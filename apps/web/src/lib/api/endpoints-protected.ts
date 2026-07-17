@@ -2275,14 +2275,16 @@ export interface BookmarkCollectionItem {
 /**
  * Input for creating a new bookmark collection.
  *
- * `color`/`icon` accept `null` (in addition to a value or omission) so a
- * caller can explicitly send "no color"/"no icon" — the domain schema
- * (`UserBookmarkCollectionSchema.color`/`.icon`) is `.nullable().optional()`,
- * so `null` is a real, API-accepted value, distinct from omitting the key.
+ * `description`/`color`/`icon` accept `null` (in addition to a value or
+ * omission) so a caller can explicitly send "no description"/"no
+ * color"/"no icon" — the domain schema
+ * (`UserBookmarkCollectionSchema.description`/`.color`/`.icon`) is
+ * `.nullable().optional()`, so `null` is a real, API-accepted value,
+ * distinct from omitting the key.
  */
 export interface CreateBookmarkCollectionInput {
     readonly name: string;
-    readonly description?: string;
+    readonly description?: string | null;
     readonly color?: string | null;
     readonly icon?: string | null;
 }
@@ -2290,14 +2292,16 @@ export interface CreateBookmarkCollectionInput {
 /**
  * Input for updating an existing bookmark collection.
  *
- * `color`/`icon` accept `null` to explicitly CLEAR a previously-set value on
- * a PATCH — sending `undefined` (or omitting the key) leaves the existing
- * value untouched instead (HOS-190 slice 3: "Sin color"/"Sin ícono" in the
- * edit modal used to send `undefined`, which never cleared the field).
+ * `description`/`color`/`icon` accept `null` to explicitly CLEAR a
+ * previously-set value on a PATCH — sending `undefined` (or omitting the
+ * key) leaves the existing value untouched instead (HOS-190 slice 3:
+ * "Sin color"/"Sin ícono" in the edit modal used to send `undefined`,
+ * which never cleared the field; `description` had the identical bug and
+ * was fixed alongside it).
  */
 export interface UpdateBookmarkCollectionInput {
     readonly name?: string;
-    readonly description?: string;
+    readonly description?: string | null;
     readonly color?: string | null;
     readonly icon?: string | null;
 }

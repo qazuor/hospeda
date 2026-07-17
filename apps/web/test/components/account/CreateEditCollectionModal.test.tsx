@@ -220,5 +220,27 @@ describe('CreateEditCollectionModal', () => {
             expect(typeof call.input.color).toBe('string');
             expect(call.input.color).not.toBeNull();
         });
+
+        // Same bug class as color/icon above, but for `description` — it was
+        // missed by the original HOS-190 fix. Clearing the description
+        // textarea in EDIT mode used to send `description: undefined`, which
+        // the server merge treats as "leave unchanged" instead of "clear",
+        // so the old description silently survived the save.
+        it('EDIT mode: sends description: null (not undefined) when the description is cleared', async () => {
+            renderEditModal();
+
+            const descriptionInput = document.getElementById(
+                'collection-description'
+            ) as HTMLTextAreaElement;
+            fireEvent.change(descriptionInput, { target: { value: '' } });
+            fireEvent.submit(document.querySelector('form')!);
+
+            await waitFor(() => {
+                expect(mockUpdate).toHaveBeenCalledTimes(1);
+            });
+            const call = mockUpdate.mock.calls[0][0] as { input: Record<string, unknown> };
+            expect(call.input.description).toBeNull();
+            expect(call.input).not.toHaveProperty('description', undefined);
+        });
     });
 });
