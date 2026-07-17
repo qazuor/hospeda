@@ -1,0 +1,329 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-147",
+    "title": "Thematic POI Filters by Category",
+    "created": "2026-07-17T04:07:19.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add PublicPoiCategorySchema Zod schema",
+            "description": "Add a public-facing category schema { id, slug, nameI18n, icon (nullable), displayWeight } in packages/schemas/src/entities/poi-category/, exported from the package barrel. This is the response shape for the new public catalog endpoint (spec G-1, section 7). Tests: schema parse/reject unit test (valid shape passes, missing slug/displayWeight fails) in the entity's __tests__ folder.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [
+                { "title": "Define PublicPoiCategorySchema", "completed": false },
+                { "title": "Export from schemas barrel", "completed": false },
+                { "title": "Parse/reject unit test", "completed": false }
+            ],
+            "tags": ["schema", "api"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-17T04:07:19.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add public read method to PoiCategoryService",
+            "description": "Add a read method on PoiCategoryService (packages/service-core) that returns ACTIVE, non-deleted categories sorted by displayWeight asc then slug, shaped as PublicPoiCategorySchema. Reuse BaseModelImpl.findAll on PoiCategoryModel with lifecycleState=ACTIVE / deletedAt=null. Tests (TDD, write first): unit test that soft-deleted/non-active categories are excluded and ordering is displayWeight then slug (AC-1).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003"],
+            "subtasks": [
+                { "title": "Write failing unit test (active-only + order)", "completed": false },
+                { "title": "Implement listPublic read method", "completed": false },
+                { "title": "Map rows to PublicPoiCategorySchema", "completed": false }
+            ],
+            "tags": ["service", "api"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-17T04:07:19.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add public route GET /api/v1/public/poi-categories",
+            "description": "Add public/list.ts under apps/api/src/routes/poi-category/ using createPublicListRoute (mirror an existing public catalog route). Validate empty query, call PoiCategoryService.listPublic, return array of PublicPoiCategorySchema, set cacheTTL consistent with other public catalog routes. Wire publicPoiCategoryRoutes into apps/api/src/routes/index.ts. Tests: route integration test asserting 200, shape, and active-only ordering (AC-1).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                { "title": "Create public/list.ts route", "completed": false },
+                { "title": "Wire into routes/index.ts", "completed": false },
+                { "title": "Route integration test", "completed": false }
+            ],
+            "tags": ["api", "route"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-17T04:07:19.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add categories[] to DestinationPointOfInterestSummarySchema",
+            "description": "Extend DestinationPointOfInterestSummarySchema (packages/schemas) with categories: z.array(z.object({ slug: z.string() })) — the full category set of the POI, additive alongside the existing primaryCategory (spec section 7, D-4). Tests: update schema unit test to assert categories[] is present and primaryCategory unchanged.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-005"],
+            "subtasks": [
+                { "title": "Add categories[] field", "completed": false },
+                { "title": "Update schema unit test", "completed": false }
+            ],
+            "tags": ["schema", "api"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-17T04:07:19.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Aggregate all POI categories in getPointsOfInterestMap",
+            "description": "Extend DestinationModel.getPointsOfInterestMap (packages/db/src/models/destination/destination.model.ts) to aggregate every r_poi_category row per POI into categories: { slug }[] (json_agg or grouped fetch), reusing the existing JOIN that already resolves primaryCategory (HOS-182). Must NOT regress the HOS-135 pagination-truncation fix nor primaryCategory. Tests (TDD): model test on a POI-rich destination (Colon) asserting a multi-category POI returns all its slugs and primaryCategory still resolves (AC-2, R-1).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                { "title": "Write failing model test (multi-category POI)", "completed": false },
+                { "title": "Add category aggregation to the query", "completed": false },
+                { "title": "Verify HOS-135/HOS-182 not regressed", "completed": false }
+            ],
+            "tags": ["db", "model"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-17T04:07:19.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Thread categories[] through DestinationService.getPointsOfInterest",
+            "description": "Propagate the aggregated categories[] from getPointsOfInterestMap through DestinationService.getPointsOfInterest and the summary mapper (toDestinationPointOfInterestSummary or equivalent) so the endpoint response carries categories[]. Tests: service test asserting the mapped summary includes categories[] (AC-2).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                { "title": "Thread field through service + mapper", "completed": false },
+                { "title": "Service test asserts categories[] on summary", "completed": false }
+            ],
+            "tags": ["service", "api"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-17T04:07:19.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Register POI-category facet in facet-config.ts",
+            "description": "Add a new FacetId for POI categories in apps/web/src/lib/filters/facet-config.ts: paramKey 'categories', singularParamKey undefined, operator 'OR', enum undefined (DB-driven, mirror the destinationAttraction precedent). This makes readFacetActiveValues / buildMultiToggleParamHref work unchanged for the new facet. Tests: unit test that read + toggle helpers resolve the new facet's CSV param correctly.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-009"],
+            "subtasks": [
+                { "title": "Add FacetId entry", "completed": false },
+                { "title": "Unit test read/toggle for new facet", "completed": false }
+            ],
+            "tags": ["web", "filters"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-17T04:07:19.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Shared OR category-filter predicate util",
+            "description": "Add a single shared predicate (e.g. matchesAnyCategory(poiCategorySlugs, activeSlugs)) in apps/web/src/lib/filters/ used by cards, PRIMARY markers, and NEARBY markers so the OR logic exists once (spec section 12, R-3). Empty active set = show all. Tests (TDD): unit tests for OR semantics, multi-category match, empty selection (AC-3, AC-4, AC-6).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-009", "T-010", "T-012"],
+            "subtasks": [
+                { "title": "Write predicate unit tests (OR/multi/empty)", "completed": false },
+                { "title": "Implement matchesAnyCategory", "completed": false }
+            ],
+            "tags": ["web", "filters"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-17T04:07:19.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Build DestinationPOIFilter chip island",
+            "description": "Create the client island (apps/web/src/components/destination/DestinationPOIFilter.client.tsx) that renders present-only category chips (D-5: only categories present in the loaded POI set, using catalog metadata for label/icon/color via getPoiCategoryIcon/getPoiCategoryColorScheme). Follow FilterChips.astro shape: <a> based, aria-current (never aria-pressed), 'Clear (N)' chip when >=2 active via buildClearFacetChip. Read initial ?categories= via readFacetActiveValues; on toggle update URL with history.pushState (buildMultiToggleParamHref semantics, drop page) and apply the filter to the SSR cards. Tests: component test for present-only chip source + aria-current toggling (AC-5, AC-7).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-007", "T-008", "T-011"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "Render present-only chips with catalog metadata", "completed": false },
+                { "title": "Read initial URL + toggle → pushState", "completed": false },
+                { "title": "Apply filter to cards + Clear(N) chip", "completed": false },
+                { "title": "Component test (chips + aria-current)", "completed": false }
+            ],
+            "tags": ["web", "component"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-17T04:07:19.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Wire card visibility + empty state in DestinationPOISection.astro",
+            "description": "In apps/web/src/components/destination/DestinationPOISection.astro, emit data-poi-categories (the POI's category slugs) on each SSR card so the chip island can toggle visibility by intersecting with the active set (OR, via T-008 predicate). Keep cards server-rendered (SEO). Add an explicit empty state shown when the active selection matches zero visible cards, chips still adjustable (AC-6, AC-8). Tests: rendering test asserting data-poi-categories present and empty-state markup exists.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "Add data-poi-categories to cards", "completed": false },
+                { "title": "Empty-state markup + toggle hook", "completed": false },
+                { "title": "Rendering test", "completed": false }
+            ],
+            "tags": ["web", "component"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-17T04:07:19.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Fetch category catalog SSR + thread props in destination page",
+            "description": "In apps/web/src/pages/[lang]/destinos/[...path].astro, fetch the public POI-category catalog once server-side (new endpoint from T-003, via a new endpoints.ts wrapper) and compute the present-only category list from the already-built pointsOfInterest set (D-5). Pass the catalog + categories to DestinationPOISection, DestinationPOIMap, and the new chip island. Tests: endpoints.ts wrapper unit test; page-prop wiring covered indirectly by T-013.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-006"],
+            "blocks": ["T-009", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Add endpoints.ts wrapper for /public/poi-categories",
+                    "completed": false
+                },
+                { "title": "Fetch catalog SSR + compute present-only list", "completed": false },
+                { "title": "Pass props to section, map, island", "completed": false }
+            ],
+            "tags": ["web", "page"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-17T04:07:19.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Filter map markers on category change",
+            "description": "In apps/web/src/components/destination/DestinationPOIMap.client.tsx (and MultiMarkerMapInner), apply the shared OR predicate (T-008) to both the SSR-provided PRIMARY markers and the client-fetched NEARBY markers. Read the active set from the current URL on mount (re-apply if the island toggled before the map hydrated, R-2) and listen for window CustomEvent 'hospeda:poi-category-filter' (detail { categories }) for live updates. Tests: island test that a filter event hides non-matching markers and NEARBY markers honor the same filter (AC-3, R-3).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-008", "T-011"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "Read initial active set from URL on mount", "completed": false },
+                {
+                    "title": "Listen CustomEvent + filter PRIMARY+NEARBY markers",
+                    "completed": false
+                },
+                { "title": "Island filter test", "completed": false }
+            ],
+            "tags": ["web", "component", "map"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-17T04:07:19.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Web integration + a11y tests for the filter",
+            "description": "Cross-cutting tests: toggling a chip filters cards AND map in sync with no reload; multi-select OR; URL reflects ?categories= and a deep-link reproduces the filtered view after hydration; empty state; aria-current (not aria-pressed) and keyboard operability; SSR HTML of the destination page still contains the full POI set (SEO regression guard). Covers AC-3..AC-8.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-010", "T-012"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Chip toggle filters cards+map in sync", "completed": false },
+                { "title": "URL read/write + deep-link reproduction", "completed": false },
+                {
+                    "title": "a11y (aria-current, keyboard) + SEO full-set guard",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "testing", "a11y"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-17T04:07:19.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Document the client-side POI category filter",
+            "description": "Update apps/web/docs and the relevant CLAUDE.md gotchas: POI thematic filter is client-side over the already-loaded list (endpoint has no category query param); the destination-POI payload now carries categories[] (all categories) alongside primaryCategory; new public GET /api/v1/public/poi-categories catalog endpoint. Note the D-3/D-4/D-5 decisions.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-013"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Update apps/web docs", "completed": false },
+                { "title": "Add CLAUDE.md gotcha note", "completed": false }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-07-17T04:07:19.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 14,
+        "pending": 14,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.1
+    }
+}
