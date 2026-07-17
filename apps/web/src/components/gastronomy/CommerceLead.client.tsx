@@ -17,6 +17,7 @@ import { CheckCircleIcon } from '@repo/icons';
 import type { CommerceLeadCreateInput } from '@repo/schemas';
 import { CommerceLeadCreateInputSchema } from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, useState } from 'react';
+import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './CommerceLead.module.css';
@@ -60,23 +61,6 @@ const INITIAL_FIELDS: LeadFields = {
     message: '',
     _hp: ''
 };
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Extracts Zod field-level errors from a ZodError and maps them to a flat
- * FieldErrors record using the first issue's message per field.
- */
-function extractFieldErrors(error: import('zod').ZodError): FieldErrors {
-    const result: FieldErrors = {};
-    for (const issue of error.issues) {
-        const field = issue.path[0] as keyof FieldErrors | undefined;
-        if (field && !result[field]) {
-            result[field] = issue.message;
-        }
-    }
-    return result;
-}
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -140,7 +124,7 @@ export function CommerceLead({
         const parsed = CommerceLeadCreateInputSchema.safeParse(schemaPayload);
 
         if (!parsed.success) {
-            setErrors(extractFieldErrors(parsed.error));
+            setErrors(zodIssuesToFieldErrors(parsed.error.issues, t));
             return;
         }
 
@@ -368,9 +352,20 @@ export function CommerceLead({
                     name="phone"
                     value={fields.phone ?? ''}
                     onChange={handleChange}
-                    className={styles.input}
+                    className={`${styles.input}${errors.phone ? ` ${styles.inputError}` : ''}`}
                     autoComplete="tel"
+                    aria-describedby={errors.phone ? 'cl-phone-error' : undefined}
+                    aria-invalid={!!errors.phone}
                 />
+                {errors.phone && (
+                    <p
+                        id="cl-phone-error"
+                        className={styles.errorMsg}
+                        role="alert"
+                    >
+                        {errors.phone}
+                    </p>
+                )}
             </div>
 
             {/* Destination (optional) */}
@@ -415,9 +410,20 @@ export function CommerceLead({
                     name="message"
                     value={fields.message ?? ''}
                     onChange={handleChange}
-                    className={styles.textarea}
+                    className={`${styles.textarea}${errors.message ? ` ${styles.inputError}` : ''}`}
                     rows={4}
+                    aria-describedby={errors.message ? 'cl-message-error' : undefined}
+                    aria-invalid={!!errors.message}
                 />
+                {errors.message && (
+                    <p
+                        id="cl-message-error"
+                        className={styles.errorMsg}
+                        role="alert"
+                    >
+                        {errors.message}
+                    </p>
+                )}
             </div>
 
             {/* Form-level error */}

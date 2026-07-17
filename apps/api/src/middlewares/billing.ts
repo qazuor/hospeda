@@ -14,7 +14,11 @@
  * @module middlewares/billing
  */
 
-import { createQZPayBilling, type QZPayBilling } from '@qazuor/qzpay-core';
+import {
+    createQZPayBilling,
+    type QZPayBilling,
+    type QZPayPaymentAdapter
+} from '@qazuor/qzpay-core';
 import {
     createMercadoPagoAdapter,
     createStubMercadoPagoAdapter,
@@ -60,6 +64,17 @@ function isBillingConfigured(): boolean {
  * Only created when billing is properly configured
  */
 let billingInstance: QZPayBilling | null = null;
+
+/**
+ * The MercadoPago payment adapter backing {@link billingInstance}, cached so
+ * callers that need the raw adapter (not the {@link QZPayBilling} facade) can
+ * reach it. The facade deliberately does not expose the `prices` slot
+ * (`preapproval_plan` CRUD), which HOS-191 provisioning needs — this accessor
+ * is how {@link getBillingPaymentAdapter} hands it out. Populated by
+ * {@link getBillingInstance} using the exact same adapter instance, so livemode
+ * / sandbox / test-control selection stays in one place.
+ */
+let billingPaymentAdapter: QZPayPaymentAdapter | null = null;
 
 /**
  * Backoff guard for a FAILED initialization.
@@ -135,6 +150,11 @@ function getBillingInstance(): QZPayBilling | null {
             ? createStubMercadoPagoAdapter()
             : createMercadoPagoAdapter({ logger: qzpayLogger });
 
+        // Cache the adapter so getBillingPaymentAdapter() can hand out the raw
+        // `prices` slot (preapproval_plan CRUD) that the QZPayBilling facade does
+        // not expose — HOS-191 MP-plan provisioning needs it.
+        billingPaymentAdapter = paymentAdapter;
+
         // Create billing instance.
         // `providerSyncErrorStrategy: 'throw'` is set explicitly so that
         // QZPayProviderSyncError surfaces to our Hono error handler on every
@@ -161,6 +181,11 @@ function getBillingInstance(): QZPayBilling | null {
         // Suppress further attempts (and stack-trace spam) for the backoff window.
         billingInitRetryAfter = Date.now() + BILLING_INIT_RETRY_BACKOFF_MS;
 
+        // Clear the payment adapter too: it may have been assigned before the
+        // failing step (createQZPayBilling) threw. Otherwise getBillingPaymentAdapter()
+        // would hand out a live adapter while the rest of billing is unavailable.
+        billingPaymentAdapter = null;
+
         const errorMessage = error instanceof Error ? error.message : String(error);
         const errorStack = error instanceof Error ? error.stack : undefined;
         apiLogger.error(
@@ -173,6 +198,26 @@ function getBillingInstance(): QZPayBilling | null {
         }
         return null;
     }
+}
+
+/**
+ * Get the raw MercadoPago payment adapter backing the billing instance.
+ *
+ * Unlike the {@link QZPayBilling} facade returned by the middleware, this exposes
+ * the adapter's `prices` slot (`preapproval_plan` create/archive/retrieve), which
+ * HOS-191 MP-plan provisioning uses to project Hospeda commercial plans onto
+ * MercadoPago `preapproval_plan` objects.
+ *
+ * Triggers lazy initialization if needed (shares the same cached instance and the
+ * same livemode/sandbox/test-control selection as {@link getBillingInstance}), and
+ * returns `null` when billing is not configured or init is in its failure backoff.
+ *
+ * @returns The MercadoPago payment adapter, or `null` when billing is unavailable.
+ */
+export function getBillingPaymentAdapter(): QZPayPaymentAdapter | null {
+    // Ensure the adapter is built (and cached) before handing it out.
+    getBillingInstance();
+    return billingPaymentAdapter;
 }
 
 /**
@@ -293,6 +338,10 @@ export function resetBillingInstance(): void {
         );
     }
     billingInstance = null;
+    // Clear the cached payment adapter too, so a test that resets billing and then
+    // simulates "unconfigured" gets a null adapter from getBillingPaymentAdapter()
+    // rather than the previous test's stale instance.
+    billingPaymentAdapter = null;
     // Also clear the failure backoff so a failed init in one test cannot
     // suppress billing for the next (the 5-minute window would outlast the
     // whole suite). See billingInitRetryAfter.

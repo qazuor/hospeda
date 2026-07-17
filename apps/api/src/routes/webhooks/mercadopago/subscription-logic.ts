@@ -145,7 +145,9 @@ export function shouldSendPausedEmail(previousStatus: string, newStatus: string)
  *
  * Sends for transitions TO cancelled, except when the subscription was already
  * cancelled or expired (both represent ended states where the user has already
- * been notified or the subscription naturally terminated).
+ * been notified or the subscription naturally terminated), or when it never
+ * activated (`pending_provider`: the user abandoned or rejected MP's hosted card
+ * authorization, so there is no subscription to announce as "cancelled" — HOS-191).
  *
  * @param previousStatus - The subscription status before the update
  * @param newStatus - The subscription status after the update
@@ -153,16 +155,18 @@ export function shouldSendPausedEmail(previousStatus: string, newStatus: string)
  *
  * @example
  * ```ts
- * shouldSendCancelledEmail('active', 'cancelled')    // true
- * shouldSendCancelledEmail('cancelled', 'cancelled') // false (already cancelled)
- * shouldSendCancelledEmail('expired', 'cancelled')   // false (already ended)
+ * shouldSendCancelledEmail('active', 'cancelled')           // true
+ * shouldSendCancelledEmail('cancelled', 'cancelled')        // false (already cancelled)
+ * shouldSendCancelledEmail('expired', 'cancelled')          // false (already ended)
+ * shouldSendCancelledEmail('pending_provider', 'cancelled') // false (never activated — HOS-191)
  * ```
  */
 export function shouldSendCancelledEmail(previousStatus: string, newStatus: string): boolean {
     return (
         newStatus === SubscriptionStatusEnum.CANCELLED &&
         previousStatus !== SubscriptionStatusEnum.CANCELLED &&
-        previousStatus !== SubscriptionStatusEnum.EXPIRED
+        previousStatus !== SubscriptionStatusEnum.EXPIRED &&
+        previousStatus !== SubscriptionStatusEnum.PENDING_PROVIDER
     );
 }
 
@@ -171,7 +175,9 @@ export function shouldSendCancelledEmail(previousStatus: string, newStatus: stri
  *
  * Uses the same logic as {@link shouldSendCancelledEmail}: sends alerts when a
  * subscription transitions to cancelled from any state that is not already
- * cancelled or expired.
+ * cancelled or expired, and never activated (`pending_provider`). An abandoned/
+ * rejected checkout is not an involuntary cancellation of a live subscription, so
+ * it must not raise the admin alert (HOS-191).
  *
  * @param previousStatus - The subscription status before the update
  * @param newStatus - The subscription status after the update
@@ -179,16 +185,18 @@ export function shouldSendCancelledEmail(previousStatus: string, newStatus: stri
  *
  * @example
  * ```ts
- * shouldSendAdminAlert('active', 'cancelled')    // true
- * shouldSendAdminAlert('expired', 'cancelled')   // false
- * shouldSendAdminAlert('cancelled', 'cancelled') // false
+ * shouldSendAdminAlert('active', 'cancelled')           // true
+ * shouldSendAdminAlert('expired', 'cancelled')          // false
+ * shouldSendAdminAlert('cancelled', 'cancelled')        // false
+ * shouldSendAdminAlert('pending_provider', 'cancelled') // false (never activated — HOS-191)
  * ```
  */
 export function shouldSendAdminAlert(previousStatus: string, newStatus: string): boolean {
     return (
         newStatus === SubscriptionStatusEnum.CANCELLED &&
         previousStatus !== SubscriptionStatusEnum.CANCELLED &&
-        previousStatus !== SubscriptionStatusEnum.EXPIRED
+        previousStatus !== SubscriptionStatusEnum.EXPIRED &&
+        previousStatus !== SubscriptionStatusEnum.PENDING_PROVIDER
     );
 }
 

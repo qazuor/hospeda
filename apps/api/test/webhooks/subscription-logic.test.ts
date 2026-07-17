@@ -298,6 +298,15 @@ describe('subscription-logic', () => {
                 )
             ).toBe(true);
         });
+
+        it('should return false when transitioning from pending_provider to cancelled (never activated — HOS-191)', () => {
+            expect(
+                shouldSendCancelledEmail(
+                    SubscriptionStatusEnum.PENDING_PROVIDER,
+                    SubscriptionStatusEnum.CANCELLED
+                )
+            ).toBe(false);
+        });
     });
 
     describe('shouldSendAdminAlert', () => {
@@ -323,6 +332,15 @@ describe('subscription-logic', () => {
             expect(
                 shouldSendAdminAlert(
                     SubscriptionStatusEnum.CANCELLED,
+                    SubscriptionStatusEnum.CANCELLED
+                )
+            ).toBe(false);
+        });
+
+        it('should return false when transitioning from pending_provider to cancelled (abandoned checkout, not involuntary — HOS-191)', () => {
+            expect(
+                shouldSendAdminAlert(
+                    SubscriptionStatusEnum.PENDING_PROVIDER,
                     SubscriptionStatusEnum.CANCELLED
                 )
             ).toBe(false);

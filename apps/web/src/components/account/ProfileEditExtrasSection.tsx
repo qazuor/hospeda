@@ -8,6 +8,7 @@
  * fields collected during signup.
  */
 
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import type { ProfileEditFieldErrors } from './ProfileEditForm.helpers';
 import styles from './ProfileEditForm.module.css';
 
@@ -63,19 +64,15 @@ export function ProfileEditExtrasSection({
                         value={website}
                         onChange={(e) => onWebsiteChange(e.target.value)}
                         placeholder="https://mipagina.com"
-                        aria-describedby={fieldErrors.website ? 'website-error' : undefined}
+                        aria-invalid={!!fieldErrors.website}
+                        aria-describedby={fieldErrors.website ? fieldErrorId('website') : undefined}
                         autoComplete="url"
                         disabled={submitting}
                     />
-                    {fieldErrors.website && (
-                        <p
-                            id="website-error"
-                            className={styles.errorMsg}
-                            role="alert"
-                        >
-                            {fieldErrors.website}
-                        </p>
-                    )}
+                    <FieldError
+                        id={fieldErrorId('website')}
+                        message={fieldErrors.website}
+                    />
                 </div>
 
                 {/* occupation */}
@@ -93,19 +90,17 @@ export function ProfileEditExtrasSection({
                         value={occupation}
                         onChange={(e) => onOccupationChange(e.target.value)}
                         maxLength={100}
-                        aria-describedby={fieldErrors.occupation ? 'occupation-error' : undefined}
+                        aria-invalid={!!fieldErrors.occupation}
+                        aria-describedby={
+                            fieldErrors.occupation ? fieldErrorId('occupation') : undefined
+                        }
                         autoComplete="organization-title"
                         disabled={submitting}
                     />
-                    {fieldErrors.occupation && (
-                        <p
-                            id="occupation-error"
-                            className={styles.errorMsg}
-                            role="alert"
-                        >
-                            {fieldErrors.occupation}
-                        </p>
-                    )}
+                    <FieldError
+                        id={fieldErrorId('occupation')}
+                        message={fieldErrors.occupation}
+                    />
                 </div>
             </div>
         </section>

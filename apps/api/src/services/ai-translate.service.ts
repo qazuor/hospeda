@@ -17,6 +17,7 @@
 import { getDb } from '@repo/db';
 import { accommodations, destinations, events, pointsOfInterest, posts } from '@repo/db/schemas';
 import type { AiFeature, I18nText, TranslationMeta } from '@repo/schemas';
+import { I18nTextSchema, TranslationMetaSchema } from '@repo/schemas';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';
 import { apiLogger } from '../utils/logger.js';
@@ -514,6 +515,34 @@ export async function persistTranslations(
 
     updateSet.translationMeta = mergedMeta;
 
+    // HOS-190 slice 3: gate the write with Zod. This function previously built
+    // `updateSet` from AI-provider output (`result.translatedText`) and wrote
+    // it straight to the DB via `db.update()` with no runtime validation — a
+    // malformed provider response (wrong type, unexpected shape) would persist
+    // ungated. Validate every i18n column against the same `I18nTextSchema`
+    // the domain entity schemas use for `nameI18n`/`summaryI18n`/etc., and the
+    // merged metadata against `TranslationMetaSchema`, before the write. A
+    // failure here throws — the caller (the AI translate routes) already
+    // wraps this call in a try/catch and reports the error, so no invalid
+    // data ever reaches the table.
+    for (const column of Object.keys(updateSet)) {
+        if (column === 'translationMeta') continue;
+        const parsedValue = I18nTextSchema.safeParse(updateSet[column]);
+        if (!parsedValue.success) {
+            throw new Error(
+                `ai-translate: refusing to persist malformed i18n value for column "${column}" (${entityType}/${entityId}): ${parsedValue.error.message}`
+            );
+        }
+        updateSet[column] = parsedValue.data;
+    }
+    const parsedMeta = TranslationMetaSchema.safeParse(mergedMeta);
+    if (!parsedMeta.success) {
+        throw new Error(
+            `ai-translate: refusing to persist malformed translationMeta (${entityType}/${entityId}): ${parsedMeta.error.message}`
+        );
+    }
+    updateSet.translationMeta = parsedMeta.data;
+
     await db.update(table).set(updateSet).where(eq(table.id, entityId));
 
     apiLogger.info({ entityType, entityId, fieldsUpdated }, 'ai-translate: translations persisted');
@@ -635,9 +664,26 @@ export async function applyManualOverride(
         }
     };
 
+    // HOS-190 slice 3: gate the write with Zod, mirroring `persistTranslations`.
+    // This is a raw `db.update()` that writes an I18nText column + translation
+    // meta; validate both against the same schemas the domain entities use so a
+    // malformed shape can never persist ungated.
+    const parsedValue = I18nTextSchema.safeParse(nextValue);
+    if (!parsedValue.success) {
+        throw new Error(
+            `ai-translate: refusing to persist malformed manual override for column "${column}" (${entityType}/${entityId}): ${parsedValue.error.message}`
+        );
+    }
+    const parsedMeta = TranslationMetaSchema.safeParse(nextMeta);
+    if (!parsedMeta.success) {
+        throw new Error(
+            `ai-translate: refusing to persist malformed translationMeta on manual override (${entityType}/${entityId}): ${parsedMeta.error.message}`
+        );
+    }
+
     await db
         .update(table)
-        .set({ [column]: nextValue, translationMeta: nextMeta })
+        .set({ [column]: parsedValue.data, translationMeta: parsedMeta.data })
         .where(eq(table.id, entityId));
 
     return { ok: true };

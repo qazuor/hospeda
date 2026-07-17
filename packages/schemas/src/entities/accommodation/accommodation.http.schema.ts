@@ -631,17 +631,23 @@ export const httpToDomainAccommodationCreate = (
         currency: httpData.currency
     },
 
-    // Contact info mapping from flat HTTP fields to nested ContactInfoSchema
+    // Contact info mapping from flat HTTP fields to nested ContactInfoSchema.
+    // Omit each key when its HTTP field is undefined (matches the draft-create
+    // and update converters below) — `mobilePhone: httpData.phone || ''` used
+    // to inject an empty string whenever phone was absent but a sibling field
+    // (whatsapp/email/website) was present, which then fails
+    // `ContactInfoSchema.mobilePhone`'s `InternationalPhoneRegex` validation
+    // even though the host never touched the phone field at all (HOS-190).
     ...(httpData.phone !== undefined ||
     httpData.whatsapp !== undefined ||
     httpData.email !== undefined ||
     httpData.website !== undefined
         ? {
               contactInfo: {
-                  mobilePhone: httpData.phone || '',
-                  whatsapp: httpData.whatsapp,
-                  personalEmail: httpData.email,
-                  website: httpData.website
+                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
+                  ...(httpData.whatsapp === undefined ? {} : { whatsapp: httpData.whatsapp }),
+                  ...(httpData.email === undefined ? {} : { personalEmail: httpData.email }),
+                  ...(httpData.website === undefined ? {} : { website: httpData.website })
               }
           }
         : {}),
@@ -780,10 +786,10 @@ export const httpToDomainAccommodationCreateDraft = (
         : {}),
 
     // --- Optional: contact info (→ contactInfo JSONB) ---
-    // ContactInfoSchema.mobilePhone is required in the full schema, but for a DRAFT
-    // we may only have a website (no phone) or a phone without website. Cast to the
-    // full ContactInfo type since the DB column is JSONB and the service normalises
-    // at read time. Same pattern as the update path (ContactInfoSchema.partial()).
+    // For a DRAFT we may only have a website (no phone) or a phone without website.
+    // mobilePhone is optional on ContactInfoSchema (HOS-190), so a partial contact
+    // object is valid; the cast just keeps the conditional-spread shape aligned with
+    // the ContactInfo type. Same pattern as the update path (ContactInfoSchema.partial()).
     ...(httpData.phone !== undefined || httpData.website !== undefined
         ? {
               contactInfo: {

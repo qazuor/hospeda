@@ -40,6 +40,7 @@ import {
 } from '@repo/service-core';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';
+import { resolveCheckoutMpPlanId } from './billing/mp-plan-provisioning.service.js';
 import { createPaidSubscription } from './billing/paid-subscription-create.js';
 import type { SubscriptionCheckoutErrorCode } from './billing/subscription-checkout-error.js';
 import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
@@ -601,11 +602,28 @@ export async function initiatePaidMonthlySubscription(
     // `createPaidSubscription` helper (`billing/paid-subscription-create.ts`),
     // also reused by the paid-reactivation flow. Pure extraction — no
     // behavior change versus the previous inline block.
+    // HOS-191: subscribe against the MP preapproval_plan matching this customer's
+    // trial length (plan base + any trial_extension promo, or 0 when they have
+    // already used their one lifetime trial). Provisioned on first use.
+    const providerPriceId = await resolveCheckoutMpPlanId({
+        commercialPlanId: plan.id,
+        planName: getPlanDisplayName(plan),
+        amountCentavos: monthlyPrice.unitAmount,
+        currency: monthlyPrice.currency,
+        // The hidden TEST_DAILY_PLAN resolves the `'day'` price above (into
+        // `monthlyPrice`), so its MP plan must be provisioned on a DAILY cadence —
+        // otherwise the plan-based preapproval bills monthly and the fast-cycle QA
+        // tool is silently defeated. Real plans on this flow are always monthly.
+        billingInterval: planSlug === TEST_DAILY_PLAN.slug ? 'daily' : 'monthly',
+        trialDays: freeTrialDays ?? 0
+    });
+
     const { subscription, checkoutUrl } = await createPaidSubscription({
         billing,
         customerId,
         planId: plan.id,
         priceId: monthlyPrice.id,
+        providerPriceId,
         paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
         notificationUrl: urls.notificationUrl,
         // HOS-171: the ONE free-trial length for this checkout — the plan's base
@@ -829,11 +847,23 @@ export async function initiateCommerceMonthlySubscription(
     // helper (`billing/paid-subscription-create.ts`), same as the accommodation
     // and reactivation flows. Pure extraction — no behavior change versus the
     // previous inline block.
+    // HOS-191: commerce listings are always no-trial (trialDays: 0); subscribe
+    // against the no-trial MP preapproval_plan for uniform plan-based checkout.
+    const providerPriceId = await resolveCheckoutMpPlanId({
+        commercialPlanId: plan.id,
+        planName: getPlanDisplayName(plan),
+        amountCentavos: monthlyPrice.unitAmount,
+        currency: monthlyPrice.currency,
+        billingInterval: 'monthly',
+        trialDays: 0
+    });
+
     const { subscription, checkoutUrl } = await createPaidSubscription({
         billing,
         customerId,
         planId: plan.id,
         priceId: monthlyPrice.id,
+        providerPriceId,
         paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
         notificationUrl: urls.notificationUrl,
         metadata: {
@@ -938,12 +968,24 @@ export async function initiatePartnerMonthlySubscription(
         );
     }
 
+    // HOS-191: partner directory subscriptions are no-trial (trialDays: 0);
+    // subscribe against the no-trial MP preapproval_plan.
+    const providerPriceId = await resolveCheckoutMpPlanId({
+        commercialPlanId: plan.id,
+        planName: getPlanDisplayName(plan),
+        amountCentavos: monthlyPrice.unitAmount,
+        currency: monthlyPrice.currency,
+        billingInterval: 'monthly',
+        trialDays: 0
+    });
+
     // AC-7: shared `createPaidSubscription` helper — see the commerce flow above.
     const { subscription, checkoutUrl } = await createPaidSubscription({
         billing,
         customerId,
         planId: plan.id,
         priceId: monthlyPrice.id,
+        providerPriceId,
         paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
         notificationUrl: urls.notificationUrl,
         metadata: {
@@ -1224,11 +1266,23 @@ export async function initiatePaidAnnualSubscription(
     // already points at. `urls.cancelUrl` has no equivalent — a preapproval has
     // exactly one back_url — and is retained on the input only for the annual
     // reactivation callers that still pass it and die with HOS-123.
+    // HOS-191: subscribe against the MP preapproval_plan matching this customer's
+    // trial length for the annual (12-month) cadence — same rule as monthly.
+    const providerPriceId = await resolveCheckoutMpPlanId({
+        commercialPlanId: plan.id,
+        planName: getPlanDisplayName(plan),
+        amountCentavos: annualPrice.unitAmount,
+        currency: annualPrice.currency,
+        billingInterval: 'annual',
+        trialDays: freeTrialDays ?? 0
+    });
+
     const { subscription, checkoutUrl } = await createPaidSubscription({
         billing,
         customerId,
         planId: plan.id,
         priceId: annualPrice.id,
+        providerPriceId,
         billingInterval: 'annual',
         paymentMethodReturnUrl: urls.successUrl,
         notificationUrl: urls.notificationUrl,

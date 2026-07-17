@@ -19,7 +19,11 @@
  */
 
 import { z } from '@hono/zod-openapi';
-import { NewsletterSourceEnum, type ServiceErrorCode } from '@repo/schemas';
+import {
+    NewsletterGuestSubscribeRequestSchema,
+    NewsletterSourceEnum,
+    type ServiceErrorCode
+} from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { createPublicRoute } from '../../../utils/route-factory';
@@ -27,20 +31,16 @@ import { getDefaultNewsletterService } from '../protected/_singletons';
 
 const CONSENT_VERSION = 'spec-101-v1';
 
-const SUBSCRIBE_SOURCES = ['web_footer', 'web_landing'] as const;
-
-const GuestSubscribeRequestSchema = z.object({
-    email: z.string().email().max(255),
-    locale: z.enum(['es', 'en', 'pt']).optional(),
-    source: z.enum(SUBSCRIBE_SOURCES).optional()
-});
-
 const GuestSubscribeResponseSchema = z.object({
     status: z.enum(['pending_verification', 'active', 'already_pending'])
 });
 
-/** Body shape (post-Zod-parsed) consumed by the handler. */
-export type GuestSubscribeBody = z.infer<typeof GuestSubscribeRequestSchema>;
+/**
+ * Body shape (post-Zod-parsed) consumed by the handler. Sourced from
+ * `@repo/schemas`' `NewsletterGuestSubscribeRequestSchema` (HOS-190 form 23) —
+ * the web client validates against the exact same schema before submitting.
+ */
+export type GuestSubscribeBody = z.infer<typeof NewsletterGuestSubscribeRequestSchema>;
 
 /** Minimal slice of `NewsletterSubscriberService` consumed by the handler. */
 export interface GuestSubscribeNewsletterService {
@@ -103,7 +103,7 @@ export const newsletterGuestSubscribeRoute = createPublicRoute({
     description:
         'Stores the email as an anonymous pending row and dispatches a double opt-in verification email. The HMAC link in that email flips the row to active. Authenticated users should use the protected subscribe route instead.',
     tags: ['Newsletter'],
-    requestBody: GuestSubscribeRequestSchema,
+    requestBody: NewsletterGuestSubscribeRequestSchema,
     responseSchema: GuestSubscribeResponseSchema,
     handler: async (ctx, _params, body) => guestSubscribeHandler(ctx, body as GuestSubscribeBody),
     options: {

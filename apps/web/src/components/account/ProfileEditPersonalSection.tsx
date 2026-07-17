@@ -7,6 +7,7 @@
  * `ProfileEditForm.client.tsx`.
  */
 
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import type { ProfileEditFieldErrors } from './ProfileEditForm.helpers';
 import styles from './ProfileEditForm.module.css';
 
@@ -87,20 +88,18 @@ export function ProfileEditPersonalSection({
                         value={displayName}
                         onChange={(e) => onDisplayNameChange(e.target.value)}
                         aria-required="true"
-                        aria-describedby={fieldErrors.displayName ? 'displayName-error' : undefined}
-                        maxLength={100}
+                        aria-invalid={!!fieldErrors.displayName}
+                        aria-describedby={
+                            fieldErrors.displayName ? fieldErrorId('displayName') : undefined
+                        }
+                        maxLength={50}
                         autoComplete="nickname"
                         disabled={submitting}
                     />
-                    {fieldErrors.displayName && (
-                        <p
-                            id="displayName-error"
-                            className={styles.errorMsg}
-                            role="alert"
-                        >
-                            {fieldErrors.displayName}
-                        </p>
-                    )}
+                    <FieldError
+                        id={fieldErrorId('displayName')}
+                        message={fieldErrors.displayName}
+                    />
                 </div>
 
                 {/* firstName */}
@@ -124,20 +123,18 @@ export function ProfileEditPersonalSection({
                         value={firstName}
                         onChange={(e) => onFirstNameChange(e.target.value)}
                         aria-required="true"
-                        aria-describedby={fieldErrors.firstName ? 'firstName-error' : undefined}
-                        maxLength={100}
+                        aria-invalid={!!fieldErrors.firstName}
+                        aria-describedby={
+                            fieldErrors.firstName ? fieldErrorId('firstName') : undefined
+                        }
+                        maxLength={50}
                         autoComplete="given-name"
                         disabled={submitting}
                     />
-                    {fieldErrors.firstName && (
-                        <p
-                            id="firstName-error"
-                            className={styles.errorMsg}
-                            role="alert"
-                        >
-                            {fieldErrors.firstName}
-                        </p>
-                    )}
+                    <FieldError
+                        id={fieldErrorId('firstName')}
+                        message={fieldErrors.firstName}
+                    />
                 </div>
 
                 {/* lastName */}
@@ -161,20 +158,18 @@ export function ProfileEditPersonalSection({
                         value={lastName}
                         onChange={(e) => onLastNameChange(e.target.value)}
                         aria-required="true"
-                        aria-describedby={fieldErrors.lastName ? 'lastName-error' : undefined}
-                        maxLength={100}
+                        aria-invalid={!!fieldErrors.lastName}
+                        aria-describedby={
+                            fieldErrors.lastName ? fieldErrorId('lastName') : undefined
+                        }
+                        maxLength={50}
                         autoComplete="family-name"
                         disabled={submitting}
                     />
-                    {fieldErrors.lastName && (
-                        <p
-                            id="lastName-error"
-                            className={styles.errorMsg}
-                            role="alert"
-                        >
-                            {fieldErrors.lastName}
-                        </p>
-                    )}
+                    <FieldError
+                        id={fieldErrorId('lastName')}
+                        message={fieldErrors.lastName}
+                    />
                 </div>
 
                 {/* birthDate */}
@@ -196,19 +191,17 @@ export function ProfileEditPersonalSection({
                         // locale to decide the display format. Hinting es-AR
                         // nudges Chromium-based browsers towards dd/mm/yyyy.
                         lang="es-AR"
+                        aria-invalid={!!fieldErrors.birthDate}
                         aria-describedby={
-                            fieldErrors.birthDate ? 'birthDate-error' : 'birthDate-hint'
+                            fieldErrors.birthDate ? fieldErrorId('birthDate') : 'birthDate-hint'
                         }
                         disabled={submitting}
                     />
                     {fieldErrors.birthDate ? (
-                        <p
-                            id="birthDate-error"
-                            className={styles.errorMsg}
-                            role="alert"
-                        >
-                            {fieldErrors.birthDate}
-                        </p>
+                        <FieldError
+                            id={fieldErrorId('birthDate')}
+                            message={fieldErrors.birthDate}
+                        />
                     ) : (
                         <p
                             id="birthDate-hint"
@@ -233,18 +226,16 @@ export function ProfileEditPersonalSection({
                         className={`${styles.input} ${fieldErrors.phone ? styles.inputError : ''}`}
                         value={phone}
                         onChange={(e) => onPhoneChange(e.target.value)}
-                        aria-describedby={fieldErrors.phone ? 'phone-error' : 'phone-hint'}
+                        aria-invalid={!!fieldErrors.phone}
+                        aria-describedby={fieldErrors.phone ? fieldErrorId('phone') : 'phone-hint'}
                         autoComplete="tel"
                         disabled={submitting}
                     />
                     {fieldErrors.phone ? (
-                        <p
-                            id="phone-error"
-                            className={styles.errorMsg}
-                            role="alert"
-                        >
-                            {fieldErrors.phone}
-                        </p>
+                        <FieldError
+                            id={fieldErrorId('phone')}
+                            message={fieldErrors.phone}
+                        />
                     ) : (
                         <p
                             id="phone-hint"
@@ -271,25 +262,23 @@ export function ProfileEditPersonalSection({
                         className={`${styles.textarea} ${fieldErrors.bio ? styles.inputError : ''}`}
                         value={bio}
                         onChange={(e) => onBioChange(e.target.value)}
-                        aria-describedby={fieldErrors.bio ? 'bio-error' : 'bio-hint'}
-                        maxLength={1000}
+                        aria-invalid={!!fieldErrors.bio}
+                        aria-describedby={fieldErrors.bio ? fieldErrorId('bio') : 'bio-hint'}
+                        maxLength={300}
                         rows={4}
                         disabled={submitting}
                     />
                     {fieldErrors.bio ? (
-                        <p
-                            id="bio-error"
-                            className={styles.errorMsg}
-                            role="alert"
-                        >
-                            {fieldErrors.bio}
-                        </p>
+                        <FieldError
+                            id={fieldErrorId('bio')}
+                            message={fieldErrors.bio}
+                        />
                     ) : (
                         <p
                             id="bio-hint"
                             className={styles.hint}
                         >
-                            {bio.length}/1000
+                            {bio.length}/300
                         </p>
                     )}
                 </div>

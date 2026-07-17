@@ -75,6 +75,13 @@ export function mapSubscriptionCheckoutErrorToHttp(err: SubscriptionCheckoutErro
             return new HTTPException(502, { message: err.message });
         case 'MISSING_INIT_POINT':
             return new HTTPException(500, { message: err.message });
+        case 'MP_PLAN_PROVISIONING_FAILED':
+            // HOS-191: the MercadoPago preapproval_plan for this checkout's
+            // trial-day variant could not be resolved/provisioned (adapter
+            // unavailable, or prices.create / registry write failed). Like the
+            // other provider-failure codes this is an upstream/registry issue,
+            // not user input — 502, retryable.
+            return new HTTPException(502, { message: err.message });
         default: {
             // Defensive: the union should be exhaustive, but TS doesn't
             // enforce that downstream consumers add new codes here. Fall

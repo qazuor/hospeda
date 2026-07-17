@@ -7,6 +7,7 @@
  * Shows a success state with a sign-in link after the password is updated.
  */
 
+import { StrongPasswordSchema } from '@repo/schemas';
 import { useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { translateApiError } from '@/lib/api-errors';
@@ -58,13 +59,44 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
             return;
         }
 
-        if (password.length < 8) {
-            setError(
-                t(
-                    'auth.resetPassword.passwordTooShort',
-                    'La contraseña debe tener al menos 8 caracteres'
-                )
-            );
+        // HOS-190 slice 3: unified with SignUp/SetPassword — validate the new
+        // password against the shared StrongPasswordSchema (min 8, max 128,
+        // upper/lower/digit/special) instead of a bare length check, so
+        // bounds and complexity are consistent across every password-setting
+        // form in the app (this form previously enforced NO complexity rule
+        // at all, unlike its siblings).
+        const passwordResult = StrongPasswordSchema.safeParse(password);
+        if (!passwordResult.success) {
+            const issue = passwordResult.error.issues[0];
+            if (issue?.code === 'too_big') {
+                // NOTE (HOS-190 i18n gap): no dedicated i18n key exists yet
+                // for this case — the fallback below is shown for every
+                // locale until `auth.resetPassword.errors.passwordMax` is added.
+                setError(
+                    t(
+                        'auth.resetPassword.errors.passwordMax',
+                        'La contraseña no puede superar los 128 caracteres'
+                    )
+                );
+            } else if (issue?.code === 'too_small') {
+                setError(
+                    t(
+                        'auth.resetPassword.passwordTooShort',
+                        'La contraseña debe tener al menos 8 caracteres'
+                    )
+                );
+            } else {
+                // NOTE (HOS-190 i18n gap): no dedicated i18n key exists yet
+                // for the complexity rule — the fallback below is shown for
+                // every locale until `auth.resetPassword.errors.passwordWeak`
+                // is added.
+                setError(
+                    t(
+                        'auth.resetPassword.errors.passwordWeak',
+                        'La contraseña debe tener mayúsculas, minúsculas, un número y un carácter especial (@$!%*?&).'
+                    )
+                );
+            }
             return;
         }
 

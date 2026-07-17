@@ -126,4 +126,55 @@ describe('DestinationPOISection.astro', () => {
         // specificity than `.poi-section__card`) is required — assert it exists.
         expect(sectionSrc).toMatch(/\.poi-section__card\[hidden\]\s*\{[^}]*display:\s*none/);
     });
+
+    it('coexists with the HOS-181 overflow cut: while filtered, hides the "Ver más" control and re-shows matching cards past the 12th (HOS-147)', () => {
+        // When a category filter is active (data-poi-filtered), the overflow
+        // "Ver más" toggle is hidden and the nth-child(n+13) cut is overridden
+        // for non-[hidden] cards, so a filtered-in card past the 12th DOM
+        // position is not swallowed by the overflow collapse.
+        expect(sectionSrc).toMatch(
+            /\.poi-section\[data-poi-filtered\]\s+\.poi-section__more\s*\{[^}]*display:\s*none/
+        );
+        expect(sectionSrc).toMatch(
+            /\.poi-section\[data-poi-filtered\][\s\S]*?nth-child\(n \+ 13\):not\(\[hidden\]\)\s*\{[^}]*display:\s*flex/
+        );
+    });
+});
+
+// HOS-181: reduce visual weight. The grid shows the 12 most important POIs and
+// hides the rest behind a native <details> disclosure. The cut is VISUAL ONLY —
+// every PRIMARY card still ships in the SSR HTML (SSR-first, crawlable), so the
+// tests below assert the render stays over the FULL `sorted` list and the
+// hiding is CSS, never a `slice` that drops cards from the markup.
+describe('DestinationPOISection.astro — HOS-181 visual-weight reduction', () => {
+    it('caps the visible grid at 12 via a named constant (D-1)', () => {
+        expect(sectionSrc).toMatch(/const\s+POI_VISIBLE_LIMIT\s*=\s*12/);
+    });
+
+    it('renders ALL sorted cards in the HTML — visual-only cut, not a server slice (AC-2)', () => {
+        expect(sectionSrc).toContain('sorted.map(');
+        expect(sectionSrc).not.toMatch(/sorted\.slice\(/);
+    });
+
+    it('hides overflow cards past the 12th purely via CSS :has(details:not([open])) (AC-1/AC-2)', () => {
+        expect(sectionSrc).toMatch(/:has\(\.poi-section__more:not\(\[open\]\)\)/);
+        expect(sectionSrc).toMatch(/nth-child\(n \+ 13\)/);
+    });
+
+    it('renders the disclosure control only when there is overflow — no control at <=12 (AC-3)', () => {
+        expect(sectionSrc).toMatch(
+            /const\s+hasOverflow\s*=\s*sorted\.length\s*>\s*POI_VISIBLE_LIMIT/
+        );
+        expect(sectionSrc).toMatch(/hasOverflow\s*&&/);
+    });
+
+    it('uses the real ui.filter.showMore/showLess i18n keys — resolve, not fallback (AC-7)', () => {
+        expect(sectionSrc).toContain("t('ui.filter.showMore'");
+        expect(sectionSrc).toContain("t('ui.filter.showLess'");
+    });
+
+    it('compacts each card — reduced padding + single-line description (AC-4)', () => {
+        expect(sectionSrc).toMatch(/padding:\s*0\.85rem/);
+        expect(sectionSrc).toMatch(/-webkit-line-clamp:\s*1/);
+    });
 });

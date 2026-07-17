@@ -70,7 +70,13 @@ export type SubscriptionCheckoutErrorCode =
     // reactivation attempt when the customer has no `canceled` subscription
     // to reactivate from. Previously surfaced as a plain `Error` (HTTP 500);
     // now a typed, mappable business error (HTTP 404 — nothing to reactivate).
-    | 'NO_CANCELED_SUBSCRIPTION';
+    | 'NO_CANCELED_SUBSCRIPTION'
+    // HOS-191: the MercadoPago `preapproval_plan` for this checkout's trial-day
+    // variant could not be resolved or provisioned — the payment adapter was
+    // unavailable, or the `prices.create` / registry write failed. Card-first
+    // checkout cannot proceed without a plan to subscribe against. Maps to HTTP
+    // 502 (provider/registry could not produce a usable plan).
+    | 'MP_PLAN_PROVISIONING_FAILED';
 
 /**
  * Domain-level error thrown across the paid-subscription checkout and

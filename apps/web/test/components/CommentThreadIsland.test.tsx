@@ -167,6 +167,26 @@ describe('CommentThreadIsland', () => {
             });
             expect(screen.getByRole('button', { name: /Comentar/i })).not.toBeDisabled();
         });
+
+        // HOS-190 form 21: validates against the real CreateCommentBodySchema
+        // (imported from @repo/schemas) instead of a hand-duplicated max-length
+        // constant, so a whitespace-only comment must fail schema validation
+        // (content.min(1) on the trimmed payload) and never reach fetch.
+        it('does NOT call fetch when content is whitespace-only, even if submitted directly', async () => {
+            renderIsland({ isAuthenticated: true });
+            fireEvent.change(screen.getByRole('textbox'), {
+                target: { value: '   ' }
+            });
+            // The visible gate (canSubmit) already disables the button for this
+            // case; assert the schema-level gate independently by submitting
+            // the form directly.
+            const form = document.querySelector('form') as HTMLFormElement;
+            fireEvent.submit(form);
+
+            await waitFor(() => {
+                expect(global.fetch).not.toHaveBeenCalled();
+            });
+        });
     });
 
     // ── AC-29: guest sees login CTA ──────────────────────────────────────────

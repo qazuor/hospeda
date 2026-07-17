@@ -50,6 +50,7 @@ const LEGAL_TRANSITIONS: ReadonlyMap<
         new Set([
             SubscriptionStatusEnum.ACTIVE,
             SubscriptionStatusEnum.TRIALING,
+            SubscriptionStatusEnum.CANCELLED,
             SubscriptionStatusEnum.ABANDONED
         ])
     ],
@@ -371,8 +372,9 @@ describe('getAllowedTransitions — utility', () => {
         expect(result).toBeDefined();
         expect(result?.has(SubscriptionStatusEnum.ACTIVE)).toBe(true);
         expect(result?.has(SubscriptionStatusEnum.TRIALING)).toBe(true);
+        expect(result?.has(SubscriptionStatusEnum.CANCELLED)).toBe(true);
         expect(result?.has(SubscriptionStatusEnum.ABANDONED)).toBe(true);
-        expect(result?.size).toBe(3);
+        expect(result?.size).toBe(4);
     });
 
     it('permits pending_provider → trialing (AC-4 — card-first authorization)', () => {
@@ -380,6 +382,20 @@ describe('getAllowedTransitions — utility', () => {
         const result = checkSubscriptionStatusTransition({
             from: SubscriptionStatusEnum.PENDING_PROVIDER,
             to: SubscriptionStatusEnum.TRIALING
+        });
+        // Assert
+        expect(result.valid).toBe(true);
+    });
+
+    it('permits pending_provider → cancelled (HOS-191 — provider cancels/rejects a sub that never activated)', () => {
+        // Arrange & Act — a user who abandons or rejects MP's hosted card
+        // authorization leaves the local row at pending_provider; the webhook/poll
+        // then reports MP `canceled`. Without this edge the transition guard
+        // rejects the write and the row sticks at pending_provider, erroring on
+        // every poll tick. Surfaces routinely with the plan-based redirect checkout.
+        const result = checkSubscriptionStatusTransition({
+            from: SubscriptionStatusEnum.PENDING_PROVIDER,
+            to: SubscriptionStatusEnum.CANCELLED
         });
         // Assert
         expect(result.valid).toBe(true);

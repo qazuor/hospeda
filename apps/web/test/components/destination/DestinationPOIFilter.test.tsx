@@ -43,16 +43,17 @@ const CATEGORIES = [
     { slug: 'museos', nameI18n: { es: 'Museos', en: 'Museums', pt: 'Museus' }, displayWeight: 50 }
 ];
 
-/** Inject a fake SSR POI card grid the island will filter. */
+/** Inject a fake SSR POI section (grid + empty state) the island will filter. */
 function seedCards(): void {
-    const grid = document.createElement('div');
-    grid.id = 'test-grid';
-    grid.innerHTML = `
+    const section = document.createElement('section');
+    section.id = 'test-grid';
+    section.className = 'poi-section';
+    section.innerHTML = `
         <div data-poi-card data-poi-categories="termas,gastronomia" id="card-a"></div>
         <div data-poi-card data-poi-categories="museos" id="card-b"></div>
         <p data-poi-empty hidden id="empty"></p>
     `;
-    document.body.appendChild(grid);
+    document.body.appendChild(section);
 }
 
 const card = (id: string) => document.getElementById(id) as HTMLElement;
@@ -180,5 +181,27 @@ describe('DestinationPOIFilter (HOS-147)', () => {
         window.removeEventListener(POI_CATEGORY_FILTER_EVENT, handler);
         // Last broadcast carries the active selection.
         expect(received.at(-1)).toEqual(['termas']);
+    });
+
+    it('flags the section with data-poi-filtered while a filter is active (HOS-181 overflow coexistence)', () => {
+        render(
+            <DestinationPOIFilter
+                categories={CATEGORIES}
+                locale="es"
+            />
+        );
+        const section = document.querySelector('.poi-section') as HTMLElement;
+
+        // No filter → no flag.
+        expect(section.hasAttribute('data-poi-filtered')).toBe(false);
+
+        // Filter active → flag set (CSS uses it to hide "Ver más" + re-show
+        // matching cards past the 12th).
+        fireEvent.click(screen.getByRole('link', { name: 'Termas' }));
+        expect(section.hasAttribute('data-poi-filtered')).toBe(true);
+
+        // Toggle off → flag removed (back to the overflow-collapsed view).
+        fireEvent.click(screen.getByRole('link', { name: 'Termas' }));
+        expect(section.hasAttribute('data-poi-filtered')).toBe(false);
     });
 });

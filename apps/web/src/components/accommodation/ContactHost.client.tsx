@@ -9,10 +9,14 @@
  * Only renders when accommodation.lifecycleState === 'ACTIVE' && !accommodation.deletedAt.
  */
 
+import type { CreateConversationAnon } from '@repo/schemas';
+import { CreateConversationAnonSchema } from '@repo/schemas';
 import { useEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
+import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -76,6 +80,64 @@ type SubmitState =
     | { readonly phase: 'rateLimit'; readonly retryAfter: number };
 
 const MAX_MESSAGE_LENGTH = 5000;
+
+/**
+ * Client-validated subset of `CreateConversationAnonSchema` — the user-facing
+ * fields only. `accommodationId` is deliberately excluded: it is never
+ * user-editable (the component always supplies it from `accommodation.id`,
+ * a real UUID in production), so validating it client-side adds no safety
+ * and only couples this form to callers constructing a real UUID even in
+ * tests. `locale` is also excluded (never surfaced as a field). The full
+ * `accommodationId` is added back onto the payload after validation succeeds.
+ */
+const ContactHostAnonFieldsSchema = CreateConversationAnonSchema.omit({
+    accommodationId: true,
+    locale: true
+});
+
+/**
+ * Resolve the correct error banner text for a failed `initiate` request
+ * (either the anonymous or authenticated route), instead of blindly showing
+ * "conversation not found" for every non-ok response.
+ *
+ * Mirrors the reason/status priority `ConversationReply.client.tsx` already
+ * uses: a known machine-readable `reason` wins, then HTTP status, then a
+ * generic "message send failed" fallback (bug fix — HOS-190 slice 3: three
+ * separate catch-alls in this file used to show
+ * `conversations.errors.conversationNotFound` for ANY failure, including a
+ * plain 400 validation error or a network failure, which is actively
+ * misleading — e.g. an invalid email showed "conversation not found").
+ *
+ * @param params.reason - Machine-readable error reason from the API body, if any.
+ * @param params.status - HTTP status code, when a response was actually received.
+ * @param params.t - Translation function.
+ */
+function resolveInitiateFailureMessage({
+    reason,
+    status,
+    t
+}: {
+    readonly reason?: string;
+    readonly status?: number;
+    readonly t: (key: string, fallback?: string, params?: Record<string, unknown>) => string;
+}): string {
+    switch (reason) {
+        case 'ACCOMMODATION_DELETED':
+            return t('conversations.errors.accommodationDeleted');
+        case 'CONVERSATION_BLOCKED':
+            return t('conversations.errors.conversationBlocked');
+        case 'MESSAGE_CONTENT_BLOCKED':
+            return t('conversations.errors.messageContentBlocked');
+        case 'CONVERSATION_DUPLICATE':
+            return t('conversations.errors.conversationDuplicate');
+        default:
+            break;
+    }
+    if (status === 404) {
+        return t('conversations.errors.conversationNotFound');
+    }
+    return t('conversations.errors.messageSendFailed');
+}
 
 /**
  * ContactHost island — renders a contact form or link depending on auth state.
@@ -150,6 +212,14 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
     const retryTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const [retryCountdown, setRetryCountdown] = useState(0);
 
+    // Client-side validation for the anonymous (Mode A) fields — guestName,
+    // guestEmail (format, not just non-empty), guestPhone, message — against
+    // the same schema the API validates the request body with.
+    const { fieldErrors, validate, clearError } = useZodForm({
+        schema: ContactHostAnonFieldsSchema,
+        t
+    });
+
     // Countdown tick for rate-limit state
     useEffect(() => {
         if (submitState.phase === 'rateLimit') {
@@ -184,6 +254,22 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         if (isSubmitDisabled) return;
+
+        // Mode A (anonymous): validate against the same schema the API
+        // validates the request body with — catches an invalid email format,
+        // an over-limit name/phone, etc. BEFORE hitting the network, and
+        // surfaces per-field errors instead of a generic banner.
+        let anonPayload: CreateConversationAnon | undefined;
+        if (!isAuthenticated) {
+            const parsed = validate({
+                guestName: name.trim(),
+                guestEmail: email.trim(),
+                guestPhone: phone.trim() || undefined,
+                message: message.trim()
+            });
+            if (!parsed.success) return;
+            anonPayload = { accommodationId: accommodation.id, ...parsed.data };
+        }
 
         setSubmitState({ phase: 'submitting' });
         // Shared analytics props for the booking funnel — enriched with type,
@@ -232,7 +318,11 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                 if (!res.ok) {
                     setSubmitState({
                         phase: 'error',
-                        message: t('conversations.errors.conversationNotFound')
+                        message: resolveInitiateFailureMessage({
+                            reason: body.error?.reason,
+                            status: res.status,
+                            t
+                        })
                     });
                     return;
                 }
@@ -246,17 +336,13 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                     });
                 }
             } else {
-                // Mode A: public endpoint
+                // Mode A: public endpoint. `anonPayload` was already validated
+                // (and set) above, against the same schema the API validates
+                // the body with.
                 const res = await fetch(`${API_BASE}/api/v1/public/conversations/initiate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        accommodationId: accommodation.id,
-                        guestName: name.trim(),
-                        guestEmail: email.trim(),
-                        guestPhone: phone.trim() || undefined,
-                        message: message.trim()
-                    })
+                    body: JSON.stringify(anonPayload)
                 });
 
                 if (res.status === 429) {
@@ -292,7 +378,11 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                 if (!res.ok) {
                     setSubmitState({
                         phase: 'error',
-                        message: t('conversations.errors.conversationNotFound')
+                        message: resolveInitiateFailureMessage({
+                            reason: body.error?.reason,
+                            status: res.status,
+                            t
+                        })
                     });
                     return;
                 }
@@ -304,9 +394,11 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                 });
             }
         } catch {
+            // Network failure, no response — never "conversation not found"
+            // (there was no response to say anything was or wasn't found).
             setSubmitState({
                 phase: 'error',
-                message: t('conversations.errors.conversationNotFound')
+                message: t('conversations.errors.messageSendFailed')
             });
         }
     }
@@ -433,10 +525,23 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                                     type="text"
                                     required
                                     value={name}
-                                    onChange={(e) => setName(e.target.value)}
+                                    onChange={(e) => {
+                                        setName(e.target.value);
+                                        clearError('guestName');
+                                    }}
                                     placeholder={t('conversations.form.namePlaceholder')}
                                     className={styles.input}
                                     autoComplete="name"
+                                    aria-invalid={!!fieldErrors.guestName}
+                                    aria-describedby={
+                                        fieldErrors.guestName
+                                            ? fieldErrorId('guestName')
+                                            : undefined
+                                    }
+                                />
+                                <FieldError
+                                    id={fieldErrorId('guestName')}
+                                    message={fieldErrors.guestName}
                                 />
                             </div>
 
@@ -459,10 +564,23 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                                     type="email"
                                     required
                                     value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    onChange={(e) => {
+                                        setEmail(e.target.value);
+                                        clearError('guestEmail');
+                                    }}
                                     placeholder={t('conversations.form.emailPlaceholder')}
                                     className={styles.input}
                                     autoComplete="email"
+                                    aria-invalid={!!fieldErrors.guestEmail}
+                                    aria-describedby={
+                                        fieldErrors.guestEmail
+                                            ? fieldErrorId('guestEmail')
+                                            : undefined
+                                    }
+                                />
+                                <FieldError
+                                    id={fieldErrorId('guestEmail')}
+                                    message={fieldErrors.guestEmail}
                                 />
                             </div>
 
@@ -477,10 +595,23 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                                     id="contact-phone"
                                     type="tel"
                                     value={phone}
-                                    onChange={(e) => setPhone(e.target.value)}
+                                    onChange={(e) => {
+                                        setPhone(e.target.value);
+                                        clearError('guestPhone');
+                                    }}
                                     placeholder={t('conversations.form.phonePlaceholder')}
                                     className={styles.input}
                                     autoComplete="tel"
+                                    aria-invalid={!!fieldErrors.guestPhone}
+                                    aria-describedby={
+                                        fieldErrors.guestPhone
+                                            ? fieldErrorId('guestPhone')
+                                            : undefined
+                                    }
+                                />
+                                <FieldError
+                                    id={fieldErrorId('guestPhone')}
+                                    message={fieldErrors.guestPhone}
                                 />
                             </div>
                         </>
@@ -505,14 +636,26 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                             id="contact-message"
                             required
                             value={message}
-                            onChange={(e) => setMessage(e.target.value)}
+                            onChange={(e) => {
+                                setMessage(e.target.value);
+                                clearError('message');
+                            }}
                             placeholder={t('conversations.form.messagePlaceholder')}
                             className={`${styles.textarea} ${isOverLimit ? styles.textareaError : ''} ${
-                                submitState.phase === 'fieldError' ? styles.textareaError : ''
+                                submitState.phase === 'fieldError' || fieldErrors.message
+                                    ? styles.textareaError
+                                    : ''
                             }`}
                             rows={5}
+                            aria-invalid={
+                                submitState.phase === 'fieldError' || !!fieldErrors.message
+                            }
                             aria-describedby={`${messageDescId} ${
-                                submitState.phase === 'fieldError' ? messageErrorId : ''
+                                submitState.phase === 'fieldError'
+                                    ? messageErrorId
+                                    : fieldErrors.message
+                                      ? fieldErrorId('message')
+                                      : ''
                             }`}
                         />
                         <span
@@ -534,6 +677,10 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                                 {submitState.message}
                             </p>
                         )}
+                        <FieldError
+                            id={fieldErrorId('message')}
+                            message={fieldErrors.message}
+                        />
                     </div>
 
                     <button

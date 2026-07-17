@@ -25,6 +25,7 @@
  * All copy comes from `account.newsletter.*` keys via `@repo/i18n`.
  */
 
+import { DEFAULT_NEWSLETTER_PREFERENCES, type NewsletterContentPreferences } from '@repo/schemas';
 import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { type ApiErrorShape, translateApiError } from '@/lib/api-errors';
@@ -37,15 +38,10 @@ import { NewsletterStatusBadge } from './NewsletterStatusBadge';
 /** Subset of NewsletterSubscriberStatusEnum values returned by GET /status. */
 type Status = 'active' | 'pending_verification' | 'unsubscribed' | 'bounced' | 'complained' | null;
 
-type Preferences = Record<'offers' | 'events' | 'guides' | 'productNews', boolean>;
+type Preferences = NewsletterContentPreferences;
 
 /** Canonical all-true default used when the server returns null preferences. */
-const ALL_TRUE_PREFERENCES: Preferences = {
-    offers: true,
-    events: true,
-    guides: true,
-    productNews: true
-};
+const ALL_TRUE_PREFERENCES: Preferences = DEFAULT_NEWSLETTER_PREFERENCES;
 
 interface StatusResponse {
     readonly subscribed: boolean;

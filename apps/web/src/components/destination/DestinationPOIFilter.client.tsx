@@ -108,6 +108,15 @@ export function DestinationPOIFilter({ categories, locale }: DestinationPOIFilte
         const empty = document.querySelector<HTMLElement>('[data-poi-empty]');
         if (empty) empty.hidden = visibleCount > 0;
 
+        // HOS-147 × HOS-181: flag the section while a filter is active so the CSS
+        // can hide the "Ver más" overflow control and re-show matching cards past
+        // the 12th (the overflow cut would otherwise hide filtered-in cards).
+        const section = document.querySelector<HTMLElement>('.poi-section');
+        if (section) {
+            if (active.length > 0) section.setAttribute('data-poi-filtered', '');
+            else section.removeAttribute('data-poi-filtered');
+        }
+
         window.dispatchEvent(
             new CustomEvent(POI_CATEGORY_FILTER_EVENT, { detail: { categories: [...active] } })
         );
