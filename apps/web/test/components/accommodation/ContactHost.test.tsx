@@ -368,6 +368,234 @@ describe('ContactHost', () => {
     });
 
     // -------------------------------------------------------------------------
+    // HOS-190 slice 3: mislabeled-error bug fix. Three catch-alls used to
+    // show "conversation not found" for ANY failure (uncategorized 4xx/5xx,
+    // and even a network failure with no response at all). Now they resolve
+    // a status/reason-appropriate message via resolveInitiateFailureMessage,
+    // falling back to a generic "message send failed" — never the specific
+    // "not found" text unless the response was actually a 404.
+    // -------------------------------------------------------------------------
+
+    describe('generic failure message (HOS-190 bug fix — was mislabeled "conversation not found")', () => {
+        it('Mode A: shows the generic messageSendFailed text (NOT conversationNotFound) for an uncategorized 400', async () => {
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: false,
+                    status: 400,
+                    headers: { get: () => null },
+                    json: async () => ({ error: { code: 'VALIDATION_ERROR', message: 'bad' } })
+                })
+            );
+
+            render(
+                <ContactHost
+                    accommodation={ACTIVE_ACCOMMODATION}
+                    currentUser={null}
+                    existingConversationId={null}
+                    locale={LOCALE}
+                />
+            );
+            fireEvent.change(screen.getByLabelText(/name/i, { exact: false }), {
+                target: { value: 'Ana' }
+            });
+            fireEvent.change(screen.getByLabelText(/email/i, { exact: false }), {
+                target: { value: 'ana@test.com' }
+            });
+            fireEvent.change(screen.getByRole('textbox', { name: /message/i }), {
+                target: { value: 'Hola, quiero reservar' }
+            });
+
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form')!);
+            });
+
+            await waitFor(() => {
+                const alert = screen.getByRole('alert');
+                expect(alert.textContent).toBe('conversations.errors.messageSendFailed');
+                expect(alert.textContent).not.toBe('conversations.errors.conversationNotFound');
+            });
+        });
+
+        it('Mode B: shows the generic messageSendFailed text (NOT conversationNotFound) for a 500 response', async () => {
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: false,
+                    status: 500,
+                    headers: { get: () => null },
+                    json: async () => ({ error: { code: 'INTERNAL_ERROR', message: 'boom' } })
+                })
+            );
+
+            render(
+                <ContactHost
+                    accommodation={ACTIVE_ACCOMMODATION}
+                    currentUser={CURRENT_USER}
+                    existingConversationId={null}
+                    locale={LOCALE}
+                />
+            );
+            fireEvent.change(screen.getByRole('textbox'), {
+                target: { value: 'Hola, me interesa' }
+            });
+
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form')!);
+            });
+
+            await waitFor(() => {
+                const alert = screen.getByRole('alert');
+                expect(alert.textContent).toBe('conversations.errors.messageSendFailed');
+                expect(alert.textContent).not.toBe('conversations.errors.conversationNotFound');
+            });
+        });
+
+        it('still shows conversationNotFound for an actual 404 (accommodation truly gone)', async () => {
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: false,
+                    status: 404,
+                    headers: { get: () => null },
+                    json: async () => ({ error: { code: 'NOT_FOUND' } })
+                })
+            );
+
+            render(
+                <ContactHost
+                    accommodation={ACTIVE_ACCOMMODATION}
+                    currentUser={null}
+                    existingConversationId={null}
+                    locale={LOCALE}
+                />
+            );
+            fireEvent.change(screen.getByLabelText(/name/i, { exact: false }), {
+                target: { value: 'Ana' }
+            });
+            fireEvent.change(screen.getByLabelText(/email/i, { exact: false }), {
+                target: { value: 'ana@test.com' }
+            });
+            fireEvent.change(screen.getByRole('textbox', { name: /message/i }), {
+                target: { value: 'Hola, quiero reservar' }
+            });
+
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form')!);
+            });
+
+            await waitFor(() => {
+                expect(screen.getByRole('alert').textContent).toBe(
+                    'conversations.errors.conversationNotFound'
+                );
+            });
+        });
+
+        it('Mode A: shows the generic messageSendFailed text (NOT conversationNotFound) on a network failure', async () => {
+            vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network down')));
+
+            render(
+                <ContactHost
+                    accommodation={ACTIVE_ACCOMMODATION}
+                    currentUser={null}
+                    existingConversationId={null}
+                    locale={LOCALE}
+                />
+            );
+            fireEvent.change(screen.getByLabelText(/name/i, { exact: false }), {
+                target: { value: 'Ana' }
+            });
+            fireEvent.change(screen.getByLabelText(/email/i, { exact: false }), {
+                target: { value: 'ana@test.com' }
+            });
+            fireEvent.change(screen.getByRole('textbox', { name: /message/i }), {
+                target: { value: 'Hola, quiero reservar' }
+            });
+
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form')!);
+            });
+
+            await waitFor(() => {
+                const alert = screen.getByRole('alert');
+                expect(alert.textContent).toBe('conversations.errors.messageSendFailed');
+                expect(alert.textContent).not.toBe('conversations.errors.conversationNotFound');
+            });
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // HOS-190 slice 3: client-side validation for the anonymous (Mode A) form,
+    // against CreateConversationAnonSchema. Previously guestEmail only checked
+    // non-empty, so a syntactically invalid email reached the network.
+    // -------------------------------------------------------------------------
+
+    describe('client-side validation (HOS-190)', () => {
+        it('blocks submit and shows a field error for an invalid guestEmail format, without calling fetch', async () => {
+            const fetchSpy = vi.fn();
+            vi.stubGlobal('fetch', fetchSpy);
+
+            render(
+                <ContactHost
+                    accommodation={ACTIVE_ACCOMMODATION}
+                    currentUser={null}
+                    existingConversationId={null}
+                    locale={LOCALE}
+                />
+            );
+            fireEvent.change(screen.getByLabelText(/name/i, { exact: false }), {
+                target: { value: 'Ana' }
+            });
+            fireEvent.change(screen.getByLabelText(/email/i, { exact: false }), {
+                target: { value: 'not-an-email' }
+            });
+            fireEvent.change(screen.getByRole('textbox', { name: /message/i }), {
+                target: { value: 'Hola, quiero reservar' }
+            });
+
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form')!);
+            });
+
+            await waitFor(() => {
+                expect(document.getElementById('guestEmail-error')).toBeInTheDocument();
+            });
+            expect(fetchSpy).not.toHaveBeenCalled();
+        });
+
+        it('clears the guestEmail field error once the user fixes the format', async () => {
+            vi.stubGlobal('fetch', vi.fn());
+
+            render(
+                <ContactHost
+                    accommodation={ACTIVE_ACCOMMODATION}
+                    currentUser={null}
+                    existingConversationId={null}
+                    locale={LOCALE}
+                />
+            );
+            const emailInput = screen.getByLabelText(/email/i, { exact: false });
+            fireEvent.change(screen.getByLabelText(/name/i, { exact: false }), {
+                target: { value: 'Ana' }
+            });
+            fireEvent.change(emailInput, { target: { value: 'not-an-email' } });
+            fireEvent.change(screen.getByRole('textbox', { name: /message/i }), {
+                target: { value: 'Hola, quiero reservar' }
+            });
+
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form')!);
+            });
+            await waitFor(() => {
+                expect(document.getElementById('guestEmail-error')).toBeInTheDocument();
+            });
+
+            fireEvent.change(emailInput, { target: { value: 'ana@test.com' } });
+            expect(document.getElementById('guestEmail-error')).not.toBeInTheDocument();
+        });
+    });
+
+    // -------------------------------------------------------------------------
     // initialMessage prop (search context handoff from listing)
     // -------------------------------------------------------------------------
 
