@@ -12,6 +12,7 @@ import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { translateApiError } from '@/lib/api-errors';
 import { signIn } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
+import { EmailFormatSchema } from '@/lib/forms/email-format';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './SignIn.module.css';
@@ -152,10 +153,24 @@ export function SignIn({
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
         e.preventDefault();
         setError(null);
+
+        // HOS-190 slice 3: `required`/`type="email"` are decorative under
+        // `noValidate` — enforce presence + format for real before calling
+        // Better Auth, instead of letting any string through.
+        const trimmedEmail = email.trim();
+        if (!trimmedEmail) {
+            setError(t('auth.signIn.errors.emailRequired', 'Ingresá tu correo electrónico.'));
+            return;
+        }
+        if (!EmailFormatSchema.safeParse(trimmedEmail).success) {
+            setError(t('auth.signIn.errors.emailInvalid', 'Ingresá un correo electrónico válido.'));
+            return;
+        }
+
         setIsLoading(true);
 
         try {
-            const result = await signIn.email({ email, password });
+            const result = await signIn.email({ email: trimmedEmail, password });
 
             if (result.error) {
                 setError(
