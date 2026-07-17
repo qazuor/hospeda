@@ -95,22 +95,22 @@
             "id": "T-005",
             "title": "Aggregate all POI categories in getPointsOfInterestMap",
             "description": "Extend DestinationModel.getPointsOfInterestMap (packages/db/src/models/destination/destination.model.ts) to aggregate every r_poi_category row per POI into categories: { slug }[] (json_agg or grouped fetch), reusing the existing JOIN that already resolves primaryCategory (HOS-182). Must NOT regress the HOS-135 pagination-truncation fix nor primaryCategory. Tests (TDD): model test on a POI-rich destination (Colon) asserting a multi-category POI returns all its slugs and primaryCategory still resolves (AC-2, R-1).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004"],
             "blocks": ["T-006"],
             "subtasks": [
-                { "title": "Write failing model test (multi-category POI)", "completed": false },
-                { "title": "Add category aggregation to the query", "completed": false },
-                { "title": "Verify HOS-135/HOS-182 not regressed", "completed": false }
+                { "title": "Write failing model test (multi-category POI)", "completed": true },
+                { "title": "Add category aggregation to the query", "completed": true },
+                { "title": "Verify HOS-135/HOS-182 not regressed", "completed": true }
             ],
             "tags": ["db", "model"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-07-17T04:07:19.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-07-17T04:33:00Z",
+                "completed": "2026-07-17T04:42:00Z"
             }
         },
         {
@@ -320,9 +320,9 @@
     ],
     "summary": {
         "total": 14,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.1
     }
