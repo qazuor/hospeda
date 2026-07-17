@@ -631,17 +631,23 @@ export const httpToDomainAccommodationCreate = (
         currency: httpData.currency
     },
 
-    // Contact info mapping from flat HTTP fields to nested ContactInfoSchema
+    // Contact info mapping from flat HTTP fields to nested ContactInfoSchema.
+    // Omit each key when its HTTP field is undefined (matches the draft-create
+    // and update converters below) — `mobilePhone: httpData.phone || ''` used
+    // to inject an empty string whenever phone was absent but a sibling field
+    // (whatsapp/email/website) was present, which then fails
+    // `ContactInfoSchema.mobilePhone`'s `InternationalPhoneRegex` validation
+    // even though the host never touched the phone field at all (HOS-190).
     ...(httpData.phone !== undefined ||
     httpData.whatsapp !== undefined ||
     httpData.email !== undefined ||
     httpData.website !== undefined
         ? {
               contactInfo: {
-                  mobilePhone: httpData.phone || '',
-                  whatsapp: httpData.whatsapp,
-                  personalEmail: httpData.email,
-                  website: httpData.website
+                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
+                  ...(httpData.whatsapp === undefined ? {} : { whatsapp: httpData.whatsapp }),
+                  ...(httpData.email === undefined ? {} : { personalEmail: httpData.email }),
+                  ...(httpData.website === undefined ? {} : { website: httpData.website })
               }
           }
         : {}),

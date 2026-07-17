@@ -346,6 +346,29 @@ describe('AccommodationEditor', () => {
         });
     });
 
+    it('blocks submit and shows a field error when email is invalid (HOS-190 regression — contact validation)', async () => {
+        // Regression guard: `validateForm` previously only checked
+        // name/summary/basePrice/currency — the ContactInfoSection error
+        // slots (phone/whatsapp/email/website) were rendered but their
+        // `errors` prop was always `{}`, so an invalid email/phone/URL
+        // silently reached the API instead of being caught client-side.
+        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
+        vi.doMock('@/lib/api/endpoints-protected', () => ({
+            accommodationEditApi: { update: mockUpdate }
+        }));
+
+        const user = userEvent.setup();
+        render(<AccommodationEditor {...DEFAULT_PROPS} />);
+
+        const emailInput = screen.getByLabelText(/^email$/i) as HTMLInputElement;
+        await user.clear(emailInput);
+        await user.type(emailInput, 'not-an-email');
+        fireEvent.submit(emailInput.closest('form')!);
+
+        expect(await screen.findByRole('alert')).toBeInTheDocument();
+        expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
     it('should include contact info fields in PATCH payload when changed', async () => {
         const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
         vi.doMock('@/lib/api/endpoints-protected', () => ({

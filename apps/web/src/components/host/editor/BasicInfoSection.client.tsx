@@ -61,7 +61,7 @@ export function BasicInfoSection({
                     value={data.name}
                     onChange={(e) => onFieldChange('name', e.target.value)}
                     required
-                    maxLength={200}
+                    maxLength={100}
                     aria-invalid={Boolean(errors.name)}
                     aria-describedby={errors.name ? 'acc-name-error' : undefined}
                 />
@@ -143,6 +143,7 @@ export function BasicInfoSection({
                                 value={data.description}
                                 onChange={(e) => onFieldChange('description', e.target.value)}
                                 rows={6}
+                                maxLength={2000}
                                 placeholder={t(
                                     'host.properties.editor.richText.placeholder',
                                     'Describí tu propiedad con detalle...'
@@ -236,6 +237,9 @@ export function BasicInfoSection({
                     <option value="ROOM">Habitación</option>
                     <option value="MOTEL">Motel</option>
                     <option value="RESORT">Resort</option>
+                    <option value="APART_HOTEL">Aparthotel</option>
+                    <option value="ESTANCIA">Estancia</option>
+                    <option value="BED_AND_BREAKFAST">Bed & Breakfast</option>
                 </select>
                 {errors.type && (
                     <span

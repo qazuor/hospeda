@@ -9,7 +9,9 @@
  * owns all state + handlers, delegates rendering to section subcomponents.
  */
 
+import { AccommodationUpdateHttpSchema, PriceCurrencyEnumSchema } from '@repo/schemas';
 import { useCallback, useMemo, useState } from 'react';
+import { z } from 'zod';
 import type {
     AccommodationEditData,
     AccommodationTranslationData,
@@ -17,6 +19,7 @@ import type {
     DestinationData,
     MediaImage
 } from '@/lib/api/types';
+import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './AccommodationEditor.module.css';
@@ -58,29 +61,92 @@ export interface AccommodationEditorProps {
     readonly initialGallery?: readonly MediaImage[];
 }
 
-type FieldErrors = {
-    name?: string;
-    summary?: string;
-    description?: string;
-    type?: string;
-    destinationId?: string;
-    maxGuests?: string;
-    bedrooms?: string;
-    bathrooms?: string;
-    basePrice?: string;
-    currency?: string;
-    phone?: string;
-    whatsapp?: string;
-    email?: string;
-    website?: string;
+/**
+ * PATCH-diff validation schema for the accommodation editor (HOS-190 slice 3).
+ *
+ * Extends the REAL `AccommodationUpdateHttpSchema` — the exact schema
+ * `PATCH /api/v1/protected/accommodations/:id` validates the request body
+ * against (see `apps/api/src/routes/accommodation/protected/patch.ts`) — so
+ * email/URL/social-network field validation matches the server 1:1.
+ *
+ * Three fields are overridden because the HTTP schema is deliberately looser
+ * than `AccommodationSchema` (the domain source of truth), and this editor
+ * previously validated against the loose client-side bounds only:
+ *  - `name`: HTTP schema allows up to 200 chars; the domain caps it at 100.
+ *  - `description`: HTTP schema allows up to 5000 chars with no minimum; the
+ *    domain requires 30–2000 (`AccommodationSchema.description`).
+ *  - `basePrice`: HTTP schema accepts `0`; the domain's `PriceSchema.price`
+ *    requires a strictly positive value.
+ *
+ * The numeric fields that `AccommodationEditData` types as `number | null`
+ * (latitude/longitude/maxGuests/bedrooms/bathrooms/basePrice/currency) are
+ * widened with `.nullable()` — the inherited `z.coerce.number()` would
+ * otherwise silently coerce an explicit `null` (host clearing the field) to
+ * `0`, which then passes bounds checks it should not.
+ */
+const AccommodationEditFormSchema = AccommodationUpdateHttpSchema.extend({
+    name: z
+        .string()
+        .min(3, { message: 'zodError.accommodation.name.min' })
+        .max(100, { message: 'zodError.accommodation.name.max' })
+        .optional(),
+    description: z
+        .string()
+        .min(30, { message: 'zodError.accommodation.description.min' })
+        .max(2000, { message: 'zodError.accommodation.description.max' })
+        .optional(),
+    latitude: z.number().min(-90).max(90).nullable().optional(),
+    longitude: z.number().min(-180).max(180).nullable().optional(),
+    maxGuests: z.number().int().min(1).max(200).nullable().optional(),
+    bedrooms: z.number().int().min(0).max(100).nullable().optional(),
+    bathrooms: z.number().int().min(1).max(100).nullable().optional(),
+    basePrice: z
+        .number()
+        .positive({ message: 'zodError.common.price.price.positive' })
+        .nullable()
+        .optional(),
+    currency: PriceCurrencyEnumSchema.nullable().optional()
+});
+
+/** Field-level error shape consumed by every editor section (dotted/flat keys). */
+type FieldErrors = Record<string, string>;
+
+/**
+ * Maps the schema-keyed social errors (`facebook`, `instagram`, ...) to the
+ * `AccommodationEditData`-keyed shape `SocialNetworksSection` expects
+ * (`facebookUrl`, `instagramUrl`, ...). The two differ only by the trailing
+ * `Url` the form-local field names carry.
+ */
+function mapSocialFieldErrors(fieldErrors: FieldErrors): {
     facebookUrl?: string;
     instagramUrl?: string;
     twitterUrl?: string;
     linkedinUrl?: string;
     tiktokUrl?: string;
     youtubeUrl?: string;
-    latitude?: string;
-    longitude?: string;
+} {
+    return {
+        facebookUrl: fieldErrors.facebook,
+        instagramUrl: fieldErrors.instagram,
+        twitterUrl: fieldErrors.twitter,
+        linkedinUrl: fieldErrors.linkedin,
+        tiktokUrl: fieldErrors.tiktok,
+        youtubeUrl: fieldErrors.youtube
+    };
+}
+
+/**
+ * Social fields are named `<network>Url` in `AccommodationEditData` but the
+ * validation schema (mirroring the flat HTTP payload) uses the bare platform
+ * name — translate before clearing so the right key is touched.
+ */
+const SOCIAL_FIELD_TO_SCHEMA_KEY: Partial<Record<keyof AccommodationEditData, string>> = {
+    facebookUrl: 'facebook',
+    instagramUrl: 'instagram',
+    twitterUrl: 'twitter',
+    linkedinUrl: 'linkedin',
+    tiktokUrl: 'tiktok',
+    youtubeUrl: 'youtube'
 };
 
 // ---------------------------------------------------------------------------
@@ -109,9 +175,14 @@ export function AccommodationEditor({
 
     // --- Form state ---
     const [formData, setFormData] = useState<AccommodationEditData>(initialData);
-    const [errors, setErrors] = useState<FieldErrors>({});
+    // Field-level validation is delegated to the shared `useZodForm` primitive
+    // (HOS-190 slice 3) against `AccommodationEditFormSchema` (see above) —
+    // previously `validateForm` only checked name/summary/basePrice/currency,
+    // leaving the ContactInfoSection/SocialNetworksSection/LocationPicker
+    // error slots permanently unpopulated.
+    const { fieldErrors, formError, validate, handleApiError, clearError, setFormError } =
+        useZodForm({ schema: AccommodationEditFormSchema, t });
     const [isSaving, setIsSaving] = useState(false);
-    const [submitError, setSubmitError] = useState<string | null>(null);
     const [submitSuccess, setSubmitSuccess] = useState(false);
 
     // --- Field change handlers ---
@@ -119,29 +190,28 @@ export function AccommodationEditor({
     const handleTextFieldChange = useCallback(
         (field: keyof AccommodationEditData, value: string) => {
             setFormData((prev) => ({ ...prev, [field]: value }));
-            // Clear field error on change
-            setErrors((prev) => ({ ...prev, [field]: undefined }));
+            clearError(SOCIAL_FIELD_TO_SCHEMA_KEY[field] ?? field);
             setSubmitSuccess(false);
         },
-        []
+        [clearError]
     );
 
     const handleNumberFieldChange = useCallback(
         (field: keyof AccommodationEditData, value: number | null) => {
             setFormData((prev) => ({ ...prev, [field]: value }));
-            setErrors((prev) => ({ ...prev, [field]: undefined }));
+            clearError(field);
             setSubmitSuccess(false);
         },
-        []
+        [clearError]
     );
 
     const handleCurrencyFieldChange = useCallback(
         (field: keyof AccommodationEditData, value: number | string | null) => {
             setFormData((prev) => ({ ...prev, [field]: value }));
-            setErrors((prev) => ({ ...prev, [field]: undefined }));
+            clearError(field);
             setSubmitSuccess(false);
         },
-        []
+        [clearError]
     );
 
     const handleToggleAmenity = useCallback((amenityId: string) => {
@@ -161,58 +231,6 @@ export function AccommodationEditor({
                 : [...prev.featureIds, featureId]
         }));
     }, []);
-
-    // --- Validation ---
-
-    const validateForm = useCallback(
-        (data: AccommodationEditData): FieldErrors => {
-            const newErrors: FieldErrors = {};
-
-            if (!data.name.trim()) {
-                newErrors.name = t(
-                    'host.properties.editor.validation.nameRequired',
-                    'El nombre es obligatorio'
-                );
-            } else if (data.name.trim().length < 3) {
-                newErrors.name = t(
-                    'host.properties.editor.validation.nameMin',
-                    'El nombre debe tener al menos 3 caracteres'
-                );
-            }
-
-            if (!data.summary.trim()) {
-                newErrors.summary = t(
-                    'host.properties.editor.validation.summaryRequired',
-                    'El resumen es obligatorio'
-                );
-            } else if (data.summary.trim().length < 10) {
-                newErrors.summary = t(
-                    'host.properties.editor.validation.summaryMin',
-                    'El resumen debe tener al menos 10 caracteres'
-                );
-            }
-
-            if (data.basePrice !== null && data.basePrice !== undefined && data.basePrice < 0) {
-                newErrors.basePrice = t(
-                    'host.properties.editor.validation.pricePositive',
-                    'El precio debe ser un número positivo'
-                );
-            }
-
-            if (data.currency !== null && data.currency !== undefined) {
-                const validCurrencies = ['ARS', 'USD'];
-                if (!validCurrencies.includes(data.currency)) {
-                    newErrors.currency = t(
-                        'host.properties.editor.validation.currencyInvalid',
-                        'La moneda debe ser ARS o USD'
-                    );
-                }
-            }
-
-            return newErrors;
-        },
-        [t]
-    );
 
     // --- Build PATCH payload (only changed fields) ---
 
@@ -239,10 +257,17 @@ export function AccommodationEditor({
             }
 
             // Number fields
-            if (current.latitude !== initial.latitude) {
+            //
+            // Latitude/longitude MUST travel together: `httpToDomainAccommodationUpdate`
+            // (packages/schemas) only emits `location.coordinates` when BOTH
+            // `latitude` AND `longitude` are present in the HTTP body — a payload
+            // carrying only one of the pair (e.g. the map-drag flow nudges
+            // latitude by a hair while longitude happens to land back on its
+            // original value) silently drops the coordinate update entirely, with
+            // no error surfaced anywhere. Sending both whenever either changed
+            // closes that gap (HOS-190 slice 3).
+            if (current.latitude !== initial.latitude || current.longitude !== initial.longitude) {
                 payload.latitude = current.latitude;
-            }
-            if (current.longitude !== initial.longitude) {
                 payload.longitude = current.longitude;
             }
             if (current.maxGuests !== initial.maxGuests) {
@@ -322,19 +347,21 @@ export function AccommodationEditor({
     const handleSubmit = useCallback(
         async (e: React.FormEvent) => {
             e.preventDefault();
-            setSubmitError(null);
+            setFormError(null);
             setSubmitSuccess(false);
-
-            const validationErrors = validateForm(formData);
-            const hasErrors = Object.values(validationErrors).some(Boolean);
-            if (hasErrors) {
-                setErrors(validationErrors);
-                return;
-            }
 
             const payload = buildPatchPayload(formData);
             if (Object.keys(payload).length === 0) {
                 // No changes — nothing to save
+                return;
+            }
+
+            // Full-diff validation against the real update schema (see
+            // `AccommodationEditFormSchema` above) — only the changed fields are
+            // checked, so a pre-existing invalid value the host isn't touching
+            // never blocks an unrelated save.
+            const parsed = validate(payload);
+            if (!parsed.success) {
                 return;
             }
 
@@ -348,20 +375,20 @@ export function AccommodationEditor({
 
                 if (result.ok) {
                     setSubmitSuccess(true);
-                    setSubmitError(null);
+                    setFormError(null);
                 } else {
-                    setSubmitError(
-                        result.error.message ||
-                            t('host.properties.editor.error.saveFailed', 'Error al guardar')
+                    handleApiError(
+                        result.error,
+                        t('host.properties.editor.error.saveFailed', 'Error al guardar')
                     );
                 }
             } catch {
-                setSubmitError(t('host.properties.editor.error.network', 'Error de conexión'));
+                setFormError(t('host.properties.editor.error.network', 'Error de conexión'));
             } finally {
                 setIsSaving(false);
             }
         },
-        [formData, accommodationId, validateForm, buildPatchPayload, t]
+        [formData, accommodationId, buildPatchPayload, validate, handleApiError, setFormError, t]
     );
 
     // --- Cancel handler ---
@@ -443,7 +470,7 @@ export function AccommodationEditor({
                             locale={locale}
                             data={formData}
                             destinations={destinations}
-                            errors={errors}
+                            errors={fieldErrors}
                             onFieldChange={handleTextFieldChange}
                         />
                     </section>
@@ -456,7 +483,7 @@ export function AccommodationEditor({
                         <CapacitySection
                             locale={locale}
                             data={formData}
-                            errors={errors}
+                            errors={fieldErrors}
                             onFieldChange={handleNumberFieldChange}
                         />
                     </section>
@@ -469,7 +496,7 @@ export function AccommodationEditor({
                         <PricingSection
                             locale={locale}
                             data={formData}
-                            errors={errors}
+                            errors={fieldErrors}
                             onFieldChange={handleCurrencyFieldChange}
                         />
                     </section>
@@ -488,13 +515,10 @@ export function AccommodationEditor({
                                     latitude: coords.latitude,
                                     longitude: coords.longitude
                                 }));
-                                setErrors((prev) => ({
-                                    ...prev,
-                                    latitude: undefined,
-                                    longitude: undefined
-                                }));
+                                clearError('latitude');
+                                clearError('longitude');
                             }}
-                            errors={errors}
+                            errors={fieldErrors}
                         />
                     </section>
 
@@ -506,7 +530,7 @@ export function AccommodationEditor({
                         <ContactInfoSection
                             locale={locale}
                             data={formData}
-                            errors={errors}
+                            errors={fieldErrors}
                             onFieldChange={handleTextFieldChange}
                         />
                     </section>
@@ -519,7 +543,7 @@ export function AccommodationEditor({
                         <SocialNetworksSection
                             locale={locale}
                             data={formData}
-                            errors={errors}
+                            errors={mapSocialFieldErrors(fieldErrors)}
                             onFieldChange={handleTextFieldChange}
                         />
                     </section>
@@ -600,12 +624,12 @@ export function AccommodationEditor({
                         </output>
                     )}
 
-                    {submitError && (
+                    {formError && (
                         <div
                             className={styles.submitError}
                             role="alert"
                         >
-                            {submitError}
+                            {formError}
                         </div>
                     )}
 
