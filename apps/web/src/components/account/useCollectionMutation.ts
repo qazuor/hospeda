@@ -87,11 +87,19 @@ export function useCollectionMutation({
             setIsSubmitting(true);
 
             try {
+                // color/icon send an explicit `null` (not `undefined`) when
+                // the user picked "Sin color"/"Sin ícono" — the domain schema
+                // (`UserBookmarkCollectionSchema`) treats `null` as "clear
+                // this field" and `undefined`/omitted as "leave unchanged".
+                // Sending `undefined` here used to silently no-op a clear on
+                // PATCH (HOS-190 slice 3 bug fix). Both the create and update
+                // input schemas accept `null` for these two fields, so this
+                // is safe in both CREATE and EDIT mode.
                 const trimmedInput = {
                     name: input.name.trim(),
                     description: input.description.trim() || undefined,
-                    color: input.color.trim() || undefined,
-                    icon: input.icon.trim() || undefined
+                    color: input.color.trim() || null,
+                    icon: input.icon.trim() || null
                 };
 
                 const result =

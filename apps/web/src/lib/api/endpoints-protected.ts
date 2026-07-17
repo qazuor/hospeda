@@ -2272,20 +2272,34 @@ export interface BookmarkCollectionItem {
     readonly updatedAt: string;
 }
 
-/** Input for creating a new bookmark collection */
+/**
+ * Input for creating a new bookmark collection.
+ *
+ * `color`/`icon` accept `null` (in addition to a value or omission) so a
+ * caller can explicitly send "no color"/"no icon" — the domain schema
+ * (`UserBookmarkCollectionSchema.color`/`.icon`) is `.nullable().optional()`,
+ * so `null` is a real, API-accepted value, distinct from omitting the key.
+ */
 export interface CreateBookmarkCollectionInput {
     readonly name: string;
     readonly description?: string;
-    readonly color?: string;
-    readonly icon?: string;
+    readonly color?: string | null;
+    readonly icon?: string | null;
 }
 
-/** Input for updating an existing bookmark collection */
+/**
+ * Input for updating an existing bookmark collection.
+ *
+ * `color`/`icon` accept `null` to explicitly CLEAR a previously-set value on
+ * a PATCH — sending `undefined` (or omitting the key) leaves the existing
+ * value untouched instead (HOS-190 slice 3: "Sin color"/"Sin ícono" in the
+ * edit modal used to send `undefined`, which never cleared the field).
+ */
 export interface UpdateBookmarkCollectionInput {
     readonly name?: string;
     readonly description?: string;
-    readonly color?: string;
-    readonly icon?: string;
+    readonly color?: string | null;
+    readonly icon?: string | null;
 }
 
 /** Response shape from the user-bookmark-collections list endpoint */
