@@ -204,6 +204,13 @@ export function AccommodationEditor({
 
     // --- Form state ---
     const [formData, setFormData] = useState<AccommodationEditData>(initialData);
+    // F6 (HOS-190): the PATCH diff is computed against this MUTABLE baseline,
+    // resynced to the persisted values after every successful save (see
+    // `handleSubmit`). Diffing against the load-time `initialData` prop instead
+    // meant that reverting a just-saved field produced an empty diff ("no
+    // changes") while the DB still held the new value — the change could not be
+    // undone without a full page reload.
+    const [baseline, setBaseline] = useState<AccommodationEditData>(initialData);
     // Field-level validation is delegated to the shared `useZodForm` primitive
     // (HOS-190 slice 3) against `AccommodationEditFormSchema` (see above) —
     // previously `validateForm` only checked name/summary/basePrice/currency,
@@ -262,7 +269,7 @@ export function AccommodationEditor({
     const buildPatchPayload = useCallback(
         (current: AccommodationEditData): Record<string, unknown> => {
             const payload: Record<string, unknown> = {};
-            const initial = initialData;
+            const initial = baseline;
 
             // Text fields
             if (current.name !== initial.name) {
@@ -364,7 +371,7 @@ export function AccommodationEditor({
 
             return payload;
         },
-        [initialData]
+        [baseline]
     );
 
     // --- Submit handler ---
@@ -406,6 +413,10 @@ export function AccommodationEditor({
 
                 if (result.ok) {
                     setFormError(null);
+                    // F6: resync the baseline to what is now persisted so a
+                    // subsequent revert of a just-saved field is correctly
+                    // detected as a change (and not swallowed as "no changes").
+                    setBaseline(formData);
                     addToast({
                         type: 'success',
                         message: t('host.properties.editor.toast.saveSuccess', 'Cambios guardados')

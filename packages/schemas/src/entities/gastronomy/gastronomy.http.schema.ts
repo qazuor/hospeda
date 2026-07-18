@@ -201,8 +201,10 @@ export const httpToDomainGastronomyCreate = (
     httpData.email !== undefined ||
     httpData.website !== undefined
         ? {
+              // Omit mobilePhone when absent instead of injecting '' (HOS-190):
+              // '' fails the strict ContactInfoSchema phone regex on create.
               contactInfo: {
-                  mobilePhone: httpData.phone ?? '',
+                  ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
                   personalEmail: httpData.email,
                   website: httpData.website
               }

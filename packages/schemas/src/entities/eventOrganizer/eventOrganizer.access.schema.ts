@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { EventOrganizerSchema } from './eventOrganizer.schema.js';
 
 /**
@@ -24,6 +25,10 @@ export const EventOrganizerPublicSchema = EventOrganizerSchema.pick({
 
     // Social networks (nested object with facebook, instagram, twitter, etc.)
     socialNetworks: true
+}).extend({
+    // HOS-190: read⊇write — a persisted contactInfo (legacy phone format, missing
+    // mobilePhone) must never 500 the response. Format stays strict on write.
+    contactInfo: ContactInfoReadSchema.nullish()
 });
 
 export type EventOrganizerPublic = z.infer<typeof EventOrganizerPublicSchema>;
@@ -50,6 +55,9 @@ export const EventOrganizerProtectedSchema = EventOrganizerSchema.pick({
     // Basic audit (created/updated dates)
     createdAt: true,
     updatedAt: true
+}).extend({
+    // HOS-190: read⊇write lenient contactInfo (see EventOrganizerPublicSchema).
+    contactInfo: ContactInfoReadSchema.nullish()
 });
 
 export type EventOrganizerProtected = z.infer<typeof EventOrganizerProtectedSchema>;
@@ -62,6 +70,9 @@ export type EventOrganizerProtected = z.infer<typeof EventOrganizerProtectedSche
  *
  * This is essentially the full schema.
  */
-export const EventOrganizerAdminSchema = EventOrganizerSchema;
+export const EventOrganizerAdminSchema = EventOrganizerSchema.extend({
+    // HOS-190: read⊇write lenient contactInfo (see EventOrganizerPublicSchema).
+    contactInfo: ContactInfoReadSchema.nullish()
+});
 
 export type EventOrganizerAdmin = z.infer<typeof EventOrganizerAdminSchema>;

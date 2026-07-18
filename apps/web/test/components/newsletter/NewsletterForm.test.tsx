@@ -212,7 +212,7 @@ describe('NewsletterForm', () => {
             });
         });
 
-        it('redirects to /{locale}/newsletter/confirma-tu-email on pending_verification', async () => {
+        it('redirects to /{locale}/newsletter/confirma-tu-email/ WITH a trailing slash before the query on pending_verification (BETA-191)', async () => {
             const fetchMock = mockFetchOk({ status: 'pending_verification' });
             vi.stubGlobal('fetch', fetchMock);
             const assignMock = vi.fn();
@@ -229,11 +229,17 @@ describe('NewsletterForm', () => {
             if (form) fireEvent.submit(form);
 
             await waitFor(() => {
+                // Regression (BETA-191): the confirmation URL MUST keep the trailing
+                // slash BEFORE the query string. Astro runs `trailingSlash: 'always'`,
+                // so the slashless form (`/confirma-tu-email?email=`) 404s — the guest
+                // subscribed successfully but landed on a 404 and never saw the
+                // "revisá tu email para confirmar" instruction. Assert the exact URL,
+                // not `stringContaining`, so the missing slash can never pass again.
                 expect(assignMock).toHaveBeenCalledWith(
-                    expect.stringContaining(
-                        '/es/newsletter/confirma-tu-email?email=guest%40example.com'
-                    )
+                    '/es/newsletter/confirma-tu-email/?email=guest%40example.com'
                 );
+                const target = assignMock.mock.calls[0]?.[0] as string;
+                expect(target).not.toMatch(/confirma-tu-email\?/);
             });
         });
 

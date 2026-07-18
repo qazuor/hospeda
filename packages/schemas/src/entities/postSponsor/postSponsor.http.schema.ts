@@ -141,8 +141,10 @@ export function httpToDomainPostSponsorCreate(
         type: httpData.type,
         description: httpData.description || '', // Required in domain
         logo: httpData.logo ? { url: httpData.logo } : undefined,
+        // Omit mobilePhone when absent instead of injecting '' (HOS-190):
+        // '' fails the strict ContactInfoSchema phone regex on create.
         contactInfo: {
-            mobilePhone: httpData.phone || '',
+            ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
             personalEmail: httpData.email,
             website: httpData.website
         },
@@ -174,8 +176,10 @@ export function httpToDomainPostSponsorUpdate(
         httpData.phone !== undefined ||
         httpData.website !== undefined
     ) {
+        // Omit mobilePhone when absent instead of injecting '' (HOS-190):
+        // '' fails the strict ContactInfoSchema phone regex on update.
         result.contactInfo = {
-            mobilePhone: httpData.phone || '', // Required field
+            ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
             personalEmail: httpData.email,
             website: httpData.website
         };

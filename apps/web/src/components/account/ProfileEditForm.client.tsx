@@ -20,7 +20,6 @@
  * Hydration: caller must use `client:load`.
  */
 
-import { ProfileEditSchema } from '@repo/schemas';
 import { useRef, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
 import { getInitials } from '@/lib/avatar-utils';
@@ -30,6 +29,12 @@ import { createTranslations } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
 import { ProfileEditAvatarSection } from './ProfileEditAvatarSection';
 import { ProfileEditExtrasSection } from './ProfileEditExtrasSection';
+import {
+    buildInitialProfileSnapshot,
+    buildProfilePatch,
+    ProfileEditFormSchema,
+    type ProfileSnapshot
+} from './ProfileEditForm.helpers';
 import styles from './ProfileEditForm.module.css';
 import { ProfileEditLocationSection } from './ProfileEditLocationSection';
 import { ProfileEditPersonalSection } from './ProfileEditPersonalSection';
@@ -202,8 +207,42 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
     // state + `parseZodErrors` helper.
 
     const { fieldErrors, formError, validate, handleApiError, clearError, setFormError } =
-        useZodForm({ schema: ProfileEditSchema, t });
+        useZodForm({ schema: ProfileEditFormSchema, t });
     const [submitting, setSubmitting] = useState(false);
+
+    // F6 (HOS-190): the PATCH diff is computed against this MUTABLE baseline,
+    // resynced to the persisted values after every successful save (see
+    // `handleSubmit`). Without the resync, reverting a just-saved field would
+    // diff-empty against the load-time snapshot and be wrongly reported as "no
+    // changes" while the DB still held the new value.
+    const [baseline, setBaseline] = useState<ProfileSnapshot>(() =>
+        buildInitialProfileSnapshot(initialUser)
+    );
+
+    /** Snapshot the current form field state for diffing against the baseline. */
+    function snapshotFromState(): ProfileSnapshot {
+        return {
+            displayName,
+            firstName,
+            lastName,
+            birthDate,
+            phone,
+            bio,
+            website,
+            occupation,
+            facebookUrl,
+            instagramUrl,
+            twitterUrl,
+            linkedinUrl,
+            youtubeUrl,
+            country,
+            province,
+            city,
+            addressLine1,
+            postalCode,
+            avatarUrl
+        };
+    }
 
     const activeImageUrl = previewUrl ?? (avatarUrl || null);
     const initials = getInitials({
@@ -255,35 +294,53 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
         e.preventDefault();
         setFormError(null);
 
-        // displayName/firstName/lastName are validated as blankable
-        // (`|| undefined`, like every other optional field below) rather than
-        // always required — a profile with `firstName: null` (incomplete
-        // OAuth signup) must still be able to re-save an unrelated field
-        // without `ProfileEditSchema` rejecting the whole payload over a
-        // required-field error (HOS-190 read⊇write fix).
-        const parsed = validate(
-            omitUndefined({
-                displayName: displayName.trim() || undefined,
-                firstName: firstName.trim() || undefined,
-                lastName: lastName.trim() || undefined,
-                bio: bio.trim() || undefined,
-                avatarUrl: avatarUrl || undefined,
-                phone: phone.trim() || undefined,
-                birthDate: birthDate || undefined,
-                website: website.trim() || undefined,
-                occupation: occupation.trim() || undefined,
-                facebookUrl: facebookUrl.trim() || undefined,
-                instagramUrl: instagramUrl.trim() || undefined,
-                twitterUrl: twitterUrl.trim() || undefined,
-                linkedinUrl: linkedinUrl.trim() || undefined,
-                youtubeUrl: youtubeUrl.trim() || undefined,
-                addressLine1: addressLine1.trim() || undefined,
-                city: city.trim() || undefined,
-                province: province.trim() || undefined,
-                country: country.trim() || undefined,
-                postalCode: postalCode.trim() || undefined
-            })
-        );
+        const current = snapshotFromState();
+        const {
+            flatChanged,
+            payload: fieldPayload,
+            clearedRequiredNames
+        } = buildProfilePatch({ current, baseline });
+
+        // BETA-189 P1: a visually-required name (displayName/firstName/lastName)
+        // that HAD a value at baseline and is now empty is a "clear" the server
+        // silently drops — block + announce it inline instead of reporting a
+        // misleading success. A name that was NEVER set (baseline empty) stays
+        // omitted, so an incomplete OAuth signup can still save unrelated fields
+        // (read⊇write).
+        if (clearedRequiredNames.length > 0) {
+            handleApiError({
+                details: clearedRequiredNames.map((field) => ({
+                    field,
+                    message: t(
+                        `account.editProfile.errors.${field}Required`,
+                        'Este campo es obligatorio'
+                    )
+                }))
+            });
+            addToast({
+                type: 'error',
+                message: t('validation.formHasErrors', 'Revisá los campos marcados')
+            });
+            return;
+        }
+
+        // BETA-189 P2 + F6: only report success when a real change was persisted.
+        // A diff-empty submit shows a "no changes" info toast (mirroring the
+        // AccommodationEditor) instead of a misleading "profile updated".
+        const avatarChanged = avatarFile !== null || avatarUrl !== baseline.avatarUrl;
+        if (Object.keys(fieldPayload).length === 0 && !avatarChanged) {
+            addToast({
+                type: 'info',
+                message: t('account.editProfile.noChanges', 'No hay cambios para guardar')
+            });
+            return;
+        }
+
+        // Validate ONLY the changed fields (read⊇write): a pre-existing invalid
+        // value the user is not touching never blocks an unrelated save. This is
+        // also where the server-aligned bio bound (min 10 / max 300) is enforced
+        // client-side — BETA-189 P4.
+        const parsed = validate(omitUndefined(flatChanged));
 
         if (!parsed.success) {
             return;
@@ -292,7 +349,7 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
         setSubmitting(true);
 
         try {
-            let finalAvatarUrl = parsed.data.avatarUrl;
+            let finalAvatarUrl: string | undefined = avatarUrl || undefined;
 
             if (avatarFile) {
                 setAvatarUploading(true);
@@ -318,111 +375,16 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
                 }
             }
 
-            // Build payload — optional fields (including displayName/
-            // firstName/lastName, see below) only when they differ from the
-            // initial value or otherwise carry a real value (avoids
-            // clobbering server state with stale empty strings).
-            //
-            // SPEC-113 follow-up: the User entity in the DB stores several
-            // groups of fields inside JSONB columns instead of as separate
-            // top-level columns. The form surface uses flat field names
-            // (phone, country, facebookUrl, …) for UX reasons; the PATCH
-            // payload has to nest them so the API actually persists them.
-            //
-            //   - phone        → contactInfo.mobilePhone
-            //   - website      → profile.website (and contactInfo.website)
-            //   - bio/occupation → profile.{bio, occupation}
-            //   - country/province/city/addressLine1/postalCode → location.*
-            //   - facebookUrl/instagramUrl/… → socialNetworks.{facebook, …}
-            //
-            // displayName/firstName/lastName are sent ONLY when the user has
-            // an actual value for them — never unconditionally. The real
-            // `UserProtectedPatchInputSchema` is `.partial()`; sending an
-            // empty string for a user whose `firstName` is `null` (incomplete
-            // OAuth signup) used to fail server-side validation and block the
-            // ENTIRE PATCH, even when the user only wanted to update an
-            // unrelated field like bio (HOS-190 read⊇write fix).
-            const payload: Record<string, unknown> = {};
-            if (parsed.data.displayName) payload.displayName = parsed.data.displayName;
-            if (parsed.data.firstName) payload.firstName = parsed.data.firstName;
-            if (parsed.data.lastName) payload.lastName = parsed.data.lastName;
-            if (finalAvatarUrl !== undefined) payload.image = finalAvatarUrl;
-            if (parsed.data.birthDate !== undefined) {
-                payload.birthDate = parsed.data.birthDate;
-            }
-
-            // ── profile JSONB (bio, website, occupation) ──────────────────
-            // Send the FULL profile block whenever any of its fields
-            // changed, so the API receives a self-consistent JSONB value
-            // regardless of whether it shallow-merges or replaces.
-            const bioTrim = bio.trim();
-            const websiteTrim = website.trim();
-            const occupationTrim = occupation.trim();
-            const originalWebsite = (
-                initialUser.website ??
-                initialUser.profile?.website ??
-                ''
-            ).trim();
-            const profileChanged =
-                bioTrim !== (initialUser.profile?.bio ?? '').trim() ||
-                websiteTrim !== originalWebsite ||
-                occupationTrim !== (initialUser.profile?.occupation ?? '').trim();
-            if (profileChanged) {
-                const profilePatch: Record<string, string> = {};
-                if (bioTrim.length > 0) profilePatch.bio = bioTrim;
-                if (websiteTrim.length > 0) profilePatch.website = websiteTrim;
-                if (occupationTrim.length > 0) profilePatch.occupation = occupationTrim;
-                payload.profile = profilePatch;
-            }
-
-            // ── contactInfo JSONB (mobilePhone) ───────────────────────────
-            if (phone.trim() !== (initialUser.phone ?? '').trim()) {
-                // Phone in DB is required-when-present per ContactInfoSchema,
-                // so we omit the key entirely on clear; otherwise we set
-                // contactInfo.mobilePhone to the new value.
-                if (phone.trim().length > 0) {
-                    payload.contactInfo = { mobilePhone: phone.trim() };
-                }
-            }
-
-            // ── socialNetworks JSONB ──────────────────────────────────────
-            const socialPatch: Record<string, string> = {};
-            const socialMap: ReadonlyArray<{
-                form: string;
-                jsonKey: 'facebook' | 'instagram' | 'twitter' | 'linkedIn' | 'youtube';
-                original: string | null | undefined;
-            }> = [
-                { form: facebookUrl, jsonKey: 'facebook', original: initialUser.facebookUrl },
-                { form: instagramUrl, jsonKey: 'instagram', original: initialUser.instagramUrl },
-                { form: twitterUrl, jsonKey: 'twitter', original: initialUser.twitterUrl },
-                { form: linkedinUrl, jsonKey: 'linkedIn', original: initialUser.linkedinUrl },
-                { form: youtubeUrl, jsonKey: 'youtube', original: initialUser.youtubeUrl }
-            ];
-            let socialChanged = false;
-            for (const { form, jsonKey, original } of socialMap) {
-                const trimmed = form.trim();
-                if (trimmed !== (original ?? '').trim()) socialChanged = true;
-                if (trimmed.length > 0) socialPatch[jsonKey] = trimmed;
-            }
-            if (socialChanged) {
-                payload.socialNetworks = socialPatch;
-            }
-
-            // ── location JSONB ────────────────────────────────────────────
-            const locationPatch: Record<string, string> = {};
-            const locationChanged =
-                country.trim() !== (initialUser.country ?? '').trim() ||
-                province.trim() !== (initialUser.province ?? '').trim() ||
-                city.trim() !== (initialUser.city ?? '').trim() ||
-                addressLine1.trim() !== (initialUser.addressLine1 ?? '').trim() ||
-                postalCode.trim() !== (initialUser.postalCode ?? '').trim();
-            if (country.trim().length > 0) locationPatch.country = country.trim();
-            if (province.trim().length > 0) locationPatch.region = province.trim();
-            if (city.trim().length > 0) locationPatch.city = city.trim();
-            if (addressLine1.trim().length > 0) locationPatch.addressLine1 = addressLine1.trim();
-            if (postalCode.trim().length > 0) locationPatch.postalCode = postalCode.trim();
-            if (locationChanged) {
-                payload.location = locationPatch;
+            // Assemble the API payload from the computed diff (see
+            // `buildProfilePatch` for the flat→JSONB nesting rules:
+            // phone→contactInfo.mobilePhone, bio/website/occupation→profile.*,
+            // country/province/city/…→location.*, facebookUrl/…→socialNetworks.*)
+            // plus the avatar, which is only sent when it actually changed vs the
+            // baseline (so an unchanged existing avatar never forces a non-empty
+            // PATCH and defeats the "no changes" path above).
+            const payload: Record<string, unknown> = { ...fieldPayload };
+            if (finalAvatarUrl !== undefined && finalAvatarUrl !== baseline.avatarUrl) {
+                payload.image = finalAvatarUrl;
             }
 
             const res = await fetch(`${base}/api/v1/protected/users/${initialUser.id}`, {
@@ -458,6 +420,10 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
                 return;
             }
 
+            // F6: resync the baseline to what is now persisted (the current
+            // snapshot, carrying the uploaded avatar URL) so a subsequent revert
+            // of a just-saved field is correctly detected as a change.
+            setBaseline({ ...current, avatarUrl: finalAvatarUrl ?? current.avatarUrl });
             addToast({
                 type: 'success',
                 message: t('account.editProfile.success', 'Perfil actualizado correctamente')

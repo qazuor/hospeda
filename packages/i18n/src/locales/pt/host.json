@@ -312,7 +312,8 @@
             },
             "toast": {
                 "saveSuccess": "Alterações salvas",
-                "saveError": "Não pudemos salvar suas alterações. Tente novamente."
+                "saveError": "Não pudemos salvar suas alterações. Tente novamente.",
+                "noChanges": "Nenhuma alteração para salvar"
             },
             "entitlement": {
                 "premiumFeature": "Recurso premium",

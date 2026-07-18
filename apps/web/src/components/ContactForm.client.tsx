@@ -14,6 +14,7 @@ import { CheckCircleIcon } from '@repo/icons';
 import type { ContactSubmitInput } from '@repo/schemas';
 import { ContactSubmitSchema } from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
+import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './ContactForm.module.css';
@@ -85,21 +86,6 @@ const CONTACT_TYPE_OPTIONS = [
     }
 ] as const;
 
-/**
- * Extracts Zod field-level errors from a ZodError and maps them to
- * a flat FieldErrors record using the first issue's message per field.
- */
-function extractFieldErrors(error: import('zod').ZodError): FieldErrors {
-    const result: FieldErrors = {};
-    for (const issue of error.issues) {
-        const field = issue.path[0] as keyof FieldErrors | undefined;
-        if (field && !result[field]) {
-            result[field] = issue.message;
-        }
-    }
-    return result;
-}
-
 // ─── Component ───────────────────────────────────────────────────────────────
 
 /**
@@ -164,7 +150,10 @@ export function ContactForm({ locale }: ContactFormProps) {
         });
 
         if (!parsed.success) {
-            setErrors(extractFieldErrors(parsed.error));
+            // Resolve each Zod `zodError.*` key through `t` (via the shared
+            // mapper) so `errors.*` hold human Spanish, not raw i18n keys
+            // (HOS-190 BETA-190 — the firstName field used to render the key).
+            setErrors(zodIssuesToFieldErrors(parsed.error.issues, t));
             return;
         }
 
@@ -297,10 +286,7 @@ export function ContactForm({ locale }: ContactFormProps) {
                             className={styles.errorMsg}
                             role="alert"
                         >
-                            {t('zodError.contact.firstName.min', errors.firstName) ===
-                            errors.firstName
-                                ? errors.firstName
-                                : t('zodError.contact.firstName.min', 'El nombre es requerido')}
+                            {errors.firstName}
                         </p>
                     )}
                 </div>

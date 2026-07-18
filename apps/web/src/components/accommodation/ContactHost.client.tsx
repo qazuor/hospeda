@@ -16,6 +16,8 @@ import { Spinner } from '@/components/shared/feedback/Spinner';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
+import type { ApiErrorShape } from '@/lib/api-errors';
+import { translateApiError } from '@/lib/api-errors';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -113,15 +115,15 @@ const ContactHostAnonFieldsSchema = CreateConversationAnonSchema.omit({
  * @param params.t - Translation function.
  */
 function resolveInitiateFailureMessage({
-    reason,
+    error,
     status,
     t
 }: {
-    readonly reason?: string;
+    readonly error?: ApiErrorShape | null;
     readonly status?: number;
     readonly t: (key: string, fallback?: string, params?: Record<string, unknown>) => string;
 }): string {
-    switch (reason) {
+    switch (error?.reason) {
         case 'ACCOMMODATION_DELETED':
             return t('conversations.errors.accommodationDeleted');
         case 'CONVERSATION_BLOCKED':
@@ -136,7 +138,15 @@ function resolveInitiateFailureMessage({
     if (status === 404) {
         return t('conversations.errors.conversationNotFound');
     }
-    return t('conversations.errors.messageSendFailed');
+    // Surface the REAL API error (reason → code → status → message priority)
+    // instead of a blanket "message send failed" — this reads `error.message`
+    // when the API supplied one (e.g. a 400 validation error), so an accurate
+    // message reaches the user rather than a generic catch-all (HOS-190).
+    return translateApiError({
+        error: error ?? null,
+        t,
+        fallback: t('conversations.errors.messageSendFailed')
+    });
 }
 
 /**
@@ -312,14 +322,14 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
 
                 const body = (await res.json()) as {
                     data?: { conversationId?: string };
-                    error?: { reason?: string };
+                    error?: ApiErrorShape;
                 };
 
                 if (!res.ok) {
                     setSubmitState({
                         phase: 'error',
                         message: resolveInitiateFailureMessage({
-                            reason: body.error?.reason,
+                            error: body.error,
                             status: res.status,
                             t
                         })
@@ -357,7 +367,7 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
 
                 const body = (await res.json()) as {
                     data?: { status?: string };
-                    error?: { reason?: string };
+                    error?: ApiErrorShape;
                 };
 
                 if (res.status === 409 && body.error?.reason === 'CONVERSATION_DUPLICATE') {
@@ -379,7 +389,7 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                     setSubmitState({
                         phase: 'error',
                         message: resolveInitiateFailureMessage({
-                            reason: body.error?.reason,
+                            error: body.error,
                             status: res.status,
                             t
                         })

@@ -29,7 +29,7 @@
         "cancelButton": "Cancelar",
         "submitSuccess": "Sua avaliação foi enviada com sucesso",
         "errors": {
-            "ratingRequired": "Você deve selecionar uma avaliação",
+            "ratingRequired": "Avalie todas as categorias",
             "titleRequired": "O título é obrigatório",
             "titleMinLength": "O título deve ter pelo menos 3 caracteres",
             "contentRequired": "O comentário é obrigatório",

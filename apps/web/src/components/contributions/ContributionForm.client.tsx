@@ -27,6 +27,7 @@ import { ContactSubmitSchema } from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, type ReactNode, useEffect, useState } from 'react';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
+import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from '../ContactForm.module.css';
@@ -82,21 +83,6 @@ const SUBMIT_EVENT_BY_TYPE: Record<ContributionType, string> = {
     photo_submission: WebEvents.ContributionPhotoSubmitted,
     editor_application: WebEvents.ContributionEditorSubmitted
 };
-
-/**
- * Extracts Zod field-level errors from a ZodError and maps them to
- * a flat FieldErrors record using the first issue's message per field.
- */
-function extractFieldErrors(error: import('zod').ZodError): FieldErrors {
-    const result: FieldErrors = {};
-    for (const issue of error.issues) {
-        const field = issue.path[0] as keyof FieldErrors | undefined;
-        if (field && !result[field]) {
-            result[field] = issue.message;
-        }
-    }
-    return result;
-}
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -159,7 +145,10 @@ export function ContributionForm({ presetType, locale, children }: ContributionF
         });
 
         if (!parsed.success) {
-            const fieldErrors = extractFieldErrors(parsed.error);
+            // Resolve each Zod `zodError.*` key through `t` (via the shared
+            // mapper) so `errors.*` hold human Spanish, not raw i18n keys
+            // (HOS-190 BETA-190).
+            const fieldErrors = zodIssuesToFieldErrors(parsed.error.issues, t);
             setErrors(fieldErrors);
             // Safety net (SPEC-191 smoke finding): if every issue maps to a
             // field this form does not render (e.g. the locked `type` rejected
@@ -320,7 +309,7 @@ export function ContributionForm({ presetType, locale, children }: ContributionF
                             className={styles.errorMsg}
                             role="alert"
                         >
-                            {t('contributions.form.firstNameError', 'El nombre es requerido')}
+                            {errors.firstName}
                         </p>
                     )}
                 </div>
