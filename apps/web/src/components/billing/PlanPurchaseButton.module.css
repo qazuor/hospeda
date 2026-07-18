@@ -172,8 +172,8 @@
     margin: 0;
     padding: var(--space-3, 0.75rem);
     border-radius: var(--radius-md, 0.625rem);
-    background-color: oklch(from var(--brand-primary) l c h / 0.08);
-    border: 1px solid oklch(from var(--brand-primary) l c h / 0.2);
+    background-color: var(--surface-warm);
+    border: 1px solid var(--border);
     text-align: left;
 }
 
