@@ -113,6 +113,13 @@ const WRITE_SCHEMAS: ReadonlyArray<{ name: string; schema: z.ZodTypeAny }> = [
 // mobilePhone — the exact shape a shallow JSONB merge can leave behind.
 const CONTACT_WITHOUT_MOBILE = { whatsapp: '+5493435551234' } as const;
 
+// Legacy/persisted phone values that FAIL the strict write regex but were once
+// storable. A read schema must accept them (never 500); a write schema must not.
+const LEGACY_CONTACT_VALUES: ReadonlyArray<{ label: string; value: Record<string, string> }> = [
+    { label: 'AR local format without "+"', value: { mobilePhone: '0223-155-1234' } },
+    { label: 'bare country code "+54"', value: { mobilePhone: '+54' } }
+];
+
 describe('HOS-190 guardrail — READ schemas never require contactInfo.mobilePhone', () => {
     for (const { name, schema } of READ_SCHEMAS) {
         it(`${name}.contactInfo accepts a value omitting mobilePhone`, () => {
@@ -129,6 +136,23 @@ describe('HOS-190 guardrail — READ schemas never require contactInfo.mobilePho
     }
 });
 
+describe('HOS-190 guardrail — READ schemas accept legacy phone formats (never 500)', () => {
+    for (const { name, schema } of READ_SCHEMAS) {
+        for (const { label, value } of LEGACY_CONTACT_VALUES) {
+            it(`${name}.contactInfo accepts a ${label}`, () => {
+                const field = getContactField(schema);
+                expect(field, `${name} should expose a contactInfo field`).toBeDefined();
+                if (!field) return;
+
+                expect(
+                    field.safeParse(value).success,
+                    `${name}: read must not reject a persisted ${label}`
+                ).toBe(true);
+            });
+        }
+    }
+});
+
 describe('HOS-190 guardrail — WRITE schemas also allow omitting contactInfo.mobilePhone', () => {
     for (const { name, schema } of WRITE_SCHEMAS) {
         it(`${name}.contactInfo accepts a value omitting mobilePhone`, () => {
@@ -141,6 +165,21 @@ describe('HOS-190 guardrail — WRITE schemas also allow omitting contactInfo.mo
                 field.safeParse(CONTACT_WITHOUT_MOBILE).success,
                 `${name}: contactInfo with a sibling field but no mobilePhone`
             ).toBe(true);
+        });
+    }
+});
+
+describe('HOS-190 guardrail — WRITE schemas still reject a bare country-code phone', () => {
+    for (const { name, schema } of WRITE_SCHEMAS) {
+        it(`${name}.contactInfo rejects a bare "+54" (strict format stays on write)`, () => {
+            const field = getContactField(schema);
+            expect(field, `${name} should expose a contactInfo field`).toBeDefined();
+            if (!field) return;
+
+            expect(
+                field.safeParse({ mobilePhone: '+54' }).success,
+                `${name}: write must reject a bare country code`
+            ).toBe(false);
         });
     }
 });
