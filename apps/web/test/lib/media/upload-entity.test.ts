@@ -14,6 +14,11 @@
  *   surfaces the pre-existing generic parse-failure message (regression
  *   guard — this codepath is intentionally unchanged for real corruption).
  * - The happy path (valid JSON success response) still resolves correctly.
+ *
+ * Covers (HOS-201 — host photo upload 404 in prod):
+ * - The upload targets an ABSOLUTE API URL (host included), never a relative
+ *   path. In prod, web and API are separate origins, so a relative path 404s
+ *   against the web origin. The XHR must open the `getApiUrl()`-prefixed URL.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -127,6 +132,28 @@ describe('uploadEntityImage', () => {
             xhr.trigger('load');
 
             await expect(promise).rejects.toThrow('Invalid response from upload endpoint');
+        });
+    });
+
+    describe('absolute API URL (HOS-201)', () => {
+        it('should open an absolute API URL (with host), not a relative path', () => {
+            void uploadEntityImage({ file: buildTestFile(), accommodationId: 'acc-1' });
+
+            const xhr = MockXHR.instances[0];
+            if (!xhr) throw new Error('expected an XHR instance to have been created');
+
+            // Must be absolute — a relative '/api/...' 404s cross-origin in prod.
+            expect(xhr.url.startsWith('/')).toBe(false);
+            expect(/^https?:\/\//.test(xhr.url)).toBe(true);
+            // Points at the API base (getApiUrl()), preserving the endpoint path.
+            expect(xhr.url).toBe('http://localhost:3001/api/v1/protected/media/upload-entity');
+        });
+
+        it('should keep sending the session cookie cross-origin (withCredentials)', () => {
+            void uploadEntityImage({ file: buildTestFile(), accommodationId: 'acc-1' });
+
+            const xhr = MockXHR.instances[0];
+            expect(xhr?.withCredentials).toBe(true);
         });
     });
 
