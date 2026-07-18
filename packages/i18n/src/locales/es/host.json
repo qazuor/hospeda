@@ -312,7 +312,8 @@
             },
             "toast": {
                 "saveSuccess": "Cambios guardados",
-                "saveError": "No pudimos guardar los cambios. Intentá de nuevo."
+                "saveError": "No pudimos guardar los cambios. Intentá de nuevo.",
+                "noChanges": "No hay cambios para guardar"
             },
             "entitlement": {
                 "premiumFeature": "Función premium",

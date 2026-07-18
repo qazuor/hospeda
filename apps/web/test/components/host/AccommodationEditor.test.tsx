@@ -356,6 +356,39 @@ describe('AccommodationEditor', () => {
         });
     });
 
+    it('re-syncs the baseline after save so reverting a just-saved field issues a restoring PATCH (F6)', async () => {
+        // F6 regression (HOS-190, BETA-187): the PATCH diff was computed against
+        // the LOAD-TIME snapshot and never resynced after a save. So saving
+        // name X, then reverting name to its original value and saving again,
+        // produced an empty diff ("no changes") while the DB kept X — the just-
+        // saved change could not be undone without a full reload. Asserts on the
+        // ACTUAL body of the SECOND save (it must carry the restored value).
+        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
+        vi.doMock('@/lib/api/endpoints-protected', () => ({
+            accommodationEditApi: { update: mockUpdate }
+        }));
+
+        const user = userEvent.setup();
+        render(<AccommodationEditor {...DEFAULT_PROPS} />);
+
+        const nameInput = screen.getByLabelText(/nombre/i) as HTMLInputElement;
+
+        // 1) Change name and save → PATCH { name: 'Hotel Actualizado' }.
+        await user.clear(nameInput);
+        await user.type(nameInput, 'Hotel Actualizado');
+        fireEvent.submit(nameInput.closest('form')!);
+        await vi.waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1));
+        expect(mockUpdate.mock.calls[0][0].data.name).toBe('Hotel Actualizado');
+
+        // 2) Revert name to the ORIGINAL value and save again. Without the
+        //    baseline resync this diff-empties and never fires a second PATCH.
+        await user.clear(nameInput);
+        await user.type(nameInput, 'Hotel Test');
+        fireEvent.submit(nameInput.closest('form')!);
+        await vi.waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(2));
+        expect(mockUpdate.mock.calls[1][0].data.name).toBe('Hotel Test');
+    });
+
     it('blocks submit and shows a field error when email is invalid (HOS-190 regression — contact validation)', async () => {
         // Regression guard: `validateForm` previously only checked
         // name/summary/basePrice/currency — the ContactInfoSection error
