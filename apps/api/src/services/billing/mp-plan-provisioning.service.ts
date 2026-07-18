@@ -69,10 +69,13 @@ export interface ResolveOrProvisionMpPlanInput {
     /**
      * Absolute `http(s)` return URL MercadoPago **requires** when creating a
      * `preapproval_plan` (`POST /preapproval_plan`). Passed through to
-     * `QZPayCreatePriceInput.backUrl`; qzpay rejects the call early if it is
-     * missing or not an absolute URL, instead of surfacing MercadoPago's opaque
-     * "Back url is required" 400 (qzpay-mercadopago 2.5.0). This is the same URL
-     * the checkout later uses as the preapproval's `back_url`.
+     * `QZPayCreatePriceInput.backUrl` (qzpay-mercadopago 2.5.0): the adapter needs
+     * either this per-call value or an adapter-level `defaultPlanBackUrl`, and
+     * rejects the call early — before hitting MercadoPago — when neither resolves
+     * to a valid absolute URL, instead of surfacing MP's opaque "Back url is
+     * required" 400. Hospeda does not configure `defaultPlanBackUrl`, so this
+     * required field is what guarantees the plan always gets one. It is the same
+     * URL the checkout later uses as the preapproval's `back_url`.
      */
     readonly backUrl: string;
 }
