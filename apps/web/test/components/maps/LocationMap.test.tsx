@@ -295,6 +295,42 @@ describe('LocationMap — mode: multi', () => {
         expect(await screen.findByText('Volver a la ciudad')).toBeInTheDocument();
     });
 
+    it('calls onShowSurroundings once when the toggle is activated, and not on the way back (HOS-181)', async () => {
+        // HOS-181: activating "ver alrededores" is what arms the consumer's lazy
+        // NEARBY fetch. It must fire on activation and stay idempotent — returning
+        // to the city view must not re-trigger a load.
+        const onShowSurroundings = vi.fn();
+        render(
+            <LocationMap
+                mode="multi"
+                markers={[primaryMarker, nearbyMarker]}
+                initialBounds={[
+                    [-32.48, -58.24],
+                    [-32.47, -58.23]
+                ]}
+                surroundingsBounds={[
+                    [-32.71, -58.51],
+                    [-32.47, -58.23]
+                ]}
+                onShowSurroundings={onShowSurroundings}
+                ariaLabel="poi map"
+                i18nStrings={multiI18n}
+            />
+        );
+
+        await screen.findAllByTestId('marker');
+        expect(onShowSurroundings).not.toHaveBeenCalled();
+
+        fireEvent.click(screen.getByText('Ver alrededores'));
+        await screen.findByText('Volver a la ciudad');
+        expect(onShowSurroundings).toHaveBeenCalledTimes(1);
+
+        // Back to the city view: no second load.
+        fireEvent.click(screen.getByText('Volver a la ciudad'));
+        await screen.findByText('Ver alrededores');
+        expect(onShowSurroundings).toHaveBeenCalledTimes(1);
+    });
+
     it('does not set aria-pressed on the surroundings toggle (its NAME changes instead)', async () => {
         // WAI-ARIA APG: a toggle either keeps a stable name and exposes state via
         // aria-pressed, or changes its name and exposes no pressed state. Doing

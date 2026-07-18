@@ -217,7 +217,15 @@ function FitBoundsToggle({
  * @param props - the `mode: 'multi'` member of {@link LocationMapProps}
  */
 export function MultiMarkerMapInner(props: Extract<LocationMapProps, { mode: 'multi' }>) {
-    const { markers, initialBounds, surroundingsBounds, ariaLabel, i18nStrings, className } = props;
+    const {
+        markers,
+        initialBounds,
+        surroundingsBounds,
+        onShowSurroundings,
+        ariaLabel,
+        i18nStrings,
+        className
+    } = props;
 
     const [showSurroundings, setShowSurroundings] = useState(false);
     const [isActive, setIsActive] = useState(false);
@@ -232,6 +240,14 @@ export function MultiMarkerMapInner(props: Extract<LocationMapProps, { mode: 'mu
         document.addEventListener('pointerdown', handlePointerDown);
         return () => document.removeEventListener('pointerdown', handlePointerDown);
     }, [isActive]);
+
+    // HOS-181: the first time the visitor steps out to the surroundings, tell the
+    // consumer so it can lazily load the extra (NEARBY) markers on demand instead
+    // of on mount. Firing on every "on" transition is fine — the consumer's
+    // request is idempotent.
+    useEffect(() => {
+        if (showSurroundings) onShowSurroundings?.();
+    }, [showSurroundings, onShowSurroundings]);
 
     // Self-guards when empty, mirroring DestinationPOISection.astro's grid.
     if (markers.length === 0) return null;

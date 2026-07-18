@@ -17,10 +17,12 @@
  *  - Always-visible Google-only explainer note
  */
 
+import { AccommodationExternalListingSchema } from '@repo/schemas';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { PlatformStatusEntry } from '@/components/host/PlatformStatusChips';
 import { PlatformStatusChips } from '@/components/host/PlatformStatusChips';
 import { Spinner } from '@/components/shared/feedback/Spinner';
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { useReputationStatus } from '@/hooks/use-reputation-status';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -132,6 +134,10 @@ export function ExternalReputationSection({
     const [addShowReviews, setAddShowReviews] = useState(false);
     const [isAdding, setIsAdding] = useState(false);
     const [addError, setAddError] = useState<string | null>(null);
+    /** Field-level URL error (HOS-190): this sub-section has its own Save, so it
+     * validates the URL client-side before POSTing instead of relying on the
+     * server 400, whose message shape it used to mis-read into a generic banner. */
+    const [addUrlError, setAddUrlError] = useState<string | null>(null);
 
     // --- Refresh state ---
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -217,7 +223,25 @@ export function ExternalReputationSection({
 
     // --- Add listing handler ---
     const handleAddListing = useCallback(async () => {
-        if (!addUrl.trim()) return;
+        const trimmedUrl = addUrl.trim();
+        if (!trimmedUrl) return;
+
+        // Client-side URL validation BEFORE the POST (HOS-190). Uses the exact
+        // server rule (`AccommodationExternalListingSchema.shape.url`, a
+        // `z.string().url()`), so a value like "csdcsdcsd" is caught here with a
+        // field-level message under the input instead of round-tripping to a
+        // server 400 that the old code mis-read into a generic banner (the API
+        // sends `userFriendlyMessage`/`summary`, never `message`).
+        const urlCheck = AccommodationExternalListingSchema.shape.url.safeParse(trimmedUrl);
+        if (!urlCheck.success) {
+            setAddError(null);
+            setAddUrlError(
+                t('external-reputation.errors.invalidUrl', 'Ingresá una URL válida (https://...).')
+            );
+            return;
+        }
+        setAddUrlError(null);
+
         setIsAdding(true);
         setAddError(null);
         try {
@@ -230,7 +254,7 @@ export function ExternalReputationSection({
                     body: JSON.stringify({
                         accommodationId,
                         platform: addPlatform,
-                        url: addUrl.trim(),
+                        url: trimmedUrl,
                         showLink: addShowLink,
                         showReviews: addShowReviews
                     })
@@ -242,11 +266,19 @@ export function ExternalReputationSection({
                 setAddShowReviews(false);
                 await loadListings();
             } else {
+                // The API has TWO 400 shapes: Hono/zod-openapi validation
+                // failures (create-app.ts defaultHook) send `{ messageKey,
+                // summary, userFriendlyMessage }`; a handler-thrown ServiceError
+                // (e.g. DUPLICATE_PLATFORM — this route's documented primary 400)
+                // is serialized by the global onError as `{ code, message,
+                // details }`. Read all three so neither shape is swallowed.
                 const errBody = (await res.json().catch(() => ({}))) as {
-                    error?: { message?: string };
+                    error?: { userFriendlyMessage?: string; summary?: string; message?: string };
                 };
                 setAddError(
-                    errBody.error?.message ??
+                    errBody.error?.userFriendlyMessage ??
+                        errBody.error?.summary ??
+                        errBody.error?.message ??
                         t('external-reputation.errors.fetchFailed', 'Error al agregar el enlace.')
                 );
             }
@@ -595,10 +627,19 @@ export function ExternalReputationSection({
                         type="url"
                         className={styles.addFormInput}
                         value={addUrl}
-                        onChange={(e) => setAddUrl(e.target.value)}
+                        onChange={(e) => {
+                            setAddUrl(e.target.value);
+                            if (addUrlError) setAddUrlError(null);
+                        }}
                         placeholder={'https://...'}
+                        aria-invalid={addUrlError ? true : undefined}
+                        aria-describedby={addUrlError ? fieldErrorId('ext-rep-url') : undefined}
                     />
                 </div>
+                <FieldError
+                    id={fieldErrorId('ext-rep-url')}
+                    message={addUrlError}
+                />
 
                 <div className={styles.addFormCheckboxRow}>
                     <label className={styles.addFormCheckbox}>
