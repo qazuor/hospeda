@@ -377,7 +377,7 @@ describe('ContactHost', () => {
     // -------------------------------------------------------------------------
 
     describe('generic failure message (HOS-190 bug fix — was mislabeled "conversation not found")', () => {
-        it('Mode A: shows the generic messageSendFailed text (NOT conversationNotFound) for an uncategorized 400', async () => {
+        it('Mode A: surfaces the real API error (NOT conversationNotFound) for an uncategorized 400', async () => {
             vi.stubGlobal(
                 'fetch',
                 vi.fn().mockResolvedValue({
@@ -412,12 +412,14 @@ describe('ContactHost', () => {
 
             await waitFor(() => {
                 const alert = screen.getByRole('alert');
-                expect(alert.textContent).toBe('conversations.errors.messageSendFailed');
+                // HOS-190: the real API error is now surfaced (via translateApiError's
+                // code → message priority), not the blanket "conversation not found".
+                expect(alert.textContent).toBe('bad');
                 expect(alert.textContent).not.toBe('conversations.errors.conversationNotFound');
             });
         });
 
-        it('Mode B: shows the generic messageSendFailed text (NOT conversationNotFound) for a 500 response', async () => {
+        it('Mode B: surfaces the real API error (NOT conversationNotFound) for a 500 response', async () => {
             vi.stubGlobal(
                 'fetch',
                 vi.fn().mockResolvedValue({
@@ -446,7 +448,8 @@ describe('ContactHost', () => {
 
             await waitFor(() => {
                 const alert = screen.getByRole('alert');
-                expect(alert.textContent).toBe('conversations.errors.messageSendFailed');
+                // HOS-190: the real API error message is surfaced now.
+                expect(alert.textContent).toBe('boom');
                 expect(alert.textContent).not.toBe('conversations.errors.conversationNotFound');
             });
         });

@@ -34,6 +34,7 @@ import { type ChangeEvent, type FormEvent, useEffect, useId, useState } from 're
 import { ownerPromotionApi, protectedAccommodationsApi } from '@/lib/api/endpoints-protected';
 import { transformOwnerPromotion } from '@/lib/api/transforms';
 import type { OwnerPromotionData } from '@/lib/api/types';
+import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -69,21 +70,6 @@ type FormFields = {
 type FieldErrors = Partial<Record<keyof FormFields, string>>;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/**
- * Extracts Zod field-level errors from a ZodError into a flat FieldErrors
- * record — first issue message per path key wins.
- */
-function extractFieldErrors(error: import('zod').ZodError): FieldErrors {
-    const result: FieldErrors = {};
-    for (const issue of error.issues) {
-        const field = issue.path[0] as keyof FieldErrors | undefined;
-        if (field && !result[field]) {
-            result[field] = issue.message;
-        }
-    }
-    return result;
-}
 
 /** Convert a JS Date or ISO string to `YYYY-MM-DD` for <input type="date">. */
 function toDateInputValue(value: string | Date | null | undefined): string {
@@ -379,7 +365,10 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
                 : OwnerPromotionUpdateInputSchema.safeParse(payload);
 
         if (!parsed.success) {
-            setErrors(extractFieldErrors(parsed.error));
+            // Resolve each Zod `zodError.*` key through `t` (via the shared
+            // mapper) so the user sees human Spanish instead of the raw i18n
+            // key that the old hand-rolled extractor surfaced (HOS-190 BETA-190).
+            setErrors(zodIssuesToFieldErrors(parsed.error.issues, t));
             return;
         }
 
