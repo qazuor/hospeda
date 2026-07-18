@@ -7,6 +7,8 @@
  * tries to mock itself.
  */
 
+import { getApiUrl } from '@/lib/env';
+
 /**
  * Client-side upload timeout (ms).
  *
@@ -49,7 +51,13 @@ export async function uploadEntityImage({
 
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/v1/protected/media/upload-entity');
+        // HOS-201: use the absolute API base URL, NOT a relative path. In prod
+        // web (hospeda.com.ar) and API (api.hospeda.com.ar) are separate origins,
+        // so a relative '/api/...' resolves against the web origin (Astro SSR),
+        // which has no such route → 404. Mirrors commerce MediaField.tsx.
+        // `withCredentials` keeps sending the session cookie cross-origin (CORS
+        // already allows it for the other protected calls).
+        xhr.open('POST', `${getApiUrl()}/api/v1/protected/media/upload-entity`);
         xhr.withCredentials = true;
         // BETA-134: bound the request so a hanging upstream (Cloudinary slow
         // response, or a reverse proxy that kills the connection) surfaces a
