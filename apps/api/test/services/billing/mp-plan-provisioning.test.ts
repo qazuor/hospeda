@@ -45,13 +45,16 @@ function createAdapter() {
     } as any;
 }
 
+const BACK_URL = 'https://hospeda.com.ar/es/suscriptores/checkout/success/';
+
 const BASE_INPUT = {
     commercialPlanId: 'plan-uuid',
     billingInterval: 'monthly' as const,
     trialDays: 14,
     amountCentavos: 1_500_000,
     currency: 'ARS',
-    planName: 'Basic'
+    planName: 'Basic',
+    backUrl: BACK_URL
 };
 
 beforeEach(() => {
@@ -88,6 +91,12 @@ describe('resolveOrProvisionMpPlan', () => {
         const res = await resolveOrProvisionMpPlan({ adapter, ...BASE_INPUT });
 
         expect(adapter.prices.create).toHaveBeenCalledOnce();
+        // The back_url MercadoPago requires on preapproval_plan creation must reach
+        // the qzpay price input (qzpay-mercadopago 2.5.0 fails fast without it).
+        expect(adapter.prices.create).toHaveBeenCalledWith(
+            expect.objectContaining({ backUrl: BACK_URL }),
+            expect.any(String)
+        );
         expect(create).toHaveBeenCalledWith(
             expect.objectContaining({
                 commercialPlanId: 'plan-uuid',
@@ -253,7 +262,8 @@ describe('resolveCheckoutMpPlanId', () => {
         amountCentavos: 1_500_000,
         currency: 'ARS',
         billingInterval: 'monthly' as const,
-        trialDays: 14
+        trialDays: 14,
+        backUrl: BACK_URL
     };
 
     it('throws MP_PLAN_PROVISIONING_FAILED when the payment adapter is unavailable', async () => {

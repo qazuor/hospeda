@@ -615,7 +615,10 @@ export async function initiatePaidMonthlySubscription(
         // otherwise the plan-based preapproval bills monthly and the fast-cycle QA
         // tool is silently defeated. Real plans on this flow are always monthly.
         billingInterval: planSlug === TEST_DAILY_PLAN.slug ? 'daily' : 'monthly',
-        trialDays: freeTrialDays ?? 0
+        trialDays: freeTrialDays ?? 0,
+        // Same URL used below as the preapproval's back_url; MP requires it on
+        // preapproval_plan creation too (qzpay-mercadopago 2.5.0).
+        backUrl: urls.paymentMethodReturnUrl
     });
 
     const { subscription, checkoutUrl } = await createPaidSubscription({
@@ -855,7 +858,10 @@ export async function initiateCommerceMonthlySubscription(
         amountCentavos: monthlyPrice.unitAmount,
         currency: monthlyPrice.currency,
         billingInterval: 'monthly',
-        trialDays: 0
+        trialDays: 0,
+        // Same URL used below as the preapproval's back_url; MP requires it on
+        // preapproval_plan creation too (qzpay-mercadopago 2.5.0).
+        backUrl: urls.paymentMethodReturnUrl
     });
 
     const { subscription, checkoutUrl } = await createPaidSubscription({
@@ -976,7 +982,10 @@ export async function initiatePartnerMonthlySubscription(
         amountCentavos: monthlyPrice.unitAmount,
         currency: monthlyPrice.currency,
         billingInterval: 'monthly',
-        trialDays: 0
+        trialDays: 0,
+        // Same URL used below as the preapproval's back_url; MP requires it on
+        // preapproval_plan creation too (qzpay-mercadopago 2.5.0).
+        backUrl: urls.paymentMethodReturnUrl
     });
 
     // AC-7: shared `createPaidSubscription` helper — see the commerce flow above.
@@ -1274,7 +1283,10 @@ export async function initiatePaidAnnualSubscription(
         amountCentavos: annualPrice.unitAmount,
         currency: annualPrice.currency,
         billingInterval: 'annual',
-        trialDays: freeTrialDays ?? 0
+        trialDays: freeTrialDays ?? 0,
+        // Same URL used below as the preapproval's back_url; MP requires it on
+        // preapproval_plan creation too (qzpay-mercadopago 2.5.0).
+        backUrl: urls.successUrl
     });
 
     const { subscription, checkoutUrl } = await createPaidSubscription({
