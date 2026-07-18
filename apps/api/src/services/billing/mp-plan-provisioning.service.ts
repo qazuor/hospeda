@@ -66,6 +66,18 @@ export interface ResolveOrProvisionMpPlanInput {
     readonly currency: string;
     /** Human-readable plan name, used as the MP plan `reason` (dashboard label). */
     readonly planName: string;
+    /**
+     * Absolute `http(s)` return URL MercadoPago **requires** when creating a
+     * `preapproval_plan` (`POST /preapproval_plan`). Passed through to
+     * `QZPayCreatePriceInput.backUrl` (qzpay-mercadopago 2.5.0): the adapter needs
+     * either this per-call value or an adapter-level `defaultPlanBackUrl`, and
+     * rejects the call early — before hitting MercadoPago — when neither resolves
+     * to a valid absolute URL, instead of surfacing MP's opaque "Back url is
+     * required" 400. Hospeda does not configure `defaultPlanBackUrl`, so this
+     * required field is what guarantees the plan always gets one. It is the same
+     * URL the checkout later uses as the preapproval's `back_url`.
+     */
+    readonly backUrl: string;
 }
 
 /**
@@ -122,7 +134,10 @@ async function createMpPlan(input: ResolveOrProvisionMpPlanInput): Promise<strin
         billingInterval: toQZPayBillingInterval(input.billingInterval),
         intervalCount: 1,
         // `0` is falsy, so the adapter omits `free_trial` for the no-trial variant.
-        trialDays: input.trialDays
+        trialDays: input.trialDays,
+        // MercadoPago requires a `back_url` on preapproval_plan creation; qzpay
+        // fails fast (before the MP call) if it is absent or not absolute.
+        backUrl: input.backUrl
     };
     const reason = buildPlanReason(input);
     return input.adapter.prices.create(priceInput, reason);
@@ -156,7 +171,8 @@ async function createMpPlan(input: ResolveOrProvisionMpPlanInput): Promise<strin
  *   trialDays: 14,
  *   amountCentavos: monthlyPrice.unitAmount,
  *   currency: monthlyPrice.currency,
- *   planName: plan.name
+ *   planName: plan.name,
+ *   backUrl: urls.paymentMethodReturnUrl
  * });
  * ```
  */
@@ -266,6 +282,12 @@ export interface ResolveCheckoutMpPlanIdInput {
     readonly billingInterval: BillingIntervalLabel;
     /** Resolved free-trial days (`0` = no trial, base, or base + promo extension). */
     readonly trialDays: number;
+    /**
+     * Absolute `http(s)` return URL required to create the MercadoPago
+     * `preapproval_plan`. Callers pass the same URL that becomes the
+     * preapproval's `back_url` (the checkout success page).
+     */
+    readonly backUrl: string;
 }
 
 /**
@@ -301,7 +323,8 @@ export async function resolveCheckoutMpPlanId(
             trialDays: input.trialDays,
             amountCentavos: input.amountCentavos,
             currency: input.currency,
-            planName: input.planName
+            planName: input.planName,
+            backUrl: input.backUrl
         });
         return mpPreapprovalPlanId;
     } catch (err) {
