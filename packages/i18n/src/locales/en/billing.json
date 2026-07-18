@@ -223,6 +223,10 @@
             "currentPlan": "Current plan",
             "currentPlanAriaLabel": "This is your current plan"
         },
+        "monthlyEmailNotice": {
+            "title": "Before you continue",
+            "text": "You'll pay with the MercadoPago account linked to {{email}}. If your MercadoPago account uses a different email, you won't be able to complete the monthly payment."
+        },
         "promoApply": {
             "toggle": "Have a discount code?",
             "label": "Discount code",

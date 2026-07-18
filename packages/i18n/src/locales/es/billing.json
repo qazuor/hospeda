@@ -223,6 +223,10 @@
             "currentPlan": "Plan actual",
             "currentPlanAriaLabel": "Este es tu plan actual"
         },
+        "monthlyEmailNotice": {
+            "title": "Antes de continuar",
+            "text": "Vas a pagar con la cuenta de MercadoPago asociada a {{email}}. Si tu cuenta de MercadoPago usa otro correo, no vas a poder completar el pago mensual."
+        },
         "promoApply": {
             "toggle": "¿Tenés un código de descuento?",
             "label": "Código de descuento",
