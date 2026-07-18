@@ -54,7 +54,7 @@ const DEFAULT_RATING_LABELS: Record<RatingKey, string> = {
     cleanliness: 'Limpieza',
     hospitality: 'Hospitalidad',
     services: 'Servicios',
-    accuracy: 'Veracidad',
+    accuracy: 'Precisión',
     communication: 'Comunicación',
     location: 'Ubicación'
 };
@@ -548,7 +548,7 @@ export function ReviewSidebarCard({
                                     >
                                         {t(
                                             'review.form.errors.ratingRequired',
-                                            'Debes seleccionar una calificación'
+                                            'Calificá todas las categorías'
                                         )}
                                     </p>
                                 )}

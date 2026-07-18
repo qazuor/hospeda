@@ -14,7 +14,7 @@
             "cleanliness": "Limpieza",
             "hospitality": "Hospitalidad",
             "services": "Servicios",
-            "accuracy": "Exactitud",
+            "accuracy": "Precisión",
             "communication": "Comunicación",
             "location": "Ubicación"
         },
@@ -29,7 +29,7 @@
         "cancelButton": "Cancelar",
         "submitSuccess": "Tu reseña fue enviada con éxito",
         "errors": {
-            "ratingRequired": "Debes seleccionar una calificación",
+            "ratingRequired": "Calificá todas las categorías",
             "titleRequired": "El título es requerido",
             "titleMinLength": "El título debe tener al menos 3 caracteres",
             "contentRequired": "El comentario es requerido",
