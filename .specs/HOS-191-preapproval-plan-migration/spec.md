@@ -1,379 +1,190 @@
 ---
-title: Migrate card-first billing to MercadoPago preapproval_plan flow
+title: Card-first billing on MercadoPago preapproval_plan (share-link + PUT external_reference)
 linear: HOS-191
 statusSource: linear
 created: 2026-07-16
+updated: 2026-07-18
 type: fix
 areas:
   - billing
   - api
+  - web
   - db
 ---
 
-# Migrate card-first billing to MercadoPago preapproval_plan flow
+# Card-first billing on MercadoPago preapproval_plan (share-link + PUT external_reference)
+
+> **Revisión 2026-07-18 — approach corregido.** La versión original de esta spec
+> (y el PR #2354 ya mergeado) migró a `preapproval_plan` pero implementó el flujo
+> **equivocado**: crear el `preapproval` **server-side** pasando `preapproval_plan_id`.
+> MercadoPago rechaza ese request con `"card_token_id is required"` → **ningún
+> checkout pago funciona en prod hoy**. La investigación empírica del 2026-07-18
+> (28+ pruebas contra MP real) determinó el flujo correcto: **redirigir al share
+> link del plan** + linkear con **`PUT external_reference`** en el back_url.
+> Base técnica completa: [`docs/billing/mp-subscription-flow-research-2026-07-18.md`](../../docs/billing/mp-subscription-flow-research-2026-07-18.md).
 
 ## 1. Summary
 
-The card-first trial shipped by HOS-171 is broken in production: a first-time
-owner who reaches the MercadoPago checkout and pays with a **credit card**
-cannot start the trial — the payment fails with "No pudimos procesar tu pago"
-and the preapproval lands `cancelled` with `payment_method_id: null`.
+El trial card-first debe crear una suscripción de MercadoPago que:
 
-Root cause is confirmed: HOS-171 sends `free_trial` **inline in a direct
-`POST /preapproval`** (subscription without an associated plan). MercadoPago's
-hosted checkout cannot complete card authorization for a direct preapproval that
-carries `free_trial`. The **`preapproval_plan` flow** (create an MP plan with the
-`free_trial`, then subscribe via `preapproval_plan_id`) authorizes the same card
-correctly.
+1. **Autorice la tarjeta** (el `free_trial` inline en un `POST /preapproval` directo
+   rompe la autorización — confirmado A/B).
+2. **Difiera el cobro** por el trial (día 1 sin cobro).
+3. **Quede linkeada de forma confiable** al usuario local de Hospeda.
 
-This spec migrates **all** Hospeda subscriptions from the direct `/preapproval`
-model to the **`preapproval_plan`** model.
+El único flujo de MP que cumple (1) es el **`preapproval_plan`**: se crea un plan con
+`free_trial`, y el usuario se suscribe **entrando al share link hosted del plan**
+(`.../subscriptions/checkout?preapproval_plan_id=<id>`), donde MP colecta la tarjeta.
+**NO** se puede crear el `preapproval` server-side (MP exige `card_token_id`, que no
+tokenizamos por diseño/PCI). El linking se resuelve con `PUT /preapproval/{id}`
+seteando `external_reference` cuando el usuario vuelve al sitio.
 
 ## 2. Problem
 
-### 2.1 Symptom (prod)
+### 2.1 Síntoma actual en prod (bug del approach shippeado)
 
-Owner-plan checkout (`/suscriptores/planes` → "Empezar" → MP) with a credit card:
+Todo checkout pago falla: `POST /api/v1/protected/billing/subscriptions/start-paid` → 500,
+`error: "Create subscription - card_token_id is required"`. El código
+(`paid-subscription-create.ts` → qzpay `buildCreateBody`) hace `POST /preapproval` con
+`preapproval_plan_id` y sin token → MP lo rechaza (los 3 shapes probados: con `status:pending`,
+sin status, mínimo → todos 400).
 
-- Warning on the review screen: *"No pudimos acceder al detalle de cuotas
-  disponibles para tu tarjeta. Podés terminar tu compra en un pago."*
-- On confirm: *"Algo salió mal… No pudimos procesar tu pago"* → MP cancels the
-  preapproval.
-- The preapproval Hospeda created is well-formed (`transaction_amount: 15000`,
-  `frequency: 1 months`, `free_trial: {14 days, first_invoice_offset: 14}`,
-  `next_payment_date: +14d`) but ends `status: cancelled`, `payment_method_id:
-  null`, zero payments/authorized_payments — the card never got attached.
+### 2.2 Por qué falla el approach server-side
 
-### 2.2 Root cause — confirmed by prod A/B + code trace
+Con `preapproval_plan_id` seteado, MP **siempre** exige `card_token_id` + `status: authorized`
+(confirmado por doc oficial + 3 pruebas). No hay init_point propio del preapproval por esta vía.
+La **única** forma sin token es el **share link hosted del plan**.
 
-**A/B in prod (same Banco Galicia Visa Crédito, raw MP API preapprovals, only
-variable = how `free_trial` is sent):**
+### 2.3 El flujo inline (viejo) tampoco sirve
 
-| Flow | Cuotas warning | On confirm |
-| -- | -- | -- |
-| `POST /preapproval` + `free_trial` inline (Hospeda today) | shows | ❌ **fails** (2/2: real owner attempt + isolated test `1b1a854f…`) |
-| `preapproval_plan` (free_trial in the plan) → subscribe via `init_point` | shows | ✅ **approved** — "¡Listo! Ya te suscribiste", sub `authorized`, `payment_method_id: visa`, **$0** card validation, trial 14d (test `ffa0cfc4…`) |
+`POST /preapproval` inline (sin plan) con `free_trial` **crea** (201, init_point sin token) pero
+**la tarjeta no autoriza** ("No pudimos procesar tu pago"; preapproval `cancelled`,
+`payment_method_id: null`). Reproducido HOY con control (la misma tarjeta autorizó en el flujo
+plan minutos antes). No es rate-block ni la tarjeta: es el flujo inline+trial.
 
-Findings:
+## 3. Decisión: camino C (share link + PUT external_reference)
 
-1. The **cuotas warning is cosmetic** — it appears in *both* flows and with
-   *any* payment method (also "Dinero disponible"). It is not the blocker.
-2. The **actual blocker is the direct `/preapproval` + inline `free_trial`
-   flow.** The `preapproval_plan` flow authorizes the card correctly ($0
-   validation charge, no real charge, trial deferred 14 days).
-3. `payment_methods: {installments: 1, default_installments: 1}` does **not**
-   help — MP silently ignores it in `/preapproval` (it is a Checkout Pro
-   preference field, not a subscriptions field; the official MP Go SDK confirms
-   `/preapproval` has no `payment_methods`/`installments` field).
+| Camino | Autoriza tarjeta | Trial | Linking |
+|---|---|---|---|
+| A · inline + free_trial | ❌ | ✅ | ✅ (moot) |
+| B · inline + start_date | ❌ (= A) | ✅ | ✅ (moot) |
+| **C · plan + share link** | ✅ | ✅ | ✅ vía `PUT external_reference` |
 
-**Code trace (origin/staging, HOS-171 commit `5cc3c9d1c`):**
-`start-paid.ts` → `initiatePaidMonthlySubscription` (`subscription-checkout.service.ts`,
-`resolveCheckoutFreeTrialDays` = planTrialDays + promo extra) →
-`createPaidSubscription({ freeTrialDays })` (`paid-subscription-create.ts`) →
-`billing.subscriptions.create({ mode: 'paid', ...freeTrialDays })` (qzpay) →
-`@qazuor/qzpay-mercadopago` adapter `buildCreateBody` builds
-`auto_recurring.free_trial` on a direct `POST /preapproval`. There is **no MP
-plan today** — every subscription is an individual, ad-hoc preapproval built from
-the Hospeda commercial plan (`billing_plans`, DB-wins per HOS-39).
+**Se adopta C.** Es el único que autoriza con trial, deja el trial en manos de MP (menos
+lógica en Hospeda) y tiene linking robusto.
 
-### 2.3 Impact
+### 3.1 Comportamiento de MP confirmado (resumen — detalle en el MD de investigación)
 
-Launch-blocking for the card-first trial: every first-time owner paying with a
-credit card (the majority case in AR) cannot start their trial. There is no
-in-UI workaround ("Dinero disponible" also shows the warning; the real card
-attempt failed).
+- `POST /preapproval` + `preapproval_plan_id` → **siempre** pide `card_token_id`. La vía sin token = share link del plan.
+- El share link **ignora** `external_reference` como query param → el preapproval nace con `external_reference: null`.
+- **`PUT /preapproval/{id}` con `external_reference` funciona post-creación y persiste**, y es **libremente sobrescribible** (guard = Hospeda).
+- `payer_id` inestable; `payer_email` estable pero frágil (BETA-183).
+- El **back_url** devuelve `?preapproval_id=<id>`. El webhook `subscription_preapproval` (sobre fino, solo `data.id`) llega **server-to-server** aunque el user no vuelva.
+- **Trial**: MP otorga 1 trial por `(payer + plan)`. NO alcanza para "1 trial por customer de por vida" → Hospeda mantiene su guard global.
+- **Dunning nativo**: MP reintenta 4×/~10d y **auto-cancela** tras 3 cuotas fallidas (nunca pausa). No duplicar.
+- **Cambio de precio del plan NO retro-propaga** a subs existentes → aumento = mutar por-sub.
+- **address_pending** en la cuenta no bloquea cobros. Cadencia diaria/anual + trial: OK. `/preapproval/search` no filtra por `external_reference` ni muestra `free_trial` en list-view (usar GET individual).
 
-## 3. Goals
+## 4. Diseño técnico
 
-- **G-1** A trial-eligible owner completes the card-first checkout with a credit
-  card in prod, ending in an `authorized` MP subscription with the 14-day trial
-  and **no** immediate charge.
-- **G-2** The same works for the **annual** cadence (12-month plan + trial).
-- **G-3** A trial-ineligible owner (already used their one lifetime trial)
-  subscribes via a no-trial plan variant and is charged immediately.
-- **G-4** Admin price changes (HOS-39 commercial layer) stay authoritative and
-  propagate to the MP plan (and thus to associated subscriptions).
-- **G-5** Promo discounts (SPEC-262) keep working — mechanism decided by the
-  spike (§11 OQ-1).
-- **G-6** No regression to entitlements, limits, dunning, webhooks/polling
-  activation, cancel/reactivate, or the commercial (DB-wins) plan layer.
+### 4.1 Flujo de checkout — redirigir al share link (NO crear server-side)
 
-## 4. Non-goals
+`start-paid` (o el service de checkout) debe:
 
-- **NG-1** Not redesigning the commercial layer. `billing_plans` (DB-wins,
-  HOS-39) stays the source of truth for price/limits/entitlements/trialDays.
-- **NG-2** Not moving off the MP **hosted/redirect** checkout to an embedded
-  card-tokenization (MP.js/Bricks) integration. We stay on the redirect flow —
-  just plan-based instead of direct-preapproval-based. (Embedded tokenization is
-  a possible future alternative if plans prove insufficient, tracked separately.)
-- **NG-3** Not fixing the cosmetic cuotas warning itself (it does not block; see
-  OQ-5).
-- **NG-4** Not re-architecting HOS-159 (webhooks). This spec depends on webhook/
-  polling activation but does not change it.
+1. Resolver/provisionar el `preapproval_plan_id` correcto para `(commercialPlan × interval × trialDays)` — esto ya existe (`mp-plan-provisioning.service.ts`, con back_url por HOS-200).
+2. Crear un registro local **pending-checkout**: `{ localUserId, planId, mpPreapprovalPlanId, timestamp, nonce }`.
+3. **Devolver como `checkoutUrl` el share link** `https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=<mpPreapprovalPlanId>` — construido desde `billing_mp_plans.mpPreapprovalPlanId`.
+4. **Dejar de llamar** `billing.subscriptions.create` / `createPaidSubscription` para el path pago (es el `POST /preapproval` que falla). Eliminar también el guard `MISSING_PROVIDER_SUBSCRIPTION_ID` (no hay sub que crear aún).
 
-## 5. Current baseline
+### 4.2 Provisioning idempotente de planes
 
-- **Commercial layer (unchanged):** `billing_plans` table, `metadata` jsonb holds
-  `hasTrial`, `trialDays`, `slug`, `category`; `monthly_price_ars` /
-  `annual_price_ars` columns. DB-wins (HOS-39, admin-editable without deploy).
-  MP has **no** knowledge of these plans.
-- **Checkout (to change):** direct `POST /preapproval` with inline
-  `auto_recurring.free_trial`, `status: pending`, user redirected to the returned
-  `init_point`. Built in `@qazuor/qzpay-mercadopago` `buildCreateBody`, called via
-  `paid-subscription-create.ts` / `subscription-checkout.service.ts` /
-  `start-paid.ts`.
-- **Eligibility:** one trial per customer for life; guard at the checkout call
-  site (`hasPriorSubscription`). Trial days = planTrialDays + promo `extra_days`
-  (`resolveCheckoutFreeTrialDays`).
-- **Discounts (SPEC-262):** a discount mutates the **individual preapproval's**
-  `transaction_amount` (lower then restore), proven viable in the spike doc
-  `packages/service-core/src/services/billing/promo-code/docs/mp-preapproval-mutation-spike.md`.
-- **Activation:** `subscription-poll` cron + MP webhooks (HOS-159 — webhooks
-  still unverified in prod). State machine currently rejects `pending_provider →
-  cancelled` (see §10 R-6 / HOS-190 sibling).
-- **DB adapter:** `packages/db/src/billing/drizzle-adapter.ts` (qzpay Drizzle
-  storage). `billing_subscriptions.mp_subscription_id` stores the MP preapproval
-  id today.
+- Registro `billing_mp_plans` keyed por `(commercial_plan_id, billing_interval, trial_days)` (ya existe, HOS-191).
+- **MP no deduplica** → el resolver debe buscar-o-crear (idempotente) y nunca crear dos planes iguales.
+- Un plan por cada duración de trial (14/30/… para trial-extension por promo).
 
-## 6. Proposed design
+### 4.3 Handler del back_url (linking primario)
 
-### 6.1 Model: MP preapproval_plan per (commercial-plan × interval × trial-variant)
+Nueva ruta de retorno (`apps/web` o `apps/api`) que recibe `?preapproval_id=X` con el user **logueado**:
 
-Introduce **MP `preapproval_plan` objects** and reference them at subscription
-time. Because trial-eligibility is per-customer (not per-plan), each commercial
-plan+interval needs up to **two** MP plan variants:
+1. `GET /preapproval/X` server-side (nunca confiar en la URL).
+2. Verificar contra el pending-checkout del user (plan + timing) y/o `payer_email`.
+3. Si `external_reference` está **vacío** → `PUT /preapproval/X { external_reference: localUserId }`.
+4. Si ya tiene **otro** user → **rechazar + alertar** (guard anti-IDOR).
+5. Persistir el `mp_subscription_id` (= preapproval_id) en `billing_subscriptions`.
 
-- `<plan>-<interval>-trial` — carries `auto_recurring.free_trial` (for
-  trial-eligible customers of a `hasTrial` plan).
-- `<plan>-<interval>-notrial` — no `free_trial` (for trial-ineligible customers,
-  and for plans with `hasTrial: false`).
+### 4.4 Handler de webhook `subscription_preapproval` (confirmación + fallback)
 
-Approximate MP-plan set (owner tiers × {monthly, annual} × {trial, notrial} +
-tourist × {monthly, annual} × notrial + commerce/partner notrial monthly +
-owner-test-daily trial):
+- Validar `x-signature`.
+- `GET /preapproval/{data.id}` → **ramificar por `status`** (NO por tipo de evento; create y cancel usan el mismo tipo): `authorized`/`trialing` → activar/derivar; `cancelled` → cancelar local; `paused` → pausar.
+- **Caso "no vuelve"**: si al llegar el webhook la sub aún no está linkeada (no hubo back_url), reconciliar por pending-checkout (plan + timing) + `payer_email`. Ambiguos (multi-user o email distinto) → marcar para **reconciliación asistida**, nunca adivinar.
+- `subscription_authorized_payment` → registrar en `billing_payments`, poblar `mp_customer_id`, derivar `trialing → active`.
+- Idempotencia: webhook repetido no duplica.
 
-- owner-basico/pro/premium × {monthly, annual} × {trial, notrial} → 12
-- tourist-plus/vip × {monthly, annual} × notrial → 4
-- commerce-listing, partner-listing → notrial monthly → 2
-- owner-test-daily → trial (1d) monthly → 1
+### 4.5 Guard de trial — dos capas
 
-≈ **19 MP plans** — managed programmatically, not by hand.
+- **MP** enforza por `(payer+plan)` (nativo, backstop).
+- **Hospeda** DEBE mantener su guard **global por customer** (ya en código, HOS-110/171, en el call-site del checkout) — sin esto un user haría trial-hopping entre planes distintos. El checkout resuelve `freeTrialDays` (0 si no elegible → plan sin trial → share link del plan notrial; N si elegible → plan con trial).
 
-### 6.2 Plan registry (DB)
+### 4.6 Dunning — reconciliar con el nativo de MP
 
-Store the MP `preapproval_plan_id` per variant so we resolve it at checkout and
-keep it in sync with the commercial layer. Options (decide in impl):
+- **No implementar** un loop propio de reintentos: MP ya reintenta 4×/~10d y auto-cancela tras 3 cuotas.
+- Reconciliar el grace de 7d (`past_due`) de Hospeda con la ventana de ~10d de MP para no producir estados contradictorios.
+- El backstop de Hospeda debe reaccionar al webhook de cancelación de MP, no anticiparse.
+- Rate-limits: honrar `Retry-After` + backoff con jitter (MP no publica ceiling).
 
-- **6.2.a** New table `billing_mp_plans` (`commercial_plan_id`, `billing_interval`,
-  `trial_variant`, `mp_preapproval_plan_id`, `amount_ars`, `trial_days`,
-  `status`, timestamps). One row per MP plan variant. **Recommended** — clean,
-  queryable, decoupled from the commercial `metadata` blob.
-- **6.2.b** Extend `billing_plans.metadata` with a `mpPlanIds` map. Lighter but
-  overloads the commercial blob and complicates interval/variant fan-out.
+### 4.7 Aumento de precio
 
-Idempotent **sync/provision** step (deploy hook or admin action): for each
-active commercial plan × interval × required variant, ensure an MP plan exists
-with the current price + trial days; create if missing, `PUT` if the amount/trial
-drifted, record the id. Never create per-customer plans.
+- `PUT /preapproval_plan` cambia el precio **solo para nuevas subs**. Un aumento a suscriptores actuales = job que muta `transaction_amount` **por-sub** (`PUT /preapproval/{id}`), no solo el plan.
 
-### 6.3 Checkout flow (redirect, plan-based)
+## 5. Cambios de código por área
 
-1. `start-paid` resolves: commercial plan, interval, and trial-eligibility →
-   picks the `trial` or `notrial` MP plan variant → looks up its
-   `mp_preapproval_plan_id` from the registry.
-2. Create the subscription referencing `preapproval_plan_id` (do **not** re-send
-   `auto_recurring`/`free_trial`/amount — inherited from the plan). Redirect the
-   user to the subscription/plan `init_point`.
-3. User authorizes the card on MP's hosted page → MP creates the subscription
-   (`authorized`, `payment_method_id` set, $0 validation, first charge deferred to
-   trial end for trial variants).
-4. Webhook/poll activates the local sub → `TRIALING` (trial variant) or `active`
-   (notrial). (HOS-159 dependency.)
+1. **`apps/api/src/services/billing/paid-subscription-create.ts`** — dejar de llamar `billing.subscriptions.create` (el `POST /preapproval` que tira card_token). Devolver el share link. Quitar guard `MISSING_PROVIDER_SUBSCRIPTION_ID`. Crear pending-checkout local. (Revierte el core del approach de PR #2354.)
+2. **`apps/api/src/services/billing/subscription-checkout.service.ts`** — el resolver de checkout construye/retorna el share link; ya tiene el `mpPreapprovalPlanId` de `resolveCheckoutMpPlanId`.
+3. **`apps/api/src/services/billing/mp-plan-provisioning.service.ts`** — mantener (provisioning idempotente + back_url OK). Verificar que el share link se construya del `mpPreapprovalPlanId`.
+4. **Nueva ruta back_url handler** (`apps/web` return route + `apps/api` linking endpoint) — GET + PUT external_reference + IDOR guard (§4.3).
+5. **`apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts`** — ramificar por `status` del GET; reconciliación no-vuelve por pending-checkout + payer_email; fallback asistido (§4.4).
+6. **`packages/db`** — tabla/registro **pending-checkout** (`{localUserId, planId, mpPreapprovalPlanId, timestamp, nonce}`); confirmar `billing_mp_plans` key `(plan, interval, trial_days)`.
+7. **Guard de trial global** (`subscription-checkout` call-site) — mantener/verificar (§4.5). **Dunning cron** — reconciliar con MP nativo (§4.6). **Job de aumento de precio** por-sub (§4.7).
+8. **qzpay** (`@qazuor/qzpay-mercadopago`) — el `buildCreateBody` server-side ya no se usa para el path pago; evaluar si hace falta un cambio de contrato o si el fix es 100% Hospeda-side (preferible). No bump si no es necesario.
 
-### 6.4 qzpay adapter changes (`@qazuor/qzpay-mercadopago`)
+## 6. Tasks (fases)
 
-**Adapter-surface audit (2026-07-16) — the change is far smaller than first
-assumed.** `preapproval_plan` management is **already implemented** in qzpay:
+- **F1 · Checkout redirect**: share link en vez de `POST /preapproval` server-side; pending-checkout; quitar guard MISSING_PROVIDER. → desbloquea el checkout en prod.
+- **F2 · Linking**: back_url handler (GET + PUT external_reference + IDOR guard) + persistir mp_subscription_id.
+- **F3 · Webhook**: ramificar por status; reconciliación no-vuelve; authorized_payment → billing_payments + mp_customer_id; idempotencia; x-signature.
+- **F4 · Trial guard global** (verificar) + **F5 · Dunning** (reconciliar con MP nativo) + **F6 · Aumento de precio por-sub**.
+- **F7 · Tests** (unit + integration con stub MP alineado al flujo real) + smoke staging/prod.
 
-- `packages/mercadopago/src/adapters/price.adapter.ts`
-  (`QZPayMercadoPagoPriceAdapter`) already wraps MP's `PreApprovalPlan` SDK class:
-  `create()` = `POST /preapproval_plan` (with `free_trial` support), `archive()` =
-  `PUT /preapproval_plan/{id}` (status inactive), `retrieve()` =
-  `GET /preapproval_plan/{id}`. It is exposed under the generic **`prices`**
-  adapter slot (`QZPayPaymentPriceAdapter`), just not wired into subscription
-  creation.
-- `packages/core/src/billing.ts` **already resolves**
-  `price.providerPriceIds[provider]` and forwards it as
-  `QZPayProviderCreateSubscriptionInput.providerPriceId` into
-  `subscriptions.create()`.
-- The **only gap**: `subscription.adapter.ts::buildCreateBody` (lines ~172-209)
-  **ignores** `providerPriceId` and builds `auto_recurring` inline.
+## 7. Criterios de aceptación
 
-So the real adapter change is a **single branch in `buildCreateBody`**:
+**Validados en prod (2026-07-18):**
 
-- If `providerInput.providerPriceId` is present → build a plan-based body
-  `{ preapproval_plan_id: providerPriceId, payer_email, external_reference,
-  reason, back_url }` with **no** `auto_recurring` (amount/interval/`free_trial`
-  inherited from the plan) and **no** `card_token`/`status` → MP returns an
-  `init_point` for the redirect authorization (the SP-1-validated flow).
-- Else → keep today's inline `/preapproval` body as fallback.
+- ✅ Checkout autoriza la tarjeta (flujo plan).
+- ✅ Trial difiere el cobro ($0 día 1).
+- ✅ `PUT external_reference` linkea; webhook llega aunque el user no vuelva.
+- ✅ Cancelación bidireccional (Hospeda→MP y MP→Hospeda).
+- ✅ `subscription_authorized_payment` en un cobro real; `address_pending` no bloquea; refund OK.
+- ✅ Regla de trial `(payer+plan)` + necesidad del guard global de Hospeda.
 
-`update()` already supports `input.transactionAmount` (the SP-1 discount
-mutation), and `cancel/pause/resume/retrieve` are unchanged. **`core` likely
-needs no change** — the contract already carries `providerPriceId`. This stays an
-**external package** change (changesets workflow; version `2.2.1` → minor bump,
-additive/non-breaking; Hospeda re-pins). Tests: extend
-`packages/mercadopago/test/subscription.adapter.test.ts` (its `buildCreateInput`
-fixture already includes a `providerPriceId`); `PreApprovalPlan` is already mocked
-in `test/helpers/mercadopago-mocks.ts`. Check `test/sandbox/
-mercadopago-sandbox.test.ts` uses mocks (not a live MP call) before editing.
+**A cumplir en la implementación:**
 
-### 6.5 Price changes
+- Un owner elegible completa el trial y queda linkeado a su user local (back_url y también si NO vuelve).
+- Un intento de IDOR (preapproval_id ajeno) es rechazado.
+- El cobro día-N pasa a `active` + registra `billing_payments` + puebla `mp_customer_id`.
+- El dunning de Hospeda no pelea con el nativo de MP.
+- El aumento de precio afecta subs existentes solo vía mutación por-sub.
 
-Admin price edit (HOS-39, DB-wins) must additionally `PUT /preapproval_plan/{id}`
-so MP and its associated subs get the new amount. Per MP docs, amount changes on
-a plan sync to associated subscriptions. Design the write path so the DB and the
-MP plan cannot silently drift (update both in one operation; reconcile on the
-provision sync as a backstop). See OQ-6 for PUT-in-place vs new-plan-version.
+## 8. Riesgos y verificaciones empíricas pendientes (no bloqueantes)
 
-### 6.6 Discounts (SPEC-262) — spike resolved: per-sub mutation (GO)
+- 🕐 **Cobro día-N**: canario `7a9e6a99` cobra 2026-07-19 ~16:13 → verificar el flujo trial→cobro completo.
+- ⏳ **Status del preapproval tras rechazo de tarjeta** (T2.2) — necesita una tarjeta que falle. Best guess: queda `pending`.
+- ⏳ **¿El dunning nativo (4 retries / 3 strikes) aplica igual a `preapproval_plan`?** — la doc es del flujo sin-plan; verificar en su momento.
+- ⏳ **¿El descuento (mutación de amount) aplica al ciclo actual o al próximo?** (T9.2) — verificar con un cobro.
+- **Caso residual de linking**: no-vuelve + email distinto (BETA-183) → reconciliación asistida (sin pérdida de plata).
+- **Edge case**: botón "volver a suscribirme" en la UI de cancelación de MP (reactivación MP-side) → captar por webhook. Baja prioridad.
 
-Owner decision was **spike first**. **SP-1 ran in prod (2026-07-16) and passed:**
-a plan-based subscription's individual `transaction_amount` **can** be mutated via
-`PUT /preapproval/{id}`, in both directions, without unlinking it from its plan.
+## 9. Referencias
 
-Evidence (raw MP API, prod token): created a `preapproval_plan` ($15000/mo, trial
-14d), authorized a sub from its `init_point` with a real Visa (`authorized`,
-`payment_method_id: visa`, $0 validation). Then `PUT /preapproval/{sub}` amount
-`15000 → 12000` = **HTTP 200**, sub stayed `authorized`, still carried
-`preapproval_plan_id`, `free_trial` preserved; GET confirmed `12000` persisted;
-restore `12000 → 15000` = **HTTP 200**. Sub + plan cancelled afterward.
-
-**Design (settled):** discounts stay **per-sub**. Subscribe via
-`preapproval_plan_id`, then mutate the individual sub's `transaction_amount` for
-the discounted cycles (lower on apply, restore when the countdown exhausts). The
-existing SPEC-262 renewal-countdown logic (`resolveRenewalPromoEffect`,
-`promo_effect_remaining_cycles`) carries over almost unchanged — the only
-difference from today is that the sub being mutated was born from a plan instead
-of a direct preapproval, which SP-1 proved MP treats identically for this write.
-
-**Not needed:** SP-2 (MP native coupon, OQ-2) and discount-plan-variant
-proliferation are both off the table — kept only as historical fallbacks.
-
-## 7. Data model / contracts
-
-- **New:** `billing_mp_plans` (see 6.2.a) — or `billing_plans.metadata.mpPlanIds`
-  (6.2.b). Decide in impl. Migration via the structural carril
-  (`pnpm db:generate` + `db:migrate`) if a table; seed/data-migration for any
-  seeded plan-id rows (dual-write rule).
-- **Unchanged:** `billing_plans`, `billing_subscriptions` (still stores the MP
-  subscription id in `mp_subscription_id`; note it now points at a
-  plan-associated subscription, semantics unchanged for our purposes),
-  entitlements/limits.
-- **MP endpoints used:** `POST /preapproval_plan`, `GET /preapproval_plan/{id}`,
-  `PUT /preapproval_plan/{id}`, `POST /preapproval` (with `preapproval_plan_id`),
-  `GET /preapproval/{id}`, `PUT /preapproval/{id}` (cancel; and amount-mutate iff
-  SP-1 passes).
-- **qzpay contract:** plan-management already exists (`prices` adapter =
-  `preapproval_plan` CRUD) and `providerPriceId` already flows to
-  `subscriptions.create()`. The change is the `buildCreateBody` branch in
-  `@qazuor/qzpay-mercadopago` only (§6.4); `@qazuor/qzpay-core` likely untouched.
-
-## 8. UX / UI behavior
-
-- Web checkout unchanged from the user's side (still "Empezar" → redirect to MP).
-  MP's hosted screen for the plan flow reads **"Activar prueba gratis"** and
-  shows an extra fallback toggle *"usar dinero disponible cuando no sea posible
-  cobrar de la tarjeta"* — nicer than the direct flow's bare "Confirmar".
-- The cosmetic cuotas warning still appears on MP's side (OQ-5); it does not
-  block. Consider a short pre-checkout note or accept as-is.
-- Success/back URL, poller, and "Mi Suscripción" states unchanged.
-
-## 9. Acceptance criteria
-
-- **AC-1** Trial-eligible owner completes card-first checkout with a **credit
-  card** in prod (real MP): MP sub `authorized`, `payment_method_id` set, $0
-  validation, no real charge, local sub `TRIALING`, `next_payment_date` = +14d.
-- **AC-2** Annual trial-eligible owner: same, on a 12-month plan variant.
-- **AC-3** Trial-ineligible owner subscribes via the `notrial` plan variant →
-  card authorized, first charge immediate, local sub `active`.
-- **AC-4** Admin changes a plan price → `PUT /preapproval_plan` → new checkouts
-  use the new amount; the DB and MP plan do not drift.
-- **AC-5** Promo discount applies correctly per the SP-1 outcome (per-sub mutate
-  or fallback), verified end-to-end.
-- **AC-6** Webhook/poll activates the plan-based sub; `billing_payments` records
-  the first real charge at trial end (HOS-159 must be resolved for the webhook
-  path).
-- **AC-7** Staging smoke against the real MP sandbox passes for the plan flow
-  (per the billing smoke-staging gate).
-- **AC-8** No regression: cancel/reactivate, dunning, entitlements, limits, and
-  the commercial (DB-wins) layer behave as before.
-
-## 10. Risks
-
-- **R-1** qzpay adapter change is in an **external package** — version bump +
-  coordination; the plan-management surface must be designed there.
-- **R-2** Plan proliferation (~19 MP plans) — needs idempotent provisioning and a
-  registry; risk of DB↔MP drift.
-- **R-3** Price-change sync (DB ↔ MP plan) — a missed `PUT` silently diverges
-  the charged amount from the advertised one.
-- **R-4** Discount reconciliation depends on SP-1; if per-sub mutation fails on
-  plan-based subs, the fallback (discount plan variants or MP coupons) is a
-  larger change.
-- **R-5** Trial extension (mutating a live trial) — HOS-171 already flagged this
-  as unverified; with plans it is even less obvious. Carried as OQ-3.
-- **R-6** State-machine gap: `pending_provider → cancelled` is rejected today, so
-  a failed/cancelled MP sub leaves the local sub stuck erroring every poll (seen
-  during this investigation). Must be handled alongside — see sibling HOS-189/
-  HOS-190 area; include a fix or link.
-- **R-7** Existing direct-preapproval subs: card-first trial never succeeded in
-  prod (all attempts failed), so there are ~no trial subs to migrate; existing
-  non-trial direct subs keep working. Confirm no bulk migration is required
-  before assuming it.
-
-## 11. Open questions
-
-- **OQ-1 (SP-1, spike) — RESOLVED 2026-07-16: YES.** A plan-based sub's individual
-  `transaction_amount` **can** be mutated via `PUT /preapproval/{id}` (both
-  directions, sub stays `authorized` + linked to its plan; HTTP 200). Prod A/B
-  sealed. Discount design settled → per-sub mutation (§6.6). No fallback needed.
-- **OQ-2 (SP-2) — moot (SP-1 passed).** MP's native coupon path is unneeded; kept
-  only as a historical fallback had per-sub mutation failed.
-- **OQ-3:** How to extend a **live** trial on a plan-based sub (HOS-171 carried
-  risk). Possibly out of scope for v1 (admin-only edge).
-- **OQ-4:** Plan registry shape — `billing_mp_plans` table (6.2.a, recommended)
-  vs `billing_plans.metadata` (6.2.b); and provisioning trigger (deploy hook vs
-  admin action vs lazy-on-first-use).
-- **OQ-5:** The cosmetic cuotas warning — accept, add a pre-checkout note, or
-  open an MP support ticket. Non-blocking.
-- **OQ-6:** Price change via `PUT /preapproval_plan/{id}` in place vs creating a
-  new plan version and migrating subs (to freeze old customers on old price).
-  Interacts with the commercial-layer price-change strategy.
-- **OQ-7:** owner-test-daily is `active: false` and priced $1 (not $15) in prod —
-  align it as the recurring canary as part of provisioning, or leave off.
-
-## 12. Implementation notes
-
-- **Verification method that worked here:** raw MP API calls (token via
-  `hops --target=prod exec api -- printenv HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN`) +
-  driving the hosted checkout in a browser as the payer. `preapproval_plan`
-  init_point form: `https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=<id>`.
-  A `$0` payment on the sub = card validation (MP refunds it), not a charge.
-- **Do NOT** send `payment_methods`/`installments` to `/preapproval` — ignored.
-- Keep the commercial DB layer authoritative; the MP plan is a **projection** of
-  it, kept in sync — never the other way around.
-- Coordinate with the sibling reset/robustness issues found in the same smoke:
-  HOS-188 (`billing-test-reset` deletes `billing_customers`), HOS-189
-  (`start-paid` should `ensureCustomerExists`), and the `pending_provider →
-  cancelled` state-machine gap (R-6).
-- Smoke-staging gate applies (billing core). Add
-  `status-needs-smoke-staging` (+ `status-needs-smoke-prod` for go-live) before
-  Done.
-
-## 13. Linear
-
-Canonical tracking:
-HOS-191
-
-Related: HOS-171 (introduced the regression), HOS-188, HOS-189, SPEC-262
-(promo-discount mutation mechanism).
+- **Base técnica completa**: [`docs/billing/mp-subscription-flow-research-2026-07-18.md`](../../docs/billing/mp-subscription-flow-research-2026-07-18.md) (3 caminos, hallazgos MP, diseño de linking, checklist, objetos de prueba).
+- Código actual: `paid-subscription-create.ts`, `subscription-checkout.service.ts`, `mp-plan-provisioning.service.ts`, `routes/webhooks/mercadopago/subscription-logic.ts`, `packages/db` `billing_mp_plan.dbschema.ts`.
+- PRs previos de HOS-191: hospeda #2354 (approach a corregir), qzpay #49/#51.
