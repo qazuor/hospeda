@@ -50,6 +50,7 @@ import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { idempotencyKeyMiddleware } from '../../middlewares/idempotency-key';
 import { mapSubscriptionCheckoutErrorToHttp } from '../../services/billing/subscription-checkout-error-http';
+import { BillingCustomerSyncService } from '../../services/billing-customer-sync';
 import {
     initiatePaidAnnualSubscription,
     initiatePaidMonthlySubscription,
@@ -114,14 +115,6 @@ export const handleStartPaidSubscription = async (
         });
     }
 
-    const billingCustomerId = c.get('billingCustomerId');
-
-    if (!billingCustomerId) {
-        throw new HTTPException(400, {
-            message: 'No billing account found'
-        });
-    }
-
     const actor = getActorFromContext(c);
 
     const billing = getQZPayBilling();
@@ -129,6 +122,40 @@ export const handleStartPaidSubscription = async (
     if (!billing) {
         throw new HTTPException(503, {
             message: 'Billing service is not available'
+        });
+    }
+
+    // HOS-189: the billing_customers row is normally created once at signup
+    // (the user.create.after hook), and billingCustomerMiddleware only looks it
+    // up — it deliberately never creates it. If the row is missing for any
+    // reason (accidental deletion, a billing-test-reset, a signup-hook race, a
+    // migration), fail-CLOSED with an opaque 400 would leave checkout dead. So
+    // self-heal here: ensure the customer exists before creating the preapproval,
+    // exactly as HOS-171 specified for this branch ("ensureCustomerExists
+    // first"). Idempotent — a no-op when the row already exists (returns the
+    // existing id). throwOnError:false keeps a sync failure from masking the real
+    // outcome; the null-guard below still surfaces the 400 if it truly cannot be
+    // resolved.
+    let billingCustomerId = c.get('billingCustomerId');
+
+    if (!billingCustomerId && actor.email) {
+        const syncService = new BillingCustomerSyncService(billing, { throwOnError: false });
+        billingCustomerId = await syncService.ensureCustomerExists({
+            userId: actor.id,
+            email: actor.email,
+            name: actor.name
+        });
+        if (billingCustomerId) {
+            apiLogger.info(
+                { userId: actor.id, customerId: billingCustomerId },
+                'start-paid: billing customer was missing and has been ensured on demand (HOS-189)'
+            );
+        }
+    }
+
+    if (!billingCustomerId) {
+        throw new HTTPException(400, {
+            message: 'No billing account found'
         });
     }
 
