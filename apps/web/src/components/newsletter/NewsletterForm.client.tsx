@@ -12,8 +12,10 @@
  *
  * Guest path (feat/newsletter-polish): the visitor types their email into the
  * input and clicks submit; the form POSTs to /api/v1/public/newsletter/subscribe
- * and redirects to `/{locale}/newsletter/confirma-tu-email?email=<their-email>`
- * regardless of pending_verification / already_pending — both responses mean
+ * and redirects to `/{locale}/newsletter/confirma-tu-email/?email=<their-email>`
+ * (trailing slash before the query string is mandatory — Astro's
+ * `trailingSlash: 'always'` 404s otherwise) regardless of
+ * pending_verification / already_pending — both responses mean
  * the same thing for UX ("we sent an email, go check"). No AuthRequiredPopover,
  * no login gate.
  *
@@ -41,6 +43,7 @@ import { trackEvent } from '@/lib/analytics/posthog-client';
 import { AUTH_ME_CACHE_KEY } from '@/lib/auth-cache';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildUrlWithParams } from '@/lib/urls';
 import styles from './NewsletterForm.module.css';
 
 // ---------------------------------------------------------------------------
@@ -466,7 +469,15 @@ export function NewsletterForm({
                     auth: false
                 });
                 const trimmed = guestEmail.trim();
-                const target = `/${locale}/newsletter/confirma-tu-email?email=${encodeURIComponent(trimmed)}`;
+                // Use buildUrlWithParams so the confirmation URL keeps its
+                // trailing slash before the query string. Astro runs with
+                // `trailingSlash: 'always'`, so a slashless path 404s (the guest
+                // subscribed successfully but landed on a 404 — HOS-190/BETA-191).
+                const target = buildUrlWithParams({
+                    locale,
+                    path: 'newsletter/confirma-tu-email',
+                    params: { email: trimmed }
+                });
                 if (typeof window !== 'undefined') {
                     window.location.assign(target);
                 }
