@@ -12,9 +12,14 @@
  * addon grants, etc. Also resets the entitlement-driven `isFeatured` /
  * `featuredByEntitlement` flags on any accommodation the user owns.
  *
+ * The `billing_customers` shell is PRESERVED on a plain reset (HOS-202):
+ * it is created once at signup and never recreated for an existing user, so
+ * deleting it would leave the user unable to checkout ("No billing account
+ * found"). It is removed only together with the user via `--delete-user`.
+ *
  * With `--delete-user` also removes the Better Auth user row (cascades
- * to `accounts` and `sessions` via FK), giving a fully fresh signup
- * surface for the next smoke.
+ * to `accounts` and `sessions` via FK), and the `billing_customers` shell,
+ * giving a fully fresh signup surface for the next smoke.
  *
  * Safety model (all targets, including prod):
  *   - **Dry-run by default.** Without `--execute` the command only
@@ -100,7 +105,12 @@ What gets wiped (per linked customer):
   - billing_notification_log
   - billing_audit_logs (polymorphic entity_type/entity_id rows for the
     customer itself and for its subscriptions, payments and invoices)
-  - billing_customers (the customer row itself)
+
+Preserved by default (HOS-202):
+  - billing_customers (the customer shell). It is created ONCE at signup
+    and never recreated for an existing user, so removing it would leave
+    the user unable to checkout ("No billing account found"). It is only
+    deleted together with the user when --delete-user is passed.
 
 Also reset (independent of the customer row — scoped by accommodation
 ownership, so it applies even when there is no linked billing customer):
@@ -275,7 +285,9 @@ export async function billingTestReset(argv: ReadonlyArray<string>): Promise<voi
     });
 
     const mode = resolveResetMode(parsed.execute);
-    process.stdout.write(`\nMode:      ${mode === 'preview' ? 'DRY RUN (pass --execute to write)' : 'EXECUTE'}\n`);
+    process.stdout.write(
+        `\nMode:      ${mode === 'preview' ? 'DRY RUN (pass --execute to write)' : 'EXECUTE'}\n`
+    );
     process.stdout.write(`Target:    ${parsed.target}\n`);
     process.stdout.write(`User:      ${discovered.userId} (${discovered.userEmail})\n`);
     process.stdout.write(`Customer:  ${discovered.customerId ?? '<none>'}\n`);
@@ -288,7 +300,13 @@ export async function billingTestReset(argv: ReadonlyArray<string>): Promise<voi
         }
     }
     if (discovered.customerId) {
-        process.stdout.write(`  ${'billing_customers'.padEnd(40)} 1\n`);
+        // HOS-202: the customer shell is only removed together with the user.
+        // A plain reset preserves it so the user can still checkout afterwards.
+        process.stdout.write(
+            parsed.deleteUser
+                ? `  ${'billing_customers'.padEnd(40)} 1\n`
+                : `  ${'billing_customers'.padEnd(40)} preserved (shell kept — pass --delete-user to remove)\n`
+        );
     }
     if (parsed.deleteUser) {
         process.stdout.write(`  ${'users'.padEnd(40)} 1 (cascades to accounts + sessions)\n`);
@@ -298,7 +316,9 @@ export async function billingTestReset(argv: ReadonlyArray<string>): Promise<voi
     );
 
     if (mode === 'preview') {
-        log.info('Dry run complete. No changes were made. Pass --execute to run the reset for real.');
+        log.info(
+            'Dry run complete. No changes were made. Pass --execute to run the reset for real.'
+        );
         return;
     }
 

@@ -63,13 +63,21 @@ describe('buildResetTransaction(params)', () => {
 
     describe('customerId is null (no linked billing_customers row)', () => {
         it('emits no billing_* deletes', () => {
-            const sql = buildResetTransaction({ customerId: null, userId: USER_ID, deleteUser: false });
+            const sql = buildResetTransaction({
+                customerId: null,
+                userId: USER_ID,
+                deleteUser: false
+            });
             expect(sql).not.toContain('billing_subscriptions');
             expect(sql).not.toContain('billing_customers');
         });
 
         it('still emits the accommodations UPDATE scoped by owner_id', () => {
-            const sql = buildResetTransaction({ customerId: null, userId: USER_ID, deleteUser: false });
+            const sql = buildResetTransaction({
+                customerId: null,
+                userId: USER_ID,
+                deleteUser: false
+            });
             expect(sql).toContain(
                 `UPDATE accommodations SET featured_by_entitlement = false, is_featured = false`
             );
@@ -114,7 +122,7 @@ describe('buildResetTransaction(params)', () => {
 
         it('deletes commerce_listing_subscriptions before billing_subscriptions', () => {
             const childIdx = lineIndex(sql, 'DELETE FROM commerce_listing_subscriptions');
-            const parentIdx = lineIndex(sql, "DELETE FROM billing_subscriptions WHERE customer_id");
+            const parentIdx = lineIndex(sql, 'DELETE FROM billing_subscriptions WHERE customer_id');
             expect(childIdx).toBeGreaterThan(-1);
             expect(parentIdx).toBeGreaterThan(-1);
             expect(childIdx).toBeLessThan(parentIdx);
@@ -128,17 +136,32 @@ describe('buildResetTransaction(params)', () => {
             expect(childIdx).toBeLessThan(parentIdx);
         });
 
-        it('deletes billing_customers last among the customer-scoped deletes', () => {
-            const customersIdx = lineIndex(sql, "DELETE FROM billing_customers WHERE id");
-            const subsIdx = lineIndex(sql, "DELETE FROM billing_subscriptions WHERE customer_id");
-            const addonPurchasesIdx = lineIndex(sql, 'DELETE FROM billing_addon_purchases');
+        it('deletes billing_customers last among the customer-scoped deletes (with --delete-user)', () => {
+            // HOS-202: billing_customers is only deleted when the whole user is
+            // removed, so this ordering only applies with deleteUser: true.
+            const sqlWithUser = buildResetTransaction({
+                customerId: CUSTOMER_ID,
+                userId: USER_ID,
+                deleteUser: true
+            });
+            const customersIdx = lineIndex(sqlWithUser, 'DELETE FROM billing_customers WHERE id');
+            const subsIdx = lineIndex(
+                sqlWithUser,
+                'DELETE FROM billing_subscriptions WHERE customer_id'
+            );
+            const addonPurchasesIdx = lineIndex(sqlWithUser, 'DELETE FROM billing_addon_purchases');
             expect(customersIdx).toBeGreaterThan(subsIdx);
             expect(customersIdx).toBeGreaterThan(addonPurchasesIdx);
         });
 
-        it('runs the accommodations UPDATE after billing_customers is deleted', () => {
-            const customersIdx = lineIndex(sql, "DELETE FROM billing_customers WHERE id");
-            const accommodationsIdx = lineIndex(sql, 'UPDATE accommodations SET');
+        it('runs the accommodations UPDATE after billing_customers is deleted (with --delete-user)', () => {
+            const sqlWithUser = buildResetTransaction({
+                customerId: CUSTOMER_ID,
+                userId: USER_ID,
+                deleteUser: true
+            });
+            const customersIdx = lineIndex(sqlWithUser, 'DELETE FROM billing_customers WHERE id');
+            const accommodationsIdx = lineIndex(sqlWithUser, 'UPDATE accommodations SET');
             expect(accommodationsIdx).toBeGreaterThan(customersIdx);
         });
     });
@@ -167,7 +190,7 @@ describe('buildResetTransaction(params)', () => {
             // billing_usage_records has no customer_id column; it is removed
             // via ON DELETE cascade when billing_subscriptions rows go.
             expect(sql).not.toContain('DELETE FROM billing_usage_records');
-            expect(sql).not.toContain("billing_usage_records WHERE customer_id");
+            expect(sql).not.toContain('billing_usage_records WHERE customer_id');
         });
 
         it('W1: scopes billing_audit_logs by customer + child subscription/payment/invoice ids', () => {
@@ -203,8 +226,9 @@ describe('buildResetTransaction(params)', () => {
             const previewSql = buildCountAffectedQuery(CUSTOMER_ID);
             const counted = countedTables(previewSql);
             const deleted = deletedTables(sql);
-            // billing_customers is deleted last but shown separately in the
-            // preview (always exactly one), so exclude it from the compare.
+            // billing_customers is not among the customer-scoped deletes on a
+            // plain reset (the shell is preserved — HOS-202) and is shown
+            // separately in the preview, so exclude it from the compare either way.
             deleted.delete('billing_customers');
             expect([...counted].sort()).toEqual([...deleted].sort());
         });
@@ -231,8 +255,39 @@ describe('buildResetTransaction(params)', () => {
         });
     });
 
+    describe('HOS-202: billing_customers shell preservation', () => {
+        it('preserves the billing_customers shell on a plain reset (no --delete-user)', () => {
+            const sql = buildResetTransaction({
+                customerId: CUSTOMER_ID,
+                userId: USER_ID,
+                deleteUser: false
+            });
+            // The shell is created once at signup and never recreated, so a
+            // plain reset must keep it or the user cannot checkout afterwards.
+            expect(sql).not.toContain('DELETE FROM billing_customers');
+            // The transactional child tables are still purged.
+            expect(sql).toContain(
+                `DELETE FROM billing_subscriptions WHERE customer_id = '${CUSTOMER_ID}';`
+            );
+        });
+
+        it('deletes the billing_customers shell only when --delete-user is set', () => {
+            const sql = buildResetTransaction({
+                customerId: CUSTOMER_ID,
+                userId: USER_ID,
+                deleteUser: true
+            });
+            expect(sql).toContain(`DELETE FROM billing_customers WHERE id = '${CUSTOMER_ID}';`);
+            // ...and it precedes the DELETE FROM users so the shell is gone
+            // before the user row it belongs to.
+            const customersIdx = lineIndex(sql, 'DELETE FROM billing_customers WHERE id');
+            const usersIdx = lineIndex(sql, 'DELETE FROM users WHERE id');
+            expect(customersIdx).toBeLessThan(usersIdx);
+        });
+    });
+
     describe('SQL string escaping', () => {
-        it("escapes single quotes in customerId and userId", () => {
+        it('escapes single quotes in customerId and userId', () => {
             const sql = buildResetTransaction({
                 customerId: "abc'; DROP TABLE users; --",
                 userId: "def'gh",
