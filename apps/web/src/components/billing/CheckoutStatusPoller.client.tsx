@@ -28,8 +28,12 @@
  *   the webhook fallback (F3) may complete the link server-side shortly after,
  *   so fall back to the normal poll rather than treating this as terminal.
  *
- * Idempotent by design: a reload re-sends the link call and the server replies
- * `already` rather than erroring.
+ * Idempotent by design: if the same `preapproval_id` is linked twice the server
+ * replies `already` rather than erroring. Note (HOS-209): the success page now
+ * scrubs `preapproval_id` from the URL on first load, so a manual RELOAD no
+ * longer carries it — the reload skips the link call and goes straight to
+ * polling. That is safe: the first load already performed the link, and the
+ * webhook fallback (F3) plus continued polling remain the completion path.
  *
  * Hydration: client:load — the user is staring at this page waiting for a
  * result, so it must start polling immediately.
