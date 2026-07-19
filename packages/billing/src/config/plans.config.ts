@@ -1,4 +1,8 @@
-import { COMPLEX_TRIAL_DAYS, OWNER_TRIAL_DAYS } from '../constants/billing.constants.js';
+import {
+    COMPLEX_TRIAL_DAYS,
+    OWNER_TRIAL_DAYS,
+    TOURIST_TRIAL_DAYS
+} from '../constants/billing.constants.js';
 import { EntitlementKey } from '../types/entitlement.types.js';
 import { LimitKey, type PlanDefinition } from '../types/plan.types.js';
 import { LIMIT_METADATA } from './limits.config.js';
@@ -446,8 +450,8 @@ export const TOURIST_PLUS_PLAN: PlanDefinition = {
     monthlyPriceArs: 500000, // ARS $5,000
     annualPriceArs: 5000000, // ARS $50,000/year
     monthlyPriceUsdRef: 5,
-    hasTrial: false,
-    trialDays: 0,
+    hasTrial: true,
+    trialDays: TOURIST_TRIAL_DAYS,
     isDefault: false,
     sortOrder: 2,
     isActive: true,
@@ -489,8 +493,8 @@ export const TOURIST_VIP_PLAN: PlanDefinition = {
     monthlyPriceArs: 1500000, // ARS $15,000
     annualPriceArs: 15000000, // ARS $150,000/year
     monthlyPriceUsdRef: 15,
-    hasTrial: false,
-    trialDays: 0,
+    hasTrial: true,
+    trialDays: TOURIST_TRIAL_DAYS,
     isDefault: false,
     sortOrder: 3,
     isActive: true,
