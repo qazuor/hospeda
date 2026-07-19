@@ -202,7 +202,7 @@ function looksLikeRateLimitError(err: unknown): boolean {
     if (!(err instanceof Error)) {
         return false;
     }
-    const record = err as unknown as Record<string, unknown>;
+    const record = err as { code?: unknown; status?: unknown; statusCode?: unknown };
     if (record.code === 'rate_limit_error') {
         return true;
     }

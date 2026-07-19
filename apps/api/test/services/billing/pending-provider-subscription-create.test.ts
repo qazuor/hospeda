@@ -105,13 +105,14 @@ describe('createPendingProviderSubscription', () => {
         const after = Date.now();
 
         // Returns a UUID-shaped localSubscriptionId, a 32-hex-char nonce, and
-        // an expiresAt roughly 30 minutes out.
+        // an expiresAt roughly 3 hours out (HOS-191: raised from 30min so the
+        // abandoned-pending reaper does not reap a Path C checkout still in progress).
         expect(result.localSubscriptionId).toMatch(/^[0-9a-f-]{36}$/);
         expect(result.nonce).toMatch(/^[0-9a-f]{32}$/);
         const expiresAtMs = new Date(result.expiresAt).getTime();
-        const thirtyMin = 30 * 60 * 1000;
-        expect(expiresAtMs).toBeGreaterThanOrEqual(before + thirtyMin - 2000);
-        expect(expiresAtMs).toBeLessThanOrEqual(after + thirtyMin + 2000);
+        const threeHours = 3 * 60 * 60 * 1000;
+        expect(expiresAtMs).toBeGreaterThanOrEqual(before + threeHours - 2000);
+        expect(expiresAtMs).toBeLessThanOrEqual(after + threeHours + 2000);
 
         // Insert shape: status='pending_provider', no mp_subscription_id, no
         // promo_code_id (a pendingDiscount is not yet REDEEMED).
