@@ -10,7 +10,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import {
     CHECKOUT_RETURN_PARAMS_TO_STRIP,
     STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET
@@ -33,6 +33,14 @@ function setUrl(pathWithQuery: string): void {
 }
 
 const SUCCESS_PATH = '/es/suscriptores/checkout/success/';
+
+// Hermetic teardown: these tests mutate the shared jsdom `window.location` /
+// `history`. Restore the default URL so nothing leaks into sibling test files
+// that may share the worker's jsdom (guards against cross-file pollution under
+// `--no-isolate`).
+afterAll(() => {
+    window.history.replaceState(null, '', '/');
+});
 
 describe('STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET', () => {
     beforeEach(() => {
