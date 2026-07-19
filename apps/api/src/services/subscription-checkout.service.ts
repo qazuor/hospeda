@@ -613,6 +613,8 @@ export async function initiatePaidMonthlySubscription(
     // itself collects the card.
     const providerPriceId = await resolveCheckoutMpPlanId({
         commercialPlanId: plan.id,
+        // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
+        customerId,
         planName: getPlanDisplayName(plan),
         amountCentavos: monthlyPrice.unitAmount,
         currency: monthlyPrice.currency,
@@ -765,6 +767,8 @@ export async function initiateCommerceMonthlySubscription(
     // against the no-trial MP preapproval_plan for uniform plan-based checkout.
     const providerPriceId = await resolveCheckoutMpPlanId({
         commercialPlanId: plan.id,
+        // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
+        customerId,
         planName: getPlanDisplayName(plan),
         amountCentavos: monthlyPrice.unitAmount,
         currency: monthlyPrice.currency,
@@ -889,6 +893,8 @@ export async function initiatePartnerMonthlySubscription(
     // subscribe against the no-trial MP preapproval_plan.
     const providerPriceId = await resolveCheckoutMpPlanId({
         commercialPlanId: plan.id,
+        // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
+        customerId,
         planName: getPlanDisplayName(plan),
         amountCentavos: monthlyPrice.unitAmount,
         currency: monthlyPrice.currency,
@@ -1198,6 +1204,8 @@ export async function initiatePaidAnnualSubscription(
     // reactivation callers that still pass it and die with HOS-123.
     const providerPriceId = await resolveCheckoutMpPlanId({
         commercialPlanId: plan.id,
+        // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
+        customerId,
         planName: getPlanDisplayName(plan),
         amountCentavos: annualPrice.unitAmount,
         currency: annualPrice.currency,

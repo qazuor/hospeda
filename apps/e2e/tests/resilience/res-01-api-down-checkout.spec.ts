@@ -11,7 +11,7 @@
  *   - Host with role=HOST and a billing customer (no subscription yet).
  *
  * What this validates:
- *  1. With `failNext({operation: 'createSubscription', errorCode: 'API_DOWN'})`
+ *  1. With `failNext({operation: 'provisionPlan', errorCode: 'API_DOWN'})`
  *     queued, the first POST /start-paid fails and DOES NOT create a
  *     subscription row.
  *  2. The retry (no failNext armed) succeeds and creates exactly one
@@ -19,16 +19,23 @@
  *  3. DB invariant: total subscriptions for the customer is 1 — the failed
  *     attempt left no duplicate.
  *
- * Why createSubscription is the failure point:
- *   It is the MercadoPago preapproval create, the first and only provider call
- *   a paid checkout makes. Failing it models "MP was down at checkout time";
- *   the retry models the user clicking again a moment later.
+ * Why provisionPlan is the failure point:
+ *   In HOS-191 Path C the accommodation checkout no longer creates a
+ *   `POST /preapproval` server-side (MercadoPago rejects a `preapproval_plan_id`
+ *   build with "card_token_id is required"). Its single, and only, provider call
+ *   is resolving/provisioning the MercadoPago `preapproval_plan`
+ *   (`resolveCheckoutMpPlanId` → `POST /preapproval_plan`). Failing it models "MP
+ *   was down at checkout time"; the retry models the user clicking again a moment
+ *   later. The seam is at the resolver boundary, before the `billing_mp_plans`
+ *   cache lookup, so the failure fires deterministically regardless of whether the
+ *   variant was already provisioned by a prior test in the shared E2E DB.
  *
- *   This spec used to fail `startTrial` and drive `publish` instead. HOS-171
- *   deleted the no-card trial: publishing now requires a card and never reaches
- *   billing, so the subscription is born in the checkout. The invariant is
- *   unchanged and matters more than ever — HOS-151 was this exact bug class
- *   (orphaned preapprovals from partial creates) in production.
+ *   The invariant is unchanged and matters more than ever — HOS-151 was this exact
+ *   bug class (orphaned provider resources from partial creates) in production. In
+ *   Path C it is even tighter: provisioning runs BEFORE the local
+ *   `pending_provider` row is inserted, so a provisioning failure structurally
+ *   cannot leave a row behind. This spec used to fail `startTrial`/`publish`, then
+ *   `createSubscription`; both call sites are gone from the accommodation path.
  *
  * @see SPEC-092 spec.md § RES-01
  */
@@ -103,11 +110,12 @@ test.describe('RES-01: MP down during checkout → retry, no duplicates @p0 @res
         // checkout itself from being the thing that creates it.
         const { customerId } = await ensureBillingCustomer({ userId: host.id });
 
-        // ── Arm a one-shot failure on the preapproval create ────────────────
+        // ── Arm a one-shot failure on the plan provisioning (Path C) ────────
         await qzpayControl.failNext({
-            operation: 'createSubscription',
+            operation: 'provisionPlan',
             errorCode: 'API_DOWN',
-            errorMessage: 'MP sandbox temporarily unreachable (RES-01 E2E)',
+            errorMessage:
+                'MP sandbox temporarily unreachable during plan provisioning (RES-01 E2E)',
             scope: customerId
         });
 
@@ -132,10 +140,13 @@ test.describe('RES-01: MP down during checkout → retry, no duplicates @p0 @res
             data: { planSlug: 'owner-basico', billingInterval: 'monthly' }
         });
 
-        // The retry needs the real MP sandbox to answer, which is not this spec's
-        // contract. What IS the contract: the failed attempt must never leave a
-        // duplicate behind, so the count can only ever be 0 (retry also failed) or
-        // 1 (retry created one) — never 2.
+        // Under the test-control gate the payment adapter is the deterministic
+        // in-memory stub, so the retry's plan provisioning succeeds and the
+        // `pending_provider` row is inserted (count 1). The branch below also
+        // tolerates a failed retry (count 0) for robustness. What IS the contract:
+        // the failed first attempt must never leave a duplicate behind, so the
+        // count can only ever be 0 (retry also failed) or 1 (retry created one) —
+        // never 2.
         const subsAfterRetry = await countSubscriptions(host.id);
         if (retry.ok()) {
             expect(subsAfterRetry, 'a successful retry creates exactly one subscription').toBe(1);
@@ -145,12 +156,14 @@ test.describe('RES-01: MP down during checkout → retry, no duplicates @p0 @res
             );
         }
 
-        // ── 3. The armed failure was consumed by the create, not by something else
-        const calls = await qzpayControl.getRecordedCalls('createSubscription');
+        // ── 3. The armed failure was consumed by the provisioning, not by something else
+        const calls = await qzpayControl.getRecordedCalls('provisionPlan');
         expect(
             calls.length,
-            'the checkout must have reached the preapproval create'
+            'the checkout must have reached the plan provisioning'
         ).toBeGreaterThan(0);
-        expect(calls[0]?.outcome, 'the first create must be the one that failed').toBe('failed');
+        expect(calls[0]?.outcome, 'the first provisioning must be the one that failed').toBe(
+            'failed'
+        );
     });
 });
