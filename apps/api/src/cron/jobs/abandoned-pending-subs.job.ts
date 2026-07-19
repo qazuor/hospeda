@@ -40,7 +40,13 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
 import { createMercadoPagoAdapter } from '@repo/billing';
-import { billingSubscriptions, getDb, sql, withTransaction } from '@repo/db';
+import {
+    billingPendingCheckoutModel,
+    billingSubscriptions,
+    getDb,
+    sql,
+    withTransaction
+} from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { checkSubscriptionStatusTransition } from '@repo/service-core';
@@ -109,7 +115,10 @@ type CronTransactionResult =
 /** Outcome of reaping a single candidate. */
 type ReapOutcome =
     | { abandoned: true; info: AbandonedSubInfo }
-    | { abandoned: false; reason: 'cancel-unverified' | 'already-reaped' };
+    | {
+          abandoned: false;
+          reason: 'cancel-unverified' | 'already-reaped' | 'checkout-in-progress';
+      };
 
 /**
  * Cancel + verify a candidate's MercadoPago preapproval (if any) and, only
@@ -199,12 +208,50 @@ async function reapPendingCandidate(params: {
             });
             return { abandoned: false, reason: 'cancel-unverified' };
         }
+    } else {
+        // FIX B layer 1 (HOS-191 Path C): a `pending_provider` row with NO
+        // `mp_subscription_id` is NOT automatically an abandoned checkout. In the
+        // share-link flow it means "MercadoPago is collecting the card on its
+        // hosted page and we have not linked the resulting preapproval yet". A
+        // customer stuck on MP's 3DS/OTP step for more than the 30-minute cron
+        // TTL is common; abandoning the row now would make the eventual link a
+        // rejected `abandoned → active` transition and strand a real payment.
+        //
+        // While a still-valid `billing_pending_checkouts` correlation row exists
+        // (status `pending`, resolved by `findByLocalSubscriptionId` after FIX E,
+        // AND not past its own `expiresAt`), leave the row pending — the
+        // back_url/webhook linker (or the reaper on a later run, once the
+        // checkout's own TTL has elapsed) will resolve it. Only a missing or
+        // expired correlation row is a genuine abandonment.
+        const pendingCheckout = await billingPendingCheckoutModel.findByLocalSubscriptionId({
+            localSubscriptionId: candidate.id
+        });
+        if (pendingCheckout && pendingCheckout.expiresAt.getTime() > Date.now()) {
+            return { abandoned: false, reason: 'checkout-in-progress' };
+        }
     }
 
     // Either there was no preapproval to cancel, or MP has confirmed it is
     // cancelled/terminal. Flip the local row to `abandoned`. The WHERE clause
     // re-asserts the pending precondition so a concurrent run that already
     // abandoned the row makes this a no-op (idempotent).
+    //
+    // FIX 2 (reaper TOCTOU): `candidate.mpSubscriptionId` is a snapshot from the
+    // Phase-1 SELECT. Between that SELECT and this UPDATE, the link-preapproval
+    // flow may have linked the row (setting `mp_subscription_id` while leaving
+    // `status = pending_provider`, and marking the correlation row `linked` so
+    // the "checkout-in-progress" guard above no longer sees it). Without an
+    // `mp_subscription_id` guard the status-only WHERE would still match and
+    // abandon a subscription that now holds a LIVE preapproval → split-brain.
+    // Guard the write against the exact mp-id state we observed:
+    //   - mp-null branch → require it is STILL null (a mid-sweep link makes this
+    //     a no-op `already-reaped` rather than a wrong abandon);
+    //   - cancel+verify branch → require the mp id is unchanged from the snapshot
+    //     (a drift means the row was re-linked; do not abandon it).
+    const mpGuard =
+        mpSubscriptionId && candidate.mpSubscriptionId
+            ? eq(billingSubscriptions.mpSubscriptionId, candidate.mpSubscriptionId)
+            : isNull(billingSubscriptions.mpSubscriptionId);
     const [row] = await db
         .update(billingSubscriptions)
         .set({ status: ABANDONED_STATUS, updatedAt: new Date() })
@@ -212,6 +259,7 @@ async function reapPendingCandidate(params: {
             and(
                 eq(billingSubscriptions.id, candidate.id),
                 inArray(billingSubscriptions.status, [...PENDING_STATUSES]),
+                mpGuard,
                 isNull(billingSubscriptions.deletedAt)
             )
         )
@@ -422,6 +470,7 @@ export const abandonedPendingSubsJob: CronJobDefinition = {
             const db = getDb();
             const abandonedSubs: AbandonedSubInfo[] = [];
             let cancelUnverified = 0;
+            let checkoutInProgress = 0;
 
             for (const candidate of cronResult.candidates) {
                 const outcome = await reapPendingCandidate({
@@ -435,6 +484,10 @@ export const abandonedPendingSubsJob: CronJobDefinition = {
                     abandonedSubs.push(outcome.info);
                 } else if (outcome.reason === 'cancel-unverified') {
                     cancelUnverified++;
+                } else if (outcome.reason === 'checkout-in-progress') {
+                    // Healthy in-progress Path C checkout — deliberately left
+                    // pending, not an error (FIX B layer 1).
+                    checkoutInProgress++;
                 }
             }
 
@@ -486,6 +539,7 @@ export const abandonedPendingSubsJob: CronJobDefinition = {
             logger.info('Abandoned-pending-subs job completed', {
                 abandoned: abandonedSubs.length,
                 cancelUnverified,
+                checkoutInProgress,
                 durationMs,
                 dryRun
             });
@@ -496,14 +550,25 @@ export const abandonedPendingSubsJob: CronJobDefinition = {
                     cancelUnverified > 0
                         ? ` (${cancelUnverified} left pending — preapproval cancel unconfirmed)`
                         : ''
+                }${
+                    checkoutInProgress > 0
+                        ? ` (${checkoutInProgress} left pending — Path C checkout still in progress)`
+                        : ''
                 }`,
                 processed: abandonedSubs.length,
                 // A cancel/verify that could not be confirmed is surfaced as an
                 // error count (the row was intentionally NOT abandoned) so ops
                 // sees a non-zero signal, even though the run itself succeeded.
+                // An in-progress Path C checkout is NOT an error — it is a healthy
+                // pending state — so it is reported separately, not in `errors`.
                 errors: cancelUnverified,
                 durationMs,
-                details: { dryRun, abandoned: abandonedSubs.length, cancelUnverified }
+                details: {
+                    dryRun,
+                    abandoned: abandonedSubs.length,
+                    cancelUnverified,
+                    checkoutInProgress
+                }
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
