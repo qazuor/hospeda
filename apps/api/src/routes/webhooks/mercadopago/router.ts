@@ -129,29 +129,62 @@ function createMercadoPagoWebhookRouter(): AppOpenAPI | null {
             // verifier — leaving two implementations to keep in sync.
             logger: qzpayLogger,
             handlers: {
+                // HOS-191 FIX #4: these keys MUST be the event types qzpay-hono
+                // actually dispatches on (`handlers[event.type]` in
+                // `createWebhookRouter`), NOT the raw MercadoPago webhook `type`.
+                // `@qazuor/qzpay-mercadopago`'s `QZPayMercadoPagoWebhookAdapter`
+                // normalizes every inbound MP event BEFORE qzpay-hono ever sees
+                // it (see `MERCADOPAGO_WEBHOOK_EVENTS` /
+                // `MERCADOPAGO_WEBHOOK_EVENTS_EXTENDED` in
+                // `@qazuor/qzpay-mercadopago/src/types.ts`):
+                //
+                //   subscription_preapproval.created      -> subscription.created
+                //   subscription_preapproval.updated      -> subscription.updated
+                //   subscription_authorized_payment.created -> invoice.paid
+                //   subscription_authorized_payment.updated -> invoice.updated
+                //   chargebacks.created                   -> dispute.created
+                //   chargebacks.updated                   -> dispute.updated
+                //   payment.created / payment.updated     -> unchanged
+                //
+                // Registering the raw MP keys here (as this file used to)
+                // means `handlers[event.type]` never finds a match for any
+                // subscription/invoice/dispute event — qzpay-hono logs
+                // "Webhook event has no registered handler" and the local
+                // subscription never reconciles. This was the root cause of a
+                // launch-blocking prod incident: paid/trial subscriptions
+                // never activated because their reconciling webhook silently
+                // no-opped.
                 'payment.created': handlePaymentCreated,
                 'payment.updated': handlePaymentUpdated,
-                // SPEC-126 D3: subscription_preapproval.created is the event MP
-                // fires immediately after the user authorizes a recurring
-                // charge in the MP-hosted checkout. It transitions the local
-                // sub from incomplete/pending_provider to active. The
-                // existing processSubscriptionUpdated logic already maps MP
-                // `authorized` -> qzpay `active` and applies the status update,
-                // so both .created and .updated point at the same handler.
-                'subscription_preapproval.created': handleSubscriptionPreapprovalEvent,
-                'subscription_preapproval.updated': handleSubscriptionPreapprovalEvent,
-                // SPEC-126 D4 / SPEC-141 D4: subscription_authorized_payment events
-                // fire when MP schedules / executes a recurring charge against a
-                // preapproval. The handler fetches the authorized-payment object
-                // via `fetchAuthorizedPaymentDetails` (REST), resolves the local
+                // SPEC-126 D3: the normalized `subscription.created` event fires
+                // immediately after the user authorizes a recurring charge in
+                // the MP-hosted checkout. It transitions the local sub from
+                // incomplete/pending_provider to active. The existing
+                // processSubscriptionUpdated logic already maps MP `authorized`
+                // -> qzpay `active` and applies the status update, so both
+                // `.created` and `.updated` point at the same handler.
+                'subscription.created': handleSubscriptionPreapprovalEvent,
+                'subscription.updated': handleSubscriptionPreapprovalEvent,
+                // SPEC-126 D4 / SPEC-141 D4: the normalized `invoice.paid` /
+                // `invoice.updated` events fire when MP schedules / executes a
+                // recurring charge against a preapproval. The handler fetches
+                // the authorized-payment object via
+                // `fetchAuthorizedPaymentDetails` (REST), resolves the local
                 // subscription via `mp_subscription_id`, and inserts a
                 // `billing_payments` row. Always acks 200 even on upstream
                 // failures so MP stops retrying. See
                 // `subscription-payment-handler.ts` for the full flow.
-                'subscription_authorized_payment.created': handleSubscriptionAuthorizedPayment,
-                'subscription_authorized_payment.updated': handleSubscriptionAuthorizedPayment,
-                chargebacks: handleDisputeOpened,
-                'payment.dispute': handleDisputeOpened
+                'invoice.paid': handleSubscriptionAuthorizedPayment,
+                'invoice.updated': handleSubscriptionAuthorizedPayment,
+                // Chargeback (dispute) events. There is no real MP event that
+                // normalizes to `payment.dispute` (confirmed against both
+                // `MERCADOPAGO_WEBHOOK_EVENTS` and
+                // `MERCADOPAGO_WEBHOOK_EVENTS_EXTENDED` — that key does not
+                // appear as a normalization target anywhere in either map), so
+                // the previous `'payment.dispute'` registration was dead and
+                // has been removed.
+                'dispute.created': handleDisputeOpened,
+                'dispute.updated': handleDisputeOpened
             },
             onEvent: handleWebhookEvent,
             onError: handleWebhookError

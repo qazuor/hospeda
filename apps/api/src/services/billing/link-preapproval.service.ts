@@ -102,11 +102,18 @@ const RECONCILE_WINDOW_MS = 24 * 60 * 60 * 1000;
  *   correlation row; or the live preapproval fails the ownership guard (its
  *   MercadoPago plan or payer email does not match the resolved checkout, FIX
  *   A). Never overwrites someone else's linking.
- * - `'reconcile_assisted'` — the heuristic path found zero or multiple
- *   candidates, a single heuristic candidate failed the payer-email ownership
- *   check, OR a user-facing (Tier 1 back_url) attempt could NOT positively
- *   verify the payer identity (the live preapproval exposed no payer email, or
- *   the checkout's snapshotted payer email is unset). Refused, not accused;
+ * - `'reconcile_assisted'` — the heuristic (Tier 3) path found zero or
+ *   multiple candidates, or a single heuristic candidate failed to positively
+ *   verify the payer-email identity (mismatch or absence — Tier 3 has no
+ *   upstream ownership proof, so email absence cannot be waved through). Since
+ *   HOS-191 FIX #5, a Tier 1 (`ownership`, back_url) attempt with an absent
+ *   live/snapshot payer email no longer downgrades here — ownership is already
+ *   proven upstream and email is defense-in-depth only there, so it resolves
+ *   to `'linked'` instead. Since HOS-191 FIX #6, a Tier 1 attempt whose live
+ *   `preapproval_plan_id` could not be resolved at all (MP access token
+ *   unset, or the lookup failed) DOES downgrade here — the plan-id match is
+ *   the tier's other load-bearing signal, so an unresolved lookup fails
+ *   closed rather than silently skipping that check. Refused, not accused;
  *   flagged for manual follow-up (recoverable — no money linked to the wrong
  *   subscription).
  * - `'not_found'` — no pending checkout could be resolved at all (unknown
@@ -351,48 +358,85 @@ function getPgErrorCode(err: unknown): string | undefined {
  * The resolution tier a linking attempt reached. Governs how strictly the
  * ownership guard treats the payer-email signal.
  *
- * - `'ownership'` — Tier 1, the F2 `back_url` handler. The caller controls the
- *   `preapprovalId` in the request body, so this is where an attacker lives:
- *   email identity MUST be positively proven (fail-closed).
+ * - `'ownership'` — Tier 1, the F2 `back_url` handler. Ownership is already
+ *   proven upstream (see {@link verifyPreapprovalOwnership} JSDoc for the full
+ *   threat model): the caller is authenticated and the pending checkout it
+ *   quoted was resolved via `expectedLocalSubscriptionId` +
+ *   `expectedCustomerId`, refusing (`idor`) any checkout it doesn't own
+ *   (`resolvePendingCheckout`, Tier 1 branch). Payer email here is
+ *   defense-in-depth only: a CONFIRMED mismatch still refuses (`idor`), but an
+ *   absent email — which MercadoPago structurally omits on many preapprovals —
+ *   no longer blocks the link.
  * - `'nonce'` — Tier 2, the F3 webhook when F2 already stamped the
  *   `external_reference`. The nonce is an unforgeable server-side secret that
- *   only an already-email-verified Tier 1 could have set, so the nonce match
- *   itself binds identity; email is a corroborating negative only.
- * - `'heuristic'` — Tier 3, the F3 webhook with no nonce yet. Email is the
- *   primary discriminant; a mismatch or absence refuses without accusing.
+ *   only an already-verified Tier 1 could have set, so the nonce match itself
+ *   binds identity; email is a corroborating negative only.
+ * - `'heuristic'` — Tier 3, the F3 webhook with no nonce yet. There is no
+ *   ownership proof at all here (unlike Tier 1), so email is the PRIMARY
+ *   discriminant; a mismatch or absence refuses without accusing.
  *
  * @internal
  */
 type OwnershipTier = 'ownership' | 'nonce' | 'heuristic';
 
 /**
- * Ownership guard for a FRESH preapproval (HOS-191 FIX A, hardened by FIX 1).
+ * Ownership guard for a FRESH preapproval (HOS-191 FIX A, hardened by FIX 1,
+ * relaxed for Tier 1 by FIX #5, fail-closed on an unresolved plan id for
+ * Tier 1 by FIX #6).
  *
  * The `external_reference` mismatch check in {@link linkPreapprovalToLocalSub}
  * only catches a preapproval that ALREADY carries someone else's nonce. When
  * the live preapproval has NO `external_reference` yet (about to be stamped
- * with THIS caller's nonce), nothing else proves the preapproval actually
- * belongs to this checkout — so an authenticated caller could quote a stranger's
- * `preapprovalId` together with their own `localSubscriptionId` and hijack it.
+ * with THIS caller's nonce), this function is the remaining check before the
+ * link is written. Its role differs sharply by tier:
  *
- * The MercadoPago `preapproval_plan_id` is NOT a per-customer secret — every
- * buyer of the same commercial plan/interval/trial shares it, and it travels in
- * the public share-link URL — so a plan match ALONE cannot prove ownership. The
- * **payer email is the identity discriminant**, applied fail-closed and
- * per-tier (see {@link OwnershipTier}):
+ * **Tier 1 (`ownership`, the F2 `back_url` path) — payer email is
+ * defense-in-depth, NOT the primary proof.** Real ownership was already
+ * established by the time this function runs: `resolvePendingCheckout`
+ * resolved the pending checkout from the AUTHENTICATED caller's
+ * `expectedLocalSubscriptionId`, and refused (`idor`) unless
+ * `checkout.customerId === expectedCustomerId`. The `preapprovalId` itself is
+ * NOT a strong or confidential bearer secret — MercadoPago delivers it to the
+ * browser as a plain URL query parameter on the `back_url` redirect, which is
+ * a WEAK secrecy channel: it can leak into browser history, `Referer`
+ * headers on subsequent requests, third-party analytics autocapture (e.g.
+ * PostHog's `$current_url` capture), and server/Sentry logs. Tier 1's real
+ * defense is therefore the AUTHENTICATED pending-checkout ownership check
+ * above (`localSubscriptionId` → `customerId`) plus the plan-id match
+ * (checked first, below) and the `external_reference`/unclaimed-checkout
+ * guard in {@link linkPreapprovalToLocalSub} — never the preapproval id's
+ * confidentiality. Given that, requiring a *positive* payer-email match on
+ * top was over-strict: MercadoPago does not always populate `payer_email` on
+ * a preapproval (confirmed empirically against prod — `GET /preapproval/{id}`
+ * routinely returns `payer_email: ""` while `payer_id` is present), so the old
+ * fail-closed-on-absence behavior downgraded a legitimate, already-proven
+ * return to `reconcile_assisted` on every such preapproval — the actual root
+ * cause of a launch-blocking incident (a paid/trial subscription silently
+ * stuck in `pending_provider` instead of activating). The guard now only
+ * VETOES: a CONFIRMED mismatch between the live and snapshotted payer emails
+ * is still `idor` (an attacker with a *stolen* preapproval id would rarely
+ * also match the victim's email, so a mismatch remains a hijack signal, even
+ * though the id's leak surface above means "stolen" is easier than a true
+ * bearer secret would allow); every other case — positive match, or an
+ * absent live/snapshot email — resolves to `ok`. Email can still block, but
+ * it can never be the sole reason a genuine owner gets refused.
  *
- * 1. **Plan match (always, when resolvable).** A different plan id is a
- *    different checkout — `idor`. Necessary but NOT sufficient on its own.
- * 2. **Payer-email identity, per tier:**
- *    - **Tier 1 (`ownership`)** requires a POSITIVE email match. A confirmed
- *      mismatch is an active hijack → `idor`. An absent live payer email, or an
- *      absent checkout-snapshot email, means the identity cannot be verified →
- *      `reconcile_assisted` (NEVER a blind link).
- *    - **Tier 3 (`heuristic`)** also requires a positive match, but a mismatch
- *      or absence downgrades to `reconcile_assisted` (refuse, do not accuse).
- *    - **Tier 2 (`nonce`)** trusts the unforgeable nonce: a live-email mismatch
- *      still refuses (`idor`), but an absent/unverifiable email does NOT degrade
- *      the trusted match — the legitimate webhook path is never broken.
+ * **Tier 3 (`heuristic`) is unchanged and much stricter**, because it has NO
+ * upstream ownership proof at all (no authenticated caller, no unforgeable
+ * nonce — just a plan-id + time-window candidate search). There, payer email
+ * is the PRIMARY identity discriminant: a positive match is REQUIRED, and a
+ * mismatch or absence refuses to `reconcile_assisted` (refuse, don't accuse).
+ *
+ * **Tier 2 (`nonce`) trusts the unforgeable nonce** — only an
+ * already-ownership-verified Tier 1 could have stamped it — so a live-email
+ * mismatch still refuses (`idor`), but an absent/unverifiable email does NOT
+ * degrade the trusted match.
+ *
+ * The MercadoPago `preapproval_plan_id` is checked first, for ALL tiers: it is
+ * NOT a per-customer secret (every buyer of the same commercial plan/interval
+ * shares it, and it travels in the public share-link URL), so a plan
+ * MISMATCH is still decisive (`idor`) everywhere, even though a plan MATCH
+ * alone never proves ownership on its own.
  *
  * The comparison email is `checkout.payerEmail` — the snapshot taken at
  * checkout time (`billing_pending_checkouts.payer_email`), NOT a live
@@ -407,10 +451,14 @@ type OwnershipTier = 'ownership' | 'nonce' | 'heuristic';
  * `checkout` row — no async lookup, so no lookup-failure mode to fail closed
  * on either.
  *
- * The common legitimate case is safe: a customer returning via `back_url` has an
- * authorized preapproval that carries their own payer email → positive match →
- * link. The rare null-email case falls to `reconcile_assisted`, recoverable
- * with no money linked to the wrong subscription — the correct trade for money.
+ * TODO(HOS-191 follow-up): Tier 1 still lacks a positive NON-email ownership
+ * factor. Add one to fully harden it — either match the live preapproval's
+ * `payer_id` (which MercadoPago DOES reliably return) against the customer's
+ * own MP identity, or mint a single-use server-side link token returned only
+ * to the owner at `/start-paid` and required back on the `back_url` return.
+ * Also have the web return page strip `preapproval_id` from the URL (e.g.
+ * `history.replaceState`) BEFORE any analytics/third-party script runs, to
+ * shrink the weak-secrecy leak surface described above.
  *
  * @internal
  */
@@ -452,6 +500,25 @@ async function verifyPreapprovalOwnership(params: {
         return 'idor';
     }
 
+    // 1b. HOS-191 FIX #6 (judgment-day hardening): Tier 1 (`ownership`) fails
+    //     CLOSED when the live preapproval_plan_id could not be resolved at
+    //     all (MP access token unset, or the lookup itself failed). Without
+    //     this guard, an unresolved plan id silently SKIPS the check above
+    //     and Tier 1 would fall through to the email step with no positive
+    //     plan signal at all — for the tier whose remaining defense-in-depth
+    //     already leans on this plan-id match (see this function's JSDoc),
+    //     that is too permissive. Refuse to link blindly; flag for manual
+    //     reconciliation instead (never an accusation). Tier 2 (`nonce`,
+    //     trusts the unforgeable nonce) and Tier 3 (`heuristic`, which never
+    //     reaches here without an already-resolved plan id) are unaffected.
+    if (tier === 'ownership' && !preapprovalPlanId) {
+        apiLogger.warn(
+            { preapprovalId, customerId: checkout.customerId, tier },
+            'HOS-191 link-preapproval: could not resolve the live preapproval_plan_id for ownership-tier verification — refusing to link blindly (reconcile_assisted)'
+        );
+        return 'reconcile_assisted';
+    }
+
     // 2. Payer-email identity. Compare against the CHECKOUT-TIME SNAPSHOT
     //    (`checkout.payerEmail`, see the function JSDoc for why a live
     //    `billing.customers.get()` lookup is the wrong source — email drift
@@ -465,8 +532,9 @@ async function verifyPreapprovalOwnership(params: {
         !!livePayerEmail && !!snapshotEmail && !emailsMatch(snapshotEmail, livePayerEmail);
 
     // Tier 2 (exact nonce): the unforgeable server-side nonce already bound the
-    // identity — only an already-email-verified Tier 1 could have stamped it.
-    // A live-email mismatch still refuses; an absent/unverifiable email does not.
+    // identity — only an already-ownership-verified Tier 1 could have stamped
+    // it. A live-email mismatch still refuses; an absent/unverifiable email
+    // does not.
     if (tier === 'nonce') {
         if (emailMismatch) {
             apiLogger.error(
@@ -482,26 +550,35 @@ async function verifyPreapprovalOwnership(params: {
         return 'ok';
     }
 
-    // Tier 1 (ownership / back_url) & Tier 3 (heuristic): a POSITIVE email match
-    // is REQUIRED — this is real money on a caller-controlled preapproval id.
-    if (emailMatches) {
+    // Tier 1 (ownership / back_url, HOS-191 FIX #5): ownership is ALREADY
+    // proven upstream (the authenticated caller's `expectedLocalSubscriptionId`
+    // resolved to a checkout it provably owns — see this function's JSDoc for
+    // the full threat model). Payer email here is defense-in-depth ONLY, never
+    // the primary proof, so it can VETO but never withhold a link on missing
+    // telemetry: a CONFIRMED mismatch is still an active-hijack signal → idor,
+    // but an absent live or snapshot email — which MercadoPago structurally
+    // omits on many real preapprovals — no longer downgrades to
+    // `reconcile_assisted`.
+    if (tier === 'ownership') {
+        if (emailMismatch) {
+            apiLogger.error(
+                { preapprovalId, customerId: checkout.customerId, tier },
+                'HOS-191 link-preapproval: back_url preapproval payer email differs from the checkout customer — refusing (possible IDOR)'
+            );
+            Sentry.captureException(
+                new Error('HOS-191 link-preapproval: payer email mismatch (ownership tier)'),
+                { extra: { preapprovalId, customerId: checkout.customerId, tier } }
+            );
+            return 'idor';
+        }
         return 'ok';
     }
 
-    // No positive match. A confirmed mismatch on the user-facing path is an
-    // active hijack → idor. Every other unverifiable case (absent live email,
-    // absent checkout snapshot email, or a heuristic mismatch) refuses without
-    // accusing → reconcile_assisted, recoverable and money-safe.
-    if (emailMismatch && tier === 'ownership') {
-        apiLogger.error(
-            { preapprovalId, customerId: checkout.customerId, tier },
-            'HOS-191 link-preapproval: back_url preapproval payer email differs from the checkout customer — refusing (possible IDOR)'
-        );
-        Sentry.captureException(
-            new Error('HOS-191 link-preapproval: payer email mismatch (ownership tier)'),
-            { extra: { preapprovalId, customerId: checkout.customerId, tier } }
-        );
-        return 'idor';
+    // Tier 3 (heuristic): the ONLY tier with no upstream ownership proof at
+    // all, so a POSITIVE email match is REQUIRED to disambiguate — this is
+    // real money on a caller-uncontrolled but otherwise unverified candidate.
+    if (emailMatches) {
+        return 'ok';
     }
 
     apiLogger.warn(
