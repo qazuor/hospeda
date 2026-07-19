@@ -94,11 +94,30 @@ vi.mock('@repo/db', () => {
 // preapproval_plan via `resolveCheckoutMpPlanId`, which reaches the payment
 // adapter singleton + `billing_mp_plans`. Stub it at this one boundary so
 // these route tests (which mock `@repo/db` and the billing middleware)
-// exercise the checkout decision logic without a live adapter or DB. The
-// provisioning service itself is unit-tested in `mp-plan-provisioning.test.ts`.
-vi.mock('../../../src/services/billing/mp-plan-provisioning.service', () => ({
-    resolveCheckoutMpPlanId: vi.fn().mockResolvedValue('mp_plan_test'),
-    resolveOrProvisionMpPlan: vi.fn()
+// exercise the checkout decision logic without a live adapter or DB.
+// `buildPreapprovalPlanShareLink` is a pure function kept REAL (via
+// `importOriginal`) so `checkoutUrl` assertions exercise the actual
+// URL-building logic. The provisioning service itself is unit-tested in
+// `mp-plan-provisioning.test.ts`.
+vi.mock('../../../src/services/billing/mp-plan-provisioning.service', async (importOriginal) => {
+    const actual =
+        await importOriginal<
+            typeof import('../../../src/services/billing/mp-plan-provisioning.service')
+        >();
+    return {
+        ...actual,
+        resolveCheckoutMpPlanId: vi.fn().mockResolvedValue('mp_plan_test'),
+        resolveOrProvisionMpPlan: vi.fn()
+    };
+});
+
+// HOS-191 Path C: checkout no longer creates a MercadoPago preapproval or a
+// local subscription via `billing.subscriptions.create` — it materializes a
+// `pending_provider` subscription via this helper. Mocked here so these route
+// tests do not require a live DB; the helper itself is unit-tested in
+// `pending-provider-subscription-create.test.ts`.
+vi.mock('../../../src/services/billing/pending-provider-subscription-create', () => ({
+    createPendingProviderSubscription: vi.fn()
 }));
 
 // ---------------------------------------------------------------------------
@@ -108,6 +127,7 @@ vi.mock('../../../src/services/billing/mp-plan-provisioning.service', () => ({
 import { captureBillingError } from '../../../src/lib/sentry';
 import { getQZPayBilling } from '../../../src/middlewares/billing';
 import { handleStartPaidSubscription } from '../../../src/routes/billing/start-paid';
+import { createPendingProviderSubscription } from '../../../src/services/billing/pending-provider-subscription-create';
 import { env } from '../../../src/utils/env';
 
 // ---------------------------------------------------------------------------
@@ -156,13 +176,14 @@ function makeBillingMock(opts: { planActive: boolean; planSlug: string }) {
 
     return {
         subscriptions: {
-            getByCustomerId: vi.fn().mockResolvedValue([]),
-            create: vi.fn().mockResolvedValue({
-                id: 'sub_new_test',
-                providerInitPoint: 'https://mp.test/checkout',
-                providerSandboxInitPoint: null,
-                // HOS-151 Bug C: createPaidSubscription requires a non-empty provider id.
-                providerSubscriptionIds: { mercadopago: 'mp_preapproval_test' }
+            getByCustomerId: vi.fn().mockResolvedValue([])
+        },
+        customers: {
+            get: vi.fn().mockResolvedValue({
+                id: CUSTOMER_ID,
+                email: 'plan-disabled-test@hospeda.test',
+                name: 'Test Host',
+                livemode: false
             })
         },
         plans: {
@@ -185,6 +206,11 @@ describe('handleStartPaidSubscription — plan-disabled guard (SPEC-148 T-006)',
     beforeEach(() => {
         vi.clearAllMocks();
         vi.mocked(captureBillingError).mockReturnValue('sentinel-event-id');
+        vi.mocked(createPendingProviderSubscription).mockResolvedValue({
+            localSubscriptionId: 'sub_new_test',
+            nonce: 'nonce-test',
+            expiresAt: '2099-01-01T00:00:00.000Z'
+        });
     });
 
     describe('monthly checkout on a disabled plan', () => {
@@ -216,7 +242,7 @@ describe('handleStartPaidSubscription — plan-disabled guard (SPEC-148 T-006)',
             expect((err as ServiceError).reason).toBe('PLAN_DISABLED');
         });
 
-        it('subscriptions.create NOT called when plan-disabled guard fires (monthly)', async () => {
+        it('createPendingProviderSubscription NOT called when plan-disabled guard fires (monthly)', async () => {
             const billing = makeBillingMock({
                 planActive: false,
                 planSlug: PLAN_SLUG_DISABLED
@@ -229,7 +255,7 @@ describe('handleStartPaidSubscription — plan-disabled guard (SPEC-148 T-006)',
                 billingInterval: 'monthly'
             }).catch(() => undefined);
 
-            expect(billing.subscriptions.create).not.toHaveBeenCalled();
+            expect(vi.mocked(createPendingProviderSubscription)).not.toHaveBeenCalled();
         });
 
         it('error message mentions plan no longer available', async () => {
@@ -274,7 +300,7 @@ describe('handleStartPaidSubscription — plan-disabled guard (SPEC-148 T-006)',
             );
         });
 
-        it('subscriptions.create NOT called when plan-disabled guard fires (annual)', async () => {
+        it('createPendingProviderSubscription NOT called when plan-disabled guard fires (annual)', async () => {
             const billing = makeBillingMock({ planActive: false, planSlug: PLAN_SLUG_DISABLED });
             mockBillingWith(billing);
 
@@ -284,7 +310,7 @@ describe('handleStartPaidSubscription — plan-disabled guard (SPEC-148 T-006)',
                 billingInterval: 'annual'
             }).catch(() => undefined);
 
-            expect(billing.subscriptions.create).not.toHaveBeenCalled();
+            expect(vi.mocked(createPendingProviderSubscription)).not.toHaveBeenCalled();
         });
     });
 
@@ -372,13 +398,14 @@ describe('handleStartPaidSubscription — plan-disabled guard (SPEC-148 T-006)',
 
             return {
                 subscriptions: {
-                    getByCustomerId: vi.fn().mockResolvedValue([]),
-                    create: vi.fn().mockResolvedValue({
-                        id: 'sub_test_daily',
-                        providerInitPoint: 'https://mp.test/checkout/daily',
-                        providerSandboxInitPoint: null,
-                        // HOS-151 Bug C: createPaidSubscription requires a non-empty provider id.
-                        providerSubscriptionIds: { mercadopago: 'mp_preapproval_daily' }
+                    getByCustomerId: vi.fn().mockResolvedValue([])
+                },
+                customers: {
+                    get: vi.fn().mockResolvedValue({
+                        id: CUSTOMER_ID,
+                        email: 'test-daily@hospeda.test',
+                        name: 'Test Daily Tester',
+                        livemode: false
                     })
                 },
                 plans: {
@@ -428,7 +455,7 @@ describe('handleStartPaidSubscription — plan-disabled guard (SPEC-148 T-006)',
             );
         });
 
-        it('succeeds end-to-end (real subscriptions.create call) when the flag is on', async () => {
+        it('succeeds end-to-end (real createPendingProviderSubscription call) when the flag is on', async () => {
             (env as unknown as Record<string, unknown>).HOSPEDA_SHOW_TEST_BILLING_PLAN = true;
             const billing = makeTestDailyBillingMock();
             mockBillingWith(billing);
@@ -439,8 +466,8 @@ describe('handleStartPaidSubscription — plan-disabled guard (SPEC-148 T-006)',
                 billingInterval: 'monthly'
             });
 
-            expect(result).toMatchObject({ localSubscriptionId: 'sub_test_daily' });
-            expect(billing.subscriptions.create).toHaveBeenCalledWith(
+            expect(result).toMatchObject({ localSubscriptionId: 'sub_new_test' });
+            expect(vi.mocked(createPendingProviderSubscription)).toHaveBeenCalledWith(
                 expect.objectContaining({ priceId: 'price_test_daily' })
             );
         });

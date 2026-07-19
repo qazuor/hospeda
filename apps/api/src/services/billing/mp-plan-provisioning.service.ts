@@ -342,6 +342,40 @@ export async function resolveCheckoutMpPlanId(
 }
 
 /**
+ * Input for {@link buildPreapprovalPlanShareLink}.
+ */
+export interface BuildPreapprovalPlanShareLinkInput {
+    /** The MercadoPago `preapproval_plan` id to build a hosted checkout link for. */
+    readonly mpPreapprovalPlanId: string;
+}
+
+/**
+ * Build MercadoPago's HOSTED share-link URL for a `preapproval_plan` (HOS-191
+ * Path C). The customer completes card collection and preapproval authorization
+ * entirely on this page — Hospeda never sees the card and creates no
+ * `POST /preapproval` server-side, which is what avoids the "card_token_id is
+ * required" rejection a server-side `preapproval_plan_id` create hits.
+ *
+ * The host (`mercadopago.com.ar`) is hardcoded to MercadoPago Argentina (MLA)
+ * prod, matching the account Hospeda operates under; this is not
+ * environment-conditional the way `HOSPEDA_SITE_URL`/`HOSPEDA_API_URL` are.
+ * This string-built URL is the SOLE mechanism today: the qzpay `prices.create`
+ * adapter returns only the `preapproval_plan` id, so nothing captures the real
+ * per-plan `init_point`. The `billing_mp_plans.init_point` column is reserved
+ * for a follow-up that records the provider's own `init_point` once the adapter
+ * exposes it — it is NOT read here and is not a fallback. Empirically this
+ * hand-built URL is functionally identical to what MP's own dashboard "share"
+ * button generates.
+ *
+ * @param input - The resolved MP plan id (from {@link resolveCheckoutMpPlanId}).
+ * @returns The absolute hosted checkout URL to redirect the customer to.
+ */
+export function buildPreapprovalPlanShareLink(input: BuildPreapprovalPlanShareLinkInput): string {
+    const params = new URLSearchParams({ preapproval_plan_id: input.mpPreapprovalPlanId });
+    return `https://www.mercadopago.com.ar/subscriptions/checkout?${params.toString()}`;
+}
+
+/**
  * Archive a MercadoPago `preapproval_plan` without letting a failure propagate.
  * Used to retire a drifted plan or reap a lost-race orphan — neither is worth
  * failing the checkout over; a leaked inactive plan is harmless and the reconcile
