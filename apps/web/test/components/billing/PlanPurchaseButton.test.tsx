@@ -1832,4 +1832,44 @@ describe('PlanPurchaseButton', () => {
             expect(window.sessionStorage.getItem(PENDING_KEY)).toBeNull();
         });
     });
+
+    // -----------------------------------------------------------------------
+    // BETA-183 — monthly MP email-mismatch notice (layer 1, notice only)
+    // -----------------------------------------------------------------------
+
+    describe('monthly MP email notice (BETA-183)', () => {
+        it('shows the notice with the user email on an authenticated monthly checkout', () => {
+            mockAuthenticated();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            const notice = screen.getByTestId('monthly-email-notice');
+            expect(notice).toBeInTheDocument();
+            // The user's signup email is interpolated into the copy so they can
+            // match (or switch) their MercadoPago account before the redirect.
+            expect(notice).toHaveTextContent('juan@example.com');
+        });
+
+        it('does NOT show the notice when the user is unauthenticated', () => {
+            mockUnauthenticated();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            expect(screen.queryByTestId('monthly-email-notice')).not.toBeInTheDocument();
+        });
+
+        it('does NOT show the notice on annual billing (annual has no email constraint)', async () => {
+            mockAuthenticated();
+            // The billing interval is driven by the closest [data-billing] ancestor
+            // (a vanilla-JS toggle outside the island). Wrapping in an annual
+            // container makes the island observe 'annual' on mount.
+            render(
+                <div data-billing="annual">
+                    <PlanPurchaseButton {...defaultProps} />
+                </div>
+            );
+
+            await waitFor(() => {
+                expect(screen.queryByTestId('monthly-email-notice')).not.toBeInTheDocument();
+            });
+        });
+    });
 });

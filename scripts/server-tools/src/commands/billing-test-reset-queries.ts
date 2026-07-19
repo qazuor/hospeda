@@ -252,9 +252,11 @@ SELECT count(*) FROM accommodations
  * `subscription_id` (it has no `customer_id` column) and its FK to
  * `billing_subscriptions` is `ON DELETE cascade`, so it is removed
  * automatically when the subscriptions rows go.
- * `billing_customers` is deleted last. The accommodations UPDATE runs
- * unconditionally (scoped by owner_id, not customerId) so it also fires
- * when the user has no billing_customers row at all.
+ * `billing_customers` (the parent shell) is deleted last, but ONLY when
+ * `deleteUser` is set (HOS-202) — a plain reset preserves it so the user can
+ * still checkout afterwards. The accommodations UPDATE runs unconditionally
+ * (scoped by owner_id, not customerId) so it also fires when the user has no
+ * billing_customers row at all.
  */
 export function buildResetTransaction(params: {
     customerId: string | null;
@@ -269,7 +271,15 @@ export function buildResetTransaction(params: {
         for (const d of customerScopedDeletes(cid)) {
             lines.push(`DELETE FROM ${d.table} WHERE ${d.where};`);
         }
-        lines.push(`DELETE FROM billing_customers WHERE id = '${cid}';`);
+        // HOS-202: preserve the billing_customers shell on a plain reset. The
+        // row is created ONCE at signup (the `user.create.after` Better Auth
+        // hook) and is never recreated for an existing user, so deleting it
+        // without --delete-user leaves the user unable to checkout
+        // ("No billing account found", 400). It is account infrastructure, not
+        // smoke state. Only drop it when the whole user is being removed anyway.
+        if (params.deleteUser) {
+            lines.push(`DELETE FROM billing_customers WHERE id = '${cid}';`);
+        }
     }
 
     lines.push(

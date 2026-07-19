@@ -312,7 +312,8 @@
             },
             "toast": {
                 "saveSuccess": "Changes saved",
-                "saveError": "We couldn't save your changes. Please try again."
+                "saveError": "We couldn't save your changes. Please try again.",
+                "noChanges": "No changes to save"
             },
             "entitlement": {
                 "premiumFeature": "Premium feature",

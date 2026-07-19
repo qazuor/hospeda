@@ -21,6 +21,7 @@
 import { ChangePasswordInputSchema } from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from 'react';
 import { refreshBetterAuthSession } from '@/lib/auth-client';
+import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './ChangePasswordForm.module.css';
@@ -136,6 +137,20 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
         setGlobalError(null);
         setErrors({});
 
+        // Required-field guard: the schema's `currentPassword` message is a raw
+        // English literal ("Current password is required"), so surface a proper
+        // localized message before the schema parse instead (HOS-190 BETA-190).
+        if (!fields.currentPassword) {
+            setErrors((prev) => ({
+                ...prev,
+                currentPassword: t(
+                    'commerce.changePassword.currentRequired',
+                    'La contraseña actual es requerida.'
+                )
+            }));
+            return;
+        }
+
         // Client-side mismatch check before hitting the API.
         if (fields.newPassword !== fields.confirmNewPassword) {
             setErrors((prev) => ({
@@ -156,14 +171,10 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
         });
 
         if (!parsed.success) {
-            const fieldErrors: FieldErrors = {};
-            for (const issue of parsed.error.issues) {
-                const field = issue.path[0] as keyof FieldErrors | undefined;
-                if (field && !fieldErrors[field]) {
-                    fieldErrors[field] = issue.message;
-                }
-            }
-            setErrors(fieldErrors);
+            // Resolve each Zod `zodError.*` key through `t` (via the shared
+            // mapper) so `errors.newPassword` shows human Spanish instead of the
+            // raw `zodError.common.password.*` key (HOS-190 BETA-190).
+            setErrors(zodIssuesToFieldErrors(parsed.error.issues, t));
             return;
         }
 

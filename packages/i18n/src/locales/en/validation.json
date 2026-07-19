@@ -1357,7 +1357,7 @@
         "id": {
             "invalid": "[EN] ID no es válido",
             "invalid_uuid": "[EN] ID debe ser un UUID válido",
-            "invalidUuid": "[EN] ID debe ser un UUID válido",
+            "invalidUuid": "[EN] Seleccioná una opción válida de la lista",
             "required": "[EN] ID es obligatorio"
         },
         "isActive": {
@@ -1688,16 +1688,16 @@
             "invalid": "[EN] El email no es válido"
         },
         "firstName": {
-            "max": "[EN] El first name no puede superar los {{max}} caracteres",
-            "min": "[EN] El first name debe tener al menos {{min}} caracteres"
+            "max": "[EN] El nombre no puede superar los {{max}} caracteres",
+            "min": "[EN] El nombre es obligatorio"
         },
         "lastName": {
-            "max": "[EN] El last name no puede superar los {{max}} caracteres",
-            "min": "[EN] El last name debe tener al menos {{min}} caracteres"
+            "max": "[EN] El apellido no puede superar los {{max}} caracteres",
+            "min": "[EN] El apellido es obligatorio"
         },
         "message": {
-            "max": "[EN] El message no puede superar los {{max}} caracteres",
-            "min": "[EN] El message debe tener al menos {{min}} caracteres"
+            "max": "[EN] El mensaje no puede superar los {{max}} caracteres",
+            "min": "[EN] El mensaje debe tener al menos {{min}} caracteres"
         }
     },
     "dateRange": {
@@ -1960,7 +1960,7 @@
             "invalid": "[EN] El access right scope no es válido"
         },
         "accommodationType": {
-            "invalid": "[EN] El accommodation type no es válido"
+            "invalid": "[EN] Elegí un tipo de alojamiento válido"
         },
         "amenitiesType": {
             "invalid": "[EN] El amenities type no es válido"
@@ -2894,8 +2894,8 @@
     },
     "ownerPromotion": {
         "currentRedemptions": {
-            "int": "[EN] El current redemptions debe ser un número entero",
-            "min": "[EN] El current redemptions debe tener al menos {{min}} caracteres"
+            "int": "[EN] Los usos actuales deben ser un número entero",
+            "min": "[EN] Los usos actuales no pueden ser negativos"
         },
         "delete": {
             "deletedAt": {
@@ -2912,20 +2912,20 @@
             "max": "[EN] La descripción no puede superar los {{max}} caracteres"
         },
         "discountValue": {
-            "min": "[EN] El discount value debe tener al menos {{min}} caracteres",
-            "required": "[EN] El discount value es obligatorio"
+            "min": "[EN] El valor del descuento no puede ser negativo",
+            "required": "[EN] El valor del descuento es obligatorio"
         },
         "maxRedemptions": {
-            "int": "[EN] El max redemptions debe ser un número entero",
-            "min": "[EN] El max redemptions debe tener al menos {{min}} caracteres"
+            "int": "[EN] Los usos máximos deben ser un número entero",
+            "min": "[EN] Los usos máximos deben ser al menos {{min}}"
         },
         "minNights": {
             "int": "[EN] La cantidad mínima de noches debe ser un número entero",
             "min": "[EN] La cantidad mínima de noches debe tener al menos {{min}} caracteres"
         },
         "slug": {
-            "min": "[EN] El slug debe tener al menos {{min}} caracteres",
-            "required": "[EN] El slug es obligatorio"
+            "min": "[EN] El identificador debe tener al menos {{min}} caracteres",
+            "required": "[EN] El identificador es obligatorio"
         },
         "title": {
             "max": "[EN] El título no puede superar los {{max}} caracteres",
@@ -2933,10 +2933,10 @@
             "required": "[EN] El título es obligatorio"
         },
         "validFrom": {
-            "required": "[EN] El valid from es obligatorio"
+            "required": "[EN] La fecha de inicio es obligatoria"
         },
         "validUntil": {
-            "invalid": "[EN] El valid until no es válido"
+            "invalid": "[EN] La fecha de fin no es válida"
         }
     },
     "pagination": {

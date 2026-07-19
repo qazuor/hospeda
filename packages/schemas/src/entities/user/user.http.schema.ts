@@ -169,10 +169,12 @@ export const httpToDomainUserCreate = (httpData: UserCreateHttp): UserCreateInpu
     lifecycleState: LifecycleStatusEnum.ACTIVE, // Default lifecycle state
     visibility: VisibilityEnum.PUBLIC, // Default visibility
 
-    // Map contact info with required mobilePhone field
+    // Map contact info. Omit mobilePhone when the phone field is absent instead of
+    // injecting a bogus placeholder number (HOS-190) — mobilePhone is optional and
+    // a fabricated phone both pollutes data and fails the strict phone regex.
     contactInfo: {
         personalEmail: httpData.email,
-        mobilePhone: httpData.phone || '+1234567890' // Provide default if phone not provided
+        ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone })
     }
 
     // Note: Many domain fields have defaults or are optional

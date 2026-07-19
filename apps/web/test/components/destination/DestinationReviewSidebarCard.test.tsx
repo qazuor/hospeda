@@ -176,7 +176,7 @@ describe('DestinationReviewSidebarCard — submit disabled state', () => {
     it('shows the ratingRequired hint when not all dimensions are rated', () => {
         renderCard();
         openDialog();
-        expect(screen.getByText(/debes seleccionar una calificación/i)).toBeInTheDocument();
+        expect(screen.getByText(/calificá todas las categorías/i)).toBeInTheDocument();
     });
 
     it('submit button is enabled after rating all 18 dimensions', () => {
@@ -191,7 +191,7 @@ describe('DestinationReviewSidebarCard — submit disabled state', () => {
         renderCard();
         openDialog();
         rateAllDimensions();
-        expect(screen.queryByText(/debes seleccionar una calificación/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/calificá todas las categorías/i)).not.toBeInTheDocument();
     });
 });
 

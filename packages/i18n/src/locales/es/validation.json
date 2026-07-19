@@ -1357,7 +1357,7 @@
         "id": {
             "invalid": "ID no es válido",
             "invalid_uuid": "ID debe ser un UUID válido",
-            "invalidUuid": "ID debe ser un UUID válido",
+            "invalidUuid": "Seleccioná una opción válida de la lista",
             "required": "ID es obligatorio"
         },
         "isActive": {
@@ -1688,16 +1688,16 @@
             "invalid": "El email no es válido"
         },
         "firstName": {
-            "max": "El first name no puede superar los {{max}} caracteres",
-            "min": "El first name debe tener al menos {{min}} caracteres"
+            "max": "El nombre no puede superar los {{max}} caracteres",
+            "min": "El nombre es obligatorio"
         },
         "lastName": {
-            "max": "El last name no puede superar los {{max}} caracteres",
-            "min": "El last name debe tener al menos {{min}} caracteres"
+            "max": "El apellido no puede superar los {{max}} caracteres",
+            "min": "El apellido es obligatorio"
         },
         "message": {
-            "max": "El message no puede superar los {{max}} caracteres",
-            "min": "El message debe tener al menos {{min}} caracteres"
+            "max": "El mensaje no puede superar los {{max}} caracteres",
+            "min": "El mensaje debe tener al menos {{min}} caracteres"
         }
     },
     "dateRange": {
@@ -1960,7 +1960,7 @@
             "invalid": "El access right scope no es válido"
         },
         "accommodationType": {
-            "invalid": "El accommodation type no es válido"
+            "invalid": "Elegí un tipo de alojamiento válido"
         },
         "amenitiesType": {
             "invalid": "El amenities type no es válido"
@@ -2894,8 +2894,8 @@
     },
     "ownerPromotion": {
         "currentRedemptions": {
-            "int": "El current redemptions debe ser un número entero",
-            "min": "El current redemptions debe tener al menos {{min}} caracteres"
+            "int": "Los usos actuales deben ser un número entero",
+            "min": "Los usos actuales no pueden ser negativos"
         },
         "delete": {
             "deletedAt": {
@@ -2912,20 +2912,20 @@
             "max": "La descripción no puede superar los {{max}} caracteres"
         },
         "discountValue": {
-            "min": "El discount value debe tener al menos {{min}} caracteres",
-            "required": "El discount value es obligatorio"
+            "min": "El valor del descuento no puede ser negativo",
+            "required": "El valor del descuento es obligatorio"
         },
         "maxRedemptions": {
-            "int": "El max redemptions debe ser un número entero",
-            "min": "El max redemptions debe tener al menos {{min}} caracteres"
+            "int": "Los usos máximos deben ser un número entero",
+            "min": "Los usos máximos deben ser al menos {{min}}"
         },
         "minNights": {
             "int": "La cantidad mínima de noches debe ser un número entero",
             "min": "La cantidad mínima de noches debe tener al menos {{min}} caracteres"
         },
         "slug": {
-            "min": "El slug debe tener al menos {{min}} caracteres",
-            "required": "El slug es obligatorio"
+            "min": "El identificador debe tener al menos {{min}} caracteres",
+            "required": "El identificador es obligatorio"
         },
         "title": {
             "max": "El título no puede superar los {{max}} caracteres",
@@ -2933,10 +2933,10 @@
             "required": "El título es obligatorio"
         },
         "validFrom": {
-            "required": "El valid from es obligatorio"
+            "required": "La fecha de inicio es obligatoria"
         },
         "validUntil": {
-            "invalid": "El valid until no es válido"
+            "invalid": "La fecha de fin no es válida"
         }
     },
     "pagination": {

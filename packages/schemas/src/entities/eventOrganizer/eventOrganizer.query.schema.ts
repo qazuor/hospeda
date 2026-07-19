@@ -4,7 +4,7 @@ import {
     HttpQueryFields,
     HttpSortingSchema
 } from '../../api/http/base-http.schema.js';
-import { ContactInfoSchema } from '../../common/contact.schema.js';
+import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { SocialNetworkSchema } from '../../common/social.schema.js';
 import { applyOpenApiMetadata, type OpenApiSchemaMetadata } from '../../utils/openapi.utils.js';
@@ -74,8 +74,9 @@ export const EventOrganizerSearchSchema = BaseSearchSchema.extend({
 
 /**
  * EventOrganizer list item schema - contains essential fields for list display.
- * contactInfo and socialNetworks use .partial() because DB records may have
- * incomplete nested objects (e.g., missing mobilePhone).
+ * contactInfo uses the lenient read overlay (HOS-190) and socialNetworks uses
+ * .partial() because DB records may have incomplete nested objects (e.g., a
+ * legacy-format phone or missing mobilePhone) that must not 500 the response.
  */
 export const EventOrganizerListItemSchema = EventOrganizerSchema.pick({
     id: true,
@@ -87,7 +88,7 @@ export const EventOrganizerListItemSchema = EventOrganizerSchema.pick({
     lifecycleState: true,
     adminInfo: true
 }).extend({
-    contactInfo: ContactInfoSchema.partial().nullish(),
+    contactInfo: ContactInfoReadSchema.nullish(),
     socialNetworks: SocialNetworkSchema.partial().nullish()
 });
 
@@ -130,6 +131,8 @@ export const EventOrganizerSummarySchema = EventOrganizerSchema.pick({
     logo: true,
     contactInfo: true
 }).extend({
+    // HOS-190: read⊇write lenient contactInfo (legacy phone must not 500).
+    contactInfo: ContactInfoReadSchema.nullish(),
     email: z.string().email().optional(),
     website: z.string().url().optional(),
     city: z.string().optional(),
