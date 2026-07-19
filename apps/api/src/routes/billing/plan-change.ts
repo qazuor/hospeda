@@ -33,6 +33,7 @@ import { captureBillingError } from '../../lib/sentry';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { idempotencyKeyMiddleware } from '../../middlewares/idempotency-key';
+import { applyTrialingPlanUpgrade } from '../../services/billing/trialing-plan-upgrade.service';
 import {
     initiatePaidPlanUpgrade,
     SubscriptionCheckoutError
@@ -76,6 +77,19 @@ function mapUpgradeErrorToHttp(err: SubscriptionCheckoutError): HTTPException {
         // retryable — 502, aligned with start-paid's mapper.
         case 'MISSING_PROVIDER_SUBSCRIPTION_ID':
             return new HTTPException(502, { message: err.message });
+        // HOS-211: the trial-time upgrade's fail-closed preapproval-amount
+        // mutation was rejected by MP — the local plan change was never
+        // applied. Upstream-provider failure, retryable — 502, consistent
+        // with MISSING_PROVIDER_SUBSCRIPTION_ID above.
+        case 'MP_PREAPPROVAL_MUTATION_FAILED':
+            return new HTTPException(502, { message: err.message });
+        // HOS-211: MP was ALREADY mutated to the new price, but the local
+        // changePlan commit failed afterward — a local/MP drift state, not a
+        // clean upstream rejection. 500 (server-side inconsistency), distinct
+        // from MP_PREAPPROVAL_MUTATION_FAILED above (which means nothing was
+        // mutated and is safe/retryable).
+        case 'TRIALING_UPGRADE_LOCAL_APPLY_FAILED':
+            return new HTTPException(500, { message: err.message });
         default:
             return new HTTPException(500, { message: err.message });
     }
@@ -327,6 +341,70 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         const normalizedCurrentPrice = currentPrice.unitAmount / currentIntervalCount;
         const normalizedTargetPrice = targetPrice.unitAmount / targetIntervalCount;
         const isUpgrade = normalizedTargetPrice > normalizedCurrentPrice;
+
+        // HOS-211 — trialing-upgrade branch. Owner decision (Stripe-style):
+        // an upgrade requested WHILE the subscription is still `trialing`
+        // must NOT charge the prorated Checkout Pro delta — there is no
+        // paid period yet, so nothing to prorate. Instead, apply the new
+        // plan now (no charge) and let the trial's first charge (at trial
+        // end) bill at the new price. This branch MUST be checked before
+        // `isUpgrade` below so a trialing subscription never reaches
+        // `initiatePaidPlanUpgrade` / the Checkout Pro. Downgrades during a
+        // trial are unaffected — they already fall through to the
+        // scheduled-downgrade branch further down, which never charges.
+        if (isUpgrade && activeSubscription.status === 'trialing') {
+            try {
+                const trialingUpgradeResult = await applyTrialingPlanUpgrade({
+                    billing,
+                    subscriptionId: activeSubscription.id,
+                    oldPlanId: activeSubscription.planId,
+                    newPlanId,
+                    newPriceId: targetPrice.id,
+                    // Current price id — lets the service tell a genuine
+                    // no-op (same plan AND same interval) apart from a
+                    // same-plan cycle change (e.g. monthly → annual on the
+                    // same tier), which must still apply (WARNING 3).
+                    currentPriceId: currentPrice.id,
+                    // qzpay stores prices in centavos; MP `auto_recurring.transaction_amount`
+                    // expects major units — same conversion `initiatePaidPlanUpgrade`
+                    // uses for `targetTransactionAmountMajor`.
+                    targetTransactionAmountMajor: targetPrice.unitAmount / 100,
+                    mpSubscriptionId: activeSubscription.providerSubscriptionIds?.mercadopago
+                });
+
+                apiLogger.info(
+                    {
+                        customerId: billingCustomerId,
+                        subscriptionId: trialingUpgradeResult.subscriptionId,
+                        previousPlanId: trialingUpgradeResult.previousPlanId,
+                        newPlanId: trialingUpgradeResult.newPlanId,
+                        alreadyOnTargetPlan: trialingUpgradeResult.alreadyOnTargetPlan
+                    },
+                    'Trialing plan upgrade applied — no charge, trial preserved'
+                );
+
+                auditLog({
+                    auditEvent: AuditEventType.BILLING_MUTATION,
+                    actorId: actor.id,
+                    action: 'update',
+                    resourceType: 'subscription_plan',
+                    resourceId: trialingUpgradeResult.subscriptionId
+                });
+
+                return {
+                    status: 'active' as const,
+                    subscriptionId: trialingUpgradeResult.subscriptionId,
+                    previousPlanId: trialingUpgradeResult.previousPlanId,
+                    newPlanId: trialingUpgradeResult.newPlanId,
+                    effectiveAt: new Date().toISOString()
+                };
+            } catch (trialingUpgradeError) {
+                if (trialingUpgradeError instanceof SubscriptionCheckoutError) {
+                    throw mapUpgradeErrorToHttp(trialingUpgradeError);
+                }
+                throw trialingUpgradeError;
+            }
+        }
 
         // SPEC-141 D7 — upgrade branch. The local subscription is NOT
         // mutated here: the user is redirected to MP to pay the prorated

@@ -82,6 +82,18 @@ export function mapSubscriptionCheckoutErrorToHttp(err: SubscriptionCheckoutErro
             // other provider-failure codes this is an upstream/registry issue,
             // not user input — 502, retryable.
             return new HTTPException(502, { message: err.message });
+        case 'MP_PREAPPROVAL_MUTATION_FAILED':
+            // HOS-211: the trial-time plan-upgrade preapproval-amount mutation
+            // was rejected by MP — fail-closed, the local plan change was never
+            // applied. Upstream-provider failure, retryable — 502, consistent
+            // with DISCOUNT_APPLY_FAILED / MISSING_PROVIDER_SUBSCRIPTION_ID.
+            return new HTTPException(502, { message: err.message });
+        case 'TRIALING_UPGRADE_LOCAL_APPLY_FAILED':
+            // HOS-211: MP was ALREADY mutated to the new price, but the local
+            // changePlan commit failed afterward — a local/MP drift state, not
+            // a clean upstream rejection. 500 (server-side inconsistency), not
+            // 502 — the provider did its job; ours failed after.
+            return new HTTPException(500, { message: err.message });
         default: {
             // Defensive: the union should be exhaustive, but TS doesn't
             // enforce that downstream consumers add new codes here. Fall
