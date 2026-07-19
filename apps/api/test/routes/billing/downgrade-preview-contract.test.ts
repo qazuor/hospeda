@@ -325,6 +325,45 @@ const MOCK_DOWNGRADE_PREVIEW_WITH_EXCESS: DowngradePreview = {
     hasExcess: true
 };
 
+/**
+ * A DowngradePreview whose target plan leaves every quantity dimension
+ * UNLIMITED. The service emits `cap: -1` as the "no cap" sentinel (see
+ * `subscription-downgrade-excess.service.ts`), e.g. for `tourist-free` which
+ * defines neither MAX_ACCOMMODATIONS nor MAX_ACTIVE_PROMOTIONS.
+ *
+ * HOS-212 regression: `DowngradePreviewSchema` previously declared `cap` as
+ * `.nonnegative()`, so this shape failed the fail-closed response strip and
+ * turned into an HTTP 500 — breaking downgrades to ANY plan with an unlimited
+ * dimension (tourist-free, owner-premium, complex-premium).
+ */
+const MOCK_DOWNGRADE_PREVIEW_UNLIMITED_CAP: DowngradePreview = {
+    accommodations: {
+        cap: -1,
+        activeCount: 2,
+        excessCount: 0,
+        items: []
+    },
+    promotions: {
+        cap: -1,
+        activeCount: 0,
+        excessCount: 0,
+        items: []
+    },
+    photos: [
+        {
+            accommodationId: crypto.randomUUID(),
+            accommodationName: 'Hotel on an unlimited-photo plan',
+            cap: -1,
+            totalCount: 12,
+            excessCount: 0,
+            hasFeaturedImage: true,
+            overflowPhotoUrls: []
+        }
+    ],
+    grandfatherFlags: [],
+    hasExcess: false
+};
+
 // ---------------------------------------------------------------------------
 // Helper — build headers for an authenticated owner actor
 // ---------------------------------------------------------------------------
@@ -595,6 +634,41 @@ describe('GET /api/v1/protected/billing/subscriptions/downgrade-preview', () => 
                 // updatedAt must be an ISO 8601 datetime string
                 expect(new Date(item.updatedAt).toISOString()).toBe(item.updatedAt);
             }
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // HOS-212 regression — unlimited target-plan cap (sentinel -1)
+    //
+    // The service uses `-1` as the "unlimited / no cap" sentinel. The response
+    // schema declared `cap` as `.nonnegative()`, so the fail-closed strip
+    // (SPEC-210) rejected `-1` → HTTP 500 for downgrades to ANY plan with an
+    // unlimited dimension (repro 100% on `tourist-free`). These assert the
+    // preview survives the real Zod strip end-to-end.
+    // -------------------------------------------------------------------------
+
+    describe('unlimited target-plan cap (HOS-212)', () => {
+        it('returns 200 (not 500) when the target plan has unlimited caps (cap:-1)', async () => {
+            // Arrange
+            mockComputeDowngradeExcess.mockResolvedValue(MOCK_DOWNGRADE_PREVIEW_UNLIMITED_CAP);
+            const headers = ownerAuthHeaders();
+
+            // Act — mirrors the SMOKE-19-07 repro: a tourist downgrading to free
+            const res = await app.request(`${ENDPOINT}?targetPlan=tourist-free`, { headers });
+
+            // Assert — the -1 sentinel passes the fail-closed response strip
+            expect(res.status).toBe(200);
+
+            const body = await res.json();
+            const data: DowngradePreview = body.data;
+
+            expect(data.accommodations.cap).toBe(-1);
+            expect(data.promotions.cap).toBe(-1);
+            expect(data.photos[0]?.cap).toBe(-1);
+            // Unlimited means nothing can be excess.
+            expect(data.hasExcess).toBe(false);
+            expect(data.accommodations.excessCount).toBe(0);
+            expect(data.promotions.excessCount).toBe(0);
         });
     });
 

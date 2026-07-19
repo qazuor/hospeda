@@ -18,6 +18,26 @@
 import { z } from 'zod';
 
 // ---------------------------------------------------------------------------
+// Shared cap primitive
+// ---------------------------------------------------------------------------
+
+/**
+ * A target-plan limit ("cap") as surfaced by the downgrade preview.
+ *
+ * The downgrade-excess service uses `-1` as the sentinel for "unlimited / no
+ * cap" (a plan that does not define the corresponding {@link LimitKey}). Every
+ * other value is a real, non-negative cap (`0` = none allowed).
+ *
+ * This must accept `-1` because `stripWithSchema` is fail-closed (SPEC-210):
+ * a plain `.nonnegative()` would reject the sentinel and turn a valid preview
+ * into an HTTP 500 for any target plan with an unlimited dimension.
+ */
+const PlanCapSchema = z
+    .number()
+    .int()
+    .refine((v) => v === -1 || v >= 0, 'cap must be >= 0, or -1 for unlimited');
+
+// ---------------------------------------------------------------------------
 // Dimension 1 & 2 — entity excess item (accommodations + promotions)
 // ---------------------------------------------------------------------------
 
@@ -54,8 +74,8 @@ export type DowngradeExcessItem = z.infer<typeof DowngradeExcessItemSchema>;
  * Accommodation-dimension excess summary.
  */
 export const AccommodationExcessSchema = z.object({
-    /** Target plan cap (0 = none allowed). */
-    cap: z.number().int().nonnegative(),
+    /** Target plan cap (0 = none allowed, -1 = unlimited). */
+    cap: PlanCapSchema,
     /** Count of currently-active, non-plan-restricted accommodations. */
     activeCount: z.number().int().nonnegative(),
     /** Number of accommodations that exceed the cap (activeCount − cap, >= 0). */
@@ -77,8 +97,8 @@ export type AccommodationExcess = z.infer<typeof AccommodationExcessSchema>;
  * Active-promotion-dimension excess summary.
  */
 export const PromotionExcessSchema = z.object({
-    /** Target plan cap (0 = no promotions allowed). */
-    cap: z.number().int().nonnegative(),
+    /** Target plan cap (0 = no promotions allowed, -1 = unlimited). */
+    cap: PlanCapSchema,
     /** Count of currently-active, non-plan-restricted promotions owned by the host. */
     activeCount: z.number().int().nonnegative(),
     /** Number of promotions that exceed the cap. */
@@ -112,8 +132,8 @@ export const AccommodationPhotoExcessSchema = z.object({
     accommodationId: z.string().uuid(),
     /** Accommodation name for UI display */
     accommodationName: z.string(),
-    /** Target photo cap for this plan. */
-    cap: z.number().int().nonnegative(),
+    /** Target photo cap for this plan (-1 = unlimited). */
+    cap: PlanCapSchema,
     /**
      * Total photos currently in this accommodation:
      * gallery.length + (featuredImage ? 1 : 0).

@@ -165,13 +165,16 @@ export function DowngradePreviewPanel({
 
     // ── Accommodation capacity warning ──────────────────────────────────────
 
+    // `cap === -1` is the "unlimited" sentinel: nothing can be over an unlimited
+    // cap, and `selected > -1` would be spuriously true (e.g. 0 > -1), which would
+    // wrongly disable Confirm when a sibling dimension has real excess (HOS-212).
     const accCap = preview.accommodations.cap;
     const accSelected = selectedAccommodationIds.size;
-    const accOverCap = accSelected > accCap;
+    const accOverCap = accCap !== -1 && accSelected > accCap;
 
     const promoCap = preview.promotions.cap;
     const promoSelected = selectedPromotionIds.size;
-    const promoOverCap = promoSelected > promoCap;
+    const promoOverCap = promoCap !== -1 && promoSelected > promoCap;
 
     return (
         <dialog
