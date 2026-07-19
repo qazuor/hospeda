@@ -1883,6 +1883,375 @@ describe('processSubscriptionUpdated', () => {
         });
     });
 
+    // -----------------------------------------------------------------------
+    // HOS-211: browser link-preapproval / trial-sync regression tests
+    // -----------------------------------------------------------------------
+    describe('trial window sync on activation (HOS-211)', () => {
+        // Core HOS-211 regression: a share-link (Path C) preapproval whose row
+        // was inserted with trialEnd=null must land on `trialing` with a real
+        // trial window, not `active` with a null one, when the live preapproval
+        // carries a card-first free trial.
+        it('should write trialing + populate trialEnd/currentPeriodEnd from the live preapproval when it carries a free trial', async () => {
+            // Arrange
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+
+            const livePeriodEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+            const mpSubscription = makeMpSubscription('active', {
+                currentPeriodEnd: livePeriodEnd,
+                auto_recurring: { free_trial: { frequency: 14, frequency_type: 'days' } }
+            });
+            mockRetrieve.mockResolvedValue(mpSubscription);
+
+            // Path C: row already linked (Step 5) but never activated — trialEnd
+            // was never known at insert time.
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                trialEnd: null
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos211-trial-sync'
+            });
+
+            // Assert: derived status is trialing, not the provider's raw active
+            expect(result.success).toBe(true);
+            expect(result.statusChanged).toBe(true);
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.TRIALING);
+
+            const txUpdateChain = dbMock.tx.update({});
+            expect(txUpdateChain.set).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    status: SubscriptionStatusEnum.TRIALING,
+                    trialEnd: livePeriodEnd,
+                    currentPeriodEnd: livePeriodEnd
+                })
+            );
+        });
+
+        // Ordinary paid activation: no free_trial on the live preapproval, so
+        // trialEnd must stay null while currentPeriodEnd still gets synced from
+        // the placeholder written at pending_provider creation to the real MP
+        // period.
+        it('should write active + leave trialEnd untouched while syncing currentPeriodEnd when the live preapproval has no free trial', async () => {
+            // Arrange
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+
+            const livePeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            const mpSubscription = makeMpSubscription('active', {
+                currentPeriodEnd: livePeriodEnd
+                // No `auto_recurring` field at all — ordinary paid preapproval.
+            });
+            mockRetrieve.mockResolvedValue(mpSubscription);
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                trialEnd: null
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos211-no-trial'
+            });
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.ACTIVE);
+
+            const txUpdateChain = dbMock.tx.update({});
+            expect(txUpdateChain.set).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    status: SubscriptionStatusEnum.ACTIVE,
+                    currentPeriodEnd: livePeriodEnd
+                })
+            );
+            // trialEnd must never be written when it was already null and stays null.
+            const setCalls = vi.mocked(txUpdateChain.set).mock.calls;
+            const lastUpdateData = setCalls[setCalls.length - 1]?.[0] as Record<string, unknown>;
+            expect(lastUpdateData).not.toHaveProperty('trialEnd');
+        });
+
+        // Preserve-if-set: once a trial has genuinely elapsed and MP has
+        // charged, the row's stored (past) trialEnd must NOT be overwritten by
+        // recomputing it from the live preapproval's NEXT (future) period —
+        // otherwise the subscription would wrongly flip back to trialing forever.
+        it('should preserve an already-set (elapsed) trialEnd and settle to active, never re-deriving trialing', async () => {
+            // Arrange
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+
+            // MP still reports free_trial (it describes the plan's trial terms,
+            // not "currently trialing") and currentPeriodEnd has already rolled
+            // to the NEXT, future billing cycle after the day-N charge.
+            const nextPeriodEnd = new Date(Date.now() + 16 * 24 * 60 * 60 * 1000);
+            const mpSubscription = makeMpSubscription('active', {
+                currentPeriodEnd: nextPeriodEnd,
+                auto_recurring: { free_trial: { frequency: 14, frequency_type: 'days' } }
+            });
+            mockRetrieve.mockResolvedValue(mpSubscription);
+
+            const elapsedTrialEnd = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.TRIALING,
+                trialStart: new Date(Date.now() - 16 * 24 * 60 * 60 * 1000),
+                trialEnd: elapsedTrialEnd
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos211-preserve'
+            });
+
+            // Assert: settles to active (elapsed trial), never re-flips to trialing
+            expect(result.success).toBe(true);
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.ACTIVE);
+
+            const txUpdateChain = dbMock.tx.update({});
+            expect(txUpdateChain.set).toHaveBeenCalledWith(
+                expect.objectContaining({ status: SubscriptionStatusEnum.ACTIVE })
+            );
+            // trialEnd is untouched — no write carries a `trialEnd` key at all.
+            // currentPeriodEnd is ALSO untouched here (round-2 remediation):
+            // this transition is trialing -> active, not pending_provider ->
+            // *, so it is outside the activation-only scope the currentPeriodEnd
+            // sync is now gated to — the row's period was already synced for
+            // real when it first went pending_provider -> trialing.
+            const setCalls = vi.mocked(txUpdateChain.set).mock.calls;
+            const lastUpdateData = setCalls[setCalls.length - 1]?.[0] as Record<string, unknown>;
+            expect(lastUpdateData).not.toHaveProperty('trialEnd');
+            expect(lastUpdateData).not.toHaveProperty('currentPeriodEnd');
+        });
+
+        // Judgment-day remediation: the state machine has no ACTIVE→TRIALING
+        // edge. A legacy row already mis-activated by the pre-HOS-211 bug
+        // (status=active, trial_end=null) now correctly re-derives TRIALING
+        // from the live preapproval's free trial, hits that guard forever, and
+        // must NOT page Sentry on every webhook — owner decision: warn only.
+        it('should warn (not error/capture) and no-op on the expected legacy ACTIVE→TRIALING no-op case', async () => {
+            // Arrange
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+
+            const livePeriodEnd = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
+            const mpSubscription = makeMpSubscription('active', {
+                currentPeriodEnd: livePeriodEnd,
+                auto_recurring: { free_trial: { frequency: 14, frequency_type: 'days' } }
+            });
+            mockRetrieve.mockResolvedValue(mpSubscription);
+
+            // Legacy row: mis-activated by the pre-HOS-211 bug.
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.ACTIVE,
+                trialEnd: null
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos211-legacy-active-to-trialing'
+            });
+
+            // Assert: no-op, no status write, no transaction opened at all
+            // (Step 6b's fast-path guard fires before withServiceTransaction).
+            expect(result).toEqual({ success: true, statusChanged: false });
+            expect(dbMock.transaction).not.toHaveBeenCalled();
+
+            // Warn, not error — and critically WITHOUT `{ capture: true }`, so this
+            // expected case never pages Sentry.
+            expect(vi.mocked(apiLogger.warn)).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    from: SubscriptionStatusEnum.ACTIVE,
+                    to: SubscriptionStatusEnum.TRIALING
+                }),
+                expect.stringContaining('ACTIVE→TRIALING')
+            );
+            const warnCalls = vi.mocked(apiLogger.warn).mock.calls;
+            const lastWarnCall = warnCalls[warnCalls.length - 1];
+            expect(lastWarnCall).toHaveLength(2); // no third `{ capture: true }` argument
+            expect(vi.mocked(apiLogger.error)).not.toHaveBeenCalled();
+        });
+
+        // Same carve-out, but forcing the IN-TX (FOR UPDATE) guard specifically,
+        // not the Step 6b fast-path guard. The outer SELECT sees a legitimate
+        // pending_provider row (previousStatus -> TRIALING is a VALID edge, so
+        // Step 6b's guard passes and the transaction opens), but the locked
+        // re-read under FOR UPDATE reveals the row was concurrently
+        // mis-activated straight to `active` by another replica in between —
+        // reproducing the exact legacy shape (active + future derived
+        // trialEnd) but caught by the in-tx guard instead. This locks the
+        // branch a refactor could otherwise silently break.
+        it('should warn (not error/capture) and no-op when the IN-TX guard catches the same ACTIVE→TRIALING case (concurrent mis-activation race)', async () => {
+            // Arrange
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+
+            const livePeriodEnd = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
+            const mpSubscription = makeMpSubscription('active', {
+                currentPeriodEnd: livePeriodEnd,
+                auto_recurring: { free_trial: { frequency: 14, frequency_type: 'days' } }
+            });
+            mockRetrieve.mockResolvedValue(mpSubscription);
+
+            // Outer SELECT: legitimate pending_provider row — previousStatus ->
+            // TRIALING is valid, so Step 6b's fast-path guard passes and the
+            // transaction opens.
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                trialEnd: null
+            });
+            // FOR UPDATE re-read: another replica already flipped the row
+            // straight to `active` between the outer SELECT and the lock —
+            // freshStatus -> TRIALING is now an invalid edge.
+            const dbMock = makeDbMock([localSub], false, [
+                { status: SubscriptionStatusEnum.ACTIVE, cancelAtPeriodEnd: false }
+            ]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos211-intx-race'
+            });
+
+            // Assert: the transaction DID open (Step 6b passed), but no write
+            // committed — the in-tx guard caught the fresh ACTIVE→TRIALING case.
+            expect(result).toEqual({ success: true, statusChanged: false });
+            expect(dbMock.transaction).toHaveBeenCalled();
+            expect(dbMock.tx.update).not.toHaveBeenCalled();
+
+            expect(vi.mocked(apiLogger.warn)).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    freshStatus: SubscriptionStatusEnum.ACTIVE,
+                    from: SubscriptionStatusEnum.ACTIVE,
+                    to: SubscriptionStatusEnum.TRIALING
+                }),
+                expect.stringContaining('ACTIVE→TRIALING')
+            );
+            const warnCalls = vi.mocked(apiLogger.warn).mock.calls;
+            const lastWarnCall = warnCalls[warnCalls.length - 1];
+            expect(lastWarnCall).toHaveLength(2); // no third `{ capture: true }` argument
+            expect(vi.mocked(apiLogger.error)).not.toHaveBeenCalled();
+        });
+
+        // Malformed / absent `auto_recurring.free_trial` payloads must all be
+        // treated as "no trial" — none of these should derive TRIALING or write
+        // a trialEnd.
+        it.each([
+            ['free_trial explicitly null', { free_trial: null }],
+            ['free_trial is a non-object (string)', { free_trial: 'yes' }],
+            [
+                'free_trial object with frequency <= 0',
+                { free_trial: { frequency: 0, frequency_type: 'days' } }
+            ]
+        ])('should treat %s as no trial', async (_label, autoRecurring) => {
+            // Arrange
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+
+            const livePeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            const mpSubscription = makeMpSubscription('active', {
+                currentPeriodEnd: livePeriodEnd,
+                auto_recurring: autoRecurring
+            });
+            mockRetrieve.mockResolvedValue(mpSubscription);
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                trialEnd: null
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos211-malformed'
+            });
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.ACTIVE);
+
+            const txUpdateChain = dbMock.tx.update({});
+            const setCalls = vi.mocked(txUpdateChain.set).mock.calls;
+            const lastUpdateData = setCalls[setCalls.length - 1]?.[0] as Record<string, unknown>;
+            expect(lastUpdateData).not.toHaveProperty('trialEnd');
+            expect(lastUpdateData.currentPeriodEnd).toEqual(livePeriodEnd);
+        });
+
+        // Judgment-day remediation (round 2): currentPeriodEnd sync IS scoped
+        // to the pending→activation transition only. Writing it on every
+        // status-changing transition would also touch it on PAST_DUE/
+        // CANCELLED/PAUSED/EXPIRED, and the past-due dunning grace window
+        // (`middlewares/past-due-grace.middleware.ts`) anchors its 7-day grace
+        // on this exact column — MP's `next_payment_date` during native
+        // recycling is a documented open reconciliation gap. Verified here on
+        // a non-activation transition (active → cancelled): the status write
+        // still happens, but currentPeriodEnd must NOT be touched.
+        it('should NOT sync currentPeriodEnd on a non-activation transition (active -> cancelled)', async () => {
+            // Arrange
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+
+            const livePeriodEnd = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
+            mockRetrieve.mockResolvedValue(
+                makeMpSubscription('canceled', { currentPeriodEnd: livePeriodEnd })
+            );
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.ACTIVE,
+                trialEnd: null
+            });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos211-cancel-period-sync'
+            });
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.CANCELLED);
+
+            const txUpdateChain = dbMock.tx.update({});
+            expect(txUpdateChain.set).toHaveBeenCalledWith(
+                expect.objectContaining({ status: SubscriptionStatusEnum.CANCELLED })
+            );
+            const setCalls = vi.mocked(txUpdateChain.set).mock.calls;
+            const lastUpdateData = setCalls[setCalls.length - 1]?.[0] as Record<string, unknown>;
+            expect(lastUpdateData).not.toHaveProperty('currentPeriodEnd');
+        });
+    });
+
     describe('transition guard (SPEC-194 T-002)', () => {
         // TC-SPEC-194-T002-A: Illegal transition → logs error, skips write, returns statusChanged:false
         it('should log error and skip status write when transition is invalid', async () => {

@@ -76,7 +76,26 @@ export type SubscriptionCheckoutErrorCode =
     // unavailable, or the `prices.create` / registry write failed. Card-first
     // checkout cannot proceed without a plan to subscribe against. Maps to HTTP
     // 502 (provider/registry could not produce a usable plan).
-    | 'MP_PLAN_PROVISIONING_FAILED';
+    | 'MP_PLAN_PROVISIONING_FAILED'
+    // HOS-211: the trial-time plan-upgrade flow (`applyTrialingPlanUpgrade`)
+    // mutates the live MercadoPago preapproval's `transaction_amount` to the
+    // new plan's price BEFORE applying the plan change locally — fail-closed
+    // by design (see that module's JSDoc). If MP rejects the mutation, this
+    // code is thrown and the local subscription is left untouched (still on
+    // the old plan), so local state and MP state never drift. Maps to HTTP
+    // 502 (upstream-provider failure), consistent with DISCOUNT_APPLY_FAILED.
+    | 'MP_PREAPPROVAL_MUTATION_FAILED'
+    // HOS-211: distinct from MP_PREAPPROVAL_MUTATION_FAILED above — this
+    // covers the case where the MP preapproval mutation SUCCEEDED (the new
+    // price is already live on MercadoPago) but the subsequent local
+    // `billing.subscriptions.changePlan` commit threw. This is a genuine
+    // local/MP drift state (MP will charge the new price at trial end while
+    // the local row still shows the old plan), not a clean rejection — it
+    // is NOT covered by `subscription-poll.job.ts`'s drift reconciler
+    // (trialing rows are excluded), so it must page loudly rather than
+    // surface as a generic 500. Maps to HTTP 500 (server-side inconsistency,
+    // not an upstream provider failure).
+    | 'TRIALING_UPGRADE_LOCAL_APPLY_FAILED';
 
 /**
  * Domain-level error thrown across the paid-subscription checkout and
