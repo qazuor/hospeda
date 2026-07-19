@@ -549,6 +549,31 @@ describe('softCancelSubscription', () => {
             ).resolves.toBeDefined();
         });
 
+        // HOS-211: `accessUntil` is read straight off `existingRow.currentPeriodEnd`
+        // (see the service's Step 8 return) — for a `trialing` row that column is
+        // kept in sync with the REAL MercadoPago trial end by the browser-link
+        // preapproval sync fix. Uses a distinct future date (not the shared
+        // CURRENT_PERIOD_END fixture) so this test would fail if the service ever
+        // started deriving `accessUntil` from something else (e.g. a hardcoded
+        // "now + trial days" computation) instead of the synced DB column.
+        it('soft-cancel of a trial returns accessUntil equal to the real synced trial end', async () => {
+            const REAL_TRIAL_END = new Date('2026-08-22T14:30:00.000Z');
+            setupDbSelectRow(buildSubRow({ status: 'trialing', currentPeriodEnd: REAL_TRIAL_END }));
+            billing = buildBillingMock({
+                ...buildSubRow({ status: 'trialing', currentPeriodEnd: REAL_TRIAL_END }),
+                canceledAt: CANCELED_AT
+            });
+
+            const result = await softCancelSubscription({
+                billing: billing as never,
+                subscriptionId: SUB_ID,
+                customerId: CUSTOMER_ID
+            });
+
+            expect(result.accessUntil).toBeInstanceOf(Date);
+            expect(result.accessUntil.getTime()).toBe(REAL_TRIAL_END.getTime());
+        });
+
         it('throws NOT_FOUND when subscription row is missing', async () => {
             setupDbSelectRow(null);
 
