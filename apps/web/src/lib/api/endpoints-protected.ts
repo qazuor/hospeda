@@ -17,6 +17,7 @@ import type {
     DestinationReviewListItem,
     DowngradePreview,
     KeepSelections,
+    LinkPreapprovalResponse,
     OccupancySourceEnum,
     PlanChangeResponse,
     PriceAlertResponse,
@@ -742,6 +743,54 @@ export const billingApi = {
     }): Promise<ApiResult<SubscriptionStatusResponse>> {
         return apiClient.getProtected({
             path: `${PROTECTED}/billing/subscriptions/${localId}/status`
+        });
+    },
+
+    /**
+     * Link a MercadoPago preapproval to its pending local subscription
+     * (HOS-191 Path C, F2).
+     *
+     * Path C's `/start-paid` redirects the browser straight to MercadoPago's
+     * hosted share link — no preapproval exists locally at that point. Once the
+     * customer authorizes, MercadoPago redirects back to the checkout success
+     * page with `?preapproval_id=...`. This call links that real preapproval id
+     * to the `pending_provider` local subscription the caller stashed in
+     * sessionStorage before the redirect (see `checkout-pending.ts`).
+     *
+     * Idempotent: a page reload after a successful link re-sends the same call
+     * and the server replies `outcome: 'already'`.
+     *
+     * Callers MUST branch on the HTTP status when `result.ok` is `false`:
+     * - `409` — hard error (IDOR: the preapproval belongs to another user's
+     *   subscription). Show an error state, do not fall back to polling.
+     * - Any other error (typically `422`, an ambiguous/not-yet-visible
+     *   resolution) — non-fatal. The `subscription_preapproval` webhook
+     *   fallback may complete the link shortly after; fall back to the normal
+     *   `getSubscriptionStatus` poll instead of treating this as terminal.
+     *
+     * @param params.preapprovalId - The MercadoPago preapproval id read from `?preapproval_id=`.
+     * @param params.localSubscriptionId - The local subscription UUID stashed before the redirect.
+     * @returns `{ outcome: 'linked' | 'already', localSubscriptionId }` on success.
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.linkPreapproval({ preapprovalId, localSubscriptionId });
+     * if (result.ok) { // start polling getSubscriptionStatus
+     * } else if (result.error.status === 409) { // hard error
+     * } else { // non-fatal, poll anyway
+     * }
+     * ```
+     */
+    linkPreapproval({
+        preapprovalId,
+        localSubscriptionId
+    }: {
+        readonly preapprovalId: string;
+        readonly localSubscriptionId: string;
+    }): Promise<ApiResult<LinkPreapprovalResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/subscriptions/link-preapproval`,
+            body: { preapprovalId, localSubscriptionId }
         });
     },
 

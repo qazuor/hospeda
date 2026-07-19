@@ -18,6 +18,12 @@
  *   a ~90s timeout is reached. Before this fix the page hung on
  *   "Verificando estado del pago..." forever for every paid conversion.
  *
+ * HOS-191 Path C ("share link" checkout) adds a third redirect shape: MercadoPago's
+ * `back_url` return carries `?preapproval_id=...` (no `collection_status`). That
+ * falls into the POLLED branch, but before polling starts the `CheckoutStatusPoller`
+ * island first links the preapproval to the pending local subscription via
+ * `POST /billing/subscriptions/link-preapproval` — see that component's docstring.
+ *
  * @route /{lang}/suscriptores/checkout/success/
  * @rendering SSR (no prerender — query params must be read server-side)
  */
@@ -49,6 +55,11 @@ const isComp = Astro.url.searchParams.get('effect') === 'comp';
 // Anything else is a recurring preapproval return that the polling island
 // resolves (HOS-151 Bug A).
 const isImmediateSuccess = collectionStatus === 'approved' || isComp;
+
+// HOS-191 Path C: MercadoPago's hosted share-link `back_url` return carries
+// this. Forwarded to `CheckoutStatusPoller`, which links it to the pending
+// local subscription before polling starts (see that component's docstring).
+const preapprovalId = Astro.url.searchParams.get('preapproval_id');
 
 // PlanPurchaseButton appends `?promoIgnored=1` when the server accepted a promo
 // code that ended up doing nothing. Since HOS-171 that means only one thing: a
@@ -88,7 +99,12 @@ const promoIgnoredNote = promoIgnored
 				}}
 			/>
 		) : (
-			<CheckoutStatusPoller client:load locale={locale} miCuentaUrl={miCuentaUrl} />
+			<CheckoutStatusPoller
+				client:load
+				locale={locale}
+				miCuentaUrl={miCuentaUrl}
+				preapprovalId={preapprovalId}
+			/>
 		)
 	}
 </MarketingLayout>

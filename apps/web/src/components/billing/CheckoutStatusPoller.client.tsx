@@ -1,6 +1,6 @@
 /**
  * @file CheckoutStatusPoller.client.tsx
- * @description Checkout success-page polling island (HOS-151 Bug A).
+ * @description Checkout success-page polling island (HOS-151 Bug A, HOS-191 Path C F2).
  *
  * A recurring MercadoPago preapproval redirect back to the checkout success
  * page carries NO `collection_status`, so the page cannot render a final
@@ -15,6 +15,21 @@
  * to the success state; after a bounded timeout (~90s) it degrades to an
  * explicit, non-alarming fallback pointing at the account page — it never spins
  * forever.
+ *
+ * HOS-191 Path C ("share link" checkout) adds a linking step before polling
+ * starts: `/start-paid` redirects straight to MercadoPago's hosted share link
+ * with no local preapproval yet, so MercadoPago's own `back_url` redirect
+ * carries `?preapproval_id=...`. When that param is present, the island first
+ * calls `POST /billing/subscriptions/link-preapproval` to tie the real
+ * preapproval to the pending local subscription:
+ * - success (`linked`/`already`) — proceed straight into the normal poll below.
+ * - `409` (IDOR — the preapproval belongs to someone else) — hard error, no poll.
+ * - any other error (typically `422`, ambiguous/not-yet-visible) — non-fatal,
+ *   the webhook fallback (F3) may complete the link server-side shortly after,
+ *   so fall back to the normal poll rather than treating this as terminal.
+ *
+ * Idempotent by design: a reload re-sends the link call and the server replies
+ * `already` rather than erroring.
  *
  * Hydration: client:load — the user is staring at this page waiting for a
  * result, so it must start polling immediately.
@@ -53,7 +68,14 @@ const MAX_ATTEMPTS = 45;
  */
 const SUCCESS_STATUSES: ReadonlySet<string> = new Set(['active', 'trialing', 'comp']);
 
-type PollerState = 'verifying' | 'success' | 'timeout';
+/**
+ * HTTP status that `billingApi.linkPreapproval` returns for a hard IDOR error
+ * (the preapproval belongs to a different local subscription/user). Every
+ * other error status is treated as non-fatal — see the module docstring.
+ */
+const LINK_PREAPPROVAL_IDOR_STATUS = 409;
+
+type PollerState = 'verifying' | 'success' | 'timeout' | 'linkError';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -64,6 +86,15 @@ export interface CheckoutStatusPollerProps {
     readonly locale: SupportedLocale;
     /** Locale-aware `/mi-cuenta` URL for the success + fallback CTAs. */
     readonly miCuentaUrl: string;
+    /**
+     * The MercadoPago preapproval id read from the `back_url` redirect's
+     * `?preapproval_id=` query param (HOS-191 Path C). `null` when the
+     * checkout return did not carry one (e.g. an already-linked recurring
+     * preapproval redirect, or a direct navigation to this page) — in that
+     * case the island skips straight to the normal status poll, unchanged
+     * from HOS-151 behaviour.
+     */
+    readonly preapprovalId: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -77,7 +108,8 @@ export interface CheckoutStatusPollerProps {
  */
 export function CheckoutStatusPoller({
     locale,
-    miCuentaUrl
+    miCuentaUrl,
+    preapprovalId
 }: CheckoutStatusPollerProps): JSX.Element {
     const { t } = createTranslations(locale);
     const [state, setState] = useState<PollerState>('verifying');
@@ -129,9 +161,45 @@ export function CheckoutStatusPoller({
             timer = setTimeout(() => void poll(), POLL_INTERVAL_MS);
         };
 
-        // First attempt fires immediately; the subscription is often already
-        // active by the time MP redirects back.
-        void poll();
+        // HOS-191 Path C: when the return URL carried a `preapproval_id`, link it
+        // to the pending local subscription BEFORE polling starts. A 409 (IDOR)
+        // is a hard error — stop here, never fall through to polling a
+        // subscription this preapproval does not actually belong to. Every other
+        // outcome (success, or a non-fatal error like 422) proceeds to the normal
+        // poll: the webhook fallback (F3) may complete an ambiguous link shortly
+        // after, and the poll will pick that up once `mp_subscription_id` is set.
+        const start = async (): Promise<void> => {
+            if (preapprovalId) {
+                try {
+                    const linkResult = await billingApi.linkPreapproval({
+                        preapprovalId,
+                        localSubscriptionId: localId
+                    });
+                    if (cancelled) {
+                        return;
+                    }
+                    if (
+                        !linkResult.ok &&
+                        linkResult.error.status === LINK_PREAPPROVAL_IDOR_STATUS
+                    ) {
+                        clearPendingCheckoutSubId();
+                        setState('linkError');
+                        return;
+                    }
+                } catch {
+                    // Network/transient error calling link-preapproval — non-fatal,
+                    // fall through to the normal poll (same treatment as a 422).
+                }
+            }
+            if (cancelled) {
+                return;
+            }
+            // First attempt fires immediately; the subscription is often already
+            // active by the time MP redirects back.
+            void poll();
+        };
+
+        void start();
 
         return () => {
             cancelled = true;
@@ -139,7 +207,10 @@ export function CheckoutStatusPoller({
                 clearTimeout(timer);
             }
         };
-    }, []);
+        // `preapprovalId` comes from the SSR-rendered query string via props and
+        // is stable for the page's lifetime — included for exhaustive-deps
+        // correctness, not because it is expected to change post-mount.
+    }, [preapprovalId]);
 
     const copy = ((): { title: string; body: string; showCta: boolean } => {
         if (state === 'success') {
@@ -155,6 +226,16 @@ export function CheckoutStatusPoller({
                 body: t(
                     'billing.checkout.success.timeoutSubtitle',
                     'El pago puede seguir procesándose. Revisá tu cuenta en unos minutos para confirmar tu suscripción.'
+                ),
+                showCta: true
+            };
+        }
+        if (state === 'linkError') {
+            return {
+                title: t('billing.checkout.success.linkErrorTitle', 'No pudimos vincular tu pago'),
+                body: t(
+                    'billing.checkout.success.linkErrorSubtitle',
+                    'Hubo un problema al vincular este pago con tu cuenta. Si ya realizaste el pago, contactá a soporte con el número de operación de MercadoPago.'
                 ),
                 showCta: true
             };
@@ -184,7 +265,9 @@ export function CheckoutStatusPoller({
                             ? styles.iconSuccess
                             : state === 'timeout'
                               ? styles.iconTimeout
-                              : styles.iconVerifying
+                              : state === 'linkError'
+                                ? styles.iconError
+                                : styles.iconVerifying
                     }`}
                     aria-hidden="true"
                 >
@@ -212,6 +295,14 @@ export function CheckoutStatusPoller({
                             {state === 'success' ? (
                                 <path
                                     d="M20 32l9 9 15-18"
+                                    stroke="currentColor"
+                                    stroke-width="4"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            ) : state === 'linkError' ? (
+                                <path
+                                    d="M22 22l20 20M42 22L22 42"
                                     stroke="currentColor"
                                     stroke-width="4"
                                     stroke-linecap="round"
