@@ -18,14 +18,26 @@
  * Operations that can be intercepted by failNext / delayNext.
  *
  * `createSubscription` is the preapproval create in `createPaidSubscription`
- * (HOS-171) — the single call every paid checkout funnels through, monthly,
- * annual and reactivation alike. It replaced `startTrial`/`cancelTrial`, which
- * were the publish flow's calls into billing back when publishing granted a
- * no-card trial. Publishing now requires a card and never reaches billing, so
- * those two operations had no call site left and no method to name.
+ * (HOS-171) — the call the COMMERCE and PARTNER paid checkouts funnel through.
+ * It replaced `startTrial`/`cancelTrial`, which were the publish flow's calls
+ * into billing back when publishing granted a no-card trial. Publishing now
+ * requires a card and never reaches billing, so those two operations had no
+ * call site left and no method to name.
+ *
+ * `provisionPlan` is the MercadoPago `preapproval_plan` resolution in
+ * `resolveCheckoutMpPlanId` (HOS-191 Path C) — the single (and only) provider
+ * call the ACCOMMODATION monthly/annual checkout makes now that it no longer
+ * creates a `POST /preapproval` server-side. The seam is placed at the resolver
+ * boundary (BEFORE the `billing_mp_plans` cache lookup) so a queued failure
+ * short-circuits deterministically regardless of whether the variant is already
+ * provisioned — the lazy, per-variant, shared-across-customers cache would
+ * otherwise make a provider-call failure impossible to force per-test. Scoped by
+ * `customerId` like `createSubscription`, so parallel E2E workers do not consume
+ * each other's armed failures.
  */
 export type ControllableOperation =
     | 'createSubscription'
+    | 'provisionPlan'
     | 'createPaymentPreference'
     | 'capturePayment'
     | 'refundPayment'
@@ -152,10 +164,11 @@ export function resetTestControl(): void {
  *  - otherwise (null, number, object with neither key as a string, ...) → undefined.
  *
  * EXTENSIBILITY: this only understands the arg shapes of the operations actually
- * wired through {@link applyTestControl} — currently just `createSubscription`
- * (`{ customerId, planId }`, scoped by `customerId`). The others
- * (createPaymentPreference, capturePayment, refundPayment, cancelSubscription,
- * updateSubscription) are declared but NOT yet wired. When you wire one whose args
+ * wired through {@link applyTestControl} — currently `createSubscription`
+ * (`{ customerId, planId }`, scoped by `customerId`) and `provisionPlan`
+ * (`{ customerId }`, scoped by `customerId`). The others (createPaymentPreference,
+ * capturePayment, refundPayment, cancelSubscription, updateSubscription) are
+ * declared but NOT yet wired. When you wire one whose args
  * carry their scope key under a different field (e.g. `{ paymentId }`), extend this
  * resolver to read that field — otherwise a scoped entry for that operation
  * silently never matches (it falls back to `undefined`, so only UNSCOPED entries

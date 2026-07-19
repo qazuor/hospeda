@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
 import { ExperienceSchema } from './experience.schema.js';
@@ -199,6 +200,11 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
      * descriptions can still be fetched without tripping `min(20)`.
      */
     description: z.string().max(2000, { message: 'zodError.commerce.description.max' }),
+    /**
+     * HOS-190: read⊇write — a persisted contactInfo (legacy phone format, missing
+     * mobilePhone) must never 500 the response. Format stays strict on write.
+     */
+    contactInfo: ContactInfoReadSchema.nullish(),
     /** Override picked `media` to exclude server-managed internal fields. */
     media: BaseMediaObjectSchema.nullish(),
     /** Rich-text description (protected visibility follows the same entitlement gate). */
@@ -235,7 +241,9 @@ export const ExperienceAdminSchema = ExperienceSchema.extend({
      * Description relaxed on the read side so DRAFT listings can still be
      * fetched by the admin panel. See SPEC-143 Finding #9 (gastronomy pattern).
      */
-    description: z.string().max(2000, { message: 'zodError.commerce.description.max' })
+    description: z.string().max(2000, { message: 'zodError.commerce.description.max' }),
+    /** HOS-190: read⊇write lenient contactInfo (see ExperienceProtectedSchema). */
+    contactInfo: ContactInfoReadSchema.nullish()
 });
 
 /** TypeScript type for {@link ExperienceAdminSchema}. */

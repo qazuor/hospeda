@@ -69,6 +69,15 @@ vi.mock('../../src/services/addon-plan-change.service.js', () => ({
     handlePlanChangeAddonRecalculation: mockHandlePlanChangeRecalculation
 }));
 
+// HOS-191 F3: the webhook fallback link attempt, mocked so these tests stay
+// scoped to `processSubscriptionUpdated`'s own branching. Defaults to
+// 'not_found' (below, in the describe's beforeEach) so every PRE-EXISTING
+// "no local subscription" test keeps its original behavior unless it opts in.
+const mockLinkPreapproval = vi.fn();
+vi.mock('../../src/services/billing/link-preapproval.service.js', () => ({
+    linkPreapprovalToLocalSub: (...args: unknown[]) => mockLinkPreapproval(...args)
+}));
+
 // Hoisted mock stubs for notification functions - declared before any imports are resolved.
 const { mockSendCancelled, mockSendPaused, mockSendReactivated } = vi.hoisted(() => ({
     mockSendCancelled: vi.fn().mockResolvedValue(undefined),
@@ -513,6 +522,7 @@ describe('processSubscriptionUpdated', () => {
         // the leaked implementation; the clean default is re-applied immediately.
         mockHandleCancellationAddons.mockReset().mockResolvedValue(undefined);
         mockHandlePlanChangeRecalculation.mockReset().mockResolvedValue(undefined);
+        mockLinkPreapproval.mockReset().mockResolvedValue({ outcome: 'not_found' });
 
         // Spy on notificationsModule exports to ensure they return Promises even if the
         // vi.mock for the module doesn't intercept the import inside subscription-logic.ts.
@@ -676,6 +686,97 @@ describe('processSubscriptionUpdated', () => {
         // Assert
         expect(result).toEqual({ success: true, statusChanged: false });
         expect(dbMock.transaction).not.toHaveBeenCalled();
+    });
+
+    // HOS-191 F3: no local subscription found by mp_subscription_id -> attempts
+    // the share-link checkout reconciliation fallback before giving up.
+    describe('HOS-191 F3: share-link checkout webhook fallback', () => {
+        it('attempts linkPreapprovalToLocalSub with the retrieve() externalReference/payerEmail when no local subscription is found', async () => {
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(
+                makeMpSubscription('active', {
+                    externalReference: 'nonce-xyz',
+                    payerEmail: 'user@example.com'
+                })
+            );
+
+            const dbMock = makeDbMock([]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos191-a'
+            });
+
+            expect(mockLinkPreapproval).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    preapprovalId: mpPreapprovalId,
+                    externalReference: 'nonce-xyz',
+                    payerEmail: 'user@example.com',
+                    billing: mockBilling,
+                    adapter: mockPaymentAdapter
+                })
+            );
+        });
+
+        it('still returns early with statusChanged:false when the fallback resolves to reconcile_assisted', async () => {
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+            mockLinkPreapproval.mockResolvedValue({ outcome: 'reconcile_assisted' });
+
+            const dbMock = makeDbMock([]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos191-b'
+            });
+
+            expect(result).toEqual({ success: true, statusChanged: false });
+            expect(dbMock.transaction).not.toHaveBeenCalled();
+        });
+
+        it('re-queries and continues processing (activation) when the fallback resolves to linked', async () => {
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.PENDING_PROVIDER
+            });
+            mockLinkPreapproval.mockResolvedValue({
+                outcome: 'linked',
+                localSubscriptionId: localSub.id
+            });
+
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+            // The pre-link SELECT must miss (empty); the post-link re-query then
+            // finds the row makeDbMock is otherwise configured to return.
+            const limitMock = dbMock.select().from().where().limit as ReturnType<typeof vi.fn>;
+            limitMock.mockReset();
+            limitMock.mockResolvedValueOnce([]).mockResolvedValueOnce([localSub]);
+
+            const result = await processSubscriptionUpdated({
+                event: makeWebhookEvent() as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-hos191-c'
+            });
+
+            expect(result).toEqual({
+                success: true,
+                statusChanged: true,
+                newStatus: SubscriptionStatusEnum.ACTIVE
+            });
+            expect(dbMock.transaction).toHaveBeenCalled();
+        });
     });
 
     // TC-06: Same status - no change

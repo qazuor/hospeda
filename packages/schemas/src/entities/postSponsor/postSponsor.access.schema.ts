@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { PostSponsorSchema } from './postSponsor.schema.js';
 
 /**
@@ -49,6 +50,10 @@ export const PostSponsorProtectedSchema = PostSponsorSchema.pick({
     // Audit (basic timestamps)
     createdAt: true,
     updatedAt: true
+}).extend({
+    // HOS-190: read⊇write — a persisted contactInfo (legacy phone format, missing
+    // mobilePhone) must never 500 the response. Format stays strict on write.
+    contactInfo: ContactInfoReadSchema.nullish()
 });
 
 export type PostSponsorProtected = z.infer<typeof PostSponsorProtectedSchema>;
@@ -61,6 +66,9 @@ export type PostSponsorProtected = z.infer<typeof PostSponsorProtectedSchema>;
  *
  * This is essentially the full schema.
  */
-export const PostSponsorAdminSchema = PostSponsorSchema;
+export const PostSponsorAdminSchema = PostSponsorSchema.extend({
+    // HOS-190: read⊇write lenient contactInfo (see PostSponsorProtectedSchema).
+    contactInfo: ContactInfoReadSchema.nullish()
+});
 
 export type PostSponsorAdmin = z.infer<typeof PostSponsorAdminSchema>;

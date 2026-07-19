@@ -48,6 +48,11 @@
     background-color: var(--warning-a12);
 }
 
+.iconError {
+    color: var(--destructive);
+    background-color: var(--destructive-a12);
+}
+
 .spinner {
     width: 44px;
     height: 44px;

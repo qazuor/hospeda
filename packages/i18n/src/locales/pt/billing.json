@@ -195,7 +195,9 @@
             "timeoutSubtitle": "Seu pagamento pode ainda estar sendo processado. Verifique sua conta em alguns minutos para confirmar sua assinatura.",
             "cta": "Ir para minha conta",
             "pageTitle": "Pagamento aprovado",
-            "promoIgnoredNote": "Seu código não foi aplicado: ele estende um período de teste grátis, e esta assinatura não tem um."
+            "promoIgnoredNote": "Seu código não foi aplicado: ele estende um período de teste grátis, e esta assinatura não tem um.",
+            "linkErrorTitle": "Não conseguimos vincular seu pagamento",
+            "linkErrorSubtitle": "Houve um problema ao vincular este pagamento à sua conta. Se você já pagou, entre em contato com o suporte com o número da operação do MercadoPago."
         },
         "pending": {
             "title": "Seu pagamento está sendo processado",
@@ -222,6 +224,10 @@
             "unauthCta": "Faça login para contratar",
             "currentPlan": "Plano atual",
             "currentPlanAriaLabel": "Este é o seu plano atual"
+        },
+        "monthlyEmailNotice": {
+            "title": "Antes de continuar",
+            "text": "Você vai pagar com a conta do MercadoPago associada a {{email}}. Se a sua conta do MercadoPago usa outro e-mail, você não vai conseguir concluir o pagamento mensal."
         },
         "promoApply": {
             "toggle": "Tem um código de desconto?",

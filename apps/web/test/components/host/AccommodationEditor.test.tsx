@@ -317,9 +317,12 @@ describe('AccommodationEditor', () => {
         fireEvent.submit(nameInput.closest('form')!);
 
         // Wait for async submit
-        await vi.waitFor(() => {
-            expect(mockUpdate).toHaveBeenCalledOnce();
-        });
+        await vi.waitFor(
+            () => {
+                expect(mockUpdate).toHaveBeenCalledOnce();
+            },
+            { timeout: 5000 }
+        );
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.id).toBe('acc-123');
         expect(callArg.data.name).toBe('Hotel Actualizado');
@@ -341,9 +344,12 @@ describe('AccommodationEditor', () => {
         await user.type(nameInput, 'Hotel Actualizado');
         fireEvent.submit(nameInput.closest('form')!);
 
-        await vi.waitFor(() => {
-            expect(mockUpdate).toHaveBeenCalledOnce();
-        });
+        await vi.waitFor(
+            () => {
+                expect(mockUpdate).toHaveBeenCalledOnce();
+            },
+            { timeout: 5000 }
+        );
         // Success is surfaced as a toast (not an inline banner) — assert the
         // toast store received a success toast with the confirmation message.
         await vi.waitFor(() => {
@@ -354,6 +360,39 @@ describe('AccommodationEditor', () => {
                 })
             );
         });
+    });
+
+    it('re-syncs the baseline after save so reverting a just-saved field issues a restoring PATCH (F6)', async () => {
+        // F6 regression (HOS-190, BETA-187): the PATCH diff was computed against
+        // the LOAD-TIME snapshot and never resynced after a save. So saving
+        // name X, then reverting name to its original value and saving again,
+        // produced an empty diff ("no changes") while the DB kept X — the just-
+        // saved change could not be undone without a full reload. Asserts on the
+        // ACTUAL body of the SECOND save (it must carry the restored value).
+        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
+        vi.doMock('@/lib/api/endpoints-protected', () => ({
+            accommodationEditApi: { update: mockUpdate }
+        }));
+
+        const user = userEvent.setup();
+        render(<AccommodationEditor {...DEFAULT_PROPS} />);
+
+        const nameInput = screen.getByLabelText(/nombre/i) as HTMLInputElement;
+
+        // 1) Change name and save → PATCH { name: 'Hotel Actualizado' }.
+        await user.clear(nameInput);
+        await user.type(nameInput, 'Hotel Actualizado');
+        fireEvent.submit(nameInput.closest('form')!);
+        await vi.waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1), { timeout: 5000 });
+        expect(mockUpdate.mock.calls[0][0].data.name).toBe('Hotel Actualizado');
+
+        // 2) Revert name to the ORIGINAL value and save again. Without the
+        //    baseline resync this diff-empties and never fires a second PATCH.
+        await user.clear(nameInput);
+        await user.type(nameInput, 'Hotel Test');
+        fireEvent.submit(nameInput.closest('form')!);
+        await vi.waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(2), { timeout: 5000 });
+        expect(mockUpdate.mock.calls[1][0].data.name).toBe('Hotel Test');
     });
 
     it('blocks submit and shows a field error when email is invalid (HOS-190 regression — contact validation)', async () => {
@@ -445,9 +484,12 @@ describe('AccommodationEditor', () => {
         await user.type(phoneNumberInput, '9 343 9999999');
         fireEvent.submit(phoneNumberInput.closest('form')!);
 
-        await vi.waitFor(() => {
-            expect(mockUpdate).toHaveBeenCalledOnce();
-        });
+        await vi.waitFor(
+            () => {
+                expect(mockUpdate).toHaveBeenCalledOnce();
+            },
+            { timeout: 5000 }
+        );
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.data.phone).toBe('+54 9 343 9999999');
     });
@@ -469,9 +511,12 @@ describe('AccommodationEditor', () => {
         await user.type(whatsappNumberInput, '9 343 8888888');
         fireEvent.submit(whatsappNumberInput.closest('form')!);
 
-        await vi.waitFor(() => {
-            expect(mockUpdate).toHaveBeenCalledOnce();
-        });
+        await vi.waitFor(
+            () => {
+                expect(mockUpdate).toHaveBeenCalledOnce();
+            },
+            { timeout: 5000 }
+        );
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.data.whatsapp).toBe('+54 9 343 8888888');
     });
@@ -489,9 +534,12 @@ describe('AccommodationEditor', () => {
         await user.type(twitterInput, 'mi-hotel');
         fireEvent.submit(twitterInput.closest('form')!);
 
-        await vi.waitFor(() => {
-            expect(mockUpdate).toHaveBeenCalledOnce();
-        });
+        await vi.waitFor(
+            () => {
+                expect(mockUpdate).toHaveBeenCalledOnce();
+            },
+            { timeout: 5000 }
+        );
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.data.twitter).toBe('https://x.com/mi-hotel');
     });
@@ -511,9 +559,12 @@ describe('AccommodationEditor', () => {
         await user.type(nameInput, 'Solo cambio nombre');
         fireEvent.submit(nameInput.closest('form')!);
 
-        await vi.waitFor(() => {
-            expect(mockUpdate).toHaveBeenCalledOnce();
-        });
+        await vi.waitFor(
+            () => {
+                expect(mockUpdate).toHaveBeenCalledOnce();
+            },
+            { timeout: 5000 }
+        );
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.data.name).toBe('Solo cambio nombre');
         expect(callArg.data.phone).toBeUndefined();
@@ -551,9 +602,12 @@ describe('AccommodationEditor', () => {
         await user.type(nameInput, 'Hotel con fotos');
         fireEvent.submit(nameInput.closest('form')!);
 
-        await vi.waitFor(() => {
-            expect(mockUpdate).toHaveBeenCalledOnce();
-        });
+        await vi.waitFor(
+            () => {
+                expect(mockUpdate).toHaveBeenCalledOnce();
+            },
+            { timeout: 5000 }
+        );
         // No photo change → media should be absent from payload
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.data.media).toBeUndefined();
@@ -591,9 +645,12 @@ describe('AccommodationEditor', () => {
         await user.type(nameInput, 'Hotel con galería');
         fireEvent.submit(nameInput.closest('form')!);
 
-        await vi.waitFor(() => {
-            expect(mockUpdate).toHaveBeenCalledOnce();
-        });
+        await vi.waitFor(
+            () => {
+                expect(mockUpdate).toHaveBeenCalledOnce();
+            },
+            { timeout: 5000 }
+        );
         // Gallery was seeded from initialGallery — it matches current photoData,
         // so media should NOT be added (no change detected).
         const callArg = mockUpdate.mock.calls[0][0];

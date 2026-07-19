@@ -33,6 +33,7 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../../services/addon-lifecycle.service.js';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service.js';
+import { linkPreapprovalToLocalSub } from '../../../services/billing/link-preapproval.service.js';
 import { completeSupersessionPairing } from '../../../services/billing/reactivation-supersession-complete.js';
 import { reconcileCommerceListingForSubscription } from '../../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service.js';
@@ -396,23 +397,58 @@ export async function processSubscriptionUpdated({
     // UPDATEs (planId-only, paymentFailureCount). The multi-table atomic write
     // (status update + audit log insert) uses withServiceTransaction below (Step 7).
     const db = getDb();
-    const [localSubscription] = await db
-        .select()
-        .from(billingSubscriptions)
-        .where(
-            and(
-                eq(billingSubscriptions.mpSubscriptionId, mpPreapprovalId),
-                isNull(billingSubscriptions.deletedAt)
+    const findLocalSubscriptionByMpId = () =>
+        db
+            .select()
+            .from(billingSubscriptions)
+            .where(
+                and(
+                    eq(billingSubscriptions.mpSubscriptionId, mpPreapprovalId),
+                    isNull(billingSubscriptions.deletedAt)
+                )
             )
-        )
-        .limit(1);
+            .limit(1);
+
+    let [localSubscription] = await findLocalSubscriptionByMpId();
 
     if (!localSubscription) {
-        apiLogger.warn(
-            { mpPreapprovalId: maskId(mpPreapprovalId), source },
-            `No local subscription found for mp_subscription_id=${maskId(mpPreapprovalId)}`
-        );
-        return { success: true, statusChanged: false };
+        // HOS-191 F3: this preapproval may belong to a share-link checkout
+        // (Path C) whose back_url handler (F2) never ran — the customer
+        // authorized on MercadoPago but the browser never came back. Attempt
+        // the same reconciliation F2 performs, reusing the `retrieve()`
+        // response already fetched in Step 2 (no extra MP call).
+        const linkResult = await linkPreapprovalToLocalSub({
+            preapprovalId: mpPreapprovalId,
+            externalReference: mpSubscription.externalReference ?? null,
+            payerEmail: mpSubscription.payerEmail ?? null,
+            billing,
+            adapter: paymentAdapter
+        });
+
+        if (linkResult.outcome === 'linked' || linkResult.outcome === 'already') {
+            apiLogger.info(
+                {
+                    mpPreapprovalId: maskId(mpPreapprovalId),
+                    source,
+                    linkOutcome: linkResult.outcome,
+                    localSubscriptionId: linkResult.localSubscriptionId
+                },
+                'HOS-191: linked share-link checkout preapproval to local subscription via webhook fallback'
+            );
+            [localSubscription] = await findLocalSubscriptionByMpId();
+        }
+
+        if (!localSubscription) {
+            apiLogger.warn(
+                {
+                    mpPreapprovalId: maskId(mpPreapprovalId),
+                    source,
+                    linkOutcome: linkResult.outcome
+                },
+                `No local subscription found for mp_subscription_id=${maskId(mpPreapprovalId)} (HOS-191 link outcome: ${linkResult.outcome})`
+            );
+            return { success: true, statusChanged: false };
+        }
     }
 
     // Step 5c: Derive TRIALING from the provider status + the local trial window

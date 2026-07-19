@@ -435,6 +435,13 @@
             "when": 1784268452490,
             "tag": "0061_heavy_blade",
             "breakpoints": true
+        },
+        {
+            "idx": 62,
+            "version": "7",
+            "when": 1784419630355,
+            "tag": "0062_clammy_jigsaw",
+            "breakpoints": true
         }
     ]
 }

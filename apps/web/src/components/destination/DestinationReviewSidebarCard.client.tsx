@@ -493,7 +493,7 @@ export function DestinationReviewSidebarCard({
                                     >
                                         {t(
                                             'review.form.errors.ratingRequired',
-                                            'Debes seleccionar una calificación'
+                                            'Calificá todas las categorías'
                                         )}
                                     </p>
                                 )}

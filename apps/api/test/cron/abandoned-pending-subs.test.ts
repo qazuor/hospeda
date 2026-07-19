@@ -33,7 +33,8 @@ const {
     mockAdapterRetrieve,
     mockCreateMercadoPagoAdapter,
     mockSentryCapture,
-    mockGetDb
+    mockGetDb,
+    mockFindByLocalSubscriptionId
 } = vi.hoisted(() => ({
     mockBillingCustomersGet: vi.fn(),
     mockBillingPlansGet: vi.fn(),
@@ -42,7 +43,8 @@ const {
     mockAdapterRetrieve: vi.fn(),
     mockCreateMercadoPagoAdapter: vi.fn(),
     mockSentryCapture: vi.fn(),
-    mockGetDb: vi.fn()
+    mockGetDb: vi.fn(),
+    mockFindByLocalSubscriptionId: vi.fn()
 }));
 
 // ─── DB mock ──────────────────────────────────────────────────────────────────
@@ -72,7 +74,10 @@ vi.mock('@repo/db', async (importOriginal) => {
             _sql: { strings, values }
         }),
         getDb: mockGetDb,
-        withTransaction: vi.fn(async (cb: (tx: typeof mockTx) => Promise<unknown>) => cb(mockTx))
+        withTransaction: vi.fn(async (cb: (tx: typeof mockTx) => Promise<unknown>) => cb(mockTx)),
+        billingPendingCheckoutModel: {
+            findByLocalSubscriptionId: mockFindByLocalSubscriptionId
+        }
     };
 });
 
@@ -250,6 +255,83 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
         expect(mockAdapterRetrieve).not.toHaveBeenCalled();
     });
 
+    it('does NOT abandon an mp-null row while a still-valid Path C checkout is in progress (FIX B)', async () => {
+        const { db, update } = makeDbMock([ABANDONED_ROW]);
+        // A pending correlation row whose own TTL has not yet elapsed → the
+        // customer may still be on MercadoPago's hosted page.
+        mockFindByLocalSubscriptionId.mockResolvedValue({
+            id: 'pc-1',
+            localSubscriptionId: 'sub-1',
+            status: 'pending',
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000)
+        });
+
+        const outcome = await _internals.reapPendingCandidate({
+            candidate: {
+                id: 'sub-1',
+                customerId: 'cust-1',
+                planId: 'plan-1',
+                mpSubscriptionId: null
+            },
+            billing: billing as any,
+            paymentAdapter: paymentAdapter as any,
+            db: db as any,
+            logger: makeLogger()
+        });
+
+        expect(outcome).toEqual({ abandoned: false, reason: 'checkout-in-progress' });
+        // Row is left pending — no abandon write, no MP calls.
+        expect(update).not.toHaveBeenCalled();
+        expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
+    });
+
+    it('abandons an mp-null row when its Path C checkout TTL has already elapsed (FIX B)', async () => {
+        const { db, update } = makeDbMock([ABANDONED_ROW]);
+        mockFindByLocalSubscriptionId.mockResolvedValue({
+            id: 'pc-1',
+            localSubscriptionId: 'sub-1',
+            status: 'pending',
+            expiresAt: new Date(Date.now() - 60 * 1000) // expired
+        });
+
+        const outcome = await _internals.reapPendingCandidate({
+            candidate: {
+                id: 'sub-1',
+                customerId: 'cust-1',
+                planId: 'plan-1',
+                mpSubscriptionId: null
+            },
+            billing: billing as any,
+            paymentAdapter: paymentAdapter as any,
+            db: db as any,
+            logger: makeLogger()
+        });
+
+        expect(outcome).toEqual({ abandoned: true, info: ABANDONED_ROW });
+        expect(update).toHaveBeenCalledOnce();
+    });
+
+    it('abandons an mp-null row when no Path C checkout correlation row exists (FIX B)', async () => {
+        const { db, update } = makeDbMock([ABANDONED_ROW]);
+        mockFindByLocalSubscriptionId.mockResolvedValue(null);
+
+        const outcome = await _internals.reapPendingCandidate({
+            candidate: {
+                id: 'sub-1',
+                customerId: 'cust-1',
+                planId: 'plan-1',
+                mpSubscriptionId: null
+            },
+            billing: billing as any,
+            paymentAdapter: paymentAdapter as any,
+            db: db as any,
+            logger: makeLogger()
+        });
+
+        expect(outcome).toEqual({ abandoned: true, info: ABANDONED_ROW });
+        expect(update).toHaveBeenCalledOnce();
+    });
+
     it('cancels then verifies via retrieve, and abandons once MP confirms cancelled', async () => {
         mockAdapterRetrieve.mockResolvedValue({ status: 'cancelled' });
         const { db, update } = makeDbMock([ABANDONED_ROW]);
@@ -360,6 +442,40 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
         });
 
         expect(outcome).toEqual({ abandoned: false, reason: 'already-reaped' });
+    });
+
+    it('FIX 2: does NOT abandon an mp-null candidate whose row got linked mid-sweep (guarded UPDATE no-op)', async () => {
+        // Candidate was SELECTed with mp_subscription_id === null. Between that
+        // snapshot and this UPDATE, the link-preapproval flow set the mp id
+        // (status stays pending_provider) and marked the correlation row linked —
+        // so findByLocalSubscriptionId no longer returns an in-progress checkout.
+        // Without FIX 2's `isNull(mp_subscription_id)` guard the status-only WHERE
+        // would still match and wrongly abandon a row holding a LIVE preapproval.
+        // With the guard, the UPDATE matches no row → already-reaped (no-op).
+        mockFindByLocalSubscriptionId.mockResolvedValue(null);
+        const { db, update, returning } = makeDbMock([]); // guard filters the row out
+
+        const outcome = await _internals.reapPendingCandidate({
+            candidate: {
+                id: 'sub-1',
+                customerId: 'cust-1',
+                planId: 'plan-1',
+                mpSubscriptionId: null
+            },
+            billing: billing as any,
+            paymentAdapter: paymentAdapter as any,
+            db: db as any,
+            logger: makeLogger()
+        });
+
+        // The abandon UPDATE was attempted (the guard lives in its WHERE), but it
+        // matched nothing, so the linked row is left intact rather than abandoned.
+        expect(update).toHaveBeenCalledOnce();
+        expect(returning).toHaveBeenCalledOnce();
+        expect(outcome).toEqual({ abandoned: false, reason: 'already-reaped' });
+        // No MP calls for an mp-null candidate.
+        expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
+        expect(mockAdapterRetrieve).not.toHaveBeenCalled();
     });
 });
 

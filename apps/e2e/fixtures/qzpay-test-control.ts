@@ -33,6 +33,7 @@ const DEFAULT_API_BASE_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhos
 
 export type ControllableOperation =
     | 'createSubscription'
+    | 'provisionPlan'
     | 'createPaymentPreference'
     | 'capturePayment'
     | 'refundPayment'

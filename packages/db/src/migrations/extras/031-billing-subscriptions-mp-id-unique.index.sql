@@ -1,0 +1,45 @@
+-- =============================================================================
+-- 031-billing-subscriptions-mp-id-unique.index.sql
+-- Partial UNIQUE index enforcing "at most one subscription per MercadoPago
+-- preapproval id" (HOS-191 Path C, FIX C).
+--
+-- Why this file exists:
+--   The share-link linking flow
+--   (apps/api/src/services/billing/link-preapproval.service.ts) writes the real
+--   MercadoPago preapproval id onto `billing_subscriptions.mp_subscription_id`
+--   via a compare-and-set (`SET mp_subscription_id = $1 WHERE id = $2 AND
+--   mp_subscription_id IS NULL`). That CAS serializes writes to ONE local
+--   subscription row, but it does NOT stop TWO different rows (e.g. a customer
+--   who retried checkout and produced two `pending_provider` rows) from each
+--   winning their own CAS for the SAME preapproval id. Only a DB-level UNIQUE
+--   constraint can guarantee a preapproval id maps to exactly one subscription.
+--
+--   The index MUST be partial (`WHERE mp_subscription_id IS NOT NULL`):
+--   `pending_provider` rows legitimately carry a NULL `mp_subscription_id` until
+--   linked, and a plain UNIQUE would collapse every unlinked row into a single
+--   NULL collision. A partial UNIQUE index cannot be declared in the (qzpay-owned)
+--   Drizzle TS schema for this table, so per the Carril 2 golden rule
+--   (packages/db/CLAUDE.md "Migrations") it lives here.
+--
+--   The linking CAS relies on this index: `link-preapproval.service.ts` catches
+--   the Postgres unique-violation (SQLSTATE 23505) it raises and maps a lost race
+--   to the idempotent 'already' outcome instead of a 500.
+--
+-- No auto-dedup:
+--   Unlike the audit-table indexes 029/030, this file does NOT delete anything
+--   first. `mp_subscription_id` is a provider-unique identifier (one MercadoPago
+--   preapproval → one row is the invariant this index enforces), so a live
+--   environment is not expected to hold duplicates. Auto-deleting a
+--   `billing_subscriptions` row to force the index through would be destructive
+--   and money-affecting; if a genuine duplicate ever exists, this CREATE will
+--   fail loudly and requires manual investigation rather than silent data loss.
+--
+-- Idempotency:
+--   CREATE UNIQUE INDEX IF NOT EXISTS is idempotent. NOT created CONCURRENTLY —
+--   the extras carril applies files in a single block (a transaction), and
+--   CONCURRENTLY cannot run inside a transaction.
+-- =============================================================================
+
+CREATE UNIQUE INDEX IF NOT EXISTS billing_subscriptions_mp_id_uniq
+    ON billing_subscriptions (mp_subscription_id)
+    WHERE mp_subscription_id IS NOT NULL;

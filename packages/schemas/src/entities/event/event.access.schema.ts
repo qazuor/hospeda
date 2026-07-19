@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import {
     EventLocationAdminSchema,
     EventLocationProtectedSchema,
@@ -105,6 +106,9 @@ export const EventProtectedSchema = EventSchema.pick({
     createdAt: true,
     updatedAt: true
 }).extend({
+    // HOS-190: read⊇write — a persisted contactInfo (legacy phone format, missing
+    // mobilePhone) must never 500 the response. Format stays strict on write.
+    contactInfo: ContactInfoReadSchema.nullish(),
     // Relation fields — nullish to accept both undefined (relation not loaded)
     // and null (relation loaded but FK is null on the row).
     organizer: EventOrganizerProtectedSchema.nullish(),
@@ -122,6 +126,8 @@ export type EventProtected = z.infer<typeof EventProtectedSchema>;
  * This is essentially the full schema.
  */
 export const EventAdminSchema = EventSchema.extend({
+    // HOS-190: read⊇write lenient contactInfo (see EventProtectedSchema).
+    contactInfo: ContactInfoReadSchema.nullish(),
     // Relation fields — nullish to accept both undefined and null.
     organizer: EventOrganizerAdminSchema.nullish(),
     location: EventLocationAdminSchema.nullish()

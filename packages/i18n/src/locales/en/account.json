@@ -168,8 +168,12 @@
         "save": "Save changes",
         "saving": "Saving...",
         "success": "Profile updated successfully",
+        "noChanges": "No changes to save",
         "errors": {
-            "saveFailed": "Failed to save profile"
+            "saveFailed": "Failed to save profile",
+            "displayNameRequired": "Display name is required",
+            "firstNameRequired": "First name is required",
+            "lastNameRequired": "Last name is required"
         }
     },
     "profileEdit": {

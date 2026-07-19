@@ -6,8 +6,12 @@ export const SlugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 // Regex for time in HH:mm format (24h)
 export const TimeRegExp = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-// Regex for international phone number (E.164)
-export const InternationalPhoneRegex = /^\+[1-9]\d{1,14}(?:\s\d{1,15})*$/;
+// Regex for international phone number (E.164): a leading "+", a 1-9 country-code
+// digit, then 6-14 further digits (7-15 total) with optional single spaces as
+// separators. Requiring at least 7 total digits rejects a bare country code like
+// "+54" (which the previous `\d{1,14}` allowed as a 2-digit "number", HOS-190)
+// while still accepting spaced local formats like "+54 11 1234 5678".
+export const InternationalPhoneRegex = /^\+[1-9](?:\s?\d){6,14}$/;
 
 // Regex for social network URLs
 export const FacebookUrlRegex = /^https?:\/\/(www\.)?facebook\.com\//;

@@ -159,11 +159,13 @@ export const httpToDomainEventOrganizerCreate = (
         logo: httpData.logo,
         lifecycleState: LifecycleStatusEnum.ACTIVE,
 
-        // Contact info as nested object (mobilePhone is required in domain)
+        // Contact info as nested object. Omit mobilePhone when the phone field is
+        // absent instead of injecting '' (HOS-190) — an empty string fails the
+        // strict ContactInfoSchema phone regex and 400s a create with no phone.
         contactInfo: {
             personalEmail: httpData.email,
             workEmail: httpData.email,
-            mobilePhone: httpData.phone || '', // Default empty string if not provided
+            ...(httpData.phone === undefined ? {} : { mobilePhone: httpData.phone }),
             website: httpData.website
         },
 

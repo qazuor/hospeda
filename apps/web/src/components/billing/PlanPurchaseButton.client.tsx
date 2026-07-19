@@ -436,6 +436,26 @@ export function PlanPurchaseButton({
     // Show the promo section only when the user can interact with checkout
     const showPromoSection = showPromo && isAuthenticated && !isCurrentPlan && !isAnnualUnavailable;
 
+    // BETA-183: a MercadoPago preapproval (used by every MONTHLY plan) is created
+    // with a fixed payer_email = the Hospeda signup email. MP rejects the payment
+    // if the paying MP account is under a different email — a surprise the user
+    // only hits on MP's own screen, with no prior warning in Hospeda. Surface an
+    // up-front notice before the redirect so the user can use (or switch to) an MP
+    // account under this email. Monthly-only: annual is a one-time charge and any
+    // MP account can pay it. Layer 1 (notice only) — capturing an alternate
+    // payer_email is a follow-up.
+    const userEmail = session?.user?.email ?? '';
+    const showMonthlyEmailNotice =
+        isAuthenticated && billingInterval === 'monthly' && !isCurrentPlan && userEmail !== '';
+    const monthlyEmailNoticeTitle = t(
+        'billing.checkout.monthlyEmailNotice.title',
+        'Antes de continuar'
+    );
+    const monthlyEmailNoticeText = t(
+        'billing.checkout.monthlyEmailNotice.text',
+        'Vas a pagar con la cuenta de MercadoPago asociada a {{email}}. Si tu cuenta de MercadoPago usa otro correo, no vas a poder completar el pago mensual.'
+    ).replace('{{email}}', userEmail);
+
     // ---------------------------------------------------------------------------
     // Promo helpers
     // ---------------------------------------------------------------------------
@@ -826,6 +846,17 @@ export function PlanPurchaseButton({
                 >
                     {error}
                 </p>
+            )}
+
+            {/* BETA-183: monthly MP email-mismatch notice (layer 1 — notice only) */}
+            {showMonthlyEmailNotice && (
+                <aside
+                    className={styles.monthlyNotice}
+                    data-testid="monthly-email-notice"
+                >
+                    <p className={styles.monthlyNoticeTitle}>{monthlyEmailNoticeTitle}</p>
+                    <p className={styles.monthlyNoticeText}>{monthlyEmailNoticeText}</p>
+                </aside>
             )}
 
             {/* Promo code section — only shown when the user can actually checkout */}

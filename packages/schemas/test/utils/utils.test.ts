@@ -91,11 +91,24 @@ describe('Regular Expressions', () => {
                 '+123456789012345',
                 '+54111234567',
                 '+442079460958',
-                '+15551234567'
+                '+15551234567',
+                '+54 11 1234 5678', // spaced local format stays valid
+                '+54 3442 123456'
             ];
 
             for (const phone of validPhones) {
                 expect(InternationalPhoneRegex.test(phone)).toBe(true);
+            }
+        });
+
+        it('should reject a bare country code with no subscriber number (HOS-190)', () => {
+            // The previous `\d{1,14}` accepted "+54" as a valid 2-digit "number".
+            // A country code alone is not a reachable phone; the tightened regex
+            // now requires at least 7 total digits.
+            const bareCountryCodes = ['+54', '+1', '+44', '+549'];
+
+            for (const phone of bareCountryCodes) {
+                expect(InternationalPhoneRegex.test(phone)).toBe(false);
             }
         });
 

@@ -182,8 +182,13 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
     });
 
     describe('submit payload (JSONB shape)', () => {
-        it('includes birthDate as a top-level field when populated', async () => {
+        it('sends birthDate as a top-level field when it changes', async () => {
+            // HOS-190 P2: birthDate is now diffed against the baseline (only
+            // sent when it actually changed) instead of unconditionally.
             renderForm();
+            fireEvent.change(document.getElementById('birthDate') as HTMLInputElement, {
+                target: { value: '1992-05-15' }
+            });
             fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
             await waitFor(() => {
                 expect(globalThis.fetch).toHaveBeenCalledTimes(1);
@@ -193,11 +198,17 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
                 RequestInit
             ];
             const body = JSON.parse(String(call[1].body)) as Record<string, unknown>;
-            expect(body.birthDate).toBe('1990-04-22');
+            expect(body.birthDate).toBe('1992-05-15');
         });
 
-        it('omits social and location keys when nothing changed', async () => {
+        it('omits social and location keys when only an unrelated field changed', async () => {
+            // HOS-190 P2: a PATCH is only issued when something changed — change
+            // occupation (profile block) and assert the untouched social /
+            // location / contact blocks stay absent.
             renderForm();
+            fireEvent.change(document.getElementById('occupation') as HTMLInputElement, {
+                target: { value: 'Senior Engineer' }
+            });
             fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
             await waitFor(() => {
                 expect(globalThis.fetch).toHaveBeenCalledTimes(1);

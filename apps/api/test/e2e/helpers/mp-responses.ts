@@ -96,6 +96,16 @@ export interface ProviderSubscriptionResponse {
     readonly metadata: Readonly<Record<string, string>>;
     readonly initPoint?: string;
     readonly sandboxInitPoint?: string;
+    /**
+     * Provider-side `external_reference` (HOS-191 share-link checkout linking).
+     * Present as of `@qazuor/qzpay-core` 1.15.0 — see `QZPayProviderSubscription`.
+     */
+    readonly externalReference?: string | null;
+    /**
+     * Payer email on file with the provider for this subscription (HOS-191).
+     * Present as of `@qazuor/qzpay-core` 1.15.0 — see `QZPayProviderSubscription`.
+     */
+    readonly payerEmail?: string | null;
 }
 
 /**
@@ -176,6 +186,8 @@ interface SubscriptionFixtureInput {
     readonly metadata?: Readonly<Record<string, string>>;
     readonly initPoint?: string;
     readonly sandboxInitPoint?: string;
+    readonly externalReference?: string | null;
+    readonly payerEmail?: string | null;
 }
 
 interface PriceFixtureInput {
@@ -268,7 +280,11 @@ export const providerResponseFixtures = {
                 : { initPoint: input.initPoint }),
             ...(input.sandboxInitPoint === undefined
                 ? {}
-                : { sandboxInitPoint: input.sandboxInitPoint })
+                : { sandboxInitPoint: input.sandboxInitPoint }),
+            ...(input.externalReference === undefined
+                ? {}
+                : { externalReference: input.externalReference }),
+            ...(input.payerEmail === undefined ? {} : { payerEmail: input.payerEmail })
         };
     },
     price(input: PriceFixtureInput = {}): ProviderPriceResponse {

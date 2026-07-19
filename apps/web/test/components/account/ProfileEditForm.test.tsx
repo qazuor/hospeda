@@ -18,6 +18,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import type { ProfileEditUser } from '../../../src/components/account/ProfileEditForm.client';
 import { ProfileEditForm } from '../../../src/components/account/ProfileEditForm.client';
+import { addToast } from '../../../src/store/toast-store';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
@@ -181,6 +182,11 @@ describe('ProfileEditForm', () => {
     // `UserProtectedPatchInputSchema` server-side.
     it('submits successfully and omits displayName/firstName/lastName from the payload when blank', async () => {
         renderForm({ ...MOCK_USER, displayName: '', firstName: '', lastName: '' });
+        // A real change is now required to trigger a PATCH (HOS-190 P2 no-op
+        // guard). Blank names were never set (read⊇write) so they stay omitted.
+        fireEvent.change(screen.getByLabelText(/biografía/i), {
+            target: { value: 'Biografía de prueba válida' }
+        });
         fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
         await waitFor(() => {
             expect(globalThis.fetch).toHaveBeenCalledTimes(1);
@@ -197,6 +203,10 @@ describe('ProfileEditForm', () => {
 
     it('calls fetch PATCH on valid submit', async () => {
         renderForm();
+        // A real change is required to issue a PATCH (HOS-190 P2 no-op guard).
+        fireEvent.change(screen.getByLabelText(/biografía/i), {
+            target: { value: 'Biografía de prueba válida' }
+        });
         fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
         await waitFor(() => {
             expect(globalThis.fetch).toHaveBeenCalledWith(
@@ -216,6 +226,9 @@ describe('ProfileEditForm', () => {
                 )
             );
         renderForm();
+        fireEvent.change(screen.getByLabelText(/biografía/i), {
+            target: { value: 'Biografía de prueba válida' }
+        });
         fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
         await waitFor(() => {
             expect(screen.getByRole('alert')).toBeInTheDocument();
@@ -226,8 +239,85 @@ describe('ProfileEditForm', () => {
         // Never resolving fetch to keep loading state
         globalThis.fetch = vi.fn().mockImplementation(() => new Promise(() => undefined));
         renderForm();
+        fireEvent.change(screen.getByLabelText(/biografía/i), {
+            target: { value: 'Biografía de prueba válida' }
+        });
         const btn = screen.getByRole('button', { name: /guardar cambios/i });
         fireEvent.click(btn);
         await waitFor(() => expect(btn).toBeDisabled());
+    });
+
+    // ── HOS-190 BETA-189 regressions ────────────────────────────────────────
+
+    it('re-syncs the baseline after save so reverting a just-saved field restores it (F6)', async () => {
+        // F6 regression (BETA-189): the diff was computed against the load-time
+        // snapshot and never resynced. Saving bio X then reverting bio to its
+        // original value and saving again produced an empty profile diff while
+        // the DB kept X. Asserts on the ACTUAL body of the SECOND save.
+        renderForm();
+        const bio = screen.getByLabelText(/biografía/i);
+        const saveBtn = screen.getByRole('button', { name: /guardar cambios/i });
+
+        // 1) Change bio and save → profile.bio carries the new value.
+        fireEvent.change(bio, { target: { value: 'Nueva biografía de prueba' } });
+        fireEvent.click(saveBtn);
+        await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(1));
+        const firstCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+            string,
+            RequestInit
+        ];
+        const firstBody = JSON.parse(String(firstCall[1].body)) as {
+            profile?: { bio?: string };
+        };
+        expect(firstBody.profile?.bio).toBe('Nueva biografía de prueba');
+
+        // 2) Revert bio to the ORIGINAL value and save again → must issue a
+        //    restoring PATCH carrying the original bio (not a "no changes").
+        fireEvent.change(bio, { target: { value: 'Viajera apasionada.' } });
+        fireEvent.click(saveBtn);
+        await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(2));
+        const secondCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[1] as [
+            string,
+            RequestInit
+        ];
+        const secondBody = JSON.parse(String(secondCall[1].body)) as {
+            profile?: { bio?: string };
+        };
+        expect(secondBody.profile?.bio).toBe('Viajera apasionada.');
+    });
+
+    it('shows a "no changes" info toast and does not PATCH when nothing changed (P2)', async () => {
+        renderForm();
+        fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
+        await waitFor(() => {
+            expect(vi.mocked(addToast)).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: 'info',
+                    message: expect.stringMatching(/no hay cambios/i)
+                })
+            );
+        });
+        expect(globalThis.fetch).not.toHaveBeenCalled();
+    });
+
+    it('blocks the save and announces when a previously-set required name is cleared (P1)', async () => {
+        renderForm();
+        fireEvent.change(screen.getByLabelText(/nombre visible/i), { target: { value: '' } });
+        fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
+        await waitFor(() => {
+            const err = document.getElementById('displayName-error');
+            expect(err).toBeInTheDocument();
+        });
+        expect(globalThis.fetch).not.toHaveBeenCalled();
+    });
+
+    it('marks bio and blocks the save when bio is shorter than the server minimum (P4)', async () => {
+        renderForm();
+        fireEvent.change(screen.getByLabelText(/biografía/i), { target: { value: 'corta' } });
+        fireEvent.click(screen.getByRole('button', { name: /guardar cambios/i }));
+        await waitFor(() => {
+            expect(document.getElementById('bio-error')).toBeInTheDocument();
+        });
+        expect(globalThis.fetch).not.toHaveBeenCalled();
     });
 });

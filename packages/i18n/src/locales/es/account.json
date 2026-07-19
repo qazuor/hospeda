@@ -168,8 +168,12 @@
         "save": "Guardar cambios",
         "saving": "Guardando...",
         "success": "Perfil actualizado correctamente",
+        "noChanges": "No hay cambios para guardar",
         "errors": {
-            "saveFailed": "Error al guardar el perfil"
+            "saveFailed": "Error al guardar el perfil",
+            "displayNameRequired": "El nombre visible es obligatorio",
+            "firstNameRequired": "El nombre es obligatorio",
+            "lastNameRequired": "El apellido es obligatorio"
         }
     },
     "profileEdit": {
