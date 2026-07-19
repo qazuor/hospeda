@@ -91,11 +91,11 @@ const promoIgnoredNote = promoIgnored
 	description={t('billing.checkout.success.subtitle', 'Tu pago fue aprobado correctamente')}
 >
 	{/* HOS-209: strip `preapproval_id` (and any future provider return-secret) from
-	   the visible URL synchronously, as the FIRST thing in <head> (head-early slot),
-	   before PostHog captures `$current_url`, before the feedback nav bootstrap
-	   records the URL, and before any cross-origin subresource sends a Referer. The
-	   CheckoutStatusPoller island already has the id via its SSR prop, so removing it
-	   from the client URL never breaks the linking flow. */}
+	   the visible URL synchronously, via the head-early slot (ahead of every
+	   URL-capturing node in <head>), before PostHog captures `$current_url`, before
+	   the feedback nav bootstrap records the URL, and before any cross-origin
+	   subresource sends a Referer. The CheckoutStatusPoller island already has the id
+	   via its SSR prop, so removing it from the client URL never breaks linking. */}
 	<StripCheckoutReturnParams slot="head-early" cspNonce={cspNonce} />
 	{
 		isImmediateSuccess ? (

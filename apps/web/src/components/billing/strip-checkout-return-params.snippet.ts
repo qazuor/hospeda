@@ -32,8 +32,9 @@
  * from the client URL therefore cannot break the linking flow.
  *
  * Timing is the whole point, and this is mounted in `BaseLayout`'s `head-early`
- * slot — the FIRST node in `<head>` — so the `is:inline` script runs
- * synchronously during parse before every URL-capturing path that follows it:
+ * slot — rendered ahead of every URL-capturing node in `<head>` (only the
+ * `charset`/`viewport` metas precede it) — so the `is:inline` script runs
+ * synchronously during parse before every path that follows it:
  *
  * - PostHog (`PostHogScript.astro`) stubs `window.posthog` synchronously but
  *   defers the real `$current_url` pageview capture until its `array.js` bundle

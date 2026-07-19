@@ -6,9 +6,10 @@
  * analytics/third-party script captures it (HOS-209).
  *
  * Mount this in the checkout success page's `<head>` via the layout's
- * `head-early` slot — rendered FIRST in `<head>`, before the PostHog snippet,
- * the feedback nav bootstrap, and any cross-origin subresource fetch — so it
- * runs synchronously during parse ahead of every URL-capturing path. See
+ * `head-early` slot — rendered ahead of every URL-capturing node (the PostHog
+ * snippet, the feedback nav bootstrap, and any cross-origin subresource fetch;
+ * only the `charset`/`viewport` metas precede it) — so it runs synchronously
+ * during parse ahead of every URL-capturing path. See
  * `strip-checkout-return-params.snippet.ts` for the full timing rationale.
  *
  * The script is `is:inline` and carries the per-request CSP nonce so it passes

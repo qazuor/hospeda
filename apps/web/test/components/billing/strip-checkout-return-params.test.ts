@@ -140,7 +140,7 @@ describe('head-early slot plumbing', () => {
         );
     });
 
-    it('MarketingLayout forwards head-early into BaseLayout', () => {
-        expect(marketingLayout).toContain('slot="head-early"');
+    it('MarketingLayout forwards head-early into BaseLayout head-early (not head)', () => {
+        expect(marketingLayout).toContain('name="head-early" slot="head-early"');
     });
 });
