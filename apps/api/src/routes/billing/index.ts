@@ -159,6 +159,27 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // in past-due-grace.middleware.ts.
     router.use('*', pastDueGraceMiddleware());
 
+    // Mount the share-link checkout back_url linking route (HOS-191 Path C F2)
+    // FIRST among the `/subscriptions`-prefixed routers, before both
+    // `cancelWrapper` and `qzpayWrapper` below. Both of those wrap their inner
+    // routes with `billingAdminGuardMiddleware()` applied via `.use('*')`,
+    // which — because Hono composes wildcard middleware for ANY request
+    // matching the mount prefix, whether or not that sub-app has its own
+    // handler for the exact path — runs for `/subscriptions/link-preapproval`
+    // too, not just the paths those wrappers actually own. That middleware's
+    // `allowedSubPaths` for the `subscriptions` segment only lists
+    // `start-paid`, `change-plan`, `cancel` (not `link-preapproval`), so
+    // whichever wrapper is registered first rejects the authenticated
+    // (non-admin) user with 403 "Billing admin guard" before this router is
+    // ever reached — reproduced by
+    // `test/routes/billing/link-preapproval-routing.test.ts`, which failed
+    // this way when the router sat after `cancelWrapper` even though it was
+    // already ahead of `qzpayWrapper`. Ownership is enforced in the service
+    // layer (linkPreapprovalToLocalSub verifies expectedCustomerId ===
+    // billingCustomerId) plus the handler's own billingCustomerId gate, so no
+    // admin guard is needed here.
+    router.route('/subscriptions', linkPreapprovalRouter);
+
     // Mount user self-service soft-cancel route (SPEC-147 T-006) BEFORE the
     // qzpay wrapper. qzpay-hono's prebuilt routes include
     // `POST /subscriptions/:id/cancel`; since Hono uses first-match routing,
@@ -231,11 +252,6 @@ export function createBillingRoutesHandler(): AppOpenAPI {
 
     // Mount custom start-paid subscription route (SPEC-126 D1).
     router.route('/subscriptions', startPaidRouter);
-
-    // Mount the share-link checkout back_url linking route (HOS-191 Path C F2).
-    // Same `/subscriptions` prefix as the siblings above; Hono routes by exact
-    // path so `/subscriptions/link-preapproval` does not conflict.
-    router.route('/subscriptions', linkPreapprovalRouter);
 
     // Mount self-serve pause/resume routes (SPEC-143 #29) at the billing root,
     // NOT under `/subscriptions`. The routes are `/me/subscription-pause` and
