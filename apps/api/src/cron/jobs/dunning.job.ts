@@ -17,6 +17,45 @@
  * - Supports dry-run mode to preview actions without making changes
  * - Emits lifecycle events: retry_scheduled, retry_succeeded, retry_failed, canceled_nonpayment
  *
+ * ## HOS-191 F5 — mutations disabled, MercadoPago native recycling is authoritative
+ *
+ * MercadoPago has its OWN native dunning ("recycling"): it retries a failed
+ * recurring charge internally for up to ~10 days and auto-CANCELS the
+ * preapproval after 3 failed cycles (never pauses it), notifying the customer
+ * by email. Hospeda's own retry/cancel loop below (`processRetries` +
+ * `processCancellations`, both from `@qazuor/qzpay-core`'s
+ * `SubscriptionLifecycleService`) duplicated that mechanism and could produce
+ * contradictory local state. The owner decided (2026-07-18) to defer entirely
+ * to MP: this job no longer calls either mutation method — see
+ * {@link DUNNING_MUTATIONS_ENABLED}. The only path a subscription actually
+ * leaves `active` for non-payment now is MP's own `subscription_preapproval`
+ * webhook reporting `cancelled`, handled in
+ * `routes/webhooks/mercadopago/subscription-logic.ts`.
+ *
+ * **Discovered gap while implementing this (read before re-enabling
+ * mutations):** `PAST_DUE` is, as of this writing, unreachable in the local
+ * `billing_subscriptions.status` column. `processRetries`/`processCancellations`
+ * only ever READ subscriptions already in `past_due`
+ * (`qzpayIsSubscriptionPastDue` in qzpay-core is a pure `status === 'past_due'`
+ * check) — the only qzpay-core code that ever WRITES `past_due` is
+ * `SubscriptionLifecycleServiceImpl.enterGracePeriod`, called exclusively from
+ * `processRenewals()`, which nothing in this codebase invokes. The webhook
+ * path (`QZPAY_TO_HOSPEDA_STATUS['past_due']` in
+ * `subscription-status-provider.ts`) is equally unreachable in practice:
+ * `@qazuor/qzpay-mercadopago`'s `MERCADOPAGO_SUBSCRIPTION_STATUS` map only
+ * translates MP's real preapproval statuses (`pending`, `authorized`,
+ * `paused`, `cancelled`) — there is no MP preapproval status that becomes
+ * `past_due`. In other words: disabling this cron's mutations did not turn
+ * off live behavior, because the retry/cancel loop was already a structural
+ * no-op (its input set — locally `past_due` subscriptions — was already
+ * always empty). `docs/billing/grace-period-source-of-truth.md` and the
+ * `pastDueGraceMiddleware` describe a `past_due` state that is currently
+ * unreachable end-to-end; that is a pre-existing gap this change surfaces
+ * but does not fix (fixing it — e.g. teaching the MP adapter to surface
+ * `recycling` as `past_due` — is a separate, larger decision, since MP's
+ * `subscription_authorized_payment` webhook with a `rejected` status is the
+ * only local signal of an in-flight retry today).
+ *
  * @module cron/jobs/dunning
  */
 
@@ -152,6 +191,26 @@ async function recordDunningAttempt(event: LifecycleEvent): Promise<void> {
  */
 /** Local alias for dunning retry intervals from @repo/billing */
 const RETRY_INTERVALS: readonly number[] = DUNNING_RETRY_INTERVALS;
+
+/**
+ * HOS-191 F5 kill switch for Hospeda's own dunning mutations.
+ *
+ * `false` (the default since HOS-191 F5): the cron NEVER calls
+ * `lifecycle.processRetries()` or `lifecycle.processCancellations()`. It
+ * still builds the `SubscriptionLifecycleService` (so `processPayment`,
+ * `getDefaultPaymentMethod`, and `onEvent` stay wired and testable — see the
+ * module doc), it just never invokes the two mutating methods. Instead it
+ * runs an observe-only pass that reports how many subscriptions are
+ * currently `past_due`, purely for visibility.
+ *
+ * `true`: restores the pre-HOS-191-F5 behavior exactly (both methods called,
+ * unchanged). Flip this back only if MercadoPago's native recycling is
+ * confirmed broken/disabled for this account — do not flip it back "just in
+ * case" without first re-checking the `past_due` reachability gap documented
+ * in the module JSDoc above, since re-enabling this alone will not make the
+ * loop do anything (no subscription is ever written to `past_due` today).
+ */
+export const DUNNING_MUTATIONS_ENABLED = false;
 
 /**
  * Discriminated union returned by the withTransaction callback in the cron handler.
@@ -521,7 +580,44 @@ export const dunningJob: CronJobDefinition = {
                     };
                 }
 
-                // Production mode: run payment retries and grace period cancellations
+                // HOS-191 F5: mutations disabled by default — MercadoPago's native
+                // recycling is now the sole retry/cancellation mechanism. See
+                // DUNNING_MUTATIONS_ENABLED and the module JSDoc for the full
+                // rationale and the past_due-reachability gap this surfaced.
+                if (!DUNNING_MUTATIONS_ENABLED) {
+                    logger.info(
+                        'Running in production mode - HOS-191 F5: dunning mutations disabled, observe-only pass (MercadoPago native recycling is authoritative)'
+                    );
+
+                    const allSubscriptions = await billing.subscriptions.list();
+                    const pastDueCount = (allSubscriptions?.data ?? []).filter(
+                        (sub) => sub.status === 'past_due'
+                    ).length;
+                    const durationMs = Date.now() - startedAt.getTime();
+
+                    logger.info('Dunning job completed (observe-only, HOS-191 F5)', {
+                        pastDueCount,
+                        dunningMutationsEnabled: false,
+                        durationMs
+                    });
+
+                    return {
+                        skipped: false,
+                        success: true,
+                        message: `Observe-only (HOS-191 F5, MercadoPago native recycling is authoritative): ${pastDueCount} subscription(s) currently past_due — no local retries or cancellations attempted`,
+                        processed: 0,
+                        errors: 0,
+                        durationMs,
+                        details: {
+                            dunningMutationsEnabled: false,
+                            pastDueCount
+                        }
+                    };
+                }
+
+                // Production mode (legacy path, currently unreachable behind the
+                // DUNNING_MUTATIONS_ENABLED kill switch above): run payment retries
+                // and grace period cancellations via qzpay-core's lifecycle service.
                 logger.info(
                     'Running in production mode - processing payment retries and cancellations'
                 );

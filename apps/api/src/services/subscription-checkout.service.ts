@@ -27,7 +27,6 @@ import {
     commerceListingSubscriptions,
     type DrizzleClient,
     eq,
-    getDb,
     partnerSubscriptions,
     withTransaction
 } from '@repo/db';
@@ -35,18 +34,21 @@ import { ProductDomainEnum } from '@repo/schemas';
 import {
     calculatePromoCodeEffect,
     resolveCheckoutFreeTrialDays,
-    resolveFullPlanPriceCentavos,
     resolvePlanTrialConfig
 } from '@repo/service-core';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';
-import { resolveCheckoutMpPlanId } from './billing/mp-plan-provisioning.service.js';
+import {
+    buildPreapprovalPlanShareLink,
+    resolveCheckoutMpPlanId
+} from './billing/mp-plan-provisioning.service.js';
 import { createPaidSubscription } from './billing/paid-subscription-create.js';
+import type { PendingCheckoutDiscount } from './billing/pending-provider-subscription-create.js';
+import { createPendingProviderSubscription } from './billing/pending-provider-subscription-create.js';
 import type { SubscriptionCheckoutErrorCode } from './billing/subscription-checkout-error.js';
 import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
 import { resolveCheckoutPromoPlan } from './subscription-checkout-promo.service.js';
 import { createCompSubscription } from './subscription-comp-create.service.js';
-import { applySignupDiscountToMonthly } from './subscription-discount-signup.service.js';
 
 export type { SubscriptionCheckoutErrorCode };
 // HOS-114 T-002: re-exported from the sibling `billing/subscription-checkout-error.js`
@@ -597,16 +599,22 @@ export async function initiatePaidMonthlySubscription(
         }
     }
 
-    // HOS-114 T-002/T-003: the `mode: 'paid'` create + checkoutUrl resolution
-    // + fail-closed MISSING_INIT_POINT guard now live in the shared
-    // `createPaidSubscription` helper (`billing/paid-subscription-create.ts`),
-    // also reused by the paid-reactivation flow. Pure extraction — no
-    // behavior change versus the previous inline block.
-    // HOS-191: subscribe against the MP preapproval_plan matching this customer's
-    // trial length (plan base + any trial_extension promo, or 0 when they have
-    // already used their one lifetime trial). Provisioned on first use.
+    // ── Path C: MercadoPago hosted preapproval-plan share link (HOS-191) ─────
+    // The API no longer creates the preapproval server-side:
+    // `billing.subscriptions.create({ mode: 'paid', providerPriceId })` calls
+    // `POST /preapproval` with a `preapproval_plan_id`, and MercadoPago rejects
+    // that with "card_token_id is required" unless a card was already
+    // tokenized — which this self-serve checkout never does. Instead, resolve
+    // (or provision) the MP `preapproval_plan` for this customer's exact
+    // trial-day variant, materialize a `pending_provider` local subscription +
+    // a `billing_pending_checkouts` correlation row (so the eventual
+    // `back_url` redirect / webhook can link the real preapproval — F2/F3, out
+    // of scope here), and redirect to MercadoPago's HOSTED share link, where MP
+    // itself collects the card.
     const providerPriceId = await resolveCheckoutMpPlanId({
         commercialPlanId: plan.id,
+        // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
+        customerId,
         planName: getPlanDisplayName(plan),
         amountCentavos: monthlyPrice.unitAmount,
         currency: monthlyPrice.currency,
@@ -616,158 +624,63 @@ export async function initiatePaidMonthlySubscription(
         // tool is silently defeated. Real plans on this flow are always monthly.
         billingInterval: planSlug === TEST_DAILY_PLAN.slug ? 'daily' : 'monthly',
         trialDays: freeTrialDays ?? 0,
-        // Same URL used below as the preapproval's back_url; MP requires it on
-        // preapproval_plan creation too (qzpay-mercadopago 2.5.0).
+        // Same URL later used as the preapproval's back_url once the real
+        // preapproval exists (F2); MP also requires it on preapproval_plan
+        // creation (qzpay-mercadopago 2.5.0).
         backUrl: urls.paymentMethodReturnUrl
     });
 
-    const { subscription, checkoutUrl } = await createPaidSubscription({
-        billing,
+    // ── DISCOUNT (deferred, SPEC-262 T-012 P2) ────────────────────────────────
+    // Path C creates no preapproval synchronously, so there is nothing to mutate
+    // yet. Snapshot the resolved discount on the pending-checkout correlation row
+    // instead — F2/F3 applies it as a follow-up mutation once the real
+    // preapproval is linked. Reuses `monthlyPrice.unitAmount` — the same amount
+    // already validated non-zero by the SPEC-262 L1 guard above — so no second
+    // price lookup is needed.
+    let pendingDiscount: PendingCheckoutDiscount | undefined;
+    if (promoPlan.kind === 'discount') {
+        const mutation = calculatePromoCodeEffect(promoPlan.effect, monthlyPrice.unitAmount);
+        if (mutation.type === 'apply-discount') {
+            pendingDiscount = {
+                promoCodeId: promoPlan.promoCodeId,
+                finalAmountCentavos: mutation.finalAmount
+            };
+        }
+    }
+
+    const customer = await billing.customers.get(customerId);
+    if (!customer) {
+        throw new SubscriptionCheckoutError(
+            'CUSTOMER_NOT_FOUND',
+            `Customer '${customerId}' not found`
+        );
+    }
+
+    const { localSubscriptionId, expiresAt } = await createPendingProviderSubscription({
         customerId,
         planId: plan.id,
         priceId: monthlyPrice.id,
-        providerPriceId,
-        paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
-        notificationUrl: urls.notificationUrl,
-        // HOS-171: the ONE free-trial length for this checkout — the plan's base
-        // plus any trial_extension promo, resolved above. qzpay maps it to
-        // `auto_recurring.free_trial`, so MP takes the card now and defers the
-        // first charge by this many days. Omitted when no trial is granted.
-        ...(freeTrialDays === undefined ? {} : { freeTrialDays }),
-        metadata: {
-            source: 'start-paid-monthly',
-            createdBy: 'subscription-flow',
-            // HOS-115 §5: the checkout toggle the customer came from, stamped so
-            // the trial-ending reminder can link back to the same interval
-            // instead of defaulting to monthly. Redundant now that the
-            // subscription carries a real billingInterval of its own (card-first
-            // trials are ordinary preapprovals) — but four readers still key off
-            // this metadata, so dropping it here silently degrades their nudge.
-            intendedInterval: 'monthly',
-            ...(promoCode === undefined ? {} : { promoCode })
-        }
+        billingInterval: 'monthly',
+        mpPreapprovalPlanId: providerPriceId,
+        payerEmail: customer.email,
+        trialGranted: freeTrialDays !== undefined,
+        ...(pendingDiscount ? { pendingDiscount } : {}),
+        livemode: customer.livemode
     });
 
-    // ── DISCOUNT branch (SPEC-262 T-012 P2) ───────────────────────────────────
-    // The preapproval was created at FULL price. Mutate it down to the discounted
-    // amount, FAIL-CLOSED. If MP rejects, cancel the just-created subscription so
-    // the payer is never left on a full-price preapproval, then throw a typed
-    // error — we MUST NOT return a checkoutUrl for a discount that did not apply.
-    // A discount now applies even when a trial was granted (HOS-171). It used to
-    // be discarded, but that was mechanics dressed as policy: a no-card trial had
-    // no preapproval, so there was literally no amount to discount, and the trial
-    // and the eventual paid subscription were different rows. Card-first makes the
-    // trial BE the preapproval, so the discount lowers the amount MP will charge
-    // at day N while the free days run untouched — verified in production by the
-    // HOS-171 spike ("lower the amount 50% on a live sub with a trial: trial
-    // intact, next_payment_date unmoved"). The customer gets both, which is what
-    // a "20% off" campaign aimed at new owners has to mean to mean anything.
-    let appliedEffect: CheckoutAppliedEffect | undefined;
-    if (promoPlan.kind === 'discount') {
-        const mpSubscriptionId = subscription.providerSubscriptionIds?.mercadopago;
-        if (!mpSubscriptionId) {
-            // HOS-151 Bug C: this is now unreachable at runtime — the shared
-            // `createPaidSubscription` helper already fails closed with
-            // MISSING_PROVIDER_SUBSCRIPTION_ID on an id-less provider response
-            // above. Retained purely as a TS type-narrowing (`string | undefined`
-            // → `string` for `applySignupDiscountToMonthly` below) and as
-            // defense-in-depth. Kept fail-closed (cancel + throw) for safety.
-            await cancelSubscriptionFailClosed(billing, subscription.id);
-            throw new SubscriptionCheckoutError(
-                'MISSING_INIT_POINT',
-                'Payment provider returned no preapproval id — cannot apply the discount; subscription cancelled.'
-            );
-        }
-
-        const fullPriceCentavos = await resolveFullPlanPriceCentavos(getDb(), plan.id);
-        if (fullPriceCentavos === null) {
-            await cancelSubscriptionFailClosed(billing, subscription.id);
-            throw new SubscriptionCheckoutError(
-                'NO_MONTHLY_PRICE',
-                `Could not resolve full plan price for plan '${planSlug}' — discount not applied; subscription cancelled.`
-            );
-        }
-
-        // applySignupDiscountToMonthly computes the discounted amount from
-        // fullPriceCentavos via the pure reducer (single source) and FAIL-CLOSED
-        // mutates the live preapproval before committing any DB state.
-        const discountResult = await applySignupDiscountToMonthly({
-            billing,
-            subscriptionId: subscription.id,
-            mpSubscriptionId,
-            customerId,
-            promoCodeId: promoPlan.promoCodeId,
-            code: promoPlan.code,
-            effect: promoPlan.effect,
-            fullPriceCentavos,
-            livemode: subscription.livemode ?? false
-        });
-
-        if (!discountResult.success) {
-            // FAIL-CLOSED: cancel the sub so the payer is not on a full-price
-            // preapproval, then surface a typed error. No checkoutUrl returned.
-            await cancelSubscriptionFailClosed(billing, subscription.id);
-            throw new SubscriptionCheckoutError(
-                'DISCOUNT_APPLY_FAILED',
-                `MercadoPago rejected the discount and the subscription was cancelled: ${discountResult.error.message}`
-            );
-        }
-        appliedEffect = 'discount';
-    }
-
-    // SPEC-143 Finding #17 fallback: enqueue a polling job that will flip
-    // the local subscription to `active` if the `subscription_preapproval.created`
-    // webhook fails to arrive in time. Webhook still wins the race when it
-    // does arrive — the poller treats an already-active subscription as a
-    // no-op. The helper handles the env-flag check, missing-storage guard,
-    // and error logging.
-    await schedulePollingForSubscription({
-        billing,
-        subscriptionId: subscription.id,
-        providerResourceId: subscription.providerSubscriptionIds?.mercadopago ?? '',
-        resourceType: 'subscription',
-        planSlug,
-        sourceLabel: 'start-paid-monthly'
-    });
+    // No `schedulePollingForSubscription` here — Path C creates no MP resource
+    // synchronously, so there is no `providerResourceId` yet to poll. Polling
+    // (if still warranted) resumes once F2/F3 links the real preapproval.
+    const checkoutUrl = buildPreapprovalPlanShareLink({ mpPreapprovalPlanId: providerPriceId });
 
     return {
         checkoutUrl,
-        localSubscriptionId: subscription.id,
-        expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
+        localSubscriptionId,
+        expiresAt,
         ...(freeTrialDays === undefined ? {} : { trialGranted: true as const }),
-        ...(appliedEffect ? { appliedEffect } : {}),
+        ...(pendingDiscount ? { appliedEffect: 'discount' as const } : {}),
         ...(promoCodeIgnored ? { promoCodeIgnored: true } : {})
     };
-}
-
-/**
- * Cancel a just-created subscription as part of the FAIL-CLOSED discount path.
- *
- * Best-effort: a cancel failure is logged (the abandoned-pending cron is the
- * safety net for an orphaned pending row) but must NOT mask the original
- * discount-failure error the caller is about to throw.
- *
- * @internal
- */
-async function cancelSubscriptionFailClosed(
-    billing: QZPayBilling,
-    subscriptionId: string
-): Promise<void> {
-    try {
-        await billing.subscriptions.cancel(subscriptionId);
-        apiLogger.warn(
-            { subscriptionId },
-            'Signup discount: cancelled subscription after MP discount mutation failed (fail-closed)'
-        );
-    } catch (cancelErr) {
-        apiLogger.error(
-            {
-                subscriptionId,
-                error: cancelErr instanceof Error ? cancelErr.message : String(cancelErr)
-            },
-            'Signup discount: FAILED to cancel subscription after discount mutation failure — abandoned-pending cron will reap it'
-        );
-    }
 }
 
 /**
@@ -854,6 +767,8 @@ export async function initiateCommerceMonthlySubscription(
     // against the no-trial MP preapproval_plan for uniform plan-based checkout.
     const providerPriceId = await resolveCheckoutMpPlanId({
         commercialPlanId: plan.id,
+        // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
+        customerId,
         planName: getPlanDisplayName(plan),
         amountCentavos: monthlyPrice.unitAmount,
         currency: monthlyPrice.currency,
@@ -978,6 +893,8 @@ export async function initiatePartnerMonthlySubscription(
     // subscribe against the no-trial MP preapproval_plan.
     const providerPriceId = await resolveCheckoutMpPlanId({
         commercialPlanId: plan.id,
+        // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
+        customerId,
         planName: getPlanDisplayName(plan),
         amountCentavos: monthlyPrice.unitAmount,
         currency: monthlyPrice.currency,
@@ -1048,17 +965,24 @@ export async function initiatePartnerMonthlySubscription(
 /**
  * Input for {@link initiatePaidAnnualSubscription}.
  *
- * Annual subscriptions skip MercadoPago's preapproval API entirely:
- * we charge the full annual amount upfront via `billing.checkout`
- * (`mode: 'payment'`) and persist a local `billing_subscriptions`
- * row directly. Because qzpay-core's `subscriptions.create()` path
- * hard-codes monthly billing-interval and a +30d period in the
- * storage adapter, it cannot be parameterized for the annual
- * lifecycle — hence the direct Drizzle insert.
+ * Annual is NOT a different KIND of checkout anymore. Since HOS-171 it is a
+ * recurring MercadoPago preapproval at a 12-month cadence
+ * (`frequency: 12, frequency_type: 'months'`), and since HOS-191 it goes through
+ * the exact same Path C share-link flow as monthly: no `POST /preapproval` is
+ * created server-side (MP rejects a `preapproval_plan_id` build with
+ * "card_token_id is required"), the checkout resolves/provisions the annual MP
+ * `preapproval_plan`, materializes a `pending_provider` `billing_subscriptions`
+ * row plus a `billing_pending_checkouts` correlation row, and redirects the
+ * browser to MercadoPago's hosted share link. The real preapproval id is linked
+ * back later by the back_url/webhook path (F2/F3). There is no upfront
+ * `billing.checkout` `mode:'payment'` charge and no direct-insert-of-an-active-
+ * subscription path — those descriptions are obsolete.
  *
- * `urls` is split into `successUrl` / `cancelUrl` (not the monthly's
- * single `paymentMethodReturnUrl`) because MP's hosted checkout
- * distinguishes both return paths.
+ * `urls` still carries `successUrl` / `cancelUrl`. `successUrl` becomes the
+ * preapproval's single `back_url` (and is required by MP on `preapproval_plan`
+ * creation). `cancelUrl` has no preapproval equivalent — a preapproval has
+ * exactly one back_url — and is retained only for the HOS-123 annual
+ * reactivation callers that still pass it.
  */
 export interface InitiatePaidAnnualSubscriptionInput {
     /** Hospeda billing customer ID (the qzpay customer ID). */
@@ -1264,121 +1188,80 @@ export async function initiatePaidAnnualSubscription(
         }
     }
 
-    // ── The preapproval ───────────────────────────────────────────────────────
-    // HOS-171 §7.2: annual is a RECURRING preapproval (qzpay maps `annual` to
-    // MercadoPago's `frequency: 12, frequency_type: 'months'`), not the one-time
-    // Checkout Pro charge it used to be. It therefore renews itself, which is why
-    // the whole annual-reactivation flow (HOS-123) has nothing left to do.
+    // ── Path C: MercadoPago hosted preapproval-plan share link (HOS-191) ─────
+    // Same rationale as the monthly path above — no preapproval is created
+    // server-side (MP rejects `POST /preapproval` built from a
+    // `preapproval_plan_id` with "card_token_id is required" unless a card was
+    // already tokenized). Resolve/provision the MP plan for this trial-day
+    // variant, materialize a `pending_provider` local subscription + a
+    // correlation row, and redirect to MercadoPago's hosted share link.
     //
-    // `urls.successUrl` is the preapproval's single `back_url`. It resolves to
-    // the same checkout success page the monthly path's `paymentMethodReturnUrl`
-    // already points at. `urls.cancelUrl` has no equivalent — a preapproval has
-    // exactly one back_url — and is retained on the input only for the annual
+    // `urls.successUrl` is the preapproval's single `back_url` once the real
+    // preapproval exists (F2). It resolves to the same checkout success page
+    // the monthly path's `paymentMethodReturnUrl` already points at.
+    // `urls.cancelUrl` has no equivalent — a preapproval has exactly one
+    // back_url — and is retained on the input only for the annual
     // reactivation callers that still pass it and die with HOS-123.
-    // HOS-191: subscribe against the MP preapproval_plan matching this customer's
-    // trial length for the annual (12-month) cadence — same rule as monthly.
     const providerPriceId = await resolveCheckoutMpPlanId({
         commercialPlanId: plan.id,
+        // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
+        customerId,
         planName: getPlanDisplayName(plan),
         amountCentavos: annualPrice.unitAmount,
         currency: annualPrice.currency,
         billingInterval: 'annual',
         trialDays: freeTrialDays ?? 0,
-        // Same URL used below as the preapproval's back_url; MP requires it on
-        // preapproval_plan creation too (qzpay-mercadopago 2.5.0).
+        // Same URL later used as the preapproval's back_url once the real
+        // preapproval exists; MP also requires it on preapproval_plan creation
+        // (qzpay-mercadopago 2.5.0).
         backUrl: urls.successUrl
     });
 
-    const { subscription, checkoutUrl } = await createPaidSubscription({
-        billing,
+    // ── DISCOUNT (deferred) ───────────────────────────────────────────────────
+    // Same reasoning as monthly: no preapproval exists yet to mutate, so the
+    // resolved discount is snapshotted on the pending-checkout correlation row
+    // for F2/F3 to apply once the real preapproval is linked.
+    let pendingDiscount: PendingCheckoutDiscount | undefined;
+    if (promoPlan.kind === 'discount') {
+        const mutation = calculatePromoCodeEffect(promoPlan.effect, annualPrice.unitAmount);
+        if (mutation.type === 'apply-discount') {
+            pendingDiscount = {
+                promoCodeId: promoPlan.promoCodeId,
+                finalAmountCentavos: mutation.finalAmount
+            };
+        }
+    }
+
+    const customer = await billing.customers.get(customerId);
+    if (!customer) {
+        throw new SubscriptionCheckoutError(
+            'CUSTOMER_NOT_FOUND',
+            `Customer '${customerId}' not found`
+        );
+    }
+
+    const { localSubscriptionId, expiresAt } = await createPendingProviderSubscription({
         customerId,
         planId: plan.id,
         priceId: annualPrice.id,
-        providerPriceId,
         billingInterval: 'annual',
-        paymentMethodReturnUrl: urls.successUrl,
-        notificationUrl: urls.notificationUrl,
-        // The ONE free-trial length for this checkout — plan base plus any
-        // trial_extension promo. qzpay maps it to `auto_recurring.free_trial`,
-        // expressed in DAYS regardless of the 12-month billing cadence.
-        ...(freeTrialDays === undefined ? {} : { freeTrialDays }),
-        metadata: {
-            source: 'start-paid-annual',
-            createdBy: 'subscription-flow',
-            planSlug,
-            // HOS-115 §5 — see the monthly path's note.
-            intendedInterval: 'annual',
-            ...(promoCode === undefined ? {} : { promoCode })
-        }
+        mpPreapprovalPlanId: providerPriceId,
+        payerEmail: customer.email,
+        trialGranted: freeTrialDays !== undefined,
+        ...(pendingDiscount ? { pendingDiscount } : {}),
+        livemode: customer.livemode
     });
 
-    // ── DISCOUNT branch ───────────────────────────────────────────────────────
-    // Now identical to monthly: the preapproval was created at FULL price, so
-    // mutate it down, FAIL-CLOSED. This replaces the old annual mechanism, which
-    // baked the discount into a one-time line item at create time — there is no
-    // line item any more.
-    //
-    // `applySignupDiscountToMonthly` is price-agnostic despite its name (it takes
-    // `fullPriceCentavos`), so the annual price flows through the same reducer,
-    // the same race-safe redemption and the same MP mutation as monthly.
-    //
-    // Applies even alongside a granted trial — see the monthly path's note.
-    let appliedEffect: CheckoutAppliedEffect | undefined;
-    if (promoPlan.kind === 'discount') {
-        const mpSubscriptionId = subscription.providerSubscriptionIds?.mercadopago;
-        if (!mpSubscriptionId) {
-            // Unreachable at runtime — `createPaidSubscription` already fails
-            // closed with MISSING_PROVIDER_SUBSCRIPTION_ID on an id-less provider
-            // response. Retained for type-narrowing and defense-in-depth.
-            await cancelSubscriptionFailClosed(billing, subscription.id);
-            throw new SubscriptionCheckoutError(
-                'MISSING_INIT_POINT',
-                'Payment provider returned no preapproval id — cannot apply the discount; subscription cancelled.'
-            );
-        }
-
-        const discountResult = await applySignupDiscountToMonthly({
-            billing,
-            subscriptionId: subscription.id,
-            mpSubscriptionId,
-            customerId,
-            promoCodeId: promoPlan.promoCodeId,
-            code: promoPlan.code,
-            effect: promoPlan.effect,
-            fullPriceCentavos: annualPrice.unitAmount,
-            livemode: subscription.livemode ?? false
-        });
-
-        if (!discountResult.success) {
-            // FAIL-CLOSED: cancel so the payer is never left on a full-price
-            // preapproval, then surface a typed error. No checkoutUrl returned.
-            await cancelSubscriptionFailClosed(billing, subscription.id);
-            throw new SubscriptionCheckoutError(
-                'DISCOUNT_APPLY_FAILED',
-                `MercadoPago rejected the discount and the subscription was cancelled: ${discountResult.error.message}`
-            );
-        }
-        appliedEffect = 'discount';
-    }
-
-    // SPEC-143 Finding #17 fallback: enqueue a polling job that flips the local
-    // subscription to `active` if the `subscription_preapproval.created` webhook
-    // never arrives. The webhook still wins the race when it does.
-    await schedulePollingForSubscription({
-        billing,
-        subscriptionId: subscription.id,
-        providerResourceId: subscription.providerSubscriptionIds?.mercadopago ?? '',
-        resourceType: 'subscription',
-        planSlug,
-        sourceLabel: 'start-paid-annual'
-    });
+    // No `schedulePollingForSubscription` here — see the monthly path's
+    // identical note: Path C creates no MP resource synchronously.
+    const checkoutUrl = buildPreapprovalPlanShareLink({ mpPreapprovalPlanId: providerPriceId });
 
     return {
         checkoutUrl,
-        localSubscriptionId: subscription.id,
-        expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString(),
+        localSubscriptionId,
+        expiresAt,
         ...(freeTrialDays === undefined ? {} : { trialGranted: true as const }),
-        ...(appliedEffect ? { appliedEffect } : {}),
+        ...(pendingDiscount ? { appliedEffect: 'discount' as const } : {}),
         ...(promoCodeIgnored ? { promoCodeIgnored: true } : {})
     };
 }

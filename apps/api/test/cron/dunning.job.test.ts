@@ -199,7 +199,7 @@ import {
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner
 } from '@repo/service-core';
-import { dunningJob } from '../../src/cron/jobs/dunning.job';
+import { DUNNING_MUTATIONS_ENABLED, dunningJob } from '../../src/cron/jobs/dunning.job';
 import type { CronJobContext } from '../../src/cron/types';
 
 // ---------------------------------------------------------------------------
@@ -287,6 +287,14 @@ describe('dunningJob', () => {
 
         it('should have 5 minute timeout', () => {
             expect(dunningJob.timeoutMs).toBe(300000);
+        });
+
+        // HOS-191 F5: MercadoPago's native recycling (dunning) is now the sole
+        // retry/cancellation mechanism. This flag must stay off so the job never
+        // duplicates it. See the module JSDoc for the full rationale and the
+        // discovered past_due-reachability gap.
+        it('should have dunning mutations disabled by default (HOS-191 F5)', () => {
+            expect(DUNNING_MUTATIONS_ENABLED).toBe(false);
         });
     });
 
@@ -383,10 +391,13 @@ describe('dunningJob', () => {
     // Production mode
     // -----------------------------------------------------------------------
 
-    describe('production mode', () => {
-        it('should call processRetries and processCancellations', async () => {
+    describe('production mode (HOS-191 F5: observe-only, MP native recycling is authoritative)', () => {
+        it('should NOT call processRetries or processCancellations', async () => {
             // Arrange
-            const billing = makeBillingMock();
+            const billing = makeBillingMock([
+                { id: 'sub_1', status: 'past_due' },
+                { id: 'sub_2', status: 'active' }
+            ]);
             mockGetQZPayBilling.mockReturnValue(billing);
 
             const lifecycle = makeLifecycleMock(
@@ -400,24 +411,25 @@ describe('dunningJob', () => {
             // Act
             const result = await dunningJob.handler(ctx);
 
-            // Assert
-            expect(lifecycle.processRetries).toHaveBeenCalledOnce();
-            expect(lifecycle.processCancellations).toHaveBeenCalledOnce();
+            // Assert — the mutating qzpay-core methods are never invoked; the job
+            // still builds the lifecycle (processPayment/onEvent stay wired) but
+            // does not call processRetries/processCancellations on it.
+            expect(lifecycle.processRetries).not.toHaveBeenCalled();
+            expect(lifecycle.processCancellations).not.toHaveBeenCalled();
             expect(result.success).toBe(true);
-            expect(result.processed).toBe(4); // 3 retries + 1 cancellation
-            expect(result.errors).toBe(1); // failed retries
+            expect(result.processed).toBe(0);
+            expect(result.errors).toBe(0);
         });
 
-        it('should include retry and cancellation details in result', async () => {
+        it('should report the current past_due count for visibility, without mutating', async () => {
             // Arrange
-            const billing = makeBillingMock();
+            const billing = makeBillingMock([
+                { id: 'sub_1', status: 'past_due' },
+                { id: 'sub_2', status: 'active' },
+                { id: 'sub_3', status: 'past_due' }
+            ]);
             mockGetQZPayBilling.mockReturnValue(billing);
-
-            const lifecycle = makeLifecycleMock(
-                { processed: 5, succeeded: 4, failed: 1, details: ['retry-detail'] },
-                { processed: 2, details: ['cancel-detail'] }
-            );
-            mockCreateSubscriptionLifecycle.mockReturnValue(lifecycle);
+            mockCreateSubscriptionLifecycle.mockReturnValue(makeLifecycleMock());
 
             const ctx = makeCronContext();
 
@@ -425,72 +437,13 @@ describe('dunningJob', () => {
             const result = await dunningJob.handler(ctx);
 
             // Assert
-            expect(result.message).toContain('4/5 succeeded');
-            expect(result.message).toContain('2 processed');
+            expect(result.success).toBe(true);
+            expect(result.message).toContain('Observe-only');
+            expect(result.message).toContain('2');
             expect(result.details).toMatchObject({
-                retries: {
-                    processed: 5,
-                    succeeded: 4,
-                    failed: 1,
-                    details: ['retry-detail']
-                },
-                cancellations: {
-                    processed: 2,
-                    details: ['cancel-detail']
-                }
+                dunningMutationsEnabled: false,
+                pastDueCount: 2
             });
-        });
-
-        it('should run retries before cancellations (sequential, not parallel)', async () => {
-            // Arrange
-            const billing = makeBillingMock();
-            mockGetQZPayBilling.mockReturnValue(billing);
-
-            const callOrder: string[] = [];
-
-            const lifecycle = {
-                processRetries: vi.fn().mockImplementation(async () => {
-                    callOrder.push('retries');
-                    return { processed: 1, succeeded: 1, failed: 0, details: [] };
-                }),
-                processCancellations: vi.fn().mockImplementation(async () => {
-                    callOrder.push('cancellations');
-                    return { processed: 1, details: [] };
-                })
-            };
-            mockCreateSubscriptionLifecycle.mockReturnValue(lifecycle);
-
-            const ctx = makeCronContext();
-
-            // Act
-            await dunningJob.handler(ctx);
-
-            // Assert - retries must run first
-            expect(callOrder).toEqual(['retries', 'cancellations']);
-        });
-
-        it('should include cancellation failures in totalErrors', async () => {
-            // Arrange
-            const billing = makeBillingMock();
-            mockGetQZPayBilling.mockReturnValue(billing);
-
-            const lifecycle = makeLifecycleMock(
-                { processed: 2, succeeded: 1, failed: 1, details: [] },
-                { processed: 3, details: [], failed: 2 } as {
-                    processed: number;
-                    details: unknown[];
-                    failed?: number;
-                }
-            );
-            mockCreateSubscriptionLifecycle.mockReturnValue(lifecycle);
-
-            const ctx = makeCronContext();
-
-            // Act
-            const result = await dunningJob.handler(ctx);
-
-            // Assert - totalErrors = retriesResult.failed (1) + cancellationsResult.failed (2)
-            expect(result.errors).toBe(3);
         });
 
         it('should return zero counts when no subscriptions need processing', async () => {
@@ -717,16 +670,15 @@ describe('dunningJob', () => {
             expect(result.message).toContain('string error');
         });
 
-        it('should handle processRetries failure', async () => {
+        // HOS-191 F5: the observe-only pass still calls billing.subscriptions.list()
+        // to count past_due subscriptions for visibility — a failure there must
+        // still surface as a failed job result, same as any other unexpected error.
+        it('should handle a failure while counting past_due subscriptions (observe-only pass)', async () => {
             // Arrange
             const billing = makeBillingMock();
+            billing.subscriptions.list.mockRejectedValue(new Error('MP list endpoint down'));
             mockGetQZPayBilling.mockReturnValue(billing);
-
-            const lifecycle = {
-                processRetries: vi.fn().mockRejectedValue(new Error('Retry service down')),
-                processCancellations: vi.fn().mockResolvedValue({ processed: 0, details: [] })
-            };
-            mockCreateSubscriptionLifecycle.mockReturnValue(lifecycle);
+            mockCreateSubscriptionLifecycle.mockReturnValue(makeLifecycleMock());
 
             const ctx = makeCronContext();
 
@@ -735,7 +687,7 @@ describe('dunningJob', () => {
 
             // Assert
             expect(result.success).toBe(false);
-            expect(result.message).toContain('Retry service down');
+            expect(result.message).toContain('MP list endpoint down');
         });
     });
 

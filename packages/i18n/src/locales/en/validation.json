@@ -579,6 +579,20 @@
         }
     },
     "billing": {
+        "linkPreapproval": {
+            "localSubscriptionId": {
+                "invalid": "The local subscription ID is not valid",
+                "invalidType": "The local subscription ID has an invalid data type"
+            },
+            "outcome": {
+                "invalid": "The link outcome is not valid"
+            },
+            "preapprovalId": {
+                "invalidType": "The preapproval ID has an invalid data type",
+                "max": "The preapproval ID cannot exceed {{max}} characters",
+                "min": "The preapproval ID must have at least {{min}} characters"
+            }
+        },
         "addon": {
             "cancel": {
                 "reason": {

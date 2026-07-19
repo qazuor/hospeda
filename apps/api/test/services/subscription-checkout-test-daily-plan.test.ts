@@ -21,6 +21,7 @@
 import { TEST_DAILY_PLAN } from '@repo/billing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveCheckoutMpPlanId } from '../../src/services/billing/mp-plan-provisioning.service';
+import { createPendingProviderSubscription } from '../../src/services/billing/pending-provider-subscription-create';
 import {
     _internals,
     initiatePaidMonthlySubscription,
@@ -32,11 +33,29 @@ import { env } from '../../src/utils/env';
 // preapproval_plan via `resolveCheckoutMpPlanId`, which reaches the payment
 // adapter singleton + `billing_mp_plans`. Stub it at this one boundary so
 // this test exercises the checkout decision logic without a live adapter or
-// DB. The provisioning service itself is unit-tested in
+// DB. `buildPreapprovalPlanShareLink` is a pure function kept REAL (via
+// `importOriginal`) so `checkoutUrl` assertions exercise the actual
+// URL-building logic. The provisioning service itself is unit-tested in
 // `mp-plan-provisioning.test.ts`.
-vi.mock('../../src/services/billing/mp-plan-provisioning.service', () => ({
-    resolveCheckoutMpPlanId: vi.fn().mockResolvedValue('mp_plan_test'),
-    resolveOrProvisionMpPlan: vi.fn()
+vi.mock('../../src/services/billing/mp-plan-provisioning.service', async (importOriginal) => {
+    const actual =
+        await importOriginal<
+            typeof import('../../src/services/billing/mp-plan-provisioning.service')
+        >();
+    return {
+        ...actual,
+        resolveCheckoutMpPlanId: vi.fn().mockResolvedValue('mp_plan_test'),
+        resolveOrProvisionMpPlan: vi.fn()
+    };
+});
+
+// HOS-191 Path C: checkout no longer creates a MercadoPago preapproval or a
+// local subscription via `billing.subscriptions.create` — it materializes a
+// `pending_provider` subscription via this helper instead. Mocked here so
+// this test does not require a live DB; the helper itself is unit-tested in
+// `pending-provider-subscription-create.test.ts`.
+vi.mock('../../src/services/billing/pending-provider-subscription-create', () => ({
+    createPendingProviderSubscription: vi.fn()
 }));
 
 const CUSTOMER_ID = 'cust_test_daily';
@@ -64,18 +83,23 @@ const URLS = {
     notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
 };
 
+const CUSTOMER_FIXTURE = {
+    id: CUSTOMER_ID,
+    email: 'daily-tester@hospeda.test',
+    name: 'Daily Tester',
+    livemode: false
+};
+
 function createBillingMock() {
     return {
         plans: {
             list: vi.fn().mockResolvedValue({ data: [TEST_DAILY_QZPAY_PLAN] })
         },
+        customers: {
+            get: vi.fn().mockResolvedValue(CUSTOMER_FIXTURE)
+        },
         subscriptions: {
-            create: vi.fn().mockResolvedValue({
-                id: LOCAL_SUB_ID,
-                providerInitPoint: 'https://mp.test/checkout/daily',
-                // HOS-151 Bug C: createPaidSubscription requires a non-empty provider id.
-                providerSubscriptionIds: { mercadopago: 'mp_preapproval_daily' }
-            })
+            getByCustomerId: vi.fn().mockResolvedValue([])
         },
         getStorage: vi.fn(() => ({}))
     };
@@ -89,6 +113,11 @@ describe('HOSPEDA_SHOW_TEST_BILLING_PLAN gate', () => {
     beforeEach(() => {
         originalFlag = env.HOSPEDA_SHOW_TEST_BILLING_PLAN;
         vi.clearAllMocks();
+        vi.mocked(createPendingProviderSubscription).mockResolvedValue({
+            localSubscriptionId: LOCAL_SUB_ID,
+            nonce: 'nonce-test',
+            expiresAt: '2099-01-01T00:00:00.000Z'
+        });
     });
 
     afterEach(() => {
@@ -176,10 +205,10 @@ describe('HOSPEDA_SHOW_TEST_BILLING_PLAN gate', () => {
             // Assert
             await expect(attempt).rejects.toBeInstanceOf(SubscriptionCheckoutError);
             await expect(attempt).rejects.toMatchObject({ code: 'PLAN_NOT_FOUND' });
-            expect(billing.subscriptions.create).not.toHaveBeenCalled();
+            expect(vi.mocked(createPendingProviderSubscription)).not.toHaveBeenCalled();
         });
 
-        it('succeeds and subscribes against the daily priceId when the flag is true', async () => {
+        it('succeeds and materializes a pending subscription against the daily priceId when the flag is true', async () => {
             // Arrange
             env.HOSPEDA_SHOW_TEST_BILLING_PLAN = true;
             const billing = createBillingMock();
@@ -194,7 +223,7 @@ describe('HOSPEDA_SHOW_TEST_BILLING_PLAN gate', () => {
 
             // Assert
             expect(result.localSubscriptionId).toBe(LOCAL_SUB_ID);
-            expect(billing.subscriptions.create).toHaveBeenCalledWith(
+            expect(vi.mocked(createPendingProviderSubscription)).toHaveBeenCalledWith(
                 expect.objectContaining({
                     customerId: CUSTOMER_ID,
                     planId: PLAN_ID,

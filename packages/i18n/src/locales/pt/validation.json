@@ -579,6 +579,20 @@
         }
     },
     "billing": {
+        "linkPreapproval": {
+            "localSubscriptionId": {
+                "invalid": "O ID de assinatura local não é válido",
+                "invalidType": "O ID de assinatura local tem um tipo de dado inválido"
+            },
+            "outcome": {
+                "invalid": "O resultado do vínculo não é válido"
+            },
+            "preapprovalId": {
+                "invalidType": "O ID de pré-aprovação tem um tipo de dado inválido",
+                "max": "O ID de pré-aprovação não pode exceder {{max}} caracteres",
+                "min": "O ID de pré-aprovação deve ter pelo menos {{min}} caracteres"
+            }
+        },
         "addon": {
             "cancel": {
                 "reason": {

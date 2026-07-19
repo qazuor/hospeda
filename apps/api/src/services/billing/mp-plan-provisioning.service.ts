@@ -25,6 +25,7 @@ import type {
     QZPayCurrency,
     QZPayPaymentAdapter
 } from '@qazuor/qzpay-core';
+import { applyTestControl } from '@repo/billing';
 import { billingMpPlanModel } from '@repo/db';
 import { getBillingPaymentAdapter } from '../../middlewares/billing.js';
 import { apiLogger } from '../../utils/logger.js';
@@ -288,6 +289,17 @@ export interface ResolveCheckoutMpPlanIdInput {
      * preapproval's `back_url` (the checkout success page).
      */
     readonly backUrl: string;
+    /**
+     * The billing customer id initiating this checkout. Used ONLY as the
+     * E2E test-control scope for the `provisionPlan` seam (HOS-191 resilience
+     * specs), so a `failNext({ operation: 'provisionPlan', scope: customerId })`
+     * only fails THIS customer's checkout and parallel workers do not consume
+     * each other's armed failures. Omit outside the checkout callers — an
+     * unscoped seam entry then matches any caller (backward-compat). Inert in
+     * production (`applyTestControl` is a passthrough unless the test-control
+     * gate is enabled).
+     */
+    readonly customerId?: string;
 }
 
 /**
@@ -316,22 +328,40 @@ export async function resolveCheckoutMpPlanId(
         );
     }
     try {
-        const { mpPreapprovalPlanId } = await resolveOrProvisionMpPlan({
-            adapter,
-            commercialPlanId: input.commercialPlanId,
-            billingInterval: input.billingInterval,
-            trialDays: input.trialDays,
-            amountCentavos: input.amountCentavos,
-            currency: input.currency,
-            planName: input.planName,
-            backUrl: input.backUrl
-        });
+        // The resolve/provision step is wrapped in the E2E test-control seam
+        // (HOS-191). `applyTestControl` consumes a queued `provisionPlan` failure
+        // by throwing BEFORE it invokes `resolveOrProvisionMpPlan`, so the
+        // `billing_mp_plans` cache lookup inside that call never runs and the
+        // failure fires deterministically whether or not the variant is already
+        // provisioned. That determinism is the whole point: the lazy, per-variant,
+        // shared-across-customers cache fires the underlying `prices.create` at
+        // most once per variant, so a seam at the adapter level could not be forced
+        // to fail per-test. This is the ONLY provider call the accommodation
+        // checkout makes, and the resilience specs (HOST-07c, RES-01) arm a failure
+        // here. Scoped by `customerId` so parallel E2E workers don't consume each
+        // other's failures. Inert in production: `applyTestControl` returns
+        // `realCall()` untouched unless HOSPEDA_QZPAY_TEST_CONTROL_ENABLED === 'true'.
+        const { mpPreapprovalPlanId } = (await applyTestControl(
+            'provisionPlan',
+            { customerId: input.customerId },
+            () =>
+                resolveOrProvisionMpPlan({
+                    adapter,
+                    commercialPlanId: input.commercialPlanId,
+                    billingInterval: input.billingInterval,
+                    trialDays: input.trialDays,
+                    amountCentavos: input.amountCentavos,
+                    currency: input.currency,
+                    planName: input.planName,
+                    backUrl: input.backUrl
+                })
+        )) as ResolveOrProvisionMpPlanResult;
         return mpPreapprovalPlanId;
     } catch (err) {
-        // A provisioning failure (MP `prices.create` error, or a registry
-        // read/write failure) must surface as the typed, retryable 502 the error
-        // code documents — not a raw 500. An already-typed checkout error (should
-        // not occur from provisioning today) passes through unchanged.
+        // A provisioning failure (MP `prices.create` error, a registry read/write
+        // failure, or the E2E seam's injected failure) must surface as the typed,
+        // retryable 502 the error code documents — not a raw 500. An already-typed
+        // checkout error (the adapter-unavailable case above) passes through.
         if (err instanceof SubscriptionCheckoutError) throw err;
         const message = err instanceof Error ? err.message : String(err);
         throw new SubscriptionCheckoutError(
@@ -339,6 +369,40 @@ export async function resolveCheckoutMpPlanId(
             `Could not resolve or provision the MercadoPago plan: ${message}`
         );
     }
+}
+
+/**
+ * Input for {@link buildPreapprovalPlanShareLink}.
+ */
+export interface BuildPreapprovalPlanShareLinkInput {
+    /** The MercadoPago `preapproval_plan` id to build a hosted checkout link for. */
+    readonly mpPreapprovalPlanId: string;
+}
+
+/**
+ * Build MercadoPago's HOSTED share-link URL for a `preapproval_plan` (HOS-191
+ * Path C). The customer completes card collection and preapproval authorization
+ * entirely on this page — Hospeda never sees the card and creates no
+ * `POST /preapproval` server-side, which is what avoids the "card_token_id is
+ * required" rejection a server-side `preapproval_plan_id` create hits.
+ *
+ * The host (`mercadopago.com.ar`) is hardcoded to MercadoPago Argentina (MLA)
+ * prod, matching the account Hospeda operates under; this is not
+ * environment-conditional the way `HOSPEDA_SITE_URL`/`HOSPEDA_API_URL` are.
+ * This string-built URL is the SOLE mechanism today: the qzpay `prices.create`
+ * adapter returns only the `preapproval_plan` id, so nothing captures the real
+ * per-plan `init_point`. The `billing_mp_plans.init_point` column is reserved
+ * for a follow-up that records the provider's own `init_point` once the adapter
+ * exposes it — it is NOT read here and is not a fallback. Empirically this
+ * hand-built URL is functionally identical to what MP's own dashboard "share"
+ * button generates.
+ *
+ * @param input - The resolved MP plan id (from {@link resolveCheckoutMpPlanId}).
+ * @returns The absolute hosted checkout URL to redirect the customer to.
+ */
+export function buildPreapprovalPlanShareLink(input: BuildPreapprovalPlanShareLinkInput): string {
+    const params = new URLSearchParams({ preapproval_plan_id: input.mpPreapprovalPlanId });
+    return `https://www.mercadopago.com.ar/subscriptions/checkout?${params.toString()}`;
 }
 
 /**

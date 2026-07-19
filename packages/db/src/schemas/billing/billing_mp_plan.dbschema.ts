@@ -65,6 +65,21 @@ export const billingMpPlans = pgTable(
         trialDays: integer('trial_days').notNull().default(0),
         /** Registry lifecycle: `active` | `inactive`. */
         status: varchar('status', { length: 20 }).notNull().default('active'),
+        /**
+         * RESERVED for the real hosted share link (`init_point`) MercadoPago
+         * returns from `POST /preapproval_plan` (HOS-191 Path C).
+         *
+         * NOT populated today: the qzpay `prices.create` adapter only returns the
+         * `preapproval_plan` id string, so nothing writes this column and it is
+         * always NULL. The share link is currently built 100% from
+         * `mpPreapprovalPlanId` by `buildPreapprovalPlanShareLink`
+         * (apps/api/src/services/billing/mp-plan-provisioning.service.ts), which
+         * hardcodes the validated MLA prod checkout host. This column exists so a
+         * follow-up can capture and persist the provider's own `init_point` once
+         * the adapter exposes it — it is NOT a live fallback source and no caller
+         * reads it.
+         */
+        initPoint: varchar('init_point', { length: 500 }),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
     },

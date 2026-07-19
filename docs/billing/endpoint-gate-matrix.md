@@ -230,6 +230,7 @@
 | `POST /api/v1/protected/billing/webhooks` | `billing/index.ts (qzpay)` | none | - | n/a | Webhook receiver; signature-verified |
 | **BILLING — PROTECTED (custom routes)** | | | | | |
 | `POST /api/v1/protected/billing/subscriptions/start-paid` | `billing/start-paid.ts` | none | - | n/a | Checkout initiation; no entitlement gate (payment entry point) |
+| `POST /api/v1/protected/billing/subscriptions/link-preapproval` | `billing/link-preapproval.ts` | none | - | n/a | HOS-191 Path C: links a MercadoPago preapproval to its pending_provider local subscription after share-link checkout; auth + ownership (session customer) only, no entitlement gate |
 | `GET /api/v1/protected/billing/trial/status` | `billing/trial.ts` | none | - | n/a | Trial status self-read; always accessible |
 | `POST /api/v1/protected/billing/trial/start` | `billing/trial.ts` | none | - | n/a | Trial activation; no entitlement gate |
 | `POST /api/v1/protected/billing/trial/extend` | `billing/trial.ts` | none | - | n/a | Trial extension; no entitlement gate |
@@ -587,6 +588,7 @@
 | `GET /api/v1/admin/billing/metrics/lifecycle` | `billing/admin/metrics.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
 | `GET /api/v1/admin/billing/subscriptions/{id}/events` | `billing/admin/subscription-events.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
 | `GET /api/v1/admin/billing/subscriptions/{id}/promo-effect` | `billing/admin/subscription-promo-effect.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated; reads extras-carril columns via raw SQL |
+| `POST /api/v1/admin/billing/plans/{id}/apply-price-increase` | `billing/admin/plan-price-increase.ts` | none | - | n/a | HOS-191 admin manual per-subscription price increase; PermissionEnum.BILLING_MANAGE gated; staff bypass entitlements so no billing gate |
 | `GET /api/v1/admin/billing/addons` | `billing/admin/addons.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
 | `GET /api/v1/admin/billing/addons/{id}` | `billing/admin/addons.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
 | `POST /api/v1/admin/billing/addons` | `billing/admin/addons.ts` | none | - | n/a | Admin write; PermissionEnum.BILLING_MANAGE gated |

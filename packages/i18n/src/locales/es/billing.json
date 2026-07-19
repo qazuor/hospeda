@@ -195,7 +195,9 @@
             "timeoutSubtitle": "El pago puede seguir procesándose. Revisá tu cuenta en unos minutos para confirmar tu suscripción.",
             "cta": "Ir a mi cuenta",
             "pageTitle": "Pago aprobado",
-            "promoIgnoredNote": "Tu código no se aplicó: es para extender una prueba gratis y esta suscripción no tiene una."
+            "promoIgnoredNote": "Tu código no se aplicó: es para extender una prueba gratis y esta suscripción no tiene una.",
+            "linkErrorTitle": "No pudimos vincular tu pago",
+            "linkErrorSubtitle": "Hubo un problema al vincular este pago con tu cuenta. Si ya realizaste el pago, contactá a soporte con el número de operación de MercadoPago."
         },
         "pending": {
             "title": "Tu pago está siendo procesado",

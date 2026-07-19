@@ -1,11 +1,14 @@
 /**
  * @file CheckoutStatusPoller.test.tsx
  * @description Unit tests for the checkout success-page polling island
- * (HOS-151 Bug A).
+ * (HOS-151 Bug A, HOS-191 Path C F2).
  *
  * Covers: no pending id → immediate fallback; pending id + active status →
  * success (and the id is cleared); pending id that never activates → bounded
- * fallback after the timeout instead of spinning forever.
+ * fallback after the timeout instead of spinning forever; and (HOS-191)
+ * link-preapproval linking before the poll starts — success/already proceeds
+ * to poll, a 409 IDOR is a hard error with no poll, a non-fatal error (422)
+ * still falls through to the normal poll.
  */
 
 import { act, render, screen, waitFor } from '@testing-library/react';
@@ -16,7 +19,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // ---------------------------------------------------------------------------
 
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
-    billingApi: { getSubscriptionStatus: vi.fn() }
+    billingApi: { getSubscriptionStatus: vi.fn(), linkPreapproval: vi.fn() }
 }));
 
 vi.mock('../../../src/lib/billing/checkout-pending', () => ({
@@ -46,14 +49,20 @@ import {
 } from '../../../src/lib/billing/checkout-pending';
 
 const mockGetStatus = billingApi.getSubscriptionStatus as ReturnType<typeof vi.fn>;
+const mockLinkPreapproval = billingApi.linkPreapproval as ReturnType<typeof vi.fn>;
 const mockReadId = readPendingCheckoutSubId as ReturnType<typeof vi.fn>;
 const mockClearId = clearPendingCheckoutSubId as ReturnType<typeof vi.fn>;
 
 const VERIFYING_TITLE = 'Verificando estado del pago...';
 const SUCCESS_TITLE = '¡Tu suscripción está activa!';
 const TIMEOUT_TITLE = 'Está tardando más de lo normal';
+const LINK_ERROR_TITLE = 'No pudimos vincular tu pago';
 
-const props = { locale: 'es' as const, miCuentaUrl: '/es/mi-cuenta/' };
+const props = {
+    locale: 'es' as const,
+    miCuentaUrl: '/es/mi-cuenta/',
+    preapprovalId: null as string | null
+};
 
 function statusResult(status: string) {
     return { ok: true as const, data: { status, mpSubscriptionId: null, activatedAt: null } };
@@ -114,5 +123,76 @@ describe('CheckoutStatusPoller (HOS-151 Bug A)', () => {
         expect(mockClearId).toHaveBeenCalledOnce();
         // It stopped polling (did not exceed the attempt cap).
         expect(mockGetStatus.mock.calls.length).toBeLessThanOrEqual(45);
+    });
+
+    describe('HOS-191 Path C — link-preapproval before polling', () => {
+        it('links successfully and proceeds to poll to success', async () => {
+            mockReadId.mockReturnValue('sub-uuid');
+            mockLinkPreapproval.mockResolvedValue({
+                ok: true,
+                data: { outcome: 'linked', localSubscriptionId: 'sub-uuid' }
+            });
+            mockGetStatus.mockResolvedValue(statusResult('active'));
+
+            render(
+                <CheckoutStatusPoller
+                    {...props}
+                    preapprovalId="mp-preapproval-1"
+                />
+            );
+
+            await waitFor(() => {
+                expect(mockLinkPreapproval).toHaveBeenCalledWith({
+                    preapprovalId: 'mp-preapproval-1',
+                    localSubscriptionId: 'sub-uuid'
+                });
+            });
+            await waitFor(() => {
+                expect(screen.getByRole('heading')).toHaveTextContent(SUCCESS_TITLE);
+            });
+            expect(mockGetStatus).toHaveBeenCalledWith({ localId: 'sub-uuid' });
+        });
+
+        it('shows a hard error and never polls on a 409 IDOR response', async () => {
+            mockReadId.mockReturnValue('sub-uuid');
+            mockLinkPreapproval.mockResolvedValue({
+                ok: false,
+                error: { status: 409, message: 'IDOR' }
+            });
+
+            render(
+                <CheckoutStatusPoller
+                    {...props}
+                    preapprovalId="mp-preapproval-1"
+                />
+            );
+
+            await waitFor(() => {
+                expect(screen.getByRole('heading')).toHaveTextContent(LINK_ERROR_TITLE);
+            });
+            expect(mockGetStatus).not.toHaveBeenCalled();
+            expect(mockClearId).toHaveBeenCalledOnce();
+        });
+
+        it('treats a non-409 link error (e.g. 422) as non-fatal and falls through to polling', async () => {
+            mockReadId.mockReturnValue('sub-uuid');
+            mockLinkPreapproval.mockResolvedValue({
+                ok: false,
+                error: { status: 422, message: 'not_found' }
+            });
+            mockGetStatus.mockResolvedValue(statusResult('active'));
+
+            render(
+                <CheckoutStatusPoller
+                    {...props}
+                    preapprovalId="mp-preapproval-1"
+                />
+            );
+
+            await waitFor(() => {
+                expect(screen.getByRole('heading')).toHaveTextContent(SUCCESS_TITLE);
+            });
+            expect(mockGetStatus).toHaveBeenCalledWith({ localId: 'sub-uuid' });
+        });
     });
 });

@@ -42,6 +42,7 @@ import {
 import { adminCustomerEntitlementsRouter } from './customer-entitlements';
 import { adminMetricsRouter } from './metrics';
 import { listNotificationLogsRoute } from './notifications';
+import { adminPlanPriceIncreaseRouter } from './plan-price-increase';
 import { adminPlansRouter } from './plans';
 import { adminBillingHooks } from './qzpay-admin-hooks';
 import { subscriptionEventsRoute } from './subscription-events';
@@ -160,6 +161,10 @@ app.route('/customer-entitlements', adminCustomerEntitlementsRouter);
 
 // GET /plans, /plans/:id - Hospeda plan view (admin only)
 app.route('/plans', adminPlansRouter);
+
+// POST /plans/:planId/apply-price-increase - Manual per-subscriber price-increase
+// mechanism (HOS-191 F6). No cron — owner-triggered only.
+app.route('/plans', adminPlanPriceIncreaseRouter);
 
 // GET/POST/PUT/DELETE /promo-codes - Hospeda promo code catalog (admin only).
 // User-self verbs (validate, apply) stay under /protected/billing/promo-codes.

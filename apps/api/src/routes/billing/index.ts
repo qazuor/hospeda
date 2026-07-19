@@ -36,6 +36,7 @@ import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { addonsRouter } from './addons';
 import { downgradePreviewRouter } from './downgrade-preview';
+import { linkPreapprovalRouter } from './link-preapproval';
 import { planChangeRouter } from './plan-change';
 import { userPromoCodesRouter } from './promo-codes';
 import { protectedPlansListRouter } from './protected-plans-list';
@@ -231,6 +232,11 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // Mount custom start-paid subscription route (SPEC-126 D1).
     router.route('/subscriptions', startPaidRouter);
 
+    // Mount the share-link checkout back_url linking route (HOS-191 Path C F2).
+    // Same `/subscriptions` prefix as the siblings above; Hono routes by exact
+    // path so `/subscriptions/link-preapproval` does not conflict.
+    router.route('/subscriptions', linkPreapprovalRouter);
+
     // Mount self-serve pause/resume routes (SPEC-143 #29) at the billing root,
     // NOT under `/subscriptions`. The routes are `/me/subscription-pause` and
     // `/me/subscription-resume`; keeping them off the `/subscriptions` namespace
@@ -243,7 +249,7 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     router.route('/usage', usageRouter);
 
     apiLogger.debug(
-        'Billing routes configured with custom promo code, add-on, trial, plan-change, subscription status, start-paid, subscription-cancel, and usage routes'
+        'Billing routes configured with custom promo code, add-on, trial, plan-change, subscription status, start-paid, link-preapproval, subscription-cancel, and usage routes'
     );
 
     return router;

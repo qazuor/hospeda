@@ -195,7 +195,9 @@
             "timeoutSubtitle": "Your payment may still be processing. Check your account in a few minutes to confirm your subscription.",
             "cta": "Go to my account",
             "pageTitle": "Payment approved",
-            "promoIgnoredNote": "Your code was not applied: it extends a free trial, and this subscription does not have one."
+            "promoIgnoredNote": "Your code was not applied: it extends a free trial, and this subscription does not have one.",
+            "linkErrorTitle": "We couldn't link your payment",
+            "linkErrorSubtitle": "There was a problem linking this payment to your account. If you already paid, contact support with the MercadoPago operation number."
         },
         "pending": {
             "title": "Your payment is being processed",

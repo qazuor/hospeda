@@ -1,6 +1,23 @@
 /**
- * Dunning cron retries failed payments and ages out past-due subs
- * (SPEC-143 T-143-30).
+ * Dunning cron: HOS-191 F5 observe-only behavior (was SPEC-143 T-143-30
+ * "retries failed payments and ages out past-due subs").
+ *
+ * ## HOS-191 F5 update (2026-07-18)
+ *
+ * The owner decided MercadoPago's own native dunning ("recycling") is now
+ * the sole retry/cancellation mechanism; Hospeda's own retry/cancel loop
+ * (`lifecycle.processRetries()` / `lifecycle.processCancellations()`) is
+ * disabled by the `DUNNING_MUTATIONS_ENABLED = false` kill switch in
+ * `dunning.job.ts`. This file's original assertions exercised exactly that
+ * loop end-to-end against a real Postgres + the mp-stub adapter; they have
+ * been rewritten below to assert the NEW behavior — the cron observes
+ * (counts `past_due` subscriptions) but never mutates them. The original
+ * scenarios (retry succeeds, retry exhausts, grace-period cancellation) are
+ * preserved as historical documentation in each test's comments, since the
+ * `DUNNING_MUTATIONS_ENABLED` flag exists specifically to restore that exact
+ * path if MercadoPago's native recycling is ever confirmed broken — see the
+ * module JSDoc in `dunning.job.ts` for the full rationale, including the
+ * discovered `past_due`-reachability gap.
  *
  * Validates the production dunning cron job end-to-end against a real
  * Postgres + the real qzpay-billing instance + the mp-stub adapter. The
@@ -10,12 +27,14 @@
  *
  * Production code under test:
  *   - `apps/api/src/cron/jobs/dunning.job.ts:dunningJob.handler`
- *   - `qzpay-core` `createSubscriptionLifecycle`'s `processRetries` and
- *      `processCancellations` paths
- *   - `billing.payments.process` → MercadoPago adapter `payments.create`
- *   - `billing_dunning_attempts` audit table writes
+ *   - the HOS-191 F5 observe-only branch (`DUNNING_MUTATIONS_ENABLED === false`):
+ *      counts `past_due` subscriptions via `billing.subscriptions.list()`
+ *      without ever calling `lifecycle.processRetries()` /
+ *      `lifecycle.processCancellations()`
+ *   - `billing_dunning_attempts` audit table (asserted to stay empty)
  *
- * Retry schedule. The hospeda cron wires `DUNNING_RETRY_INTERVALS =
+ * Retry schedule (now dormant behind the kill switch, documented for when
+ * it is re-enabled). The hospeda cron wires `DUNNING_RETRY_INTERVALS =
  * [1, 3, 5, 7]` days (packages/billing/src/constants/billing.constants.ts:47).
  * Four attempts total. NOT exponential backoff — the SPEC-143 task notes
  * called it "exponential backoff" but the actual schedule is a fixed
@@ -23,19 +42,16 @@
  * this is a deliberate product decision to be more aggressive than the
  * original SPEC-021 [1, 3, 7] proposal.
  *
- * Grace period. `DUNNING_GRACE_PERIOD_DAYS = 7`. A past_due sub is
- * eligible for cancellation when `gracePeriodStartedAt + 7 days <= now`
- * AND `retryCount >= retryIntervals.length` (i.e., 4+). Both checks
- * must pass; the cron does NOT cancel partway through the retry
- * schedule.
+ * Grace period (also dormant). `DUNNING_GRACE_PERIOD_DAYS = 7`. A past_due
+ * sub was eligible for cancellation when `gracePeriodStartedAt + 7 days <=
+ * now` AND `retryCount >= retryIntervals.length` (i.e., 4+).
  *
  * Setup pattern. Each test builds a past_due subscription with the
- * exact retry metadata the qzpay-core lifecycle service expects
- * (`gracePeriodStartedAt`, `retryCount`, `lastRetryAt`), inserts a
- * default payment method for the customer (otherwise the cron skips
- * the retry), and configures the mp-stub to either succeed or fail the
- * payment. The cron handler then runs against the real billing
- * instance and the assertions verify the persisted DB state.
+ * exact retry metadata the qzpay-core lifecycle service would read if
+ * mutations were re-enabled (`gracePeriodStartedAt`, `retryCount`,
+ * `lastRetryAt`), inserts a default payment method for the customer, and
+ * configures the mp-stub — then asserts the cron leaves all of it
+ * untouched.
  *
  * @module test/e2e/flows/billing/dunning-cron
  */
@@ -100,7 +116,7 @@ function buildCronContext(): Parameters<typeof dunningJob.handler>[0] {
     };
 }
 
-describe('SPEC-143 T-143-30 — dunning cron', () => {
+describe('HOS-191 F5 (was SPEC-143 T-143-30) — dunning cron, observe-only', () => {
     let customerId: string;
     let cheapPlanId: string;
     let subscriptionId: string;
@@ -193,10 +209,13 @@ describe('SPEC-143 T-143-30 — dunning cron', () => {
         `);
     }
 
-    it('retries a past-due payment, flips the sub to active, and records a success attempt', async () => {
-        // ARRANGE: eligible for retry — retryCount=0, lastRetryAt=2d ago
-        // (>= retryIntervals[0]=1), gracePeriod started 2d ago (well
-        // within the 7d window).
+    it('does NOT retry a past-due payment or flip the sub to active, even when eligible under the old schedule', async () => {
+        // ARRANGE: this metadata shape would have made the sub eligible for
+        // retry under the pre-HOS-191-F5 schedule — retryCount=0,
+        // lastRetryAt=2d ago (>= retryIntervals[0]=1), gracePeriod started 2d
+        // ago (well within the old 7d window). Kept exactly as before so this
+        // test still proves eligibility is irrelevant now: the cron does not
+        // even look at it.
         await patchRetryMetadata({
             gracePeriodDaysAgo: 2,
             retryCount: 0,
@@ -204,7 +223,8 @@ describe('SPEC-143 T-143-30 — dunning cron', () => {
         });
         await insertDefaultPaymentMethod();
 
-        // ARRANGE: mp-stub returns a succeeded payment.
+        // ARRANGE: mp-stub WOULD return a succeeded payment if the cron ever
+        // called billing.payments.process — asserting below that it never does.
         mpStub.config.setSuccess(
             'payments.create',
             providerResponseFixtures.payment({
@@ -218,16 +238,15 @@ describe('SPEC-143 T-143-30 — dunning cron', () => {
         // ACT
         const result = await dunningJob.handler(buildCronContext());
 
-        // ASSERT: cron returned success with at least one processed
-        // retry. The handler aggregates both retries and cancellations,
-        // so processed >= 1.
+        // ASSERT: HOS-191 F5 observe-only pass — no local mutation is
+        // attempted, so `processed` stays 0 and the details report the
+        // current past_due count instead.
         expect(result.success).toBe(true);
-        expect(result.processed).toBeGreaterThanOrEqual(1);
+        expect(result.processed).toBe(0);
+        expect(result.details).toMatchObject({ dunningMutationsEnabled: false });
 
-        // ASSERT: subscription flipped to active. qzpay-core's
-        // `processSuccessfulRetry` calls
-        // `updateSubscriptionAfterRetryRecovery` which sets status back
-        // to 'active' and advances the period bounds.
+        // ASSERT: subscription stays past_due — the retry loop that used to
+        // call `updateSubscriptionAfterRetryRecovery` on success is disabled.
         const row = (
             await testDb
                 .getDb()
@@ -235,46 +254,25 @@ describe('SPEC-143 T-143-30 — dunning cron', () => {
                 .from(billingSubscriptions)
                 .where(eq(billingSubscriptions.id, subscriptionId))
         )[0];
-        expect(row?.status).toBe('active');
+        expect(row?.status).toBe('past_due');
 
-        // ASSERT: a billing_dunning_attempts row with result='success'
-        // was written by the cron's onEvent recorder.
+        // ASSERT: no billing_dunning_attempts row was written — the
+        // onEvent recorder only fires for events the (now-unused)
+        // lifecycle.processRetries()/processCancellations() would emit.
         const attempts = await testDb
             .getDb()
             .select()
             .from(billingDunningAttempts)
             .where(eq(billingDunningAttempts.subscriptionId, subscriptionId));
-        const successAttempts = attempts.filter((a) => a.result === 'success');
-        expect(successAttempts).toHaveLength(1);
-        expect(successAttempts[0]?.provider).toBe('mercadopago');
-        expect(successAttempts[0]?.attemptNumber).toBeGreaterThanOrEqual(0);
+        expect(attempts).toHaveLength(0);
     });
 
-    it('records a failed attempt when retries exhaust and leaves the sub past_due (cancellation happens on a later cron run)', async () => {
-        // ARRANGE: retryCount=3 so the upcoming failure produces
-        // newRetryCount=4 which equals retryIntervals.length=4 →
-        // hasMoreRetries=false → qzpay-core emits
-        // 'subscription.retry_failed' (not 'retry_scheduled') and the
-        // hospeda cron's recordDunningAttempt writes a 'failed' row
-        // (dunning.job.ts:37-78 only inserts for retry_succeeded /
-        // retry_failed). The grace period is still within 7 days, so
-        // the cancellation phase that runs immediately after retries
-        // does NOT cancel — the cancel needs BOTH retries exhausted
-        // AND grace expired. The sub therefore stays past_due here
-        // and a separate cron run after grace expiry (covered by the
-        // next test) is what finalises the cancellation.
-        //
-        // Important audit-coverage finding documented for SPEC-143
-        // observability scope. Mid-schedule failures (retryCount < 4
-        // newRetryCount < 4) emit 'subscription.retry_scheduled' with
-        // the error embedded in event.data — NOT 'retry_failed'.
-        // recordDunningAttempt only persists 'retry_succeeded' and
-        // 'retry_failed' events (dunning.job.ts:38-43), so attempts
-        // 1, 2, and 3 of a four-attempt schedule are NEVER written to
-        // billing_dunning_attempts. The audit table is therefore
-        // incomplete: only the FINAL outcome of a dunning sequence
-        // (max-out or success) is persisted. Tracked under the
-        // SPEC-143 Phase 4 observability scope.
+    it('does NOT record a failed attempt or touch retry metadata when retries would have exhausted under the old schedule', async () => {
+        // ARRANGE: retryCount=3 so an upcoming failure would have produced
+        // newRetryCount=4 == retryIntervals.length=4 under the old schedule
+        // (hasMoreRetries=false → qzpay-core would emit
+        // 'subscription.retry_failed'). Preserved for documentation; the
+        // cron now ignores this metadata entirely.
         await patchRetryMetadata({
             gracePeriodDaysAgo: 2,
             retryCount: 3,
@@ -282,11 +280,8 @@ describe('SPEC-143 T-143-30 — dunning cron', () => {
         });
         await insertDefaultPaymentMethod();
 
-        // ARRANGE: mp-stub rejects the payment. The qzpay-core
-        // `billing.payments.process` catches the adapter error and
-        // marks the payment as 'failed'; `processSuccessfulRetry`
-        // throws because the returned payment.status !== 'succeeded',
-        // which trips `processFailedRetry`.
+        // ARRANGE: mp-stub WOULD reject the payment if the cron ever called
+        // billing.payments.process — asserting below that it never does.
         mpStub.config.setError(
             'payments.create',
             500,
@@ -297,27 +292,22 @@ describe('SPEC-143 T-143-30 — dunning cron', () => {
         // ACT
         const result = await dunningJob.handler(buildCronContext());
 
-        // ASSERT: handler still returned success (the cron does not
-        // fail on per-sub payment errors — it logs and continues).
+        // ASSERT: handler still returns success — an observe-only pass has
+        // nothing that can fail per-subscription.
         expect(result.success).toBe(true);
+        expect(result.processed).toBe(0);
 
-        // ASSERT: a billing_dunning_attempts row with result='failed'
-        // was written.
+        // ASSERT: no billing_dunning_attempts row was written.
         const attempts = await testDb
             .getDb()
             .select()
             .from(billingDunningAttempts)
             .where(eq(billingDunningAttempts.subscriptionId, subscriptionId));
-        const failedAttempts = attempts.filter((a) => a.result === 'failed');
-        expect(failedAttempts).toHaveLength(1);
+        expect(attempts).toHaveLength(0);
 
-        // ASSERT: subscription stays past_due. qzpay-core's
-        // `processFailedRetry` updates the metadata (incremented
-        // retryCount, new lastRetryAt) but does not flip the status —
-        // that is the cancellation phase's job once retries exhaust
-        // AND the grace window expires. Grace window is still active
-        // here (2d into the 7d window) so the cancellation pass is a
-        // no-op for this sub.
+        // ASSERT: subscription and its retry metadata are byte-for-byte
+        // untouched — the observe-only pass never writes
+        // `retryCount`/`lastRetryError`, unlike the old `processFailedRetry`.
         const row = (
             await testDb
                 .getDb()
@@ -327,38 +317,31 @@ describe('SPEC-143 T-143-30 — dunning cron', () => {
         )[0];
         expect(row?.status).toBe('past_due');
         const metadata = row?.metadata as Record<string, unknown> | null;
-        expect(metadata?.retryCount).toBe(4);
-        expect(metadata?.lastRetryError).toBeDefined();
+        expect(metadata?.retryCount).toBe(3);
+        expect(metadata?.lastRetryError).toBeUndefined();
     });
 
-    it('cancels a past-due subscription once retries are exhausted and the grace period has expired', async () => {
-        // ARRANGE: retries exhausted (retryCount=4 — beyond the
-        // retryIntervals.length=4 boundary, so hasMoreRetries=false)
-        // and gracePeriodStartedAt is 8 days ago (>= the 7-day grace
-        // window). lastRetryAt does not matter for this branch because
-        // getSubscriptionsToRetry returns empty when retryIntervals[4]
-        // is undefined, so the retry phase is a no-op and the
-        // cancellation phase fires next.
+    it('does NOT cancel a past-due subscription even once the old retry-exhausted + grace-expired conditions are met', async () => {
+        // ARRANGE: under the old schedule this combination (retries
+        // exhausted, gracePeriodStartedAt 8 days ago >= the 7-day grace
+        // window) would have triggered `processCancellations()`. Preserved
+        // for documentation; the cron now ignores it.
         await patchRetryMetadata({
             gracePeriodDaysAgo: 8,
             retryCount: 4,
             lastRetryDaysAgo: 7
         });
-        // No payment method needed: cancellation does not invoke
-        // billing.payments.process.
 
         // ACT
         const result = await dunningJob.handler(buildCronContext());
 
         expect(result.success).toBe(true);
-        expect(result.processed).toBeGreaterThanOrEqual(1);
+        expect(result.processed).toBe(0);
 
-        // ASSERT: status flipped to 'canceled' (US spelling, the
-        // qzpay-core canonical value — billing.ts:1380 and
-        // QZPAY_SUBSCRIPTION_STATUS.CANCELED). The cancellation path
-        // also stamps canceledAt and merges
-        // `cancelReason: 'Payment failed - grace period expired'`
-        // into the metadata (subscription-lifecycle.service.ts:858-863).
+        // ASSERT: status stays 'past_due' — NOT flipped to 'canceled'. Only
+        // MercadoPago's own `subscription_preapproval` cancellation webhook
+        // (subscription-logic.ts) can move this subscription out of
+        // past_due now.
         const row = (
             await testDb
                 .getDb()
@@ -366,22 +349,32 @@ describe('SPEC-143 T-143-30 — dunning cron', () => {
                 .from(billingSubscriptions)
                 .where(eq(billingSubscriptions.id, subscriptionId))
         )[0];
-        expect(row?.status).toBe('canceled');
-        expect(row?.canceledAt).toBeInstanceOf(Date);
-        const metadata = row?.metadata as Record<string, unknown> | null;
-        expect(metadata?.cancelReason).toBe('Payment failed - grace period expired');
-        expect(typeof metadata?.gracePeriodEndedAt).toBe('string');
+        expect(row?.status).toBe('past_due');
+        expect(row?.canceledAt).toBeNull();
 
-        // ASSERT: no dunning_attempts row was written for this
-        // cancellation. The audit recorder only fires for
-        // retry_succeeded / retry_failed events; the
-        // canceled_nonpayment event is logged but not persisted in
-        // the dunning_attempts table.
+        // ASSERT: no dunning_attempts row was written.
         const attempts = await testDb
             .getDb()
             .select()
             .from(billingDunningAttempts)
             .where(eq(billingDunningAttempts.subscriptionId, subscriptionId));
         expect(attempts).toHaveLength(0);
+    });
+
+    // HOS-191 F5: the observe-only pass still counts past_due subscriptions
+    // for visibility (the only thing the cron does now in production mode).
+    it('reports the past_due count for visibility without mutating anything', async () => {
+        await patchRetryMetadata({
+            gracePeriodDaysAgo: 2,
+            retryCount: 0,
+            lastRetryDaysAgo: 2
+        });
+
+        const result = await dunningJob.handler(buildCronContext());
+
+        expect(result.success).toBe(true);
+        expect(result.message).toContain('Observe-only');
+        const details = result.details as { pastDueCount?: number } | undefined;
+        expect(details?.pastDueCount).toBeGreaterThanOrEqual(1);
     });
 });

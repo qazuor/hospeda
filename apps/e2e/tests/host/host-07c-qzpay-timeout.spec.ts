@@ -9,20 +9,25 @@
  *   - QZPay test-control endpoint mounted.
  *
  * What this validates:
- *  1. With `failNext({operation: 'createSubscription', errorCode: 'TIMEOUT'})`
+ *  1. With `failNext({operation: 'provisionPlan', errorCode: 'TIMEOUT'})`
  *     armed, POST /start-paid fails instead of hanging or half-committing.
- *  2. The recorded calls include a failed `createSubscription`.
+ *  2. The recorded calls include a failed `provisionPlan`.
  *  3. DB invariant: no `billing_subscriptions` row survives the timeout.
  *
  * A timeout is the nastier sibling of RES-01's outage: the provider may or may
  * not have acted, so the guarantee we need is that OUR side persists nothing it
- * cannot later reconcile. HOS-151 is what this protects against — an `incomplete`
- * row whose preapproval can never be located again.
+ * cannot later reconcile. HOS-151 is what this protects against — a half-created
+ * row whose provider resource can never be located again.
  *
- * This spec used to time out `startTrial` and drive `publish`. HOS-171 deleted the
- * no-card trial: publishing requires a card now and never reaches billing, so the
- * provider call it was modelling no longer exists there. The checkout is where a
- * timeout can actually strand a subscription.
+ * This spec used to time out `startTrial`/`publish`, then `createSubscription`
+ * (the server-side `POST /preapproval`). HOS-191 Path C removed the server-side
+ * preapproval create from the accommodation checkout entirely: the ONLY provider
+ * call the checkout now makes is resolving/provisioning the MercadoPago
+ * `preapproval_plan` (`resolveCheckoutMpPlanId` → `POST /preapproval_plan`), which
+ * runs BEFORE the local `pending_provider` subscription row is materialized. So a
+ * timeout there is exactly where a checkout can be interrupted mid-flight, and the
+ * invariant is even cleaner than before: if provisioning times out, nothing was
+ * written, because the DB insert only happens after provisioning succeeds.
  *
  * @see SPEC-092 spec.md § HOST-07
  */
@@ -73,11 +78,17 @@ test.describe('HOST-07c: MP timeout during checkout @p0 @host @billing @resilien
         // `extractScope` (@repo/billing). It must exist before arming.
         const { customerId } = await ensureBillingCustomer({ userId: host.id });
 
-        // ── Arm the failure: the next preapproval create times out ──────────
+        // ── Arm the failure: the next plan provisioning times out (Path C) ──
+        // In Path C the checkout's single provider call is the MercadoPago
+        // `preapproval_plan` resolution (`resolveCheckoutMpPlanId`). The seam sits
+        // at that resolver boundary — BEFORE the `billing_mp_plans` cache lookup —
+        // so this fires deterministically even when the plan variant is already
+        // provisioned by a prior test in the shared E2E DB.
         await qzpayControl.failNext({
-            operation: 'createSubscription',
+            operation: 'provisionPlan',
             errorCode: 'TIMEOUT',
-            errorMessage: 'MercadoPago preapproval create exceeded its timeout (HOST-07c E2E)',
+            errorMessage:
+                'MercadoPago preapproval_plan provisioning exceeded its timeout (HOST-07c E2E)',
             scope: customerId
         });
 
@@ -94,12 +105,12 @@ test.describe('HOST-07c: MP timeout during checkout @p0 @host @billing @resilien
             `checkout must not succeed on a provider timeout (got ${response.status()})`
         ).toBe(false);
 
-        // ── Recorded calls: the failed create was captured ──────────────────
-        const calls = await qzpayControl.getRecordedCalls('createSubscription');
+        // ── Recorded calls: the failed provisioning was captured ────────────
+        const calls = await qzpayControl.getRecordedCalls('provisionPlan');
         const firstFailure = calls.find((call) => call.outcome !== 'ok');
         expect(
             firstFailure,
-            'expected at least one failed createSubscription in recorded calls'
+            'expected at least one failed provisionPlan in recorded calls'
         ).toBeDefined();
 
         // ── DB invariant: no orphan row ─────────────────────────────────────
