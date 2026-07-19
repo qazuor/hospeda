@@ -1,0 +1,30 @@
+---
+/**
+ * @file StripCheckoutReturnParams.astro
+ * @description Emits the inline `<script>` that scrubs sensitive provider query
+ * parameters (e.g. `preapproval_id`) off the checkout return URL before any
+ * analytics/third-party script captures it (HOS-209).
+ *
+ * Mount this in the checkout success page's `<head>` via the layout's
+ * `head-early` slot — rendered ahead of every URL-capturing node (the PostHog
+ * snippet, the feedback nav bootstrap, and any cross-origin subresource fetch;
+ * only the `charset`/`viewport` metas precede it) — so it runs synchronously
+ * during parse ahead of every URL-capturing path. See
+ * `strip-checkout-return-params.snippet.ts` for the full timing rationale.
+ *
+ * The emitted `<script>` is inline and carries the per-request CSP nonce so it
+ * passes the site's `strict-dynamic` policy (mirrors `PostHogScript.astro`).
+ * When the nonce is empty (local dev without CSP) it still renders harmlessly.
+ */
+
+import { STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET } from './strip-checkout-return-params.snippet';
+
+interface Props {
+	/** The per-request CSP nonce (so the inline script passes strict-dynamic). */
+	readonly cspNonce: string;
+}
+
+const { cspNonce } = Astro.props;
+---
+
+<script is:inline nonce={cspNonce} set:html={STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET} />

@@ -9,6 +9,15 @@ export const OWNER_TRIAL_DAYS = 14;
 export const COMPLEX_TRIAL_DAYS = 14;
 
 /**
+ * Trial period for self-service tourist plans (tourist-plus / tourist-vip).
+ *
+ * Owner decision (SMOKE-19-07, HOS-210): all self-service tourist plans get the
+ * same 14-day card-first trial as owner plans. Aliased to OWNER_TRIAL_DAYS so the
+ * tourist tier can never drift from the owner tier.
+ */
+export const TOURIST_TRIAL_DAYS = OWNER_TRIAL_DAYS;
+
+/**
  * Reference constant for the initial-payment grace window, in days.
  *
  * IMPORTANT: This constant is NOT the value enforced at runtime. qzpay-core's

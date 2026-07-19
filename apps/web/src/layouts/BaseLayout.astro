@@ -89,6 +89,18 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+		<!--
+		  Named slot for scripts that MUST run before ANY other head content:
+		  analytics snippets, the feedback nav bootstrap, and cross-origin
+		  subresource fetches (fonts, PostHog assets) that would otherwise send a
+		  `Referer` header. Rendered first in <head> so an inline script here
+		  executes synchronously during parse, before all of the above. Used by the
+		  checkout success page (HOS-209) to scrub `preapproval_id` from the URL
+		  before it can leak. Empty on every other page.
+		-->
+		<slot name="head-early" />
+
 		<!-- SPEC-157 REQ-18: browser UI chrome matches the brand blue. The light
 		     value matches site.webmanifest theme_color; the dark variant keeps the
 		     chrome on-brand under prefers-color-scheme: dark (the manifest stays

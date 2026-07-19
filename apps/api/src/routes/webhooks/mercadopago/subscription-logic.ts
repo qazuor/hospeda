@@ -297,6 +297,51 @@ export async function completeReactivationSupersession({
 }
 
 /**
+ * Reads whether a live MercadoPago preapproval carries a card-first free trial
+ * (HOS-211).
+ *
+ * `auto_recurring.free_trial` lives on the raw MP payload, NOT on qzpay's typed
+ * `QZPayProviderSubscription` shape returned by `subscriptions.retrieve()` — the
+ * typed shape only surfaces `currentPeriodStart`/`currentPeriodEnd`/`trialStart`/
+ * `trialEnd` as already-normalized `Date`s, it does not surface the raw
+ * `auto_recurring` object qzpay itself read those from. The retrieve() response
+ * still carries the raw snake_case fields alongside the typed camelCase ones
+ * (nothing strips them), so this reads it via a `Record` cast — the identical
+ * pattern `extractLiveTransactionAmountMajor` in
+ * `apps/api/src/services/billing/apply-price-increase.service.ts` uses for
+ * `auto_recurring.transaction_amount`.
+ *
+ * When present, `auto_recurring.free_trial` is an object like
+ * `{ frequency: 14, frequency_type: 'days' }`; absent or `null` when the
+ * preapproval carries no trial.
+ *
+ * @param livePreapproval - The raw object returned by `subscriptions.retrieve()`.
+ * @returns `true` only when `auto_recurring.free_trial` is a non-null object with
+ *   a positive `frequency`.
+ */
+function livePreapprovalHasFreeTrial(livePreapproval: unknown): boolean {
+    if (typeof livePreapproval !== 'object' || livePreapproval === null) {
+        return false;
+    }
+    const record = livePreapproval as Record<string, unknown>;
+    const autoRecurring =
+        typeof record.auto_recurring === 'object' && record.auto_recurring !== null
+            ? (record.auto_recurring as Record<string, unknown>)
+            : null;
+    if (autoRecurring === null) {
+        return false;
+    }
+    const freeTrial =
+        typeof autoRecurring.free_trial === 'object' && autoRecurring.free_trial !== null
+            ? (autoRecurring.free_trial as Record<string, unknown>)
+            : null;
+    if (freeTrial === null) {
+        return false;
+    }
+    return typeof freeTrial.frequency === 'number' && freeTrial.frequency > 0;
+}
+
+/**
  * Input for processing a subscription_preapproval.updated event.
  */
 interface ProcessSubscriptionUpdatedInput {
@@ -452,21 +497,44 @@ export async function processSubscriptionUpdated({
     }
 
     // Step 5c: Derive TRIALING from the provider status + the local trial window
-    // (HOS-171).
+    // (HOS-171 / HOS-211).
     //
     // MercadoPago has no trial status: a card-first trial is an `authorized`
     // preapproval whose first charge is deferred, which arrives here as `active`.
-    // `trialEnd` comes from the row already fetched above, so this costs no extra
-    // query, and the clock is passed explicitly to keep the helper pure.
+    // `trialEnd` normally comes straight from the row already fetched above (no
+    // extra query) — EXCEPT for a share-link (Path C) subscription just linked
+    // by Step 5 above, whose row was inserted with `trialEnd = null` (qzpay's
+    // `mode: 'paid'` insert never knows about a trial that only the live
+    // preapproval reports). HOS-211: resolve it once here, PRESERVE-IF-SET.
     //
+    // `resolvedTrialEnd` is only ever COMPUTED when the stored value is still
+    // null — an already-set `trialEnd` always wins untouched. This is load
+    // bearing, not a simplification: if we recomputed trialEnd from
+    // `currentPeriodEnd` on every webhook, then AFTER the day-N charge MP still
+    // reports `auto_recurring.free_trial` (it describes the plan's trial terms,
+    // not "is currently trialing") and `currentPeriodEnd` has already rolled to
+    // the NEXT (future) cycle — so the row would wrongly flip back to `trialing`
+    // forever. Fixing `trialEnd` once, only while it is still null, is what lets
+    // `deriveTrialingStatus`'s own past-date rule settle the row to `ACTIVE`
+    // once the real trial elapses.
+    const now = new Date();
+    const periodEnd = mpSubscription.currentPeriodEnd ?? null;
+    const resolvedTrialEnd =
+        localSubscription.trialEnd ??
+        (livePreapprovalHasFreeTrial(mpSubscription) &&
+        periodEnd &&
+        periodEnd.getTime() > now.getTime()
+            ? periodEnd
+            : null);
+
     // This deliberately lands BEFORE every consumer of `mappedStatus` — the
     // planId safety net, the Step 6 fast-path guard and the in-transaction guard
     // must all observe the SAME target status, or the row is written with one
     // value while the guards reason about another.
     const mappedStatus = deriveTrialingStatus({
         mappedStatus: providerStatus,
-        trialEnd: localSubscription.trialEnd,
-        now: new Date()
+        trialEnd: resolvedTrialEnd,
+        now
     });
 
     // Step 5b: Detect planId change (webhook safety net for AC-3.7)
@@ -622,6 +690,46 @@ export async function processSubscriptionUpdated({
         subscriptionId: localSubscription.id
     });
     if (!transitionGuard.valid) {
+        // HOS-211: ACTIVE → TRIALING is an EXPECTED invalid transition for a
+        // legacy row that the pre-HOS-211 bug already mis-activated (stored as
+        // `active` with `trial_end = null`). HOS-211's resolvedTrialEnd fix now
+        // (correctly) derives TRIALING for that row from the live preapproval's
+        // free trial, but the state machine intentionally has no ACTIVE→TRIALING
+        // edge — by owner decision we do NOT self-heal legacy rows, touch the
+        // state machine, or backfill data here. Downgrade to `warn` WITHOUT
+        // `capture: true` so this expected, recurring case does not page Sentry
+        // on every webhook forever. Every other invalid transition is a genuine
+        // anomaly and keeps the `error` + `capture: true` treatment below.
+        //
+        // Caveat: this condition actually matches ANY `active` row for which we
+        // derive a future `trialEnd`, not just the known legacy case — today
+        // only that legacy case can produce one, since the trial-extension path
+        // (`extendExistingSubscriptionTrial`) is gated to `status = trialing`.
+        // A future bug that wrote a future `trialEnd` onto a genuinely ACTIVE
+        // row would also be silently downgraded to `warn` here. Accepted
+        // trade-off, flagged for awareness — not something this remediation
+        // guards against.
+        const isExpectedLegacyActiveToTrialing =
+            previousStatus === SubscriptionStatusEnum.ACTIVE &&
+            mappedStatus === SubscriptionStatusEnum.TRIALING;
+
+        if (isExpectedLegacyActiveToTrialing) {
+            apiLogger.warn(
+                {
+                    subscriptionId: localSubscription.id,
+                    customerId: localSubscription.customerId,
+                    from: previousStatus,
+                    to: mappedStatus,
+                    mpPreapprovalId: maskId(mpPreapprovalId),
+                    providerEventId,
+                    source,
+                    reason: transitionGuard.reason
+                },
+                'Subscription webhook: expected ACTIVE→TRIALING no-op for a legacy pre-HOS-211 row (activated before the trial-sync fix, trial_end was never populated) — state machine intentionally does not auto-correct this; skipping status write'
+            );
+            return { success: true, statusChanged: false };
+        }
+
         // SPEC-180: invalid transitions are actionable (indicate MP/local state divergence).
         apiLogger.error(
             {
@@ -647,6 +755,33 @@ export async function processSubscriptionUpdated({
         status: mappedStatus,
         updatedAt: new Date()
     };
+
+    // HOS-211: persist the real MP-reported period end, replacing the
+    // `pending-provider-subscription-create.ts` 3h placeholder — but ONLY on
+    // the pending→activation transition, since that placeholder is the only
+    // thing this fix is meant to correct. Judgment-day remediation (round 2):
+    // writing `currentPeriodEnd` on every status-changing transition would
+    // also touch it on PAST_DUE/CANCELLED/PAUSED/EXPIRED, and the past-due
+    // dunning grace window (`middlewares/past-due-grace.middleware.ts`)
+    // anchors its 7-day grace on this exact column — MP's `next_payment_date`
+    // during native recycling is a documented open reconciliation gap, so
+    // touching the column outside activation risks silently shifting that
+    // grace window. `current_period_end` is NOT NULL in the schema, so this
+    // also never writes when MP didn't report one — never overwrite a real
+    // value with null.
+    if (periodEnd !== null && previousStatus === SubscriptionStatusEnum.PENDING_PROVIDER) {
+        updateData.currentPeriodEnd = periodEnd;
+    }
+
+    // HOS-211: persist `resolvedTrialEnd` only when it differs from what the
+    // row already has — i.e. only when Step 5c just derived a brand-new value
+    // for a row whose stored `trialEnd` was still null. When the row already
+    // carried a trialEnd, `resolvedTrialEnd === localSubscription.trialEnd`
+    // (preserve-if-set), so this correctly skips a redundant/no-op write and
+    // never writes null over an existing value.
+    if (resolvedTrialEnd !== localSubscription.trialEnd) {
+        updateData.trialEnd = resolvedTrialEnd;
+    }
 
     // Persist planId update within the same transaction as the status change
     if (fetchedPlanId != null && localPlanId != null && fetchedPlanId !== localPlanId) {
@@ -772,6 +907,38 @@ export async function processSubscriptionUpdated({
             subscriptionId: localSubscription.id
         });
         if (!txTransitionGuard.valid) {
+            // HOS-211: same ACTIVE→TRIALING carve-out as the Step 6b guard above,
+            // re-evaluated on the fresh (locked) status — see that comment for
+            // the full rationale. Owner decision: prevent new legacy rows and
+            // silence the recurring Sentry noise for this ONE expected case,
+            // without touching the state machine or backfilling old data.
+            //
+            // Caveat (see Step 6b comment for detail): this matches ANY `active`
+            // row with a derived future `trialEnd`, not only the known legacy
+            // case — accepted trade-off.
+            const isExpectedLegacyActiveToTrialing =
+                freshStatus === SubscriptionStatusEnum.ACTIVE &&
+                mappedStatus === SubscriptionStatusEnum.TRIALING;
+
+            if (isExpectedLegacyActiveToTrialing) {
+                apiLogger.warn(
+                    {
+                        subscriptionId: localSubscription.id,
+                        freshStatus,
+                        from: freshStatus,
+                        to: mappedStatus,
+                        previousStatus,
+                        mpPreapprovalId: maskId(mpPreapprovalId),
+                        providerEventId,
+                        source,
+                        reason: txTransitionGuard.reason
+                    },
+                    'Subscription webhook tx: expected ACTIVE→TRIALING no-op for a legacy pre-HOS-211 row (activated before the trial-sync fix, trial_end was never populated) — state machine intentionally does not auto-correct this; committing nothing'
+                );
+                txStatusChanged = false;
+                return;
+            }
+
             // SPEC-180: in-transaction transition guard failure is actionable.
             apiLogger.error(
                 {

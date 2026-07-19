@@ -15,6 +15,18 @@ import { getApiUrl, getSiteUrl, getTurnstileSiteKey } from '@/lib/env';
 import { buildUrl } from '@/lib/urls';
 import { FeedbackForm, parseFeedbackParams } from '@repo/feedback';
 import type { ReportTypeId } from '@repo/feedback';
+// This page intentionally bypasses BaseLayout (see file header), so it must
+// pull the feedback widget's stylesheet itself — BaseLayout is the only other
+// place that imports it. Without this, the form renders as unstyled native
+// controls (BETA-193). Brand-color overrides live in the <style is:global>
+// block below (kept as direct sRGB hex, since this page has no access to the
+// global brand tokens). We deliberately do NOT import feedback-overrides.css:
+// it maps --fb-* onto global brand tokens this standalone page never defines.
+import '@repo/feedback/styles.css';
+// Optimized logo asset (emitted to /_astro/*.webp). The previous hardcoded
+// "/assets/images/logo.svg" path did not exist in public/, so the logo showed
+// as broken alt-text (BETA-193).
+import logoSrc from '@/assets/images/logo.webp';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const t = createT(locale);
@@ -52,7 +64,7 @@ const hasErrorContext = Boolean(queryParams.source === 'error-banner');
 	<div class="feedback-standalone__container">
 		<header class="feedback-standalone__header">
 			<a href={homeUrl} class="feedback-standalone__logo" aria-label="Volver a Hospeda">
-				<img src="/assets/images/logo.svg" alt="Hospeda" width="120" height="32" />
+				<img src={logoSrc.src} alt="Hospeda" width="120" height="32" />
 			</a>
 		</header>
 
@@ -120,6 +132,19 @@ const hasErrorContext = Boolean(queryParams.source === 'error-banner');
 		--ring: #0f74c5;
 		--radius-card: 24px;
 		--radius-button: 8px;
+	}
+
+	/*
+	 * Map the feedback widget's neutral defaults onto the Hospeda brand accent
+	 * (warm orange). Mirrors feedback-overrides.css, but with direct sRGB hex
+	 * instead of the global brand tokens (which this standalone page cannot
+	 * see). Scoped to .feedback-root and kept out of oklch() so the widget
+	 * stays branded on browsers without oklch support (BETA-45 lesson).
+	 * sRGB equivalents: --brand-accent oklch(0.7 0.18 55) -> #ed7b00.
+	 */
+	.feedback-root {
+		--fb-primary: #ed7b00;
+		--fb-primary-hover: #df5400;
 	}
 </style>
 
