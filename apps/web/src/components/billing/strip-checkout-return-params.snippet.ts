@@ -31,14 +31,22 @@
  * prop, so the island never reads it back off `window.location`. Removing it
  * from the client URL therefore cannot break the linking flow.
  *
- * Timing is the whole point. PostHog's inline snippet (`PostHogScript.astro`,
- * rendered in `BaseLayout`'s `<head>`) stubs `window.posthog` synchronously but
- * defers the real pageview capture until its `array.js` bundle loads over the
- * network (async). An `is:inline` script placed in the page `<head>` runs
- * synchronously during parse — many milliseconds before that network round-trip
- * resolves — so by the time PostHog reads `location.href` for `$current_url`,
- * the parameter is already gone. The island's `useEffect` (client:load) would
- * hydrate later and race that network fetch, so it is NOT the right layer.
+ * Timing is the whole point, and this is mounted in `BaseLayout`'s `head-early`
+ * slot — the FIRST node in `<head>` — so the `is:inline` script runs
+ * synchronously during parse before every URL-capturing path that follows it:
+ *
+ * - PostHog (`PostHogScript.astro`) stubs `window.posthog` synchronously but
+ *   defers the real `$current_url` pageview capture until its `array.js` bundle
+ *   loads over the network; by then the parameter is already gone.
+ * - The feedback nav bootstrap records `location.pathname + location.search`
+ *   into sessionStorage synchronously — running first means it records the
+ *   already-scrubbed URL.
+ * - Cross-origin subresource fetches (fonts, PostHog assets) that would send a
+ *   `Referer` header are all declared later in `<head>`, so their requests
+ *   carry the scrubbed URL.
+ *
+ * The island's `useEffect` (client:load) would hydrate much later and race all
+ * of the above, so it is NOT the right layer.
  *
  * The snippet is exported as a plain string so it can be embedded verbatim via
  * `set:html` (mirroring `PostHogScript.astro`) AND executed as-is in a jsdom

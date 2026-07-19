@@ -112,10 +112,35 @@ describe('checkout success.astro wiring', () => {
         'utf8'
     );
 
-    it('mounts the scrubber in the head via the head-extra slot with the CSP nonce', () => {
+    it('mounts the scrubber first in the head via the head-early slot with the CSP nonce', () => {
         expect(src).toContain('StripCheckoutReturnParams');
-        expect(src).toContain('slot="head-extra"');
+        expect(src).toContain('slot="head-early"');
         expect(src).toContain('cspNonce={cspNonce}');
         expect(src).toContain('Astro.locals.cspNonce');
+    });
+});
+
+describe('head-early slot plumbing', () => {
+    const baseLayout = readFileSync(
+        resolve(__dirname, '../../../src/layouts/BaseLayout.astro'),
+        'utf8'
+    );
+    const marketingLayout = readFileSync(
+        resolve(__dirname, '../../../src/layouts/MarketingLayout.astro'),
+        'utf8'
+    );
+
+    it('BaseLayout renders the head-early slot before the PostHog snippet', () => {
+        expect(baseLayout).toContain('name="head-early"');
+        // Ordering guarantee: the scrubber must run before PostHog captures the
+        // URL. Compare against the component USAGE (`<PostHogScript`), not the
+        // top-of-file import, which naturally precedes everything in <head>.
+        expect(baseLayout.indexOf('name="head-early"')).toBeLessThan(
+            baseLayout.indexOf('<PostHogScript')
+        );
+    });
+
+    it('MarketingLayout forwards head-early into BaseLayout', () => {
+        expect(marketingLayout).toContain('slot="head-early"');
     });
 });

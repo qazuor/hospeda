@@ -5,10 +5,11 @@
  * parameters (e.g. `preapproval_id`) off the checkout return URL before any
  * analytics/third-party script captures it (HOS-209).
  *
- * Mount this in the checkout success page's `<head>` (via the layout's
- * `head-extra` slot) so it runs synchronously during parse — see
- * `strip-checkout-return-params.snippet.ts` for the full timing rationale
- * (it must beat PostHog's async pageview capture).
+ * Mount this in the checkout success page's `<head>` via the layout's
+ * `head-early` slot — rendered FIRST in `<head>`, before the PostHog snippet,
+ * the feedback nav bootstrap, and any cross-origin subresource fetch — so it
+ * runs synchronously during parse ahead of every URL-capturing path. See
+ * `strip-checkout-return-params.snippet.ts` for the full timing rationale.
  *
  * The script is `is:inline` and carries the per-request CSP nonce so it passes
  * the site's `strict-dynamic` policy (mirrors `PostHogScript.astro`). When the
