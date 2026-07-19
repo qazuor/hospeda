@@ -12,9 +12,9 @@
  * during parse ahead of every URL-capturing path. See
  * `strip-checkout-return-params.snippet.ts` for the full timing rationale.
  *
- * The script is `is:inline` and carries the per-request CSP nonce so it passes
- * the site's `strict-dynamic` policy (mirrors `PostHogScript.astro`). When the
- * nonce is empty (local dev without CSP) it still renders harmlessly.
+ * The emitted `<script>` is inline and carries the per-request CSP nonce so it
+ * passes the site's `strict-dynamic` policy (mirrors `PostHogScript.astro`).
+ * When the nonce is empty (local dev without CSP) it still renders harmlessly.
  */
 
 import { STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET } from './strip-checkout-return-params.snippet';
