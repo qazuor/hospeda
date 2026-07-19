@@ -16,8 +16,18 @@
  * - CAS race lost (concurrent linking) -> 'already'
  * - deferred discount applied on successful link (best-effort, non-blocking)
  * - FIX 1: ownership guard compares `checkout.payerEmail` (checkout-time
- *   snapshot), not a live customer lookup -> immune to live-email drift,
- *   falls back to 'reconcile_assisted' when the snapshot is unset
+ *   snapshot), not a live customer lookup -> immune to live-email drift
+ * - FIX #5 (HOS-191): Tier 1 (`ownership`, back_url) payer email is
+ *   defense-in-depth ONLY -> an absent live or snapshot payer email now
+ *   resolves to 'linked' (was 'reconcile_assisted'); a CONFIRMED mismatch
+ *   still resolves to 'idor'; a positive match still resolves to 'linked'.
+ *   Tier 3 (heuristic) is unchanged: still requires a positive match, still
+ *   downgrades to 'reconcile_assisted' on mismatch or absence.
+ * - FIX #6 (HOS-191): Tier 1 (`ownership`, back_url) fails CLOSED when the
+ *   live `preapproval_plan_id` cannot be resolved at all (lookup error / no
+ *   access token) -> 'reconcile_assisted', never a silent skip of the
+ *   plan-match veto; a resolved AND matching plan id still resolves to
+ *   'linked'.
  *
  * @module test/services/billing/link-preapproval.service
  */
@@ -259,7 +269,7 @@ describe('linkPreapprovalToLocalSub', () => {
         expect(markReconcileAssistedMock).not.toHaveBeenCalled();
     });
 
-    it('FIX 1: refuses a back_url link (reconcile_assisted, NOT linked) when the live preapproval exposes no payer email', async () => {
+    it('FIX #5: links a back_url attempt (Tier 1) even when the live preapproval exposes no payer email', async () => {
         queueSelectResult([]);
         findByLocalSubscriptionIdMock.mockResolvedValue(makePendingCheckout());
 
@@ -270,13 +280,17 @@ describe('linkPreapprovalToLocalSub', () => {
             expectedLocalSubscriptionId: 'sub-1',
             expectedCustomerId: 'cust-1',
             billing: makeBilling('user@example.com') as never,
-            // Tier 1, but the preapproval has no payer email → identity cannot be
-            // positively verified → fail closed (recoverable), never blind-link.
+            // Tier 1: ownership is already proven upstream (the authenticated
+            // caller's expectedLocalSubscriptionId resolved to a checkout it
+            // owns). MercadoPago structurally omits payer_email on many real
+            // preapprovals (confirmed empirically in prod), so an absent live
+            // email must NOT block a proven owner — payer email is
+            // defense-in-depth only on this tier, never the sole gate.
             adapter: makeAdapter({ payerEmail: null }) as never
         });
 
-        expect(result).toEqual({ outcome: 'reconcile_assisted' });
-        expect(markLinkedMock).not.toHaveBeenCalled();
+        expect(result).toEqual({ outcome: 'linked', localSubscriptionId: 'sub-1' });
+        expect(markLinkedMock).toHaveBeenCalledWith({ id: 'pc-1' }, expect.anything());
         expect(markReconcileAssistedMock).not.toHaveBeenCalled();
     });
 
@@ -305,7 +319,7 @@ describe('linkPreapprovalToLocalSub', () => {
         expect(markLinkedMock).toHaveBeenCalledWith({ id: 'pc-1' }, expect.anything());
     });
 
-    it('FIX 1: falls back to reconcile_assisted when the checkout snapshot has no payer email (Tier 1)', async () => {
+    it('FIX #5: links a back_url attempt (Tier 1) when the checkout snapshot has no payer email but the live one does', async () => {
         queueSelectResult([]);
         findByLocalSubscriptionIdMock.mockResolvedValue(makePendingCheckout({ payerEmail: null }));
 
@@ -317,7 +331,53 @@ describe('linkPreapprovalToLocalSub', () => {
             expectedCustomerId: 'cust-1',
             billing: makeBilling('user@example.com') as never,
             // Live email present, but the checkout has no snapshot to compare
-            // against — identity cannot be positively verified.
+            // against — no positive match is POSSIBLE, but that is not a
+            // mismatch either. Tier 1 ownership is already proven upstream, so
+            // this resolves to a link, not reconcile_assisted.
+            adapter: makeAdapter({ payerEmail: 'user@example.com' }) as never
+        });
+
+        expect(result).toEqual({ outcome: 'linked', localSubscriptionId: 'sub-1' });
+        expect(markLinkedMock).toHaveBeenCalledWith({ id: 'pc-1' }, expect.anything());
+    });
+
+    it('FIX #6: links a back_url attempt (Tier 1) when the live preapproval_plan_id resolves and matches', async () => {
+        queueSelectResult([]);
+        findByLocalSubscriptionIdMock.mockResolvedValue(makePendingCheckout());
+        fetchPreapprovalPlanIdMock.mockResolvedValue({
+            kind: 'ok',
+            preapprovalPlanId: 'mp-plan-1'
+        });
+
+        const result = await linkPreapprovalToLocalSub({
+            preapprovalId: 'pa-1',
+            externalReference: null,
+            payerEmail: null,
+            expectedLocalSubscriptionId: 'sub-1',
+            expectedCustomerId: 'cust-1',
+            billing: makeBilling('user@example.com') as never,
+            adapter: makeAdapter({ payerEmail: 'user@example.com' }) as never
+        });
+
+        expect(result).toEqual({ outcome: 'linked', localSubscriptionId: 'sub-1' });
+        expect(markLinkedMock).toHaveBeenCalledWith({ id: 'pc-1' }, expect.anything());
+    });
+
+    it('FIX #6: downgrades a back_url attempt (Tier 1) to "reconcile_assisted" when the live preapproval_plan_id cannot be resolved', async () => {
+        queueSelectResult([]);
+        findByLocalSubscriptionIdMock.mockResolvedValue(makePendingCheckout());
+        // The MP plan-id lookup fails entirely (e.g. access token unset, or the
+        // MP call itself errors) — Tier 1 must fail CLOSED rather than silently
+        // skip the plan-match veto and fall through on ownership alone.
+        fetchPreapprovalPlanIdMock.mockResolvedValue({ kind: 'error' });
+
+        const result = await linkPreapprovalToLocalSub({
+            preapprovalId: 'pa-1',
+            externalReference: null,
+            payerEmail: null,
+            expectedLocalSubscriptionId: 'sub-1',
+            expectedCustomerId: 'cust-1',
+            billing: makeBilling('user@example.com') as never,
             adapter: makeAdapter({ payerEmail: 'user@example.com' }) as never
         });
 
