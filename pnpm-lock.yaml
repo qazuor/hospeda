@@ -38,7 +38,7 @@ overrides:
   serialize-javascript: '>=7.0.3'
   prismjs: '>=1.30.0'
   js-yaml@<4.1.1: ^4.1.1
-  undici: '>=7.28.0 <8'
+  undici: '>=8.7.0 <9'
   vite@^6.0.0: '>=8.0.16 <9'
   vite@^7.0.0: '>=8.0.16 <9'
   vite@>=6.0.0: '>=8.0.16 <9'
@@ -564,8 +564,8 @@ importers:
         specifier: ^2.17.5
         version: 2.17.5
       undici:
-        specifier: '>=7.28.0 <8'
-        version: 7.28.0
+        specifier: '>=8.7.0 <9'
+        version: 8.7.0
       zod:
         specifier: 4.3.6
         version: 4.3.6
@@ -1791,8 +1791,8 @@ importers:
         specifier: ^1.6.9
         version: 1.6.9
       undici:
-        specifier: '>=7.28.0 <8'
-        version: 7.28.0
+        specifier: '>=8.7.0 <9'
+        version: 8.7.0
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:*
@@ -11614,9 +11614,9 @@ packages:
   undici-types@8.3.0:
     resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
 
-  undici@7.28.0:
-    resolution: {integrity: sha512-cRZYrTDwWznlnRiPjggAGxZXanty6M8RV1ff8Wm4LWXBp7/IG8v5DnOm74DtUBp9OONpK75YlPnIjQqX0dBDtA==}
-    engines: {node: '>=20.18.1'}
+  undici@8.7.0:
+    resolution: {integrity: sha512-N7iQtfyLhIMOFgQubvmLV26svHpO0bqKnAiWotTQCVKCmWrcGbBotPuW1x+xwYZ2VHdSTVUfPQQnlEt1/LouTQ==}
+    engines: {node: '>=22.19.0'}
 
   unenv@2.0.0-rc.24:
     resolution: {integrity: sha512-i7qRCmY42zmCwnYlh9H2SvLEypEFGye5iRmEMKjcGi7zk9UquigRjFtTLz0TYqr0ZGLZhaMHl/foy1bZR+Cwlw==}
@@ -15910,7 +15910,7 @@ snapshots:
       cookie-signature: 1.2.2
       source-map-support: 0.5.21
       stream-slice: 0.1.2
-      undici: 7.28.0
+      undici: 8.7.0
     optionalDependencies:
       typescript: 6.0.3
 
@@ -23388,7 +23388,7 @@ snapshots:
 
   undici-types@8.3.0: {}
 
-  undici@7.28.0: {}
+  undici@8.7.0: {}
 
   unenv@2.0.0-rc.24:
     dependencies:
