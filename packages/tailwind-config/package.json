@@ -14,7 +14,7 @@
     },
     "devDependencies": {
         "@vitest/coverage-v8": "^4.1.10",
-        "postcss": "^8.5.16",
+        "postcss": "^8.5.18",
         "tailwindcss": "^4.3.2",
         "vitest": "^4.1.10"
     }
