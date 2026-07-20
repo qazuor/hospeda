@@ -404,6 +404,17 @@ function makeLocalSubscription(overrides: Record<string, unknown> = {}): Record<
 
 /**
  * Builds a minimal QZPayProviderSubscription stub returned by retrieve().
+ *
+ * This mirrors `@qazuor/qzpay-mercadopago@2.6.0`'s `mapToProviderSubscription()`
+ * REAL return shape — a closed camelCase object with NO `auto_recurring` key
+ * (`trialStart`/`trialEnd` are hardcoded `null` by qzpay itself). Do NOT spread
+ * an `auto_recurring` object onto the default return of this factory to
+ * simulate a trial — that shape is never actually returned by qzpay's
+ * `subscriptions.retrieve()` (HOS-211 follow-up: the original tests did
+ * exactly this and it is why the bug shipped). Only the small set of tests
+ * that deliberately exercise `livePreapprovalHasFreeTrial`'s defensive
+ * fallback (unreachable in prod today) should pass an `auto_recurring`
+ * override, and they must say so in a comment.
  */
 function makeMpSubscription(
     status: string,
@@ -1887,27 +1898,34 @@ describe('processSubscriptionUpdated', () => {
     // HOS-211: browser link-preapproval / trial-sync regression tests
     // -----------------------------------------------------------------------
     describe('trial window sync on activation (HOS-211)', () => {
-        // Core HOS-211 regression: a share-link (Path C) preapproval whose row
-        // was inserted with trialEnd=null must land on `trialing` with a real
-        // trial window, not `active` with a null one, when the live preapproval
-        // carries a card-first free trial.
-        it('should write trialing + populate trialEnd/currentPeriodEnd from the live preapproval when it carries a free trial', async () => {
+        // Core HOS-211 regression (Option B): a share-link (Path C) preapproval
+        // whose row was created with a PRE-POPULATED `trialEnd` (persisted at
+        // checkout time by `createPendingProviderSubscription` from
+        // `freeTrialDays` — see pending-provider-subscription-create.ts) must
+        // land on `trialing`, even though the live preapproval carries NO
+        // `auto_recurring` at all (qzpay's real `retrieve()` shape). This is
+        // the primary derivation path now — it does NOT depend on
+        // `livePreapprovalHasFreeTrial` firing.
+        it('should derive trialing from a pre-populated local trialEnd even when the live preapproval has no auto_recurring', async () => {
             // Arrange
             const mpPreapprovalId = 'preapproval-mp-001';
             mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
 
             const livePeriodEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+            // Real qzpay shape: no `auto_recurring` field anywhere.
             const mpSubscription = makeMpSubscription('active', {
-                currentPeriodEnd: livePeriodEnd,
-                auto_recurring: { free_trial: { frequency: 14, frequency_type: 'days' } }
+                currentPeriodEnd: livePeriodEnd
             });
             mockRetrieve.mockResolvedValue(mpSubscription);
 
-            // Path C: row already linked (Step 5) but never activated — trialEnd
-            // was never known at insert time.
+            // Path C: row already linked (Step 5), trialEnd was persisted at
+            // creation time (HOS-211 Option B) — the local row is the source
+            // of truth for the trial window, not the live preapproval.
+            const localTrialEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
             const localSub = makeLocalSubscription({
                 status: SubscriptionStatusEnum.PENDING_PROVIDER,
-                trialEnd: null
+                trialStart: new Date(),
+                trialEnd: localTrialEnd
             });
             const dbMock = makeDbMock([localSub]);
             vi.mocked(getDb).mockReturnValue(dbMock as never);
@@ -1929,10 +1947,17 @@ describe('processSubscriptionUpdated', () => {
             expect(txUpdateChain.set).toHaveBeenCalledWith(
                 expect.objectContaining({
                     status: SubscriptionStatusEnum.TRIALING,
-                    trialEnd: livePeriodEnd,
+                    // currentPeriodEnd still syncs from the live preapproval on
+                    // the pending_provider -> * activation transition.
                     currentPeriodEnd: livePeriodEnd
                 })
             );
+            // trialEnd is NOT re-written — it already carried the correct value
+            // from creation time, so resolvedTrialEnd === localSubscription.trialEnd
+            // (preserve-if-set) skips the redundant write.
+            const setCalls = vi.mocked(txUpdateChain.set).mock.calls;
+            const lastUpdateData = setCalls[setCalls.length - 1]?.[0] as Record<string, unknown>;
+            expect(lastUpdateData).not.toHaveProperty('trialEnd');
         });
 
         // Ordinary paid activation: no free_trial on the live preapproval, so
@@ -1987,18 +2012,19 @@ describe('processSubscriptionUpdated', () => {
         // charged, the row's stored (past) trialEnd must NOT be overwritten by
         // recomputing it from the live preapproval's NEXT (future) period —
         // otherwise the subscription would wrongly flip back to trialing forever.
+        // Deliberately uses the real (no `auto_recurring`) fixture shape: the
+        // local row's already-set trialEnd is what `resolvedTrialEnd` preserves
+        // — the live preapproval's shape is irrelevant to this guard.
         it('should preserve an already-set (elapsed) trialEnd and settle to active, never re-deriving trialing', async () => {
             // Arrange
             const mpPreapprovalId = 'preapproval-mp-001';
             mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
 
-            // MP still reports free_trial (it describes the plan's trial terms,
-            // not "currently trialing") and currentPeriodEnd has already rolled
-            // to the NEXT, future billing cycle after the day-N charge.
+            // currentPeriodEnd has already rolled to the NEXT, future billing
+            // cycle after the day-N charge. No `auto_recurring` — real shape.
             const nextPeriodEnd = new Date(Date.now() + 16 * 24 * 60 * 60 * 1000);
             const mpSubscription = makeMpSubscription('active', {
-                currentPeriodEnd: nextPeriodEnd,
-                auto_recurring: { free_trial: { frequency: 14, frequency_type: 'days' } }
+                currentPeriodEnd: nextPeriodEnd
             });
             mockRetrieve.mockResolvedValue(mpSubscription);
 
@@ -2044,6 +2070,14 @@ describe('processSubscriptionUpdated', () => {
         // (status=active, trial_end=null) now correctly re-derives TRIALING
         // from the live preapproval's free trial, hits that guard forever, and
         // must NOT page Sentry on every webhook — owner decision: warn only.
+        //
+        // NOTE: this is the ONE scenario where `auto_recurring` on the fixture
+        // is legitimate — a genuinely legacy row (predates HOS-211 Option B) has
+        // NO pre-populated local `trialEnd` to fall back on, so the only way to
+        // derive a future trialEnd at all is `livePreapprovalHasFreeTrial`'s
+        // defensive fallback. This exercises that fallback deliberately, not the
+        // primary Option-B path — it does not represent real qzpay traffic today
+        // (see the fallback's own JSDoc), only a hypothetical/legacy-data case.
         it('should warn (not error/capture) and no-op on the expected legacy ACTIVE→TRIALING no-op case', async () => {
             // Arrange
             const mpPreapprovalId = 'preapproval-mp-001';
@@ -2052,6 +2086,7 @@ describe('processSubscriptionUpdated', () => {
             const livePeriodEnd = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
             const mpSubscription = makeMpSubscription('active', {
                 currentPeriodEnd: livePeriodEnd,
+                // Defensive-fallback-only shape — see note above.
                 auto_recurring: { free_trial: { frequency: 14, frequency_type: 'days' } }
             });
             mockRetrieve.mockResolvedValue(mpSubscription);
@@ -2101,6 +2136,13 @@ describe('processSubscriptionUpdated', () => {
         // reproducing the exact legacy shape (active + future derived
         // trialEnd) but caught by the in-tx guard instead. This locks the
         // branch a refactor could otherwise silently break.
+        //
+        // NOTE: like the sibling legacy carve-out test above, this row has NO
+        // pre-populated local `trialEnd` (a pending_provider row created without
+        // `freeTrialDays`, or a pre-Option-B legacy row), so deriving a future
+        // trialEnd at all requires the defensive `livePreapprovalHasFreeTrial`
+        // fallback — hence the `auto_recurring` override here is intentional,
+        // not a stand-in for the primary Option-B path.
         it('should warn (not error/capture) and no-op when the IN-TX guard catches the same ACTIVE→TRIALING case (concurrent mis-activation race)', async () => {
             // Arrange
             const mpPreapprovalId = 'preapproval-mp-001';
@@ -2109,6 +2151,7 @@ describe('processSubscriptionUpdated', () => {
             const livePeriodEnd = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
             const mpSubscription = makeMpSubscription('active', {
                 currentPeriodEnd: livePeriodEnd,
+                // Defensive-fallback-only shape — see note above.
                 auto_recurring: { free_trial: { frequency: 14, frequency_type: 'days' } }
             });
             mockRetrieve.mockResolvedValue(mpSubscription);
@@ -2158,7 +2201,11 @@ describe('processSubscriptionUpdated', () => {
 
         // Malformed / absent `auto_recurring.free_trial` payloads must all be
         // treated as "no trial" — none of these should derive TRIALING or write
-        // a trialEnd.
+        // a trialEnd. This exercises `livePreapprovalHasFreeTrial`'s own edge
+        // cases directly (its defensive fallback role, not the primary
+        // Option-B path) — the local row also carries no pre-populated
+        // trialEnd, matching the only scenario where this fallback is
+        // reachable at all.
         it.each([
             ['free_trial explicitly null', { free_trial: null }],
             ['free_trial is a non-object (string)', { free_trial: 'yes' }],

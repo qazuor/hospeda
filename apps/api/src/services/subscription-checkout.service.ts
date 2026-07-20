@@ -664,6 +664,7 @@ export async function initiatePaidMonthlySubscription(
         mpPreapprovalPlanId: providerPriceId,
         payerEmail: customer.email,
         trialGranted: freeTrialDays !== undefined,
+        freeTrialDays,
         ...(pendingDiscount ? { pendingDiscount } : {}),
         livemode: customer.livemode
     });
@@ -1248,6 +1249,7 @@ export async function initiatePaidAnnualSubscription(
         mpPreapprovalPlanId: providerPriceId,
         payerEmail: customer.email,
         trialGranted: freeTrialDays !== undefined,
+        freeTrialDays,
         ...(pendingDiscount ? { pendingDiscount } : {}),
         livemode: customer.livemode
     });

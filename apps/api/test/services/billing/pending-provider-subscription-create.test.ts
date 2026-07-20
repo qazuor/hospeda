@@ -7,6 +7,10 @@
  *    (`'monthly' -> 'month'`, `'annual' -> 'year'`).
  *  - stamps `product_domain` (default `'accommodation'`, override respected)
  *    via a typed UPDATE, mirroring `createCompSubscription`'s two-step stamp.
+ *  - persists `trialStart`/`trialEnd` from `freeTrialDays` at insert time
+ *    (HOS-211 Option B) while `status` stays `pending_provider` regardless —
+ *    a set `trial_end` on a pending row grants nothing until the webhook
+ *    flips status (HOS-171 guard).
  *  - inserts the `billing_pending_checkouts` correlation row, INSIDE the same
  *    transaction, carrying `mpPreapprovalPlanId` / `payerEmail` /
  *    `pendingDiscount` (when supplied) / a 32-hex-char `nonce`.
@@ -203,6 +207,38 @@ describe('createPendingProviderSubscription', () => {
         const inserted = insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
         const metadata = inserted.metadata as Record<string, unknown>;
         expect(metadata.trialGranted).toBe('true');
+    });
+
+    it('persists trialStart/trialEnd from freeTrialDays, status stays pending_provider (HOS-211 Option B)', async () => {
+        const before = Date.now();
+        await createPendingProviderSubscription({
+            ...BASE_INPUT,
+            trialGranted: true,
+            freeTrialDays: 14
+        });
+        const after = Date.now();
+
+        const inserted = insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
+        // A set trialEnd on a pending row must NOT change status — entitlements
+        // gate on status only (HOS-171 guard); the webhook is still the one
+        // that flips it once the preapproval is confirmed.
+        expect(inserted.status).toBe('pending_provider');
+
+        const trialStart = inserted.trialStart as Date;
+        const trialEnd = inserted.trialEnd as Date;
+        expect(trialStart.getTime()).toBeGreaterThanOrEqual(before - 2000);
+        expect(trialStart.getTime()).toBeLessThanOrEqual(after + 2000);
+
+        const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
+        expect(trialEnd.getTime() - trialStart.getTime()).toBe(fourteenDaysMs);
+    });
+
+    it('leaves trialStart/trialEnd null when freeTrialDays is not provided', async () => {
+        await createPendingProviderSubscription(BASE_INPUT);
+
+        const inserted = insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(inserted.trialStart).toBeNull();
+        expect(inserted.trialEnd).toBeNull();
     });
 
     it('generates a fresh nonce on every call (no accidental reuse)', async () => {
