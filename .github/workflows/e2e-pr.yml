@@ -131,7 +131,7 @@ jobs:
           grep -vE '^\s*(#|$)' apps/e2e/.env.e2e >> "$GITHUB_ENV"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
 

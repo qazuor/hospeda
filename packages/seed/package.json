@@ -55,7 +55,7 @@
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
         "@types/bcryptjs": "^3.0.0",
-        "@types/node": "^26.1.0",
+        "@types/node": "^26.1.1",
         "@types/pg": "^8.20.0",
         "@vitest/coverage-v8": "^4.1.10",
         "tsup": "^8.5.1",

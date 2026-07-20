@@ -62,6 +62,17 @@ export interface AppBindings {
          */
         billingLoadFailed?: boolean;
         webhookEventId?: string;
+        /**
+         * HOS-216: sanitized replacement for `body.description` on
+         * `PATCH /accommodations/:id`, stashed by `gateRichDescription` /
+         * `gateVideoEmbed` (see `middlewares/accommodation-entitlements.ts`)
+         * when the actor lacks the entitlement for content detected in the
+         * submitted description. The route handler applies this instead of
+         * the raw body value so only the gated syntax is dropped — the rest
+         * of the PATCH (name, price, capacity, contact...) still persists.
+         * `undefined` means neither gate touched the description.
+         */
+        accommodationDescriptionOverride?: string;
     };
 }
 

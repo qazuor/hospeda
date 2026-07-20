@@ -26,7 +26,12 @@ import {
     type LimitKey
 } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
-import { isAccommodationSubscription, RoleEnum, ServiceError } from '@repo/service-core';
+import {
+    isAccommodationSubscription,
+    isOwnerCategorySubscription,
+    RoleEnum,
+    ServiceError
+} from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
 import { captureBillingError } from '../lib/sentry';
@@ -400,6 +405,15 @@ function buildStaffUnlimitedResult(): LoadEntitlementsResult {
  * fail the function returns plan-only data with `shouldCache: false` so degraded
  * results are never stored in cache.
  *
+ * **HOS-217**: for HOST actors, the "active accommodation subscription" found
+ * on path 1 must also be an `owner`/`complex`-category plan (checked via
+ * {@link isOwnerCategorySubscription}). A HOST who reached that role via
+ * host-onboarding without ever subscribing to an owner plan may still have a
+ * live tourist-tier subscription (e.g. `tourist-vip`) — that is treated as
+ * "no owner subscription" and falls through to path 2's `owner-basico`
+ * fallback, the same as a HOST with zero subscriptions at all. Non-HOST
+ * actors are unaffected — their real tourist plan always resolves normally.
+ *
  * @param customerId - The QZPay customer ID
  * @param actorRole - The role of the authenticated actor. Used to select the
  *   correct fallback when no active subscription is found. HOST actors fall back
@@ -438,7 +452,7 @@ async function loadEntitlements(
         // with BOTH an accommodation sub and a commerce sub always resolves
         // accommodation entitlements from the correct sub. Treats null/undefined
         // productDomain as 'accommodation' (legacy rows and the column default).
-        const activeSubscription = subscriptions.find(
+        let activeSubscription = subscriptions.find(
             (sub: { status: string }) =>
                 // SPEC-262 T-012 P2: 'comp' (free-forever) is an ACTIVE entitlement
                 // state — a comped subscriber retains the full entitlements of the
@@ -446,6 +460,24 @@ async function loadEntitlements(
                 (sub.status === 'active' || sub.status === 'trialing' || sub.status === 'comp') &&
                 isAccommodationSubscription(sub)
         );
+
+        // HOS-217: a HOST actor can reach role=HOST without ever subscribing to
+        // an owner plan (auto-promoted by the host-onboarding flow). If the
+        // "accommodation subscription" found above is really a tourist-tier
+        // plan (e.g. `tourist-vip`) the actor happens to still be paying for,
+        // treat it the SAME as having no owner subscription — otherwise the
+        // tourist plan's entitlements (no `EDIT_ACCOMMODATION_INFO` /
+        // `PUBLISH_ACCOMMODATIONS`) get resolved below instead of the
+        // `owner-basico` draft-defaults fallback. Scoped to HOST only:
+        // non-HOST roles (e.g. a plain USER on a tourist plan) must keep
+        // resolving their real tourist entitlements unchanged.
+        if (
+            activeSubscription &&
+            actorRole === RoleEnum.HOST &&
+            !(await isOwnerCategorySubscription({ planId: activeSubscription.planId }))
+        ) {
+            activeSubscription = undefined;
+        }
 
         if (!activeSubscription) {
             // Only cancelled / past_due / paused subscriptions — fall back to

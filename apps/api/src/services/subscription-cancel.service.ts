@@ -92,8 +92,11 @@ export interface SoftCancelSubscriptionResult {
     /** The timestamp set by qzpay-core's `cancel()`. */
     readonly canceledAt: Date;
     /**
-     * The `current_period_end` of the subscription — the last day the user
-     * retains access. Suitable for passing to the confirmation notification.
+     * The last day the user retains access. This is `current_period_end`,
+     * EXCEPT while the subscription is still `trialing` with a future
+     * `trial_end` — in that case it is `trial_end` (HOS-215), since the
+     * recurring preapproval's period end can sit far beyond the trial
+     * window. Suitable for passing to the confirmation notification.
      */
     readonly accessUntil: Date;
 }
@@ -148,6 +151,7 @@ export async function softCancelSubscription(
             cancelAtPeriodEnd: billingSubscriptions.cancelAtPeriodEnd,
             canceledAt: billingSubscriptions.canceledAt,
             currentPeriodEnd: billingSubscriptions.currentPeriodEnd,
+            trialEnd: billingSubscriptions.trialEnd,
             planId: billingSubscriptions.planId
         })
         .from(billingSubscriptions)
@@ -160,6 +164,19 @@ export async function softCancelSubscription(
             `Subscription '${subscriptionId}' not found.`
         );
     }
+
+    // HOS-215: while a soft-cancelled subscription is still `trialing`, the
+    // "access until" date is when the free trial ends (`trialEnd`), NOT
+    // `currentPeriodEnd` — the recurring preapproval's period end can sit far
+    // beyond the trial window. Falls back to `currentPeriodEnd` for every
+    // other case (non-trialing, or a null/elapsed `trialEnd`), preserving the
+    // existing behaviour exactly.
+    const effectiveAccessUntil =
+        existingRow.status === 'trialing' &&
+        existingRow.trialEnd &&
+        existingRow.trialEnd > new Date()
+            ? existingRow.trialEnd
+            : existingRow.currentPeriodEnd;
 
     // Defence-in-depth ownership check (route middleware already guards this).
     if (existingRow.customerId !== customerId) {
@@ -185,7 +202,7 @@ export async function softCancelSubscription(
             subscriptionId,
             cancelAtPeriodEnd: true,
             canceledAt: existingRow.canceledAt ?? new Date(),
-            accessUntil: existingRow.currentPeriodEnd
+            accessUntil: effectiveAccessUntil
         };
     }
 
@@ -314,7 +331,7 @@ export async function softCancelSubscription(
     clearEntitlementCache(customerId);
 
     apiLogger.info(
-        { subscriptionId, customerId, reason, accessUntil: existingRow.currentPeriodEnd },
+        { subscriptionId, customerId, reason, accessUntil: effectiveAccessUntil },
         'soft-cancel: completed successfully'
     );
 
@@ -331,7 +348,7 @@ export async function softCancelSubscription(
                 userId: input.userId ?? null,
                 customerId,
                 planName: input.planName ?? '',
-                accessUntil: existingRow.currentPeriodEnd.toISOString()
+                accessUntil: effectiveAccessUntil.toISOString()
             })
         ).catch((err: unknown) => {
             apiLogger.warn(
@@ -350,6 +367,6 @@ export async function softCancelSubscription(
         subscriptionId,
         cancelAtPeriodEnd: true,
         canceledAt,
-        accessUntil: existingRow.currentPeriodEnd
+        accessUntil: effectiveAccessUntil
     };
 }

@@ -92,7 +92,13 @@ export interface ScheduleSubscriptionDowngradeResult {
     readonly subscriptionId: string;
     readonly previousPlanId: string;
     readonly newPlanId: string;
-    /** ISO 8601 timestamp when the change will fire (= currentPeriodEnd). */
+    /**
+     * ISO 8601 timestamp when the change will fire. This is
+     * `sub.currentPeriodEnd`, EXCEPT while the subscription is still
+     * `trialing` with a future `trialEnd` — in that case it is `trialEnd`
+     * (HOS-215), since the recurring preapproval's period end can sit far
+     * beyond the trial window.
+     */
     readonly applyAt: string;
     /**
      * True when a prior pending schedule was overwritten by this call.
@@ -295,11 +301,19 @@ export async function scheduleSubscriptionDowngrade(
     // pre-convert it here once instead of every cron tick.
     const targetTransactionAmountMajor = targetPrice.unitAmount / 100;
 
+    // HOS-215: a downgrade scheduled while trialing must apply at the trial's
+    // actual end, not currentPeriodEnd — the recurring preapproval's period
+    // end can sit far beyond the trial window for a card-first trial.
+    const { trialEnd } = sub;
+    const isTrialingWithFutureTrialEnd =
+        sub.status === 'trialing' && trialEnd != null && trialEnd > now;
+    const applyAt = (isTrialingWithFutureTrialEnd ? trialEnd : sub.currentPeriodEnd).toISOString();
+
     const scheduled: QZPayScheduledPlanChange = {
         newPlanId,
         newPriceId: targetPrice.id,
         targetTransactionAmountMajor,
-        applyAt: sub.currentPeriodEnd.toISOString(),
+        applyAt,
         requestedAt: now.toISOString(),
         ...(requestedBy === undefined ? {} : { requestedBy }),
         status: 'pending',

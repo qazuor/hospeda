@@ -14,7 +14,12 @@
 import { EntitlementKey } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
-import { containsRichDescription, containsVideoEmbed } from '../lib/content-detection';
+import {
+    containsRichDescription,
+    containsVideoEmbed,
+    stripRichDescriptionSyntax,
+    stripVideoEmbeds
+} from '../lib/content-detection';
 import type { AppMiddleware } from '../types';
 import { apiLogger } from '../utils/logger';
 import { hasEntitlement } from './entitlement';
@@ -23,24 +28,41 @@ import { hasEntitlement } from './entitlement';
  * Gates rich description feature (markdown formatting).
  *
  * Checks if the request body's `description` contains markdown syntax and
- * the user lacks `CAN_USE_RICH_DESCRIPTION`. When both conditions hold,
- * returns 403 ENTITLEMENT_REQUIRED so the client can prompt the user to
- * upgrade. Plain-text descriptions pass through regardless of plan — the
- * gate only fires when the user is actually exercising the gated capability.
+ * the user lacks `CAN_USE_RICH_DESCRIPTION`. Plain-text descriptions pass
+ * through regardless of plan — the gate only fires when the user is actually
+ * exercising the gated capability.
  *
  * Design note: SPEC-143 Block 1 smoke C.9 documented two failure modes for
- * this gate — "silent strip" or "no enforcement". Both indicate a gap.
- * This implementation chooses the third option (return 403) because:
- *   1. The smoke checklist's "correct" expectation is 403 ENTITLEMENT_REQUIRED.
- *   2. Silent-strip is user-hostile (a typed paragraph quietly loses
- *      formatting on save with no UI feedback).
- *   3. The 403 envelope (`code: ENTITLEMENT_REQUIRED, requiredEntitlement,
- *      upgradeUrl`) is the same shape the LIMIT_REACHED gate uses, so the
- *      frontend already has handling.
+ * this gate — "silent strip" or "no enforcement". This gate originally chose
+ * a third option: `throw` 403 ENTITLEMENT_REQUIRED for the whole request.
+ *
+ * **HOS-216 policy flex (relaxes the SPEC-143 decision above):** the 403
+ * aborted the ENTIRE `PATCH /accommodations/:id` request, not just the
+ * description field. Combined with the unordered-list pattern originally
+ * matching a single bullet line, an owner-basico host writing a plain-text
+ * amenities list ("- WiFi\n- Pileta" — extremely common host copy) lost
+ * name/price/capacity/contact changes in the SAME request purely because of
+ * a false-positive on the description. That is worse than the "silent
+ * strip" the original design rejected. As of HOS-216:
+ *   1. The unordered-list pattern requires 2+ consecutive bullet lines
+ *      (see `content-detection.ts`), fixing the false positive at the
+ *      source for legitimate single-line prose.
+ *   2. When rich content IS genuinely detected and the actor still lacks
+ *      the entitlement, the gate no longer throws — it neutralizes only the
+ *      rich syntax in `description` (via `stripRichDescriptionSyntax`),
+ *      stashes the sanitized value on `c` for the route handler to apply,
+ *      and lets the rest of the PATCH proceed. Base fields always save; the
+ *      rich formatting is silently downgraded to plain text, logged here
+ *      for observability instead of surfaced as a hard 403.
+ * This is a deliberate, scoped exception — NOT a reversal of "no silent
+ * strip" as a general principle. It applies only to `description` inside
+ * this compound PATCH, where a hard reject was corrupting unrelated fields.
  *
  * Body reading: the middleware uses `ctx.req.raw.clone().json()` so the
- * downstream zValidator can re-read the body. We do NOT mutate the body
- * (no silent strip).
+ * downstream zValidator can re-read the ORIGINAL body — this gate never
+ * mutates the raw request stream. The sanitized override lives on context
+ * (`accommodationDescriptionOverride`) and is applied explicitly by the
+ * route handler after validation.
  *
  * Wired by SPEC-143 Block 4 follow-up on `PATCH /api/v1/protected/accommodations/:id`
  * as the reference implementation of the negative-entitlement gating pattern
@@ -87,34 +109,43 @@ export function gateRichDescription(): AppMiddleware {
         }
 
         apiLogger.warn(
-            `gateRichDescription: blocked update — user lacks ${EntitlementKey.CAN_USE_RICH_DESCRIPTION}`
+            `gateRichDescription: neutralized rich content in description — user lacks ${EntitlementKey.CAN_USE_RICH_DESCRIPTION}`
         );
 
-        throw new ServiceError(
-            ServiceErrorCode.ENTITLEMENT_REQUIRED,
-            'Tu plan actual no incluye el uso de Markdown en la descripción. Actualizá tu plan para acceder a esta funcionalidad.',
-            {
-                requiredEntitlement: EntitlementKey.CAN_USE_RICH_DESCRIPTION,
-                upgradeUrl: '/billing/plans'
-            }
-        );
+        // HOS-216: neutralize only the rich portion, let the rest of the
+        // PATCH proceed. See the doc comment above for the full rationale.
+        c.set('accommodationDescriptionOverride', stripRichDescriptionSyntax(description));
+
+        await next();
     };
 }
 
 /**
  * Gates video embed feature.
  *
- * Returns 403 ENTITLEMENT_REQUIRED when the request body's `description`
- * field contains a video URL (YouTube / Vimeo / Dailymotion) AND the actor
- * lacks `CAN_EMBED_VIDEO`. Plain prose passes through regardless of plan —
- * the gate only fires when the user is actually exercising the gated
- * capability.
+ * Neutralizes video embed URLs (YouTube / Vimeo / Dailymotion) in the
+ * request body's `description` field when the actor lacks `CAN_EMBED_VIDEO`.
+ * Plain prose passes through regardless of plan — the gate only fires when
+ * the user is actually exercising the gated capability.
  *
- * Refactored from the previous "silent strip" implementation as part of
- * SPEC-143 #25, mirroring the `gateRichDescription` pattern shipped in
- * PR #1250. Same body-clone strategy so downstream zValidator works,
- * same ServiceError(ENTITLEMENT_REQUIRED) envelope so the frontend has
- * consistent handling across all entitlement-gated routes.
+ * Originally refactored from a "silent strip" implementation to a hard 403
+ * as part of SPEC-143 #25, mirroring `gateRichDescription`. **HOS-216
+ * reverted the 403 back to a scoped strip** for the same reason documented
+ * on `gateRichDescription`: this gate runs on the same compound
+ * `PATCH /accommodations/:id` request, and a 403 here aborted unrelated
+ * field changes (name, price, capacity, contact) over a video URL in the
+ * description. See the `gateRichDescription` doc comment for the full
+ * rationale — this is a scoped exception to "no silent strip", not a
+ * reversal of the general principle.
+ *
+ * Runs AFTER `gateRichDescription` in the route's middleware chain: if that
+ * gate already stashed a sanitized `description` on context (because the
+ * actor also lacks `CAN_USE_RICH_DESCRIPTION`), this gate reads and further
+ * sanitizes THAT value instead of re-reading the raw body, so the two gates
+ * compose instead of one undoing the other's neutralization.
+ *
+ * Same body-clone strategy as `gateRichDescription` so downstream
+ * zValidator works — this gate never mutates the raw request stream.
  *
  * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
  * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
@@ -133,32 +164,37 @@ export function gateVideoEmbed(): AppMiddleware {
             return;
         }
 
-        let body: { description?: unknown };
-        try {
-            body = (await c.req.raw.clone().json()) as { description?: unknown };
-        } catch {
-            await next();
-            return;
+        // Compose with a prior gateRichDescription pass: prefer its
+        // sanitized override (already stripped of markdown) over the raw
+        // body so neither gate's neutralization undoes the other's.
+        const priorOverride = c.get('accommodationDescriptionOverride');
+        let description: unknown = priorOverride;
+
+        if (description === undefined) {
+            let body: { description?: unknown };
+            try {
+                body = (await c.req.raw.clone().json()) as { description?: unknown };
+            } catch {
+                await next();
+                return;
+            }
+            description = body?.description;
         }
 
-        const description = body?.description;
         if (typeof description !== 'string' || !containsVideoEmbed(description)) {
             await next();
             return;
         }
 
         apiLogger.warn(
-            `gateVideoEmbed: blocked update — user lacks ${EntitlementKey.CAN_EMBED_VIDEO}`
+            `gateVideoEmbed: neutralized video embed in description — user lacks ${EntitlementKey.CAN_EMBED_VIDEO}`
         );
 
-        throw new ServiceError(
-            ServiceErrorCode.ENTITLEMENT_REQUIRED,
-            'Tu plan actual no incluye incrustar videos en la descripción. Actualizá tu plan para acceder a esta funcionalidad.',
-            {
-                requiredEntitlement: EntitlementKey.CAN_EMBED_VIDEO,
-                upgradeUrl: '/billing/plans'
-            }
-        );
+        // HOS-216: neutralize only the video-URL portion, let the rest of
+        // the PATCH proceed. See the doc comment above for the full rationale.
+        c.set('accommodationDescriptionOverride', stripVideoEmbeds(description));
+
+        await next();
     };
 }
 

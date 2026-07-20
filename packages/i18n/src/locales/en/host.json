@@ -188,7 +188,12 @@
         "list": {
             "title": "[TODO]",
             "subtitle": "[TODO]",
-            "publishAnother": "Publish another"
+            "publishAnother": "Publish another",
+            "needsPlanBanner": {
+                "title": "Choose your plan to publish",
+                "description": "You have draft properties. To publish them you need an active host plan.",
+                "cta": "View host plans"
+            }
         },
         "usage": {
             "label": "{{current}} of {{max}} properties",

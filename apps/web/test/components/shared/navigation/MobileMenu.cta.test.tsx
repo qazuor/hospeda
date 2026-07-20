@@ -62,7 +62,16 @@ vi.mock('../../../../src/components/ui/IconButtonReact', () => ({
 }));
 
 vi.mock('../../../../src/lib/auth-client', () => ({
-    signOut: vi.fn().mockResolvedValue(undefined)
+    signOut: vi.fn().mockResolvedValue(undefined),
+    // HOS-217: MobileMenu now also calls useMyEntitlements (to refine the
+    // HOST-mode CTA against real entitlements), which reads Better Auth's
+    // useSession directly. Perpetually-pending by default — these tests are
+    // about role-driven CTA switching, not entitlement resolution, so
+    // `entitlementsLoading` should stay `true` throughout (the hook's own
+    // fail-open default) and never override the role-based expectations
+    // below. Tests that DO care about the entitlement-resolved state mock
+    // this per-case.
+    useSession: vi.fn(() => ({ data: null, isPending: true }))
 }));
 
 vi.mock('../../../../src/lib/env', () => ({

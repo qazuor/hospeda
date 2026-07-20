@@ -8,12 +8,23 @@
  * T-003: isAccommodationSubscription() no longer reads the raw snake_case
  * `product_domain` fallback — only the typed `productDomain` property.
  *
+ * HOS-217: isOwnerCategorySubscription() — tells an owner/complex plan
+ * subscription apart from a tourist-tier one, so a HOST actor's "accommodation
+ * subscription" isn't mistaken for a real host plan just because it's in the
+ * accommodation domain.
+ *
  * No DB, no network — all mocked.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@repo/db', () => ({
+    and: vi.fn((...conditions: unknown[]) => ({ and: conditions })),
+    billingPlans: {
+        id: 'id',
+        deletedAt: 'deletedAt',
+        metadata: 'metadata'
+    },
     billingSubscriptions: {
         id: 'id',
         status: 'status',
@@ -23,12 +34,16 @@ vi.mock('@repo/db', () => ({
         promoEffectRemainingCycles: 'promoEffectRemainingCycles'
     },
     eq: vi.fn((col: unknown, val: unknown) => ({ col, val })),
-    getDb: vi.fn()
+    getDb: vi.fn(),
+    isNull: vi.fn((col: unknown) => ({ isNull: col })),
+    sql: vi.fn()
 }));
 
+import type { DrizzleClient } from '@repo/db';
 import * as dbModule from '@repo/db';
 import {
     isAccommodationSubscription,
+    isOwnerCategorySubscription,
     loadSubscriptionDiscountState
 } from '../../src/services/billing/subscription/subscription-product-domain.js';
 
@@ -153,4 +168,98 @@ describe('isAccommodationSubscription — dual-read removal (HOS-75 T-003)', () 
             expect(result).toBe(true);
         }
     );
+});
+
+describe('isOwnerCategorySubscription (HOS-217)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    /** Wires `mockGetDb` to resolve the `billing_plans` category lookup with `rows`. */
+    function mockCategoryQuery(rows: Array<{ category: string | null }>) {
+        mockGetDb.mockReturnValue({
+            select: vi.fn().mockReturnValue({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockReturnValue({
+                        limit: vi.fn().mockResolvedValue(rows)
+                    })
+                })
+            })
+        });
+    }
+
+    it('returns true when the plan category is "owner"', async () => {
+        // Arrange
+        mockCategoryQuery([{ category: 'owner' }]);
+
+        // Act
+        const result = await isOwnerCategorySubscription({ planId: 'plan-owner-basico' });
+
+        // Assert
+        expect(result).toBe(true);
+    });
+
+    it('returns true when the plan category is "complex"', async () => {
+        // Arrange
+        mockCategoryQuery([{ category: 'complex' }]);
+
+        // Act
+        const result = await isOwnerCategorySubscription({ planId: 'plan-complex-basico' });
+
+        // Assert
+        expect(result).toBe(true);
+    });
+
+    it('returns true (legacy default) when the plan is found but category is null/absent', async () => {
+        // Arrange — a plan predating the `category` metadata key: the row is
+        // found, but `metadata->>'category'` resolves to null (jsonb key
+        // missing). Must match mapDbToPlan's (plan.crud.ts) legacy default of
+        // treating an absent category as 'owner', not fail-closed to false.
+        mockCategoryQuery([{ category: null }]);
+
+        // Act
+        const result = await isOwnerCategorySubscription({ planId: 'plan-legacy-no-category' });
+
+        // Assert
+        expect(result).toBe(true);
+    });
+
+    it('returns false when the plan category is "tourist" (the HOS-217 bug case)', async () => {
+        // Arrange — e.g. the `tourist-vip` plan a HOST-role actor is still
+        // subscribed to after being auto-promoted via host-onboarding.
+        mockCategoryQuery([{ category: 'tourist' }]);
+
+        // Act
+        const result = await isOwnerCategorySubscription({ planId: 'plan-tourist-vip' });
+
+        // Assert
+        expect(result).toBe(false);
+    });
+
+    it('returns false (fail-closed) when the plan is not found', async () => {
+        // Arrange — no matching row (deleted plan, or a stale/garbage planId).
+        mockCategoryQuery([]);
+
+        // Act
+        const result = await isOwnerCategorySubscription({ planId: 'missing-plan' });
+
+        // Assert
+        expect(result).toBe(false);
+    });
+
+    it('uses the caller-provided tx instead of a standalone getDb() connection', async () => {
+        // Arrange
+        const limitMock = vi.fn().mockResolvedValue([{ category: 'owner' }]);
+        const whereMock = vi.fn().mockReturnValue({ limit: limitMock });
+        const fromMock = vi.fn().mockReturnValue({ where: whereMock });
+        const selectMock = vi.fn().mockReturnValue({ from: fromMock });
+        const fakeTx = { select: selectMock } as unknown as DrizzleClient;
+
+        // Act
+        await isOwnerCategorySubscription({ planId: 'plan-1', tx: fakeTx });
+
+        // Assert — the standalone getDb() connection was never touched.
+        expect(mockGetDb).not.toHaveBeenCalled();
+        expect(selectMock).toHaveBeenCalledTimes(1);
+    });
 });

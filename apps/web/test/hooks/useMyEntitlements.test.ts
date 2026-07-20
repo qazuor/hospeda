@@ -223,6 +223,77 @@ describe('useMyEntitlements', () => {
         expect(result.current.has('can_use_rich_description')).toBe(true);
     });
 
+    // ------------------------------------------------------------------
+    // `skip` param (HOS-217, e.g. MobileMenu.client.tsx) — a caller that
+    // already knows entitlements are irrelevant for the current actor never
+    // pays for the fetch, and un-skipping mid-lifecycle must re-assert the
+    // loading state instead of leaking a stale resolved-false.
+    // ------------------------------------------------------------------
+
+    it('does NOT fetch and resolves isLoading to false when skip is true', async () => {
+        const { result } = renderHook(() => useMyEntitlements({ skip: true }));
+
+        await waitFor(() => {
+            expect(result.current.isLoading).toBe(false);
+        });
+
+        expect(mockFetch).not.toHaveBeenCalled();
+        expect(result.current.has('can_use_rich_description')).toBe(false);
+        expect(result.current.plan).toBeNull();
+        expect(result.current.error).toBeNull();
+    });
+
+    it('re-asserts isLoading=true when transitioning from skip:true to skip:false, then resolves', async () => {
+        // Never resolves — lets us observe the intermediate isLoading=true
+        // state before the fetch settles, instead of racing straight to the
+        // final resolved state.
+        mockFetch.mockReturnValueOnce(new Promise(() => {}));
+
+        const { result, rerender } = renderHook(
+            ({ skip }: { skip: boolean }) => useMyEntitlements({ skip }),
+            {
+                initialProps: { skip: true }
+            }
+        );
+
+        // skip:true — resolved, no fetch.
+        await waitFor(() => {
+            expect(result.current.isLoading).toBe(false);
+        });
+        expect(mockFetch).not.toHaveBeenCalled();
+
+        // Un-skip: the effect must re-assert isLoading=true synchronously
+        // (the fix under test) instead of leaving the stale resolved-false
+        // from the skip branch in place while the fetch is in flight.
+        rerender({ skip: false });
+        expect(result.current.isLoading).toBe(true);
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('resolves entitlements after transitioning from skip:true to skip:false once the fetch settles', async () => {
+        mockFetch.mockResolvedValueOnce(mockSuccessResponse(ENTITLEMENTS_RESPONSE));
+
+        const { result, rerender } = renderHook(
+            ({ skip }: { skip: boolean }) => useMyEntitlements({ skip }),
+            {
+                initialProps: { skip: true }
+            }
+        );
+
+        await waitFor(() => {
+            expect(result.current.isLoading).toBe(false);
+        });
+        expect(mockFetch).not.toHaveBeenCalled();
+
+        rerender({ skip: false });
+
+        await waitFor(() => {
+            expect(result.current.isLoading).toBe(false);
+        });
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+        expect(result.current.has('can_use_rich_description')).toBe(true);
+    });
+
     it('clears entitlements when the session flips from authenticated to guest (sign-out)', async () => {
         mockFetch.mockResolvedValueOnce(mockSuccessResponse(ENTITLEMENTS_RESPONSE));
 

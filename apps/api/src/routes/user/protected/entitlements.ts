@@ -21,6 +21,11 @@
  * @route GET /api/v1/protected/users/me/entitlements
  */
 import type { EntitlementKey, LimitKey } from '@repo/billing';
+import {
+    isAccommodationSubscription,
+    isOwnerCategorySubscription,
+    RoleEnum
+} from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
@@ -42,6 +47,17 @@ import { createProtectedRoute } from '../../../utils/route-factory';
  * surfaces those defaults as `plan: null` plus the populated `entitlements`/
  * `limits` so the client knows the user is in "draft host" mode without
  * needing a separate flag.
+ *
+ * **HOS-217**: for a HOST actor, the resolved subscription must also be an
+ * `owner`/`complex`-category plan — the same category check
+ * `loadEntitlements` applies. A HOST who reached that role via
+ * host-onboarding without ever subscribing to an owner plan may still have a
+ * live *tourist* subscription (e.g. `tourist-vip`); without this check the
+ * client would see `plan: { slug: 'tourist-vip', ... }` (non-null) even
+ * though the `entitlements`/`limits` above already reflect the owner-basico
+ * draft-defaults fallback — misleadingly implying the HOST has a real host
+ * plan when they do not. Non-HOST actors are unaffected — their real
+ * tourist plan is surfaced unchanged.
  */
 const EntitlementsResponseSchema = z.object({
     entitlements: z.array(z.string()),
@@ -102,10 +118,24 @@ export const userEntitlementsRoute = createProtectedRoute({
                 const customer = await billing.customers.getByExternalId(actor.id);
                 if (customer) {
                     const subscriptions = await billing.subscriptions.getByCustomerId(customer.id);
-                    const activeSub = subscriptions?.find(
+                    let activeSub = subscriptions?.find(
                         (sub: { status: string }) =>
-                            sub.status === 'active' || sub.status === 'trialing'
+                            (sub.status === 'active' || sub.status === 'trialing') &&
+                            isAccommodationSubscription(sub)
                     );
+
+                    // HOS-217: a HOST actor's resolved subscription must also be
+                    // an owner/complex-category plan (see file JSDoc). Scoped to
+                    // HOST only — a plain tourist actor's real tourist plan must
+                    // keep surfacing unchanged.
+                    if (
+                        activeSub &&
+                        actor.role === RoleEnum.HOST &&
+                        !(await isOwnerCategorySubscription({ planId: activeSub.planId }))
+                    ) {
+                        activeSub = undefined;
+                    }
+
                     if (activeSub) {
                         const planRecord = await billing.plans.get(activeSub.planId);
                         if (planRecord) {

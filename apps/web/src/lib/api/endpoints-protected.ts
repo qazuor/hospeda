@@ -305,7 +305,9 @@ export interface SubscriptionData {
      *
      * Field names match the `QZPayScheduledPlanChange` shape stored by QZPay:
      * `newPlanId` is the target plan ID and `effectiveAt` is an ISO 8601 datetime
-     * for when the change will be applied (typically `currentPeriodEnd`).
+     * for when the change will be applied — typically `currentPeriodEnd`, or
+     * `trialEnd` when the downgrade was scheduled while still trialing
+     * (HOS-215).
      */
     readonly scheduledPlanChange?: {
         readonly newPlanId: string;

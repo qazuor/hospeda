@@ -456,7 +456,15 @@ vi.mock('@repo/service-core', async (importOriginal) => {
                     error: { code: 'NOT_FOUND', message: 'Plan not found' }
                 };
             }
-        }
+        },
+        // HOS-217: isOwnerCategorySubscription queries `billing_plans` directly via
+        // getDb() (not through PlanService), which the global @repo/db mock does not
+        // resolve to real rows — the real implementation would throw on the mocked
+        // chain. Default to `true` ("the subscription IS an owner/complex plan") so
+        // every pre-existing HOST-with-active-subscription test keeps resolving real
+        // plan entitlements unchanged; tests exercising the HOS-217 tourist-plan
+        // fallback override this per-case via `vi.mocked(isOwnerCategorySubscription)`.
+        isOwnerCategorySubscription: vi.fn().mockResolvedValue(true)
     };
 });
 

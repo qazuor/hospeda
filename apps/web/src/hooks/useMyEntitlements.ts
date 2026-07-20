@@ -27,6 +27,22 @@ import {
 // Types
 // ---------------------------------------------------------------------------
 
+/** Input for useMyEntitlements. */
+export interface UseMyEntitlementsParams {
+    /**
+     * Skip resolving entirely (RO-RO, default `false`). For a caller that
+     * already knows entitlements are irrelevant for the current actor — e.g.
+     * `MobileMenu.client.tsx` (HOS-217) only needs them to refine its
+     * HOST-only CTA, so every non-HOST authenticated visitor should never
+     * pay for the fetch even though the hook itself must be called
+     * unconditionally (rules of hooks). When `true`, `data` stays `null`
+     * (so `has()` fails closed, same shape as the guest/no-session case) and
+     * `isLoading` resolves to `false` without ever touching the network.
+     * Every existing call site omits this and is unaffected.
+     */
+    readonly skip?: boolean;
+}
+
 /** Return type for useMyEntitlements. */
 export interface UseMyEntitlementsReturn {
     /**
@@ -64,6 +80,7 @@ export function clearEntitlementsCache(): void {
 /**
  * Fetches and caches the current user's plan entitlements.
  *
+ * @param params - `{ skip? }` (RO-RO). See {@link UseMyEntitlementsParams}.
  * @returns A typed convenience object for checking entitlement flags and
  *   limit values.
  *
@@ -76,7 +93,8 @@ export function clearEntitlementsCache(): void {
  * return <RichEditor />;
  * ```
  */
-export function useMyEntitlements(): UseMyEntitlementsReturn {
+export function useMyEntitlements(params: UseMyEntitlementsParams = {}): UseMyEntitlementsReturn {
+    const { skip = false } = params;
     // Initial state is deliberately hydration-safe: it must NOT depend on the
     // shared entitlements cache. During SSR the cache is always empty
     // (isLoading=true), but on the client another island may have already
@@ -107,6 +125,26 @@ export function useMyEntitlements(): UseMyEntitlementsReturn {
     }, []);
 
     useEffect(() => {
+        // Caller opted out entirely (e.g. a non-HOST actor in MobileMenu) —
+        // resolve immediately to the same "fails closed" shape as the
+        // guest/no-session branch below, without ever touching the network.
+        if (skip) {
+            setData(null);
+            setError(null);
+            setIsLoading(false);
+            return;
+        }
+
+        // Re-assert the loading state on every meaningful effect re-run (this
+        // line only runs when `skip` is false). A caller that un-skips
+        // (`skip: true -> false`, e.g. MobileMenu once `role` resolves to
+        // HOST) may already have a stale `isLoading=false` left over from the
+        // skip branch above — without this, that stale resolved-false would
+        // leak into the un-skipped render instead of correctly going back to
+        // "loading" while the (now-relevant) session/entitlements resolve.
+        // A no-op re-render when already `true` (the common, non-un-skip case).
+        setIsLoading(true);
+
         // Session not resolved yet: stay in the loading state (has() fails
         // closed) and let the effect re-run once it settles. This also keeps
         // the initial render hydration-safe (isLoading=true on both sides).
@@ -146,7 +184,7 @@ export function useMyEntitlements(): UseMyEntitlementsReturn {
         return () => {
             cancelled = true;
         };
-    }, [isSessionPending, hasSession]);
+    }, [isSessionPending, hasSession, skip]);
 
     const entitlementSet = new Set(data?.entitlements ?? []);
 
