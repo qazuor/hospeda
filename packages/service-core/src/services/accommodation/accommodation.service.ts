@@ -1435,19 +1435,30 @@ export class AccommodationService extends BaseCrudService<
      * Intercepts updates to enforce billing gates and route lifecycle transitions
      * through the correct publish flow.
      *
-     * SPEC-217: gates ALL writes for regular HOST owners whose subscription is lapsed
+     * SPEC-217: gates writes for regular HOST owners whose subscription is lapsed
      * (`subscription_required`). Admins and billing-exempt owners are excluded.
-     * This applies to both name/field updates on published accommodations AND to
-     * DRAFT→ACTIVE transitions. The gate fires before any DB write so lapsed hosts
-     * can never mutate accommodations regardless of the payload.
+     *
+     * HOS-217-followup: `checkEligibility` became category-aware (it now requires an
+     * *owner*-category plan, not just any active subscription), which made this gate
+     * over-broad — a HOST with a non-owner plan (e.g. a tourist plan) could no longer
+     * even edit a still-unpublished DRAFT, when the intent was only to block
+     * *publishing*. The gate is therefore scoped to accommodations that are ALREADY
+     * ACTIVE: editing a DRAFT (or any other non-ACTIVE state) never requires an owner
+     * plan, only transitioning it to ACTIVE does (enforced separately by `publish()`,
+     * which is untouched by this scoping). The gate fires before any DB write so a
+     * lapsed host can never mutate an already-published accommodation regardless of
+     * the payload.
      *
      * SPEC-172: when `amenityIds` or `featureIds` are present in the update payload,
      * wraps the full update + junction sync in a `withServiceTransaction` boundary so
      * the accommodation update and the junction mutations are fully atomic.
      *
      * Behaviour matrix:
-     * - `publishDeps` wired AND owner has `subscription_required` AND actor is not admin:
-     *   → reject with FORBIDDEN immediately (all writes blocked).
+     * - `publishDeps` wired AND current accommodation is ACTIVE AND owner has
+     *   `subscription_required` AND actor is not admin:
+     *   → reject with FORBIDDEN immediately (all writes on that ACTIVE accommodation
+     *     blocked). A DRAFT (or any non-ACTIVE) accommodation never hits this branch,
+     *     regardless of owner eligibility.
      * - `lifecycleState === ACTIVE` AND current state is NOT ACTIVE AND
      *   `publishDeps` are wired AND eligibility is NOT `subscription_required`:
      *   → apply any non-lifecycle fields via the regular update pipeline first,
@@ -1478,12 +1489,21 @@ export class AccommodationService extends BaseCrudService<
         // publish branch below can reuse the result without a second DB round-trip.
         const current = this._publishDeps ? await this.model.findById(id, resolvedCtx?.tx) : null;
 
-        // SPEC-217: gate ALL writes for regular HOST owners whose subscription is
+        // SPEC-217: gate writes for regular HOST owners whose subscription is
         // lapsed. Admins (actor with ACCOMMODATION_UPDATE_ANY) and owners with
         // billing-exempt roles (ADMIN/SUPER_ADMIN/CLIENT_MANAGER) are excluded.
         // The gate only fires when publishDeps are wired; services instantiated
         // without billing deps (e.g. unit tests) are unaffected.
-        if (this._publishDeps && current) {
+        //
+        // HOS-217-followup: also only fires when the accommodation is ALREADY
+        // ACTIVE. `checkEligibility` became category-aware (requires an owner-
+        // category plan), and applying that requirement to DRAFT edits was
+        // over-broad — a HOST with a non-owner plan (e.g. tourist) could no
+        // longer even edit an unpublished draft, when only *publishing* it
+        // should require an owner plan. Editing a DRAFT (or any non-ACTIVE
+        // state) is always allowed here; the publish-time check below (and in
+        // `publish()`) is what actually enforces the owner-plan requirement.
+        if (this._publishDeps && current && current.lifecycleState === LifecycleStatusEnum.ACTIVE) {
             const actorIsAdmin = actor.permissions.includes(
                 PermissionEnum.ACCOMMODATION_UPDATE_ANY
             );

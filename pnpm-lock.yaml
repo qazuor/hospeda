@@ -22,7 +22,7 @@ overrides:
   tar-fs: '>=3.1.1'
   node-forge: '>=1.4.0'
   basic-ftp: '>=5.2.0'
-  cookie: '>=0.7.0'
+  cookie: '>=0.7.0 <2'
   path-to-regexp: '>=6.3.0'
   msw>path-to-regexp: 8.4.2
   rollup: '>=4.59.0'
@@ -38,7 +38,7 @@ overrides:
   serialize-javascript: '>=7.0.3'
   prismjs: '>=1.30.0'
   js-yaml@<4.1.1: ^4.1.1
-  undici: '>=7.28.0 <8'
+  undici: '>=8.7.0 <9'
   vite@^6.0.0: '>=8.0.16 <9'
   vite@^7.0.0: '>=8.0.16 <9'
   vite@>=6.0.0: '>=8.0.16 <9'
@@ -435,14 +435,14 @@ importers:
         specifier: ^88.0.0
         version: 88.0.0(graphql@16.14.2)
       '@qazuor/qzpay-core':
-        specifier: ^1.15.0
-        version: 1.15.0
+        specifier: ^1.16.0
+        version: 1.16.0
       '@qazuor/qzpay-hono':
         specifier: ^1.6.1
         version: 1.6.1(hono@4.12.27)(zod@4.3.6)
       '@qazuor/qzpay-mercadopago':
-        specifier: ^2.6.0
-        version: 2.6.0(mercadopago@2.12.0)
+        specifier: ^2.7.0
+        version: 2.7.0(mercadopago@2.12.0)
       '@react-email/components':
         specifier: ^1.0.12
         version: 1.0.12(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -564,8 +564,8 @@ importers:
         specifier: ^2.17.5
         version: 2.17.5
       undici:
-        specifier: '>=7.28.0 <8'
-        version: 7.28.0
+        specifier: '>=8.7.0 <9'
+        version: 8.7.0
       zod:
         specifier: 4.3.6
         version: 4.3.6
@@ -1051,11 +1051,11 @@ importers:
   packages/billing:
     dependencies:
       '@qazuor/qzpay-core':
-        specifier: ^1.15.0
-        version: 1.15.0
+        specifier: ^1.16.0
+        version: 1.16.0
       '@qazuor/qzpay-mercadopago':
-        specifier: ^2.6.0
-        version: 2.6.0(mercadopago@2.12.0)
+        specifier: ^2.7.0
+        version: 2.7.0(mercadopago@2.12.0)
       '@repo/config':
         specifier: workspace:*
         version: link:../config
@@ -1144,8 +1144,8 @@ importers:
   packages/db:
     dependencies:
       '@qazuor/qzpay-core':
-        specifier: ^1.15.0
-        version: 1.15.0
+        specifier: ^1.16.0
+        version: 1.16.0
       '@qazuor/qzpay-drizzle':
         specifier: ^1.11.0
         version: 1.11.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(postgres@3.4.8)(zod@4.3.6)
@@ -1719,8 +1719,8 @@ importers:
         version: 4.3.6
     devDependencies:
       '@qazuor/qzpay-core':
-        specifier: ^1.15.0
-        version: 1.15.0
+        specifier: ^1.16.0
+        version: 1.16.0
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -1791,8 +1791,8 @@ importers:
         specifier: ^1.6.9
         version: 1.6.9
       undici:
-        specifier: '>=7.28.0 <8'
-        version: 7.28.0
+        specifier: '>=8.7.0 <9'
+        version: 8.7.0
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:*
@@ -3939,6 +3939,10 @@ packages:
     resolution: {integrity: sha512-PuzGyrco2TRAZ4ljzcPFwFnCw/jqVRcMsXR5/Ph1o8tme8D0pVZkFJ+DWAb293wt5fHhdtUbZAc2/b3IjMNuVA==}
     engines: {node: '>=22'}
 
+  '@qazuor/qzpay-core@1.16.0':
+    resolution: {integrity: sha512-IkNxMTFDr79bBwnLsPKqbzg65YXwViuo2N1A2Rcvq4zRg3AI94RSExMmwPErVkgGxZKD+5gk6HxXSBUeeawutA==}
+    engines: {node: '>=22'}
+
   '@qazuor/qzpay-drizzle@1.11.0':
     resolution: {integrity: sha512-S6IbrVQwIda2Hbc9BXbU2jl6gfYWMlf0bm5EZyIUB9qQKAkFMLNB//Tz0K2AmINlWAvCByYKI1wwelax6BubWg==}
     engines: {node: '>=22'}
@@ -3954,8 +3958,8 @@ packages:
       hono: '>=4.0.0'
       zod: 4.3.6
 
-  '@qazuor/qzpay-mercadopago@2.6.0':
-    resolution: {integrity: sha512-beDoHDIPoJFfLv4/KidpHEiPn9UNlNIMU+rUxC5d6s4tN3jc4Q/DXNvz819WAlnXtPWPbz+fp00S7wQ78aiY1w==}
+  '@qazuor/qzpay-mercadopago@2.7.0':
+    resolution: {integrity: sha512-o5dkyTLNv+rH6gbtomjmGexf/Sm1al64o0ZtVBBpBSA2FlIO03qSa0HpGsN/fPHW+2hwuJtfUENlfNbSyvcEuA==}
     engines: {node: '>=22'}
     peerDependencies:
       mercadopago: '>=2.0.0'
@@ -11614,9 +11618,9 @@ packages:
   undici-types@8.3.0:
     resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
 
-  undici@7.28.0:
-    resolution: {integrity: sha512-cRZYrTDwWznlnRiPjggAGxZXanty6M8RV1ff8Wm4LWXBp7/IG8v5DnOm74DtUBp9OONpK75YlPnIjQqX0dBDtA==}
-    engines: {node: '>=20.18.1'}
+  undici@8.7.0:
+    resolution: {integrity: sha512-N7iQtfyLhIMOFgQubvmLV26svHpO0bqKnAiWotTQCVKCmWrcGbBotPuW1x+xwYZ2VHdSTVUfPQQnlEt1/LouTQ==}
+    engines: {node: '>=22.19.0'}
 
   unenv@2.0.0-rc.24:
     resolution: {integrity: sha512-i7qRCmY42zmCwnYlh9H2SvLEypEFGye5iRmEMKjcGi7zk9UquigRjFtTLz0TYqr0ZGLZhaMHl/foy1bZR+Cwlw==}
@@ -14855,6 +14859,8 @@ snapshots:
 
   '@qazuor/qzpay-core@1.15.0': {}
 
+  '@qazuor/qzpay-core@1.16.0': {}
+
   '@qazuor/qzpay-drizzle@1.11.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(postgres@3.4.8)(zod@4.3.6)':
     dependencies:
       '@qazuor/qzpay-core': 1.12.0
@@ -14870,9 +14876,9 @@ snapshots:
       hono: 4.12.27
       zod: 4.3.6
 
-  '@qazuor/qzpay-mercadopago@2.6.0(mercadopago@2.12.0)':
+  '@qazuor/qzpay-mercadopago@2.7.0(mercadopago@2.12.0)':
     dependencies:
-      '@qazuor/qzpay-core': 1.15.0
+      '@qazuor/qzpay-core': 1.16.0
       mercadopago: 2.12.0
 
   '@qazuor/qzpay-react@1.1.16(react@19.2.7)':
@@ -15910,7 +15916,7 @@ snapshots:
       cookie-signature: 1.2.2
       source-map-support: 0.5.21
       stream-slice: 0.1.2
-      undici: 7.28.0
+      undici: 8.7.0
     optionalDependencies:
       typescript: 6.0.3
 
@@ -23388,7 +23394,7 @@ snapshots:
 
   undici-types@8.3.0: {}
 
-  undici@7.28.0: {}
+  undici@8.7.0: {}
 
   unenv@2.0.0-rc.24:
     dependencies:

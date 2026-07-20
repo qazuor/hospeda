@@ -111,7 +111,7 @@
     },
     "packageManager": "pnpm@11.13.0",
     "engines": {
-        "node": ">=22.12.0"
+        "node": ">=22.19.0"
     },
     "dependencies": {
         "glob": "^13.0.6",

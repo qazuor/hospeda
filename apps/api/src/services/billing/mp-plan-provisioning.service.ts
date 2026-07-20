@@ -106,16 +106,30 @@ function toQZPayBillingInterval(interval: BillingIntervalLabel): QZPayBillingInt
 }
 
 /**
- * Build the MercadoPago plan `reason` (its dashboard-visible name). Kept
- * descriptive and deterministic so operators can identify a variant at a glance.
+ * Spanish labels for each billing cadence. This `reason` string is shown to the
+ * buyer on the MercadoPago checkout/dashboard, and Hospeda's default locale is
+ * `es` (Argentina market), so it must not leak the English cadence literals.
+ */
+const BILLING_INTERVAL_LABELS_ES: Record<BillingIntervalLabel, string> = {
+    monthly: 'mensual',
+    annual: 'anual',
+    daily: 'diario'
+};
+
+/**
+ * Build the MercadoPago plan `reason` (its buyer- and dashboard-visible name).
+ * Kept descriptive and deterministic so operators can identify a variant at a
+ * glance. Rendered in Spanish (Hospeda's default locale) — the `planName` is a
+ * brand display name (e.g. `Plus`) and is left as-is.
  */
 function buildPlanReason(input: {
     planName: string;
     billingInterval: BillingIntervalLabel;
     trialDays: number;
 }): string {
-    const trialLabel = input.trialDays > 0 ? `${input.trialDays}d trial` : 'no trial';
-    return `${input.planName} — ${input.billingInterval} — ${trialLabel}`;
+    const intervalLabel = BILLING_INTERVAL_LABELS_ES[input.billingInterval];
+    const trialLabel = input.trialDays > 0 ? `${input.trialDays} días de prueba` : 'sin prueba';
+    return `${input.planName} — ${intervalLabel} — ${trialLabel}`;
 }
 
 /**

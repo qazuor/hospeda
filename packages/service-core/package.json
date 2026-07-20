@@ -31,7 +31,7 @@
         "test:integration:watch": "vitest --config vitest.integration.config.ts"
     },
     "devDependencies": {
-        "@qazuor/qzpay-core": "^1.15.0",
+        "@qazuor/qzpay-core": "^1.16.0",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "^26.1.1",
         "@types/pg": "^8.20.0",

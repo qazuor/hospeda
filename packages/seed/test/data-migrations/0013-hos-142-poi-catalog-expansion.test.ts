@@ -6,8 +6,10 @@
  * `0009-hos-113-points-of-interest.test.ts` / `0012-hos-139-poi-categories.test.ts`
  * use.
  *
- * Fixture data (908 catalog POIs under `src/data/pointOfInterest/013-*.json`
- * through `926-*.json`, and the destination-relations pipeline output under
+ * Fixture data (830 catalog POIs under `src/data/pointOfInterest/013-*.json`
+ * through `926-*.json` as of the `0018-poi-curation-safe-subset` cleanup —
+ * originally 908, minus 78 non-geolocatable POIs removed by that later pass
+ * — and the destination-relations pipeline output under
  * `scripts/poi-pipeline/output/destination-relations.json`) is loaded FOR
  * REAL by the migration's own `loadJsonFiles`/`fs.readFile` calls, so a drift
  * between this test's expectations and the actual data surfaces as a real
@@ -27,15 +29,21 @@ const STUB_ACTOR: Actor = {
     permissions: []
 };
 
-/** Total POI catalog fixture count this migration inserts (HOS-142 G-1/AC-1). */
-const EXPECTED_TOTAL_POIS = 908;
+/**
+ * Total POI catalog fixture count this migration inserts (HOS-142 G-1/AC-1).
+ * Originally 908; `0018-poi-curation-safe-subset` removed 78 non-geolocatable
+ * rows (events, gas stations, fixed-location-less circuits), leaving 830 —
+ * this test reads the REAL manifest, so it reflects that later cleanup too.
+ */
+const EXPECTED_TOTAL_POIS = 830;
 
 /**
  * Total destination-POI relation rows in `destination-relations.json`
- * (verified against the real pipeline output at authoring time: 914 PRIMARY
- * + 646 NEARBY).
+ * (originally 914 PRIMARY + 646 NEARBY = 1560; `0018-poi-curation-safe-subset`
+ * removed the 174 rows referencing one of the 78 deleted POIs, leaving
+ * 836 PRIMARY + 550 NEARBY = 1386).
  */
-const EXPECTED_TOTAL_RELATION_ENTRIES = 1560;
+const EXPECTED_TOTAL_RELATION_ENTRIES = 1386;
 
 /**
  * The 4 relation entries that collide with a pair `0009` already created
@@ -51,8 +59,12 @@ const EXPECTED_NEW_RELATIONS =
     EXPECTED_PRE_EXISTING_MATCHING_PAIRS -
     EXPECTED_PRE_EXISTING_CONFLICTING_PAIRS;
 
-/** Sum of every catalog fixture's `categories[]` array length (HOS-139/HOS-142). */
-const EXPECTED_TOTAL_CATEGORY_ASSIGNMENTS = 3206;
+/**
+ * Sum of every catalog fixture's `categories[]` array length (HOS-139/HOS-142).
+ * Originally 3206 across 908 fixtures; 2907 across the 830 remaining after
+ * `0018-poi-curation-safe-subset` removed 78 fixtures.
+ */
+const EXPECTED_TOTAL_CATEGORY_ASSIGNMENTS = 2907;
 
 /** The 12 original HOS-113 POI slugs, already seeded before this migration runs. */
 const ORIGINAL_POI_SLUGS = [
@@ -313,7 +325,7 @@ function buildCtx(stores: Stores): SeedMigrationCtx {
 }
 
 describe('0013-hos-142-poi-catalog-expansion', () => {
-    it('creates all 908 POIs, the new destination relations, and every category assignment on a first run', async () => {
+    it('creates all 830 POIs, the new destination relations, and every category assignment on a first run', async () => {
         // Arrange
         const stores = buildStores();
         const ctx = buildCtx(stores);
@@ -403,7 +415,7 @@ describe('0013-hos-142-poi-catalog-expansion', () => {
         });
     });
 
-    it('creates two independent rows for the same catalog POI when it is PRIMARY for one destination and NEARBY for another (actividades_nauticas)', async () => {
+    it('creates two independent rows for the same catalog POI when it is PRIMARY for one destination and NEARBY for another (almacen_campo_la_sonada)', async () => {
         // Arrange
         const stores = buildStores();
         const ctx = buildCtx(stores);
@@ -411,13 +423,18 @@ describe('0013-hos-142-poi-catalog-expansion', () => {
         // Act
         await poiCatalogMigration.up(ctx);
 
-        // Assert — santa-ana holds the PRIMARY relation, chajari and federacion
+        // Assert — chajari holds the PRIMARY relation, federacion and santa-ana
         // hold NEARBY — three separate legitimate rows for the same POI, none of
         // them colliding on the (destinationId, pointOfInterestId) pair.
-        const poiId = 'poi-actividades_nauticas';
-        expect(stores.relationStore.get(`dest-santa-ana:${poiId}`)?.relation).toBe('PRIMARY');
-        expect(stores.relationStore.get(`dest-chajari:${poiId}`)?.relation).toBe('NEARBY');
+        //
+        // (Previously used `actividades_nauticas` as the worked example — one of
+        // the 78 POIs removed by `0018-poi-curation-safe-subset` — swapped for
+        // `almacen_campo_la_sonada`, which has the same one-PRIMARY-plus-two-
+        // NEARBY shape across the same three destinations.)
+        const poiId = 'poi-almacen_campo_la_sonada';
+        expect(stores.relationStore.get(`dest-chajari:${poiId}`)?.relation).toBe('PRIMARY');
         expect(stores.relationStore.get(`dest-federacion:${poiId}`)?.relation).toBe('NEARBY');
+        expect(stores.relationStore.get(`dest-santa-ana:${poiId}`)?.relation).toBe('NEARBY');
     });
 
     it('counts a destination as not-found (and skips its relations) when its slug is missing from the DB', async () => {

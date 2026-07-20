@@ -56,6 +56,7 @@ import * as Sentry from '@sentry/node';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { handlePlanChangeAddonRecalculation } from '../../services/addon-plan-change.service.js';
+import { resolvePlanChangeReason } from '../../services/billing/plan-change-reason.js';
 import { applyDowngradeRestrictions } from '../../services/plan-downgrade-remediation.service.js';
 import { getKeepSelectionsForChange } from '../../services/subscription-downgrade.service.js';
 import { PlanCatalogMissError } from '../../services/subscription-downgrade-excess.service.js';
@@ -383,9 +384,14 @@ async function applyOne(
                     newPlanId,
                     targetTransactionAmountMajor
                 );
+                // HOS-220: pass the plan display name as the MP preapproval
+                // `reason` so the buyer sees e.g. "VIP" instead of the raw plan
+                // UUID; `undefined` keeps the adapter's synthetic fallback.
+                const reason = await resolvePlanChangeReason({ planId: newPlanId });
                 await paymentAdapter.subscriptions.update(mpSubscriptionId, {
                     planId: newPlanId,
-                    transactionAmount: effectiveTransactionAmountMajor
+                    transactionAmount: effectiveTransactionAmountMajor,
+                    reason
                 });
                 if (effectiveTransactionAmountMajor !== targetTransactionAmountMajor) {
                     logger.info(

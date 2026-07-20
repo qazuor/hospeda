@@ -38,6 +38,7 @@ import { qzpayLogger } from '../../../lib/qzpay-logger';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { AddonService } from '../../../services/addon.service';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
+import { resolvePlanChangeReason } from '../../../services/billing/plan-change-reason';
 import { applyUpgradeRestorationsOrWarn } from '../../../services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../services/refund-lifecycle.service';
 import { clearPendingScheduledPlanChange } from '../../../services/subscription-downgrade.service';
@@ -603,9 +604,14 @@ async function confirmPlanUpgrade(input: {
                     newPlanId,
                     targetTransactionAmountMajor
                 );
+                // HOS-220: pass the plan display name as the MP preapproval
+                // `reason` so the buyer sees e.g. "VIP" instead of the raw plan
+                // UUID; `undefined` keeps the adapter's synthetic fallback.
+                const reason = await resolvePlanChangeReason({ planId: newPlanId });
                 await paymentAdapter.subscriptions.update(mpSubscriptionId, {
                     planId: newPlanId,
-                    transactionAmount: effectiveTransactionAmountMajor
+                    transactionAmount: effectiveTransactionAmountMajor,
+                    reason
                 });
                 if (effectiveTransactionAmountMajor !== targetTransactionAmountMajor) {
                     apiLogger.info(
