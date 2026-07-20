@@ -188,7 +188,12 @@
         "list": {
             "title": "Mis propiedades",
             "subtitle": "Gestioná tus publicaciones",
-            "publishAnother": "Publicar otra"
+            "publishAnother": "Publicar otra",
+            "needsPlanBanner": {
+                "title": "Elegí tu plan para publicar",
+                "description": "Tenés propiedades en borrador. Para publicarlas necesitás un plan de anfitrión activo.",
+                "cta": "Ver planes de anfitrión"
+            }
         },
         "usage": {
             "label": "{{current}} de {{max}} propiedades",

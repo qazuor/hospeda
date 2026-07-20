@@ -34,6 +34,7 @@
  * Tasks: T-074
  */
 
+import { EntitlementKey } from '@repo/billing';
 import { CloseIcon, SearchIcon } from '@repo/icons';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
@@ -41,6 +42,7 @@ import { ThemeControl } from '@/components/shared/preferences/ThemeControl.clien
 import { IconButton } from '@/components/ui/IconButtonReact';
 import type { NavItem as AccountNavItem } from '@/config/navigation';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
+import { useMyEntitlements } from '@/hooks/useMyEntitlements';
 import { buildAdminPanelItem } from '@/lib/admin-panel-link';
 import type { AuthMeUser } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
@@ -177,8 +179,36 @@ export function MobileMenu({
     // surfaces. Unauthenticated visitors and tourists keep the /publicar
     // funnel. `role` starts at `initialRole` and is refined by the same
     // hook resolution as `user`/`permissions` above.
+    //
+    // HOS-217: `role === 'HOST'` alone is not entitlement-aware — a TOURIST
+    // who completes host-onboarding reaches role=HOST immediately, even
+    // before ever subscribing to an owner plan. `useMyEntitlements` (same
+    // hook already used elsewhere, e.g. `useCompareGuard`) resolves the
+    // actor's real entitlement set; `PUBLISH_ACCOMMODATIONS` /
+    // `EDIT_ACCOMMODATION_INFO` is granted either by a real owner plan or by
+    // the `owner-basico` draft-defaults fallback for a HOST with no plan yet
+    // (see `loadEntitlements` HOS-217), so it's absent only in the bug case
+    // (a data-integrity edge case aside). `hasEntitlement` starts `false`
+    // while `isLoading` (fail-closed by the hook's own contract) — ORing in
+    // `entitlementsLoading` here keeps first paint identical to the SSR hint
+    // (`role === 'HOST'`, matching `Header.astro`'s `isAlreadyHost` on the
+    // same page) and only downgrades to the /publicar funnel once the real
+    // entitlement resolves negative, instead of flashing the wrong CTA for
+    // every HOST on every load while the fetch is in flight.
     // ------------------------------------------------------------------
-    const isHostMode = role === 'HOST' && Boolean(adminPanelUrl);
+    // `skip` when role isn't (yet, or ever) HOST — avoids firing the
+    // entitlements fetch for every authenticated visitor on every page just
+    // to refine a CTA that only HOST actors see anyway. `role` starts at
+    // `initialRole` (the SSR hint), so this is already correct on first
+    // render — no extra hydration-mismatch risk.
+    const { has: hasEntitlement, isLoading: entitlementsLoading } = useMyEntitlements({
+        skip: role !== 'HOST'
+    });
+    const hostHasEntitlement =
+        entitlementsLoading ||
+        hasEntitlement(EntitlementKey.PUBLISH_ACCOMMODATIONS) ||
+        hasEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO);
+    const isHostMode = role === 'HOST' && Boolean(adminPanelUrl) && hostHasEntitlement;
     const ctaLabel = isHostMode ? t('nav.hostModeCta', 'Modo anfitrión') : t('nav.ownerCta');
     const ctaHref = isHostMode
         ? (adminPanelUrl as string)

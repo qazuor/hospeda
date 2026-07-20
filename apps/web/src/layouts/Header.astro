@@ -23,6 +23,7 @@
  */
 
 import { getImage, Image } from "astro:assets";
+import { EntitlementKey } from "@repo/billing";
 import { BuildingIcon, HamburgerIcon } from "@repo/icons";
 import MobileMenuIsland from "@/components/shared/navigation/MobileMenuIsland.astro";
 // Side-effect import of the mobile menu's CSS module. ClientRouter has
@@ -40,9 +41,10 @@ import { LanguageSwitcher } from "@/components/shared/preferences/LanguageSwitch
 import { ThemeControl } from "@/components/shared/preferences/ThemeControl.client";
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import IconButton from '@/components/shared/ui/IconButton.astro';
-import { getAdminUrl } from "@/lib/env";
+import { getAdminUrl, getApiUrl } from "@/lib/env";
 import { createTranslations } from "@/lib/i18n";
 import type { SupportedLocale } from "@/lib/i18n";
+import { webLogger as logger } from "@/lib/logger";
 import { buildUrl } from "@/lib/urls";
 import logoSrc from "@/assets/images/logo.webp";
 
@@ -121,9 +123,55 @@ const adminPanelUrl = getAdminUrl();
  * concern is CTA destination, not CTA visibility. On SSG pages where
  * middleware does not parse the session, `serverUser` is null and the CTA
  * is shown — the correct default for guests.
+ *
+ * **HOS-217**: a plain `role === 'HOST'` check is not entitlement-aware — a
+ * TOURIST who completes host-onboarding reaches `role=HOST` immediately, even
+ * before ever subscribing to an owner plan. For that role specifically (not
+ * the staff roles below, which bypass billing entirely and are always
+ * unlimited), confirm the actor actually holds a real host entitlement
+ * (`PUBLISH_ACCOMMODATIONS` or `EDIT_ACCOMMODATION_INFO` — granted either by a
+ * real owner plan or by the `owner-basico` draft-defaults fallback for a
+ * HOST with no plan yet, see `loadEntitlements` HOS-217) before hiding the
+ * CTA. This is an SSR-only server-side fetch to the already-existing
+ * `/protected/users/me/entitlements` endpoint (same pattern as
+ * `pages/[lang]/publicar/nueva.astro`), gated on `role === 'HOST'` so the
+ * vast majority of page views (guests, tourists, staff) never pay for the
+ * extra request. Fails open on any error (falls back to the plain
+ * role check) so a transient API issue never regresses an existing host.
  */
-const isAlreadyHost = serverUser?.role === 'HOST' || serverUser?.role === 'ADMIN' ||
-    serverUser?.role === 'CLIENT_MANAGER' || serverUser?.role === 'SUPER_ADMIN';
+let hostHasEntitlement = true;
+if (serverUser?.role === 'HOST') {
+    try {
+        const cookieHeader = Astro.request.headers.get('cookie');
+        if (cookieHeader) {
+            const entitlementsResponse = await fetch(
+                `${getApiUrl()}/api/v1/protected/users/me/entitlements`,
+                { headers: { cookie: cookieHeader } }
+            );
+            if (entitlementsResponse.ok) {
+                const json = (await entitlementsResponse.json()) as {
+                    data?: { entitlements?: readonly string[] };
+                };
+                const entitlements = json.data?.entitlements ?? [];
+                hostHasEntitlement =
+                    entitlements.includes(EntitlementKey.PUBLISH_ACCOMMODATIONS) ||
+                    entitlements.includes(EntitlementKey.EDIT_ACCOMMODATION_INFO);
+            } else {
+                logger.warn('Header: entitlements fetch returned non-ok', {
+                    status: entitlementsResponse.status
+                });
+            }
+        }
+    } catch (error) {
+        logger.warn('Header: failed to resolve HOST entitlements — defaulting to role-based CTA visibility', { error });
+    }
+}
+
+const isAlreadyHost =
+    (serverUser?.role === 'HOST' && hostHasEntitlement) ||
+    serverUser?.role === 'ADMIN' ||
+    serverUser?.role === 'CLIENT_MANAGER' ||
+    serverUser?.role === 'SUPER_ADMIN';
 ---
 
 <header data-header class:list={['header', { 'header--hero': isHero }]} role="banner">

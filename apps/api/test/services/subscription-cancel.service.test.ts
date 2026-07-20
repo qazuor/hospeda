@@ -87,6 +87,7 @@ vi.mock('@repo/db', () => ({
         cancelAtPeriodEnd: 'cancel_at_period_end',
         canceledAt: 'canceled_at',
         currentPeriodEnd: 'current_period_end',
+        trialEnd: 'trial_end',
         planId: 'plan_id',
         updatedAt: 'updated_at'
     },
@@ -179,6 +180,7 @@ interface SubRow {
     cancelAtPeriodEnd: boolean;
     canceledAt: Date | null;
     currentPeriodEnd: Date;
+    trialEnd: Date | null;
     planId: string;
 }
 
@@ -191,6 +193,7 @@ function buildSubRow(overrides: Partial<SubRow> = {}): SubRow {
         cancelAtPeriodEnd: false,
         canceledAt: null,
         currentPeriodEnd: CURRENT_PERIOD_END,
+        trialEnd: null,
         planId: PLAN_ID,
         ...overrides
     };
@@ -549,14 +552,15 @@ describe('softCancelSubscription', () => {
             ).resolves.toBeDefined();
         });
 
-        // HOS-211: `accessUntil` is read straight off `existingRow.currentPeriodEnd`
-        // (see the service's Step 8 return) — for a `trialing` row that column is
-        // kept in sync with the REAL MercadoPago trial end by the browser-link
-        // preapproval sync fix. Uses a distinct future date (not the shared
-        // CURRENT_PERIOD_END fixture) so this test would fail if the service ever
-        // started deriving `accessUntil` from something else (e.g. a hardcoded
-        // "now + trial days" computation) instead of the synced DB column.
-        it('soft-cancel of a trial returns accessUntil equal to the real synced trial end', async () => {
+        // HOS-211/HOS-215: when the row carries no `trialEnd` (the pre-HOS-215
+        // shape, or a trial-less row), `accessUntil` still falls back to
+        // `existingRow.currentPeriodEnd` exactly as before — no regression for
+        // rows that predate the trialEnd-aware fix. Uses a distinct future date
+        // (not the shared CURRENT_PERIOD_END fixture) so this test would fail if
+        // the service ever started deriving `accessUntil` from something else
+        // (e.g. a hardcoded "now + trial days" computation) instead of the DB
+        // column.
+        it('soft-cancel of a trial with no trialEnd falls back to currentPeriodEnd', async () => {
             const REAL_TRIAL_END = new Date('2026-08-22T14:30:00.000Z');
             setupDbSelectRow(buildSubRow({ status: 'trialing', currentPeriodEnd: REAL_TRIAL_END }));
             billing = buildBillingMock({
@@ -590,6 +594,88 @@ describe('softCancelSubscription', () => {
 
             expect(caught).toBeInstanceOf(ServiceError);
             expect((caught as ServiceError).code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
+    });
+
+    // ── HOS-215: trial-aware accessUntil ──────────────────────────────────────
+
+    describe('HOS-215 — trial-aware accessUntil', () => {
+        it('uses trialEnd (not currentPeriodEnd) when trialing with a future trialEnd', async () => {
+            const FUTURE_TRIAL_END = new Date('2026-08-01T00:00:00.000Z');
+            // currentPeriodEnd deliberately differs from trialEnd so the test
+            // fails if the service ever falls back to the wrong column.
+            const row = buildSubRow({
+                status: 'trialing',
+                currentPeriodEnd: new Date('2026-12-31T23:59:59.000Z'),
+                trialEnd: FUTURE_TRIAL_END
+            });
+            setupDbSelectRow(row);
+            billing = buildBillingMock({ ...row, canceledAt: CANCELED_AT });
+
+            const result = await softCancelSubscription({
+                billing: billing as never,
+                subscriptionId: SUB_ID,
+                customerId: CUSTOMER_ID
+            });
+
+            expect(result.accessUntil.getTime()).toBe(FUTURE_TRIAL_END.getTime());
+        });
+
+        it('falls back to currentPeriodEnd when trialing but trialEnd is null', async () => {
+            const row = buildSubRow({
+                status: 'trialing',
+                currentPeriodEnd: CURRENT_PERIOD_END,
+                trialEnd: null
+            });
+            setupDbSelectRow(row);
+            billing = buildBillingMock({ ...row, canceledAt: CANCELED_AT });
+
+            const result = await softCancelSubscription({
+                billing: billing as never,
+                subscriptionId: SUB_ID,
+                customerId: CUSTOMER_ID
+            });
+
+            expect(result.accessUntil.getTime()).toBe(CURRENT_PERIOD_END.getTime());
+        });
+
+        it('falls back to currentPeriodEnd when trialing but trialEnd is already in the past', async () => {
+            const PAST_TRIAL_END = new Date('2020-01-01T00:00:00.000Z');
+            const row = buildSubRow({
+                status: 'trialing',
+                currentPeriodEnd: CURRENT_PERIOD_END,
+                trialEnd: PAST_TRIAL_END
+            });
+            setupDbSelectRow(row);
+            billing = buildBillingMock({ ...row, canceledAt: CANCELED_AT });
+
+            const result = await softCancelSubscription({
+                billing: billing as never,
+                subscriptionId: SUB_ID,
+                customerId: CUSTOMER_ID
+            });
+
+            expect(result.accessUntil.getTime()).toBe(CURRENT_PERIOD_END.getTime());
+        });
+
+        it('regression: non-trialing status always uses currentPeriodEnd, even with a trialEnd set', async () => {
+            // A resolved subscription can still carry a historical trialEnd —
+            // it must NOT be used once status is no longer 'trialing'.
+            const row = buildSubRow({
+                status: 'active',
+                currentPeriodEnd: CURRENT_PERIOD_END,
+                trialEnd: new Date('2026-08-01T00:00:00.000Z')
+            });
+            setupDbSelectRow(row);
+            billing = buildBillingMock({ ...row, canceledAt: CANCELED_AT });
+
+            const result = await softCancelSubscription({
+                billing: billing as never,
+                subscriptionId: SUB_ID,
+                customerId: CUSTOMER_ID
+            });
+
+            expect(result.accessUntil.getTime()).toBe(CURRENT_PERIOD_END.getTime());
         });
     });
 

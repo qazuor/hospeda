@@ -61,7 +61,11 @@ vi.mock('../../../../src/components/ui/IconButtonReact', () => ({
 }));
 
 vi.mock('../../../../src/lib/auth-client', () => ({
-    signOut: vi.fn().mockResolvedValue(undefined)
+    signOut: vi.fn().mockResolvedValue(undefined),
+    // HOS-217: MobileMenu now also calls useMyEntitlements (host-mode CTA
+    // entitlement refinement), which reads Better Auth's useSession directly.
+    // Perpetually-pending — irrelevant to this file's account-block assertions.
+    useSession: vi.fn(() => ({ data: null, isPending: true }))
 }));
 
 vi.mock('../../../../src/lib/env', () => ({

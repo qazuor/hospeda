@@ -95,7 +95,12 @@ const SubscriptionResponseSchema = z.object({
                 .object({
                     /** Plan id the subscription will switch to at `effectiveAt`. */
                     newPlanId: z.string(),
-                    /** ISO 8601 timestamp when the change will be applied (= currentPeriodEnd at schedule time). */
+                    /**
+                     * ISO 8601 timestamp when the change will be applied. This is
+                     * `currentPeriodEnd` at schedule time, EXCEPT when the
+                     * subscription was still `trialing` with a future `trialEnd` at
+                     * schedule time — in that case it is `trialEnd` (HOS-215).
+                     */
                     effectiveAt: z.string()
                 })
                 .nullable()

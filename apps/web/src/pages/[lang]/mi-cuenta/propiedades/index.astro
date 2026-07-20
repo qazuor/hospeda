@@ -16,7 +16,9 @@
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
+import { LifecycleStatusEnum } from '@repo/schemas';
 import type { Accommodation } from '@repo/schemas';
+import { CreditCardIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -69,6 +71,13 @@ let fetchError = false;
 // ── Usage/limit data for plan-awareness badge ──
 let usageData: { currentUsage: number; maxAllowed: number; threshold: string } | null = null;
 
+// ── HOS-217: does the owner have a REAL owner/complex plan? ──
+// Fail-open (`true`) on any fetch error — this only gates a proactive nag
+// banner, never actual publish capability (the `/publish` endpoint is the
+// enforcement point via `checkEligibility`), so a transient API failure
+// must not falsely nag a paying host.
+let hasOwnerPlan = true;
+
 try {
     const apiUrl = getApiUrl();
     const cookieHeader = Astro.request.headers.get('cookie');
@@ -79,8 +88,8 @@ try {
             Accept: 'application/json'
         };
 
-        // Parallel fetch: accommodations + usage limit
-        const [accomResponse, usageResponse] = await Promise.all([
+        // Parallel fetch: accommodations + usage limit + entitlements/plan
+        const [accomResponse, usageResponse, entitlementsResponse] = await Promise.all([
             fetch(
                 `${apiUrl}/api/v1/protected/accommodations?pageSize=50&sortBy=createdAt&sortOrder=desc`,
                 { headers }
@@ -88,7 +97,8 @@ try {
             fetch(
                 `${apiUrl}/api/v1/protected/billing/usage/${MAX_ACCOMMODATIONS_LIMIT_KEY}`,
                 { headers }
-            )
+            ),
+            fetch(`${apiUrl}/api/v1/protected/users/me/entitlements`, { headers })
         ]);
 
         if (accomResponse.ok) {
@@ -105,6 +115,22 @@ try {
             usageData = parseUsageResponse({ json: await usageResponse.json() });
         }
         // Usage fetch failure is non-critical — badge simply won't render
+
+        if (entitlementsResponse.ok) {
+            // `plan` is null when the owner has no real owner/complex-category
+            // subscription — including the HOS-217 bug case (a HOST whose only
+            // live subscription is a tourist plan, or a HOST with no
+            // subscription at all resolving owner-basico draft defaults).
+            const entJson = (await entitlementsResponse.json()) as {
+                data?: { plan?: unknown };
+            };
+            hasOwnerPlan = entJson.data?.plan != null;
+        } else {
+            logger.warn('[propiedades] entitlements fetch returned non-ok', {
+                status: entitlementsResponse.status
+            });
+        }
+        // Entitlements fetch failure is non-fatal — hasOwnerPlan stays true (fail-open)
     }
 } catch (err) {
     fetchError = true;
@@ -123,8 +149,26 @@ const emptyMessage = t('host.properties.empty.title', 'Aún no publicaste ningun
 const emptyCta = t('host.properties.empty.cta', 'Publicar ahora');
 
 const publishNewUrl = buildUrl({ locale, path: 'publicar/nueva' });
+const subscriptionUrl = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
 
 const isEmpty = properties.length === 0;
+
+// HOS-217: proactive "pick a host plan" banner — an owner with at least one
+// DRAFT property but no real owner/complex subscription would otherwise only
+// discover they can't publish by clicking "Publicar" on the card and hitting
+// the `subscription_required` error. Surfacing it here (list level) instead
+// of only reactively (card level) matches the requested onboarding journey.
+const hasDraftProperty = properties.some(
+    (property) => property.lifecycleState === LifecycleStatusEnum.DRAFT
+);
+const showNeedsPlanBanner = !isEmpty && !fetchError && hasDraftProperty && !hasOwnerPlan;
+
+const needsPlanTitle = t('host.properties.list.needsPlanBanner.title', 'Elegí tu plan para publicar');
+const needsPlanDescription = t(
+    'host.properties.list.needsPlanBanner.description',
+    'Tenés propiedades en borrador. Para publicarlas necesitás un plan de anfitrión activo.'
+);
+const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Ver planes de anfitrión');
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="propiedades">
@@ -141,6 +185,22 @@ const isEmpty = properties.length === 0;
             </a>
         )}
     </div>
+
+    {/* ── HOS-217: proactive "pick a host plan" banner ── */}
+    {showNeedsPlanBanner && (
+        <aside class="props-page__needs-plan" role="note">
+            <div class="props-page__needs-plan-icon" aria-hidden="true">
+                <CreditCardIcon size={20} weight="fill" />
+            </div>
+            <div class="props-page__needs-plan-body">
+                <p class="props-page__needs-plan-title">{needsPlanTitle}</p>
+                <p class="props-page__needs-plan-text">{needsPlanDescription}</p>
+            </div>
+            <a href={subscriptionUrl} class:list={['props-page__needs-plan-cta', btn.primary]}>
+                {needsPlanCta}
+            </a>
+        </aside>
+    )}
 
     {/* ── Plan/limit awareness badge ── */}
     {usageData && usageData.maxAllowed > 0 && (
@@ -257,6 +317,68 @@ const isEmpty = properties.length === 0;
 
     .props-page__usage-upgrade:hover {
         opacity: 0.88;
+    }
+
+    /* ── HOS-217: proactive "pick a host plan" banner ──
+       Layout mirrors SearchContextBanner.astro's info-banner pattern (icon +
+       body + accent left-border), plus a CTA button since this one is
+       actionable (link to the subscription page), not purely informational. */
+    .props-page__needs-plan {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3, 0.75rem);
+        padding: 16px 20px;
+        margin-bottom: var(--space-6, 1.5rem);
+        background-color: var(--surface-warm);
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--brand-accent);
+        border-radius: var(--radius-md, 12px);
+    }
+
+    @media (min-width: 640px) {
+        .props-page__needs-plan {
+            flex-direction: row;
+            align-items: center;
+        }
+    }
+
+    .props-page__needs-plan-icon {
+        color: var(--brand-accent);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .props-page__needs-plan-body {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .props-page__needs-plan-title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 15px;
+        line-height: 1.3;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .props-page__needs-plan-text {
+        font-family: var(--font-sans);
+        font-size: 14px;
+        line-height: 1.5;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .props-page__needs-plan-cta {
+        flex-shrink: 0;
+        text-decoration: none;
+        white-space: nowrap;
     }
 
     /* ── Page header ── */

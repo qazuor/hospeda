@@ -20,7 +20,16 @@
  * @module services/billing/subscription/subscription-product-domain
  */
 
-import { billingSubscriptions, type DrizzleClient, eq, getDb } from '@repo/db';
+import {
+    and,
+    billingPlans,
+    billingSubscriptions,
+    type DrizzleClient,
+    eq,
+    getDb,
+    isNull,
+    sql
+} from '@repo/db';
 
 /**
  * Discount-relevant state for a single subscription, as loaded by
@@ -83,6 +92,75 @@ export function isAccommodationSubscription(sub: unknown): boolean {
     }
 
     return false;
+}
+
+/**
+ * Returns `true` when the subscription's plan belongs to the `'owner'` or
+ * `'complex'` billing-plan category (HOS-217).
+ *
+ * **Why this exists**: `isAccommodationSubscription` only tells apart the
+ * accommodation vs. commerce/partner *product domain* — it does NOT tell
+ * apart an actual host plan from a tourist-tier plan (e.g. `tourist-vip`)
+ * that also lives in the accommodation domain. A user can reach `role=HOST`
+ * without ever subscribing to an owner plan (auto-promoted by
+ * `AccommodationService.createForOnboarding` on the host-onboarding flow),
+ * so a tourist subscription can end up being "the" accommodation
+ * subscription `loadEntitlements`/`checkEligibility` find for them. Without
+ * this check, that tourist plan's entitlements (which do NOT include
+ * `EDIT_ACCOMMODATION_INFO`/`PUBLISH_ACCOMMODATIONS`) get resolved instead of
+ * falling back to the `owner-basico` draft defaults, and the owner is
+ * incorrectly treated as eligible to publish.
+ *
+ * Reads `billing_plans.metadata->>'category'` directly (the same jsonb path
+ * `plan.crud.ts`'s `mapDbToPlan` uses) rather than going through the full
+ * `getPlanById` CRUD helper, to avoid the extra `billing_prices` join on a
+ * hot path (`loadEntitlements` runs on every entitlement-cache miss;
+ * `checkEligibility` runs on every publish attempt) — mirrors
+ * {@link loadSubscriptionDiscountState}'s "narrow typed query" convention in
+ * this same file rather than pulling in the heavier CRUD module.
+ *
+ * Soft-deleted plans (`deletedAt IS NOT NULL`) are excluded and treated as
+ * "not an owner plan" (fail-closed) — same as `getPlanById`'s NOT_FOUND
+ * behavior for a deleted plan.
+ *
+ * A `null`/`undefined` `category` (metadata without the key at all) is
+ * treated as `'owner'` — matching `mapDbToPlan`'s (`plan.crud.ts`) legacy
+ * default for the same field, so a plan predating the `category` metadata
+ * key resolves identically whether read through this narrow query or the
+ * full CRUD helper.
+ *
+ * @param input.planId - The subscription's `planId` (`billing_plans.id`).
+ * @param input.tx - Optional Drizzle client (e.g. a caller-provided
+ *   transaction) so the read participates in the caller's boundary. Defaults
+ *   to a standalone `getDb()` connection.
+ * @returns `true` when the plan's category is `'owner'` or `'complex'`;
+ *   `false` for `'tourist'` or when the plan cannot be found (fail-closed).
+ *
+ * @example
+ * ```ts
+ * const isRealOwnerSub = await isOwnerCategorySubscription({ planId: activeSubscription.planId });
+ * if (!isRealOwnerSub) {
+ *   // treat as "no owner subscription" — fall back to owner-basico draft defaults
+ * }
+ * ```
+ */
+export async function isOwnerCategorySubscription(input: {
+    planId: string;
+    tx?: DrizzleClient;
+}): Promise<boolean> {
+    const db = input.tx ?? getDb();
+    const [row] = await db
+        .select({ category: sql<string | null>`${billingPlans.metadata}->>'category'` })
+        .from(billingPlans)
+        .where(and(eq(billingPlans.id, input.planId), isNull(billingPlans.deletedAt)))
+        .limit(1);
+
+    if (!row) {
+        return false;
+    }
+
+    const category = row.category ?? 'owner';
+    return category === 'owner' || category === 'complex';
 }
 
 /**
