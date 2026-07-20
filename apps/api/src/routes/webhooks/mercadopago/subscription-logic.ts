@@ -300,24 +300,35 @@ export async function completeReactivationSupersession({
  * Reads whether a live MercadoPago preapproval carries a card-first free trial
  * (HOS-211).
  *
- * `auto_recurring.free_trial` lives on the raw MP payload, NOT on qzpay's typed
- * `QZPayProviderSubscription` shape returned by `subscriptions.retrieve()` — the
- * typed shape only surfaces `currentPeriodStart`/`currentPeriodEnd`/`trialStart`/
- * `trialEnd` as already-normalized `Date`s, it does not surface the raw
- * `auto_recurring` object qzpay itself read those from. The retrieve() response
- * still carries the raw snake_case fields alongside the typed camelCase ones
- * (nothing strips them), so this reads it via a `Record` cast — the identical
- * pattern `extractLiveTransactionAmountMajor` in
- * `apps/api/src/services/billing/apply-price-increase.service.ts` uses for
- * `auto_recurring.transaction_amount`.
+ * **Corrected, HOS-211 follow-up**: this was originally documented as reading
+ * `auto_recurring.free_trial` off the raw snake_case payload that supposedly
+ * survives alongside qzpay's typed fields on `subscriptions.retrieve()`. That
+ * claim was FALSE — `@qazuor/qzpay-mercadopago@2.6.0`'s `mapToProviderSubscription()`
+ * builds a closed camelCase object (`id`, `status`, `currentPeriodStart`,
+ * `currentPeriodEnd`, `cancelAtPeriodEnd`, `canceledAt`, `trialStart`, `trialEnd`,
+ * `metadata`) with NO `auto_recurring` key at all, and hardcodes `trialStart`/
+ * `trialEnd` to `null` unconditionally. This function therefore ALWAYS returned
+ * `false` against a real MP response, which is exactly how every card-first
+ * trial subscription landed as `active`/`trial_end=null` instead of `trialing`
+ * (the bug this comment used to misdescribe as already handled).
  *
- * When present, `auto_recurring.free_trial` is an object like
- * `{ frequency: 14, frequency_type: 'days' }`; absent or `null` when the
- * preapproval carries no trial.
+ * The real fix (Option B) is upstream of this function: `trial_end` is now
+ * PERSISTED on the local `billing_subscriptions` row at subscription creation
+ * time, computed from `freeTrialDays` (already resolved at checkout by
+ * `resolveCheckoutFreeTrialDays`) — see
+ * `apps/api/src/services/billing/pending-provider-subscription-create.ts`. The
+ * caller's preserve-if-set logic (`resolvedTrialEnd = localSubscription.trialEnd
+ * ?? ...`) picks that up directly, without ever needing this helper.
  *
- * @param livePreapproval - The raw object returned by `subscriptions.retrieve()`.
+ * This function remains ONLY as a defensive fallback for the (currently
+ * unreachable in prod) case where `livePreapproval` genuinely does carry an
+ * `auto_recurring.free_trial` object — e.g. a future qzpay version, a test
+ * double, or a differently-shaped provider response. Do not rely on it firing
+ * against real MercadoPago traffic today.
+ *
+ * @param livePreapproval - The object returned by `subscriptions.retrieve()`.
  * @returns `true` only when `auto_recurring.free_trial` is a non-null object with
- *   a positive `frequency`.
+ *   a positive `frequency`. Always `false` for qzpay's real mapped shape.
  */
 function livePreapprovalHasFreeTrial(livePreapproval: unknown): boolean {
     if (typeof livePreapproval !== 'object' || livePreapproval === null) {

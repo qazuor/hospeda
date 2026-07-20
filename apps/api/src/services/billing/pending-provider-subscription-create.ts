@@ -98,6 +98,19 @@ export interface CreatePendingProviderSubscriptionInput {
      * `TRIALING` is derived, never stored at creation).
      */
     readonly trialGranted: boolean;
+    /**
+     * Free trial length in days, resolved once at checkout by
+     * `resolveCheckoutFreeTrialDays` (plan base + any `trial_extension` promo).
+     * `undefined` when no trial applies. Persisted here (HOS-211 Option B) as
+     * `trialStart`/`trialEnd` on the row itself, so the eventual webhook's
+     * preserve-if-set logic (`resolvedTrialEnd = localSubscription.trialEnd ?? ...`
+     * in `subscription-logic.ts`) can derive `trialing` WITHOUT depending on
+     * `auto_recurring.free_trial` being present on qzpay's `retrieve()` response
+     * — which it is not, on `@qazuor/qzpay-mercadopago@2.6.0`'s mapped shape.
+     * Does NOT change `status`, which stays `pending_provider` regardless (see
+     * the insert below) — entitlements gate on status only (HOS-171).
+     */
+    readonly freeTrialDays?: number;
     /** A resolved-but-not-yet-applied discount (SPEC-262), if a `discount` promo code was used. */
     readonly pendingDiscount?: PendingCheckoutDiscount;
     /** Product domain to stamp on the subscription. Defaults to `'accommodation'`. */
@@ -139,6 +152,7 @@ export interface CreatePendingProviderSubscriptionResult {
  *   mpPreapprovalPlanId: providerPriceId,
  *   payerEmail: customer.email,
  *   trialGranted: freeTrialDays !== undefined,
+ *   freeTrialDays,
  *   livemode: customer.livemode
  * });
  * ```
@@ -154,6 +168,7 @@ export async function createPendingProviderSubscription(
         mpPreapprovalPlanId,
         payerEmail,
         trialGranted,
+        freeTrialDays,
         pendingDiscount,
         livemode
     } = input;
@@ -190,6 +205,18 @@ export async function createPendingProviderSubscription(
             // billing period; `current_period_end` is NOT NULL in the schema.
             currentPeriodEnd: expiresAt,
             status: SubscriptionStatusEnum.PENDING_PROVIDER,
+            // HOS-211 Option B: persist the trial window at creation time, from
+            // the checkout-time-resolved `freeTrialDays`, instead of relying on
+            // the webhook to derive it from a live `auto_recurring.free_trial`
+            // that qzpay's mapped subscription shape does not expose. `status`
+            // intentionally stays `pending_provider` above — a set `trialEnd` on
+            // a pending row grants nothing until the webhook flips status, per
+            // the HOS-171 guard (entitlements gate on status, never trial_end).
+            trialStart: freeTrialDays === undefined ? null : now,
+            trialEnd:
+                freeTrialDays === undefined
+                    ? null
+                    : new Date(now.getTime() + freeTrialDays * 24 * 60 * 60 * 1000),
             livemode,
             metadata: {
                 source: 'start-paid-share-link',
