@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "010-point-of-interest-balneario_itape",
     "slug": "balneario_itape",
-    "lat": null,
-    "long": null,
+    "lat": -32.5005771,
+    "long": -58.229137,
     "type": "BEACH",
     "description": "Balneario sobre el río Uruguay cercano a la ciudad de Colón",
     "nameI18n": {

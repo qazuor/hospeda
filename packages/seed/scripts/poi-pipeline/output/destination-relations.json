@@ -5,21 +5,6 @@
         "relation": "PRIMARY"
     },
     {
-        "destinationSlug": "chajari",
-        "poiSlug": "actividades_nauticas",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "federacion",
-        "poiSlug": "actividades_nauticas",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "santa-ana",
-        "poiSlug": "actividades_nauticas",
-        "relation": "PRIMARY"
-    },
-    {
         "destinationSlug": "san-jose",
         "poiSlug": "administracion_complejo_turistico",
         "relation": "PRIMARY"
@@ -357,26 +342,6 @@
     {
         "destinationSlug": "concepcion-del-uruguay",
         "poiSlug": "autodromo_concepcion_del_uruguay",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "ceibas",
-        "poiSlug": "avistaje_aves",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ibicuy",
-        "poiSlug": "avistaje_aves",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "paranacito",
-        "poiSlug": "avistaje_aves",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "caseros",
-        "poiSlug": "axion",
         "relation": "PRIMARY"
     },
     {
@@ -790,36 +755,6 @@
         "relation": "PRIMARY"
     },
     {
-        "destinationSlug": "caseros",
-        "poiSlug": "cabalgata_camino_real",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "concepcion-del-uruguay",
-        "poiSlug": "cabalgata_camino_real",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "san-justo",
-        "poiSlug": "cabalgata_camino_real",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "ibicuy",
-        "poiSlug": "cabalgatas_humedal",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "paranacito",
-        "poiSlug": "cabalgatas_humedal",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ceibas",
-        "poiSlug": "cabalgatas_humedal",
-        "relation": "PRIMARY"
-    },
-    {
         "destinationSlug": "rosario-del-tala",
         "poiSlug": "calera_osinalde_izaguirre",
         "relation": "PRIMARY"
@@ -1080,46 +1015,6 @@
         "relation": "PRIMARY"
     },
     {
-        "destinationSlug": "gualeguay",
-        "poiSlug": "carnaval_del_pais",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "larroque",
-        "poiSlug": "carnaval_del_pais",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "urdinarrain",
-        "poiSlug": "carnaval_del_pais",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "gualeguaychu",
-        "poiSlug": "carnaval_del_pais",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "concordia",
-        "poiSlug": "carnaval_federaense",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "santa-ana",
-        "poiSlug": "carnaval_federaense",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "federacion",
-        "poiSlug": "carnaval_federaense",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "caseros",
-        "poiSlug": "carnavales",
-        "relation": "PRIMARY"
-    },
-    {
         "destinationSlug": "gualeguaychu",
         "poiSlug": "casa_andrade",
         "relation": "PRIMARY"
@@ -1322,36 +1217,6 @@
     {
         "destinationSlug": "ceibas",
         "poiSlug": "ceibas_municipalidad",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "ibicuy",
-        "poiSlug": "ceibas_paseos_lancha",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "paranacito",
-        "poiSlug": "ceibas_paseos_lancha",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ceibas",
-        "poiSlug": "ceibas_paseos_lancha",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "ibicuy",
-        "poiSlug": "ceibas_pesca_deportiva",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "paranacito",
-        "poiSlug": "ceibas_pesca_deportiva",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ceibas",
-        "poiSlug": "ceibas_pesca_deportiva",
         "relation": "PRIMARY"
     },
     {
@@ -1565,21 +1430,6 @@
         "relation": "PRIMARY"
     },
     {
-        "destinationSlug": "ceibas",
-        "poiSlug": "cicloturismo",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ibicuy",
-        "poiSlug": "cicloturismo",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "paranacito",
-        "poiSlug": "cicloturismo",
-        "relation": "PRIMARY"
-    },
-    {
         "destinationSlug": "villaguay",
         "poiSlug": "cine_teatro_emilio_berisso",
         "relation": "PRIMARY"
@@ -1595,318 +1445,8 @@
         "relation": "PRIMARY"
     },
     {
-        "destinationSlug": "concordia",
-        "poiSlug": "circuito_art_nouveau",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "ibicuy",
-        "poiSlug": "circuito_avistaje_aves",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "paranacito",
-        "poiSlug": "circuito_avistaje_aves",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ceibas",
-        "poiSlug": "circuito_avistaje_aves",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "ceibas",
-        "poiSlug": "circuito_bici_historico",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "paranacito",
-        "poiSlug": "circuito_bici_historico",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ibicuy",
-        "poiSlug": "circuito_bici_historico",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "ceibas",
-        "poiSlug": "circuito_bici_natural",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "paranacito",
-        "poiSlug": "circuito_bici_natural",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ibicuy",
-        "poiSlug": "circuito_bici_natural",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "ceibas",
-        "poiSlug": "circuito_bici_urbano",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ibicuy",
-        "poiSlug": "circuito_bici_urbano",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "ubajay",
-        "poiSlug": "circuito_calle_san_martin",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "san-salvador",
-        "poiSlug": "circuito_calle_san_martin",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "san-jose",
-        "poiSlug": "circuito_capillas",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "villa-elisa",
-        "poiSlug": "circuito_capillas",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "concepcion-del-uruguay",
-        "poiSlug": "circuito_casco_puerto_isla",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "san-salvador",
-        "poiSlug": "circuito_centro_civico",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "villaguay",
-        "poiSlug": "circuito_centro_civico",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "san-justo",
-        "poiSlug": "circuito_colonia_avicultura",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "san-salvador",
-        "poiSlug": "circuito_colonias_judias",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ubajay",
-        "poiSlug": "circuito_colonias_judias",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "villaguay",
-        "poiSlug": "circuito_colonias_judias",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "ibicuy",
-        "poiSlug": "circuito_fotografia_naturaleza",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "paranacito",
-        "poiSlug": "circuito_fotografia_naturaleza",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ceibas",
-        "poiSlug": "circuito_fotografia_naturaleza",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "concepcion-del-uruguay",
-        "poiSlug": "circuito_funerario_historico",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "chajari",
-        "poiSlug": "circuito_gimnasia_aire_libre",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "gualeguaychu",
-        "poiSlug": "circuito_historico_autoguiado",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "larroque",
-        "poiSlug": "circuito_historico_autoguiado",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "urdinarrain",
-        "poiSlug": "circuito_historico_autoguiado",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "colon",
-        "poiSlug": "circuito_historico_guiado",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "san-jose",
-        "poiSlug": "circuito_historico_guiado",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "liebig",
-        "poiSlug": "circuito_historico_guiado",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "urdinarrain",
-        "poiSlug": "circuito_monumentos",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "urdinarrain",
-        "poiSlug": "circuito_museos_bici",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "larroque",
-        "poiSlug": "circuito_museos_bici",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "ceibas",
-        "poiSlug": "circuito_pesca_deportiva",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "paranacito",
-        "poiSlug": "circuito_pesca_deportiva",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ibicuy",
-        "poiSlug": "circuito_pesca_deportiva",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "santa-ana",
-        "poiSlug": "circuito_productivo",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "federacion",
-        "poiSlug": "circuito_productivo",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "concordia",
-        "poiSlug": "circuito_productivo_arrocero",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ubajay",
-        "poiSlug": "circuito_productivo_arrocero",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "villaguay",
-        "poiSlug": "circuito_productivo_arrocero",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "san-salvador",
-        "poiSlug": "circuito_productivo_arrocero",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "chajari",
-        "poiSlug": "circuito_productivo_citrus",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "federacion",
-        "poiSlug": "circuito_productivo_citrus",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "santa-ana",
-        "poiSlug": "circuito_productivo_citrus",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "chajari",
-        "poiSlug": "circuito_productivo_sandia",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "santa-ana",
-        "poiSlug": "circuito_productivo_sandia",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "concepcion-del-uruguay",
-        "poiSlug": "circuito_san_sebastian",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "concordia",
-        "poiSlug": "circuito_tierra_promesas",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ubajay",
-        "poiSlug": "circuito_tierra_promesas",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "san-salvador",
-        "poiSlug": "circuito_tierra_promesas",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "gualeguaychu",
-        "poiSlug": "circuitos_rurales_bici",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "larroque",
-        "poiSlug": "circuitos_rurales_bici",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "rosario-del-tala",
-        "poiSlug": "circuitos_rurales_bici",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "urdinarrain",
-        "poiSlug": "circuitos_rurales_bici",
-        "relation": "PRIMARY"
-    },
-    {
         "destinationSlug": "santa-ana",
         "poiSlug": "citrus_santa_ana",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "concepcion-del-uruguay",
-        "poiSlug": "city_tour_audioguiado",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "san-justo",
-        "poiSlug": "city_tour_audioguiado",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "caseros",
-        "poiSlug": "city_tour_audioguiado",
         "relation": "PRIMARY"
     },
     {
@@ -2480,11 +2020,6 @@
         "relation": "PRIMARY"
     },
     {
-        "destinationSlug": "paranacito",
-        "poiSlug": "dia_isleno",
-        "relation": "PRIMARY"
-    },
-    {
         "destinationSlug": "ibicuy",
         "poiSlug": "direccion_provincial_vialidad",
         "relation": "PRIMARY"
@@ -2532,21 +2067,6 @@
     {
         "destinationSlug": "ceibas",
         "poiSlug": "empalme_rutas_12_14",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "urdinarrain",
-        "poiSlug": "encuentro_acordeon",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "caseros",
-        "poiSlug": "encuentro_coros",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "san-justo",
-        "poiSlug": "entierro_carnaval",
         "relation": "PRIMARY"
     },
     {
@@ -2755,16 +2275,6 @@
         "relation": "PRIMARY"
     },
     {
-        "destinationSlug": "chajari",
-        "poiSlug": "estacion_servicio_genesis",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "santa-ana",
-        "poiSlug": "estacion_servicio_genesis",
-        "relation": "PRIMARY"
-    },
-    {
         "destinationSlug": "ibicuy",
         "poiSlug": "estancia_la_azotea",
         "relation": "NEARBY"
@@ -2807,26 +2317,6 @@
     {
         "destinationSlug": "villaguay",
         "poiSlug": "ex_teatro_mayo",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "san-justo",
-        "poiSlug": "expo_feria_rural",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "larroque",
-        "poiSlug": "expo_ovina",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "rosario-del-tala",
-        "poiSlug": "expo_ovina",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "urdinarrain",
-        "poiSlug": "expo_ovina",
         "relation": "PRIMARY"
     },
     {
@@ -2900,21 +2390,6 @@
         "relation": "PRIMARY"
     },
     {
-        "destinationSlug": "chajari",
-        "poiSlug": "feria_artesanos",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "colon",
-        "poiSlug": "feria_costanera",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "colon",
-        "poiSlug": "feria_manos_del_puerto",
-        "relation": "PRIMARY"
-    },
-    {
         "destinationSlug": "concordia",
         "poiSlug": "feria_parque_ferre",
         "relation": "PRIMARY"
@@ -2932,176 +2407,6 @@
     {
         "destinationSlug": "rosario-del-tala",
         "poiSlug": "ferroclub",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "san-justo",
-        "poiSlug": "festival_instituciones",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "gualeguaychu",
-        "poiSlug": "festival_teatro",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "urdinarrain",
-        "poiSlug": "festival_teatro",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "larroque",
-        "poiSlug": "festival_teatro",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "ceibas",
-        "poiSlug": "fiesta_carrozas_nauticas",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ibicuy",
-        "poiSlug": "fiesta_carrozas_nauticas",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "paranacito",
-        "poiSlug": "fiesta_carrozas_nauticas",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "gualeguaychu",
-        "poiSlug": "fiesta_inmigrante",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "larroque",
-        "poiSlug": "fiesta_inmigrante",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "urdinarrain",
-        "poiSlug": "fiesta_inmigrante",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "concordia",
-        "poiSlug": "fiesta_nacional_lago",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "santa-ana",
-        "poiSlug": "fiesta_nacional_lago",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "federacion",
-        "poiSlug": "fiesta_nacional_lago",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "chajari",
-        "poiSlug": "fiesta_nacional_sandia",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "federacion",
-        "poiSlug": "fiesta_nacional_sandia",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "santa-ana",
-        "poiSlug": "fiesta_nacional_sandia",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "rosario-del-tala",
-        "poiSlug": "fiesta_pastel_artesanal",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "san-salvador",
-        "poiSlug": "fiesta_pastel_artesanal",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "villaguay",
-        "poiSlug": "fiesta_pastel_artesanal",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "rosario-del-tala",
-        "poiSlug": "fiesta_pati_gualeyo",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "gualeguay",
-        "poiSlug": "fiesta_pati_gualeyo",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "san-justo",
-        "poiSlug": "fiesta_patronal_dolores",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "ceibas",
-        "poiSlug": "fiesta_pejerrey",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ibicuy",
-        "poiSlug": "fiesta_pejerrey",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "paranacito",
-        "poiSlug": "fiesta_pejerrey",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "larroque",
-        "poiSlug": "fiesta_provincial_caballo",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "rosario-del-tala",
-        "poiSlug": "fiesta_provincial_caballo",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "urdinarrain",
-        "poiSlug": "fiesta_provincial_caballo",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "gualeguaychu",
-        "poiSlug": "fiesta_regional_cerveza",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "larroque",
-        "poiSlug": "fiesta_regional_cerveza",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "urdinarrain",
-        "poiSlug": "fiesta_regional_cerveza",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "larroque",
-        "poiSlug": "fiesta_tradicion",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "rosario-del-tala",
-        "poiSlug": "fiesta_tradicion",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "urdinarrain",
-        "poiSlug": "fiesta_tradicion",
         "relation": "PRIMARY"
     },
     {
@@ -3620,16 +2925,6 @@
         "relation": "PRIMARY"
     },
     {
-        "destinationSlug": "paranacito",
-        "poiSlug": "kayak_nuestro_rio",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ibicuy",
-        "poiSlug": "kayak_nuestro_rio",
-        "relation": "PRIMARY"
-    },
-    {
         "destinationSlug": "san-jose",
         "poiSlug": "la_aldea_club_campo",
         "relation": "NEARBY"
@@ -3657,11 +2952,6 @@
     {
         "destinationSlug": "concordia",
         "poiSlug": "la_angelica",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "rosario-del-tala",
-        "poiSlug": "la_criolla_kayak",
         "relation": "PRIMARY"
     },
     {
@@ -3737,11 +3027,6 @@
     {
         "destinationSlug": "larroque",
         "poiSlug": "larroque_comisaria",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "larroque",
-        "poiSlug": "larroque_danza",
         "relation": "PRIMARY"
     },
     {
@@ -3847,26 +3132,6 @@
     {
         "destinationSlug": "santa-ana",
         "poiSlug": "mandisovi_chico",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "chajari",
-        "poiSlug": "maraton_ciudad",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "federacion",
-        "poiSlug": "maraton_ciudad",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "santa-ana",
-        "poiSlug": "maraton_ciudad",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "caseros",
-        "poiSlug": "maraton_sergio_pesaro",
         "relation": "PRIMARY"
     },
     {
@@ -4480,11 +3745,6 @@
         "relation": "PRIMARY"
     },
     {
-        "destinationSlug": "rosario-del-tala",
-        "poiSlug": "nativo_kayak",
-        "relation": "PRIMARY"
-    },
-    {
         "destinationSlug": "concepcion-del-uruguay",
         "poiSlug": "nuevo_salon_arte",
         "relation": "PRIMARY"
@@ -4691,11 +3951,6 @@
     },
     {
         "destinationSlug": "paranacito",
-        "poiSlug": "paranacito_fiesta_patronal",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "paranacito",
         "poiSlug": "paranacito_hospital",
         "relation": "PRIMARY"
     },
@@ -4707,36 +3962,6 @@
     {
         "destinationSlug": "paranacito",
         "poiSlug": "paranacito_oficina_turismo",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "ceibas",
-        "poiSlug": "paranacito_paseos_lancha",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ibicuy",
-        "poiSlug": "paranacito_paseos_lancha",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "paranacito",
-        "poiSlug": "paranacito_paseos_lancha",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "ceibas",
-        "poiSlug": "paranacito_pesca_deportiva",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "ibicuy",
-        "poiSlug": "paranacito_pesca_deportiva",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "paranacito",
-        "poiSlug": "paranacito_pesca_deportiva",
         "relation": "PRIMARY"
     },
     {
@@ -5280,26 +4505,6 @@
         "relation": "PRIMARY"
     },
     {
-        "destinationSlug": "ibicuy",
-        "poiSlug": "paseos_canoa",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "paranacito",
-        "poiSlug": "paseos_canoa",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "ibicuy",
-        "poiSlug": "paseos_kayak",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "paranacito",
-        "poiSlug": "paseos_kayak",
-        "relation": "PRIMARY"
-    },
-    {
         "destinationSlug": "gualeguay",
         "poiSlug": "paso_el_corralito",
         "relation": "NEARBY"
@@ -5347,11 +4552,6 @@
     {
         "destinationSlug": "concordia",
         "poiSlug": "peatonal_entre_rios",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "san-justo",
-        "poiSlug": "pesca_san_cipriano",
         "relation": "PRIMARY"
     },
     {
@@ -6445,26 +5645,6 @@
         "relation": "PRIMARY"
     },
     {
-        "destinationSlug": "gualeguay",
-        "poiSlug": "rosario_del_tala_carnaval",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "gualeguaychu",
-        "poiSlug": "rosario_del_tala_carnaval",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "urdinarrain",
-        "poiSlug": "rosario_del_tala_carnaval",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "rosario-del-tala",
-        "poiSlug": "rosario_del_tala_carnaval",
-        "relation": "PRIMARY"
-    },
-    {
         "destinationSlug": "rosario-del-tala",
         "poiSlug": "rosario_del_tala_comisaria",
         "relation": "PRIMARY"
@@ -6487,11 +5667,6 @@
     {
         "destinationSlug": "rosario-del-tala",
         "poiSlug": "rosario_del_tala_estacion_ferroviaria",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "rosario-del-tala",
-        "poiSlug": "rosario_del_tala_fiesta_patronal",
         "relation": "PRIMARY"
     },
     {
@@ -6827,21 +6002,6 @@
     {
         "destinationSlug": "santa-ana",
         "poiSlug": "santa_ana_oficina_turismo",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "chajari",
-        "poiSlug": "santa_ana_pesca_deportiva",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "federacion",
-        "poiSlug": "santa_ana_pesca_deportiva",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "santa-ana",
-        "poiSlug": "santa_ana_pesca_deportiva",
         "relation": "PRIMARY"
     },
     {
@@ -7510,21 +6670,6 @@
         "relation": "PRIMARY"
     },
     {
-        "destinationSlug": "chajari",
-        "poiSlug": "turismo_rural_estancias",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "federacion",
-        "poiSlug": "turismo_rural_estancias",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "santa-ana",
-        "poiSlug": "turismo_rural_estancias",
-        "relation": "PRIMARY"
-    },
-    {
         "destinationSlug": "ubajay",
         "poiSlug": "ubajay_centro_cultural",
         "relation": "PRIMARY"
@@ -7707,21 +6852,6 @@
     {
         "destinationSlug": "villaguay",
         "poiSlug": "villaguay_camping_balneario",
-        "relation": "PRIMARY"
-    },
-    {
-        "destinationSlug": "gualeguaychu",
-        "poiSlug": "villaguay_carnaval",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "san-salvador",
-        "poiSlug": "villaguay_carnaval",
-        "relation": "NEARBY"
-    },
-    {
-        "destinationSlug": "villaguay",
-        "poiSlug": "villaguay_carnaval",
         "relation": "PRIMARY"
     },
     {

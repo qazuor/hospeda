@@ -15,10 +15,21 @@
  *
  * The relation data itself is loaded FOR REAL via `loadDestinationRelations`
  * (the SAME loader `0013-hos-142-poi-catalog-expansion.ts` uses), so this
- * test's expected counts (914 PRIMARY + 646 NEARBY = 1560 total entries;
- * 1556 new creates once the 13 pre-existing HOS-113 pairs are accounted
- * for) verify AC-2's claim that the fresh seed-time path and the live-env
- * dual-write migration converge on identical relation counts.
+ * test's expected counts (836 PRIMARY + 550 NEARBY = 1386 total entries
+ * post-curation — see the "poi curation safe subset" pass below; 1382 new
+ * creates once the 13 pre-existing HOS-113 pairs are accounted for) verify
+ * AC-2's claim that the fresh seed-time path and the live-env dual-write
+ * migration converge on identical relation counts.
+ *
+ * **Curation update**: a later editorial pass (`0018-poi-curation-safe-subset`,
+ * dual-write for the same change) removed 78 non-geolocatable catalog POIs
+ * (events, gas stations, circuits with no fixed location) and their 174
+ * relation rows from `destination-relations.json`, dropping the totals from
+ * the original 914/646/1560 to 836/550/1386. `actividades_nauticas` — the
+ * original worked example for a POI with one PRIMARY and multiple NEARBY
+ * relations — was one of the removed 78, so this file's example test now
+ * uses `almacen_campo_la_sonada` instead (same three-destination shape:
+ * PRIMARY at `chajari`, NEARBY at `federacion` and `santa-ana`).
  *
  * @module test/pointOfInterestCatalog/pointOfInterestCatalogRelations
  */
@@ -85,8 +96,12 @@ const PRE_EXISTING_PRIMARY_PAIRS: ReadonlyArray<{ destinationSlug: string; poiSl
     { destinationSlug: 'caseros', poiSlug: 'palacio_san_jose' }
 ];
 
-/** Total destination-POI relation entries in the real pipeline output (914 PRIMARY + 646 NEARBY). */
-const EXPECTED_TOTAL_RELATION_ENTRIES = 1560;
+/**
+ * Total destination-POI relation entries in the real pipeline output
+ * (836 PRIMARY + 550 NEARBY) after the `0018-poi-curation-safe-subset`
+ * cleanup removed 174 rows referencing one of the 78 deleted POIs.
+ */
+const EXPECTED_TOTAL_RELATION_ENTRIES = 1386;
 
 /** Of the 13 pre-existing pairs, 3 agree with the pipeline's `relation` value (pure no-op skip). */
 const EXPECTED_PRE_EXISTING_MATCHING_PAIRS = 3;
@@ -196,8 +211,8 @@ describe('seedPointOfInterestCatalogRelations (HOS-142 fresh-DB relations step)'
 
     it('sanity: the real pipeline data has the expected shape at authoring time', () => {
         expect(realRelations).toHaveLength(EXPECTED_TOTAL_RELATION_ENTRIES);
-        expect(realRelations.filter((r) => r.relation === 'PRIMARY')).toHaveLength(914);
-        expect(realRelations.filter((r) => r.relation === 'NEARBY')).toHaveLength(646);
+        expect(realRelations.filter((r) => r.relation === 'PRIMARY')).toHaveLength(836);
+        expect(realRelations.filter((r) => r.relation === 'NEARBY')).toHaveLength(550);
     });
 
     it('creates every new relation and converges on the SAME counts 0013 produces for the live-env path (AC-2)', async () => {
@@ -258,15 +273,15 @@ describe('seedPointOfInterestCatalogRelations (HOS-142 fresh-DB relations step)'
         });
     });
 
-    it('creates two independent rows for the same catalog POI when it is PRIMARY for one destination and NEARBY for another (actividades_nauticas)', async () => {
+    it('creates two independent rows for the same catalog POI when it is PRIMARY for one destination and NEARBY for another (almacen_campo_la_sonada)', async () => {
         // Act
         await seedPointOfInterestCatalogRelations(deps);
 
         // Assert
-        const poiId = 'poi-actividades_nauticas';
-        expect(relationStore.get(`dest-santa-ana:${poiId}`)?.relation).toBe('PRIMARY');
-        expect(relationStore.get(`dest-chajari:${poiId}`)?.relation).toBe('NEARBY');
+        const poiId = 'poi-almacen_campo_la_sonada';
+        expect(relationStore.get(`dest-chajari:${poiId}`)?.relation).toBe('PRIMARY');
         expect(relationStore.get(`dest-federacion:${poiId}`)?.relation).toBe('NEARBY');
+        expect(relationStore.get(`dest-santa-ana:${poiId}`)?.relation).toBe('NEARBY');
     });
 
     it('counts a destination as not-found (and skips its relations) when its slug is missing from the DB', async () => {
@@ -283,7 +298,7 @@ describe('seedPointOfInterestCatalogRelations (HOS-142 fresh-DB relations step)'
 
     it('counts a POI as not-found (and skips its relations) when its slug is missing from the DB', async () => {
         // Arrange
-        poiStore.delete('actividades_nauticas');
+        poiStore.delete('almacen_campo_la_sonada');
 
         // Act
         await seedPointOfInterestCatalogRelations(deps);

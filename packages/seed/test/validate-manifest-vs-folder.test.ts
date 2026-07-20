@@ -78,7 +78,9 @@ describe('validateAllManifests end-to-end (HOS-142 regression)', () => {
         expect(manifest.pointOfInterestCatalog).toBeDefined();
         expect(Array.isArray(manifest.pointOfInterestCatalog)).toBe(true);
         // 914 bulk-imported rows minus 6 that collide with a pre-HOS-142 curated
-        // slug (dropped, not renamed/duplicated — see import-poi-catalog.ts).
-        expect(manifest.pointOfInterestCatalog.length).toBe(908);
+        // slug (dropped, not renamed/duplicated — see import-poi-catalog.ts),
+        // minus a further 78 non-geolocatable rows removed by the
+        // `0018-poi-curation-safe-subset` editorial cleanup pass.
+        expect(manifest.pointOfInterestCatalog.length).toBe(830);
     });
 });
