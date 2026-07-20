@@ -253,6 +253,52 @@ describe('resolveOrProvisionMpPlan', () => {
             expect.any(String)
         );
     });
+
+    // HOS-219: the MP plan `reason` is buyer-visible; Hospeda's default locale is
+    // `es`, so cadence + trial fragments must be in Spanish (not "monthly"/"Xd trial").
+    it('builds the reason in Spanish for a monthly trial variant', async () => {
+        findOne.mockResolvedValue(null);
+        create.mockResolvedValue({ id: 'row1' });
+        const adapter = createAdapter();
+
+        await resolveOrProvisionMpPlan({ adapter, ...BASE_INPUT, planName: 'Plus', trialDays: 14 });
+
+        expect(adapter.prices.create).toHaveBeenCalledWith(
+            expect.anything(),
+            'Plus — mensual — 14 días de prueba'
+        );
+    });
+
+    it('builds the reason in Spanish for an annual variant', async () => {
+        findOne.mockResolvedValue(null);
+        create.mockResolvedValue({ id: 'row1' });
+        const adapter = createAdapter();
+
+        await resolveOrProvisionMpPlan({
+            adapter,
+            ...BASE_INPUT,
+            planName: 'VIP',
+            billingInterval: 'annual'
+        });
+
+        expect(adapter.prices.create).toHaveBeenCalledWith(
+            expect.anything(),
+            'VIP — anual — 14 días de prueba'
+        );
+    });
+
+    it('builds the reason with "sin prueba" for a no-trial variant', async () => {
+        findOne.mockResolvedValue(null);
+        create.mockResolvedValue({ id: 'row1' });
+        const adapter = createAdapter();
+
+        await resolveOrProvisionMpPlan({ adapter, ...BASE_INPUT, planName: 'Basic', trialDays: 0 });
+
+        expect(adapter.prices.create).toHaveBeenCalledWith(
+            expect.anything(),
+            'Basic — mensual — sin prueba'
+        );
+    });
 });
 
 describe('resolveCheckoutMpPlanId', () => {
