@@ -51,8 +51,8 @@ function readCatalogManifestFiles(): string[] {
 describe('--poi-catalog seed group (HOS-142)', () => {
     const files = readCatalogManifestFiles();
 
-    it('manifest lists exactly 908 fixtures (914 bulk rows minus 6 pre-HOS-142 slug collisions)', () => {
-        expect(files).toHaveLength(908);
+    it('manifest lists exactly 830 fixtures (908 post-HOS-142 rows minus 78 removed by the poi-curation-safe-subset pass)', () => {
+        expect(files).toHaveLength(830);
     });
 
     it('loads every manifest-listed file without error', () => {

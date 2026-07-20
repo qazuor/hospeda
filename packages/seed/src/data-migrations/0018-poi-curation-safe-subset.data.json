@@ -1,0 +1,1304 @@
+{
+    "deletedSlugs": [
+        "actividades_nauticas",
+        "avistaje_aves",
+        "axion",
+        "cabalgata_camino_real",
+        "cabalgatas_humedal",
+        "carnaval_del_pais",
+        "carnaval_federaense",
+        "carnavales",
+        "ceibas_paseos_lancha",
+        "ceibas_pesca_deportiva",
+        "cicloturismo",
+        "circuito_art_nouveau",
+        "circuito_avistaje_aves",
+        "circuito_bici_historico",
+        "circuito_bici_natural",
+        "circuito_bici_urbano",
+        "circuito_calle_san_martin",
+        "circuito_capillas",
+        "circuito_casco_puerto_isla",
+        "circuito_centro_civico",
+        "circuito_colonia_avicultura",
+        "circuito_colonias_judias",
+        "circuito_fotografia_naturaleza",
+        "circuito_funerario_historico",
+        "circuito_gimnasia_aire_libre",
+        "circuito_historico_autoguiado",
+        "circuito_historico_guiado",
+        "circuito_monumentos",
+        "circuito_museos_bici",
+        "circuito_pesca_deportiva",
+        "circuito_productivo",
+        "circuito_productivo_arrocero",
+        "circuito_productivo_citrus",
+        "circuito_productivo_sandia",
+        "circuito_san_sebastian",
+        "circuito_tierra_promesas",
+        "circuitos_rurales_bici",
+        "city_tour_audioguiado",
+        "dia_isleno",
+        "encuentro_acordeon",
+        "encuentro_coros",
+        "entierro_carnaval",
+        "estacion_servicio_genesis",
+        "expo_feria_rural",
+        "expo_ovina",
+        "feria_artesanos",
+        "feria_costanera",
+        "feria_manos_del_puerto",
+        "festival_instituciones",
+        "festival_teatro",
+        "fiesta_carrozas_nauticas",
+        "fiesta_inmigrante",
+        "fiesta_nacional_lago",
+        "fiesta_nacional_sandia",
+        "fiesta_pastel_artesanal",
+        "fiesta_pati_gualeyo",
+        "fiesta_patronal_dolores",
+        "fiesta_pejerrey",
+        "fiesta_provincial_caballo",
+        "fiesta_regional_cerveza",
+        "fiesta_tradicion",
+        "kayak_nuestro_rio",
+        "la_criolla_kayak",
+        "larroque_danza",
+        "maraton_ciudad",
+        "maraton_sergio_pesaro",
+        "nativo_kayak",
+        "paranacito_fiesta_patronal",
+        "paranacito_paseos_lancha",
+        "paranacito_pesca_deportiva",
+        "paseos_canoa",
+        "paseos_kayak",
+        "pesca_san_cipriano",
+        "rosario_del_tala_carnaval",
+        "rosario_del_tala_fiesta_patronal",
+        "santa_ana_pesca_deportiva",
+        "turismo_rural_estancias",
+        "villaguay_carnaval"
+    ],
+    "coordCorrections": [
+        {
+            "slug": "administracion_complejo_turistico",
+            "lat": -32.1913125,
+            "long": -58.1829375
+        },
+        {
+            "slug": "aeroclub",
+            "lat": -32.3245649,
+            "long": -59.1895767
+        },
+        {
+            "slug": "almacen_francou",
+            "lat": -32.0411793,
+            "long": -58.3909176
+        },
+        {
+            "slug": "anden_elevado_holt",
+            "lat": -33.7470246,
+            "long": -59.1544656
+        },
+        {
+            "slug": "anfiteatro_juancho_garcilazo",
+            "lat": -30.9863659,
+            "long": -57.9164939
+        },
+        {
+            "slug": "anfiteatro_natural",
+            "lat": -32.1922676,
+            "long": -58.161198
+        },
+        {
+            "slug": "antigua_ciudad",
+            "lat": -31.0010608,
+            "long": -57.8857827
+        },
+        {
+            "slug": "apimania",
+            "lat": -31.0074684,
+            "long": -57.8998097
+        },
+        {
+            "slug": "asociacion_artesanos",
+            "lat": -31.8635677,
+            "long": -59.0346962
+        },
+        {
+            "slug": "balneario_itape",
+            "lat": -32.5005771,
+            "long": -58.229137
+        },
+        {
+            "slug": "balneario_municipal",
+            "lat": -32.1528392,
+            "long": -58.1874263
+        },
+        {
+            "slug": "balneario_san_cipriano",
+            "lat": -32.4460836,
+            "long": -58.3916875
+        },
+        {
+            "slug": "biblioteca_fabrica_colon",
+            "lat": -32.1553504,
+            "long": -58.1946098
+        },
+        {
+            "slug": "biblioteca_julian_monzon",
+            "lat": -32.2999306,
+            "long": -59.1405395
+        },
+        {
+            "slug": "biblioteca_rivadavia",
+            "lat": -30.9851342,
+            "long": -57.9208625
+        },
+        {
+            "slug": "bodega_alonso_saenz",
+            "lat": -31.8990604,
+            "long": -58.4236534
+        },
+        {
+            "slug": "bodega_altos_palmar",
+            "lat": -31.8568623,
+            "long": -58.3245386
+        },
+        {
+            "slug": "bodega_vulliez_sermet",
+            "lat": -32.2388134,
+            "long": -58.1588286
+        },
+        {
+            "slug": "camping_las_palmeras",
+            "lat": -31.244756,
+            "long": -57.9614354
+        },
+        {
+            "slug": "camping_termas",
+            "lat": -30.746011,
+            "long": -58.010871
+        },
+        {
+            "slug": "campo_las_ruedas",
+            "lat": -32.4963409,
+            "long": -58.442593
+        },
+        {
+            "slug": "casa_deken",
+            "lat": -33.0092911,
+            "long": -58.5139008
+        },
+        {
+            "slug": "casa_fundador",
+            "lat": -31.622869,
+            "long": -58.5151701
+        },
+        {
+            "slug": "casa_martiniano_leguizamon",
+            "lat": -32.3032928,
+            "long": -59.1443327
+        },
+        {
+            "slug": "casa_miel",
+            "lat": -31.0131199,
+            "long": -57.9440084
+        },
+        {
+            "slug": "caseros_corsodromo",
+            "lat": -32.4648972,
+            "long": -58.4784844
+        },
+        {
+            "slug": "caseros_plaza_justo_jose_de_urquiza",
+            "lat": -32.4620857,
+            "long": -58.4793311
+        },
+        {
+            "slug": "casino_colon",
+            "lat": -32.2209511,
+            "long": -58.1362918
+        },
+        {
+            "slug": "cementerio_historico",
+            "lat": -32.3093391,
+            "long": -59.1559421
+        },
+        {
+            "slug": "centro_civico_municipalidad",
+            "lat": -32.1553997,
+            "long": -58.1947661
+        },
+        {
+            "slug": "centro_cultural_margarita_thea",
+            "lat": -32.4651498,
+            "long": -58.4810524
+        },
+        {
+            "slug": "centro_salud_diego_paroissien",
+            "lat": -31.7958513,
+            "long": -58.3148639
+        },
+        {
+            "slug": "centro_visitantes_el_palmar",
+            "lat": -31.8674095,
+            "long": -58.2088412
+        },
+        {
+            "slug": "cepida",
+            "lat": -31.0072699,
+            "long": -57.8908145
+        },
+        {
+            "slug": "chajari_plaza_libertad",
+            "lat": -30.7471148,
+            "long": -57.9744656
+        },
+        {
+            "slug": "chajari_plaza_urquiza",
+            "lat": -30.755062,
+            "long": -57.9800098
+        },
+        {
+            "slug": "chimeneas_frigorifico",
+            "lat": -32.1557568,
+            "long": -58.1876845
+        },
+        {
+            "slug": "club_nautico",
+            "lat": -32.1926969,
+            "long": -58.1595137
+        },
+        {
+            "slug": "club_nautico_colon",
+            "lat": -32.2150853,
+            "long": -58.1372819
+        },
+        {
+            "slug": "club_regatas",
+            "lat": -31.3993986,
+            "long": -57.9984211
+        },
+        {
+            "slug": "colegio_nicolas_mugherli",
+            "lat": -32.4624753,
+            "long": -58.4788391
+        },
+        {
+            "slug": "colon_costanera",
+            "lat": -32.2186972,
+            "long": -58.1329714
+        },
+        {
+            "slug": "colon_municipalidad",
+            "lat": -32.2240366,
+            "long": -58.1419614
+        },
+        {
+            "slug": "colon_plaza_san_martin",
+            "lat": -32.2185575,
+            "long": -58.1353869
+        },
+        {
+            "slug": "comparsa_kamarr",
+            "lat": -33.019468,
+            "long": -58.5208262
+        },
+        {
+            "slug": "comparsa_obahia",
+            "lat": -33.0193862,
+            "long": -58.5185577
+        },
+        {
+            "slug": "concepcion_del_uruguay_cementerio_municipal",
+            "lat": -32.4884232,
+            "long": -58.2537477
+        },
+        {
+            "slug": "concepcion_del_uruguay_estacion_ferroviaria",
+            "lat": -32.4794832,
+            "long": -58.2412128
+        },
+        {
+            "slug": "concepcion_del_uruguay_museo_ferroviario",
+            "lat": -32.4800172,
+            "long": -58.243522
+        },
+        {
+            "slug": "concepcion_del_uruguay_plaza_rocamora",
+            "lat": -32.4836598,
+            "long": -58.2509782
+        },
+        {
+            "slug": "concepcion_del_uruguay_plaza_san_martin",
+            "lat": -32.4801864,
+            "long": -58.2343407
+        },
+        {
+            "slug": "concordia_centro_convenciones",
+            "lat": -31.3844392,
+            "long": -58.018065
+        },
+        {
+            "slug": "concordia_costanera",
+            "lat": -31.4025751,
+            "long": -58.0053204
+        },
+        {
+            "slug": "concordia_hipodromo",
+            "lat": -31.3624442,
+            "long": -58.0657408
+        },
+        {
+            "slug": "concordia_lago_salto_grande",
+            "lat": -31.2710088,
+            "long": -58.1079873
+        },
+        {
+            "slug": "concordia_plaza_urquiza",
+            "lat": -31.3918914,
+            "long": -58.0170499
+        },
+        {
+            "slug": "cooperativa_arrocera",
+            "lat": -31.626862,
+            "long": -58.4999366
+        },
+        {
+            "slug": "corsodromo_atanasio_bonfiglio",
+            "lat": -31.3813814,
+            "long": -58.0170196
+        },
+        {
+            "slug": "costa_ciencia",
+            "lat": -31.4025259,
+            "long": -58.0045301
+        },
+        {
+            "slug": "costanera_puerto_ibicuy",
+            "lat": -33.7525613,
+            "long": -59.1776751
+        },
+        {
+            "slug": "defensa_sur_costanera_sur",
+            "lat": -32.4983783,
+            "long": -58.2288453
+        },
+        {
+            "slug": "delta_entrerriano",
+            "lat": -33.7076593,
+            "long": -58.6671298
+        },
+        {
+            "slug": "desfilodromo_silvestri",
+            "lat": -30.984834,
+            "long": -57.9172682
+        },
+        {
+            "slug": "escuela_16_hipolito_vieytes",
+            "lat": -32.155575,
+            "long": -58.1927458
+        },
+        {
+            "slug": "escuela_ana_urquiza_victorica",
+            "lat": -32.4828252,
+            "long": -58.233475
+        },
+        {
+            "slug": "escuela_municipal_musica",
+            "lat": -33.1450118,
+            "long": -59.3146091
+        },
+        {
+            "slug": "escuela_privada_78_urquiza",
+            "lat": -32.4629609,
+            "long": -58.4789016
+        },
+        {
+            "slug": "espigon_camping",
+            "lat": -30.9132853,
+            "long": -57.9266736
+        },
+        {
+            "slug": "estacion_ferrocarril",
+            "lat": -30.7622064,
+            "long": -57.9804003
+        },
+        {
+            "slug": "estacion_libertador_general_san_martin",
+            "lat": -33.7091898,
+            "long": -59.0331828
+        },
+        {
+            "slug": "estacion_puerto_ruiz",
+            "lat": -33.2197407,
+            "long": -59.3629554
+        },
+        {
+            "slug": "estancia_la_azotea",
+            "lat": -33.5007183,
+            "long": -58.8045578
+        },
+        {
+            "slug": "estancia_museo_el_porvenir",
+            "lat": -32.1736071,
+            "long": -58.4052941
+        },
+        {
+            "slug": "facultad_ciencia_tecnologia_uader",
+            "lat": -32.479084,
+            "long": -58.2334594
+        },
+        {
+            "slug": "federacion_playa_grande",
+            "lat": -30.9849637,
+            "long": -57.913265
+        },
+        {
+            "slug": "federacion_puerto",
+            "lat": -30.9858989,
+            "long": -57.9202185
+        },
+        {
+            "slug": "finca_los_bayos",
+            "lat": -32.6494126,
+            "long": -58.8859796
+        },
+        {
+            "slug": "franco_suizos",
+            "lat": -32.1952975,
+            "long": -58.2431496
+        },
+        {
+            "slug": "frigorifico_serviave",
+            "lat": -32.4476707,
+            "long": -58.4292852
+        },
+        {
+            "slug": "granja_bengochea",
+            "lat": -31.8521609,
+            "long": -59.0719363
+        },
+        {
+            "slug": "granja_san_anton",
+            "lat": -32.3031196,
+            "long": -59.1242223
+        },
+        {
+            "slug": "gruta_padre_pio",
+            "lat": -30.7553358,
+            "long": -57.9630505
+        },
+        {
+            "slug": "gualeguay_corsodromo",
+            "lat": -33.1486736,
+            "long": -59.3286285
+        },
+        {
+            "slug": "gualeguay_estacion_ferroviaria",
+            "lat": -33.1488192,
+            "long": -59.3290317
+        },
+        {
+            "slug": "gualeguay_plaza_rocamora",
+            "lat": -33.1541162,
+            "long": -59.3226535
+        },
+        {
+            "slug": "gualeguaychu_centro_convenciones",
+            "lat": -33.0186604,
+            "long": -58.5196531
+        },
+        {
+            "slug": "gualeguaychu_costanera",
+            "lat": -33.0103083,
+            "long": -58.504739
+        },
+        {
+            "slug": "hospital_san_isidro_labrador",
+            "lat": -33.030119,
+            "long": -59.0046626
+        },
+        {
+            "slug": "ibicuy_plaza_san_martin",
+            "lat": -33.7424848,
+            "long": -59.1576654
+        },
+        {
+            "slug": "iglesia_natividad",
+            "lat": -32.1652077,
+            "long": -58.4017186
+        },
+        {
+            "slug": "imagen_virgen_islas",
+            "lat": -33.7164006,
+            "long": -58.6568564
+        },
+        {
+            "slug": "juegos_del_lago",
+            "lat": -30.9947793,
+            "long": -57.9140015
+        },
+        {
+            "slug": "la_aldea_club_campo",
+            "lat": -32.345706,
+            "long": -58.159467
+        },
+        {
+            "slug": "la_angelica",
+            "lat": -31.2634357,
+            "long": -57.9916184
+        },
+        {
+            "slug": "lacteos_la_pequena",
+            "lat": -32.6532238,
+            "long": -58.8831372
+        },
+        {
+            "slug": "larroque_estacion_ferroviaria",
+            "lat": -33.034435,
+            "long": -59.0053601
+        },
+        {
+            "slug": "letras_corporeas",
+            "lat": -30.9000072,
+            "long": -57.9241973
+        },
+        {
+            "slug": "locomotora_la_solis",
+            "lat": -33.1483158,
+            "long": -59.3276817
+        },
+        {
+            "slug": "locomotora_parque_estacion",
+            "lat": -33.035753,
+            "long": -59.0061041
+        },
+        {
+            "slug": "logia_jorge_washington",
+            "lat": -32.4824634,
+            "long": -58.2330224
+        },
+        {
+            "slug": "mandisovi_chico",
+            "lat": -30.9474768,
+            "long": -57.9476318
+        },
+        {
+            "slug": "medanos",
+            "lat": -33.4357863,
+            "long": -59.0675878
+        },
+        {
+            "slug": "mesa_giratoria_holt",
+            "lat": -33.7470246,
+            "long": -59.1544656
+        },
+        {
+            "slug": "mirador_arroyo_los_loros",
+            "lat": -31.8640696,
+            "long": -58.2294422
+        },
+        {
+            "slug": "mirador_chaviyu",
+            "lat": -31.2323622,
+            "long": -57.9459469
+        },
+        {
+            "slug": "mirador_el_porvenir",
+            "lat": -32.1736071,
+            "long": -58.4052941
+        },
+        {
+            "slug": "mirador_la_glorieta",
+            "lat": -31.8790485,
+            "long": -58.2679943
+        },
+        {
+            "slug": "molino_astegar",
+            "lat": -32.3055515,
+            "long": -59.1446774
+        },
+        {
+            "slug": "molino_forclaz",
+            "lat": -32.2169995,
+            "long": -58.1860002
+        },
+        {
+            "slug": "monumento_arroyo_ceballos",
+            "lat": -33.0418437,
+            "long": -59.0794351
+        },
+        {
+            "slug": "monumento_caidos_arroyo_grande",
+            "lat": -31.6111322,
+            "long": -58.467959
+        },
+        {
+            "slug": "monumento_sembrador",
+            "lat": -32.1624305,
+            "long": -58.4013786
+        },
+        {
+            "slug": "monumento_urquiza",
+            "lat": -32.4459109,
+            "long": -58.4346136
+        },
+        {
+            "slug": "museo_artemio_alisio",
+            "lat": -32.4856372,
+            "long": -58.2310212
+        },
+        {
+            "slug": "museo_artes_visuales",
+            "lat": -31.397104,
+            "long": -58.0178121
+        },
+        {
+            "slug": "museo_camila_quiroga",
+            "lat": -30.7464713,
+            "long": -57.9783483
+        },
+        {
+            "slug": "museo_cielo_abierto_estacion",
+            "lat": -32.4654753,
+            "long": -58.4809474
+        },
+        {
+            "slug": "museo_ciudad",
+            "lat": -32.4837986,
+            "long": -58.2308255
+        },
+        {
+            "slug": "museo_delio_panizza",
+            "lat": -32.4834864,
+            "long": -58.2305544
+        },
+        {
+            "slug": "museo_fray_mocho",
+            "lat": -33.0062523,
+            "long": -58.5170431
+        },
+        {
+            "slug": "museo_ivy_mara_ey",
+            "lat": -30.753769,
+            "long": -57.9821967
+        },
+        {
+            "slug": "museo_judio",
+            "lat": -31.3997343,
+            "long": -58.0194971
+        },
+        {
+            "slug": "museo_memoria_popular",
+            "lat": -33.0093464,
+            "long": -58.5139085
+        },
+        {
+            "slug": "museo_pablo_lorentz",
+            "lat": -32.4844214,
+            "long": -58.2330289
+        },
+        {
+            "slug": "museo_salto_grande",
+            "lat": -31.2599391,
+            "long": -57.9677208
+        },
+        {
+            "slug": "observatorio_pastizal",
+            "lat": -31.8857286,
+            "long": -58.2393346
+        },
+        {
+            "slug": "palacio_tribunales",
+            "lat": -31.8681652,
+            "long": -59.0264045
+        },
+        {
+            "slug": "pampa_azul",
+            "lat": -31.3133995,
+            "long": -57.9914905
+        },
+        {
+            "slug": "papaya_beach",
+            "lat": -33.0139697,
+            "long": -58.4993516
+        },
+        {
+            "slug": "paranacito_camping_municipal",
+            "lat": -33.7146367,
+            "long": -58.6583381
+        },
+        {
+            "slug": "paranacito_hospital",
+            "lat": -33.7159594,
+            "long": -58.6533176
+        },
+        {
+            "slug": "parque_acuatico",
+            "lat": -30.9774426,
+            "long": -57.9315993
+        },
+        {
+            "slug": "parque_acuatico_ayui",
+            "lat": -31.2555835,
+            "long": -57.9561726
+        },
+        {
+            "slug": "parque_balneario_municipal",
+            "lat": -31.8650356,
+            "long": -59.0028943
+        },
+        {
+            "slug": "parque_estacion_fabio_larrosa",
+            "lat": -33.035753,
+            "long": -59.0061041
+        },
+        {
+            "slug": "parque_eva_peron",
+            "lat": -31.6237056,
+            "long": -58.5059597
+        },
+        {
+            "slug": "parque_ferre",
+            "lat": -31.3920574,
+            "long": -58.0327377
+        },
+        {
+            "slug": "parque_intendente_bogdan",
+            "lat": -33.155006,
+            "long": -59.3085893
+        },
+        {
+            "slug": "parque_intendente_quintana",
+            "lat": -33.155006,
+            "long": -59.3085893
+        },
+        {
+            "slug": "parque_la_tera",
+            "lat": -33.0328106,
+            "long": -59.0144761
+        },
+        {
+            "slug": "parque_nativo",
+            "lat": -31.6219269,
+            "long": -58.5165759
+        },
+        {
+            "slug": "parque_pancho_ramirez",
+            "lat": -31.6202548,
+            "long": -58.5112651
+        },
+        {
+            "slug": "parque_quiros",
+            "lat": -32.2258165,
+            "long": -58.1333375
+        },
+        {
+            "slug": "parque_san_martin",
+            "lat": -32.6852152,
+            "long": -58.8909721
+        },
+        {
+            "slug": "parque_unzue",
+            "lat": -33.010432,
+            "long": -58.4979644
+        },
+        {
+            "slug": "parroquia_santa_rosa_lima",
+            "lat": -31.8670778,
+            "long": -59.0277271
+        },
+        {
+            "slug": "paseo_de_la_via",
+            "lat": -30.7647418,
+            "long": -57.9824433
+        },
+        {
+            "slug": "paseo_inmaculada",
+            "lat": -30.982226,
+            "long": -57.9189109
+        },
+        {
+            "slug": "paseo_madre",
+            "lat": -30.9877165,
+            "long": -57.9189921
+        },
+        {
+            "slug": "paseo_merceditas",
+            "lat": -30.9977538,
+            "long": -57.9160018
+        },
+        {
+            "slug": "paseo_stella_maris",
+            "lat": -30.9901586,
+            "long": -57.9140243
+        },
+        {
+            "slug": "patrimonio_saladeril_puerto_ruiz",
+            "lat": -33.2197407,
+            "long": -59.3629554
+        },
+        {
+            "slug": "piletas_club_juventud",
+            "lat": -32.4655538,
+            "long": -58.4890028
+        },
+        {
+            "slug": "piscina_olas",
+            "lat": -30.9773545,
+            "long": -57.9320913
+        },
+        {
+            "slug": "playa_baly",
+            "lat": -30.9890994,
+            "long": -57.9127275
+        },
+        {
+            "slug": "playa_del_lago",
+            "lat": -32.1251203,
+            "long": -58.4399305
+        },
+        {
+            "slug": "playa_del_puente",
+            "lat": -33.0079805,
+            "long": -58.501398
+        },
+        {
+            "slug": "playa_los_sauces",
+            "lat": -31.4076807,
+            "long": -58.0117497
+        },
+        {
+            "slug": "playa_norte",
+            "lat": -32.9681716,
+            "long": -58.520841
+        },
+        {
+            "slug": "playa_punta_sur",
+            "lat": -33.008302,
+            "long": -58.4886879
+        },
+        {
+            "slug": "playa_sur",
+            "lat": -30.9954416,
+            "long": -57.9153884
+        },
+        {
+            "slug": "plaza_12_octubre",
+            "lat": -32.4744063,
+            "long": -58.2426217
+        },
+        {
+            "slug": "plaza_artesanos",
+            "lat": -33.7424848,
+            "long": -59.1576654
+        },
+        {
+            "slug": "plaza_artigas",
+            "lat": -32.225255,
+            "long": -58.1420225
+        },
+        {
+            "slug": "plaza_colonizadores",
+            "lat": -32.2163338,
+            "long": -58.1381371
+        },
+        {
+            "slug": "plaza_general_san_martin",
+            "lat": -32.1548546,
+            "long": -58.1913459
+        },
+        {
+            "slug": "plaza_nautica",
+            "lat": -30.9774426,
+            "long": -57.9315993
+        },
+        {
+            "slug": "plaza_saludable_fraternidad",
+            "lat": -31.6300616,
+            "long": -58.5053956
+        },
+        {
+            "slug": "plaza_washington",
+            "lat": -32.2248093,
+            "long": -58.1425702
+        },
+        {
+            "slug": "plazoleta_belgrano",
+            "lat": -31.6262743,
+            "long": -58.5097835
+        },
+        {
+            "slug": "plazoleta_centenario",
+            "lat": -31.6241547,
+            "long": -58.5049421
+        },
+        {
+            "slug": "plazoleta_democracia",
+            "lat": -31.6228266,
+            "long": -58.506515
+        },
+        {
+            "slug": "plazoleta_manuel_belgrano",
+            "lat": -31.3973224,
+            "long": -58.0178413
+        },
+        {
+            "slug": "plazoleta_paz",
+            "lat": -31.6261431,
+            "long": -58.5025875
+        },
+        {
+            "slug": "plazoleta_pioneros",
+            "lat": -31.6266413,
+            "long": -58.5020464
+        },
+        {
+            "slug": "pozo_cuatro",
+            "lat": -32.3121393,
+            "long": -59.0743718
+        },
+        {
+            "slug": "pozo_el_jopo",
+            "lat": -32.2947176,
+            "long": -59.0819353
+        },
+        {
+            "slug": "predio_ferial_vinedos_moulins",
+            "lat": -31.3849283,
+            "long": -58.0181689
+        },
+        {
+            "slug": "puente_mendez_casariego",
+            "lat": -33.0083857,
+            "long": -58.5005143
+        },
+        {
+            "slug": "puerto_colon",
+            "lat": -32.2157724,
+            "long": -58.1360355
+        },
+        {
+            "slug": "puerto_ruiz",
+            "lat": -33.22105,
+            "long": -59.3631199
+        },
+        {
+            "slug": "pulperia_colonia_caseros",
+            "lat": -32.4344543,
+            "long": -58.5128234
+        },
+        {
+            "slug": "quinchos_municipales",
+            "lat": -32.4640665,
+            "long": -58.4844206
+        },
+        {
+            "slug": "quinta_la_suiza",
+            "lat": -31.817215,
+            "long": -59.026423
+        },
+        {
+            "slug": "represa_salto_grande",
+            "lat": -31.2748467,
+            "long": -57.9391601
+        },
+        {
+            "slug": "reserva_el_potrero",
+            "lat": -33.0657402,
+            "long": -58.2561237
+        },
+        {
+            "slug": "reserva_natural",
+            "lat": -33.4912493,
+            "long": -58.6798977
+        },
+        {
+            "slug": "reserva_natural_balneario",
+            "lat": -32.193597,
+            "long": -58.1585604
+        },
+        {
+            "slug": "reserva_natural_termas",
+            "lat": -30.7412689,
+            "long": -58.0141844
+        },
+        {
+            "slug": "reservorio_piedras_semipreciosas",
+            "lat": -32.1986335,
+            "long": -58.1554691
+        },
+        {
+            "slug": "restaurante_el_palmar",
+            "lat": -31.8673155,
+            "long": -58.2088471
+        },
+        {
+            "slug": "rincon_hondo",
+            "lat": -32.3182676,
+            "long": -59.0780503
+        },
+        {
+            "slug": "rio_paranacito",
+            "lat": -33.7146367,
+            "long": -58.6583381
+        },
+        {
+            "slug": "rosario_del_tala_camping_balneario",
+            "lat": -32.3094366,
+            "long": -59.0768886
+        },
+        {
+            "slug": "rosario_del_tala_comisaria",
+            "lat": -32.3000068,
+            "long": -59.1391854
+        },
+        {
+            "slug": "rosario_del_tala_playa_grande",
+            "lat": -32.3097738,
+            "long": -59.0763643
+        },
+        {
+            "slug": "rosario_del_tala_plaza_libertad",
+            "lat": -32.3009409,
+            "long": -59.1392742
+        },
+        {
+            "slug": "rosario_del_tala_rio_gualeguay",
+            "lat": -32.3067333,
+            "long": -59.1262982
+        },
+        {
+            "slug": "rosario_del_tala_terminal_omnibus",
+            "lat": -32.3019948,
+            "long": -59.1353952
+        },
+        {
+            "slug": "sala_carnaval",
+            "lat": -33.148622,
+            "long": -59.3292615
+        },
+        {
+            "slug": "sala_san_martin",
+            "lat": -31.6261,
+            "long": -58.5046092
+        },
+        {
+            "slug": "sala_teatro_padre_paoli",
+            "lat": -33.034479,
+            "long": -59.0057368
+        },
+        {
+            "slug": "salon_americas",
+            "lat": -31.383323,
+            "long": -58.0148167
+        },
+        {
+            "slug": "salon_heraldo_peragallo",
+            "lat": -32.163501,
+            "long": -58.4013861
+        },
+        {
+            "slug": "salon_pirincho_lonardi",
+            "lat": -33.0341912,
+            "long": -59.0044708
+        },
+        {
+            "slug": "san_jose_cementerio_municipal",
+            "lat": -32.2014971,
+            "long": -58.2221131
+        },
+        {
+            "slug": "san_jose_museo_historico_regional",
+            "lat": -32.2126566,
+            "long": -58.2199544
+        },
+        {
+            "slug": "san_justo_plaza_justo_jose_de_urquiza",
+            "lat": -32.4453131,
+            "long": -58.4356691
+        },
+        {
+            "slug": "santa_ana_costanera",
+            "lat": -30.9002829,
+            "long": -57.9360922
+        },
+        {
+            "slug": "santa_ana_lago_salto_grande",
+            "lat": -30.8987766,
+            "long": -57.952814
+        },
+        {
+            "slug": "santa_ana_plaza_san_martin",
+            "lat": -30.8992533,
+            "long": -57.930918
+        },
+        {
+            "slug": "sendero_arroyo_el_palmar",
+            "lat": -31.8946084,
+            "long": -58.2379336
+        },
+        {
+            "slug": "sendero_calera_palmar",
+            "lat": -31.8743646,
+            "long": -58.2093118
+        },
+        {
+            "slug": "sendero_el_pastizal",
+            "lat": -31.8935,
+            "long": -58.2552
+        },
+        {
+            "slug": "sendero_la_glorieta",
+            "lat": -31.888435,
+            "long": -58.2717584
+        },
+        {
+            "slug": "sendero_la_portada",
+            "lat": -31.888435,
+            "long": -58.2717584
+        },
+        {
+            "slug": "sendero_selva",
+            "lat": -31.885784,
+            "long": -58.2038411
+        },
+        {
+            "slug": "sendero_tunel",
+            "lat": -32.4637596,
+            "long": -58.484018
+        },
+        {
+            "slug": "sendero_ubajay_palmar",
+            "lat": -31.795069,
+            "long": -58.3161385
+        },
+        {
+            "slug": "sendero_yatay",
+            "lat": -31.8786886,
+            "long": -58.2684781
+        },
+        {
+            "slug": "senderos_la_chinita",
+            "lat": -31.8384741,
+            "long": -59.001348
+        },
+        {
+            "slug": "sitio_combate_arroyo_ceballos",
+            "lat": -33.0418437,
+            "long": -59.0794351
+        },
+        {
+            "slug": "sitio_historico_calera_palmar",
+            "lat": -31.8743646,
+            "long": -58.2093118
+        },
+        {
+            "slug": "sociedad_sportiva",
+            "lat": -33.1483044,
+            "long": -59.3242915
+        },
+        {
+            "slug": "solar_del_este",
+            "lat": -33.0057269,
+            "long": -58.4953636
+        },
+        {
+            "slug": "tala_sup",
+            "lat": -32.3092515,
+            "long": -59.0771866
+        },
+        {
+            "slug": "teatro_auditorium",
+            "lat": -31.3976021,
+            "long": -58.0183563
+        },
+        {
+            "slug": "teatro_italia",
+            "lat": -33.1478387,
+            "long": -59.3152772
+        },
+        {
+            "slug": "termas",
+            "lat": -31.850338,
+            "long": -59.02554
+        },
+        {
+            "slug": "termas_ayui",
+            "lat": -31.2555835,
+            "long": -57.9561726
+        },
+        {
+            "slug": "termas_colon",
+            "lat": -32.2097666,
+            "long": -58.1450956
+        },
+        {
+            "slug": "termas_punta_viracho",
+            "lat": -31.2462604,
+            "long": -57.9516586
+        },
+        {
+            "slug": "termas_villa_elisa",
+            "lat": -32.129781,
+            "long": -58.4402025
+        },
+        {
+            "slug": "universidad_concepcion_uruguay",
+            "lat": -32.4815978,
+            "long": -58.229692
+        },
+        {
+            "slug": "viejo_expreso",
+            "lat": -30.9799042,
+            "long": -57.9277624
+        },
+        {
+            "slug": "villa_aurora",
+            "lat": -31.6289554,
+            "long": -58.5015344
+        },
+        {
+            "slug": "villa_elisa_hospital_san_roque",
+            "lat": -32.1577927,
+            "long": -58.3951342
+        },
+        {
+            "slug": "villa_elisa_plaza_san_martin",
+            "lat": -32.1624111,
+            "long": -58.397689
+        },
+        {
+            "slug": "villa_elisa_terminal_omnibus",
+            "lat": -32.1631297,
+            "long": -58.401428
+        },
+        {
+            "slug": "villaguay_camping_balneario",
+            "lat": -31.8650356,
+            "long": -59.0028943
+        },
+        {
+            "slug": "villaguay_palacio_municipal",
+            "lat": -31.8644124,
+            "long": -59.0452584
+        },
+        {
+            "slug": "villaguay_plaza_25_mayo",
+            "lat": -31.8676734,
+            "long": -59.0269832
+        },
+        {
+            "slug": "vinedo_la_dominga",
+            "lat": -33.0441565,
+            "long": -58.5438001
+        },
+        {
+            "slug": "vivero_nativas_yatay",
+            "lat": -31.8651603,
+            "long": -58.2110104
+        }
+    ]
+}

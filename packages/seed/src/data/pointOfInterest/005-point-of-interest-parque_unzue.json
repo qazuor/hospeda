@@ -2,8 +2,8 @@
     "$schema": "../../schemas/point-of-interest.schema.json",
     "id": "005-point-of-interest-parque_unzue",
     "slug": "parque_unzue",
-    "lat": null,
-    "long": null,
+    "lat": -33.010432,
+    "long": -58.4979644,
     "type": "PARK",
     "description": "Parque urbano tradicional con espacios verdes y arboledas centenarias",
     "nameI18n": {
