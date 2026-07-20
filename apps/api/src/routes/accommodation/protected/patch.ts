@@ -58,11 +58,25 @@ export const protectedPatchAccommodationRoute = createProtectedRoute({
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
+
+        // HOS-216: gateRichDescription / gateVideoEmbed no longer reject the
+        // whole PATCH when the actor lacks the entitlement for content they
+        // submitted — they neutralize just the gated syntax in `description`
+        // and stash the sanitized value here instead. Apply it before
+        // conversion so the rest of the body (name, price, capacity,
+        // contact...) still persists unchanged. `undefined` means neither
+        // gate touched the description (entitled actor, or plain text).
+        const descriptionOverride = ctx.get('accommodationDescriptionOverride');
+        const effectiveBody =
+            descriptionOverride === undefined
+                ? body
+                : { ...body, description: descriptionOverride };
+
         // Convert flat HTTP body to domain-shaped input before calling the service.
         // Without this conversion, nested fields (location.coordinates, price.price,
         // contactInfo, socialNetworks, extraInfo, media) are never persisted (SPEC-208).
         const domainInput: AccommodationUpdateInput = httpToDomainAccommodationUpdate(
-            body as AccommodationUpdateHttp
+            effectiveBody as AccommodationUpdateHttp
         );
         const result = await accommodationService.update(actor, params.id as string, domainInput);
 
@@ -74,23 +88,26 @@ export const protectedPatchAccommodationRoute = createProtectedRoute({
     },
     options: {
         // Negative-entitlement gates for SPEC-143 finding #25 (in order of
-        // execution). Each gate inspects the request body for content that
-        // exercises a gated capability and throws 403 ENTITLEMENT_REQUIRED
-        // if the actor's plan does not include the corresponding entitlement.
-        // Plain-text descriptions / non-gated payloads pass through.
+        // execution). Plain-text descriptions / non-gated payloads pass
+        // through untouched.
         //
         // - requireEntitlement(EDIT_ACCOMMODATION_INFO): baseline gate — actor
         //   must be on any owner/complex plan (granted on all host tiers).
         //   Runs first so non-entitled users get a clean 403 before body
-        //   inspection by the content-specific gates.
-        // - gateRichDescription: blocks markdown syntax in `description` when
-        //   actor lacks CAN_USE_RICH_DESCRIPTION (owner-basico, free tiers).
-        // - gateVideoEmbed: blocks video URLs (YouTube/Vimeo/Dailymotion) in
-        //   `description` when actor lacks CAN_EMBED_VIDEO (owner-basico).
+        //   inspection by the content-specific gates. Still throws 403 —
+        //   HOS-216 does NOT touch this gate (see HOS-217).
+        // - gateRichDescription: when actor lacks CAN_USE_RICH_DESCRIPTION
+        //   (owner-basico, free tiers) and `description` contains markdown
+        //   syntax, neutralizes just that syntax (HOS-216) instead of
+        //   rejecting the request — see the handler below and the gate's own
+        //   doc comment in `accommodation-entitlements.ts`.
+        // - gateVideoEmbed: same neutralize-not-reject treatment (HOS-216)
+        //   for video URLs (YouTube/Vimeo/Dailymotion) when actor lacks
+        //   CAN_EMBED_VIDEO (owner-basico).
         //
-        // Both content gates use the same envelope shape (code: ENTITLEMENT_REQUIRED,
-        // details: {requiredEntitlement, upgradeUrl}) so the frontend has
-        // consistent handling for entitlement-driven 403s.
+        // The EDIT_ACCOMMODATION_INFO gate still uses the ENTITLEMENT_REQUIRED
+        // envelope (code, details: {requiredEntitlement, upgradeUrl}) — the
+        // two content gates no longer throw at all as of HOS-216.
         middlewares: [
             requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
             gateRichDescription(),
