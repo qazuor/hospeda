@@ -44,6 +44,8 @@ const HALFWAY = new Date('2026-06-16T00:00:00.000Z');
 
 interface SubFixtureOpts {
     planId?: string;
+    status?: string;
+    trialEnd?: Date | null;
     scheduledPlanChange?: {
         status: 'pending' | 'applied' | 'cancelled' | 'failed';
         newPlanId?: string;
@@ -55,7 +57,8 @@ function makeSub(opts: SubFixtureOpts = {}) {
         id: SUB_ID,
         customerId: CUSTOMER_ID,
         planId: opts.planId ?? CURRENT_PLAN_ID,
-        status: 'active' as const,
+        status: opts.status ?? ('active' as const),
+        trialEnd: opts.trialEnd ?? null,
         currentPeriodStart: PERIOD_START,
         currentPeriodEnd: PERIOD_END,
         // interval + intervalCount drive `scheduleSubscriptionDowngrade`'s
@@ -547,6 +550,100 @@ describe('scheduleSubscriptionDowngrade', () => {
                 })
             ).rejects.toMatchObject({ code: 'NOT_A_DOWNGRADE' });
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-215: trial-aware applyAt
+// ---------------------------------------------------------------------------
+
+describe('scheduleSubscriptionDowngrade — HOS-215 trial-aware applyAt', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('uses trialEnd (not currentPeriodEnd) when scheduled while trialing with a future trialEnd', async () => {
+        // trialEnd deliberately differs from currentPeriodEnd (PERIOD_END) so the
+        // test fails if the service ever falls back to the wrong field.
+        const TRIAL_END = new Date('2026-06-20T00:00:00.000Z');
+        const billing = createBillingMock({
+            sub: makeSub({ status: 'trialing', trialEnd: TRIAL_END })
+        });
+
+        const result = await scheduleSubscriptionDowngrade({
+            currentSubscriptionId: SUB_ID,
+            newPlanId: TARGET_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            now: HALFWAY
+        });
+
+        expect(result.applyAt).toBe(TRIAL_END.toISOString());
+        const [, updateInput] = billing.subscriptions.update.mock.calls[0] as [
+            string,
+            Record<string, unknown>
+        ];
+        const scheduled = updateInput.scheduledPlanChange as Record<string, unknown>;
+        expect(scheduled.applyAt).toBe(TRIAL_END.toISOString());
+    });
+
+    it('falls back to currentPeriodEnd when trialing but trialEnd is null', async () => {
+        const billing = createBillingMock({
+            sub: makeSub({ status: 'trialing', trialEnd: null })
+        });
+
+        const result = await scheduleSubscriptionDowngrade({
+            currentSubscriptionId: SUB_ID,
+            newPlanId: TARGET_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            now: HALFWAY
+        });
+
+        expect(result.applyAt).toBe(PERIOD_END.toISOString());
+    });
+
+    it('falls back to currentPeriodEnd when trialing but trialEnd is already in the past', async () => {
+        const PAST_TRIAL_END = new Date('2026-06-10T00:00:00.000Z');
+        const billing = createBillingMock({
+            sub: makeSub({ status: 'trialing', trialEnd: PAST_TRIAL_END })
+        });
+
+        const result = await scheduleSubscriptionDowngrade({
+            currentSubscriptionId: SUB_ID,
+            newPlanId: TARGET_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            now: HALFWAY
+        });
+
+        expect(result.applyAt).toBe(PERIOD_END.toISOString());
+    });
+
+    it('regression: non-trialing status always uses currentPeriodEnd, even with a trialEnd set', async () => {
+        // A resolved subscription can still carry a historical trialEnd — it
+        // must NOT be used once status is no longer 'trialing'.
+        const billing = createBillingMock({
+            sub: makeSub({ status: 'active', trialEnd: new Date('2026-06-20T00:00:00.000Z') })
+        });
+
+        const result = await scheduleSubscriptionDowngrade({
+            currentSubscriptionId: SUB_ID,
+            newPlanId: TARGET_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            now: HALFWAY
+        });
+
+        expect(result.applyAt).toBe(PERIOD_END.toISOString());
     });
 });
 

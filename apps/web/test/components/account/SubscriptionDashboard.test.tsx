@@ -21,6 +21,7 @@ import {
     SubscriptionDashboard,
     type SubscriptionDashboardUser
 } from '../../../src/components/account/SubscriptionDashboard.client';
+import { formatDate } from '../../../src/lib/format-utils';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
@@ -149,6 +150,36 @@ const TRIAL_SUBSCRIPTION = {
     ...ACTIVE_SUBSCRIPTION,
     status: 'trial' as const,
     paymentMethod: null
+};
+
+// HOS-215: a trialing subscription whose trialEndsAt deliberately differs
+// from currentPeriodEnd — the recurring preapproval's period end can sit far
+// beyond the actual trial window, so the UI must display trialEndsAt as the
+// "next billing date", not currentPeriodEnd.
+//
+// trialEndsAt is computed relative to "now" (not a hardcoded past-looking
+// string) so this fixture never silently drifts into the past as real time
+// moves forward — the component's HOS-215 follow-up guard treats a past
+// trialEndsAt as elapsed and falls back to currentPeriodEnd, which would
+// otherwise turn this into a flaky, date-dependent test.
+const FUTURE_TRIAL_END_ISO = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+const FAR_FUTURE_PERIOD_END_ISO = new Date(Date.now() + 300 * 24 * 60 * 60 * 1000).toISOString();
+const PAST_TRIAL_END_ISO = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+
+const TRIAL_SUBSCRIPTION_WITH_DISTINCT_TRIAL_END = {
+    ...TRIAL_SUBSCRIPTION,
+    currentPeriodEnd: FAR_FUTURE_PERIOD_END_ISO,
+    trialEndsAt: FUTURE_TRIAL_END_ISO
+};
+
+// HOS-215 follow-up: a trialing subscription whose trialEndsAt has already
+// elapsed (e.g. right before the trial-reconcile cron converts it) must fall
+// back to currentPeriodEnd — mirrors the `trialEnd > now` guard already used
+// by subscription-cancel.service.ts / subscription-downgrade.service.ts.
+const TRIAL_SUBSCRIPTION_WITH_PAST_TRIAL_END = {
+    ...TRIAL_SUBSCRIPTION,
+    currentPeriodEnd: FAR_FUTURE_PERIOD_END_ISO,
+    trialEndsAt: PAST_TRIAL_END_ISO
 };
 
 const MOCK_INVOICE = {
@@ -316,6 +347,64 @@ describe('SubscriptionDashboard — resolved subscription', () => {
         await waitFor(() => {
             expect(screen.getByText(/Visa •••• 4242/)).toBeInTheDocument();
         });
+    });
+
+    // HOS-215
+    it('shows trialEndsAt (not currentPeriodEnd) as the next billing date while trialing', async () => {
+        mockSubscriptionSuccess(TRIAL_SUBSCRIPTION_WITH_DISTINCT_TRIAL_END);
+        renderDashboard();
+
+        const expectedTrialEndText = formatDate({
+            date: TRIAL_SUBSCRIPTION_WITH_DISTINCT_TRIAL_END.trialEndsAt,
+            locale: 'es'
+        });
+        const wrongPeriodEndText = formatDate({
+            date: TRIAL_SUBSCRIPTION_WITH_DISTINCT_TRIAL_END.currentPeriodEnd,
+            locale: 'es'
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText(expectedTrialEndText)).toBeInTheDocument();
+        });
+        expect(screen.queryByText(wrongPeriodEndText)).not.toBeInTheDocument();
+    });
+
+    // HOS-215 regression: a non-trialing subscription must keep using
+    // currentPeriodEnd exactly as before.
+    it('shows currentPeriodEnd as the next billing date for an active (non-trial) subscription', async () => {
+        mockSubscriptionSuccess(ACTIVE_SUBSCRIPTION);
+        renderDashboard();
+
+        const expectedText = formatDate({
+            date: ACTIVE_SUBSCRIPTION.currentPeriodEnd,
+            locale: 'es'
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText(expectedText)).toBeInTheDocument();
+        });
+    });
+
+    // HOS-215 follow-up: a trialing subscription whose trialEndsAt has
+    // already elapsed must fall back to currentPeriodEnd instead of
+    // displaying a billing date that's already in the past.
+    it('shows currentPeriodEnd as the next billing date when trialing but trialEndsAt is in the past', async () => {
+        mockSubscriptionSuccess(TRIAL_SUBSCRIPTION_WITH_PAST_TRIAL_END);
+        renderDashboard();
+
+        const expectedPeriodEndText = formatDate({
+            date: TRIAL_SUBSCRIPTION_WITH_PAST_TRIAL_END.currentPeriodEnd,
+            locale: 'es'
+        });
+        const pastTrialEndText = formatDate({
+            date: TRIAL_SUBSCRIPTION_WITH_PAST_TRIAL_END.trialEndsAt,
+            locale: 'es'
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText(expectedPeriodEndText)).toBeInTheDocument();
+        });
+        expect(screen.queryByText(pastTrialEndText)).not.toBeInTheDocument();
     });
 
     it('renders MercadoPago as payment method when no card', async () => {

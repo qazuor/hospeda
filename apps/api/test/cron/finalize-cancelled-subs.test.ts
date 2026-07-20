@@ -35,7 +35,8 @@ const {
     mockValidateTransition,
     mockSendNotification,
     mockWithTransaction,
-    mockSyncFeaturedByEntitlementForOwner
+    mockSyncFeaturedByEntitlementForOwner,
+    mockSql
 } = vi.hoisted(() => ({
     mockHandleSubscriptionCancellationAddons: vi.fn(),
     mockClearEntitlementCache: vi.fn(),
@@ -49,7 +50,12 @@ const {
     // mocked db (same insert/update/select handles).
     mockWithTransaction: vi.fn(),
     // SPEC-309 T-024: Step 3c's unconditional revoke call.
-    mockSyncFeaturedByEntitlementForOwner: vi.fn()
+    mockSyncFeaturedByEntitlementForOwner: vi.fn(),
+    // HOS-215: hoisted so tests can inspect the CASE-WHEN effective-end-date
+    // fragment built by `effectiveEndDateExpr()`.
+    mockSql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
+        _sql: { strings, values }
+    }))
 }));
 
 // ---------------------------------------------------------------------------
@@ -193,6 +199,7 @@ vi.mock('@repo/db', async (importOriginal) => {
             status: 'STATUS',
             planId: 'PLAN_ID',
             currentPeriodEnd: 'CURRENT_PERIOD_END',
+            trialEnd: 'TRIAL_END',
             cancelAtPeriodEnd: 'CANCEL_AT_PERIOD_END',
             deletedAt: 'DELETED_AT',
             updatedAt: 'UPDATED_AT'
@@ -204,9 +211,7 @@ vi.mock('@repo/db', async (importOriginal) => {
         lte: vi.fn((col, val) => ({ _lte: [col, val] })),
         isNull: vi.fn((col) => ({ _isNull: col })),
         inArray: vi.fn((col, vals) => ({ _inArray: [col, vals] })),
-        sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
-            _sql: { strings, values }
-        }))
+        sql: mockSql
     };
 });
 
@@ -282,6 +287,10 @@ beforeEach(() => {
     mockSendNotification.mockReset();
     mockWithTransaction.mockReset();
     mockSyncFeaturedByEntitlementForOwner.mockReset();
+    // HOS-215: clear call history only — keep the CASE-WHEN implementation
+    // (findDueSoftCancelledSubs / sendAccessEndingReminders call it on every
+    // handler run, so a full mockReset() would silently break every test).
+    mockSql.mockClear();
 
     // Re-set defaults after reset
     mockGetQZPayBilling.mockReturnValue(makeBilling());
@@ -709,6 +718,49 @@ describe('_internals.findDueSoftCancelledSubs — WHERE clause', () => {
         expect(hasIsNull).toBe(true);
     });
 
+    // ── HOS-215: the lte gate compares against the trial-aware effective ──
+    // ── end date (trial_end while trialing), not the raw currentPeriodEnd ──
+
+    it('HOS-215: the lte predicate compares against a CASE-WHEN effective end date (trial_end while trialing), not the raw currentPeriodEnd column', async () => {
+        const capturedPredicates: unknown[] = [];
+
+        mockDbSelectChain.mockImplementation(function () {
+            const chain = {
+                from: () => chain,
+                where: (predicate: unknown) => {
+                    capturedPredicates.push(predicate);
+                    return chain;
+                },
+                limit: async () => []
+            };
+            return chain;
+        });
+
+        await _internals.findDueSoftCancelledSubs();
+
+        const predicate = capturedPredicates[0] as {
+            _and: Array<{ _lte?: [unknown, unknown] }>;
+        };
+        const ltePred = predicate._and.find((p): p is { _lte: [unknown, unknown] } => '_lte' in p);
+        expect(ltePred).toBeDefined();
+
+        // The lte's column argument must be the mocked sql`` CASE-WHEN fragment
+        // (not a bare column reference like 'CURRENT_PERIOD_END').
+        const col = ltePred?._lte[0] as { _sql?: { strings: string[]; values: unknown[] } };
+        expect(col._sql).toBeDefined();
+
+        const templateText = col._sql?.strings.join('');
+        expect(templateText).toContain('CASE WHEN');
+        expect(templateText).toContain("= 'trialing'");
+        expect(templateText).toContain('IS NOT NULL');
+
+        // The interpolated values must reference status, trialEnd (twice — the
+        // condition and the THEN branch) and currentPeriodEnd (the ELSE branch).
+        expect(col._sql?.values).toContain('STATUS');
+        expect(col._sql?.values).toContain('TRIAL_END');
+        expect(col._sql?.values).toContain('CURRENT_PERIOD_END');
+    });
+
     it('FINALIZE_ELIGIBLE_STATUSES constant includes active, past_due, and trialing', () => {
         const statuses = _internals.FINALIZE_ELIGIBLE_STATUSES as readonly string[];
         expect(statuses).toContain('active');
@@ -1008,6 +1060,58 @@ describe('_internals.sendAccessEndingReminders', () => {
 
     it('exports sendAccessEndingReminders function', () => {
         expect(typeof _internals.sendAccessEndingReminders).toBe('function');
+    });
+
+    it('HOS-215: selects periodEnd and filters the window using the trial-aware effective end date, not the raw currentPeriodEnd column', async () => {
+        const capturedPredicates: unknown[] = [];
+        mockDbSelectChain.mockImplementation(function () {
+            const chain = {
+                from: () => chain,
+                where: (predicate: unknown) => {
+                    capturedPredicates.push(predicate);
+                    return chain;
+                },
+                limit: async () => []
+            };
+            return chain;
+        });
+
+        const fakeLogger = {
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn(),
+            debug: vi.fn()
+        };
+
+        await _internals.sendAccessEndingReminders(fakeLogger);
+
+        // The select() projection for periodEnd must be the CASE-WHEN fragment
+        // (built by the same effectiveEndDateExpr() as Pass 1), not the raw
+        // currentPeriodEnd column — otherwise the reminder email would show a
+        // trialing sub's recurring-preapproval period end instead of its
+        // actual trial end.
+        const selectArgs = mockDbSelectChain.mock.calls[0]?.[0] as {
+            periodEnd?: { _sql?: { strings: string[]; values: unknown[] } };
+        };
+        expect(selectArgs.periodEnd?._sql).toBeDefined();
+        expect(selectArgs.periodEnd?._sql?.strings.join('')).toContain('CASE WHEN');
+
+        // Both window bounds (gte + lte) must compare against the same
+        // effective-date fragment.
+        const predicate = capturedPredicates[0] as { _and: Array<Record<string, unknown>> };
+        const gtePred = predicate._and.find((p) => '_gte' in p) as
+            | { _gte: [unknown, unknown] }
+            | undefined;
+        const ltePred = predicate._and.find((p) => '_lte' in p) as
+            | { _lte: [unknown, unknown] }
+            | undefined;
+        expect(gtePred).toBeDefined();
+        expect(ltePred).toBeDefined();
+
+        const gteCol = gtePred?._gte[0] as { _sql?: unknown };
+        const lteCol = ltePred?._lte[0] as { _sql?: unknown };
+        expect(gteCol._sql).toBeDefined();
+        expect(lteCol._sql).toBeDefined();
     });
 
     it('sends one reminder for a soft-cancelled sub in the 3-day window', async () => {

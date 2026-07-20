@@ -790,8 +790,27 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
               status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')
           );
 
-    const nextBillingDate = subscription.currentPeriodEnd
-        ? formatDate({ date: subscription.currentPeriodEnd, locale })
+    // HOS-215: while trialing, `currentPeriodEnd` is the recurring
+    // preapproval's period end (which can be far beyond the trial window),
+    // NOT when the free trial actually ends. `trialEndsAt` is the correct
+    // "next billing date" for a trialing subscription — the trial converts
+    // (and MP charges) on that date, not on currentPeriodEnd.
+    //
+    // Guard `trialEndsAt` against having already elapsed — mirrors the same
+    // `trialEnd > now` guard used by subscription-cancel.service.ts and
+    // subscription-downgrade.service.ts. A `status: 'trial'` row with a PAST
+    // `trialEndsAt` (e.g. right before the trial-reconcile cron converts it)
+    // must fall back to `currentPeriodEnd`, not display a billing date that's
+    // already behind us.
+    const effectiveNextBillingDate =
+        status === 'trial' &&
+        subscription.trialEndsAt &&
+        new Date(subscription.trialEndsAt) > new Date()
+            ? subscription.trialEndsAt
+            : subscription.currentPeriodEnd;
+
+    const nextBillingDate = effectiveNextBillingDate
+        ? formatDate({ date: effectiveNextBillingDate, locale })
         : t('account.pages.subscription.noBillingDate', 'N/A');
 
     const nextBillingLabel = isCancelScheduled
@@ -1088,7 +1107,7 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
                 <CancelConfirmModal
                     locale={locale}
                     subscriptionId={subscription.id}
-                    accessUntilFallback={subscription.currentPeriodEnd}
+                    accessUntilFallback={effectiveNextBillingDate}
                     onDismiss={() => {
                         setShowCancelModal(false);
                     }}

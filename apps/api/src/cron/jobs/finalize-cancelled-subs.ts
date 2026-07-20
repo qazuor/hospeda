@@ -6,8 +6,13 @@
  * ### Pass 1 — Finalize due soft-cancellations (T-009)
  *
  * Finds all subscriptions that have `cancelAtPeriodEnd=true` AND
- * `current_period_end <= now()` AND `status IN ('active', 'past_due', 'trialing')`,
- * then completes the cancellation lifecycle for each:
+ * `<effective end date> <= now()` AND `status IN ('active', 'past_due', 'trialing')`,
+ * then completes the cancellation lifecycle for each. The "effective end date"
+ * (HOS-215, see `effectiveEndDateExpr()`) is `trial_end` while the row is
+ * `trialing` with a set `trial_end`, and `current_period_end` otherwise — a
+ * card-first trial's recurring preapproval `current_period_end` can sit well
+ * beyond the actual trial window, which previously let a cancelled trial
+ * subscription's access survive up to ~16 days longer than it should:
  *
  *   1. Validates the `<status> → cancelled` transition via the state machine
  *      (all three source statuses have a registered edge to 'cancelled').
@@ -47,17 +52,18 @@
  *
  * ### Pass 2 — D3 "access ending soon" reminders (T-010)
  *
- * Scans for soft-cancelled subs whose `current_period_end` falls in the
- * [now+2d, now+4d] window. Uses the same `FINALIZE_ELIGIBLE_STATUSES` set as
- * Pass 1 so `past_due` and `trialing` soft-cancelled subs also receive the
- * "access ending" heads-up (they deserve it just as much as `active` subs).
- * For each, fires one `SUBSCRIPTION_ACCESS_ENDING_SOON` email with per-sub
- * dedup via a `SUBSCRIPTION_ACCESS_ENDING_NOTIF` billing event.
- * Fire-and-forget (errors are logged, not counted in job result).
+ * Scans for soft-cancelled subs whose effective end date (HOS-215, same
+ * `effectiveEndDateExpr()` as Pass 1) falls in the [now+2d, now+4d] window.
+ * Uses the same `FINALIZE_ELIGIBLE_STATUSES` set as Pass 1 so `past_due` and
+ * `trialing` soft-cancelled subs also receive the "access ending" heads-up
+ * (they deserve it just as much as `active` subs). For each, fires one
+ * `SUBSCRIPTION_ACCESS_ENDING_SOON` email with per-sub dedup via a
+ * `SUBSCRIPTION_ACCESS_ENDING_NOTIF` billing event. Fire-and-forget (errors
+ * are logged, not counted in job result).
  *
  * The two query windows are non-overlapping:
- *  - Pass 1: `period_end <= now` (already expired)
- *  - Pass 2: `period_end in (now+2d, now+4d)` (3 days out)
+ *  - Pass 1: `effective end date <= now` (already expired)
+ *  - Pass 2: `effective end date in (now+2d, now+4d)` (3 days out)
  *
  * ### Idempotency
  *
@@ -90,6 +96,7 @@ import {
     inArray,
     isNull,
     lte,
+    sql,
     withTransaction
 } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
@@ -143,7 +150,8 @@ const FINALIZE_ELIGIBLE_STATUSES = [
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * D3 window: subs whose `current_period_end` falls between now+2d and now+4d.
+ * D3 window: subs whose effective end date (HOS-215) falls between now+2d
+ * and now+4d.
  *
  * The 2-day lower bound avoids double-sending if the cron runs slightly early
  * on the day before. The 4-day upper bound provides a 48-hour catching window
@@ -177,6 +185,33 @@ interface AccessEndingRow {
 }
 
 // ---------------------------------------------------------------------------
+// Trial-aware effective end date (HOS-215)
+// ---------------------------------------------------------------------------
+
+/**
+ * Builds a SQL `CASE` expression that resolves the "effective" period-end
+ * date for a soft-cancelled subscription row: `trial_end` while the row is
+ * `trialing` and `trial_end` is set, `current_period_end` otherwise.
+ *
+ * Both passes in this job (the finalize gate and the D3 "access ending soon"
+ * window) previously compared purely against `current_period_end`, which is
+ * the recurring preapproval's period end and can sit well beyond the actual
+ * trial window for a card-first trial (HOS-171). That let a cancelled trial
+ * subscription's data/access survive up to ~16 days longer than it should —
+ * this expression is the fix, expressed once so both passes stay consistent.
+ *
+ * A fresh `sql` fragment is built on every call rather than a shared module
+ * constant, matching how Drizzle expects column-referencing fragments to be
+ * composed per-query.
+ *
+ * @returns A `Date`-typed SQL fragment usable anywhere a column reference
+ *   is accepted (`lte`, `gte`, or a `select()` projection).
+ */
+function effectiveEndDateExpr() {
+    return sql<Date>`CASE WHEN ${billingSubscriptions.status} = 'trialing' AND ${billingSubscriptions.trialEnd} IS NOT NULL THEN ${billingSubscriptions.trialEnd} ELSE ${billingSubscriptions.currentPeriodEnd} END`;
+}
+
+// ---------------------------------------------------------------------------
 // Query
 // ---------------------------------------------------------------------------
 
@@ -188,7 +223,8 @@ interface AccessEndingRow {
  *     'active'-only query caused soft-cancelled subs that went `past_due`
  *     (payment-failure webhook) or stayed `trialing` to be stuck forever.
  *   - `cancel_at_period_end = true`
- *   - `current_period_end <= now()` (the grace period has elapsed)
+ *   - effective end date (HOS-215: `trial_end` while trialing, else
+ *     `current_period_end`) `<= now()` (the grace period has elapsed)
  *   - Not soft-deleted
  *
  * All predicates are applied in the SQL WHERE clause via Drizzle's `and()`
@@ -217,12 +253,13 @@ async function findDueSoftCancelledSubs(): Promise<DueSoftCancelledRow[]> {
             // soft-cancelled subs that are in past_due or trialing at
             // period_end (M2 regression fix).
             // cancelAtPeriodEnd is a boolean column: eq(col, true).
-            // lte(currentPeriodEnd, now) enforces the grace-period gate.
+            // lte(effectiveEndDateExpr(), now) enforces the grace-period gate
+            // using trial_end (not current_period_end) while trialing — HOS-215.
             // isNull(deletedAt) guards soft-delete.
             and(
                 inArray(billingSubscriptions.status, [...FINALIZE_ELIGIBLE_STATUSES]),
                 eq(billingSubscriptions.cancelAtPeriodEnd, true),
-                lte(billingSubscriptions.currentPeriodEnd, now),
+                lte(effectiveEndDateExpr(), now),
                 isNull(billingSubscriptions.deletedAt)
             )
         )
@@ -247,8 +284,8 @@ type ReminderLogger = {
 };
 
 /**
- * Scans for soft-cancelled subscriptions whose `current_period_end` falls
- * in the D3 window ([now+2d, now+4d]) and sends a
+ * Scans for soft-cancelled subscriptions whose effective end date (HOS-215)
+ * falls in the D3 window ([now+2d, now+4d]) and sends a
  * `SUBSCRIPTION_ACCESS_ENDING_SOON` reminder for each that has not yet
  * received one (dedup via `SUBSCRIPTION_ACCESS_ENDING_NOTIF` event).
  *
@@ -271,7 +308,10 @@ async function sendAccessEndingReminders(logger: ReminderLogger): Promise<void> 
                 id: billingSubscriptions.id,
                 customerId: billingSubscriptions.customerId,
                 planId: billingSubscriptions.planId,
-                periodEnd: billingSubscriptions.currentPeriodEnd
+                // HOS-215: trial-aware effective end date — see effectiveEndDateExpr().
+                // Keeps the "access ending" reminder's date in sync with the same
+                // date the window predicate below and the finalize gate use.
+                periodEnd: effectiveEndDateExpr()
             })
             .from(billingSubscriptions)
             .where(
@@ -281,8 +321,8 @@ async function sendAccessEndingReminders(logger: ReminderLogger): Promise<void> 
                     inArray(billingSubscriptions.status, [...FINALIZE_ELIGIBLE_STATUSES]),
                     eq(billingSubscriptions.cancelAtPeriodEnd, true),
                     isNull(billingSubscriptions.deletedAt),
-                    gte(billingSubscriptions.currentPeriodEnd, windowStart),
-                    lte(billingSubscriptions.currentPeriodEnd, windowEnd)
+                    gte(effectiveEndDateExpr(), windowStart),
+                    lte(effectiveEndDateExpr(), windowEnd)
                 )
             )
             .limit(MAX_ROWS_PER_TICK);

@@ -54,10 +54,17 @@ export const UserCancelSubscriptionResponseSchema = z.object({
     /** Timestamp when the cancel was recorded. Set by qzpay-core. */
     canceledAt: z.coerce.date().describe('When the cancellation was recorded'),
     /**
-     * The `current_period_end` of the subscription. The user retains full
-     * access to plan entitlements until this date.
+     * The last day the user retains full access to plan entitlements. This is
+     * `current_period_end`, EXCEPT while the subscription is still `trialing`
+     * with a future `trial_end` — in that case it is `trial_end` (HOS-215),
+     * since the recurring preapproval's period end can sit far beyond the
+     * trial window.
      */
-    accessUntil: z.coerce.date().describe('Last day the user retains access (current_period_end)')
+    accessUntil: z.coerce
+        .date()
+        .describe(
+            'Last day the user retains access (current_period_end, or trial_end while trialing)'
+        )
 });
 
 export type UserCancelSubscriptionResponse = z.infer<typeof UserCancelSubscriptionResponseSchema>;
