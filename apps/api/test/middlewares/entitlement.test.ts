@@ -3,7 +3,7 @@
  */
 
 import { EntitlementKey, LimitKey } from '@repo/billing';
-import { PlanService, RoleEnum } from '@repo/service-core';
+import { isOwnerCategorySubscription, PlanService, RoleEnum } from '@repo/service-core';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -737,6 +737,147 @@ describe('entitlementMiddleware', () => {
             spy.mockRestore();
             // Reset cache again so the rejected-promise stub does not persist.
             clearHostDraftDefaultsCache();
+        });
+    });
+
+    describe('HOST actor category-aware subscription resolution (HOS-217)', () => {
+        // Bug: a TOURIST who completes host-onboarding ends up with
+        // role=HOST but no owner-category subscription — their only live
+        // accommodation-domain subscription is still their tourist plan
+        // (e.g. tourist-vip). Pre-fix, loadEntitlements resolved that
+        // tourist plan's entitlements for them (no PUBLISH_ACCOMMODATIONS /
+        // EDIT_ACCOMMODATION_INFO). Post-fix, a HOST's "active accommodation
+        // subscription" must also be an owner/complex-category plan —
+        // otherwise it's treated the same as having no subscription at all
+        // and falls back to owner-basico draft defaults.
+
+        it('falls back to owner-basico defaults when the HOST actor only has a live tourist-category subscription', async () => {
+            // Arrange — HOST role, but the only live accommodation subscription
+            // is a tourist plan (mirrors a tourist-vip subscriber who onboarded
+            // as a host without ever picking an owner plan).
+            const hostActor = {
+                id: 'host-tourist-sub-only',
+                role: RoleEnum.HOST,
+                permissions: [],
+                email: 'host-tourist-sub-only@example.com'
+            };
+            const hostCustomerId = 'host-customer-tourist-sub-only';
+            clearEntitlementCache(hostCustomerId);
+
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-tourist-vip', planId: 'plan-tourist-vip', status: 'active' }
+            ]);
+            vi.mocked(isOwnerCategorySubscription).mockResolvedValueOnce(false);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', hostCustomerId);
+                c.set(
+                    'actor',
+                    hostActor as unknown as import('../../src/types').AppBindings['Variables']['actor']
+                );
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                const limits = c.get('userLimits');
+                return c.json({
+                    entitlements: Array.from(entitlements).sort(),
+                    limits: Object.fromEntries(limits)
+                });
+            });
+
+            // Act
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // Assert — isOwnerCategorySubscription was consulted for the
+            // tourist plan's id, and the outcome is the owner-basico
+            // draft-defaults fallback (NOT the tourist plan's entitlements).
+            expect(isOwnerCategorySubscription).toHaveBeenCalledWith(
+                expect.objectContaining({ planId: 'plan-tourist-vip' })
+            );
+            expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.entitlements).toContain(EntitlementKey.EDIT_ACCOMMODATION_INFO);
+            expect(data.entitlements).not.toContain(EntitlementKey.SAVE_FAVORITES);
+            expect(data.entitlements).not.toContain(EntitlementKey.WRITE_REVIEWS);
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(1);
+        });
+
+        it('resolves the real plan entitlements for a HOST actor with a live owner-category subscription (no regression)', async () => {
+            // Arrange — HOST role with a real, live owner-category subscription.
+            // Uses an entitlement/limit NOT present in the owner-basico mock
+            // (CAN_USE_RICH_DESCRIPTION, max_accommodations=10) so the
+            // assertion can only pass if the REAL plan resolved — not the
+            // owner-basico draft-defaults fallback.
+            const hostActor = {
+                id: 'host-real-owner-sub',
+                role: RoleEnum.HOST,
+                permissions: [],
+                email: 'host-real-owner-sub@example.com'
+            };
+            const hostCustomerId = 'host-customer-real-owner-sub';
+            clearEntitlementCache(hostCustomerId);
+
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-owner-pro', planId: 'plan-owner-pro', status: 'active' }
+            ]);
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-owner-pro',
+                name: 'Owner Pro',
+                entitlements: [
+                    EntitlementKey.PUBLISH_ACCOMMODATIONS,
+                    EntitlementKey.EDIT_ACCOMMODATION_INFO,
+                    EntitlementKey.CAN_USE_RICH_DESCRIPTION
+                ],
+                limits: {
+                    [LimitKey.MAX_ACCOMMODATIONS]: 10,
+                    [LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]: 20
+                }
+            });
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+            // Real owner plan — isOwnerCategorySubscription's global default
+            // (mocked `true` in test/setup.ts) already covers this, but pin it
+            // explicitly for this test's own clarity/robustness.
+            vi.mocked(isOwnerCategorySubscription).mockResolvedValueOnce(true);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', hostCustomerId);
+                c.set(
+                    'actor',
+                    hostActor as unknown as import('../../src/types').AppBindings['Variables']['actor']
+                );
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                const limits = c.get('userLimits');
+                return c.json({
+                    entitlements: Array.from(entitlements).sort(),
+                    limits: Object.fromEntries(limits)
+                });
+            });
+
+            // Act
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // Assert — the REAL owner-pro plan resolved (not owner-basico).
+            expect(isOwnerCategorySubscription).toHaveBeenCalledWith(
+                expect.objectContaining({ planId: 'plan-owner-pro' })
+            );
+            expect(data.entitlements).toContain(EntitlementKey.CAN_USE_RICH_DESCRIPTION);
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(10);
         });
     });
 
@@ -1961,18 +2102,49 @@ describe('Accommodation Entitlement Gates', () => {
             expect(data.description).toContain('**Bold**');
         });
 
-        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
-            // Shipped contract (PR #1250/#1252, smoke-validated): a user without
-            // CAN_USE_RICH_DESCRIPTION who submits markdown is blocked with a
-            // 403 ENTITLEMENT_REQUIRED envelope (not silently stripped). The gate
-            // throws a ServiceError, mapped to 403 by createErrorHandler.
+        it('should NOT block a single plain-text bullet line (HOS-216 regression)', async () => {
+            // HOS-216: a lone "- WiFi" line is common host prose, not markdown
+            // intent. Before HOS-216 this false-positived and blocked the
+            // ENTIRE PATCH. It must now pass through untouched: no override
+            // stashed, description reaches the handler verbatim.
+            app.use((c, next) => {
+                c.set('userEntitlements', new Set<EntitlementKey>());
+                return next();
+            });
+            app.use(gateRichDescription());
+            app.post('/test', async (c) => {
+                const body = await c.req.json();
+                return c.json({
+                    processed: true,
+                    description: body.description,
+                    override: c.get('accommodationDescriptionOverride') ?? null
+                });
+            });
+
+            const res = await app.request('/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description: '- WiFi incluido en todas las habitaciones' })
+            });
+
+            expect(res.status).toBe(200);
+            const data = await res.json();
+            expect(data.description).toBe('- WiFi incluido en todas las habitaciones');
+            expect(data.override).toBeNull();
+        });
+
+        it('neutralizes real markdown instead of blocking the request when user lacks entitlement', async () => {
+            // HOS-216: replaces the old "throws 403 for the whole PATCH"
+            // contract. A user without CAN_USE_RICH_DESCRIPTION who submits
+            // genuine markdown (here: 2+ consecutive bullet lines, which IS
+            // real list syntax) gets a 200 — the gate stashes a sanitized
+            // description on context instead of throwing.
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateRichDescription());
             app.post('/test', async (c) => c.json({ processed: true }));
-            app.onError(createErrorHandler());
 
             const res = await app.request('/test', {
                 method: 'POST',
@@ -1982,13 +2154,9 @@ describe('Accommodation Entitlement Gates', () => {
                 })
             });
 
-            // Contract: 403 + ENTITLEMENT_REQUIRED. The full envelope (incl.
-            // details.requiredEntitlement) is exercised against the real app
-            // error handler by the accommodation e2e flow + the staging smoke;
-            // this bare-Hono harness pins the status + code.
-            expect(res.status).toBe(403);
+            expect(res.status).toBe(200);
             const data = await res.json();
-            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
+            expect(data.processed).toBe(true);
         });
     });
 
@@ -2020,16 +2188,22 @@ describe('Accommodation Entitlement Gates', () => {
             expect(data.videoUrl).toBe('https://www.youtube.com/watch?v=abc123');
         });
 
-        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
-            // Shipped contract: a user without CAN_EMBED_VIDEO who submits a
-            // video URL is blocked with 403 ENTITLEMENT_REQUIRED (not stripped).
+        it('neutralizes the video URL instead of blocking the request when user lacks entitlement', async () => {
+            // HOS-216: replaces the old "throws 403 for the whole PATCH"
+            // contract — see gateRichDescription's HOS-216 test above.
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateVideoEmbed());
-            app.post('/test', async (c) => c.json({ processed: true }));
-            app.onError(createErrorHandler());
+            app.post('/test', async (c) => {
+                const body = await c.req.json();
+                return c.json({
+                    processed: true,
+                    override: c.get('accommodationDescriptionOverride') ?? null,
+                    rawDescription: body.description
+                });
+            });
 
             const res = await app.request('/test', {
                 method: 'POST',
@@ -2044,9 +2218,47 @@ describe('Accommodation Entitlement Gates', () => {
                 })
             });
 
-            expect(res.status).toBe(403);
+            expect(res.status).toBe(200);
             const data = await res.json();
-            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
+            expect(data.processed).toBe(true);
+            // Original body is untouched — the sanitized value lives only on
+            // the stashed context override, applied by the route handler.
+            expect(data.rawDescription).toContain('youtube.com');
+            expect(data.override).not.toContain('youtube.com');
+            expect(data.override).toContain('Check out this video');
+        });
+
+        it('composes with a prior gateRichDescription pass instead of reverting it', async () => {
+            // HOS-216: when both gates fire (actor lacks both entitlements),
+            // gateVideoEmbed must sanitize the ALREADY-sanitized description
+            // from gateRichDescription, not re-read the raw body and lose
+            // the markdown neutralization.
+            app.use((c, next) => {
+                c.set('userEntitlements', new Set<EntitlementKey>());
+                return next();
+            });
+            app.use(gateRichDescription());
+            app.use(gateVideoEmbed());
+            app.post('/test', async (c) =>
+                c.json({
+                    processed: true,
+                    override: c.get('accommodationDescriptionOverride') ?? null
+                })
+            );
+
+            const res = await app.request('/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    description:
+                        '**Bold**\n- item one\n- item two https://www.youtube.com/watch?v=abc123'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            const data = await res.json();
+            expect(data.override).not.toContain('**');
+            expect(data.override).not.toContain('youtube.com');
         });
     });
 

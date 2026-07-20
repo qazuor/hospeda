@@ -1,7 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-    getDb: vi.fn()
+    getDb: vi.fn(),
+    // HOS-217: checkEligibility now calls isOwnerCategorySubscription per live
+    // subscription to confirm it's an owner/complex plan, not just "any live
+    // sub". Mocked here (rather than exercised against the mocked @repo/db
+    // chain, which only wires the customer + subscriptions queries) so the
+    // pre-existing "any live sub = has_active_sub" tests keep working
+    // unchanged via a default resolved-true, with dedicated tests below
+    // overriding it to false for the HOS-217 tourist-plan case.
+    isOwnerCategorySubscription: vi.fn()
 }));
 
 vi.mock('@repo/db', () => ({
@@ -11,6 +19,11 @@ vi.mock('@repo/db', () => ({
     eq: vi.fn(),
     getDb: mocks.getDb
 }));
+
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return { ...actual, isOwnerCategorySubscription: mocks.isOwnerCategorySubscription };
+});
 
 import { buildAccommodationPublishDeps } from '../../src/services/accommodation-publish-deps';
 
@@ -84,6 +97,11 @@ function setupDbMock(customerRows: unknown[], subscriptionRows: unknown[]) {
 describe('buildAccommodationPublishDeps.checkEligibility', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // Default: every live subscription resolves as an owner/complex plan,
+        // matching this suite's pre-HOS-217 assumption ("any live sub is a
+        // host plan"). Tests exercising the new tourist-plan rejection path
+        // override this per-case.
+        mocks.isOwnerCategorySubscription.mockResolvedValue(true);
         // checkEligibility -> isSubscriptionLive uses Date.now() internally (no nowMs
         // param). Freeze time at NOW_MS so the date-relative grace cases are
         // deterministic regardless of wall-clock time of day.
@@ -234,5 +252,142 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
 
         // Assert
         expect(result).toBe('subscription_required');
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-217: a live subscription alone is not enough — it must also be an
+    // owner/complex-category plan. A HOST promoted via host-onboarding who
+    // still only has a live tourist-vip subscription must NOT be treated as
+    // eligible to publish.
+    // -----------------------------------------------------------------------
+
+    it('returns subscription_required when the only live subscription is a tourist-category plan', async () => {
+        // Arrange: an active, non-expired subscription (would have been
+        // has_active_sub pre-HOS-217) whose plan is tourist-category — e.g.
+        // tourist-vip, still active on a HOST who onboarded without ever
+        // picking an owner plan.
+        const futureEnd = new Date(NOW_MS + hoursMs(24));
+        setupDbMock(
+            [CUSTOMER],
+            [
+                {
+                    status: 'active',
+                    trialEnd: null,
+                    currentPeriodEnd: futureEnd,
+                    planId: 'plan-tourist-vip'
+                }
+            ]
+        );
+        mocks.isOwnerCategorySubscription.mockResolvedValue(false);
+        const deps = buildAccommodationPublishDeps();
+
+        // Act
+        const result = await deps.checkEligibility('owner-1');
+
+        // Assert
+        expect(result).toBe('subscription_required');
+        expect(mocks.isOwnerCategorySubscription).toHaveBeenCalledWith(
+            expect.objectContaining({ planId: 'plan-tourist-vip' })
+        );
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-217 follow-up: `commerce-listing`/`partner-listing` plans have
+    // `metadata.category = 'owner'` on purpose (SPEC-239 T-034 quirk), so a
+    // live commerce-domain subscription must be filtered out by product
+    // domain BEFORE the owner/complex category check runs — otherwise a host
+    // with only a commerce subscription would be allowed to publish an
+    // accommodation with no accommodation plan at all.
+    // -----------------------------------------------------------------------
+
+    it('returns subscription_required when the only live subscription is a commerce-domain plan (owner-category quirk)', async () => {
+        // Arrange: a live subscription whose productDomain is 'commerce' —
+        // isOwnerCategorySubscription would resolve true for it (the
+        // commerce-listing plan's category is 'owner' on purpose), so this
+        // case only passes if isAccommodationSubscription filters it out
+        // before the category loop ever runs.
+        const futureEnd = new Date(NOW_MS + hoursMs(24));
+        setupDbMock(
+            [CUSTOMER],
+            [
+                {
+                    status: 'active',
+                    trialEnd: null,
+                    currentPeriodEnd: futureEnd,
+                    planId: 'plan-commerce-listing',
+                    productDomain: 'commerce'
+                }
+            ]
+        );
+        // isOwnerCategorySubscription default mock resolves true — if the
+        // product-domain filter is missing, this sub would incorrectly pass.
+        const deps = buildAccommodationPublishDeps();
+
+        // Act
+        const result = await deps.checkEligibility('owner-1');
+
+        // Assert
+        expect(result).toBe('subscription_required');
+        expect(mocks.isOwnerCategorySubscription).not.toHaveBeenCalled();
+    });
+
+    it('returns has_active_sub when an owner accommodation-domain subscription exists', async () => {
+        // Regression: a normal accommodation-domain, owner-category live
+        // subscription must still be eligible after the product-domain
+        // filter is added.
+        const futureEnd = new Date(NOW_MS + hoursMs(24));
+        setupDbMock(
+            [CUSTOMER],
+            [
+                {
+                    status: 'active',
+                    trialEnd: null,
+                    currentPeriodEnd: futureEnd,
+                    planId: 'plan-owner-basico',
+                    productDomain: 'accommodation'
+                }
+            ]
+        );
+        const deps = buildAccommodationPublishDeps();
+
+        // Act
+        const result = await deps.checkEligibility('owner-1');
+
+        // Assert
+        expect(result).toBe('has_active_sub');
+    });
+
+    it('returns has_active_sub when a live owner-category plan exists alongside a live tourist plan', async () => {
+        // Arrange: two live subscriptions — the tourist one is not an owner
+        // plan, but the owner one is. The loop must not bail out on the first
+        // (tourist) match; it must keep checking until it finds an owner match.
+        const futureEnd = new Date(NOW_MS + hoursMs(24));
+        setupDbMock(
+            [CUSTOMER],
+            [
+                {
+                    status: 'active',
+                    trialEnd: null,
+                    currentPeriodEnd: futureEnd,
+                    planId: 'plan-tourist-vip'
+                },
+                {
+                    status: 'active',
+                    trialEnd: null,
+                    currentPeriodEnd: futureEnd,
+                    planId: 'plan-owner-basico'
+                }
+            ]
+        );
+        mocks.isOwnerCategorySubscription.mockImplementation(
+            async ({ planId }: { planId: string }) => planId === 'plan-owner-basico'
+        );
+        const deps = buildAccommodationPublishDeps();
+
+        // Act
+        const result = await deps.checkEligibility('owner-1');
+
+        // Assert
+        expect(result).toBe('has_active_sub');
     });
 });

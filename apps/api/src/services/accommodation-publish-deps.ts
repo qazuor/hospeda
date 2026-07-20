@@ -24,7 +24,12 @@
  */
 import { isSubscriptionLive } from '@repo/billing';
 import { billingCustomers, billingSubscriptions, desc, eq, getDb } from '@repo/db';
-import type { AccommodationPublishDeps, PublishEligibility } from '@repo/service-core';
+import {
+    type AccommodationPublishDeps,
+    isAccommodationSubscription,
+    isOwnerCategorySubscription,
+    type PublishEligibility
+} from '@repo/service-core';
 
 /**
  * Builds the publish dependencies that `AccommodationService.publish()` needs.
@@ -40,6 +45,16 @@ import type { AccommodationPublishDeps, PublishEligibility } from '@repo/service
  * `first_publish` — which `publish()` now rejects to the plans page exactly like
  * `subscription_required`. The two stay distinct because the front-end has
  * grounds to word them differently.
+ *
+ * **HOS-217**: a live subscription alone is not enough to publish — it must
+ * also be an `owner`/`complex`-category plan. Without this, a HOST who
+ * reached that role via host-onboarding (without ever subscribing to an
+ * owner plan) but still has a live *tourist* subscription (e.g.
+ * `tourist-vip`) would answer `has_active_sub` and be allowed to publish
+ * with no host plan at all. Such an owner now answers `subscription_required`
+ * — the SAME outcome (and the same already-localized "no active plan, go
+ * pick one" UI) as an owner with zero subscriptions, so no new front-end
+ * copy is needed.
  */
 export function buildAccommodationPublishDeps(): AccommodationPublishDeps {
     return {
@@ -62,14 +77,38 @@ export function buildAccommodationPublishDeps(): AccommodationPublishDeps {
             if (subscriptions.length === 0) {
                 return 'first_publish';
             }
-            const hasActive = subscriptions.some((s) =>
+            const liveSubscriptions = subscriptions.filter((s) =>
                 isSubscriptionLive({
                     status: s.status,
                     trialEnd: s.trialEnd,
                     currentPeriodEnd: s.currentPeriodEnd
                 })
             );
-            return hasActive ? 'has_active_sub' : 'subscription_required';
+            if (liveSubscriptions.length === 0) {
+                return 'subscription_required';
+            }
+            // SPEC-239 T-034 / commerce-listing quirk: `commerce-listing` and
+            // `partner-listing` plans have `metadata.category = 'owner'` on
+            // purpose (see isOwnerCategorySubscription's docstring), so they
+            // would otherwise pass the owner/complex check below despite
+            // being a different product entirely. Filter to the accommodation
+            // product domain FIRST — before ever asking whether a plan is
+            // owner/complex-category — so a host whose only live subscription
+            // is a commerce-domain plan answers subscription_required, not
+            // has_active_sub.
+            const accommodationLiveSubscriptions = liveSubscriptions.filter((sub) =>
+                isAccommodationSubscription(sub)
+            );
+            // Sequential (not Promise.all) by design: short-circuits on the
+            // first owner/complex match instead of resolving every live
+            // subscription's plan category up front — a customer has at most
+            // 1-2 live subscriptions in practice (one per product domain).
+            for (const sub of accommodationLiveSubscriptions) {
+                if (await isOwnerCategorySubscription({ planId: sub.planId, tx: db })) {
+                    return 'has_active_sub';
+                }
+            }
+            return 'subscription_required';
         }
     };
 }
