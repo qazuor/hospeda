@@ -278,6 +278,12 @@ async function assertNoPrivateAddress(hostname: string): Promise<PinnedAddress> 
  */
 function buildPinnedAgent(pinnedAddress: string, family: 4 | 6): Agent {
     return new Agent({
+        // Force HTTP/1.1. undici 8 enables HTTP/2 by default (`feat!: enable h2
+        // by default`), but this Agent connects to arbitrary untrusted HTTPS
+        // hosts (the URL is user-supplied — the SSRF surface). Keep the audited,
+        // h1-only path instead of silently inheriting undici's newer, less
+        // exercised h2 client. safe-fetch never needs HTTP/2.
+        allowH2: false,
         connect: {
             lookup: (
                 _hostname: string,
@@ -544,8 +550,9 @@ async function _doFetch(params: FetchParams): Promise<SafeFetchResult | SafeFetc
                 response = await undiciRequest(href, {
                     method: 'GET',
                     headers: { ...headers },
-                    // maxRedirections defaults to 0 in undici 7 — we handle
-                    // redirects manually so auto-follow is intentionally off.
+                    // maxRedirections defaults to 0 in undici 7 and 8 — we
+                    // handle redirects manually so auto-follow is intentionally
+                    // off.
                     signal: abortController.signal,
                     dispatcher: pinnedAgent
                 });
