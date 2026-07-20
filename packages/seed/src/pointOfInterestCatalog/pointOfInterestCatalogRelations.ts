@@ -107,8 +107,7 @@ export interface PointOfInterestCatalogRelationsDeps {
  * await seedPointOfInterestCatalogRelations();
  * // Wires relations like:
  * // (chajari, acceso_oficina_turismo) -> PRIMARY
- * // (santa-ana, actividades_nauticas) -> PRIMARY
- * // (chajari, actividades_nauticas) -> NEARBY
+ * // (san-jose, administracion_complejo_turistico) -> PRIMARY
  * ```
  */
 export async function seedPointOfInterestCatalogRelations(
