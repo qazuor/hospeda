@@ -223,7 +223,7 @@ describe('AccommodationService.update — publish routing', () => {
     });
 });
 
-describe('AccommodationService.update — billing write-gate (SPEC-217)', () => {
+describe('AccommodationService.update — billing write-gate (SPEC-217, scoped to ACTIVE by HOS-217-followup)', () => {
     let accommodationModel: ReturnType<typeof createMockBaseModel>;
     let userModel: UserModel;
 
@@ -234,7 +234,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217)', () => 
         userModel = createUserModelMock();
     });
 
-    it('a. returns FORBIDDEN subscription_required when non-admin owner has lapsed subscription', async () => {
+    it('a. returns FORBIDDEN subscription_required when non-admin owner has lapsed subscription and the accommodation is ACTIVE', async () => {
         // Arrange
         const deps = createPublishDeps({
             checkEligibility: vi.fn().mockResolvedValue('subscription_required')
@@ -243,7 +243,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217)', () => 
         const accommodation = createMockAccommodation({
             id: 'acc-gate-a',
             ownerId: 'user-host-a',
-            lifecycleState: LifecycleStatusEnum.DRAFT
+            lifecycleState: LifecycleStatusEnum.ACTIVE
         });
         (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
         // actor IS the owner — userModel.findById should NOT be called (perf path)
@@ -263,7 +263,107 @@ describe('AccommodationService.update — billing write-gate (SPEC-217)', () => 
         expect(accommodationModel.update).not.toHaveBeenCalled();
     });
 
-    it('b. proceeds when owner has an active subscription', async () => {
+    it('a2. HOS-217-followup: does NOT gate edits to a DRAFT accommodation even when checkEligibility would return subscription_required', async () => {
+        // Arrange — this is the exact bug scenario: a HOST with a non-owner plan
+        // (checkEligibility would deny) must still be able to edit their own DRAFT.
+        // Only publishing (DRAFT -> ACTIVE) requires an owner plan, not editing.
+        const checkEligibility = vi.fn().mockResolvedValue('subscription_required');
+        const deps = createPublishDeps({ checkEligibility });
+        const service = buildService(accommodationModel, userModel, deps);
+        const accommodation = createMockAccommodation({
+            id: 'acc-gate-a2',
+            ownerId: 'user-host-a2',
+            lifecycleState: LifecycleStatusEnum.DRAFT
+        });
+        (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+        (accommodationModel.update as Mock).mockResolvedValue({
+            ...accommodation,
+            name: 'draft-edit'
+        });
+        const actor = createActor({
+            id: 'user-host-a2',
+            role: RoleEnum.HOST,
+            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
+        });
+
+        // Act
+        const result = await service.update(actor, 'acc-gate-a2', { name: 'draft-edit' });
+
+        // Assert — the write-gate never even runs for a non-ACTIVE accommodation,
+        // so checkEligibility is not invoked from it at all.
+        expect(result.error).toBeUndefined();
+        expect(accommodationModel.update).toHaveBeenCalled();
+        expect(checkEligibility).not.toHaveBeenCalled();
+    });
+
+    it('a3. HOS-217-followup: does NOT gate edits to an INACTIVE accommodation even when checkEligibility would return subscription_required', async () => {
+        // Arrange — editing an INACTIVE accommodation does not require a plan owner —
+        // it is not public (checkCanView treats non-ACTIVE as non-visible); the plan
+        // gate only applies to ACTIVE. This fixes the HOS-217-followup design decision
+        // so a future change to `!== DRAFT` instead of `=== ACTIVE` gets caught here.
+        const checkEligibility = vi.fn().mockResolvedValue('subscription_required');
+        const deps = createPublishDeps({ checkEligibility });
+        const service = buildService(accommodationModel, userModel, deps);
+        const accommodation = createMockAccommodation({
+            id: 'acc-gate-a3',
+            ownerId: 'user-host-a3',
+            lifecycleState: LifecycleStatusEnum.INACTIVE
+        });
+        (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+        (accommodationModel.update as Mock).mockResolvedValue({
+            ...accommodation,
+            name: 'inactive-edit'
+        });
+        const actor = createActor({
+            id: 'user-host-a3',
+            role: RoleEnum.HOST,
+            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
+        });
+
+        // Act
+        const result = await service.update(actor, 'acc-gate-a3', { name: 'inactive-edit' });
+
+        // Assert — the write-gate never even runs for a non-ACTIVE accommodation,
+        // so checkEligibility is not invoked from it at all.
+        expect(result.error).toBeUndefined();
+        expect(accommodationModel.update).toHaveBeenCalled();
+        expect(checkEligibility).not.toHaveBeenCalled();
+    });
+
+    it('a4. HOS-217-followup: does NOT gate edits to an ARCHIVED accommodation even when checkEligibility would return subscription_required', async () => {
+        // Arrange — same reasoning as (a3): ARCHIVED is not public either, so editing
+        // it must not require an owner plan. Documents that the gate is scoped to
+        // ACTIVE only, not "any non-DRAFT" state.
+        const checkEligibility = vi.fn().mockResolvedValue('subscription_required');
+        const deps = createPublishDeps({ checkEligibility });
+        const service = buildService(accommodationModel, userModel, deps);
+        const accommodation = createMockAccommodation({
+            id: 'acc-gate-a4',
+            ownerId: 'user-host-a4',
+            lifecycleState: LifecycleStatusEnum.ARCHIVED
+        });
+        (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+        (accommodationModel.update as Mock).mockResolvedValue({
+            ...accommodation,
+            name: 'archived-edit'
+        });
+        const actor = createActor({
+            id: 'user-host-a4',
+            role: RoleEnum.HOST,
+            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
+        });
+
+        // Act
+        const result = await service.update(actor, 'acc-gate-a4', { name: 'archived-edit' });
+
+        // Assert — the write-gate never even runs for a non-ACTIVE accommodation,
+        // so checkEligibility is not invoked from it at all.
+        expect(result.error).toBeUndefined();
+        expect(accommodationModel.update).toHaveBeenCalled();
+        expect(checkEligibility).not.toHaveBeenCalled();
+    });
+
+    it('b. proceeds when owner has an active subscription and the accommodation is ACTIVE', async () => {
         // Arrange
         const deps = createPublishDeps({
             checkEligibility: vi.fn().mockResolvedValue('has_active_sub')
@@ -272,7 +372,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217)', () => 
         const accommodation = createMockAccommodation({
             id: 'acc-gate-b',
             ownerId: 'user-host-b',
-            lifecycleState: LifecycleStatusEnum.DRAFT
+            lifecycleState: LifecycleStatusEnum.ACTIVE
         });
         (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
         (accommodationModel.update as Mock).mockResolvedValue({
@@ -291,9 +391,40 @@ describe('AccommodationService.update — billing write-gate (SPEC-217)', () => 
         // Assert
         expect(result.error).toBeUndefined();
         expect(accommodationModel.update).toHaveBeenCalled();
+        expect(deps.checkEligibility).toHaveBeenCalledWith('user-host-b', expect.anything());
     });
 
-    it('c. proceeds when checkEligibility returns first_publish', async () => {
+    it('b2. proceeds when owner has an owner-category plan and edits a DRAFT (no regression)', async () => {
+        // Arrange — same "owner has a valid plan" case as (b), but on a DRAFT, where
+        // the gate is skipped altogether rather than evaluated-and-passed.
+        const checkEligibility = vi.fn().mockResolvedValue('has_active_sub');
+        const deps = createPublishDeps({ checkEligibility });
+        const service = buildService(accommodationModel, userModel, deps);
+        const accommodation = createMockAccommodation({
+            id: 'acc-gate-b2',
+            ownerId: 'user-host-b2',
+            lifecycleState: LifecycleStatusEnum.DRAFT
+        });
+        (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+        (accommodationModel.update as Mock).mockResolvedValue({
+            ...accommodation,
+            name: 'Updated Name B2'
+        });
+        const actor = createActor({
+            id: 'user-host-b2',
+            role: RoleEnum.HOST,
+            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
+        });
+
+        // Act
+        const result = await service.update(actor, 'acc-gate-b2', { name: 'Updated Name B2' });
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        expect(accommodationModel.update).toHaveBeenCalled();
+    });
+
+    it('c. proceeds when checkEligibility returns first_publish and the accommodation is ACTIVE', async () => {
         // Arrange
         const deps = createPublishDeps({
             checkEligibility: vi.fn().mockResolvedValue('first_publish')
@@ -302,7 +433,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217)', () => 
         const accommodation = createMockAccommodation({
             id: 'acc-gate-c',
             ownerId: 'user-host-c',
-            lifecycleState: LifecycleStatusEnum.DRAFT
+            lifecycleState: LifecycleStatusEnum.ACTIVE
         });
         (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
         (accommodationModel.update as Mock).mockResolvedValue({
@@ -323,7 +454,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217)', () => 
         expect(accommodationModel.update).toHaveBeenCalled();
     });
 
-    it('d. admin actor bypasses the gate regardless of eligibility result', async () => {
+    it('d. admin actor bypasses the gate regardless of eligibility result, on an ACTIVE accommodation', async () => {
         // Arrange
         const checkEligibility = vi.fn().mockResolvedValue('subscription_required');
         const deps = createPublishDeps({ checkEligibility });
@@ -331,7 +462,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217)', () => 
         const accommodation = createMockAccommodation({
             id: 'acc-gate-d',
             ownerId: 'user-host-d',
-            lifecycleState: LifecycleStatusEnum.DRAFT
+            lifecycleState: LifecycleStatusEnum.ACTIVE
         });
         (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
         (accommodationModel.update as Mock).mockResolvedValue({
@@ -349,7 +480,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217)', () => 
         expect(accommodationModel.update).toHaveBeenCalled();
     });
 
-    it('e. billing-exempt owner role bypasses checkEligibility (DB lookup path)', async () => {
+    it('e. billing-exempt owner role bypasses checkEligibility (DB lookup path), on an ACTIVE accommodation', async () => {
         // Arrange — actor is NOT the owner so the fallback DB lookup runs
         const checkEligibility = vi.fn().mockResolvedValue('subscription_required');
         const deps = createPublishDeps({ checkEligibility });
@@ -357,7 +488,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217)', () => 
         const accommodation = createMockAccommodation({
             id: 'acc-gate-e',
             ownerId: 'user-client-manager',
-            lifecycleState: LifecycleStatusEnum.DRAFT
+            lifecycleState: LifecycleStatusEnum.ACTIVE
         });
         (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
         (accommodationModel.update as Mock).mockResolvedValue({
@@ -380,13 +511,13 @@ describe('AccommodationService.update — billing write-gate (SPEC-217)', () => 
         expect(checkEligibility).not.toHaveBeenCalled();
     });
 
-    it('f. gate does not fire when publishDeps are not wired', async () => {
+    it('f. gate does not fire when publishDeps are not wired, regardless of lifecycle state', async () => {
         // Arrange — service built without billing deps
         const service = buildService(accommodationModel, userModel, null);
         const accommodation = createMockAccommodation({
             id: 'acc-gate-f',
             ownerId: 'user-host-f',
-            lifecycleState: LifecycleStatusEnum.DRAFT
+            lifecycleState: LifecycleStatusEnum.ACTIVE
         });
         (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
         (accommodationModel.update as Mock).mockResolvedValue({
@@ -411,7 +542,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217)', () => 
         expect(accommodationModel.update).toHaveBeenCalled();
     });
 
-    it('g. perf: userModel.findById is NOT called when actor is the owner', async () => {
+    it('g. perf: userModel.findById is NOT called when actor is the owner, on an ACTIVE accommodation', async () => {
         // Arrange — actor IS the owner; the optimised path reuses actor.role
         const checkEligibility = vi.fn().mockResolvedValue('has_active_sub');
         const deps = createPublishDeps({ checkEligibility });
@@ -419,7 +550,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217)', () => 
         const accommodation = createMockAccommodation({
             id: 'acc-gate-g',
             ownerId: 'user-host-g',
-            lifecycleState: LifecycleStatusEnum.DRAFT
+            lifecycleState: LifecycleStatusEnum.ACTIVE
         });
         (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
         (accommodationModel.update as Mock).mockResolvedValue({
@@ -441,7 +572,11 @@ describe('AccommodationService.update — billing write-gate (SPEC-217)', () => 
         expect(checkEligibility).toHaveBeenCalledOnce();
         expect((checkEligibility as Mock).mock.calls[0]?.[0]).toBe('user-host-g');
         // The perf optimisation: userModel.findById must NOT be called for the
-        // billing-exempt role check when actor.id === ownerId.
-        expect(userModel.findById).not.toHaveBeenCalled();
+        // write-gate's billing-exempt role check when actor.id === ownerId — the
+        // single call observed here comes from the unrelated `_assignHostRoleIfNeeded`
+        // afterUpdate hook, which fires on any ACTIVE-state update regardless of the
+        // write-gate. If the perf optimisation regressed, the gate would add a SECOND
+        // call, so exactly-once (not zero) is the correct assertion on an ACTIVE fixture.
+        expect(userModel.findById).toHaveBeenCalledTimes(1);
     });
 });
