@@ -223,7 +223,8 @@
             "error": "We could not start the payment. Please try again.",
             "unauthCta": "Sign in to subscribe",
             "currentPlan": "Current plan",
-            "currentPlanAriaLabel": "This is your current plan"
+            "currentPlanAriaLabel": "This is your current plan",
+            "changePlan": "Switch to this plan"
         },
         "monthlyEmailNotice": {
             "title": "Before you continue",

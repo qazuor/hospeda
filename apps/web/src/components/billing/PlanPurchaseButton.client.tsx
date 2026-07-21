@@ -325,6 +325,9 @@ export function PlanPurchaseButton({
         'No pudimos iniciar el pago. Intenta de nuevo.'
     );
     const currentPlanLabel = t('billing.checkout.button.currentPlan', 'Plan actual');
+    // BETA-195: CTA label when the user already has an active subscription on a
+    // different plan — this card is a plan change, not a fresh checkout.
+    const changePlanCtaLabel = t('billing.checkout.button.changePlan', 'Cambiar a este plan');
     const currentPlanAriaLabel = t(
         'billing.checkout.button.currentPlanAriaLabel',
         'Este es tu plan actual'
@@ -510,8 +513,20 @@ export function PlanPurchaseButton({
 
     const isCurrentPlan = isAuthenticated && currentPlanSlug === planSlug;
 
+    // BETA-195: the user already has an active subscription on a DIFFERENT plan.
+    // There is one subscription per customer, so firing start-paid for a second
+    // plan is rejected by the backend with a non-transitory 409 ("You already
+    // have an active subscription — use the plan-change endpoint"). This card is
+    // therefore a PLAN CHANGE, not a fresh start: relabel the CTA and route the
+    // user to Mi Suscripción → Cambiar plan (which runs the plan-change engine,
+    // incl. HOS-222's cross-category classification) instead of start-paid.
+    const isPlanChange =
+        isAuthenticated && currentPlanSlug !== null && currentPlanSlug !== planSlug;
+
     // Show the promo section only when the user can interact with checkout
-    const showPromoSection = showPromo && isAuthenticated && !isCurrentPlan && !isAnnualUnavailable;
+    // (never in the plan-change case — promo codes apply at checkout, not here).
+    const showPromoSection =
+        showPromo && isAuthenticated && !isCurrentPlan && !isAnnualUnavailable && !isPlanChange;
 
     // BETA-183: a MercadoPago preapproval (used by every MONTHLY plan) is created
     // with a fixed payer_email = the Hospeda signup email. MP rejects the payment
@@ -523,7 +538,11 @@ export function PlanPurchaseButton({
     // payer_email is a follow-up.
     const userEmail = session?.user?.email ?? '';
     const showMonthlyEmailNotice =
-        isAuthenticated && billingInterval === 'monthly' && !isCurrentPlan && userEmail !== '';
+        isAuthenticated &&
+        billingInterval === 'monthly' &&
+        !isCurrentPlan &&
+        !isPlanChange &&
+        userEmail !== '';
     const monthlyEmailNoticeTitle = t(
         'billing.checkout.monthlyEmailNotice.title',
         'Antes de continuar'
@@ -776,6 +795,15 @@ export function PlanPurchaseButton({
             return;
         }
 
+        // BETA-195: an authenticated user who already has a subscription switches
+        // plans through Mi Suscripción → Cambiar plan (the plan-change engine),
+        // NOT start-paid — which would deterministically 409 ("already have an
+        // active subscription"). Route there instead of firing a doomed checkout.
+        if (isPlanChange) {
+            window.location.href = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
+            return;
+        }
+
         // Prevent double-submission.
         if (loading) {
             return;
@@ -847,11 +875,13 @@ export function PlanPurchaseButton({
 
     const buttonAriaLabel = isCurrentPlan
         ? currentPlanAriaLabel
-        : isAnnualUnavailable
-          ? monthlyOnlyLabel
-          : loading
-            ? processingAriaLabel
-            : `${ctaText} — ${formattedPrice}`;
+        : isPlanChange
+          ? changePlanCtaLabel
+          : isAnnualUnavailable
+            ? monthlyOnlyLabel
+            : loading
+              ? processingAriaLabel
+              : `${ctaText} — ${formattedPrice}`;
 
     const buttonDisabled = loading || isCurrentPlan || isAnnualUnavailable;
 
@@ -900,6 +930,10 @@ export function PlanPurchaseButton({
                 ) : isAnnualUnavailable ? (
                     <span className={styles.idleContent}>
                         <span className={styles.ctaText}>{monthlyOnlyLabel}</span>
+                    </span>
+                ) : isPlanChange ? (
+                    <span className={styles.idleContent}>
+                        <span className={styles.ctaText}>{changePlanCtaLabel}</span>
                     </span>
                 ) : (
                     <span className={styles.idleContent}>
