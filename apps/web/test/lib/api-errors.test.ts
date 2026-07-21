@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { translateApiError } from '../../src/lib/api-errors';
+import { isRetryableApiError, translateApiError } from '../../src/lib/api-errors';
 
 describe('translateApiError', () => {
     it('returns the localized message for a known error code', () => {
@@ -25,6 +25,35 @@ describe('translateApiError', () => {
             locale: 'es'
         });
         expect(message).toMatch(/newsletter no está disponible/i);
+    });
+
+    // BETA-194: the plan-change 409 carries reason SUBSCRIPTION_CANCEL_PENDING
+    // (code ALREADY_EXISTS) and must resolve to the specific localized copy, not
+    // the generic "already exists" text.
+    it('maps SUBSCRIPTION_CANCEL_PENDING (reason) to the specific message per locale', () => {
+        const es = translateApiError({
+            error: {
+                status: 409,
+                code: 'ALREADY_EXISTS',
+                reason: 'SUBSCRIPTION_CANCEL_PENDING',
+                message: 'Subscription is scheduled to cancel at period end.'
+            },
+            locale: 'es'
+        });
+        expect(es).toMatch(/programada para cancelarse/i);
+        expect(es).not.toMatch(/ya existe/i);
+
+        const en = translateApiError({
+            error: { reason: 'SUBSCRIPTION_CANCEL_PENDING', message: 'x' },
+            locale: 'en'
+        });
+        expect(en).toMatch(/scheduled to cancel/i);
+
+        const pt = translateApiError({
+            error: { reason: 'SUBSCRIPTION_CANCEL_PENDING', message: 'x' },
+            locale: 'pt'
+        });
+        expect(pt).toMatch(/programada para ser cancelada/i);
     });
 
     it('falls back to `code` when the `reason` is unknown', () => {
@@ -218,5 +247,28 @@ describe('translateApiError', () => {
             });
             expect(message).toBe('API request failed with status 500');
         });
+    });
+});
+
+// BETA-194 / BETA-195: a "Retry" affordance must appear only for TRANSIENT
+// failures. Non-transitory 4xx business rejections (409/422/403/...) are
+// deterministically doomed and must NOT offer retry.
+describe('isRetryableApiError', () => {
+    it('is NOT retryable for non-transitory 4xx rejections', () => {
+        for (const status of [400, 403, 404, 409, 422]) {
+            expect(isRetryableApiError({ status })).toBe(false);
+        }
+    });
+
+    it('IS retryable for transient failures (network, timeout, rate-limit, 5xx)', () => {
+        for (const status of [0, 408, 429, 500, 502, 503]) {
+            expect(isRetryableApiError({ status })).toBe(true);
+        }
+    });
+
+    it('treats an absent/undefined status as transient (retry is the safe default)', () => {
+        expect(isRetryableApiError(null)).toBe(true);
+        expect(isRetryableApiError(undefined)).toBe(true);
+        expect(isRetryableApiError({})).toBe(true);
     });
 });

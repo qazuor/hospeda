@@ -65,6 +65,7 @@ function parseError({ status, body }: { status: number; body?: unknown }): ApiEr
             status,
             message: errBody.error.message,
             code: errBody.error.code,
+            reason: errBody.error.reason,
             details: errBody.error.details
         };
     }

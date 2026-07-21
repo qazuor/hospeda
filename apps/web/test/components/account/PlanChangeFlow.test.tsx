@@ -797,6 +797,31 @@ describe('PlanChangeFlow', () => {
         expect(screen.getByRole('button', { name: /reintentar/i })).toBeInTheDocument();
     });
 
+    it('shows the specific message and NO retry on a non-transitory 409 (BETA-194)', async () => {
+        mockChangePlan.mockResolvedValue({
+            ok: false,
+            error: {
+                status: 409,
+                code: 'ALREADY_EXISTS',
+                reason: 'SUBSCRIPTION_CANCEL_PENDING',
+                message: 'Subscription is scheduled to cancel at period end.'
+            }
+        });
+
+        renderFlow({ currentSlug: 'owner-basico' });
+        fireEvent.click(screen.getByRole('button', { name: /mensual/i }));
+
+        // The backend's machine-readable reason resolves to the localized copy…
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent(/programada para cancelarse/i);
+        });
+
+        // …and because a 409 is non-transitory, there is NO "Reintentar" — the
+        // banner offers "Cerrar" instead (retrying would always fail).
+        expect(screen.queryByRole('button', { name: /reintentar/i })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /cerrar/i })).toBeInTheDocument();
+    });
+
     it('shows error and retry when previewDowngrade API fails', async () => {
         mockPreviewDowngrade.mockResolvedValue({
             ok: false,
@@ -960,6 +985,31 @@ describe('SubscriptionDashboard — plan-change flow wiring (T-009)', () => {
         await waitFor(() => {
             expect(screen.getByText('Básico')).toBeInTheDocument();
         });
+    });
+
+    it('disables "Cambiar plan" and explains why when a cancellation is scheduled (BETA-194)', async () => {
+        mockGetSubscription.mockResolvedValue({
+            ok: true,
+            data: { subscription: { ...ACTIVE_SUBSCRIPTION, cancelAtPeriodEnd: true } }
+        });
+        mockListInvoices.mockResolvedValue({
+            ok: true,
+            data: { items: [], pagination: { page: 1, pageSize: 1, total: 0, totalPages: 0 } }
+        });
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={USER}
+                plans={PLANS}
+            />
+        );
+
+        const changeBtn = await screen.findByRole('button', { name: /cambiar plan/i });
+        expect(changeBtn).toBeDisabled();
+        expect(
+            screen.getByText(/no podés cambiar de plan mientras haya una cancelación pendiente/i)
+        ).toBeInTheDocument();
     });
 
     it('re-fetches subscription after successful plan change (onChanged callback)', async () => {

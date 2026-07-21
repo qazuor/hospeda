@@ -587,7 +587,8 @@
             },
             "cancelScheduled": {
                 "title": "Assinatura cancelada",
-                "body": "Nenhuma cobrança adicional será feita. Você mantém acesso ao seu plano até {date}."
+                "body": "Nenhuma cobrança adicional será feita. Você mantém acesso ao seu plano até {date}.",
+                "planChangeBlocked": "Você não pode mudar de plano enquanto houver um cancelamento pendente. Poderá fazê-lo quando o período atual terminar."
             },
             "pauseModal": {
                 "title": "Pausar assinatura",

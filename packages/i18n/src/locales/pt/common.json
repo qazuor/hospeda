@@ -80,7 +80,8 @@
         "PROVIDER_ERROR": "O serviço de pagamento retornou um erro inesperado. Tente novamente em alguns minutos.",
         "PROVIDER_RATE_LIMITED": "O serviço de pagamento está ocupado. Aguarde alguns segundos e tente novamente.",
         "PROVIDER_TIMEOUT": "O serviço de pagamento demorou muito para responder. Tente novamente.",
-        "PLAN_DISABLED": "O plano selecionado não está mais disponível. Escolha outro plano para continuar."
+        "PLAN_DISABLED": "O plano selecionado não está mais disponível. Escolha outro plano para continuar.",
+        "SUBSCRIPTION_CANCEL_PENDING": "Sua assinatura está programada para ser cancelada no fim do período. Você não pode mudar de plano até o período atual terminar."
     },
     "filters": "Filtros",
     "filterChips": {
