@@ -8,6 +8,8 @@ vi.mock('../../../src/utils/env.js', () => ({
 }));
 
 import {
+    buildAddonCancelUrl,
+    buildAddonSuccessUrl,
     buildAnnualCancelUrl,
     buildAnnualSuccessUrl,
     buildNotificationUrl,
@@ -43,6 +45,39 @@ describe('checkout-return-urls — annual builders (HOS-123 T-005)', () => {
         // Documents the intentional parity: both land on the success page so a
         // paid reactivation and a first-time checkout never diverge.
         expect(buildAnnualSuccessUrl('es')).toBe(buildPaymentMethodReturnUrl('es'));
+    });
+
+    it('buildAddonSuccessUrl returns the locale-prefixed, trailing-slashed add-ons page (HOS-224)', () => {
+        // HOS-224 regression: the old checkout hard-coded
+        // `${webUrl}/mi-cuenta/addons?status=...` — no locale prefix, no
+        // trailing slash, and a page that did not exist — so a returning payer
+        // hit Astro's `/es/` 404 rewrite. The builder MUST carry `/{locale}`
+        // and a trailing slash BEFORE the query string.
+        expect(buildAddonSuccessUrl('es', 'visibility-boost-7d')).toBe(
+            'https://site.test/es/mi-cuenta/addons/?status=success&addon=visibility-boost-7d'
+        );
+        expect(buildAddonSuccessUrl('en', 'extra-photos-20')).toBe(
+            'https://site.test/en/mi-cuenta/addons/?status=success&addon=extra-photos-20'
+        );
+        expect(buildAddonSuccessUrl('pt', 'extra-accommodations-5')).toBe(
+            'https://site.test/pt/mi-cuenta/addons/?status=success&addon=extra-accommodations-5'
+        );
+    });
+
+    it('buildAddonCancelUrl returns the locale-prefixed add-ons page with status=failure (HOS-224)', () => {
+        expect(buildAddonCancelUrl('es', 'visibility-boost-30d')).toBe(
+            'https://site.test/es/mi-cuenta/addons/?status=failure&addon=visibility-boost-30d'
+        );
+        expect(buildAddonCancelUrl('en', 'extra-photos-20')).toBe(
+            'https://site.test/en/mi-cuenta/addons/?status=failure&addon=extra-photos-20'
+        );
+    });
+
+    it('add-on return URLs keep the trailing slash before the query string (Finding #8 guard)', () => {
+        // The `/addons/?` shape (slash then `?`) is what keeps Astro's locale
+        // middleware from rewriting the path into a 404 — assert it explicitly.
+        expect(buildAddonSuccessUrl('es', 'x')).toContain('/mi-cuenta/addons/?');
+        expect(buildAddonCancelUrl('es', 'x')).toContain('/mi-cuenta/addons/?');
     });
 
     it('buildNotificationUrl points at the MP webhook endpoint with the v2 source_news marker (HOS-159)', () => {

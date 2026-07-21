@@ -37,6 +37,7 @@ import { CapacitySection } from './editor/CapacitySection.client';
 import { ContactInfoSection } from './editor/ContactInfoSection.client';
 import type { EditorSectionNavItem } from './editor/EditorSectionNav.client';
 import { EditorSectionNav } from './editor/EditorSectionNav.client';
+import { FeaturedToggleSection } from './editor/FeaturedToggleSection.client';
 import { LocationPicker } from './editor/LocationPicker.client';
 import { PhotoSection } from './editor/PhotoSection.client';
 import { PlanEntitlementGate } from './editor/PlanEntitlementGate.client';
@@ -663,6 +664,23 @@ export function AccommodationEditor({
                             accommodationId={accommodationId}
                         />
                     </section>
+
+                    {/*
+                     * HOS-224: secondary self-service entry point for the
+                     * featured toggle. Rendered WITHOUT the editor's section-card
+                     * wrapper and WITHOUT a nav item on purpose: the component
+                     * self-hides (returns null) for the majority of owners who
+                     * lack an active FEATURED_LISTING entitlement, so a card
+                     * wrapper would leave an empty card and a nav item would
+                     * dead-end. When entitled, it renders its own fieldset card.
+                     * Purchasing the visibility-boost addon lives on the canonical
+                     * /mi-cuenta/addons page, not here — this only toggles an
+                     * already-granted entitlement.
+                     */}
+                    <FeaturedToggleSection
+                        locale={locale}
+                        accommodationId={accommodationId}
+                    />
 
                     {formError && (
                         <div

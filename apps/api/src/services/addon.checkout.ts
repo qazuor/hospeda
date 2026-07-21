@@ -421,8 +421,17 @@ export async function createAddonCheckout(
                     categoryId: 'services'
                 }
             ],
-            successUrl: `${webUrl}/mi-cuenta/addons?status=success&addon=${addon.slug}`,
-            cancelUrl: `${webUrl}/mi-cuenta/addons?status=failure&addon=${addon.slug}`,
+            // HOS-224: the route layer passes locale-prefixed URLs built via
+            // buildAddonSuccessUrl/buildAddonCancelUrl. The `?? ${webUrl}/es/...`
+            // fallback keeps a valid (locale-prefixed, trailing-slashed) page for
+            // any caller that omits them — never the old locale-less
+            // `${webUrl}/mi-cuenta/addons?...` that Astro rewrote to a 404.
+            successUrl:
+                input.successUrl ??
+                `${webUrl}/es/mi-cuenta/addons/?status=success&addon=${addon.slug}`,
+            cancelUrl:
+                input.cancelUrl ??
+                `${webUrl}/es/mi-cuenta/addons/?status=failure&addon=${addon.slug}`,
             customerId: input.customerId,
             customerEmail: customer.email,
             ...(customerName === undefined ? {} : { customerName }),

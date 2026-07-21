@@ -100,7 +100,17 @@ export const AddonResponseSchema = z.object({
     /** Whether the addon is currently available */
     isActive: z.boolean(),
     /** Sort order for display */
-    sortOrder: z.number().int()
+    sortOrder: z.number().int(),
+    /**
+     * Whether purchasing this addon requires selecting a target accommodation
+     * (SPEC-309 OQ-3 / HOS-224). `true` for the per-accommodation
+     * `visibility-boost-7d`/`-30d` addons; every other addon omits the flag in
+     * its DB metadata, which maps to `false` here via `.default(false)` so the
+     * field is never `undefined` on the wire — required to avoid breaking
+     * response validation (`stripWithSchema`) for every addon that predates
+     * this field.
+     */
+    requiresAccommodationTarget: z.boolean().default(false)
 });
 
 // ─── User Addon Response ────────────────────────────────────────────────────
