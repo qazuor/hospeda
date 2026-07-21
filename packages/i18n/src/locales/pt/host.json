@@ -190,9 +190,9 @@
             "subtitle": "[TODO]",
             "publishAnother": "Publicar outra",
             "needsPlanBanner": {
-                "title": "Escolha seu plano para publicar",
-                "description": "Você tem propriedades em rascunho. Para publicá-las é necessário um plano de anfitrião ativo.",
-                "cta": "Ver planos de anfitrião"
+                "title": "Você é um anfitrião em preparação",
+                "description": "Suas propriedades ficam salvas como rascunho e ainda não são visíveis no site. Para publicá-las é necessário um plano de anfitrião ativo.",
+                "cta": "Escolher plano de anfitrião"
             }
         },
         "usage": {

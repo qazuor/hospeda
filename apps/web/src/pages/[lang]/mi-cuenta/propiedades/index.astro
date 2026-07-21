@@ -27,6 +27,7 @@ import { isHostRole } from '@/lib/account-roles';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import { MAX_ACCOMMODATIONS_LIMIT_KEY, parseUsageResponse } from '@/lib/host/usage-badge';
+import { shouldShowNeedsPlanBanner } from '@/lib/host/needs-plan-banner';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import accountSectionStyles from '@/components/account/AccountSection.module.css';
@@ -149,26 +150,39 @@ const emptyMessage = t('host.properties.empty.title', 'Aún no publicaste ningun
 const emptyCta = t('host.properties.empty.cta', 'Publicar ahora');
 
 const publishNewUrl = buildUrl({ locale, path: 'publicar/nueva' });
-const subscriptionUrl = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
+// Owner plans page (NOT mi-cuenta/suscripcion): BETA-195 routes this page's
+// CTA to plan-change when the actor already has an active subscription
+// (e.g. a tourist plan), so it correctly handles the cross-category
+// tourist→owner upgrade this banner exists to prompt. Also matches the link
+// `PublishButton.client.tsx` renders on the reactive `subscription_required`
+// error, keeping the whole "publish" journey pointing at one place.
+const ownerPlansUrl = buildUrl({ locale, path: 'suscriptores/planes' });
 
 const isEmpty = properties.length === 0;
 
-// HOS-217: proactive "pick a host plan" banner — an owner with at least one
-// DRAFT property but no real owner/complex subscription would otherwise only
-// discover they can't publish by clicking "Publicar" on the card and hitting
-// the `subscription_required` error. Surfacing it here (list level) instead
-// of only reactively (card level) matches the requested onboarding journey.
+// HOS-217: proactive "anfitrión en preparación" banner — an owner with at
+// least one DRAFT property but no real owner/complex subscription would
+// otherwise only discover they can't publish by clicking "Publicar" on the
+// card and hitting the `subscription_required` error. Surfacing it here
+// (list level) instead of only reactively (card level) matches the
+// requested onboarding journey. Decision extracted to a pure, unit-tested
+// helper (see `@/lib/host/needs-plan-banner`).
 const hasDraftProperty = properties.some(
     (property) => property.lifecycleState === LifecycleStatusEnum.DRAFT
 );
-const showNeedsPlanBanner = !isEmpty && !fetchError && hasDraftProperty && !hasOwnerPlan;
+const showNeedsPlanBanner = shouldShowNeedsPlanBanner({
+    isEmpty,
+    fetchError,
+    hasDraftProperty,
+    hasOwnerPlan
+});
 
-const needsPlanTitle = t('host.properties.list.needsPlanBanner.title', 'Elegí tu plan para publicar');
+const needsPlanTitle = t('host.properties.list.needsPlanBanner.title', 'Sos anfitrión en preparación');
 const needsPlanDescription = t(
     'host.properties.list.needsPlanBanner.description',
-    'Tenés propiedades en borrador. Para publicarlas necesitás un plan de anfitrión activo.'
+    'Tus propiedades quedan guardadas como borrador y todavía no son visibles en el sitio. Para publicarlas necesitás un plan de anfitrión activo.'
 );
-const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Ver planes de anfitrión');
+const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan de anfitrión');
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="propiedades">
@@ -196,7 +210,7 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Ver planes d
                 <p class="props-page__needs-plan-title">{needsPlanTitle}</p>
                 <p class="props-page__needs-plan-text">{needsPlanDescription}</p>
             </div>
-            <a href={subscriptionUrl} class:list={['props-page__needs-plan-cta', btn.primary]}>
+            <a href={ownerPlansUrl} class:list={['props-page__needs-plan-cta', btn.primary]}>
                 {needsPlanCta}
             </a>
         </aside>
