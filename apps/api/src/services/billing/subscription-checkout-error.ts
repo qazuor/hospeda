@@ -95,7 +95,19 @@ export type SubscriptionCheckoutErrorCode =
     // (trialing rows are excluded), so it must page loudly rather than
     // surface as a generic 500. Maps to HTTP 500 (server-side inconsistency,
     // not an upstream provider failure).
-    | 'TRIALING_UPGRADE_LOCAL_APPLY_FAILED';
+    | 'TRIALING_UPGRADE_LOCAL_APPLY_FAILED'
+    // HOS-222: the immediate paid plan-swap flow (`applyImmediatePaidPlanSwap`)
+    // — used for an equal-or-cheaper cross-category rank-UP change on an
+    // ACTIVE (non-trial) subscription — mutated the live MercadoPago
+    // preapproval to the new plan/amount, but the subsequent local
+    // `billing.subscriptions.changePlan` commit threw. Like
+    // TRIALING_UPGRADE_LOCAL_APPLY_FAILED this is a genuine local/MP drift
+    // state (MP already carries the new plan price while the local row still
+    // shows the old plan), so it pages loudly and maps to HTTP 500
+    // (server-side inconsistency, not an upstream provider failure). The MP
+    // mutation failing on its own reuses MP_PREAPPROVAL_MUTATION_FAILED (502),
+    // fail-closed — nothing was applied locally.
+    | 'IMMEDIATE_SWAP_LOCAL_APPLY_FAILED';
 
 /**
  * Domain-level error thrown across the paid-subscription checkout and
