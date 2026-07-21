@@ -244,8 +244,10 @@ export const GASTRO_LIST: readonly FeatureListItem[] = [
 /**
  * A single plan-table cell value. `yes`/`no` render as check/dash icons,
  * `limit`/`unlimited` render numeric-limit chips, `addon` renders the
- * "con addon" pill, and `text` renders an arbitrary short i18n-sourced label
- * (e.g. "ver" / "directo" for the WhatsApp row).
+ * "con addon" pill, `upcoming` renders the "Próximamente" pill (feature
+ * announced for a plan but not yet shipped — keeps the brochure honest), and
+ * `text` renders an arbitrary short i18n-sourced label (e.g. "ver" / "directo"
+ * for the WhatsApp row).
  */
 export type PlanCellValue =
     | { readonly kind: 'yes' }
@@ -253,6 +255,7 @@ export type PlanCellValue =
     | { readonly kind: 'limit'; readonly value: string }
     | { readonly kind: 'unlimited' }
     | { readonly kind: 'addon' }
+    | { readonly kind: 'upcoming' }
     | { readonly kind: 'text'; readonly labelKey: string };
 
 /** One row of a plan comparison table: a feature label plus one cell per plan column. */
@@ -372,12 +375,17 @@ export const ANFITRIONES_TABLE_ROWS: readonly PlanTableRow[] = [
         cells: [{ kind: 'no' }, { kind: 'no' }, { kind: 'yes' }]
     },
     {
+        // CUSTOM_BRANDING is announced for Premium but not yet shipped (no gate,
+        // no surface). Show it honestly as "Próximamente" instead of a plain ✓
+        // so /funcionalidades matches PlanComparisonTable's `upcoming` status.
         labelKey: 'features.anfitriones.table.rows.customBranding.label',
-        cells: [{ kind: 'no' }, { kind: 'no' }, { kind: 'yes' }]
+        cells: [{ kind: 'no' }, { kind: 'no' }, { kind: 'upcoming' }]
     },
     {
+        // PRIORITY_SUPPORT is a marketing-only entitlement (no implementation).
+        // Mark the Pro/Premium cells as upcoming rather than a false ✓.
         labelKey: 'features.anfitriones.table.rows.prioritySupport.label',
-        cells: [{ kind: 'no' }, { kind: 'yes' }, { kind: 'yes' }]
+        cells: [{ kind: 'no' }, { kind: 'upcoming' }, { kind: 'upcoming' }]
     },
     {
         labelKey: 'features.anfitriones.table.rows.aiImport.label',
