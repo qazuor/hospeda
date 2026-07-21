@@ -129,3 +129,35 @@ export function buildAnnualSuccessUrl(locale: ReturnUrlLocale): string {
 export function buildAnnualCancelUrl(locale: ReturnUrlLocale): string {
     return `${env.HOSPEDA_SITE_URL}/${locale}/suscriptores/checkout/failure/`;
 }
+
+/**
+ * Hosted-checkout `success` redirect for a one-time / recurring ADD-ON
+ * purchase (HOS-224). Points at the localized self-service add-ons page,
+ * which reads the `?status=` / `?addon=` query params to render the purchase
+ * result banner.
+ *
+ * The URL MUST carry the `/${locale}` prefix and a trailing slash before the
+ * query string: Astro's locale middleware rewrites an unprefixed
+ * `/mi-cuenta/addons` into the `/es/` 404 surface (the same Finding #8 class
+ * that bit the subscription flow). Before this builder the add-on checkout
+ * hard-coded `${webUrl}/mi-cuenta/addons?status=...` — no locale, no trailing
+ * slash, and a page that did not exist — so a returning payer landed on a 404.
+ *
+ * @param locale - User's preferred return-URL locale (e.g. `'es'`, `'en'`, `'pt'`).
+ * @param addonSlug - The purchased add-on's slug, echoed back in the banner.
+ */
+export function buildAddonSuccessUrl(locale: ReturnUrlLocale, addonSlug: string): string {
+    return `${env.HOSPEDA_SITE_URL}/${locale}/mi-cuenta/addons/?status=success&addon=${addonSlug}`;
+}
+
+/**
+ * Hosted-checkout `cancel`/`failure` redirect for an ADD-ON purchase
+ * (HOS-224). Same localized add-ons page as {@link buildAddonSuccessUrl},
+ * with `status=failure`.
+ *
+ * @param locale - User's preferred return-URL locale.
+ * @param addonSlug - The add-on's slug, echoed back in the banner.
+ */
+export function buildAddonCancelUrl(locale: ReturnUrlLocale, addonSlug: string): string {
+    return `${env.HOSPEDA_SITE_URL}/${locale}/mi-cuenta/addons/?status=failure&addon=${addonSlug}`;
+}

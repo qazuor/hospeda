@@ -587,7 +587,8 @@
             },
             "cancelScheduled": {
                 "title": "Assinatura cancelada",
-                "body": "Nenhuma cobrança adicional será feita. Você mantém acesso ao seu plano até {date}."
+                "body": "Nenhuma cobrança adicional será feita. Você mantém acesso ao seu plano até {date}.",
+                "planChangeBlocked": "Você não pode mudar de plano enquanto houver um cancelamento pendente. Poderá fazê-lo quando o período atual terminar."
             },
             "pauseModal": {
                 "title": "Pausar assinatura",
@@ -676,6 +677,10 @@
         "recommendations": {
             "title": "Sugestões para você",
             "description": "Acomodações escolhidas especialmente para você, com base nos seus favoritos, buscas e atividade recente no Hospeda"
+        },
+        "addons": {
+            "title": "Complementos",
+            "description": "Amplie as funções da sua conta com complementos adicionais no Hospeda"
         }
     },
     "newsletter": {
@@ -928,6 +933,45 @@
             "title": "Sugestões para você",
             "message": "As sugestões personalizadas estão disponíveis nos planos Plus e VIP. Atualize seu plano para acessar.",
             "cta": "Ver planos"
+        }
+    },
+    "addons": {
+        "title": "Complementos",
+        "subtitle": "Amplie as funções da sua conta com complementos adicionais",
+        "loading": "Carregando complementos...",
+        "errorFetch": "Não foi possível carregar os complementos disponíveis",
+        "empty": "Não há complementos disponíveis no momento.",
+        "groups": {
+            "perAccommodation": "Por hospedagem",
+            "account": "Da conta"
+        },
+        "billingType": {
+            "one_time": "Pagamento único",
+            "recurring": "Mensal"
+        },
+        "duration": "{{days}} dias",
+        "priceLabel": "Preço",
+        "buyButton": "Comprar",
+        "buyingButton": "Processando...",
+        "owned": "Ativo",
+        "accommodationSelect": {
+            "label": "Hospedagem",
+            "placeholder": "Escolha uma hospedagem",
+            "required": "Escolha uma hospedagem para continuar",
+            "empty": "Você precisa de uma hospedagem primeiro"
+        },
+        "gate": {
+            "title": "Você precisa de uma assinatura ativa",
+            "body": "Os complementos estão disponíveis para contas com uma assinatura ativa ou em período de teste.",
+            "cta": "Ver planos"
+        },
+        "result": {
+            "success": "Complemento adquirido com sucesso!",
+            "failure": "A compra não foi concluída. Você pode tentar novamente quando quiser."
+        },
+        "errors": {
+            "purchaseFailed": "Não foi possível iniciar a compra. Tente novamente.",
+            "missingAccommodation": "Escolha uma hospedagem para continuar."
         }
     }
 }

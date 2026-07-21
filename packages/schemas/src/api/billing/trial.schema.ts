@@ -208,3 +208,58 @@ export const ExtendTrialRequestSchema = z.object({
 
 /** TypeScript type inferred from ExtendTrialRequestSchema */
 export type ExtendTrialRequest = z.infer<typeof ExtendTrialRequestSchema>;
+
+/**
+ * Query params for `GET /api/v1/protected/billing/trial-eligibility` (HOS-226).
+ *
+ * `planSlug` is optional and purely informational — echoed back on the
+ * response. The "one trial per customer, for life" rule this endpoint
+ * answers is customer-scoped, not plan-scoped (see the `hasPriorSubscription`
+ * gate documented on `resolveCheckoutFreeTrialDays` in `@repo/service-core`),
+ * so the eligibility verdict is identical regardless of which trial-bearing
+ * plan the caller is asking about. Reserved for a future per-plan rule.
+ */
+export const TrialEligibilityQuerySchema = z.object({
+    planSlug: z
+        .string({
+            message: 'zodError.billing.trial.eligibility.planSlug.invalidType'
+        })
+        .min(1, { message: 'zodError.billing.trial.eligibility.planSlug.min' })
+        .optional()
+});
+
+/** TypeScript type inferred from TrialEligibilityQuerySchema */
+export type TrialEligibilityQuery = z.infer<typeof TrialEligibilityQuerySchema>;
+
+/**
+ * Response body for `GET /api/v1/protected/billing/trial-eligibility` (HOS-226).
+ *
+ * `eligible: true` means the authenticated user has NEVER had any prior
+ * `billing_subscriptions` row — any status, any product domain, including
+ * cancelled — and would still receive a free trial at checkout on a
+ * trial-bearing plan. This mirrors, via the shared `hasAnyPriorSubscription`
+ * query, the EXACT rule `subscription-checkout.service.ts` enforces at
+ * actual checkout time, so this read-only check can never diverge from what
+ * checkout will actually grant. A user on the implicit `tourist-free`
+ * default (which never creates a subscription row) is always `eligible`.
+ *
+ * This endpoint never reserves or consumes a trial — it is purely
+ * informational, used by the pricing page to suppress the static "N days
+ * free" badge for a logged-in visitor who already consumed their lifetime
+ * trial (the badge itself comes from the public, unauthenticated, 1h-cached
+ * `GET /api/v1/public/plans` and cannot know this).
+ */
+export const TrialEligibilityResponseSchema = z.object({
+    eligible: z.boolean({
+        message: 'zodError.billing.trial.eligibility.response.eligible.invalidType'
+    }),
+    /** Echoes the `planSlug` query param, or `null` when it was omitted. */
+    planSlug: z
+        .string({
+            message: 'zodError.billing.trial.eligibility.response.planSlug.invalidType'
+        })
+        .nullable()
+});
+
+/** TypeScript type inferred from TrialEligibilityResponseSchema */
+export type TrialEligibilityResponse = z.infer<typeof TrialEligibilityResponseSchema>;

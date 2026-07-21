@@ -587,7 +587,8 @@
             },
             "cancelScheduled": {
                 "title": "Subscription cancelled",
-                "body": "No further charges will be made. You keep access to your plan until {date}."
+                "body": "No further charges will be made. You keep access to your plan until {date}.",
+                "planChangeBlocked": "You can't change plans while a cancellation is pending. You'll be able to once the current period ends."
             },
             "pauseModal": {
                 "title": "Pause subscription",
@@ -676,6 +677,10 @@
         "recommendations": {
             "title": "Suggestions for you",
             "description": "Accommodations picked especially for you, based on your favorites, searches, and recent activity on Hospeda"
+        },
+        "addons": {
+            "title": "Add-ons",
+            "description": "Extend your account features with additional add-ons on Hospeda"
         }
     },
     "newsletter": {
@@ -928,6 +933,45 @@
             "title": "Suggestions for you",
             "message": "Personalized suggestions are available on the Plus and VIP plans. Upgrade your plan to access them.",
             "cta": "View plans"
+        }
+    },
+    "addons": {
+        "title": "Add-ons",
+        "subtitle": "Extend your account with additional add-ons",
+        "loading": "Loading add-ons...",
+        "errorFetch": "Could not load the available add-ons",
+        "empty": "No add-ons available right now.",
+        "groups": {
+            "perAccommodation": "Per accommodation",
+            "account": "Account-wide"
+        },
+        "billingType": {
+            "one_time": "One-time",
+            "recurring": "Monthly"
+        },
+        "duration": "{{days}} days",
+        "priceLabel": "Price",
+        "buyButton": "Buy",
+        "buyingButton": "Processing...",
+        "owned": "Active",
+        "accommodationSelect": {
+            "label": "Accommodation",
+            "placeholder": "Choose an accommodation",
+            "required": "Choose an accommodation to continue",
+            "empty": "You need an accommodation first"
+        },
+        "gate": {
+            "title": "You need an active subscription",
+            "body": "Add-ons are available for accounts with an active or trial subscription.",
+            "cta": "View plans"
+        },
+        "result": {
+            "success": "Add-on purchased successfully!",
+            "failure": "The purchase didn't go through. You can try again whenever you want."
+        },
+        "errors": {
+            "purchaseFailed": "Could not start the purchase. Please try again.",
+            "missingAccommodation": "Choose an accommodation to continue."
         }
     }
 }

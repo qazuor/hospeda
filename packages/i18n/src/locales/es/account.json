@@ -587,7 +587,8 @@
             },
             "cancelScheduled": {
                 "title": "Suscripción cancelada",
-                "body": "No se realizarán más cobros. Mantenés acceso a tu plan hasta el {date}."
+                "body": "No se realizarán más cobros. Mantenés acceso a tu plan hasta el {date}.",
+                "planChangeBlocked": "No podés cambiar de plan mientras haya una cancelación pendiente. Vas a poder hacerlo cuando termine el período actual."
             },
             "pauseModal": {
                 "title": "Pausar suscripción",
@@ -672,6 +673,10 @@
         "exclusiveDeals": {
             "title": "Ofertas exclusivas",
             "description": "Descubrí ofertas y descuentos exclusivos para tu plan en Hospeda"
+        },
+        "addons": {
+            "title": "Complementos",
+            "description": "Ampliá las funciones de tu cuenta con complementos adicionales en Hospeda"
         },
         "recommendations": {
             "title": "Sugerencias para vos",
@@ -904,6 +909,45 @@
         "listLabel": "Tus ofertas exclusivas",
         "item": {
             "vipBadge": "Solo VIP"
+        }
+    },
+    "addons": {
+        "title": "Complementos",
+        "subtitle": "Ampliá las funciones de tu cuenta con complementos adicionales",
+        "loading": "Cargando complementos...",
+        "errorFetch": "No se pudieron cargar los complementos disponibles",
+        "empty": "No hay complementos disponibles en este momento.",
+        "groups": {
+            "perAccommodation": "Por alojamiento",
+            "account": "De cuenta"
+        },
+        "billingType": {
+            "one_time": "Pago único",
+            "recurring": "Mensual"
+        },
+        "duration": "{{days}} días",
+        "priceLabel": "Precio",
+        "buyButton": "Comprar",
+        "buyingButton": "Procesando...",
+        "owned": "Activo",
+        "accommodationSelect": {
+            "label": "Alojamiento",
+            "placeholder": "Elegí un alojamiento",
+            "required": "Elegí un alojamiento para continuar",
+            "empty": "Necesitás un alojamiento primero"
+        },
+        "gate": {
+            "title": "Necesitás una suscripción activa",
+            "body": "Los complementos están disponibles para cuentas con una suscripción activa o en período de prueba.",
+            "cta": "Ver planes"
+        },
+        "result": {
+            "success": "¡Complemento adquirido con éxito!",
+            "failure": "La compra no se completó. Podés intentarlo de nuevo cuando quieras."
+        },
+        "errors": {
+            "purchaseFailed": "No se pudo iniciar la compra. Intentá de nuevo.",
+            "missingAccommodation": "Elegí un alojamiento para continuar."
         }
     },
     "recommendations": {

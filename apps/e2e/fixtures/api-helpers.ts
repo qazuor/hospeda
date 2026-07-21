@@ -292,7 +292,7 @@ export async function getMe(
 
 interface OnboardingStartResponse {
     data?: {
-        status: 'created' | 'resumed';
+        status: 'created';
         accommodationId?: string;
         accommodationSlug?: string;
     };
@@ -301,7 +301,8 @@ interface OnboardingStartResponse {
 /**
  * Calls the host-onboarding endpoint (the same one driven by
  * /publicar/nueva on the web app). Used for HOST-01 setups and HOST-07
- * idempotency / republish tests.
+ * create-always / republish tests. Since BETA-197 the endpoint always
+ * returns `status: 'created'` (auto-resume was removed).
  *
  * The API schema (AccommodationCreateDraftHttpSchema) expects:
  *   - `type`: AccommodationTypeEnum value (APARTMENT, HOUSE, etc.) — uppercase.
@@ -325,7 +326,7 @@ export async function startHostOnboarding(
     },
     config?: ApiHelperConfig
 ): Promise<{
-    readonly status: 'created' | 'resumed';
+    readonly status: 'created';
     readonly accommodationId: string | null;
     readonly accommodationSlug: string | null;
 }> {

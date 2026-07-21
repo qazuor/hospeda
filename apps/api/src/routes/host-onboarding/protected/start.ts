@@ -4,18 +4,21 @@
  * Specialized entry point for the public web "publicar" flow. Unlike the
  * generic `/api/v1/protected/accommodations/draft` endpoint, this one is
  * callable by any authenticated USER because it does NOT require the
- * `ACCOMMODATION_CREATE` permission. It encodes two terminal states the
- * caller can hit:
+ * `ACCOMMODATION_CREATE` permission.
  *
- *  - `created`     - a fresh DRAFT was inserted and the user can fill in the
- *                    rest from the web self-service editor. When the actor is
- *                    already HOST (or higher) the role promotion is a no-op
- *                    but the DRAFT is still created so their input is not lost.
- *  - `resumed`     - the user already had an active DRAFT; reuse that one.
+ * As of BETA-197, this endpoint ALWAYS creates a fresh DRAFT — it no longer
+ * auto-resumes an existing active DRAFT. The web calls
+ * `GET /host-onboarding/precheck` BEFORE showing the form and decides itself
+ * whether to create, resume, delete, or upgrade; by the time `/start` is
+ * called, the caller has already committed to creating. Consequently, DRAFTs
+ * count against `max_accommodations` like any other create — the limit is
+ * enforced with no bypass. When the actor is already HOST (or higher) the
+ * role promotion is a no-op but the DRAFT is still created so their input is
+ * not lost.
  *
- * A USER who creates or resumes onboarding is promoted to HOST during the
- * onboarding flow so they can access host surfaces immediately. The billing
- * trial still starts later, on the first DRAFT -> ACTIVE publish.
+ * A USER who creates onboarding is promoted to HOST during the onboarding
+ * flow so they can access host surfaces immediately. The billing trial still
+ * starts later, on the first DRAFT -> ACTIVE publish.
  */
 import {
     AccommodationCreateDraftHttpSchema,
@@ -36,12 +39,13 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
 /**
- * Response shape for `/host-onboarding/start`. A discriminated union by
- * `status` would be more precise but the route factory expects a single
- * Zod object schema; we represent the variants with nullable id fields.
+ * Response shape for `/host-onboarding/start`. `status` is kept as a
+ * single-value enum (rather than dropped) so the response shape stays
+ * stable for existing consumers now that `createForOnboarding` always
+ * creates (see {@link HostOnboardingResult}).
  */
 const HostOnboardingStartResponseSchema = z.object({
-    status: z.enum(['created', 'resumed']),
+    status: z.enum(['created']),
     accommodationId: AccommodationIdSchema.nullable(),
     accommodationSlug: z.string().nullable()
 });
@@ -54,7 +58,7 @@ export const protectedHostOnboardingStartRoute = createProtectedRoute({
     path: '/start',
     summary: 'Start host onboarding',
     description:
-        'Creates or resumes a host onboarding draft for the authenticated user. Existing hosts flow through normally — the role promotion is a no-op. No special permissions required.',
+        'Creates a host onboarding draft for the authenticated user. Existing hosts flow through normally — the role promotion is a no-op. No special permissions required. Callers should use GET /host-onboarding/precheck first to decide whether creation is the right action.',
     tags: ['Host Onboarding'],
     requestBody: AccommodationCreateDraftHttpSchema,
     responseSchema: HostOnboardingStartResponseSchema,
@@ -146,10 +150,11 @@ export const protectedHostOnboardingStartRoute = createProtectedRoute({
         // point for authenticated tourists. A tourist-free user must be able to
         // create the onboarding draft; the 14-day owner trial starts later on the
         // first DRAFT -> ACTIVE publish, not here. Keep the limit guard so existing
-        // hosts still cannot exceed max_accommodations via this shortcut — but with
-        // `skipWhenActiveDraftExists` so a HOST who already has a DRAFT (and would
-        // therefore RESUME it, not create a new row) is not falsely blocked by the
-        // limit on re-entry.
-        middlewares: [enforceAccommodationLimit({ skipWhenActiveDraftExists: true })]
+        // hosts still cannot exceed max_accommodations via this shortcut. As of
+        // BETA-197 this endpoint always creates (no more auto-resume), so the
+        // limit applies unconditionally, drafts included — the web is responsible
+        // for steering the user away from `/start` when they should resume/delete/
+        // upgrade instead, via `GET /host-onboarding/precheck`.
+        middlewares: [enforceAccommodationLimit()]
     }
 });

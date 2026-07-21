@@ -22,8 +22,8 @@
  *     already-active one and rejects with 403 subscription_required otherwise, so
  *     the owner is given a plan here the way a real one gets it at checkout.
  *  7. Public detail page shows the accommodation within ISR window.
- *  8. Idempotency: re-firing mini-form returns `resumed` with no
- *     new accommodation row.
+ *  8. Re-firing the mini-form after publish returns `created` and starts a
+ *     fresh draft — since BETA-197 the endpoint never auto-resumes.
  *  9. No Sentry errors logged.
  *
  * @see SPEC-092 spec.md § HOST-01

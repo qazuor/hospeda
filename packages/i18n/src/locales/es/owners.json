@@ -6,12 +6,14 @@
     },
     "host": {
         "landing": {
-            "trialCallout": "Probá Hospeda gratis por 14 días. Tu trial empieza cuando publicás tu primera propiedad. Sin tarjeta, sin compromiso."
+            "trialCallout": "Probá Hospeda gratis por 14 días. Tu trial empieza cuando publicás tu primera propiedad. No pagás nada hasta el día 14, sin compromiso."
         },
         "pages": {
             "nueva": {
                 "trialCalloutTitle": "14 días gratis al publicar",
-                "trialNote": "Cuando publiques tu primera propiedad arranca tu trial gratis de 14 días. Sin tarjeta, sin compromiso. Podés probar todo el panel mientras armás tu borrador."
+                "trialCalloutTitleIneligible": "Armá tu propiedad",
+                "trialNote": "Cuando publiques tu primera propiedad arranca tu trial gratis de 14 días. No pagás nada hasta el día 14, sin compromiso. Podés probar todo el panel mientras armás tu borrador.",
+                "trialNoteIneligible": "Podés crear y editar tu borrador ahora. Para publicarlo y salir al aire vas a necesitar un plan de anfitrión activo."
             }
         }
     }

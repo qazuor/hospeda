@@ -1,0 +1,182 @@
+/**
+ * AddonsPurchasePanel.module.css
+ * Styles for the HOS-224 add-ons self-service purchase panel.
+ */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8, 2rem);
+}
+
+.group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1rem);
+}
+
+.groupTitle {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.125rem;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-card-gap, 1.875rem);
+}
+
+@media (min-width: 640px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ── Card ─────────────────────────────────────────────────────────────── */
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-6, 1.5rem);
+    background-color: var(--core-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+}
+
+.cardHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+.cardTitle {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.ownedBadge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.625rem;
+    background-color: oklch(0.95 0.04 145);
+    color: oklch(0.35 0.12 145);
+    border: 1px solid oklch(0.85 0.08 145);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.cardDescription {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+    flex-grow: 1;
+}
+
+.cardMeta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.price {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.0625rem;
+    color: var(--brand-primary);
+}
+
+.billingType,
+.duration {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    background-color: var(--surface-warm);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ── Accommodation select ─────────────────────────────────────────────── */
+
+.selectLabel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.select {
+    padding: var(--space-2) var(--space-3);
+    background-color: var(--core-background);
+    color: var(--core-foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+}
+
+.noAccommodations {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+/* ── Buy button ───────────────────────────────────────────────────────── */
+
+.buyBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-5);
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
+    border: 1px solid transparent;
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity var(--duration-normal, 0.4s) ease;
+}
+
+.buyBtn:hover:not(:disabled) {
+    opacity: 0.88;
+}
+
+.buyBtn:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.buyBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

@@ -328,86 +328,29 @@ describe('Limit Enforcement Middleware', () => {
             expect(mockNext).toHaveBeenCalled();
         });
 
-        describe('skipWhenActiveDraftExists (host-onboarding resume bypass)', () => {
-            it('skips the limit and calls next() when an active DRAFT exists, even at/over limit', async () => {
-                // Arrange: actor is HOST, at limit (count 5 / max 5), but already owns a DRAFT.
-                vi.mocked(getActorFromContext).mockReturnValue(mockActor);
-                mockLimitsMap.set(LimitKey.MAX_ACCOMMODATIONS, 5);
+        it('always runs a single total-count query and blocks at limit (BETA-197: no draft-exists bypass)', async () => {
+            // Regression guard: the former `skipWhenActiveDraftExists` bypass option was
+            // removed (BETA-197 — host-onboarding `/start` no longer auto-resumes, so
+            // drafts count against the limit like any other create). This asserts
+            // `enforceAccommodationLimit()` behaves as a plain single-query gate.
+            vi.mocked(getActorFromContext).mockReturnValue(mockActor);
+            mockLimitsMap.set(LimitKey.MAX_ACCOMMODATIONS, 5);
 
-                // The first count() call (DRAFT predicate) returns 1 → bypass.
-                // The second (total) call would return 5 (at limit) but must never run.
-                const mockCount = vi
-                    .fn()
-                    .mockResolvedValueOnce({ success: true, data: { count: 1 } })
-                    .mockResolvedValueOnce({ success: true, data: { count: 5 } });
-                vi.mocked(AccommodationService).mockImplementation(function () {
-                    return {
-                        count: mockCount
-                    } as unknown as AccommodationService;
-                });
-
-                const middleware = enforceAccommodationLimit({ skipWhenActiveDraftExists: true });
-                await middleware(mockContext, mockNext);
-
-                // Bypassed: next() called, no 403.
-                expect(mockNext).toHaveBeenCalled();
-                // Only the DRAFT-count query ran; the total-count limit query was skipped.
-                expect(mockCount).toHaveBeenCalledTimes(1);
-                // The DRAFT query uses the resume predicate.
-                expect(mockCount.mock.calls[0]?.[1]).toMatchObject({
-                    ownerId: 'user-123',
-                    lifecycleState: LifecycleStatusEnum.DRAFT,
-                    deletedAt: null
-                });
+            const mockCount = vi.fn().mockResolvedValue({ success: true, data: { count: 5 } });
+            vi.mocked(AccommodationService).mockImplementation(function () {
+                return {
+                    count: mockCount
+                } as unknown as AccommodationService;
             });
 
-            it('still blocks with 403 when the flag is set but NO active DRAFT exists at limit', async () => {
-                // Arrange: at limit (count 5 / max 5) and NO draft → must still block.
-                vi.mocked(getActorFromContext).mockReturnValue(mockActor);
-                mockLimitsMap.set(LimitKey.MAX_ACCOMMODATIONS, 5);
+            const middleware = enforceAccommodationLimit();
 
-                // First count() (DRAFT) returns 0 → no bypass. Second (total) returns 5 → block.
-                const mockCount = vi
-                    .fn()
-                    .mockResolvedValueOnce({ success: true, data: { count: 0 } })
-                    .mockResolvedValueOnce({ success: true, data: { count: 5 } });
-                vi.mocked(AccommodationService).mockImplementation(function () {
-                    return {
-                        count: mockCount
-                    } as unknown as AccommodationService;
-                });
-
-                const middleware = enforceAccommodationLimit({ skipWhenActiveDraftExists: true });
-
-                await expect(middleware(mockContext, mockNext)).rejects.toThrow(ServiceError);
-                expect(mockNext).not.toHaveBeenCalled();
-                // Both queries ran: DRAFT check (0) then the total-count limit check (5).
-                expect(mockCount).toHaveBeenCalledTimes(2);
-            });
-
-            it('default (no options) does NOT run the DRAFT pre-check and blocks at limit', async () => {
-                // Regression guard: the existing two consumers call enforceAccommodationLimit()
-                // with no args and must behave exactly as before — a single total-count query
-                // and a 403 at limit, with no DRAFT pre-check.
-                vi.mocked(getActorFromContext).mockReturnValue(mockActor);
-                mockLimitsMap.set(LimitKey.MAX_ACCOMMODATIONS, 5);
-
-                const mockCount = vi.fn().mockResolvedValue({ success: true, data: { count: 5 } });
-                vi.mocked(AccommodationService).mockImplementation(function () {
-                    return {
-                        count: mockCount
-                    } as unknown as AccommodationService;
-                });
-
-                const middleware = enforceAccommodationLimit();
-
-                await expect(middleware(mockContext, mockNext)).rejects.toThrow(ServiceError);
-                expect(mockNext).not.toHaveBeenCalled();
-                // Exactly one count() call — the total-count limit query. No DRAFT pre-check.
-                expect(mockCount).toHaveBeenCalledTimes(1);
-                expect(mockCount.mock.calls[0]?.[1]).toMatchObject({ ownerId: 'user-123' });
-                expect(mockCount.mock.calls[0]?.[1]).not.toHaveProperty('lifecycleState');
-            });
+            await expect(middleware(mockContext, mockNext)).rejects.toThrow(ServiceError);
+            expect(mockNext).not.toHaveBeenCalled();
+            // Exactly one count() call — the total-count limit query. No DRAFT pre-check.
+            expect(mockCount).toHaveBeenCalledTimes(1);
+            expect(mockCount.mock.calls[0]?.[1]).toMatchObject({ ownerId: 'user-123' });
+            expect(mockCount.mock.calls[0]?.[1]).not.toHaveProperty('lifecycleState');
         });
     });
 

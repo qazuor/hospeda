@@ -3,12 +3,15 @@
  *
  * Unit tests for the public-host-onboarding entry point of AccommodationService.
  *
- * Validates the two terminal states (`created`, `resumed`),
- * the idempotency contract (one DRAFT per USER), the no-op role promotion for
- * already-privileged actors, the defense-in-depth `ownerId = actor.id` override,
- * and the SPEC-258 B-API expansion: import-provided fields (capacity, location,
- * price, contactInfo, amenityIds) are persisted in the draft and amenities are
- * synced transactionally.
+ * As of BETA-197, this method ALWAYS creates a fresh DRAFT — the auto-resume
+ * branch (returning an existing active DRAFT instead of inserting a new one)
+ * was removed. The web now calls `GET /host-onboarding/precheck` before showing
+ * the form and decides create/resume/delete/upgrade itself; the accommodation
+ * limit applies normally, drafts included. This suite validates the always-create
+ * outcome, the no-op role promotion for already-privileged actors, the
+ * defense-in-depth `ownerId = actor.id` override, and the SPEC-258 B-API
+ * expansion: import-provided fields (capacity, location, price, contactInfo,
+ * amenityIds) are persisted in the draft and amenities are synced transactionally.
  */
 
 import type { AccommodationModel, RAccommodationAmenityModel, UserModel } from '@repo/db';
@@ -133,8 +136,6 @@ describe('AccommodationService.createForOnboarding', () => {
         vi.spyOn(helpers, 'generateSlug').mockResolvedValue('mock-slug');
 
         accommodationModel = createMockBaseModel();
-        // The shared mock factory does not include findOne — add it for this suite.
-        (accommodationModel as unknown as { findOne: unknown }).findOne = vi.fn();
         userModel = createUserModelMock();
         service = buildService(accommodationModel, userModel);
     });
@@ -147,7 +148,6 @@ describe('AccommodationService.createForOnboarding', () => {
                 id: 'user-001',
                 role: RoleEnum.USER
             });
-            (accommodationModel.findOne as Mock).mockResolvedValue(null);
             const created = createMockAccommodation({
                 id: 'acc-001',
                 ownerId: 'user-001',
@@ -174,7 +174,6 @@ describe('AccommodationService.createForOnboarding', () => {
                 id: 'user-001b',
                 role: RoleEnum.USER
             });
-            (accommodationModel.findOne as Mock).mockResolvedValue(null);
             (accommodationModel.create as Mock).mockResolvedValue(
                 createMockAccommodation({ id: 'acc-001b', ownerId: 'user-001b' })
             );
@@ -196,7 +195,6 @@ describe('AccommodationService.createForOnboarding', () => {
                 id: 'user-002',
                 role: RoleEnum.USER
             });
-            (accommodationModel.findOne as Mock).mockResolvedValue(null);
             const created = createMockAccommodation({
                 id: 'acc-002',
                 ownerId: 'user-002',
@@ -218,57 +216,73 @@ describe('AccommodationService.createForOnboarding', () => {
         });
     });
 
-    describe('status: resumed (idempotency)', () => {
-        it('returns the existing DRAFT when one is already active for this owner', async () => {
-            // Arrange
+    describe('BETA-197: no auto-resume — always creates', () => {
+        it('creates a fresh DRAFT with no lookup for an existing active DRAFT', async () => {
+            // Regression guard: the removed auto-resume branch used to call
+            // `this.model.findOne(...)` to look for an existing active DRAFT before
+            // deciding whether to create. As of BETA-197 that lookup is gone entirely —
+            // the web decides create/resume/delete/upgrade via a separate precheck
+            // endpoint, and this method unconditionally creates.
             const actor = createActor({ id: 'user-003' });
             asMock(userModel.findById as Mock).mockResolvedValue({
                 id: 'user-003',
                 role: RoleEnum.USER
             });
-            const existing = createMockAccommodation({
-                id: 'acc-existing',
+            const created = createMockAccommodation({
+                id: 'acc-created',
                 ownerId: 'user-003',
                 lifecycleState: LifecycleStatusEnum.DRAFT
             });
-            (accommodationModel.findOne as Mock).mockResolvedValue(existing);
+            (accommodationModel.create as Mock).mockResolvedValue(created);
 
             // Act
             const result = await service.createForOnboarding(actor, VALID_DRAFT_INPUT);
 
             // Assert
             expect(result.error).toBeUndefined();
-            expect(result.data?.status).toBe('resumed');
-            if (result.data?.status === 'resumed') {
-                expect(result.data.accommodation.id).toBe('acc-existing');
+            expect(result.data?.status).toBe('created');
+            if (result.data?.status === 'created') {
+                expect(result.data.accommodation.id).toBe('acc-created');
             }
-            // model.create must not be called when a draft already exists
-            expect(accommodationModel.create).not.toHaveBeenCalled();
+            expect(accommodationModel.create).toHaveBeenCalledTimes(1);
+            // No idempotency lookup: `model.findOne` is never invoked by this
+            // method anymore.
+            expect(accommodationModel.findOne).not.toHaveBeenCalled();
         });
 
-        it('queries for non-deleted DRAFT only', async () => {
-            // Arrange
+        it("creates a SECOND DRAFT on a repeat call for the same owner (limit enforcement is the caller layer's job, not this method's)", async () => {
+            // The old idempotency guard capped a USER at one active DRAFT by returning
+            // the existing row instead of inserting. That guard is gone: a second call
+            // for the same owner inserts a second row. Whether that second call is
+            // actually reachable is now decided by `GET /host-onboarding/precheck` on
+            // the web, and by `enforceAccommodationLimit()` (unconditional, no bypass)
+            // on the `/start` route — both live outside this service method.
             const actor = createActor({ id: 'user-004' });
             asMock(userModel.findById as Mock).mockResolvedValue({
                 id: 'user-004',
                 role: RoleEnum.USER
             });
-            (accommodationModel.findOne as Mock).mockResolvedValue(null);
-            (accommodationModel.create as Mock).mockResolvedValue(
-                createMockAccommodation({ id: 'acc-new', ownerId: 'user-004' })
-            );
+            (accommodationModel.create as Mock)
+                .mockResolvedValueOnce(
+                    createMockAccommodation({ id: 'acc-first', ownerId: 'user-004' })
+                )
+                .mockResolvedValueOnce(
+                    createMockAccommodation({ id: 'acc-second', ownerId: 'user-004' })
+                );
 
-            // Act
-            await service.createForOnboarding(actor, VALID_DRAFT_INPUT);
+            // Act — call twice, simulating an owner who already has an active DRAFT
+            // re-entering onboarding.
+            const first = await service.createForOnboarding(actor, VALID_DRAFT_INPUT);
+            const second = await service.createForOnboarding(actor, VALID_DRAFT_INPUT);
 
-            // Assert: the where clause locks the lookup to ownerId + DRAFT + not soft-deleted
-            const findOneCalls = (accommodationModel.findOne as Mock).mock.calls;
-            expect(findOneCalls).toHaveLength(1);
-            expect(findOneCalls[0]?.[0]).toEqual({
-                ownerId: 'user-004',
-                lifecycleState: LifecycleStatusEnum.DRAFT,
-                deletedAt: null
-            });
+            // Assert: both calls created a new row.
+            expect(first.data?.status).toBe('created');
+            expect(second.data?.status).toBe('created');
+            if (first.data?.status === 'created' && second.data?.status === 'created') {
+                expect(first.data.accommodation.id).toBe('acc-first');
+                expect(second.data.accommodation.id).toBe('acc-second');
+            }
+            expect(accommodationModel.create).toHaveBeenCalledTimes(2);
         });
     });
 
@@ -282,7 +296,6 @@ describe('AccommodationService.createForOnboarding', () => {
                 id: 'user-host',
                 role: RoleEnum.HOST
             });
-            (accommodationModel.findOne as Mock).mockResolvedValue(null);
             const created = createMockAccommodation({
                 id: 'acc-host-new',
                 ownerId: 'user-host',
@@ -300,29 +313,32 @@ describe('AccommodationService.createForOnboarding', () => {
             expect(accommodationModel.create).toHaveBeenCalledTimes(1);
         });
 
-        it('returns resumed (not created) for a HOST who already has an active DRAFT', async () => {
-            // The DRAFT idempotency guard fires before any create logic,
-            // so a HOST with an existing DRAFT gets `resumed`, not a second draft.
+        it('returns created (a new DRAFT) for a HOST who already has an active DRAFT (BETA-197: no auto-resume)', async () => {
+            // Previously the DRAFT idempotency guard fired before any create logic,
+            // so a HOST with an existing DRAFT got `resumed`, not a second draft.
+            // As of BETA-197 that guard is gone; a HOST re-entering onboarding gets a
+            // second DRAFT created (subject to the accommodation limit at the route
+            // layer, not here).
             const actor = createHostActor({ id: 'user-host-draft' });
             asMock(userModel.findById as Mock).mockResolvedValue({
                 id: 'user-host-draft',
                 role: RoleEnum.HOST
             });
-            const existing = createMockAccommodation({
-                id: 'acc-host-existing',
+            const created = createMockAccommodation({
+                id: 'acc-host-second-draft',
                 ownerId: 'user-host-draft',
                 lifecycleState: LifecycleStatusEnum.DRAFT
             });
-            (accommodationModel.findOne as Mock).mockResolvedValue(existing);
+            (accommodationModel.create as Mock).mockResolvedValue(created);
 
             const result = await service.createForOnboarding(actor, VALID_DRAFT_INPUT);
 
             expect(result.error).toBeUndefined();
-            expect(result.data?.status).toBe('resumed');
-            if (result.data?.status === 'resumed') {
-                expect(result.data.accommodation.id).toBe('acc-host-existing');
+            expect(result.data?.status).toBe('created');
+            if (result.data?.status === 'created') {
+                expect(result.data.accommodation.id).toBe('acc-host-second-draft');
             }
-            expect(accommodationModel.create).not.toHaveBeenCalled();
+            expect(accommodationModel.create).toHaveBeenCalledTimes(1);
         });
 
         it.each([
@@ -335,7 +351,6 @@ describe('AccommodationService.createForOnboarding', () => {
                 id: 'user-priv',
                 role
             });
-            (accommodationModel.findOne as Mock).mockResolvedValue(null);
             (accommodationModel.create as Mock).mockResolvedValue(
                 createMockAccommodation({ id: 'acc-priv', ownerId: 'user-priv' })
             );
@@ -373,7 +388,6 @@ describe('AccommodationService.createForOnboarding', () => {
                 id: 'user-007',
                 role: RoleEnum.USER
             });
-            (accommodationModel.findOne as Mock).mockResolvedValue(null);
             // Override destination to a non-CITY type.
             // @ts-expect-error: override for test
             service._destinationModel = {
@@ -425,7 +439,6 @@ describe('AccommodationService.createForOnboarding', () => {
                 id: 'user-import',
                 role: RoleEnum.USER
             });
-            (accommodationModel.findOne as Mock).mockResolvedValue(null);
         });
 
         it('persists extraInfo (capacity/bedrooms/bathrooms/beds) when provided', async () => {
@@ -554,7 +567,6 @@ describe('AccommodationService.createForOnboarding', () => {
                 id: 'user-minimal',
                 role: RoleEnum.USER
             });
-            (accommodationModel.findOne as Mock).mockResolvedValue(null);
             const created = createMockAccommodation({
                 id: 'acc-minimal',
                 ownerId: 'user-minimal',

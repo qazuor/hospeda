@@ -99,6 +99,28 @@ function fetchCurrentPlanSlug(): Promise<string | null> {
     return subscriptionPromise;
 }
 
+/**
+ * Module-level promise that fetches the current user's trial eligibility
+ * (HOS-226). Same sharing rationale as {@link fetchCurrentPlanSlug}: the
+ * question `billingApi.getTrialEligibility` answers is customer-scoped, not
+ * plan-scoped, so every <PlanPurchaseButton> island on the page shares the
+ * identical answer — one request instead of N.
+ *
+ * Resolves to `null` (not `false`) on any failure or when unauthenticated,
+ * so the badge-suppression effect below can distinguish "definitely
+ * ineligible" (`false`) from "unknown, leave the SSR badge alone" (`null`).
+ */
+let trialEligibilityPromise: Promise<boolean | null> | null = null;
+
+function fetchTrialEligible(): Promise<boolean | null> {
+    if (trialEligibilityPromise) return trialEligibilityPromise;
+    trialEligibilityPromise = billingApi
+        .getTrialEligibility()
+        .then((result) => (result.ok ? result.data.eligible : null))
+        .catch(() => null);
+    return trialEligibilityPromise;
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -222,6 +244,10 @@ export function PlanPurchaseButton({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [currentPlanSlug, setCurrentPlanSlug] = useState<string | null>(null);
+    // HOS-226: `null` = unknown (unauthenticated, still loading, or the lookup
+    // failed) — the SSR "N days free" badge stays untouched in that case.
+    // `false` is the only value that triggers badge suppression below.
+    const [trialEligible, setTrialEligible] = useState<boolean | null>(null);
     // The toggle lives outside this island (vanilla JS in PricingCardsGrid).
     // The island observes the closest `data-billing` ancestor for changes so
     // the displayed price + the checkout payload stay in sync with the
@@ -288,6 +314,10 @@ export function PlanPurchaseButton({
     // `buildPreviewText` closure (keeps useEffect deps exhaustive + stable).
     const promoBadgeText = appliedPreview ? buildPreviewText(appliedPreview) : '';
 
+    // HOS-226: replacement copy for the SSR trial badge on this card when the
+    // authenticated user turns out to be ineligible (see the DOM effect below).
+    const trialNotEligibleLabel = t('pricing.trialNotEligible', 'Sin período de prueba');
+
     const processingText = t('billing.checkout.button.processing', 'Procesando...');
     const processingAriaLabel = t('billing.checkout.button.processingAriaLabel', 'Procesando pago');
     const errorText = t(
@@ -295,6 +325,9 @@ export function PlanPurchaseButton({
         'No pudimos iniciar el pago. Intenta de nuevo.'
     );
     const currentPlanLabel = t('billing.checkout.button.currentPlan', 'Plan actual');
+    // BETA-195: CTA label when the user already has an active subscription on a
+    // different plan — this card is a plan change, not a fresh checkout.
+    const changePlanCtaLabel = t('billing.checkout.button.changePlan', 'Cambiar a este plan');
     const currentPlanAriaLabel = t(
         'billing.checkout.button.currentPlanAriaLabel',
         'Este es tu plan actual'
@@ -395,6 +428,53 @@ export function PlanPurchaseButton({
         };
     }, [isAuthenticated]);
 
+    // HOS-226: fetch the user's trial eligibility once they're authenticated,
+    // shared across every PlanPurchaseButton island via trialEligibilityPromise
+    // (same one-request-per-page-load rationale as the subscription fetch
+    // above). Feeds the badge-suppression DOM effect further down.
+    useEffect(() => {
+        if (!isAuthenticated) {
+            setTrialEligible(null);
+            return;
+        }
+        let cancelled = false;
+        fetchTrialEligible().then((eligible) => {
+            if (!cancelled) setTrialEligible(eligible);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated]);
+
+    // HOS-226: correct the SSR-rendered "N days free" badge for an
+    // authenticated, non-eligible visitor. The badge itself comes from the
+    // static, unauthenticated, 1h-cached `GET /api/v1/public/plans` (Pricing
+    // Exception — see apps/web/CLAUDE.md — the page must never be empty or
+    // auth-dependent at SSR), so an anonymous visitor or one who is still
+    // trial-eligible always sees the original SSR markup untouched.
+    //
+    // Reuses the exact `.pricing-card` ancestor + `.pricing-card__trial`
+    // lookup the promo-code effect further below already uses to reach the
+    // same element — same DOM-reach pattern, no new coupling invented.
+    // Deliberately only reacts to `trialEligible === false`: `null` covers
+    // both "not authenticated" and "lookup failed", and in both cases the
+    // SSR default must stand.
+    useEffect(() => {
+        if (trialEligible !== false) return;
+        const card = buttonRef.current?.closest('.pricing-card');
+        const trialEl = card?.querySelector<HTMLElement>('.pricing-card__trial');
+        if (!trialEl) return;
+
+        const original = trialEl.textContent;
+        trialEl.textContent = trialNotEligibleLabel;
+        trialEl.classList.add('pricing-card__trial--ineligible');
+
+        return () => {
+            trialEl.textContent = original;
+            trialEl.classList.remove('pricing-card__trial--ineligible');
+        };
+    }, [trialEligible, trialNotEligibleLabel]);
+
     // Observe the closest ancestor that carries the billing-interval toggle
     // state (set by PricingCardsGrid.astro's inline vanilla JS). We use a
     // MutationObserver because the toggle changes the attribute imperatively
@@ -433,8 +513,20 @@ export function PlanPurchaseButton({
 
     const isCurrentPlan = isAuthenticated && currentPlanSlug === planSlug;
 
+    // BETA-195: the user already has an active subscription on a DIFFERENT plan.
+    // There is one subscription per customer, so firing start-paid for a second
+    // plan is rejected by the backend with a non-transitory 409 ("You already
+    // have an active subscription — use the plan-change endpoint"). This card is
+    // therefore a PLAN CHANGE, not a fresh start: relabel the CTA and route the
+    // user to Mi Suscripción → Cambiar plan (which runs the plan-change engine,
+    // incl. HOS-222's cross-category classification) instead of start-paid.
+    const isPlanChange =
+        isAuthenticated && currentPlanSlug !== null && currentPlanSlug !== planSlug;
+
     // Show the promo section only when the user can interact with checkout
-    const showPromoSection = showPromo && isAuthenticated && !isCurrentPlan && !isAnnualUnavailable;
+    // (never in the plan-change case — promo codes apply at checkout, not here).
+    const showPromoSection =
+        showPromo && isAuthenticated && !isCurrentPlan && !isAnnualUnavailable && !isPlanChange;
 
     // BETA-183: a MercadoPago preapproval (used by every MONTHLY plan) is created
     // with a fixed payer_email = the Hospeda signup email. MP rejects the payment
@@ -446,7 +538,11 @@ export function PlanPurchaseButton({
     // payer_email is a follow-up.
     const userEmail = session?.user?.email ?? '';
     const showMonthlyEmailNotice =
-        isAuthenticated && billingInterval === 'monthly' && !isCurrentPlan && userEmail !== '';
+        isAuthenticated &&
+        billingInterval === 'monthly' &&
+        !isCurrentPlan &&
+        !isPlanChange &&
+        userEmail !== '';
     const monthlyEmailNoticeTitle = t(
         'billing.checkout.monthlyEmailNotice.title',
         'Antes de continuar'
@@ -699,6 +795,15 @@ export function PlanPurchaseButton({
             return;
         }
 
+        // BETA-195: an authenticated user who already has a subscription switches
+        // plans through Mi Suscripción → Cambiar plan (the plan-change engine),
+        // NOT start-paid — which would deterministically 409 ("already have an
+        // active subscription"). Route there instead of firing a doomed checkout.
+        if (isPlanChange) {
+            window.location.href = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
+            return;
+        }
+
         // Prevent double-submission.
         if (loading) {
             return;
@@ -770,11 +875,13 @@ export function PlanPurchaseButton({
 
     const buttonAriaLabel = isCurrentPlan
         ? currentPlanAriaLabel
-        : isAnnualUnavailable
-          ? monthlyOnlyLabel
-          : loading
-            ? processingAriaLabel
-            : `${ctaText} — ${formattedPrice}`;
+        : isPlanChange
+          ? changePlanCtaLabel
+          : isAnnualUnavailable
+            ? monthlyOnlyLabel
+            : loading
+              ? processingAriaLabel
+              : `${ctaText} — ${formattedPrice}`;
 
     const buttonDisabled = loading || isCurrentPlan || isAnnualUnavailable;
 
@@ -823,6 +930,10 @@ export function PlanPurchaseButton({
                 ) : isAnnualUnavailable ? (
                     <span className={styles.idleContent}>
                         <span className={styles.ctaText}>{monthlyOnlyLabel}</span>
+                    </span>
+                ) : isPlanChange ? (
+                    <span className={styles.idleContent}>
+                        <span className={styles.ctaText}>{changePlanCtaLabel}</span>
                     </span>
                 ) : (
                     <span className={styles.idleContent}>

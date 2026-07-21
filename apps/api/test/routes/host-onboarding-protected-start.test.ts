@@ -50,10 +50,10 @@ vi.mock('@repo/service-core', async () => {
         AccommodationService: vi.fn().mockImplementation(function () {
             return {
                 createForOnboarding: mockCreateForOnboarding,
-                // `enforceAccommodationLimit({ skipWhenActiveDraftExists: true })`
-                // (wired on this route) instantiates its own AccommodationService
-                // and calls `.count()` twice (draft-exists bypass check, then the
-                // general MAX_ACCOMMODATIONS check) before the handler ever runs.
+                // `enforceAccommodationLimit()` (wired on this route, unconditional
+                // since BETA-197 removed the draft-exists bypass) instantiates its
+                // own AccommodationService and calls `.count()` once for the
+                // MAX_ACCOMMODATIONS check before the handler ever runs.
                 count: mockCount
             };
         })

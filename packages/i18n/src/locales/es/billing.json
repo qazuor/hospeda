@@ -223,7 +223,8 @@
             "error": "No pudimos iniciar el pago. Intentá de nuevo.",
             "unauthCta": "Iniciá sesión para contratar",
             "currentPlan": "Plan actual",
-            "currentPlanAriaLabel": "Este es tu plan actual"
+            "currentPlanAriaLabel": "Este es tu plan actual",
+            "changePlan": "Cambiar a este plan"
         },
         "monthlyEmailNotice": {
             "title": "Antes de continuar",

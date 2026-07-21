@@ -10,9 +10,19 @@
  * PROTECTED_SEGMENTS), so this page does its own in-page auth guard, same
  * pattern as /mi-cuenta/*.
  *
- * F4: If the user is at or over their max_accommodations limit, replaces the
- * form with an AtLimit panel so the user sees a clear upgrade prompt instead
- * of a confusing form that would fail on submit.
+ * BETA-197: BEFORE rendering the onboarding form, calls
+ * `GET /host-onboarding/precheck` and branches on its `decision`:
+ *  - `create_direct` (or `?create=1` bypass from the panel's "Crear uno
+ *    nuevo" action on `resume_or_create` / `pick_draft_or_create`) → renders
+ *    the form directly.
+ *  - Every other decision → renders `PublishPrecheckPanel`, which shows the
+ *    right choice (resume/pick/delete/upgrade) per the decision matrix
+ *    instead of a form that would either lie (silently resuming a draft) or
+ *    fail on submit (limit reached).
+ *
+ * The precheck fetch fails OPEN (falls back to `create_direct`) on any
+ * error — `POST /host-onboarding/start` still enforces the real limit
+ * server-side, so a transient precheck failure never lets a user bypass it.
  *
  * @route    /{lang}/publicar/nueva/
  * @rendering SSR (prerender = false — requires authenticated user)
@@ -21,19 +31,15 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
-import { buildUrl } from '@/lib/urls';
+import { buildUrl, buildUrlWithParams } from '@/lib/urls';
 import { getAdminUrlOrThrow, getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { CreatePropertyMiniForm } from '@/components/host/CreatePropertyMiniForm.client';
-import {
-    BuildingsIcon,
-    ImageIcon,
-    FileTextIcon,
-    CheckCircleIcon,
-    AlertCircleIcon,
-    ArrowRightIcon
-} from '@repo/icons';
+import PublishPrecheckPanel from '@/components/host/PublishPrecheckPanel.astro';
+import { hostOnboardingApi } from '@/lib/api/endpoints-protected';
+import type { HostOnboardingPrecheckDecision, HostOnboardingPrecheckDraft } from '@/lib/api/endpoints-protected';
+import { BuildingsIcon, ImageIcon, FileTextIcon, CheckCircleIcon } from '@repo/icons';
 
 export const prerender = false;
 
@@ -82,87 +88,51 @@ try {
     logger.warn('publicar/nueva: failed to resolve admin panel access', { error });
 }
 
-// F4: Check if the user has hit their max_accommodations limit.
-// If so, render the AtLimit panel instead of the form.
-//
-// Two fetches are needed:
-//   1. /me/entitlements  → limits.max_accommodations (plan ceiling; -1 = unlimited)
-//   2. /accommodations?pageSize=1  → pagination.total (actual owned count)
-//
-// Either fetch failing is non-fatal: we fall through and render the form,
-// letting the API reject on submit if needed.
-let isAtAccommodationLimit = false;
-let currentAccommodationCount = 0;
-let maxAccommodationAllowed = 0;
+// BETA-197: precheck the onboarding decision BEFORE rendering the form.
+// Fails OPEN to 'create_direct' on any error — POST /host-onboarding/start
+// still enforces the real accommodation limit server-side (403
+// LIMIT_REACHED, handled by CreatePropertyMiniForm), so a transient
+// precheck failure never lets a user bypass the real gate; it only risks
+// (rarely) showing the form when a dialog would have been friendlier.
+let currentCount = 0;
+let maxAllowed = 0;
+let drafts: ReadonlyArray<HostOnboardingPrecheckDraft> = [];
+let decision: HostOnboardingPrecheckDecision = 'create_direct';
 
 try {
     if (cookieHeader) {
-        const [entitlementsResponse, ownedResponse] = await Promise.all([
-            fetch(`${getApiUrl()}/api/v1/protected/users/me/entitlements`, {
-                headers: { cookie: cookieHeader }
-            }),
-            // pageSize=1 is enough — we only need pagination.total, not the items.
-            fetch(`${getApiUrl()}/api/v1/protected/accommodations?page=1&pageSize=1`, {
-                headers: { cookie: cookieHeader }
-            })
-        ]);
-
-        let maxAllowed: number | undefined;
-        let currentCount: number | undefined;
-
-        if (entitlementsResponse.ok) {
-            const entJson = (await entitlementsResponse.json()) as {
-                data?: {
-                    limits?: Readonly<Record<string, number>>;
-                };
-            };
-            const raw = entJson.data?.limits?.max_accommodations;
-            if (typeof raw === 'number') {
-                maxAllowed = raw;
-            }
+        const result = await hostOnboardingApi.precheck({ cookieHeader });
+        if (result.ok) {
+            currentCount = result.data.currentCount;
+            maxAllowed = result.data.maxAllowed;
+            drafts = result.data.drafts;
+            decision = result.data.decision;
         } else {
-            logger.warn(
-                'publicar/nueva: entitlements fetch returned non-ok',
-                { status: entitlementsResponse.status }
-            );
-        }
-
-        if (ownedResponse.ok) {
-            const ownedJson = (await ownedResponse.json()) as {
-                data?: {
-                    pagination?: { total?: number };
-                };
-            };
-            const raw = ownedJson.data?.pagination?.total;
-            if (typeof raw === 'number') {
-                currentCount = raw;
-            }
-        } else {
-            logger.warn(
-                'publicar/nueva: owned-accommodations fetch returned non-ok',
-                { status: ownedResponse.status }
-            );
-        }
-
-        // Only flip the gate when BOTH values resolved successfully.
-        // A limit of -1 means unlimited — never block in that case.
-        if (
-            typeof maxAllowed === 'number' &&
-            maxAllowed !== -1 &&
-            typeof currentCount === 'number'
-        ) {
-            maxAccommodationAllowed = maxAllowed;
-            currentAccommodationCount = currentCount;
-            isAtAccommodationLimit = currentCount >= maxAllowed;
+            logger.warn('publicar/nueva: precheck fetch returned an error', { error: result.error });
         }
     }
 } catch (error) {
-    logger.warn('publicar/nueva: failed to fetch entitlements or owned count for limit check', { error });
-    // Non-fatal: render the form normally on error (let the API reject on submit if needed).
+    logger.warn('publicar/nueva: precheck fetch threw', { error });
 }
 
 const accountPropertiesUrl = buildUrl({ locale, path: 'mi-cuenta/propiedades' });
 const subscriptionUrl = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
+
+// "Crear uno nuevo" from the panel appends ?create=1 to bypass the panel on
+// reload — only honored for the two decisions that actually offer a
+// "create new" choice (resume_or_create / pick_draft_or_create). It is NOT
+// a security bypass: /host-onboarding/start re-validates the limit
+// server-side regardless of this param.
+const wantsCreate = Astro.url.searchParams.get('create') === '1';
+const showForm =
+    decision === 'create_direct' ||
+    (wantsCreate && (decision === 'resume_or_create' || decision === 'pick_draft_or_create'));
+
+const firstDraft = drafts[0];
+const editUrl = firstDraft
+    ? buildUrl({ locale, path: `mi-cuenta/propiedades/${firstDraft.id}/editar` })
+    : undefined;
+const createUrl = buildUrlWithParams({ locale, path: 'publicar/nueva', params: { create: '1' } });
 ---
 
 <MarketingLayout
@@ -230,52 +200,7 @@ const subscriptionUrl = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
 
     <section class="nueva-form nueva-form--compact section">
         <div class="nueva-form__container">
-            {isAtAccommodationLimit ? (
-                /* F4: AtLimit panel — shown when the user has reached max_accommodations */
-                <div class="at-limit-panel" role="alert" aria-live="polite">
-                    <span class="at-limit-panel__icon" aria-hidden="true">
-                        <AlertCircleIcon size={40} weight="duotone" />
-                    </span>
-                    <h2 class="at-limit-panel__title">
-                        {t(
-                            'billing.limit.max_accommodations.atLimitPanel.title',
-                            'Llegaste al límite de tu plan'
-                        )}
-                    </h2>
-                    <p class="at-limit-panel__body">
-                        {t(
-                            'billing.limit.max_accommodations.atLimitPanel.body',
-                            'Estás usando {{currentCount}} de {{maxAllowed}} propiedades. Para publicar otra, actualizá tu plan.',
-                            { currentCount: currentAccommodationCount, maxAllowed: maxAccommodationAllowed }
-                        )}
-                    </p>
-                    <div class="at-limit-panel__actions">
-                        <a
-                            href={subscriptionUrl}
-                            class="at-limit-panel__primary-cta btn-gradient btn-gradient--accent btn-gradient--shape-rounded"
-                        >
-                            <span class="gradient-btn__label">
-                                {t(
-                                    'billing.limit.max_accommodations.atLimitPanel.primaryCta',
-                                    'Ver mi suscripción'
-                                )}
-                            </span>
-                            <span aria-hidden="true">
-                                <ArrowRightIcon size={16} weight="bold" />
-                            </span>
-                        </a>
-                        <a
-                            href={accountPropertiesUrl}
-                            class="at-limit-panel__secondary-link"
-                        >
-                            {t(
-                                'billing.limit.max_accommodations.atLimitPanel.secondaryCta',
-                                'Ver mis propiedades'
-                            )}
-                        </a>
-                    </div>
-                </div>
-            ) : (
+            {showForm ? (
                 <CreatePropertyMiniForm
                     client:load
                     locale={locale}
@@ -283,6 +208,19 @@ const subscriptionUrl = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
                     adminUrl={adminUrl}
                     accountPropertiesUrl={accountPropertiesUrl}
                     canAccessAdminPanel={canAccessAdminPanel}
+                />
+            ) : (
+                /* BETA-197: precheck panel — resume/pick/delete/upgrade per the decision matrix. */
+                <PublishPrecheckPanel
+                    locale={locale}
+                    decision={decision as Exclude<HostOnboardingPrecheckDecision, 'create_direct'>}
+                    currentCount={currentCount}
+                    maxAllowed={maxAllowed}
+                    drafts={drafts}
+                    editUrl={editUrl}
+                    createUrl={createUrl}
+                    accountPropertiesUrl={accountPropertiesUrl}
+                    subscriptionUrl={subscriptionUrl}
                 />
             )}
         </div>
@@ -505,74 +443,4 @@ const subscriptionUrl = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
         .nueva-hero__visual { order: -1; min-height: 240px; }
     }
 
-    /* ── AtLimit panel (F4) ────────────────────────────────────────────── */
-    .at-limit-panel {
-        max-width: 520px;
-        margin: 0 auto;
-        background-color: var(--core-card);
-        border: 1px solid var(--brand-accent-a30);
-        border-radius: var(--radius-card);
-        padding: var(--space-8) var(--space-6);
-        text-align: center;
-        box-shadow: var(--shadow-card);
-    }
-
-    .at-limit-panel__icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 72px;
-        height: 72px;
-        border-radius: 50%;
-        background-color: var(--brand-accent-a12);
-        color: var(--brand-accent);
-        margin-bottom: var(--space-4);
-    }
-
-    .at-limit-panel__title {
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: var(--text-h3);
-        color: var(--core-foreground);
-        margin: 0 0 var(--space-3);
-        text-wrap: balance;
-    }
-
-    .at-limit-panel__body {
-        font-family: var(--font-sans);
-        font-size: var(--text-body-lg);
-        color: var(--core-muted-foreground);
-        line-height: 1.6;
-        margin: 0 0 var(--space-6);
-        max-width: 44ch;
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    .at-limit-panel__actions {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: var(--space-3);
-    }
-
-    .at-limit-panel__primary-cta {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-2);
-        text-decoration: none;
-    }
-
-    .at-limit-panel__secondary-link {
-        font-family: var(--font-sans);
-        font-size: var(--text-body-sm);
-        color: var(--brand-primary);
-        text-decoration: none;
-        transition: color var(--duration-fast) ease;
-    }
-
-    .at-limit-panel__secondary-link:hover {
-        color: var(--brand-accent);
-        text-decoration: underline;
-    }
 </style>

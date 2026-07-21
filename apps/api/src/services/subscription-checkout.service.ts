@@ -47,6 +47,7 @@ import type { PendingCheckoutDiscount } from './billing/pending-provider-subscri
 import { createPendingProviderSubscription } from './billing/pending-provider-subscription-create.js';
 import type { SubscriptionCheckoutErrorCode } from './billing/subscription-checkout-error.js';
 import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
+import { hasAnyPriorSubscription } from './billing/trial-eligibility.service.js';
 import { resolveCheckoutPromoPlan } from './subscription-checkout-promo.service.js';
 import { createCompSubscription } from './subscription-comp-create.service.js';
 
@@ -565,10 +566,12 @@ export async function initiatePaidMonthlySubscription(
     // single authoritative gate and has no second checker behind it: any prior
     // subscription — any status, any product domain, including cancelled —
     // disqualifies. Only queried when the plan actually declares a trial, since
-    // otherwise the answer cannot change the outcome.
+    // otherwise the answer cannot change the outcome. `hasAnyPriorSubscription`
+    // (HOS-226) is the SAME query the read-only `GET /trial-eligibility` route
+    // runs, so the two can never disagree on who is still trial-eligible.
     const hasPriorSubscription =
         planHasTrial && planTrialDays > 0
-            ? (await billing.subscriptions.getByCustomerId(customerId)).length > 0
+            ? await hasAnyPriorSubscription({ billing, customerId })
             : true;
 
     const extraTrialDays = promoPlan.kind === 'trial' ? promoPlan.freeTrialDays : undefined;
@@ -1156,10 +1159,11 @@ export async function initiatePaidAnnualSubscription(
 
     // One trial per customer, for life — cross-interval, not per-interval. This
     // is the single authoritative gate now that `TrialService.startTrial` (which
-    // used to re-check it) is gone.
+    // used to re-check it) is gone. `hasAnyPriorSubscription` (HOS-226) is the
+    // SAME query the read-only `GET /trial-eligibility` route runs.
     const hasPriorSubscription =
         planHasTrial && planTrialDays > 0
-            ? (await billing.subscriptions.getByCustomerId(customerId)).length > 0
+            ? await hasAnyPriorSubscription({ billing, customerId })
             : true;
 
     const extraTrialDays = promoPlan.kind === 'trial' ? promoPlan.freeTrialDays : undefined;

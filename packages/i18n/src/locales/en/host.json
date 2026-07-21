@@ -190,9 +190,9 @@
             "subtitle": "[TODO]",
             "publishAnother": "Publish another",
             "needsPlanBanner": {
-                "title": "Choose your plan to publish",
-                "description": "You have draft properties. To publish them you need an active host plan.",
-                "cta": "View host plans"
+                "title": "You're a host in preparation",
+                "description": "Your properties are saved as drafts and are not yet visible on the site. To publish them you need an active host plan.",
+                "cta": "Choose a host plan"
             }
         },
         "usage": {

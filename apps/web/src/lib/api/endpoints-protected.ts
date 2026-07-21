@@ -14,6 +14,7 @@ import type {
     AccommodationImportStatusResponse,
     AccommodationOccupancy,
     AccommodationReviewListItem,
+    AddonResponse,
     DestinationReviewListItem,
     DowngradePreview,
     KeepSelections,
@@ -21,6 +22,7 @@ import type {
     OccupancySourceEnum,
     PlanChangeResponse,
     PriceAlertResponse,
+    PurchaseAddonResponse,
     StartPaidSubscriptionResponse,
     SubscriptionStatusResponse,
     UserBookmark,
@@ -369,6 +371,7 @@ export const userApi = {
     /**
      * Get the authenticated user's current subscription details.
      *
+     * @param params - Optional SSR cookie header (see {@link protectedConversationsApi.list})
      * @returns Current subscription data or null if no active subscription
      *
      * @example
@@ -377,8 +380,13 @@ export const userApi = {
      * if (result.ok && result.data.subscription) { ... }
      * ```
      */
-    getSubscription(): Promise<ApiResult<{ readonly subscription: SubscriptionData | null }>> {
-        return apiClient.getProtected({ path: `${PROTECTED}/users/me/subscription` });
+    getSubscription(params?: {
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<{ readonly subscription: SubscriptionData | null }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/users/me/subscription`,
+            cookieHeader: params?.cookieHeader
+        });
     },
 
     /**
@@ -489,15 +497,28 @@ export interface UsageSummary {
     }>;
 }
 
-/** User addon item */
+/**
+ * User addon item — the authenticated user's own purchased add-on.
+ *
+ * Mirrors `UserAddonResponseSchema` (`@repo/schemas`, `GET
+ * /protected/billing/addons/my`) field-for-field (HOS-224 fix: the previous
+ * shape here — `name`/`slug`/`price`/a 3-value `status` union — never matched
+ * the real API response and had no consumer to surface the drift; the addons
+ * self-service page is the first real caller).
+ */
 export interface UserAddon {
     readonly id: string;
-    readonly name: string;
-    readonly slug: string;
-    readonly status: 'active' | 'expiring_soon' | 'expired';
-    readonly expiresAt?: string;
-    readonly price: number;
-    readonly currency: string;
+    readonly addonSlug: string;
+    readonly addonName: string;
+    readonly billingType: 'one_time' | 'recurring';
+    readonly status: 'active' | 'expired' | 'canceled' | 'pending';
+    readonly purchasedAt: string;
+    readonly expiresAt: string | null;
+    readonly canceledAt: string | null;
+    readonly priceArs: number;
+    readonly affectsLimitKey: string | null;
+    readonly limitIncrease: number | null;
+    readonly grantsEntitlement: string | null;
 }
 
 /** Plan item for plan listing and selection */
@@ -883,17 +904,114 @@ export const billingApi = {
     /**
      * Get the authenticated user's active addons.
      *
+     * The API returns a plain array (`GET /protected/billing/addons/my`,
+     * `responseSchema: z.array(UserAddonResponseSchema)` in
+     * `apps/api/src/routes/billing/addons.ts`) — NOT a `{ addons: [...] }`
+     * envelope (HOS-224 fix: the previous signature here claimed an `addons`
+     * wrapper key that the backend never sent; this endpoint had no consumer
+     * until the addons self-service page).
+     *
+     * @param params - Optional SSR cookie header (see {@link protectedConversationsApi.list})
      * @returns List of active addons for the current user
      *
      * @example
      * ```ts
      * const result = await billingApi.getAddons();
-     * if (result.ok) console.log(result.data.addons);
+     * if (result.ok) console.log(result.data);
      * ```
      */
-    getAddons(): Promise<ApiResult<{ readonly addons: readonly UserAddon[] }>> {
+    getAddons(params?: {
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<readonly UserAddon[]>> {
         return apiClient.getProtected({
-            path: `${PROTECTED}/billing/addons/my`
+            path: `${PROTECTED}/billing/addons/my`,
+            cookieHeader: params?.cookieHeader
+        });
+    },
+
+    /**
+     * List available add-ons for purchase (HOS-224 self-service).
+     *
+     * `GET /protected/billing/addons` (`ListAddonsQuerySchema` /
+     * `z.array(AddonResponseSchema)` — see `apps/api/src/routes/billing/addons.ts`).
+     * Distinct from {@link billingApi.getAddons}, which lists the user's own
+     * *purchased* addons — this lists the *catalog* of purchasable ones.
+     *
+     * @param params - Optional filters + SSR cookie header
+     * @returns The filtered, sorted add-on catalog
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.listAvailableAddons({ active: true });
+     * if (result.ok) console.log(result.data);
+     * ```
+     */
+    listAvailableAddons(params?: {
+        readonly active?: boolean;
+        readonly targetCategory?: 'owner' | 'complex';
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<readonly AddonResponse[]>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing/addons`,
+            params: {
+                active: params?.active,
+                targetCategory: params?.targetCategory
+            },
+            cookieHeader: params?.cookieHeader
+        });
+    },
+
+    /**
+     * Purchase an add-on (HOS-224 self-service), returning a MercadoPago
+     * checkout URL to redirect the browser to.
+     *
+     * `POST /protected/billing/addons/{slug}/purchase`. Enforces
+     * `X-Idempotency-Key` server-side (`idempotencyKeyMiddleware`) — callers
+     * MUST pass a fresh `crypto.randomUUID()` per purchase click.
+     *
+     * The request body is validated against `PurchaseAddonSchema`, which
+     * requires an `addonId` field even though the handler resolves the addon
+     * from the URL's `:slug` param, not from the body (see the contract note
+     * pinned by `apps/api/test/e2e/flows/billing/addon-purchase.test.ts`).
+     * This wrapper sends `addonId: slug` automatically so callers only need
+     * to supply the optional `promoCode` / `accommodationId`.
+     *
+     * @param params.slug - The add-on's slug (also the URL path param)
+     * @param params.body - Optional promo code and/or target accommodation
+     *   (required by the API when the addon's `requiresAccommodationTarget` is true)
+     * @param params.idempotencyKey - Fresh UUID v4 per purchase attempt
+     * @param params.cookieHeader - Optional SSR cookie header
+     * @returns The MercadoPago checkout URL and order metadata
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.purchaseAddon({
+     *   slug: 'visibility-boost-7d',
+     *   body: { accommodationId: 'acc-uuid' },
+     *   idempotencyKey: crypto.randomUUID()
+     * });
+     * if (result.ok) window.location.href = result.data.checkoutUrl;
+     * ```
+     */
+    purchaseAddon({
+        slug,
+        body,
+        idempotencyKey,
+        cookieHeader
+    }: {
+        readonly slug: string;
+        readonly body?: {
+            readonly promoCode?: string;
+            readonly accommodationId?: string;
+        };
+        readonly idempotencyKey: string;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<PurchaseAddonResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/addons/${slug}/purchase`,
+            body: { addonId: slug, ...body },
+            headers: { 'X-Idempotency-Key': idempotencyKey },
+            cookieHeader
         });
     },
 
@@ -982,6 +1100,52 @@ export const billingApi = {
         return apiClient.getProtected({
             path: `${PROTECTED}/users/me/entitlements`,
             cookieHeader: params?.cookieHeader
+        });
+    },
+
+    // ── Trial eligibility (HOS-226) ─────────────────────────────────────────
+    // Kept as its own clearly-delimited block: this wrapper is new and
+    // unrelated to the entries above/below it, added on a branch that may
+    // rebase against other in-flight billing-wrapper additions.
+
+    /**
+     * Get whether the authenticated user is still eligible for a free trial
+     * (one trial per customer, for life — any status, any product domain).
+     *
+     * Read-only, never reserves or consumes a trial. Used by
+     * `PlanPurchaseButton.client.tsx` to correct the SSR-rendered "N days
+     * free" pricing badge at hydration time for a logged-in visitor who
+     * already consumed their lifetime trial — the badge itself comes from
+     * the static, unauthenticated, 1h-cached `GET /api/v1/public/plans` and
+     * has no notion of per-user eligibility.
+     *
+     * @param params - Optional plan slug (informational, echoed back — the
+     *   eligibility rule is customer-scoped, not plan-scoped) and SSR cookie
+     *   header (see {@link protectedConversationsApi.list}).
+     * @returns Whether the current user is trial-eligible.
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.getTrialEligibility();
+     * if (result.ok && !result.data.eligible) {
+     *   // suppress the "N days free" badge for this visitor
+     * }
+     * ```
+     */
+    getTrialEligibility(params?: {
+        readonly planSlug?: string;
+        readonly cookieHeader?: string;
+    }): Promise<
+        ApiResult<{
+            readonly eligible: boolean;
+            readonly planSlug: string | null;
+        }>
+    > {
+        const { planSlug, cookieHeader } = params ?? {};
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing/trial-eligibility`,
+            params: planSlug === undefined ? undefined : { planSlug },
+            cookieHeader
         });
     }
 };
@@ -1700,13 +1864,18 @@ export const hostAnalyticsApi = {
      * List the authenticated host's own accommodations (id + name only needed
      * for cross-referencing analytics by accommodation). Server-side filtered
      * by actor.id.
+     *
+     * @param params - Optional SSR cookie header (see {@link protectedConversationsApi.list})
      */
-    listOwnAccommodations(): Promise<
+    listOwnAccommodations(params?: {
+        readonly cookieHeader?: string;
+    }): Promise<
         ApiResult<{ readonly items: readonly { readonly id: string; readonly name: string }[] }>
     > {
         return apiClient.getProtected({
             path: `${PROTECTED}/accommodations`,
-            params: { pageSize: 50, sortBy: 'createdAt', sortOrder: 'desc' }
+            params: { pageSize: 50, sortBy: 'createdAt', sortOrder: 'desc' },
+            cookieHeader: params?.cookieHeader
         });
     },
 
@@ -2030,6 +2199,79 @@ export const geocodingApi = {
         return apiClient.getProtected({
             path: `${PROTECTED}/geocoding/reverse`,
             params: { lat, lng }
+        });
+    }
+};
+
+/**
+ * A single DRAFT accommodation surfaced by the host-onboarding precheck.
+ */
+export interface HostOnboardingPrecheckDraft {
+    readonly id: string;
+    readonly slug: string;
+    readonly name: string;
+}
+
+/**
+ * The six possible outcomes of the host-onboarding precheck decision matrix
+ * (BETA-197). Mirrors `OnboardingPrecheckDecision` in
+ * `apps/api/src/services/onboarding-precheck.ts` — kept as a local literal
+ * union here since the web app does not import API-internal types.
+ */
+export type HostOnboardingPrecheckDecision =
+    | 'create_direct'
+    | 'upgrade_only'
+    | 'resume_or_create'
+    | 'resume_delete_or_upgrade'
+    | 'pick_draft_or_create'
+    | 'pick_draft_delete_or_upgrade';
+
+/**
+ * Response shape for `GET /protected/host-onboarding/precheck`.
+ */
+export interface HostOnboardingPrecheckResponse {
+    /** Total non-deleted accommodations owned by the actor. */
+    readonly currentCount: number;
+    /** Plan ceiling for accommodations owned; `-1` means unlimited. */
+    readonly maxAllowed: number;
+    /** Whether the actor's plan still has room for one more accommodation. */
+    readonly hasQuota: boolean;
+    /** Number of non-deleted DRAFT accommodations owned by the actor. */
+    readonly draftCount: number;
+    /** The actor's DRAFT accommodations (id/slug/name only). */
+    readonly drafts: ReadonlyArray<HostOnboardingPrecheckDraft>;
+    /** Which dialog/action the "publicar nueva" flow should show. */
+    readonly decision: HostOnboardingPrecheckDecision;
+}
+
+/**
+ * Host-onboarding precheck API (BETA-197).
+ * Read-only endpoint the "publicar nueva" flow calls BEFORE rendering the
+ * onboarding form, so it can decide whether to create directly, offer to
+ * resume/pick among existing DRAFTs, or send the user to upgrade.
+ */
+export const hostOnboardingApi = {
+    /**
+     * Precheck the onboarding decision for the current actor.
+     *
+     * @param params - Optional SSR cookie header (browser callers omit it;
+     *   `credentials: 'include'` covers them).
+     * @returns The draft/quota counts and the derived decision.
+     *
+     * @example
+     * ```ts
+     * const result = await hostOnboardingApi.precheck({ cookieHeader });
+     * if (result.ok) console.log(result.data.decision);
+     * ```
+     */
+    precheck({
+        cookieHeader
+    }: {
+        readonly cookieHeader?: string;
+    } = {}): Promise<ApiResult<HostOnboardingPrecheckResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host-onboarding/precheck`,
+            cookieHeader
         });
     }
 };

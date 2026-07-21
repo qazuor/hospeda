@@ -720,7 +720,8 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
                 paymentStatus: 'approved',
                 debitDate: '2026-06-05',
                 couponAmount: null,
-                campaignId: null
+                campaignId: null,
+                mpPayerId: null
             }
         });
 
@@ -793,7 +794,8 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
                 paymentStatus: 'approved',
                 debitDate: null,
                 couponAmount: null,
-                campaignId: null
+                campaignId: null,
+                mpPayerId: null
             }
         });
 
@@ -852,7 +854,8 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
                 paymentStatus: 'approved',
                 debitDate: null,
                 couponAmount: null,
-                campaignId: null
+                campaignId: null,
+                mpPayerId: null
             }
         });
 

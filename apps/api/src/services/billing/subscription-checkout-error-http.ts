@@ -94,6 +94,11 @@ export function mapSubscriptionCheckoutErrorToHttp(err: SubscriptionCheckoutErro
             // a clean upstream rejection. 500 (server-side inconsistency), not
             // 502 — the provider did its job; ours failed after.
             return new HTTPException(500, { message: err.message });
+        case 'IMMEDIATE_SWAP_LOCAL_APPLY_FAILED':
+            // HOS-222: same drift semantics as TRIALING_UPGRADE_LOCAL_APPLY_FAILED
+            // for the immediate cross-category plan swap — MP already mutated,
+            // local commit failed after. 500 (server-side inconsistency).
+            return new HTTPException(500, { message: err.message });
         default: {
             // Defensive: the union should be exhaustive, but TS doesn't
             // enforce that downstream consumers add new codes here. Fall

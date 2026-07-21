@@ -54,6 +54,7 @@ hops db-seed-migrate [--target=prod|staging]
                      [--status]
                      [--pull | --no-pull]
                      [--no-install]
+                     [--allow-destructive]
                      [--yes]
 
 Apply pending SEED DATA-migrations (HOS-25) against the target database.
@@ -84,6 +85,11 @@ Flags:
   --no-install        Skip \`pnpm install --frozen-lockfile\` after the pull.
                       Only use when the pulled commits added no dependency.
                       Has no effect when no pull happens.
+  --allow-destructive Permit migrations flagged \`destructive: true\` to run
+                      against prod. Forwarded to the seed prod gate as
+                      HOSPEDA_ALLOW_DESTRUCTIVE_MIGRATION=true. Required whenever
+                      a pending migration soft-deletes/removes rows; harmless
+                      otherwise. No effect with --status.
   --yes               Skip the prod confirmation prompt (write path only).
   --help, -h          Show this help.
 
@@ -93,6 +99,7 @@ Unattended examples:
   hops db-seed-migrate --target=staging --status
   hops db-seed-migrate --target=staging --no-pull --yes
   hops db-seed-migrate --target=prod --pull --yes
+  hops db-seed-migrate --target=prod --pull --allow-destructive --yes
 
 Required environment variables (in scripts/server-tools/.env.local):
   HOPS_<TARGET>_POSTGRES_UUID    Coolify Postgres service UUID.
@@ -105,6 +112,17 @@ export interface ParsedSeedMigrateArgs {
     readonly install: boolean;
     readonly pull: 'on' | 'off' | 'ask';
     readonly skipConfirm: boolean;
+    /**
+     * Opt-in to run migrations flagged `destructive: true` against prod. The
+     * seed CLI's own prod gate (`packages/seed/src/data-migrations/prodGate.ts`)
+     * refuses destructive migrations under `NODE_ENV=production` unless it sees
+     * either its own `--allow-destructive` argv flag OR the
+     * `HOSPEDA_ALLOW_DESTRUCTIVE_MIGRATION=true` env var. Because `hops` invokes
+     * the seed via the `pnpm db:seed:migrate` alias (which does not forward
+     * trailing argv reliably through the nested `--filter` run), this flag is
+     * propagated as the env var instead — see {@link runSeedDataMigrate}.
+     */
+    readonly allowDestructive: boolean;
 }
 
 export function parseSeedMigrateArgs(argv: ReadonlyArray<string>): ParsedSeedMigrateArgs {
@@ -120,7 +138,8 @@ export function parseSeedMigrateArgs(argv: ReadonlyArray<string>): ParsedSeedMig
         status: args.includes('--status'),
         install: !args.includes('--no-install'),
         pull: wantsPull ? 'on' : skipsPull ? 'off' : 'ask',
-        skipConfirm: args.includes('--yes')
+        skipConfirm: args.includes('--yes'),
+        allowDestructive: args.includes('--allow-destructive')
     };
 }
 
@@ -157,6 +176,13 @@ async function runSeedDataMigrate(params: {
     readonly databaseUrl: string;
     readonly script: 'db:seed:migrate' | 'db:seed:migrate:status';
     readonly nodeEnv: 'production' | 'development';
+    /**
+     * When true, inject `HOSPEDA_ALLOW_DESTRUCTIVE_MIGRATION=true` so the seed
+     * prod gate permits migrations flagged `destructive: true`. The child seed
+     * process reads it from `process.env`; dotenvx only injects keys present in
+     * `.env.local`, so this key (absent there) is never overridden.
+     */
+    readonly allowDestructive?: boolean;
 }): Promise<void> {
     log.info(`Running: pnpm ${params.script}`);
     log.hint(`cwd: ${params.repoRoot}  NODE_ENV: ${params.nodeEnv}`);
@@ -165,7 +191,8 @@ async function runSeedDataMigrate(params: {
         inherit: true,
         env: {
             HOSPEDA_DATABASE_URL: params.databaseUrl,
-            NODE_ENV: params.nodeEnv
+            NODE_ENV: params.nodeEnv,
+            ...(params.allowDestructive ? { HOSPEDA_ALLOW_DESTRUCTIVE_MIGRATION: 'true' } : {})
         }
     });
     if (result.exitCode !== 0) {
@@ -243,8 +270,14 @@ export async function dbSeedMigrate(argv: ReadonlyArray<string>): Promise<void> 
     }
 
     // ── Prod confirmation ────────────────────────────────────────────────
-    // Applying data-migrations is non-destructive (ledger-guarded, never
-    // reseeds), but it IS a write against prod — confirm unless --yes.
+    // Applying data-migrations never reseeds and is ledger-guarded, but it IS
+    // a write against prod (and, with --allow-destructive, may soft-delete or
+    // remove rows) — confirm unless --yes.
+    if (target === 'prod' && parsed.allowDestructive) {
+        log.warn(
+            'DESTRUCTIVE mode: --allow-destructive will let migrations flagged destructive run against PRODUCTION.'
+        );
+    }
     if (target === 'prod' && !parsed.skipConfirm) {
         const ok = await confirm('Apply pending seed data-migrations against PRODUCTION?', {
             defaultValue: false
@@ -260,7 +293,8 @@ export async function dbSeedMigrate(argv: ReadonlyArray<string>): Promise<void> 
         repoRoot,
         databaseUrl,
         script: 'db:seed:migrate',
-        nodeEnv
+        nodeEnv,
+        allowDestructive: parsed.allowDestructive
     });
 
     log.ok(`db-seed-migrate completed against ${target}.`);

@@ -80,7 +80,8 @@
         "PROVIDER_ERROR": "The payment service returned an unexpected error. Please try again in a few minutes.",
         "PROVIDER_RATE_LIMITED": "The payment service is busy. Please wait a few seconds and try again.",
         "PROVIDER_TIMEOUT": "The payment service took too long to respond. Please try again.",
-        "PLAN_DISABLED": "The selected plan is no longer available. Please choose a different plan to continue."
+        "PLAN_DISABLED": "The selected plan is no longer available. Please choose a different plan to continue.",
+        "SUBSCRIPTION_CANCEL_PENDING": "Your subscription is scheduled to cancel at the end of the period. You can't change plans until the current period ends."
     },
     "filters": "Filters",
     "filterChips": {

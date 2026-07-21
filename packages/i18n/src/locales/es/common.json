@@ -80,7 +80,8 @@
         "PROVIDER_ERROR": "El servicio de pago devolvió un error inesperado. Intentá de nuevo en unos minutos.",
         "PROVIDER_RATE_LIMITED": "El servicio de pago está ocupado. Esperá unos segundos y volvé a intentar.",
         "PROVIDER_TIMEOUT": "El servicio de pago tardó demasiado en responder. Intentá de nuevo.",
-        "PLAN_DISABLED": "El plan seleccionado ya no está disponible. Elegí otro plan para continuar."
+        "PLAN_DISABLED": "El plan seleccionado ya no está disponible. Elegí otro plan para continuar.",
+        "SUBSCRIPTION_CANCEL_PENDING": "Tu suscripción está programada para cancelarse al fin del período. No podés cambiar de plan hasta que termine el período actual."
     },
     "filters": "Filtros",
     "filterChips": {

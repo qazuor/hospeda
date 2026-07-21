@@ -66,6 +66,19 @@ export interface PurchaseAddonInput {
      * the addon's `requiresAccommodationTarget` flag is true; ignored otherwise.
      */
     accommodationId?: string;
+    /**
+     * Locale-prefixed MercadoPago return URL for a successful purchase
+     * (HOS-224). Built by the route layer via `buildAddonSuccessUrl` so the
+     * payer lands on the localized `/{locale}/mi-cuenta/addons/` result page.
+     * When absent, the checkout falls back to an `'es'`-prefixed URL.
+     */
+    successUrl?: string;
+    /**
+     * Locale-prefixed MercadoPago return URL for a cancelled/failed purchase
+     * (HOS-224). Built by the route layer via `buildAddonCancelUrl`. When
+     * absent, the checkout falls back to an `'es'`-prefixed URL.
+     */
+    cancelUrl?: string;
 }
 
 /**
