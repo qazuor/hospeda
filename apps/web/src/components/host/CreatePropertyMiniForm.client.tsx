@@ -32,7 +32,7 @@
 
 import type { AccommodationImportResponse, DestinationPublic, FieldSource } from '@repo/schemas';
 import { AccommodationCreateDraftHttpSchema, AccommodationTypeEnum } from '@repo/schemas';
-import { useCallback, useId, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import type { SelectableItem } from '@/components/form/SearchableSelect.client';
 import { SearchableSelect } from '@/components/form/SearchableSelect.client';
 import { ImportFromUrl } from '@/components/host/ImportFromUrl.client';
@@ -41,6 +41,7 @@ import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { destinationsApi } from '@/lib/api/endpoints';
+import { billingApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
 import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
 import { useZodForm } from '@/lib/forms/use-zod-form';
@@ -270,6 +271,31 @@ export function CreatePropertyMiniForm({
     // SPEC-258: extras from the import (editable by the host, submitted flat)
     const [extras, setExtras] = useState<ImportedExtras>({});
     const [extrasOpen, setExtrasOpen] = useState(true);
+
+    // The onboarding callout must NOT promise "14 días gratis" to a user who is
+    // not trial-eligible: a tourist who already paid or is mid-trial gets NO
+    // owner trial on conversion (HOS-217 decision C), so a static "free trial"
+    // callout would lie to them — the same class of bug HOS-226 fixed on the
+    // pricing badge. Resolve eligibility once via the same endpoint the badge
+    // uses and swap the callout copy when the user is ineligible. `null` =
+    // unknown (loading / unauthenticated / lookup failed) → keep the
+    // encouraging default; only an explicit `false` swaps to the no-trial copy.
+    const [trialEligible, setTrialEligible] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        billingApi
+            .getTrialEligibility()
+            .then((result) => {
+                if (!cancelled) setTrialEligible(result.ok ? result.data.eligible : null);
+            })
+            .catch(() => {
+                if (!cancelled) setTrialEligible(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     // Items for the accommodation type picker. Memoized so the dropdown
     // doesn't re-allocate on every render. Each item carries the matching
@@ -1586,17 +1612,24 @@ export function CreatePropertyMiniForm({
                     className="form-trial-callout__icon"
                     aria-hidden="true"
                 >
-                    🎁
+                    {trialEligible === false ? '🏠' : '🎁'}
                 </span>
                 <div className="form-trial-callout__body">
                     <p className="form-trial-callout__title">
-                        {t('host.pages.nueva.trialCalloutTitle', '14 días gratis al publicar')}
+                        {trialEligible === false
+                            ? t('host.pages.nueva.trialCalloutTitleIneligible', 'Armá tu propiedad')
+                            : t('host.pages.nueva.trialCalloutTitle', '14 días gratis al publicar')}
                     </p>
                     <p className="form-trial-callout__text">
-                        {t(
-                            'host.pages.nueva.trialNote',
-                            'Cuando publiques tu primera propiedad arranca tu trial gratis de 14 días. No pagás nada hasta el día 14, sin compromiso. Podés probar todo el panel mientras armás tu borrador.'
-                        )}
+                        {trialEligible === false
+                            ? t(
+                                  'host.pages.nueva.trialNoteIneligible',
+                                  'Podés crear y editar tu borrador ahora. Para publicarlo y salir al aire vas a necesitar un plan de anfitrión activo.'
+                              )
+                            : t(
+                                  'host.pages.nueva.trialNote',
+                                  'Cuando publiques tu primera propiedad arranca tu trial gratis de 14 días. No pagás nada hasta el día 14, sin compromiso. Podés probar todo el panel mientras armás tu borrador.'
+                              )}
                     </p>
                 </div>
             </aside>
