@@ -190,9 +190,9 @@
             "subtitle": "Gestioná tus publicaciones",
             "publishAnother": "Publicar otra",
             "needsPlanBanner": {
-                "title": "Elegí tu plan para publicar",
-                "description": "Tenés propiedades en borrador. Para publicarlas necesitás un plan de anfitrión activo.",
-                "cta": "Ver planes de anfitrión"
+                "title": "Sos anfitrión en preparación",
+                "description": "Tus propiedades quedan guardadas como borrador y todavía no son visibles en el sitio. Para publicarlas necesitás un plan de anfitrión activo.",
+                "cta": "Elegir plan de anfitrión"
             }
         },
         "usage": {

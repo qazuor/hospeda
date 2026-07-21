@@ -214,12 +214,12 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
                     accommodationId={property.id}
                     locale={locale}
                     label={t('host.properties.card.actions.publish', 'Publicar')}
-                    confirmTitle={t('host.properties.card.actions.publishConfirmTitle', '14 días gratis al publicar')}
-                    confirmNote={t('host.properties.card.actions.publishConfirmNote', 'Al publicar arranca tu prueba gratis de 14 días. Sin tarjeta, sin compromiso.')}
+                    confirmTitle={t('host.properties.card.actions.publishConfirmTitle', '¿Publicar este alojamiento?')}
+                    confirmNote={t('host.properties.card.actions.publishConfirmNote', 'Va a aparecer en el sitio, visible para los turistas.')}
                     confirmYes={t('host.properties.card.actions.publishYes', 'Sí, publicar')}
                     confirmNo={t('host.properties.card.actions.confirmNo', 'Cancelar')}
                     errorText={t('host.properties.card.publishError', 'No se pudo publicar. Intentá de nuevo.')}
-                    subscriptionRequiredMessage={t('host.properties.card.publishSubscriptionRequiredMessage', 'Ya usaste tu prueba gratis de 14 días. Suscribite a un plan para publicar esta propiedad.')}
+                    subscriptionRequiredMessage={t('host.properties.card.publishSubscriptionRequiredMessage', 'Necesitás un plan activo para publicar. Si es tu primera vez, empezás con 14 días gratis.')}
                     subscriptionRequiredCta={t('host.properties.card.publishSubscriptionRequiredCta', 'Ver planes')}
                     incompleteCapacityMessage={t('host.properties.card.publishIncompleteCapacityMessage', 'Faltan datos de capacidad (huéspedes, habitaciones o baños). Completalos en el editor antes de publicar.')}
                     incompleteCapacityCta={t('host.properties.card.publishIncompleteCapacityCta', 'Completar en el editor')}
