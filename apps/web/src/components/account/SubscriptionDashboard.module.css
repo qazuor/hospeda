@@ -224,6 +224,14 @@
     text-decoration: none;
 }
 
+/* Disabled "Cambiar plan" entry point (BETA-194): a plan change is blocked
+   while a cancellation is scheduled. Kept right after the base rule so the
+   higher-specificity `:disabled` selector never precedes it. */
+.btnSecondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .btnDanger {
     composes: danger from "./AccountButton.module.css";
     text-decoration: none;

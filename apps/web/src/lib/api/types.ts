@@ -36,6 +36,13 @@ export interface ApiErrorResponse {
     readonly error: {
         readonly code: string;
         readonly message: string;
+        /**
+         * Optional machine-readable reason emitted unconditionally by
+         * `ServiceError`'s 4th constructor arg. More specific than `code`
+         * (e.g. `code: 'ALREADY_EXISTS'` + `reason: 'SUBSCRIPTION_CANCEL_PENDING'`);
+         * `translateApiError` prefers it when mapping to a localized message.
+         */
+        readonly reason?: string;
         readonly details?: unknown;
     };
     readonly metadata?: {
@@ -49,6 +56,11 @@ export interface ApiError {
     readonly status: number;
     readonly message: string;
     readonly code?: string;
+    /**
+     * Machine-readable reason forwarded from the API error body. Preferred over
+     * `code` by `translateApiError` for the most specific localized message.
+     */
+    readonly reason?: string;
     readonly details?: unknown;
 }
 

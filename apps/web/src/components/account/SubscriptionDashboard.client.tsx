@@ -839,6 +839,13 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
     const canPause = (status === 'active' || status === 'trial') && !isCancelScheduled;
     const canResume = status === 'paused';
 
+    // A plan change is rejected by the backend (409 SUBSCRIPTION_CANCEL_PENDING)
+    // while a cancellation is already scheduled — there is no "undo cancel"
+    // endpoint, so it can only happen once the current period ends. Disable the
+    // entry point rather than let the user open the flow and hit an opaque error
+    // (BETA-194).
+    const canChangePlan = !isCancelScheduled;
+
     // ── JSX ────────────────────────────────────────────────────────────────
 
     return (
@@ -899,6 +906,12 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
                                     'No se realizarán más cobros. Mantenés acceso a tu plan hasta el {date}.'
                                 ).replace('{date}', nextBillingDate)}
                             </p>
+                            <p className={styles.cancelScheduledBannerBody}>
+                                {t(
+                                    'account.pages.subscription.cancelScheduled.planChangeBlocked',
+                                    'No podés cambiar de plan mientras haya una cancelación pendiente. Vas a poder hacerlo cuando termine el período actual.'
+                                )}
+                            </p>
                         </div>
                     </div>
                 )}
@@ -954,7 +967,9 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
                     <button
                         type="button"
                         className={styles.btnSecondary}
+                        disabled={!canChangePlan}
                         onClick={() => {
+                            if (!canChangePlan) return;
                             setShowPlanChangeFlow(true);
                         }}
                         aria-label={t(

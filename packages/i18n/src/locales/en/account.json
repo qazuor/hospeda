@@ -587,7 +587,8 @@
             },
             "cancelScheduled": {
                 "title": "Subscription cancelled",
-                "body": "No further charges will be made. You keep access to your plan until {date}."
+                "body": "No further charges will be made. You keep access to your plan until {date}.",
+                "planChangeBlocked": "You can't change plans while a cancellation is pending. You'll be able to once the current period ends."
             },
             "pauseModal": {
                 "title": "Pause subscription",

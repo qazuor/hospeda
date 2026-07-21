@@ -17,6 +17,7 @@ import type { DowngradePreview, KeepSelections, PlanChangeResponse } from '@repo
 import { useEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { billingApi } from '@/lib/api/endpoints-protected';
+import { isRetryableApiError, translateApiError } from '@/lib/api-errors';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -198,7 +199,14 @@ export function PlanChangeFlow({
     const [downgradePreview, setDowngradePreview] = useState<DowngradePreview | null>(null);
     const [result, setResult] = useState<PlanChangeResponse | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    // `retryable` drives whether the error banner offers "Retry": only transient
+    // failures (network/5xx) get it. A non-transitory 4xx (e.g. the 409 raised
+    // when a cancellation is already scheduled) shows the specific message and a
+    // "Close" action instead — retrying it would always fail (BETA-194).
+    const [error, setError] = useState<{
+        readonly message: string;
+        readonly retryable: boolean;
+    } | null>(null);
     const backdropRef = useRef<HTMLDivElement>(null);
 
     // ── Escape key handler ──────────────────────────────────────────────────
@@ -238,12 +246,17 @@ export function PlanChangeFlow({
                 });
 
                 if (!result.ok) {
-                    setError(
-                        t(
-                            'account.pages.subscription.planChangeFlow.previewError',
-                            'No se pudo obtener la vista previa del cambio. Intentá de nuevo.'
-                        )
-                    );
+                    setError({
+                        message: translateApiError({
+                            error: result.error,
+                            t,
+                            fallback: t(
+                                'account.pages.subscription.planChangeFlow.previewError',
+                                'No se pudo obtener la vista previa del cambio.'
+                            )
+                        }),
+                        retryable: isRetryableApiError(result.error)
+                    });
                     return;
                 }
 
@@ -290,12 +303,17 @@ export function PlanChangeFlow({
             });
 
             if (!apiResult.ok) {
-                setError(
-                    t(
-                        'account.pages.subscription.planChangeFlow.changeError',
-                        'No se pudo cambiar el plan. Intentá de nuevo.'
-                    )
-                );
+                setError({
+                    message: translateApiError({
+                        error: apiResult.error,
+                        t,
+                        fallback: t(
+                            'account.pages.subscription.planChangeFlow.changeError',
+                            'No se pudo cambiar el plan.'
+                        )
+                    }),
+                    retryable: isRetryableApiError(apiResult.error)
+                });
                 return;
             }
 
@@ -355,17 +373,27 @@ export function PlanChangeFlow({
                         className={styles.globalError}
                         role="alert"
                     >
-                        {error}
-                        <button
-                            type="button"
-                            className={styles.retryLink}
-                            onClick={() => {
-                                setError(null);
-                                setStep('picker');
-                            }}
-                        >
-                            {t('common.retry', 'Reintentar')}
-                        </button>
+                        {error.message}
+                        {error.retryable ? (
+                            <button
+                                type="button"
+                                className={styles.retryLink}
+                                onClick={() => {
+                                    setError(null);
+                                    setStep('picker');
+                                }}
+                            >
+                                {t('common.retry', 'Reintentar')}
+                            </button>
+                        ) : (
+                            <button
+                                type="button"
+                                className={styles.retryLink}
+                                onClick={onDismiss}
+                            >
+                                {t('common.close', 'Cerrar')}
+                            </button>
+                        )}
                     </p>
                 )}
 

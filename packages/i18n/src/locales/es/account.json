@@ -587,7 +587,8 @@
             },
             "cancelScheduled": {
                 "title": "Suscripción cancelada",
-                "body": "No se realizarán más cobros. Mantenés acceso a tu plan hasta el {date}."
+                "body": "No se realizarán más cobros. Mantenés acceso a tu plan hasta el {date}.",
+                "planChangeBlocked": "No podés cambiar de plan mientras haya una cancelación pendiente. Vas a poder hacerlo cuando termine el período actual."
             },
             "pauseModal": {
                 "title": "Pausar suscripción",

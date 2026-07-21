@@ -65,3 +65,27 @@ export function translateApiError(params: {
 
     return translateApiErrorWithT({ error, t: resolvedT, fallback });
 }
+
+/**
+ * Decide whether an API error is worth a "Retry" affordance.
+ *
+ * A retry only helps for TRANSIENT failures — the same request may succeed
+ * moments later: network/offline (no status), client-side timeout (408),
+ * rate-limit (429), or any server-side error (>= 500). Every other 4xx
+ * (400/403/404/409/422) is a NON-transitory business/state rejection: the
+ * request is deterministically doomed until the caller changes something, so
+ * offering "Retry" invites the user to repeat a click that will always fail
+ * (BETA-194 / BETA-195). Those must surface the specific message WITHOUT a
+ * retry button.
+ *
+ * @param error - The API error, or `null`/`undefined` when the failure has no
+ *   structured shape (treated as transient — retry is the safe default).
+ * @returns `true` when a retry affordance is appropriate.
+ */
+export function isRetryableApiError(
+    error: { readonly status?: number } | null | undefined
+): boolean {
+    const status = error?.status;
+    if (status == null) return true;
+    return status === 0 || status === 408 || status === 429 || status >= 500;
+}
