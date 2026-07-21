@@ -34,6 +34,11 @@ import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { createProtectedRoute } from '../../utils/route-factory';
+import {
+    buildAddonCancelUrl,
+    buildAddonSuccessUrl,
+    resolveReturnUrlLocale
+} from './checkout-return-urls.js';
 
 /**
  * List available add-ons (authenticated)
@@ -182,12 +187,19 @@ export const purchaseAddonRoute = createProtectedRoute({
             'Purchasing add-on'
         );
 
+        // HOS-224: build locale-prefixed MP return URLs so the payer lands on
+        // the localized `/{locale}/mi-cuenta/addons/` result page instead of
+        // the old locale-less path that Astro rewrote to a 404.
+        const locale = resolveReturnUrlLocale(c);
+
         const result = await service.purchase({
             customerId: billingCustomerId,
             addonSlug: params.slug as string,
             promoCode: body.promoCode as string | undefined,
             userId: actor.id,
-            accommodationId: body.accommodationId as string | undefined
+            accommodationId: body.accommodationId as string | undefined,
+            successUrl: buildAddonSuccessUrl(locale, params.slug as string),
+            cancelUrl: buildAddonCancelUrl(locale, params.slug as string)
         });
 
         if (!result.success) {
