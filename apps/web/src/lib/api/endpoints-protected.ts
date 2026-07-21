@@ -983,6 +983,52 @@ export const billingApi = {
             path: `${PROTECTED}/users/me/entitlements`,
             cookieHeader: params?.cookieHeader
         });
+    },
+
+    // ── Trial eligibility (HOS-226) ─────────────────────────────────────────
+    // Kept as its own clearly-delimited block: this wrapper is new and
+    // unrelated to the entries above/below it, added on a branch that may
+    // rebase against other in-flight billing-wrapper additions.
+
+    /**
+     * Get whether the authenticated user is still eligible for a free trial
+     * (one trial per customer, for life — any status, any product domain).
+     *
+     * Read-only, never reserves or consumes a trial. Used by
+     * `PlanPurchaseButton.client.tsx` to correct the SSR-rendered "N days
+     * free" pricing badge at hydration time for a logged-in visitor who
+     * already consumed their lifetime trial — the badge itself comes from
+     * the static, unauthenticated, 1h-cached `GET /api/v1/public/plans` and
+     * has no notion of per-user eligibility.
+     *
+     * @param params - Optional plan slug (informational, echoed back — the
+     *   eligibility rule is customer-scoped, not plan-scoped) and SSR cookie
+     *   header (see {@link protectedConversationsApi.list}).
+     * @returns Whether the current user is trial-eligible.
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.getTrialEligibility();
+     * if (result.ok && !result.data.eligible) {
+     *   // suppress the "N days free" badge for this visitor
+     * }
+     * ```
+     */
+    getTrialEligibility(params?: {
+        readonly planSlug?: string;
+        readonly cookieHeader?: string;
+    }): Promise<
+        ApiResult<{
+            readonly eligible: boolean;
+            readonly planSlug: string | null;
+        }>
+    > {
+        const { planSlug, cookieHeader } = params ?? {};
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing/trial-eligibility`,
+            params: planSlug === undefined ? undefined : { planSlug },
+            cookieHeader
+        });
     }
 };
 

@@ -45,6 +45,7 @@ import { subscriptionCancelRouter } from './subscription-cancel';
 import { subscriptionPauseRouter } from './subscription-pause';
 import { subscriptionStatusRouter } from './subscription-status';
 import { trialRouter } from './trial';
+import { trialEligibilityRouter } from './trial-eligibility';
 import { usageRouter } from './usage';
 
 /**
@@ -241,6 +242,11 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // Mount custom trial routes
     router.route('/trial', trialRouter);
 
+    // Mount the read-only trial-eligibility check (HOS-226) — a single GET,
+    // deliberately kept off the `/trial` lifecycle namespace above (it never
+    // starts, extends, or reactivates anything, it only answers a question).
+    router.route('/trial-eligibility', trialEligibilityRouter);
+
     // Mount custom plan change routes
     router.route('/subscriptions', planChangeRouter);
 
@@ -265,7 +271,7 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     router.route('/usage', usageRouter);
 
     apiLogger.debug(
-        'Billing routes configured with custom promo code, add-on, trial, plan-change, subscription status, start-paid, link-preapproval, subscription-cancel, and usage routes'
+        'Billing routes configured with custom promo code, add-on, trial, trial-eligibility, plan-change, subscription status, start-paid, link-preapproval, subscription-cancel, and usage routes'
     );
 
     return router;
