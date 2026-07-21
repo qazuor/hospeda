@@ -48,24 +48,28 @@
  *      preapproval-to-local-sub link MUST update `mp_subscription_id`
  *      directly via raw SQL after the factory call.
  *
- *   5. UPSTREAM BUG PIN (engram topic
+ *   5. HOS-225 REGRESSION TEST (fixed upstream bug, engram topic
  *      `bug/qzpay-drizzle-payments-create-loses-provider-ids`):
- *      `qzpay-drizzle/src/adapter/drizzle-storage.adapter.ts:405-419
- *      createPaymentStorage().create()` does not propagate
- *      `providerPaymentIds` and hardcodes `provider: 'stripe'` even for
- *      MercadoPago payments. The recorded row ends up with
- *      `provider_payment_ids = '{}'` and `provider = 'stripe'`. This
- *      cascades into two further issues:
+ *      `qzpay-drizzle/src/adapter/drizzle-storage.adapter.ts`
+ *      `createPaymentStorage().create()` used to hardcode
+ *      `provider: 'stripe'` and drop `providerPaymentIds` for every
+ *      payment, MercadoPago included. Fixed in `@qazuor/qzpay-drizzle`
+ *      1.11.5: `create()` now derives `provider` from the
+ *      `providerPaymentIds` keys and forwards the map as-is, so a
+ *      MercadoPago payment persists `provider = 'mercadopago'` and
+ *      `provider_payment_ids = { mercadopago: <mp paymentId> }`. This
+ *      fixes two things this suite now pins as CORRECT behavior:
  *        a. `paymentAlreadyRecorded` (handler.ts:115) queries
- *           `provider_payment_ids->>'mercadopago'` which always misses
- *           → MP webhook retries DUPLICATE billing_payments rows.
- *        b. Reporting grouped by `provider` cannot distinguish MP from
- *           any other provider.
- *      Tests below pin the current (broken) behavior. When the upstream
- *      fix lands, flip the relevant assertions to the documented
- *      contract: `providerPaymentIds = { mercadopago: <mp paymentId> }`,
- *      `provider = 'mercadopago'`, and the idempotency test asserts
- *      a single billing_payments row instead of two.
+ *           `provider_payment_ids->>'mercadopago'`, which now MATCHES on
+ *           a retried event → a repeated MP webhook no longer inserts a
+ *           duplicate `billing_payments` row.
+ *        b. Reporting grouped by `provider` correctly distinguishes MP
+ *           from any other provider.
+ *      Tests below assert the fixed (correct) behavior:
+ *      `providerPaymentIds = { mercadopago: <mp paymentId> }`,
+ *      `provider = 'mercadopago'`, and the idempotency test asserts a
+ *      single billing_payments row for two webhook deliveries of the
+ *      same authorized payment.
  *
  * @module test/e2e/flows/billing/authorized-payment
  */
@@ -259,7 +263,16 @@ describe('SPEC-143 T-143-33 — subscription_authorized_payment webhook', () => 
             'webhooks.constructEvent',
             providerResponseFixtures.webhookEvent({
                 id: eventId,
-                type: `subscription_authorized_payment.${action}`,
+                // HOS-191 raw→normalized dispatch gap: qzpay-hono's router
+                // dispatches on the NORMALIZED event type (per
+                // `MERCADOPAGO_WEBHOOK_EVENTS_EXTENDED` in
+                // `@qazuor/qzpay-mercadopago`), which the REAL adapter's
+                // `webhooks.constructEvent` derives internally. Because this
+                // stub replaces `constructEvent` wholesale, it must emit the
+                // already-normalized type itself: `subscription_authorized_
+                // payment.created` -> `invoice.paid`,
+                // `subscription_authorized_payment.updated` -> `invoice.updated`.
+                type: action === 'created' ? 'invoice.paid' : 'invoice.updated',
                 data: { id: opts.authorizedPaymentId }
             })
         );
@@ -319,17 +332,13 @@ describe('SPEC-143 T-143-33 — subscription_authorized_payment webhook', () => 
         const metadata = payment?.metadata as Record<string, unknown> | null;
         expect(metadata?.mpAuthorizedPaymentId).toBe(authorizedPaymentId);
 
-        // ASSERT (BUG PIN, see file-level note 5) — `provider_payment_ids`
-        // ends up empty and `provider` is hardcoded to 'stripe' because
-        // qzpay-drizzle's payments storage adapter discards the
-        // QZPayPayment.providerPaymentIds map and writes
-        // `provider: 'stripe'` regardless of the actual provider. When the
-        // upstream fix lands, change these to:
-        //   expect(providerIds).toMatchObject({ mercadopago: mpPaymentId });
-        //   expect(payment?.provider).toBe('mercadopago');
+        // ASSERT (HOS-225 regression, see file-level note 5) —
+        // `provider_payment_ids` carries the real MP payment id and
+        // `provider` is derived as 'mercadopago', fixed upstream in
+        // `@qazuor/qzpay-drizzle` 1.11.5's `payments.create()`.
         const providerIds = payment?.providerPaymentIds as Record<string, string> | null;
-        expect(providerIds).toEqual({});
-        expect(payment?.provider).toBe('stripe');
+        expect(providerIds).toEqual({ mercadopago: mpPaymentId });
+        expect(payment?.provider).toBe('mercadopago');
 
         // ASSERT — adapter dispatch ran exactly once. The handler does NOT
         // call `payments.retrieve` for this event family (unlike the
@@ -347,8 +356,8 @@ describe('SPEC-143 T-143-33 — subscription_authorized_payment webhook', () => 
         expect(callArg?.authorizedPaymentId).toBe(authorizedPaymentId);
     });
 
-    it('PINS BUG: handler-level idempotency (paymentAlreadyRecorded) is broken because qzpay-drizzle drops providerPaymentIds — duplicate MP webhooks insert duplicate billing_payments rows', async () => {
-        // BUG REGISTRY ENTRY (engram topic:
+    it('HOS-225: handler-level idempotency (paymentAlreadyRecorded) works because qzpay-drizzle 1.11.5 persists providerPaymentIds — duplicate MP webhooks do NOT insert a duplicate billing_payments row', async () => {
+        // BUG REGISTRY ENTRY (fixed, engram topic:
         // `bug/qzpay-drizzle-payments-create-loses-provider-ids`):
         //
         // The handler calls `paymentAlreadyRecorded(details.paymentId)` to
@@ -358,22 +367,16 @@ describe('SPEC-143 T-143-33 — subscription_authorized_payment webhook', () => 
         //     SELECT id FROM billing_payments
         //     WHERE provider_payment_ids->>'mercadopago' = $providerPaymentId
         //
-        // Because qzpay-drizzle's `payments.create` discards the
-        // `providerPaymentIds` map and stores `'{}'` instead, the JSONB
-        // lookup ALWAYS misses on retried events. Result: every retry of
-        // the same authorized-payment inserts a NEW billing_payments row
-        // with the same MP payment id stored only inside the metadata
-        // blob (not the indexed JSONB column).
+        // Previously, qzpay-drizzle's `payments.create` discarded the
+        // `providerPaymentIds` map and stored `'{}'` instead, so the JSONB
+        // lookup ALWAYS missed on retried events and every retry inserted a
+        // NEW billing_payments row. Fixed in `@qazuor/qzpay-drizzle` 1.11.5:
+        // `create()` now derives `provider` from the `providerPaymentIds`
+        // keys and persists the map, so the JSONB lookup MATCHES on the
+        // second delivery and the handler's dedupe guard fires correctly.
         //
-        // Pinning the current (broken) behavior: two webhook deliveries
-        // produce two rows. When the upstream fix lands and providerPaymentIds
-        // is populated correctly, flip the post-second assertion to
-        // `toHaveLength(1)` and add `expect(afterSecond[0]?.id).toBe(insertedId)`.
-        //
-        // Out of scope for SPEC-143; requires upstream PR to qzpay-drizzle
-        // (use mapCorePaymentToDrizzle in the payments storage adapter
-        // create() method, matching the pattern of customers/subscriptions
-        // storages).
+        // Asserting the fixed (correct) behavior: two webhook deliveries of
+        // the same authorized payment produce exactly ONE row.
         const authorizedPaymentId = `authpay_idem_${Date.now()}`;
         const mpPaymentId = `pay_idem_${Date.now()}`;
 
@@ -432,19 +435,20 @@ describe('SPEC-143 T-143-33 — subscription_authorized_payment webhook', () => 
         );
         expect(secondResponse.status).toBe(200);
 
-        // ASSERT (BUG PIN) — TWO rows in billing_payments for the same MP
-        // payment id. The handler's idempotency guard didn't fire because
-        // `provider_payment_ids` is empty on both rows. Both rows share
-        // the customer + subscription + amount but have distinct UUIDs.
+        // ASSERT (HOS-225 fix) — still ONE row in billing_payments for the
+        // same MP payment id. The handler's idempotency guard fired on the
+        // second delivery because `provider_payment_ids->>'mercadopago'`
+        // now matches, so `paymentAlreadyRecorded` short-circuits before a
+        // second insert. The surviving row is the same one from the first
+        // delivery, not a new one.
         const afterSecond = await testDb.getDb().select().from(billingPayments);
-        expect(afterSecond).toHaveLength(2);
-        const uniqueIds = new Set(afterSecond.map((row) => row.id));
-        expect(uniqueIds.size).toBe(2);
+        expect(afterSecond).toHaveLength(1);
+        expect(afterSecond[0]?.id).toBe(afterFirst[0]?.id);
 
-        // ASSERT — REST helper was called both times because the
-        // idempotency check (downstream of the fetch) never short-circuits
-        // due to the same bug. This is the expected wiring even after the
-        // fix: the fetch always happens before the dedup check.
+        // ASSERT — the REST helper was still called both times: the fetch
+        // that enriches the IPN payload always happens BEFORE the dedup
+        // check, regardless of the fix. Only the downstream insert is
+        // skipped on the second delivery.
         expect(fetchAuthorizedPaymentDetailsMock).toHaveBeenCalledTimes(2);
     });
 
