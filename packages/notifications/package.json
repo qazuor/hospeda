@@ -23,14 +23,14 @@
     },
     "dependencies": {
         "@react-email/components": "^1.0.12",
-        "@react-email/render": "^2.0.10",
+        "@react-email/render": "^2.1.0",
         "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/logger": "workspace:*",
         "@repo/utils": "workspace:*",
         "ioredis": "^5.11.1",
         "react": "^19.1.1",
-        "sanitize-html": "^2.17.5"
+        "sanitize-html": "^2.17.6"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",

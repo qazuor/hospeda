@@ -77,7 +77,7 @@ import { evaluateTargetPolicy } from './lib/target-policy.ts';
  * binary and JSON imports add a bundler-specific code path; hardcoding the
  * string is the simpler contract.
  */
-const VERSION = '1.2.0';
+const VERSION = '1.2.1';
 
 interface Command {
     /** kebab-case name; matches the CLI invocation. */
