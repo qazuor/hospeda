@@ -89,3 +89,51 @@ describe('Dockerfile build ARGs are registered (I4)', () => {
         });
     }
 });
+
+/**
+ * Reverse gate (I4b): every client-baked env var MUST be declared as a build
+ * `ARG` in its app's Dockerfile.
+ *
+ * `PUBLIC_*` (Astro) and `VITE_*` (Vite) values are inlined into the client
+ * bundle at build time. Coolify only forwards a `--build-arg` for ARGs the
+ * Dockerfile actually declares — an undeclared one is silently dropped and the
+ * value bakes EMPTY, disabling whatever depends on it (PostHog, client-side
+ * Sentry, Turnstile) with no error. The forward gate above only checks
+ * ARG → registry; this checks registry → ARG, closing the blind spot that let
+ * `PUBLIC_POSTHOG_KEY` ship unbaked to prod.
+ *
+ * Basis is the NAME PREFIX, not `stage: 'build'`: the client vars are not
+ * consistently tagged `stage: 'build'` in the registry, but the `PUBLIC_`/
+ * `VITE_` prefix is an exact, framework-enforced signal that a value is
+ * client-baked and therefore build-time.
+ */
+const CLIENT_BAKED_PREFIXES = ['PUBLIC_', 'VITE_'] as const;
+
+/** `apps/web/Dockerfile` → `web`. */
+function appIdFromDockerfilePath(relativePath: string): string {
+    return relativePath.split('/')[1] as string;
+}
+
+describe('Client-baked env vars are declared as build ARGs (I4b, reverse gate)', () => {
+    for (const relativePath of DOCKERFILES) {
+        it(`every PUBLIC_/VITE_ registry var for ${relativePath}'s app is declared as an ARG`, () => {
+            const appId = appIdFromDockerfilePath(relativePath);
+            const content = readFileSync(resolve(repoRoot, relativePath), 'utf8');
+            const declaredArgs = new Set(extractArgNames(content));
+
+            const expectedClientVars = ENV_REGISTRY.filter(
+                (entry) =>
+                    (entry.apps as readonly string[]).includes(appId) &&
+                    CLIENT_BAKED_PREFIXES.some((prefix) => entry.name.startsWith(prefix))
+            ).map((entry) => entry.name);
+
+            const missing = [
+                ...new Set(expectedClientVars.filter((name) => !declaredArgs.has(name)))
+            ];
+            expect(
+                missing,
+                `Client-baked var(s) not declared as build ARG in ${relativePath}: ${missing.join(', ')}. Each PUBLIC_/VITE_ var the registry assigns to this app MUST be an ARG here, or Coolify's --build-arg is dropped and the value bakes empty. Add the ARG (+ ENV line) to the Dockerfile.`
+            ).toEqual([]);
+        });
+    }
+});
