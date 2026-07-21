@@ -95,4 +95,27 @@ describe("DEFAULT_PROMPTS['search'] — SPEC-212 conversational refinement frami
     it('scopes the single-turn omit rule to when no current filter set is provided', () => {
         expect(prompt).toContain('single-turn mode');
     });
+
+    // ── BETA-177: NEW SEARCH vs REFINEMENT ────────────────────────────────────
+
+    it('distinguishes a NEW SEARCH from a refinement', () => {
+        // BETA-177: without this framing the model treated every turn as a
+        // refinement and merged a brand-new query onto the prior filters,
+        // producing false empty results.
+        expect(prompt).toContain('REFINEMENT');
+        expect(prompt).toContain('NEW SEARCH');
+    });
+
+    it('instructs the model to DISCARD the current filter set on a new search', () => {
+        expect(prompt).toMatch(/DISCARD the CURRENT FILTER SET/);
+        expect(prompt).toMatch(/extract ONLY from the latest message/);
+    });
+
+    it('biases toward a new search when refinement vs new search is ambiguous', () => {
+        expect(prompt).toMatch(/prefer NEW SEARCH/);
+    });
+
+    it('requires the returned filters to stay consistent with the reply', () => {
+        expect(prompt).toMatch(/consistent with the assistant's natural-language reply/);
+    });
 });

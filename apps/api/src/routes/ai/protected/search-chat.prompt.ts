@@ -134,7 +134,7 @@ export function buildConversationalSearchPrompt({
     const hasFilters = currentFilters !== undefined && Object.keys(currentFilters).length > 0;
     if (hasFilters) {
         lines.push(
-            'CURRENT FILTER SET (the accumulated state of this search conversation — return the COMPLETE updated set, applying the new message as a delta):',
+            'CURRENT FILTER SET (the accumulated state of this search conversation — refine it with the new message and return the COMPLETE updated set, OR discard it and start fresh if the new message is a NEW search rather than a refinement; see the "Conversational refinement" rules):',
             JSON.stringify(currentFilters),
             '',
             // HOS-111 T-012: reinforce nearby-expansion detection from the
