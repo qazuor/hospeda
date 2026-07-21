@@ -207,10 +207,11 @@ describe('mapIntentToSearchParams — radius clamping', () => {
 
     it('regression HOS-207: schema-parsed radius:0 (with lat+lng) emits no radius param', () => {
         // Arrange: mirror the real flow — entities always reach the mapper after
-        // SearchIntentEntitiesSchema parse. The schema transform collapses the
-        // model's `radius: 0` sentinel to undefined, so the geo branch must NOT
-        // forward `radius: '0'` (which would 400 the downstream accommodation
-        // search whose radius is still `.positive()`).
+        // SearchIntentEntitiesSchema parse. The schema keeps the model's
+        // `radius: 0` sentinel as 0 (it cannot transform — it is serialized to
+        // JSON Schema for generateObject), so the mapper's geo branch is what
+        // must treat 0 as unset and NOT forward `radius: '0'` (which would 400
+        // the downstream accommodation search whose radius is still `.positive()`).
         const parsed = SearchIntentEntitiesSchema.safeParse({
             latitude: -32,
             longitude: -58,
