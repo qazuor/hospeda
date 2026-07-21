@@ -2035,6 +2035,79 @@ export const geocodingApi = {
 };
 
 /**
+ * A single DRAFT accommodation surfaced by the host-onboarding precheck.
+ */
+export interface HostOnboardingPrecheckDraft {
+    readonly id: string;
+    readonly slug: string;
+    readonly name: string;
+}
+
+/**
+ * The six possible outcomes of the host-onboarding precheck decision matrix
+ * (BETA-197). Mirrors `OnboardingPrecheckDecision` in
+ * `apps/api/src/services/onboarding-precheck.ts` — kept as a local literal
+ * union here since the web app does not import API-internal types.
+ */
+export type HostOnboardingPrecheckDecision =
+    | 'create_direct'
+    | 'upgrade_only'
+    | 'resume_or_create'
+    | 'resume_delete_or_upgrade'
+    | 'pick_draft_or_create'
+    | 'pick_draft_delete_or_upgrade';
+
+/**
+ * Response shape for `GET /protected/host-onboarding/precheck`.
+ */
+export interface HostOnboardingPrecheckResponse {
+    /** Total non-deleted accommodations owned by the actor. */
+    readonly currentCount: number;
+    /** Plan ceiling for accommodations owned; `-1` means unlimited. */
+    readonly maxAllowed: number;
+    /** Whether the actor's plan still has room for one more accommodation. */
+    readonly hasQuota: boolean;
+    /** Number of non-deleted DRAFT accommodations owned by the actor. */
+    readonly draftCount: number;
+    /** The actor's DRAFT accommodations (id/slug/name only). */
+    readonly drafts: ReadonlyArray<HostOnboardingPrecheckDraft>;
+    /** Which dialog/action the "publicar nueva" flow should show. */
+    readonly decision: HostOnboardingPrecheckDecision;
+}
+
+/**
+ * Host-onboarding precheck API (BETA-197).
+ * Read-only endpoint the "publicar nueva" flow calls BEFORE rendering the
+ * onboarding form, so it can decide whether to create directly, offer to
+ * resume/pick among existing DRAFTs, or send the user to upgrade.
+ */
+export const hostOnboardingApi = {
+    /**
+     * Precheck the onboarding decision for the current actor.
+     *
+     * @param params - Optional SSR cookie header (browser callers omit it;
+     *   `credentials: 'include'` covers them).
+     * @returns The draft/quota counts and the derived decision.
+     *
+     * @example
+     * ```ts
+     * const result = await hostOnboardingApi.precheck({ cookieHeader });
+     * if (result.ok) console.log(result.data.decision);
+     * ```
+     */
+    precheck({
+        cookieHeader
+    }: {
+        readonly cookieHeader?: string;
+    } = {}): Promise<ApiResult<HostOnboardingPrecheckResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host-onboarding/precheck`,
+            cookieHeader
+        });
+    }
+};
+
+/**
  * Protected accommodation edit API endpoints.
  * Wraps the protected accommodation GET/PATCH and public amenities/destinations
  * endpoints used by the web editor form.

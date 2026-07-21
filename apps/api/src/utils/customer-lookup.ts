@@ -8,6 +8,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { billingCustomers, eq, getDb } from '@repo/db';
 import { apiLogger } from './logger';
 
 /**
@@ -18,14 +19,48 @@ export interface CustomerDetails {
     email: string;
     /** Customer display name */
     name: string;
-    /** Associated user ID (from metadata) */
+    /** Associated user ID (from `billing_customers.external_id`) */
     userId: string | null;
+}
+
+/**
+ * Resolves the Hospeda `users.id` for a billing customer via
+ * `billing_customers.external_id` — the canonical user<->customer link used
+ * throughout the codebase (see `subscription-pause.service.ts::resolveOwnerUserId`
+ * for the same pattern). Never throws: DB failures are logged and degrade to
+ * `null` so callers can still surface email/name (HOS-223).
+ *
+ * @param customerId - Billing customer ID
+ * @returns The linked user ID, or null if not found/on error
+ */
+async function resolveUserIdFromExternalId(customerId: string): Promise<string | null> {
+    try {
+        const db = getDb();
+        const rows = await db
+            .select({ externalId: billingCustomers.externalId })
+            .from(billingCustomers)
+            .where(eq(billingCustomers.id, customerId))
+            .limit(1);
+
+        return rows[0]?.externalId ?? null;
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+
+        apiLogger.warn(
+            { customerId, error: errorMessage },
+            'Failed to resolve userId from billing_customers.external_id'
+        );
+
+        return null;
+    }
 }
 
 /**
  * Look up customer details from QZPay billing
  *
- * Retrieves customer email, name, and userId from the billing system.
+ * Retrieves customer email and name from the billing system, and resolves the
+ * associated Hospeda userId from `billing_customers.external_id` (the
+ * canonical link — NOT `customer.metadata.userId`, which is never written).
  * Handles errors gracefully - returns null on failure.
  *
  * @param billing - QZPay billing instance
@@ -44,10 +79,12 @@ export async function lookupCustomerDetails(
             return null;
         }
 
+        const userId = await resolveUserIdFromExternalId(customerId);
+
         return {
             email: customer.email,
             name: String(customer.metadata?.name || customer.email),
-            userId: customer.metadata?.userId ? String(customer.metadata.userId) : null
+            userId
         };
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
