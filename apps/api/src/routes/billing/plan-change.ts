@@ -15,6 +15,7 @@
  * @module routes/billing/plan-change
  */
 
+import { compareCategoryRank, resolvePlanCategory } from '@repo/billing';
 import { NotificationType } from '@repo/notifications';
 import type { DowngradePreview } from '@repo/schemas';
 import {
@@ -33,6 +34,7 @@ import { captureBillingError } from '../../lib/sentry';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { idempotencyKeyMiddleware } from '../../middlewares/idempotency-key';
+import { applyImmediatePaidPlanSwap } from '../../services/billing/immediate-plan-swap.service';
 import { applyTrialingPlanUpgrade } from '../../services/billing/trialing-plan-upgrade.service';
 import {
     initiatePaidPlanUpgrade,
@@ -89,6 +91,11 @@ function mapUpgradeErrorToHttp(err: SubscriptionCheckoutError): HTTPException {
         // from MP_PREAPPROVAL_MUTATION_FAILED above (which means nothing was
         // mutated and is safe/retryable).
         case 'TRIALING_UPGRADE_LOCAL_APPLY_FAILED':
+            return new HTTPException(500, { message: err.message });
+        // HOS-222: the immediate cross-category plan swap mutated MP but the
+        // local changePlan commit failed afterward — same local/MP drift
+        // semantics as TRIALING_UPGRADE_LOCAL_APPLY_FAILED above. 500.
+        case 'IMMEDIATE_SWAP_LOCAL_APPLY_FAILED':
             return new HTTPException(500, { message: err.message });
         default:
             return new HTTPException(500, { message: err.message });
@@ -342,6 +349,28 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         const normalizedTargetPrice = targetPrice.unitAmount / targetIntervalCount;
         const isUpgrade = normalizedTargetPrice > normalizedCurrentPrice;
 
+        // HOS-222 — cross-category rank classification. Price alone is
+        // category-blind: an equal-priced `tourist-vip` → `owner-basico` move is
+        // a genuine cross-tier UPGRADE, but the price comparison above sees it as
+        // a downgrade and the downgrade guard rejects it (HTTP 422). Read each
+        // plan's category defensively off metadata (missing/unknown → undefined,
+        // which falls back to the price-based classification, so plans without a
+        // category behave exactly as before) and detect a move to a HIGHER tier.
+        const currentCategory = resolvePlanCategory(currentPlan.metadata);
+        const targetCategory = resolvePlanCategory(targetPlan.metadata);
+        const isCrossCategoryRankUp =
+            currentCategory !== undefined &&
+            targetCategory !== undefined &&
+            compareCategoryRank(currentCategory, targetCategory) < 0;
+
+        // The change applies IMMEDIATELY when it is either a same-category price
+        // upgrade (dearer) OR a cross-category rank-UP (dearer, equal, OR
+        // cheaper). Everything else — a same-category cheaper change, or a
+        // cross-category rank-DOWN — keeps the existing price logic and falls
+        // through to the scheduled-downgrade branch. A rank-DOWN is deliberately
+        // NOT forced immediate (owner decision HOS-222 §2).
+        const applyImmediately = isUpgrade || isCrossCategoryRankUp;
+
         // HOS-211 — trialing-upgrade branch. Owner decision (Stripe-style):
         // an upgrade requested WHILE the subscription is still `trialing`
         // must NOT charge the prorated Checkout Pro delta — there is no
@@ -352,7 +381,14 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         // `initiatePaidPlanUpgrade` / the Checkout Pro. Downgrades during a
         // trial are unaffected — they already fall through to the
         // scheduled-downgrade branch further down, which never charges.
-        if (isUpgrade && activeSubscription.status === 'trialing') {
+        //
+        // HOS-222: `applyImmediately` (not `isUpgrade`) gates this branch so a
+        // cross-category rank-UP that is equal-priced or cheaper ALSO applies
+        // now during a trial. `applyTrialingPlanUpgrade` only mutates the
+        // preapproval's plan/amount (no charge), so it works for a dearer,
+        // equal, or cheaper target alike — preserving the current trial with no
+        // new trial granted.
+        if (applyImmediately && activeSubscription.status === 'trialing') {
             try {
                 const trialingUpgradeResult = await applyTrialingPlanUpgrade({
                     billing,
@@ -406,72 +442,131 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             }
         }
 
-        // SPEC-141 D7 — upgrade branch. The local subscription is NOT
-        // mutated here: the user is redirected to MP to pay the prorated
-        // delta, and `confirmPlanUpgrade` (payment-logic.ts) commits the
-        // plan change once the payment.updated webhook lands. Returning
-        // a `pending_payment` response keeps the legacy synchronous
-        // downgrade flow below intact.
-        if (isUpgrade) {
+        // SPEC-141 D7 / HOS-222 — immediate paid-change branch (ACTIVE sub).
+        // Reached when the change applies now rather than being scheduled:
+        // either a strictly-dearer upgrade (charge the prorated delta via
+        // Checkout Pro) OR an equal-or-cheaper cross-category rank-UP (swap the
+        // plan immediately with no charge). Trialing subs never reach here —
+        // they returned from the `applyImmediately && trialing` branch above.
+        if (applyImmediately) {
             if (qzpayInterval !== 'month' && qzpayInterval !== 'year') {
                 // mapBillingIntervalToQZPay only emits 'month'|'year' for the
                 // intervals SUPPORTED_INTERVALS allows; this guard exists to
-                // narrow the type for `initiatePaidPlanUpgrade` and to
+                // narrow the type for the immediate-change services and to
                 // surface a clear error if a future caller widens the union.
                 throw new HTTPException(422, {
                     message: `Upgrade flow does not support interval '${qzpayInterval}'`
                 });
             }
+
+            // Strictly-dearer target: the local subscription is NOT mutated
+            // here — the user is redirected to MP to pay the prorated delta,
+            // and `confirmPlanUpgrade` (payment-logic.ts) commits the plan
+            // change once the payment.updated webhook lands.
+            if (isUpgrade) {
+                try {
+                    const upgradeResult = await initiatePaidPlanUpgrade({
+                        customerId: billingCustomerId,
+                        currentSubscriptionId: activeSubscription.id,
+                        newPlanId,
+                        billingInterval: qzpayInterval,
+                        intervalCount: qzpayIntervalCount,
+                        billing,
+                        urls: {
+                            // Point at existing locale-prefixed checkout pages so
+                            // Astro's locale middleware does not rewrite `/billing/return`
+                            // into a 404 surface (Finding #8 from staging smoke
+                            // 2026-05-21). Hardcoded `es` matches the default
+                            // locale used by `buildPaymentMethodReturnUrl` in
+                            // `start-paid.ts`; both should pull the user's
+                            // preferred locale when that propagation lands.
+                            successUrl: `${env.HOSPEDA_SITE_URL}/es/suscriptores/checkout/success/`,
+                            cancelUrl: `${env.HOSPEDA_SITE_URL}/es/suscriptores/checkout/failure/`,
+                            // HOS-159: use the shared builder so the ?source_news=webhooks
+                            // marker is always present — otherwise the webhook router
+                            // drops the delivery as a legacy IPN duplicate.
+                            notificationUrl: buildNotificationUrl()
+                        },
+                        statementDescriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR
+                    });
+
+                    apiLogger.info(
+                        {
+                            customerId: billingCustomerId,
+                            subscriptionId: activeSubscription.id,
+                            oldPlanId: activeSubscription.planId,
+                            newPlanId,
+                            deltaCentavos: upgradeResult.deltaCentavos
+                        },
+                        'Plan upgrade initiated, awaiting prorated delta payment'
+                    );
+
+                    return {
+                        status: 'pending_payment' as const,
+                        checkoutUrl: upgradeResult.checkoutUrl,
+                        localSubscriptionId: upgradeResult.localSubscriptionId,
+                        expiresAt: upgradeResult.expiresAt,
+                        newPlanId: upgradeResult.newPlanId,
+                        deltaCentavos: upgradeResult.deltaCentavos
+                    };
+                } catch (upgradeError) {
+                    if (upgradeError instanceof SubscriptionCheckoutError) {
+                        throw mapUpgradeErrorToHttp(upgradeError);
+                    }
+                    throw upgradeError;
+                }
+            }
+
+            // HOS-222 — equal-or-cheaper cross-category rank-UP on an ACTIVE
+            // (non-trial) subscription. There is no positive prorated delta to
+            // charge, so `initiatePaidPlanUpgrade` (which throws NOT_AN_UPGRADE
+            // for delta ≤ 0) does not apply. Swap the plan immediately with no
+            // charge and no proration credit — the MP preapproval is mutated to
+            // the new plan/amount and the local plan is committed at once.
             try {
-                const upgradeResult = await initiatePaidPlanUpgrade({
-                    customerId: billingCustomerId,
-                    currentSubscriptionId: activeSubscription.id,
-                    newPlanId,
-                    billingInterval: qzpayInterval,
-                    intervalCount: qzpayIntervalCount,
+                const swapResult = await applyImmediatePaidPlanSwap({
                     billing,
-                    urls: {
-                        // Point at existing locale-prefixed checkout pages so
-                        // Astro's locale middleware does not rewrite `/billing/return`
-                        // into a 404 surface (Finding #8 from staging smoke
-                        // 2026-05-21). Hardcoded `es` matches the default
-                        // locale used by `buildPaymentMethodReturnUrl` in
-                        // `start-paid.ts`; both should pull the user's
-                        // preferred locale when that propagation lands.
-                        successUrl: `${env.HOSPEDA_SITE_URL}/es/suscriptores/checkout/success/`,
-                        cancelUrl: `${env.HOSPEDA_SITE_URL}/es/suscriptores/checkout/failure/`,
-                        // HOS-159: use the shared builder so the ?source_news=webhooks
-                        // marker is always present — otherwise the webhook router
-                        // drops the delivery as a legacy IPN duplicate.
-                        notificationUrl: buildNotificationUrl()
-                    },
-                    statementDescriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR
+                    subscriptionId: activeSubscription.id,
+                    oldPlanId: activeSubscription.planId,
+                    newPlanId,
+                    newPriceId: targetPrice.id,
+                    // qzpay stores prices in centavos; MP `transaction_amount`
+                    // expects major units — same conversion the other MP update
+                    // sites use.
+                    targetTransactionAmountMajor: targetPrice.unitAmount / 100,
+                    mpSubscriptionId: activeSubscription.providerSubscriptionIds?.mercadopago
                 });
 
                 apiLogger.info(
                     {
                         customerId: billingCustomerId,
-                        subscriptionId: activeSubscription.id,
-                        oldPlanId: activeSubscription.planId,
-                        newPlanId,
-                        deltaCentavos: upgradeResult.deltaCentavos
+                        subscriptionId: swapResult.subscriptionId,
+                        previousPlanId: swapResult.previousPlanId,
+                        newPlanId: swapResult.newPlanId
                     },
-                    'Plan upgrade initiated, awaiting prorated delta payment'
+                    'Immediate cross-category plan swap applied — no charge (equal or cheaper rank-up)'
                 );
 
+                auditLog({
+                    auditEvent: AuditEventType.BILLING_MUTATION,
+                    actorId: actor.id,
+                    action: 'update',
+                    resourceType: 'subscription_plan',
+                    resourceId: swapResult.subscriptionId
+                });
+
                 return {
-                    status: 'pending_payment' as const,
-                    checkoutUrl: upgradeResult.checkoutUrl,
-                    localSubscriptionId: upgradeResult.localSubscriptionId,
-                    expiresAt: upgradeResult.expiresAt,
-                    newPlanId: upgradeResult.newPlanId,
-                    deltaCentavos: upgradeResult.deltaCentavos
+                    status: 'active' as const,
+                    subscriptionId: swapResult.subscriptionId,
+                    previousPlanId: swapResult.previousPlanId,
+                    newPlanId: swapResult.newPlanId,
+                    effectiveAt: new Date().toISOString()
                 };
-            } catch (upgradeError) {
-                if (upgradeError instanceof SubscriptionCheckoutError) {
-                    throw mapUpgradeErrorToHttp(upgradeError);
+            } catch (swapError) {
+                if (swapError instanceof SubscriptionCheckoutError) {
+                    throw mapUpgradeErrorToHttp(swapError);
                 }
-                throw upgradeError;
+                throw swapError;
             }
         }
 

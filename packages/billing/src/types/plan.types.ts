@@ -58,6 +58,76 @@ export enum LimitKey {
 export type PlanCategory = 'owner' | 'complex' | 'tourist';
 
 /**
+ * Ordinal rank of each {@link PlanCategory}, ascending by "tier weight"
+ * (HOS-222).
+ *
+ * The rank encodes the product's category hierarchy — `tourist` (consumer) is
+ * the lowest tier, `owner` (single-property host) sits above it, and `complex`
+ * (multi-property host) is the highest. This is the SINGLE SOURCE OF TRUTH used
+ * by the plan-change classifier to decide upgrade-vs-downgrade ACROSS
+ * categories, where a raw price comparison is wrong: an equal-priced
+ * `tourist-vip` → `owner-basico` move is a genuine cross-tier UPGRADE even
+ * though the price does not increase, so it must apply immediately rather than
+ * being (mis)classified as a downgrade and rejected.
+ *
+ * Do NOT re-derive this ordering anywhere else — import {@link compareCategoryRank}.
+ */
+export const CATEGORY_RANK: Readonly<Record<PlanCategory, number>> = {
+    tourist: 0,
+    owner: 1,
+    complex: 2
+} as const;
+
+/**
+ * Compare two {@link PlanCategory} values by their {@link CATEGORY_RANK}.
+ *
+ * @param a - The "from" / current category.
+ * @param b - The "to" / target category.
+ * @returns A negative number when `a` ranks below `b` (moving up a tier),
+ *   `0` when both categories are the same tier, and a positive number when `a`
+ *   ranks above `b` (moving down a tier). Mirrors the `Array.prototype.sort`
+ *   comparator convention.
+ *
+ * @example
+ * ```ts
+ * compareCategoryRank('tourist', 'owner'); // < 0  (rank up: tourist → owner)
+ * compareCategoryRank('owner', 'owner');   // === 0 (same tier)
+ * compareCategoryRank('complex', 'owner'); // > 0  (rank down: complex → owner)
+ * ```
+ */
+export function compareCategoryRank(a: PlanCategory, b: PlanCategory): number {
+    return CATEGORY_RANK[a] - CATEGORY_RANK[b];
+}
+
+/**
+ * Read a plan's {@link PlanCategory} defensively off its raw
+ * `billing_plans.metadata` value (HOS-222).
+ *
+ * The category is stored in the plan's `metadata.category` JSONB field (seeded
+ * from {@link PlanDefinition.category}). The qzpay-core plan shape types
+ * `metadata` as `unknown`, so this is the single source of truth for turning
+ * that raw value into a trusted {@link PlanCategory} — mirroring
+ * `resolvePlanTrialConfig`'s defensiveness against malformed/missing metadata.
+ *
+ * @param metadata - The plan's `metadata` value (typed `unknown`).
+ * @returns The resolved {@link PlanCategory}, or `undefined` when the metadata
+ *   is missing/malformed or the stored value is not one of the three known
+ *   categories. Callers MUST treat `undefined` as "category unknown — fall back
+ *   to price-based classification" so plans without the field behave exactly as
+ *   they did before this helper existed.
+ *
+ * @example
+ * ```ts
+ * const category = resolvePlanCategory(plan.metadata); // 'owner' | 'complex' | 'tourist' | undefined
+ * ```
+ */
+export function resolvePlanCategory(metadata: unknown): PlanCategory | undefined {
+    const meta = (metadata ?? {}) as Record<string, unknown>;
+    const raw = meta.category;
+    return raw === 'owner' || raw === 'complex' || raw === 'tourist' ? raw : undefined;
+}
+
+/**
  * Limit definition with a numeric value
  */
 export interface LimitDefinition {
