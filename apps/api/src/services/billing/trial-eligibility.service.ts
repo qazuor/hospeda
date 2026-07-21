@@ -54,13 +54,15 @@ type PriorSubscription = Awaited<
  * Hospeda's {@link SubscriptionStatusEnum} vocabulary:
  *
  * - `pending_provider` — a checkout was started but MercadoPago has not yet
- *   collected the card / authorized the preapproval. Created with NO provider
- *   subscription id (see `createPendingProviderSubscription`). The qzpay
- *   `mode:'paid'` inline flow writes the equivalent raw value `incomplete`.
+ *   authorized the preapproval. The share-link flow creates it with no provider
+ *   id (see `createPendingProviderSubscription`); the qzpay `mode:'paid'` inline
+ *   flow writes the equivalent raw value `incomplete` and DOES persist a provider
+ *   id at creation, before authorization (HOS-151 Bug C).
  * - `abandoned` — a `pending_provider` row whose checkout TTL elapsed with no
- *   provider authorization. Terminal; only ever reached FROM `pending_provider`,
- *   so it too never carried a real preapproval. The qzpay raw equivalent is
- *   `incomplete_expired`.
+ *   provider authorization. Terminal; only ever reached FROM `pending_provider`.
+ *   May still CARRY a provider id: the `abandoned-pending-subs` cron cancels and
+ *   verifies the preapproval but does not clear the id column. The qzpay raw
+ *   equivalent is `incomplete_expired`.
  *
  * A row in either state means the customer merely opened (and backed out of)
  * the MercadoPago screen — they never actually had a trial, so it must NOT
@@ -80,25 +82,31 @@ const NEVER_AUTHORIZED_STATUSES: ReadonlySet<SubscriptionStatusEnum> = new Set([
 ]);
 
 /**
- * Whether a single prior subscription actually consumed the customer's trial —
- * i.e. its preapproval was authorized by the provider at least once.
+ * Whether a single prior subscription consumed the customer's one-per-lifetime
+ * trial — decided purely by its NORMALIZED lifecycle status.
  *
- * True for any status outside {@link NEVER_AUTHORIZED_STATUSES}
+ * Consumed (`true`) for any status outside {@link NEVER_AUTHORIZED_STATUSES}
  * (`active`/`trialing`/`past_due`/`paused`/`cancelled`/`expired`/`comp` — all
  * only reachable after authorization) and for an unknown/unmappable status
  * (`normalizeStoredSubscriptionStatus` → `null`), the safe fail-closed default
- * for the single trial gate. For the two never-authorized statuses it falls back
- * to the provider id: a present `providerSubscriptionIds.mercadopago` means MP
- * created and authorized a real preapproval, which counts even if the webhook
- * has not yet flipped the local status away from `pending_provider` (a narrow
- * race). An `abandoned` row never carries one, so it correctly stays uncounted.
+ * for the single trial gate. NOT consumed for the two never-authorized states.
+ *
+ * Status is the ONLY signal — deliberately NOT the provider id. Presence of a
+ * `providerSubscriptionIds.mercadopago` does NOT imply the preapproval was ever
+ * authorized: the `mode:'paid'` inline flow persists the id at creation time,
+ * BEFORE the customer completes MP's authorization page (HOS-151 Bug C), and the
+ * `abandoned-pending-subs` cron flips a reaped row to `abandoned` WITHOUT
+ * clearing the id. Trusting id-presence therefore re-opens the exact HOS-230
+ * false-disqualification bug (an abandoned/incomplete row with a stray id wrongly
+ * counting as a consumed trial, even cross-domain). The narrow window where an
+ * authorized `pending_provider` row has not yet had its webhook flip the status
+ * is intentionally left to read as "still eligible" — the correct guard against a
+ * second concurrent checkout in that window is the live-preapproval duplicate
+ * guard (HOS-232), not this eligibility heuristic.
  */
 function consumedTrialEligibility(sub: PriorSubscription): boolean {
     const status = normalizeStoredSubscriptionStatus(sub.status);
-    if (status === null || !NEVER_AUTHORIZED_STATUSES.has(status)) {
-        return true;
-    }
-    return Boolean(sub.providerSubscriptionIds?.mercadopago);
+    return status === null || !NEVER_AUTHORIZED_STATUSES.has(status);
 }
 
 /**

@@ -123,20 +123,51 @@ describe('hasAnyPriorSubscription', () => {
         expect(result).toEqual({ eligible: true });
     });
 
-    // Race guard: a pending_provider row whose preapproval WAS already authorized
-    // by MP (provider id present under the `mercadopago` key) but whose webhook
-    // has not yet flipped the local status still counts, so it cannot be
-    // double-dipped. Uses the real `providerSubscriptionIds` map shape.
-    it('returns true for a pending_provider row that already has an MP provider id (authorized, webhook race)', async () => {
+    // HOS-230 (round-2 finding): a provider id being PRESENT does NOT imply the
+    // preapproval was authorized. The mode:'paid' inline flow persists the id at
+    // creation (HOS-151 Bug C) and the abandoned-pending-subs cron flips a reaped
+    // row to abandoned WITHOUT clearing the id. So an abandoned/pending row with a
+    // stray `providerSubscriptionIds.mercadopago` must STILL NOT consume the trial,
+    // otherwise the false-disqualification bug recurs (even cross-domain).
+    it('returns false for an abandoned row that still carries a stray MP provider id', async () => {
         const billing = makeBilling([
             {
                 id: 'sub-1',
-                status: 'pending_provider',
+                status: 'abandoned',
                 providerSubscriptionIds: { mercadopago: 'mp-preapproval-123' }
             }
         ]);
 
-        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(true);
+        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(false);
+    });
+
+    it('returns false for a raw qzpay `incomplete` row that carries a provider id (mode:paid, backed out)', async () => {
+        const billing = makeBilling([
+            {
+                id: 'sub-1',
+                status: 'incomplete',
+                providerSubscriptionIds: { mercadopago: 'mp-preapproval-456' }
+            }
+        ]);
+
+        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(false);
+    });
+
+    // The cross-domain regression from the round-2 finding: a commerce mode:'paid'
+    // checkout that was abandoned (with a stray provider id) must not poison the
+    // same customer's FIRST accommodation-host trial eligibility.
+    it('stays eligible when the only prior row is an abandoned mode:paid checkout with a provider id', async () => {
+        const billing = makeBilling([
+            {
+                id: 'sub-commerce',
+                status: 'incomplete_expired',
+                providerSubscriptionIds: { mercadopago: 'mp-preapproval-789' }
+            }
+        ]);
+
+        const result = await resolveTrialEligibility({ billing, customerId: CUSTOMER_ID });
+
+        expect(result).toEqual({ eligible: true });
     });
 
     // An authorized subscription still disqualifies even when accompanied by an
