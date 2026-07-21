@@ -748,6 +748,14 @@ function formatPriceArs(cents: number): string {
 		color: var(--success, var(--brand-accent));
 		font-weight: 700;
 	}
+	/* HOS-226: badge-suppression note injected by PlanPurchaseButton when an
+	   authenticated user turns out to be trial-ineligible. Muted (not the
+	   accent color the "N days free" perk uses) — this is neutral billing
+	   info, not a benefit being advertised. */
+	.pricing-card__trial--ineligible {
+		color: var(--core-muted-foreground);
+		font-weight: 500;
+	}
 	.pricing-card__price--promo-active {
 		animation: promo-price-pulse 650ms ease-out 1;
 		border-radius: var(--radius-md, 0.5rem);

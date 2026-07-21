@@ -3,6 +3,7 @@
     "free": "Free",
     "recommended": "Recommended",
     "trial": "{days}-day free trial",
+    "trialNotEligible": "No trial period",
     "includesEverything": "Everything in {plan}, plus:",
     "inheritedSummary": "+{count} features from the {plan} plan",
     "baseHighlightTitle": "Perfect to get started",

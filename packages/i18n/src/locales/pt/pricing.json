@@ -3,6 +3,7 @@
     "free": "Grátis",
     "recommended": "Recomendado",
     "trial": "{days} dias grátis",
+    "trialNotEligible": "Sem período de teste",
     "includesEverything": "Tudo do plano {plan}, mais:",
     "inheritedSummary": "+{count} funções do plano {plan}",
     "baseHighlightTitle": "Ideal para começar",
