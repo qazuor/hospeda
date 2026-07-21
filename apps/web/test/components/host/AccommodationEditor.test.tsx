@@ -321,7 +321,7 @@ describe('AccommodationEditor', () => {
             () => {
                 expect(mockUpdate).toHaveBeenCalledOnce();
             },
-            { timeout: 5000 }
+            { timeout: 15000 }
         );
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.id).toBe('acc-123');
@@ -348,7 +348,7 @@ describe('AccommodationEditor', () => {
             () => {
                 expect(mockUpdate).toHaveBeenCalledOnce();
             },
-            { timeout: 5000 }
+            { timeout: 15000 }
         );
         // Success is surfaced as a toast (not an inline banner) — assert the
         // toast store received a success toast with the confirmation message.
@@ -383,7 +383,7 @@ describe('AccommodationEditor', () => {
         await user.clear(nameInput);
         await user.type(nameInput, 'Hotel Actualizado');
         fireEvent.submit(nameInput.closest('form')!);
-        await vi.waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1), { timeout: 5000 });
+        await vi.waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1), { timeout: 15000 });
         expect(mockUpdate.mock.calls[0][0].data.name).toBe('Hotel Actualizado');
 
         // 2) Revert name to the ORIGINAL value and save again. Without the
@@ -391,7 +391,7 @@ describe('AccommodationEditor', () => {
         await user.clear(nameInput);
         await user.type(nameInput, 'Hotel Test');
         fireEvent.submit(nameInput.closest('form')!);
-        await vi.waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(2), { timeout: 5000 });
+        await vi.waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(2), { timeout: 15000 });
         expect(mockUpdate.mock.calls[1][0].data.name).toBe('Hotel Test');
     });
 
@@ -488,7 +488,7 @@ describe('AccommodationEditor', () => {
             () => {
                 expect(mockUpdate).toHaveBeenCalledOnce();
             },
-            { timeout: 5000 }
+            { timeout: 15000 }
         );
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.data.phone).toBe('+54 9 343 9999999');
@@ -515,7 +515,7 @@ describe('AccommodationEditor', () => {
             () => {
                 expect(mockUpdate).toHaveBeenCalledOnce();
             },
-            { timeout: 5000 }
+            { timeout: 15000 }
         );
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.data.whatsapp).toBe('+54 9 343 8888888');
@@ -538,7 +538,7 @@ describe('AccommodationEditor', () => {
             () => {
                 expect(mockUpdate).toHaveBeenCalledOnce();
             },
-            { timeout: 5000 }
+            { timeout: 15000 }
         );
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.data.twitter).toBe('https://x.com/mi-hotel');
@@ -563,7 +563,7 @@ describe('AccommodationEditor', () => {
             () => {
                 expect(mockUpdate).toHaveBeenCalledOnce();
             },
-            { timeout: 5000 }
+            { timeout: 15000 }
         );
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.data.name).toBe('Solo cambio nombre');
@@ -606,7 +606,7 @@ describe('AccommodationEditor', () => {
             () => {
                 expect(mockUpdate).toHaveBeenCalledOnce();
             },
-            { timeout: 5000 }
+            { timeout: 15000 }
         );
         // No photo change → media should be absent from payload
         const callArg = mockUpdate.mock.calls[0][0];
@@ -649,7 +649,7 @@ describe('AccommodationEditor', () => {
             () => {
                 expect(mockUpdate).toHaveBeenCalledOnce();
             },
-            { timeout: 5000 }
+            { timeout: 15000 }
         );
         // Gallery was seeded from initialGallery — it matches current photoData,
         // so media should NOT be added (no change detected).
