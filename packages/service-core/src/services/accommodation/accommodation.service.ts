@@ -1224,25 +1224,25 @@ export class AccommodationService extends BaseCrudService<
      *
      * Unlike the generic `create()` method, this one is callable by any authenticated
      * `USER` because it does NOT require the `ACCOMMODATION_CREATE` permission. It is
-     * the single back-end seam used by `POST /api/v1/protected/host-onboarding/start`
-     * and intentionally encodes the three terminal states a USER can land in when
-     * trying to publish their first listing:
+     * the single back-end seam used by `POST /api/v1/protected/host-onboarding/start`.
      *
-     * - `created`  - no privileged role, no active draft. A fresh DRAFT is inserted
-     *   with `ownerId = actor.id`, `lifecycleState = DRAFT`, `lastWarnedAt = null`,
-     *   and the owner is atomically promoted USER -> HOST in the same transaction.
-     *   The promotion is required so the owner gains the HOST role's permissions
-     *   (manage their own accommodations, upload media, etc.) — NOT for admin
-     *   panel access, which HOST does not have (`ACCESS_PANEL_ADMIN` is
-     *   staff-only; see HOS-152). The trial subscription is NOT created here —
-     *   it is deferred to the first publish (see `publish()`).
+     * As of BETA-197, this method ALWAYS creates a fresh DRAFT — it no longer looks
+     * up or auto-resumes an existing active DRAFT for the owner. The web now calls
+     * `GET /host-onboarding/precheck` before showing the form and decides whether to
+     * create, resume, delete, or upgrade; by the time this endpoint is hit, the
+     * caller has already committed to creating. Consequently, drafts count against
+     * `max_accommodations` like any other create (enforced by
+     * `enforceAccommodationLimit()` on the route, with no bypass).
      *
-     * - `resumed`  - a non-deleted DRAFT already exists for this owner. The existing
-     *   row is returned and the caller resumes onboarding on it. This is the
-     *   idempotency guarantee: at most one active DRAFT per USER at any given time.
-     *   Defensively re-promotes a `USER` who somehow has an active DRAFT (legacy
-     *   data) so the HOST-permissions invariant is restored (again, not related
-     *   to admin panel access).
+     * A fresh DRAFT is inserted with `ownerId = actor.id`, `lifecycleState = DRAFT`,
+     * `lastWarnedAt = null`, and the owner is atomically promoted USER -> HOST in the
+     * same transaction. The promotion is required so the owner gains the HOST role's
+     * permissions (manage their own accommodations, upload media, etc.) — NOT for
+     * admin panel access, which HOST does not have (`ACCESS_PANEL_ADMIN` is
+     * staff-only; see HOS-152). When the actor is already HOST (or higher) the role
+     * promotion is a no-op but a new DRAFT is still created so their input is not
+     * lost. The trial subscription is NOT created here — it is deferred to the first
+     * publish (see `publish()`).
      *
      * Slug generation and destination validation reuse the same `_beforeCreate` hook
      * as the generic create flow, so the resulting row is structurally identical to
@@ -1252,7 +1252,7 @@ export class AccommodationService extends BaseCrudService<
      * @param input - Lean draft input (name, summary, type, destinationId, optional description).
      * @param ctx - Optional service context. When provided with a transaction, the
      *   operation participates in the existing transaction.
-     * @returns A `ServiceOutput` containing the discriminated `HostOnboardingResult`.
+     * @returns A `ServiceOutput` containing the `HostOnboardingResult`.
      */
     public async createForOnboarding(
         actor: Actor,
@@ -1273,31 +1273,6 @@ export class AccommodationService extends BaseCrudService<
                 }
 
                 const user = await this._userModel.findById(validatedActor.id, execCtx?.tx);
-
-                const existingDraft = await this.model.findOne(
-                    {
-                        ownerId: validatedActor.id,
-                        lifecycleState: LifecycleStatusEnum.DRAFT,
-                        deletedAt: null
-                    },
-                    execCtx?.tx
-                );
-                if (existingDraft) {
-                    // Defense-in-depth: legacy data may have a USER who owns
-                    // an active DRAFT but was never promoted. Re-promote so
-                    // the owner has the HOST role's permissions (manage own
-                    // accommodations, upload media, etc.) — not for admin
-                    // panel access, which HOST does not have. No-op when the
-                    // user is already HOST (most common path on resume).
-                    if (user && user.role === RoleEnum.USER) {
-                        await this._userModel.update(
-                            { id: validatedActor.id },
-                            { role: RoleEnum.HOST },
-                            execCtx?.tx
-                        );
-                    }
-                    return { status: 'resumed', accommodation: existingDraft };
-                }
 
                 const domainInput = httpToDomainAccommodationCreateDraft(
                     validatedData,

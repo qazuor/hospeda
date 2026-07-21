@@ -48,16 +48,20 @@ export interface AccommodationPublishDeps {
 /**
  * Outcome of `AccommodationService.createForOnboarding`.
  *
- * - `created`: a fresh DRAFT was inserted for the actor and the onboarding flow
- *   promotes them from `USER` to `HOST` so they can access host surfaces. When the
- *   actor is already `HOST` (or higher) the role promotion is a no-op but a new
- *   DRAFT is still created so they don't lose their input.
- * - `resumed`: the actor already had an active DRAFT — that one is returned and the
- *   caller should resume the onboarding flow on it instead of creating a new one.
+ * As of BETA-197, `createForOnboarding` always creates — the auto-resume branch
+ * (returning an existing active DRAFT instead of inserting a new one) was removed.
+ * The web now calls `GET /host-onboarding/precheck` before showing the form and
+ * decides create/resume/delete/upgrade itself; by the time this endpoint is
+ * called, the caller has already committed to creating. `status` is kept (rather
+ * than dropped) as a literal `'created'` so the `/host-onboarding/start` response
+ * shape stays stable for existing consumers.
+ *
+ * A fresh DRAFT was inserted for the actor and the onboarding flow promotes them
+ * from `USER` to `HOST` so they can access host surfaces. When the actor is
+ * already `HOST` (or higher) the role promotion is a no-op but a new DRAFT is
+ * still created so they don't lose their input.
  */
-export type HostOnboardingResult =
-    | { status: 'created'; accommodation: Accommodation }
-    | { status: 'resumed'; accommodation: Accommodation };
+export type HostOnboardingResult = { status: 'created'; accommodation: Accommodation };
 
 /**
  * Per-request hook state for AccommodationService lifecycle hooks.
