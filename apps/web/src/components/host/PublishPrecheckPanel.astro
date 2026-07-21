@@ -1,0 +1,246 @@
+---
+/**
+ * @file PublishPrecheckPanel.astro
+ * @description Renders the "publicar nueva" host-onboarding precheck panel
+ * (BETA-197) for every decision except `create_direct` (which renders the
+ * onboarding form directly instead, from `pages/[lang]/publicar/nueva.astro`).
+ *
+ * Content (title/body/actions) is derived by the pure
+ * `resolvePrecheckPanelContent` helper — this component only resolves i18n
+ * keys through `t()` and renders markup, plus mounts the shared
+ * `DeleteButton` React island for the one decision that needs an async
+ * confirm step (`resume_delete_or_upgrade`'s "Borrar borrador").
+ *
+ * Reuses the same visual language as the pre-BETA-197 static "AtLimit"
+ * panel (accent-bordered card, `btn-gradient` primary CTA, text-link
+ * secondary) so `upgrade_only` looks identical to before.
+ */
+
+import { AlertCircleIcon, ArrowRightIcon } from '@repo/icons';
+import { DeleteButton } from '@/components/host/DeleteButton.client';
+import type { HostOnboardingPrecheckDecision, HostOnboardingPrecheckDraft } from '@/lib/api/endpoints-protected';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { resolvePrecheckPanelContent } from '@/lib/host/publish-precheck-panel-content';
+
+interface Props {
+    readonly locale: SupportedLocale;
+    /** Any decision except `create_direct` — the caller renders the form directly for that one. */
+    readonly decision: Exclude<HostOnboardingPrecheckDecision, 'create_direct'>;
+    readonly currentCount: number;
+    readonly maxAllowed: number;
+    /** All of the actor's DRAFT accommodations (used for the "several drafts" context list). */
+    readonly drafts: ReadonlyArray<HostOnboardingPrecheckDraft>;
+    /** Edit URL for `drafts[0]`, present when `draftCount === 1`. */
+    readonly editUrl?: string;
+    /** Current page URL with `?create=1` appended. */
+    readonly createUrl: string;
+    readonly accountPropertiesUrl: string;
+    readonly subscriptionUrl: string;
+}
+
+const {
+    locale,
+    decision,
+    currentCount,
+    maxAllowed,
+    drafts,
+    editUrl,
+    createUrl,
+    accountPropertiesUrl,
+    subscriptionUrl
+} = Astro.props;
+
+const { t } = createTranslations(locale);
+
+const content = resolvePrecheckPanelContent({
+    decision,
+    editUrl,
+    createUrl,
+    accountPropertiesUrl,
+    subscriptionUrl
+});
+
+const title = t(content.titleKey, content.titleFallback);
+const body = content.showQuota
+    ? t(content.bodyKey, content.bodyFallback, { currentCount, maxAllowed })
+    : t(content.bodyKey, content.bodyFallback);
+
+// Only decisions with draftCount > 1 (pick_draft_*) show the context list.
+const showDraftList = drafts.length > 1;
+
+// The delete action targets `drafts[0]` (only reachable when draftCount === 1).
+const draftIdForDelete = drafts[0]?.id;
+
+const deleteLabel = t(
+    'host.pages.nueva.precheck.resumeDeleteOrUpgrade.deleteCta',
+    'Borrar borrador'
+);
+const deleteConfirmText = t(
+    'host.pages.nueva.precheck.resumeDeleteOrUpgrade.deleteConfirm',
+    '¿Borrar este borrador? Vas a poder crear una propiedad nueva.'
+);
+const deleteConfirmYes = t('host.properties.card.actions.deleteYes', 'Sí, eliminar');
+const deleteConfirmNo = t('host.properties.card.actions.confirmNo', 'Cancelar');
+const deleteErrorText = t(
+    'host.properties.card.deleteError',
+    'No se pudo eliminar. Intentá de nuevo.'
+);
+---
+
+<div
+    class="precheck-panel"
+    role="region"
+    aria-label={title}
+>
+    <span
+        class="precheck-panel__icon"
+        aria-hidden="true"
+    >
+        <AlertCircleIcon size={40} weight="duotone" />
+    </span>
+    <h2 class="precheck-panel__title">{title}</h2>
+    <p class="precheck-panel__body">{body}</p>
+
+    {showDraftList && (
+        <ul
+            class="precheck-panel__drafts"
+            data-testid="precheck-panel-drafts"
+        >
+            {drafts.map((draft) => (
+                <li class="precheck-panel__draft-item">{draft.name}</li>
+            ))}
+        </ul>
+    )}
+
+    <div class="precheck-panel__actions">
+        {content.actions.map((action) =>
+            action.kind === 'link' ? (
+                action.variant === 'primary' ? (
+                    <a
+                        href={action.href}
+                        class="precheck-panel__primary-cta btn-gradient btn-gradient--accent btn-gradient--shape-rounded"
+                        data-testid={`precheck-action-${action.labelKey}`}
+                    >
+                        <span class="gradient-btn__label">{t(action.labelKey, action.labelFallback)}</span>
+                        <span aria-hidden="true">
+                            <ArrowRightIcon size={16} weight="bold" />
+                        </span>
+                    </a>
+                ) : (
+                    <a
+                        href={action.href}
+                        class="precheck-panel__secondary-link"
+                        data-testid={`precheck-action-${action.labelKey}`}
+                    >
+                        {t(action.labelKey, action.labelFallback)}
+                    </a>
+                )
+            ) : draftIdForDelete ? (
+                <DeleteButton
+                    client:load
+                    accommodationId={draftIdForDelete}
+                    locale={locale}
+                    label={deleteLabel}
+                    confirmText={deleteConfirmText}
+                    confirmYes={deleteConfirmYes}
+                    confirmNo={deleteConfirmNo}
+                    errorText={deleteErrorText}
+                />
+            ) : null
+        )}
+    </div>
+</div>
+
+<style>
+    .precheck-panel {
+        max-width: 560px;
+        margin: 0 auto;
+        background-color: var(--core-card);
+        border: 1px solid var(--brand-accent-a30);
+        border-radius: var(--radius-card);
+        padding: var(--space-8) var(--space-6);
+        text-align: center;
+        box-shadow: var(--shadow-card);
+    }
+
+    .precheck-panel__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background-color: var(--brand-accent-a12);
+        color: var(--brand-accent);
+        margin-bottom: var(--space-4);
+    }
+
+    .precheck-panel__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: var(--text-h3);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-3);
+        text-wrap: balance;
+    }
+
+    .precheck-panel__body {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-lg);
+        color: var(--core-muted-foreground);
+        line-height: 1.6;
+        margin: 0 0 var(--space-6);
+        max-width: 46ch;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .precheck-panel__drafts {
+        list-style: none;
+        margin: 0 0 var(--space-6);
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    .precheck-panel__draft-item {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--core-foreground);
+        background-color: var(--surface-warm);
+        border-radius: var(--radius-md);
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .precheck-panel__actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-3);
+    }
+
+    .precheck-panel__primary-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        text-decoration: none;
+    }
+
+    .precheck-panel__secondary-link {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--brand-primary);
+        text-decoration: none;
+        transition: color var(--duration-fast) ease;
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+
+    .precheck-panel__secondary-link:hover {
+        color: var(--brand-accent);
+        text-decoration: underline;
+    }
+</style>
