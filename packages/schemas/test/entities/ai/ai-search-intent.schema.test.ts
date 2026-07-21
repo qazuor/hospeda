@@ -247,10 +247,13 @@ describe('SearchIntentEntitiesSchema', () => {
 
     // ── radius (HOS-207) ──────────────────────────────────────────────────────
 
-    it('accepts radius: 0 (regression HOS-207 — "no radius" sentinel from the model)', () => {
+    it('accepts radius: 0 without throwing (regression HOS-207)', () => {
         // Arrange: the AI returns an explicit radius: 0 when the query mentions
         // no search radius. `.positive()` used to reject this and 500 the whole
-        // NL search; `.min(0)` accepts it.
+        // NL search (AI_TypeValidationError inside generateObject); `.min(0)`
+        // accepts it. The "0 means absent" normalization happens downstream, in
+        // the mapper + search-chat POI branch (a transform here is impossible —
+        // this schema is serialized to JSON Schema for generateObject).
         const input = { radius: 0 };
         // Act
         const result = SearchIntentEntitiesSchema.safeParse(input);
@@ -275,6 +278,10 @@ describe('SearchIntentEntitiesSchema', () => {
         const result = SearchIntentEntitiesSchema.safeParse(input);
         // Assert
         expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.radius).toBe(0);
+            expect(result.data.accommodationType).toBe('CABIN');
+        }
     });
 
     it('accepts radius at upper boundary 500', () => {
