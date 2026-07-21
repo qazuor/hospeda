@@ -385,6 +385,12 @@ async function paymentAlreadyRecorded(providerPaymentId: string): Promise<boolea
  * enrichment column must never turn into a webhook retry storm or block
  * payment recording.
  *
+ * **Note on the stored value**: this writes the authorized-payment's
+ * `payer_id` — the subscriber's MercadoPago *user/account* id — NOT an MP
+ * Customers-API (`/v1/customers`) resource id. Treat the column as advisory
+ * (e.g. for display/reconciliation), not as an authoritative Customers-API
+ * handle, and never as a sole ownership/authorization factor.
+ *
  * @internal
  */
 async function backfillMpCustomerId(params: {
@@ -423,10 +429,21 @@ async function backfillMpCustomerId(params: {
             return;
         }
 
+        // Compare-and-swap: re-assert mp_customer_id IS NULL in the UPDATE
+        // itself, not just the earlier SELECT. This makes the "never
+        // overwrites" contract atomic even if a future concurrent writer
+        // (e.g. a checkout-time write) sets the column between our SELECT and
+        // this UPDATE — the write simply no-ops instead of clobbering it.
         await db
             .update(billingCustomers)
             .set({ mpCustomerId: mpPayerId, updatedAt: new Date() })
-            .where(and(eq(billingCustomers.id, customerId), isNull(billingCustomers.deletedAt)));
+            .where(
+                and(
+                    eq(billingCustomers.id, customerId),
+                    isNull(billingCustomers.deletedAt),
+                    isNull(billingCustomers.mpCustomerId)
+                )
+            );
 
         apiLogger.info(
             { eventId, requestId, customerId, mpPayerId },
