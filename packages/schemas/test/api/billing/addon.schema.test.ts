@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+    type AddonResponse,
+    AddonResponseSchema,
     type AdminAddonListQuery,
     AdminAddonListQuerySchema,
     type AdminAddonResponse,
@@ -448,5 +450,65 @@ describe('AdminAddonResponseSchema', () => {
             expect(query.page).toBe(2);
             expect(query.pageSize).toBe(10);
         });
+    });
+});
+
+// ─── AddonResponseSchema (HOS-224) ────────────────────────────────────────────
+
+/** Minimal valid AddonResponse payload (public catalog shape) */
+const validAddonResponse: AddonResponse = {
+    slug: 'visibility-boost-7d',
+    name: 'Visibility Boost (7 days)',
+    description: 'Feature your accommodation for 7 days.',
+    billingType: 'one_time',
+    priceArs: 500000,
+    durationDays: 7,
+    affectsLimitKey: null,
+    limitIncrease: null,
+    grantsEntitlement: 'featured_listing',
+    targetCategories: ['owner', 'complex'],
+    isActive: true,
+    sortOrder: 1,
+    requiresAccommodationTarget: true
+};
+
+describe('AddonResponseSchema (HOS-224)', () => {
+    it('should parse a payload that explicitly sets requiresAccommodationTarget', () => {
+        // Arrange
+        const input = { ...validAddonResponse };
+
+        // Act
+        const result = AddonResponseSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.requiresAccommodationTarget).toBe(true);
+        }
+    });
+
+    it('should default requiresAccommodationTarget to false when the field is absent (back-compat)', () => {
+        // Arrange — mirrors a pre-HOS-224 addon row whose metadata never set the flag
+        const { requiresAccommodationTarget: _omit, ...input } = validAddonResponse;
+
+        // Act
+        const result = AddonResponseSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.requiresAccommodationTarget).toBe(false);
+        }
+    });
+
+    it('should reject a non-boolean requiresAccommodationTarget', () => {
+        // Arrange
+        const input = { ...validAddonResponse, requiresAccommodationTarget: 'yes' };
+
+        // Act
+        const result = AddonResponseSchema.safeParse(input);
+
+        // Assert
+        expect(result.success).toBe(false);
     });
 });

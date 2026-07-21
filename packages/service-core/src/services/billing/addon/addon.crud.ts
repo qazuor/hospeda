@@ -78,6 +78,10 @@ export function mapRowToAdminAddonResponse(row: QZPayBillingAddon): AdminAddonRe
         targetCategories: def.targetCategories.filter(
             (c): c is 'owner' | 'complex' => c === 'owner' || c === 'complex'
         ),
+        // HOS-224: AddonResponseSchema now carries `requiresAccommodationTarget`
+        // (z.boolean().default(false)), so the output type requires a concrete
+        // boolean; the AddonDefinition mapper leaves it optional. Normalize here.
+        requiresAccommodationTarget: def.requiresAccommodationTarget ?? false,
         id: row.id,
         createdAt: row.createdAt.toISOString(),
         updatedAt: row.updatedAt?.toISOString() ?? row.createdAt.toISOString(),

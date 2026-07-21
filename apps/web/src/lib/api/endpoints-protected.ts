@@ -14,6 +14,7 @@ import type {
     AccommodationImportStatusResponse,
     AccommodationOccupancy,
     AccommodationReviewListItem,
+    AddonResponse,
     DestinationReviewListItem,
     DowngradePreview,
     KeepSelections,
@@ -21,6 +22,7 @@ import type {
     OccupancySourceEnum,
     PlanChangeResponse,
     PriceAlertResponse,
+    PurchaseAddonResponse,
     StartPaidSubscriptionResponse,
     SubscriptionStatusResponse,
     UserBookmark,
@@ -369,6 +371,7 @@ export const userApi = {
     /**
      * Get the authenticated user's current subscription details.
      *
+     * @param params - Optional SSR cookie header (see {@link protectedConversationsApi.list})
      * @returns Current subscription data or null if no active subscription
      *
      * @example
@@ -377,8 +380,13 @@ export const userApi = {
      * if (result.ok && result.data.subscription) { ... }
      * ```
      */
-    getSubscription(): Promise<ApiResult<{ readonly subscription: SubscriptionData | null }>> {
-        return apiClient.getProtected({ path: `${PROTECTED}/users/me/subscription` });
+    getSubscription(params?: {
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<{ readonly subscription: SubscriptionData | null }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/users/me/subscription`,
+            cookieHeader: params?.cookieHeader
+        });
     },
 
     /**
@@ -489,15 +497,28 @@ export interface UsageSummary {
     }>;
 }
 
-/** User addon item */
+/**
+ * User addon item — the authenticated user's own purchased add-on.
+ *
+ * Mirrors `UserAddonResponseSchema` (`@repo/schemas`, `GET
+ * /protected/billing/addons/my`) field-for-field (HOS-224 fix: the previous
+ * shape here — `name`/`slug`/`price`/a 3-value `status` union — never matched
+ * the real API response and had no consumer to surface the drift; the addons
+ * self-service page is the first real caller).
+ */
 export interface UserAddon {
     readonly id: string;
-    readonly name: string;
-    readonly slug: string;
-    readonly status: 'active' | 'expiring_soon' | 'expired';
-    readonly expiresAt?: string;
-    readonly price: number;
-    readonly currency: string;
+    readonly addonSlug: string;
+    readonly addonName: string;
+    readonly billingType: 'one_time' | 'recurring';
+    readonly status: 'active' | 'expired' | 'canceled' | 'pending';
+    readonly purchasedAt: string;
+    readonly expiresAt: string | null;
+    readonly canceledAt: string | null;
+    readonly priceArs: number;
+    readonly affectsLimitKey: string | null;
+    readonly limitIncrease: number | null;
+    readonly grantsEntitlement: string | null;
 }
 
 /** Plan item for plan listing and selection */
@@ -883,17 +904,114 @@ export const billingApi = {
     /**
      * Get the authenticated user's active addons.
      *
+     * The API returns a plain array (`GET /protected/billing/addons/my`,
+     * `responseSchema: z.array(UserAddonResponseSchema)` in
+     * `apps/api/src/routes/billing/addons.ts`) — NOT a `{ addons: [...] }`
+     * envelope (HOS-224 fix: the previous signature here claimed an `addons`
+     * wrapper key that the backend never sent; this endpoint had no consumer
+     * until the addons self-service page).
+     *
+     * @param params - Optional SSR cookie header (see {@link protectedConversationsApi.list})
      * @returns List of active addons for the current user
      *
      * @example
      * ```ts
      * const result = await billingApi.getAddons();
-     * if (result.ok) console.log(result.data.addons);
+     * if (result.ok) console.log(result.data);
      * ```
      */
-    getAddons(): Promise<ApiResult<{ readonly addons: readonly UserAddon[] }>> {
+    getAddons(params?: {
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<readonly UserAddon[]>> {
         return apiClient.getProtected({
-            path: `${PROTECTED}/billing/addons/my`
+            path: `${PROTECTED}/billing/addons/my`,
+            cookieHeader: params?.cookieHeader
+        });
+    },
+
+    /**
+     * List available add-ons for purchase (HOS-224 self-service).
+     *
+     * `GET /protected/billing/addons` (`ListAddonsQuerySchema` /
+     * `z.array(AddonResponseSchema)` — see `apps/api/src/routes/billing/addons.ts`).
+     * Distinct from {@link billingApi.getAddons}, which lists the user's own
+     * *purchased* addons — this lists the *catalog* of purchasable ones.
+     *
+     * @param params - Optional filters + SSR cookie header
+     * @returns The filtered, sorted add-on catalog
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.listAvailableAddons({ active: true });
+     * if (result.ok) console.log(result.data);
+     * ```
+     */
+    listAvailableAddons(params?: {
+        readonly active?: boolean;
+        readonly targetCategory?: 'owner' | 'complex';
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<readonly AddonResponse[]>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing/addons`,
+            params: {
+                active: params?.active,
+                targetCategory: params?.targetCategory
+            },
+            cookieHeader: params?.cookieHeader
+        });
+    },
+
+    /**
+     * Purchase an add-on (HOS-224 self-service), returning a MercadoPago
+     * checkout URL to redirect the browser to.
+     *
+     * `POST /protected/billing/addons/{slug}/purchase`. Enforces
+     * `X-Idempotency-Key` server-side (`idempotencyKeyMiddleware`) — callers
+     * MUST pass a fresh `crypto.randomUUID()` per purchase click.
+     *
+     * The request body is validated against `PurchaseAddonSchema`, which
+     * requires an `addonId` field even though the handler resolves the addon
+     * from the URL's `:slug` param, not from the body (see the contract note
+     * pinned by `apps/api/test/e2e/flows/billing/addon-purchase.test.ts`).
+     * This wrapper sends `addonId: slug` automatically so callers only need
+     * to supply the optional `promoCode` / `accommodationId`.
+     *
+     * @param params.slug - The add-on's slug (also the URL path param)
+     * @param params.body - Optional promo code and/or target accommodation
+     *   (required by the API when the addon's `requiresAccommodationTarget` is true)
+     * @param params.idempotencyKey - Fresh UUID v4 per purchase attempt
+     * @param params.cookieHeader - Optional SSR cookie header
+     * @returns The MercadoPago checkout URL and order metadata
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.purchaseAddon({
+     *   slug: 'visibility-boost-7d',
+     *   body: { accommodationId: 'acc-uuid' },
+     *   idempotencyKey: crypto.randomUUID()
+     * });
+     * if (result.ok) window.location.href = result.data.checkoutUrl;
+     * ```
+     */
+    purchaseAddon({
+        slug,
+        body,
+        idempotencyKey,
+        cookieHeader
+    }: {
+        readonly slug: string;
+        readonly body?: {
+            readonly promoCode?: string;
+            readonly accommodationId?: string;
+        };
+        readonly idempotencyKey: string;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<PurchaseAddonResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/addons/${slug}/purchase`,
+            body: { addonId: slug, ...body },
+            headers: { 'X-Idempotency-Key': idempotencyKey },
+            cookieHeader
         });
     },
 
@@ -1700,13 +1818,18 @@ export const hostAnalyticsApi = {
      * List the authenticated host's own accommodations (id + name only needed
      * for cross-referencing analytics by accommodation). Server-side filtered
      * by actor.id.
+     *
+     * @param params - Optional SSR cookie header (see {@link protectedConversationsApi.list})
      */
-    listOwnAccommodations(): Promise<
+    listOwnAccommodations(params?: {
+        readonly cookieHeader?: string;
+    }): Promise<
         ApiResult<{ readonly items: readonly { readonly id: string; readonly name: string }[] }>
     > {
         return apiClient.getProtected({
             path: `${PROTECTED}/accommodations`,
-            params: { pageSize: 50, sortBy: 'createdAt', sortOrder: 'desc' }
+            params: { pageSize: 50, sortBy: 'createdAt', sortOrder: 'desc' },
+            cookieHeader: params?.cookieHeader
         });
     },
 
