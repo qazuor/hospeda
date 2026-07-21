@@ -888,6 +888,28 @@ export class AccommodationService extends BaseCrudService<
         }
     }
 
+    /**
+     * Whether an accommodation is visible to the public — the only case in which
+     * its change should trigger public-page (ISR/Cloudflare) revalidation.
+     *
+     * An accommodation is public iff it is both published (`lifecycleState`
+     * `ACTIVE`) AND `visibility` `PUBLIC`. A DRAFT (any visibility) or a
+     * `PRIVATE`/`RESTRICTED` listing never appears on public pages, so purging
+     * public paths for it is wasted work (HOS-203).
+     *
+     * @param entity - Accommodation-like object carrying `lifecycleState`/`visibility`.
+     * @returns `true` when the listing is publicly visible.
+     */
+    private _isPubliclyVisible(entity: {
+        readonly lifecycleState?: Accommodation['lifecycleState'];
+        readonly visibility?: Accommodation['visibility'];
+    }): boolean {
+        return (
+            entity.lifecycleState === LifecycleStatusEnum.ACTIVE &&
+            entity.visibility === VisibilityEnum.PUBLIC
+        );
+    }
+
     protected async _afterCreate(
         entity: Accommodation,
         _actor: Actor,
@@ -946,21 +968,29 @@ export class AccommodationService extends BaseCrudService<
         if (entity.destinationId) {
             await this.destinationService.updateAccommodationsCount(entity.destinationId, ctx);
         }
-        const destinationSlug = entity.destinationId
-            ? await this._resolveDestinationSlug(entity.destinationId)
-            : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation',
-                slug: entity.slug,
-                destinationSlug,
-                accommodationType: entity.type?.toLowerCase()
-            });
-        } catch (error) {
-            this.logger.warn(
-                { error, entityType: 'accommodation' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
+        // HOS-203: only revalidate public pages when the new accommodation is
+        // actually publicly visible. A freshly-created DRAFT/PRIVATE listing has
+        // no public footprint, so scheduling revalidation of the destination's
+        // public paths is pure waste (and, in prod, produced spurious 404 logs).
+        // A create can never have a prior public footprint, so `is public now`
+        // is a sufficient and always-safe condition here.
+        if (this._isPubliclyVisible(entity)) {
+            const destinationSlug = entity.destinationId
+                ? await this._resolveDestinationSlug(entity.destinationId)
+                : undefined;
+            try {
+                getRevalidationService()?.scheduleRevalidation({
+                    entityType: 'accommodation',
+                    slug: entity.slug,
+                    destinationSlug,
+                    accommodationType: entity.type?.toLowerCase()
+                });
+            } catch (error) {
+                this.logger.warn(
+                    { error, entityType: 'accommodation' },
+                    'Revalidation scheduling failed (non-blocking)'
+                );
+            }
         }
 
         // SPEC-212: fire-and-forget auto-translation
@@ -1038,6 +1068,13 @@ export class AccommodationService extends BaseCrudService<
                     description: current?.description ?? undefined,
                     richDescription: current?.richDescription ?? undefined
                 };
+                // HOS-203: remember whether the listing was publicly visible BEFORE
+                // the update, so _afterUpdate can still revalidate an ACTIVE→DRAFT
+                // unpublish (the public page that just disappeared must be purged),
+                // while skipping revalidation for edits that stay private end-to-end.
+                ctx.hookState.previousPubliclyVisible = current
+                    ? this._isPubliclyVisible(current)
+                    : undefined;
             }
         }
 
@@ -1139,22 +1176,32 @@ export class AccommodationService extends BaseCrudService<
         // Photo gallery management is handled exclusively via granular media endpoints.
         // Videos remain in the JSONB blob and are written by the regular update path.
 
-        const destinationSlug = entity.destinationId
-            ? await this._resolveDestinationSlug(entity.destinationId)
-            : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation',
-                id: entity.id,
-                slug: entity.slug,
-                destinationSlug,
-                accommodationType: entity.type?.toLowerCase()
-            });
-        } catch (error) {
-            this.logger.warn(
-                { error, entityType: 'accommodation' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
+        // HOS-203: skip public revalidation when the listing is private BOTH before
+        // and after the update. Editing a DRAFT/PRIVATE listing has no public footprint,
+        // so purging public paths is wasted work (and logged 404s in prod). We still
+        // revalidate when the listing is public now (normal edit / publish) OR was
+        // public before (e.g. an ACTIVE→DRAFT unpublish via update must purge the page
+        // that just disappeared). `previousPubliclyVisible` is captured in _beforeUpdate;
+        // `undefined` (before-state unknown) falls through to revalidating — the safe default.
+        const wasPubliclyVisible = ctx.hookState?.previousPubliclyVisible;
+        if (this._isPubliclyVisible(entity) || wasPubliclyVisible !== false) {
+            const destinationSlug = entity.destinationId
+                ? await this._resolveDestinationSlug(entity.destinationId)
+                : undefined;
+            try {
+                getRevalidationService()?.scheduleRevalidation({
+                    entityType: 'accommodation',
+                    id: entity.id,
+                    slug: entity.slug,
+                    destinationSlug,
+                    accommodationType: entity.type?.toLowerCase()
+                });
+            } catch (error) {
+                this.logger.warn(
+                    { error, entityType: 'accommodation' },
+                    'Revalidation scheduling failed (non-blocking)'
+                );
+            }
         }
 
         // Auto-assign HOST role when accommodation becomes ACTIVE.

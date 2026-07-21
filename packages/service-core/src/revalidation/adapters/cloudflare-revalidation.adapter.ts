@@ -11,7 +11,8 @@ export interface CloudflareRevalidationAdapterConfig {
      */
     readonly secret: string;
     /** Base site URL (e.g. `https://hospeda.com.ar`) — the cache-purge endpoint
-     * lives at `${siteUrl}/api/revalidate?secret=...`. */
+     * lives at `${siteUrl}/api/revalidate/?secret=...` (trailing slash required,
+     * see {@link CloudflareRevalidationAdapter} for why). */
     readonly siteUrl: string;
 }
 
@@ -92,7 +93,14 @@ export class CloudflareRevalidationAdapter implements RevalidationAdapter {
      */
     private async purgeOnce(): Promise<RevalidatePathResult> {
         const start = Date.now();
-        const url = `${this.siteUrl}/api/revalidate?secret=${encodeURIComponent(this.secret)}`;
+        // Trailing slash is REQUIRED: the web app runs `trailingSlash: 'always'`
+        // (apps/web/astro.config.mjs) and its middleware exempts `/api/*` from its
+        // own trailing-slash redirect, so Astro core 301-redirects `/api/revalidate`
+        // → `/api/revalidate/`. A POST following that 301 is downgraded to GET and
+        // hits a route that only exports POST, yielding HTTP 404 (the exact failure
+        // seen in prod, HOS-203). Emit the slashed form directly, mirroring
+        // apps/web/src/lib/og-template.ts which does the same for `/api/og/`.
+        const url = `${this.siteUrl}/api/revalidate/?secret=${encodeURIComponent(this.secret)}`;
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10_000);
