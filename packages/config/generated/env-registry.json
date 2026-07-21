@@ -877,6 +877,22 @@
       "howToObtainEs": "Poné \"true\" en los entornos de preview y producción para mostrar el FAB de feedback. Dejalo sin setear en local (por defecto es false así no molesta en dev)."
     },
     {
+      "name": "VITE_FEEDBACK_ENABLED",
+      "description": "Enables the Hospeda feedback FAB widget in the admin app. Gate visibility per environment (dev/preview/production). Admin twin of PUBLIC_FEEDBACK_ENABLED.",
+      "descriptionEs": "Habilita el widget FAB de feedback de Hospeda en el admin. Controlá la visibilidad por entorno (dev/preview/producción). Gemela para admin de PUBLIC_FEEDBACK_ENABLED.",
+      "type": "boolean",
+      "required": false,
+      "secret": false,
+      "defaultValue": "false",
+      "exampleValue": "true",
+      "apps": [
+        "admin"
+      ],
+      "category": "integrations",
+      "howToObtain": "Set to \"true\" in preview and production environments to show the feedback FAB. Leave unset locally (defaults to false so dev/local stays quiet).",
+      "howToObtainEs": "Poné \"true\" en los entornos de preview y producción para mostrar el FAB de feedback. Dejalo sin setear en local (por defecto es false así no molesta en dev)."
+    },
+    {
       "name": "HOSPEDA_FEEDBACK_ENABLED",
       "description": "Kill switch to disable feedback endpoint (set to \"false\" to disable)",
       "descriptionEs": "Kill switch para desactivar el endpoint de feedback (poné \"false\" para desactivar)",

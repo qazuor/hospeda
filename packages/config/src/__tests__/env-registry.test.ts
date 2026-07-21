@@ -232,8 +232,13 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * so they were absent from .env.example and invisible to operators. The
  * registry↔schema cross-check could not catch it — it diffs the registry
  * against the Zod schema, and these were in neither. 264 + 8 = 272.
+ *
+ * +1 = VITE_FEEDBACK_ENABLED, the admin twin of PUBLIC_FEEDBACK_ENABLED. It was
+ * read via import.meta.env in the admin app but never registered (so it was
+ * missing from .env.example AND from the Dockerfile build ARGs — see the
+ * dockerfile-build-args I4b reverse gate). 272 + 1 = 273.
  */
-const EXPECTED_VAR_COUNT = 272;
+const EXPECTED_VAR_COUNT = 273;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -636,7 +641,7 @@ describe('ENV_REGISTRY', () => {
             expect(entry?.secret).toBe(false);
         });
 
-        it('should contain all 29 VITE_* admin variables', () => {
+        it('should contain all 30 VITE_* admin variables', () => {
             // Arrange
             // 28 original + VITE_SENTRY_CSP_REPORT_URI (Sentry prod-hardening,
             // dedicated hospeda-csp CSP-violation-report project).
@@ -644,8 +649,9 @@ describe('ENV_REGISTRY', () => {
 
             // Assert
             // 27 original VITE_* vars + VITE_TURNSTILE_SITE_KEY (SPEC-301 T-010)
-            // + VITE_SENTRY_CSP_REPORT_URI (Sentry prod-hardening) = 29
-            expect(viteVars.length).toBe(29);
+            // + VITE_SENTRY_CSP_REPORT_URI (Sentry prod-hardening)
+            // + VITE_FEEDBACK_ENABLED (admin twin of PUBLIC_FEEDBACK_ENABLED) = 30
+            expect(viteVars.length).toBe(30);
         });
     });
 
