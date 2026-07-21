@@ -29,6 +29,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
+import { hasActiveAccommodationListingFilters, resolveListingCacheControl } from '@/lib/cache/listing-cache';
 import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
 import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
 import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param';
@@ -481,6 +482,26 @@ const canonicalBaseUrl =
 // back to page 1. We rebuild the real crawlable URL from the page number so
 // each paginated page self-canonicalizes and stays indexable.
 const canonicalPath = page > 1 ? `${canonicalBaseUrl}page/${page}/` : canonicalBaseUrl;
+
+// HOS-218 — Cloudflare edge cache. This SSR page re-fetches the near-static
+// catalog (accommodations + amenities + features + destinations) on every
+// render; served `cf-cache-status: DYNAMIC` in prod, so anonymous/bot traffic
+// hammered origin. Emit a shareable `Cache-Control` only for an anonymous,
+// indexable, unfiltered view (base listing / single-type landing + bounded
+// sort/pagination variants) so Cloudflare edge-caches it; personalised,
+// `noindex`, or filtered responses stay `private`. The origin gate ensures a
+// favourite-baked response is never MARKED shareable; the Cloudflare Cache Rule
+// that this header enables must also bypass on the session cookie (see
+// `@/lib/cache/listing-cache`).
+Astro.response.headers.set(
+	'Cache-Control',
+	resolveListingCacheControl({
+		cacheable:
+			!isAuthenticated &&
+			!facetSeoDecision.noindex &&
+			!hasActiveAccommodationListingFilters({ searchParams: url.searchParams })
+	})
+);
 
 /**
  * Quick-filter type chips shown above the listing grid (HOS-97). Uses the

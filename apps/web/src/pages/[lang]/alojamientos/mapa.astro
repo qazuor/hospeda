@@ -25,6 +25,7 @@ import { webLogger } from '@/lib/logger';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { hasActiveAccommodationListingFilters, resolveListingCacheControl } from '@/lib/cache/listing-cache';
 import { resolveI18nText } from '@/lib/resolve-i18n-text';
 import { getAccommodationTypeLabel, getBadgeStatusColor } from '@/lib/colors';
 import { formatPrice } from '@/lib/format-utils';
@@ -47,6 +48,30 @@ const isAuthenticated = !!Astro.locals.user;
 const MAP_FETCH_CAP = 100;
 
 const url = Astro.url;
+
+// HOS-218 — Cloudflare edge cache. The map SSR seeds the initial result set +
+// filter sidebar via the same near-static catalog `Promise.all` as the list
+// view, and served `cf-cache-status: DYNAMIC` in prod (no `Cache-Control`), so
+// anonymous/bot traffic re-ran it on every hit. The map is `noindex` by design,
+// but `noindex` is orthogonal to CDN cacheability: emit a shareable
+// `Cache-Control` for an anonymous, unfiltered base map (+ bounded sort
+// variants) so Cloudflare edge-caches it; personalised or filtered responses
+// stay `private`. Gating on the anonymous case keeps favourite-baked HTML out
+// of the shared cache. Unlike the base listing (`facetSeoDecision.noindex`) and
+// the `/tipo/{slug}/` landing (type fixed by path), the map reads and forwards
+// `types` to the API with no per-value guard, so it is excluded explicitly here
+// — otherwise `hasActiveAccommodationListingFilters` (which treats `types` as
+// non-filtering for the other two pages) would edge-cache arbitrary multi-type
+// map combinations.
+Astro.response.headers.set(
+	'Cache-Control',
+	resolveListingCacheControl({
+		cacheable:
+			!isAuthenticated &&
+			!url.searchParams.has('types') &&
+			!hasActiveAccommodationListingFilters({ searchParams: url.searchParams })
+	})
+);
 
 // Extract filter params (same as list view, minus pagination)
 const q = url.searchParams.get('q') ?? undefined;
