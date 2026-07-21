@@ -1595,7 +1595,7 @@ export function CreatePropertyMiniForm({
                     <p className="form-trial-callout__text">
                         {t(
                             'host.pages.nueva.trialNote',
-                            'Cuando publiques tu primera propiedad arranca tu trial gratis de 14 días. Sin tarjeta, sin compromiso. Podés probar todo el panel mientras armás tu borrador.'
+                            'Cuando publiques tu primera propiedad arranca tu trial gratis de 14 días. No pagás nada hasta el día 14, sin compromiso. Podés probar todo el panel mientras armás tu borrador.'
                         )}
                     </p>
                 </div>
