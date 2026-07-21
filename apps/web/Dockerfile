@@ -34,6 +34,25 @@ ARG HOSPEDA_ADMIN_URL=https://admin.placeholder.local
 ARG PUBLIC_API_URL=https://api.placeholder.local
 ARG PUBLIC_SITE_URL=https://placeholder.local
 ARG PUBLIC_ADMIN_URL=https://admin.placeholder.local
+# Client-baked vars: Astro inlines `import.meta.env.PUBLIC_*` into the browser
+# bundle at build time, so each MUST be declared here. Coolify only forwards a
+# --build-arg for ARGs the Dockerfile declares; an undeclared one is silently
+# dropped and the value bakes EMPTY. That is exactly what disabled PostHog and
+# client-side Sentry in prod (both were set in Coolify but never declared here).
+# No placeholder defaults: these are optional / production-scoped, and the build
+# stage does not set NODE_ENV=production, so an empty local `docker build` still
+# passes the Zod validator; Coolify overrides with real values.
+ARG PUBLIC_SENTRY_DSN
+ARG PUBLIC_SENTRY_TUNNEL
+ARG PUBLIC_SENTRY_TRACES_SAMPLE_RATE
+ARG PUBLIC_SENTRY_CSP_REPORT_URI
+ARG PUBLIC_POSTHOG_KEY
+ARG PUBLIC_POSTHOG_HOST
+ARG PUBLIC_VERSION
+ARG PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL
+ARG PUBLIC_ENABLE_LOGGING
+ARG PUBLIC_TURNSTILE_SITE_KEY
+ARG PUBLIC_FEEDBACK_ENABLED
 # HOSPEDA_GIT_SHA + PUBLIC_SENTRY_RELEASE drive the Sentry release tag baked
 # into the client bundle. The default-value chain points back to SOURCE_COMMIT,
 # which Coolify auto-injects as a build-arg ONLY when the application has
@@ -61,7 +80,18 @@ ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     PUBLIC_ADMIN_URL=$PUBLIC_ADMIN_URL \
     PUBLIC_SENTRY_RELEASE=$PUBLIC_SENTRY_RELEASE \
     PUBLIC_SENTRY_ENVIRONMENT=$PUBLIC_SENTRY_ENVIRONMENT \
-    HOSPEDA_GIT_SHA=$HOSPEDA_GIT_SHA
+    HOSPEDA_GIT_SHA=$HOSPEDA_GIT_SHA \
+    PUBLIC_SENTRY_DSN=$PUBLIC_SENTRY_DSN \
+    PUBLIC_SENTRY_TUNNEL=$PUBLIC_SENTRY_TUNNEL \
+    PUBLIC_SENTRY_TRACES_SAMPLE_RATE=$PUBLIC_SENTRY_TRACES_SAMPLE_RATE \
+    PUBLIC_SENTRY_CSP_REPORT_URI=$PUBLIC_SENTRY_CSP_REPORT_URI \
+    PUBLIC_POSTHOG_KEY=$PUBLIC_POSTHOG_KEY \
+    PUBLIC_POSTHOG_HOST=$PUBLIC_POSTHOG_HOST \
+    PUBLIC_VERSION=$PUBLIC_VERSION \
+    PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL=$PUBLIC_HOSPEDA_WHATSAPP_CHANNEL_URL \
+    PUBLIC_ENABLE_LOGGING=$PUBLIC_ENABLE_LOGGING \
+    PUBLIC_TURNSTILE_SITE_KEY=$PUBLIC_TURNSTILE_SITE_KEY \
+    PUBLIC_FEEDBACK_ENABLED=$PUBLIC_FEEDBACK_ENABLED
 COPY --from=deps /repo /repo
 # SKIP_PACKAGE_DTS=true skips .d.ts generation for the @repo/* workspace packages
 # during the deploy build. Astro/Vite consumes @repo/* JS, never the .d.ts (the
