@@ -1065,6 +1065,20 @@
             }
         },
         "trial": {
+            "eligibility": {
+                "planSlug": {
+                    "invalidType": "[EN] El plan slug tiene un tipo de dato inválido",
+                    "min": "[EN] El plan slug debe tener al menos {{min}} caracteres"
+                },
+                "response": {
+                    "eligible": {
+                        "invalidType": "[EN] El resultado de elegibilidad debe ser un booleano"
+                    },
+                    "planSlug": {
+                        "invalidType": "[EN] El plan slug tiene un tipo de dato inválido"
+                    }
+                }
+            },
             "extend": {
                 "additionalDays": {
                     "int": "[EN] El additional days debe ser un número entero",
