@@ -48,6 +48,17 @@ vi.mock('@/components/host/editor/LocationPickerMap.client', () => ({
     LocationPickerMap: () => <div data-testid="mock-location-picker-map" />
 }));
 
+// HOS-224: FeaturedToggleSection self-fetches its entitlement on mount via a
+// dynamic import of `@/lib/api/endpoints-protected`. In the submit tests below
+// that module is `vi.doMock`ed to expose only `update`, so the component's
+// `getFeaturedEntitlement` call rejects and its trailing async state work races
+// the submit assertions (same class of instability that forced the
+// LocationPickerMap stub above). Stub it — the dedicated read-source test
+// `AccommodationEditor.featured-mount.test.ts` guards that it is actually mounted.
+vi.mock('@/components/host/editor/FeaturedToggleSection.client', () => ({
+    FeaturedToggleSection: () => <div data-testid="mock-featured-toggle-section" />
+}));
+
 // CSS module mocks for all section modules
 vi.mock('@/components/host/AccommodationEditor.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
