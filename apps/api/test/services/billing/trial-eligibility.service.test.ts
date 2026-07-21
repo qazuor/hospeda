@@ -1,16 +1,18 @@
 /**
- * Unit tests for the trial-eligibility resolver (HOS-226).
+ * Unit tests for the trial-eligibility resolver (HOS-226, HOS-230).
  *
  * Covers:
- * - `hasAnyPriorSubscription` reflects `billing.subscriptions.getByCustomerId`
- *   length (0 -> false, 1+ -> true), regardless of subscription status.
+ * - `hasAnyPriorSubscription` counts only subscriptions the provider actually
+ *   authorized (active/trialing/cancelled/comp/past_due/paused/expired), NOT
+ *   never-authorized `abandoned` / `pending_provider` checkouts (HOS-230).
  * - `resolveTrialEligibility` is the exact negation of `hasAnyPriorSubscription`.
  * - A customer who never checked out (the implicit `tourist-free` default,
  *   which never creates a `billing_subscriptions` row — HOS-217 concern)
  *   stays eligible.
- * - A customer with ANY prior subscription — active, cancelled, comp,
- *   past_due — is disqualified, matching the "one trial per customer, for
- *   life" rule documented on `resolveCheckoutFreeTrialDays`.
+ * - A customer whose ONLY row is an `abandoned` checkout (opened the MercadoPago
+ *   screen and backed out) stays eligible — the HOS-230 regression.
+ * - A customer with any authorized prior subscription is disqualified, matching
+ *   the "one trial per customer, for life" rule.
  *
  * @module test/services/billing/trial-eligibility.service
  */
@@ -66,6 +68,62 @@ describe('hasAnyPriorSubscription', () => {
 
     it('returns true when the only prior subscription is past_due', async () => {
         const billing = makeBilling([{ id: 'sub-1', status: 'past_due' }]);
+
+        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(true);
+    });
+
+    // HOS-230: a checkout that was started but never authorized (the user opened
+    // the MercadoPago screen and backed out) must NOT consume trial eligibility.
+    it('returns false when the only prior subscription is abandoned (backed out of MP)', async () => {
+        const billing = makeBilling([
+            { id: 'sub-1', status: 'abandoned', providerSubscriptionId: null }
+        ]);
+
+        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(false);
+    });
+
+    it('returns false when the only prior subscription is a never-authorized pending_provider', async () => {
+        const billing = makeBilling([
+            { id: 'sub-1', status: 'pending_provider', providerSubscriptionId: null }
+        ]);
+
+        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(false);
+    });
+
+    // Regression for the exact SMOKE-19-07 repro: fresh customer starts a
+    // checkout, abandons it, and must remain eligible on the next attempt.
+    it('stays eligible after fresh -> start checkout -> abandon', async () => {
+        const billing = makeBilling([
+            { id: 'sub-1', status: 'abandoned', providerSubscriptionId: null }
+        ]);
+
+        const result = await resolveTrialEligibility({ billing, customerId: CUSTOMER_ID });
+
+        expect(result).toEqual({ eligible: true });
+    });
+
+    // Race guard: a pending_provider row whose preapproval WAS already authorized
+    // by MP (provider id present) but whose webhook has not yet flipped the local
+    // status still counts, so it cannot be double-dipped.
+    it('returns true for a pending_provider row that already has a provider id (authorized, webhook race)', async () => {
+        const billing = makeBilling([
+            {
+                id: 'sub-1',
+                status: 'pending_provider',
+                providerSubscriptionId: 'mp-preapproval-123'
+            }
+        ]);
+
+        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(true);
+    });
+
+    // An authorized subscription still disqualifies even when accompanied by an
+    // abandoned row from an earlier backed-out attempt.
+    it('returns true when an authorized sub coexists with an abandoned one', async () => {
+        const billing = makeBilling([
+            { id: 'sub-1', status: 'abandoned', providerSubscriptionId: null },
+            { id: 'sub-2', status: 'active', providerSubscriptionId: 'mp-preapproval-1' }
+        ]);
 
         expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(true);
     });

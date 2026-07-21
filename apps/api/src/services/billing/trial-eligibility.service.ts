@@ -11,16 +11,20 @@
  * `GET /trial-eligibility` route now call through this one function, so the
  * two can never drift on how they answer the same question.
  *
- * "One trial per customer, for life": any prior subscription — any status
- * (active, cancelled, comp, past_due, ...), any product domain (accommodation
+ * "One trial per customer, for life": any prior subscription that was
+ * authorized by the provider at least once — any authorized status (active,
+ * trialing, cancelled, comp, past_due, ...), any product domain (accommodation
  * or commerce) — disqualifies. A user who has never checked out at all (e.g.
  * every user on the implicit `tourist-free` default, which never creates a
- * `billing_subscriptions` row) is eligible.
+ * `billing_subscriptions` row) is eligible — and so is one whose only rows are
+ * `abandoned` / never-authorized `pending_provider` checkouts they backed out
+ * of (HOS-230), since those never granted a trial.
  *
  * @module services/billing/trial-eligibility
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { SubscriptionStatusEnum } from '@repo/schemas';
 
 /**
  * Input shared by {@link hasAnyPriorSubscription} and
@@ -34,8 +38,62 @@ export interface TrialEligibilityInput {
 }
 
 /**
- * Whether a billing customer has ANY prior subscription — any status, any
- * product domain, including cancelled.
+ * One element of `billing.subscriptions.getByCustomerId`'s result, narrowed to
+ * the two fields the eligibility rule reads. Derived from the method's own
+ * return type so it stays in sync with qzpay-core without importing a named
+ * subscription type.
+ */
+type PriorSubscription = Awaited<
+    ReturnType<QZPayBilling['subscriptions']['getByCustomerId']>
+>[number];
+
+/**
+ * The two lifecycle states a subscription can be in WITHOUT ever having been
+ * authorized by the payment provider (HOS-230):
+ *
+ * - `pending_provider` — a checkout was started but MercadoPago has not yet
+ *   collected the card / authorized the preapproval. Created with NO
+ *   `mp_subscription_id` (see `createPendingProviderSubscription`).
+ * - `abandoned` — a `pending_provider` row whose checkout TTL elapsed with no
+ *   provider authorization. Terminal; only ever reached FROM `pending_provider`,
+ *   so it too never carried a real preapproval.
+ *
+ * A row in either state means the customer merely opened (and backed out of)
+ * the MercadoPago screen — they never actually had a trial, so it must NOT
+ * consume their one-per-lifetime trial eligibility.
+ */
+const NEVER_AUTHORIZED_STATUSES: ReadonlySet<string> = new Set([
+    SubscriptionStatusEnum.PENDING_PROVIDER,
+    SubscriptionStatusEnum.ABANDONED
+]);
+
+/**
+ * Whether a single prior subscription actually consumed the customer's trial —
+ * i.e. its preapproval was authorized by the provider at least once.
+ *
+ * True for any status outside {@link NEVER_AUTHORIZED_STATUSES}
+ * (`active`/`trialing`/`past_due`/`paused`/`cancelled`/`expired`/`comp` — all
+ * only reachable after authorization). For the two never-authorized statuses it
+ * falls back to the provider id: a present `providerSubscriptionId` means MP
+ * created and authorized a real preapproval, which counts even if the webhook
+ * has not yet flipped the local status away from `pending_provider` (a narrow
+ * race). An `abandoned` row never carries one, so it correctly stays uncounted.
+ */
+function consumedTrialEligibility(sub: PriorSubscription): boolean {
+    const record = sub as { status?: string; providerSubscriptionId?: string | null };
+    if (record.status === undefined || !NEVER_AUTHORIZED_STATUSES.has(record.status)) {
+        return true;
+    }
+    return Boolean(record.providerSubscriptionId);
+}
+
+/**
+ * Whether a billing customer has ANY prior subscription that actually consumed
+ * their one-per-lifetime free trial — i.e. one whose preapproval was authorized
+ * by the provider at least once (any status, any product domain, including
+ * cancelled). Checkouts that ended in `abandoned` (or `pending_provider` rows
+ * that never authorized) are explicitly EXCLUDED: merely opening the
+ * MercadoPago screen and backing out must not strip the trial (HOS-230).
  *
  * This is the exact query `subscription-checkout.service.ts` runs (behind
  * its `planHasTrial && planTrialDays > 0` short-circuit) to decide
@@ -45,13 +103,14 @@ export interface TrialEligibilityInput {
  * {@link resolveTrialEligibility}, share ONE implementation.
  *
  * @param input - Billing instance and customer id.
- * @returns `true` when the customer has at least one subscription row of
- *   any kind; `false` when they have never had one.
+ * @returns `true` when the customer has at least one authorized prior
+ *   subscription; `false` when they have never had one (or only ever
+ *   abandoned/pending checkouts).
  */
 export async function hasAnyPriorSubscription(input: TrialEligibilityInput): Promise<boolean> {
     const { billing, customerId } = input;
     const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
-    return subscriptions.length > 0;
+    return subscriptions.some(consumedTrialEligibility);
 }
 
 /**
@@ -71,8 +130,9 @@ export interface TrialEligibilityResult {
  * to call as often as needed (e.g. once per pricing-page hydration).
  *
  * @param input - Billing instance and customer id.
- * @returns `{ eligible: true }` when the customer has no prior subscription
- *   of any kind; `{ eligible: false }` otherwise.
+ * @returns `{ eligible: true }` when the customer has no prior authorized
+ *   subscription (never checked out, or only ever abandoned/pending checkouts);
+ *   `{ eligible: false }` otherwise.
  *
  * @example
  * ```ts
