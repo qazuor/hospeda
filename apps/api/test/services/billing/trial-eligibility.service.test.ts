@@ -74,9 +74,10 @@ describe('hasAnyPriorSubscription', () => {
 
     // HOS-230: a checkout that was started but never authorized (the user opened
     // the MercadoPago screen and backed out) must NOT consume trial eligibility.
+    // `abandoned` is Hospeda's vocabulary (share-link/cron path).
     it('returns false when the only prior subscription is abandoned (backed out of MP)', async () => {
         const billing = makeBilling([
-            { id: 'sub-1', status: 'abandoned', providerSubscriptionId: null }
+            { id: 'sub-1', status: 'abandoned', providerSubscriptionIds: {} }
         ]);
 
         expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(false);
@@ -84,7 +85,27 @@ describe('hasAnyPriorSubscription', () => {
 
     it('returns false when the only prior subscription is a never-authorized pending_provider', async () => {
         const billing = makeBilling([
-            { id: 'sub-1', status: 'pending_provider', providerSubscriptionId: null }
+            { id: 'sub-1', status: 'pending_provider', providerSubscriptionIds: {} }
+        ]);
+
+        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(false);
+    });
+
+    // HOS-230 C2: `getByCustomerId` returns the RAW stored status, and the
+    // `mode:'paid'` inline-preapproval flow writes qzpay's own vocabulary
+    // (`incomplete` -> pending_provider, `incomplete_expired` -> abandoned).
+    // These must be normalized and excluded too, or the bug recurs for that path.
+    it('returns false for a raw qzpay `incomplete` row (mode:paid, not yet authorized)', async () => {
+        const billing = makeBilling([
+            { id: 'sub-1', status: 'incomplete', providerSubscriptionIds: {} }
+        ]);
+
+        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(false);
+    });
+
+    it('returns false for a raw qzpay `incomplete_expired` row (mode:paid, abandoned)', async () => {
+        const billing = makeBilling([
+            { id: 'sub-1', status: 'incomplete_expired', providerSubscriptionIds: {} }
         ]);
 
         expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(false);
@@ -94,7 +115,7 @@ describe('hasAnyPriorSubscription', () => {
     // checkout, abandons it, and must remain eligible on the next attempt.
     it('stays eligible after fresh -> start checkout -> abandon', async () => {
         const billing = makeBilling([
-            { id: 'sub-1', status: 'abandoned', providerSubscriptionId: null }
+            { id: 'sub-1', status: 'abandoned', providerSubscriptionIds: {} }
         ]);
 
         const result = await resolveTrialEligibility({ billing, customerId: CUSTOMER_ID });
@@ -103,14 +124,15 @@ describe('hasAnyPriorSubscription', () => {
     });
 
     // Race guard: a pending_provider row whose preapproval WAS already authorized
-    // by MP (provider id present) but whose webhook has not yet flipped the local
-    // status still counts, so it cannot be double-dipped.
-    it('returns true for a pending_provider row that already has a provider id (authorized, webhook race)', async () => {
+    // by MP (provider id present under the `mercadopago` key) but whose webhook
+    // has not yet flipped the local status still counts, so it cannot be
+    // double-dipped. Uses the real `providerSubscriptionIds` map shape.
+    it('returns true for a pending_provider row that already has an MP provider id (authorized, webhook race)', async () => {
         const billing = makeBilling([
             {
                 id: 'sub-1',
                 status: 'pending_provider',
-                providerSubscriptionId: 'mp-preapproval-123'
+                providerSubscriptionIds: { mercadopago: 'mp-preapproval-123' }
             }
         ]);
 
@@ -121,8 +143,12 @@ describe('hasAnyPriorSubscription', () => {
     // abandoned row from an earlier backed-out attempt.
     it('returns true when an authorized sub coexists with an abandoned one', async () => {
         const billing = makeBilling([
-            { id: 'sub-1', status: 'abandoned', providerSubscriptionId: null },
-            { id: 'sub-2', status: 'active', providerSubscriptionId: 'mp-preapproval-1' }
+            { id: 'sub-1', status: 'abandoned', providerSubscriptionIds: {} },
+            {
+                id: 'sub-2',
+                status: 'active',
+                providerSubscriptionIds: { mercadopago: 'mp-preapproval-1' }
+            }
         ]);
 
         expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(true);
