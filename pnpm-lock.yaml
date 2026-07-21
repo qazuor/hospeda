@@ -1149,8 +1149,8 @@ importers:
         specifier: ^1.16.0
         version: 1.16.0
       '@qazuor/qzpay-drizzle':
-        specifier: ^1.11.0
-        version: 1.11.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(postgres@3.4.8)(zod@4.3.6)
+        specifier: ^1.11.5
+        version: 1.11.5(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(postgres@3.4.8)(zod@4.3.6)
       '@repo/billing':
         specifier: workspace:*
         version: link:../billing
@@ -3971,8 +3971,8 @@ packages:
     resolution: {integrity: sha512-IkNxMTFDr79bBwnLsPKqbzg65YXwViuo2N1A2Rcvq4zRg3AI94RSExMmwPErVkgGxZKD+5gk6HxXSBUeeawutA==}
     engines: {node: '>=22'}
 
-  '@qazuor/qzpay-drizzle@1.11.0':
-    resolution: {integrity: sha512-S6IbrVQwIda2Hbc9BXbU2jl6gfYWMlf0bm5EZyIUB9qQKAkFMLNB//Tz0K2AmINlWAvCByYKI1wwelax6BubWg==}
+  '@qazuor/qzpay-drizzle@1.11.5':
+    resolution: {integrity: sha512-R7XirVGkNrpsYXQ9ff4dbydZ60jwuOJplKqcHSt1+aejms6br5LbG8dqCMgJHM0/ul2hLYR3dPKpK1UjKyXcew==}
     engines: {node: '>=22'}
     peerDependencies:
       drizzle-orm: '>=0.45.2'
@@ -14967,9 +14967,9 @@ snapshots:
 
   '@qazuor/qzpay-core@1.16.0': {}
 
-  '@qazuor/qzpay-drizzle@1.11.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(postgres@3.4.8)(zod@4.3.6)':
+  '@qazuor/qzpay-drizzle@1.11.5(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(postgres@3.4.8)(zod@4.3.6)':
     dependencies:
-      '@qazuor/qzpay-core': 1.12.0
+      '@qazuor/qzpay-core': 1.16.0
       drizzle-orm: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8)
       drizzle-zod: 0.5.1(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(zod@4.3.6)
       postgres: 3.4.8

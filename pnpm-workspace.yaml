@@ -109,3 +109,4 @@ forceLegacyDeploy: true
 minimumReleaseAgeExclude:
   - '@qazuor/qzpay-core@1.15.0 || 1.16.0'
   - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0'
+  - '@qazuor/qzpay-drizzle@1.11.5'
