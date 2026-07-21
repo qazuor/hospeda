@@ -37,4 +37,22 @@ describe('parseSeedMigrateArgs', () => {
         expect(parseSeedMigrateArgs(['--yes']).skipConfirm).toBe(true);
         expect(parseSeedMigrateArgs([]).skipConfirm).toBe(false);
     });
+
+    it('sets allowDestructive only when --allow-destructive is passed', () => {
+        expect(parseSeedMigrateArgs(['--allow-destructive']).allowDestructive).toBe(true);
+        expect(parseSeedMigrateArgs([]).allowDestructive).toBe(false);
+    });
+
+    it('parses allowDestructive independently of other flags', () => {
+        const parsed = parseSeedMigrateArgs([
+            '--target=prod',
+            '--pull',
+            '--allow-destructive',
+            '--yes'
+        ]);
+        expect(parsed.allowDestructive).toBe(true);
+        expect(parsed.pull).toBe('on');
+        expect(parsed.skipConfirm).toBe(true);
+        expect(parsed.status).toBe(false);
+    });
 });
