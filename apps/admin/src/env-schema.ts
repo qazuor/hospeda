@@ -121,6 +121,14 @@ export const AdminEnvSchema = z.object({
         .default('false')
         .transform((val) => val === 'true')
         .describe('Enable TanStack Router DevTools'),
+    // Kill switch for the feedback FAB widget in the admin app (admin twin of
+    // the web's PUBLIC_FEEDBACK_ENABLED). Defaults to false so local/dev stays
+    // quiet; set 'true' in preview/production to show the FAB.
+    VITE_FEEDBACK_ENABLED: z
+        .string()
+        .default('false')
+        .transform((val) => val === 'true')
+        .describe('Enable the feedback FAB widget in the admin app'),
 
     // UI Configuration
     VITE_DEFAULT_PAGE_SIZE: z
