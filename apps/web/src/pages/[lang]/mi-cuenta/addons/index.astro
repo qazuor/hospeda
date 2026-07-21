@@ -1,0 +1,256 @@
+---
+/**
+ * @file mi-cuenta/addons/index.astro
+ * @description Add-ons self-service purchase page (HOS-224). Lists the
+ * purchasable add-on catalog, gates on an active/trialing subscription, and
+ * renders a purchase-result banner when MercadoPago redirects back with
+ * `?status=success|failure&addon=<slug>` (see
+ * `apps/api/src/routes/billing/checkout-return-urls.ts` `buildAddonSuccessUrl`
+ * / `buildAddonCancelUrl`).
+ *
+ * @route /{lang}/mi-cuenta/addons/
+ * @rendering SSR (prerender = false — requires authenticated user)
+ */
+
+export const prerender = false;
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import { AddonsPurchasePanel } from '@/components/account/AddonsPurchasePanel.client';
+import type { AddonCardData } from '@/components/account/AddonsPurchasePanel.client';
+import { billingApi, hostAnalyticsApi, userApi } from '@/lib/api/endpoints-protected';
+import { isHostRole } from '@/lib/account-roles';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { webLogger as logger } from '@/lib/logger';
+
+const locale = Astro.locals.locale as SupportedLocale;
+
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+const { t } = createTranslations(locale);
+const title = t('account.pages.addons.title', 'Complementos');
+const description = t(
+    'account.pages.addons.description',
+    'Ampliá las funciones de tu cuenta con complementos adicionales en Hospeda'
+);
+
+// ---------------------------------------------------------------------------
+// Server-side fetch: available add-ons, the user's own purchased add-ons
+// (for the "owned" badge), subscription status (for the gate), and the
+// host's own accommodations (for the per-accommodation target selector).
+// Session cookie is forwarded to authenticate every protected request.
+// ---------------------------------------------------------------------------
+
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+
+let availableAddons: AddonCardData[] = [];
+let ownedAddonSlugs: string[] = [];
+let hasUsableSubscription = false;
+let accommodations: { readonly id: string; readonly name: string }[] = [];
+let fetchError = false;
+
+const [addonsResult, ownedResult, subscriptionResult] = await Promise.all([
+    billingApi.listAvailableAddons({ active: true, cookieHeader }),
+    billingApi.getAddons({ cookieHeader }),
+    userApi.getSubscription({ cookieHeader })
+]);
+
+if (addonsResult.ok) {
+    availableAddons = [...addonsResult.data];
+} else {
+    fetchError = true;
+    logger.error('[addons] failed to fetch available addons', addonsResult.error);
+}
+
+if (ownedResult.ok) {
+    ownedAddonSlugs = [
+        ...new Set(
+            ownedResult.data.filter((addon) => addon.status === 'active').map((addon) => addon.addonSlug)
+        )
+    ];
+} else {
+    // Non-fatal: the "owned" badge simply won't render for anything.
+    logger.warn('[addons] failed to fetch owned addons', ownedResult.error);
+}
+
+const subscription = subscriptionResult.ok ? subscriptionResult.data.subscription : null;
+// HOS-224: the backend is the real gate (addon purchase requires an `active`
+// OR `trialing` subscription). This page-level check is UX only, so it accepts
+// BOTH `'trial'` and `'trialing'`: the web `SubscriptionStatus` type declares
+// `'trial'`, but the runtime MP-derived value is `'trialing'` (see
+// CheckoutStatusPoller's SUCCESS_STATUSES). The issue's own repro is an
+// owner-pro `trialing` user, who must NOT be wrongly blocked here.
+const USABLE_SUBSCRIPTION_STATUSES: readonly string[] = ['active', 'trial', 'trialing'];
+hasUsableSubscription =
+    subscription !== null && USABLE_SUBSCRIPTION_STATUSES.includes(subscription.status);
+
+// Only needed for per-accommodation addons (visibility-boost-7d/-30d).
+// Best-effort: a tourist without host entitlements will get a non-ok result
+// here, which just means the selector falls back to "necesitás un
+// alojamiento primero" — never a page-level failure.
+const needsAccommodationTarget = availableAddons.some(
+    (addon) => addon.requiresAccommodationTarget
+);
+if (needsAccommodationTarget) {
+    const accommodationsResult = await hostAnalyticsApi.listOwnAccommodations({ cookieHeader });
+    if (accommodationsResult.ok) {
+        accommodations = [...accommodationsResult.data.items];
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Purchase-result banner (MercadoPago return redirect)
+// ---------------------------------------------------------------------------
+
+const statusParam = Astro.url.searchParams.get('status');
+const addonSlugParam = Astro.url.searchParams.get('addon');
+const resultAddonName =
+    availableAddons.find((addon) => addon.slug === addonSlugParam)?.name ?? addonSlugParam ?? '';
+
+const resultBanner: { readonly kind: 'success' | 'failure'; readonly message: string } | null =
+    statusParam === 'success'
+        ? {
+                kind: 'success',
+                message: t('account.addons.result.success', '¡Complemento adquirido con éxito!', {
+                    addon: resultAddonName
+                })
+            }
+        : statusParam === 'failure'
+          ? {
+                  kind: 'failure',
+                  message: t(
+                      'account.addons.result.failure',
+                      'La compra no se completó. Podés intentarlo de nuevo cuando quieras.',
+                      { addon: resultAddonName }
+                  )
+              }
+          : null;
+
+const upgradeUrl = buildUrl({
+    locale,
+    path: isHostRole(user.role) ? 'suscriptores/planes' : 'suscriptores/turistas'
+});
+---
+
+<AccountLayout locale={locale} title={title} description={description} activeSection="addons">
+    <AccountPageHeader title={title} description={description} />
+
+    {resultBanner && (
+        <div
+            class:list={['addons-page__banner', `addons-page__banner--${resultBanner.kind}`]}
+            role="status"
+        >
+            {resultBanner.message}
+        </div>
+    )}
+
+    {fetchError && (
+        <p class="addons-page__error" role="alert">
+            {t('account.addons.errorFetch', 'No se pudieron cargar los complementos disponibles')}
+        </p>
+    )}
+
+    {!hasUsableSubscription ? (
+        <div class="addons-page__gate" role="note">
+            <p class="addons-page__gate-title">
+                {t('account.addons.gate.title', 'Necesitás una suscripción activa')}
+            </p>
+            <p class="addons-page__gate-body">
+                {t(
+                    'account.addons.gate.body',
+                    'Los complementos están disponibles para cuentas con una suscripción activa o en período de prueba.'
+                )}
+            </p>
+            <a href={upgradeUrl} class="addons-page__gate-cta">
+                {t('account.addons.gate.cta', 'Ver planes')}
+            </a>
+        </div>
+    ) : (
+        <AddonsPurchasePanel
+            client:load
+            locale={locale}
+            addons={availableAddons}
+            ownedAddonSlugs={ownedAddonSlugs}
+            accommodations={accommodations}
+        />
+    )}
+</AccountLayout>
+
+<style>
+    .addons-page__banner {
+        padding: var(--space-4, 1rem) var(--space-5, 1.25rem);
+        margin-bottom: var(--space-6, 1.5rem);
+        border-radius: var(--radius-md, 12px);
+        font-family: var(--font-sans);
+        font-size: 0.9375rem;
+        font-weight: 500;
+    }
+
+    .addons-page__banner--success {
+        background-color: color-mix(in oklab, var(--core-card) 87%, var(--success) 13%);
+        color: var(--success);
+        border: 1px solid color-mix(in oklab, var(--core-card) 70%, var(--success) 30%);
+    }
+
+    .addons-page__banner--failure {
+        background-color: color-mix(in oklab, var(--core-card) 87%, var(--destructive) 13%);
+        color: var(--destructive);
+        border: 1px solid color-mix(in oklab, var(--core-card) 70%, var(--destructive) 30%);
+    }
+
+    .addons-page__error {
+        padding: var(--space-4, 1rem);
+        margin-bottom: var(--space-6, 1.5rem);
+        color: var(--destructive);
+        font-family: var(--font-sans);
+    }
+
+    .addons-page__gate {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3, 0.75rem);
+        padding: var(--space-8, 2rem);
+        background-color: var(--surface-warm);
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--brand-accent);
+        border-radius: var(--radius-card);
+    }
+
+    .addons-page__gate-title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 1.125rem;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .addons-page__gate-body {
+        font-family: var(--font-sans);
+        font-size: 0.9375rem;
+        color: var(--core-muted-foreground);
+        margin: 0;
+    }
+
+    .addons-page__gate-cta {
+        display: inline-flex;
+        align-items: center;
+        padding: var(--space-2) var(--space-5);
+        background-color: var(--brand-primary);
+        color: var(--primary-foreground);
+        border-radius: var(--radius-button);
+        font-family: var(--font-sans);
+        font-weight: 600;
+        text-decoration: none;
+        transition: opacity var(--duration-normal, 0.4s) ease;
+    }
+
+    .addons-page__gate-cta:hover {
+        opacity: 0.88;
+    }
+</style>
