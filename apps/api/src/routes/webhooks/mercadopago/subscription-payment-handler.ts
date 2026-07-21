@@ -47,6 +47,7 @@ import type { QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
 import {
     and,
+    billingCustomers,
     billingPayments,
     billingSubscriptionEvents,
     billingSubscriptions,
@@ -352,6 +353,100 @@ async function paymentAlreadyRecorded(providerPaymentId: string): Promise<boolea
 }
 
 /**
+ * Back-fill `billing_customers.mp_customer_id` from the payer id surfaced on
+ * a settled MercadoPago authorized payment (HOS-225 defect #4).
+ *
+ * Nothing else in Hospeda ever writes this column: `billing_customers` is
+ * created with `mp_customer_id = NULL` and no call site fills it in
+ * afterward, even though qzpay-drizzle's customer repository already
+ * exposes the primitive (`updateMpCustomerId` / `findByMpCustomerId`). This
+ * is the first real MP interaction after checkout that reliably carries the
+ * subscriber's own MP user id (`payer_id`), so it is the natural place to
+ * close that gap.
+ *
+ * Deliberately reads-then-writes with a typed Drizzle query directly against
+ * `billing_customers` (mirroring how this same file already looks up
+ * `billing_subscriptions` — see {@link findLocalSubscriptionByPreapprovalId})
+ * rather than going through `billing.customers.update()`: the generic
+ * `QZPayUpdateCustomerInput` facade type has no `mpCustomerId` slot, and
+ * forcing it through would need an unsafe cast for a single-column write
+ * that a plain typed Drizzle update already covers cleanly.
+ *
+ * **Idempotency**: only writes when the column is currently unset. A
+ * customer that already carries an `mp_customer_id` (from a previous
+ * payment, or from a future dedicated checkout-time write) is left alone —
+ * this function never overwrites an existing value, even if it differs from
+ * the freshly observed `mpPayerId` (that divergence would be a
+ * reconciliation question, not something a webhook should resolve
+ * unilaterally).
+ *
+ * **Soft-fail by design**: swallows every error. The payment has already
+ * been recorded by the time this runs — a failure to back-fill an
+ * enrichment column must never turn into a webhook retry storm or block
+ * payment recording.
+ *
+ * @internal
+ */
+async function backfillMpCustomerId(params: {
+    customerId: string;
+    mpPayerId: string | null;
+    eventId: string | number;
+    requestId: string;
+}): Promise<void> {
+    const { customerId, mpPayerId, eventId, requestId } = params;
+
+    if (!mpPayerId) {
+        return;
+    }
+
+    try {
+        const db = getDb();
+
+        const rows = await db
+            .select({ mpCustomerId: billingCustomers.mpCustomerId })
+            .from(billingCustomers)
+            .where(and(eq(billingCustomers.id, customerId), isNull(billingCustomers.deletedAt)))
+            .limit(1);
+
+        const customer = rows[0];
+        if (!customer) {
+            apiLogger.warn(
+                { eventId, requestId, customerId, mpPayerId },
+                'MercadoPago webhook: could not back-fill mp_customer_id — local customer row not found'
+            );
+            return;
+        }
+
+        if (customer.mpCustomerId) {
+            // Already set — never overwrite, even on a mismatch (HOS-225 #4
+            // idempotency contract). Nothing to log; this is the steady state.
+            return;
+        }
+
+        await db
+            .update(billingCustomers)
+            .set({ mpCustomerId: mpPayerId, updatedAt: new Date() })
+            .where(and(eq(billingCustomers.id, customerId), isNull(billingCustomers.deletedAt)));
+
+        apiLogger.info(
+            { eventId, requestId, customerId, mpPayerId },
+            'MercadoPago webhook: back-filled billing_customers.mp_customer_id from the authorized-payment payer id'
+        );
+    } catch (err) {
+        apiLogger.warn(
+            {
+                eventId,
+                requestId,
+                customerId,
+                mpPayerId,
+                error: err instanceof Error ? err.message : String(err)
+            },
+            'MercadoPago webhook: failed to back-fill mp_customer_id — non-blocking, payment already recorded'
+        );
+    }
+}
+
+/**
  * Mark a webhook event as processed without ever throwing — logs the
  * failure if the update itself fails so MP can retry.
  */
@@ -645,6 +740,18 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
             'MercadoPago webhook: recurring payment recorded in billing_payments'
         );
 
+        // HOS-225 #4: the authorized payment just resolved the subscriber's own
+        // MP user id — back-fill billing_customers.mp_customer_id if it is still
+        // unset. Awaited (not fire-and-forget): it is two cheap, single-row
+        // queries, and it is internally soft-fail (see backfillMpCustomerId), so
+        // awaiting it adds no risk to the webhook ACK path.
+        await backfillMpCustomerId({
+            customerId: sub.customerId,
+            mpPayerId: details.mpPayerId,
+            eventId: event.id,
+            requestId
+        });
+
         // Accounting defense (HOS-171 §7.5): the money that arrived is now on
         // record; check whether MercadoPago's own campaign engine is the reason
         // it is not the amount we asked for. Fire-and-forget so an accounting
@@ -743,6 +850,7 @@ export const _internals = {
     mapMpStatusToQZPayStatus,
     findLocalSubscriptionByPreapprovalId,
     paymentAlreadyRecorded,
+    backfillMpCustomerId,
     safeMarkProcessed
 };
 

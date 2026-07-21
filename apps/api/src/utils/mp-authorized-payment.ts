@@ -57,6 +57,17 @@ export interface MPAuthorizedPaymentDetails {
      * campaign matched. Also never set by us; see {@link couponAmount}.
      */
     readonly campaignId: string | null;
+    /**
+     * `payer_id` — MercadoPago's own user ID for the subscriber who is being
+     * charged, reported as a TOP-LEVEL field on the authorized-payment
+     * resource (NOT nested under `payment`). Unlike `preapproval_id` /
+     * `transaction_amount` / `currency_id` / `status`, this is treated as
+     * OPTIONAL rather than required: it is only consumed to back-fill
+     * `billing_customers.mp_customer_id` (HOS-225 defect #4), a best-effort
+     * enrichment, so its absence must never fail the whole parse and block
+     * payment recording.
+     */
+    readonly mpPayerId: string | null;
 }
 
 /**
@@ -180,6 +191,18 @@ function parseAuthorizedPaymentResponse(
 
     const debitDate = typeof raw.debit_date === 'string' ? raw.debit_date : null;
 
+    // MercadoPago reports the subscriber's own user id as a top-level
+    // `payer_id` on the authorized-payment resource (numeric in practice,
+    // per MP's SDK — see `InvoiceResponse.payer_id?: number` in
+    // sdk-nodejs). Coerce defensively and degrade to null rather than fail
+    // the whole parse — HOS-225 #4 only uses it as a best-effort enrichment.
+    let mpPayerId: string | null = null;
+    if (typeof raw.payer_id === 'number') {
+        mpPayerId = String(raw.payer_id);
+    } else if (typeof raw.payer_id === 'string' && raw.payer_id.length > 0) {
+        mpPayerId = raw.payer_id;
+    }
+
     let paymentId: string | null = null;
     let paymentStatus: string | null = null;
     // MercadoPago reports its own campaign discounts on the inner payment block.
@@ -218,7 +241,8 @@ function parseAuthorizedPaymentResponse(
         paymentStatus,
         debitDate,
         couponAmount,
-        campaignId
+        campaignId,
+        mpPayerId
     };
 }
 
