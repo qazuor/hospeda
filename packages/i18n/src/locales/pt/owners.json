@@ -11,7 +11,9 @@
         "pages": {
             "nueva": {
                 "trialCalloutTitle": "14 dias gratis ao publicar",
-                "trialNote": "Quando voce publicar sua primeira propriedade, seu periodo de avaliacao gratuito de 14 dias vai comecar. Voce nao paga nada ate o dia 14, sem compromisso. Voce pode explorar o painel inteiro enquanto monta o seu rascunho."
+                "trialCalloutTitleIneligible": "Monte sua propriedade",
+                "trialNote": "Quando voce publicar sua primeira propriedade, seu periodo de avaliacao gratuito de 14 dias vai comecar. Voce nao paga nada ate o dia 14, sem compromisso. Voce pode explorar o painel inteiro enquanto monta o seu rascunho.",
+                "trialNoteIneligible": "Voce pode criar e editar seu rascunho agora. Para publica-lo e ficar visivel vai precisar de um plano de anfitriao ativo."
             }
         }
     }

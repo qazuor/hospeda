@@ -240,6 +240,19 @@ vi.mock('../../../src/lib/api/endpoints', () => ({
     }
 }));
 
+/**
+ * Mock the protected API — the mini-form resolves the caller's trial
+ * eligibility on mount to decide whether the trial callout may promise
+ * "14 días gratis" (NOSPEC: trial-callout drift; a paid/mid-trial tourist
+ * who converts to host gets no owner trial, HOS-217 decision C).
+ */
+const { mockGetTrialEligibility } = vi.hoisted(() => ({ mockGetTrialEligibility: vi.fn() }));
+vi.mock('../../../src/lib/api/endpoints-protected', () => ({
+    billingApi: {
+        getTrialEligibility: () => mockGetTrialEligibility()
+    }
+}));
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -269,6 +282,13 @@ function buildFetchResponse(opts: { ok?: boolean; status?: number; body?: unknow
 
 beforeEach(() => {
     vi.clearAllMocks();
+
+    // Default: trial-eligible → the encouraging "14 días gratis" callout.
+    // Tests exercising the ineligible / lookup-failure paths override this.
+    mockGetTrialEligibility.mockResolvedValue({
+        ok: true,
+        data: { eligible: true, planSlug: null }
+    });
 
     // JSDOM does not allow direct assignment to window.location.href in strict
     // mode. Use Object.defineProperty to provide a writable stub — same
@@ -928,5 +948,40 @@ describe('CreatePropertyMiniForm — import analytics (SPEC-258 A7)', () => {
             'property_import_succeeded',
             expect.objectContaining({ source: 'generic' })
         );
+    });
+});
+
+describe('CreatePropertyMiniForm — trial callout eligibility (NOSPEC)', () => {
+    it('shows the ineligible callout (no "14 días gratis") when the user is not trial-eligible', async () => {
+        mockGetTrialEligibility.mockResolvedValue({
+            ok: true,
+            data: { eligible: false, planSlug: null }
+        });
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        // useEffect resolves eligible:false → the callout swaps to the no-trial copy.
+        expect(await screen.findByText('Armá tu propiedad')).toBeInTheDocument();
+        expect(screen.queryByText('14 días gratis al publicar')).not.toBeInTheDocument();
+    });
+
+    it('shows the default "14 días gratis" callout when the user is trial-eligible', async () => {
+        mockGetTrialEligibility.mockResolvedValue({
+            ok: true,
+            data: { eligible: true, planSlug: null }
+        });
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        expect(await screen.findByText('14 días gratis al publicar')).toBeInTheDocument();
+        expect(screen.queryByText('Armá tu propiedad')).not.toBeInTheDocument();
+    });
+
+    it('keeps the default callout when the eligibility lookup fails (null → encouraging default)', async () => {
+        mockGetTrialEligibility.mockResolvedValue({
+            ok: false,
+            error: { status: 500, message: 'boom' }
+        });
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        expect(await screen.findByText('14 días gratis al publicar')).toBeInTheDocument();
     });
 });
