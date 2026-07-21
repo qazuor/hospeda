@@ -118,8 +118,18 @@ export const SearchIntentEntitiesSchema = z.object({
     /** Geographic longitude in degrees (-180 to 180). Only meaningful with `latitude`. */
     longitude: z.number().min(-180).max(180).optional(),
 
-    /** Search radius in km (max 500). Only applied when `latitude` + `longitude` present. */
-    radius: z.number().positive().max(500).optional(),
+    /**
+     * Search radius in km (0–500). Only applied when `latitude` + `longitude` present.
+     *
+     * **Why `.min(0)` and not `.positive()`** (HOS-207): the model returns an
+     * explicit `radius: 0` for queries that mention no search radius (`0 !==
+     * undefined`, so `.optional()` does not cover it). `.positive()` rejects `0`,
+     * which made `generateObject` throw `AI_TypeValidationError` and 500 the
+     * whole NL search for the majority of queries. `0` is a valid "no radius"
+     * sentinel — the mapper only forwards a radius when `latitude` + `longitude`
+     * are present, so a `0` never produces a bogus proximity constraint.
+     */
+    radius: z.number().min(0).max(500).optional(),
 
     /**
      * Geo "nearby destinations" expansion signal (HOS-111 T-012, G-9).

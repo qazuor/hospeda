@@ -245,6 +245,55 @@ describe('SearchIntentEntitiesSchema', () => {
         expect(SearchIntentEntitiesSchema.safeParse({ longitude: 180 }).success).toBe(true);
     });
 
+    // ── radius (HOS-207) ──────────────────────────────────────────────────────
+
+    it('accepts radius: 0 (regression HOS-207 — "no radius" sentinel from the model)', () => {
+        // Arrange: the AI returns an explicit radius: 0 when the query mentions
+        // no search radius. `.positive()` used to reject this and 500 the whole
+        // NL search; `.min(0)` accepts it.
+        const input = { radius: 0 };
+        // Act
+        const result = SearchIntentEntitiesSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.radius).toBe(0);
+        }
+    });
+
+    it('accepts a full intent carrying radius: 0 (regression HOS-207)', () => {
+        // Arrange: mirrors the exact prod payload shape that used to 500 —
+        // extracted entities present, radius explicitly 0.
+        const input = {
+            accommodationType: 'CABIN',
+            minGuests: 4,
+            maxGuests: 4,
+            hasPool: true,
+            radius: 0
+        };
+        // Act
+        const result = SearchIntentEntitiesSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(true);
+    });
+
+    it('accepts radius at upper boundary 500', () => {
+        expect(SearchIntentEntitiesSchema.safeParse({ radius: 500 }).success).toBe(true);
+    });
+
+    it('rejects radius above 500', () => {
+        const result = SearchIntentEntitiesSchema.safeParse({ radius: 500.001 });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues.some((i) => i.path.includes('radius'))).toBe(true);
+        }
+    });
+
+    it('rejects negative radius', () => {
+        const result = SearchIntentEntitiesSchema.safeParse({ radius: -1 });
+        expect(result.success).toBe(false);
+    });
+
     // ── minBedrooms / maxBedrooms ─────────────────────────────────────────────
 
     it('accepts minBedrooms at 0 (boundary)', () => {
