@@ -89,6 +89,7 @@ export const validateAdminEnv = (): AdminEnv => {
             VITE_ENABLE_DEVTOOLS: import.meta.env.VITE_ENABLE_DEVTOOLS || 'false',
             VITE_ENABLE_QUERY_DEVTOOLS: import.meta.env.VITE_ENABLE_QUERY_DEVTOOLS || 'false',
             VITE_ENABLE_ROUTER_DEVTOOLS: import.meta.env.VITE_ENABLE_ROUTER_DEVTOOLS || 'false',
+            VITE_FEEDBACK_ENABLED: import.meta.env.VITE_FEEDBACK_ENABLED || 'false',
             VITE_DEFAULT_PAGE_SIZE: import.meta.env.VITE_DEFAULT_PAGE_SIZE || '25',
             VITE_MAX_PAGE_SIZE: import.meta.env.VITE_MAX_PAGE_SIZE || '100',
             VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN,
