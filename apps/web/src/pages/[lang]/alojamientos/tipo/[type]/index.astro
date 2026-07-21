@@ -40,6 +40,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { getApiUrl } from '@/lib/env';
+import { hasActiveAccommodationListingFilters, resolveListingCacheControl } from '@/lib/cache/listing-cache';
 import { AccommodationTypeEnum } from '@repo/schemas';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -72,6 +73,22 @@ const typeDescription = t(`accommodations.byType.types.${typeEnum}.description`,
 const url = Astro.url;
 const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
 const pageSize = 9;
+
+// HOS-218 — Cloudflare edge cache. Like the base listing, this indexable
+// single-type landing re-fetches the near-static catalog on every render and
+// served `cf-cache-status: DYNAMIC` in prod. The type is fixed by the URL path
+// (always the indexable canonical), so emit a shareable `Cache-Control` for an
+// anonymous, unfiltered landing (+ bounded sort/pagination variants) so
+// Cloudflare edge-caches it; personalised or filtered responses stay `private`.
+// The origin gate ensures a favourite-baked response is never MARKED shareable;
+// the Cloudflare Cache Rule this header enables must also bypass on the session
+// cookie (see `@/lib/cache/listing-cache`).
+Astro.response.headers.set(
+	'Cache-Control',
+	resolveListingCacheControl({
+		cacheable: !isAuthenticated && !hasActiveAccommodationListingFilters({ searchParams: url.searchParams })
+	})
+);
 
 /**
  * Maps the URL's user-friendly sort key to the backend `(sortBy, sortOrder)`
