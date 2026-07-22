@@ -255,4 +255,33 @@ describe('createPendingProviderSubscription', () => {
             'unique constraint violation'
         );
     });
+
+    // ── HOS-240: trial_extension redemption is DEFERRED — snapshotted, not recorded ──
+
+    it('HOS-240: snapshots pendingTrialExtension on the correlation row (redemption deferred to link time)', async () => {
+        await createPendingProviderSubscription({
+            ...BASE_INPUT,
+            trialGranted: true,
+            freeTrialDays: 44,
+            pendingTrialExtension: { promoCodeId: 'pc-trial-1', code: 'FREEMONTH' }
+        });
+
+        // Deferred: no promo_code_id stamped here (only product_domain) — the
+        // stamp + redemption happen at link time (link-preapproval.service.ts).
+        expect(updateSetMock).toHaveBeenCalledWith({ productDomain: 'accommodation' });
+
+        // The promo identity is snapshotted on the correlation row, like pendingDiscount.
+        const [correlationArg] = pendingCheckoutCreateMock.mock.calls[0] ?? [];
+        expect((correlationArg as Record<string, unknown>).pendingTrialExtension).toEqual({
+            promoCodeId: 'pc-trial-1',
+            code: 'FREEMONTH'
+        });
+    });
+
+    it('HOS-240: omits pendingTrialExtension from the correlation row when not supplied', async () => {
+        await createPendingProviderSubscription(BASE_INPUT);
+
+        const [correlationArg] = pendingCheckoutCreateMock.mock.calls[0] ?? [];
+        expect(correlationArg).not.toHaveProperty('pendingTrialExtension');
+    });
 });
