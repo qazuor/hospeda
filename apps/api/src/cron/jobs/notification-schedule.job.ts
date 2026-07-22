@@ -29,6 +29,7 @@ import {
 import { type NotificationPayload, NotificationType, RetryService } from '@repo/notifications';
 import { BILLING_EVENT_TYPES, type TrialEndingSubscription } from '@repo/service-core';
 import { getQZPayBilling } from '../../middlewares/billing.js';
+import { resolvePlanDisplayName } from '../../services/billing/plan-change-reason.js';
 import { processDbNotificationRetries } from '../../services/notification-retry.service.js';
 import { buildTrialUpgradeUrl, TrialService } from '../../services/trial.service.js';
 import { loadBillingSettings } from '../../utils/billing-settings.js';
@@ -588,7 +589,12 @@ export const notificationScheduleJob: CronJobDefinition = {
                                 try {
                                     const plan = await billing.plans.get(subscription.planId);
                                     if (plan) {
-                                        planName = plan.name;
+                                        // HOS-231: `plan.name` is the SLUG; resolve the
+                                        // display name for the customer-facing email.
+                                        planName =
+                                            (await resolvePlanDisplayName({
+                                                planId: subscription.planId
+                                            })) ?? plan.name;
                                         // Find price matching subscription interval
                                         const matchingPrice = plan.prices?.find(
                                             (p: {
