@@ -19,7 +19,7 @@ import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { AddonsPurchasePanel } from '@/components/account/AddonsPurchasePanel.client';
 import type { AddonCardData } from '@/components/account/AddonsPurchasePanel.client';
 import { billingApi, hostAnalyticsApi, userApi } from '@/lib/api/endpoints-protected';
-import { isHostRole } from '@/lib/account-roles';
+import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -133,7 +133,7 @@ const resultBanner: { readonly kind: 'success' | 'failure'; readonly message: st
 
 const upgradeUrl = buildUrl({
     locale,
-    path: isHostRole(user.role) ? 'suscriptores/planes' : 'suscriptores/turistas'
+    path: resolveSubscriptionPlansPath({ role: user.role })
 });
 ---
 

@@ -415,7 +415,10 @@ if (accommodation.hasWhatsapp) {
         whatsappShowUpsell = true;
     }
 }
-const whatsappPlansHref = buildUrl({ locale, path: 'suscriptores/planes' });
+// CAN_CONTACT_WHATSAPP_DISPLAY is a tourist entitlement every owner plan already
+// inherits, so the WhatsApp upsell audience is always a free-tier tourist — point
+// at the tourist pricing page, not the owner one (BETA-201).
+const whatsappPlansHref = buildUrl({ locale, path: 'suscriptores/turistas' });
 
 // --- Gallery images for ImageGallery island ---
 // Build a unified GalleryImage[] from galleryItems (preferred) or URL-only images list.

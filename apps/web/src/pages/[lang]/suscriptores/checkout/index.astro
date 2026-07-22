@@ -1,19 +1,44 @@
 ---
 /**
  * @file suscriptores/checkout/index.astro
- * @description Redirect from /checkout/ to /planes/. Direct navigation to the
- * checkout root has no meaning for a user — checkout is a MercadoPago return
- * target with sub-routes (success/failure/pending), never a destination on its
- * own. Bookmarks or mistyped links should land on the pricing page instead.
+ * @description Role-aware redirect from the bare /checkout/ root to the pricing
+ * page. Direct navigation to the checkout root has no meaning — checkout is a
+ * MercadoPago return target with sub-routes (success/failure/pending), never a
+ * destination on its own. Bookmarks or mistyped links are redirected to the
+ * OWNER plans page for host-level roles and the TOURIST plans page for tourists
+ * and anonymous visitors (BETA-201).
  *
  * @route /{lang}/suscriptores/checkout/
- * @rendering SSR (executes redirect)
+ * @rendering SSR (executes a per-visitor, uncacheable redirect)
  */
 
+import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
+import { parseSessionUser, requestHasSessionCookie } from '@/lib/middleware-helpers';
 import { buildUrl } from '@/lib/urls';
 
 export const prerender = false;
 
 const locale = Astro.locals.locale;
-return Astro.redirect(buildUrl({ locale, path: 'suscriptores/planes' }), 302);
+// Resolve the actor's role to pick the pricing page. The middleware does not
+// parse the session for /suscriptores/*, so do it here — but only when a session
+// cookie is actually present, to avoid an unnecessary get-session round-trip on
+// every anonymous hit (auth rate-limit protection, see NextEventsSection.astro).
+// A null role (anonymous / failed lookup) falls back to the tourist page.
+const cookieHeader = Astro.request.headers.get('cookie');
+const sessionUser = requestHasSessionCookie(cookieHeader)
+	? await parseSessionUser({ cookieHeader })
+	: null;
+const plansPath = resolveSubscriptionPlansPath({ role: sessionUser?.role ?? null });
+
+// The redirect target is per-visitor (role-variant) and the bare URL carries no
+// differentiator, so it must never be shared from a CDN edge cache. Return an
+// explicit Response with `Cache-Control: private, no-store` — `Astro.redirect`
+// does not attach response headers set elsewhere.
+return new Response(null, {
+	status: 302,
+	headers: {
+		Location: buildUrl({ locale, path: plansPath }),
+		'Cache-Control': 'private, no-store'
+	}
+});
 ---
