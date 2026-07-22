@@ -585,6 +585,14 @@ export function PlanPurchaseButton({
                         '{{percent}}% de descuento para siempre'
                     ).replace('{{percent}}', String(value));
                 }
+                if (months === 1) {
+                    return t(
+                        'billing.checkout.promoApply.discountPercentCycle',
+                        '{{percent}}% de descuento por {{months}} mes'
+                    )
+                        .replace('{{percent}}', String(value))
+                        .replace('{{months}}', String(months));
+                }
                 return t(
                     'billing.checkout.promoApply.discountPercentCycles',
                     '{{percent}}% de descuento por {{months}} meses'
@@ -603,6 +611,14 @@ export function PlanPurchaseButton({
                         'billing.checkout.promoApply.discountFixedForever',
                         '${{amount}} de descuento para siempre'
                     ).replace('{{amount}}', displayAmount);
+                }
+                if (months === 1) {
+                    return t(
+                        'billing.checkout.promoApply.discountFixedCycle',
+                        '${{amount}} de descuento por {{months}} mes'
+                    )
+                        .replace('{{amount}}', displayAmount)
+                        .replace('{{months}}', String(months));
                 }
                 return t(
                     'billing.checkout.promoApply.discountFixedCycles',
