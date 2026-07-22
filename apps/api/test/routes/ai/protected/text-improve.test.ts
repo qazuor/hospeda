@@ -361,6 +361,22 @@ describe('protected AI text-improve route (SPEC-198 T-005)', () => {
             expect(out).toContain('accommodation summary');
             expect(out.endsWith('Cozy cabin.')).toBe(true);
         });
+
+        it('frames faq_answer as a helpful answer, NOT marketing copy', () => {
+            const out = buildTextImprovePrompt({
+                fieldType: 'faq_answer',
+                fieldValue: 'Yes, parking is free.'
+            });
+            // FAQ answers are factual guest answers — never sales copy.
+            expect(out).toContain('FAQ answer');
+            expect(out).toContain('helpful answer');
+            expect(out).toContain('Do not turn a factual answer into marketing');
+            expect(out).not.toContain('persuasive marketing copy');
+            // Shared invariants still hold for every field type.
+            expect(out).toMatch(/rewrite/i);
+            expect(out).toContain('auto-generated metadata prefix');
+            expect(out.endsWith('Yes, parking is free.')).toBe(true);
+        });
     });
 
     // =========================================================================
