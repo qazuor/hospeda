@@ -74,6 +74,7 @@ import { handlePlanChangeAddonRecalculation } from '../addon-plan-change.service
 import { applyUpgradeRestorationsOrWarn } from '../plan-upgrade-restoration.service.js';
 import { clearPendingScheduledPlanChange } from '../subscription-downgrade.service.js';
 import { resolveOwnerUserId } from '../subscription-pause.service.js';
+import { resolvePlanChangeReason } from './plan-change-reason.js';
 import { SubscriptionCheckoutError } from './subscription-checkout-error.js';
 
 /**
@@ -218,6 +219,16 @@ export async function applyTrialingPlanUpgrade(
         throw new SubscriptionCheckoutError('MP_PREAPPROVAL_MUTATION_FAILED', message);
     }
 
+    // HOS-231: pass the plan display name as the MP preapproval `reason` so the
+    // buyer sees e.g. "VIP" instead of the raw plan UUID ("Plan updated to:
+    // <uuid>") in their MercadoPago panel and notification email. `undefined`
+    // keeps the adapter's synthetic fallback. Resolved BEFORE the MP call (and
+    // outside the try) so a best-effort name lookup never runs mid-mutation —
+    // mirroring the three sibling plan-change paths (immediate-plan-swap,
+    // apply-scheduled-plan-changes, confirmPlanUpgrade). This trial path was the
+    // only cross-plan mutation that still omitted it (HOS-220 missed it).
+    const reason = await resolvePlanChangeReason({ planId: newPlanId });
+
     // WARNING 4: the try block wraps ONLY the MP call itself — the
     // success-path log below lives OUTSIDE it, so a (hypothetical) logger
     // throw can never be misreported as an MP rejection.
@@ -229,7 +240,8 @@ export async function applyTrialingPlanUpgrade(
             // existing cross-plan precedents (payment-logic.ts's
             // confirmPlanUpgrade and apply-scheduled-plan-changes.ts's applyOne).
             planId: newPlanId,
-            transactionAmount: targetTransactionAmountMajor
+            transactionAmount: targetTransactionAmountMajor,
+            reason
         });
     } catch (mpErr) {
         const rawMessage = mpErr instanceof Error ? mpErr.message : String(mpErr);
