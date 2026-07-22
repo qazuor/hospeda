@@ -21,6 +21,7 @@
  * @route GET /api/v1/protected/users/me/entitlements
  */
 import type { EntitlementKey, LimitKey } from '@repo/billing';
+import { isEntitlementGrantingStatus } from '@repo/billing';
 import {
     isAccommodationSubscription,
     isOwnerCategorySubscription,
@@ -118,9 +119,14 @@ export const userEntitlementsRoute = createProtectedRoute({
                 const customer = await billing.customers.getByExternalId(actor.id);
                 if (customer) {
                     const subscriptions = await billing.subscriptions.getByCustomerId(customer.id);
+                    // HOS-239: use the canonical entitlement-granting status set
+                    // (active | trialing | comp) instead of the inline
+                    // `active | trialing` that dropped `comp` — that omission is
+                    // exactly what returned `plan: null` for comp subscribers even
+                    // though loadEntitlements populated their entitlements/limits.
                     let activeSub = subscriptions?.find(
                         (sub: { status: string }) =>
-                            (sub.status === 'active' || sub.status === 'trialing') &&
+                            isEntitlementGrantingStatus(sub.status) &&
                             isAccommodationSubscription(sub)
                     );
 
@@ -128,9 +134,15 @@ export const userEntitlementsRoute = createProtectedRoute({
                     // an owner/complex-category plan (see file JSDoc). Scoped to
                     // HOST only — a plain tourist actor's real tourist plan must
                     // keep surfacing unchanged.
+                    //
+                    // HOS-238/HOS-239: a `comp` sub is a deliberate grant, exempt
+                    // from the discard (mirrors loadEntitlements). Without this the
+                    // route would still null a comped HOST's plan even after the
+                    // find above includes comp.
                     if (
                         activeSub &&
                         actor.role === RoleEnum.HOST &&
+                        (activeSub.status as string) !== 'comp' &&
                         !(await isOwnerCategorySubscription({ planId: activeSub.planId }))
                     ) {
                         activeSub = undefined;

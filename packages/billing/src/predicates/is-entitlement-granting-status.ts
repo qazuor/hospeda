@@ -2,22 +2,23 @@
  * Canonical set of subscription statuses that grant a plan's entitlements
  * *right now*, independent of any date/grace-window consideration.
  *
- * Intended as the single source of truth for the coarse "is this subscription
- * currently live (in an entitlement-granting status)?" question that several
- * call-sites re-implement inline today and drift on. As of this commit
- * (HOS-238) only `entitlement.ts` (`loadEntitlements`) uses it; the remaining
- * call-sites are migrated in HOS-239. Snapshot of the drift being consolidated:
+ * Single source of truth for the coarse "is this subscription currently live
+ * (in an entitlement-granting status)?" question that several call-sites used
+ * to re-implement inline and drift on. Call-sites that route through it:
  *
- * - `entitlement.ts` (`loadEntitlements`): `active | trialing | comp` — now
- *   uses this predicate.
- * - `entitlements.ts` route (plan context): `active | trialing` — drops
- *   `comp`, so `GET /me/entitlements` returns `plan: null` for comped
- *   subscribers (the HOS-239 bug; migration pending).
- * - `subscription.ts` (account-management view): `active | trialing |
- *   past_due | paused` — deliberately broader (it renders paused/past_due
- *   subs so the user can resume/pay), but ALSO drops `comp`, so a comped
- *   subscriber's account page shows no subscription. HOS-239 will re-express it
- *   as "this set PLUS the management-only statuses".
+ * - `entitlement.ts` (`loadEntitlements`): the entitlement find (HOS-238).
+ * - `entitlements.ts` route (plan context): the plan-context find — dropping
+ *   `comp` here was what returned `plan: null` for comped subscribers (HOS-239).
+ * - `start-paid.ts` (already-subscribed guard): the "has active accommodation
+ *   sub" check (HOS-239).
+ *
+ * One "is this sub live?" filter is deliberately NOT consolidated yet:
+ * `subscription.ts` (the account-management view) keeps its own broader set
+ * (`active | trialing | past_due | paused`, no `comp`). Adding `comp` there
+ * would surface a comped sub in the account UI mapped to `active`, which makes
+ * the frontend render Cancel/Pause actions that the cancel/pause backend (not
+ * comp-aware) rejects. Reconciling that needs a comp-aware cancel/pause flow —
+ * tracked as a separate follow-up, out of HOS-239 scope.
  *
  * **Status-only, by design.** It deliberately does NOT look at
  * `currentPeriodEnd` / `trialEnd`. The entitlement finds are status-only
@@ -25,10 +26,9 @@
  * (cron-lag grace is informational and access is ALWAYS granted — see the
  * cron-lag detection block in `entitlement.ts`). Date-aware liveness (soft-
  * cancel grace, cron-lag windows) is a separate concern owned by
- * {@link isSubscriptionLive}, which the publish gate uses. NOTE:
- * `isSubscriptionLive` does NOT yet recognise `comp` (it returns `false` for
- * it) — so a comped subscriber is currently live for entitlements but not for
- * the date-aware publish gate. Reconciling the two on `comp` is HOS-239 scope.
+ * {@link isSubscriptionLive}, which the publish gate uses. The two predicates
+ * agree on `comp` (both treat it as live as of HOS-239); `isSubscriptionLive`
+ * layers date grace on top for the statuses where a period/trial end matters.
  *
  * The three entitlement-granting statuses:
  * - `'active'`   — a paid subscription in good standing.

@@ -30,7 +30,7 @@
  * @module routes/billing/start-paid
  */
 
-import { TEST_DAILY_PLAN } from '@repo/billing';
+import { isEntitlementGrantingStatus, TEST_DAILY_PLAN } from '@repo/billing';
 import type { StartPaidSubscriptionResponse } from '@repo/schemas';
 import {
     ServiceErrorCode,
@@ -181,10 +181,10 @@ export const handleStartPaidSubscription = async (
             // more specific SUBSCRIPTION_CANCEL_PENDING message. comp subs are
             // perpetual (no cancelAtPeriodEnd) so they still match.
             if (sub.cancelAtPeriodEnd === true) return false;
-            // Cast to string — QZPay's type union does not include 'comp' (our
-            // Hospeda-specific custom status) so a direct === comparison fails tsc.
-            const status = sub.status as string;
-            return status === 'active' || status === 'trialing' || status === 'comp';
+            // HOS-239: canonical entitlement-granting status set (active |
+            // trialing | comp). Takes a string; QZPay's union excludes the
+            // Hospeda-specific 'comp', hence the widening cast.
+            return isEntitlementGrantingStatus(sub.status as string);
         });
         if (hasActiveAccommodationSub) {
             throw new ServiceError(
