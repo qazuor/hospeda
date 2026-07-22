@@ -70,10 +70,13 @@ migration in the **same PR** — see the root
 [CLAUDE.md](../../CLAUDE.md) bullet "Seed dual-write rule (MANDATORY, HOS-25)" for the exact
 rule. `scripts/check-seed-dual-write.sh` enforces it in CI. Since HOS-173 the guard is
 **fail-closed**: everything under `packages/seed/src/data/**` is guarded by default (plus
-the seven inline-constant seeders and the billing config files), MINUS a short, explicit
-exemption list of demo-only sources (accommodations, events, posts, reviews, bookmarks and
-their join/aux tables, plus `data/user/example/**` and non-`internal`/`system` files under
-`data/tag/`). This means a brand-new curated data folder is caught automatically — the old
+nine inline-constant seeders — `example/{experiences,entityTagAssignments,userTags}.seed.ts`
+and the six `required/*.seed.ts` inline ones — and the billing config files), MINUS a short,
+explicit exemption list of demo-only sources (accommodations, events, posts, reviews,
+bookmarks and their join/aux tables, plus `data/user/example/**`, non-`internal`/`system`
+files under `data/tag/`, and three demo-only inline seeders that touch only exempt entities:
+`accommodationExternalListings`, `accommodationExternalReputation`, `postTagAssignments`).
+This means a brand-new curated data folder is caught automatically — the old
 allowlist was fail-open and let the `partners` catalog escape to prod empty (HOS-172). A PR
 can opt out with a literal `[skip-seed-migration]: <reason>` marker in its description when a
 change genuinely needs no backfill; valid reasons are a closed set (`demo-only: ...` or a

@@ -276,18 +276,29 @@ tag/{internal,system}-*.json) **and** the curated prod-content sources that used
 packages/billing/src/config/{plans,limits,entitlements,addons,promo-codes}.config.ts
 ```
 
-Plus seven **inline-constant seeders** whose fixtures live in a TS constant (no `data/`
+Plus nine **inline-constant seeders** whose fixtures live in a TS constant (no `data/`
 folder to path-match), guarded on any diff to the whole file:
 
 ```
-packages/seed/src/example/experiences.seed.ts
+packages/seed/src/example/experiences.seed.ts             (prod-content commerce listings)
+packages/seed/src/example/entityTagAssignments.seed.ts    (tags GUARDED destination catalog rows)
+packages/seed/src/example/userTags.seed.ts                (tags the GUARDED required admin-user)
 packages/seed/src/required/{rolePermissions,aiPrompts,aiSettings,socialAutomation,contentModeration,systemUser}.seed.ts
 ```
 
+**Demo-only inline seeders (audited, intentionally NOT guarded)**: three other
+`example/*.seed.ts` files also bake fixtures inline but attach only to demo entities that are
+themselves exempt (fake accommodations / demo posts), so they never need a live-env backfill:
+`accommodationExternalListings.seed.ts`, `accommodationExternalReputation.seed.ts`,
+`postTagAssignments.seed.ts`. This was a reviewed decision, not an omission — the test suite
+pins both these three (exempt) and `entityTagAssignments`/`userTags` (guarded) so the split
+stays visible. If one of the three ever attaches to a guarded entity, move it to the guarded
+list above.
+
 **Residual gap**: a *future* inline-constant seeder added under `example/`/`required/` with
-neither a `data/` folder nor an entry in the named-file list would still escape. Prefer
-extracting inline fixtures into `data/**/*.json` files so the default path-glob covers them
-(HOS-173 OQ-3 follow-up).
+neither a `data/` folder nor an entry in the guarded named-file list, that DOES carry
+prod-bound content, would still escape. Prefer extracting inline fixtures into
+`data/**/*.json` files so the default path-glob covers them (HOS-173 OQ-3 follow-up).
 
 ### Opt-out
 
