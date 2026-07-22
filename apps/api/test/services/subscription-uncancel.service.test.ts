@@ -263,6 +263,35 @@ describe('uncancelSubscription', () => {
         expect(mockBillingUncancelFn).not.toHaveBeenCalled();
     });
 
+    // HOS-232 TOCTOU: the finalize cron can win the race between the Step-1
+    // fast-path read and the Step-4 in-tx FOR UPDATE re-read. The re-read must
+    // observe status='cancelled' and abort BEFORE the provider call.
+    it('aborts (VALIDATION_ERROR) when the in-tx FOR UPDATE re-read sees a finalized status, without calling the provider', async () => {
+        const makeChain = (rows: unknown[]) => ({
+            from: () => ({ where: () => ({ for: () => Promise.resolve(rows) }) })
+        });
+        // Call 1 (Step 1 fast-path): still soft-cancelled + active → passes.
+        // Call 2 (Step 4 in-tx re-read): the cron already flipped it to
+        // 'cancelled' (it leaves cancelAtPeriodEnd=true).
+        mockDbSelectFn
+            .mockReturnValueOnce(makeChain([buildSubRow()]) as ReturnType<typeof mockDbSelectFn>)
+            .mockReturnValue(
+                makeChain([buildSubRow({ status: 'cancelled' })]) as ReturnType<
+                    typeof mockDbSelectFn
+                >
+            );
+
+        await expect(
+            uncancelSubscription({
+                billing: billing as never,
+                subscriptionId: SUB_ID,
+                customerId: CUSTOMER_ID
+            })
+        ).rejects.toMatchObject({ code: ServiceErrorCode.VALIDATION_ERROR });
+        // Provider must NOT be re-authorized on a row the cron already finalized.
+        expect(mockBillingUncancelFn).not.toHaveBeenCalled();
+    });
+
     it('maps a provider error to a ServiceError and rolls the flag back (no cache clear)', async () => {
         setupDbSelectRow(buildSubRow());
         mockBillingUncancelFn.mockRejectedValueOnce(
