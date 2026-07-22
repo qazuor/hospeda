@@ -7,10 +7,11 @@
  *
  * Policy (per SPEC-194 §3 T-194-03 / T-019):
  * - FULL refund   → persist `refunded_amount` on billing_payments (full
- *                   payment.amount), transition the linked subscription to
- *                   `cancelled` via the SPEC-194 state machine, insert an
- *                   audit event, and clear the entitlement cache so the
- *                   customer loses access immediately.
+ *                   payment.amount) UNCONDITIONALLY (HOS-235), then — only if
+ *                   the subscription can still transition — move it to
+ *                   `cancelled` via the SPEC-194 state machine and insert a
+ *                   `payment.full_refund` audit event. Always clears the
+ *                   entitlement cache so the customer loses access immediately.
  * - PARTIAL refund → accumulate `refunded_amount` on billing_payments, insert
  *                    a `payment.partial_refund` audit event, keep the
  *                    subscription active (entitlement cache NOT cleared —
@@ -18,8 +19,10 @@
  *                    accumulated total reaches `payment.amount`, the full
  *                    cancel+revoke path is taken instead.
  * - No subscription linked to the payment → log and return (no-op).
- * - Invalid transition (e.g. sub already cancelled) → log + skip the status
- *   write but still clear the cache (idempotent refunds must not error).
+ * - Invalid transition (e.g. sub already `cancelled`) → the refund is STILL
+ *   recorded on billing_payments (HOS-235); only the status transition is
+ *   skipped. A `payment.full_refund_no_transition` audit event is written and
+ *   the cache is cleared (idempotent refunds must not error).
  *
  * ## Unit semantics (CRITICAL — money)
  *
@@ -257,8 +260,43 @@ export async function applyRefundLifecycle({
     // yet and will be written inside the transaction below.
     apiLogger.info(
         { paymentId, customerId, subscriptionId, refundAmount, adminUserId, source },
-        'Refund lifecycle: full refund — transitioning subscription to cancelled'
+        'Refund lifecycle: full refund — recording refunded amount, then evaluating subscription transition'
     );
+
+    // ── HOS-235: record the refund on the payment FIRST, unconditionally ───────
+    // The `refunded_amount` write must NOT depend on the subscription being in a
+    // transitionable state. It previously lived only inside the guarded
+    // transaction below, so a full refund of a payment whose subscription was
+    // ALREADY `cancelled` (customer cancelled from their MP account, a late
+    // chargeback, or admin cancel-then-refund) hit the invalid-transition
+    // early-return and left `billing_payments.refunded_amount = 0` forever —
+    // inflating internal revenue with money that was actually returned. This is
+    // the ONLY writer of `refunded_amount` in apps/api, so nothing reconciled it.
+    //
+    // For a full refund the recorded amount is always `payment.amount`. Writing
+    // it here is idempotent for the accumulated-partials fall-through (which
+    // already wrote the same capped value above) and safe on webhook re-delivery.
+    //
+    // Intentional non-atomicity (accepted tradeoff): this write is deliberately
+    // OUTSIDE the subscription-status transaction below. Recording the returned
+    // money is the priority and must not be rolled back by a subscription-cancel
+    // failure. The only downside is the rare inverse: if THIS write throws while
+    // the status tx later succeeds, `refunded_amount` stays 0 on a cancelled sub
+    // — strictly rarer than the deterministic bug it replaces (a single-row
+    // UPDATE failure vs. every already-cancelled refund), logged for follow-up,
+    // and consistent with this service's step-independent fail-safe design.
+    const effectiveRefundedAmount = payment.amount;
+    try {
+        await db
+            .update(billingPayments)
+            .set({ refundedAmount: effectiveRefundedAmount, updatedAt: new Date() })
+            .where(eq(billingPayments.id, paymentId));
+    } catch (err) {
+        apiLogger.error(
+            { paymentId, customerId, subscriptionId, err, adminUserId, source },
+            'Refund lifecycle: DB error writing refunded_amount on full refund — attempting subscription transition anyway'
+        );
+    }
 
     // Look up the current subscription status before the transaction.
     let currentStatus: string | undefined;
@@ -306,33 +344,46 @@ export async function applyRefundLifecycle({
                 adminUserId,
                 source
             },
-            'Refund lifecycle: invalid status transition — skipping status write, still clearing cache'
+            'Refund lifecycle: invalid status transition — skipping status write (refund already recorded), still clearing cache'
         );
+        // HOS-235: the refund IS recorded (refunded_amount was written above);
+        // only the subscription status transition is skipped because the sub is
+        // already terminal. Write a distinct audit event so the recorded refund
+        // is traceable even without an accompanying status change.
+        try {
+            await db.insert(billingSubscriptionEvents).values({
+                subscriptionId,
+                previousStatus: currentStatus,
+                newStatus: currentStatus,
+                triggerSource: 'admin-refund',
+                metadata: {
+                    action: 'payment.full_refund_no_transition',
+                    paymentId,
+                    refundAmount: effectiveRefundedAmount,
+                    skippedTransitionReason: guard.reason,
+                    adminUserId,
+                    source
+                }
+            });
+        } catch (err) {
+            apiLogger.error(
+                { subscriptionId, paymentId, customerId, err, adminUserId, source },
+                'Refund lifecycle: DB error inserting full_refund_no_transition audit event'
+            );
+        }
         // Idempotent: cache clear is always safe even if transition is skipped.
         clearEntitlementCache(customerId);
         return;
     }
 
-    // The effective refunded amount for the full-refund path is always
-    // payment.amount — this is correct for:
-    // (a) direct full refund (refundAmount undefined or >= payment.amount), and
-    // (b) accumulated partials reaching full (fall-through from above where
-    //     billing_payments is already updated; writing payment.amount again is
-    //     idempotent since that is what the atomic increment set it to).
-    const effectiveRefundedAmount = payment.amount;
-
-    // Atomic triple-write: persist refunded_amount, update subscription status,
-    // and insert audit event in a single transaction (item 2 fix).
+    // The refund was already recorded on billing_payments above (HOS-235); the
+    // transition guard now gates ONLY the subscription-status write. Update the
+    // status + insert the full-refund audit event atomically.
     // clearEntitlementCache runs OUTSIDE the transaction — it is not rollback-able.
     try {
         await withServiceTransaction(async (ctx) => {
             // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
             const tx = ctx.tx!;
-
-            await tx
-                .update(billingPayments)
-                .set({ refundedAmount: effectiveRefundedAmount, updatedAt: new Date() })
-                .where(eq(billingPayments.id, paymentId));
 
             await tx
                 .update(billingSubscriptions)
