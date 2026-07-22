@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# check-seed-dual-write.sh  (HOS-25 T-024)
+# check-seed-dual-write.sh  (HOS-25 T-024; hardened to fail-closed in HOS-173)
 #
 # Enforces the seed "dual-write rule" (spec R-5): a PR that changes BASELINE
 # seed DATA that already lives in a deployed environment (staging/prod) MUST
@@ -9,84 +9,130 @@
 # re-run from scratch) silently never receive the delta.
 #
 # -----------------------------------------------------------------------------
-# DESIGN (reviewed before implementation, kept here for auditability)
+# DESIGN (HOS-173 rewrite — fail-closed by default, kept here for auditability)
 # -----------------------------------------------------------------------------
+#
+# HISTORY: v1 (HOS-25) was an ALLOWLIST of `required`-seeder data paths and was
+# FAIL-OPEN by construction — any seed source not on the list was invisible,
+# regardless of whether its data was deterministic and prod-bound. That let the
+# `partners` catalog (6 deterministic fixtures, added 2026-07-08, one day after
+# the guard went live) ship with zero CI signal; `partners` is still empty in
+# prod (HOS-172). Four other curated sources (`gastronomy`, `hostTrade`,
+# `postSponsor`, `postSponsorship`) plus the inline `experiences` fixtures sat
+# in the identical blind zone, safe only by chronological luck. The exemption
+# depended on HOW a seeder was registered (which orchestrator ran it), not on
+# what its data represented — and the premise behind it ("example data is
+# regenerated non-deterministically on every reseed") is factually FALSE for
+# this package: `@repo/seed` has no faker dependency; every fixture (required
+# AND example) gets a deterministic UUIDv5 id and re-seeds byte-identically.
 #
 # 1) Detection approach — diff-based file-pair heuristic, mirroring
 #    scripts/check-schema-drift.sh's exit-code / messaging conventions but
-#    diffing against the PR base ref (schema-drift instead re-derives drift
-#    offline via `drizzle-kit generate`; there is no offline equivalent for
-#    seed data, so a real base...HEAD diff is required here, the same way
-#    the `security` CI job diffs semgrep findings against
-#    `github.event.pull_request.base.sha`).
+#    diffing against the PR base ref (there is no offline equivalent for seed
+#    data, so a real base...HEAD diff is required, the same way the `security`
+#    CI job diffs findings against the PR base sha).
 #
-# 2) Guarded paths ("baseline data that lives in a live env") — determined by
-#    reading which `packages/seed/src/required/*.seed.ts` seeders read which
-#    `packages/seed/src/data/**` folders (required seeders run against every
-#    live environment; `example/*.seed.ts` fixtures do not and are excluded):
+# 2) Guarded surface — FAIL-CLOSED DEFAULT. Everything under
+#    `packages/seed/src/data/**` is guarded by default (so a brand-new data
+#    folder — the exact partners shape — is caught with nobody needing to
+#    remember to add it to a list), MINUS a short, explicit, reviewed EXEMPTION
+#    list of demo-only sources. The axis is NOT `required` vs `example`; it is
+#    "curated content a live environment is meant to carry" (guarded) vs
+#    "synthetic demo-only content that must never represent a real environment"
+#    (exempt). A `partner` fixture and a fake accommodation share the same
+#    `runExampleSeeds()` registration bucket but are opposite for dual-write
+#    purposes, so registration bucket cannot be the discriminator.
 #
-#      packages/seed/src/data/amenity/**
-#      packages/seed/src/data/attraction/**
-#      packages/seed/src/data/destination/**
-#      packages/seed/src/data/exchangeRate/**
-#      packages/seed/src/data/exchangeRateConfig/**
-#      packages/seed/src/data/feature/**
-#      packages/seed/src/data/revalidationConfig/**
-#      packages/seed/src/data/sponsorshipLevel/**
-#      packages/seed/src/data/sponsorshipPackage/**
-#      packages/seed/src/data/postTag/**
-#      packages/seed/src/data/pointOfInterest/**
-#      packages/seed/src/data/poiCategory/**
-#      packages/seed/src/data/user/required/**
+#    EXEMPT_DATA_DIR_PATTERNS below enumerates the demo-only `data/**` folders
+#    (accommodations, events, posts, reviews, bookmarks, and their join/aux
+#    tables). Two folders are MIXED and handled specially:
+#      - `data/tag/`  — only `internal-*` / `system-*` files are required
+#        (globbed by internalTags/systemTags required seeders); every other
+#        file is example passthrough and is exempt.
+#      - `data/user/` — only `data/user/required/**` is required; `user/example/`
+#        (and anything else under `user/`) is demo-only and exempt.
+#    Everything else under `data/**` — amenity, attraction, destination,
+#    exchangeRate(+Config), feature, revalidationConfig, sponsorshipLevel,
+#    sponsorshipPackage, postTag, pointOfInterest, poiCategory (all required),
+#    AND partner, gastronomy, hostTrade, postSponsor, postSponsorship (curated
+#    prod content, the five formerly-escaped sources) — is guarded by default.
 #
-#    `packages/seed/src/data/tag/` is a MIXED folder: `internalTags.seed.ts`
-#    and `systemTags.seed.ts` (required) glob `internal-*.json` / `system-*.json`
-#    from it, while `example/tags.seed.ts` reads OTHER files from the SAME
-#    folder via an explicit manifest list. Only the `internal-*` / `system-*`
-#    files are guarded here; anything else under `data/tag/` is treated as
-#    example data.
+#    INLINE-CONSTANT files: a handful of seeders bake their fixtures into an
+#    inline TS constant instead of a `data/**/*.json` folder, so a path-glob
+#    over `data/**` cannot see them. The ones carrying PROD-BOUND data are
+#    guarded as NAMED FILES on ANY diff to the whole file (coarse-grained — a
+#    pure logic refactor also trips the guard and needs the opt-out marker;
+#    accepted because these files change rarely and the alternative is a silent
+#    data escape). INLINE_CONSTANT_FILES (prod-content only):
+#      - packages/seed/src/example/experiences.seed.ts   (SPEC-240 commerce
+#        listings — deterministic inline array, no data/ folder at all)
+#      - packages/seed/src/example/entityTagAssignments.seed.ts  (inline
+#        r_entity_tag assignments that attach tags to GUARDED destination
+#        catalog rows — Chajarí/Colón — and demo events; guarded because a
+#        change to which real destination is tagged is prod-relevant)
+#      - packages/seed/src/example/userTags.seed.ts  (inline user-tag
+#        assignments that attach tags to the GUARDED required admin-user)
+#      - packages/seed/src/required/rolePermissions.seed.ts
+#      - packages/seed/src/required/aiPrompts.seed.ts
+#      - packages/seed/src/required/aiSettings.seed.ts
+#      - packages/seed/src/required/socialAutomation.seed.ts
+#      - packages/seed/src/required/contentModeration.seed.ts
+#      - packages/seed/src/required/systemUser.seed.ts
+#    (The `required/billing*.seed.ts` and `required/partnerPlan/commercePlan`
+#    seeders are NOT here: their data lives in `packages/billing/src/config/
+#    *.config.ts`, already guarded below — the seeders only read it.)
+#
+#    DEMO-ONLY inline seeders — deliberately NOT guarded (audited HOS-173, not an
+#    omission). Three other `example/*.seed.ts` files bake fixtures into inline
+#    constants with no live `data/` folder, but they attach ONLY to demo entities
+#    (fake accommodations, demo posts) that are themselves exempt, so — like
+#    their exempt data-folder siblings — they never need a live-env backfill and
+#    requiring a migration on every edit would be pure false-positive friction:
+#      - packages/seed/src/example/accommodationExternalListings.seed.ts   (attaches
+#        external-listing rows to demo accommodations only)
+#      - packages/seed/src/example/accommodationExternalReputation.seed.ts  (ditto,
+#        reputation rows on demo accommodations only)
+#      - packages/seed/src/example/postTagAssignments.seed.ts   (post↔PostTag
+#        rows on demo posts only)
+#    (If any of these ever attaches to a guarded entity or gains prod-bound
+#    content, move it to INLINE_CONSTANT_FILES — as entityTagAssignments/userTags
+#    were. The `scripts/__tests__` suite pins both the exemption of these three
+#    AND the guarding of entityTagAssignments/userTags so the split stays visible.)
 #
 #    Additionally, the billing plan/limit/entitlement/addon/promo-code TS
-#    constants in `packages/billing/src/config/*.config.ts` are guarded — this
-#    is the exact precedent the 0001-0003 data-migrations already ported
-#    (formerly hand-written `.plan.sql` extras files).
+#    constants in `packages/billing/src/config/*.config.ts` are guarded — the
+#    exact precedent the 0001-0003 data-migrations already ported.
 #
-#    SCOPED OUT (v1, flagged for follow-up, see HOS-25 T-023 docs): several
-#    OTHER `packages/seed/src/required/*.seed.ts` files carry their OWN inline
-#    baseline-data constants rather than reading a `data/**/*.json` folder
-#    (e.g. `rolePermissions.seed.ts`'s `ROLE_PERMISSIONS` map, `aiPrompts.seed.ts`,
-#    `aiSettings.seed.ts`, `socialAutomation.seed.ts`, `contentModeration.seed.ts`,
-#    `systemUser.seed.ts`). These are NOT path-diffable from data-only changes
-#    without also flagging every logic change to those files (which would be
-#    a much higher false-positive surface), so v1 deliberately does not guard
-#    them. `example/**/*.json` data is excluded entirely: it is regenerated
-#    non-deterministically on every full reseed (T-016/T-025 exceptions aside)
-#    and does not need a live-env backfill.
+#    NOT COVERED (residual, see HOS-173 §6.2 / OQ-3): a FUTURE prod-content
+#    inline-constant seeder added under `example/`/`required/` with neither a
+#    `data/` folder nor an entry in INLINE_CONSTANT_FILES would still escape.
+#    The fix for that class is to extract inline data into `data/**/*.json`
+#    files (so the default path-glob covers them); tracked as a follow-up.
 #
 # 3) "A new migration was added" — the diff must ADD (not modify) at least one
 #    file matching `packages/seed/src/data-migrations/NNNN-*.ts` (4-digit
-#    numeric prefix, matching the convention `make.ts`/`discover.ts` already
-#    enforce).
+#    numeric prefix, matching the convention `make.ts`/`discover.ts` enforce).
 #
 # 4) Opt-out — a literal marker `[skip-seed-migration]` (optionally followed
-#    by `: <reason>`) in the PR description OR any commit message in the
-#    diff range. This mirrors the repo's existing magic-word convention
-#    (`Closes HOS-N` in a PR body) rather than inventing a new label-based
-#    mechanism — no CI guard in this repo currently reads PR labels, and a
-#    marker requires no extra GitHub API call / permission. It is visible to
-#    reviewers in the PR body (the standard review surface), same trust model
-#    as other magic words in this repo.
+#    by `: <reason>`) in the PR description OR any commit message in the diff
+#    range, mirroring the repo's existing magic-word convention. Since the whole
+#    data surface is now default-guarded, this marker is the escape hatch for a
+#    genuinely-safe additive change that needs no backfill. VALID reasons are a
+#    CLOSED set (enforced by REVIEW, not tooling — see HOS-173 NG-5):
+#      a) "demo-only: synthetic content, must never represent a real
+#         environment" — the only category that currently exists here, and the
+#         reason a new demo fixture not yet on EXEMPT_DATA_DIR_PATTERNS would use.
+#      b) "non-deterministic: <the actual regeneration mechanism, e.g. a faker
+#         call or timestamp-based id>" — kept available for a hypothetical
+#         future fixture that truly re-randomizes. No such case exists today;
+#         the bare word "non-deterministic" with no described, diff-visible
+#         mechanism is NOT an acceptable reason (that was v1's false premise).
 #
-#    False-positive profile: a genuinely-safe additive data change (e.g. a new
-#    catalog entry nobody needs backfilled on already-seeded environments)
-#    without the marker will fail loudly — the marker exists precisely to
-#    unblock that case with an explicit, reviewable declaration.
-#    False-negative profile: an author can add the marker to bypass a change
-#    that DOES need a migration, with no automated defense beyond human PR
-#    review (same trust boundary as every other magic-word convention here).
-#    Also: this v1 guard cannot detect inline-constant changes in the
-#    scoped-out `required/*.seed.ts` files above (see point 2) — a real gap,
-#    reported to the orchestrator as a candidate future tightening.
+#    False-positive profile: a genuinely-safe additive data change without the
+#    marker fails loudly — the marker unblocks it with an explicit, reviewable
+#    declaration. False-negative profile: an author can add the marker to bypass
+#    a change that DOES need a migration, defended only by human PR review (same
+#    trust boundary as every other magic-word convention here).
 #
 # -----------------------------------------------------------------------------
 # TESTABILITY
@@ -118,29 +164,59 @@ cd "${REPO_ROOT}"
 
 SKIP_MARKER='[skip-seed-migration]'
 
-# Guarded baseline-data directory prefixes (required seeders only — see design
-# note 2 above). Bash regex (used with `=~`), anchored to repo-root-relative
-# paths as `git diff --name-status` reports them.
-REQUIRED_DATA_DIR_PATTERNS=(
-    '^packages/seed/src/data/amenity/'
-    '^packages/seed/src/data/attraction/'
-    '^packages/seed/src/data/destination/'
-    '^packages/seed/src/data/exchangeRate/'
-    '^packages/seed/src/data/exchangeRateConfig/'
-    '^packages/seed/src/data/feature/'
-    '^packages/seed/src/data/revalidationConfig/'
-    '^packages/seed/src/data/sponsorshipLevel/'
-    '^packages/seed/src/data/sponsorshipPackage/'
-    '^packages/seed/src/data/postTag/'
-    '^packages/seed/src/data/pointOfInterest/'
-    '^packages/seed/src/data/poiCategory/'
-    '^packages/seed/src/data/user/required/'
+# Everything under this prefix is guarded by DEFAULT (fail-closed), minus the
+# EXEMPT_DATA_DIR_PATTERNS / mixed-folder rules below. Bash regex (used with
+# `=~`), anchored to repo-root-relative paths as `git diff --name-status`
+# reports them.
+GUARDED_DATA_ROOT_PATTERN='^packages/seed/src/data/'
+
+# Demo-only `data/**` folders: synthetic content that must never represent a
+# real environment, so it never needs a live-env backfill. Subtracted from the
+# default-guarded surface. (data/tag/ and data/user/ are mixed — handled by the
+# dedicated patterns below, NOT listed here.)
+EXEMPT_DATA_DIR_PATTERNS=(
+    '^packages/seed/src/data/accommodation/'
+    '^packages/seed/src/data/accommodationExternalListing/'
+    '^packages/seed/src/data/accommodationExternalReputation/'
+    '^packages/seed/src/data/accommodationReview/'
+    '^packages/seed/src/data/bookmark/'
+    '^packages/seed/src/data/destinationReview/'
+    '^packages/seed/src/data/event/'
+    '^packages/seed/src/data/eventLocation/'
+    '^packages/seed/src/data/eventOrganizer/'
+    '^packages/seed/src/data/post/'
+    '^packages/seed/src/data/userBookmarkCollection/'
 )
 
-# data/tag/ is mixed (required + example share the folder) — only these
-# filename prefixes are required data (matches internalTags.seed.ts /
-# systemTags.seed.ts globs).
+# data/tag/ is mixed: only internal-*/system-* files are required (globbed by
+# internalTags.seed.ts / systemTags.seed.ts); every other file is example
+# passthrough (read via an explicit manifest by example/tags.seed.ts).
 REQUIRED_TAG_FILE_PATTERN='^packages/seed/src/data/tag/(internal|system)-.*\.json$'
+
+# data/user/ is mixed: only user/required/** is required; user/example/** (and
+# anything else under user/) is demo-only.
+REQUIRED_USER_DIR_PATTERN='^packages/seed/src/data/user/required/'
+TAG_DIR_PATTERN='^packages/seed/src/data/tag/'
+USER_DIR_PATTERN='^packages/seed/src/data/user/'
+
+# Inline-constant seeders: fixtures baked into a TS constant, no data/**/*.json
+# folder to path-match. Guarded as exact filenames on ANY diff (coarse). See
+# design note 2 above.
+INLINE_CONSTANT_FILES=(
+    'packages/seed/src/example/experiences.seed.ts'
+    # entityTagAssignments / userTags bake inline assignments that attach to
+    # GUARDED entities (real destination catalog rows like Chajarí/Colón, and
+    # the required admin-user) — not purely demo entities — so a change to which
+    # real row gets tagged is prod-relevant and must not escape silently.
+    'packages/seed/src/example/entityTagAssignments.seed.ts'
+    'packages/seed/src/example/userTags.seed.ts'
+    'packages/seed/src/required/rolePermissions.seed.ts'
+    'packages/seed/src/required/aiPrompts.seed.ts'
+    'packages/seed/src/required/aiSettings.seed.ts'
+    'packages/seed/src/required/socialAutomation.seed.ts'
+    'packages/seed/src/required/contentModeration.seed.ts'
+    'packages/seed/src/required/systemUser.seed.ts'
+)
 
 # Billing plan/limit/entitlement/addon/promo-code TS constants (023-025
 # precedent).
@@ -182,8 +258,20 @@ compute_changed_files() {
         return 0
     fi
 
-    git diff --name-status "${base}...HEAD" -- \
+    # Diff roots: `data` (default-guarded surface + mixed folders), the two
+    # inline-constant orchestrator dirs (`example`, `required` — so the named
+    # INLINE_CONSTANT_FILES show up in the diff), `billing/config`, and
+    # `data-migrations` (to detect the accompanying migration).
+    #
+    # `--no-renames` keeps every diff line a strict A/M/D with a single path, so
+    # the exact-equality checks in is_guarded_path (INLINE_CONSTANT_FILES /
+    # BILLING_CONFIG_FILES) can never be defeated by git emitting an
+    # `R<score><TAB>old<TAB>new` line that the two-field `read` would collapse
+    # into one path string. (diff.renames defaults ON in modern git.)
+    git diff --no-renames --name-status "${base}...HEAD" -- \
         'packages/seed/src/data' \
+        'packages/seed/src/example' \
+        'packages/seed/src/required' \
         'packages/billing/src/config' \
         'packages/seed/src/data-migrations'
 }
@@ -211,6 +299,43 @@ $(git log "${base}..HEAD" --format=%B 2>/dev/null || true)"
 }
 
 # -----------------------------------------------------------------------------
+# is_guarded_path: pure predicate. Given a single repo-relative path, returns 0
+# (guarded) or 1 (not guarded), implementing the fail-closed default + exemptions.
+# -----------------------------------------------------------------------------
+is_guarded_path() {
+    local path="$1"
+
+    # Exact-match guarded files (billing config + inline-constant seeders).
+    local f
+    for f in "${BILLING_CONFIG_FILES[@]}" "${INLINE_CONSTANT_FILES[@]}"; do
+        [[ "${path}" == "${f}" ]] && return 0
+    done
+
+    # Everything under data/ is guarded by default, minus exemptions.
+    if [[ "${path}" =~ ${GUARDED_DATA_ROOT_PATTERN} ]]; then
+        # Mixed folder: tag — guard only internal-*/system-*.
+        if [[ "${path}" =~ ${TAG_DIR_PATTERN} ]]; then
+            [[ "${path}" =~ ${REQUIRED_TAG_FILE_PATTERN} ]] && return 0
+            return 1
+        fi
+        # Mixed folder: user — guard only user/required/**.
+        if [[ "${path}" =~ ${USER_DIR_PATTERN} ]]; then
+            [[ "${path}" =~ ${REQUIRED_USER_DIR_PATTERN} ]] && return 0
+            return 1
+        fi
+        # Explicit demo-only exemptions.
+        local ex
+        for ex in "${EXEMPT_DATA_DIR_PATTERNS[@]}"; do
+            [[ "${path}" =~ ${ex} ]] && return 1
+        done
+        # Default: guarded.
+        return 0
+    fi
+
+    return 1
+}
+
+# -----------------------------------------------------------------------------
 # decide: pure decision function. Reads changed-files + marker text, prints a
 # message, returns 0 (pass) or 1 (fail).
 # -----------------------------------------------------------------------------
@@ -223,25 +348,10 @@ decide() {
 
     while IFS=$'\t' read -r status path; do
         [[ -z "${path:-}" ]] && continue
-
-        for pattern in "${REQUIRED_DATA_DIR_PATTERNS[@]}"; do
-            if [[ "${path}" =~ ${pattern} ]]; then
-                baseline_changed=1
-                matched_paths+=("${path}")
-            fi
-        done
-
-        if [[ "${path}" =~ ${REQUIRED_TAG_FILE_PATTERN} ]]; then
+        if is_guarded_path "${path}"; then
             baseline_changed=1
             matched_paths+=("${path}")
         fi
-
-        for billing_file in "${BILLING_CONFIG_FILES[@]}"; do
-            if [[ "${path}" == "${billing_file}" ]]; then
-                baseline_changed=1
-                matched_paths+=("${path}")
-            fi
-        done
     done <<<"${changed_files}"
 
     if [[ "${baseline_changed}" -eq 0 ]]; then
@@ -283,11 +393,12 @@ decide() {
     echo "  a numbered data-migration backfills it (HOS-25 dual-write rule, spec R-5)."
     echo ""
     echo "  Fix: scaffold a new migration and commit it in this PR:"
-    echo "    pnpm --filter @repo/seed seed --data-migrate-make <slug>"
-    echo "    (becomes  pnpm db:seed:make <slug>  once HOS-25 T-018 lands)"
+    echo "    pnpm db:seed:make <slug>"
     echo ""
-    echo "  If this change genuinely needs no backfill on already-seeded environments,"
-    echo "  add '${SKIP_MARKER}: <reason>' to the PR description and re-run."
+    echo "  If this change genuinely needs no backfill on already-seeded environments"
+    echo "  (e.g. demo-only synthetic content), add '${SKIP_MARKER}: <reason>' to the"
+    echo "  PR description and re-run. Valid reasons are a closed set — see the design"
+    echo "  note in this script (opt-out); the bare word 'non-deterministic' is not one."
     return 1
 }
 

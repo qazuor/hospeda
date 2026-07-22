@@ -337,25 +337,45 @@ describe('protected AI text-improve route (SPEC-198 T-005)', () => {
     // buildTextImprovePrompt — pure helper
     // =========================================================================
 
-    describe('buildTextImprovePrompt', () => {
-        it('produces the description prompt shape', () => {
+    describe('buildTextImprovePrompt (BETA-180: real rewrite, strips metadata prefix)', () => {
+        it('instructs a substantial rewrite for the description field, not a cosmetic edit', () => {
             const out = buildTextImprovePrompt({
                 fieldType: 'description',
                 fieldValue: 'Cabin near the river.'
             });
-            expect(out).toBe(
-                'Please improve the following accommodation description:\n\nCabin near the river.'
-            );
+            expect(out).toContain('accommodation description');
+            // Drives a genuine rewrite (the BETA-180 bug was cosmetic-only output).
+            expect(out).toMatch(/rewrite/i);
+            expect(out).toContain('do not just fix punctuation');
+            // Instructs stripping the auto-generated metadata prefix (date / listing type / category).
+            expect(out).toContain('auto-generated metadata prefix');
+            // The original field value is always preserved verbatim, at the very end.
+            expect(out.endsWith('Cabin near the river.')).toBe(true);
         });
 
-        it('produces the summary prompt shape', () => {
+        it('carries the summary field label and preserves the original value', () => {
             const out = buildTextImprovePrompt({
                 fieldType: 'summary',
-                fieldValue: 'Cabin near the river.'
+                fieldValue: 'Cozy cabin.'
             });
-            expect(out).toBe(
-                'Please improve the following accommodation summary:\n\nCabin near the river.'
-            );
+            expect(out).toContain('accommodation summary');
+            expect(out.endsWith('Cozy cabin.')).toBe(true);
+        });
+
+        it('frames faq_answer as a helpful answer, NOT marketing copy', () => {
+            const out = buildTextImprovePrompt({
+                fieldType: 'faq_answer',
+                fieldValue: 'Yes, parking is free.'
+            });
+            // FAQ answers are factual guest answers — never sales copy.
+            expect(out).toContain('FAQ answer');
+            expect(out).toContain('helpful answer');
+            expect(out).toContain('Do not turn a factual answer into marketing');
+            expect(out).not.toContain('persuasive marketing copy');
+            // Shared invariants still hold for every field type.
+            expect(out).toMatch(/rewrite/i);
+            expect(out).toContain('auto-generated metadata prefix');
+            expect(out.endsWith('Yes, parking is free.')).toBe(true);
         });
     });
 
@@ -372,8 +392,13 @@ describe('protected AI text-improve route (SPEC-198 T-005)', () => {
             expect(streamTextCalls).toHaveLength(1);
             const call = streamTextCalls[0]!;
             expect(call.feature).toBe('text_improve');
+            // The handler passes exactly what the prompt builder produces (wiring contract);
+            // the builder's content is asserted in the buildTextImprovePrompt describe above.
             expect(call.prompt).toBe(
-                `Please improve the following accommodation description:\n\n${VALID_DESCRIPTION_BODY.fieldValue}`
+                buildTextImprovePrompt({
+                    fieldType: 'description',
+                    fieldValue: VALID_DESCRIPTION_BODY.fieldValue
+                })
             );
         });
 
