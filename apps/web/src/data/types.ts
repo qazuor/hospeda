@@ -612,6 +612,14 @@ export interface AccommodationDetailData {
      * owner's HAS_VERIFICATION_BADGE entitlement.
      */
     readonly isVerified: boolean;
+    /**
+     * HOS-19: Whether this accommodation carries a WhatsApp contact number
+     * (`contactInfo.whatsapp`). Owner-derived and cache-safe — the number
+     * itself is fetched per-viewer from the protected endpoint and gated by the
+     * viewer's plan. This flag only decides whether the WhatsApp contact block
+     * (or the upsell) renders at all on the detail page.
+     */
+    readonly hasWhatsapp: boolean;
     readonly createdAt: string;
     readonly averageRating: number;
     readonly reviewsCount: number;
