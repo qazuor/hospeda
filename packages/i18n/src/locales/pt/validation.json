@@ -23,10 +23,18 @@
         },
         "extraInfo": {
             "bathrooms": {
+                "max": "[PT] La cantidad de baños no puede superar los {{max}}",
+                "min": "[PT] La cantidad de baños no puede ser menor a {{min}}",
                 "required": "[PT] La cantidad de baños es obligatoria"
             },
             "bedrooms": {
+                "max": "[PT] La cantidad de habitaciones no puede superar los {{max}}",
+                "min": "[PT] La cantidad de habitaciones no puede ser menor a {{min}}",
                 "required": "[PT] La cantidad de habitaciones es obligatoria"
+            },
+            "beds": {
+                "max": "[PT] La cantidad de camas no puede superar los {{max}}",
+                "min": "[PT] La cantidad de camas no puede ser menor a {{min}}"
             },
             "capacity": {
                 "required": "[PT] La capacidad es obligatoria"
@@ -1726,6 +1734,22 @@
         "message": {
             "max": "[PT] El mensaje no puede superar los {{max}} caracteres",
             "min": "[PT] El mensaje debe tener al menos {{min}} caracteres"
+        }
+    },
+    "conversation": {
+        "guestEmail": {
+            "invalid": "[PT] El email no es válido"
+        },
+        "guestName": {
+            "max": "[PT] El nombre no puede superar los {{max}} caracteres",
+            "min": "[PT] El nombre es obligatorio"
+        },
+        "guestPhone": {
+            "max": "[PT] El teléfono no puede superar los {{max}} caracteres"
+        },
+        "message": {
+            "max": "[PT] El mensaje no puede superar los {{max}} caracteres",
+            "min": "[PT] El mensaje es obligatorio"
         }
     },
     "dateRange": {
