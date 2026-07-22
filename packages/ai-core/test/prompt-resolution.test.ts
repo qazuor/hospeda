@@ -460,15 +460,13 @@ describe('DEFAULT_PROMPTS', () => {
 // ---------------------------------------------------------------------------
 
 describe('engine integration — generateText', () => {
-    it('should inject a system message when the caller supplies only a prompt', async () => {
+    it('should inject the system prompt via the `system` field when the caller supplies only a prompt (HOS-205)', async () => {
         // Arrange
-        const capturedMessages: AiMessage[][] = [];
+        const capturedRequests: { system?: string; prompt?: string; messages?: AiMessage[] }[] = [];
         const spyProvider: AiProvider = {
             id: 'stub',
             generateText: vi.fn().mockImplementation((req) => {
-                if (req.messages !== undefined) {
-                    capturedMessages.push([...req.messages]);
-                }
+                capturedRequests.push(req);
                 return Promise.resolve({
                     text: 'ok',
                     usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
@@ -498,21 +496,21 @@ describe('engine integration — generateText', () => {
             prompt: 'Improve this text'
         });
 
-        // Assert — provider received messages, not prompt.
+        // Assert — HOS-205: provider received the system prompt via the native
+        // `system` field, with the user prompt left intact and NO role:'system'
+        // message synthesized inside `messages`.
         // The engine composes content + "\n\n" + rules; since the mock row has no
         // `rules` field (null), the resolver falls back to DEFAULT_RULES.text_improve.
-        expect(capturedMessages).toHaveLength(1);
-        const messages = capturedMessages[0];
-        expect(messages).toBeDefined();
-        expect(messages?.[0]?.role).toBe('system');
-        expect(messages?.[0]?.content).toBe(
+        expect(capturedRequests).toHaveLength(1);
+        const captured = capturedRequests[0];
+        expect(captured?.system).toBe(
             composeSystemPrompt({
                 content: 'System: you are a helpful assistant.',
                 rules: DEFAULT_RULES.text_improve
             })
         );
-        expect(messages?.[1]?.role).toBe('user');
-        expect(messages?.[1]?.content).toBe('Improve this text');
+        expect(captured?.prompt).toBe('Improve this text');
+        expect(captured?.messages).toBeUndefined();
     });
 
     it('should pass request through UNCHANGED when caller already supplies a system message (caller-wins)', async () => {
@@ -567,9 +565,9 @@ describe('engine integration — generateText', () => {
 // ---------------------------------------------------------------------------
 
 describe('engine integration — streamText', () => {
-    it('should inject a system message before routing to the provider', async () => {
+    it('should inject the system prompt via the `system` field before routing to the provider (HOS-205)', async () => {
         // Arrange
-        const capturedMessages: AiMessage[][] = [];
+        const capturedRequests: { system?: string; prompt?: string; messages?: AiMessage[] }[] = [];
         const fakeStream = (async function* () {
             yield { delta: 'streamed text' };
         })();
@@ -578,9 +576,7 @@ describe('engine integration — streamText', () => {
             id: 'stub',
             generateText: vi.fn(),
             streamText: vi.fn().mockImplementation((req) => {
-                if (req.messages !== undefined) {
-                    capturedMessages.push([...req.messages]);
-                }
+                capturedRequests.push(req);
                 return Promise.resolve({
                     stream: fakeStream,
                     meta: Promise.resolve({
@@ -608,18 +604,19 @@ describe('engine integration — streamText', () => {
             prompt: 'Tell me about Concepción'
         });
 
-        // Assert — provider received messages array with system first.
+        // Assert — HOS-205: provider received the system prompt via the native
+        // `system` field, prompt intact, no role:'system' message synthesized.
         // Source is 'default' (content was null) → composed DEFAULT_PROMPTS.chat + DEFAULT_RULES.chat.
-        expect(capturedMessages).toHaveLength(1);
-        const messages = capturedMessages[0];
-        expect(messages?.[0]?.role).toBe('system');
-        expect(messages?.[0]?.content).toBe(
+        expect(capturedRequests).toHaveLength(1);
+        const captured = capturedRequests[0];
+        expect(captured?.system).toBe(
             composeSystemPrompt({
                 content: DEFAULT_PROMPTS.chat,
                 rules: DEFAULT_RULES.chat
             })
         );
-        expect(messages?.[1]?.role).toBe('user');
+        expect(captured?.prompt).toBe('Tell me about Concepción');
+        expect(captured?.messages).toBeUndefined();
     });
 });
 

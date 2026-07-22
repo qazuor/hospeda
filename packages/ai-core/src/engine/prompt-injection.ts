@@ -7,18 +7,22 @@
  *
  * - If the caller already supplied a `system` string, OR a message with
  *   `role: 'system'`, the request is returned UNCHANGED — the caller knows
- *   what they are doing. Prefer the `system` field for new call sites (the
- *   Vercel AI SDK's native system-instructions channel); the `role: 'system'`
- *   message check is preserved for callers that still build their own
- *   `messages` array.
- * - Otherwise, the resolved system prompt is injected automatically:
- *   - **prompt-path** (`prompt` field) — converted to
- *     `messages: [{ role: 'system', content }, { role: 'user', content: prompt }]`.
- *   - **messages-path** (`messages` field) — the system message is prepended:
- *     `[{ role: 'system', content }, ...existingMessages]`.
+ *   what they are doing. The `role: 'system'` message check is preserved for
+ *   callers that still build their own `messages` array.
+ * - Otherwise, the resolved system prompt is injected via the SDK's native
+ *   `system` field (HOS-205), leaving the caller's `prompt` / `messages`
+ *   payload untouched:
+ *   - **prompt-path** (`prompt` field) — `{ prompt } → { system, prompt }`.
+ *   - **messages-path** (`messages` field) — `{ messages } → { system, messages }`.
+ *
+ * Injecting a `role: 'system'` entry into `messages` (the previous behavior)
+ * tripped the Vercel AI SDK's "System messages in the prompt or messages fields
+ * can be a security risk ... Use the system option instead" warning; the
+ * provider adapters already forward `input.system` to that native channel.
  *
  * `generateObject` has only a `prompt` field and no `messages`, so its
- * injection is handled inline in the engine with the simpler prompt-path logic.
+ * injection is handled inline in the engine (system content concatenated into
+ * the prompt string — no `role: 'system'` message, so no SDK warning).
  * `extractIntent` constructs its own fully-formed prompt string internally and
  * calls `generateObject`, so it is excluded from injection (injecting there
  * would double-wrap the prompt in a system message).
@@ -113,33 +117,32 @@ export interface InjectSystemPromptInput<T extends PromptOrMessagesRequest> {
  *
  * ## Injection paths
  *
- * When no caller system content exists, injection proceeds based on which
- * path the request uses. The auto-injected admin/default prompt still uses
- * the `messages`-based `role: 'system'` form below — only caller-supplied
- * system content is expected to use the `system` field (see `search-chat.ts`
- * / `chat.ts` for examples):
+ * When no caller system content exists, the resolved prompt is placed in the
+ * SDK-native `system` field (HOS-205) and the caller's `prompt` / `messages`
+ * payload is left as-is — no `role: 'system'` message is ever synthesized:
  *
  * | Path | Before | After |
  * |------|--------|-------|
- * | `prompt` | `{ prompt: 'hello' }` | `{ messages: [{ role:'system', content }, { role:'user', content:'hello' }] }` |
- * | `messages` | `{ messages: [{ role:'user', content:'hello' }] }` | `{ messages: [{ role:'system', content }, { role:'user', content:'hello' }] }` |
+ * | `prompt` | `{ prompt: 'hello' }` | `{ system: content, prompt: 'hello' }` |
+ * | `messages` | `{ messages: [{ role:'user', content:'hello' }] }` | `{ system: content, messages: [{ role:'user', content:'hello' }] }` |
  *
- * The converted `messages`-path result has the `prompt` field absent —
- * provider adapters branch on `prompt !== undefined` so removing it ensures
- * they use the correct `messages` code path.
+ * The `prompt` / `messages` discriminator is preserved, so provider adapters
+ * still branch correctly on `prompt !== undefined`; the added `system` field is
+ * forwarded to the SDK's native system-instructions channel by both adapters.
  *
  * **Schema validity**: `GenerateTextRequestSchema` uses `.superRefine` to
- * enforce exactly-one-of `prompt` / `messages`.  After injection, the returned
- * object always has `messages` and no `prompt`, satisfying the schema.
+ * enforce exactly-one-of `prompt` / `messages`. Injection only adds the
+ * independent `system` field, so that invariant still holds (and injection runs
+ * post-validation regardless).
  *
  * @param input - {@link InjectSystemPromptInput}
- * @returns The (possibly modified) request.  The type is `Omit<T, 'prompt'> & { messages: AiMessage[] }` after injection, or `T` unchanged when the caller already supplied a system message.
+ * @returns The request with `system` set to the resolved prompt, or `T` unchanged when the caller already supplied their own system content.
  *
  * @example
  * ```ts
  * // prompt-path:
  * injectSystemPrompt({ req: { feature: 'chat', locale: 'es', prompt: 'Hi' }, systemContent: 'You are...' })
- * // → { feature: 'chat', locale: 'es', messages: [{ role:'system', content:'You are...' }, { role:'user', content:'Hi' }] }
+ * // → { feature: 'chat', locale: 'es', prompt: 'Hi', system: 'You are...' }
  *
  * // messages-path with existing system (caller-wins):
  * injectSystemPrompt({ req: { feature: 'chat', locale: 'es', messages: [{ role:'system', content:'My custom prompt' }, { role:'user', content:'Hi' }] }, systemContent: 'ignored' })
@@ -148,7 +151,7 @@ export interface InjectSystemPromptInput<T extends PromptOrMessagesRequest> {
  */
 export function injectSystemPrompt<T extends PromptOrMessagesRequest>(
     input: InjectSystemPromptInput<T>
-): T | (Omit<T, 'prompt'> & { readonly messages: readonly AiMessage[] }) {
+): T {
     const { req, systemContent } = input;
 
     // Caller-wins: if the caller already provided a system message, pass through.
@@ -156,23 +159,14 @@ export function injectSystemPrompt<T extends PromptOrMessagesRequest>(
         return req;
     }
 
-    const systemMessage: AiMessage = { role: 'system', content: systemContent };
-
-    if (req.prompt !== undefined) {
-        // prompt-path → convert to messages form, drop the prompt field.
-        // Destructure to explicitly drop 'prompt'; spread the rest.
-        const { prompt: _droppedPrompt, ...rest } = req;
-        const userMessage: AiMessage = { role: 'user', content: req.prompt };
-        return {
-            ...rest,
-            messages: [systemMessage, userMessage]
-        } as Omit<T, 'prompt'> & { readonly messages: readonly AiMessage[] };
-    }
-
-    // messages-path → prepend the system message.
-    const existingMessages = req.messages ?? [];
-    return {
-        ...req,
-        messages: [systemMessage, ...existingMessages]
-    } as T | (Omit<T, 'prompt'> & { readonly messages: readonly AiMessage[] });
+    // HOS-205: inject the resolved system prompt via the Vercel AI SDK's native
+    // `system` channel, NOT as a `role: 'system'` entry inside `messages`. A
+    // system message embedded in `messages` (or `prompt`) trips the SDK warning
+    // "System messages in the prompt or messages fields can be a security risk
+    // because they may enable prompt injection attacks. Use the system option
+    // instead" (observed x3 on draft auto-translation). The caller's `prompt` /
+    // `messages` payload is left untouched; the provider adapters already forward
+    // `input.system` to the SDK's system-instructions option, so this is exactly
+    // the "use the system option instead" remediation the warning asks for.
+    return { ...req, system: systemContent } as T;
 }
