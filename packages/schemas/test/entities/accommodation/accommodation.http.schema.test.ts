@@ -92,6 +92,59 @@ describe('AccommodationCreateHttpSchema — capacity ceilings', () => {
     });
 });
 
+describe('AccommodationCreateHttpSchema — capacity validation message keys (HOS-243)', () => {
+    // The web edit/create forms resolve `issue.message` as an i18n key
+    // (`zodError.*`). These bounds used to carry Zod's raw English default,
+    // which leaked verbatim in every locale. Assert the localized key is wired.
+    const findIssueMessage = (
+        result: ReturnType<typeof AccommodationCreateHttpSchema.safeParse>,
+        field: string
+    ): string | undefined =>
+        result.success
+            ? undefined
+            : result.error.issues.find((issue) => issue.path[0] === field)?.message;
+
+    it('emits the bedrooms.min key when bedrooms is below 0', () => {
+        const result = AccommodationCreateHttpSchema.safeParse({
+            ...baseCreatePayload,
+            bedrooms: -1
+        });
+        expect(findIssueMessage(result, 'bedrooms')).toBe(
+            'zodError.accommodation.extraInfo.bedrooms.min'
+        );
+    });
+
+    it('emits the bedrooms.max key when bedrooms is above 100', () => {
+        const result = AccommodationCreateHttpSchema.safeParse({
+            ...baseCreatePayload,
+            bedrooms: 101
+        });
+        expect(findIssueMessage(result, 'bedrooms')).toBe(
+            'zodError.accommodation.extraInfo.bedrooms.max'
+        );
+    });
+
+    it('emits the bathrooms.min key when bathrooms is below 1', () => {
+        const result = AccommodationCreateHttpSchema.safeParse({
+            ...baseCreatePayload,
+            bathrooms: 0
+        });
+        expect(findIssueMessage(result, 'bathrooms')).toBe(
+            'zodError.accommodation.extraInfo.bathrooms.min'
+        );
+    });
+
+    it('emits the bathrooms.max key when bathrooms is above 100', () => {
+        const result = AccommodationCreateHttpSchema.safeParse({
+            ...baseCreatePayload,
+            bathrooms: 101
+        });
+        expect(findIssueMessage(result, 'bathrooms')).toBe(
+            'zodError.accommodation.extraInfo.bathrooms.max'
+        );
+    });
+});
+
 // ---------------------------------------------------------------------------
 // socialNetworks — HTTP schema parsing
 // ---------------------------------------------------------------------------

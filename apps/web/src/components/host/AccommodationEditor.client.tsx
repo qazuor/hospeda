@@ -98,7 +98,7 @@ export interface AccommodationEditorProps {
  * otherwise silently coerce an explicit `null` (host clearing the field) to
  * `0`, which then passes bounds checks it should not.
  */
-const AccommodationEditFormSchema = AccommodationUpdateHttpSchema.extend({
+export const AccommodationEditFormSchema = AccommodationUpdateHttpSchema.extend({
     name: z
         .string()
         .min(3, { message: 'zodError.accommodation.name.min' })
@@ -112,8 +112,20 @@ const AccommodationEditFormSchema = AccommodationUpdateHttpSchema.extend({
     latitude: z.number().min(-90).max(90).nullable().optional(),
     longitude: z.number().min(-180).max(180).nullable().optional(),
     maxGuests: z.number().int().min(1).max(200).nullable().optional(),
-    bedrooms: z.number().int().min(0).max(100).nullable().optional(),
-    bathrooms: z.number().int().min(1).max(100).nullable().optional(),
+    bedrooms: z
+        .number()
+        .int()
+        .min(0, { message: 'zodError.accommodation.extraInfo.bedrooms.min' })
+        .max(100, { message: 'zodError.accommodation.extraInfo.bedrooms.max' })
+        .nullable()
+        .optional(),
+    bathrooms: z
+        .number()
+        .int()
+        .min(1, { message: 'zodError.accommodation.extraInfo.bathrooms.min' })
+        .max(100, { message: 'zodError.accommodation.extraInfo.bathrooms.max' })
+        .nullable()
+        .optional(),
     basePrice: z
         .number()
         .positive({ message: 'zodError.common.price.price.positive' })
