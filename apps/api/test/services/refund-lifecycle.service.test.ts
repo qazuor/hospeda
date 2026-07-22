@@ -258,12 +258,13 @@ function buildPartialRefundDbMock(returnedAccumulated: number) {
 /**
  * Build a DB mock for accumulated-partials-reach-full path (items 1+3 fix).
  *
- * After the fix:
+ * After the HOS-235 fix (payment refund write moved OUT of the transaction):
  *   update[0].set(...).where(...).returning(...) → [{ refundedAmount: payment.amount }]
- *   (falls through to full-cancel path)
+ *   (partial atomic increment; falls through to full-cancel path)
+ *   update[1].set(...).where(...) → billingPayments.refundedAmount (payment.amount —
+ *     idempotent, now written unconditionally BEFORE the transition guard)
  *   select[0] → billingSubscriptions.status
  *   db.transaction(tx => ...)
- *     tx.update[1] → billingPayments.refundedAmount (payment.amount — idempotent)
  *     tx.update[2] → billingSubscriptions.status → cancelled
  *     tx.insert[0] → billingSubscriptionEvents (full_refund event)
  *
@@ -549,7 +550,7 @@ describe('applyRefundLifecycle', () => {
     // ── Full refund — happy path (item 2: atomic triple-write in tx) ────────
 
     describe('full refund — explicit amount equal to payment.amount', () => {
-        it('REGRESSION item-2: wraps billingPayments + subscription + audit in a single transaction', async () => {
+        it('records the payment refund up front, then wraps the subscription status + audit in one transaction (HOS-235)', async () => {
             const { db, spies } = buildDbMock('active');
             vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
 
@@ -561,13 +562,14 @@ describe('applyRefundLifecycle', () => {
 
             // withServiceTransaction (mocked to db.transaction) must be called once.
             expect(spies.transaction).toHaveBeenCalledTimes(1);
-            // Two updates inside the transaction.
+            // Two updates total: the billing_payments refund (now OUTSIDE the tx,
+            // before the guard — HOS-235) + the subscription status (inside the tx).
             expect(spies.update).toHaveBeenCalledTimes(2);
-            // One insert inside the transaction.
+            // One insert: the full_refund audit event (inside the tx).
             expect(spies.insert).toHaveBeenCalledTimes(1);
         });
 
-        it('persists refundedAmount equal to payment.amount inside the transaction', async () => {
+        it('persists refundedAmount equal to payment.amount (recorded before the transition guard)', async () => {
             const { db, spies } = buildDbMock('active');
             vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
 
@@ -704,7 +706,11 @@ describe('applyRefundLifecycle', () => {
     // ── Full refund — subscription already cancelled (invalid transition) ───
 
     describe('full refund on an already-cancelled subscription', () => {
-        it('skips the status write when the transition is invalid', async () => {
+        // HOS-235: the refund must STILL be recorded on billing_payments even
+        // though the subscription status transition (cancelled → cancelled) is
+        // invalid and therefore skipped. Previously the whole write lived inside
+        // the guarded transaction, so `refunded_amount` stayed 0 forever.
+        it('records refunded_amount on the payment but skips the subscription status write (HOS-235)', async () => {
             const { db, spies } = buildDbMock('cancelled');
             vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
 
@@ -714,13 +720,41 @@ describe('applyRefundLifecycle', () => {
                 adminUserId: ADMIN_USER_ID
             });
 
-            // No transaction on invalid transition.
+            // No transaction on invalid transition — the tx is only for the
+            // subscription-status write, which is skipped here.
             expect(spies.transaction).not.toHaveBeenCalled();
+
             const setArgs = vi
                 .mocked(spies.updateSet)
                 .mock.calls.map((call) => call[0] as Record<string, unknown>);
+            // The refund IS recorded (the bug: this used to be missing).
+            expect(setArgs.some((a) => a.refundedAmount === 1000)).toBe(true);
+            // The subscription status is NOT written (invalid transition).
             expect(setArgs.some((a) => a.status === 'cancelled')).toBe(false);
-            expect(spies.insert).not.toHaveBeenCalled();
+        });
+
+        it('writes a payment.full_refund_no_transition audit event (HOS-235)', async () => {
+            const { db, spies } = buildDbMock('cancelled');
+            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+
+            await applyRefundLifecycle({
+                payment: buildPayment(),
+                refundAmount: 1000,
+                adminUserId: ADMIN_USER_ID
+            });
+
+            expect(spies.insert).toHaveBeenCalled();
+            const eventArg = vi.mocked(spies.insertValues).mock.calls[0]?.[0] as Record<
+                string,
+                unknown
+            >;
+            expect((eventArg?.metadata as Record<string, unknown>)?.action).toBe(
+                'payment.full_refund_no_transition'
+            );
+            expect((eventArg?.metadata as Record<string, unknown>)?.refundAmount).toBe(1000);
+            // No status change on the event (previousStatus === newStatus).
+            expect(eventArg?.previousStatus).toBe('cancelled');
+            expect(eventArg?.newStatus).toBe('cancelled');
         });
 
         it('still clears the entitlement cache even when the transition is skipped', async () => {
@@ -761,11 +795,13 @@ describe('applyRefundLifecycle', () => {
     // ── Full refund — subscription row not found ────────────────────────────
 
     describe('full refund when subscription row is missing from DB', () => {
-        it('clears the cache and returns without writing', async () => {
+        it('still records the payment refund, then clears the cache without a status write (HOS-235)', async () => {
             const selectWhere = vi.fn().mockResolvedValue([]); // no rows
             const selectFrom = vi.fn().mockReturnValue({ where: selectWhere });
             const select = vi.fn().mockReturnValue({ from: selectFrom });
-            const update = vi.fn();
+            const updateWhere = vi.fn().mockResolvedValue(undefined);
+            const updateSet = vi.fn().mockReturnValue({ where: updateWhere });
+            const update = vi.fn().mockReturnValue({ set: updateSet });
             const insert = vi.fn();
             const transaction = vi.fn();
             vi.mocked(getDb).mockReturnValue({
@@ -781,7 +817,12 @@ describe('applyRefundLifecycle', () => {
                 adminUserId: ADMIN_USER_ID
             });
 
-            expect(update).not.toHaveBeenCalled();
+            // HOS-235: the refund is recorded on billing_payments even though the
+            // subscription row is missing (the payment itself was refunded).
+            const setArgs = updateSet.mock.calls.map((call) => call[0] as Record<string, unknown>);
+            expect(setArgs.some((a) => a.refundedAmount === 1000)).toBe(true);
+            // No subscription status write, no audit event, no transaction.
+            expect(setArgs.some((a) => a.status === 'cancelled')).toBe(false);
             expect(insert).not.toHaveBeenCalled();
             expect(transaction).not.toHaveBeenCalled();
             expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
