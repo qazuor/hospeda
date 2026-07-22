@@ -30,6 +30,7 @@
  * @module apps/api/routes/accommodation/protected/import-from-url-status
  */
 
+import { ExchangeRateModel } from '@repo/db';
 import {
     type AccommodationImportStatusQuery,
     AccommodationImportStatusQuerySchema,
@@ -42,6 +43,10 @@ import {
     AmenityService,
     type AsyncExtractionSource,
     DestinationService,
+    DolarApiClient,
+    ExchangeRateApiClient,
+    ExchangeRateConfigService,
+    ExchangeRateFetcher,
     finalizeImportDraft,
     type ImportContext,
     resolveImportRunStatus,
@@ -61,6 +66,25 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const amenityService = new AmenityService({ logger: apiLogger });
 const destinationService = new DestinationService({ logger: apiLogger });
 
+/**
+ * Exchange-rate dependencies (BETA-181) so an async-resolved (Airbnb/Booking)
+ * draft's USD price is converted to ARS on this poll path too, not just the
+ * synchronous `POST .../import-from-url` path.
+ *
+ * Constructed at module load (matching this file's sibling `amenityService` /
+ * `destinationService` above), NOT per-request. `import-from-url.ts` builds the
+ * same deps inside its handler instead; both are safe — `getRateWithFallback`
+ * only reads cached rates from the DB and holds no per-request state.
+ */
+const exchangeRateFetcher = new ExchangeRateFetcher({
+    dolarApiClient: new DolarApiClient(),
+    exchangeRateApiClient: new ExchangeRateApiClient({
+        apiKey: env.HOSPEDA_EXCHANGE_RATE_API_KEY
+    }),
+    exchangeRateModel: new ExchangeRateModel()
+});
+const exchangeRateConfigService = new ExchangeRateConfigService({ logger: apiLogger });
+
 // ---------------------------------------------------------------------------
 // Core poll logic (extracted for direct unit testing — same pattern as
 // buildImportAiExtract in import-from-url.ts)
@@ -78,6 +102,18 @@ export interface HandleImportStatusPollDeps {
     readonly amenityService: AmenityService;
     /** Composed DestinationService instance. */
     readonly destinationService: DestinationService;
+    /**
+     * Exchange-rate fetcher used to convert a USD draft price to ARS
+     * (BETA-181). Optional — when absent (or when
+     * {@link exchangeRateConfigService} is absent), price conversion is
+     * skipped and the scraped price is left untouched.
+     */
+    readonly exchangeRateFetcher?: ExchangeRateFetcher;
+    /**
+     * Exchange-rate config service used to read the platform's default rate
+     * type (BETA-181). Optional — see {@link exchangeRateFetcher}.
+     */
+    readonly exchangeRateConfigService?: ExchangeRateConfigService;
     /**
      * Current time in epoch milliseconds, used to evaluate the poll ceiling.
      * Defaults to `Date.now()` — overridable for deterministic tests.
@@ -112,7 +148,15 @@ export async function handleImportStatusPoll(
     query: AccommodationImportStatusQuery,
     deps: HandleImportStatusPollDeps
 ): Promise<AccommodationImportStatusResponse> {
-    const { context, actor, amenityService, destinationService, now = Date.now() } = deps;
+    const {
+        context,
+        actor,
+        amenityService,
+        destinationService,
+        exchangeRateFetcher,
+        exchangeRateConfigService,
+        now = Date.now()
+    } = deps;
 
     if (query.source !== 'airbnb' && query.source !== 'booking') {
         throw new ServiceError(
@@ -152,7 +196,9 @@ export async function handleImportStatusPoll(
             source,
             actor,
             amenityService,
-            destinationService
+            destinationService,
+            exchangeRateFetcher,
+            exchangeRateConfigService
         });
         return { settled: true, draft };
     }
@@ -206,7 +252,9 @@ export const protectedImportFromUrlStatusRoute = createProtectedRoute({
             context,
             actor,
             amenityService,
-            destinationService
+            destinationService,
+            exchangeRateFetcher,
+            exchangeRateConfigService
         });
     }
 });

@@ -17,6 +17,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { RawExtraction } from '../../../src/services/accommodation-import/adapter.types.js';
+import type { ExchangeRateConfigService } from '../../../src/services/exchange-rate/exchange-rate-config.service.js';
+import type { ExchangeRateFetcher } from '../../../src/services/exchange-rate/exchange-rate-fetcher.js';
 import type { Actor } from '../../../src/types/index.js';
 
 vi.mock('../../../src/services/accommodation-import/resolvers/amenities.js', () => ({
@@ -169,5 +171,85 @@ describe('finalizeImportDraft', () => {
         const result = await finalizeImportDraft(raw, makeCtx('generic'));
 
         expect(result.draft).not.toHaveProperty('destinationId');
+    });
+
+    describe('price conversion (BETA-181)', () => {
+        const usdRaw: RawExtraction = {
+            sourcePlatform: 'airbnb',
+            name: { value: 'Casa Sol', source: 'jsonld' },
+            price: {
+                price: { value: 100, source: 'jsonld' },
+                currency: { value: 'USD', source: 'jsonld' }
+            }
+        };
+
+        it('converts a USD draft price to ARS and surfaces priceConversion when exchange-rate deps are provided', async () => {
+            const exchangeRateFetcher = {
+                getRateWithFallback: async () => ({
+                    rate: {
+                        id: 'rate-1',
+                        fromCurrency: 'USD',
+                        toCurrency: 'ARS',
+                        rate: 1500,
+                        inverseRate: 1 / 1500,
+                        rateType: 'oficial',
+                        source: 'dolarapi',
+                        isManualOverride: false,
+                        fetchedAt: new Date(),
+                        expiresAt: null,
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    },
+                    quality: 'fresh'
+                })
+            } as unknown as ExchangeRateFetcher;
+            const exchangeRateConfigService = {
+                getConfig: async () => ({ data: { defaultRateType: 'oficial' } })
+            } as unknown as ExchangeRateConfigService;
+
+            const result = await finalizeImportDraft(usdRaw, {
+                ...makeCtx('airbnb'),
+                exchangeRateFetcher,
+                exchangeRateConfigService
+            });
+
+            expect(result.draft.price?.price?.value).toBe(150000);
+            expect(result.draft.price?.currency?.value).toBe('ARS');
+            expect(result.priceConversion).toEqual({
+                originalPrice: 100,
+                originalCurrency: 'USD',
+                convertedPrice: 150000,
+                currency: 'ARS',
+                rate: 1500,
+                rateType: 'oficial'
+            });
+        });
+
+        it('leaves the price untouched and omits priceConversion when no exchange-rate deps are provided', async () => {
+            const result = await finalizeImportDraft(usdRaw, makeCtx('airbnb'));
+
+            expect(result.draft.price?.price?.value).toBe(100);
+            expect(result.draft.price?.currency?.value).toBe('USD');
+            expect(result.priceConversion).toBeUndefined();
+        });
+
+        it('leaves the price untouched when conversion is not possible (e.g. no rate)', async () => {
+            const exchangeRateFetcher = {
+                getRateWithFallback: async () => ({ rate: null, quality: 'not_found' })
+            } as unknown as ExchangeRateFetcher;
+            const exchangeRateConfigService = {
+                getConfig: async () => ({ data: { defaultRateType: 'oficial' } })
+            } as unknown as ExchangeRateConfigService;
+
+            const result = await finalizeImportDraft(usdRaw, {
+                ...makeCtx('airbnb'),
+                exchangeRateFetcher,
+                exchangeRateConfigService
+            });
+
+            expect(result.draft.price?.price?.value).toBe(100);
+            expect(result.draft.price?.currency?.value).toBe('USD');
+            expect(result.priceConversion).toBeUndefined();
+        });
     });
 });

@@ -106,12 +106,43 @@ const FIXTURE_IMPORT_RESPONSE_FULL: AccommodationImportResponse = {
 };
 
 /**
- * Mock ImportFromUrl with a stub that renders two buttons:
+ * Fixture import response for a USD price that was auto-converted to ARS by
+ * the API (BETA-181). Mirrors the FULL fixture's price/extras shape, but
+ * `draft.price` already carries the CONVERTED ARS value (as the real API
+ * rewrites it server-side) plus the advisory `priceConversion` object.
+ */
+const FIXTURE_IMPORT_RESPONSE_PRICE_CONVERTED: AccommodationImportResponse = {
+    draft: {
+        name: { value: 'Casa Importada', confidence: 90, source: 'jsonld' },
+        summary: { value: 'Descripción importada desde URL.', confidence: 75, source: 'opengraph' },
+        type: { value: 'CABIN', confidence: 80, source: 'text' },
+        price: {
+            price: { value: 150000, confidence: 65, source: 'text' },
+            currency: { value: 'ARS', confidence: 65, source: 'text' }
+        }
+    },
+    source: 'airbnb',
+    methodsUsed: ['jsonld', 'text'],
+    partial: false,
+    priceConversion: {
+        originalPrice: 100,
+        originalCurrency: 'USD',
+        convertedPrice: 150000,
+        currency: 'ARS',
+        rate: 1500,
+        rateType: 'oficial'
+    }
+};
+
+/**
+ * Mock ImportFromUrl with a stub that renders three buttons:
  * - "Importar desde una URL" toggles the section (mirrors the toggle button the
  *   real component renders).
  * - "Simular importación" calls `onImported` with the fixture response so the
  *   test can drive the prefill without a real HTTP request.
  * - "Simular importación completa" calls `onImported` with the full fixture (extras).
+ * - "Simular importación con conversión de precio" calls `onImported` with the
+ *   USD→ARS price-conversion fixture (BETA-181).
  */
 vi.mock('../../../src/components/host/ImportFromUrl.client', () => ({
     ImportFromUrl: ({
@@ -136,6 +167,13 @@ vi.mock('../../../src/components/host/ImportFromUrl.client', () => ({
                 onClick={() => onImported?.(FIXTURE_IMPORT_RESPONSE_FULL)}
             >
                 Simular importación completa
+            </button>
+            <button
+                type="button"
+                data-testid="stub-trigger-import-price-conversion"
+                onClick={() => onImported?.(FIXTURE_IMPORT_RESPONSE_PRICE_CONVERTED)}
+            >
+                Simular importación con conversión de precio
             </button>
         </div>
     )
@@ -473,6 +511,17 @@ async function triggerFullImport(user: ReturnType<typeof userEvent.setup>): Prom
     await user.click(screen.getByTestId('stub-trigger-import-full'));
 }
 
+/**
+ * Open the import section and fire an import whose price was auto-converted
+ * from USD to ARS (BETA-181), via the stub's price-conversion fixture button.
+ */
+async function triggerPriceConversionImport(
+    user: ReturnType<typeof userEvent.setup>
+): Promise<void> {
+    await user.click(screen.getByTestId('import-toggle'));
+    await user.click(screen.getByTestId('stub-trigger-import-price-conversion'));
+}
+
 describe('CreatePropertyMiniForm — import prefill (T-025)', () => {
     it('pre-fills the name input from the import draft', async () => {
         // Arrange
@@ -590,6 +639,38 @@ describe('CreatePropertyMiniForm — import prefill (T-025)', () => {
         // null (no onChange was called on the city SearchableSelect).
         // The city picker renders with its original label from the mock ("Ciudad").
         expect(screen.getByTestId('property-city-mock-select')).toHaveTextContent(/Ciudad/i);
+    });
+
+    it('surfaces the price-conversion advisory banner when response carries priceConversion (BETA-181)', async () => {
+        // Arrange
+        const user = userEvent.setup();
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        // Assert: banner absent before import.
+        expect(screen.queryByTestId('price-conversion-hint')).not.toBeInTheDocument();
+
+        // Act
+        await triggerPriceConversionImport(user);
+
+        // Assert: banner renders with the original USD amount and converted ARS amount.
+        const banner = screen.getByTestId('price-conversion-hint');
+        expect(banner).toBeInTheDocument();
+        expect(banner).toHaveTextContent('150.000');
+        // The pre-filled base-price input already holds the CONVERTED ARS value,
+        // not the original USD one — conversion never forces anything, it's advisory.
+        expect(screen.getByTestId('extras-basePrice')).toHaveValue(150000);
+    });
+
+    it('does NOT surface the price-conversion banner when the import has no priceConversion', async () => {
+        // Arrange
+        const user = userEvent.setup();
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        // Act
+        await triggerFullImport(user);
+
+        // Assert: FIXTURE_IMPORT_RESPONSE_FULL has an ARS price with no conversion.
+        expect(screen.queryByTestId('price-conversion-hint')).not.toBeInTheDocument();
     });
 
     it('does NOT call the create endpoint as a result of import (no auto-save)', async () => {
