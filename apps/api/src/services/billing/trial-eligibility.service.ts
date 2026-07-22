@@ -24,8 +24,10 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { billingSubscriptionEvents, getDb } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { normalizeStoredSubscriptionStatus } from '@repo/service-core';
+import { inArray } from 'drizzle-orm';
 
 /**
  * Input shared by {@link hasAnyPriorSubscription} and
@@ -82,40 +84,120 @@ const NEVER_AUTHORIZED_STATUSES: ReadonlySet<SubscriptionStatusEnum> = new Set([
 ]);
 
 /**
- * Whether a single prior subscription consumed the customer's one-per-lifetime
- * trial — decided purely by its NORMALIZED lifecycle status.
+ * Statuses only ever reachable AFTER the provider authorized the subscription.
+ * Presence of any of these — as a subscription's current status, or ANYWHERE in
+ * its `billing_subscription_events` history (as a `previousStatus` or
+ * `newStatus`) — proves the subscription was authorized at least once, and so
+ * consumed the trial.
  *
- * Consumed (`true`) for any status outside {@link NEVER_AUTHORIZED_STATUSES}
- * (`active`/`trialing`/`past_due`/`paused`/`cancelled`/`expired`/`comp` — all
- * only reachable after authorization) and for an unknown/unmappable status
- * (`normalizeStoredSubscriptionStatus` → `null`), the safe fail-closed default
- * for the single trial gate. NOT consumed for the two never-authorized states.
- *
- * Status is the ONLY signal — deliberately NOT the provider id. Presence of a
- * `providerSubscriptionIds.mercadopago` does NOT imply the preapproval was ever
- * authorized: the `mode:'paid'` inline flow persists the id at creation time,
- * BEFORE the customer completes MP's authorization page (HOS-151 Bug C), and the
- * `abandoned-pending-subs` cron flips a reaped row to `abandoned` WITHOUT
- * clearing the id. Trusting id-presence therefore re-opens the exact HOS-230
- * false-disqualification bug (an abandoned/incomplete row with a stray id wrongly
- * counting as a consumed trial, even cross-domain). The narrow window where an
- * authorized `pending_provider` row has not yet had its webhook flip the status
- * is intentionally left to read as "still eligible" — the correct guard against a
- * second concurrent checkout in that window is the live-preapproval duplicate
- * guard (HOS-232), not this eligibility heuristic.
+ * `cancelled` is deliberately NOT here: it is ambiguous. It is reachable both
+ * from an authorized state (`active`/`trialing` → `cancelled`, a real
+ * cancellation that DID consume the trial) AND directly from `pending_provider`
+ * (`pending_provider` → `cancelled`, when MercadoPago reports the pending
+ * preapproval rejected/cancelled before it ever activated — the user backed out
+ * of / rejected the card on MP's hosted checkout; a routine HOS-191 transition
+ * that never consumed a trial). `comp` is also excluded here — it is a direct DB
+ * insert with no provider authorization — but it is handled as consumed by
+ * {@link classifyPriorSubscription} because it is an explicit permanent grant.
  */
-function consumedTrialEligibility(sub: PriorSubscription): boolean {
+const AUTHORIZED_STATUSES: ReadonlySet<SubscriptionStatusEnum> = new Set([
+    SubscriptionStatusEnum.ACTIVE,
+    SubscriptionStatusEnum.TRIALING,
+    SubscriptionStatusEnum.PAST_DUE,
+    SubscriptionStatusEnum.PAUSED,
+    SubscriptionStatusEnum.EXPIRED
+]);
+
+/** Whether a raw stored status value normalizes to an authorized status. */
+function isAuthorizedStatus(rawStatus: unknown): boolean {
+    const status = normalizeStoredSubscriptionStatus(rawStatus);
+    return status !== null && AUTHORIZED_STATUSES.has(status);
+}
+
+/** Classification of a prior subscription against the trial-eligibility rule. */
+type PriorSubscriptionClass =
+    /** Definitely consumed the trial (authorized status, or an explicit `comp` grant). */
+    | 'consumed'
+    /** Definitely did not (never-authorized `pending_provider`/`abandoned`). */
+    | 'not-consumed'
+    /** `cancelled` — needs the event history to tell whether it was ever authorized. */
+    | 'ambiguous-cancelled';
+
+/**
+ * Classify a single prior subscription by its NORMALIZED current status.
+ *
+ * Normalization is required because `getByCustomerId` returns the raw stored
+ * string and `billing_subscriptions.status` holds two vocabularies (qzpay
+ * `incomplete`/`incomplete_expired`/`canceled` from the `mode:'paid'` flow,
+ * Hospeda `pending_provider`/`abandoned`/`cancelled` from the
+ * share-link/webhook/cron paths). An unknown/unmappable status
+ * (`normalizeStoredSubscriptionStatus` → `null`) is treated as `consumed` — the
+ * fail-closed default for the single trial gate, which must never accidentally
+ * hand out a second trial.
+ *
+ * NOTE: status alone is deliberately the classifier, NOT the provider id —
+ * presence of a `providerSubscriptionIds.mercadopago` does NOT imply
+ * authorization: the `mode:'paid'` inline flow persists the id at creation
+ * (HOS-151 Bug C) and the `abandoned-pending-subs` cron reaps a row to
+ * `abandoned` WITHOUT clearing the id, so trusting id-presence would re-open the
+ * exact HOS-230 false-disqualification bug.
+ */
+function classifyPriorSubscription(sub: PriorSubscription): PriorSubscriptionClass {
     const status = normalizeStoredSubscriptionStatus(sub.status);
-    return status === null || !NEVER_AUTHORIZED_STATUSES.has(status);
+    if (status === null) {
+        return 'consumed';
+    }
+    if (status === SubscriptionStatusEnum.CANCELLED) {
+        return 'ambiguous-cancelled';
+    }
+    return NEVER_AUTHORIZED_STATUSES.has(status) ? 'not-consumed' : 'consumed';
+}
+
+/**
+ * Whether any of the given (cancelled) subscriptions was authorized by the
+ * provider at least once, resolved from the `billing_subscription_events` audit
+ * trail — the single ground-truth signal that disambiguates a real cancellation
+ * (`active`/`trialing` → `cancelled`, consumed the trial) from a never-activated
+ * backout (`pending_provider` → `cancelled`, did NOT, the HOS-230 case).
+ *
+ * A subscription was authorized iff any of its events carries an authorized
+ * status in `previousStatus` OR `newStatus` (checking both catches the
+ * authorization transition itself and the later cancel-from-authorized event).
+ * A `pending_provider` → `cancelled` row has neither, so it reads as
+ * never-authorized and does NOT consume the trial. A cancelled row with NO
+ * events (a data-integrity oddity — a real cancel always writes an event) reads
+ * as never-authorized, the direction that fixes the bug.
+ *
+ * @param subscriptionIds - The ids of the customer's `cancelled` subscriptions.
+ * @returns `true` if at least one was ever authorized.
+ */
+async function anyCancelledSubscriptionWasAuthorized(
+    subscriptionIds: readonly string[]
+): Promise<boolean> {
+    const db = getDb();
+    const events = await db
+        .select({
+            previousStatus: billingSubscriptionEvents.previousStatus,
+            newStatus: billingSubscriptionEvents.newStatus
+        })
+        .from(billingSubscriptionEvents)
+        .where(inArray(billingSubscriptionEvents.subscriptionId, [...subscriptionIds]));
+
+    return events.some(
+        (event) => isAuthorizedStatus(event.previousStatus) || isAuthorizedStatus(event.newStatus)
+    );
 }
 
 /**
  * Whether a billing customer has ANY prior subscription that actually consumed
  * their one-per-lifetime free trial — i.e. one whose preapproval was authorized
- * by the provider at least once (any status, any product domain, including
- * cancelled). Checkouts that ended in `abandoned` (or `pending_provider` rows
- * that never authorized) are explicitly EXCLUDED: merely opening the
- * MercadoPago screen and backing out must not strip the trial (HOS-230).
+ * by the provider at least once (any authorized status, any product domain,
+ * including a subsequently-cancelled one). Checkouts the user backed out of
+ * before authorization are explicitly EXCLUDED: `abandoned` /
+ * never-authorized `pending_provider` rows (HOS-230), AND `cancelled` rows that
+ * were reached directly from `pending_provider` (MP reported the preapproval
+ * rejected before it ever activated) — the latter disambiguated via the
+ * subscription's event history.
  *
  * This is the exact query `subscription-checkout.service.ts` runs (behind
  * its `planHasTrial && planTrialDays > 0` short-circuit) to decide
@@ -124,15 +206,37 @@ function consumedTrialEligibility(sub: PriorSubscription): boolean {
  * extracted here so both call sites, plus this module's own
  * {@link resolveTrialEligibility}, share ONE implementation.
  *
+ * The event-history query runs ONLY when the customer's sole prior rows are
+ * `cancelled` (no unambiguously-authorized subscription short-circuits it away
+ * first), so the common paths stay a single `getByCustomerId` call.
+ *
  * @param input - Billing instance and customer id.
  * @returns `true` when the customer has at least one authorized prior
  *   subscription; `false` when they have never had one (or only ever
- *   abandoned/pending checkouts).
+ *   abandoned/pending/never-activated-cancelled checkouts).
  */
 export async function hasAnyPriorSubscription(input: TrialEligibilityInput): Promise<boolean> {
     const { billing, customerId } = input;
     const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
-    return subscriptions.some(consumedTrialEligibility);
+
+    const cancelledSubscriptionIds: string[] = [];
+    for (const sub of subscriptions) {
+        const classification = classifyPriorSubscription(sub);
+        if (classification === 'consumed') {
+            // An unambiguously-authorized subscription settles it — no need to
+            // inspect event history.
+            return true;
+        }
+        if (classification === 'ambiguous-cancelled') {
+            cancelledSubscriptionIds.push(sub.id);
+        }
+    }
+
+    if (cancelledSubscriptionIds.length === 0) {
+        return false;
+    }
+
+    return anyCancelledSubscriptionWasAuthorized(cancelledSubscriptionIds);
 }
 
 /**
