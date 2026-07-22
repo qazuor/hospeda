@@ -58,13 +58,32 @@ vi.mock('@repo/db', () => ({
     billingSubscriptions: {
         planId: 'planId',
         status: 'status',
+        mpSubscriptionId: 'mpSubscriptionId',
         deletedAt: 'deletedAt'
+    },
+    // HOS-176: updatePlan now enqueues a plan price change (plan-price-change.service),
+    // which references these table columns + operators.
+    billingPlanPriceChanges: {
+        id: 'id',
+        planId: 'planId',
+        priceId: 'priceId',
+        billingInterval: 'billingInterval',
+        oldAmount: 'oldAmount',
+        newAmount: 'newAmount',
+        direction: 'direction',
+        status: 'status',
+        effectiveAt: 'effectiveAt',
+        actorId: 'actorId',
+        metadata: 'metadata',
+        updatedAt: 'updatedAt'
     },
     billingAuditLogs: { id: 'id' },
     and: vi.fn((...args: unknown[]) => ({ _and: args })),
     asc: vi.fn((col: unknown) => ({ _asc: col })),
     eq: vi.fn((col: unknown, val: unknown) => ({ _eq: { col, val } })),
     isNull: vi.fn((col: unknown) => ({ _isNull: col })),
+    isNotNull: vi.fn((col: unknown) => ({ _isNotNull: col })),
+    inArray: vi.fn((col: unknown, vals: unknown) => ({ _inArray: { col, vals } })),
     count: vi.fn(() => ({ _count: true })),
     sql: Object.assign(
         vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
@@ -231,7 +250,10 @@ function buildMockDb(
             return makeChain(result);
         }),
         insert: vi.fn().mockImplementation(() => {
-            const result = insertResult[insertIdx] ?? [];
+            // HOS-176: the plan price-change enqueue does insert().returning() and needs a
+            // non-empty row so `[inserted]` has an id. Any insert not explicitly sequenced
+            // (e.g. the enqueue header insert) falls back to a generated row rather than [].
+            const result = insertResult[insertIdx] ?? [{ id: 'mock-generated-id' }];
             insertIdx++;
             return makeChain(result);
         }),
