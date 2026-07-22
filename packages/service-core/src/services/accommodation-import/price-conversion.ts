@@ -27,6 +27,7 @@ import type { Actor } from '../../types/index.js';
 import { convertAmount } from '../exchange-rate/exchange-rate.helpers.js';
 import type { ExchangeRateConfigService } from '../exchange-rate/exchange-rate-config.service.js';
 import type { ExchangeRateFetcher } from '../exchange-rate/exchange-rate-fetcher.js';
+import { isPlausiblePerNightUsd } from './adapters/price-plausibility.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -95,7 +96,10 @@ export function roundToNearestThousand(input: { amount: number }): number {
  * Only USD → ARS conversion is supported — there is no reliable BRL rate in
  * the platform's exchange-rate infrastructure, so any currency other than
  * `'ARS'`/`'USD'` is left untouched (returns `null`). An `'ARS'` price also
- * returns `null` since there is nothing to convert.
+ * returns `null` since there is nothing to convert. A USD price whose
+ * per-night magnitude is implausible ({@link isPlausiblePerNightUsd} band —
+ * below $1 or above $3000) also returns `null` so a mis-parsed value is never
+ * converted into a `0` or absurdly-high ARS price (BETA-169).
  *
  * **Never throws.** Any error (config lookup, rate lookup, unexpected
  * exception) degrades to `null` so the caller can safely leave the scraped
@@ -130,6 +134,18 @@ export async function convertImportedPriceToArs(
 
         // Only USD→ARS is supported — no reliable BRL rate exists.
         if (cur !== 'USD') {
+            return null;
+        }
+
+        // Plausibility floor (BETA-169 band [PER_NIGHT_MIN_USD, PER_NIGHT_MAX_USD]).
+        // The OTA price-probe guard runs INSIDE the Airbnb/Booking adapters, but the
+        // generic/JSON-LD/AI adapter does NOT — so a mis-parsed sub-$1 or absurdly
+        // high "USD" per-night value can reach here. Converting a sub-$1 price would
+        // silently round to 0 ARS and still show a "converted" banner; an ~1000x
+        // value would fabricate a millions-of-ARS price. In both cases leave the
+        // scraped price untouched (return null) for the host to fix manually —
+        // under-resolve is safer than mis-resolve.
+        if (!isPlausiblePerNightUsd(price)) {
             return null;
         }
 

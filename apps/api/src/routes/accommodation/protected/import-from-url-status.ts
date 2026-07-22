@@ -67,10 +67,14 @@ const amenityService = new AmenityService({ logger: apiLogger });
 const destinationService = new DestinationService({ logger: apiLogger });
 
 /**
- * Exchange-rate dependencies (BETA-181), wired the same way as
- * `import-from-url.ts` so an async-resolved (Airbnb/Booking) draft's USD
- * price is converted to ARS on this poll path too, not just the synchronous
- * `POST .../import-from-url` path.
+ * Exchange-rate dependencies (BETA-181) so an async-resolved (Airbnb/Booking)
+ * draft's USD price is converted to ARS on this poll path too, not just the
+ * synchronous `POST .../import-from-url` path.
+ *
+ * Constructed at module load (matching this file's sibling `amenityService` /
+ * `destinationService` above), NOT per-request. `import-from-url.ts` builds the
+ * same deps inside its handler instead; both are safe — `getRateWithFallback`
+ * only reads cached rates from the DB and holds no per-request state.
  */
 const exchangeRateFetcher = new ExchangeRateFetcher({
     dolarApiClient: new DolarApiClient(),

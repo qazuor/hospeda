@@ -1404,9 +1404,13 @@ export function CreatePropertyMiniForm({
                                                 )}
                                             </span>
                                             <span className={styles.priceConversionText}>
+                                                {/* Interpolate in-component via .replace (the established
+                                                    pattern for this file's advisory banners, e.g. destinationHint):
+                                                    t() returns the placeholder-bearing string and the two
+                                                    formatPrice values are substituted here, once each. */}
                                                 {t(
                                                     'host.importFromUrl.prefill.priceConversion.banner',
-                                                    `Convertimos ${formatPrice({ amount: priceConversion.originalPrice, currency: priceConversion.originalCurrency, locale, showDecimals: true })} a ${formatPrice({ amount: priceConversion.convertedPrice, currency: priceConversion.currency, locale })}.`
+                                                    'Convertimos {{original}} a {{converted}}.'
                                                 )
                                                     .replace(
                                                         '{{original}}',
@@ -1425,6 +1429,20 @@ export function CreatePropertyMiniForm({
                                                             currency: priceConversion.currency,
                                                             locale
                                                         })
+                                                    )}
+                                            </span>
+                                            <span className={styles.priceConversionText}>
+                                                {t(
+                                                    'host.importFromUrl.prefill.priceConversion.rateLabel',
+                                                    'Tipo de cambio aplicado: {{rate}} ({{rateType}})'
+                                                )
+                                                    .replace(
+                                                        '{{rate}}',
+                                                        String(priceConversion.rate)
+                                                    )
+                                                    .replace(
+                                                        '{{rateType}}',
+                                                        priceConversion.rateType
                                                     )}
                                             </span>
                                             <span className={styles.priceConversionCallout}>

@@ -155,6 +155,33 @@ describe('convertImportedPriceToArs', () => {
         expect(result).toBeNull();
     });
 
+    it('should return null for an implausible sub-$1 USD price (never convert to 0 ARS)', async () => {
+        const result = await convertImportedPriceToArs({
+            price: 0.1,
+            currency: 'USD',
+            exchangeRateFetcher: makeFetcher(okRateResult),
+            exchangeRateConfigService: makeConfigService(ExchangeRateTypeEnum.OFICIAL),
+            actor: fakeActor
+        });
+
+        // 0.1 USD * 1500 = 150 → rounds to 0 ARS; must be rejected, not surfaced.
+        expect(result).toBeNull();
+    });
+
+    it('should return null for an implausibly high USD price (likely mislabeled local currency)', async () => {
+        const result = await convertImportedPriceToArs({
+            price: 15964.5,
+            currency: 'USD',
+            exchangeRateFetcher: makeFetcher(okRateResult),
+            exchangeRateConfigService: makeConfigService(ExchangeRateTypeEnum.OFICIAL),
+            actor: fakeActor
+        });
+
+        // Above PER_NIGHT_MAX_USD (3000) — the BETA-169 magnitude signal for a
+        // mislabeled ARS value; leave it for the host rather than fabricate millions of ARS.
+        expect(result).toBeNull();
+    });
+
     it('should return null when no rate is available', async () => {
         const result = await convertImportedPriceToArs({
             price: 100,
