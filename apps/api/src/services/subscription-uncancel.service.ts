@@ -213,7 +213,11 @@ export async function uncancelSubscription(
             subscriptionId,
             eventType: BILLING_EVENT_TYPES.USER_UNCANCELED,
             triggerSource: 'user-uncancel',
-            metadata: { preapprovalReauthorized: true }
+            // Written with the flag-clear, BEFORE the provider re-authorization —
+            // so it records the user's intent, not the (not-yet-known) provider
+            // outcome. A provider failure rolls the flag back but leaves this
+            // event as the audit trail of the attempt.
+            metadata: { reason: 'user-uncancel' }
         });
 
         flagCleared = true;

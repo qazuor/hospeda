@@ -454,7 +454,10 @@ async function sendAccessEndingReminders(logger: ReminderLogger): Promise<void> 
 /**
  * Outcome of attempting to finalize one soft-cancelled subscription.
  */
-type FinalizeOutcome = { kind: 'finalized' } | { kind: 'error'; error: string };
+type FinalizeOutcome =
+    | { kind: 'finalized' }
+    | { kind: 'skipped' }
+    | { kind: 'error'; error: string };
 
 /**
  * Completes the cancellation lifecycle for a single soft-cancelled subscription.
@@ -512,8 +515,28 @@ async function finalizeOne(
         // All three writes are wrapped in a single transaction so a failure in
         // addon revocation rolls back the status flip (keeping status='active')
         // and the audit event insert. The sub will re-appear on the next run.
+        let skipped = false;
         await withTransaction(async (tx) => {
-            // ── Step 2a: Flip status to 'cancelled' ──────────────────────────
+            // ── Step 2a: TOCTOU guard — re-read FOR UPDATE, confirm still
+            // soft-cancelled (HOS-232). The batch scan (findDueSoftCancelledSubs)
+            // is a non-locking snapshot; a concurrent `uncancelSubscription` may
+            // have cleared `cancelAtPeriodEnd` AND re-authorized the MercadoPago
+            // preapproval between that snapshot and this row's turn in the loop.
+            // Finalizing it anyway would flip status to 'cancelled' while MP keeps
+            // charging — a money/entitlement zombie. Re-check under the row lock
+            // and SKIP (commit a no-op tx) when the flag is no longer set.
+            const [fresh] = await tx
+                .select({ cancelAtPeriodEnd: billingSubscriptions.cancelAtPeriodEnd })
+                .from(billingSubscriptions)
+                .where(eq(billingSubscriptions.id, subscriptionId))
+                .for('update');
+
+            if (fresh?.cancelAtPeriodEnd !== true) {
+                skipped = true;
+                return;
+            }
+
+            // ── Step 2b: Flip status to 'cancelled' ──────────────────────────
             // UK spelling ('cancelled', 2 L's) matches the DB column constraint
             // and the state machine. billing.subscriptions.cancel() was already
             // called at soft-cancel time and does NOT set status when
@@ -558,6 +581,17 @@ async function finalizeOne(
                 }
             });
         }, db);
+
+        // HOS-232: the row was un-cancelled between the batch scan and now — do
+        // NOT run any of the finalization side-effects (cache clear, commerce/
+        // partner reconcile, featured revoke). Report 'skipped', not 'finalized'.
+        if (skipped) {
+            logger.info(
+                'finalize-cancelled-subs: skipped — subscription un-cancelled since the batch scan',
+                { subscriptionId, customerId }
+            );
+            return { kind: 'skipped' };
+        }
 
         // ── Step 3: Clear entitlement cache (INV-1) ──────────────────────────
         // Runs AFTER the transaction commits. Non-rollback-able cache side-effect —
@@ -699,11 +733,16 @@ export const finalizeCancelledSubsJob: CronJobDefinition = {
 
         let finalized = 0;
         let errors = 0;
+        let skipped = 0;
 
         for (const row of dueRows) {
             const outcome = await finalizeOne(row, logger);
             if (outcome.kind === 'finalized') {
                 finalized += 1;
+            } else if (outcome.kind === 'skipped') {
+                // HOS-232: the row was un-cancelled between the batch scan and its
+                // turn in this loop — NOT an error, and must NOT be finalized.
+                skipped += 1;
             } else {
                 errors += 1;
             }
@@ -721,8 +760,8 @@ export const finalizeCancelledSubsJob: CronJobDefinition = {
 
         return {
             success: errors === 0,
-            message: `Finalized ${finalized}, errors ${errors}`,
-            processed: finalized + errors,
+            message: `Finalized ${finalized}, skipped ${skipped}, errors ${errors}`,
+            processed: finalized + skipped + errors,
             errors,
             durationMs: Date.now() - startMs,
             details: { finalized, errors, due: dueRows.length }

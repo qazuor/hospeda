@@ -153,7 +153,9 @@ vi.mock('@repo/db', async (importOriginal) => {
         const chain = {
             from: () => chain,
             where: () => chain,
-            limit: async () => dueRowsState.rows
+            limit: async () => dueRowsState.rows,
+            // HOS-232 finalizeOne's in-tx TOCTOU re-read: still soft-cancelled.
+            for: async () => [{ cancelAtPeriodEnd: true }]
         };
         return chain;
     }
@@ -323,7 +325,9 @@ beforeEach(() => {
         const chain = {
             from: () => chain,
             where: () => chain,
-            limit: async () => dueRowsState.rows
+            limit: async () => dueRowsState.rows,
+            // HOS-232 finalizeOne's in-tx TOCTOU re-read: still soft-cancelled.
+            for: async () => [{ cancelAtPeriodEnd: true }]
         };
         return chain;
     };
@@ -450,6 +454,34 @@ describe('handler: happy path — due soft-cancelled sub', () => {
                 to: 'cancelled'
             })
         );
+    });
+
+    // HOS-232 TOCTOU: a row can be un-cancelled (cancelAtPeriodEnd cleared +
+    // MP re-authorized) between the batch scan and its turn in the loop. The
+    // in-tx FOR UPDATE re-read must observe the cleared flag and SKIP — NOT flip
+    // status to 'cancelled' (which would zombie a now-live subscription).
+    it('skips finalization when the row was un-cancelled since the batch scan', async () => {
+        dueRowsState.rows = [makeDueRow()];
+        // The tx re-read sees the flag already cleared (concurrent un-cancel).
+        mockDbSelectChain.mockImplementation(function () {
+            const chain = {
+                from: () => chain,
+                where: () => chain,
+                limit: async () => dueRowsState.rows,
+                for: async () => [{ cancelAtPeriodEnd: false }]
+            };
+            return chain;
+        });
+
+        const ctx = makeCronCtx();
+        const result = await finalizeCancelledSubsJob.handler(ctx);
+
+        // No finalization side-effects ran: no addon revoke, no cache clear, no
+        // status-flip UPDATE, no FINALIZE audit event.
+        expect(mockHandleSubscriptionCancellationAddons).not.toHaveBeenCalled();
+        expect(mockClearEntitlementCache).not.toHaveBeenCalled();
+        expect(mockDbUpdate).not.toHaveBeenCalled();
+        expect(result.message).toContain('skipped 1');
     });
 
     it('processes multiple due subs in a single tick', async () => {
