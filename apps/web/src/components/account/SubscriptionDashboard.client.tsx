@@ -837,7 +837,12 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
     // rather than let the user re-trigger a cancel that already happened.
     const canCancel = (status === 'active' || status === 'trial') && !isCancelScheduled;
     const canPause = (status === 'active' || status === 'trial') && !isCancelScheduled;
-    const canResume = status === 'paused';
+    // HOS-236: a soft-cancelled subscription can end up `paused` (e.g. a
+    // pre-existing stranded row). "Resume" must NOT be offered there — resuming
+    // reactivates the MP preapproval and re-charges a subscription the user
+    // already cancelled, while the "Cancelación programada" badge is shown right
+    // next to it. Gate on `!isCancelScheduled`, mirroring canCancel/canPause.
+    const canResume = status === 'paused' && !isCancelScheduled;
 
     // A plan change is rejected by the backend (409 SUBSCRIPTION_CANCEL_PENDING)
     // while a cancellation is already scheduled — there is no "undo cancel"
