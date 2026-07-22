@@ -402,6 +402,16 @@ async function backfillMpCustomerId(params: {
     const { customerId, mpPayerId, eventId, requestId } = params;
 
     if (!mpPayerId) {
+        // HOS-234: this was the ONLY early-return in this function with no log,
+        // which made a NULL `mp_customer_id` in prod impossible to attribute —
+        // "MercadoPago genuinely sent no payer_id" vs any other silent failure.
+        // Logged at WARN so it survives prod log retention (INFO rotates by size,
+        // ~1h buffer) and is greppable during a smoke (`hops logs api -g payer`).
+        // This is the load-bearing signal for the HOS-233 root-cause confirmation.
+        apiLogger.warn(
+            { eventId, requestId, customerId },
+            'MercadoPago webhook: skipped mp_customer_id back-fill — the authorized payment carried no payer_id (HOS-234/HOS-233)'
+        );
         return;
     }
 

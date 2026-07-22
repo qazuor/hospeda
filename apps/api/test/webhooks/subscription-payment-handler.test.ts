@@ -213,6 +213,7 @@ import {
     markEventProcessedByProviderId
 } from '../../src/routes/webhooks/mercadopago/utils';
 import { restoreFullPriceMutation } from '../../src/services/promo-renewal-mp.service';
+import { apiLogger } from '../../src/utils/logger';
 import {
     fetchAuthorizedPaymentDetails,
     type MPAuthorizedPaymentDetails,
@@ -934,9 +935,10 @@ describe('handleSubscriptionAuthorizedPayment', () => {
             expect(mockDbUpdateChain.set).not.toHaveBeenCalled();
         });
 
-        it('skips the back-fill entirely when no payer id was parsed', async () => {
+        it('skips the back-fill entirely AND warns when no payer id was parsed (HOS-234)', async () => {
             subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1' }];
             dedupeResult.rows = [];
+            vi.mocked(apiLogger.warn).mockClear();
             vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(
                 fetchOk(makeDetails({ mpPayerId: null }))
             );
@@ -945,6 +947,12 @@ describe('handleSubscriptionAuthorizedPayment', () => {
             await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
 
             expect(mockDbUpdateChain.set).not.toHaveBeenCalled();
+            // HOS-234: the (previously silent) early-return now logs at WARN so a
+            // NULL mp_customer_id in prod is attributable to an absent payer_id.
+            expect(apiLogger.warn).toHaveBeenCalledWith(
+                expect.objectContaining({ customerId: 'cust-1' }),
+                expect.stringContaining('no payer_id')
+            );
         });
 
         it('is a no-op (warns, does not throw) when the local customer row is not found', async () => {
