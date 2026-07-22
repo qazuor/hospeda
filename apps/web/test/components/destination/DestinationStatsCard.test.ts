@@ -52,9 +52,9 @@ describe('DestinationStatsCard.astro', () => {
         it('should always render the core count rows (accommodations, events, attractions)', () => {
             // The card stays visible even when counts are zero so the sidebar
             // is never silently empty. Rating + reviews stay conditional.
-            expect(src).toContain("'destination.detail.stats.accommodations'");
-            expect(src).toContain("'destination.detail.stats.events'");
-            expect(src).toContain("'destination.detail.stats.attractions'");
+            expect(src).toContain("'destinations.detail.stats.accommodations'");
+            expect(src).toContain("'destinations.detail.stats.events'");
+            expect(src).toContain("'destinations.detail.stats.attractions'");
         });
 
         it('should omit rating row when averageRating is 0', () => {
@@ -76,17 +76,71 @@ describe('DestinationStatsCard.astro', () => {
         });
 
         it('should use t() for card title with fallback', () => {
-            expect(src).toContain("t('destination.detail.stats.title'");
+            expect(src).toContain("t('destinations.detail.stats.title'");
             expect(src).toContain('En este destino');
         });
 
         it('should use t() for each stat label', () => {
-            expect(src).toContain("t('destination.detail.stats.accommodations'");
-            expect(src).toContain("t('destination.detail.stats.events'");
-            expect(src).toContain("t('destination.detail.stats.attractions'");
-            expect(src).toContain("t('destination.detail.stats.rating'");
-            expect(src).toContain("t('destination.detail.stats.reviews'");
+            expect(src).toContain("t('destinations.detail.stats.accommodations'");
+            expect(src).toContain("t('destinations.detail.stats.events'");
+            expect(src).toContain("t('destinations.detail.stats.attractions'");
+            expect(src).toContain("t('destinations.detail.stats.rating'");
+            expect(src).toContain("t('destinations.detail.stats.reviews'");
         });
+
+        it('should use the plural `destinations` namespace, not the non-existent singular `destination` (BETA-188)', () => {
+            // The i18n namespace backed by destination.json is registered as
+            // `destinations` (plural). Using `destination.` (singular) resolves to
+            // nothing, so every locale silently falls back to the Spanish default —
+            // which is exactly why /en/ and /pt/ rendered these labels in Spanish.
+            expect(src).not.toMatch(/t\('destination\.detail\.stats\./);
+        });
+    });
+
+    describe('i18n key resolution (BETA-188 regression)', () => {
+        // A source-only assertion cannot catch a key that resolves to nothing.
+        // These load the real locale bundles and assert the keys the component
+        // reads actually EXIST in es/en/pt, so /en/ and /pt/ render translated
+        // labels instead of falling back to the Spanish default.
+        const LOCALES = ['es', 'en', 'pt'] as const;
+        const STAT_KEYS = [
+            'title',
+            'accommodations',
+            'events',
+            'attractions',
+            'rating',
+            'reviews'
+        ] as const;
+
+        const loadDestinationDict = (locale: string): Record<string, unknown> =>
+            JSON.parse(
+                readFileSync(
+                    resolve(
+                        __dirname,
+                        `../../../../../packages/i18n/src/locales/${locale}/destination.json`
+                    ),
+                    'utf8'
+                )
+            );
+
+        for (const locale of LOCALES) {
+            it(`resolves detail.stats.* and detail.location in "${locale}"`, () => {
+                const dict = loadDestinationDict(locale);
+                const detail = dict.detail as Record<string, unknown>;
+                const stats = detail?.stats as Record<string, unknown> | undefined;
+                expect(stats, `detail.stats missing in ${locale}`).toBeDefined();
+                for (const key of STAT_KEYS) {
+                    expect(
+                        typeof stats?.[key] === 'string' && (stats[key] as string).length > 0,
+                        `detail.stats.${key} missing/empty in ${locale}`
+                    ).toBe(true);
+                }
+                expect(
+                    typeof detail?.location === 'string' && (detail.location as string).length > 0,
+                    `detail.location missing/empty in ${locale}`
+                ).toBe(true);
+            });
+        }
     });
 
     describe('accessibility', () => {
