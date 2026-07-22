@@ -284,6 +284,14 @@ export interface SubscriptionData {
     readonly planSlug: string;
     readonly planName: string;
     readonly status: SubscriptionStatus;
+    /**
+     * True when the subscription is complimentary (`comp`, SPEC-262) — an
+     * admin-granted, never-charged, permanent plan surfaced with `status:
+     * 'active'`. The UI hides the self-service Cancel / Pause / Change-plan
+     * actions when this is true, since the backend rejects all three for a comp
+     * (there is no MP preapproval to act on). HOS-242.
+     */
+    readonly isComplimentary: boolean;
     readonly currentPeriodStart: string | null;
     readonly currentPeriodEnd: string | null;
     readonly cancelAtPeriodEnd: boolean;

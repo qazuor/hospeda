@@ -835,6 +835,13 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
     // `trialEndsAt` (e.g. right before the trial-reconcile cron converts it)
     // must fall back to `currentPeriodEnd`, not display a billing date that's
     // already behind us.
+    // HOS-242: a complimentary (`comp`, SPEC-262) subscription is surfaced with
+    // status 'active' but has NO MercadoPago preapproval — the cancel, pause and
+    // change-plan backends all reject it (422 / 404 / "No active subscription").
+    // An admin grants and revokes a comp; the user has no self-service actions on
+    // it, so hide all three rather than render buttons that always fail.
+    const isComplimentary = subscription.isComplimentary === true;
+
     const effectiveNextBillingDate =
         status === 'trial' &&
         subscription.trialEndsAt &&
@@ -842,13 +849,19 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
             ? subscription.trialEndsAt
             : subscription.currentPeriodEnd;
 
-    const nextBillingDate = effectiveNextBillingDate
-        ? formatDate({ date: effectiveNextBillingDate, locale })
-        : t('account.pages.subscription.noBillingDate', 'N/A');
+    // HOS-242: a comp has a ~100-year sentinel `currentPeriodEnd` and is never
+    // charged — surface "no renewal" instead of a bogus far-future billing date.
+    const nextBillingLabel = isComplimentary
+        ? t('account.pages.subscription.complimentaryLabel', 'Plan de cortesía')
+        : isCancelScheduled
+          ? t('account.pages.subscription.accessUntilLabel', 'Acceso hasta')
+          : t('account.pages.subscription.nextBillingLabel', 'Próxima facturación');
 
-    const nextBillingLabel = isCancelScheduled
-        ? t('account.pages.subscription.accessUntilLabel', 'Acceso hasta')
-        : t('account.pages.subscription.nextBillingLabel', 'Próxima facturación');
+    const nextBillingDate = isComplimentary
+        ? t('account.pages.subscription.complimentaryNoBilling', 'Sin vencimiento')
+        : effectiveNextBillingDate
+          ? formatDate({ date: effectiveNextBillingDate, locale })
+          : t('account.pages.subscription.noBillingDate', 'N/A');
 
     const paymentMethodLabel = formatPaymentMethod(
         subscription.paymentMethod,
@@ -868,8 +881,10 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
     // Cancel/pause stop making sense once the cancellation is already
     // scheduled — there is no "undo cancel" endpoint, so hide both actions
     // rather than let the user re-trigger a cancel that already happened.
-    const canCancel = (status === 'active' || status === 'trial') && !isCancelScheduled;
-    const canPause = (status === 'active' || status === 'trial') && !isCancelScheduled;
+    const canCancel =
+        (status === 'active' || status === 'trial') && !isCancelScheduled && !isComplimentary;
+    const canPause =
+        (status === 'active' || status === 'trial') && !isCancelScheduled && !isComplimentary;
     // HOS-236: a soft-cancelled subscription can end up `paused` (e.g. a
     // pre-existing stranded row). "Resume" must NOT be offered there — resuming
     // reactivates the MP preapproval and re-charges a subscription the user
@@ -881,8 +896,10 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
     // while a cancellation is already scheduled — there is no "undo cancel"
     // endpoint, so it can only happen once the current period ends. Disable the
     // entry point rather than let the user open the flow and hit an opaque error
-    // (BETA-194).
-    const canChangePlan = !isCancelScheduled;
+    // (BETA-194). HOS-242: also hidden for a comp — plan-change's find is
+    // `active | trialing` and a comp has no MP preapproval to mutate, so it would
+    // fail with "No active subscription found".
+    const canChangePlan = !isCancelScheduled && !isComplimentary;
 
     // ── JSX ────────────────────────────────────────────────────────────────
 
@@ -1120,27 +1137,31 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
                         while still in the access window. No charge. Only for a
                         live soft-cancel (active/trial); a paused sub is a
                         different axis the backend rejects. */}
-                    {isCancelScheduled && (status === 'active' || status === 'trial') && (
-                        <button
-                            type="button"
-                            className={styles.btnPrimary}
-                            onClick={() => void handleUncancel()}
-                            disabled={isUncancelling}
-                            aria-busy={isUncancelling}
-                        >
-                            <PlayIcon
-                                size={16}
-                                weight="regular"
-                                aria-hidden="true"
-                            />
-                            {isUncancelling
-                                ? t('common.loading', 'Cargando...')
-                                : t(
-                                      'account.pages.subscription.uncancelButton',
-                                      'Descartar cancelación'
-                                  )}
-                        </button>
-                    )}
+                    {/* HOS-242: !isComplimentary is defense-in-depth — a comp never
+                        sets cancelAtPeriodEnd, but never offer uncancel for one either. */}
+                    {isCancelScheduled &&
+                        (status === 'active' || status === 'trial') &&
+                        !isComplimentary && (
+                            <button
+                                type="button"
+                                className={styles.btnPrimary}
+                                onClick={() => void handleUncancel()}
+                                disabled={isUncancelling}
+                                aria-busy={isUncancelling}
+                            >
+                                <PlayIcon
+                                    size={16}
+                                    weight="regular"
+                                    aria-hidden="true"
+                                />
+                                {isUncancelling
+                                    ? t('common.loading', 'Cargando...')
+                                    : t(
+                                          'account.pages.subscription.uncancelButton',
+                                          'Descartar cancelación'
+                                      )}
+                            </button>
+                        )}
 
                     {/* Cancel subscription (only when cancellable) */}
                     {canCancel && (

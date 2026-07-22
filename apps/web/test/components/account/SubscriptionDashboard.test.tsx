@@ -127,6 +127,7 @@ const ACTIVE_SUBSCRIPTION = {
     planSlug: 'pro',
     planName: 'Plan Pro',
     status: 'active' as const,
+    isComplimentary: false,
     currentPeriodStart: '2026-04-01T00:00:00Z',
     currentPeriodEnd: '2026-05-01T00:00:00Z',
     cancelAtPeriodEnd: false,
@@ -138,6 +139,15 @@ const ACTIVE_SUBSCRIPTION = {
         expMonth: 12,
         expYear: 2027
     }
+};
+
+// HOS-242: a complimentary (comp, SPEC-262) subscription — surfaced with
+// status 'active' but `isComplimentary: true`. The self-service Cancel / Pause /
+// Change-plan actions MUST NOT render (the backend rejects all three for a comp).
+const COMP_SUBSCRIPTION = {
+    ...ACTIVE_SUBSCRIPTION,
+    isComplimentary: true,
+    paymentMethod: null
 };
 
 const CANCELLED_SUBSCRIPTION = {
@@ -493,6 +503,44 @@ describe('SubscriptionDashboard — resume button gating (HOS-236)', () => {
         // The contradictory pairing is resolved: the "scheduled cancellation"
         // badge is shown instead.
         expect(screen.getByText(/cancelación programada/i)).toBeInTheDocument();
+    });
+});
+
+describe('SubscriptionDashboard — complimentary (comp) gating (HOS-242)', () => {
+    it('hides the cancel button for a complimentary subscription', async () => {
+        mockSubscriptionSuccess(COMP_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+        expect(
+            screen.queryByRole('button', { name: /cancelar suscripción/i })
+        ).not.toBeInTheDocument();
+    });
+
+    it('hides the pause button for a complimentary subscription', async () => {
+        mockSubscriptionSuccess(COMP_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+        expect(
+            screen.queryByRole('button', { name: /pausar suscripción/i })
+        ).not.toBeInTheDocument();
+    });
+
+    it('still renders the plan for a complimentary subscription (visible, not null)', async () => {
+        mockSubscriptionSuccess(COMP_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+        expect(screen.getByText('Plan Pro')).toBeInTheDocument();
+    });
+
+    it('shows "Plan de cortesía / Sin vencimiento" instead of a bogus billing date', async () => {
+        // A comp's currentPeriodEnd is a ~100-year sentinel; surfacing it as
+        // "Próxima facturación: <year 2126>" would read as a real future charge.
+        mockSubscriptionSuccess(COMP_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+        expect(screen.getByText(/plan de cortesía/i)).toBeInTheDocument();
+        expect(screen.getByText(/sin vencimiento/i)).toBeInTheDocument();
+        expect(screen.queryByText(/próxima facturación/i)).not.toBeInTheDocument();
     });
 });
 
@@ -1189,6 +1237,27 @@ describe('SubscriptionDashboard — FIX 5: "Cambiar plan" button styling', () =>
             // The mock maps class → 'className' so we check against 'btnSecondary'.
             expect(btn.className).toContain('btnSecondary');
             expect(btn.className).not.toContain('upgradeLink');
+        });
+    });
+
+    it('disables the "Cambiar plan" button for a complimentary subscription (HOS-242)', async () => {
+        // The change-plan entry point is rendered but disabled (mirrors the
+        // soft-cancel-scheduled treatment) — plan-change's find is active|trialing
+        // and a comp has no MP preapproval to mutate, so it would fail.
+        mockSubscriptionSuccess(COMP_SUBSCRIPTION);
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={USER_ROLE}
+                plans={MOCK_PLANS}
+            />
+        );
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('button', { name: /cambiar plan de suscripción/i })
+            ).toBeDisabled();
         });
     });
 });

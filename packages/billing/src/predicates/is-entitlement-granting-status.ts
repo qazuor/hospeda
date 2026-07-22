@@ -11,14 +11,11 @@
  *   `comp` here was what returned `plan: null` for comped subscribers (HOS-239).
  * - `start-paid.ts` (already-subscribed guard): the "has active accommodation
  *   sub" check (HOS-239).
- *
- * One "is this sub live?" filter is deliberately NOT consolidated yet:
- * `subscription.ts` (the account-management view) keeps its own broader set
- * (`active | trialing | past_due | paused`, no `comp`). Adding `comp` there
- * would surface a comped sub in the account UI mapped to `active`, which makes
- * the frontend render Cancel/Pause actions that the cancel/pause backend (not
- * comp-aware) rejects. Reconciling that needs a comp-aware cancel/pause flow —
- * tracked as a separate follow-up, out of HOS-239 scope.
+ * - `subscription.ts` (account-management view): composes this set PLUS the
+ *   management-only statuses `past_due` / `paused`. It maps `comp` → `active`
+ *   in its response and carries a separate `isComplimentary` flag so the UI can
+ *   hide the Cancel/Pause/Change-plan self-service actions the (non-comp-aware)
+ *   backends reject (HOS-242).
  *
  * **Status-only, by design.** It deliberately does NOT look at
  * `currentPeriodEnd` / `trialEnd`. The entitlement finds are status-only
