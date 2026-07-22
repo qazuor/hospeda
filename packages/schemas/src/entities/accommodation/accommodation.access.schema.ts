@@ -332,7 +332,19 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
      * can show a "Chat IA" badge. Optional: absent on responses that don't enrich
      * it (only the public list endpoint populates it today).
      */
-    hasAiChat: z.boolean().optional()
+    hasAiChat: z.boolean().optional(),
+    /**
+     * Whether this accommodation carries a WhatsApp contact number
+     * (`contactInfo.whatsapp`). This is a cache-safe, OWNER-derived boolean —
+     * the number itself is NEVER exposed on this public payload because the
+     * `/public/accommodations` endpoint is shared-cached (a per-viewer field
+     * would leak the first viewer's plan result to everyone). HOS-19 gates the
+     * actual number by the VIEWER's plan on a separate per-user protected
+     * endpoint (`GET /protected/accommodations/:id/whatsapp`); this flag only
+     * tells the web whether to render the WhatsApp block / upsell at all.
+     * Resolved per-accommodation at the API route layer, not stored as a column.
+     */
+    hasWhatsapp: z.boolean().optional()
 });
 
 export type AccommodationPublic = z.infer<typeof AccommodationPublicSchema>;
