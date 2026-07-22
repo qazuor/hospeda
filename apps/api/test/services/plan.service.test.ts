@@ -96,7 +96,24 @@ vi.mock('@repo/db', () => ({
         id: 'id',
         planId: 'planId',
         customerId: 'customerId',
-        status: 'status'
+        status: 'status',
+        mpSubscriptionId: 'mpSubscriptionId'
+    },
+    // HOS-176: updatePlan enqueues a plan price change (plan-price-change.service)
+    // whenever an EXISTING monthly/annual price actually changes value.
+    billingPlanPriceChanges: {
+        id: 'id',
+        planId: 'planId',
+        priceId: 'priceId',
+        billingInterval: 'billingInterval',
+        oldAmount: 'oldAmount',
+        newAmount: 'newAmount',
+        direction: 'direction',
+        status: 'status',
+        effectiveAt: 'effectiveAt',
+        actorId: 'actorId',
+        metadata: 'metadata',
+        updatedAt: 'updatedAt'
     },
     billingAuditLogs: {
         id: 'id',
@@ -116,6 +133,7 @@ vi.mock('@repo/db', () => ({
     count: vi.fn(() => 'count-fn'),
     desc: vi.fn((field: unknown) => `desc(${String(field)})`),
     eq: vi.fn((field: unknown, value: unknown) => ({ field, value, op: 'eq' })),
+    inArray: vi.fn((field: unknown, values: unknown) => ({ field, values, op: 'inArray' })),
     isNull: vi.fn((field: unknown) => ({ field, op: 'isNull' })),
     isNotNull: vi.fn((field: unknown) => ({ field, op: 'isNotNull' })),
     safeIlike: vi.fn((field: unknown, value: unknown) => ({ field, value, op: 'safeIlike' })),
@@ -632,20 +650,27 @@ describe('PlanService', () => {
         });
 
         it('should reconcile monthly price when monthlyPriceArs changes', async () => {
-            // Queries: getPlanByIdInternal, planUpdate, monthlyPriceLookup, priceUpdate, audit, pricesRefetch
+            // Queries: getPlanByIdInternal, planUpdate, monthlyPriceLookup, priceUpdate,
+            // then HOS-176's enqueuePlanPriceChange side-effect (fires because the price
+            // actually changed 500000 -> 700000): supersede-update, insert+returning,
+            // affected-subscriber count select — finally audit, pricesRefetch.
             mockDb
                 .where!.mockReturnValueOnce(mockDb) // getPlanByIdInternal: intermediate
                 .mockReturnValueOnce(mockDb) // planUpdate .where: intermediate
                 .mockReturnValueOnce(mockDb) // monthly price lookup: intermediate
-                .mockReturnValueOnce(mockDb) // monthly price update .where: intermediate
+                .mockReturnValueOnce(mockDb) // monthly price update .where: terminal, return unused
+                .mockReturnValueOnce(mockDb) // HOS-176 supersede update .where: terminal, return unused
+                .mockResolvedValueOnce([]) // HOS-176 affected-subscriber count select: terminal, destructured
                 .mockResolvedValueOnce([{ ...mockMonthlyPrice, unitAmount: 700000 }]); // prices refetch: terminal
             mockDb
                 .limit!.mockResolvedValueOnce([mockPlanRow]) // getPlanByIdInternal: terminal
                 .mockResolvedValueOnce([mockMonthlyPrice]); // monthly price lookup: terminal
             mockDb
                 .returning!.mockResolvedValueOnce([mockPlanRow]) // plan update
-                .mockResolvedValueOnce([{ ...mockMonthlyPrice, unitAmount: 700000 }]); // price update
-            mockDb.values!.mockResolvedValueOnce([]); // audit
+                .mockResolvedValueOnce([{ id: 'price-change-001' }]); // HOS-176 enqueue insert .returning({id})
+            mockDb
+                .values!.mockReturnValueOnce(mockDb) // HOS-176 enqueue insert .values: intermediate (returning follows)
+                .mockResolvedValueOnce([]); // audit: terminal
 
             // Act
             const result = await service.update('plan-uuid-001', { monthlyPriceArs: 700000 });

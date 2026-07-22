@@ -274,6 +274,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Checks the status of pending/running Apify actor runs for external reputation data and persists results when runs complete.'
     },
     {
+        name: 'propagate-plan-price-changes',
+        displayName: 'Propagación de cambios de precio de plan',
+        category: 'billing',
+        schedule: '*/15 * * * *',
+        description:
+            'Propagate admin plan price DECREASES to existing subscribers’ MercadoPago preapprovals (HOS-176). Increases are gated on the owner re-auth smoke + notice flow.'
+    },
+    {
         name: 'social-publish-dispatch',
         displayName: 'Despacho de publicaciones sociales',
         category: 'content',
