@@ -62,6 +62,16 @@ const log = createLogger('service-core:promo-code:renewal');
 import { calculatePromoCodeEffect } from './effect-reducer.js';
 import { getPromoCodeById } from './promo-code.crud.js';
 
+/**
+ * Tolerance (in integer centavos) when comparing the confirmed charge amount
+ * against the expected discounted amount (HOS-245). Both values are exact
+ * integer centavos, but the expected amount round-trips through MercadoPago's
+ * major-unit `transaction_amount` (centavos → major → centavos), so a 1-centavo
+ * slack absorbs any float rounding. A genuinely undelivered discount differs by
+ * thousands of centavos (full vs discounted), so this never masks a real mismatch.
+ */
+const AMOUNT_MATCH_TOLERANCE_CENTAVOS = 1;
+
 // ---------------------------------------------------------------------------
 // Input / Output types
 // ---------------------------------------------------------------------------
@@ -87,6 +97,24 @@ export interface ResolveRenewalPromoEffectInput {
      * pre-flight check.
      */
     persist?: boolean;
+    /**
+     * The amount actually charged for the confirmed cycle, in integer centavos
+     * (from the settled MercadoPago payment: `Math.round(details.transactionAmount * 100)`).
+     *
+     * HOS-245 defense-in-depth. When provided, the discount countdown is only
+     * advanced (and the counter decremented) if this amount matches the expected
+     * discounted amount for the current cycle. If a charge that should have been
+     * discounted settled at a different amount (e.g. full price due to a
+     * provisioning race), consuming a discount cycle would record an undelivered
+     * discount as delivered — so the decrement is skipped and the mismatch logged
+     * (surfaced to Sentry via the apps/api log transport) instead.
+     *
+     * `undefined` (default) — preserves the pre-HOS-245 behavior: the caller has
+     * no confirmed charge amount to verify against (e.g. the `persist:false`
+     * safety-net preview / subscription-poll pre-flight), so the countdown
+     * advances unconditionally as before.
+     */
+    chargedAmountCentavos?: number;
     /** Optional outer query context — when provided, DB reads/writes use `ctx.tx` */
     ctx?: QueryContext;
 }
@@ -134,7 +162,9 @@ export interface RenewalPromoDecision {
      * - `null` — forever discount (no decrement; stays null).
      * - `0`    — this was the last discounted cycle (paired with `restore-full`).
      * - `N>0`  — N discounted cycles remain (paired with `apply-discount`).
-     * Absent for `comp` and `noop`.
+     * Absent for `comp`. Present for `restore-full`/`apply-discount`, and also
+     * echoed on some `noop` results (already-exhausted and the HOS-245
+     * amount-mismatch skip) to report the counter left untouched.
      */
     remainingCyclesAfter?: number | null;
     /** The subscription this decision applies to (echoed for the caller's logs) */
@@ -205,7 +235,7 @@ export type ResolveRenewalPromoEffectResult =
 export async function resolveRenewalPromoEffect(
     input: ResolveRenewalPromoEffectInput
 ): Promise<ResolveRenewalPromoEffectResult> {
-    const { subscriptionId, persist = true, ctx } = input;
+    const { subscriptionId, persist = true, chargedAmountCentavos, ctx } = input;
     const db = ctx?.tx ?? getDb();
 
     try {
@@ -316,6 +346,67 @@ export async function resolveRenewalPromoEffect(
         const fullMajor = centavosToMajor(fullPriceCentavos);
 
         // ------------------------------------------------------------------
+        // HOS-245 (defense-in-depth): only advance the discount countdown when
+        // the charge that triggered this webhook actually reflected the
+        // discounted amount. At this point we know a discount is active (the
+        // early-exhausted check above already returned for remaining <= 0), so
+        // the confirmed charge is expected to equal `discountedCentavos`.
+        //
+        // If a charge that should have been discounted settled at a different
+        // amount (e.g. full price due to a provisioning race), consuming a
+        // discount cycle here would record an undelivered discount as delivered
+        // (the counter would reach 0 and fire a no-op `restore-full`), leaving
+        // the customer charged full with the system convinced the discount was
+        // granted — hard to detect/reconcile. Skip the decrement and surface the
+        // mismatch instead. Only enforced when the caller supplies the charged
+        // amount (real webhook path); the preview/reconcile path leaves it
+        // undefined and keeps the pre-HOS-245 unconditional behavior.
+        // ------------------------------------------------------------------
+        //
+        // Exclude the inconsistent-state defensive branch below
+        // (`remaining === null` with a non-null `durationCycles`): that path
+        // self-heals a broken row to `restore-full`/`remaining=0`, and a
+        // full-price charge is exactly what it expects — intercepting it here
+        // as a mismatch would leave the broken row un-normalized (counter stuck
+        // at null). Only guard genuine active-discount cycles (finite
+        // remaining > 0, or a legitimate forever discount).
+        const isInconsistentDiscountState =
+            remaining === null && discountEffect.durationCycles !== null;
+        if (
+            !isInconsistentDiscountState &&
+            chargedAmountCentavos !== undefined &&
+            Math.abs(chargedAmountCentavos - discountedCentavos) > AMOUNT_MATCH_TOLERANCE_CENTAVOS
+        ) {
+            log.error(
+                {
+                    subscriptionId,
+                    promoCodeId,
+                    expectedDiscountedCentavos: discountedCentavos,
+                    chargedAmountCentavos,
+                    remainingCyclesBefore: remaining,
+                    module: 'promo-code.renewal',
+                    operation: 'amountMismatch'
+                },
+                `resolveRenewalPromoEffect: charged amount ${chargedAmountCentavos} centavos does not match expected discounted amount ${discountedCentavos} centavos for sub ${subscriptionId} — NOT consuming a discount cycle (possible undelivered discount).`,
+                // SPEC-180 opt-in: forward to Sentry via the apps/api capture hook.
+                // Without `capture: true` an ERROR log only reaches stdout — the
+                // whole point of HOS-245 is to make this mismatch actionable.
+                { capture: true }
+            );
+            // Leave the counter untouched (no decrement, no MP mutation) so a
+            // non-discounted charge never advances the discounted-cycle countdown.
+            return {
+                success: true,
+                data: {
+                    action: 'noop',
+                    subscriptionId,
+                    promoCodeId,
+                    remainingCyclesAfter: remaining
+                }
+            };
+        }
+
+        // ------------------------------------------------------------------
         // Step 5: forever discount (remaining null + durationCycles null).
         // Stay discounted; counter stays null (AC-2.2). No decrement to persist.
         // ------------------------------------------------------------------
@@ -348,7 +439,10 @@ export async function resolveRenewalPromoEffect(
                     module: 'promo-code.renewal',
                     operation: 'defensiveBranch'
                 },
-                `resolveRenewalPromoEffect: inconsistent state — remaining=null but durationCycles=${discountEffect.durationCycles} for sub ${subscriptionId}. Treating as exhausted (restore-full).`
+                `resolveRenewalPromoEffect: inconsistent state — remaining=null but durationCycles=${discountEffect.durationCycles} for sub ${subscriptionId}. Treating as exhausted (restore-full).`,
+                // SPEC-180 opt-in: the surrounding comment promises Sentry visibility;
+                // without `capture: true` this ERROR log only reached stdout (HOS-245).
+                { capture: true }
             );
             if (persist) {
                 await persistRemainingCycles(db, subscriptionId, 0);

@@ -20,6 +20,10 @@
  * 9. Subscription not found: NOT_FOUND error
  * 10. persist=false: decision computed but counter NOT written
  * 11. Defensive branch (remaining=null, durationCycles set): restore-full + log.error (NIT)
+ * 12. HOS-245 charge-amount verification: charged==discounted → decrements;
+ *     charged==full (undelivered discount) → noop + log.error, counter untouched;
+ *     forever discount charged full → noop + log; within 1-centavo tolerance →
+ *     still decrements; chargedAmountCentavos undefined → pre-HOS-245 behavior.
  *
  * The DB layer is fully mocked — no real database is hit.
  *
@@ -512,5 +516,226 @@ describe('resolveRenewalPromoEffect (SPEC-262 T-007)', () => {
         expect(logMsg).toContain('inconsistent state');
         // Counter written to 0 (persist=true by default).
         expect(updateSetSpy).toHaveBeenCalledWith({ promoEffectRemainingCycles: 0 });
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-245 — charge-amount verification before decrementing the counter.
+    // The countdown must only advance when the confirmed charge actually
+    // reflected the discounted amount. A non-discounted charge (e.g. full price
+    // via a provisioning race) must NOT consume a discount cycle.
+    // -----------------------------------------------------------------------
+
+    it('HOS-245: chargedAmountCentavos matches the discounted amount → decrements normally', async () => {
+        // Arrange: remaining=3, unit=10000 → discounted (50%) = 5000. Charge = 5000 (matches).
+        const updateSetSpy = vi.fn();
+        const db = buildDbMock({
+            subRow: {
+                id: 'sub-1',
+                status: 'active',
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-1',
+                promoCodeId: 'pc-1',
+                promoEffectRemainingCycles: 3
+            },
+            unitAmount: 10000,
+            updateSetSpy
+        });
+        mockGetDb.mockReturnValue(db);
+        mockGetPromoCodeById.mockResolvedValue(discountCode(3));
+
+        // Act
+        const result = await resolveRenewalPromoEffect({
+            subscriptionId: 'sub-1',
+            chargedAmountCentavos: 5000
+        });
+
+        // Assert: normal apply-discount, counter decremented, no mismatch log.
+        expect(result.success).toBe(true);
+        if (!result.success) throw new Error('expected success');
+        expect(result.data.action).toBe('apply-discount');
+        expect(result.data.remainingCyclesAfter).toBe(2);
+        expect(updateSetSpy).toHaveBeenCalledWith({ promoEffectRemainingCycles: 2 });
+        expect(mockLoggerError).not.toHaveBeenCalled();
+    });
+
+    it('HOS-245: charged full price when discount expected → noop, counter NOT decremented, log.error', async () => {
+        // Arrange: remaining=3, unit=10000, discounted=5000, but the charge
+        // settled at full 10000 (undelivered discount). Must NOT consume a cycle.
+        const updateSetSpy = vi.fn();
+        const db = buildDbMock({
+            subRow: {
+                id: 'sub-1',
+                status: 'active',
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-1',
+                promoCodeId: 'pc-1',
+                promoEffectRemainingCycles: 3
+            },
+            unitAmount: 10000,
+            updateSetSpy
+        });
+        mockGetDb.mockReturnValue(db);
+        mockGetPromoCodeById.mockResolvedValue(discountCode(3));
+
+        // Act
+        const result = await resolveRenewalPromoEffect({
+            subscriptionId: 'sub-1',
+            chargedAmountCentavos: 10000
+        });
+
+        // Assert: noop, counter untouched, mismatch logged (Sentry via apps/api transport).
+        expect(result.success).toBe(true);
+        if (!result.success) throw new Error('expected success');
+        expect(result.data.action).toBe('noop');
+        // Counter left at its current value — the discount cycle was NOT consumed.
+        expect(result.data.remainingCyclesAfter).toBe(3);
+        expect(updateSetSpy).not.toHaveBeenCalled();
+        expect(mockLoggerError).toHaveBeenCalledOnce();
+        const logMsg = mockLoggerError.mock.calls[0]?.[1] as string;
+        expect(logMsg).toContain('does not match expected discounted amount');
+        // Must opt in to Sentry capture — an ERROR log without { capture: true }
+        // only reaches stdout, defeating the purpose of HOS-245.
+        expect(mockLoggerError.mock.calls[0]?.[2]).toEqual({ capture: true });
+    });
+
+    it('HOS-245: forever discount charged at full price → noop + log, counter stays NULL', async () => {
+        // Arrange: forever discount (remaining=null, durationCycles=null),
+        // discounted=5000, but the charge settled full 10000. No decrement anyway,
+        // but the mismatch must still be surfaced and no apply-discount returned.
+        const updateSetSpy = vi.fn();
+        const db = buildDbMock({
+            subRow: {
+                id: 'sub-1',
+                status: 'active',
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-1',
+                promoCodeId: 'pc-1',
+                promoEffectRemainingCycles: null
+            },
+            unitAmount: 10000,
+            updateSetSpy
+        });
+        mockGetDb.mockReturnValue(db);
+        mockGetPromoCodeById.mockResolvedValue(discountCode(null));
+
+        // Act
+        const result = await resolveRenewalPromoEffect({
+            subscriptionId: 'sub-1',
+            chargedAmountCentavos: 10000
+        });
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (!result.success) throw new Error('expected success');
+        expect(result.data.action).toBe('noop');
+        expect(result.data.remainingCyclesAfter).toBeNull();
+        expect(updateSetSpy).not.toHaveBeenCalled();
+        expect(mockLoggerError).toHaveBeenCalledOnce();
+        expect(mockLoggerError.mock.calls[0]?.[2]).toEqual({ capture: true });
+    });
+
+    it('HOS-245: inconsistent state (remaining=null, durationCycles set) + full charge → defensive restore-full, NOT intercepted by the mismatch guard', async () => {
+        // The mismatch guard must NOT shadow the pre-existing inconsistent-state
+        // defensive branch: a broken row (remaining=null but durationCycles set)
+        // charged at full price must still self-heal to restore-full/remaining=0,
+        // not be swallowed as a mismatch noop (which would leave it stuck at null).
+        const updateSetSpy = vi.fn();
+        const db = buildDbMock({
+            subRow: {
+                id: 'sub-1',
+                status: 'active',
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-1',
+                promoCodeId: 'pc-1',
+                promoEffectRemainingCycles: null // inconsistent: durationCycles is 3, not null
+            },
+            unitAmount: 10000,
+            updateSetSpy
+        });
+        mockGetDb.mockReturnValue(db);
+        mockGetPromoCodeById.mockResolvedValue(discountCode(3)); // durationCycles=3
+
+        // Act — charge settled at full price (10000), discounted would be 5000.
+        const result = await resolveRenewalPromoEffect({
+            subscriptionId: 'sub-1',
+            chargedAmountCentavos: 10000
+        });
+
+        // Assert: defensive branch wins → restore-full, counter normalized to 0.
+        expect(result.success).toBe(true);
+        if (!result.success) throw new Error('expected success');
+        expect(result.data.action).toBe('restore-full');
+        expect(result.data.remainingCyclesAfter).toBe(0);
+        expect(updateSetSpy).toHaveBeenCalledWith({ promoEffectRemainingCycles: 0 });
+        // The defensive branch logs the inconsistency (with Sentry capture).
+        expect(mockLoggerError).toHaveBeenCalledOnce();
+        const logMsg = mockLoggerError.mock.calls[0]?.[1] as string;
+        expect(logMsg).toContain('inconsistent state');
+        expect(mockLoggerError.mock.calls[0]?.[2]).toEqual({ capture: true });
+    });
+
+    it('HOS-245: charged amount within 1-centavo tolerance → still decrements (float round-trip slack)', async () => {
+        // Arrange: discounted=5000, charge=5001 (1 centavo off from a major-unit
+        // round-trip). Within tolerance → treated as a match, cycle consumed.
+        const updateSetSpy = vi.fn();
+        const db = buildDbMock({
+            subRow: {
+                id: 'sub-1',
+                status: 'active',
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-1',
+                promoCodeId: 'pc-1',
+                promoEffectRemainingCycles: 2
+            },
+            unitAmount: 10000,
+            updateSetSpy
+        });
+        mockGetDb.mockReturnValue(db);
+        mockGetPromoCodeById.mockResolvedValue(discountCode(3));
+
+        // Act
+        const result = await resolveRenewalPromoEffect({
+            subscriptionId: 'sub-1',
+            chargedAmountCentavos: 5001
+        });
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (!result.success) throw new Error('expected success');
+        expect(result.data.action).toBe('apply-discount');
+        expect(result.data.remainingCyclesAfter).toBe(1);
+        expect(updateSetSpy).toHaveBeenCalledWith({ promoEffectRemainingCycles: 1 });
+        expect(mockLoggerError).not.toHaveBeenCalled();
+    });
+
+    it('HOS-245: chargedAmountCentavos undefined → pre-HOS-245 behavior preserved (decrements unconditionally)', async () => {
+        // Backward-compat: the preview / subscription-poll path passes no charge
+        // amount, so the countdown advances as before with no mismatch check.
+        const updateSetSpy = vi.fn();
+        const db = buildDbMock({
+            subRow: {
+                id: 'sub-1',
+                status: 'active',
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-1',
+                promoCodeId: 'pc-1',
+                promoEffectRemainingCycles: 2
+            },
+            unitAmount: 10000,
+            updateSetSpy
+        });
+        mockGetDb.mockReturnValue(db);
+        mockGetPromoCodeById.mockResolvedValue(discountCode(3));
+
+        // Act — no chargedAmountCentavos supplied.
+        const result = await resolveRenewalPromoEffect({ subscriptionId: 'sub-1' });
+
+        // Assert: decrements exactly as the pre-existing "webhook #2" test does.
+        expect(result.success).toBe(true);
+        if (!result.success) throw new Error('expected success');
+        expect(result.data.action).toBe('apply-discount');
+        expect(result.data.remainingCyclesAfter).toBe(1);
+        expect(updateSetSpy).toHaveBeenCalledWith({ promoEffectRemainingCycles: 1 });
+        expect(mockLoggerError).not.toHaveBeenCalled();
     });
 });
