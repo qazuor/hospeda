@@ -630,8 +630,12 @@ describe('handleSubscriptionAuthorizedPayment', () => {
             await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
 
             // Assert
+            // HOS-245: the settled charge amount (999.5 ARS → 99950 centavos) is
+            // threaded through so the discount countdown only advances on a
+            // charge that reflected the discount.
             expect(resolveRenewalPromoEffect).toHaveBeenCalledWith({
-                subscriptionId: 'local-sub-1'
+                subscriptionId: 'local-sub-1',
+                chargedAmountCentavos: 99950
             });
             expect(restoreFullPriceMutation).toHaveBeenCalledOnce();
             const arg = vi.mocked(restoreFullPriceMutation).mock.calls[0]?.[0];

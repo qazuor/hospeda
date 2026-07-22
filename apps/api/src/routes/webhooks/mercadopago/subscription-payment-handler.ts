@@ -505,14 +505,30 @@ async function safeMarkProcessed(eventId: string | number): Promise<void> {
 async function handleRenewalPromoEffect(params: {
     localSubscriptionId: string;
     mpSubscriptionId: string;
+    /**
+     * Amount actually charged for this confirmed cycle, in integer centavos.
+     * HOS-245: passed through so `resolveRenewalPromoEffect` only advances the
+     * discount countdown when the charge reflected the discounted amount.
+     */
+    chargedAmountCentavos: number;
     billing: NonNullable<ReturnType<typeof getQZPayBilling>>;
     eventId: string | number;
     requestId: string;
 }): Promise<void> {
-    const { localSubscriptionId, mpSubscriptionId, billing, eventId, requestId } = params;
+    const {
+        localSubscriptionId,
+        mpSubscriptionId,
+        chargedAmountCentavos,
+        billing,
+        eventId,
+        requestId
+    } = params;
 
     try {
-        const decision = await resolveRenewalPromoEffect({ subscriptionId: localSubscriptionId });
+        const decision = await resolveRenewalPromoEffect({
+            subscriptionId: localSubscriptionId,
+            chargedAmountCentavos
+        });
 
         if (!decision.success) {
             apiLogger.warn(
@@ -824,6 +840,10 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
             void handleRenewalPromoEffect({
                 localSubscriptionId: sub.id,
                 mpSubscriptionId: details.preapprovalId,
+                // HOS-245: the amount actually settled for this cycle (integer
+                // centavos) so the discount countdown only advances on a charge
+                // that reflected the discount.
+                chargedAmountCentavos: amountInCentavos,
                 billing,
                 eventId: event.id,
                 requestId
