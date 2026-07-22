@@ -517,6 +517,33 @@ export const AccommodationImportResponseSchema = z.object({
             /** List of absolute image URLs found on the listing page. */
             imageUrls: z.array(z.string())
         })
+        .optional(),
+    /**
+     * Advisory note surfaced when the scraped price was in a foreign currency
+     * (currently only USD is supported) and was auto-converted to ARS inside
+     * the import pipeline (BETA-181). Hospeda is ARS-only, so the draft's
+     * `price.price`/`price.currency` are rewritten to the converted ARS value
+     * before this response is assembled — this object exists purely so the
+     * host-facing wizard can show a "converted automatically, please review"
+     * banner. It is **advisory only**: the pre-filled price stays fully
+     * editable and nothing is ever forced — the host confirms before
+     * publishing.
+     */
+    priceConversion: z
+        .object({
+            /** Original numeric price as scraped, before conversion. */
+            originalPrice: z.number(),
+            /** Original currency code as scraped (e.g. `'USD'`). */
+            originalCurrency: z.string(),
+            /** Converted price, rounded to the nearest 1000 ARS. */
+            convertedPrice: z.number(),
+            /** Always `'ARS'` — Hospeda is ARS-only. */
+            currency: z.literal('ARS'),
+            /** Exchange rate applied (1 unit of `originalCurrency` in ARS). */
+            rate: z.number(),
+            /** Rate type used for the conversion (e.g. `'oficial'`, `'blue'`). */
+            rateType: z.string()
+        })
         .optional()
 });
 

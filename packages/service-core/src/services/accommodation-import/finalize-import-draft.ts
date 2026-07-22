@@ -25,8 +25,11 @@ import {
 import type { Actor } from '../../types/index.js';
 import type { AmenityService } from '../amenity/amenity.service.js';
 import type { DestinationService } from '../destination/destination.service.js';
+import type { ExchangeRateConfigService } from '../exchange-rate/exchange-rate-config.service.js';
+import type { ExchangeRateFetcher } from '../exchange-rate/exchange-rate-fetcher.js';
 import type { RawExtraction } from './adapter.types.js';
 import { mapRawToDraft } from './mapping.js';
+import { convertImportedPriceToArs } from './price-conversion.js';
 import { resolveAmenities } from './resolvers/amenities.js';
 import { buildDestinationHint } from './resolvers/destination.js';
 
@@ -46,6 +49,18 @@ export interface FinalizeImportDraftContext {
     readonly amenityService: AmenityService;
     /** Composed DestinationService instance used to build the destination hint. */
     readonly destinationService: DestinationService;
+    /**
+     * Exchange-rate fetcher used to convert a USD draft price to ARS
+     * (BETA-181). Optional — when absent (or when
+     * {@link exchangeRateConfigService} is absent), price conversion is
+     * skipped and the scraped price is left untouched.
+     */
+    readonly exchangeRateFetcher?: ExchangeRateFetcher;
+    /**
+     * Exchange-rate config service used to read the platform's default rate
+     * type (BETA-181). Optional — see {@link exchangeRateFetcher}.
+     */
+    readonly exchangeRateConfigService?: ExchangeRateConfigService;
 }
 
 /**
@@ -72,6 +87,9 @@ function buildDegradedResponse(failureCode: ImportFailureCode): AccommodationImp
  *
  * **Pipeline:**
  * 1. Map raw candidates to a typed draft with `mapRawToDraft`.
+ * 1.5. When exchange-rate dependencies are provided, convert a non-ARS draft
+ *    price to ARS (BETA-181) via `convertImportedPriceToArs`; on `null` or
+ *    thrown error, leave the price untouched and omit `priceConversion`.
  * 2. Resolve amenity names to catalog UUIDs; on throw, omit them.
  * 3. Build a destination hint from scraped locality; on throw, omit it.
  * 4. Collect `mediaHints` from raw image URLs.
@@ -114,12 +132,74 @@ export async function finalizeImportDraft(
     raw: RawExtraction,
     ctx: FinalizeImportDraftContext
 ): Promise<AccommodationImportResponse> {
-    const { source, actor, amenityService, destinationService } = ctx;
+    const {
+        source,
+        actor,
+        amenityService,
+        destinationService,
+        exchangeRateFetcher,
+        exchangeRateConfigService
+    } = ctx;
 
     // -----------------------------------------------------------------------
     // Step 1: Map raw candidates to a typed draft.
     // -----------------------------------------------------------------------
     const { draft, methodsUsed } = mapRawToDraft({ raw });
+
+    // -----------------------------------------------------------------------
+    // Step 1.5: Convert a USD draft price to ARS (BETA-181).
+    //
+    // Only runs when both exchange-rate dependencies were provided AND the
+    // draft carries a numeric price with a non-ARS currency. Rewrites
+    // `draft.price` in place (preserving each field's original
+    // `confidence`/`source` envelope) and surfaces a `priceConversion`
+    // advisory on the response. Never throws —
+    // `convertImportedPriceToArs` degrades to `null` on any failure, in which
+    // case the scraped price is left completely untouched.
+    // -----------------------------------------------------------------------
+    let effectiveDraft = draft;
+    let priceConversion: AccommodationImportResponse['priceConversion'];
+    try {
+        const priceValue = draft.price?.price?.value;
+        const currencyValue = draft.price?.currency?.value;
+        if (
+            exchangeRateFetcher !== undefined &&
+            exchangeRateConfigService !== undefined &&
+            typeof priceValue === 'number' &&
+            typeof currencyValue === 'string' &&
+            currencyValue.trim().toUpperCase() !== 'ARS'
+        ) {
+            const conversion = await convertImportedPriceToArs({
+                price: priceValue,
+                currency: currencyValue,
+                exchangeRateFetcher,
+                exchangeRateConfigService,
+                actor
+            });
+
+            if (conversion !== null && draft.price?.price && draft.price.currency) {
+                effectiveDraft = {
+                    ...draft,
+                    price: {
+                        ...draft.price,
+                        price: { ...draft.price.price, value: conversion.convertedPrice },
+                        currency: { ...draft.price.currency, value: 'ARS' }
+                    }
+                };
+                priceConversion = {
+                    originalPrice: conversion.originalPrice,
+                    originalCurrency: conversion.originalCurrency,
+                    convertedPrice: conversion.convertedPrice,
+                    currency: 'ARS',
+                    rate: conversion.rate,
+                    rateType: conversion.rateType
+                };
+            }
+        }
+    } catch {
+        // Defensive guard — conversion must never break the pipeline; leave
+        // the draft's price untouched on any unexpected error.
+    }
 
     // -----------------------------------------------------------------------
     // Step 2: Resolve amenity names to catalog UUIDs.
@@ -205,7 +285,7 @@ export async function finalizeImportDraft(
     // If Zod somehow rejects it (should not happen), return a safe fallback.
     // -----------------------------------------------------------------------
     const assembled: AccommodationImportResponse = {
-        draft,
+        draft: effectiveDraft,
         source: effectiveSource,
         methodsUsed,
         partial,
@@ -213,7 +293,8 @@ export async function finalizeImportDraft(
         ...(destinationHint === undefined ? {} : { destinationHint }),
         ...(resolvedAmenityIds === undefined ? {} : { resolvedAmenityIds }),
         ...(unresolvedAmenities === undefined ? {} : { unresolvedAmenities }),
-        ...(mediaHints === undefined ? {} : { mediaHints })
+        ...(mediaHints === undefined ? {} : { mediaHints }),
+        ...(priceConversion === undefined ? {} : { priceConversion })
     };
 
     const parsed = AccommodationImportResponseSchema.safeParse(assembled);
