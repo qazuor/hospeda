@@ -251,9 +251,13 @@ export function PriceAlertButton({
         );
     }
 
-    // Free plan — locked state, links to the plans page, no API call.
+    // Free plan — locked state, links to the tourist plans page, no API call.
+    // PRICE_ALERTS is a tourist entitlement every owner plan already inherits
+    // (TOURIST_VIP_ENTITLEMENTS), so anyone seeing this locked state is a
+    // free-tier tourist — the upsell must target the tourist pricing page, not
+    // the owner one (BETA-201; mirrors the sibling AlertsList.client.tsx).
     if (!canCreateAlerts) {
-        const upgradeHref = buildUrl({ locale, path: 'suscriptores/planes' });
+        const upgradeHref = buildUrl({ locale, path: 'suscriptores/turistas' });
         return (
             <div className={styles.priceAlertWrapper}>
                 <a
