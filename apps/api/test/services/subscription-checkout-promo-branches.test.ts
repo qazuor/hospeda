@@ -368,6 +368,57 @@ describe('HOS-110 W1 / HOS-171 / HOS-191: promo effect_kind precedence before th
         // extension) as `trialDays` — not 14 now and 60 again later.
         expect(mpPlanCallArg().trialDays).toBe(74);
         expect(pendingCallArg().trialGranted).toBe(true);
+        // HOS-240: a config-backed trial (no DB id) records NO redemption.
+        expect(pendingCallArg().pendingTrialExtension).toBeUndefined();
+    });
+
+    it('HOS-240: a DB-backed trial_extension threads pendingTrialExtension to the pending sub', async () => {
+        resolveCheckoutPromoPlanMock.mockResolvedValue({
+            kind: 'trial',
+            freeTrialDays: 30,
+            promoCodeId: 'pc-trial-1',
+            code: 'FREEMONTH'
+        });
+        const billing = makeTrialBilling();
+
+        const result = await initiatePaidMonthlySubscription({
+            ...MONTHLY_BASE,
+            // biome-ignore lint/suspicious/noExplicitAny: test billing stub
+            billing: billing as any,
+            promoCode: 'FREEMONTH'
+        });
+
+        expect(result.trialGranted).toBe(true);
+        // HOS-240: the promo identity is SNAPSHOTTED on the pending sub / correlation
+        // row — its redemption is DEFERRED to link time (link-preapproval.service.ts),
+        // NOT recorded at checkout. So the checkout must perform no redemption here.
+        expect(pendingCallArg().pendingTrialExtension).toEqual({
+            promoCodeId: 'pc-trial-1',
+            code: 'FREEMONTH'
+        });
+        expect(redeemAndRecordUsageMock).not.toHaveBeenCalled();
+    });
+
+    it('HOS-240: a DB trial_extension that grants NO trial (prior subscription) records no redemption', async () => {
+        resolveCheckoutPromoPlanMock.mockResolvedValue({
+            kind: 'trial',
+            freeTrialDays: 30,
+            promoCodeId: 'pc-trial-1',
+            code: 'FREEMONTH'
+        });
+        // A customer who already had a subscription burns the one-per-lifetime
+        // trial → the extension is ignored → nothing to redeem.
+        const billing = makeTrialBilling({ existingSubscriptions: [{ id: 'old-sub' }] });
+
+        await initiatePaidMonthlySubscription({
+            ...MONTHLY_BASE,
+            // biome-ignore lint/suspicious/noExplicitAny: test billing stub
+            billing: billing as any,
+            promoCode: 'FREEMONTH'
+        });
+
+        expect(pendingCallArg().trialGranted).toBe(false);
+        expect(pendingCallArg().pendingTrialExtension).toBeUndefined();
     });
 
     it('discount: applies ALONGSIDE the trial — the customer gets both (HOS-171)', async () => {

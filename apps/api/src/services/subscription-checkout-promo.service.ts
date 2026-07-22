@@ -30,9 +30,12 @@ import { apiLogger } from '../utils/logger.js';
 /**
  * Discriminated result of resolving a checkout promo code.
  *
- * `none` and `trial` carry no DB identity (trial may come from config). The
+ * `none` carries no DB identity. A `trial` may come from a DB-persisted
+ * `trial_extension` code (then it carries `promoCodeId` + normalized `code` so
+ * the redemption can be recorded — HOS-240) OR from the config-backed legacy
+ * fallback (then it has neither, since there is no DB row to redeem). The
  * `discount` and `comp` variants always originate from a DB-persisted code, so
- * they carry `promoCodeId` + the normalized `code` for the redemption record.
+ * they always carry `promoCodeId` + the normalized `code` for the redemption record.
  *
  * The `invalid` variant is returned (NOT thrown) so this resolver has no import
  * dependency on the checkout service's error class — the caller maps `invalid`
@@ -41,7 +44,19 @@ import { apiLogger } from '../utils/logger.js';
  */
 export type CheckoutPromoPlan =
     | { readonly kind: 'none' }
-    | { readonly kind: 'trial'; readonly freeTrialDays: number }
+    | {
+          readonly kind: 'trial';
+          readonly freeTrialDays: number;
+          /**
+           * DB id + normalized code of the `trial_extension` promo, present ONLY
+           * when the trial extension came from a DB-persisted code (HOS-240). The
+           * config-backed legacy fallback leaves both undefined (nothing to
+           * redeem). When set, the checkout records the redemption and stamps
+           * `promo_code_id` on the subscription.
+           */
+          readonly promoCodeId?: string;
+          readonly code?: string;
+      }
     | {
           readonly kind: 'discount';
           readonly promoCodeId: string;
@@ -144,7 +159,17 @@ async function classifyValidatedCode(promoCode: string): Promise<CheckoutPromoPl
         const effect = dbCode.effect;
 
         if (effect?.kind === PromoEffectKindEnum.TRIAL_EXTENSION) {
-            return { kind: 'trial', freeTrialDays: effect.extraDays };
+            // HOS-240: carry the DB identity so the checkout can record the
+            // redemption (used_count++, usage row, promo_code_id stamp). Without
+            // it, a DB-backed trial_extension code applied its effect but never
+            // enforced max_uses / max_per_customer — matching how the sibling
+            // `comp`/`discount` branches below propagate `promoCodeId` + `code`.
+            return {
+                kind: 'trial',
+                freeTrialDays: effect.extraDays,
+                promoCodeId: dbCode.id,
+                code: dbCode.code
+            };
         }
 
         if (effect?.kind === PromoEffectKindEnum.COMP) {

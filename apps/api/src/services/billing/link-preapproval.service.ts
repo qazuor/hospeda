@@ -55,7 +55,7 @@ import {
     isNull
 } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { getPromoCodeById, withServiceTransaction } from '@repo/service-core';
+import { getPromoCodeById, redeemAndRecordUsage, withServiceTransaction } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
@@ -702,6 +702,97 @@ async function applyPendingDiscountBestEffort(params: {
 }
 
 /**
+ * Record a checkout-time pending `trial_extension` redemption (HOS-240) against
+ * a just-linked preapproval, best-effort. Never throws and never blocks the
+ * linking outcome.
+ *
+ * The redemption is DEFERRED to here (instead of being recorded at checkout, on
+ * the unauthorized `pending_provider` sub) so an abandoned MercadoPago checkout
+ * never burns a capped code (`max_uses`/`max_per_customer`) for a subscription
+ * that never activated. By the time this runs the customer HAS authorized the
+ * hosted checkout and the preapproval is linked — a real, converting trial.
+ *
+ * The extra trial days themselves were already baked into the MP
+ * `preapproval_plan` at checkout, so there is nothing to APPLY here — only the
+ * redemption to RECORD (`used_count++`, usage row) and the `promo_code_id` FK to
+ * stamp. Both are done atomically. Best-effort posture mirrors the discount
+ * path: a recording failure (e.g. a `max_uses` race lost to a concurrent
+ * converter) leaves the trial granted and is logged loudly for manual
+ * reconciliation rather than blocking the link.
+ *
+ * @internal
+ */
+async function applyPendingTrialExtensionBestEffort(params: {
+    readonly localSubscriptionId: string;
+    readonly preapprovalId: string;
+    readonly customerId: string;
+    readonly pendingTrialExtension: { readonly promoCodeId: string; readonly code: string };
+    readonly livemode: boolean;
+}): Promise<void> {
+    const { localSubscriptionId, preapprovalId, customerId, pendingTrialExtension, livemode } =
+        params;
+
+    try {
+        // Guard: the code must still resolve to a valid trial_extension effect
+        // (same optional-chaining pattern as the discount path — `getPromoCodeById`
+        // does not narrow `data` after `success`).
+        const promoCodeResult = await getPromoCodeById(pendingTrialExtension.promoCodeId);
+        const effect = promoCodeResult.success ? promoCodeResult.data?.effect : undefined;
+        if (!promoCodeResult.success || effect?.kind !== 'trial_extension') {
+            apiLogger.error(
+                {
+                    localSubscriptionId,
+                    preapprovalId,
+                    promoCodeId: pendingTrialExtension.promoCodeId
+                },
+                'HOS-240 link-preapproval: pending trial_extension promo no longer resolvable to a valid effect — skipping redemption (the trial was already granted in the MP plan)'
+            );
+            return;
+        }
+
+        // Record the redemption + stamp promo_code_id atomically. `discountAmount`
+        // is 0 — a trial extension grants free days, not a monetary discount.
+        await withServiceTransaction(async (ctx) => {
+            // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
+            const tx = ctx.tx!;
+            const redeemResult = await redeemAndRecordUsage({
+                promoCodeId: pendingTrialExtension.promoCodeId,
+                customerId,
+                subscriptionId: localSubscriptionId,
+                discountAmount: 0,
+                currency: 'ARS',
+                livemode,
+                tx
+            });
+            if (!redeemResult.success) {
+                throw new Error(redeemResult.error.message);
+            }
+            await tx
+                .update(billingSubscriptions)
+                .set({ promoCodeId: pendingTrialExtension.promoCodeId })
+                .where(eq(billingSubscriptions.id, localSubscriptionId));
+        });
+    } catch (err) {
+        apiLogger.error(
+            {
+                localSubscriptionId,
+                preapprovalId,
+                promoCodeId: pendingTrialExtension.promoCodeId,
+                error: err instanceof Error ? err.message : String(err)
+            },
+            'HOS-240 link-preapproval: deferred trial_extension redemption failed — the trial was granted (baked into the MP plan) but its usage was NOT recorded; needs manual reconcile'
+        );
+        Sentry.captureException(err, {
+            extra: {
+                localSubscriptionId,
+                preapprovalId,
+                promoCodeId: pendingTrialExtension.promoCodeId
+            }
+        });
+    }
+}
+
+/**
  * Link a real MercadoPago preapproval to the local `pending_provider`
  * subscription it belongs to. See module JSDoc for the full correlation
  * model and idempotency contract.
@@ -899,6 +990,25 @@ export async function linkPreapprovalToLocalSub(
             customerId: checkout.customerId,
             planId: checkout.planId,
             pendingDiscount: checkout.pendingDiscount,
+            livemode: subRow?.livemode ?? false
+        });
+    }
+
+    // Step 7: record a deferred trial_extension redemption (HOS-240), best-effort,
+    // non-blocking — the caps were validated at checkout; this only records the
+    // usage now that the preapproval is authorized+linked (never on an abandon).
+    if (checkout.pendingTrialExtension) {
+        const [subRow] = await client
+            .select({ livemode: billingSubscriptions.livemode })
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, checkout.localSubscriptionId))
+            .limit(1);
+
+        await applyPendingTrialExtensionBestEffort({
+            localSubscriptionId: checkout.localSubscriptionId,
+            preapprovalId,
+            customerId: checkout.customerId,
+            pendingTrialExtension: checkout.pendingTrialExtension,
             livemode: subRow?.livemode ?? false
         });
     }

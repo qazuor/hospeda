@@ -442,6 +442,13 @@
             "when": 1784419630355,
             "tag": "0062_clammy_jigsaw",
             "breakpoints": true
+        },
+        {
+            "idx": 63,
+            "version": "7",
+            "when": 1784720390213,
+            "tag": "0063_small_archangel",
+            "breakpoints": true
         }
     ]
 }
