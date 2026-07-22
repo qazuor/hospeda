@@ -61,10 +61,19 @@ export const useSession = authClient.useSession;
  * Unified response shape for auth operations that require manual fetch calls.
  * Mirrors the `ApiResult<T>` pattern used in `lib/api/types.ts` so callers
  * have a single consistent error-handling contract.
+ *
+ * `code` and `status` (HOS-195) feed `translateApiError`'s reason → code →
+ * status priority chain — without them every failure from these manual fetch
+ * helpers fell straight through to the raw (always-English) API `message`,
+ * regardless of the user's locale.
  */
 export interface AuthResult<T = unknown> {
     readonly data?: T;
-    readonly error?: { readonly message?: string; readonly code?: string } | null;
+    readonly error?: {
+        readonly message?: string;
+        readonly code?: string;
+        readonly status?: number;
+    } | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -105,13 +114,25 @@ export async function forgetPassword({
                     message:
                         typeof data?.message === 'string'
                             ? data.message
-                            : 'Error al enviar el correo de recuperacion'
+                            : 'Error al enviar el correo de recuperacion',
+                    // HOS-195: Better Auth's JSON error body carries a machine-readable
+                    // `code` for most endpoints. Better Auth's OWN built-in rate limiter
+                    // is status-only (429 with no `code`), but this app's custom lockout
+                    // wrapper around forgot-password/signup/resend (see
+                    // `apps/api/src/routes/auth/handler.ts`) DOES send
+                    // `{ code: 'TOO_MANY_REQUESTS' }` in the body on lockout, so
+                    // `common.apiError.TOO_MANY_REQUESTS` IS reachable via that code.
+                    // Propagating both `code` and `status` lets `translateApiError`'s
+                    // priority chain resolve a localized message instead of always
+                    // falling through to the raw English `message`.
+                    code: typeof data?.code === 'string' ? data.code : undefined,
+                    status: response.status
                 }
             };
         }
         return { data };
     } catch {
-        return { error: { message: 'Error de red. Por favor, intenta de nuevo.' } };
+        return { error: { message: 'Error de red. Por favor, intenta de nuevo.', status: 0 } };
     }
 }
 
@@ -144,13 +165,19 @@ export async function resetPassword({
                     message:
                         typeof data?.message === 'string'
                             ? data.message
-                            : 'No se pudo restablecer la contrasena'
+                            : 'No se pudo restablecer la contrasena',
+                    // HOS-195: propagate the Better Auth error `code` (e.g.
+                    // INVALID_TOKEN for an expired/invalid reset token) and HTTP
+                    // `status` so `translateApiError` can resolve a localized
+                    // message instead of the raw English API text.
+                    code: typeof data?.code === 'string' ? data.code : undefined,
+                    status: response.status
                 }
             };
         }
         return { data };
     } catch {
-        return { error: { message: 'Error de red. Por favor, intenta de nuevo.' } };
+        return { error: { message: 'Error de red. Por favor, intenta de nuevo.', status: 0 } };
     }
 }
 
@@ -174,13 +201,20 @@ export async function verifyEmail({ token }: { readonly token: string }): Promis
             return {
                 error: {
                     message:
-                        typeof data?.message === 'string' ? data.message : 'La verificacion fallo'
+                        typeof data?.message === 'string' ? data.message : 'La verificacion fallo',
+                    // HOS-195: propagate the Better Auth error `code` (e.g.
+                    // INVALID_TOKEN / EMAIL_NOT_VERIFIED for an expired/invalid
+                    // verification token) and HTTP `status` so `translateApiError`
+                    // can resolve a localized message instead of the raw English
+                    // API text.
+                    code: typeof data?.code === 'string' ? data.code : undefined,
+                    status: response.status
                 }
             };
         }
         return { data };
     } catch {
-        return { error: { message: 'Error de red. Por favor, intenta de nuevo.' } };
+        return { error: { message: 'Error de red. Por favor, intenta de nuevo.', status: 0 } };
     }
 }
 

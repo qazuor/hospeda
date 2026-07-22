@@ -331,11 +331,26 @@ export const AccommodationCreateDraftHttpSchema = z.object({
     /** Maximum number of guests. Maps to `extraInfo.capacity`. */
     maxGuests: z.coerce.number().int().min(1).max(200).optional(),
     /** Number of bedrooms. Maps to `extraInfo.bedrooms`. */
-    bedrooms: z.coerce.number().int().min(0).max(100).optional(),
+    bedrooms: z.coerce
+        .number()
+        .int()
+        .min(0, { message: 'zodError.accommodation.extraInfo.bedrooms.min' })
+        .max(100, { message: 'zodError.accommodation.extraInfo.bedrooms.max' })
+        .optional(),
     /** Number of bathrooms. Maps to `extraInfo.bathrooms`. */
-    bathrooms: z.coerce.number().int().min(1).max(100).optional(),
+    bathrooms: z.coerce
+        .number()
+        .int()
+        .min(1, { message: 'zodError.accommodation.extraInfo.bathrooms.min' })
+        .max(100, { message: 'zodError.accommodation.extraInfo.bathrooms.max' })
+        .optional(),
     /** Number of beds. Maps to `extraInfo.beds`. */
-    beds: z.coerce.number().int().min(0).max(200).optional(),
+    beds: z.coerce
+        .number()
+        .int()
+        .min(0, { message: 'zodError.accommodation.extraInfo.beds.min' })
+        .max(200, { message: 'zodError.accommodation.extraInfo.beds.max' })
+        .optional(),
 
     // --- Optional pricing (→ price) ---
     /** Base nightly price. Maps to `price.price`. */
@@ -349,9 +364,17 @@ export const AccommodationCreateDraftHttpSchema = z.object({
     /** Longitude in decimal degrees. Maps to `location.coordinates.long`. */
     longitude: z.coerce.number().min(-180).max(180).optional(),
     /** Street name. Maps to `location.street`. */
-    street: z.string().min(2).max(50).optional(),
+    street: z
+        .string()
+        .min(2, { message: 'zodError.accommodation.location.street.min' })
+        .max(50, { message: 'zodError.accommodation.location.street.max' })
+        .optional(),
     /** Street number (string to support "123bis" etc.). Maps to `location.number`. */
-    number: z.string().min(1).max(10).optional(),
+    number: z
+        .string()
+        .min(1, { message: 'zodError.accommodation.location.number.min' })
+        .max(10, { message: 'zodError.accommodation.location.number.max' })
+        .optional(),
 
     // --- Optional contact (→ contactInfo) ---
     /** Mobile phone. Maps to `contactInfo.mobilePhone`. */

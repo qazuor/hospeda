@@ -36,16 +36,25 @@ export const CreateConversationAnonSchema = z
         accommodationId: z.string().uuid(),
 
         /** Guest's full display name (1..255 characters). */
-        guestName: z.string().min(1).max(255),
+        guestName: z
+            .string()
+            .min(1, { message: 'zodError.conversation.guestName.min' })
+            .max(255, { message: 'zodError.conversation.guestName.max' }),
 
         /** Guest's email address — used for email verification. */
-        guestEmail: z.string().email(),
+        guestEmail: z.string().email({ message: 'zodError.conversation.guestEmail.invalid' }),
 
         /** Optional guest phone number. */
-        guestPhone: z.string().max(50).optional(),
+        guestPhone: z
+            .string()
+            .max(50, { message: 'zodError.conversation.guestPhone.max' })
+            .optional(),
 
         /** Opening message from the guest (1..5000 characters). */
-        message: z.string().min(1).max(5000),
+        message: z
+            .string()
+            .min(1, { message: 'zodError.conversation.message.min' })
+            .max(5000, { message: 'zodError.conversation.message.max' }),
 
         /** Preferred locale for system notifications (e.g. "es", "en", "pt"). */
         locale: z.string().max(10).optional()
