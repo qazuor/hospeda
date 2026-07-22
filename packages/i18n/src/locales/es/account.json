@@ -948,6 +948,32 @@
         "errors": {
             "purchaseFailed": "No se pudo iniciar la compra. Intentá de nuevo.",
             "missingAccommodation": "Elegí un alojamiento para continuar."
+        },
+        "catalog": {
+            "visibility-boost-7d": {
+                "name": "Impulso de visibilidad (7 días)",
+                "description": "Tu alojamiento aparece destacado en los resultados de búsqueda durante 7 días."
+            },
+            "visibility-boost-30d": {
+                "name": "Impulso de visibilidad (30 días)",
+                "description": "Tu alojamiento aparece destacado en los resultados de búsqueda durante 30 días."
+            },
+            "extra-photos-20": {
+                "name": "Pack de fotos extra (+20 fotos)",
+                "description": "Agrega 20 fotos adicionales a cada alojamiento. Se renueva mensualmente."
+            },
+            "extra-accommodations-5": {
+                "name": "Pack de alojamientos extra (+5)",
+                "description": "Agrega 5 alojamientos adicionales a tu plan. Se renueva mensualmente."
+            },
+            "extra-properties-5": {
+                "name": "Pack de propiedades extra (+5)",
+                "description": "Agrega 5 propiedades adicionales a tu complejo. Se renueva mensualmente."
+            },
+            "ai-support-monthly": {
+                "name": "Soporte con IA (mensual)",
+                "description": "Desbloquea herramientas de soporte con IA para anfitriones, incluidas sugerencias de respuesta inteligentes y gestión automática de preguntas frecuentes de huéspedes. Se renueva mensualmente."
+            }
         }
     },
     "recommendations": {

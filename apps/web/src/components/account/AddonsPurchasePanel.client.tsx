@@ -19,6 +19,7 @@ import { PackageIcon } from '@repo/icons';
 import type { AddonResponse } from '@repo/schemas';
 import { useState } from 'react';
 import { AccountEmptyState } from '@/components/account/AccountEmptyState';
+import { translateAddonDescription, translateAddonName } from '@/lib/addon-labels';
 import { billingApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
 import { formatPrice } from '@/lib/format-utils';
@@ -166,7 +167,9 @@ export function AddonsPurchasePanel({
                 data-testid={`addon-card-${addon.slug}`}
             >
                 <div className={styles.cardHeader}>
-                    <h3 className={styles.cardTitle}>{addon.name}</h3>
+                    <h3 className={styles.cardTitle}>
+                        {translateAddonName({ t, slug: addon.slug, fallback: addon.name })}
+                    </h3>
                     {isOwned && (
                         <span className={styles.ownedBadge}>
                             {t('account.addons.owned', 'Activo')}
@@ -174,7 +177,13 @@ export function AddonsPurchasePanel({
                     )}
                 </div>
 
-                <p className={styles.cardDescription}>{addon.description}</p>
+                <p className={styles.cardDescription}>
+                    {translateAddonDescription({
+                        t,
+                        slug: addon.slug,
+                        fallback: addon.description
+                    })}
+                </p>
 
                 <div className={styles.cardMeta}>
                     <span className={styles.price}>{priceLabel}</span>

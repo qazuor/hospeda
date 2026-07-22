@@ -28,9 +28,19 @@ vi.mock('../../../src/components/account/AddonsPurchasePanel.module.css', () => 
     })
 }));
 
+// Localized copy for addon name/description lives under
+// `account.addons.catalog.<slug>.*` (BETA-198). The mock resolves those keys so
+// tests can assert the panel renders the i18n value instead of the raw
+// definition string; all other keys fall back to the provided fallback.
+const CATALOG_TRANSLATIONS: Record<string, string> = {
+    'account.addons.catalog.extra-photos-20.name': 'Pack de fotos extra (localizado)',
+    'account.addons.catalog.extra-photos-20.description': 'Descripción localizada de fotos.',
+    'account.addons.catalog.visibility-boost-7d.name': 'Impulso de visibilidad (localizado)'
+};
+
 vi.mock('../../../src/lib/i18n', () => {
     const t = (key: string, fallback?: string, params?: Record<string, unknown>): string => {
-        const raw = fallback ?? key;
+        const raw = CATALOG_TRANSLATIONS[key] ?? fallback ?? key;
         if (!params) return raw;
         return Object.keys(params).reduce(
             (acc, k) => acc.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(params[k])),
@@ -283,6 +293,23 @@ describe('AddonsPurchasePanel', () => {
             expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }));
         });
         expect(window.location.href).toBe('');
+    });
+
+    it('renders the localized addon name/description from i18n, not the raw definition string (BETA-198)', () => {
+        render(
+            <AddonsPurchasePanel
+                locale="es"
+                addons={[ACCOUNT_ADDON]}
+                ownedAddonSlugs={[]}
+                accommodations={[]}
+            />
+        );
+
+        // The i18n value wins over the English definition string.
+        expect(screen.getByText('Pack de fotos extra (localizado)')).toBeInTheDocument();
+        expect(screen.getByText('Descripción localizada de fotos.')).toBeInTheDocument();
+        expect(screen.queryByText(ACCOUNT_ADDON.name)).not.toBeInTheDocument();
+        expect(screen.queryByText(ACCOUNT_ADDON.description)).not.toBeInTheDocument();
     });
 
     it('renders the price and duration for a one-time addon', () => {
