@@ -34,6 +34,7 @@ import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../../services/addon-lifecycle.service.js';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service.js';
 import { linkPreapprovalToLocalSub } from '../../../services/billing/link-preapproval.service.js';
+import { planDisplayNameFromPlan } from '../../../services/billing/plan-change-reason.js';
 import { completeSupersessionPairing } from '../../../services/billing/reactivation-supersession-complete.js';
 import { reconcileCommerceListingForSubscription } from '../../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service.js';
@@ -1396,7 +1397,13 @@ export async function processSubscriptionUpdated({
         return { success: true, statusChanged: true, newStatus: mappedStatus };
     }
 
+    // `plan.name` from the qzpay adapter is the SLUG (`owner-basico`) — fine for
+    // the `planSlug` log below, but the customer-facing cancelled/paused/
+    // reactivated emails must show the display name (`Basic`). Derive it from the
+    // already-fetched plan object (metadata.displayName, slug fallback) — no extra
+    // query (HOS-231).
     const planName = plan?.name ?? 'Plan';
+    const planDisplayName = plan ? planDisplayNameFromPlan(plan) : planName;
     const customerName =
         typeof customer?.metadata?.name === 'string'
             ? customer.metadata.name
@@ -1415,7 +1422,7 @@ export async function processSubscriptionUpdated({
             customerEmail: customer?.email ?? '',
             customerName,
             userId,
-            planName,
+            planName: planDisplayName,
             currentPeriodEnd,
             mpSubscriptionId: mpPreapprovalId,
             previousStatus
@@ -1430,7 +1437,7 @@ export async function processSubscriptionUpdated({
             customerEmail: customer?.email ?? '',
             customerName,
             userId,
-            planName
+            planName: planDisplayName
         }).catch((err) => {
             apiLogger.debug({ error: err }, 'Subscription paused notification failed');
         });
@@ -1442,7 +1449,7 @@ export async function processSubscriptionUpdated({
             customerEmail: customer?.email ?? '',
             customerName,
             userId,
-            planName,
+            planName: planDisplayName,
             nextBillingDate
         }).catch((err) => {
             apiLogger.debug({ error: err }, 'Subscription reactivated notification failed');

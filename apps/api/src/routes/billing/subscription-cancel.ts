@@ -55,6 +55,7 @@ import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
+import { resolvePlanDisplayName } from '../../services/billing/plan-change-reason';
 import { softCancelSubscription } from '../../services/subscription-cancel.service';
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env';
@@ -161,13 +162,15 @@ export const handleUserCancelSubscription = async (
     const recipientName = (actor as { name?: string }).name ?? recipientEmail;
 
     // Resolve a human-readable plan name for the notification (best-effort).
+    // HOS-231: the qzpay adapter's `plan.name` is the SLUG (`owner-basico`);
+    // resolve the display name (`Basic`) via the shared helper so the
+    // cancel-confirmed email shows a human label, not the slug.
     let planName: string | undefined;
     try {
         const subscriptions = await billing.subscriptions.getByCustomerId(billingCustomerId);
         const thisSub = subscriptions.find((s) => s.id === subscriptionId);
         if (thisSub) {
-            const plan = await billing.plans.get(thisSub.planId);
-            planName = (plan?.name as string | undefined) ?? undefined;
+            planName = await resolvePlanDisplayName({ planId: thisSub.planId });
         }
     } catch {
         // Plan name lookup is best-effort — failure must not block the cancel.

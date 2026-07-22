@@ -1507,6 +1507,27 @@ describe('SPEC-167 T-017: PLAN_CHANGE_CONFIRMATION notification at apply time (a
         expect(payload?.userId).toBeDefined();
     });
 
+    // HOS-231: when a plan carries metadata.displayName, the confirmation email
+    // must show the DISPLAY name ("Basic"), not the raw slug ("owner-basico").
+    it('confirmation payload uses plan DISPLAY names (metadata.displayName), not the raw slug', async () => {
+        const { billing, plansGet } = makeBillingWithCustomers();
+        plansGet.mockImplementation((id: string) =>
+            id === NEW_PLAN_ID
+                ? Promise.resolve({ name: 'owner-basico', metadata: { displayName: 'Basic' } })
+                : Promise.resolve({ name: 'owner-pro', metadata: { displayName: 'Professional' } })
+        );
+        const row = makeRow({ scheduledPlanChange: makeScheduled({ direction: 'downgrade' }) });
+
+        await _internals.applyOne(row, billing, makeCtx().logger);
+
+        const calls = sendNotificationMock.mock.calls as Array<[Record<string, unknown>]>;
+        const payload = calls.find(
+            ([p]) => p.type === NotificationType.PLAN_CHANGE_CONFIRMATION
+        )?.[0];
+        expect(payload?.oldPlanName).toBe('Professional');
+        expect(payload?.newPlanName).toBe('Basic');
+    });
+
     it('exactly once per applied change — not sent when changePlan fails (retry outcome)', async () => {
         const { billing } = makeBillingWithCustomers({
             changePlanThrows: new Error('provider down')

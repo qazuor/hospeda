@@ -9,6 +9,7 @@
 
 import { NotificationType } from '@repo/notifications';
 import type { getQZPayBilling } from '../../../middlewares/billing';
+import { resolvePlanDisplayName } from '../../../services/billing/plan-change-reason';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
 import { sendNotification } from '../../../utils/notification-helper';
@@ -48,14 +49,12 @@ export async function sendPaymentSuccessNotification(
             const userId =
                 typeof customer.metadata?.userId === 'string' ? customer.metadata.userId : null;
 
+            // HOS-231: `plan.name` is the SLUG; resolve the display name so the
+            // payment-success email shows a human label (falls back to generic).
             let planName = 'Subscription';
             if (subscription?.planId) {
-                try {
-                    const plan = await billing.plans.get(subscription.planId);
-                    planName = plan?.name || 'Subscription';
-                } catch {
-                    // Ignore plan fetch errors
-                }
+                planName =
+                    (await resolvePlanDisplayName({ planId: subscription.planId })) ?? planName;
             }
 
             await sendNotification({
@@ -131,14 +130,12 @@ export async function sendPaymentFailureNotifications(
         const userId =
             typeof customer.metadata?.userId === 'string' ? customer.metadata.userId : null;
 
+        // HOS-231: the qzpay adapter's `plan.name` is the SLUG (`owner-basico`);
+        // resolve the display name (`Basic`) so the payment email shows a human
+        // label. Falls back to the generic 'Subscription' when unresolved.
         let planName = 'Subscription';
         if (subscription?.planId) {
-            try {
-                const plan = await billing.plans.get(subscription.planId);
-                planName = plan?.name || 'Subscription';
-            } catch {
-                // Ignore plan fetch errors
-            }
+            planName = (await resolvePlanDisplayName({ planId: subscription.planId })) ?? planName;
         }
 
         const sanitizedUserReason = sanitizeErrorForNotification(failureReason, 200);

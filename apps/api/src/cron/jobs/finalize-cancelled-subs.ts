@@ -110,6 +110,7 @@ import {
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../services/addon-lifecycle-cancellation.service.js';
+import { planDisplayNameFromPlan } from '../../services/billing/plan-change-reason.js';
 import { reconcileCommerceListingForSubscription } from '../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../services/partner-reconcile.service.js';
 import { resolveOwnerUserId } from '../../services/subscription-pause.service.js';
@@ -408,7 +409,8 @@ async function sendAccessEndingReminders(logger: ReminderLogger): Promise<void> 
                     userId: null,
                     customerId: customer.id,
                     idempotencyKey: `sub-access-ending-d3-${row.id}`,
-                    planName: plan.name,
+                    // HOS-231: display name, not the raw slug.
+                    planName: planDisplayNameFromPlan(plan),
                     accessUntil: periodEnd.toISOString(),
                     daysRemaining
                 })

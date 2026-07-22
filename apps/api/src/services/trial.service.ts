@@ -40,6 +40,7 @@ import { and, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
 import { createPaidSubscription } from './billing/paid-subscription-create.js';
+import { planDisplayNameFromPlan } from './billing/plan-change-reason.js';
 import { resolveReactivationPlan } from './billing/reactivation-plan-guard.js';
 import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
 
@@ -1361,6 +1362,7 @@ export class TrialService {
                             userName: String(customer.metadata?.name || customer.email),
                             userId: String(customer.metadata?.userId || ''),
                             planSlug: plan.name,
+                            planDisplayName: planDisplayNameFromPlan(plan),
                             trialEnd,
                             daysRemaining,
                             ...(intendedInterval ? { intendedInterval } : {})
