@@ -9,24 +9,29 @@
  *
  * ### What it does (mirror-image of soft-cancel)
  *
- * - Calls `billing.subscriptions.uncancel()` (qzpay-core >= 1.17.0), which
+ * - Clears Hospeda's own `cancelAtPeriodEnd` column and writes a
+ *   `USER_UNCANCELED` audit event inside a transaction, under a FOR UPDATE
+ *   re-read (the authoritative TOCTOU guard against the concurrent
+ *   `finalize-cancelled-subs` cron). Clearing the flag removes the row from that
+ *   cron's scan (`WHERE cancelAtPeriodEnd = true`) — there is no per-subscription
+ *   scheduled job to cancel, so clearing the flag IS cancelling the finalize.
+ * - Then calls `billing.subscriptions.uncancel()` (qzpay-core >= 1.17.0), which
  *   re-authorizes the MercadoPago preapproval that the soft-cancel PAUSED
  *   (`PUT status: 'authorized'`) and clears qzpay's own `canceledAt` stamp,
  *   WITHOUT changing `status` (a `trialing` subscription stays `trialing`, its
- *   deferred first charge restored).
- * - Clears Hospeda's own `cancelAtPeriodEnd` column (and `canceledAt`), which
- *   also removes the row from the `finalize-cancelled-subs` scan (that cron
- *   selects `WHERE cancelAtPeriodEnd = true` — there is no per-subscription
- *   scheduled job to cancel, so clearing the flag IS cancelling the finalize).
- * - Writes an audit event, clears the entitlement cache, fires a notification.
+ *   deferred first charge restored). `canceledAt` is qzpay-core's to own.
+ * - Clears the entitlement cache.
  *
  * ### Invariants honoured
  *
  * - **INV-1 (cache invalidation)**: `clearEntitlementCache` runs after the DB
  *   writes so entitlement checks never serve stale data.
- * - **Fail-closed provider ordering**: the provider un-pause runs FIRST; the
- *   local flag clear only proceeds if it succeeds, so we never tell the user
- *   "kept" while MercadoPago is still paused (which would silently stop billing).
+ * - **TOCTOU / fail-closed ordering**: the local flag is cleared FIRST inside a
+ *   FOR UPDATE transaction (so the finalize cron can neither race the write nor
+ *   pick the row up mid-flight), THEN the provider is re-authorized; a provider
+ *   failure ROLLS the flag back to `true`, so we never report "kept" while
+ *   MercadoPago is still paused. Mirrors softCancelSubscription's flag-first +
+ *   rollback structure, reversed.
  *
  * @module services/subscription-uncancel
  */
@@ -75,10 +80,13 @@ export interface UncancelSubscriptionResult {
 
 /**
  * Statuses in which a soft-cancelled subscription can still be un-cancelled —
- * the live, pre-finalization states. Mirrors the soft-cancellable set (a
- * subscription that could be soft-cancelled is `active`/`trialing`, and the
- * finalize cron leaves it in one of these until `current_period_end`). Once the
- * `finalize-cancelled-subs` cron flips it to `cancelled`, it is terminal.
+ * the live, pre-finalization states. This matches the `finalize-cancelled-subs`
+ * cron's own eligible set (`active`/`trialing`/`past_due`), NOT the narrower
+ * soft-cancellable set (`active`/`trialing`): `past_due` is deliberately
+ * included because a soft-cancelled subscription can legitimately fall into
+ * `past_due` before its period ends, and it is still reversible then. Once the
+ * cron flips it to `cancelled`, it is terminal; `paused` is a different axis
+ * (reverse with resume), so it is excluded.
  */
 const UNCANCELLABLE_STATUSES = new Set(['active', 'trialing', 'past_due']);
 
@@ -158,14 +166,88 @@ export async function uncancelSubscription(
         );
     }
 
-    // ── Step 4: Provider call FIRST — re-authorize the MP preapproval ────────
-    // Fail-closed: if this throws we do NOT clear the local flag, so we never
-    // report "kept" while MercadoPago is still paused (which would silently stop
-    // billing). qzpay-core's uncancel re-authorizes the paused preapproval and
-    // clears its own canceledAt; it does NOT change status (preserves trialing).
+    // ── Step 4: Clear the local flag FIRST, under a FOR UPDATE re-read ────────
+    // Mirrors softCancelSubscription's ordering (reversed). The authoritative
+    // TOCTOU guard re-reads the row FOR UPDATE inside the transaction so the
+    // concurrent `finalize-cancelled-subs` cron (which flips a due soft-cancel to
+    // 'cancelled') is serialized on the row lock: it either committed BEFORE us
+    // (we observe a terminal status and abort with the provider untouched) or
+    // waits BEHIND our lock (and then sees cancelAtPeriodEnd=false and skips the
+    // row). Clearing the flag BEFORE the provider call means the finalize scan
+    // (`WHERE cancelAtPeriodEnd = true`) can never pick this row up while the
+    // re-authorization is in flight; a provider failure rolls the flag back.
+    // `canceledAt` is left to qzpay-core's uncancel (Step 5), which owns it.
+    let flagCleared = false;
+    await withServiceTransaction(async (ctx) => {
+        // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
+        const tx = ctx.tx!;
+
+        const [freshRow] = await (tx as typeof db)
+            .select({
+                status: billingSubscriptions.status,
+                cancelAtPeriodEnd: billingSubscriptions.cancelAtPeriodEnd
+            })
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, subscriptionId))
+            .for('update');
+
+        if (!freshRow?.cancelAtPeriodEnd) {
+            // A concurrent writer already cleared the flag — idempotent, done.
+            return;
+        }
+        if (!UNCANCELLABLE_STATUSES.has(freshRow.status)) {
+            // The finalize cron won the race and flipped this to a terminal
+            // status. Abort BEFORE touching the provider.
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                `Cannot un-cancel a subscription with status '${freshRow.status}'.`
+            );
+        }
+
+        await (tx as typeof db)
+            .update(billingSubscriptions)
+            .set({ cancelAtPeriodEnd: false, updatedAt: new Date() })
+            .where(eq(billingSubscriptions.id, subscriptionId));
+
+        await (tx as typeof db).insert(billingSubscriptionEvents).values({
+            subscriptionId,
+            eventType: BILLING_EVENT_TYPES.USER_UNCANCELED,
+            triggerSource: 'user-uncancel',
+            metadata: { preapprovalReauthorized: true }
+        });
+
+        flagCleared = true;
+    });
+
+    // A concurrent writer already reversed the cancellation — idempotent no-op.
+    if (!flagCleared) {
+        return { subscriptionId, cancelAtPeriodEnd: false };
+    }
+
+    // ── Step 5: Provider call — re-authorize the MP preapproval ──────────────
+    // qzpay-core's uncancel re-authorizes the paused preapproval and clears its
+    // own canceledAt; it does NOT change status (preserves trialing). On failure
+    // we roll the local flag back so we never report "kept" while MercadoPago is
+    // still paused (mirrors softCancel's rollback).
     try {
         await billing.subscriptions.uncancel(subscriptionId);
     } catch (error) {
+        await db
+            .update(billingSubscriptions)
+            .set({ cancelAtPeriodEnd: true, updatedAt: new Date() })
+            .where(eq(billingSubscriptions.id, subscriptionId))
+            .catch((rollbackErr: unknown) => {
+                apiLogger.error(
+                    {
+                        subscriptionId,
+                        customerId,
+                        rollbackError:
+                            rollbackErr instanceof Error ? rollbackErr.message : String(rollbackErr)
+                    },
+                    'uncancel: failed to roll back cancelAtPeriodEnd after provider error'
+                );
+            });
+
         if (isBillingProviderError(error)) {
             const serviceError = mapProviderErrorToServiceError({
                 error,
@@ -182,28 +264,6 @@ export async function uncancelSubscription(
         }
         throw error;
     }
-
-    // ── Step 5: Clear the local soft-cancel flag + stamp ─────────────────────
-    // Removes the row from the `finalize-cancelled-subs` scan
-    // (`WHERE cancelAtPeriodEnd = true`). Status is left untouched — qzpay-core
-    // already preserved it, and finalize is scan-based (no scheduled job to
-    // cancel). Wrapped in a transaction with the audit event.
-    await withServiceTransaction(async (ctx) => {
-        // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
-        const tx = ctx.tx!;
-
-        await (tx as typeof db)
-            .update(billingSubscriptions)
-            .set({ cancelAtPeriodEnd: false, canceledAt: null, updatedAt: new Date() })
-            .where(eq(billingSubscriptions.id, subscriptionId));
-
-        await (tx as typeof db).insert(billingSubscriptionEvents).values({
-            subscriptionId,
-            eventType: BILLING_EVENT_TYPES.USER_UNCANCELED,
-            triggerSource: 'user-uncancel',
-            metadata: { preapprovalReauthorized: true }
-        });
-    });
 
     // ── Step 6: Clear entitlement cache (INV-1) ──────────────────────────────
     clearEntitlementCache(customerId);

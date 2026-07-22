@@ -1112,8 +1112,10 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
                     )}
 
                     {/* Discard cancellation (HOS-232) — reverse a soft-cancel
-                        while still in the access window. No charge. */}
-                    {isCancelScheduled && (
+                        while still in the access window. No charge. Only for a
+                        live soft-cancel (active/trial); a paused sub is a
+                        different axis the backend rejects. */}
+                    {isCancelScheduled && (status === 'active' || status === 'trial') && (
                         <button
                             type="button"
                             className={styles.btnPrimary}

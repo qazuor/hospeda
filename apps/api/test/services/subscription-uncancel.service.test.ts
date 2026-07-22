@@ -263,7 +263,7 @@ describe('uncancelSubscription', () => {
         expect(mockBillingUncancelFn).not.toHaveBeenCalled();
     });
 
-    it('maps a provider error to a ServiceError and does NOT clear the flag', async () => {
+    it('maps a provider error to a ServiceError and rolls the flag back (no cache clear)', async () => {
         setupDbSelectRow(buildSubRow());
         mockBillingUncancelFn.mockRejectedValueOnce(
             new QZPayProviderSyncError(
@@ -282,8 +282,11 @@ describe('uncancelSubscription', () => {
                 customerId: CUSTOMER_ID
             })
         ).rejects.toBeInstanceOf(ServiceError);
-        // Fail-closed: local flag was NOT cleared.
-        expect(mockDbUpdateFn).not.toHaveBeenCalled();
+        // Fail-closed: the flag was cleared in the tx then ROLLED BACK when the
+        // provider failed (a rollback UPDATE ran), and the entitlement cache was
+        // NOT cleared (we never reported success).
+        expect(mockBillingUncancelFn).toHaveBeenCalledWith(SUB_ID);
+        expect(mockDbUpdateFn).toHaveBeenCalled();
         expect(clearEntitlementCache).not.toHaveBeenCalled();
     });
 });
