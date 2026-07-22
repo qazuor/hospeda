@@ -48,7 +48,10 @@ vi.mock('../../../../src/services/plan.service', () => ({
 vi.mock('@repo/billing', () => ({
     PAYMENT_GRACE_PERIOD_DAYS: 7,
     getDefaultEntitlements: vi.fn(() => ({ entitlements: [], limits: [] })),
-    getUnlimitedEntitlements: vi.fn(() => ({ entitlements: [], limits: [] }))
+    getUnlimitedEntitlements: vi.fn(() => ({ entitlements: [], limits: [] })),
+    // HOS-242: subscription.ts composes on the canonical predicate.
+    isEntitlementGrantingStatus: (status: string) =>
+        status === 'active' || status === 'trialing' || status === 'comp'
 }));
 
 vi.mock('../../../../src/middlewares/billing', () => ({
@@ -305,6 +308,60 @@ describe('GET /api/v1/protected/users/me/subscription — soft-cancel state (SPE
             // Assert
             expect(result.subscription?.cancelAtPeriodEnd).toBe(false);
             expect(result.subscription?.canceledAt).toBeNull();
+        });
+
+        it('reports isComplimentary=false for a non-comp active subscription', async () => {
+            setupBillingMock(makeActiveSub());
+            mockGetBySlug.mockResolvedValue(PLAN_FOUND);
+
+            const result = (await subscriptionHandler(makeCtx())) as {
+                subscription: { isComplimentary: boolean };
+            };
+
+            expect(result.subscription?.isComplimentary).toBe(false);
+        });
+    });
+
+    describe('comp (complimentary) subscription — HOS-242', () => {
+        function makeCompSub() {
+            return {
+                status: 'comp',
+                planId: 'owner-pro',
+                currentPeriodStart: new Date(PERIOD_START),
+                currentPeriodEnd: new Date(PERIOD_END),
+                cancelAtPeriodEnd: false,
+                canceledAt: null,
+                trialEnd: null
+            };
+        }
+
+        it('surfaces the comp subscription instead of returning null (regression)', async () => {
+            // Before HOS-242 the find dropped `comp` → the account page showed
+            // `subscription: null` for a comped user, hiding their plan entirely.
+            setupBillingMock(makeCompSub());
+            mockGetBySlug.mockResolvedValue(PLAN_FOUND);
+
+            const result = (await subscriptionHandler(makeCtx())) as {
+                subscription: { planSlug: string } | null;
+            };
+
+            expect(result.subscription).not.toBeNull();
+            expect(result.subscription?.planSlug).toBe('owner-pro');
+        });
+
+        it("maps comp status to 'active' and sets isComplimentary=true", async () => {
+            // comp is not a SubscriptionResponseSchema enum value; it maps to
+            // 'active' (functionally active) and the isComplimentary flag lets the
+            // UI hide the cancel/pause/change-plan actions.
+            setupBillingMock(makeCompSub());
+            mockGetBySlug.mockResolvedValue(PLAN_FOUND);
+
+            const result = (await subscriptionHandler(makeCtx())) as {
+                subscription: { status: string; isComplimentary: boolean };
+            };
+
+            expect(result.subscription?.status).toBe('active');
+            expect(result.subscription?.isComplimentary).toBe(true);
         });
     });
 });

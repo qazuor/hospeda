@@ -158,7 +158,8 @@ const adultsParam = url.searchParams.get('adults');
 const childrenParam = url.searchParams.get('children');
 const adults = adultsParam ? Number(adultsParam) : undefined;
 const childrenCount = childrenParam ? Number(childrenParam) : undefined;
-const guestCount = (adults ?? 2) + (childrenCount ?? 0);
+// Default 0 = NO guest filter until the visitor picks a party size (BETA-161).
+const guestCount = (adults ?? 0) + (childrenCount ?? 0);
 const minGuests = guestCount > 0 ? guestCount : undefined;
 
 // Fetch destinations (CITY only) for the location + geo-radius groups.
@@ -259,8 +260,8 @@ if (includeNoPrice === false) initialParams.includeNoPrice = 'false';
 if (includeNoReviews === false) initialParams.includeNoReviews = 'false';
 if (checkIn) initialParams.checkIn = checkIn;
 if (checkOut) initialParams.checkOut = checkOut;
-initialParams.adults = String(adults ?? 2);
-initialParams.children = String(childrenCount ?? 0);
+if (adults !== undefined) initialParams.adults = String(adults);
+if (childrenCount !== undefined) initialParams.children = String(childrenCount);
 if (hasWifi) initialParams.hasWifi = 'true';
 if (hasPool) initialParams.hasPool = 'true';
 if (hasParking) initialParams.hasParking = 'true';

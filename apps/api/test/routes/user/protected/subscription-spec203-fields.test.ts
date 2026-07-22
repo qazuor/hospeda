@@ -49,7 +49,10 @@ vi.mock('../../../../src/services/plan.service', () => ({
 vi.mock('@repo/billing', () => ({
     PAYMENT_GRACE_PERIOD_DAYS: 7,
     getDefaultEntitlements: vi.fn(() => ({ entitlements: [], limits: [] })),
-    getUnlimitedEntitlements: vi.fn(() => ({ entitlements: [], limits: [] }))
+    getUnlimitedEntitlements: vi.fn(() => ({ entitlements: [], limits: [] })),
+    // HOS-242: subscription.ts composes on the canonical predicate.
+    isEntitlementGrantingStatus: (status: string) =>
+        status === 'active' || status === 'trialing' || status === 'comp'
 }));
 
 vi.mock('../../../../src/middlewares/billing', () => ({

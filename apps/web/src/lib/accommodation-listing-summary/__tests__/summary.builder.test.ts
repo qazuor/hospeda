@@ -500,6 +500,16 @@ describe('buildAccommodationListingSummary', () => {
             });
             expect(result).toContain('sin filtros activos');
         });
+
+        it('should omit the "para al menos" clause when guests is undefined (BETA-161)', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'es',
+                filters: { guests: undefined },
+                counts: { shown: 10, globalTotal: 50 }
+            });
+            expect(result).not.toContain('huésped');
+            expect(result).toContain('sin filtros activos');
+        });
     });
 
     // -------------------------------------------------------------------------

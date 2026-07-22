@@ -78,6 +78,8 @@ vi.mock('../../../src/services/subscription-discount-signup.service.js', () => (
 }));
 
 const getPromoCodeByIdMock = vi.fn();
+// HOS-240: deferred trial_extension redemption at link time.
+const redeemAndRecordUsageMock = vi.fn();
 
 // txCasResult controls what the CAS update (inside withServiceTransaction)
 // returns: an array of rows (non-empty = CAS won).
@@ -94,6 +96,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     return {
         ...actual,
         getPromoCodeById: (...args: unknown[]) => getPromoCodeByIdMock(...args),
+        redeemAndRecordUsage: (...args: unknown[]) => redeemAndRecordUsageMock(...args),
         withServiceTransaction: vi.fn(async (cb: (ctx: unknown) => Promise<unknown>) => {
             const tx = {
                 update: vi.fn(() => ({
@@ -170,6 +173,7 @@ function makePendingCheckout(overrides: Record<string, unknown> = {}) {
         nonce: 'nonce-abc',
         payerEmail: 'user@example.com',
         pendingDiscount: null,
+        pendingTrialExtension: null,
         status: 'pending',
         expiresAt: new Date(Date.now() + 30 * 60 * 1000),
         createdAt: new Date(),
@@ -229,6 +233,12 @@ describe('linkPreapprovalToLocalSub', () => {
             success: true,
             data: { discountedAmountCentavos: 8000, remainingCyclesSeed: null }
         });
+        // HOS-240 defaults: a resolvable trial_extension code + a successful redeem.
+        getPromoCodeByIdMock.mockResolvedValue({
+            success: true,
+            data: { id: 'pc-trial-1', code: 'FREEMONTH', effect: { kind: 'trial_extension' } }
+        });
+        redeemAndRecordUsageMock.mockResolvedValue({ success: true, data: {} });
     });
 
     it('returns "already" when the preapproval is already linked', async () => {
@@ -688,6 +698,81 @@ describe('linkPreapprovalToLocalSub', () => {
                 livemode: true
             })
         );
+    });
+
+    // ── HOS-240: deferred trial_extension redemption at link time ──────────────
+
+    it('records a deferred trial_extension redemption best-effort after a successful link', async () => {
+        queueSelectResult([]); // idempotency check
+        findByNonceMock.mockResolvedValue(
+            makePendingCheckout({
+                pendingTrialExtension: { promoCodeId: 'pc-trial-1', code: 'FREEMONTH' }
+            })
+        );
+        queueSelectResult([{ livemode: true }]); // livemode lookup (Step 7)
+
+        const result = await linkPreapprovalToLocalSub({
+            preapprovalId: 'pa-1',
+            externalReference: 'nonce-abc',
+            payerEmail: null,
+            billing: makeBilling() as never,
+            adapter: makeAdapter({ externalReference: 'nonce-abc' }) as never
+        });
+
+        expect(result.outcome).toBe('linked');
+        // The redemption is recorded ONLY now (at link time), $0 discount.
+        expect(redeemAndRecordUsageMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                promoCodeId: 'pc-trial-1',
+                customerId: 'cust-1',
+                subscriptionId: 'sub-1',
+                discountAmount: 0,
+                currency: 'ARS',
+                livemode: true
+            })
+        );
+    });
+
+    it('does not record a trial_extension redemption when there is no pending trial extension', async () => {
+        queueSelectResult([]);
+        findByNonceMock.mockResolvedValue(makePendingCheckout()); // pendingTrialExtension: null
+
+        const result = await linkPreapprovalToLocalSub({
+            preapprovalId: 'pa-1',
+            externalReference: 'nonce-abc',
+            payerEmail: null,
+            billing: makeBilling() as never,
+            adapter: makeAdapter({ externalReference: 'nonce-abc' }) as never
+        });
+
+        expect(result.outcome).toBe('linked');
+        expect(redeemAndRecordUsageMock).not.toHaveBeenCalled();
+    });
+
+    it('does not block linking when the pending trial_extension code is no longer resolvable', async () => {
+        queueSelectResult([]);
+        findByNonceMock.mockResolvedValue(
+            makePendingCheckout({
+                pendingTrialExtension: { promoCodeId: 'pc-trial-1', code: 'FREEMONTH' }
+            })
+        );
+        queueSelectResult([{ livemode: false }]);
+        getPromoCodeByIdMock.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'gone' }
+        });
+
+        const result = await linkPreapprovalToLocalSub({
+            preapprovalId: 'pa-1',
+            externalReference: 'nonce-abc',
+            payerEmail: null,
+            billing: makeBilling() as never,
+            adapter: makeAdapter({ externalReference: 'nonce-abc' }) as never
+        });
+
+        // Link still succeeds; the redemption is skipped (not recorded).
+        expect(result.outcome).toBe('linked');
+        expect(redeemAndRecordUsageMock).not.toHaveBeenCalled();
     });
 
     it('does not block linking when the deferred discount promo code is no longer valid', async () => {

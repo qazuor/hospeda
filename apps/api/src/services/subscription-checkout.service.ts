@@ -647,6 +647,22 @@ export async function initiatePaidMonthlySubscription(
         trialGranted: freeTrialDays !== undefined,
         freeTrialDays,
         ...(pendingDiscount ? { pendingDiscount } : {}),
+        // HOS-240: snapshot the trial_extension promo so its redemption is
+        // DEFERRED to link time (like `pendingDiscount`) — recorded only once the
+        // MP preapproval is authorized+linked, never on an abandoned checkout.
+        // Only for a DB-backed code that actually granted the extra days (not a
+        // config code, not kill-switched/ineligible where the extension was ignored).
+        ...(promoPlan.kind === 'trial' &&
+        promoPlan.promoCodeId &&
+        promoPlan.code &&
+        !promoExtensionIgnored
+            ? {
+                  pendingTrialExtension: {
+                      promoCodeId: promoPlan.promoCodeId,
+                      code: promoPlan.code
+                  }
+              }
+            : {}),
         livemode: customer.livemode
     });
 
@@ -1233,6 +1249,22 @@ export async function initiatePaidAnnualSubscription(
         trialGranted: freeTrialDays !== undefined,
         freeTrialDays,
         ...(pendingDiscount ? { pendingDiscount } : {}),
+        // HOS-240: snapshot the trial_extension promo so its redemption is
+        // DEFERRED to link time (like `pendingDiscount`) — recorded only once the
+        // MP preapproval is authorized+linked, never on an abandoned checkout.
+        // Only for a DB-backed code that actually granted the extra days (not a
+        // config code, not kill-switched/ineligible where the extension was ignored).
+        ...(promoPlan.kind === 'trial' &&
+        promoPlan.promoCodeId &&
+        promoPlan.code &&
+        !promoExtensionIgnored
+            ? {
+                  pendingTrialExtension: {
+                      promoCodeId: promoPlan.promoCodeId,
+                      code: promoPlan.code
+                  }
+              }
+            : {}),
         livemode: customer.livemode
     });
 

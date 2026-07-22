@@ -146,7 +146,7 @@ describe('resolveCheckoutPromoPlan', () => {
         });
     });
 
-    it('DB trial_extension → trial with freeTrialDays (after validation pass)', async () => {
+    it('DB trial_extension → trial with freeTrialDays + promoCodeId + code (HOS-240)', async () => {
         validatePromoCodeMock.mockResolvedValue({ valid: true });
         promoServiceGetByCodeMock = vi.fn().mockResolvedValue({
             success: true,
@@ -158,7 +158,14 @@ describe('resolveCheckoutPromoPlan', () => {
             }
         });
         const result = await resolveCheckoutPromoPlan({ promoCode: 'FREE30', userId: 'user-1' });
-        expect(result).toEqual({ kind: 'trial', freeTrialDays: 30 });
+        // HOS-240: a DB-backed trial_extension now carries its identity so the
+        // checkout can record the redemption + stamp promo_code_id.
+        expect(result).toEqual({
+            kind: 'trial',
+            freeTrialDays: 30,
+            promoCodeId: 'pc',
+            code: 'FREE30'
+        });
     });
 
     it('DB comp → comp with promoCodeId + code', async () => {

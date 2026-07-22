@@ -554,6 +554,8 @@
             "statusLabel": "Estado",
             "nextBillingLabel": "Próxima facturación",
             "accessUntilLabel": "Acceso hasta",
+            "complimentaryLabel": "Plan de cortesía",
+            "complimentaryNoBilling": "Sin vencimiento",
             "paymentMethodLabel": "Método de pago",
             "paymentMercadoPago": "MercadoPago",
             "noBillingDate": "No hay fecha de facturación disponible",
