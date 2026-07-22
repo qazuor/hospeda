@@ -75,7 +75,7 @@ describe('CloudflareRevalidationAdapter', () => {
         expect(result.error).toContain('ECONNREFUSED');
     });
 
-    it('POSTs to /api/revalidate with the secret in the query string', async () => {
+    it('POSTs to /api/revalidate/ (trailing slash) with the secret in the query string', async () => {
         const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK' });
         vi.stubGlobal('fetch', mockFetch);
         const adapter = new CloudflareRevalidationAdapter({
@@ -86,7 +86,9 @@ describe('CloudflareRevalidationAdapter', () => {
         const calledUrl = mockFetch.mock.calls[0]![0] as string;
         const calledOpts = mockFetch.mock.calls[0]![1] as { method: string };
         expect(calledOpts.method).toBe('POST');
-        expect(calledUrl).toBe(`${SITE_URL}/api/revalidate?secret=${encodeURIComponent(SECRET)}`);
+        // Trailing slash is required — the web runs `trailingSlash: 'always'`, so
+        // the unslashed form 301→GET→404s (HOS-203).
+        expect(calledUrl).toBe(`${SITE_URL}/api/revalidate/?secret=${encodeURIComponent(SECRET)}`);
     });
 
     it('strips a trailing slash from siteUrl when building the request URL', async () => {
@@ -98,7 +100,7 @@ describe('CloudflareRevalidationAdapter', () => {
         });
         await adapter.revalidate({ path: TEST_PATH });
         const calledUrl = mockFetch.mock.calls[0]![0] as string;
-        expect(calledUrl).toBe(`${SITE_URL}/api/revalidate?secret=${encodeURIComponent(SECRET)}`);
+        expect(calledUrl).toBe(`${SITE_URL}/api/revalidate/?secret=${encodeURIComponent(SECRET)}`);
     });
 
     it('returns the path in the result', async () => {
