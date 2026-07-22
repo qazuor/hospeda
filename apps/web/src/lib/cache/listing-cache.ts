@@ -75,11 +75,15 @@ export function resolveListingCacheControl({ cacheable }: { readonly cacheable: 
 }
 
 /**
- * Default party-size context values. A value away from these DOES narrow the
- * result set (both feed the derived `minGuests`), unlike the other purely
+ * Default children context value. A value away from this DOES narrow the
+ * result set (it feeds the derived `minGuests`), unlike the other purely
  * informational context params, so it counts as an active filter.
+ *
+ * `adults` has no equivalent default: since BETA-161, the absence of the
+ * `adults` param is the only non-filtering state — ANY explicit `adults`
+ * value (including what used to be the invisible default of 2) is now a
+ * real, active filter. See {@link hasActiveAccommodationListingFilters}.
  */
-const DEFAULT_ADULTS = 2;
 const DEFAULT_CHILDREN = 0;
 
 /**
@@ -92,7 +96,8 @@ const DEFAULT_CHILDREN = 0;
  *   - `type` / `types`: the accommodation-type facet, handled separately per
  *     page (via the `noindex` SEO decision on the base listing, or fixed by the
  *     URL path on the dedicated `/tipo/{slug}/` landing).
- * `adults` / `children` are handled explicitly below (default vs. non-default).
+ * `adults` / `children` are handled explicitly below (any explicit `adults`
+ * value is a filter; `children` is a filter only away from its 0 default).
  */
 const NON_FILTERING_PARAMS: ReadonlySet<string> = new Set([
     'page',
@@ -110,11 +115,11 @@ const NON_FILTERING_PARAMS: ReadonlySet<string> = new Set([
  * combination we don't want to fill the CDN cache with).
  *
  * Returns `true` when any query param outside {@link NON_FILTERING_PARAMS} is
- * present, or when the party-size steppers are away from their defaults (those
- * feed the derived `minGuests` and DO narrow results even though they read as
- * "context"). Returns `false` for a bare URL or one carrying only
- * pagination/sort/context params — i.e. the base listing, single-type landing,
- * and their bounded pagination/sort variants.
+ * present, when `adults` is explicitly set (any value — see BETA-161), or when
+ * `children` is away from its 0 default (both feed the derived `minGuests` and
+ * DO narrow results even though they read as "context"). Returns `false` for a
+ * bare URL or one carrying only pagination/sort/context params — i.e. the base
+ * listing, single-type landing, and their bounded pagination/sort variants.
  *
  * @param params.searchParams - The request URL's search params.
  * @returns `true` when at least one real filter is active.
@@ -132,7 +137,7 @@ export function hasActiveAccommodationListingFilters({
     }
 
     const adults = searchParams.get('adults');
-    if (adults !== null && Number(adults) !== DEFAULT_ADULTS) {
+    if (adults !== null) {
         return true;
     }
     const children = searchParams.get('children');

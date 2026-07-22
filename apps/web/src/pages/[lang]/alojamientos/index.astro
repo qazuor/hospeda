@@ -165,9 +165,10 @@ const adults = adultsParam ? Number(adultsParam) : undefined;
 const childrenCount = childrenParam ? Number(childrenParam) : undefined;
 
 // Derived guest-capacity filter: sum of adults + children. Used to filter
-// accommodations that fit the party size. Falls back to defaults (2 + 0)
-// when the URL hasn't been touched.
-const guestCount = (adults ?? 2) + (childrenCount ?? 0);
+// accommodations that fit the party size. Defaults to 0 (NO guest filter)
+// until the visitor actually picks a party size, so a fresh listing shows the
+// full catalog instead of silently excluding 1-guest stays (BETA-161).
+const guestCount = (adults ?? 0) + (childrenCount ?? 0);
 const minGuests = guestCount > 0 ? guestCount : undefined;
 
 // Build a query suffix to forward search context to each accommodation detail link.
@@ -450,11 +451,12 @@ const hasOtherAccommodationFilters = Boolean(
 		allowsPets ||
 		hasGeoRadius ||
 		// `adults`/`children` DO filter (they feed `minGuests`, unlike the purely
-		// informational `checkIn`/`checkOut`) — a party size away from the 2/0
-		// default narrows the result set, so it must block the single-facet
-		// canonical just like any other active filter.
-		(adults !== undefined && adults !== 2) ||
-		(childrenCount !== undefined && childrenCount !== 0)
+		// informational `checkIn`/`checkOut`) — the default is now the ABSENCE of
+		// the `adults` param (see BETA-161), so any explicit value narrows the
+		// result set and must block the single-facet canonical just like any
+		// other active filter. `children` still defaults to 0.
+		adults !== undefined ||
+			(childrenCount !== undefined && childrenCount !== 0)
 );
 const facetSeoDecision = resolveFacetSeoDecision({
 	facetValues: typeActiveValues,
@@ -589,12 +591,12 @@ if (featuresParam) initialParams.features = featuresParam;
 if (includeNoPrice === false) initialParams.includeNoPrice = 'false';
 if (includeNoReviews === false) initialParams.includeNoReviews = 'false';
 // Trip-context fields: always seed defaults so the sidebar steppers /
-// date inputs render with their last-known values (or 2 adults / 0 kids /
+// date inputs render with their last-known values (or 1 adult / 0 kids /
 // no dates on a fresh visit).
 if (checkIn) initialParams.checkIn = checkIn;
 if (checkOut) initialParams.checkOut = checkOut;
-initialParams.adults = String(adults ?? 2);
-initialParams.children = String(childrenCount ?? 0);
+if (adults !== undefined) initialParams.adults = String(adults);
+if (childrenCount !== undefined) initialParams.children = String(childrenCount);
 // Quick-amenity boolean shortcuts (priority chips inside the Comodidades group).
 if (hasWifi) initialParams.hasWifi = 'true';
 if (hasPool) initialParams.hasPool = 'true';
