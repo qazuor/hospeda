@@ -31,8 +31,7 @@ import {
     ShieldIcon,
     SparkleIcon,
     TagIcon,
-    UserIcon,
-    WhatsappIcon
+    UserIcon
 } from '@repo/icons';
 import type { ComponentType } from 'react';
 
@@ -545,12 +544,6 @@ export const SOON_ITEMS: readonly SoonItem[] = [
         Icon: ChatIcon,
         titleKey: 'features.proximamente.items.reviewReplies.title',
         descriptionKey: 'features.proximamente.items.reviewReplies.description'
-    },
-    {
-        id: 'whatsapp-listing',
-        Icon: WhatsappIcon,
-        titleKey: 'features.proximamente.items.whatsappListing.title',
-        descriptionKey: 'features.proximamente.items.whatsappListing.description'
     },
     {
         id: 'review-photos',

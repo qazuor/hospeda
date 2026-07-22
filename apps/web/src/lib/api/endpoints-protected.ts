@@ -2020,6 +2020,44 @@ export const protectedAccommodationsApi = {
     },
 
     /**
+     * Get the accommodation's WhatsApp contact number, gated by the CALLER's
+     * (viewer's) billing plan (HOS-19).
+     *
+     * - `number`: the WhatsApp number, present ONLY when the caller has
+     *   `CAN_CONTACT_WHATSAPP_DISPLAY` (tourist-plus+) AND the owner set one;
+     *   `null` otherwise (never leaked to unentitled callers).
+     * - `direct`: `true` when the caller also has `CAN_CONTACT_WHATSAPP_DIRECT`
+     *   (tourist-vip+) — authorizes rendering a one-click `wa.me` deep link.
+     * - `entitled`: whether the caller has the DISPLAY entitlement — lets the
+     *   web decide between rendering the number vs an upsell.
+     *
+     * Lives on the protected (per-user, no-store) tier on purpose: the public
+     * detail payload is shared-cached, so the number cannot ride it safely.
+     *
+     * @param params - Accommodation ID + optional SSR cookie header.
+     * @returns `{ number, direct, entitled }`.
+     */
+    getWhatsApp({
+        id,
+        cookieHeader
+    }: {
+        readonly id: string;
+        /** SSR-only: raw `Cookie` header so the request carries the session. */
+        readonly cookieHeader?: string;
+    }): Promise<
+        ApiResult<{
+            readonly number: string | null;
+            readonly direct: boolean;
+            readonly entitled: boolean;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/${id}/whatsapp`,
+            cookieHeader
+        });
+    },
+
+    /**
      * List accommodations owned by the authenticated user.
      * Results are filtered server-side to only include accommodations where ownerId === actor.id.
      *

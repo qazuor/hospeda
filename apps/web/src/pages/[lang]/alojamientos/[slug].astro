@@ -32,6 +32,7 @@ import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
 import PricingSidebar from '@/components/accommodation/PricingSidebar.astro';
 import OwnerCard from '@/components/accommodation/OwnerCard.astro';
 import { ContactHost } from '@/components/accommodation/ContactHost.client';
+import WhatsAppContact from '@/components/accommodation/WhatsAppContact.astro';
 import { AccommodationViewTracker } from '@/components/analytics/AccommodationViewTracker.client';
 import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
 import { PriceAlertButton } from '@/components/accommodation/PriceAlertButton';
@@ -44,13 +45,14 @@ import PromotionBanner from '@/components/accommodation/PromotionBanner.astro';
 import { accommodationsApi, ownerPromotionsApi, postsApi, eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import type { OwnerPromotionPublicItem } from '@/lib/api/endpoints';
 import type { NearbyPoi } from '@repo/schemas';
-import { billingApi, priceAlertsApi, userBookmarksApi } from '@/lib/api/endpoints-protected';
+import { billingApi, priceAlertsApi, protectedAccommodationsApi, userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { faqSetInLanguage, toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { resolvePriceAlertGateState } from '@/lib/price-alert-gate';
 import { pickLocalizedSeo } from '@/lib/seo';
+import { buildUrl } from '@/lib/urls';
 
 export const prerender = false;
 
@@ -368,6 +370,52 @@ if (isAuthenticated) {
         webLogger.error('[slug] failed to fetch price-alert state', err);
     }
 }
+
+// --- WhatsApp contact (HOS-19, VIEWER-gated) ---
+// The number is gated by the VIEWER's plan and lives on a per-user protected
+// endpoint (the public detail payload is shared-cached, so it only carries the
+// owner-derived `hasWhatsapp` boolean). Anonymous / unentitled viewers see an
+// upsell; entitled viewers get the number (a clickable wa.me link at VIP+). The
+// protected endpoint is the authoritative gate — it never returns the number to
+// an unentitled caller, so nothing needs to be re-checked here.
+let whatsappNumber: string | null = null;
+let whatsappDirect = false;
+let whatsappShowUpsell = false;
+if (accommodation.hasWhatsapp) {
+    if (isAuthenticated) {
+        try {
+            const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+            const waResult = await protectedAccommodationsApi.getWhatsApp({
+                id: accommodation.id,
+                cookieHeader
+            });
+            if (waResult.ok) {
+                if (waResult.data.number) {
+                    whatsappNumber = waResult.data.number;
+                    whatsappDirect = waResult.data.direct;
+                } else if (!waResult.data.entitled) {
+                    // Authenticated but not on a WhatsApp-display plan → upsell.
+                    whatsappShowUpsell = true;
+                }
+                // entitled but no number (rare owner-removed race) → render nothing.
+            } else {
+                // The API client resolves HTTP failures to `{ ok: false }` rather
+                // than throwing, so the catch below never fires for a transient
+                // 5xx / session desync. Fall back to the upsell (same intent as
+                // the catch) so an authenticated viewer never sees a blank block.
+                whatsappShowUpsell = true;
+            }
+        } catch (err) {
+            // Graceful degradation: prefer the upsell over a blank block.
+            whatsappShowUpsell = true;
+            webLogger.error('[slug] failed to fetch WhatsApp contact', err);
+        }
+    } else {
+        // Anonymous visitor → upsell, never hit the protected endpoint.
+        whatsappShowUpsell = true;
+    }
+}
+const whatsappPlansHref = buildUrl({ locale, path: 'suscriptores/planes' });
 
 // --- Gallery images for ImageGallery island ---
 // Build a unified GalleryImage[] from galleryItems (preferred) or URL-only images list.
@@ -700,6 +748,16 @@ const faqSections = accommodation.faqs.map((faq) => ({
                     locale={locale}
                     initialMessage={prefilledMessage}
                 />
+                {accommodation.hasWhatsapp && (whatsappNumber || whatsappShowUpsell) && (
+                    <WhatsAppContact
+                        number={whatsappNumber}
+                        direct={whatsappDirect}
+                        showUpsell={whatsappShowUpsell}
+                        accommodationName={accommodation.name}
+                        plansHref={whatsappPlansHref}
+                        locale={locale}
+                    />
+                )}
             </OwnerCard>
             {isAuthenticated && (
                 <ReviewSidebarCard
