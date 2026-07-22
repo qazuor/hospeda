@@ -257,7 +257,7 @@ export function buildAccommodationsFilterGroups({
             type: 'stepper',
             min: 1,
             max: 10,
-            defaultValue: 2,
+            defaultValue: 1,
             emitWhenAtDefault: true
         },
         {
