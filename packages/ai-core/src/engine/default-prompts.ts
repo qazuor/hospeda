@@ -240,13 +240,34 @@ accommodations that comfortably fit more guests.
 
 Conversational refinement (multi-turn search):
 - The request may include a CURRENT FILTER SET that represents the accumulated state \
-of an ongoing search conversation. When it is present, treat it as the source of \
-truth for the filters chosen in previous turns.
-- In that case you MUST return the COMPLETE updated entity set, never only the \
-changes: carry over every prior filter unchanged, apply the latest user message as a \
-delta — add new filters, modify the ones the user changes, and DROP (omit) only the \
-ones the user explicitly asks to remove (e.g. "saca la pileta", "sin parrilla", \
-"que no importe el precio").
+of an ongoing search conversation. When it is present, FIRST decide whether the latest \
+user message REFINES that search or STARTS A NEW one:
+  * REFINEMENT — the message adjusts or extends the existing criteria without restating \
+the whole query (e.g. "más barata", "y que además tenga pileta", "pero para 6 personas", \
+"saca la parrilla"). Narrowing WITHIN the current destination is still a refinement, not a \
+new search: a mention of a neighborhood, area, or landmark inside the SAME destination \
+(e.g. after "cabaña en Colón", "que sea cerca del centro" or "en la zona del río") refines \
+the location, it does not reset the filters. Treat the CURRENT FILTER SET as the source of \
+truth and return the COMPLETE updated entity set, never only the changes: carry over every \
+prior filter unchanged, apply the message as a delta — add new filters, modify the ones \
+the user changes, and DROP (omit) only the ones the user explicitly asks to remove (e.g. \
+"saca la pileta", "sin parrilla", "que no importe el precio").
+  * NEW SEARCH — the message is a self-contained query that stands on its own, most \
+clearly when it names a DIFFERENT destination (a different city/town, not merely a \
+neighborhood or landmark within the current one) or otherwise restates from scratch what \
+is being looked for (e.g. after "cabaña para 4 en Colón", a message like "alojamiento en \
+Concordia para 2 personas"). In this case DISCARD the CURRENT FILTER SET entirely and \
+extract ONLY from the latest message — do NOT carry over any prior filter (type, \
+amenities, features, guests, price, dates, etc.) that the new message does not itself \
+state. When the message clearly names a different destination or restates the query from \
+scratch, prefer NEW SEARCH over silently retaining filters the user did not mention, since \
+stale filters produce confusing empty results. Two things are NOT new searches: a request \
+to widen the current search to nearby or surrounding destinations (e.g. "y en destinos \
+cercanos", "también cerca") is a refinement — keep the CURRENT FILTER SET; and a message \
+that names NO destination at all keeps the current destination rather than dropping it, \
+even if the rest of the query is restated.
+- The filters you return MUST reflect what the latest user message actually asks for, so \
+they stay consistent with the assistant's natural-language reply about that same message.
 - When NO current filter set is provided, extract purely from the user query \
 (single-turn mode); the "omit fields you cannot infer" rule applies only in this case.`,
 

@@ -95,4 +95,41 @@ describe("DEFAULT_PROMPTS['search'] — SPEC-212 conversational refinement frami
     it('scopes the single-turn omit rule to when no current filter set is provided', () => {
         expect(prompt).toContain('single-turn mode');
     });
+
+    // ── BETA-177: NEW SEARCH vs REFINEMENT ────────────────────────────────────
+
+    it('distinguishes a NEW SEARCH from a refinement', () => {
+        // BETA-177: without this framing the model treated every turn as a
+        // refinement and merged a brand-new query onto the prior filters,
+        // producing false empty results.
+        expect(prompt).toContain('REFINEMENT');
+        expect(prompt).toContain('NEW SEARCH');
+    });
+
+    it('instructs the model to DISCARD the current filter set on a new search', () => {
+        expect(prompt).toMatch(/DISCARD the CURRENT FILTER SET/);
+        expect(prompt).toMatch(/extract ONLY from the latest message/);
+    });
+
+    it('treats narrowing within the same destination as a refinement, not a new search', () => {
+        // Guards against over-discarding: a neighborhood/landmark within the
+        // SAME destination must refine, not reset the filters.
+        expect(prompt).toMatch(/Narrowing WITHIN the current destination is still a refinement/);
+        expect(prompt).toMatch(/not merely a neighborhood or landmark within the current one/);
+    });
+
+    it('prefers a new search on a clear different-destination / restated query', () => {
+        expect(prompt).toMatch(/prefer NEW SEARCH/);
+    });
+
+    it('carves out nearby-expansion and destination-less restatements from NEW SEARCH', () => {
+        // Reconcile with the per-request NEARBY EXPANSION instruction and avoid
+        // dropping the destination when the new message names none.
+        expect(prompt).toMatch(/widen the current search to nearby or surrounding destinations/);
+        expect(prompt).toMatch(/names NO destination at all keeps the current destination/);
+    });
+
+    it('requires the returned filters to stay consistent with the reply', () => {
+        expect(prompt).toMatch(/consistent with the assistant's natural-language reply/);
+    });
 });
