@@ -83,7 +83,14 @@ const DEFAULT_LOCALE: LanguageEnum = 'es';
  */
 export function buildTextImprovePrompt(input: AiTextImprove): string {
     const label: AiTextImproveFieldType = input.fieldType;
-    return `Please improve the following accommodation ${label}:\n\n${input.fieldValue}`;
+    return (
+        `Rewrite the following accommodation ${label} so it reads as clear, engaging, and persuasive marketing copy for a tourism listing. ` +
+        `Substantially rework the wording, structure, and flow — do not just fix punctuation, expand abbreviations, or make other cosmetic edits. ` +
+        `Remove any auto-generated metadata prefix that is not part of the marketing text (for example a publication date, the listing type, or a category label such as "Entire home: country house"). ` +
+        `Stay faithful to the facts: do not invent amenities, services, prices, distances, or claims that are not in the original. ` +
+        `Reply with only the improved ${label}, in the same language as the input, with no preamble, labels, or surrounding quotation marks.\n\n` +
+        `${input.fieldValue}`
+    );
 }
 
 // ---------------------------------------------------------------------------
