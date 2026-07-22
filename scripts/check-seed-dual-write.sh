@@ -59,12 +59,14 @@
 #
 #    INLINE-CONSTANT files: a handful of seeders bake their fixtures into an
 #    inline TS constant instead of a `data/**/*.json` folder, so a path-glob
-#    over `data/**` cannot see them. They are guarded as NAMED FILES on ANY
-#    diff to the whole file (coarse-grained — a pure logic refactor also trips
-#    the guard and needs the opt-out marker; accepted because these files change
-#    rarely and the alternative is a silent data escape). INLINE_CONSTANT_FILES:
+#    over `data/**` cannot see them. The ones carrying PROD-BOUND data are
+#    guarded as NAMED FILES on ANY diff to the whole file (coarse-grained — a
+#    pure logic refactor also trips the guard and needs the opt-out marker;
+#    accepted because these files change rarely and the alternative is a silent
+#    data escape). INLINE_CONSTANT_FILES (prod-content only):
 #      - packages/seed/src/example/experiences.seed.ts   (SPEC-240 commerce
-#        listings — deterministic inline array, no data/ folder at all)
+#        listings — deterministic inline array, no data/ folder at all; the ONE
+#        prod-content inline seeder under example/)
 #      - packages/seed/src/required/rolePermissions.seed.ts
 #      - packages/seed/src/required/aiPrompts.seed.ts
 #      - packages/seed/src/required/aiSettings.seed.ts
@@ -75,15 +77,31 @@
 #    seeders are NOT here: their data lives in `packages/billing/src/config/
 #    *.config.ts`, already guarded below — the seeders only read it.)
 #
+#    DEMO-ONLY inline seeders — deliberately NOT guarded (audited HOS-173, not an
+#    omission). Five other `example/*.seed.ts` files also bake their fixtures
+#    into inline constants with no live `data/` folder, but their content is
+#    demo-only synthetic data (fake accommodations' external listings/reputation
+#    and demo tag assignments), so — exactly like their exempt data-folder
+#    siblings — they never need a live-env backfill and requiring a migration on
+#    every edit would be pure false-positive friction:
+#      - packages/seed/src/example/accommodationExternalListings.seed.ts
+#      - packages/seed/src/example/accommodationExternalReputation.seed.ts
+#      - packages/seed/src/example/postTagAssignments.seed.ts
+#      - packages/seed/src/example/entityTagAssignments.seed.ts
+#      - packages/seed/src/example/userTags.seed.ts
+#    (If any of these ever gains prod-bound content, move it to INLINE_CONSTANT_FILES
+#    or extract its data into `data/**/*.json`. The `scripts/__tests__` suite
+#    pins their current demo-only exemption so the decision stays visible.)
+#
 #    Additionally, the billing plan/limit/entitlement/addon/promo-code TS
 #    constants in `packages/billing/src/config/*.config.ts` are guarded — the
 #    exact precedent the 0001-0003 data-migrations already ported.
 #
-#    NOT COVERED (residual, see HOS-173 §6.2 / OQ-3): a FUTURE inline-constant
-#    seeder added under `example/`/`required/` with neither a `data/` folder nor
-#    an entry in INLINE_CONSTANT_FILES would still escape. The fix for that
-#    class is to extract inline data into `data/**/*.json` files (so the default
-#    path-glob covers them); tracked as a follow-up, not built here.
+#    NOT COVERED (residual, see HOS-173 §6.2 / OQ-3): a FUTURE prod-content
+#    inline-constant seeder added under `example/`/`required/` with neither a
+#    `data/` folder nor an entry in INLINE_CONSTANT_FILES would still escape.
+#    The fix for that class is to extract inline data into `data/**/*.json`
+#    files (so the default path-glob covers them); tracked as a follow-up.
 #
 # 3) "A new migration was added" — the diff must ADD (not modify) at least one
 #    file matching `packages/seed/src/data-migrations/NNNN-*.ts` (4-digit
@@ -232,7 +250,13 @@ compute_changed_files() {
     # inline-constant orchestrator dirs (`example`, `required` — so the named
     # INLINE_CONSTANT_FILES show up in the diff), `billing/config`, and
     # `data-migrations` (to detect the accompanying migration).
-    git diff --name-status "${base}...HEAD" -- \
+    #
+    # `--no-renames` keeps every diff line a strict A/M/D with a single path, so
+    # the exact-equality checks in is_guarded_path (INLINE_CONSTANT_FILES /
+    # BILLING_CONFIG_FILES) can never be defeated by git emitting an
+    # `R<score><TAB>old<TAB>new` line that the two-field `read` would collapse
+    # into one path string. (diff.renames defaults ON in modern git.)
+    git diff --no-renames --name-status "${base}...HEAD" -- \
         'packages/seed/src/data' \
         'packages/seed/src/example' \
         'packages/seed/src/required' \

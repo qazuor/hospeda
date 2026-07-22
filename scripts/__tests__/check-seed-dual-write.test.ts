@@ -214,14 +214,24 @@ describe('check-seed-dual-write.sh (HOS-25 T-024)', () => {
         expect(result.stdout).toContain('FAIL: baseline seed data changed');
     });
 
-    it('AC-3: PASSES demo-only sources on the exemption list with no migration/marker', () => {
-        // Arrange: several demo-only folders that must stay green post-inversion.
+    it('AC-3: PASSES every demo-only exemption-list folder with no migration/marker', () => {
+        // Arrange: all 11 EXEMPT_DATA_DIR_PATTERNS folders + the two mixed-folder
+        // demo cases must stay green post-inversion (proves the inversion did not
+        // introduce a wave of new required markers on already-safe PRs).
         for (const path of [
-            'packages/seed/src/data/event/001-event.json',
-            'packages/seed/src/data/post/001-post.json',
-            'packages/seed/src/data/bookmark/001-bookmark.json',
+            'packages/seed/src/data/accommodation/001-acc.json',
+            'packages/seed/src/data/accommodationExternalListing/001-l.json',
+            'packages/seed/src/data/accommodationExternalReputation/001-r.json',
             'packages/seed/src/data/accommodationReview/001-review.json',
-            'packages/seed/src/data/user/example/001-user.json'
+            'packages/seed/src/data/bookmark/001-bookmark.json',
+            'packages/seed/src/data/destinationReview/001-review.json',
+            'packages/seed/src/data/event/001-event.json',
+            'packages/seed/src/data/eventLocation/001-loc.json',
+            'packages/seed/src/data/eventOrganizer/001-org.json',
+            'packages/seed/src/data/post/001-post.json',
+            'packages/seed/src/data/userBookmarkCollection/001-col.json',
+            'packages/seed/src/data/user/example/001-user.json',
+            'packages/seed/src/data/tag/culture-travel.json'
         ]) {
             // Act
             const result = runGuard({
@@ -231,6 +241,29 @@ describe('check-seed-dual-write.sh (HOS-25 T-024)', () => {
 
             // Assert
             expect(result.exitCode, `expected ${path} to be exempt`).toBe(0);
+        }
+    });
+
+    it('does NOT guard the 5 demo-only inline example seeders (intentional exemption, HOS-173)', () => {
+        // Arrange: these bake fixtures into inline TS constants (no data/ folder)
+        // but are demo-only synthetic content, so — like their exempt data-folder
+        // siblings — they never need a live-env backfill. Pinning the decision so
+        // it stays a visible, reviewed choice rather than an accident of omission.
+        for (const path of [
+            'packages/seed/src/example/accommodationExternalListings.seed.ts',
+            'packages/seed/src/example/accommodationExternalReputation.seed.ts',
+            'packages/seed/src/example/postTagAssignments.seed.ts',
+            'packages/seed/src/example/entityTagAssignments.seed.ts',
+            'packages/seed/src/example/userTags.seed.ts'
+        ]) {
+            // Act
+            const result = runGuard({
+                CHANGED_FILES_OVERRIDE: `M\t${path}`,
+                MARKER_TEXT_OVERRIDE: ''
+            });
+
+            // Assert
+            expect(result.exitCode, `expected ${path} to be demo-only exempt`).toBe(0);
         }
     });
 
