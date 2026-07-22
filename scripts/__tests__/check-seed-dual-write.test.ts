@@ -71,7 +71,7 @@ describe('check-seed-dual-write.sh (HOS-25 T-024)', () => {
         // Assert
         expect(result.exitCode).toBe(1);
         expect(result.stdout).toContain('FAIL: baseline seed data changed');
-        expect(result.stdout).toContain('data-migrate-make');
+        expect(result.stdout).toContain('db:seed:make');
     });
 
     it('passes when required data changed AND a new NNNN- migration was added', () => {
@@ -166,9 +166,181 @@ describe('check-seed-dual-write.sh (HOS-25 T-024)', () => {
         expect(result.exitCode).toBe(0);
     });
 
-    it('does NOT guard example/**/*.json data (non-deterministic, regenerated on reseed)', () => {
-        // Arrange
+    it('does NOT guard demo-only accommodation fixtures (exemption list, HOS-173)', () => {
+        // Arrange: accommodation is synthetic demo-only content that must never
+        // represent a real environment — exempt, NOT because it is
+        // "regenerated non-deterministically" (that premise was false: every
+        // fixture here has a deterministic UUIDv5 id). See HOS-173.
         const changed = 'M\tpackages/seed/src/data/accommodation/uruguay/001-some-fixture.json';
+
+        // Act
+        const result = runGuard({ CHANGED_FILES_OVERRIDE: changed, MARKER_TEXT_OVERRIDE: '' });
+
+        // Assert
+        expect(result.exitCode).toBe(0);
+    });
+
+    // -------------------------------------------------------------------------
+    // HOS-173: fail-closed default + closed-gap regression tests
+    // -------------------------------------------------------------------------
+
+    it('AC-1: FAILS the exact partners-commit shape (new data/partner/ folder, no migration)', () => {
+        // Arrange: replay commit 24ce27a5f — a brand-new data/partner/*.json
+        // folder registered via runExampleSeeds(), no migration, no marker.
+        const changed = [
+            'A\tpackages/seed/src/data/partner/001-partner-autoservice-litoral.json',
+            'A\tpackages/seed/src/data/partner/002-partner-something.json',
+            'A\tpackages/seed/src/example/partners.seed.ts'
+        ].join('\n');
+
+        // Act
+        const result = runGuard({ CHANGED_FILES_OVERRIDE: changed, MARKER_TEXT_OVERRIDE: '' });
+
+        // Assert
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('FAIL: baseline seed data changed');
+        expect(result.stdout).toContain('data/partner/001-partner-autoservice-litoral.json');
+    });
+
+    it('AC-2: FAILS a brand-new data/ folder not on the exemption list (fail-closed default)', () => {
+        // Arrange: a hypothetical new curated source nobody added to any list.
+        const changed = 'A\tpackages/seed/src/data/brandNewCatalog/001-thing.json';
+
+        // Act
+        const result = runGuard({ CHANGED_FILES_OVERRIDE: changed, MARKER_TEXT_OVERRIDE: '' });
+
+        // Assert
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('FAIL: baseline seed data changed');
+    });
+
+    it('AC-3: PASSES every demo-only exemption-list folder with no migration/marker', () => {
+        // Arrange: all 11 EXEMPT_DATA_DIR_PATTERNS folders + the two mixed-folder
+        // demo cases must stay green post-inversion (proves the inversion did not
+        // introduce a wave of new required markers on already-safe PRs).
+        for (const path of [
+            'packages/seed/src/data/accommodation/001-acc.json',
+            'packages/seed/src/data/accommodationExternalListing/001-l.json',
+            'packages/seed/src/data/accommodationExternalReputation/001-r.json',
+            'packages/seed/src/data/accommodationReview/001-review.json',
+            'packages/seed/src/data/bookmark/001-bookmark.json',
+            'packages/seed/src/data/destinationReview/001-review.json',
+            'packages/seed/src/data/event/001-event.json',
+            'packages/seed/src/data/eventLocation/001-loc.json',
+            'packages/seed/src/data/eventOrganizer/001-org.json',
+            'packages/seed/src/data/post/001-post.json',
+            'packages/seed/src/data/userBookmarkCollection/001-col.json',
+            'packages/seed/src/data/user/example/001-user.json',
+            'packages/seed/src/data/tag/culture-travel.json'
+        ]) {
+            // Act
+            const result = runGuard({
+                CHANGED_FILES_OVERRIDE: `M\t${path}`,
+                MARKER_TEXT_OVERRIDE: ''
+            });
+
+            // Assert
+            expect(result.exitCode, `expected ${path} to be exempt`).toBe(0);
+        }
+    });
+
+    it('does NOT guard the 3 demo-only inline example seeders (intentional exemption, HOS-173)', () => {
+        // Arrange: these bake fixtures into inline TS constants (no data/ folder)
+        // and attach ONLY to demo entities (fake accommodations / demo posts),
+        // so — like their exempt data-folder siblings — they never need a
+        // live-env backfill. Pinning the decision so it stays a visible, reviewed
+        // choice rather than an accident of omission.
+        for (const path of [
+            'packages/seed/src/example/accommodationExternalListings.seed.ts',
+            'packages/seed/src/example/accommodationExternalReputation.seed.ts',
+            'packages/seed/src/example/postTagAssignments.seed.ts'
+        ]) {
+            // Act
+            const result = runGuard({
+                CHANGED_FILES_OVERRIDE: `M\t${path}`,
+                MARKER_TEXT_OVERRIDE: ''
+            });
+
+            // Assert
+            expect(result.exitCode, `expected ${path} to be demo-only exempt`).toBe(0);
+        }
+    });
+
+    it('DOES guard entityTagAssignments/userTags (inline, but attach to guarded entities)', () => {
+        // Arrange: entityTagAssignments tags real destination catalog rows
+        // (Chajarí/Colón); userTags tags the required admin-user. Both attach to
+        // GUARDED entities, so a change is prod-relevant and must not escape.
+        for (const path of [
+            'packages/seed/src/example/entityTagAssignments.seed.ts',
+            'packages/seed/src/example/userTags.seed.ts'
+        ]) {
+            // Act
+            const result = runGuard({
+                CHANGED_FILES_OVERRIDE: `M\t${path}`,
+                MARKER_TEXT_OVERRIDE: ''
+            });
+
+            // Assert
+            expect(result.exitCode, `expected ${path} to be guarded`).toBe(1);
+        }
+    });
+
+    it('a rename-shaped diff line (R<score>\\told\\tnew) does NOT match an exact-guarded file', () => {
+        // Documents WHY compute_changed_files passes `--no-renames`: the two-field
+        // `IFS=$'\t' read -r status path` collapses "old<TAB>new" into `path`, so a
+        // rename line can never equal a bare INLINE_CONSTANT_FILES/BILLING_CONFIG_FILES
+        // name. With --no-renames git emits clean A/D pairs instead, keeping the
+        // exact-match guards reliable. If this test ever starts FAILING (exit 1),
+        // the parsing changed and --no-renames may no longer be load-bearing.
+        const renameLine =
+            'R100\tpackages/billing/src/config/plans.config.ts\tpackages/billing/src/config/plans2.config.ts';
+
+        // Act
+        const result = runGuard({ CHANGED_FILES_OVERRIDE: renameLine, MARKER_TEXT_OVERRIDE: '' });
+
+        // Assert: the collapsed path does not equal 'plans.config.ts' → not guarded.
+        expect(result.exitCode).toBe(0);
+    });
+
+    it('AC-4: FAILS the four other formerly-escaped curated sources + inline experiences', () => {
+        // Arrange
+        for (const path of [
+            'M\tpackages/seed/src/data/gastronomy/001-gastronomy.json',
+            'M\tpackages/seed/src/data/hostTrade/001-host-trade.json',
+            'M\tpackages/seed/src/data/postSponsor/001-sponsor.json',
+            'M\tpackages/seed/src/data/postSponsorship/001-sponsorship.json',
+            'M\tpackages/seed/src/example/experiences.seed.ts'
+        ]) {
+            // Act
+            const result = runGuard({ CHANGED_FILES_OVERRIDE: path, MARKER_TEXT_OVERRIDE: '' });
+
+            // Assert
+            expect(result.exitCode, `expected ${path} to be guarded`).toBe(1);
+        }
+    });
+
+    it('AC-5: FAILS the inline-constant required seeders (previously scoped-out set)', () => {
+        // Arrange
+        for (const path of [
+            'M\tpackages/seed/src/required/rolePermissions.seed.ts',
+            'M\tpackages/seed/src/required/aiPrompts.seed.ts',
+            'M\tpackages/seed/src/required/aiSettings.seed.ts',
+            'M\tpackages/seed/src/required/socialAutomation.seed.ts',
+            'M\tpackages/seed/src/required/contentModeration.seed.ts',
+            'M\tpackages/seed/src/required/systemUser.seed.ts'
+        ]) {
+            // Act
+            const result = runGuard({ CHANGED_FILES_OVERRIDE: path, MARKER_TEXT_OVERRIDE: '' });
+
+            // Assert
+            expect(result.exitCode, `expected ${path} to be guarded`).toBe(1);
+        }
+    });
+
+    it('does NOT guard demo example orchestrator logic (e.g. accommodations.seed.ts)', () => {
+        // Arrange: a demo orchestrator that reads from an exempt data/ folder —
+        // not an inline-constant file, so a logic edit must not trip the guard.
+        const changed = 'M\tpackages/seed/src/example/accommodations.seed.ts';
 
         // Act
         const result = runGuard({ CHANGED_FILES_OVERRIDE: changed, MARKER_TEXT_OVERRIDE: '' });

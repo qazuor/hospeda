@@ -238,44 +238,86 @@ baseline is a silent bug — fresh DBs get it right, live DBs never do.
 against the base ref and, if any **guarded** path changed without a new
 `packages/seed/src/data-migrations/NNNN-*.ts` file also being added, fails the build.
 
-Guarded paths (required-data only — `example/` fixtures are excluded, since they are
-non-deterministic content regenerated on every reseed, except where a migration deliberately
-targets a deterministic `example` fixture id — see [OQ-1 note](#example-migrations-and-deterministic-fixture-ids)):
+Since HOS-173 the guard is **fail-closed**, not an allowlist. **Everything under
+`packages/seed/src/data/**` is guarded by default** — a brand-new catalog folder is caught
+automatically, with nobody needing to remember to add it to a list. (The old allowlist was
+fail-open: it silently missed the `partners` catalog, which shipped to prod empty — HOS-172.
+There is no "non-deterministic example data" exempt by nature — every fixture in this package
+has a deterministic UUIDv5 id, `required` and `example` alike.)
+
+The default-guarded surface is `data/**` MINUS a short, explicit **exemption list** of
+demo-only sources (synthetic content that must never represent a real environment, so it
+never needs a live-env backfill):
 
 ```
-packages/seed/src/data/amenity/**
-packages/seed/src/data/attraction/**
-packages/seed/src/data/destination/**
-packages/seed/src/data/exchangeRate/**
-packages/seed/src/data/exchangeRateConfig/**
-packages/seed/src/data/feature/**
-packages/seed/src/data/revalidationConfig/**
-packages/seed/src/data/sponsorshipLevel/**
-packages/seed/src/data/sponsorshipPackage/**
-packages/seed/src/data/postTag/**
-packages/seed/src/data/user/required/**
-packages/seed/src/data/tag/{internal,system}-*.json     (data/tag/ is a MIXED folder — only these prefixes are guarded)
+EXEMPT (demo-only, no backfill needed):
+  packages/seed/src/data/accommodation/**
+  packages/seed/src/data/accommodationExternalListing/**
+  packages/seed/src/data/accommodationExternalReputation/**
+  packages/seed/src/data/accommodationReview/**
+  packages/seed/src/data/bookmark/**
+  packages/seed/src/data/destinationReview/**
+  packages/seed/src/data/event/**
+  packages/seed/src/data/eventLocation/**
+  packages/seed/src/data/eventOrganizer/**
+  packages/seed/src/data/post/**
+  packages/seed/src/data/userBookmarkCollection/**
+  packages/seed/src/data/user/example/**          (data/user/ is MIXED — only user/required/** is guarded)
+  packages/seed/src/data/tag/  (files NOT prefixed internal-/system-)   (data/tag/ is MIXED)
+```
+
+Everything else under `data/**` is guarded — the required catalogs (amenity, attraction,
+destination, exchangeRate(+Config), feature, revalidationConfig, sponsorshipLevel,
+sponsorshipPackage, postTag, pointOfInterest, poiCategory, user/required,
+tag/{internal,system}-*.json) **and** the curated prod-content sources that used to escape
+(partner, gastronomy, hostTrade, postSponsor, postSponsorship). Additionally guarded:
+
+```
 packages/billing/src/config/{plans,limits,entitlements,addons,promo-codes}.config.ts
 ```
 
-**Known v1 gap**: several `required/*.seed.ts` files carry their own inline TS baseline-data
-constants instead of reading a `data/**/*.json` folder — `rolePermissions.seed.ts`,
-`aiPrompts.seed.ts`, `aiSettings.seed.ts`, `socialAutomation.seed.ts`,
-`contentModeration.seed.ts`, `systemUser.seed.ts`. The guard does **not** watch these files
-(a path-diff guard cannot distinguish a data change from a logic change in an inline
-constant without a much higher false-positive rate). If you edit baseline data in one of
-these files, apply the dual-write rule manually — the CI guard will not catch a missed
-migration there.
+Plus nine **inline-constant seeders** whose fixtures live in a TS constant (no `data/`
+folder to path-match), guarded on any diff to the whole file:
+
+```
+packages/seed/src/example/experiences.seed.ts             (prod-content commerce listings)
+packages/seed/src/example/entityTagAssignments.seed.ts    (tags GUARDED destination catalog rows)
+packages/seed/src/example/userTags.seed.ts                (tags the GUARDED required admin-user)
+packages/seed/src/required/{rolePermissions,aiPrompts,aiSettings,socialAutomation,contentModeration,systemUser}.seed.ts
+```
+
+**Demo-only inline seeders (audited, intentionally NOT guarded)**: three other
+`example/*.seed.ts` files also bake fixtures inline but attach only to demo entities that are
+themselves exempt (fake accommodations / demo posts), so they never need a live-env backfill:
+`accommodationExternalListings.seed.ts`, `accommodationExternalReputation.seed.ts`,
+`postTagAssignments.seed.ts`. This was a reviewed decision, not an omission — the test suite
+pins both these three (exempt) and `entityTagAssignments`/`userTags` (guarded) so the split
+stays visible. If one of the three ever attaches to a guarded entity, move it to the guarded
+list above.
+
+**Residual gap**: a *future* inline-constant seeder added under `example/`/`required/` with
+neither a `data/` folder nor an entry in the guarded named-file list, that DOES carry
+prod-bound content, would still escape. Prefer extracting inline fixtures into
+`data/**/*.json` files so the default path-glob covers them (HOS-173 OQ-3 follow-up).
 
 ### Opt-out
 
-A genuinely safe additive change (a brand-new catalog entry nobody needs backfilled onto
-already-seeded environments) can skip the guard by adding a literal marker to the PR
-description:
+A genuinely safe additive change (e.g. a new demo-only fixture not yet on the exemption
+list) can skip the guard by adding a literal marker to the PR description:
 
 ```
 [skip-seed-migration]: <reason>
 ```
+
+The `<reason>` must be one of a **closed set** (enforced by review, not tooling):
+
+- `demo-only: synthetic content, must never represent a real environment` — the only
+  category that currently exists in this package.
+- `non-deterministic: <describe the actual regeneration mechanism, e.g. a faker call or
+  timestamp-based id>` — kept available for a hypothetical future fixture that truly
+  re-randomizes. No such case exists today; the **bare word `non-deterministic` with no
+  described, diff-visible mechanism is NOT an acceptable reason** (that was the guard's
+  original false premise, fixed in HOS-173).
 
 The marker is also honored if present in any commit message in the diff range (useful for a
 local/manual run of the script). Same trust model as this repo's other magic-word
