@@ -57,6 +57,7 @@ import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { resolvePlanDisplayName } from '../../services/billing/plan-change-reason';
 import { softCancelSubscription } from '../../services/subscription-cancel.service';
+import { uncancelSubscription } from '../../services/subscription-uncancel.service';
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
@@ -265,10 +266,119 @@ export const userCancelSubscriptionRoute = createCRUDRoute({
 });
 
 // ---------------------------------------------------------------------------
+// Un-cancel (HOS-232) — reverse a soft-cancel while still in the access window
+// ---------------------------------------------------------------------------
+
+/** Response schema for the self-service un-cancel endpoint. */
+const UserUncancelSubscriptionResponseSchema = z.object({
+    subscriptionId: z.string(),
+    cancelAtPeriodEnd: z.literal(false)
+});
+
+/**
+ * Handler for the user self-service un-cancel (HOS-232). Reverses a soft-cancel
+ * (`cancelAtPeriodEnd = true`, still inside the access window): re-authorizes the
+ * MercadoPago preapproval and clears the flag — no new checkout, no charge.
+ *
+ * Gated by the same `HOSPEDA_USER_CANCEL_ENABLED` flag as cancel, and by the
+ * `billingOwnershipMiddleware` that runs before it. Idempotent.
+ */
+export const handleUserUncancelSubscription = async (
+    // biome-ignore lint/suspicious/noExplicitAny: Context type param cannot be narrowed from generic createCRUDRoute handler signature; matches handleUserCancelSubscription
+    c: Context<any>,
+    params: Record<string, unknown>
+): Promise<{ subscriptionId: string; cancelAtPeriodEnd: false }> => {
+    if (!env.HOSPEDA_USER_CANCEL_ENABLED) {
+        throw new HTTPException(404, { message: 'Not found' });
+    }
+
+    if (!c.get('billingEnabled')) {
+        throw new HTTPException(503, { message: 'Billing service is not configured' });
+    }
+    const billingCustomerId = c.get('billingCustomerId');
+    if (!billingCustomerId) {
+        throw new HTTPException(400, { message: 'No billing account found' });
+    }
+    const billing = getQZPayBilling();
+    if (!billing) {
+        throw new HTTPException(503, { message: 'Billing service is not available' });
+    }
+
+    const subscriptionId = params.id;
+    if (!subscriptionId || typeof subscriptionId !== 'string') {
+        throw new HTTPException(400, { message: 'Missing subscription ID' });
+    }
+
+    try {
+        const result = await uncancelSubscription({
+            billing,
+            subscriptionId,
+            customerId: billingCustomerId
+        });
+
+        apiLogger.info(
+            { subscriptionId, customerId: billingCustomerId },
+            'User self-service un-cancel completed'
+        );
+
+        return result;
+    } catch (error) {
+        if (error instanceof HTTPException) {
+            throw error;
+        }
+        if (error instanceof ServiceError) {
+            const status = mapServiceErrorToStatus(error.code);
+            apiLogger.warn(
+                {
+                    subscriptionId,
+                    customerId: billingCustomerId,
+                    errorCode: error.code,
+                    errorMessage: error.message
+                },
+                'User un-cancel: ServiceError from uncancelSubscription'
+            );
+            throw new HTTPException(status as 400 | 403 | 404 | 422 | 500 | 502 | 503 | 504, {
+                message: error.message
+            });
+        }
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        apiLogger.error(
+            { subscriptionId, customerId: billingCustomerId, error: errorMessage },
+            'User self-service un-cancel: unexpected error'
+        );
+        throw new HTTPException(500, {
+            message: 'Failed to keep subscription. Please try again or contact support.'
+        });
+    }
+};
+
+/**
+ * POST /api/v1/protected/billing/subscriptions/:id/uncancel
+ *
+ * User self-service un-cancel (reverse a soft-cancel). Ships dark behind the
+ * same `HOSPEDA_USER_CANCEL_ENABLED` flag as cancel.
+ */
+export const userUncancelSubscriptionRoute = createCRUDRoute({
+    method: 'post',
+    path: '/{id}/uncancel',
+    summary: 'Keep your subscription (reverse a soft-cancel)',
+    description:
+        'Reverses a soft-cancel while still inside the access window: re-authorizes the preapproval and clears the pending cancellation. No new checkout, no charge. Requires HOSPEDA_USER_CANCEL_ENABLED=true.',
+    tags: ['Billing', 'Subscriptions'],
+    requestParams: {
+        id: z.string().describe('The subscription ID to un-cancel')
+    },
+    responseSchema: UserUncancelSubscriptionResponseSchema,
+    successStatusCode: 200,
+    handler: handleUserUncancelSubscription
+});
+
+// ---------------------------------------------------------------------------
 // Router
 // ---------------------------------------------------------------------------
 
 const subscriptionCancelRouter = createRouter();
 subscriptionCancelRouter.route('/', userCancelSubscriptionRoute);
+subscriptionCancelRouter.route('/', userUncancelSubscriptionRoute);
 
 export { subscriptionCancelRouter };

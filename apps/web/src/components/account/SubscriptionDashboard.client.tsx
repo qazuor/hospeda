@@ -591,6 +591,7 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
     const [showPauseModal, setShowPauseModal] = useState(false);
     const [showPlanChangeFlow, setShowPlanChangeFlow] = useState(false);
     const [isPausing, setIsPausing] = useState(false);
+    const [isUncancelling, setIsUncancelling] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
 
     const isBillingAdmin = BILLING_ADMIN_ROLES.has(user.role);
@@ -739,6 +740,38 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
             await fetchData();
         } finally {
             setIsPausing(false);
+        }
+    }
+
+    // HOS-232: reverse a soft-cancel while still in the access window. Clears the
+    // pending cancellation and re-authorizes the preapproval — no charge.
+    async function handleUncancel() {
+        if (!subscription) return;
+        setIsUncancelling(true);
+        try {
+            const result = await billingApi.uncancelSubscription({
+                subscriptionId: subscription.id
+            });
+            if (!result.ok) {
+                addToast({
+                    type: 'error',
+                    message: t(
+                        'account.pages.subscription.uncancelError',
+                        'No se pudo descartar la cancelación.'
+                    )
+                });
+                return;
+            }
+            addToast({
+                type: 'success',
+                message: t(
+                    'account.pages.subscription.uncancelSuccess',
+                    'Cancelación descartada. Tu suscripción sigue activa.'
+                )
+            });
+            await fetchData();
+        } finally {
+            setIsUncancelling(false);
         }
     }
 
@@ -1074,6 +1107,32 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
                                 : t(
                                       'account.pages.subscription.resumeButton',
                                       'Reanudar suscripción'
+                                  )}
+                        </button>
+                    )}
+
+                    {/* Discard cancellation (HOS-232) — reverse a soft-cancel
+                        while still in the access window. No charge. Only for a
+                        live soft-cancel (active/trial); a paused sub is a
+                        different axis the backend rejects. */}
+                    {isCancelScheduled && (status === 'active' || status === 'trial') && (
+                        <button
+                            type="button"
+                            className={styles.btnPrimary}
+                            onClick={() => void handleUncancel()}
+                            disabled={isUncancelling}
+                            aria-busy={isUncancelling}
+                        >
+                            <PlayIcon
+                                size={16}
+                                weight="regular"
+                                aria-hidden="true"
+                            />
+                            {isUncancelling
+                                ? t('common.loading', 'Cargando...')
+                                : t(
+                                      'account.pages.subscription.uncancelButton',
+                                      'Descartar cancelación'
                                   )}
                         </button>
                     )}

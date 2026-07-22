@@ -96,6 +96,13 @@ export const BILLING_EVENT_TYPES = {
      */
     USER_CANCELED: 'USER_CANCELED',
     /**
+     * Fired when a user reverses a soft-cancel while still in the access window
+     * via the self-service un-cancel flow (HOS-232): `cancelAtPeriodEnd` is
+     * cleared and the MercadoPago preapproval re-authorized, with no new
+     * checkout and no charge. The mirror of {@link USER_CANCELED}.
+     */
+    USER_UNCANCELED: 'USER_UNCANCELED',
+    /**
      * Fired when a cancelled subscription's end-of-period finalization job
      * runs and completes the transition to the cancelled state (SPEC-147).
      * Written by the cron/job that processes subscriptions past their

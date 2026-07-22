@@ -210,9 +210,14 @@ export const handleStartPaidSubscription = async (
                 sub.cancelAtPeriodEnd === true
         );
         if (hasSoftCancelledSub) {
+            // HOS-232: the recovery path is now un-cancel, not "wait". Starting a
+            // second subscription over a live soft-cancelled preapproval would
+            // create a duplicate live preapproval (double-charge risk), so this
+            // stays a hard block — but the user can reverse the cancellation with
+            // POST /subscriptions/:id/uncancel to keep their subscription.
             throw new ServiceError(
                 ServiceErrorCode.ALREADY_EXISTS,
-                'An existing subscription is scheduled to cancel at period end. Cannot start a new subscription while a cancellation is pending. Please wait for the current period to end.',
+                'Your subscription is scheduled to cancel at period end. Un-cancel it to keep your subscription instead of starting a new one.',
                 undefined,
                 'SUBSCRIPTION_CANCEL_PENDING'
             );

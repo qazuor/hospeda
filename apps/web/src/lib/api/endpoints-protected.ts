@@ -616,6 +616,29 @@ export const billingApi = {
     },
 
     /**
+     * Un-cancel (reverse a soft-cancel) the authenticated user's subscription
+     * (HOS-232). While still inside the access window (`cancelAtPeriodEnd = true`),
+     * this clears the pending cancellation and re-authorizes the MercadoPago
+     * preapproval — no new checkout and no charge. The mirror of
+     * {@link cancelSubscription}. Idempotent.
+     *
+     * Calls `POST /subscriptions/:id/uncancel`.
+     *
+     * @param params - Subscription ID.
+     * @returns `{ subscriptionId, cancelAtPeriodEnd: false }` on success.
+     */
+    uncancelSubscription({
+        subscriptionId
+    }: {
+        readonly subscriptionId: string;
+    }): Promise<ApiResult<{ subscriptionId: string; cancelAtPeriodEnd: false }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/subscriptions/${subscriptionId}/uncancel`,
+            body: {}
+        });
+    },
+
+    /**
      * Preview the restrictions that would apply if the host downgrades to a given plan.
      *
      * Returns a structured excess report covering:
