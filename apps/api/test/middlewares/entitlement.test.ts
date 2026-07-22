@@ -879,6 +879,88 @@ describe('entitlementMiddleware', () => {
             expect(data.entitlements).toContain(EntitlementKey.CAN_USE_RICH_DESCRIPTION);
             expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(10);
         });
+
+        it('resolves the real comped tourist plan (NOT owner-basico) for a HOST actor with a comp tourist-category subscription (HOS-238)', async () => {
+            // Regression for HOS-238: a HOST comped on a tourist plan (SPEC-262
+            // `status:'comp'`) used to hit the HOS-217 discard — which fires on
+            // any non-owner-category sub for a HOST — and get substituted with
+            // owner-basico draft defaults. That both over-entitled them (free
+            // PUBLISH_ACCOMMODATIONS + VIP tier + max_accommodations:1) and
+            // under-entitled them (lost the tourist base grants their comped
+            // plan actually gives). A `comp` sub is a DELIBERATE grant, so it is
+            // now exempt from the discard and its real plan resolves.
+            const hostActor = {
+                id: 'host-comp-tourist-sub',
+                role: RoleEnum.HOST,
+                permissions: [],
+                email: 'host-comp-tourist-sub@example.com'
+            };
+            const hostCustomerId = 'host-customer-comp-tourist-sub';
+            clearEntitlementCache(hostCustomerId);
+
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-tourist-plus-comp', planId: 'plan-tourist-plus', status: 'comp' }
+            ]);
+            // Real comped plan is tourist-plus: tourist base grants, no owner/VIP,
+            // MAX_COMPARE_ITEMS=3, no MAX_ACCOMMODATIONS.
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-tourist-plus',
+                name: 'Plus',
+                entitlements: [
+                    EntitlementKey.SAVE_FAVORITES,
+                    EntitlementKey.WRITE_REVIEWS,
+                    EntitlementKey.READ_REVIEWS,
+                    EntitlementKey.CAN_COMPARE_ACCOMMODATIONS
+                ],
+                limits: {
+                    [LimitKey.MAX_COMPARE_ITEMS]: 3
+                }
+            });
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', hostCustomerId);
+                c.set(
+                    'actor',
+                    hostActor as unknown as import('../../src/types').AppBindings['Variables']['actor']
+                );
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                const limits = c.get('userLimits');
+                return c.json({
+                    entitlements: Array.from(entitlements).sort(),
+                    limits: Object.fromEntries(limits)
+                });
+            });
+
+            // Act
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // Assert — the comp exemption short-circuits BEFORE the category
+            // check, so isOwnerCategorySubscription is never consulted for the
+            // comp sub, and the REAL tourist-plus plan resolves.
+            expect(isOwnerCategorySubscription).not.toHaveBeenCalled();
+            // Keeps the tourist base grants its comped plan gives.
+            expect(data.entitlements).toContain(EntitlementKey.SAVE_FAVORITES);
+            expect(data.entitlements).toContain(EntitlementKey.WRITE_REVIEWS);
+            // Does NOT gain owner-basico's owner/VIP over-entitlement.
+            expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.entitlements).not.toContain(EntitlementKey.EDIT_ACCOMMODATION_INFO);
+            expect(data.entitlements).not.toContain(EntitlementKey.VIP_SUPPORT);
+            // Tourist-plus compare cap (3), not owner-basico's VIP cap (5).
+            expect(data.limits[LimitKey.MAX_COMPARE_ITEMS]).toBe(3);
+            // No free host accommodation slot.
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBeUndefined();
+        });
     });
 
     describe('customer-level entitlement/limit merging', () => {
