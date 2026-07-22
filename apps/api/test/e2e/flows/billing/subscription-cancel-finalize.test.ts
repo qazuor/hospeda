@@ -52,10 +52,12 @@ const stubRef = vi.hoisted(() => ({
 
 // ---------------------------------------------------------------------------
 // Step 2: intercept @repo/billing so the billing middleware never reaches the
-// real MP adapter. The finalize cron path does NOT call the payment adapter
-// (the preapproval was already paused at soft-cancel time), but the billing
-// singleton is still initialised eagerly at app boot — without the stub that
-// initialisation tries to reach the MP network.
+// real MP adapter. Since HOS-237 the finalize cron DOES reach the payment
+// adapter — it best-effort hard-cancels the MP preapproval after finalizing a
+// sub that has one (`billing.getPaymentAdapter().subscriptions.cancel`). The
+// subscriptions seeded here carry no `mp_subscription_id`, so that call is
+// skipped; but the billing singleton is still initialised eagerly at app boot,
+// and without the stub that initialisation would try to reach the MP network.
 // ---------------------------------------------------------------------------
 
 vi.mock('@repo/billing', async (importOriginal) => {

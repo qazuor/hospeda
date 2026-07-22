@@ -155,6 +155,11 @@ vi.mock('@repo/ai-core', () => {
                 };
             })
         })),
+        // `createConfiguredAiService` (ai-service.factory.ts) awaits `resolveConfig()`
+        // to read the opt-in moderation provider. The stub returns no moderation
+        // config so the engine skips moderation — without this the 200-path tests
+        // throw "No resolveConfig export is defined on the @repo/ai-core mock".
+        resolveConfig: vi.fn(async () => ({ moderation: undefined })),
         scrubPii: vi.fn((s: string) => s)
     };
 });
@@ -603,9 +608,10 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
             const call = streamTextCalls[0];
             if (!call) throw new Error('Expected one streamText call');
             expect(call.feature).toBe('text_improve');
-            expect(call.prompt).toBe(
-                'Please improve the following accommodation description:\n\nA cozy cabin in the woods near the river.'
-            );
+            // BETA-180: the prompt drives a genuine rewrite and carries the original text verbatim.
+            expect(call.prompt).toMatch(/rewrite/i);
+            expect(call.prompt).toContain('accommodation description');
+            expect(call.prompt.endsWith('A cozy cabin in the woods near the river.')).toBe(true);
             expect(call.locale).toBe('en');
         });
 

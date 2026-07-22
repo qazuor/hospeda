@@ -20,6 +20,7 @@ import {
     type EntitlementKey,
     getDefaultEntitlements,
     getUnlimitedEntitlements,
+    isEntitlementGrantingStatus,
     isEntitlementKey,
     isLimitKey,
     isSubscriptionLive,
@@ -454,11 +455,12 @@ async function loadEntitlements(
         // productDomain as 'accommodation' (legacy rows and the column default).
         let activeSubscription = subscriptions.find(
             (sub: { status: string }) =>
-                // SPEC-262 T-012 P2: 'comp' (free-forever) is an ACTIVE entitlement
-                // state — a comped subscriber retains the full entitlements of the
-                // plan they were comped on (see SubscriptionStatusEnum.COMP doc).
-                (sub.status === 'active' || sub.status === 'trialing' || sub.status === 'comp') &&
-                isAccommodationSubscription(sub)
+                // HOS-239: single source of truth for the "entitlement-granting
+                // status" set (active | trialing | comp). SPEC-262 T-012 P2:
+                // 'comp' (free-forever) is an ACTIVE entitlement state — a comped
+                // subscriber retains the full entitlements of the plan they were
+                // comped on (see SubscriptionStatusEnum.COMP doc).
+                isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
         );
 
         // HOS-217: a HOST actor can reach role=HOST without ever subscribing to
@@ -471,9 +473,23 @@ async function loadEntitlements(
         // `owner-basico` draft-defaults fallback. Scoped to HOST only:
         // non-HOST roles (e.g. a plain USER on a tourist plan) must keep
         // resolving their real tourist entitlements unchanged.
+        //
+        // HOS-238: a `comp` subscription is a DELIBERATE grant (an admin comped
+        // this HOST on a specific plan via SPEC-262), not an incidental leftover
+        // tourist sub dragged in by host-onboarding. Exempt it from the discard
+        // so the comped plan's real entitlements resolve (e.g. a HOST comped on
+        // tourist-plus keeps SAVE_FAVORITES/WRITE_REVIEWS and does NOT gain
+        // owner-basico's free PUBLISH_ACCOMMODATIONS + VIP tier). Without this
+        // exemption the discard fires (tourist category) and substitutes the
+        // owner-basico draft defaults — the exact over/under-entitlement bug.
+        // `status` is widened to string: the published QZPay status union does
+        // not include the SPEC-262 `'comp'` value (same gap the `find` above
+        // works around with a `{ status: string }` annotation), so a direct
+        // `!== 'comp'` on the narrow type reports a bogus "no overlap".
         if (
             activeSubscription &&
             actorRole === RoleEnum.HOST &&
+            (activeSubscription.status as string) !== 'comp' &&
             !(await isOwnerCategorySubscription({ planId: activeSubscription.planId }))
         ) {
             activeSubscription = undefined;
