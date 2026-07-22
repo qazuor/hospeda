@@ -57,8 +57,13 @@ export const billingPlanPriceChanges = pgTable(
         /** `increase` | `decrease` — derived from newAmount vs oldAmount at enqueue. */
         direction: varchar('direction', { length: 10 }).notNull(),
         /**
-         * Lifecycle: `pending` (enqueued) | `noticing` (increase notice sent, in grace) |
-         * `applying` (batch mutating targets) | `done` | `failed`.
+         * Header lifecycle: `pending` (enqueued) | `noticing` (increase notice sent, in
+         * grace — increase path, gated) | `applying` (cron creating/mutating targets) |
+         * `superseded` (a newer price change for the same plan+interval replaced it) |
+         * `done` (all targets applied) | `failed` (≥1 target `failed`/`skipped`).
+         * Plain varchar with NO CHECK constraint on purpose — the propagation cron writes
+         * `superseded` and the finalize logic distinguishes `done`/`failed`; do NOT add a
+         * CHECK that omits these live values.
          */
         status: varchar('status', { length: 20 }).notNull().default('pending'),
         /** When the advance-notice was sent to affected subscribers (increase only). */
@@ -107,7 +112,13 @@ export const billingPlanPriceChangeTargets = pgTable(
         mpSubscriptionId: varchar('mp_subscription_id', { length: 255 }),
         /** Discount-aware amount to set on the preapproval, integer centavos. */
         targetAmount: integer('target_amount').notNull(),
-        /** `pending` | `applied` | `failed`. */
+        /**
+         * Target lifecycle: `pending` (awaiting MP mutation) | `deferred` (amount not yet
+         * determinable — discount lookup transiently failing/throwing; reprocessed each tick
+         * with an attempt budget) | `applied` (MP updated) | `skipped` (defer budget
+         * exhausted — kept the old amount, Sentry-alerted) | `failed` (MP mutation budget
+         * exhausted). Plain varchar, NO CHECK — do NOT add one omitting `deferred`/`skipped`.
+         */
         status: varchar('status', { length: 20 }).notNull().default('pending'),
         attemptCount: integer('attempt_count').notNull().default(0),
         lastError: text('last_error'),

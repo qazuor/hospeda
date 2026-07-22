@@ -12,7 +12,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Mock @repo/db (column handles + operator stubs only) ──────────────────
 vi.mock('@repo/db', () => ({
-    billingPlanPriceChanges: { id: 'id' },
+    billingPlanPriceChanges: {
+        id: 'id',
+        planId: 'planId',
+        billingInterval: 'billingInterval',
+        status: 'status'
+    },
     billingSubscriptions: {
         planId: 'planId',
         status: 'status',
@@ -22,8 +27,7 @@ vi.mock('@repo/db', () => ({
     eq: vi.fn((col: unknown, val: unknown) => ({ type: 'eq', col, val })),
     inArray: vi.fn((col: unknown, vals: unknown) => ({ type: 'inArray', col, vals })),
     isNotNull: vi.fn((col: unknown) => ({ type: 'isNotNull', col })),
-    count: vi.fn(() => ({ type: 'count' })),
-    sql: vi.fn((strings: TemplateStringsArray) => ({ type: 'sql', strings }))
+    count: vi.fn(() => ({ type: 'count' }))
 }));
 
 import {
@@ -69,14 +73,32 @@ describe('computeEffectiveAt', () => {
 describe('enqueuePlanPriceChange', () => {
     const now = new Date('2026-07-22T12:00:00.000Z');
     let insertedValues: Record<string, unknown> | undefined;
+    let supersedeSet: Record<string, unknown> | undefined;
+    let callOrder: string[];
 
-    // Minimal chainable mock: insert().values().returning() + select().from().where()
+    // Minimal chainable mock:
+    //   update().set().where()  (supersession — W2)
+    //   insert().values().returning()
+    //   select().from().where()
     function makeMockDb(affectedCount: number) {
         insertedValues = undefined;
+        supersedeSet = undefined;
+        callOrder = [];
         return {
+            update: vi.fn(() => ({
+                set: vi.fn((v: Record<string, unknown>) => {
+                    supersedeSet = v;
+                    return {
+                        where: vi.fn(async () => {
+                            callOrder.push('update');
+                        })
+                    };
+                })
+            })),
             insert: vi.fn(() => ({
                 values: vi.fn((v: Record<string, unknown>) => {
                     insertedValues = v;
+                    callOrder.push('insert');
                     return { returning: vi.fn(async () => [{ id: 'pc-1' }]) };
                 })
             })),
@@ -139,5 +161,39 @@ describe('enqueuePlanPriceChange', () => {
         expect(result.effectiveAt.getTime()).toBe(now.getTime());
         expect(result.affectedSubscriberCount).toBe(0);
         expect(insertedValues).toMatchObject({ direction: 'decrease', status: 'pending' });
+    });
+
+    it('supersedes prior still-open changes (UPDATE) BEFORE inserting the new one (W2)', async () => {
+        const db = makeMockDb(0);
+        await enqueuePlanPriceChange({
+            db,
+            planId: 'plan-1',
+            priceId: 'price-3',
+            billingInterval: 'month',
+            oldAmount: 15000,
+            newAmount: 12000,
+            now
+        });
+
+        // The supersede UPDATE flips prior open changes to 'superseded'...
+        expect(supersedeSet).toMatchObject({ status: 'superseded' });
+        // ...and it runs BEFORE the insert of the new change (ordering matters: an
+        // older change must be closed before the authoritative new one lands).
+        expect(callOrder).toEqual(['update', 'insert']);
+    });
+
+    it("omits the metadata literal so the column default ('{}'::jsonb) applies", async () => {
+        const db = makeMockDb(0);
+        await enqueuePlanPriceChange({
+            db,
+            planId: 'plan-1',
+            priceId: 'price-4',
+            billingInterval: 'month',
+            oldAmount: 15000,
+            newAmount: 12000,
+            now
+        });
+        expect(insertedValues).toBeDefined();
+        expect(insertedValues).not.toHaveProperty('metadata');
     });
 });

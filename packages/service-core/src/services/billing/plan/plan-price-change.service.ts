@@ -30,8 +30,7 @@ import {
     type DrizzleClient,
     eq,
     inArray,
-    isNotNull,
-    sql
+    isNotNull
 } from '@repo/db';
 
 /**
@@ -174,6 +173,21 @@ export async function enqueuePlanPriceChange(input: {
     const direction = resolvePriceChangeDirection({ oldAmount, newAmount });
     const effectiveAt = computeEffectiveAt({ direction, now, graceDays });
 
+    // Supersede any prior still-open change for the SAME plan+interval before
+    // inserting: the newest price change is authoritative, so an older still-open
+    // change (any direction) must not later re-apply its now-stale amount (W2). Runs
+    // in the caller's transaction (same `db`), so it commits atomically with the insert.
+    await db
+        .update(billingPlanPriceChanges)
+        .set({ status: 'superseded', updatedAt: new Date() })
+        .where(
+            and(
+                eq(billingPlanPriceChanges.planId, planId),
+                eq(billingPlanPriceChanges.billingInterval, billingInterval),
+                inArray(billingPlanPriceChanges.status, ['pending', 'applying'])
+            )
+        );
+
     const [inserted] = await db
         .insert(billingPlanPriceChanges)
         .values({
@@ -185,8 +199,7 @@ export async function enqueuePlanPriceChange(input: {
             direction,
             status: 'pending',
             effectiveAt,
-            actorId,
-            metadata: sql`'{}'::jsonb`
+            actorId
         })
         .returning({ id: billingPlanPriceChanges.id });
 
