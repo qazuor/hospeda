@@ -9,6 +9,14 @@ publicHoistPattern:
   - "*react*"
 
 overrides:
+  # HOS-232: unify qzpay-core / -mercadopago to the single latest version across
+  # the workspace. qzpay-hono/-drizzle transitively pin older core versions
+  # (1.12.0 / 1.16.0), and having two `QZPayBilling`/`QZPayEventMap` type
+  # identities in play makes a 1.17.0 billing instance unassignable to a 1.12.0
+  # parameter (the `subscription.uncanceled` event is only in 1.17.0). Forcing a
+  # single version resolves the fragmentation; the bumps are additive minors.
+  "@qazuor/qzpay-core": "1.17.0"
+  "@qazuor/qzpay-mercadopago": "2.8.0"
   typescript: "6.0.3"
   "zod@>=4.0.0 <5": "4.3.6"
   ws: ">=8.21.0"
@@ -110,6 +118,6 @@ allowBuilds:
 forceLegacyDeploy: true
 
 minimumReleaseAgeExclude:
-  - '@qazuor/qzpay-core@1.15.0 || 1.16.0'
-  - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0'
+  - '@qazuor/qzpay-core@1.15.0 || 1.16.0 || 1.17.0'
+  - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0 || 2.8.0'
   - '@qazuor/qzpay-drizzle@1.11.5'
