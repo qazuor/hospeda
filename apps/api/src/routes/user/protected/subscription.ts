@@ -4,7 +4,7 @@
  * @route GET /api/v1/protected/users/me/subscription
  */
 import type { QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
-import { PAYMENT_GRACE_PERIOD_DAYS } from '@repo/billing';
+import { isEntitlementGrantingStatus, PAYMENT_GRACE_PERIOD_DAYS } from '@repo/billing';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
@@ -30,6 +30,14 @@ const SUBSCRIPTION_STATUSES = [
 /** Maps QZPay subscription status values to our API status enum */
 const QZPAY_STATUS_MAP: Record<string, (typeof SUBSCRIPTION_STATUSES)[number]> = {
     active: 'active',
+    // HOS-242: a `comp` (SPEC-262 complimentary) subscription is surfaced by the
+    // account view (the find below includes it). It is functionally an active
+    // subscription — grants full plan access, never pending/cancelled — so map it
+    // to 'active'. The response's separate `isComplimentary` flag is what the UI
+    // uses to hide the self-service Cancel/Pause/Change-plan actions (none of
+    // which apply to an admin-granted comp), so no new response enum value is
+    // needed. Without this it would fall through to the 'pending' default.
+    comp: 'active',
     trialing: 'trial',
     trial: 'trial',
     canceled: 'cancelled',
@@ -56,6 +64,15 @@ const SubscriptionResponseSchema = z.object({
             planSlug: z.string(),
             planName: z.string(),
             status: z.enum(SUBSCRIPTION_STATUSES),
+            /**
+             * True when the subscription is complimentary (`status = 'comp'`,
+             * SPEC-262) — an admin-granted, never-charged, permanent plan. The
+             * `status` above is mapped to `'active'` for a comp (it IS active),
+             * so the UI uses THIS flag to hide the self-service Cancel / Pause /
+             * Change-plan actions, which the backend rejects for a comp (no MP
+             * preapproval exists to cancel/pause/mutate). HOS-242.
+             */
+            isComplimentary: z.boolean(),
             currentPeriodStart: z.string().nullable(),
             /**
              * The end of the current billing period. For a soft-cancelled
@@ -189,14 +206,22 @@ export const userSubscriptionRoute = createProtectedRoute({
             return { subscription: null };
         }
 
-        // Find the current subscription. Includes `paused` so the account UI can
-        // render the paused state + a "Reanudar" action (SPEC-143 #29 self-serve
-        // pause/resume); excluding it made a paused sub look like "no subscription"
-        // and stranded the user with no way to resume (SPEC-143 smoke F-UI-RESUME).
+        // Find the current subscription for the account-management view. This is
+        // the entitlement-granting set (active | trialing | comp — HOS-242
+        // consolidates onto the shared isEntitlementGrantingStatus predicate) PLUS
+        // two management-only statuses:
+        //   - `paused` so the account UI can render the paused state + a
+        //     "Reanudar" action (SPEC-143 #29 self-serve pause/resume); excluding
+        //     it made a paused sub look like "no subscription" and stranded the
+        //     user with no way to resume (SPEC-143 smoke F-UI-RESUME).
+        //   - `past_due` so a delinquent sub still shows for the pay/dunning flow.
+        // HOS-242: adding `comp` here (via the predicate) surfaces a comped
+        // subscriber's plan on their account page instead of hiding it as "no
+        // subscription"; the response's `isComplimentary` flag drives which
+        // self-service actions the UI shows.
         const activeSubscription = subscriptions.find(
             (sub) =>
-                sub.status === 'active' ||
-                sub.status === 'trialing' ||
+                isEntitlementGrantingStatus(sub.status) ||
                 sub.status === 'past_due' ||
                 sub.status === 'paused'
         );
@@ -204,7 +229,7 @@ export const userSubscriptionRoute = createProtectedRoute({
         if (!activeSubscription) {
             apiLogger.debug(
                 { userId: actor.id, customerId: customer.id },
-                'No active, trial, past_due, or paused subscription found for billing customer'
+                'No active, trial, comp, past_due, or paused subscription found for billing customer'
             );
             return { subscription: null };
         }
@@ -302,6 +327,10 @@ export const userSubscriptionRoute = createProtectedRoute({
                 planSlug: resolvedPlanSlug,
                 planName,
                 status: mappedStatus,
+                // HOS-242: comp is mapped to 'active' above; this flag lets the UI
+                // distinguish a real active sub from a complimentary one and hide
+                // the cancel/pause/change-plan actions a comp cannot use.
+                isComplimentary: (activeSubscription.status as string) === 'comp',
                 currentPeriodStart: toIsoString(activeSubscription.currentPeriodStart),
                 currentPeriodEnd: toIsoString(activeSubscription.currentPeriodEnd),
                 cancelAtPeriodEnd: activeSubscription.cancelAtPeriodEnd ?? false,

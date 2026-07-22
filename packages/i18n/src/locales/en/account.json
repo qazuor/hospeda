@@ -554,6 +554,8 @@
             "statusLabel": "Status",
             "nextBillingLabel": "Next billing date",
             "accessUntilLabel": "Access until",
+            "complimentaryLabel": "Complimentary plan",
+            "complimentaryNoBilling": "No expiry",
             "paymentMethodLabel": "Payment method",
             "paymentMercadoPago": "MercadoPago",
             "noBillingDate": "No billing date available",
