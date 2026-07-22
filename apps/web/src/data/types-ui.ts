@@ -198,7 +198,12 @@ export interface HomepageConfig {
 export interface PartnerData {
     /** Display name of the partner or sponsor (used as `alt` text). */
     readonly name: string;
-    /** Root-relative path to the partner's logo image. */
+    /**
+     * Path to the partner's logo image, rendered directly into `<img src>`.
+     * May be an absolute URL (e.g. a CDN URL, as returned by the public
+     * partners API) or a root-relative path, depending on what the API
+     * returns for this partner.
+     */
     readonly logoPath: string;
     /** Optional external URL the logo links to. */
     readonly url?: string;
