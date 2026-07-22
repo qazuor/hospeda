@@ -65,8 +65,13 @@
 #    accepted because these files change rarely and the alternative is a silent
 #    data escape). INLINE_CONSTANT_FILES (prod-content only):
 #      - packages/seed/src/example/experiences.seed.ts   (SPEC-240 commerce
-#        listings — deterministic inline array, no data/ folder at all; the ONE
-#        prod-content inline seeder under example/)
+#        listings — deterministic inline array, no data/ folder at all)
+#      - packages/seed/src/example/entityTagAssignments.seed.ts  (inline
+#        r_entity_tag assignments that attach tags to GUARDED destination
+#        catalog rows — Chajarí/Colón — and demo events; guarded because a
+#        change to which real destination is tagged is prod-relevant)
+#      - packages/seed/src/example/userTags.seed.ts  (inline user-tag
+#        assignments that attach tags to the GUARDED required admin-user)
 #      - packages/seed/src/required/rolePermissions.seed.ts
 #      - packages/seed/src/required/aiPrompts.seed.ts
 #      - packages/seed/src/required/aiSettings.seed.ts
@@ -78,20 +83,21 @@
 #    *.config.ts`, already guarded below — the seeders only read it.)
 #
 #    DEMO-ONLY inline seeders — deliberately NOT guarded (audited HOS-173, not an
-#    omission). Five other `example/*.seed.ts` files also bake their fixtures
-#    into inline constants with no live `data/` folder, but their content is
-#    demo-only synthetic data (fake accommodations' external listings/reputation
-#    and demo tag assignments), so — exactly like their exempt data-folder
-#    siblings — they never need a live-env backfill and requiring a migration on
-#    every edit would be pure false-positive friction:
-#      - packages/seed/src/example/accommodationExternalListings.seed.ts
-#      - packages/seed/src/example/accommodationExternalReputation.seed.ts
-#      - packages/seed/src/example/postTagAssignments.seed.ts
-#      - packages/seed/src/example/entityTagAssignments.seed.ts
-#      - packages/seed/src/example/userTags.seed.ts
-#    (If any of these ever gains prod-bound content, move it to INLINE_CONSTANT_FILES
-#    or extract its data into `data/**/*.json`. The `scripts/__tests__` suite
-#    pins their current demo-only exemption so the decision stays visible.)
+#    omission). Three other `example/*.seed.ts` files bake fixtures into inline
+#    constants with no live `data/` folder, but they attach ONLY to demo entities
+#    (fake accommodations, demo posts) that are themselves exempt, so — like
+#    their exempt data-folder siblings — they never need a live-env backfill and
+#    requiring a migration on every edit would be pure false-positive friction:
+#      - packages/seed/src/example/accommodationExternalListings.seed.ts   (attaches
+#        external-listing rows to demo accommodations only)
+#      - packages/seed/src/example/accommodationExternalReputation.seed.ts  (ditto,
+#        reputation rows on demo accommodations only)
+#      - packages/seed/src/example/postTagAssignments.seed.ts   (post↔PostTag
+#        rows on demo posts only)
+#    (If any of these ever attaches to a guarded entity or gains prod-bound
+#    content, move it to INLINE_CONSTANT_FILES — as entityTagAssignments/userTags
+#    were. The `scripts/__tests__` suite pins both the exemption of these three
+#    AND the guarding of entityTagAssignments/userTags so the split stays visible.)
 #
 #    Additionally, the billing plan/limit/entitlement/addon/promo-code TS
 #    constants in `packages/billing/src/config/*.config.ts` are guarded — the
@@ -198,6 +204,12 @@ USER_DIR_PATTERN='^packages/seed/src/data/user/'
 # design note 2 above.
 INLINE_CONSTANT_FILES=(
     'packages/seed/src/example/experiences.seed.ts'
+    # entityTagAssignments / userTags bake inline assignments that attach to
+    # GUARDED entities (real destination catalog rows like Chajarí/Colón, and
+    # the required admin-user) — not purely demo entities — so a change to which
+    # real row gets tagged is prod-relevant and must not escape silently.
+    'packages/seed/src/example/entityTagAssignments.seed.ts'
+    'packages/seed/src/example/userTags.seed.ts'
     'packages/seed/src/required/rolePermissions.seed.ts'
     'packages/seed/src/required/aiPrompts.seed.ts'
     'packages/seed/src/required/aiSettings.seed.ts'

@@ -244,17 +244,16 @@ describe('check-seed-dual-write.sh (HOS-25 T-024)', () => {
         }
     });
 
-    it('does NOT guard the 5 demo-only inline example seeders (intentional exemption, HOS-173)', () => {
+    it('does NOT guard the 3 demo-only inline example seeders (intentional exemption, HOS-173)', () => {
         // Arrange: these bake fixtures into inline TS constants (no data/ folder)
-        // but are demo-only synthetic content, so — like their exempt data-folder
-        // siblings — they never need a live-env backfill. Pinning the decision so
-        // it stays a visible, reviewed choice rather than an accident of omission.
+        // and attach ONLY to demo entities (fake accommodations / demo posts),
+        // so — like their exempt data-folder siblings — they never need a
+        // live-env backfill. Pinning the decision so it stays a visible, reviewed
+        // choice rather than an accident of omission.
         for (const path of [
             'packages/seed/src/example/accommodationExternalListings.seed.ts',
             'packages/seed/src/example/accommodationExternalReputation.seed.ts',
-            'packages/seed/src/example/postTagAssignments.seed.ts',
-            'packages/seed/src/example/entityTagAssignments.seed.ts',
-            'packages/seed/src/example/userTags.seed.ts'
+            'packages/seed/src/example/postTagAssignments.seed.ts'
         ]) {
             // Act
             const result = runGuard({
@@ -265,6 +264,42 @@ describe('check-seed-dual-write.sh (HOS-25 T-024)', () => {
             // Assert
             expect(result.exitCode, `expected ${path} to be demo-only exempt`).toBe(0);
         }
+    });
+
+    it('DOES guard entityTagAssignments/userTags (inline, but attach to guarded entities)', () => {
+        // Arrange: entityTagAssignments tags real destination catalog rows
+        // (Chajarí/Colón); userTags tags the required admin-user. Both attach to
+        // GUARDED entities, so a change is prod-relevant and must not escape.
+        for (const path of [
+            'packages/seed/src/example/entityTagAssignments.seed.ts',
+            'packages/seed/src/example/userTags.seed.ts'
+        ]) {
+            // Act
+            const result = runGuard({
+                CHANGED_FILES_OVERRIDE: `M\t${path}`,
+                MARKER_TEXT_OVERRIDE: ''
+            });
+
+            // Assert
+            expect(result.exitCode, `expected ${path} to be guarded`).toBe(1);
+        }
+    });
+
+    it('a rename-shaped diff line (R<score>\\told\\tnew) does NOT match an exact-guarded file', () => {
+        // Documents WHY compute_changed_files passes `--no-renames`: the two-field
+        // `IFS=$'\t' read -r status path` collapses "old<TAB>new" into `path`, so a
+        // rename line can never equal a bare INLINE_CONSTANT_FILES/BILLING_CONFIG_FILES
+        // name. With --no-renames git emits clean A/D pairs instead, keeping the
+        // exact-match guards reliable. If this test ever starts FAILING (exit 1),
+        // the parsing changed and --no-renames may no longer be load-bearing.
+        const renameLine =
+            'R100\tpackages/billing/src/config/plans.config.ts\tpackages/billing/src/config/plans2.config.ts';
+
+        // Act
+        const result = runGuard({ CHANGED_FILES_OVERRIDE: renameLine, MARKER_TEXT_OVERRIDE: '' });
+
+        // Assert: the collapsed path does not equal 'plans.config.ts' → not guarded.
+        expect(result.exitCode).toBe(0);
     });
 
     it('AC-4: FAILS the four other formerly-escaped curated sources + inline experiences', () => {
