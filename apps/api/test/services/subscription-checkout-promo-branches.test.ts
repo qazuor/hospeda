@@ -188,8 +188,10 @@ const ANNUAL_URLS = {
     notificationUrl: 'https://api.hospeda.test/api/v1/webhooks/mercadopago'
 };
 
+// HOS-209: the share-link now carries the pending-checkout nonce (mocked to
+// 'nonce-test') as external_reference for exact-nonce (Tier 2) linking.
 const EXPECTED_SHARE_LINK =
-    'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=mp_plan_test';
+    'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=mp_plan_test&external_reference=nonce-test';
 
 /** Default pending-provider result — overridden per-test via `mockResolvedValueOnce`. */
 const DEFAULT_PENDING_RESULT = {

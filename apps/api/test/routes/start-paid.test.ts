@@ -288,8 +288,10 @@ mockCreatePendingProviderSubscription.mockImplementation(async () => ({
  * given the module-level `resolveCheckoutMpPlanId` mock always returns
  * `'mp_plan_test'`.
  */
+// HOS-209: the share-link now carries the pending-checkout nonce (mocked to
+// 'nonce-test-1234') as external_reference for exact-nonce (Tier 2) linking.
 const EXPECTED_SHARE_LINK =
-    'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=mp_plan_test';
+    'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=mp_plan_test&external_reference=nonce-test-1234';
 const MONTHLY_PRICE_ID = 'price_monthly_1';
 const ANNUAL_PRICE_ID = 'price_annual_1';
 

@@ -30,6 +30,7 @@ vi.mock('../../../src/middlewares/billing', () => ({
 }));
 
 import {
+    buildPreapprovalPlanShareLink,
     resolveCheckoutMpPlanId,
     resolveOrProvisionMpPlan
 } from '../../../src/services/billing/mp-plan-provisioning.service';
@@ -346,5 +347,60 @@ describe('resolveCheckoutMpPlanId', () => {
         await expect(resolveCheckoutMpPlanId(CHECKOUT_INPUT)).rejects.toMatchObject({
             code: 'MP_PLAN_PROVISIONING_FAILED'
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// buildPreapprovalPlanShareLink (HOS-209)
+// ---------------------------------------------------------------------------
+
+describe('buildPreapprovalPlanShareLink', () => {
+    it('builds the hosted checkout URL with the preapproval_plan_id (no external_reference by default)', () => {
+        const link = buildPreapprovalPlanShareLink({ mpPreapprovalPlanId: 'mp_plan_abc' });
+
+        const url = new URL(link);
+        expect(url.origin + url.pathname).toBe(
+            'https://www.mercadopago.com.ar/subscriptions/checkout'
+        );
+        expect(url.searchParams.get('preapproval_plan_id')).toBe('mp_plan_abc');
+        // Backward-compat: no external_reference when the nonce is omitted.
+        expect(url.searchParams.has('external_reference')).toBe(false);
+    });
+
+    it('appends the nonce as external_reference when provided (HOS-209)', () => {
+        const link = buildPreapprovalPlanShareLink({
+            mpPreapprovalPlanId: 'mp_plan_abc',
+            externalReference: 'nonce-abc-123'
+        });
+
+        const url = new URL(link);
+        expect(url.searchParams.get('preapproval_plan_id')).toBe('mp_plan_abc');
+        expect(url.searchParams.get('external_reference')).toBe('nonce-abc-123');
+    });
+
+    it('URL-encodes an external_reference containing reserved characters', () => {
+        // Nonces are hex today, but the builder must not emit an invalid URL if
+        // a value ever contains reserved characters.
+        const link = buildPreapprovalPlanShareLink({
+            mpPreapprovalPlanId: 'mp_plan_abc',
+            externalReference: 'a b&c=d'
+        });
+
+        // The raw string must be percent-encoded in the URL...
+        expect(link).toContain('external_reference=a+b%26c%3Dd');
+        // ...and round-trip back to the original value when parsed.
+        expect(new URL(link).searchParams.get('external_reference')).toBe('a b&c=d');
+    });
+
+    // Future-proofing: the real nonce is always a non-empty 32-char hex string
+    // (randomBytes), so this short-circuit is defensive for the general-purpose
+    // builder rather than a reachable production case.
+    it('does not append external_reference for an empty-string nonce', () => {
+        const link = buildPreapprovalPlanShareLink({
+            mpPreapprovalPlanId: 'mp_plan_abc',
+            externalReference: ''
+        });
+
+        expect(new URL(link).searchParams.has('external_reference')).toBe(false);
     });
 });

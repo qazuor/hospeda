@@ -637,7 +637,7 @@ export async function initiatePaidMonthlySubscription(
         );
     }
 
-    const { localSubscriptionId, expiresAt } = await createPendingProviderSubscription({
+    const { localSubscriptionId, expiresAt, nonce } = await createPendingProviderSubscription({
         customerId,
         planId: plan.id,
         priceId: monthlyPrice.id,
@@ -669,7 +669,15 @@ export async function initiatePaidMonthlySubscription(
     // No `schedulePollingForSubscription` here — Path C creates no MP resource
     // synchronously, so there is no `providerResourceId` yet to poll. Polling
     // (if still warranted) resumes once F2/F3 links the real preapproval.
-    const checkoutUrl = buildPreapprovalPlanShareLink({ mpPreapprovalPlanId: providerPriceId });
+    //
+    // HOS-209: stamp the per-checkout nonce as external_reference on the hosted
+    // checkout URL so MP carries it onto the authorized preapproval, enabling
+    // exact-nonce (Tier 2) linking from the start (belt-and-suspenders with the
+    // post-hoc Step-4 stamp in link-preapproval.service.ts).
+    const checkoutUrl = buildPreapprovalPlanShareLink({
+        mpPreapprovalPlanId: providerPriceId,
+        externalReference: nonce
+    });
 
     return {
         checkoutUrl,
@@ -1239,7 +1247,7 @@ export async function initiatePaidAnnualSubscription(
         );
     }
 
-    const { localSubscriptionId, expiresAt } = await createPendingProviderSubscription({
+    const { localSubscriptionId, expiresAt, nonce } = await createPendingProviderSubscription({
         customerId,
         planId: plan.id,
         priceId: annualPrice.id,
@@ -1270,7 +1278,11 @@ export async function initiatePaidAnnualSubscription(
 
     // No `schedulePollingForSubscription` here — see the monthly path's
     // identical note: Path C creates no MP resource synchronously.
-    const checkoutUrl = buildPreapprovalPlanShareLink({ mpPreapprovalPlanId: providerPriceId });
+    // HOS-209: stamp the per-checkout nonce as external_reference (see monthly).
+    const checkoutUrl = buildPreapprovalPlanShareLink({
+        mpPreapprovalPlanId: providerPriceId,
+        externalReference: nonce
+    });
 
     return {
         checkoutUrl,
