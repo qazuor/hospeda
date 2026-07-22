@@ -7,7 +7,11 @@
  * AAA (Arrange / Act / Assert) pattern is used throughout.
  */
 
-import { AccommodationTypeEnum, PriceCurrencyEnum } from '@repo/schemas';
+import {
+    AccommodationTypeEnum,
+    PriceCurrencyEnum,
+    SearchIntentEntitiesSchema
+} from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { mapIntentToSearchParams } from '../../../../src/routes/ai/protected/search-intent.mapper.js';
 
@@ -198,6 +202,30 @@ describe('mapIntentToSearchParams — radius clamping', () => {
 
     it('radius omitted when lat + lng not both present', () => {
         const result = mapIntentToSearchParams({ latitude: -32, radius: 100 });
+        expect(result.radius).toBeUndefined();
+    });
+
+    it('regression HOS-207: schema-parsed radius:0 (with lat+lng) emits no radius param', () => {
+        // Arrange: mirror the real flow — entities always reach the mapper after
+        // SearchIntentEntitiesSchema parse. The schema keeps the model's
+        // `radius: 0` sentinel as 0 (it cannot transform — it is serialized to
+        // JSON Schema for generateObject), so the mapper's geo branch is what
+        // must treat 0 as unset and NOT forward `radius: '0'` (which would 400
+        // the downstream accommodation search whose radius is still `.positive()`).
+        const parsed = SearchIntentEntitiesSchema.safeParse({
+            latitude: -32,
+            longitude: -58,
+            radius: 0
+        });
+        expect(parsed.success).toBe(true);
+        if (!parsed.success) {
+            return;
+        }
+        // Act
+        const result = mapIntentToSearchParams(parsed.data);
+        // Assert: geo coords still forwarded, radius dropped.
+        expect(result.latitude).toBe('-32');
+        expect(result.longitude).toBe('-58');
         expect(result.radius).toBeUndefined();
     });
 });

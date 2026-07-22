@@ -118,8 +118,30 @@ export const SearchIntentEntitiesSchema = z.object({
     /** Geographic longitude in degrees (-180 to 180). Only meaningful with `latitude`. */
     longitude: z.number().min(-180).max(180).optional(),
 
-    /** Search radius in km (max 500). Only applied when `latitude` + `longitude` present. */
-    radius: z.number().positive().max(500).optional(),
+    /**
+     * Search radius in km (0–500), where `0` means "no radius specified".
+     * Only applied when `latitude` + `longitude` present.
+     *
+     * **Why `.min(0)` and not `.positive()`** (HOS-207): the model returns an
+     * explicit `radius: 0` for queries that mention no search radius (`0 !==
+     * undefined`, so `.optional()` alone does not cover it). The old `.positive()`
+     * rejected `0`, which made `generateObject` throw `AI_TypeValidationError`
+     * and 500 the whole NL search for the majority of queries. `.min(0)` accepts
+     * it.
+     *
+     * **`0` is a sentinel, normalized at consumption, NOT here.** A `0 → undefined`
+     * `.transform()` on this field is impossible: this schema is serialized to
+     * JSON Schema for `generateObject`, and Zod refuses that
+     * ("Transforms cannot be represented in JSON Schema") — the same reason the
+     * `checkIn`/`checkOut` `.regex()` was removed. So the "0 means absent" rule
+     * is applied by the two consumers that emit a radius —
+     * `mapIntentToSearchParams` (geo branch) and the search-chat POI branch —
+     * which treat `radius === 0` as unset. Forwarded verbatim a `0` would
+     * override the POI-proximity 5 km default with a degenerate 0 km search and
+     * 400 the still-`.positive()` `AccommodationSearchHttpSchema.radius` one hop
+     * downstream.
+     */
+    radius: z.number().min(0).max(500).optional(),
 
     /**
      * Geo "nearby destinations" expansion signal (HOS-111 T-012, G-9).
