@@ -135,7 +135,7 @@ function computePosition(
  *     anchorRef={buttonRef}
  *     message="Tu plan no incluye la comparación de alojamientos."
  *     ctaLabel="Ver planes"
- *     ctaHref="/es/suscriptores/planes/"
+ *     ctaHref="/es/suscriptores/turistas/"
  *     onClose={() => setOpen(false)}
  *     dialogLabel="Función no disponible en tu plan"
  *     closeLabel="Cerrar"
