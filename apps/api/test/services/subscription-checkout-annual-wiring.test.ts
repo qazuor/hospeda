@@ -224,11 +224,13 @@ describe('initiatePaidAnnualSubscription wiring (HOS-171 AC-11, HOS-191 Path C)'
         );
     });
 
-    it('grants no trial on annual when the customer already has a subscription', async () => {
-        // Arrange — one trial per customer, for life, cross-interval
+    it('grants no trial on annual when the customer already has an authorized subscription', async () => {
+        // Arrange — one trial per customer, for life, cross-interval. `expired` is
+        // an authorized subscription that ran its course; post-HOS-230 the gate no
+        // longer counts never-authorized backouts, but this one is unambiguous.
         const billing = createBillingMock({ ...PLAN_METADATA, hasTrial: true, trialDays: 14 });
         billing.subscriptions.getByCustomerId.mockResolvedValue([
-            { id: 'sub-prior', status: 'canceled' }
+            { id: 'sub-prior', status: 'expired' }
         ]);
 
         // Act

@@ -426,10 +426,13 @@ describe('HOS-110 W1 / HOS-171 / HOS-191: promo effect_kind precedence before th
         expect(mpPlanCallArg().trialDays).toBe(14);
     });
 
-    it('AC-10: a customer with any prior subscription gets no trial and resolves a no-trial MP plan', async () => {
+    it('AC-10: a customer with a prior authorized subscription gets no trial and resolves a no-trial MP plan', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'none' });
+        // `expired` = a real, authorized subscription that ran its course. Since
+        // HOS-230 the gate no longer counts never-authorized backouts
+        // (abandoned / pending -> cancelled); an authorized prior sub still does.
         const billing = makeTrialBilling({
-            existingSubscriptions: [{ id: 'existing-sub', status: 'cancelled' }]
+            existingSubscriptions: [{ id: 'existing-sub', status: 'expired' }]
         });
 
         const result = await initiatePaidMonthlySubscription({
@@ -836,11 +839,13 @@ describe('HOS-115/HOS-171/HOS-191: annual TRIAL-eligible checkout (mirrors month
 
     it('AC-7/AC-10: cross-interval eligibility — a customer who already consumed a trial (any interval, any status) is not granted a second one', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({ kind: 'none' });
-        // The customer's only subscription is a CANCELED trial — the
-        // eligibility gate does not distinguish status or interval, so this
-        // still disqualifies (one trial per customer, for life).
+        // The customer's only subscription is an EXPIRED monthly trial — an
+        // authorized subscription that ran its course. The eligibility gate is
+        // cross-interval, so this disqualifies an annual trial too (one trial
+        // per customer, for life). Post-HOS-230 the gate DOES distinguish never-
+        // authorized backouts, but an expired trial is unambiguously authorized.
         const billing = makeTrialBilling({
-            existingSubscriptions: [{ id: 'expired-monthly-trial', status: 'canceled' }]
+            existingSubscriptions: [{ id: 'expired-monthly-trial', status: 'expired' }]
         });
 
         const result = await initiatePaidAnnualSubscription({

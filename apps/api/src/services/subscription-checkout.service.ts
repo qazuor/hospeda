@@ -564,11 +564,14 @@ export async function initiatePaidMonthlySubscription(
     // short-circuit in front of `TrialService.startTrial`, which re-checked it
     // and was the authoritative gate. `startTrial` is gone, so this is now the
     // single authoritative gate and has no second checker behind it: any prior
-    // subscription — any status, any product domain, including cancelled —
-    // disqualifies. Only queried when the plan actually declares a trial, since
-    // otherwise the answer cannot change the outcome. `hasAnyPriorSubscription`
-    // (HOS-226) is the SAME query the read-only `GET /trial-eligibility` route
-    // runs, so the two can never disagree on who is still trial-eligible.
+    // subscription the provider AUTHORIZED at least once — any authorized status,
+    // any product domain, including cancelled — disqualifies. Never-authorized
+    // checkouts the user backed out of (`abandoned` / `pending_provider`, or the
+    // raw qzpay `incomplete`/`incomplete_expired`) do NOT count (HOS-230). Only
+    // queried when the plan actually declares a trial, since otherwise the answer
+    // cannot change the outcome. `hasAnyPriorSubscription` (HOS-226) is the SAME
+    // query the read-only `GET /trial-eligibility` route runs, so the two can
+    // never disagree on who is still trial-eligible.
     const hasPriorSubscription =
         planHasTrial && planTrialDays > 0
             ? await hasAnyPriorSubscription({ billing, customerId })

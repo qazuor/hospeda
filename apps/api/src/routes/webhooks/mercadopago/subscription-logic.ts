@@ -1016,7 +1016,12 @@ export async function processSubscriptionUpdated({
         } catch (auditError) {
             apiLogger.error(
                 { error: auditError, subscriptionId: localSubscription.id },
-                'Failed to insert subscription audit log entry'
+                'Failed to insert subscription audit log entry',
+                // Page Sentry: this audit row is now load-bearing for the HOS-230
+                // trial-eligibility decision (a cancelled subscription's
+                // authorization is read back from billing_subscription_events), so
+                // a silently-lost authorization event can wrongly re-grant a trial.
+                { capture: true }
             );
             // Do NOT throw - audit failure is non-blocking; status update must still commit
         }
