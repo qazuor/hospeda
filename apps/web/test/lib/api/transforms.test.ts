@@ -11,6 +11,7 @@ import {
     toDestinationCardProps,
     toEventCardProps,
     toEventDetailProps,
+    toPartnerData,
     toTestimonialCardProps,
     transformFavoritesBreakdown,
     transformOwnerPromotion,
@@ -411,6 +412,68 @@ describe('toTestimonialCardProps', () => {
         const result = toTestimonialCardProps({ item: {} });
         expect(result.id).toBe('');
         expect(result.rating).toBe(0);
+    });
+});
+
+describe('toPartnerData', () => {
+    it('should transform a complete partner item into the marquee shape', () => {
+        const item = {
+            name: 'Autoservicio Litoral',
+            logoUrl: 'https://cdn.hospeda.com.ar/partners/autoservicio-litoral.png',
+            websiteUrl: 'https://autoservicio-litoral.example.com'
+        };
+
+        const result = toPartnerData({ item });
+
+        expect(result).toEqual({
+            name: 'Autoservicio Litoral',
+            logoPath: 'https://cdn.hospeda.com.ar/partners/autoservicio-litoral.png',
+            url: 'https://autoservicio-litoral.example.com',
+            aspectRatio: 3.5
+        });
+    });
+
+    it('should default aspectRatio to 3.5 (the API carries no logo dimension metadata)', () => {
+        const item = {
+            name: 'Fundación Entre Ríos Sustentable',
+            logoUrl: 'https://cdn.hospeda.com.ar/partners/fundacion-entre-rios.png',
+            websiteUrl: 'https://fundacion-entre-rios.example.com'
+        };
+
+        const result = toPartnerData({ item });
+
+        expect(result.aspectRatio).toBe(3.5);
+    });
+
+    it('should map url to undefined when websiteUrl is null', () => {
+        const item = {
+            name: 'ONG Amigos del Río Uruguay',
+            logoUrl: 'https://cdn.hospeda.com.ar/partners/amigos-del-rio.png',
+            websiteUrl: null
+        };
+
+        const result = toPartnerData({ item });
+
+        expect(result.url).toBeUndefined();
+    });
+
+    it('should map url to undefined when websiteUrl is absent', () => {
+        const item = {
+            name: 'Universidad Tecnológica del Litoral',
+            logoUrl: 'https://cdn.hospeda.com.ar/partners/universidad-tecnologica.png'
+        };
+
+        const result = toPartnerData({ item });
+
+        expect(result.url).toBeUndefined();
+    });
+
+    it('should default name and logoPath to empty strings when missing', () => {
+        const result = toPartnerData({ item: {} });
+
+        expect(result.name).toBe('');
+        expect(result.logoPath).toBe('');
+        expect(result.url).toBeUndefined();
     });
 });
 

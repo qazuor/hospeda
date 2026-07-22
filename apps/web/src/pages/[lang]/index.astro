@@ -30,9 +30,10 @@ import NextEventsSectionSkeleton from "@/components/skeletons/NextEventsSectionS
 import PartnersSection from "@/components/sections/PartnersSection.astro";
 import StatsSection from "@/components/sections/StatsSection.astro";
 import TestimonialsSection from "@/components/sections/TestimonialsSection.astro";
-import type { StatItemData } from "@/data/types";
+import type { PartnerData, StatItemData } from "@/data/types";
 import DefaultLayout from "@/layouts/DefaultLayout.astro";
-import { destinationsApi, SSR_PUBLIC_CACHE_TTL_MS, statsApi } from "@/lib/api/endpoints";
+import { destinationsApi, partnerApi, SSR_PUBLIC_CACHE_TTL_MS, statsApi } from "@/lib/api/endpoints";
+import { toPartnerData } from "@/lib/api/transforms";
 import { BRAND_NAME, ORGANIZATION_INFO, SOCIAL_PROFILE_URLS } from "@/lib/constants";
 import { getSiteUrl } from "@/lib/env";
 import { shouldShowSocialProof } from "@/lib/home-guards";
@@ -55,14 +56,25 @@ const logoUrl = `${siteUrl}/android-chrome-512x512.png`;
 // resolves to the same resource the hero paints — no duplicate download.
 const heroFirstSlide = await buildHeroVariants({ rawImage: HERO_RAW_SLIDES[0] });
 
-// Fetch city destinations for the search bar (SSG — fetched at build time)
-const destinationsResult = await destinationsApi.list({
-    destinationType: "CITY",
-    pageSize: 50,
-    // HOS-103: cache this bounded homepage read; shares the key with the
-    // DestinationsSection CITY read so the two collapse to one API hit.
-    cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS,
-});
+// Fetch city destinations, partners, and platform stats concurrently — these
+// three SSR reads are fully independent of each other (HOS-160 perf shape).
+const [destinationsResult, partnersResult, statsResult] = await Promise.all([
+    // Fetch city destinations for the search bar (SSG — fetched at build time)
+    destinationsApi.list({
+        destinationType: "CITY",
+        pageSize: 50,
+        // HOS-103: cache this bounded homepage read; shares the key with the
+        // DestinationsSection CITY read so the two collapse to one API hit.
+        cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS,
+    }),
+    // Fetch partners for the homepage marquee (HOS-172). Fail-soft: any error
+    // or empty result yields an empty array, which PartnersSection treats as
+    // "don't render the section" rather than breaking the page.
+    partnerApi.list({ pageSize: 20 }),
+    // Fetch platform stats for the stats section (SSG — fetched at build time)
+    statsApi.getPlatformStats(),
+]);
+
 const destinations = destinationsResult.ok
     ? destinationsResult.data.items.map((d) => ({
           id: String(d.id),
@@ -72,8 +84,12 @@ const destinations = destinationsResult.ok
       }))
     : [];
 
-// Fetch platform stats for the stats section (SSG — fetched at build time)
-const statsResult = await statsApi.getPlatformStats();
+const partners: readonly PartnerData[] = partnersResult.ok
+    ? partnersResult.data.items
+          .filter((item) => item.logoUrl)
+          .map((item) => toPartnerData({ item: item as unknown as Record<string, unknown> }))
+    : [];
+
 const platformStats: readonly StatItemData[] = statsResult.ok
     ? [
           { icon: "BuildingIcon", value: statsResult.data.accommodations, labelKey: "home.statistics.accommodations" },
@@ -232,5 +248,5 @@ const categoryTiles = [
     <StatsSection locale={locale} stats={platformStats} suffixes={["+", "+", "+", "+", "+"]} />
 
     <!-- 11. Partners -->
-    <PartnersSection locale={locale} />
+    <PartnersSection locale={locale} partners={partners} />
 </DefaultLayout>
