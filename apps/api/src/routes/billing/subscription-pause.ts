@@ -71,13 +71,36 @@ export const handleSelfServePause = async (c: Parameters<SimpleRouteInterface['h
     const actor = getActorFromContext(c);
 
     const subscriptions = await billing.subscriptions.getByCustomerId(billingCustomerId);
-    const target = subscriptions.find(
+    const activeSubscriptions = subscriptions.filter(
         (sub) => sub.status === 'active' || sub.status === 'trialing'
     );
+    // HOS-246: a subscription that is scheduled for cancellation
+    // (`cancelAtPeriodEnd=true`) must NOT be pausable. Pausing suspends the
+    // owner's listings immediately, cutting short the soft-cancel grace window
+    // (the already-cancelled user would lose access before the period end they
+    // paid for). This mirrors the resume guard from HOS-236 and the
+    // `!isCancelScheduled` gate the dashboard `canPause` uses. `cancelAtPeriodEnd`
+    // is Hospeda's soft-cancel signal (set by `softCancelSubscription`).
+    const target = activeSubscriptions.find((sub) => sub.cancelAtPeriodEnd !== true);
     if (!target) {
+        // Distinguish "nothing active/trialing" from "the only candidate is a
+        // cancellation in progress" so the caller gets an actionable error.
+        if (activeSubscriptions.some((sub) => sub.cancelAtPeriodEnd === true)) {
+            throw new HTTPException(409, {
+                message:
+                    'PAUSE_NOT_ALLOWED_CANCELLATION_SCHEDULED: This subscription is scheduled for cancellation and cannot be paused'
+            });
+        }
         throw new HTTPException(404, { message: 'No active subscription to pause' });
     }
 
+    // Precedence note (HOS-246): the soft-cancel guard above runs BEFORE this
+    // annual guard. So a subscription that is BOTH annual AND scheduled for
+    // cancellation surfaces the 409 cancellation-scheduled error, never this
+    // 400 annual error — that is deliberate: "you already cancelled" is the
+    // dominant, user-facing reason and applies regardless of interval. The
+    // annual guard only fires for a still-live (non-cancelling) annual sub.
+    //
     // Annual one-time subscriptions are backed by a single MP payment, not a
     // recurring preapproval. There is nothing to pause on the billing side, and
     // calling billing.subscriptions.pause() on them would silently fail or lie
