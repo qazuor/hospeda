@@ -166,6 +166,7 @@ type MockTrial = {
     userName: string;
     userId: string;
     planSlug: string;
+    planDisplayName?: string;
     trialEnd: Date;
     daysRemaining: number;
     intendedInterval?: string;
@@ -261,6 +262,34 @@ describe('Notification Schedule Cron Job', () => {
     });
 
     describe('Trial Ending Reminders', () => {
+        // HOS-231: the trial-ending email prefers the plan DISPLAY name
+        // (TrialEndingSubscription.planDisplayName) over the raw slug.
+        it('uses planDisplayName over planSlug when present', async () => {
+            const ctx = createMockContext();
+            mockTrialServiceByDays({
+                3: [
+                    makeTrial({
+                        id: 'sub-1',
+                        daysRemaining: 3,
+                        planSlug: 'owner-basico',
+                        planDisplayName: 'Basic'
+                    })
+                ]
+            });
+            vi.mocked(getQZPayBilling).mockReturnValue({} as never);
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            mockEmptyRetryService();
+
+            await notificationScheduleJob.handler(ctx);
+
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: NotificationType.TRIAL_ENDING_REMINDER,
+                    planName: 'Basic'
+                })
+            );
+        });
+
         it('should send primary (D-3) reminders for trials in the config window', async () => {
             // Arrange
             const ctx = createMockContext();

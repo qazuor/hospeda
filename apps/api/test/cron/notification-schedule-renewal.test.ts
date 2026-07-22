@@ -703,6 +703,52 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             );
         });
 
+        // HOS-231: when the plan carries metadata.displayName, the renewal email
+        // must show the DISPLAY name ("Basic"), not the raw slug ("owner-basico").
+        it('should use the plan DISPLAY name (metadata.displayName) over the slug', async () => {
+            const ctx = createMockContext();
+            const mockSubscription = createMockSubscription(3);
+
+            const mockBilling = {
+                subscriptions: {
+                    list: vi.fn().mockResolvedValue({ data: [mockSubscription] })
+                },
+                plans: {
+                    get: vi.fn().mockResolvedValue({
+                        name: 'owner-basico',
+                        metadata: { displayName: 'Basic' }
+                    })
+                }
+            };
+            const mockTrialService = { findTrialsEndingSoon: vi.fn().mockResolvedValue([]) };
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
+            vi.mocked(lookupCustomerDetails).mockResolvedValue({
+                email: 'user@example.com',
+                name: 'User',
+                userId: 'user-123'
+            });
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(RetryService).mockImplementation(function () {
+                return {
+                    processRetries: vi.fn().mockResolvedValue({
+                        processed: 0,
+                        succeeded: 0,
+                        failed: 0,
+                        permanentlyFailed: 0
+                    })
+                } as any;
+            });
+
+            await notificationScheduleJob.handler(ctx);
+
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({ planName: 'Basic' })
+            );
+        });
+
         it('should use default plan name when lookup fails', async () => {
             // Arrange
             const ctx = createMockContext();

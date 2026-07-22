@@ -19,12 +19,49 @@ const { getPlanById } = vi.hoisted(() => ({ getPlanById: vi.fn() }));
 vi.mock('../../../src/services/plan.service', () => ({ getPlanById }));
 
 import {
+    planDisplayNameFromPlan,
     resolvePlanChangeReason,
     resolvePlanDisplayName
 } from '../../../src/services/billing/plan-change-reason';
 
 beforeEach(() => {
     getPlanById.mockReset();
+});
+
+describe('planDisplayNameFromPlan', () => {
+    it('returns metadata.displayName when present (the display-name-wins branch)', () => {
+        expect(
+            planDisplayNameFromPlan({ name: 'owner-basico', metadata: { displayName: 'Basic' } })
+        ).toBe('Basic');
+    });
+
+    it('falls back to the slug (name) when there is no metadata', () => {
+        expect(planDisplayNameFromPlan({ name: 'owner-basico' })).toBe('owner-basico');
+    });
+
+    it('falls back to the slug when metadata has no displayName', () => {
+        expect(planDisplayNameFromPlan({ name: 'owner-basico', metadata: { other: 'x' } })).toBe(
+            'owner-basico'
+        );
+    });
+
+    it('falls back to the slug when displayName is a blank/whitespace string', () => {
+        expect(
+            planDisplayNameFromPlan({ name: 'owner-basico', metadata: { displayName: '   ' } })
+        ).toBe('owner-basico');
+    });
+
+    it('falls back to the slug when displayName is not a string', () => {
+        expect(
+            planDisplayNameFromPlan({ name: 'owner-basico', metadata: { displayName: 42 } })
+        ).toBe('owner-basico');
+    });
+
+    it('falls back to the slug when metadata is null', () => {
+        expect(planDisplayNameFromPlan({ name: 'owner-basico', metadata: null })).toBe(
+            'owner-basico'
+        );
+    });
 });
 
 describe('resolvePlanDisplayName', () => {
