@@ -29,7 +29,13 @@ export {
     checkCanModerateReview,
     checkCanViewAll
 } from './commerce.permissions';
-export type { CommerceListingHookState } from './commerce.types';
+export type { CommerceEntityType, CommerceListingHookState } from './commerce.types';
+export {
+    type CommerceListingCompletenessListing,
+    type ResolveListingCompletenessInput,
+    type ResolveListingCompletenessResult,
+    resolveListingCompleteness
+} from './commerce-completeness';
 export {
     CommerceLeadService,
     type LeadNotificationPort,

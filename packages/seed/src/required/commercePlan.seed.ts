@@ -147,7 +147,7 @@ export async function seedCommercePlan(_context: SeedContext): Promise<void> {
 
         logger.info(`${separator}`);
         logger.info(
-            `${STATUS_ICONS.Info}  Commerce plan: ${planStatus}; monthly price: ${priceStatus}. NOTE: monthlyPriceArs is a PLACEHOLDER — owner must confirm the real price via the admin UI.`
+            `${STATUS_ICONS.Info}  Commerce plan: ${planStatus}; monthly price: ${priceStatus}. monthlyPriceArs is CONFIRMED (ARS 15.000/mes, owner 2026-07-22, HOS-166 OQ-2) — it is still a commercial-layer field, so any later admin-UI override stands.`
         );
 
         summaryTracker.trackSuccess(entityName);

@@ -526,9 +526,10 @@ export const TOURIST_VIP_PLAN: PlanDefinition = {
  * accommodation flow ever reads this plan because it is excluded from
  * `ALL_PLANS` and filtered out by product_domain.
  *
- * NOTE (owner): `monthlyPriceArs` below is a PLACEHOLDER (ARS 5,000.00). The
- * owner must confirm / override the real commerce-listing price via the admin
- * UI (it is a commercial-layer field; the seed never overwrites it once set).
+ * NOTE (owner): `monthlyPriceArs` below is CONFIRMED at ARS 15,000.00 (owner
+ * 2026-07-22, HOS-166 OQ-2). It is still a commercial-layer field — the seed
+ * never overwrites it once a value exists in the DB — so any operator
+ * override made afterward via the admin UI stands.
  *
  * `hasTrial=false`, `entitlements=[]`, `limits=[]`: commerce visibility is
  * driven by the subscription status via the `commerce_listing_subscriptions`
@@ -541,10 +542,10 @@ export const COMMERCE_LISTING_PLAN: PlanDefinition = {
     // See JSDoc: 'owner' only satisfies the PlanCategory type; product_domain is
     // the real discriminator. Do NOT widen PlanCategory to add 'commerce'.
     category: 'owner',
-    // PLACEHOLDER price — owner to confirm via admin UI (ARS 5,000.00 in cents).
-    monthlyPriceArs: 500000,
+    // CONFIRMED price (owner 2026-07-22, HOS-166 OQ-2): ARS 15,000.00 in cents.
+    monthlyPriceArs: 1500000,
     annualPriceArs: null,
-    monthlyPriceUsdRef: 5,
+    monthlyPriceUsdRef: 15,
     hasTrial: false,
     trialDays: 0,
     isDefault: false,
