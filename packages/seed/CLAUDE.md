@@ -64,17 +64,22 @@ since the baseline fixtures already reflect the post-migration end state.
 
 Editing baseline seed data that already lives on a deployed environment (a `required`
 catalog fixture, a billing plan/limit/entitlement config, or a deterministic-id `example`
-fixture) requires adding a numbered migration in the **same PR** — see the root
+fixture — every fixture in this package has a deterministic UUIDv5 id, so there is no
+"non-deterministic example data" that is exempt by nature) requires adding a numbered
+migration in the **same PR** — see the root
 [CLAUDE.md](../../CLAUDE.md) bullet "Seed dual-write rule (MANDATORY, HOS-25)" for the exact
-rule. `scripts/check-seed-dual-write.sh` enforces it in CI against a fixed set of guarded
-paths (`data/{amenity,attraction,destination,exchangeRate,exchangeRateConfig,feature,
-revalidationConfig,sponsorshipLevel,sponsorshipPackage,postTag,pointOfInterest}/**`,
-`data/user/required/**`, `data/tag/{internal,system}-*.json`, and
-`packages/billing/src/config/{plans,limits,entitlements,addons,promo-codes}.config.ts`);
-a PR can opt out with a literal
-`[skip-seed-migration]: <reason>` marker in its description when a change genuinely needs no
-backfill. Full guard-path list and rationale, plus the run order
-(`db:migrate` → `db:apply-extras` → `db:seed:migrate`, schema before data), are in the
+rule. `scripts/check-seed-dual-write.sh` enforces it in CI. Since HOS-173 the guard is
+**fail-closed**: everything under `packages/seed/src/data/**` is guarded by default (plus
+the seven inline-constant seeders and the billing config files), MINUS a short, explicit
+exemption list of demo-only sources (accommodations, events, posts, reviews, bookmarks and
+their join/aux tables, plus `data/user/example/**` and non-`internal`/`system` files under
+`data/tag/`). This means a brand-new curated data folder is caught automatically — the old
+allowlist was fail-open and let the `partners` catalog escape to prod empty (HOS-172). A PR
+can opt out with a literal `[skip-seed-migration]: <reason>` marker in its description when a
+change genuinely needs no backfill; valid reasons are a closed set (`demo-only: ...` or a
+`non-deterministic: <described mechanism>` — the bare word "non-deterministic" is not one).
+Full guard-path list, exemption rationale, and the run order
+(`db:migrate` → `db:apply-extras` → `db:seed:migrate`, schema before data) are in the
 [author guide](../../docs/guides/seed-data-migrations.md).
 
 ## Test Users for Billing (SPEC-143 Block 1)
