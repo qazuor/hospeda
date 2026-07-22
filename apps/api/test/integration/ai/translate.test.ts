@@ -96,7 +96,12 @@ vi.mock('@repo/ai-core', () => {
         recordAiUsage: vi.fn(),
         checkCostCeiling: vi.fn(async () => ({ allowed: true })),
         resolveFeatureConfig: vi.fn(async () => ({ enabled: true })),
-        resolveSystemPrompt: vi.fn(async () => 'Test prompt')
+        resolveSystemPrompt: vi.fn(async () => 'Test prompt'),
+        // ai-service.factory.createConfiguredAiService awaits resolveConfig() to
+        // read the opt-in moderation provider; the stub reports none so the engine
+        // skips moderation. Without it the 200-path throws "No resolveConfig
+        // export is defined on the @repo/ai-core mock".
+        resolveConfig: vi.fn(async () => ({ moderation: undefined }))
     };
 });
 
@@ -126,9 +131,92 @@ vi.mock('../../../src/middlewares/entitlement', async (importOriginal) => {
     };
 });
 
+/**
+ * Holds the entity row that the mocked `getDb()` query builder resolves to.
+ * `null` makes the builder resolve to `[]` (entity-not-found path); a row object
+ * makes it resolve to `[row]` (happy path). Set per-test via `resetMockState()`
+ * and overridden in the 404 test. Hoisted so the `vi.mock` factory can close
+ * over it.
+ */
+const { entityRowHolder } = vi.hoisted(() => ({
+    entityRowHolder: { current: null as Record<string, unknown> | null }
+}));
+
 vi.mock('@repo/db', async () => {
     const { createDbMock } = await import('../../helpers/mocks/db-mock');
-    return createDbMock();
+    const base = createDbMock();
+
+    // Minimal stub for the `ai_provider_credentials` table (declared INSIDE the
+    // factory — vi.mock is hoisted above any top-level const, so an outer
+    // reference would hit the temporal dead zone). createConfiguredAiService
+    // (ai-service.factory.ts) selects providerId/metadata from it; the mocked
+    // query resolves it to [] (no providers configured) so the factory falls
+    // through to the stubbed @repo/ai-core engine.
+    const aiProviderCredentialsStub = {
+        providerId: 'provider_id',
+        metadata: 'metadata',
+        deletedAt: 'deleted_at'
+    } as const;
+
+    // The shared createDbMock's query builder sets `limit: mockReturnThis()`, so
+    // `const [row] = await db.select()…limit(1)` destructures the non-iterable
+    // mock object and throws (→ HTTP 500). This suite's happy path instead needs
+    // the builder to RESOLVE to an array holding one entity row. Override getDb()
+    // with a thenable chain: every builder method returns the chain, and awaiting
+    // the chain yields `entityRowHolder.current` wrapped in an array (or []). The
+    // DB access paths in ai-translate.service — loadTranslatableFields /
+    // loadExistingTranslations (`select().from().where().limit(1)`, awaited) and
+    // persistTranslations (`update().set().where()`, awaited) — all terminate in
+    // an await, so a single thenable covers both the read and write paths. The
+    // `.from()` table is captured so the ai-service.factory's credentials query
+    // (from `aiProviderCredentials`) resolves to `[]` instead of the entity row.
+    const makeChain = (): Record<string, unknown> => {
+        let fromTable: unknown;
+        // Invariant this mock relies on: every getDb() call issues statements
+        // against ONE table (the entity table, or aiProviderCredentials). `rows`
+        // is broad-by-default — any table that is not the credentials stub yields
+        // the entity row. If ai-translate.service ever reads a second, different
+        // table on the same getDb() handle, extend this branch accordingly.
+        const rows = () => {
+            if (fromTable === aiProviderCredentialsStub) return [];
+            return entityRowHolder.current ? [entityRowHolder.current] : [];
+        };
+        const chain: Record<string, unknown> = {};
+        const self = () => chain;
+        for (const method of [
+            'select',
+            'where',
+            'innerJoin',
+            'leftJoin',
+            'orderBy',
+            'limit',
+            'update',
+            'set',
+            'insert',
+            'values',
+            'delete'
+        ]) {
+            chain[method] = self;
+        }
+        chain.from = (table: unknown) => {
+            fromTable = table;
+            return chain;
+        };
+        chain.returning = () => Promise.resolve(rows());
+        chain.execute = () => Promise.resolve(rows());
+        // Intentional thenable: the mock query builder must be awaitable to mimic
+        // Drizzle's terminal `await` on `select()…limit(1)` and `update()…where()`.
+        // biome-ignore lint/suspicious/noThenProperty: intentional awaitable mock builder
+        chain.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
+            Promise.resolve(rows()).then(resolve, reject);
+        return chain;
+    };
+
+    return {
+        ...base,
+        aiProviderCredentials: aiProviderCredentialsStub,
+        getDb: vi.fn(() => makeChain())
+    };
 });
 
 // ---------------------------------------------------------------------------
@@ -173,6 +261,33 @@ function buildTestApp(): OpenAPIHono<AppBindings> {
     return app;
 }
 
+/**
+ * Builds a mock entity row carrying every translatable source column across the
+ * four entity types (accommodation / destination / event / post) as non-empty
+ * Spanish strings, so `loadTranslatableFields` returns fields for whichever
+ * entity a test targets. The per-field i18n columns are `null` so
+ * `loadExistingTranslations` reports no existing translations and every target
+ * locale is treated as missing (the AI stub then "translates" each one).
+ */
+function makeEntityRow(): Record<string, unknown> {
+    return {
+        id: '00000000-0000-4000-8000-000000000001',
+        name: 'Cabaña del Río',
+        title: 'Título de Prueba',
+        summary: 'Resumen breve del contenido.',
+        description: 'Descripción larga del contenido para traducir.',
+        richDescription: 'Descripción enriquecida del contenido.',
+        content: 'Contenido extenso del post para traducir.',
+        nameI18n: null,
+        titleI18n: null,
+        summaryI18n: null,
+        descriptionI18n: null,
+        richDescriptionI18n: null,
+        contentI18n: null,
+        translationMeta: null
+    };
+}
+
 function resetMockState() {
     generateTextCalls.length = 0;
     nextGenerateTextResult.current = {
@@ -186,6 +301,8 @@ function resetMockState() {
     currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TRANSLATE]);
     currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 200]]);
     currentBillingLoadFailedForTest.current = false;
+    // Happy-path default: the entity exists. The 404 test overrides to null.
+    entityRowHolder.current = makeEntityRow();
 }
 
 // ---------------------------------------------------------------------------
@@ -222,7 +339,7 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
                 entityType: 'accommodation',
-                entityId: '00000000-0000-4000-0000-000000000001'
+                entityId: '00000000-0000-4000-8000-000000000001'
             })
         });
 
@@ -242,7 +359,7 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
             headers: makeMockActorHeaders(),
             body: JSON.stringify({
                 entityType: 'accommodation',
-                entityId: '00000000-0000-4000-0000-000000000001'
+                entityId: '00000000-0000-4000-8000-000000000001'
             })
         });
 
@@ -263,7 +380,7 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
             headers: makeMockActorHeaders(),
             body: JSON.stringify({
                 entityType: 'accommodation',
-                entityId: '00000000-0000-4000-0000-000000000001'
+                entityId: '00000000-0000-4000-8000-000000000001'
             })
         });
 
@@ -285,7 +402,7 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
             headers: makeMockActorHeaders(),
             body: JSON.stringify({
                 entityType: 'accommodation',
-                entityId: '00000000-0000-4000-0000-000000000001'
+                entityId: '00000000-0000-4000-8000-000000000001'
             })
         });
 
@@ -300,7 +417,7 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
         const res = await testApp.request(`${TEST_PATH}`, {
             method: 'POST',
             headers: makeMockActorHeaders(),
-            body: JSON.stringify({ entityId: '00000000-0000-4000-0000-000000000001' })
+            body: JSON.stringify({ entityId: '00000000-0000-4000-8000-000000000001' })
         });
 
         expect(res.status).toBe(400);
@@ -322,7 +439,7 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
             headers: makeMockActorHeaders(),
             body: JSON.stringify({
                 entityType: 'invalid_type',
-                entityId: '00000000-0000-4000-0000-000000000001'
+                entityId: '00000000-0000-4000-8000-000000000001'
             })
         });
 
@@ -349,7 +466,7 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
             headers: makeMockActorHeaders(),
             body: JSON.stringify({
                 entityType: 'accommodation',
-                entityId: '00000000-0000-4000-0000-000000000001'
+                entityId: '00000000-0000-4000-8000-000000000001'
             })
         });
 
@@ -375,7 +492,7 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
             headers: makeMockActorHeaders(),
             body: JSON.stringify({
                 entityType: 'accommodation',
-                entityId: '00000000-0000-4000-0000-000000000001',
+                entityId: '00000000-0000-4000-8000-000000000001',
                 targetLocales: ['en']
             })
         });
@@ -389,7 +506,7 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
             headers: makeMockActorHeaders(),
             body: JSON.stringify({
                 entityType: 'destination',
-                entityId: '11111111-1111-4111-1111-111111111111'
+                entityId: '11111111-1111-4111-8111-111111111111'
             })
         });
 
@@ -402,7 +519,7 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
             headers: makeMockActorHeaders(),
             body: JSON.stringify({
                 entityType: 'event',
-                entityId: '33333333-3333-4333-3333-333333333333'
+                entityId: '33333333-3333-4333-8333-333333333333'
             })
         });
 
@@ -415,7 +532,7 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
             headers: makeMockActorHeaders(),
             body: JSON.stringify({
                 entityType: 'post',
-                entityId: '44444444-4444-4444-4444-444444444444'
+                entityId: '44444444-4444-4444-8444-444444444444'
             })
         });
 
@@ -427,13 +544,15 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
     // -----------------------------------------------------------------------
 
     it('returns 404 when entity is not found in database', async () => {
-        // Use an ID that doesn't exist in any table
+        // Simulate the entity being absent: the query builder resolves to [].
+        entityRowHolder.current = null;
+
         const res = await testApp.request(`${TEST_PATH}`, {
             method: 'POST',
             headers: makeMockActorHeaders(),
             body: JSON.stringify({
                 entityType: 'accommodation',
-                entityId: 'ffffffff-ffff-4fff-ffff-ffffffffffff'
+                entityId: 'ffffffff-ffff-4fff-8fff-ffffffffffff'
             })
         });
 
