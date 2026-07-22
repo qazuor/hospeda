@@ -36,10 +36,11 @@
 import { aiCredentialAudit, aiProviderCredentials, getDb } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { and, eq, isNull, sql } from 'drizzle-orm';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { getDecryptedAiProviderCredential } from '../../../src/services/ai-credential-vault.service';
 import { validateApiEnv } from '../../../src/utils/env';
+import { createTestUser } from '../../e2e/setup/seed-helpers';
 import { testDb } from '../../e2e/setup/test-database';
 
 // ---------------------------------------------------------------------------
@@ -120,6 +121,15 @@ describe('AI credential vault round-trip (SPEC-173 T-037 AC-3)', () => {
 
     afterEach(async () => {
         await testDb.clean();
+    });
+
+    // `afterEach` truncates every table (including `users`) between tests, so
+    // the `ai_credential_audit.actor_id` FK on `adminActorId` must be
+    // re-seeded before each test runs. `beforeEach` also runs before the
+    // FIRST test (there is no preceding `afterEach` at that point), covering
+    // the case where the actor was never seeded in `beforeAll`.
+    beforeEach(async () => {
+        await createTestUser({ id: adminActorId });
     });
 
     // -------------------------------------------------------------------------

@@ -42,11 +42,12 @@ import { aiUsage, getDb } from '@repo/db';
 import { type PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { and, eq } from 'drizzle-orm';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { actorMiddleware } from '../../../src/middlewares/actor';
 import { createAiQuotaMiddleware } from '../../../src/middlewares/ai-quota';
 import { createErrorHandler } from '../../../src/middlewares/response';
 import type { AppBindings } from '../../../src/types';
+import { createTestUser } from '../../e2e/setup/seed-helpers';
 import { testDb } from '../../e2e/setup/test-database';
 
 // ---------------------------------------------------------------------------
@@ -163,6 +164,15 @@ describe('AI quota enforcement middleware (SPEC-173 T-037 AC-5 + AC-6)', () => {
 
     afterEach(async () => {
         await testDb.clean();
+    });
+
+    // `afterEach` truncates every table (including `users`) between tests, so
+    // the stable `userId` referenced by the `ai_usage.user_id` FK must be
+    // re-seeded before each test runs. `beforeEach` runs before the FIRST test
+    // too (there is no preceding `afterEach` at that point), covering the case
+    // where the user was never seeded in `beforeAll`.
+    beforeEach(async () => {
+        await createTestUser({ id: userId });
     });
 
     // -------------------------------------------------------------------------
