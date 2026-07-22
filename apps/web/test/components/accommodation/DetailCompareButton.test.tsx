@@ -250,7 +250,7 @@ describe('DetailCompareButton — guard outcomes', () => {
         expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'false');
         const arg = mockAddToast.mock.calls[0]?.[0];
         expect(arg.type).toBe('info');
-        expect(arg.action?.href).toBe('/es/suscriptores/planes/');
+        expect(arg.action?.href).toBe('/es/suscriptores/turistas/');
     });
 
     it('shows a warning toast when the plan is at its per-plan cap', () => {

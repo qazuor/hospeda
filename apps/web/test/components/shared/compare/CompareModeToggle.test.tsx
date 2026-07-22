@@ -111,7 +111,7 @@ vi.mock('../../../../src/components/shared/compare/CompareUpsellPopover.client',
             data-testid="compare-upsell-popover"
         >
             <p>{message}</p>
-            <a href="/es/suscriptores/planes/">{ctaLabel}</a>
+            <a href="/es/suscriptores/turistas/">{ctaLabel}</a>
             <button
                 type="button"
                 onClick={onClose}
