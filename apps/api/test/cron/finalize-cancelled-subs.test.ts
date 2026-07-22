@@ -36,6 +36,7 @@ const {
     mockSendNotification,
     mockWithTransaction,
     mockSyncFeaturedByEntitlementForOwner,
+    mockSentryCaptureException,
     mockSql
 } = vi.hoisted(() => ({
     mockHandleSubscriptionCancellationAddons: vi.fn(),
@@ -46,6 +47,7 @@ const {
     mockDbSelectChain: vi.fn(),
     mockValidateTransition: vi.fn(),
     mockSendNotification: vi.fn().mockResolvedValue(undefined),
+    mockSentryCaptureException: vi.fn(),
     // withTransaction executes the callback with a tx object that mirrors the
     // mocked db (same insert/update/select handles).
     mockWithTransaction: vi.fn(),
@@ -90,6 +92,14 @@ vi.mock('../../src/utils/notification-helper.js', () => ({
     sendNotification: mockSendNotification
 }));
 
+// HOS-237: hardCancelPreapprovalBestEffort captures a failed MP hard-cancel to
+// Sentry. Spy only captureException; keep every other export real so unrelated
+// Sentry calls in the transitive import graph stay no-ops.
+vi.mock('@sentry/node', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@sentry/node')>();
+    return { ...actual, captureException: mockSentryCaptureException };
+});
+
 // Drizzle DB mock: select chain returns rows fed by `dueRowsState`.
 // The D3 reminder tests also need access-ending rows (accessEndingRowsState).
 // A `selectCallCount` counter lets the mock return the right dataset for the
@@ -100,6 +110,13 @@ interface DueRow {
     id: string;
     customerId: string;
     status: string;
+    /**
+     * HOS-237: the MP preapproval id. `finalizeOne`'s caller hard-cancels the
+     * preapproval after finalization. Defaults to a value in `makeDueRow` so
+     * the realistic soft-cancel path (always has a preapproval) is exercised;
+     * set to `null` to test the unlinked case.
+     */
+    mpSubscriptionId?: string | null;
     /**
      * Optional owner external id (`users.id`). Present only in SPEC-309 T-024
      * tests — `resolveOwnerUserId` shares the same generic `getDb()` select
@@ -204,7 +221,8 @@ vi.mock('@repo/db', async (importOriginal) => {
             trialEnd: 'TRIAL_END',
             cancelAtPeriodEnd: 'CANCEL_AT_PERIOD_END',
             deletedAt: 'DELETED_AT',
-            updatedAt: 'UPDATED_AT'
+            updatedAt: 'UPDATED_AT',
+            mpSubscriptionId: 'MP_SUBSCRIPTION_ID'
         },
         billingSubscriptionEvents: { _table: 'billing_subscription_events' },
         eq: vi.fn((col, val) => ({ _eq: [col, val] })),
@@ -254,7 +272,14 @@ function makeCronCtx(dryRun = false) {
 function makeBilling() {
     return {
         customers: { get: vi.fn().mockResolvedValue(null) },
-        plans: { get: vi.fn().mockResolvedValue(null) }
+        plans: { get: vi.fn().mockResolvedValue(null) },
+        // HOS-237: the finalize handler hard-cancels the MP preapproval via
+        // billing.getPaymentAdapter().subscriptions.cancel(). A throwaway spy is
+        // enough for tests that do not assert on it; dedicated HOS-237 tests
+        // supply their own billing with a captured cancel spy.
+        getPaymentAdapter: vi.fn(() => ({
+            subscriptions: { cancel: vi.fn().mockResolvedValue(undefined) }
+        }))
     };
 }
 
@@ -264,6 +289,7 @@ function makeDueRow(overrides: Partial<DueRow> = {}): DueRow {
         id: SUB_ID_1,
         customerId: CUSTOMER_ID_1,
         status: 'active',
+        mpSubscriptionId: 'preapproval-default',
         ...overrides
     };
 }
@@ -289,6 +315,7 @@ beforeEach(() => {
     mockSendNotification.mockReset();
     mockWithTransaction.mockReset();
     mockSyncFeaturedByEntitlementForOwner.mockReset();
+    mockSentryCaptureException.mockReset();
     // HOS-215: clear call history only — keep the CASE-WHEN implementation
     // (findDueSoftCancelledSubs / sendAccessEndingReminders call it on every
     // handler run, so a full mockReset() would silently break every test).
@@ -386,6 +413,10 @@ describe('_internals', () => {
 
     it('exports finalizeOne function', () => {
         expect(typeof _internals.finalizeOne).toBe('function');
+    });
+
+    it('exports hardCancelPreapprovalBestEffort function (HOS-237)', () => {
+        expect(typeof _internals.hardCancelPreapprovalBestEffort).toBe('function');
     });
 });
 
@@ -514,6 +545,110 @@ describe('handler: happy path — due soft-cancelled sub', () => {
         expect(result.processed).toBe(2);
         expect(result.errors).toBe(0);
         expect(mockClearEntitlementCache).toHaveBeenCalledTimes(2);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-237: MP preapproval hard-cancel after finalization
+//
+// Soft-cancel only PAUSES the MP preapproval. After the local sub is finalized
+// to `cancelled`, the finalize handler hard-cancels the preapproval so the
+// provider state matches (cancel(mpId, false) → MP status 'cancelled'). This
+// is best-effort: a provider failure must not fail the local finalization.
+// ---------------------------------------------------------------------------
+
+describe('handler: HOS-237 — MP preapproval hard-cancel after finalization', () => {
+    /** Billing mock whose payment adapter exposes a captured cancel spy. */
+    function billingWithCancelSpy(cancelSpy: ReturnType<typeof vi.fn>) {
+        return {
+            customers: { get: vi.fn().mockResolvedValue(null) },
+            plans: { get: vi.fn().mockResolvedValue(null) },
+            getPaymentAdapter: vi.fn(() => ({ subscriptions: { cancel: cancelSpy } }))
+        };
+    }
+
+    it('hard-cancels the MP preapproval (cancel(mpId, false)) for a finalized sub', async () => {
+        const cancelSpy = vi.fn().mockResolvedValue(undefined);
+        mockGetQZPayBilling.mockReturnValue(billingWithCancelSpy(cancelSpy));
+        dueRowsState.rows = [makeDueRow({ mpSubscriptionId: 'mp-preapproval-777' })];
+
+        const ctx = makeCronCtx();
+        const result = await finalizeCancelledSubsJob.handler(ctx);
+
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(1);
+        // Irreversible hard-cancel: cancelAtPeriodEnd=false → MP status 'cancelled'.
+        expect(cancelSpy).toHaveBeenCalledWith('mp-preapproval-777', false);
+    });
+
+    it('skips the hard-cancel when the sub has no linked preapproval (mpSubscriptionId null)', async () => {
+        const cancelSpy = vi.fn().mockResolvedValue(undefined);
+        const billing = billingWithCancelSpy(cancelSpy);
+        mockGetQZPayBilling.mockReturnValue(billing);
+        dueRowsState.rows = [makeDueRow({ mpSubscriptionId: null })];
+
+        const ctx = makeCronCtx();
+        const result = await finalizeCancelledSubsJob.handler(ctx);
+
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(1);
+        // Early-returns before touching the adapter.
+        expect(billing.getPaymentAdapter).not.toHaveBeenCalled();
+        expect(cancelSpy).not.toHaveBeenCalled();
+        expect(ctx.logger.warn).toHaveBeenCalledWith(
+            'finalize-cancelled-subs: no mpSubscriptionId — skipping MP preapproval hard-cancel',
+            expect.objectContaining({ subscriptionId: SUB_ID_1 })
+        );
+    });
+
+    it('is non-blocking: an MP hard-cancel failure does not fail the finalization', async () => {
+        const cancelSpy = vi.fn().mockRejectedValue(new Error('MP 503'));
+        mockGetQZPayBilling.mockReturnValue(billingWithCancelSpy(cancelSpy));
+        dueRowsState.rows = [makeDueRow({ mpSubscriptionId: 'mp-preapproval-777' })];
+
+        const ctx = makeCronCtx();
+        const result = await finalizeCancelledSubsJob.handler(ctx);
+
+        // Finalization still succeeds; the MP failure is logged, not counted.
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(1);
+        expect(result.errors).toBe(0);
+        expect(cancelSpy).toHaveBeenCalledWith('mp-preapproval-777', false);
+        expect(ctx.logger.error).toHaveBeenCalledWith(
+            'finalize-cancelled-subs: MP preapproval hard-cancel failed (non-blocking)',
+            expect.objectContaining({
+                subscriptionId: SUB_ID_1,
+                mpSubscriptionId: 'mp-preapproval-777'
+            })
+        );
+        // The failure is captured to Sentry so ops can sweep the lingering
+        // paused preapproval (there is no automated retry).
+        expect(mockSentryCaptureException).toHaveBeenCalledWith(
+            expect.any(Error),
+            expect.objectContaining({
+                tags: expect.objectContaining({ action: 'finalize_hard_cancel_preapproval' }),
+                extra: expect.objectContaining({
+                    subscriptionId: SUB_ID_1,
+                    mpSubscriptionId: 'mp-preapproval-777'
+                })
+            })
+        );
+    });
+
+    it('does NOT hard-cancel when the sub was not finalized (error outcome)', async () => {
+        const cancelSpy = vi.fn().mockResolvedValue(undefined);
+        mockGetQZPayBilling.mockReturnValue(billingWithCancelSpy(cancelSpy));
+        // Transition guard throws → finalizeOne returns error → no hard-cancel.
+        mockValidateTransition.mockImplementation(function () {
+            throw new Error('Invalid transition');
+        });
+        dueRowsState.rows = [makeDueRow({ mpSubscriptionId: 'mp-preapproval-777' })];
+
+        const ctx = makeCronCtx();
+        const result = await finalizeCancelledSubsJob.handler(ctx);
+
+        expect(result.success).toBe(false);
+        expect(cancelSpy).not.toHaveBeenCalled();
     });
 });
 

@@ -202,6 +202,10 @@ export function createStubMercadoPagoAdapter(): QZPayPaymentAdapter {
             resume: async (_providerSubscriptionId: string): Promise<void> => {
                 // No-op.
             },
+            uncancel: async (_providerSubscriptionId: string): Promise<void> => {
+                // No-op: reverses cancel(cancelAtPeriodEnd) — there is no
+                // provider-side preapproval to re-authorize in the stub.
+            },
             retrieve: async (
                 providerSubscriptionId: string
             ): Promise<QZPayProviderSubscription> => {
