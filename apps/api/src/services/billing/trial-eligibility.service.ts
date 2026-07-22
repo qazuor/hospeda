@@ -11,14 +11,17 @@
  * `GET /trial-eligibility` route now call through this one function, so the
  * two can never drift on how they answer the same question.
  *
- * "One trial per customer, for life": any prior subscription that was
- * authorized by the provider at least once — any authorized status (active,
- * trialing, cancelled, comp, past_due, ...), any product domain (accommodation
- * or commerce) — disqualifies. A user who has never checked out at all (e.g.
- * every user on the implicit `tourist-free` default, which never creates a
- * `billing_subscriptions` row) is eligible — and so is one whose only rows are
- * `abandoned` / never-authorized `pending_provider` checkouts they backed out
- * of (HOS-230), since those never granted a trial.
+ * "One trial per customer, for life": any prior subscription that consumed a
+ * trial-equivalent benefit — one authorized by the provider at least once
+ * (active, trialing, past_due, paused, expired), or an explicit `comp` grant —
+ * disqualifies, in any product domain (accommodation or commerce). A user who
+ * has never checked out at all (e.g. every user on the implicit `tourist-free`
+ * default, which never creates a `billing_subscriptions` row) is eligible — and
+ * so is one whose only rows are checkouts they backed out of before
+ * authorization: `abandoned` / never-authorized `pending_provider`, and
+ * `cancelled` rows that were reached directly from `pending_provider` (HOS-230),
+ * since those never granted a trial. A `cancelled` row is ambiguous and is
+ * disambiguated via the subscription's `billing_subscription_events` history.
  *
  * @module services/billing/trial-eligibility
  */
@@ -108,10 +111,23 @@ const AUTHORIZED_STATUSES: ReadonlySet<SubscriptionStatusEnum> = new Set([
     SubscriptionStatusEnum.EXPIRED
 ]);
 
-/** Whether a raw stored status value normalizes to an authorized status. */
-function isAuthorizedStatus(rawStatus: unknown): boolean {
+/**
+ * Whether a raw stored status value normalizes to one whose presence in a
+ * subscription's event history PROVES it consumed the trial: any authorized
+ * status, PLUS `comp`.
+ *
+ * `comp` is included even though it is never provider-authorized — it is an
+ * explicit permanent (free-forever) grant that is trial-consuming. A comp
+ * subscription later revoked (`comp` → `cancelled`, the SPEC-262 admin-revoke
+ * transition) leaves `previousStatus: 'comp'` as its only history; without this
+ * it would be misclassified as never-authorized and wrongly re-grant a trial.
+ */
+function isTrialConsumingStatus(rawStatus: unknown): boolean {
     const status = normalizeStoredSubscriptionStatus(rawStatus);
-    return status !== null && AUTHORIZED_STATUSES.has(status);
+    return (
+        status !== null &&
+        (AUTHORIZED_STATUSES.has(status) || status === SubscriptionStatusEnum.COMP)
+    );
 }
 
 /** Classification of a prior subscription against the trial-eligibility rule. */
@@ -160,10 +176,11 @@ function classifyPriorSubscription(sub: PriorSubscription): PriorSubscriptionCla
  * (`active`/`trialing` → `cancelled`, consumed the trial) from a never-activated
  * backout (`pending_provider` → `cancelled`, did NOT, the HOS-230 case).
  *
- * A subscription was authorized iff any of its events carries an authorized
- * status in `previousStatus` OR `newStatus` (checking both catches the
- * authorization transition itself and the later cancel-from-authorized event).
- * A `pending_provider` → `cancelled` row has neither, so it reads as
+ * A subscription consumed the trial iff any of its events carries a
+ * trial-consuming status (authorized, or `comp`) in `previousStatus` OR
+ * `newStatus` — checking both catches the authorization transition itself and
+ * the later cancel-from-authorized (or comp-revoke) event. A
+ * `pending_provider` → `cancelled` row has neither, so it reads as
  * never-authorized and does NOT consume the trial. A cancelled row with NO
  * events (a data-integrity oddity — a real cancel always writes an event) reads
  * as never-authorized, the direction that fixes the bug.
@@ -184,7 +201,8 @@ async function anyCancelledSubscriptionWasAuthorized(
         .where(inArray(billingSubscriptionEvents.subscriptionId, [...subscriptionIds]));
 
     return events.some(
-        (event) => isAuthorizedStatus(event.previousStatus) || isAuthorizedStatus(event.newStatus)
+        (event) =>
+            isTrialConsumingStatus(event.previousStatus) || isTrialConsumingStatus(event.newStatus)
     );
 }
 

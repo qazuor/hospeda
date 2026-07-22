@@ -220,6 +220,16 @@ describe('hasAnyPriorSubscription', () => {
         expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(false);
     });
 
+    // A comp (free-forever) grant later revoked (comp -> cancelled, SPEC-262
+    // admin revoke) is trial-consuming even though it was never provider-
+    // authorized. Its only event carries previousStatus 'comp'; it must count.
+    it('returns true for a cancelled row whose history shows it was a comp grant (revoked comp)', async () => {
+        mockSubscriptionEvents([{ previousStatus: 'comp', newStatus: 'cancelled' }]);
+        const billing = makeBilling([{ id: 'sub-1', status: 'cancelled' }]);
+
+        expect(await hasAnyPriorSubscription({ billing, customerId: CUSTOMER_ID })).toBe(true);
+    });
+
     // The event query must batch ALL cancelled rows; one authorized among them
     // disqualifies.
     it('returns true when one of several cancelled rows was authorized', async () => {
