@@ -575,6 +575,9 @@
             "pauseError": "Could not pause the subscription.",
             "resumeSuccess": "Subscription resumed.",
             "resumeError": "Could not resume the subscription.",
+            "uncancelButton": "Discard cancellation",
+            "uncancelSuccess": "Cancellation discarded. Your subscription stays active.",
+            "uncancelError": "Could not discard the cancellation.",
             "status": {
                 "active": "Active",
                 "trial": "Trial",

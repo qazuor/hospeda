@@ -575,6 +575,9 @@
             "pauseError": "No se pudo pausar la suscripción.",
             "resumeSuccess": "Suscripción reanudada.",
             "resumeError": "No se pudo reanudar la suscripción.",
+            "uncancelButton": "Descartar cancelación",
+            "uncancelSuccess": "Cancelación descartada. Tu suscripción sigue activa.",
+            "uncancelError": "No se pudo descartar la cancelación.",
             "status": {
                 "active": "Activa",
                 "trial": "Prueba",
