@@ -122,6 +122,13 @@ describe("DEFAULT_PROMPTS['search'] — SPEC-212 conversational refinement frami
         expect(prompt).toMatch(/prefer NEW SEARCH/);
     });
 
+    it('carves out nearby-expansion and destination-less restatements from NEW SEARCH', () => {
+        // Reconcile with the per-request NEARBY EXPANSION instruction and avoid
+        // dropping the destination when the new message names none.
+        expect(prompt).toMatch(/widen the current search to nearby or surrounding destinations/);
+        expect(prompt).toMatch(/names NO destination at all keeps the current destination/);
+    });
+
     it('requires the returned filters to stay consistent with the reply', () => {
         expect(prompt).toMatch(/consistent with the assistant's natural-language reply/);
     });

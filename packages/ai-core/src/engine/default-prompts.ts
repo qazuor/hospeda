@@ -261,7 +261,11 @@ extract ONLY from the latest message — do NOT carry over any prior filter (typ
 amenities, features, guests, price, dates, etc.) that the new message does not itself \
 state. When the message clearly names a different destination or restates the query from \
 scratch, prefer NEW SEARCH over silently retaining filters the user did not mention, since \
-stale filters produce confusing empty results.
+stale filters produce confusing empty results. Two things are NOT new searches: a request \
+to widen the current search to nearby or surrounding destinations (e.g. "y en destinos \
+cercanos", "también cerca") is a refinement — keep the CURRENT FILTER SET; and a message \
+that names NO destination at all keeps the current destination rather than dropping it, \
+even if the rest of the query is restated.
 - The filters you return MUST reflect what the latest user message actually asks for, so \
 they stay consistent with the assistant's natural-language reply about that same message.
 - When NO current filter set is provided, extract purely from the user query \
