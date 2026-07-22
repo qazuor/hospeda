@@ -1141,6 +1141,96 @@ describe('PlanPurchaseButton', () => {
             });
         });
 
+        it('uses the SINGULAR form ("1 mes") for a single-cycle percentage discount', async () => {
+            // Regression (BETA-202): a 1-cycle discount must read "por 1 mes"
+            // (singular), never the pluralised "por 1 meses".
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: () =>
+                        Promise.resolve({
+                            data: {
+                                valid: true,
+                                effectPreview: {
+                                    effectKind: 'discount',
+                                    valueKind: 'percentage',
+                                    value: 30,
+                                    durationCycles: 1,
+                                    extraDays: null,
+                                    finalAmount: 105000
+                                }
+                            }
+                        })
+                })
+            );
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'BIENVENIDO30');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            await waitFor(() => {
+                // Anchored regex — `toHaveTextContent('...1 mes')` alone is a
+                // substring match and would also pass on the buggy "1 meses"
+                // output ("1 mes" ⊂ "1 meses"). `$` closes the door on that.
+                expect(screen.getByRole('status')).toHaveTextContent(
+                    /^30% de descuento por 1 mes$/
+                );
+            });
+            // Belt-and-suspenders: the pluralised copy must NOT leak through.
+            expect(screen.getByRole('status')).not.toHaveTextContent('1 meses');
+        });
+
+        it('uses the SINGULAR form ("1 mes") for a single-cycle fixed discount', async () => {
+            // Regression (BETA-202): mirrors the percentage case for the
+            // fixed-amount branch.
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: () =>
+                        Promise.resolve({
+                            data: {
+                                valid: true,
+                                effectPreview: {
+                                    effectKind: 'discount',
+                                    valueKind: 'fixed',
+                                    value: 50000,
+                                    durationCycles: 1,
+                                    extraDays: null,
+                                    finalAmount: 100000
+                                }
+                            }
+                        })
+                })
+            );
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'FIXED500X1');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            await waitFor(() => {
+                // Anchored regex — see the percentage case above for why a bare
+                // substring assertion is insufficient here.
+                expect(screen.getByRole('status')).toHaveTextContent(
+                    /^\$500 de descuento por 1 mes$/
+                );
+            });
+            expect(screen.getByRole('status')).not.toHaveTextContent('1 meses');
+        });
+
         it('shows the trial-extension days for a trial_extension code', async () => {
             mockAuthenticated();
             vi.stubGlobal(
