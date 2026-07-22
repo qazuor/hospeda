@@ -972,6 +972,32 @@
         "errors": {
             "purchaseFailed": "Não foi possível iniciar a compra. Tente novamente.",
             "missingAccommodation": "Escolha uma hospedagem para continuar."
+        },
+        "catalog": {
+            "visibility-boost-7d": {
+                "name": "Impulso de visibilidade (7 dias)",
+                "description": "Sua hospedagem aparece em destaque nos resultados de busca por 7 dias."
+            },
+            "visibility-boost-30d": {
+                "name": "Impulso de visibilidade (30 dias)",
+                "description": "Sua hospedagem aparece em destaque nos resultados de busca por 30 dias."
+            },
+            "extra-photos-20": {
+                "name": "Pacote de fotos extra (+20 fotos)",
+                "description": "Adiciona 20 fotos adicionais a cada hospedagem. Renova mensalmente."
+            },
+            "extra-accommodations-5": {
+                "name": "Pacote de hospedagens extra (+5)",
+                "description": "Adiciona 5 hospedagens adicionais ao seu plano. Renova mensalmente."
+            },
+            "extra-properties-5": {
+                "name": "Pacote de propriedades extra (+5)",
+                "description": "Adiciona 5 propriedades adicionais ao seu complexo. Renova mensalmente."
+            },
+            "ai-support-monthly": {
+                "name": "Suporte com IA (mensal)",
+                "description": "Desbloqueia ferramentas de suporte com IA para anfitriões, incluindo sugestões de resposta inteligentes e tratamento automático de perguntas frequentes de hóspedes. Renova mensalmente."
+            }
         }
     }
 }
