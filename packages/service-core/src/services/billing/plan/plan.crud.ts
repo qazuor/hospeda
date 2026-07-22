@@ -33,6 +33,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { diffPlanFields, insertPlanAuditLog } from './plan.audit.js';
 import type { CreatePlanInput, ListPlansFilters, UpdatePlanInput } from './plan.types.js';
 import { findCapabilityFieldViolation } from './plan.types.js';
+import { enqueuePlanPriceChange } from './plan-price-change.service.js';
 
 // ---------------------------------------------------------------------------
 // Mapping
@@ -641,6 +642,20 @@ export async function updatePlan(
                         .update(billingPrices)
                         .set({ unitAmount: input.monthlyPriceArs })
                         .where(eq(billingPrices.id, monthlyPrice.id));
+                    // HOS-176: enqueue MP propagation when an EXISTING price actually
+                    // changed (a no-op write or a brand-new price with no subscribers
+                    // needs no propagation). Same transaction → atomic with the price write.
+                    if (monthlyPrice.unitAmount !== input.monthlyPriceArs) {
+                        await enqueuePlanPriceChange({
+                            db,
+                            planId: id,
+                            priceId: monthlyPrice.id,
+                            billingInterval: 'month',
+                            oldAmount: monthlyPrice.unitAmount,
+                            newAmount: input.monthlyPriceArs,
+                            actorId
+                        });
+                    }
                 } else {
                     await db.insert(billingPrices).values({
                         planId: id,
@@ -680,6 +695,20 @@ export async function updatePlan(
                         .update(billingPrices)
                         .set({ unitAmount: input.annualPriceArs })
                         .where(eq(billingPrices.id, annualPrice.id));
+                    // HOS-176: propagate an annual price change (since HOS-171 annual is
+                    // a recurring MP preapproval too). Deactivation (null/0, handled above)
+                    // is NOT a price change to propagate.
+                    if (annualPrice.unitAmount !== input.annualPriceArs) {
+                        await enqueuePlanPriceChange({
+                            db,
+                            planId: id,
+                            priceId: annualPrice.id,
+                            billingInterval: 'year',
+                            oldAmount: annualPrice.unitAmount,
+                            newAmount: input.annualPriceArs,
+                            actorId
+                        });
+                    }
                 } else {
                     await db.insert(billingPrices).values({
                         planId: id,

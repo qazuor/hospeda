@@ -226,8 +226,16 @@ export const AccommodationCreateHttpSchema = z.object({
     // anti-abuse guards, not product limits. Per-unit capacity modelling for
     // hotels/complexes is tracked as a dedicated follow-up spec.
     maxGuests: z.coerce.number().int().min(1).max(200),
-    bedrooms: z.coerce.number().int().min(0).max(100),
-    bathrooms: z.coerce.number().int().min(1).max(100),
+    bedrooms: z.coerce
+        .number()
+        .int()
+        .min(0, { message: 'zodError.accommodation.extraInfo.bedrooms.min' })
+        .max(100, { message: 'zodError.accommodation.extraInfo.bedrooms.max' }),
+    bathrooms: z.coerce
+        .number()
+        .int()
+        .min(1, { message: 'zodError.accommodation.extraInfo.bathrooms.min' })
+        .max(100, { message: 'zodError.accommodation.extraInfo.bathrooms.max' }),
 
     // Pricing
     basePrice: z.coerce.number().min(0),
