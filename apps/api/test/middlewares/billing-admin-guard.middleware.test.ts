@@ -289,6 +289,22 @@ describe('billingAdminGuardMiddleware', () => {
             expect(ctx.json).not.toHaveBeenCalled();
         });
 
+        // HOS-232: user self-service un-cancel at /subscriptions/:id/uncancel.
+        // Must pass the admin guard like /cancel (regression for the DoA bug where
+        // a missing allowedSubPaths entry 403s the whole feature for real users).
+        it('should allow POST /subscriptions/:id/uncancel for regular users (un-cancel HOS-232)', async () => {
+            const ctx = createMockContext({
+                method: 'POST',
+                path: '/api/v1/protected/billing/subscriptions/sub_abc123/uncancel'
+            });
+            const middleware = billingAdminGuardMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
+
         it('should still block DELETE /subscriptions/:id for regular users (hard-cancel remains admin-only)', async () => {
             const ctx = createMockContext({
                 method: 'DELETE',

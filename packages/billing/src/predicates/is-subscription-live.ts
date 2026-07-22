@@ -44,6 +44,8 @@ export interface IsSubscriptionLiveInput {
  * grant access to entitlements).
  *
  * Logic:
+ * - `'comp'` (SPEC-262 complimentary): **always** live — a comped subscription
+ *   is never charged and has no period/trial end to expire against (HOS-239).
  * - `'active'`: live iff `currentPeriodEnd` is absent/null **or** the period
  *   has not exceeded the cron-lag grace window (default 6 h).
  * - `'trialing'`: live iff `trialEnd` is absent/null **or** the trial has not
@@ -99,6 +101,18 @@ export function isSubscriptionLive(input: IsSubscriptionLiveInput): boolean {
         nowMs = Date.now(),
         graceHours = BILLING_CRON_LAG_GRACE_HOURS
     } = input;
+
+    if (status === 'comp') {
+        // HOS-239: a permanently-complimentary subscription (SPEC-262) grants its
+        // plan's entitlements forever — it is never charged and has no period/trial
+        // end to expire against, so it is unconditionally live. Aligns the
+        // date-aware gate (publish eligibility via `checkEligibility`) with the
+        // status-only entitlement finds (isEntitlementGrantingStatus), which
+        // already treat comp as live; before this, a HOST comped on an owner plan
+        // passed the entitlement middleware but was blocked from actually
+        // publishing because checkEligibility filtered the comp sub out.
+        return true;
+    }
 
     if (status === 'trialing') {
         const graceLimitMs = graceHours * 3_600_000;

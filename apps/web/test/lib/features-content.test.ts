@@ -164,8 +164,10 @@ describe('features-content — brochure cupo spot-checks', () => {
 // ─── Próximamente ───────────────────────────────────────────────────────────
 
 describe('features-content — próximamente items', () => {
-    it('has exactly 7 items', () => {
-        expect(SOON_ITEMS).toHaveLength(7);
+    it('has exactly 6 items', () => {
+        // HOS-19 removed the shipped `whatsapp-listing` entry (WhatsApp contact
+        // is now live on the accommodation detail page, no longer "coming soon").
+        expect(SOON_ITEMS).toHaveLength(6);
     });
 
     it('every item has a unique id', () => {

@@ -346,10 +346,12 @@ export function gateExternalCalendarSync(): AppMiddleware {
  * );
  * ```
  */
-// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
-// (Reserved — Phantom Gates section). The accommodation schema has no dedicated
-// whatsappNumber field; this gate targets a future PATCH surface. Do NOT delete and
-// do NOT build the route without a spec.
+// PHANTOM-GATE (SPEC-145): still not wired to any route. HOS-19 shipped WhatsApp
+// contact as a VIEWER-gated READ feature (the number is gated by the tourist's
+// plan on GET /protected/accommodations/:id/whatsapp), NOT an owner WRITE gate —
+// so this write-side gate is intentionally NOT used and remains reserved. Any
+// owner may set contactInfo.whatsapp freely (BETA-151). Do NOT delete and do NOT
+// wire this without a new spec. See docs/billing/endpoint-gate-matrix.md.
 export function gateWhatsAppDisplay(): AppMiddleware {
     return async (c, next) => {
         const canDisplayWhatsApp = hasEntitlement(c, EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY);
@@ -427,10 +429,12 @@ export function gateWhatsAppDisplay(): AppMiddleware {
  * );
  * ```
  */
-// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
-// (Reserved — Phantom Gates section). The accommodation schema has no dedicated
-// whatsappDirectLink field; this gate targets a future PATCH surface. Do NOT delete
-// and do NOT build the route without a spec.
+// PHANTOM-GATE (SPEC-145): still not wired to any route. HOS-19 shipped WhatsApp
+// "direct" as a VIEWER capability — the `wa.me` deep link is authorized by the
+// tourist's CAN_CONTACT_WHATSAPP_DIRECT plan on GET /protected/accommodations/:id/whatsapp,
+// NOT by an owner-stored flag. There is no `whatsappDirectLink` column and this
+// write-side gate is intentionally NOT used. Do NOT delete and do NOT wire this
+// without a new spec. See docs/billing/endpoint-gate-matrix.md.
 export function gateWhatsAppDirect(): AppMiddleware {
     return async (c, next) => {
         const canUseWhatsAppDirect = hasEntitlement(c, EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT);

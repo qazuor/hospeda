@@ -575,6 +575,9 @@
             "pauseError": "Não foi possível pausar a assinatura.",
             "resumeSuccess": "Assinatura retomada.",
             "resumeError": "Não foi possível retomar a assinatura.",
+            "uncancelButton": "Descartar cancelamento",
+            "uncancelSuccess": "Cancelamento descartado. Sua assinatura continua ativa.",
+            "uncancelError": "Não foi possível descartar o cancelamento.",
             "status": {
                 "active": "Ativa",
                 "trial": "Teste",
