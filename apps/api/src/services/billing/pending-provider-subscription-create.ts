@@ -113,6 +113,21 @@ export interface CreatePendingProviderSubscriptionInput {
     readonly freeTrialDays?: number;
     /** A resolved-but-not-yet-applied discount (SPEC-262), if a `discount` promo code was used. */
     readonly pendingDiscount?: PendingCheckoutDiscount;
+    /**
+     * A DB-backed `trial_extension` promo whose free days were granted on this
+     * checkout (HOS-240). Snapshotted on the `billing_pending_checkouts`
+     * correlation row and DEFERRED to link time — exactly like
+     * {@link pendingDiscount}. The redemption (`used_count++`, usage row,
+     * `promo_code_id` stamp) is recorded by `link-preapproval.service.ts` ONLY
+     * once the real MercadoPago preapproval is linked, so an abandoned checkout
+     * never burns a capped code for a subscription that never activated.
+     * Omitted for config-backed trials (no DB row), kill-switched/ineligible
+     * trials, and non-trial checkouts.
+     */
+    readonly pendingTrialExtension?: {
+        readonly promoCodeId: string;
+        readonly code: string;
+    };
     /** Product domain to stamp on the subscription. Defaults to `'accommodation'`. */
     readonly productDomain?: string;
     /** Whether the customer/record is in live mode. */
@@ -170,6 +185,7 @@ export async function createPendingProviderSubscription(
         trialGranted,
         freeTrialDays,
         pendingDiscount,
+        pendingTrialExtension,
         livemode
     } = input;
     const productDomain = input.productDomain ?? ProductDomainEnum.ACCOMMODATION;
@@ -189,9 +205,10 @@ export async function createPendingProviderSubscription(
         const tx = ctx.tx!;
 
         // 1. Insert the pending_provider subscription row. No mp_subscription_id
-        //    (the preapproval does not exist yet) and no promo_code_id (a
-        //    pendingDiscount is not yet REDEEMED — only resolved — until F2/F3
-        //    applies it against the real, eventually-linked preapproval).
+        //    (the preapproval does not exist yet) and no promo_code_id — a
+        //    `pendingDiscount` or `pendingTrialExtension` (HOS-240) is only
+        //    resolved, not REDEEMED, until F2/F3 links the real preapproval and
+        //    applies/records it (see `link-preapproval.service.ts`).
         await tx.insert(billingSubscriptions).values({
             id: localSubscriptionId,
             customerId,
@@ -237,7 +254,9 @@ export async function createPendingProviderSubscription(
 
         // 3. Insert the correlation row, INSIDE the same transaction so the
         //    pending_provider subscription can never exist without a way to
-        //    link it (or vice versa).
+        //    link it (or vice versa). Both `pendingDiscount` and
+        //    `pendingTrialExtension` (HOS-240) are SNAPSHOTTED here — their
+        //    application/redemption is deferred to link time.
         await billingPendingCheckoutModel.create(
             {
                 localSubscriptionId,
@@ -247,6 +266,7 @@ export async function createPendingProviderSubscription(
                 nonce,
                 payerEmail,
                 ...(pendingDiscount ? { pendingDiscount } : {}),
+                ...(pendingTrialExtension ? { pendingTrialExtension } : {}),
                 status: 'pending',
                 expiresAt
             },

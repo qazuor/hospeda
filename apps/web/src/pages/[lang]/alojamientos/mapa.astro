@@ -111,7 +111,8 @@ const adultsContext = adultsParam ? Number(adultsParam) : undefined;
 const childrenContext = childrenParam ? Number(childrenParam) : undefined;
 // Derived guest-capacity filter — sum of adults + children. See list view
 // for the rationale.
-const guestCount = (adultsContext ?? 2) + (childrenContext ?? 0);
+// Default 0 = NO guest filter until the visitor picks a party size (BETA-161).
+const guestCount = (adultsContext ?? 0) + (childrenContext ?? 0);
 const minGuests = guestCount > 0 ? guestCount : undefined;
 
 // Fetch destinations for filter dropdown (CITY only — accommodations are
@@ -342,8 +343,10 @@ const filterGroups: FilterGroup[] = [
 		label: t('accommodations.sidebar.adults', 'Adultos'),
 		type: 'stepper',
 		min: 1,
+		// Display default 1 (not 2), matching the shared buildAccommodationsFilterGroups
+		// config — BETA-161: never imply an unsolicited "2 adults" party size.
 		max: 10,
-		defaultValue: 2,
+		defaultValue: 1,
 		emitWhenAtDefault: true,
 	},
 	{
@@ -404,8 +407,8 @@ if (includeNoPrice === false) initialParams.includeNoPrice = 'false';
 if (includeNoReviews === false) initialParams.includeNoReviews = 'false';
 if (checkIn) initialParams.checkIn = checkIn;
 if (checkOut) initialParams.checkOut = checkOut;
-initialParams.adults = String(adultsContext ?? 2);
-initialParams.children = String(childrenContext ?? 0);
+if (adultsContext !== undefined) initialParams.adults = String(adultsContext);
+if (childrenContext !== undefined) initialParams.children = String(childrenContext);
 
 // Build the URL pointing back to the list view, preserving every active filter.
 const listHref = (() => {

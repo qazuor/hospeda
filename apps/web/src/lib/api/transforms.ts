@@ -28,6 +28,7 @@ import type {
     GastronomyOpeningHoursEntry,
     GastronomySocialNetworks,
     PartnerCardData,
+    PartnerData,
     ReviewCardData
 } from '@/data/types';
 import { getInitialsFromName } from '../avatar-utils';
@@ -840,6 +841,11 @@ export function toAccommodationDetailPageProps({
         // SPEC-291: manual verification flag. Owner entitlement gating
         // (HAS_VERIFICATION_BADGE) is already applied server-side.
         isVerified: Boolean(item.isVerified),
+        // HOS-19: owner-derived, cache-safe flag — whether this accommodation
+        // carries a WhatsApp number. The number itself is fetched per-viewer
+        // from the protected endpoint; this only decides whether to render the
+        // WhatsApp block / upsell at all.
+        hasWhatsapp: Boolean(item.hasWhatsapp),
         createdAt: item.createdAt ? String(item.createdAt) : new Date().toISOString(),
         averageRating: Number(item.averageRating || 0),
         reviewsCount: Number(item.reviewsCount || 0),
@@ -2389,5 +2395,33 @@ export function toPartnerCardProps({
         isFeatured: Boolean(item.isFeatured),
         startsAt: item.startsAt == null ? null : String(item.startsAt),
         endsAt: item.endsAt == null ? null : String(item.endsAt)
+    };
+}
+
+/**
+ * Default aspect ratio (width / height) applied to a partner logo mapped for
+ * the homepage marquee. The public partner API carries no logo dimension
+ * metadata, so every item gets the same documented fallback — see
+ * `PartnerData.aspectRatio`'s JSDoc ("~3.5 for typical wide logos").
+ */
+const DEFAULT_PARTNER_LOGO_ASPECT_RATIO = 3.5;
+
+/**
+ * Transforms a raw API partner item to the `PartnerData` shape the homepage
+ * `PartnersSection` marquee expects (HOS-172).
+ *
+ * Callers should filter out items with no `logoUrl` before mapping — the
+ * marquee always renders an `<img>` per entry, so a partner with no logo has
+ * nothing meaningful to show.
+ *
+ * @param item - Raw partner object from the public API
+ * @returns Typed PartnerData for the partners marquee
+ */
+export function toPartnerData({ item }: { readonly item: Record<string, unknown> }): PartnerData {
+    return {
+        name: String(item.name || ''),
+        logoPath: String(item.logoUrl || ''),
+        url: item.websiteUrl == null ? undefined : String(item.websiteUrl),
+        aspectRatio: DEFAULT_PARTNER_LOGO_ASPECT_RATIO
     };
 }

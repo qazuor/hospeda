@@ -28,6 +28,29 @@ describe('isSubscriptionLive', () => {
     });
 
     // -------------------------------------------------------------------------
+    // 'comp' status — permanently complimentary (SPEC-262); always live (HOS-239)
+    // -------------------------------------------------------------------------
+    describe("status 'comp' (complimentary — always live)", () => {
+        it('should return true with no dates provided', () => {
+            expect(isSubscriptionLive({ status: 'comp', nowMs: NOW_MS })).toBe(true);
+        });
+
+        it('should return true even with a currentPeriodEnd far in the past (never expires)', () => {
+            const longAgo = new Date(NOW_MS - 365 * 24 * HOURS_MS);
+            expect(
+                isSubscriptionLive({ status: 'comp', currentPeriodEnd: longAgo, nowMs: NOW_MS })
+            ).toBe(true);
+        });
+
+        it('should return true even with a trialEnd in the past (dates are ignored for comp)', () => {
+            const pastTrial = new Date(NOW_MS - 10 * 24 * HOURS_MS);
+            expect(isSubscriptionLive({ status: 'comp', trialEnd: pastTrial, nowMs: NOW_MS })).toBe(
+                true
+            );
+        });
+    });
+
+    // -------------------------------------------------------------------------
     // 'cancelled' status — soft-cancel grace (live until currentPeriodEnd, no grace window)
     // -------------------------------------------------------------------------
     describe("status 'cancelled' (soft-cancel grace)", () => {

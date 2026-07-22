@@ -34,6 +34,8 @@ import { safeExternalFetch } from '@repo/utils/safe-fetch';
 import type { Actor, ServiceConfig } from '../../types/index.js';
 import { AmenityService } from '../amenity/amenity.service.js';
 import { DestinationService } from '../destination/destination.service.js';
+import type { ExchangeRateConfigService } from '../exchange-rate/exchange-rate-config.service.js';
+import type { ExchangeRateFetcher } from '../exchange-rate/exchange-rate-fetcher.js';
 import type { ImportContext, ImportSourceAdapter, RawExtraction } from './adapter.types.js';
 import { supportsAsyncExtraction } from './adapter.types.js';
 import { AirbnbAdapter } from './adapters/airbnb.adapter.js';
@@ -230,6 +232,26 @@ export interface ImportAsyncDispatchResult {
 export type ImportDispatchResult = ImportSyncDispatchResult | ImportAsyncDispatchResult;
 
 // ---------------------------------------------------------------------------
+// AccommodationImportServiceDeps
+// ---------------------------------------------------------------------------
+
+/**
+ * Optional dependencies for {@link AccommodationImportService} (BETA-181).
+ *
+ * Both fields are optional and independent of the required {@link ServiceConfig}
+ * constructor argument — when either is absent, the imported draft's price is
+ * left untouched (no USD → ARS conversion, no `priceConversion` advisory).
+ * The route layer is responsible for constructing these (it is allowed to
+ * read env vars; `service-core` is not).
+ */
+export interface AccommodationImportServiceDeps {
+    /** Fetcher used to read the current USD→ARS exchange rate. */
+    readonly exchangeRateFetcher?: ExchangeRateFetcher;
+    /** Config service used to read the platform's default rate type. */
+    readonly exchangeRateConfigService?: ExchangeRateConfigService;
+}
+
+// ---------------------------------------------------------------------------
 // AccommodationImportService
 // ---------------------------------------------------------------------------
 
@@ -281,6 +303,18 @@ export class AccommodationImportService {
     private readonly destinationService: DestinationService;
 
     /**
+     * Optional exchange-rate fetcher (BETA-181). `undefined` when the caller
+     * did not provide it — price conversion is then skipped entirely.
+     */
+    private readonly exchangeRateFetcher: ExchangeRateFetcher | undefined;
+
+    /**
+     * Optional exchange-rate config service (BETA-181). `undefined` when the
+     * caller did not provide it — price conversion is then skipped entirely.
+     */
+    private readonly exchangeRateConfigService: ExchangeRateConfigService | undefined;
+
+    /**
      * Ordered adapter registry. The orchestrator iterates this list and picks
      * the first adapter whose `supports(url)` returns `true`. `GenericAdapter`
      * must remain last — it accepts any HTTPS URL.
@@ -294,10 +328,16 @@ export class AccommodationImportService {
      * this package). The route layer passes `{ logger: apiLogger }`.
      *
      * @param ctx - Service configuration carrying an optional logger.
+     * @param deps - Optional exchange-rate dependencies (BETA-181). When both
+     *   `exchangeRateFetcher` and `exchangeRateConfigService` are provided, a
+     *   non-ARS draft price is converted to ARS. Existing callers that omit
+     *   this argument keep working unchanged — conversion is simply skipped.
      */
-    constructor(ctx: ServiceConfig) {
+    constructor(ctx: ServiceConfig, deps?: AccommodationImportServiceDeps) {
         this.amenityService = new AmenityService(ctx);
         this.destinationService = new DestinationService(ctx);
+        this.exchangeRateFetcher = deps?.exchangeRateFetcher;
+        this.exchangeRateConfigService = deps?.exchangeRateConfigService;
         this.adapters = [
             new MercadoLibreAdapter(),
             new GooglePlacesAdapter(),
@@ -373,7 +413,9 @@ export class AccommodationImportService {
             source,
             actor,
             amenityService: this.amenityService,
-            destinationService: this.destinationService
+            destinationService: this.destinationService,
+            exchangeRateFetcher: this.exchangeRateFetcher,
+            exchangeRateConfigService: this.exchangeRateConfigService
         });
     }
 
@@ -428,7 +470,9 @@ export class AccommodationImportService {
                 source,
                 actor,
                 amenityService: this.amenityService,
-                destinationService: this.destinationService
+                destinationService: this.destinationService,
+                exchangeRateFetcher: this.exchangeRateFetcher,
+                exchangeRateConfigService: this.exchangeRateConfigService
             });
             return { kind: 'sync', response };
         }
@@ -440,7 +484,9 @@ export class AccommodationImportService {
                 source,
                 actor,
                 amenityService: this.amenityService,
-                destinationService: this.destinationService
+                destinationService: this.destinationService,
+                exchangeRateFetcher: this.exchangeRateFetcher,
+                exchangeRateConfigService: this.exchangeRateConfigService
             });
             return { kind: 'sync', response };
         }
@@ -452,7 +498,9 @@ export class AccommodationImportService {
                     source,
                     actor,
                     amenityService: this.amenityService,
-                    destinationService: this.destinationService
+                    destinationService: this.destinationService,
+                    exchangeRateFetcher: this.exchangeRateFetcher,
+                    exchangeRateConfigService: this.exchangeRateConfigService
                 }
             );
             return { kind: 'sync', response };

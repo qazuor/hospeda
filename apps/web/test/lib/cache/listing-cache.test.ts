@@ -60,17 +60,32 @@ describe('hasActiveAccommodationListingFilters', () => {
         ).toBe(false);
     });
 
-    it('returns false when party size is at its defaults (2 adults / 0 children)', () => {
+    it('treats an explicit adults=2 as an active filter (no more invisible default, BETA-161)', () => {
+        // Since BETA-161 the hero only emits `adults` when its stepper was
+        // touched, so ANY explicit `adults` reaching this predicate — even the
+        // old "invisible default" of 2 — is a real, active filter.
         expect(
             hasActiveAccommodationListingFilters({
                 searchParams: params('adults=2&children=0&sortBy=featured')
             })
-        ).toBe(false);
+        ).toBe(true);
+    });
+
+    it('treats an explicit adults=1 as an active filter', () => {
+        expect(hasActiveAccommodationListingFilters({ searchParams: params('adults=1') })).toBe(
+            true
+        );
     });
 
     it('returns true when adults are above the default (narrows via minGuests)', () => {
         expect(hasActiveAccommodationListingFilters({ searchParams: params('adults=4') })).toBe(
             true
+        );
+    });
+
+    it('does not treat children=0 alone (without adults) as an active filter', () => {
+        expect(hasActiveAccommodationListingFilters({ searchParams: params('children=0') })).toBe(
+            false
         );
     });
 

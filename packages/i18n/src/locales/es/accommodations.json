@@ -666,6 +666,14 @@
         "faq": "Preguntas frecuentes",
         "similar": "Alojamientos similares",
         "perNight": "por noche",
+        "whatsapp": {
+            "title": "Contacto por WhatsApp",
+            "cta": "Consultar por WhatsApp",
+            "messageTemplate": "Hola, me interesa obtener más información sobre {{name}}",
+            "numberLabel": "WhatsApp del anfitrión",
+            "upsellText": "Suscribite a Plus para ver el WhatsApp del anfitrión.",
+            "upsellCta": "Ver planes"
+        },
         "share": "Compartir",
         "checkIn": "Check-in",
         "checkOut": "Check-out",

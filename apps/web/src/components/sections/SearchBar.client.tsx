@@ -114,8 +114,11 @@ function formatIsoDate(date: Date): string {
 
 /**
  * Build the navigation URL with only the params that have a meaningful value.
- * Adults/children are emitted only when they differ from defaults (2/0) so the
- * URL stays clean for casual searches.
+ * `adults` is emitted only when the guests stepper was actually touched by
+ * the user (`guestsTouched`) — an untouched hero search must send NO adults
+ * param, otherwise the listing page applies it as a real `minGuests` filter
+ * (see BETA-161). `children` is emitted only when non-zero, since 0 remains
+ * a true "no children" default regardless of whether the stepper was touched.
  */
 export function buildSearchUrl(args: {
     readonly baseUrl: string;
@@ -125,6 +128,7 @@ export function buildSearchUrl(args: {
     readonly checkOut?: Date;
     readonly adults: number;
     readonly children: number;
+    readonly guestsTouched: boolean;
 }): string {
     const params = new URLSearchParams();
     if (args.destinationId) {
@@ -139,10 +143,12 @@ export function buildSearchUrl(args: {
     if (args.checkOut) {
         params.set('checkOut', formatIsoDate(args.checkOut));
     }
-    // Always emit adults/children so the listing's sidebar steppers reflect
-    // exactly what the user saw in the hero (otherwise defaults diverge: hero
-    // defaults to 2/0, sidebar minima are 1/0).
-    params.set('adults', String(args.adults));
+    // Only emit adults when the user actually interacted with the guests
+    // stepper — a pristine search must not silently narrow the listing to
+    // "at least 2 guests" (BETA-161).
+    if (args.guestsTouched) {
+        params.set('adults', String(args.adults));
+    }
     if (args.children > 0) {
         params.set('children', String(args.children));
     }
@@ -162,11 +168,17 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [adults, setAdults] = useState(2);
     const [children, setChildren] = useState(0);
-    // Whether the user has interacted with the guests stepper. The default
-    // value (2 adults, 0 children) is indistinguishable from "untouched", so
-    // without this flag a user who deliberately sets 2 sees the placeholder
-    // again and assumes the value was not saved.
-    const [guestsTouched, setGuestsTouched] = useState(false);
+    // Whether the user has interacted with each guests stepper independently.
+    // The default value (2 adults, 0 children) is indistinguishable from
+    // "untouched", so without these flags a user who deliberately sets 2
+    // adults sees the placeholder again and assumes the value was not saved.
+    // Split in two (rather than one combined `guestsTouched`) because
+    // `buildSearchUrl` gates the `adults` param on touch alone: touching only
+    // the children stepper must not emit an unasserted `adults=2` (BETA-161
+    // round 2 — a single combined flag let a children-only interaction leak
+    // the untouched adults default into the URL as a real filter).
+    const [adultsTouched, setAdultsTouched] = useState(false);
+    const [childrenTouched, setChildrenTouched] = useState(false);
     // Search inputs inside the destination and type panels. Filtered locally
     // against the pre-fetched lists — no extra API calls.
     const [destinationQuery, setDestinationQuery] = useState('');
@@ -488,11 +500,14 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         <span
                             className={cn(
                                 styles.value,
-                                (guestsTouched || adults !== 2 || children !== 0) &&
+                                (adultsTouched ||
+                                    childrenTouched ||
+                                    adults !== 2 ||
+                                    children !== 0) &&
                                     styles.valueSelected
                             )}
                         >
-                            {!guestsTouched && adults === 2 && children === 0
+                            {!adultsTouched && !childrenTouched && adults === 2 && children === 0
                                 ? t('home.searchBar.guestsPlaceholder', '¿Cuántas personas son?')
                                 : guestsDisplay}
                         </span>
@@ -512,7 +527,8 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                             checkIn: dateRange?.from,
                             checkOut: dateRange?.to,
                             adults,
-                            children
+                            children,
+                            guestsTouched: adultsTouched
                         });
                         trackEvent(WebEvents.AccommodationSearched, {
                             destination_id: selectedDestination?.id ?? null,
@@ -807,7 +823,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                     type="button"
                                     className={styles.stepperButton}
                                     onClick={() => {
-                                        setGuestsTouched(true);
+                                        setAdultsTouched(true);
                                         setAdults((prev) => Math.max(1, prev - 1));
                                     }}
                                     disabled={adults <= 1}
@@ -820,7 +836,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                     type="button"
                                     className={styles.stepperButton}
                                     onClick={() => {
-                                        setGuestsTouched(true);
+                                        setAdultsTouched(true);
                                         setAdults((prev) => Math.min(10, prev + 1));
                                     }}
                                     disabled={adults >= 10}
@@ -840,7 +856,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                     type="button"
                                     className={styles.stepperButton}
                                     onClick={() => {
-                                        setGuestsTouched(true);
+                                        setChildrenTouched(true);
                                         setChildren((prev) => Math.max(0, prev - 1));
                                     }}
                                     disabled={children <= 0}
@@ -853,7 +869,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                     type="button"
                                     className={styles.stepperButton}
                                     onClick={() => {
-                                        setGuestsTouched(true);
+                                        setChildrenTouched(true);
                                         setChildren((prev) => Math.min(6, prev + 1));
                                     }}
                                     disabled={children >= 6}

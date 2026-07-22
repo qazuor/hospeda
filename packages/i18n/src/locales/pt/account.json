@@ -554,6 +554,8 @@
             "statusLabel": "Status",
             "nextBillingLabel": "Próxima cobrança",
             "accessUntilLabel": "Acesso até",
+            "complimentaryLabel": "Plano de cortesia",
+            "complimentaryNoBilling": "Sem vencimento",
             "paymentMethodLabel": "Método de pagamento",
             "paymentMercadoPago": "MercadoPago",
             "noBillingDate": "Sem data de faturamento disponível",
@@ -575,6 +577,9 @@
             "pauseError": "Não foi possível pausar a assinatura.",
             "resumeSuccess": "Assinatura retomada.",
             "resumeError": "Não foi possível retomar a assinatura.",
+            "uncancelButton": "Descartar cancelamento",
+            "uncancelSuccess": "Cancelamento descartado. Sua assinatura continua ativa.",
+            "uncancelError": "Não foi possível descartar o cancelamento.",
             "status": {
                 "active": "Ativa",
                 "trial": "Teste",

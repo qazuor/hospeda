@@ -805,10 +805,11 @@ export async function processSubscriptionUpdated({
         updateData.canceledAt = new Date();
     }
 
-    // Reset cancel_at_period_end when reactivating
-    if (mappedStatus === SubscriptionStatusEnum.ACTIVE && localSubscription.cancelAtPeriodEnd) {
-        updateData.cancelAtPeriodEnd = false;
-    }
+    // NB: the `cancelAtPeriodEnd = false` reset on reactivation is NOT decided
+    // here. HOS-236 gates it on a genuine resume (paused → active), and that
+    // decision must read the FOR-UPDATE-locked `freshStatus`/`freshRow`, not this
+    // pre-transaction snapshot — see the reset block just before the `tx.update`
+    // write below.
 
     // Track whether the transaction observed a status change so callers can decide
     // whether to run the post-commit side effects (notifications, addon cleanup, etc.).
@@ -969,6 +970,27 @@ export async function processSubscriptionUpdated({
             );
             txStatusChanged = false;
             return;
+        }
+
+        // HOS-236: reset cancel_at_period_end ONLY on a genuine resume
+        // (paused → active), using the FOR-UPDATE-locked values (freshStatus +
+        // freshRow.cancelAtPeriodEnd) for consistency with the TOCTOU guards
+        // above — NOT the stale pre-transaction snapshot.
+        //
+        // Without the `freshStatus === PAUSED` gate, a `past_due → active`
+        // (dunning recovery) or `trialing → active` (trial conversion) webhook on
+        // a soft-cancelled row (cancelAtPeriodEnd=true) would silently clear the
+        // flag, reviving a subscription the user explicitly cancelled and losing
+        // the cancellation (finalize-cancelled-subs would then never finalize it).
+        // A deliberate resume is the ONLY transition that should un-cancel, and it
+        // always comes FROM paused. (An `active → active` webhook can never reach
+        // here — it is dropped by the same-status idempotent skip above.)
+        if (
+            mappedStatus === SubscriptionStatusEnum.ACTIVE &&
+            freshRow.cancelAtPeriodEnd === true &&
+            freshStatus === SubscriptionStatusEnum.PAUSED
+        ) {
+            updateData.cancelAtPeriodEnd = false;
         }
 
         await tx

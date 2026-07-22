@@ -1061,6 +1061,84 @@ describe('processSubscriptionUpdated', () => {
         );
     });
 
+    // TC-11b (HOS-236): an ACTIVE webhook on a NON-paused soft-cancelled row must
+    // NOT reset cancelAtPeriodEnd. Only a genuine resume (paused → active) may
+    // clear the soft-cancel flag; a stray/racing active status on a still
+    // past_due/trialing/active soft-cancelled sub must not silently un-cancel it.
+    it('should NOT reset cancelAtPeriodEnd on an active webhook when the previous status was not paused (HOS-236)', async () => {
+        // Arrange: dunning recovery (past_due → active) on a soft-cancelled sub.
+        const mpPreapprovalId = 'preapproval-mp-001';
+        mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+        mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+        const localSub = makeLocalSubscription({
+            status: SubscriptionStatusEnum.PAST_DUE,
+            cancelAtPeriodEnd: true
+        });
+        const dbMock = makeDbMock([localSub]);
+        vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+        const event = makeWebhookEvent();
+
+        // Act
+        const result = await processSubscriptionUpdated({
+            event: event as never,
+            billing: mockBilling as never,
+            paymentAdapter: mockPaymentAdapter as never,
+            providerEventId: 'evt-011b'
+        });
+
+        // Assert: the status still transitions to active…
+        expect(result).toEqual({
+            success: true,
+            statusChanged: true,
+            newStatus: SubscriptionStatusEnum.ACTIVE
+        });
+        // …but the soft-cancel flag is preserved (NOT reset to false), so the
+        // finalization cron will still honour the user's cancellation.
+        const txUpdateChain = dbMock.tx.update({});
+        expect(txUpdateChain.set).toHaveBeenCalledWith(
+            expect.not.objectContaining({ cancelAtPeriodEnd: false })
+        );
+    });
+
+    // TC-11c (HOS-236): trial conversion (trialing → active) on a soft-cancelled
+    // row must ALSO preserve cancelAtPeriodEnd — only paused → active resumes it.
+    it('should NOT reset cancelAtPeriodEnd on a trialing→active conversion of a soft-cancelled sub (HOS-236)', async () => {
+        // Arrange
+        const mpPreapprovalId = 'preapproval-mp-001';
+        mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+        mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+        const localSub = makeLocalSubscription({
+            status: SubscriptionStatusEnum.TRIALING,
+            cancelAtPeriodEnd: true
+        });
+        const dbMock = makeDbMock([localSub]);
+        vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+        const event = makeWebhookEvent();
+
+        // Act
+        const result = await processSubscriptionUpdated({
+            event: event as never,
+            billing: mockBilling as never,
+            paymentAdapter: mockPaymentAdapter as never,
+            providerEventId: 'evt-011c'
+        });
+
+        // Assert: transitions to active, soft-cancel flag preserved.
+        expect(result).toEqual({
+            success: true,
+            statusChanged: true,
+            newStatus: SubscriptionStatusEnum.ACTIVE
+        });
+        const txUpdateChain = dbMock.tx.update({});
+        expect(txUpdateChain.set).toHaveBeenCalledWith(
+            expect.not.objectContaining({ cancelAtPeriodEnd: false })
+        );
+    });
+
     // TC-12: Audit event is created with correct fields on status change
     it('should create audit event with correct previousStatus, newStatus, triggerSource, and metadata', async () => {
         // Arrange

@@ -170,7 +170,7 @@ describe('ComparisonMatrix', () => {
         render(<ComparisonMatrix locale="es" />);
 
         const cta = await screen.findByRole('link', { name: 'Ver planes' });
-        expect(cta).toHaveAttribute('href', '/es/suscriptores/planes/');
+        expect(cta).toHaveAttribute('href', '/es/suscriptores/turistas/');
     });
 });
 

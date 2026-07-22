@@ -17,6 +17,13 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
+
+// HOS-234: the helper logs the payload SHAPE when no usable payer_id is found.
+vi.mock('../../src/utils/logger', () => ({
+    apiLogger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+}));
+
+import { apiLogger } from '../../src/utils/logger';
 import { _internals, fetchAuthorizedPaymentDetails } from '../../src/utils/mp-authorized-payment';
 
 const VALID_RESPONSE = {
@@ -67,6 +74,48 @@ describe('fetchAuthorizedPaymentDetails', () => {
             debitDate: '2026-06-15T10:00:00.000Z',
             mpPayerId: '219902101'
         });
+    });
+
+    // ── HOS-234: payload-shape diagnostic when payer_id is absent ──────────────
+    it('logs the payload shape (keys only, no values) when no usable payer_id is present (HOS-234)', async () => {
+        vi.mocked(apiLogger.info).mockClear();
+        const { payer_id: _drop, ...noPayer } = VALID_RESPONSE;
+        const fetchImpl = mockFetchOk(noPayer);
+
+        const result = await fetchAuthorizedPaymentDetails({
+            authorizedPaymentId: '123456789',
+            accessToken: 'TEST-abc',
+            fetchImpl: fetchImpl as unknown as typeof fetch
+        });
+
+        expect(result.kind).toBe('ok');
+        if (result.kind !== 'ok') throw new Error('unreachable');
+        expect(result.details.mpPayerId).toBeNull();
+
+        // The diagnostic logs the SHAPE — top-level keys + inner payment keys +
+        // the payer_id type — never the sensitive values themselves.
+        expect(apiLogger.info).toHaveBeenCalledWith(
+            expect.objectContaining({
+                authorizedPaymentId: '123456789',
+                topLevelKeys: expect.arrayContaining(['preapproval_id', 'payment']),
+                paymentKeys: expect.arrayContaining(['id', 'status']),
+                payerIdType: 'undefined'
+            }),
+            expect.stringContaining('no usable payer_id')
+        );
+    });
+
+    it('does NOT log the payload-shape diagnostic when a payer_id is present (HOS-234)', async () => {
+        vi.mocked(apiLogger.info).mockClear();
+        const fetchImpl = mockFetchOk(VALID_RESPONSE); // has payer_id
+
+        await fetchAuthorizedPaymentDetails({
+            authorizedPaymentId: '123456789',
+            accessToken: 'TEST-abc',
+            fetchImpl: fetchImpl as unknown as typeof fetch
+        });
+
+        expect(apiLogger.info).not.toHaveBeenCalled();
     });
 
     it('uses the configured URL, method, and headers (Bearer auth, URL-encoded id)', async () => {

@@ -132,6 +132,38 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * Price conversion advisory (BETA-181)
+ * --------------------------------------------------------------------------- */
+
+.priceConversion {
+    margin-top: var(--space-2, 0.5rem);
+    padding: var(--space-3, 0.75rem);
+    background-color: var(--surface-warm);
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--core-muted-foreground);
+}
+
+.priceConversionLabel {
+    display: block;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin-bottom: var(--space-1, 0.25rem);
+}
+
+.priceConversionText {
+    display: block;
+    margin-bottom: var(--space-1, 0.25rem);
+}
+
+.priceConversionCallout {
+    display: block;
+    font-style: italic;
+    margin-top: var(--space-1, 0.25rem);
+}
+
+/* ---------------------------------------------------------------------------
  * Imported extras section — progressive disclosure (SPEC-258 B-web)
  * --------------------------------------------------------------------------- */
 

@@ -158,6 +158,59 @@ describe('handleImportStatusPoll', () => {
         expect(mockResolveImportRunStatus).not.toHaveBeenCalled();
     });
 
+    it('forwards exchange-rate deps to finalizeImportDraft and passes a priceConversion advisory through untouched (BETA-181)', async () => {
+        const raw = {
+            sourcePlatform: 'airbnb' as const,
+            price: {
+                price: { value: 100, source: 'jsonld' as const },
+                currency: { value: 'USD', source: 'jsonld' as const }
+            }
+        };
+        mockResolveImportRunStatus.mockResolvedValue({ settled: true, raw });
+        const finalized = {
+            draft: {
+                price: {
+                    price: { value: 150000, source: 'jsonld', confidence: 70 },
+                    currency: { value: 'ARS', source: 'jsonld', confidence: 70 }
+                }
+            },
+            source: 'airbnb' as const,
+            methodsUsed: ['jsonld' as const],
+            partial: true,
+            priceConversion: {
+                originalPrice: 100,
+                originalCurrency: 'USD',
+                convertedPrice: 150000,
+                currency: 'ARS' as const,
+                rate: 1500,
+                rateType: 'oficial'
+            }
+        };
+        mockFinalizeImportDraft.mockResolvedValue(finalized);
+
+        const fakeExchangeRateFetcher = { getRateWithFallback: vi.fn() } as never;
+        const fakeExchangeRateConfigService = { getConfig: vi.fn() } as never;
+
+        const result = await handleImportStatusPoll(makeQuery(), {
+            context: makeContext(),
+            actor: fakeActor,
+            amenityService: fakeAmenityService,
+            destinationService: fakeDestinationService,
+            exchangeRateFetcher: fakeExchangeRateFetcher,
+            exchangeRateConfigService: fakeExchangeRateConfigService,
+            now: NOW
+        });
+
+        expect(mockFinalizeImportDraft).toHaveBeenCalledWith(
+            raw,
+            expect.objectContaining({
+                exchangeRateFetcher: fakeExchangeRateFetcher,
+                exchangeRateConfigService: fakeExchangeRateConfigService
+            })
+        );
+        expect(result).toEqual({ settled: true, draft: finalized });
+    });
+
     it('rejects a source outside airbnb/booking (the only async-capable sources)', async () => {
         await expect(
             handleImportStatusPoll(makeQuery({ source: 'generic' }), {

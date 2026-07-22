@@ -308,10 +308,6 @@
                 "title": "Responder reseñas",
                 "description": "Que el anfitrión responda públicamente las opiniones de sus huéspedes."
             },
-            "whatsappListing": {
-                "title": "WhatsApp en la ficha",
-                "description": "Contacto directo por WhatsApp con el anfitrión, desde la misma página."
-            },
             "reviewPhotos": {
                 "title": "Fotos en las reseñas",
                 "description": "Que los huéspedes sumen sus propias fotos a las opiniones."

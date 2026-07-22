@@ -121,7 +121,8 @@ export const CompareCardSelect: FC<CompareCardSelectProps> = ({
     const selected = isInList(accommodationId);
 
     const comparePageHref = `/${locale}/alojamientos/comparar/`;
-    const pricingHref = `/${locale}/suscriptores/planes/`;
+    // Compare is a tourist feature → tourist plans page, not owner plans (BETA-200).
+    const pricingHref = `/${locale}/suscriptores/turistas/`;
 
     const ariaLabel = selected
         ? t('accommodations.comparison.button.removeAriaLabel', 'Quitar de comparación', {

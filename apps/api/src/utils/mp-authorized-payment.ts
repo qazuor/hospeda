@@ -15,6 +15,8 @@
  * @module utils/mp-authorized-payment
  */
 
+import { apiLogger } from './logger';
+
 const MP_API_BASE = 'https://api.mercadopago.com';
 const DEFAULT_TIMEOUT_MS = 10_000;
 
@@ -147,6 +149,29 @@ export async function fetchAuthorizedPaymentDetails(
                 authorizedPaymentId,
                 message: 'MercadoPago authorized_payments response missing required fields'
             };
+        }
+
+        // HOS-234/HOS-233: when the parse found no usable `payer_id`, log the
+        // SHAPE of the payload (top-level keys + inner `payment` keys) — never the
+        // values, which may be sensitive — so a smoke can CONFIRM whether MP
+        // actually sends a `payer_id` on this authorized-payment flow (the leading
+        // hypothesis for the NULL `mp_customer_id`). INFO on purpose: it is only
+        // needed live during a diagnostic run (`hops logs api -f -g payer`), not
+        // as a persistent prod signal (that is the WARN in backfillMpCustomerId).
+        if (!parsed.mpPayerId) {
+            const paymentKeys =
+                raw.payment && typeof raw.payment === 'object'
+                    ? Object.keys(raw.payment as Record<string, unknown>)
+                    : null;
+            apiLogger.info(
+                {
+                    authorizedPaymentId,
+                    topLevelKeys: Object.keys(raw),
+                    paymentKeys,
+                    payerIdType: typeof raw.payer_id
+                },
+                'MercadoPago authorized_payment: no usable payer_id — logging payload shape for HOS-233 root-cause confirmation'
+            );
         }
 
         return { kind: 'ok', details: parsed };

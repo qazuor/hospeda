@@ -67,6 +67,23 @@ export const billingPendingCheckouts = pgTable(
             finalAmountCentavos: number;
         }>(),
         /**
+         * Snapshot of a `trial_extension` promo code resolved (and granted) at
+         * checkout time, whose redemption is DEFERRED to link time (HOS-240).
+         * Path C's redirect flow must not record the redemption before the
+         * customer authorizes on MercadoPago — otherwise an abandoned checkout
+         * permanently burns a capped code (`max_uses`/`max_per_customer`) for a
+         * subscription that never activated. Mirrors {@link pendingDiscount}:
+         * only when the real preapproval is linked (F2/F3) does
+         * `link-preapproval.service.ts` record the redemption (`used_count++`,
+         * usage row) and stamp `promo_code_id` on the now-linked subscription.
+         *
+         * Shape: `{ promoCodeId: string, code: string }`.
+         */
+        pendingTrialExtension: jsonb('pending_trial_extension').$type<{
+            promoCodeId: string;
+            code: string;
+        }>(),
+        /**
          * Correlation lifecycle: `pending` | `linked` | `reconcile_assisted`.
          * There is no `'expired'` status value written anywhere — expiry is
          * enforced by comparing `expiresAt` against "now" at read time (see
