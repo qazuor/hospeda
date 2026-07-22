@@ -52,14 +52,20 @@ const DEFAULTS = {
     destinationId: null,
     types: new Set<never>(),
     adults: 2,
-    children: 0
+    children: 0,
+    guestsTouched: false
 } as const;
 
 describe('buildSearchUrl', () => {
-    it('emits only adults at default state (others suppressed)', () => {
-        // Adults is always emitted to keep the sidebar in sync with the hero.
-        // Everything else stays out when at default.
+    it('omits adults at default state when the guests stepper was not touched (BETA-161)', () => {
+        // An untouched hero search must not silently narrow the listing via
+        // `minGuests` — adults is suppressed entirely when guestsTouched=false.
         const url = buildSearchUrl({ ...DEFAULTS });
+        expect(url).toBe(BASE);
+    });
+
+    it('emits adults when the guests stepper was touched, even at the default value', () => {
+        const url = buildSearchUrl({ ...DEFAULTS, guestsTouched: true });
         expect(url).toBe(`${BASE}?adults=2`);
     });
 
@@ -97,7 +103,6 @@ describe('buildSearchUrl', () => {
             ...DEFAULTS,
             types: new Set(ALL) as ReadonlySet<(typeof ALL)[number]>
         });
-        // adults still emitted (always) but no `types`
         expect(url).not.toContain('types=');
     });
 
@@ -111,26 +116,55 @@ describe('buildSearchUrl', () => {
         expect(url).toContain('checkOut=2026-06-07');
     });
 
-    it('always emits adults so the listing sidebar shows the same number the user saw in the hero', () => {
-        // Even at the default (2), `adults` is emitted because the sidebar's
-        // stepper minimum is 1 — without this, the sidebar would default-render
-        // 1 adult and silently disagree with the hero.
-        const url = buildSearchUrl({ ...DEFAULTS, adults: 2, children: 0 });
-        expect(url).toContain('adults=2');
+    it('emits adults only when guestsTouched is true, regardless of the listing sidebar value (BETA-161)', () => {
+        // Untouched: adults is fully suppressed, no matter its numeric value.
+        const untouched = buildSearchUrl({ ...DEFAULTS, adults: 2, children: 0 });
+        expect(untouched).not.toContain('adults=');
+        // Touched: adults is emitted so the listing sidebar shows the same
+        // number the user deliberately set in the hero.
+        const touched = buildSearchUrl({
+            ...DEFAULTS,
+            adults: 2,
+            children: 0,
+            guestsTouched: true
+        });
+        expect(touched).toContain('adults=2');
         // Children stays out when 0 (its natural absence; sidebar default is 0 too).
-        expect(url).not.toContain('children=');
+        expect(touched).not.toContain('children=');
     });
 
     it('emits children only when greater than 0', () => {
-        const url = buildSearchUrl({ ...DEFAULTS, adults: 4, children: 2 });
+        const url = buildSearchUrl({
+            ...DEFAULTS,
+            adults: 4,
+            children: 2,
+            guestsTouched: true
+        });
         expect(url).toContain('adults=4');
         expect(url).toContain('children=2');
     });
 
     it('still suppresses children when the user did not touch it', () => {
-        const url = buildSearchUrl({ ...DEFAULTS, adults: 5, children: 0 });
+        const url = buildSearchUrl({
+            ...DEFAULTS,
+            adults: 5,
+            children: 0,
+            guestsTouched: true
+        });
         expect(url).toContain('adults=5');
         expect(url).not.toContain('children=');
+    });
+
+    it('omits adults when only children was touched (adults untouched)', () => {
+        // Regression for BETA-161 round 2: the hero used a single combined
+        // `guestsTouched` flag shared by both steppers, so touching only
+        // children leaked the untouched `adults` default (2) into the URL as
+        // an unasserted filter. `guestsTouched` gates solely on the adults
+        // stepper's own touched state (`adultsTouched`), independent of
+        // `childrenTouched`.
+        const url = buildSearchUrl({ ...DEFAULTS, children: 1, guestsTouched: false });
+        expect(url).not.toContain('adults=');
+        expect(url).toContain('children=1');
     });
 
     it('combines every param when all are set', () => {
@@ -141,7 +175,8 @@ describe('buildSearchUrl', () => {
             checkIn: new Date(2026, 0, 15),
             checkOut: new Date(2026, 0, 20),
             adults: 3,
-            children: 1
+            children: 1,
+            guestsTouched: true
         });
         expect(url).toContain('destinationIds=dest-1');
         expect(url).toContain('types=HOTEL');
@@ -280,19 +315,22 @@ describe('<SearchBar /> submit flow', () => {
         const navigatedTo = assignSpy.mock.calls[0]?.[0] as string;
 
         // Compare against buildSearchUrl directly to make the contract explicit.
+        // The guests stepper was never touched, so guestsTouched is false and
+        // adults is suppressed (BETA-161).
         const expected = buildSearchUrl({
             baseUrl: SEARCH_BASE,
             destinationId: 'dest-colon',
             types: new Set(),
             adults: 2,
-            children: 0
+            children: 0,
+            guestsTouched: false
         });
         expect(navigatedTo).toBe(expected);
         expect(navigatedTo).toContain('destinationIds=dest-colon');
-        expect(navigatedTo).toContain('adults=2');
-        // No dates, no children, types omitted.
+        // No dates, no adults (untouched), no children, types omitted.
         expect(navigatedTo).not.toContain('checkIn=');
         expect(navigatedTo).not.toContain('checkOut=');
+        expect(navigatedTo).not.toContain('adults=');
         expect(navigatedTo).not.toContain('children=');
         expect(navigatedTo).not.toContain('types=');
     });
