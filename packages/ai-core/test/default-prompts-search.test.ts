@@ -111,7 +111,14 @@ describe("DEFAULT_PROMPTS['search'] — SPEC-212 conversational refinement frami
         expect(prompt).toMatch(/extract ONLY from the latest message/);
     });
 
-    it('biases toward a new search when refinement vs new search is ambiguous', () => {
+    it('treats narrowing within the same destination as a refinement, not a new search', () => {
+        // Guards against over-discarding: a neighborhood/landmark within the
+        // SAME destination must refine, not reset the filters.
+        expect(prompt).toMatch(/Narrowing WITHIN the current destination is still a refinement/);
+        expect(prompt).toMatch(/not merely a neighborhood or landmark within the current one/);
+    });
+
+    it('prefers a new search on a clear different-destination / restated query', () => {
         expect(prompt).toMatch(/prefer NEW SEARCH/);
     });
 
