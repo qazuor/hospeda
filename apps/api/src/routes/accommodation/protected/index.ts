@@ -30,6 +30,7 @@ import { protectedGetOwnAccommodationByIdRoute } from './getById';
 import { getFaqsRoute } from './getFaqs';
 import { protectedGetMediaRoute } from './getMedia';
 import { protectedGetOccupancyRoute } from './getOccupancy';
+import { protectedGetWhatsAppRoute } from './getWhatsApp';
 import { hostFavoritesBreakdownRoute } from './hostFavoritesBreakdown';
 import { hostMarketComparisonRoute } from './hostMarketComparison';
 import { protectedImportFromUrlRoute } from './import-from-url';
@@ -95,6 +96,11 @@ app.route('/', protectedImportFromUrlStatusRoute);
 
 // GET /:id/contact - Resolved contact info (auth required, NO ownership)
 app.route('/', protectedGetContactRoute);
+
+// GET /:id/whatsapp - WhatsApp number gated by the VIEWER's plan (HOS-19).
+// Auth required, NO ownership: any authenticated tourist on the right plan may
+// read it. Separate from the shared-cached public payload for cache safety.
+app.route('/', protectedGetWhatsAppRoute);
 
 // PATCH /:id/featured-toggle - Owner self-service featured toggle (SPEC-309 T-019)
 // Ownership + entitlement gate enforced inside setAccommodationFeaturedToggle,

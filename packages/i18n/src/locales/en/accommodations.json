@@ -438,6 +438,14 @@
         "faq": "Frequently Asked Questions",
         "similar": "Similar Accommodations",
         "perNight": "per night",
+        "whatsapp": {
+            "title": "WhatsApp contact",
+            "cta": "Contact via WhatsApp",
+            "messageTemplate": "Hi, I'm interested in more information about {{name}}",
+            "numberLabel": "Host's WhatsApp",
+            "upsellText": "Subscribe to Plus to see the host's WhatsApp.",
+            "upsellCta": "View plans"
+        },
         "share": "Share",
         "checkIn": "Check-in",
         "checkOut": "Check-out",

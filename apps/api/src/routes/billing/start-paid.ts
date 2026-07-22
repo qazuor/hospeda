@@ -30,7 +30,7 @@
  * @module routes/billing/start-paid
  */
 
-import { TEST_DAILY_PLAN } from '@repo/billing';
+import { isEntitlementGrantingStatus, TEST_DAILY_PLAN } from '@repo/billing';
 import type { StartPaidSubscriptionResponse } from '@repo/schemas';
 import {
     ServiceErrorCode,
@@ -181,10 +181,10 @@ export const handleStartPaidSubscription = async (
             // more specific SUBSCRIPTION_CANCEL_PENDING message. comp subs are
             // perpetual (no cancelAtPeriodEnd) so they still match.
             if (sub.cancelAtPeriodEnd === true) return false;
-            // Cast to string — QZPay's type union does not include 'comp' (our
-            // Hospeda-specific custom status) so a direct === comparison fails tsc.
-            const status = sub.status as string;
-            return status === 'active' || status === 'trialing' || status === 'comp';
+            // HOS-239: canonical entitlement-granting status set (active |
+            // trialing | comp). Takes a string; QZPay's union excludes the
+            // Hospeda-specific 'comp', hence the widening cast.
+            return isEntitlementGrantingStatus(sub.status as string);
         });
         if (hasActiveAccommodationSub) {
             throw new ServiceError(
@@ -210,9 +210,14 @@ export const handleStartPaidSubscription = async (
                 sub.cancelAtPeriodEnd === true
         );
         if (hasSoftCancelledSub) {
+            // HOS-232: the recovery path is now un-cancel, not "wait". Starting a
+            // second subscription over a live soft-cancelled preapproval would
+            // create a duplicate live preapproval (double-charge risk), so this
+            // stays a hard block — but the user can reverse the cancellation with
+            // POST /subscriptions/:id/uncancel to keep their subscription.
             throw new ServiceError(
                 ServiceErrorCode.ALREADY_EXISTS,
-                'An existing subscription is scheduled to cancel at period end. Cannot start a new subscription while a cancellation is pending. Please wait for the current period to end.',
+                'Your subscription is scheduled to cancel at period end. Un-cancel it to keep your subscription instead of starting a new one.',
                 undefined,
                 'SUBSCRIPTION_CANCEL_PENDING'
             );

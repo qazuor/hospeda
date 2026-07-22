@@ -5,8 +5,9 @@
  * persisted in billing_subscription_events rows, so any rename would corrupt
  * historical data. Pin the literals here so a rename fails CI immediately.
  *
- * All 23 types are asserted (16 pre-existing + 3 added by SPEC-147 T-002/T-009
- * + 1 added by SPEC-147 T-010 + 2 added by SPEC-148 T-004 + 1 added by HOS-171).
+ * All 24 types are asserted (16 pre-existing + 3 added by SPEC-147 T-002/T-009
+ * + 1 added by SPEC-147 T-010 + 2 added by SPEC-148 T-004 + 1 added by HOS-171
+ * + 1 added by HOS-232 (USER_UNCANCELED)).
  */
 
 import { describe, expect, it } from 'vitest';
@@ -132,8 +133,19 @@ describe('BILLING_EVENT_TYPES', () => {
             expect(value).toBe('PLAN_DISABLED_MIGRATION');
         });
 
-        it('the total number of event types is 23', () => {
-            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(23);
+        it('USER_UNCANCELED is assignable to BillingEventType', () => {
+            const value: BillingEventType = BILLING_EVENT_TYPES.USER_UNCANCELED;
+            expect(value).toBe('USER_UNCANCELED');
+        });
+
+        it('the total number of event types is 24', () => {
+            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(24);
+        });
+    });
+
+    describe('HOS-232 new event type — stable contract value', () => {
+        it('USER_UNCANCELED is exported with the exact string value "USER_UNCANCELED"', () => {
+            expect(BILLING_EVENT_TYPES.USER_UNCANCELED).toBe('USER_UNCANCELED');
         });
     });
 

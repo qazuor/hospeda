@@ -80,7 +80,10 @@ vi.mock('@repo/schemas', () => ({
 // ---------------------------------------------------------------------------
 
 import { getQZPayBilling } from '../../src/middlewares/billing';
-import { handleSelfServePause } from '../../src/routes/billing/subscription-pause';
+import {
+    handleSelfServePause,
+    handleSelfServeResume
+} from '../../src/routes/billing/subscription-pause';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -106,13 +109,17 @@ interface SubFixture {
     id?: string;
     status?: string;
     metadata?: Record<string, unknown>;
+    cancelAtPeriodEnd?: boolean;
 }
 
 function makeBillingMock(subs: SubFixture[] = []) {
     return {
         subscriptions: {
             getByCustomerId: vi.fn().mockResolvedValue(subs),
-            pause: vi.fn().mockResolvedValue({ id: subs[0]?.id ?? 'sub-1', status: 'paused' })
+            pause: vi.fn().mockResolvedValue({ id: subs[0]?.id ?? 'sub-1', status: 'paused' }),
+            resume: vi
+                .fn()
+                .mockImplementation((id: string) => Promise.resolve({ id, status: 'active' }))
         }
     };
 }
@@ -246,6 +253,96 @@ describe('handleSelfServePause', () => {
         try {
             await handleSelfServePause(ctx as never);
         } catch (err) {
+            expect((err as HTTPException).status).toBe(404);
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
+// handleSelfServeResume (HOS-236)
+// ---------------------------------------------------------------------------
+
+describe('handleSelfServeResume', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('resumes a genuinely user-paused subscription (no pending cancellation)', async () => {
+        const sub = {
+            id: 'sub-paused-1',
+            status: 'paused',
+            metadata: {},
+            cancelAtPeriodEnd: false
+        };
+        const billing = makeBillingMock([sub]);
+        mockBilling(billing);
+        const ctx = createMockContext();
+
+        const result = await handleSelfServeResume(ctx as never);
+
+        expect(result.success).toBe(true);
+        expect(result.subscriptionId).toBe('sub-paused-1');
+        expect(billing.subscriptions.resume).toHaveBeenCalledWith('sub-paused-1');
+    });
+
+    // ── THE regression guard: a soft-cancelled paused sub must NOT be resumable ──
+    it('rejects with 409 when the only paused sub is scheduled for cancellation (HOS-236)', async () => {
+        const softCancelled = {
+            id: 'sub-softcancel-1',
+            status: 'paused',
+            metadata: {},
+            cancelAtPeriodEnd: true
+        };
+        const billing = makeBillingMock([softCancelled]);
+        mockBilling(billing);
+        const ctx = createMockContext();
+
+        try {
+            await handleSelfServeResume(ctx as never);
+            throw new Error('expected handleSelfServeResume to throw');
+        } catch (err) {
+            expect(err).toBeInstanceOf(HTTPException);
+            const httpErr = err as HTTPException;
+            expect(httpErr.status).toBe(409);
+            expect(httpErr.message).toContain('RESUME_NOT_ALLOWED_CANCELLATION_SCHEDULED');
+        }
+        // The MP preapproval must NEVER be resumed for a cancelled subscription.
+        expect(billing.subscriptions.resume).not.toHaveBeenCalled();
+    });
+
+    it('resumes the genuinely-paused sub and skips the soft-cancelled one when both exist', async () => {
+        const softCancelled = {
+            id: 'sub-softcancel-2',
+            status: 'paused',
+            metadata: {},
+            cancelAtPeriodEnd: true
+        };
+        const resumable = {
+            id: 'sub-paused-2',
+            status: 'paused',
+            metadata: {},
+            cancelAtPeriodEnd: false
+        };
+        const billing = makeBillingMock([softCancelled, resumable]);
+        mockBilling(billing);
+        const ctx = createMockContext();
+
+        const result = await handleSelfServeResume(ctx as never);
+
+        expect(result.subscriptionId).toBe('sub-paused-2');
+        expect(billing.subscriptions.resume).toHaveBeenCalledWith('sub-paused-2');
+        expect(billing.subscriptions.resume).not.toHaveBeenCalledWith('sub-softcancel-2');
+    });
+
+    it('throws 404 when no paused subscription exists', async () => {
+        mockBilling(makeBillingMock([{ id: 'sub-active', status: 'active', metadata: {} }]));
+        const ctx = createMockContext();
+
+        try {
+            await handleSelfServeResume(ctx as never);
+            throw new Error('expected handleSelfServeResume to throw');
+        } catch (err) {
+            expect(err).toBeInstanceOf(HTTPException);
             expect((err as HTTPException).status).toBe(404);
         }
     });

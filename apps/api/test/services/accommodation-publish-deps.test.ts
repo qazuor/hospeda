@@ -357,6 +357,67 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
         expect(result).toBe('has_active_sub');
     });
 
+    // -----------------------------------------------------------------------
+    // HOS-239: a `comp` (SPEC-262 complimentary) subscription grants its plan's
+    // entitlements forever. Before HOS-239 `isSubscriptionLive` returned false
+    // for `comp`, so a HOST legitimately comped on an owner plan passed the
+    // entitlement middleware but was filtered out of `liveSubscriptions` here
+    // and blocked from actually publishing (subscription_required). The comp
+    // branch in isSubscriptionLive fixes that.
+    // -----------------------------------------------------------------------
+
+    it('returns has_active_sub for a comp owner-category accommodation subscription (HOS-239)', async () => {
+        // Arrange: a comp sub whose currentPeriodEnd is even in the PAST — comp
+        // never expires, so it must still count as live.
+        const pastEnd = new Date(NOW_MS - hoursMs(9000));
+        setupDbMock(
+            [CUSTOMER],
+            [
+                {
+                    status: 'comp',
+                    trialEnd: null,
+                    currentPeriodEnd: pastEnd,
+                    planId: 'plan-owner-vip',
+                    productDomain: 'accommodation'
+                }
+            ]
+        );
+        const deps = buildAccommodationPublishDeps();
+
+        // Act
+        const result = await deps.checkEligibility('owner-1');
+
+        // Assert
+        expect(result).toBe('has_active_sub');
+        expect(mocks.isOwnerCategorySubscription).toHaveBeenCalledWith(
+            expect.objectContaining({ planId: 'plan-owner-vip' })
+        );
+    });
+
+    it('returns subscription_required for a comp tourist-category subscription (not an owner plan)', async () => {
+        // A comp on a tourist plan is live but not owner-category → cannot publish.
+        setupDbMock(
+            [CUSTOMER],
+            [
+                {
+                    status: 'comp',
+                    trialEnd: null,
+                    currentPeriodEnd: null,
+                    planId: 'plan-tourist-plus',
+                    productDomain: 'accommodation'
+                }
+            ]
+        );
+        mocks.isOwnerCategorySubscription.mockResolvedValue(false);
+        const deps = buildAccommodationPublishDeps();
+
+        // Act
+        const result = await deps.checkEligibility('owner-1');
+
+        // Assert
+        expect(result).toBe('subscription_required');
+    });
+
     it('returns has_active_sub when a live owner-category plan exists alongside a live tourist plan', async () => {
         // Arrange: two live subscriptions — the tourist one is not an owner
         // plan, but the owner one is. The loop must not bail out on the first

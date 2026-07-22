@@ -137,8 +137,24 @@ export const handleSelfServeResume = async (c: Parameters<SimpleRouteInterface['
     const actor = getActorFromContext(c);
 
     const subscriptions = await billing.subscriptions.getByCustomerId(billingCustomerId);
-    const target = subscriptions.find((sub) => sub.status === 'paused');
+    const pausedSubscriptions = subscriptions.filter((sub) => sub.status === 'paused');
+    // HOS-236: a paused subscription that is scheduled for cancellation
+    // (`cancelAtPeriodEnd=true`) must NOT be resumable — resuming reactivates the
+    // MP preapproval and re-charges a subscription the user already cancelled.
+    // Only a genuinely user-paused subscription (no pending cancellation) can be
+    // resumed here. `cancelAtPeriodEnd` is Hospeda's soft-cancel signal (the
+    // `softCancelSubscription` service sets exactly this flag) and mirrors the
+    // `isCancelScheduled` gate the dashboard UI uses for the Resume button.
+    const target = pausedSubscriptions.find((sub) => sub.cancelAtPeriodEnd !== true);
     if (!target) {
+        // Distinguish "nothing paused" from "the paused sub is a cancellation in
+        // progress" so the caller gets an actionable error instead of a generic 404.
+        if (pausedSubscriptions.some((sub) => sub.cancelAtPeriodEnd === true)) {
+            throw new HTTPException(409, {
+                message:
+                    'RESUME_NOT_ALLOWED_CANCELLATION_SCHEDULED: This subscription is scheduled for cancellation and cannot be resumed'
+            });
+        }
         throw new HTTPException(404, { message: 'No paused subscription to resume' });
     }
 

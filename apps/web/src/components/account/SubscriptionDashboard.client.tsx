@@ -591,6 +591,7 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
     const [showPauseModal, setShowPauseModal] = useState(false);
     const [showPlanChangeFlow, setShowPlanChangeFlow] = useState(false);
     const [isPausing, setIsPausing] = useState(false);
+    const [isUncancelling, setIsUncancelling] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
 
     const isBillingAdmin = BILLING_ADMIN_ROLES.has(user.role);
@@ -742,6 +743,38 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
         }
     }
 
+    // HOS-232: reverse a soft-cancel while still in the access window. Clears the
+    // pending cancellation and re-authorizes the preapproval — no charge.
+    async function handleUncancel() {
+        if (!subscription) return;
+        setIsUncancelling(true);
+        try {
+            const result = await billingApi.uncancelSubscription({
+                subscriptionId: subscription.id
+            });
+            if (!result.ok) {
+                addToast({
+                    type: 'error',
+                    message: t(
+                        'account.pages.subscription.uncancelError',
+                        'No se pudo descartar la cancelación.'
+                    )
+                });
+                return;
+            }
+            addToast({
+                type: 'success',
+                message: t(
+                    'account.pages.subscription.uncancelSuccess',
+                    'Cancelación descartada. Tu suscripción sigue activa.'
+                )
+            });
+            await fetchData();
+        } finally {
+            setIsUncancelling(false);
+        }
+    }
+
     // ── Render guards ──────────────────────────────────────────────────────
 
     if (isLoading) {
@@ -837,7 +870,12 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
     // rather than let the user re-trigger a cancel that already happened.
     const canCancel = (status === 'active' || status === 'trial') && !isCancelScheduled;
     const canPause = (status === 'active' || status === 'trial') && !isCancelScheduled;
-    const canResume = status === 'paused';
+    // HOS-236: a soft-cancelled subscription can end up `paused` (e.g. a
+    // pre-existing stranded row). "Resume" must NOT be offered there — resuming
+    // reactivates the MP preapproval and re-charges a subscription the user
+    // already cancelled, while the "Cancelación programada" badge is shown right
+    // next to it. Gate on `!isCancelScheduled`, mirroring canCancel/canPause.
+    const canResume = status === 'paused' && !isCancelScheduled;
 
     // A plan change is rejected by the backend (409 SUBSCRIPTION_CANCEL_PENDING)
     // while a cancellation is already scheduled — there is no "undo cancel"
@@ -1074,6 +1112,32 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
                                 : t(
                                       'account.pages.subscription.resumeButton',
                                       'Reanudar suscripción'
+                                  )}
+                        </button>
+                    )}
+
+                    {/* Discard cancellation (HOS-232) — reverse a soft-cancel
+                        while still in the access window. No charge. Only for a
+                        live soft-cancel (active/trial); a paused sub is a
+                        different axis the backend rejects. */}
+                    {isCancelScheduled && (status === 'active' || status === 'trial') && (
+                        <button
+                            type="button"
+                            className={styles.btnPrimary}
+                            onClick={() => void handleUncancel()}
+                            disabled={isUncancelling}
+                            aria-busy={isUncancelling}
+                        >
+                            <PlayIcon
+                                size={16}
+                                weight="regular"
+                                aria-hidden="true"
+                            />
+                            {isUncancelling
+                                ? t('common.loading', 'Cargando...')
+                                : t(
+                                      'account.pages.subscription.uncancelButton',
+                                      'Descartar cancelación'
                                   )}
                         </button>
                     )}

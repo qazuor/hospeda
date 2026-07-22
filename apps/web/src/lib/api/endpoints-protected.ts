@@ -616,6 +616,29 @@ export const billingApi = {
     },
 
     /**
+     * Un-cancel (reverse a soft-cancel) the authenticated user's subscription
+     * (HOS-232). While still inside the access window (`cancelAtPeriodEnd = true`),
+     * this clears the pending cancellation and re-authorizes the MercadoPago
+     * preapproval — no new checkout and no charge. The mirror of
+     * {@link cancelSubscription}. Idempotent.
+     *
+     * Calls `POST /subscriptions/:id/uncancel`.
+     *
+     * @param params - Subscription ID.
+     * @returns `{ subscriptionId, cancelAtPeriodEnd: false }` on success.
+     */
+    uncancelSubscription({
+        subscriptionId
+    }: {
+        readonly subscriptionId: string;
+    }): Promise<ApiResult<{ subscriptionId: string; cancelAtPeriodEnd: false }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/subscriptions/${subscriptionId}/uncancel`,
+            body: {}
+        });
+    },
+
+    /**
      * Preview the restrictions that would apply if the host downgrades to a given plan.
      *
      * Returns a structured excess report covering:
@@ -2017,6 +2040,44 @@ export const protectedAccommodationsApi = {
         readonly id: string;
     }): Promise<ApiResult<AccommodationContactResponse>> {
         return apiClient.getProtected({ path: `${PROTECTED}/accommodations/${id}/contact` });
+    },
+
+    /**
+     * Get the accommodation's WhatsApp contact number, gated by the CALLER's
+     * (viewer's) billing plan (HOS-19).
+     *
+     * - `number`: the WhatsApp number, present ONLY when the caller has
+     *   `CAN_CONTACT_WHATSAPP_DISPLAY` (tourist-plus+) AND the owner set one;
+     *   `null` otherwise (never leaked to unentitled callers).
+     * - `direct`: `true` when the caller also has `CAN_CONTACT_WHATSAPP_DIRECT`
+     *   (tourist-vip+) — authorizes rendering a one-click `wa.me` deep link.
+     * - `entitled`: whether the caller has the DISPLAY entitlement — lets the
+     *   web decide between rendering the number vs an upsell.
+     *
+     * Lives on the protected (per-user, no-store) tier on purpose: the public
+     * detail payload is shared-cached, so the number cannot ride it safely.
+     *
+     * @param params - Accommodation ID + optional SSR cookie header.
+     * @returns `{ number, direct, entitled }`.
+     */
+    getWhatsApp({
+        id,
+        cookieHeader
+    }: {
+        readonly id: string;
+        /** SSR-only: raw `Cookie` header so the request carries the session. */
+        readonly cookieHeader?: string;
+    }): Promise<
+        ApiResult<{
+            readonly number: string | null;
+            readonly direct: boolean;
+            readonly entitled: boolean;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/${id}/whatsapp`,
+            cookieHeader
+        });
     },
 
     /**

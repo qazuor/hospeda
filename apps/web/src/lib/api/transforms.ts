@@ -840,6 +840,11 @@ export function toAccommodationDetailPageProps({
         // SPEC-291: manual verification flag. Owner entitlement gating
         // (HAS_VERIFICATION_BADGE) is already applied server-side.
         isVerified: Boolean(item.isVerified),
+        // HOS-19: owner-derived, cache-safe flag — whether this accommodation
+        // carries a WhatsApp number. The number itself is fetched per-viewer
+        // from the protected endpoint; this only decides whether to render the
+        // WhatsApp block / upsell at all.
+        hasWhatsapp: Boolean(item.hasWhatsapp),
         createdAt: item.createdAt ? String(item.createdAt) : new Date().toISOString(),
         averageRating: Number(item.averageRating || 0),
         reviewsCount: Number(item.reviewsCount || 0),
