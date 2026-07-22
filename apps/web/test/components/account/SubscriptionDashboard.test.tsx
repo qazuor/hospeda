@@ -146,6 +146,23 @@ const CANCELLED_SUBSCRIPTION = {
     cancelAtPeriodEnd: true
 };
 
+// HOS-236: a genuinely user-paused subscription (no pending cancellation) —
+// the Resume button SHOULD appear for it.
+const PAUSED_SUBSCRIPTION = {
+    ...ACTIVE_SUBSCRIPTION,
+    status: 'paused' as const,
+    cancelAtPeriodEnd: false
+};
+
+// HOS-236: a soft-cancelled subscription that ended up `paused`. The Resume
+// button MUST NOT appear — resuming would revive a cancellation the user
+// already made. The "Cancelación programada" badge is shown instead.
+const SOFT_CANCELLED_PAUSED_SUBSCRIPTION = {
+    ...ACTIVE_SUBSCRIPTION,
+    status: 'paused' as const,
+    cancelAtPeriodEnd: true
+};
+
 const TRIAL_SUBSCRIPTION = {
     ...ACTIVE_SUBSCRIPTION,
     status: 'trial' as const,
@@ -452,6 +469,30 @@ describe('SubscriptionDashboard — resolved subscription', () => {
         expect(
             screen.queryByRole('button', { name: /cancelar suscripción/i })
         ).not.toBeInTheDocument();
+    });
+});
+
+describe('SubscriptionDashboard — resume button gating (HOS-236)', () => {
+    it('shows the resume button for a genuinely paused subscription', async () => {
+        mockSubscriptionSuccess(PAUSED_SUBSCRIPTION);
+        renderDashboard();
+        expect(
+            await screen.findByRole('button', { name: /reanudar suscripción/i })
+        ).toBeInTheDocument();
+    });
+
+    // THE regression guard: a soft-cancelled paused sub must NOT offer Resume —
+    // resuming reactivates the MP preapproval and re-charges a cancelled sub.
+    it('hides the resume button for a soft-cancelled paused subscription (cancelAtPeriodEnd=true)', async () => {
+        mockSubscriptionSuccess(SOFT_CANCELLED_PAUSED_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+        expect(
+            screen.queryByRole('button', { name: /reanudar suscripción/i })
+        ).not.toBeInTheDocument();
+        // The contradictory pairing is resolved: the "scheduled cancellation"
+        // badge is shown instead.
+        expect(screen.getByText(/cancelación programada/i)).toBeInTheDocument();
     });
 });
 
