@@ -263,18 +263,22 @@ describe('Notification Schedule Cron Job', () => {
 
     describe('Trial Ending Reminders', () => {
         // HOS-231: the trial-ending email prefers the plan DISPLAY name
-        // (TrialEndingSubscription.planDisplayName) over the raw slug.
+        // (TrialEndingSubscription.planDisplayName) over the raw slug. The trial is
+        // returned for EVERY daysAhead window the job queries (not keyed to one
+        // day) so the assertion is independent of the config reminder window.
         it('uses planDisplayName over planSlug when present', async () => {
             const ctx = createMockContext();
-            mockTrialServiceByDays({
-                3: [
-                    makeTrial({
-                        id: 'sub-1',
-                        daysRemaining: 3,
-                        planSlug: 'owner-basico',
-                        planDisplayName: 'Basic'
-                    })
-                ]
+            const trial = makeTrial({
+                id: 'sub-1',
+                daysRemaining: 3,
+                planSlug: 'owner-basico',
+                planDisplayName: 'Basic'
+            });
+            const service = {
+                findTrialsEndingSoon: vi.fn().mockResolvedValue([trial])
+            };
+            vi.mocked(TrialService).mockImplementation(function () {
+                return service as unknown as InstanceType<typeof TrialService>;
             });
             vi.mocked(getQZPayBilling).mockReturnValue({} as never);
             vi.mocked(sendNotification).mockResolvedValue(undefined);
@@ -286,6 +290,13 @@ describe('Notification Schedule Cron Job', () => {
                 expect.objectContaining({
                     type: NotificationType.TRIAL_ENDING_REMINDER,
                     planName: 'Basic'
+                })
+            );
+            // Never the raw slug.
+            expect(sendNotification).not.toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: NotificationType.TRIAL_ENDING_REMINDER,
+                    planName: 'owner-basico'
                 })
             );
         });
