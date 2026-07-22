@@ -69,9 +69,6 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
         if (!passwordResult.success) {
             const issue = passwordResult.error.issues[0];
             if (issue?.code === 'too_big') {
-                // NOTE (HOS-190 i18n gap): no dedicated i18n key exists yet
-                // for this case — the fallback below is shown for every
-                // locale until `auth.resetPassword.errors.passwordMax` is added.
                 setError(
                     t(
                         'auth.resetPassword.errors.passwordMax',
@@ -86,10 +83,6 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
                     )
                 );
             } else {
-                // NOTE (HOS-190 i18n gap): no dedicated i18n key exists yet
-                // for the complexity rule — the fallback below is shown for
-                // every locale until `auth.resetPassword.errors.passwordWeak`
-                // is added.
                 setError(
                     t(
                         'auth.resetPassword.errors.passwordWeak',
