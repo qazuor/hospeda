@@ -868,23 +868,23 @@ describe('single-provider config with retryable failure', () => {
 
 import { injectSystemPrompt } from '../src/engine/prompt-injection.js';
 
-describe('injectSystemPrompt — messages-path with undefined messages', () => {
-    it('should inject system message when req has no prompt and no messages', () => {
-        // Arrange — request has neither prompt nor messages (messages is undefined).
-        // This exercises the `req.messages ?? []` fallback so the injected result
-        // contains only the system message.
-        const req = {} as { prompt?: string; messages?: { role: string; content: string }[] };
+describe('injectSystemPrompt — no prompt and no messages', () => {
+    it('should set the `system` field and never synthesize a role:"system" message (HOS-205)', () => {
+        // Arrange — request has neither prompt nor messages.
+        const req = {} as {
+            prompt?: string;
+            messages?: { role: string; content: string }[];
+            system?: string;
+        };
         const systemContent = 'You are helpful.';
 
         // Act
         const result = injectSystemPrompt({ req, systemContent });
 
-        // Assert — messages is [system] (injected from empty fallback)
-        expect((result as { messages: unknown[] }).messages).toHaveLength(1);
-        expect((result as { messages: { role: string; content: string }[] }).messages[0]).toEqual({
-            role: 'system',
-            content: systemContent
-        });
+        // Assert — system is set via the native channel; no messages array is
+        // fabricated (which would trip the SDK's mid-array system-message warning).
+        expect((result as { system: string }).system).toBe(systemContent);
+        expect((result as { messages?: unknown[] }).messages).toBeUndefined();
     });
 });
 
@@ -914,18 +914,38 @@ describe('injectSystemPrompt — `system` field caller-wins', () => {
         expect((result as typeof req).system).toBe('Caller-supplied system content.');
     });
 
-    it('should still inject the resolved prompt as a role:"system" message when req.system is absent', () => {
+    it('should inject the resolved prompt into the `system` field when req.system is absent (HOS-205)', () => {
         // Arrange — no `system` field and no role:'system' message.
         const req = { messages: [{ role: 'user', content: 'hi' }] };
 
         // Act
         const result = injectSystemPrompt({ req, systemContent: 'Resolved admin prompt.' });
 
-        // Assert — the auto-injection fallback path is unchanged by the new field.
-        expect((result as { messages: { role: string; content: string }[] }).messages[0]).toEqual({
-            role: 'system',
-            content: 'Resolved admin prompt.'
-        });
+        // Assert — system set via the native channel; the caller's messages are
+        // left untouched (no role:'system' entry prepended).
+        expect((result as { system: string }).system).toBe('Resolved admin prompt.');
+        expect((result as { messages: { role: string; content: string }[] }).messages).toEqual([
+            { role: 'user', content: 'hi' }
+        ]);
+    });
+
+    it('should keep the `prompt` field and set `system` on the prompt-path (HOS-205)', () => {
+        // Arrange — prompt-path request, no caller system content.
+        const req = { prompt: 'Improve this' } as {
+            prompt?: string;
+            messages?: { role: string; content: string }[];
+            system?: string;
+        };
+
+        // Act
+        const result = injectSystemPrompt({ req, systemContent: 'You are a writer.' });
+
+        // Assert — the discriminator (`prompt`) is preserved so the adapter still
+        // takes the prompt branch; `system` carries the resolved prompt; no
+        // messages array (and therefore no role:'system' message) is synthesized.
+        expect((result as { prompt: string }).prompt).toBe('Improve this');
+        expect((result as { system: string }).system).toBe('You are a writer.');
+        expect((result as { messages?: unknown[] }).messages).toBeUndefined();
     });
 });
 
