@@ -175,6 +175,15 @@
         "bookmark_count_one": "Salvo por {{count}} pessoa",
         "bookmark_count_other": "Salvo por {{count}} pessoas",
         "bookmark_count_zero": "Seja o primeiro a salvar",
+        "location": "Localização",
+        "stats": {
+            "title": "Neste destino",
+            "accommodations": "acomodações",
+            "events": "eventos",
+            "attractions": "atrações",
+            "rating": "avaliação",
+            "reviews": "avaliações"
+        },
         "reviews": {
             "modal": {
                 "loading": "Carregando avaliações…"

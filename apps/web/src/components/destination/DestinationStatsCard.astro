@@ -40,30 +40,30 @@ const rows: StatRow[] = [];
 // when there is something meaningful to show (rating=0 means no scores yet).
 rows.push({
 	value: String(stats.accommodationsCount),
-	label: t('destination.detail.stats.accommodations', 'alojamientos'),
+	label: t('destinations.detail.stats.accommodations', 'alojamientos'),
 	icon: 'bed'
 });
 rows.push({
 	value: String(stats.eventsCount),
-	label: t('destination.detail.stats.events', 'eventos'),
+	label: t('destinations.detail.stats.events', 'eventos'),
 	icon: 'calendar'
 });
 rows.push({
 	value: String(stats.attractionsCount),
-	label: t('destination.detail.stats.attractions', 'atracciones'),
+	label: t('destinations.detail.stats.attractions', 'atracciones'),
 	icon: 'location'
 });
 if (stats.averageRating > 0) {
 	rows.push({
 		value: stats.averageRating.toFixed(1),
-		label: t('destination.detail.stats.rating', 'puntuación'),
+		label: t('destinations.detail.stats.rating', 'puntuación'),
 		icon: 'star'
 	});
 }
 if (stats.reviewsCount > 0) {
 	rows.push({
 		value: String(stats.reviewsCount),
-		label: t('destination.detail.stats.reviews', 'reseñas'),
+		label: t('destinations.detail.stats.reviews', 'reseñas'),
 		icon: 'chat'
 	});
 }
@@ -71,7 +71,7 @@ if (stats.reviewsCount > 0) {
 
 <div class="dest-stats-card">
 	<h3 class="dest-stats-card__title">
-		{t('destination.detail.stats.title', 'En este destino')}
+		{t('destinations.detail.stats.title', 'En este destino')}
 	</h3>
 
 	<ul class="dest-stats-card__list" role="list">
