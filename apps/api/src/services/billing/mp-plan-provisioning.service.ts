@@ -391,6 +391,27 @@ export async function resolveCheckoutMpPlanId(
 export interface BuildPreapprovalPlanShareLinkInput {
     /** The MercadoPago `preapproval_plan` id to build a hosted checkout link for. */
     readonly mpPreapprovalPlanId: string;
+    /**
+     * The pending checkout's anti-IDOR `nonce` (HOS-209). When provided it is
+     * appended to the hosted-checkout URL as `external_reference`, so
+     * MercadoPago stamps it on whichever preapproval the customer authorizes on
+     * that page — making the nonce present on the preapproval FROM THE START,
+     * before any `back_url` return or webhook.
+     *
+     * Why this matters: the `preapproval_plan_id` is shared across every buyer
+     * of the same plan/interval/trial variant, so a webhook-only (F3) linking
+     * with multiple concurrent pending checkouts for the same customer+plan
+     * falls back to heuristic reconciliation and can refuse ambiguous
+     * candidates (observed in prod, SMOKE-19-07). A per-checkout
+     * `external_reference` lets the linker resolve by exact-nonce (Tier 2)
+     * immediately, independent of whether the browser ever returns.
+     *
+     * The post-hoc `adapter.subscriptions.update({ externalReference })` in
+     * `link-preapproval.service.ts` (Step 4) remains as a fallback for the case
+     * MercadoPago does not honor the URL param — this is belt-and-suspenders.
+     * Whether MP actually stamps it is deferred to a real-MP smoke (HOS-174).
+     */
+    readonly externalReference?: string;
 }
 
 /**
@@ -416,6 +437,12 @@ export interface BuildPreapprovalPlanShareLinkInput {
  */
 export function buildPreapprovalPlanShareLink(input: BuildPreapprovalPlanShareLinkInput): string {
     const params = new URLSearchParams({ preapproval_plan_id: input.mpPreapprovalPlanId });
+    // HOS-209: stamp the per-checkout nonce so MercadoPago carries it onto the
+    // authorized preapproval as external_reference, enabling exact-nonce (Tier 2)
+    // linking from the start. URLSearchParams handles the encoding.
+    if (input.externalReference) {
+        params.set('external_reference', input.externalReference);
+    }
     return `https://www.mercadopago.com.ar/subscriptions/checkout?${params.toString()}`;
 }
 

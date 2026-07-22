@@ -451,14 +451,50 @@ type OwnershipTier = 'ownership' | 'nonce' | 'heuristic';
  * `checkout` row — no async lookup, so no lookup-failure mode to fail closed
  * on either.
  *
- * TODO(HOS-191 follow-up): Tier 1 still lacks a positive NON-email ownership
- * factor. Add one to fully harden it — either match the live preapproval's
- * `payer_id` (which MercadoPago DOES reliably return) against the customer's
- * own MP identity, or mint a single-use server-side link token returned only
- * to the owner at `/start-paid` and required back on the `back_url` return.
- * Also have the web return page strip `preapproval_id` from the URL (e.g.
- * `history.replaceState`) BEFORE any analytics/third-party script runs, to
- * shrink the weak-secrecy leak surface described above.
+ * ## HOS-209: Tier 1's positive non-email factor is now the `external_reference`
+ *
+ * The chosen hardening (owner decision, 2026-07-22) is NOT payer_id or a link
+ * token — it is stamping the per-checkout `nonce` onto the hosted-checkout
+ * share-link URL as `external_reference` (see `buildPreapprovalPlanShareLink`,
+ * HOS-209), so MercadoPago carries it onto the authorized preapproval FROM THE
+ * START. That closes the Tier-1 forward-hijack residual through the ALREADY
+ * EXISTING Step-3 IDOR guard in {@link linkPreapprovalToLocalSub}, at no extra
+ * cost here: an attacker who quotes their own `expectedLocalSubscriptionId`
+ * plus a victim's leaked `preapproval_id` now hits `live.externalReference`
+ * (the victim's nonce) !== `checkout.nonce` (the attacker's) → `idor`. Before
+ * HOS-209 that guard was inert on Tier 1 because a fresh preapproval carried no
+ * `external_reference` until Step 4 stamped it post-hoc, which is exactly why
+ * payer-email had to carry the load. The web return page already strips
+ * `preapproval_id` from the URL before analytics run (HOS-209 web part, merged
+ * in #2374), shrinking the leak surface in parallel.
+ *
+ * Leak-surface tradeoff (HOS-209): stamping the nonce onto the hosted-checkout
+ * URL means it now travels through the buyer's browser (history, and any script
+ * MercadoPago's own hosted page loads) — the same weak-secrecy class the
+ * `preapproval_id` leak is described under above. That does NOT weaken the nonce
+ * as an ownership factor, because NO code path ever trusts a client-supplied
+ * `external_reference`: the Step-3 IDOR guard compares against
+ * `live.externalReference` re-`retrieve`d directly from MercadoPago (F2 back_url,
+ * `routes/billing/link-preapproval.ts` passes exactly that live value, plus
+ * `expectedCustomerId` from the authenticated session — never a body/query
+ * field), and Tier 2 matches the `external_reference` read from a live
+ * MercadoPago `retrieve()` triggered by a signature-verified webhook event (F3)
+ * — the webhook body carries only the resource id, never `external_reference`,
+ * so the value is always MP-sourced, not attacker-supplied. A leaked nonce also cannot be turned into a hijack: the
+ * comparand `checkout.nonce` is read from the caller's OWN server-generated
+ * `billing_pending_checkouts` row (`randomBytes`), so an attacker cannot make
+ * their `checkout.nonce` equal a victim's — knowing the victim's nonce grants no
+ * new capability. The "unforgeable" framing for Tier 2 above therefore still
+ * holds against the values this guard actually trusts (MP-sourced), even though
+ * the nonce is no longer strictly server-side-only in transit.
+ *
+ * Belt-and-suspenders: the post-hoc Step-4 `adapter.subscriptions.update({
+ * externalReference })` REMAINS as a fallback for the case MercadoPago does not
+ * honor the URL param. Whether MP actually stamps the URL `external_reference`
+ * onto the preapproval is EMPIRICAL and DEFERRED to a real-MP staging smoke
+ * (HOS-174, this issue carries `status-needs-smoke-staging`). If the smoke shows
+ * MP drops the param, fall back to the payer_id consistency guard or a
+ * single-use link token — but do not build either blind.
  *
  * @internal
  */

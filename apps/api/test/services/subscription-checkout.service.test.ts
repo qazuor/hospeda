@@ -194,8 +194,11 @@ describe('PENDING_PROVIDER_TTL_MS', () => {
     });
 });
 
+// HOS-209: the share-link now carries the per-checkout nonce as
+// `external_reference` (from PENDING_RESULT.nonce = 'nonce-test-1234') so MP
+// stamps it on the authorized preapproval for exact-nonce (Tier 2) linking.
 const EXPECTED_SHARE_LINK =
-    'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=mp_plan_test';
+    'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=mp_plan_test&external_reference=nonce-test-1234';
 
 describe('initiatePaidMonthlySubscription', () => {
     beforeEach(() => {
@@ -219,6 +222,22 @@ describe('initiatePaidMonthlySubscription', () => {
         expect(result.checkoutUrl).toBe(EXPECTED_SHARE_LINK);
         expect(result.localSubscriptionId).toBe(PENDING_RESULT.localSubscriptionId);
         expect(result.expiresAt).toBe(PENDING_RESULT.expiresAt);
+    });
+
+    it('HOS-209: stamps the pending-checkout nonce as external_reference on the share-link', async () => {
+        const billing = createBillingMock();
+
+        const result = await initiatePaidMonthlySubscription({
+            customerId: CUSTOMER_ID,
+            planSlug: 'owner-premium',
+            billing: billing as any,
+            urls: URLS
+        });
+
+        // Parse rather than string-match so the assertion survives param reorder.
+        const url = new URL(result.checkoutUrl);
+        expect(url.searchParams.get('preapproval_plan_id')).toBe('mp_plan_test');
+        expect(url.searchParams.get('external_reference')).toBe(PENDING_RESULT.nonce);
     });
 
     it('invokes createPendingProviderSubscription with the right arguments', async () => {
