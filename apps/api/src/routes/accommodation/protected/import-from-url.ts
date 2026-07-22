@@ -46,6 +46,7 @@
 
 import type { AiService } from '@repo/ai-core';
 import { getMonthlyCallCount, recordAiUsage } from '@repo/ai-core';
+import { ExchangeRateModel } from '@repo/db';
 import {
     type AccommodationImportAsyncStartResponse,
     type AccommodationImportRequest,
@@ -57,6 +58,10 @@ import {
 import type { Actor } from '@repo/service-core';
 import {
     AccommodationImportService,
+    DolarApiClient,
+    ExchangeRateApiClient,
+    ExchangeRateConfigService,
+    ExchangeRateFetcher,
     type ImportContext,
     type ImportDispatchResult,
     type RawExtraction,
@@ -385,7 +390,23 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
             properties: { host: sourceHost }
         });
 
-        const service = new AccommodationImportService({ logger: apiLogger });
+        // Exchange-rate dependencies (BETA-181): a scraped USD price is
+        // converted to ARS inside finalizeImportDraft when both are present.
+        // Constructed here (route layer is allowed to read env; service-core
+        // is not) — mirrors apps/api/src/routes/exchange-rates/public/convert.ts.
+        const exchangeRateFetcher = new ExchangeRateFetcher({
+            dolarApiClient: new DolarApiClient(),
+            exchangeRateApiClient: new ExchangeRateApiClient({
+                apiKey: env.HOSPEDA_EXCHANGE_RATE_API_KEY
+            }),
+            exchangeRateModel: new ExchangeRateModel()
+        });
+        const exchangeRateConfigService = new ExchangeRateConfigService({ logger: apiLogger });
+
+        const service = new AccommodationImportService(
+            { logger: apiLogger },
+            { exchangeRateFetcher, exchangeRateConfigService }
+        );
         const dispatch = await service.dispatchImportFromUrl(
             { url: input.url, locale, context },
             actor

@@ -41,6 +41,12 @@
                 "candidates": "Destinos sugeridos: {{names}}",
                 "hint": "Elegí el destino manualmente en el campo Ciudad.",
                 "autoSelected": "Autoseleccionamos el destino detectado. Revisalo y cambialo si no es correcto."
+            },
+            "priceConversion": {
+                "label": "Precio convertido automáticamente",
+                "banner": "Convertimos {{original}} a {{converted}}.",
+                "reviewNote": "Revisá y confirmá el precio antes de publicar.",
+                "rateLabel": "Tipo de cambio aplicado: {{rate}} ({{rateType}})"
             }
         },
         "help": {

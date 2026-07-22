@@ -41,6 +41,12 @@
                 "candidates": "Suggested destinations: {{names}}",
                 "hint": "Please select the destination manually in the City field.",
                 "autoSelected": "We auto-selected the detected destination. Review it and change it if it's wrong."
+            },
+            "priceConversion": {
+                "label": "Price converted automatically",
+                "banner": "We converted {{original}} to {{converted}}.",
+                "reviewNote": "Please review and confirm the price before publishing.",
+                "rateLabel": "Exchange rate applied: {{rate}} ({{rateType}})"
             }
         },
         "help": {
