@@ -273,8 +273,14 @@ export interface TrialEndingSubscription {
     readonly userName: string;
     /** User ID */
     readonly userId: string;
-    /** Plan slug */
+    /** Plan slug (the raw `billing_plans.name`, e.g. `owner-basico`). */
     readonly planSlug: string;
+    /**
+     * Buyer-visible plan display name (`metadata.displayName`, e.g. `Basic`),
+     * for customer-facing notifications. Falls back to the slug at the call site
+     * when absent (HOS-231).
+     */
+    readonly planDisplayName?: string;
     /** Trial end date */
     readonly trialEnd: Date;
     /** Days remaining */

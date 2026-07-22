@@ -19,6 +19,43 @@
 import { getPlanById } from '../plan.service.js';
 
 /**
+ * A qzpay plan object (`billing.plans.get()` result) narrowed to the two fields
+ * needed to derive its buyer-visible label.
+ */
+export interface PlanDisplayNameSource {
+    readonly name: string;
+    readonly metadata?: unknown;
+}
+
+/**
+ * Resolve a plan's buyer-visible display name from an ALREADY-FETCHED qzpay plan
+ * object — zero extra queries. Prefers `metadata.displayName`, falling back to
+ * `name` (which is the raw slug on a qzpay plan object).
+ *
+ * Use this when you already hold a `billing.plans.get()` result (webhook/cron
+ * paths that fetch the plan for other reasons); use {@link resolvePlanDisplayName}
+ * when you only have the plan id. This is the single source of truth for the
+ * "prefer displayName, fall back to slug" rule (previously duplicated as a
+ * private helper in `subscription-checkout.service.ts`).
+ *
+ * @param plan - An already-fetched qzpay plan object.
+ * @returns The display name, or the slug when no `displayName` is set.
+ */
+export function planDisplayNameFromPlan(plan: PlanDisplayNameSource): string {
+    if (
+        typeof plan.metadata === 'object' &&
+        plan.metadata !== null &&
+        'displayName' in plan.metadata
+    ) {
+        const displayName = (plan.metadata as Record<string, unknown>).displayName;
+        if (typeof displayName === 'string' && displayName.trim().length > 0) {
+            return displayName;
+        }
+    }
+    return plan.name;
+}
+
+/**
  * Resolve the buyer-visible display name for a plan.
  *
  * @param input - Object holding the target `billing_plans.id`.

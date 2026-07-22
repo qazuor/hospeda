@@ -54,6 +54,7 @@ import * as Sentry from '@sentry/node';
 import { and, eq, inArray, isNull, lt } from 'drizzle-orm';
 import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
+import { planDisplayNameFromPlan } from '../../services/billing/plan-change-reason.js';
 import { CONFIRMED_TERMINAL_STATUSES } from '../../services/billing/reactivation-supersession-complete.js';
 import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition } from '../types.js';
@@ -518,7 +519,8 @@ export const abandonedPendingSubsJob: CronJobDefinition = {
                         userId: null,
                         customerId: customer.id,
                         idempotencyKey: `abandoned-sub-${sub.id}`,
-                        planName: plan?.name ?? sub.planId
+                        // HOS-231: display name; never leak the raw UUID/slug.
+                        planName: plan ? planDisplayNameFromPlan(plan) : sub.planId
                     });
 
                     logger.debug('Sent abandoned-sub notification', {

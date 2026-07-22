@@ -29,7 +29,7 @@ import {
 import { type NotificationPayload, NotificationType, RetryService } from '@repo/notifications';
 import { BILLING_EVENT_TYPES, type TrialEndingSubscription } from '@repo/service-core';
 import { getQZPayBilling } from '../../middlewares/billing.js';
-import { resolvePlanDisplayName } from '../../services/billing/plan-change-reason.js';
+import { planDisplayNameFromPlan } from '../../services/billing/plan-change-reason.js';
 import { processDbNotificationRetries } from '../../services/notification-retry.service.js';
 import { buildTrialUpgradeUrl, TrialService } from '../../services/trial.service.js';
 import { loadBillingSettings } from '../../utils/billing-settings.js';
@@ -261,7 +261,8 @@ async function sendTrialReminderDurable(params: {
         recipientName: trial.userName,
         userId: trial.userId,
         customerId: trial.customerId,
-        planName: trial.planSlug,
+        // HOS-231: prefer the display name; `planSlug` is the raw slug fallback.
+        planName: trial.planDisplayName ?? trial.planSlug,
         trialEndDate: trial.trialEnd.toISOString(),
         daysRemaining: trial.daysRemaining,
         upgradeUrl,
@@ -589,12 +590,10 @@ export const notificationScheduleJob: CronJobDefinition = {
                                 try {
                                     const plan = await billing.plans.get(subscription.planId);
                                     if (plan) {
-                                        // HOS-231: `plan.name` is the SLUG; resolve the
-                                        // display name for the customer-facing email.
-                                        planName =
-                                            (await resolvePlanDisplayName({
-                                                planId: subscription.planId
-                                            })) ?? plan.name;
+                                        // HOS-231: `plan.name` is the SLUG; use the
+                                        // display name (metadata.displayName) for the
+                                        // customer-facing email — no extra query.
+                                        planName = planDisplayNameFromPlan(plan);
                                         // Find price matching subscription interval
                                         const matchingPrice = plan.prices?.find(
                                             (p: {

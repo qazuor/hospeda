@@ -34,7 +34,7 @@ import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../../services/addon-lifecycle.service.js';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service.js';
 import { linkPreapprovalToLocalSub } from '../../../services/billing/link-preapproval.service.js';
-import { resolvePlanDisplayName } from '../../../services/billing/plan-change-reason.js';
+import { planDisplayNameFromPlan } from '../../../services/billing/plan-change-reason.js';
 import { completeSupersessionPairing } from '../../../services/billing/reactivation-supersession-complete.js';
 import { reconcileCommerceListingForSubscription } from '../../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service.js';
@@ -1399,12 +1399,11 @@ export async function processSubscriptionUpdated({
 
     // `plan.name` from the qzpay adapter is the SLUG (`owner-basico`) — fine for
     // the `planSlug` log below, but the customer-facing cancelled/paused/
-    // reactivated emails must show the display name (`Basic`). Resolve it via the
-    // shared helper, falling back to the slug when the plan cannot be resolved
-    // (HOS-231).
+    // reactivated emails must show the display name (`Basic`). Derive it from the
+    // already-fetched plan object (metadata.displayName, slug fallback) — no extra
+    // query (HOS-231).
     const planName = plan?.name ?? 'Plan';
-    const planDisplayName =
-        (await resolvePlanDisplayName({ planId: localSubscription.planId })) ?? planName;
+    const planDisplayName = plan ? planDisplayNameFromPlan(plan) : planName;
     const customerName =
         typeof customer?.metadata?.name === 'string'
             ? customer.metadata.name

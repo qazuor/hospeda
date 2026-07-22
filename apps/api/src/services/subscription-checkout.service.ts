@@ -45,6 +45,7 @@ import {
 import { createPaidSubscription } from './billing/paid-subscription-create.js';
 import type { PendingCheckoutDiscount } from './billing/pending-provider-subscription-create.js';
 import { createPendingProviderSubscription } from './billing/pending-provider-subscription-create.js';
+import { planDisplayNameFromPlan } from './billing/plan-change-reason.js';
 import type { SubscriptionCheckoutErrorCode } from './billing/subscription-checkout-error.js';
 import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
 import { hasAnyPriorSubscription } from './billing/trial-eligibility.service.js';
@@ -187,32 +188,6 @@ async function resolvePlanBySlug(billing: QZPayBilling, planSlug: string) {
     }
     const plansResult = await billing.plans.list();
     return plansResult.data.find((p) => p.name === planSlug) ?? null;
-}
-
-/**
- * Get the human-facing display name for a plan, falling back to the slug
- * when no display name is configured.
- *
- * Hospeda stores the slug as `billing_plans.name` (the QZPay-facing lookup
- * key) and the human label in `billing_plans.metadata.displayName` (set by
- * the seed from `PlanDefinition.name`). MercadoPago shows whatever string we
- * pass as the line-item title to the buyer, so this helper centralises the
- * "prefer display name, fall back to slug" rule used by every checkout
- * builder in this file. Slugs like `owner-basico` look bad in the MP
- * checkout screen — display names like `Basic` are what we want.
- */
-function getPlanDisplayName(plan: { readonly name: string; readonly metadata?: unknown }): string {
-    if (
-        typeof plan.metadata === 'object' &&
-        plan.metadata !== null &&
-        'displayName' in plan.metadata
-    ) {
-        const displayName = (plan.metadata as Record<string, unknown>).displayName;
-        if (typeof displayName === 'string' && displayName.length > 0) {
-            return displayName;
-        }
-    }
-    return plan.name;
 }
 
 interface PriceShape {
@@ -621,7 +596,7 @@ export async function initiatePaidMonthlySubscription(
         commercialPlanId: plan.id,
         // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
         customerId,
-        planName: getPlanDisplayName(plan),
+        planName: planDisplayNameFromPlan(plan),
         amountCentavos: monthlyPrice.unitAmount,
         currency: monthlyPrice.currency,
         // The hidden TEST_DAILY_PLAN resolves the `'day'` price above (into
@@ -776,7 +751,7 @@ export async function initiateCommerceMonthlySubscription(
         commercialPlanId: plan.id,
         // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
         customerId,
-        planName: getPlanDisplayName(plan),
+        planName: planDisplayNameFromPlan(plan),
         amountCentavos: monthlyPrice.unitAmount,
         currency: monthlyPrice.currency,
         billingInterval: 'monthly',
@@ -902,7 +877,7 @@ export async function initiatePartnerMonthlySubscription(
         commercialPlanId: plan.id,
         // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
         customerId,
-        planName: getPlanDisplayName(plan),
+        planName: planDisplayNameFromPlan(plan),
         amountCentavos: monthlyPrice.unitAmount,
         currency: monthlyPrice.currency,
         billingInterval: 'monthly',
@@ -1214,7 +1189,7 @@ export async function initiatePaidAnnualSubscription(
         commercialPlanId: plan.id,
         // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
         customerId,
-        planName: getPlanDisplayName(plan),
+        planName: planDisplayNameFromPlan(plan),
         amountCentavos: annualPrice.unitAmount,
         currency: annualPrice.currency,
         billingInterval: 'annual',
@@ -1489,7 +1464,7 @@ export async function initiatePaidPlanUpgrade(
                 unitAmount: deltaCentavos,
                 currency: 'ARS',
                 quantity: 1,
-                title: `${getPlanDisplayName(targetPlan)} (Upgrade prorated)`,
+                title: `${planDisplayNameFromPlan(targetPlan)} (Upgrade prorated)`,
                 categoryId: 'services'
             }
         ],
