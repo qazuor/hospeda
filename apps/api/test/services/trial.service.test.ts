@@ -831,6 +831,41 @@ describe('TrialService', () => {
             );
         });
 
+        // ── HOS-237: soft-cancelled trial is deferred, never mirrored to paused ──
+        // A user soft-cancel sets cancelAtPeriodEnd=true and pauses the MP
+        // preapproval. Mirroring `paused` here would strand the row (paused is
+        // excluded from finalize-cancelled-subs forever). Instead the row is left
+        // `trialing` for finalize-cancelled-subs to finalize the same night.
+        it('defers a soft-cancelled trial (cancelAtPeriodEnd=true) instead of mirroring paused (HOS-237)', async () => {
+            // Arrange — the preapproval would report `paused`, but we must not ask.
+            givenClaimedRows([makeClaimedRow({ cancelAtPeriodEnd: true })]);
+            givenProviderStatus('paused');
+
+            // Act
+            const result = await trialService.reconcileExpiredTrials(adapterInput());
+
+            // Assert — not counted as reconciled; no status write (would strand it
+            // at `paused`); no provider retrieve (outcome is already known); no
+            // cancel here (finalize-cancelled-subs owns the hard-cancel).
+            expect(result).toBe(0);
+            expect(mockTxUpdateChain.set).not.toHaveBeenCalled();
+            expect(mockPaymentAdapter.subscriptions.retrieve).not.toHaveBeenCalled();
+            expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+        });
+
+        it('does not write a TRIAL_RECONCILED event for a deferred soft-cancelled trial (HOS-237)', async () => {
+            // Arrange
+            givenClaimedRows([makeClaimedRow({ cancelAtPeriodEnd: true })]);
+            givenProviderStatus('paused');
+
+            // Act
+            await trialService.reconcileExpiredTrials(adapterInput());
+
+            // Assert — no event write, so the row stays re-claimable until
+            // finalize-cancelled-subs actually finalizes it.
+            expect(mockTxInsertChain.values).not.toHaveBeenCalled();
+        });
+
         // ── Deferral and safety ─────────────────────────────────────────────
         it('defers to the next run when the provider is still pending', async () => {
             // Arrange — MP has not settled the charge yet
