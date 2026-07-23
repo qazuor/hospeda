@@ -19,6 +19,11 @@
  *
  * All tests use mocked Drizzle clients (`vi.spyOn(dbUtils, 'getDb')`) per the
  * project convention — no real DB connection required.
+ *
+ * HOS-274 note: `PostModel.findAll` now ALSO injects a default
+ * `isNull(posts.deletedAt)` soft-delete condition, so a WHERE clause with a
+ * category filter present is `and(categoryCondition, isNull(deletedAt))`
+ * rather than a bare single condition. See `flattenAndConditions()` below.
  */
 import type { SQL } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -57,6 +62,28 @@ function inArrayValuesOf(clause: unknown): unknown[] | undefined {
 function eqValueOf(clause: unknown): unknown {
     const chunks = chunksOf(clause);
     return (chunks?.[3] as { value?: unknown } | undefined)?.value;
+}
+
+/**
+ * Flattens an `and(...)`-composed WHERE clause into its individual top-level
+ * conditions (HOS-274 — see file header note). Returns `[clause]` unchanged
+ * when `clause` is already a single leaf condition (no AND wrapper detected).
+ */
+function flattenAndConditions(clause: unknown): unknown[] {
+    const chunks = chunksOf(clause);
+    const isAndWrapper =
+        chunks?.length === 3 && chunks[0]?.value?.[0] === '(' && chunks[2]?.value?.[0] === ')';
+    if (!isAndWrapper) return [clause];
+
+    const innerChunks = chunksOf(chunks?.[1]);
+    if (!innerChunks) return [clause];
+    // Even indices are conditions; odd indices are ' and ' separator chunks.
+    return innerChunks.filter((_, i) => i % 2 === 0);
+}
+
+/** Finds the sub-condition (after flattening any AND wrapper) whose operator matches. */
+function findConditionByOperator(clause: unknown, operator: string): unknown {
+    return flattenAndConditions(clause).find((c) => operatorOf(c) === operator);
 }
 
 /**
@@ -122,8 +149,9 @@ describe('PostModel — categories/category manual WHERE branch (HOS-96)', () =>
 
         await model.findAll({ categories: ['CULTURE'] });
 
-        expect(operatorOf(capturedWhere)).toBe(' in ');
-        expect(inArrayValuesOf(capturedWhere)).toEqual(['CULTURE']);
+        const categoryClause = findConditionByOperator(capturedWhere, ' in ');
+        expect(operatorOf(categoryClause)).toBe(' in ');
+        expect(inArrayValuesOf(categoryClause)).toEqual(['CULTURE']);
     });
 
     it('builds inArray(posts.category, [...]) when categories has N values', async () => {
@@ -137,8 +165,9 @@ describe('PostModel — categories/category manual WHERE branch (HOS-96)', () =>
 
         await model.findAll({ categories: ['CULTURE', 'GASTRONOMY', 'NATURE'] });
 
-        expect(operatorOf(capturedWhere)).toBe(' in ');
-        expect(inArrayValuesOf(capturedWhere)).toEqual(['CULTURE', 'GASTRONOMY', 'NATURE']);
+        const categoryClause = findConditionByOperator(capturedWhere, ' in ');
+        expect(operatorOf(categoryClause)).toBe(' in ');
+        expect(inArrayValuesOf(categoryClause)).toEqual(['CULTURE', 'GASTRONOMY', 'NATURE']);
     });
 
     it('falls back to eq(posts.category, category) when only the singular value is present', async () => {
@@ -152,8 +181,9 @@ describe('PostModel — categories/category manual WHERE branch (HOS-96)', () =>
 
         await model.findAll({ category: 'CULTURE' });
 
-        expect(operatorOf(capturedWhere)).toBe(' = ');
-        expect(eqValueOf(capturedWhere)).toBe('CULTURE');
+        const categoryClause = findConditionByOperator(capturedWhere, ' = ');
+        expect(operatorOf(categoryClause)).toBe(' = ');
+        expect(eqValueOf(categoryClause)).toBe('CULTURE');
     });
 
     it('gives the array precedence when both category and categories are present', async () => {
@@ -167,11 +197,12 @@ describe('PostModel — categories/category manual WHERE branch (HOS-96)', () =>
 
         await model.findAll({ category: 'CULTURE', categories: ['GASTRONOMY', 'NATURE'] });
 
-        expect(operatorOf(capturedWhere)).toBe(' in ');
-        expect(inArrayValuesOf(capturedWhere)).toEqual(['GASTRONOMY', 'NATURE']);
+        const categoryClause = findConditionByOperator(capturedWhere, ' in ');
+        expect(operatorOf(categoryClause)).toBe(' in ');
+        expect(inArrayValuesOf(categoryClause)).toEqual(['GASTRONOMY', 'NATURE']);
     });
 
-    it('adds no category clause when categories is empty and category is absent', async () => {
+    it('adds no category clause when categories is empty and category is absent (HOS-274: only the default soft-delete condition remains)', async () => {
         let capturedWhere: SQL | undefined;
         let captured = false;
         const { db } = makeFindAllMock({
@@ -185,7 +216,14 @@ describe('PostModel — categories/category manual WHERE branch (HOS-96)', () =>
         await model.findAll({ categories: [] });
 
         expect(captured).toBe(true);
-        expect(capturedWhere).toBeUndefined();
+        // No category condition was added, but the WHERE clause is NOT undefined
+        // anymore (pre-HOS-274 expectation) — PostModel.findAll now defaults to
+        // excluding soft-deleted rows, so a single isNull(posts.deletedAt)
+        // condition is present instead of an empty clause.
+        expect(capturedWhere).toBeDefined();
+        expect(findConditionByOperator(capturedWhere, ' in ')).toBeUndefined();
+        expect(findConditionByOperator(capturedWhere, ' = ')).toBeUndefined();
+        expect(operatorOf(capturedWhere)).toBe(' is null');
     });
 
     // -----------------------------------------------------------------------
@@ -212,7 +250,8 @@ describe('PostModel — categories/category manual WHERE branch (HOS-96)', () =>
 
         await model.findAll({ categories: ['CULTURE', 'GASTRONOMY'] });
 
-        const matchedValues = inArrayValuesOf(capturedWhere) as string[];
+        const categoryClause = findConditionByOperator(capturedWhere, ' in ');
+        const matchedValues = inArrayValuesOf(categoryClause) as string[];
         const unionResult = fixture.filter((row) => matchedValues.includes(row.category));
 
         expect(unionResult).toHaveLength(2);

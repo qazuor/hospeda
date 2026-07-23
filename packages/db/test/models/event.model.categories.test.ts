@@ -67,6 +67,43 @@ function eqValueOf(clause: unknown): unknown {
 }
 
 /**
+ * Flattens an `and(...)`-composed WHERE clause into its individual top-level
+ * conditions.
+ *
+ * Since HOS-274, `EventModel.findAll` also injects a default
+ * `isNull(events.deletedAt)` soft-delete condition alongside the
+ * `categories`/`category` condition tested in this file, so a WHERE clause
+ * with both present is `and(categoryCondition, isNull(deletedAt))` rather
+ * than a bare single condition. Drizzle's `and()` wraps its arguments as
+ * `[StringChunk('('), innerSQL, StringChunk(')')]`, where `innerSQL`
+ * alternates conditions and `' and '` separator chunks
+ * (`[cond1, ' and ', cond2, ...]`). This helper detects that wrapper shape and
+ * extracts just the conditions (even indices), so existing per-condition
+ * assertions (`operatorOf`, `inArrayValuesOf`, `eqValueOf`) keep working
+ * unchanged on the individual sub-conditions.
+ *
+ * Returns `[clause]` unchanged when `clause` is already a single leaf
+ * condition (no AND wrapper detected) — e.g. when only the soft-delete
+ * condition fired and no category filter was applied.
+ */
+function flattenAndConditions(clause: unknown): unknown[] {
+    const chunks = chunksOf(clause);
+    const isAndWrapper =
+        chunks?.length === 3 && chunks[0]?.value?.[0] === '(' && chunks[2]?.value?.[0] === ')';
+    if (!isAndWrapper) return [clause];
+
+    const innerChunks = chunksOf(chunks?.[1]);
+    if (!innerChunks) return [clause];
+    // Even indices are conditions; odd indices are ' and ' separator chunks.
+    return innerChunks.filter((_, i) => i % 2 === 0);
+}
+
+/** Finds the sub-condition (after flattening any AND wrapper) whose operator matches. */
+function findConditionByOperator(clause: unknown, operator: string): unknown {
+    return flattenAndConditions(clause).find((c) => operatorOf(c) === operator);
+}
+
+/**
  * Creates a chainable mock for `db.select().from().where().limit().offset()`
  * (items query) plus `db.select().from().where()` (count query), capturing
  * the WHERE clause passed to the items query.
@@ -129,8 +166,11 @@ describe('EventModel — categories/category manual WHERE branch (HOS-96)', () =
 
         await model.findAll({ categories: ['MUSIC'] });
 
-        expect(operatorOf(capturedWhere)).toBe(' in ');
-        expect(inArrayValuesOf(capturedWhere)).toEqual(['MUSIC']);
+        // HOS-274: the WHERE clause is now `and(categoryCondition, isNull(deletedAt))`
+        // by default — flatten before asserting on the category sub-condition.
+        const categoryClause = findConditionByOperator(capturedWhere, ' in ');
+        expect(operatorOf(categoryClause)).toBe(' in ');
+        expect(inArrayValuesOf(categoryClause)).toEqual(['MUSIC']);
     });
 
     it('builds inArray(events.category, [...]) when categories has N values', async () => {
@@ -144,8 +184,9 @@ describe('EventModel — categories/category manual WHERE branch (HOS-96)', () =
 
         await model.findAll({ categories: ['MUSIC', 'CULTURE', 'SPORTS'] });
 
-        expect(operatorOf(capturedWhere)).toBe(' in ');
-        expect(inArrayValuesOf(capturedWhere)).toEqual(['MUSIC', 'CULTURE', 'SPORTS']);
+        const categoryClause = findConditionByOperator(capturedWhere, ' in ');
+        expect(operatorOf(categoryClause)).toBe(' in ');
+        expect(inArrayValuesOf(categoryClause)).toEqual(['MUSIC', 'CULTURE', 'SPORTS']);
     });
 
     it('falls back to eq(events.category, category) when only the singular value is present', async () => {
@@ -159,8 +200,9 @@ describe('EventModel — categories/category manual WHERE branch (HOS-96)', () =
 
         await model.findAll({ category: 'MUSIC' });
 
-        expect(operatorOf(capturedWhere)).toBe(' = ');
-        expect(eqValueOf(capturedWhere)).toBe('MUSIC');
+        const categoryClause = findConditionByOperator(capturedWhere, ' = ');
+        expect(operatorOf(categoryClause)).toBe(' = ');
+        expect(eqValueOf(categoryClause)).toBe('MUSIC');
     });
 
     it('gives the array precedence when both category and categories are present', async () => {
@@ -174,11 +216,12 @@ describe('EventModel — categories/category manual WHERE branch (HOS-96)', () =
 
         await model.findAll({ category: 'MUSIC', categories: ['CULTURE', 'SPORTS'] });
 
-        expect(operatorOf(capturedWhere)).toBe(' in ');
-        expect(inArrayValuesOf(capturedWhere)).toEqual(['CULTURE', 'SPORTS']);
+        const categoryClause = findConditionByOperator(capturedWhere, ' in ');
+        expect(operatorOf(categoryClause)).toBe(' in ');
+        expect(inArrayValuesOf(categoryClause)).toEqual(['CULTURE', 'SPORTS']);
     });
 
-    it('adds no category clause when categories is empty and category is absent', async () => {
+    it('adds no category clause when categories is empty and category is absent (HOS-274: only the default soft-delete condition remains)', async () => {
         let capturedWhere: SQL | undefined;
         let captured = false;
         const { db } = makeFindAllMock({
@@ -192,7 +235,14 @@ describe('EventModel — categories/category manual WHERE branch (HOS-96)', () =
         await model.findAll({ categories: [] });
 
         expect(captured).toBe(true);
-        expect(capturedWhere).toBeUndefined();
+        // No category condition was added, but the WHERE clause is NOT undefined
+        // anymore (pre-HOS-274 expectation) — EventModel.findAll now defaults to
+        // excluding soft-deleted rows, so a single isNull(events.deletedAt)
+        // condition is present instead of an empty clause.
+        expect(capturedWhere).toBeDefined();
+        expect(findConditionByOperator(capturedWhere, ' in ')).toBeUndefined();
+        expect(findConditionByOperator(capturedWhere, ' = ')).toBeUndefined();
+        expect(operatorOf(capturedWhere)).toBe(' is null');
     });
 
     // -----------------------------------------------------------------------
@@ -220,7 +270,10 @@ describe('EventModel — categories/category manual WHERE branch (HOS-96)', () =
 
         await model.findAll({ categories: ['MUSIC', 'CULTURE'] });
 
-        const matchedValues = inArrayValuesOf(capturedWhere) as string[];
+        // HOS-274: flatten the AND-composed clause (category cond + default
+        // soft-delete cond) before reading the inArray values.
+        const categoryClause = findConditionByOperator(capturedWhere, ' in ');
+        const matchedValues = inArrayValuesOf(categoryClause) as string[];
         const unionResult = fixture.filter((row) => matchedValues.includes(row.category));
 
         expect(unionResult).toHaveLength(2);

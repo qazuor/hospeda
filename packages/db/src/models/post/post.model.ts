@@ -1,6 +1,6 @@
 import type { Post, PostMonthlyTrendItem } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
-import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { posts } from '../../schemas/post/post.dbschema.ts';
 import { userBookmarks } from '../../schemas/user/user_bookmark.dbschema.ts';
@@ -77,6 +77,14 @@ function extractPostCategoryCondition(where: Record<string, unknown>): {
     return { where: rest, condition: undefined };
 }
 
+/**
+ * Options accepted by {@link PostModel.findAll}, {@link PostModel.findAllWithRelations},
+ * and {@link PostModel.count} that this model's soft-delete default cares about.
+ */
+interface PostIncludeDeletedOption {
+    includeDeleted?: boolean;
+}
+
 export class PostModel extends BaseModelImpl<Post> {
     protected table = posts;
     public entityName = 'posts';
@@ -106,6 +114,39 @@ export class PostModel extends BaseModelImpl<Post> {
     }
 
     /**
+     * Computes the soft-delete exclusion condition injected by default into every
+     * {@link findAll}, {@link findAllWithRelations}, and {@link count} query on this
+     * model (HOS-274). Public list/count/getByX endpoints (e.g. `getByCategory`,
+     * `getByRelatedAccommodation`, `_executeSearch`) never explicitly filtered
+     * `deletedAt` themselves, so soft-deleted posts leaked into public responses.
+     * Centralizing the rule here — rather than fixing each call site — closes the
+     * gap for every current and future caller of these three methods.
+     *
+     * Returns `undefined` (no condition injected, i.e. soft-deleted rows are
+     * included) when EITHER escape hatch applies, mirroring the existing
+     * convention in `BaseCrudRead.list()` (`packages/service-core/src/base/base.crud.read.ts`):
+     *   (a) `options.includeDeleted === true` — explicit opt-in, e.g. the admin
+     *       trash/restore view via `adminList({ includeDeleted: true })`, or
+     *   (b) the caller's `where` record already specifies a `deletedAt` key —
+     *       explicit caller intent always wins over the default.
+     *
+     * @param where - The raw filter record as received by the caller, BEFORE
+     *   {@link extractPostCategoryCondition} strips `category`/`categories` (that
+     *   extraction never touches `deletedAt`, so checking the raw or sanitized
+     *   record is equivalent here — the raw record is used for clarity).
+     * @param options - Optional read options; only `includeDeleted` is read.
+     * @returns `isNull(posts.deletedAt)`, or `undefined` when either escape hatch applies.
+     */
+    #softDeleteCondition(
+        where: Record<string, unknown>,
+        options?: PostIncludeDeletedOption
+    ): SQL<unknown> | undefined {
+        if (options?.includeDeleted) return undefined;
+        if ('deletedAt' in where) return undefined;
+        return isNull(posts.deletedAt);
+    }
+
+    /**
      * Overrides {@link BaseModelImpl.findAll} to add support for the synthetic
      * `mostSaved` sort field. When `options.sortBy === 'mostSaved'`, the query
      * orders rows by the count of active bookmarks via a correlated subquery on
@@ -118,7 +159,13 @@ export class PostModel extends BaseModelImpl<Post> {
      */
     override async findAll(
         where: Record<string, unknown>,
-        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
+        options?: {
+            page?: number;
+            pageSize?: number;
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
+            includeDeleted?: boolean;
+        },
         additionalConditions?: SQL[],
         tx?: DrizzleClient
     ): Promise<{ items: Post[]; total: number }> {
@@ -127,9 +174,12 @@ export class PostModel extends BaseModelImpl<Post> {
         // below builds its query — see extractPostCategoryCondition() JSDoc.
         const { where: sanitizedWhere, condition: categoryCondition } =
             extractPostCategoryCondition(where ?? {});
+        // HOS-274: default-exclude soft-deleted rows — see #softDeleteCondition() JSDoc.
+        const softDeleteCondition = this.#softDeleteCondition(where ?? {}, options);
         const mergedConditions: SQL[] = [
             ...(additionalConditions ?? []),
-            ...(categoryCondition ? [categoryCondition] : [])
+            ...(categoryCondition ? [categoryCondition] : []),
+            ...(softDeleteCondition ? [softDeleteCondition] : [])
         ];
 
         if (options?.sortBy !== MOST_SAVED_SORT_FIELD) {
@@ -179,9 +229,13 @@ export class PostModel extends BaseModelImpl<Post> {
 
             const [items, total] = await Promise.all([
                 itemsQuery,
+                // includeDeleted is forwarded so `total` makes the same soft-delete
+                // include/exclude decision as `items` above (HOS-274 — see
+                // #softDeleteCondition() JSDoc).
                 this.count(safeWhere, {
                     additionalConditions: mergedConditions,
-                    tx
+                    tx,
+                    includeDeleted: options?.includeDeleted
                 })
             ]);
 
@@ -205,6 +259,11 @@ export class PostModel extends BaseModelImpl<Post> {
      * manual `categories`/`category` branch as {@link findAll} (HOS-96
      * US-2/US-9), so the public search endpoint — which loads relations (e.g.
      * `author`) — reflects the same OR-union filter as the plain item query.
+     * Also applies the same default soft-delete exclusion (HOS-274) — see
+     * {@link #softDeleteCondition} JSDoc. The internal `this.count()` call that
+     * `BaseModelImpl.findAllWithRelations` makes for `total` receives `options`
+     * (including `includeDeleted`) unchanged, so it independently makes the same
+     * include/exclude decision as the `items` query built here.
      */
     override async findAllWithRelations(
         relations: Record<string, boolean | Record<string, unknown>>,
@@ -214,15 +273,19 @@ export class PostModel extends BaseModelImpl<Post> {
             pageSize?: number;
             sortBy?: string;
             sortOrder?: 'asc' | 'desc';
+            includeDeleted?: boolean;
         } = {},
         additionalConditions?: SQL[],
         tx?: DrizzleClient
     ): Promise<{ items: Post[]; total: number }> {
         const { where: sanitizedWhere, condition: categoryCondition } =
             extractPostCategoryCondition(where ?? {});
+        // HOS-274: default-exclude soft-deleted rows — see #softDeleteCondition() JSDoc.
+        const softDeleteCondition = this.#softDeleteCondition(where ?? {}, options);
         const mergedConditions: SQL[] = [
             ...(additionalConditions ?? []),
-            ...(categoryCondition ? [categoryCondition] : [])
+            ...(categoryCondition ? [categoryCondition] : []),
+            ...(softDeleteCondition ? [softDeleteCondition] : [])
         ];
 
         return super.findAllWithRelations(
@@ -239,17 +302,20 @@ export class PostModel extends BaseModelImpl<Post> {
      * `categories`/`category` branch as {@link findAll} and
      * {@link findAllWithRelations} (HOS-96 US-2/US-9), so the public count
      * endpoint (which drives pagination totals) reflects the exact same
-     * OR-union filter as the items query.
+     * OR-union filter as the items query. Also applies the same default
+     * soft-delete exclusion (HOS-274) — see {@link #softDeleteCondition} JSDoc.
      */
     override async count(
         where: Record<string, unknown>,
-        options?: { additionalConditions?: SQL[]; tx?: DrizzleClient }
+        options?: { additionalConditions?: SQL[]; tx?: DrizzleClient; includeDeleted?: boolean }
     ): Promise<number> {
         const { where: sanitizedWhere, condition: categoryCondition } =
             extractPostCategoryCondition(where ?? {});
+        const softDeleteCondition = this.#softDeleteCondition(where ?? {}, options);
         const mergedConditions: SQL[] = [
             ...(options?.additionalConditions ?? []),
-            ...(categoryCondition ? [categoryCondition] : [])
+            ...(categoryCondition ? [categoryCondition] : []),
+            ...(softDeleteCondition ? [softDeleteCondition] : [])
         ];
         return super.count(sanitizedWhere, { ...options, additionalConditions: mergedConditions });
     }
