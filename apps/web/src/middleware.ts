@@ -336,14 +336,29 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // same styled error page for chrome, but FORCE the status back to 410:
     // Astro assigns `/404` a 404 status by convention, so a bare
     // `rewrite('/404')` would coerce the 410 → 404 and lose the desindex signal
-    // (verified empirically). The rewrite re-runs middleware for `/404`, so the
-    // CSP header + nonces are already on `rendered.headers`; we only override the
-    // status line.
+    // (verified empirically); the re-wrap below only overrides the status line
+    // while the body and headers pass through unchanged.
+    //
+    // The rewritten error page (404 and 410 alike) ships WITHOUT the CSP header:
+    // `context.rewrite('/404')` renders `/404`, which `isStaticAssetRoute()`
+    // matches (`path === '/404'`/`'/404/'`), so that render exits via Step 1's
+    // static-asset shortcut BEFORE Step 9 (CSP) ever runs — and the rewrite does
+    // not re-enter `onRequest` at all. This is a pre-existing gap the 404 branch
+    // already has; the 410 branch inherits it for parity (not a new regression),
+    // tracked as a follow-up in HOS-263.
+    //
+    // This branch intentionally uses `rendered.headers` and drops the original
+    // 410 response's headers. That is safe ONLY because every current 410
+    // producer (`alojamientos/[slug].astro`, `eventos/[slug].astro`,
+    // `destinos/[...path].astro`, `experiencias/[slug].astro`,
+    // `gastronomia/[slug].astro`, `publicaciones/[slug].astro`) returns
+    // `new Response(null, { status: 410 })` with no headers — a future 410
+    // producer that attaches headers (e.g. Cache-Control) would silently lose
+    // them here.
     if (response.status === 410) {
         const rendered = await context.rewrite('/404');
         return new Response(rendered.body, {
             status: 410,
-            statusText: 'Gone',
             headers: rendered.headers
         });
     }

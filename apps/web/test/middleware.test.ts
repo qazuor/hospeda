@@ -107,6 +107,37 @@ describe('middleware onRequest — Server Island requests never trigger parseSes
     });
 });
 
+describe('middleware onRequest — 410 Gone rewrite keeps the 410 status (soft-delete SEO desindex)', () => {
+    beforeEach(() => {
+        parseSessionUserMock.mockClear();
+    });
+
+    it('re-wraps a downstream 410 as a 410 rendering the /404 chrome (not a coerced 404)', async () => {
+        const { onRequest } = await import('../src/middleware');
+        // A real 410 producer (e.g. `alojamientos/[slug].astro` for a soft-deleted
+        // entity) returns an empty-body 410. Use a valid, trailing-slashed,
+        // session-optional public detail path so Steps 1-7 pass through without an
+        // early return before Step 8b.
+        const context = createContext({ pathname: '/es/alojamientos/x/' });
+        // Mimic Astro's `/404` render: a 200/404 HTML page with chrome. Astro
+        // assigns `/404` a 404 status by convention; the middleware must force it
+        // back to 410.
+        context.rewrite.mockReturnValue(
+            new Response('<html>chrome</html>', {
+                status: 404,
+                headers: { 'content-type': 'text/html' }
+            })
+        );
+        const next = vi.fn().mockResolvedValue(new Response(null, { status: 410 }));
+
+        const result = await onRequest(context as any, next);
+
+        expect(result).toBeInstanceOf(Response);
+        expect((result as Response).status).toBe(410);
+        expect(context.rewrite).toHaveBeenCalledWith('/404');
+    });
+});
+
 describe('middleware onRequest — BETA-162 legacy /blog alias redirects to /publicaciones/', () => {
     beforeEach(() => {
         parseSessionUserMock.mockClear();
