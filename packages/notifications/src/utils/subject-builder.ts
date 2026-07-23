@@ -56,7 +56,12 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
 
     // Broken iCal feed alert to the host (HOS-162 Phase 3)
     [NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN]:
-        'Tu calendario de {providerLabel} dejó de sincronizarse — {accommodationName}'
+        'Tu calendario de {providerLabel} dejó de sincronizarse — {accommodationName}',
+
+    // Plan price-increase advance notice (HOS-176)
+    // TODO(HOS-176 D-3): final legal copy pending owner/legal sign-off.
+    [NotificationType.PLAN_PRICE_CHANGE_NOTICE]:
+        'Aviso de cambio de precio de tu plan {planName} — vigente desde el {effectiveDate}'
 };
 
 /**

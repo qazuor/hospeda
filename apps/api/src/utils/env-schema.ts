@@ -459,6 +459,22 @@ export const ApiEnvBaseSchema = z.object({
         .default('true')
         .transform((v) => v !== 'false'),
     /**
+     * Feature flag for the plan price-INCREASE propagation path (HOS-176
+     * Increment A). Ships dark (default false): while unset/false the
+     * propagation cron leaves every `increase` price change in `pending` and
+     * NEVER sends an advance notice or raises a subscriber's MercadoPago
+     * `transaction_amount`. Set to the literal string `'true'` to enable the
+     * full increase flow — the Disp. 954/2025 advance-notice phase plus the
+     * post-grace amount mutation. Decrease propagation is unaffected by this
+     * flag (it is frictionless and always active). Opt-in: only `'true'`
+     * enables it; keep it false until the legal notice copy is signed off and
+     * a staging smoke has passed.
+     */
+    HOSPEDA_BILLING_PRICE_INCREASE_ENABLED: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
+    /**
      * Statement descriptor that appears on the cardholder's bank statement
      * after a MercadoPago payment. MP rejects descriptors longer than 11
      * characters and recommends uppercase ASCII (letters, digits, spaces) so

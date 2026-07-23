@@ -5,13 +5,30 @@
  * admin edits a plan's price) to each affected subscriber's MercadoPago preapproval,
  * so MP stops charging the stale amount. Fires every 15 minutes.
  *
- * SCOPE (this increment): **DECREASES ONLY.** A price decrease is frictionless — no
- * legal notice, no chargeback risk, and it only ever lowers `transaction_amount`
- * from/to a value at or below what the subscriber authorized (the proven-safe
- * direction, spike §3.2). INCREASES are deliberately NOT processed here: they are
- * gated on the owner's MP sandbox re-auth smoke (spike G-1) and require prior notice
- * + a grace window (Disp. 954/2025, owner decision D-3). Increase rows stay `pending`
- * until the gated increase executor + notice flow are enabled in a follow-up.
+ * SCOPE. DECREASES are always processed (frictionless — no legal notice, no chargeback
+ * risk; only ever lowers `transaction_amount` to a value at/below what the subscriber
+ * authorized, the proven-safe direction, spike §3.2).
+ *
+ * INCREASES (HOS-176 Increment A) are processed ONLY when
+ * `env.HOSPEDA_BILLING_PRICE_INCREASE_ENABLED` is true. The D-1 MP sandbox smoke
+ * confirmed that raising `auto_recurring.transaction_amount` above the originally
+ * authorized amount returns HTTP 200 with NO re-authorization, so the increase uses
+ * the SAME silent `paymentAdapter.subscriptions.update` mutation as a decrease. Legal
+ * (Disp. 954/2025) requires PRIOR notice + a grace window, so an increase has an extra
+ * lifecycle stage: `pending` → (notice phase sends the advance notice) → `noticing`
+ * (`noticeSentAt` stamped, `effectiveAt` recomputed to `noticeSentAt + 15 days`) →
+ * (after `effectiveAt`) apply, reusing the existing `applyChange` → `done`/`failed`.
+ * When the flag is false, increases stay `pending` untouched (safe default: no notice,
+ * no MP mutation). Two owner decisions shape the increase apply:
+ *   - Grace window = 15 days (owner decision).
+ *   - Trialing subs are GRANDFATHERED: they receive the notice but keep the OLD price
+ *     through their in-flight trial, so they are EXCLUDED from the apply enumeration
+ *     for increases (decreases still include them — lowering a trialing sub is fine).
+ *
+ * Two hard MP amount limits (both directions; decisive for increases): MP rejects a
+ * `transaction_amount` > 2,000,000 ARS absolute and ≤ 0 — a target with such an amount
+ * is marked terminal `skipped` (never sent to MP) so it surfaces to ops instead of
+ * failing the MP call repeatedly.
  *
  * Idempotency (mirrors `apply-scheduled-plan-changes`):
  *   - Target rows are created with `ON CONFLICT DO NOTHING` on
@@ -52,9 +69,12 @@ import {
     getDb,
     inArray,
     isNotNull,
+    isNull,
     lte,
+    or,
     sql
 } from '@repo/db';
+import { NotificationType } from '@repo/notifications';
 import {
     calculatePromoCodeEffect,
     getPromoCodeById,
@@ -62,6 +82,9 @@ import {
 } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { getQZPayBilling } from '../../middlewares/billing.js';
+import { planDisplayNameFromPlan } from '../../services/billing/plan-change-reason.js';
+import { env } from '../../utils/env.js';
+import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
 
 /** Hard cap on price-change rows processed per tick (safety valve). */
@@ -75,8 +98,71 @@ const MAX_CHANGES_PER_TICK = 50;
  */
 const MAX_TARGETS_PER_CHANGE = 500;
 
-/** Subscription statuses whose preapproval we re-price (live, chargeable subs). */
+/**
+ * Subscription statuses whose preapproval we re-price for a DECREASE (all live,
+ * chargeable subs — lowering a trialing sub's price is harmless).
+ */
 const AFFECTED_SUB_STATUSES = ['active', 'trialing', 'past_due'] as const;
+
+/**
+ * Subscription statuses re-priced for an INCREASE. `trialing` is EXCLUDED
+ * (owner decision D-4: trialing subs are grandfathered — they keep the OLD price
+ * through their in-flight trial). Note this is the APPLY-time set; the notice
+ * phase still notifies trialing subs (they are affected).
+ *
+ * FOLLOW-UP: full "new price from the cycle following the trial" re-pricing of a
+ * grandfathered trialing sub needs a post-first-charge re-price hook and is out of
+ * scope for Increment A. v1 leaves them at the old amount; the divergence detector
+ * (separate follow-up) will surface them.
+ */
+const INCREASE_AFFECTED_SUB_STATUSES = ['active', 'past_due'] as const;
+
+/**
+ * MercadoPago's absolute ceiling on `auto_recurring.transaction_amount`, in ARS
+ * MAJOR units. MP returns HTTP 400 ("Cannot pay an amount greater than
+ * $ 2000000.00") for any amount strictly above this (D-1 smoke). A target whose
+ * amount exceeds it is marked terminal `skipped` — never sent to MP.
+ */
+const MP_MAX_TRANSACTION_AMOUNT_ARS = 2_000_000;
+
+/** Grace window (ms) between an increase's advance notice and its apply (15 days, D-3). */
+const INCREASE_NOTICE_GRACE_MS = 15 * 24 * 60 * 60 * 1000;
+
+/**
+ * Pure: the apply-time affected-subscriber status filter for a price change,
+ * parameterized by direction. Increases exclude `trialing` (grandfathered, D-4);
+ * decreases include it.
+ *
+ * @internal
+ */
+function affectedStatusesForDirection(direction: string): readonly string[] {
+    return direction === 'increase'
+        ? [...INCREASE_AFFECTED_SUB_STATUSES]
+        : [...AFFECTED_SUB_STATUSES];
+}
+
+/**
+ * Pure: validate a target amount against MP's absolute limits BEFORE any MP call.
+ * MP rejects `transaction_amount` ≤ 0 and > {@link MP_MAX_TRANSACTION_AMOUNT_ARS}
+ * ARS major (D-1 smoke). A non-ok result must be marked terminal `skipped` (never
+ * sent to MP), which forces the header to `failed` at finalize so ops sees it.
+ *
+ * @param input.targetAmountCentavos - The target amount in integer centavos.
+ * @internal
+ */
+function classifyTargetAmountGuard(input: {
+    readonly targetAmountCentavos: number;
+}):
+    | { readonly ok: true }
+    | { readonly ok: false; readonly reason: 'non_positive' | 'exceeds_mp_max' } {
+    if (input.targetAmountCentavos <= 0) {
+        return { ok: false, reason: 'non_positive' };
+    }
+    if (input.targetAmountCentavos / 100 > MP_MAX_TRANSACTION_AMOUNT_ARS) {
+        return { ok: false, reason: 'exceeds_mp_max' };
+    }
+    return { ok: true };
+}
 
 /**
  * Intra-tick retry count for a SINGLE best-effort MP amount mutation within one
@@ -252,27 +338,57 @@ function shouldFinalize(input: {
     return input.pendingCount === 0 && input.deferredCount === 0 && input.newSubsFound === 0;
 }
 
-/** Load due DECREASE price changes (effectiveAt elapsed, not yet done/failed). */
-async function findDueDecreaseChanges(): Promise<DueChangeRow[]> {
+/**
+ * Load due price changes whose `effectiveAt` has elapsed and are not yet finalized.
+ *
+ * DECREASES are always included (`status IN ('pending','applying')`). INCREASES are
+ * included ONLY when `increaseEnabled` is true, and only once they have passed their
+ * notice phase (`status IN ('noticing','applying')`) — a `pending` increase has not
+ * been noticed yet and must NOT be applied. When the flag is off, increases are never
+ * returned here (they stay `pending`, untouched).
+ *
+ * OPERATOR KILL-SWITCH SEMANTICS (I2): turning `HOSPEDA_BILLING_PRICE_INCREASE_ENABLED`
+ * OFF is a hard kill-switch that STRANDS any increase already mid-flight in `noticing`
+ * or `applying` — this query stops selecting it, so it is neither advanced nor rolled
+ * back until the flag is re-enabled. This is the intended operator semantics (an
+ * increase already noticed to customers is paused in place, not silently reverted),
+ * documented here so it is not a surprise during an incident.
+ *
+ * @param input.increaseEnabled - Whether the increase path is enabled.
+ */
+async function findDueChanges(input: {
+    readonly increaseEnabled: boolean;
+}): Promise<DueChangeRow[]> {
     const db = getDb();
+    const now = new Date();
+    const projection = {
+        id: billingPlanPriceChanges.id,
+        planId: billingPlanPriceChanges.planId,
+        billingInterval: billingPlanPriceChanges.billingInterval,
+        newAmount: billingPlanPriceChanges.newAmount,
+        direction: billingPlanPriceChanges.direction
+    };
+    const decreaseCond = and(
+        eq(billingPlanPriceChanges.direction, 'decrease'),
+        inArray(billingPlanPriceChanges.status, ['pending', 'applying']),
+        lte(billingPlanPriceChanges.effectiveAt, now)
+    );
+    // Only past-notice increases are due; `pending` increases still await their notice.
+    // S2 (deferred follow-up): the `noticing` branch is NOT covered by the partial index
+    // on this table — adding it needs a migration, deliberately not done here. The table
+    // is tiny (one row per admin price edit), so the seq-scan cost is negligible for now.
+    const increaseCond = and(
+        eq(billingPlanPriceChanges.direction, 'increase'),
+        inArray(billingPlanPriceChanges.status, ['noticing', 'applying']),
+        lte(billingPlanPriceChanges.effectiveAt, now)
+    );
+    const where = input.increaseEnabled ? or(decreaseCond, increaseCond) : decreaseCond;
     const rows = await db
-        .select({
-            id: billingPlanPriceChanges.id,
-            planId: billingPlanPriceChanges.planId,
-            billingInterval: billingPlanPriceChanges.billingInterval,
-            newAmount: billingPlanPriceChanges.newAmount,
-            direction: billingPlanPriceChanges.direction
-        })
+        .select(projection)
         .from(billingPlanPriceChanges)
-        .where(
-            and(
-                eq(billingPlanPriceChanges.direction, 'decrease'),
-                inArray(billingPlanPriceChanges.status, ['pending', 'applying']),
-                lte(billingPlanPriceChanges.effectiveAt, new Date())
-            )
-        )
+        .where(where)
         // Apply oldest-effective first (tie-break by creation) so concurrent
-        // decreases converge deterministically to the newest amount (W2).
+        // changes converge deterministically to the newest amount (W2).
         .orderBy(asc(billingPlanPriceChanges.effectiveAt), asc(billingPlanPriceChanges.createdAt))
         .limit(MAX_CHANGES_PER_TICK);
     return rows;
@@ -288,7 +404,8 @@ async function findDueDecreaseChanges(): Promise<DueChangeRow[]> {
 async function findAffectedSubscribers(
     planId: string,
     billingInterval: string,
-    changeId: string
+    changeId: string,
+    statuses: readonly string[]
 ): Promise<AffectedSubRow[]> {
     const db = getDb();
     const rows = await db
@@ -301,9 +418,50 @@ async function findAffectedSubscribers(
             and(
                 eq(billingSubscriptions.planId, planId),
                 eq(billingSubscriptions.billingInterval, billingInterval),
-                inArray(billingSubscriptions.status, [...AFFECTED_SUB_STATUSES]),
+                inArray(billingSubscriptions.status, [...statuses]),
                 isNotNull(billingSubscriptions.mpSubscriptionId),
                 sql`NOT EXISTS (SELECT 1 FROM ${billingPlanPriceChangeTargets} t WHERE t.price_change_id = ${changeId} AND t.subscription_id = ${billingSubscriptions.id})`
+            )
+        )
+        .orderBy(asc(billingSubscriptions.id))
+        .limit(MAX_TARGETS_PER_CHANGE);
+    return rows;
+}
+
+/** Row shape for the notice phase: enough to resolve the customer + email. */
+interface NoticeSubRow {
+    readonly subscriptionId: string;
+    readonly customerId: string;
+}
+
+/**
+ * ALL live subscribers on a plan+interval carrying an MP preapproval, WITHOUT the
+ * NOT-EXISTS-target filter (unlike {@link findAffectedSubscribers}). Used by the
+ * increase notice phase, which must notify every affected subscriber — including
+ * trialing subs (grandfathered at apply time, but still legally notified).
+ *
+ * @param planId - Plan UUID.
+ * @param billingInterval - `month` | `year`.
+ * @param statuses - Affected statuses (notice phase uses the full live set).
+ */
+async function findAllAffectedSubscribers(
+    planId: string,
+    billingInterval: string,
+    statuses: readonly string[]
+): Promise<NoticeSubRow[]> {
+    const db = getDb();
+    const rows = await db
+        .select({
+            subscriptionId: billingSubscriptions.id,
+            customerId: billingSubscriptions.customerId
+        })
+        .from(billingSubscriptions)
+        .where(
+            and(
+                eq(billingSubscriptions.planId, planId),
+                eq(billingSubscriptions.billingInterval, billingInterval),
+                inArray(billingSubscriptions.status, [...statuses]),
+                isNotNull(billingSubscriptions.mpSubscriptionId)
             )
         )
         .orderBy(asc(billingSubscriptions.id))
@@ -389,7 +547,11 @@ interface ApplyChangeOutcome {
     readonly done: boolean;
 }
 
-/** Apply one due decrease change: create targets, mutate pending ones, finalize. */
+/**
+ * Apply one due price change (increase OR decrease): create targets, mutate pending
+ * ones, finalize. Direction is parameterized via the affected-status filter; the apply
+ * mechanism (absolute MP `transaction_amount` mutation) is identical for both.
+ */
 async function applyChange(
     change: DueChangeRow,
     billing: QZPayBilling,
@@ -471,7 +633,15 @@ async function applyChange(
         }
     }
 
-    const subs = await findAffectedSubscribers(change.planId, change.billingInterval, change.id);
+    // Direction-parameterized status filter: increases EXCLUDE trialing subs
+    // (grandfathered — kept at the OLD amount through their trial, D-4); decreases
+    // include them (lowering a trialing sub's price is harmless).
+    const subs = await findAffectedSubscribers(
+        change.planId,
+        change.billingInterval,
+        change.id,
+        affectedStatusesForDirection(change.direction)
+    );
     await ensureTargets(change, subs, logger);
     // New (not-yet-targeted) subs found this tick. While > 0 the change is not
     // finalized — there may be more overflow subs to batch next tick (I1).
@@ -499,6 +669,50 @@ async function applyChange(
     let targetsFailed = 0;
 
     for (const t of pending) {
+        // MP amount guards (both directions; decisive for increases). Run BEFORE any
+        // MP call: MP rejects amounts ≤ 0 and > MP_MAX_TRANSACTION_AMOUNT_ARS with a
+        // HTTP 400 (D-1 smoke), so retrying the mutation would just burn the attempt
+        // budget. Mark the target terminal `skipped` (keeps its OLD amount) and surface
+        // to ops via Sentry. A `skipped` target forces the header to `failed` at
+        // finalize (existing logic), so the invalid plan price is not silently swallowed.
+        const guard = classifyTargetAmountGuard({ targetAmountCentavos: t.targetAmount });
+        if (!guard.ok) {
+            await db
+                .update(billingPlanPriceChangeTargets)
+                .set({
+                    status: 'skipped',
+                    lastError:
+                        guard.reason === 'non_positive'
+                            ? 'invalid amount ≤ 0 — not sent to MP'
+                            : `plan price exceeds MP ${MP_MAX_TRANSACTION_AMOUNT_ARS} ARS absolute cap — not sent to MP`,
+                    lastAttemptAt: now,
+                    updatedAt: now
+                })
+                .where(eq(billingPlanPriceChangeTargets.id, t.id));
+            targetsFailed += 1;
+            Sentry.captureException(
+                new Error(
+                    guard.reason === 'non_positive'
+                        ? `HOS-176: target amount ≤ 0 for subscription ${t.subscriptionId} — never sent to MP (marked skipped)`
+                        : `HOS-176: plan price exceeds MP's ${MP_MAX_TRANSACTION_AMOUNT_ARS} ARS absolute cap for subscription ${t.subscriptionId} — cannot propagate; ops must review the plan price (marked skipped)`
+                ),
+                {
+                    extra: {
+                        priceChangeId: change.id,
+                        subscriptionId: t.subscriptionId,
+                        targetAmountCentavos: t.targetAmount
+                    },
+                    tags: { module: 'propagate-plan-price-changes' }
+                }
+            );
+            logger.warn('Price propagation: target amount rejected by MP guard (marked skipped)', {
+                priceChangeId: change.id,
+                subscriptionId: t.subscriptionId,
+                reason: guard.reason,
+                targetAmountCentavos: t.targetAmount
+            });
+            continue;
+        }
         if (!t.mpSubscriptionId) {
             // No preapproval to mutate — mark applied (nothing to do) so it does not
             // block the change from completing.
@@ -579,8 +793,9 @@ async function applyChange(
         // Finalize: `failed` if ANY target for this change went terminal-bad — either
         // `failed` (MP mutation gave up) OR `skipped` (could not be re-priced within
         // the defer budget; an honest partial failure) — else `done`. A finalized
-        // header is no longer re-selected by findDueDecreaseChanges (which filters
-        // status IN ('pending','applying')).
+        // header is no longer re-selected by findDueChanges (which filters
+        // status IN ('pending','applying') for decreases / ('noticing','applying') for
+        // increases).
         const [failed] = await db
             .select({ n: sql<number>`count(*)::int` })
             .from(billingPlanPriceChangeTargets)
@@ -608,13 +823,319 @@ interface CronJobContextLogger {
     error: (m: string, d?: Record<string, unknown>) => void;
 }
 
+/** Change row shape the notice phase needs (carries oldAmount for the notice copy). */
+interface NoticeChangeRow {
+    readonly id: string;
+    readonly planId: string;
+    readonly billingInterval: string;
+    readonly oldAmount: number;
+    readonly newAmount: number;
+}
+
+/**
+ * Pending INCREASE changes that still need their advance notice sent
+ * (`status='pending' AND notice_sent_at IS NULL`).
+ */
+async function findPendingIncreaseChangesToNotice(): Promise<NoticeChangeRow[]> {
+    const db = getDb();
+    const rows = await db
+        .select({
+            id: billingPlanPriceChanges.id,
+            planId: billingPlanPriceChanges.planId,
+            billingInterval: billingPlanPriceChanges.billingInterval,
+            oldAmount: billingPlanPriceChanges.oldAmount,
+            newAmount: billingPlanPriceChanges.newAmount
+        })
+        .from(billingPlanPriceChanges)
+        .where(
+            and(
+                eq(billingPlanPriceChanges.direction, 'increase'),
+                eq(billingPlanPriceChanges.status, 'pending'),
+                isNull(billingPlanPriceChanges.noticeSentAt)
+            )
+        )
+        .orderBy(asc(billingPlanPriceChanges.createdAt))
+        .limit(MAX_CHANGES_PER_TICK);
+    return rows;
+}
+
+/** Outcome of one notice-phase pass. */
+interface NoticePhaseOutcome {
+    /** Number of changes flipped `pending` → `noticing` this tick. */
+    readonly noticed: number;
+    /** Number of advance notices successfully attempted (subscribers). */
+    readonly notified: number;
+}
+
+/**
+ * Increase NOTICE phase (HOS-176 Increment A, gated by the caller on the increase
+ * flag). For each pending, not-yet-noticed increase change:
+ *   1. Enumerate ALL affected subscribers (includes trialing — grandfathered at
+ *      apply time but still legally notified) via {@link findAllAffectedSubscribers}.
+ *   2. FAIL-CLOSED overflow guard (W1): if the enumeration returned `>=`
+ *      {@link MAX_TARGETS_PER_CHANGE} rows there may be MORE affected subscribers
+ *      beyond the per-tick cap that we cannot enumerate here. Emailing a subset and
+ *      then flipping to `noticing` would re-price the un-notified overflow subs at
+ *      apply time WITHOUT the legally-required advance notice (Disp. 954/2025 gap).
+ *      So the change is NOT noticed and NOT sent this tick: it is left `pending`
+ *      (never applied) and surfaced to ops for manual handling.
+ *   3. Resolve the plan display name (best-effort).
+ *   4. Send the advance notice to each subscriber. A subscriber whose CUSTOMER cannot be
+ *      resolved (null) is a HARD failure (FIX A) — no notice can be produced and there is
+ *      no retry path. A THROW from customer/plan resolution (or the send) is ALSO a HARD
+ *      failure (FIX 1 / INFO-1): `sendNotification` never throws, so a throw here is
+ *      practically only a resolution failure — the same "could not notify this sub" case.
+ *      ANY per-sub notice failure (null OR throw) blocks the flip in step 5 (fail-closed,
+ *      symmetric).
+ *   5. Flip the change to `noticing`, stamp `noticeSentAt=now`, and recompute
+ *      `effectiveAt = now + 15 days` — ONLY if no hard notice failure occurred. Once
+ *      flipped it is never re-noticed (noticeSentAt non-null) and becomes due for apply
+ *      only after the grace window.
+ *
+ * DELIVERY SEMANTICS — AT-LEAST-ONCE, NOT exactly-once (FIX B, honest correction). The
+ * `idempotencyKey: price-notice:<changeId>:<subscriptionId>` passed to `sendNotification`
+ * does NOT prevent a duplicate advance-notice EMAIL on replay: `NotificationService.send()`
+ * sends the email BEFORE its idempotent `logNotification` insert (and swallows the
+ * unique-index conflict), so the key dedups only the notification LOG rows, never the
+ * delivery. A crash between the send loop and the `noticing` flip re-selects the
+ * still-`pending` change next tick and MAY re-email subscribers. The only harm is a
+ * duplicate advance notice (we never UNDER-send); exactly-once is a pre-enable follow-up
+ * (see below, item 2). The key is kept because it is harmless and becomes effective if
+ * `send()` ever gains pre-send dedup.
+ *
+ * SCALE LIMIT (v1): auto-increase is supported only for plans with FEWER than
+ * {@link MAX_TARGETS_PER_CHANGE} affected subscribers — proof that a single tick can
+ * enumerate and notify everyone. A plan at/above that scale requires a human to handle
+ * the mass increase; a cross-tick paginated notice is a deliberate follow-up, NOT built
+ * here (building it would risk emailing a subset and then not completing, which is the
+ * exact partial-notice hazard this guard avoids).
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ * PRE-ENABLE FOLLOW-UP (before setting HOSPEDA_BILLING_PRICE_INCREASE_ENABLED=true in
+ * ANY env). The increase flow is gated OFF by default; the items below MUST land before
+ * the flag is ever enabled — they are not blockers for the off state, but are for the on
+ * state:
+ *   1. LEGAL NOTICE COPY (D-3): replace the `TODO(HOS-176 D-3)` placeholder notice copy
+ *      with the final, legally-reviewed advance-notice wording.
+ *   2. PER-SUBSCRIBER NOTICE-TARGET PERSISTENCE (robust replacement for FIX A + FIX B's
+ *      stop-gaps): at notice time, persist a `notified` marker/target per successfully-
+ *      notified sub. The notice phase then EXCLUDES already-notified subs (exactly-once —
+ *      closes the crash-replay duplicate-email window), and the increase APPLY sources
+ *      ONLY `notified` subs (closes the customer-not-found / retry-exhaustion notice→apply
+ *      gap and the notice-set vs apply-set divergence that FIX A only narrowly patches by
+ *      blocking the flip).
+ *   3. CROSS-TICK PAGINATED NOTICE for plans with >= {@link MAX_TARGETS_PER_CHANGE}
+ *      affected subscribers (today those fail closed to manual handling — see SCALE
+ *      LIMIT above).
+ *   4. A STAGING SMOKE of the full increase flow (notice → grace → apply) against the
+ *      real MP sandbox before enabling the flag in any environment.
+ * ─────────────────────────────────────────────────────────────────────────────────────
+ *
+ * Best-effort throughout: never throws to the caller (the caller also wraps it).
+ */
+async function runIncreaseNoticePhase(
+    billing: QZPayBilling,
+    logger: CronJobContextLogger
+): Promise<NoticePhaseOutcome> {
+    const db = getDb();
+    let noticed = 0;
+    let notified = 0;
+
+    const changes = await findPendingIncreaseChangesToNotice();
+    for (const change of changes) {
+        const now = new Date();
+        const effectiveAt = new Date(now.getTime() + INCREASE_NOTICE_GRACE_MS);
+
+        // Enumerate affected subs FIRST so the overflow guard can bail before we send
+        // any notice or resolve the plan name.
+        const subs = await findAllAffectedSubscribers(change.planId, change.billingInterval, [
+            ...AFFECTED_SUB_STATUSES
+        ]);
+
+        // W1 FAIL-CLOSED overflow guard: the enumeration is capped at
+        // MAX_TARGETS_PER_CHANGE. `>=` the cap means there may be un-enumerable overflow
+        // subscribers, so notifying a subset then flipping to `noticing` would apply an
+        // increase to the overflow without the mandatory advance notice. Detect this
+        // BEFORE sending anything and bail: leave the change `pending` (noticeSentAt
+        // stays NULL, so it is never applied) and surface it for manual handling.
+        if (subs.length >= MAX_TARGETS_PER_CHANGE) {
+            Sentry.captureException(
+                new Error(
+                    `HOS-176: plan price INCREASE on plan ${change.planId}/${change.billingInterval} affects >= ${MAX_TARGETS_PER_CHANGE} subscribers — auto-notice not supported at this scale; manual handling required. Change ${change.id} left pending, NOT applied.`
+                ),
+                {
+                    extra: {
+                        priceChangeId: change.id,
+                        planId: change.planId,
+                        billingInterval: change.billingInterval
+                    },
+                    tags: { module: 'propagate-plan-price-changes' }
+                }
+            );
+            logger.error(
+                'Price propagation notice: increase affects >= per-tick cap subscribers — auto-notice unsupported at this scale; change left pending for manual handling (NOT applied)',
+                {
+                    priceChangeId: change.id,
+                    planId: change.planId,
+                    billingInterval: change.billingInterval,
+                    cap: MAX_TARGETS_PER_CHANGE
+                }
+            );
+            continue;
+        }
+
+        // Resolve the plan display name once (best-effort — falls back to the plan id).
+        let planName = change.planId;
+        try {
+            const plan = await billing.plans.get(change.planId);
+            if (plan) planName = planDisplayNameFromPlan(plan);
+        } catch (planErr) {
+            logger.warn('Price propagation notice: could not resolve plan name', {
+                priceChangeId: change.id,
+                planId: change.planId,
+                error: planErr instanceof Error ? planErr.message : String(planErr)
+            });
+        }
+
+        // FIX A: a HARD notice failure (a sub whose customer cannot be resolved — no
+        // notice can be produced and there is NO retry path for it) must block the flip
+        // to `noticing`. Flipping anyway would make this un-noticed sub due for apply in
+        // 15 days and re-price it WITHOUT the legally-required advance notice (Disp.
+        // 954/2025). Only customer-not-found sets this flag; a transient `sendNotification`
+        // throw does NOT (RetryService re-enqueues those out-of-band, so they will be
+        // retried — see the catch below).
+        let hadHardNoticeFailure = false;
+        for (const sub of subs) {
+            try {
+                const customer = await billing.customers.get(sub.customerId);
+                if (!customer) {
+                    // HARD failure: the customer is unresolvable, so no notice can be
+                    // sent and there is no out-of-band retry that will fix it. Do NOT flip
+                    // this change to `noticing` — leave it `pending` so `findDueChanges`
+                    // never applies it, and re-surface it every tick until ops fixes the
+                    // data anomaly. HONEST CONSEQUENCE (INFO-2): leaving the change
+                    // `pending` is NOT just internal Sentry noise. While it stays stranded,
+                    // EACH cron tick re-enumerates this change and RE-EMAILS every
+                    // already-resolvable subscriber on it (customer-facing at-least-once
+                    // amplification, since there is no per-sub `notified` marker yet), and
+                    // keeps doing so until ops repairs the unresolvable customer. Pre-enable
+                    // follow-up item 2 (per-subscriber notice-target persistence) is what
+                    // eliminates this re-email amplification.
+                    hadHardNoticeFailure = true;
+                    Sentry.captureException(
+                        new Error(
+                            `HOS-176: increase notice could not resolve customer for subscription ${sub.subscriptionId} on change ${change.id} — leaving change pending, NOT flipping to noticing`
+                        ),
+                        {
+                            extra: {
+                                priceChangeId: change.id,
+                                subscriptionId: sub.subscriptionId,
+                                customerId: sub.customerId
+                            },
+                            tags: { module: 'propagate-plan-price-changes' }
+                        }
+                    );
+                    logger.error(
+                        'Price propagation notice: customer not found — HARD failure, change will NOT flip to noticing',
+                        {
+                            priceChangeId: change.id,
+                            subscriptionId: sub.subscriptionId,
+                            customerId: sub.customerId
+                        }
+                    );
+                    continue;
+                }
+                const meta = customer.metadata as Record<string, unknown> | null | undefined;
+                const customerName = String(meta?.name ?? customer.email);
+                await sendNotification({
+                    type: NotificationType.PLAN_PRICE_CHANGE_NOTICE,
+                    recipientEmail: customer.email,
+                    recipientName: customerName,
+                    userId: meta?.userId == null ? null : String(meta.userId),
+                    customerId: sub.customerId,
+                    // AT-LEAST-ONCE (see FIX B / method docstring): this key does NOT
+                    // prevent a duplicate email on replay — NotificationService sends
+                    // BEFORE the idempotent log insert, so the key only dedups the
+                    // notification LOG rows, never the delivery. Kept because it is
+                    // harmless and becomes effective if send() ever gains pre-send dedup.
+                    idempotencyKey: `price-notice:${change.id}:${sub.subscriptionId}`,
+                    planName,
+                    oldPriceArs: change.oldAmount,
+                    newPriceArs: change.newAmount,
+                    effectiveDate: effectiveAt.toISOString(),
+                    billingInterval: change.billingInterval
+                });
+                notified += 1;
+            } catch (sendErr) {
+                // HARD failure (FIX 1 / INFO-1), symmetric with the customer-not-found
+                // null case above. `sendNotification` / NotificationService.send() NEVER
+                // throw (they swallow + retry out-of-band), so a throw here is practically
+                // only a customer/plan resolution failure — i.e. "we could not notify this
+                // sub", exactly the same hard failure as the null case. Flipping to
+                // `noticing` anyway would make this un-noticed sub due for apply in 15 days
+                // WITHOUT the legally-required advance notice (Disp. 954/2025). So set the
+                // flag and block the flip (fail-closed). This is safe: a transient throw
+                // just leaves the change `pending` and it is retried next tick.
+                hadHardNoticeFailure = true;
+                Sentry.captureException(
+                    new Error(
+                        `HOS-176: increase notice threw resolving/sending for subscription ${sub.subscriptionId} on change ${change.id} — leaving change pending, NOT flipping to noticing`
+                    ),
+                    {
+                        extra: { priceChangeId: change.id, subscriptionId: sub.subscriptionId },
+                        tags: { module: 'propagate-plan-price-changes' }
+                    }
+                );
+                logger.warn(
+                    'Price propagation notice: notice threw (HARD failure — change left pending, NOT flipped to noticing)',
+                    {
+                        priceChangeId: change.id,
+                        subscriptionId: sub.subscriptionId,
+                        error: sendErr instanceof Error ? sendErr.message : String(sendErr)
+                    }
+                );
+            }
+        }
+
+        if (hadHardNoticeFailure) {
+            // At least one affected sub could not be notified (unresolvable customer).
+            // Leave the change `pending` (noticeSentAt NULL) so it is never applied
+            // without a complete advance notice; it is retried next tick.
+            logger.error(
+                'Price propagation notice: change left pending — at least one affected subscriber has an unresolvable customer; NOT flipped to noticing (will retry next tick)',
+                {
+                    priceChangeId: change.id,
+                    planId: change.planId,
+                    billingInterval: change.billingInterval,
+                    subscribersFound: subs.length
+                }
+            );
+            continue;
+        }
+
+        await db
+            .update(billingPlanPriceChanges)
+            .set({ status: 'noticing', noticeSentAt: now, effectiveAt, updatedAt: now })
+            .where(eq(billingPlanPriceChanges.id, change.id));
+        noticed += 1;
+        logger.info('Price propagation notice: change moved to noticing', {
+            priceChangeId: change.id,
+            planId: change.planId,
+            subscribersFound: subs.length,
+            effectiveAt: effectiveAt.toISOString()
+        });
+    }
+
+    return { noticed, notified };
+}
+
 /**
  * Cron job definition — registered in `apps/api/src/cron/registry.ts`.
  */
 export const propagatePlanPriceChangesJob: CronJobDefinition = {
     name: 'propagate-plan-price-changes',
     description:
-        'Propagate admin plan price DECREASES to existing subscribers’ MP preapprovals (HOS-176). Increases are gated on the owner re-auth smoke + notice flow.',
+        'Propagate admin plan price changes to existing subscribers’ MP preapprovals (HOS-176). Decreases apply immediately; increases run the Disp. 954/2025 advance-notice + 15-day grace flow behind HOSPEDA_BILLING_PRICE_INCREASE_ENABLED (off by default).',
     schedule: '*/15 * * * *',
     enabled: true,
     timeoutMs: 5 * 60_000,
@@ -635,9 +1156,32 @@ export const propagatePlanPriceChangesJob: CronJobDefinition = {
             };
         }
 
+        // Increase path is gated: when the flag is off, increases never get a notice
+        // and are never returned as due — they stay `pending`, exactly as before.
+        const increaseEnabled = env.HOSPEDA_BILLING_PRICE_INCREASE_ENABLED;
+
+        // Notice phase (increase only, gated). Best-effort: a failure here must not
+        // block decrease propagation, so it is wrapped and only logged. Skipped in
+        // dry-run (it sends real emails + flips rows).
+        if (increaseEnabled && !dryRun) {
+            try {
+                const noticeOutcome = await runIncreaseNoticePhase(billing, logger);
+                if (noticeOutcome.noticed > 0) {
+                    logger.info('propagate-plan-price-changes: increase notice phase complete', {
+                        changesNoticed: noticeOutcome.noticed,
+                        subscribersNotified: noticeOutcome.notified
+                    });
+                }
+            } catch (noticeErr) {
+                logger.error('propagate-plan-price-changes: increase notice phase failed', {
+                    error: noticeErr instanceof Error ? noticeErr.message : String(noticeErr)
+                });
+            }
+        }
+
         let due: DueChangeRow[];
         try {
-            due = await findDueDecreaseChanges();
+            due = await findDueChanges({ increaseEnabled });
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
             logger.error('propagate-plan-price-changes: due-query failed', { error: message });
@@ -653,11 +1197,11 @@ export const propagatePlanPriceChangesJob: CronJobDefinition = {
         if (dryRun) {
             return {
                 success: true,
-                message: `Dry run — ${due.length} decrease change(s) would be propagated`,
+                message: `Dry run — ${due.length} price change(s) would be propagated`,
                 processed: due.length,
                 errors: 0,
                 durationMs: Date.now() - startMs,
-                details: { ids: due.map((c) => c.id) }
+                details: { ids: due.map((c) => c.id), increaseEnabled }
             };
         }
 
@@ -697,12 +1241,19 @@ export const _internals = {
     MAX_TARGETS_PER_CHANGE,
     MP_UPDATE_MAX_ATTEMPTS,
     MAX_TARGET_TICK_ATTEMPTS,
+    MP_MAX_TRANSACTION_AMOUNT_ARS,
+    INCREASE_NOTICE_GRACE_MS,
     resolveDiscountAwareTargetCentavos,
     nextTargetStatusOnFailure,
     nextDeferStatus,
     shouldFinalize,
-    findDueDecreaseChanges,
+    affectedStatusesForDirection,
+    classifyTargetAmountGuard,
+    findDueChanges,
     findAffectedSubscribers,
+    findAllAffectedSubscribers,
+    findPendingIncreaseChangesToNotice,
+    runIncreaseNoticePhase,
     ensureTargets,
     applyMpAmount,
     applyChange
