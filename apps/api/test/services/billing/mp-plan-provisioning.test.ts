@@ -53,6 +53,8 @@ const BASE_INPUT = {
     billingInterval: 'monthly' as const,
     trialDays: 14,
     amountCentavos: 1_500_000,
+    // HOS-244: no signup discount by default (sentinel 0 = full price).
+    discountCycle1AmountCentavos: 0,
     currency: 'ARS',
     planName: 'Basic',
     backUrl: BACK_URL
@@ -109,6 +111,97 @@ describe('resolveOrProvisionMpPlan', () => {
             })
         );
         expect(res).toEqual({ mpPreapprovalPlanId: 'mp_plan_new', created: true });
+    });
+
+    it('HOS-244: provisions at the DISCOUNTED amount and persists the discount dimension on a miss', async () => {
+        findOne.mockResolvedValue(null);
+        create.mockResolvedValue({ id: 'row-disc' });
+        const adapter = createAdapter();
+        adapter.prices.create.mockResolvedValue('mp_plan_discounted');
+
+        const res = await resolveOrProvisionMpPlan({
+            adapter,
+            ...BASE_INPUT,
+            // Full price 1_500_000; cycle-1 discounted to 1_050_000 (30% off).
+            discountCycle1AmountCentavos: 1_050_000
+        });
+
+        // The MP plan is baked at the DISCOUNTED amount, not the full price — this
+        // is what makes the preapproval born discounted.
+        expect(adapter.prices.create).toHaveBeenCalledWith(
+            expect.objectContaining({ unitAmount: 1_050_000 }),
+            // The reason marks the discounted variant so operators can tell it apart.
+            expect.stringContaining('desc. 1er ciclo')
+        );
+        // The row persists the FULL price as the drift snapshot AND the discount dim.
+        expect(create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                amountArs: 1_500_000,
+                discountCycle1AmountArs: 1_050_000,
+                mpPreapprovalPlanId: 'mp_plan_discounted'
+            })
+        );
+        // The lookup key carries the discount dimension so discounted and
+        // full-price variants of the same plan never collide.
+        expect(findOne).toHaveBeenCalledWith(
+            expect.objectContaining({ discountCycle1AmountArs: 1_050_000 })
+        );
+        expect(res).toEqual({ mpPreapprovalPlanId: 'mp_plan_discounted', created: true });
+    });
+
+    it('HOS-244: no-discount (sentinel 0) provisions at full price and keys the dimension 0', async () => {
+        findOne.mockResolvedValue(null);
+        create.mockResolvedValue({ id: 'row-full' });
+        const adapter = createAdapter();
+        adapter.prices.create.mockResolvedValue('mp_plan_full');
+
+        // BASE_INPUT carries discountCycle1AmountCentavos: 0.
+        await resolveOrProvisionMpPlan({ adapter, ...BASE_INPUT });
+
+        expect(adapter.prices.create).toHaveBeenCalledWith(
+            expect.objectContaining({ unitAmount: 1_500_000 }),
+            expect.any(String)
+        );
+        // No-discount reason must NOT carry the discount marker.
+        const reason = adapter.prices.create.mock.calls[0]?.[1] as string;
+        expect(reason).not.toContain('desc.');
+        expect(create).toHaveBeenCalledWith(
+            expect.objectContaining({ discountCycle1AmountArs: 0, amountArs: 1_500_000 })
+        );
+        expect(findOne).toHaveBeenCalledWith(
+            expect.objectContaining({ discountCycle1AmountArs: 0 })
+        );
+    });
+
+    it('HOS-244: a discounted variant and a full-price variant of the same plan are distinct keys', async () => {
+        // A registry hit at the same FULL amount but for the no-discount key must
+        // NOT satisfy a discounted lookup — the discount dimension is part of the
+        // key, so the discounted checkout misses and provisions its own plan.
+        findOne.mockResolvedValue(null);
+        create.mockResolvedValue({ id: 'row-disc2' });
+        const adapter = createAdapter();
+        adapter.prices.create.mockResolvedValue('mp_plan_disc2');
+
+        await resolveOrProvisionMpPlan({
+            adapter,
+            ...BASE_INPUT,
+            discountCycle1AmountCentavos: 900_000
+        });
+
+        // Looked up with the discount dimension, provisioned fresh (a full-price
+        // row would not have matched this key).
+        expect(findOne).toHaveBeenCalledWith(
+            expect.objectContaining({
+                commercialPlanId: 'plan-uuid',
+                billingInterval: 'monthly',
+                trialDays: 14,
+                discountCycle1AmountArs: 900_000
+            })
+        );
+        expect(adapter.prices.create).toHaveBeenCalledWith(
+            expect.objectContaining({ unitAmount: 900_000 }),
+            expect.any(String)
+        );
     });
 
     it('re-provisions and archives the stale plan when the commercial price drifted (CAS won)', async () => {

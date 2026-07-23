@@ -68,8 +68,21 @@ const PENDING_CHECKOUT_TTL_MS = 3 * 60 * 60 * 1000;
 export interface PendingCheckoutDiscount {
     /** The DB promo code id (for stamping + redemption once applied). */
     readonly promoCodeId: string;
-    /** The discounted amount, in centavos, to mutate the preapproval to. */
+    /** The discounted cycle-1 amount, in centavos (baked into the MP plan, HOS-244). */
     readonly finalAmountCentavos: number;
+    /**
+     * The discount's `durationCycles` snapshotted at checkout (HOS-244). `null` =
+     * forever; `N` = finite N-cycle discount. Carried on the snapshot so the
+     * link-time bookkeeping can seed `promo_effect_remaining_cycles` WITHOUT
+     * re-resolving the promo code — which is what makes stamping fail-closed and
+     * closes the permanent-discount leak (a born-discounted preapproval whose
+     * counter never gets seeded would never restore to full).
+     *
+     * Optional for backward-compat with pending checkouts snapshotted BEFORE this
+     * field existed (in-flight rows at deploy time): when absent, the link path
+     * falls back to re-resolving it from the promo code.
+     */
+    readonly durationCycles?: number | null;
 }
 
 /**

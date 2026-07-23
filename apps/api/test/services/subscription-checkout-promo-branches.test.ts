@@ -459,7 +459,9 @@ describe('HOS-110 W1 / HOS-171 / HOS-191: promo effect_kind precedence before th
         // never mutates a live preapproval synchronously.
         expect(pendingCallArg().pendingDiscount).toEqual({
             promoCodeId: 'pc-1',
-            finalAmountCentavos: 5000
+            finalAmountCentavos: 5000,
+            // HOS-244: durationCycles snapshotted for fail-closed link-time seeding.
+            durationCycles: 3
         });
         expect(billing.subscriptions.create).not.toHaveBeenCalled();
     });
@@ -642,8 +644,16 @@ describe('monthly discount branch (deferred — HOS-191 Path C)', () => {
         expect(result.checkoutUrl).toBe(EXPECTED_SHARE_LINK);
         expect(pendingCallArg().pendingDiscount).toEqual({
             promoCodeId: 'pc-1',
-            finalAmountCentavos: 5000
+            finalAmountCentavos: 5000,
+            // HOS-244: durationCycles snapshotted for fail-closed link-time seeding.
+            durationCycles: 3
         });
+        // HOS-244: the MP plan is resolved with the DISCOUNTED cycle-1 amount
+        // (5000) so the preapproval is provisioned already discounted — closing
+        // the cycle-1 charge race instead of PUT-ing the amount down afterward.
+        expect(resolveCheckoutMpPlanIdMock).toHaveBeenCalledWith(
+            expect.objectContaining({ discountCycle1AmountCentavos: 5000 })
+        );
         // No live preapproval exists yet to mutate or cancel.
         expect(billing.subscriptions.cancel).not.toHaveBeenCalled();
         // resolveFullPlanPriceCentavos is unused by the checkout path — the
@@ -740,62 +750,16 @@ describe('annual comp + discount branches (HOS-171 §7.2: annual resolves an MP 
         expect(compArg.interval).toBe('annual');
     });
 
-    it('discount → pendingDiscount snapshotted at full price (deferred to F2/F3), appliedEffect=discount', async () => {
-        // HOS-191: annual discount is no longer mutated onto a live preapproval
-        // at checkout time — it is snapshotted exactly like monthly (both routes
-        // resolve/materialize identically now; only the cadence differs).
+    it('HOS-244: annual + discount code → INVALID_PROMO_CODE, no pending subscription materialized', async () => {
+        // HOS-244: born-discounted MP plans are MONTHLY-only for now. Annual
+        // preapprovals are still provisioned at full price, so a discount code on
+        // annual checkout would stamp a discount MercadoPago never charges — it is
+        // rejected fail-fast, before any MP plan or pending subscription is created.
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'discount',
             promoCodeId: 'pc-1',
             code: 'ANNUAL20',
             effect: { kind: 'discount', valueKind: 'percentage', value: 20, durationCycles: 1 }
-        });
-        calculatePromoCodeEffectMock.mockReturnValue({
-            type: 'apply-discount',
-            discountAmount: 20000,
-            finalAmount: 80000,
-            remainingCycles: 0
-        });
-        const billing = makeBilling();
-
-        const result = await initiatePaidAnnualSubscription({
-            ...ANNUAL_BASE,
-            // biome-ignore lint/suspicious/noExplicitAny: test billing stub
-            billing: billing as any,
-            promoCode: 'ANNUAL20'
-        });
-
-        expect(result.appliedEffect).toBe('discount');
-        expect(result.checkoutUrl).toBe(EXPECTED_SHARE_LINK);
-        // Annual no longer calls the one-time `checkout.create` at all.
-        expect(billing.checkout.create).not.toHaveBeenCalled();
-        // The MP plan was resolved with billingInterval='annual' at full price
-        // (annualPrice.unitAmount = 100000) and no trial (this plan does not
-        // declare one), and the discount is snapshotted for the deferred apply.
-        expect(mpPlanCallArg().billingInterval).toBe('annual');
-        expect(mpPlanCallArg().trialDays).toBe(0);
-        expect(pendingCallArg().pendingDiscount).toEqual({
-            promoCodeId: 'pc-1',
-            finalAmountCentavos: 80000
-        });
-        // resolveFullPlanPriceCentavos is a MONTHLY-only DB lookup — annual
-        // (and the deferred discount path generally) uses annualPrice.unitAmount
-        // directly, never touching it.
-        expect(resolveFullPlanPriceCentavosMock).not.toHaveBeenCalled();
-    });
-
-    it('SPEC-262 L1: annual 100% discount (finalAmount=0) → INVALID_PROMO_CODE, no pending subscription materialized', async () => {
-        resolveCheckoutPromoPlanMock.mockResolvedValue({
-            kind: 'discount',
-            promoCodeId: 'pc-1',
-            code: 'FREE100',
-            effect: { kind: 'discount', valueKind: 'percentage', value: 100, durationCycles: 1 }
-        });
-        calculatePromoCodeEffectMock.mockReturnValue({
-            type: 'apply-discount',
-            discountAmount: 100000,
-            finalAmount: 0,
-            remainingCycles: 1
         });
         const billing = makeBilling();
 
@@ -805,15 +769,27 @@ describe('annual comp + discount branches (HOS-171 §7.2: annual resolves an MP 
                 ...ANNUAL_BASE,
                 // biome-ignore lint/suspicious/noExplicitAny: test billing stub
                 billing: billing as any,
-                promoCode: 'FREE100'
+                promoCode: 'ANNUAL20'
             });
         } catch (e) {
             thrown = e;
         }
 
         expect((thrown as SubscriptionCheckoutError).code).toBe('INVALID_PROMO_CODE');
+        expect((thrown as SubscriptionCheckoutError).message).toContain(
+            'Discount codes are not available on annual plans'
+        );
+        // Fail-fast: rejected before ANY MP-side computation or persistence — no
+        // discount computed, no MP plan resolved, no pending subscription created.
+        expect(calculatePromoCodeEffectMock).not.toHaveBeenCalled();
+        expect(resolveCheckoutMpPlanIdMock).not.toHaveBeenCalled();
         expect(createPendingProviderSubscriptionMock).not.toHaveBeenCalled();
     });
+
+    // (Removed the old "SPEC-262 L1: annual 100% discount → INVALID_PROMO_CODE"
+    // test: HOS-244 now rejects ALL discount codes on annual before any amount is
+    // computed, so the zero-price special case is fully subsumed by the generic
+    // rejection test above — which asserts calculatePromoCodeEffect is never called.)
 
     it('SPEC-262 C1+H1: annual expired/restricted code → INVALID_PROMO_CODE', async () => {
         resolveCheckoutPromoPlanMock.mockResolvedValue({
@@ -957,7 +933,7 @@ describe('HOS-115/HOS-171/HOS-191: annual TRIAL-eligible checkout (mirrors month
         expect(mpPlanCallArg().trialDays).toBe(24);
     });
 
-    it('discount applies ALONGSIDE the annual trial, exactly like monthly (HOS-171)', async () => {
+    it('HOS-244: annual + discount is rejected even when the plan has a trial', async () => {
         // Arrange
         resolveCheckoutPromoPlanMock.mockResolvedValue({
             kind: 'discount',
@@ -965,33 +941,24 @@ describe('HOS-115/HOS-171/HOS-191: annual TRIAL-eligible checkout (mirrors month
             code: 'LANZA50',
             effect: { kind: 'discount', valueKind: 'percentage', value: 50, durationCycles: 3 }
         });
-        calculatePromoCodeEffectMock.mockReturnValue({
-            type: 'apply-discount',
-            discountAmount: 17_500_000,
-            finalAmount: 17_500_000,
-            remainingCycles: 3
-        });
         const billing = makeTrialBilling();
 
-        // Act
-        const result = await initiatePaidAnnualSubscription({
-            ...ANNUAL_BASE,
-            // biome-ignore lint/suspicious/noExplicitAny: test billing stub
-            billing: billing as any,
-            promoCode: 'LANZA50'
-        });
+        // Act — discount codes are blocked on annual regardless of the trial.
+        let thrown: unknown;
+        try {
+            await initiatePaidAnnualSubscription({
+                ...ANNUAL_BASE,
+                // biome-ignore lint/suspicious/noExplicitAny: test billing stub
+                billing: billing as any,
+                promoCode: 'LANZA50'
+            });
+        } catch (e) {
+            thrown = e;
+        }
 
-        // Assert — annual has no promo behavior of its own any more
-        expect(result.promoCodeIgnored).toBeUndefined();
-        expect(result.appliedEffect).toBe('discount');
-        expect(mpPlanCallArg().billingInterval).toBe('annual');
-        expect(mpPlanCallArg().trialDays).toBe(14);
-        // Snapshotted for the deferred F2/F3 apply — the hosted checkout is
-        // never touched synchronously.
-        expect(pendingCallArg().pendingDiscount).toEqual({
-            promoCodeId: 'pc-1',
-            finalAmountCentavos: 17_500_000
-        });
+        // Assert
+        expect((thrown as SubscriptionCheckoutError).code).toBe('INVALID_PROMO_CODE');
+        expect(createPendingProviderSubscriptionMock).not.toHaveBeenCalled();
         expect(billing.checkout.create).not.toHaveBeenCalled();
     });
 });
