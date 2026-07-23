@@ -380,19 +380,29 @@ export const userApi = {
      * Get the authenticated user's current subscription details.
      *
      * @param params - Optional SSR cookie header (see {@link protectedConversationsApi.list})
+     *   plus an optional `productDomain` (HOS-259) to scope which of the
+     *   caller's subscriptions to resolve when they hold more than one under
+     *   the same billing customer (e.g. an accommodation host who also owns
+     *   a commerce listing). Defaults to `'accommodation'` server-side when
+     *   omitted — matches every pre-existing caller's behaviour.
      * @returns Current subscription data or null if no active subscription
      *
      * @example
      * ```ts
      * const result = await userApi.getSubscription();
      * if (result.ok && result.data.subscription) { ... }
+     *
+     * // Scope to the commerce subscription instead:
+     * const commerce = await userApi.getSubscription({ productDomain: 'commerce' });
      * ```
      */
     getSubscription(params?: {
         readonly cookieHeader?: string;
+        readonly productDomain?: 'accommodation' | 'commerce';
     }): Promise<ApiResult<{ readonly subscription: SubscriptionData | null }>> {
         return apiClient.getProtected({
             path: `${PROTECTED}/users/me/subscription`,
+            params: params?.productDomain ? { productDomain: params.productDomain } : undefined,
             cookieHeader: params?.cookieHeader
         });
     },

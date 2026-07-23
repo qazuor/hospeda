@@ -5,6 +5,7 @@
  */
 import type { QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
 import { isEntitlementGrantingStatus, PAYMENT_GRACE_PERIOD_DAYS } from '@repo/billing';
+import { isAccommodationSubscription, isCommerceSubscription } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
@@ -54,6 +55,19 @@ const QZPAY_STATUS_MAP: Record<string, (typeof SUBSCRIPTION_STATUSES)[number]> =
     paused: 'paused',
     pending: 'pending'
 };
+
+/**
+ * Which product domain's subscription to resolve (HOS-259). A dual-role
+ * owner (accommodation host AND commerce-listing owner) can have TWO
+ * subscriptions under the same billing customer; without this the `.find()`
+ * below picked whichever one came first, which could surface the
+ * accommodation subscription when the caller actually needed the commerce
+ * one (e.g. the commerce SUSPENDED recover CTA). Defaults to `'accommodation'`
+ * to match every existing caller's behaviour unchanged.
+ */
+const ProductDomainQuerySchema = z.object({
+    productDomain: z.enum(['accommodation', 'commerce']).optional().default('accommodation')
+});
 
 /** Response schema for user subscription */
 const SubscriptionResponseSchema = z.object({
@@ -137,9 +151,12 @@ export const userSubscriptionRoute = createProtectedRoute({
     description:
         'Returns the current billing subscription for the authenticated user including plan details and status.',
     tags: ['Users'],
+    requestQuery: ProductDomainQuerySchema.shape,
     responseSchema: SubscriptionResponseSchema,
-    handler: async (ctx: Context) => {
+    handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
+        const { productDomain } = (query || {}) as { productDomain?: 'accommodation' | 'commerce' };
+        const resolvedProductDomain = productDomain ?? 'accommodation';
 
         // Check if billing is enabled
         const billingEnabled = ctx.get('billingEnabled');
@@ -219,17 +236,27 @@ export const userSubscriptionRoute = createProtectedRoute({
         // subscriber's plan on their account page instead of hiding it as "no
         // subscription"; the response's `isComplimentary` flag drives which
         // self-service actions the UI shows.
+        // HOS-259: also scope by product domain. A dual-role owner (both an
+        // accommodation host AND a commerce-listing owner) can hold two
+        // subscriptions under the same billing customer; without this filter
+        // `.find()` returned whichever came first, which could surface the
+        // accommodation subscription to a caller that needed the commerce one.
+        const domainPredicate =
+            resolvedProductDomain === 'commerce'
+                ? isCommerceSubscription
+                : isAccommodationSubscription;
         const activeSubscription = subscriptions.find(
             (sub) =>
-                isEntitlementGrantingStatus(sub.status) ||
-                sub.status === 'past_due' ||
-                sub.status === 'paused'
+                (isEntitlementGrantingStatus(sub.status) ||
+                    sub.status === 'past_due' ||
+                    sub.status === 'paused') &&
+                domainPredicate(sub)
         );
 
         if (!activeSubscription) {
             apiLogger.debug(
-                { userId: actor.id, customerId: customer.id },
-                'No active, trial, comp, past_due, or paused subscription found for billing customer'
+                { userId: actor.id, customerId: customer.id, productDomain: resolvedProductDomain },
+                'No active, trial, comp, past_due, or paused subscription found for billing customer in the requested product domain'
             );
             return { subscription: null };
         }

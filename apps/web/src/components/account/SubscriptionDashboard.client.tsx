@@ -67,6 +67,14 @@ export interface SubscriptionDashboardProps {
      * When absent, the legacy plain anchor to the pricing page is shown.
      */
     readonly plans?: readonly PublicPlanData[];
+    /**
+     * Which of the caller's subscriptions to load (HOS-259). A dual-role
+     * owner (accommodation host AND commerce-listing owner) can have TWO
+     * subscriptions under the same billing customer; this scopes both the
+     * initial fetch and the silent refresh to the right one. Defaults to
+     * `'accommodation'` server-side when omitted (see `userApi.getSubscription`).
+     */
+    readonly productDomain?: 'accommodation' | 'commerce';
 }
 
 // ---------------------------------------------------------------------------
@@ -566,7 +574,12 @@ function PauseConfirmModal({
  *
  * @param props - {@link SubscriptionDashboardProps}
  */
-export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashboardProps) {
+export function SubscriptionDashboard({
+    locale,
+    user,
+    plans,
+    productDomain
+}: SubscriptionDashboardProps) {
     const { t } = createTranslations(locale);
 
     // ── State ──────────────────────────────────────────────────────────────
@@ -585,13 +598,13 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
 
     // ── Fetch ──────────────────────────────────────────────────────────────
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: stable identity by design — `t` and `userApi` are captured at first mount and never change between renders for a given locale.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: `t` and `userApi` stable identity by design — captured at first mount and never change between renders for a given locale. `productDomain` IS a real dep, listed below.
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         setFetchError(null);
 
         try {
-            const subResult = await userApi.getSubscription();
+            const subResult = await userApi.getSubscription({ productDomain });
 
             if (!subResult.ok) {
                 setFetchError(
@@ -608,7 +621,7 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [productDomain]);
 
     /**
      * Silent background refresh — updates subscription data WITHOUT setting
@@ -618,7 +631,7 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
      */
     const refreshSilently = useCallback(async () => {
         try {
-            const subResult = await userApi.getSubscription();
+            const subResult = await userApi.getSubscription({ productDomain });
             if (subResult.ok) {
                 setSubscription(subResult.data.subscription);
             }
@@ -627,7 +640,7 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
         } catch {
             // Network errors are intentionally swallowed here.
         }
-    }, []);
+    }, [productDomain]);
 
     useEffect(() => {
         void fetchData();

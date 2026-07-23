@@ -543,6 +543,7 @@
         },
         "subscription": {
             "title": "Minha assinatura",
+            "titleCommerce": "Assinatura de comércio",
             "description": "Gerencie seu plano e assinatura no Hospeda",
             "heading": "Minha assinatura",
             "headingDesc": "Gerencie seu plano e preferencias de pagamento",

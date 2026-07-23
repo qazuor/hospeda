@@ -23,7 +23,21 @@ if (!user) {
 }
 
 const { t } = createTranslations(locale);
-const title = t('account.pages.subscription.title', 'Suscripción');
+
+/**
+ * HOS-259: `?domain=commerce` scopes the dashboard to the caller's commerce
+ * subscription instead of the default accommodation one — used by the
+ * commerce SUSPENDED recover CTA (`CommerceListingActions.client.tsx`) for
+ * an owner who holds both kinds of subscription under one billing customer.
+ * Any other/absent value falls back to the default accommodation view.
+ */
+const rawDomain = Astro.url.searchParams.get('domain');
+const productDomain: 'accommodation' | 'commerce' = rawDomain === 'commerce' ? 'commerce' : 'accommodation';
+
+const title =
+	productDomain === 'commerce'
+		? t('account.pages.subscription.titleCommerce', 'Suscripción de comercio')
+		: t('account.pages.subscription.title', 'Suscripción');
 
 /** Minimal user shape forwarded to the island (no sensitive fields) */
 const islandUser = {
@@ -53,6 +67,7 @@ const availablePlans = plansResult.ok ? filterPlansByCategory(plansResult.plans,
 		locale={locale}
 		user={islandUser}
 		plans={availablePlans}
+		productDomain={productDomain}
 		client:load
 	/>
 </AccountLayout>
