@@ -63,6 +63,23 @@ export const meta = {
 } as const satisfies SeedMigrationModule['meta'];
 
 export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
+    // Production-only gate: this purge exists to clean the fake demo dataset from
+    // PRODUCTION. Staging and local are development environments
+    // (NODE_ENV !== 'production', per `hops db-seed-migrate` which injects
+    // NODE_ENV=production only for --target=prod) where the example data must stay
+    // for testing/demos, so this migration is a deliberate no-op there. It is still
+    // recorded in the ledger (returning a result marks it applied), so a later
+    // `db:seed:migrate` on staging/local for an UNRELATED migration never
+    // re-triggers this one and the demo data survives. See HOS-261.
+    if (process.env.NODE_ENV !== 'production') {
+        return {
+            summary:
+                'Skipped: example-data soft-delete runs in production only ' +
+                '(staging/local keep the demo data).',
+            counts: { skipped: 1 }
+        };
+    }
+
     const { accommodationIds, postIds, eventIds } = computeFakeExampleIds();
     const now = new Date();
     const deletedById = ctx.actor.id;
