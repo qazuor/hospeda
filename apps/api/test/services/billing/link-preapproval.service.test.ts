@@ -51,13 +51,56 @@ const dbSelectMock = vi.fn(() => ({
     }))
 }));
 
-const dbMock = { select: dbSelectMock };
+// HOS-244 Phase 1: `getDb().update(billingSubscriptions).set(...).where(...)`,
+// awaited directly (no further chaining) — the non-transactional, fail-closed
+// stamp of `promo_code_id` + `promo_effect_remaining_cycles`. `dbUpdateSetMock`
+// captures the `.set(...)` payload so tests can assert the stamp; `dbUpdateError`
+// makes the `.where(...)` promise reject, to exercise the fail-closed branch.
+let dbUpdateError: Error | null = null;
+const dbUpdateSetMock = vi.fn();
+const dbUpdateMock = vi.fn(() => ({
+    set: vi.fn((values: unknown) => {
+        dbUpdateSetMock(values);
+        return {
+            where: vi.fn(async () => {
+                if (dbUpdateError) {
+                    throw dbUpdateError;
+                }
+                return undefined;
+            })
+        };
+    })
+}));
+
+const dbMock = { select: dbSelectMock, update: dbUpdateMock };
+
+// vi.mock factories are hoisted above regular top-level `const`s, so a directly
+// (non-lazily) referenced outer variable hits a TDZ error — use `vi.hoisted` for
+// the mocks the *tests themselves* need to assert against.
+const { apiLoggerInfoMock, apiLoggerWarnMock, apiLoggerErrorMock, apiLoggerDebugMock } = vi.hoisted(
+    () => ({
+        apiLoggerInfoMock: vi.fn(),
+        apiLoggerWarnMock: vi.fn(),
+        apiLoggerErrorMock: vi.fn(),
+        apiLoggerDebugMock: vi.fn()
+    })
+);
 
 vi.mock('../../../src/utils/logger.js', () => ({
-    apiLogger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+    apiLogger: {
+        info: apiLoggerInfoMock,
+        warn: apiLoggerWarnMock,
+        error: apiLoggerErrorMock,
+        debug: apiLoggerDebugMock
+    }
 }));
 vi.mock('../../../src/utils/logger', () => ({
-    apiLogger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+    apiLogger: {
+        info: apiLoggerInfoMock,
+        warn: apiLoggerWarnMock,
+        error: apiLoggerErrorMock,
+        debug: apiLoggerDebugMock
+    }
 }));
 
 vi.mock('../../../src/utils/env.js', () => ({
@@ -72,9 +115,13 @@ vi.mock('../../../src/utils/mp-preapproval-plan-lookup.js', () => ({
     fetchPreapprovalPlanId: (...args: unknown[]) => fetchPreapprovalPlanIdMock(...args)
 }));
 
-const applySignupDiscountToMonthlyMock = vi.fn();
+// HOS-244: `applySignupDiscountToMonthly` was deleted — the module now only
+// exports `computeSignupDiscountCycleSeed`, whose real behavior (seed N, the
+// SANDBOX-VERIFY constant — see `subscription-discount-signup.service.ts`) is
+// reproduced directly here rather than stubbed, since `link-preapproval.service.ts`
+// calls the real function's contract (identity on `durationCycles`).
 vi.mock('../../../src/services/subscription-discount-signup.service.js', () => ({
-    applySignupDiscountToMonthly: (...args: unknown[]) => applySignupDiscountToMonthlyMock(...args)
+    computeSignupDiscountCycleSeed: (durationCycles: number) => durationCycles
 }));
 
 const getPromoCodeByIdMock = vi.fn();
@@ -217,6 +264,7 @@ describe('linkPreapprovalToLocalSub', () => {
         selectResultsQueue.length = 0;
         txCasResult = [{ id: 'sub-1' }];
         txCasError = null;
+        dbUpdateError = null;
         // Default: the live preapproval's plan matches the checkout's, so the
         // FIX A ownership guard passes on the happy path. Tests that assert an
         // IDOR override this to a mismatching plan id.
@@ -229,10 +277,6 @@ describe('linkPreapprovalToLocalSub', () => {
         findReconcileCandidatesMock.mockResolvedValue([]);
         markLinkedMock.mockResolvedValue(undefined);
         markReconcileAssistedMock.mockResolvedValue(undefined);
-        applySignupDiscountToMonthlyMock.mockResolvedValue({
-            success: true,
-            data: { discountedAmountCentavos: 8000, remainingCyclesSeed: null }
-        });
         // HOS-240 defaults: a resolvable trial_extension code + a successful redeem.
         getPromoCodeByIdMock.mockResolvedValue({
             success: true,
@@ -662,20 +706,26 @@ describe('linkPreapprovalToLocalSub', () => {
         expect(adapter.subscriptions.update).not.toHaveBeenCalled();
     });
 
-    it('applies a deferred discount best-effort after a successful link', async () => {
+    it('applies a deferred discount best-effort after a successful link (HOS-244 two-phase stamp + redeem)', async () => {
         queueSelectResult([]); // idempotency check
         findByNonceMock.mockResolvedValue(
             makePendingCheckout({
-                pendingDiscount: { promoCodeId: 'promo-1', finalAmountCentavos: 8000 }
+                pendingDiscount: {
+                    promoCodeId: 'promo-1',
+                    finalAmountCentavos: 8000,
+                    durationCycles: 3
+                }
             })
         );
         queueSelectResult([{ livemode: true }]); // livemode lookup
+        // Phase 2 resolves the code again (the durationCycles snapshot was
+        // present, so Phase 1 never resolved/cached a code).
         getPromoCodeByIdMock.mockResolvedValue({
             success: true,
             data: {
                 id: 'promo-1',
                 code: 'SAVE20',
-                effect: { kind: 'discount', valueKind: 'percentage', value: 20, durationCycles: 1 }
+                effect: { kind: 'discount', valueKind: 'percentage', value: 20, durationCycles: 3 }
             }
         });
 
@@ -688,15 +738,158 @@ describe('linkPreapprovalToLocalSub', () => {
         });
 
         expect(result.outcome).toBe('linked');
-        expect(applySignupDiscountToMonthlyMock).toHaveBeenCalledWith(
-            expect.objectContaining({
-                subscriptionId: 'sub-1',
-                mpSubscriptionId: 'pa-1',
-                promoCodeId: 'promo-1',
-                code: 'SAVE20',
-                fullPriceCentavos: 10000,
-                livemode: true
+        // Phase 1 (CRITICAL, fail-closed): stamp promo_code_id + seed the cycle
+        // counter from the snapshot's durationCycles (computeSignupDiscountCycleSeed
+        // is the identity function — seeds N).
+        expect(dbUpdateSetMock).toHaveBeenCalledWith({
+            promoCodeId: 'promo-1',
+            promoEffectRemainingCycles: 3
+        });
+        // Phase 2 (BEST-EFFORT): record the redemption usage row, discountAmount =
+        // monthly full price (10000) - the actually-charged amount (8000).
+        expect(redeemAndRecordUsageMock).toHaveBeenCalledWith({
+            promoCodeId: 'promo-1',
+            customerId: 'cust-1',
+            subscriptionId: 'sub-1',
+            discountAmount: 2000,
+            currency: 'ARS',
+            livemode: true
+        });
+    });
+
+    it('HOS-244 Phase 1: fails closed and never redeems when the stamp DB write throws', async () => {
+        queueSelectResult([]); // idempotency check
+        findByNonceMock.mockResolvedValue(
+            makePendingCheckout({
+                pendingDiscount: {
+                    promoCodeId: 'promo-1',
+                    finalAmountCentavos: 8000,
+                    durationCycles: 3
+                }
             })
+        );
+        queueSelectResult([{ livemode: true }]); // livemode lookup
+        dbUpdateError = new Error('connection reset');
+
+        const result = await linkPreapprovalToLocalSub({
+            preapprovalId: 'pa-1',
+            externalReference: 'nonce-abc',
+            payerEmail: null,
+            billing: makeBilling() as never,
+            adapter: makeAdapter({ externalReference: 'nonce-abc' }) as never
+        });
+
+        // Linking itself is unaffected — the discount bookkeeping is non-blocking.
+        expect(result.outcome).toBe('linked');
+        expect(Sentry.captureException).toHaveBeenCalledWith(
+            dbUpdateError,
+            expect.objectContaining({
+                extra: expect.objectContaining({
+                    localSubscriptionId: 'sub-1',
+                    promoCodeId: 'promo-1'
+                })
+            })
+        );
+        // Correct semantics: the subscription is UNDER-charged (not the old,
+        // misleading "customer charged full price" framing).
+        expect(apiLoggerErrorMock).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.stringContaining('UNDER-charged'),
+            expect.anything()
+        );
+        expect(apiLoggerErrorMock).not.toHaveBeenCalledWith(
+            expect.anything(),
+            expect.stringContaining('charged full price'),
+            expect.anything()
+        );
+        // A failed Phase 1 must never proceed to Phase 2.
+        expect(redeemAndRecordUsageMock).not.toHaveBeenCalled();
+    });
+
+    it('HOS-244: falls back to re-resolving durationCycles from the promo code when the snapshot lacks it (pre-HOS-244 in-flight rows)', async () => {
+        queueSelectResult([]); // idempotency check
+        findByNonceMock.mockResolvedValue(
+            makePendingCheckout({
+                pendingDiscount: { promoCodeId: 'promo-1', finalAmountCentavos: 8000 }
+                // durationCycles intentionally absent — pre-HOS-244 snapshot shape.
+            })
+        );
+        queueSelectResult([{ livemode: true }]); // livemode lookup
+        getPromoCodeByIdMock.mockResolvedValue({
+            success: true,
+            data: {
+                id: 'promo-1',
+                code: 'SAVE20',
+                effect: { kind: 'discount', valueKind: 'percentage', value: 20, durationCycles: 5 }
+            }
+        });
+
+        const result = await linkPreapprovalToLocalSub({
+            preapprovalId: 'pa-1',
+            externalReference: 'nonce-abc',
+            payerEmail: null,
+            billing: makeBilling() as never,
+            adapter: makeAdapter({ externalReference: 'nonce-abc' }) as never
+        });
+
+        expect(result.outcome).toBe('linked');
+        // The seed matches the RESOLVED durationCycles (5), not a missing/default
+        // value — the fallback re-resolves it from the promo code.
+        expect(dbUpdateSetMock).toHaveBeenCalledWith({
+            promoCodeId: 'promo-1',
+            promoEffectRemainingCycles: 5
+        });
+        // The resolved code is cached from the fallback lookup and reused in
+        // Phase 2 — only one getPromoCodeById call total.
+        expect(getPromoCodeByIdMock).toHaveBeenCalledTimes(1);
+        expect(redeemAndRecordUsageMock).toHaveBeenCalledWith(
+            expect.objectContaining({ promoCodeId: 'promo-1', discountAmount: 2000 })
+        );
+    });
+
+    it('HOS-244 Phase 2: a redeem failure is logged but does not affect the linking outcome', async () => {
+        queueSelectResult([]); // idempotency check
+        findByNonceMock.mockResolvedValue(
+            makePendingCheckout({
+                pendingDiscount: {
+                    promoCodeId: 'promo-1',
+                    finalAmountCentavos: 8000,
+                    durationCycles: 3
+                }
+            })
+        );
+        queueSelectResult([{ livemode: true }]); // livemode lookup
+        getPromoCodeByIdMock.mockResolvedValue({
+            success: true,
+            data: {
+                id: 'promo-1',
+                code: 'SAVE20',
+                effect: { kind: 'discount', valueKind: 'percentage', value: 20, durationCycles: 3 }
+            }
+        });
+        redeemAndRecordUsageMock.mockResolvedValue({
+            success: false,
+            error: { code: 'INTERNAL', message: 'usage insert failed' }
+        });
+
+        const result = await linkPreapprovalToLocalSub({
+            preapprovalId: 'pa-1',
+            externalReference: 'nonce-abc',
+            payerEmail: null,
+            billing: makeBilling() as never,
+            adapter: makeAdapter({ externalReference: 'nonce-abc' }) as never
+        });
+
+        // Phase 1 already succeeded (the discount is live); a Phase 2 redeem
+        // failure must not throw or change the linking outcome.
+        expect(result).toEqual({ outcome: 'linked', localSubscriptionId: 'sub-1' });
+        expect(dbUpdateSetMock).toHaveBeenCalledWith({
+            promoCodeId: 'promo-1',
+            promoEffectRemainingCycles: 3
+        });
+        expect(apiLoggerErrorMock).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.stringContaining('redemption record failed')
         );
     });
 
@@ -779,6 +972,8 @@ describe('linkPreapprovalToLocalSub', () => {
         queueSelectResult([]);
         findByNonceMock.mockResolvedValue(
             makePendingCheckout({
+                // durationCycles absent — forces the snapshot-fallback resolution,
+                // which also fails below (code no longer valid).
                 pendingDiscount: { promoCodeId: 'promo-1', finalAmountCentavos: 8000 }
             })
         );
@@ -797,7 +992,14 @@ describe('linkPreapprovalToLocalSub', () => {
         });
 
         expect(result).toEqual({ outcome: 'linked', localSubscriptionId: 'sub-1' });
-        expect(applySignupDiscountToMonthlyMock).not.toHaveBeenCalled();
+        // Phase 1 still stamps promo_code_id, seeding `null` (durationCycles could
+        // not be resolved) — an over-charge-never-under-charge fallback, not a skip.
+        expect(dbUpdateSetMock).toHaveBeenCalledWith({
+            promoCodeId: 'promo-1',
+            promoEffectRemainingCycles: null
+        });
+        // Phase 2 cannot resolve a code either — best-effort skip, never a throw.
+        expect(redeemAndRecordUsageMock).not.toHaveBeenCalled();
     });
 
     // ── FIX A: ownership guard (IDOR) ────────────────────────────────────────

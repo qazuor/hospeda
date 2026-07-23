@@ -63,6 +63,26 @@ export const billingMpPlans = pgTable(
          * uniqueness key: one MP plan per `(commercial_plan, interval, trial_days)`.
          */
         trialDays: integer('trial_days').notNull().default(0),
+        /**
+         * Cycle-1 discounted amount baked into this MP plan, in **centavos**
+         * (HOS-244). A second discriminating dimension alongside `trial_days`.
+         *
+         * `0` (sentinel, the default) = NO signup discount — the plan is provisioned
+         * at the full commercial `amount_ars`, the historical behavior. A non-zero
+         * value = a signup-discount variant whose `preapproval_plan.transaction_amount`
+         * is provisioned ALREADY discounted, so the customer sees and pays the
+         * discounted cycle-1 price on MercadoPago's hosted screen and cycle 1 is
+         * charged correctly with no post-authorization mutation race. Two promo
+         * codes that resolve to the same cycle-1 price (e.g. 20% off vs a fixed
+         * amount) intentionally collapse to ONE MP plan variant — the value MP cares
+         * about is the resulting number, not which code produced it. The full price
+         * is restored on the next cycle by the existing renewal restore-full path
+         * (`resolveRenewalPromoEffect`), which derives amounts from `billing_prices`,
+         * not from the MP plan. Sentinel `0` (not NULL) keeps the uniqueness index
+         * NULL-free and unlimited full-price rows distinct only by their other
+         * dimensions.
+         */
+        discountCycle1AmountArs: integer('discount_cycle1_amount_ars').notNull().default(0),
         /** Registry lifecycle: `active` | `inactive`. */
         status: varchar('status', { length: 20 }).notNull().default('active'),
         /**
@@ -84,11 +104,15 @@ export const billingMpPlans = pgTable(
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
     },
     (table) => ({
-        // Exactly one MP plan per (commercial plan × interval × trial length).
+        // Exactly one MP plan per
+        // (commercial plan × interval × trial length × cycle-1 discount).
+        // HOS-244 added the discount dimension; `0` is the no-discount sentinel so
+        // pre-existing full-price rows remain unique under their original tuple.
         billingMpPlans_variant_uniq: uniqueIndex('billingMpPlans_variant_uniq').on(
             table.commercialPlanId,
             table.billingInterval,
-            table.trialDays
+            table.trialDays,
+            table.discountCycle1AmountArs
         ),
         // An MP preapproval_plan id is registered at most once.
         billingMpPlans_mpPreapprovalPlanId_uniq: uniqueIndex(
