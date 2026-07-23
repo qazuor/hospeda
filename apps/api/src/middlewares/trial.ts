@@ -58,12 +58,37 @@ const ALLOWED_ROUTES_WHEN_BLOCKED = [
 ];
 
 /**
+ * Prefix + suffix pair identifying the commerce owner self-checkout route
+ * (`POST /api/v1/protected/commerce/listings/:entityType/:entityId/start-subscription`,
+ * HOS-166 §6.3/§7.1). A trial-expired host is still a customer who must be
+ * able to pay for a brand-new COMMERCE listing subscription even though
+ * their ACCOMMODATION trial has expired — the same "can't block payment for
+ * being delinquent on a DIFFERENT product domain" exemption as the
+ * `/api/v1/protected/billing/*` allowlist above (ADR-035 product-domain
+ * isolation). Matched by prefix+suffix (not a single fixed entry in
+ * {@link ALLOWED_ROUTES_WHEN_BLOCKED}) because `:entityType`/`:entityId` vary
+ * in the middle of the path, and `trialMiddleware` — unlike
+ * `pastDueGraceMiddleware` — is mounted globally rather than scoped to
+ * `/api/v1/protected/*`, so the prefix is required to avoid also exempting
+ * the admin-tier equivalent
+ * (`/api/v1/admin/commerce/listings/:entityType/:entityId/start-subscription`).
+ */
+const COMMERCE_START_SUBSCRIPTION_PREFIX = '/api/v1/protected/commerce/listings/';
+const COMMERCE_START_SUBSCRIPTION_SUFFIX = '/start-subscription';
+
+/**
  * Check if a route path is allowed when trial is blocked
  *
  * @param path - Request path
  * @returns True if route is allowed
  */
 function isRouteAllowedWhenBlocked(path: string): boolean {
+    if (
+        path.startsWith(COMMERCE_START_SUBSCRIPTION_PREFIX) &&
+        path.endsWith(COMMERCE_START_SUBSCRIPTION_SUFFIX)
+    ) {
+        return true;
+    }
     return ALLOWED_ROUTES_WHEN_BLOCKED.some((allowedPath) => path.startsWith(allowedPath));
 }
 
