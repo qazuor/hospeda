@@ -13,6 +13,7 @@
  * 6. Parse session only for routes that need it (protected + auth)
  * 7. Protect /mi-cuenta/* routes (redirect to login if unauthenticated)
  * 8. Rewrite 404 responses to the custom 404 page
+ * 8b. Rewrite 410 (Gone) responses to the same styled page, forcing the 410 status
  * 9. Set Content-Security-Policy header (enforce mode, HOS-30 Phase 2) on HTML responses
  * 10. Set X-Robots-Tag noindex on hosts in HOSPEDA_NOINDEX_HOSTS (e.g. staging)
  */
@@ -326,6 +327,41 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // so it renders with the full site layout and i18n context.
     if (response.status === 404) {
         return context.rewrite('/404');
+    }
+
+    // Step 8b: A soft-deleted PUBLIC entity returns 410 Gone (the SEO desindex
+    // signal — HOS-117 T-022 for accommodations/posts, HOS-256 for events/
+    // destinations). Without this branch a 410 falls straight through with an
+    // empty body — a blank page, no site chrome, i18n, or navigation. Render the
+    // same styled error page for chrome, but FORCE the status back to 410:
+    // Astro assigns `/404` a 404 status by convention, so a bare
+    // `rewrite('/404')` would coerce the 410 → 404 and lose the desindex signal
+    // (verified empirically); the re-wrap below only overrides the status line
+    // while the body and headers pass through unchanged.
+    //
+    // The rewritten error page (404 and 410 alike) ships WITHOUT the CSP header.
+    // `context.rewrite('/404')` DOES re-run onRequest for `/404` (Astro spins up
+    // a fresh middleware pass per rewrite — the same reason it caps rewrite depth
+    // at 4 with a 508 "Loop Detected"), but that re-entered pass hits Step 1's
+    // `isStaticAssetRoute()` match for `/404` (`path === '/404'`/`'/404/'`) and
+    // returns immediately, BEFORE Step 9 (CSP) ever runs — so CSP is never applied
+    // to error pages regardless. Pre-existing gap the 404 branch already has; the
+    // 410 branch inherits it for parity (not a new regression), tracked in HOS-263.
+    //
+    // This branch intentionally uses `rendered.headers` and drops the original
+    // 410 response's headers. That is safe ONLY because every current 410
+    // producer (`alojamientos/[slug].astro`, `eventos/[slug].astro`,
+    // `destinos/[...path].astro`, `experiencias/[slug].astro`,
+    // `gastronomia/[slug].astro`, `publicaciones/[slug].astro`) returns
+    // `new Response(null, { status: 410 })` with no headers — a future 410
+    // producer that attaches headers (e.g. Cache-Control) would silently lose
+    // them here.
+    if (response.status === 410) {
+        const rendered = await context.rewrite('/404');
+        return new Response(rendered.body, {
+            status: 410,
+            headers: rendered.headers
+        });
     }
 
     // Step 9: Attach a Content-Security-Policy header (enforce mode, HOS-30 Phase 2,
