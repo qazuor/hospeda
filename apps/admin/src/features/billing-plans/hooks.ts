@@ -1,5 +1,9 @@
-import type { BillingPlanResponse } from '@repo/schemas';
-import { AdminBillingPlanResponseSchema, BillingPlanResponseSchema } from '@repo/schemas';
+import type { AdminBillingPlanUpdateResponse, BillingPlanResponse } from '@repo/schemas';
+import {
+    AdminBillingPlanResponseSchema,
+    AdminBillingPlanUpdateResponseSchema,
+    BillingPlanResponseSchema
+} from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { fetchApi } from '@/lib/api/client';
@@ -191,15 +195,20 @@ async function createPlan(payload: CreatePlanPayload): Promise<BillingPlanRespon
 /**
  * Update an existing plan by UUID (slug is immutable per D1, absent from payload type).
  *
- * PUT /api/v1/admin/billing/plans/{id} — partial update, returns updated plan.
+ * PUT /api/v1/admin/billing/plans/{id} — partial update. Returns the updated plan
+ * plus `priceChangeEffects` (HOS-176): 0-2 entries describing the subscriber impact
+ * of any monthly/annual price change made by this update.
  */
-async function updatePlan({ id, ...payload }: UpdatePlanPayload): Promise<BillingPlanResponse> {
+async function updatePlan({
+    id,
+    ...payload
+}: UpdatePlanPayload): Promise<AdminBillingPlanUpdateResponse> {
     const result = await fetchApi<{ success: boolean; data: unknown }>({
         path: `/api/v1/admin/billing/plans/${id}`,
         method: 'PUT',
         body: toApiLimits(payload)
     });
-    const parsed = BillingPlanResponseSchema.safeParse(result.data.data);
+    const parsed = AdminBillingPlanUpdateResponseSchema.safeParse(result.data.data);
     if (!parsed.success) {
         throw new ApiError('Update plan response failed schema validation', {
             status: 502,

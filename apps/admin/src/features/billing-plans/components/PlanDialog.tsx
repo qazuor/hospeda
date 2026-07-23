@@ -7,7 +7,7 @@
  */
 
 import { type EntitlementKey, LIMIT_METADATA, LimitKey } from '@repo/billing';
-import type { ApiErrorShape, TranslationKey } from '@repo/i18n';
+import { type ApiErrorShape, defaultIntlLocale, formatDate, type TranslationKey } from '@repo/i18n';
 import { LoaderIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
@@ -35,7 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
 
 import { translateAdminApiError } from '@/lib/errors';
-import type { CreatePlanPayload, ParsedPlanRecord } from '../types';
+import type { CreatePlanPayload, ParsedPlanRecord, PlanSubmitResult } from '../types';
 import { ENTITLEMENT_GROUP_KEYS, getEntitlementName } from './plan-entitlement-groups';
 
 interface PlanDialogProps {
@@ -43,7 +43,12 @@ interface PlanDialogProps {
     onOpenChange: (open: boolean) => void;
     /** The plan being edited (undefined/null for create mode). */
     plan?: ParsedPlanRecord | null;
-    onSubmit: (payload: CreatePlanPayload) => Promise<void>;
+    /**
+     * Submits the create/update payload. Must resolve with the mutation's
+     * `priceChangeEffects` (HOS-176) so this dialog can show a follow-up
+     * subscriber-impact toast when a price edit reaches live subscribers.
+     */
+    onSubmit: (payload: CreatePlanPayload) => Promise<PlanSubmitResult>;
     isSubmitting?: boolean;
 }
 
@@ -97,7 +102,7 @@ export function PlanDialog({
                     isActive: value.isActive
                 };
 
-                await onSubmit(payload);
+                const result = await onSubmit(payload);
 
                 addToast({
                     title: plan
@@ -106,6 +111,38 @@ export function PlanDialog({
                     message: `"${value.name}" ${plan ? t('admin-billing.plans.dialog.successMessageUpdate') : t('admin-billing.plans.dialog.successMessageCreate')}`,
                     variant: 'success'
                 });
+
+                // HOS-176: surface subscriber impact for each price-change effect the
+                // update triggered (0-2: monthly and/or annual). Empty for create-mode
+                // submissions and for updates that didn't touch a price.
+                const priceChangeEffects = result?.priceChangeEffects ?? [];
+                for (const effect of priceChangeEffects) {
+                    const interval =
+                        effect.billingInterval === 'month'
+                            ? t('admin-billing.plans.dialog.priceChangeIntervalMonth')
+                            : t('admin-billing.plans.dialog.priceChangeIntervalYear');
+
+                    const message =
+                        effect.direction === 'decrease'
+                            ? t('admin-billing.plans.dialog.priceChangeImpactDecrease', {
+                                  interval,
+                                  count: effect.affectedSubscriberCount
+                              })
+                            : t('admin-billing.plans.dialog.priceChangeImpactIncrease', {
+                                  interval,
+                                  count: effect.affectedSubscriberCount,
+                                  date: formatDate({
+                                      date: effect.effectiveAt,
+                                      locale: defaultIntlLocale
+                                  })
+                              });
+
+                    addToast({
+                        title: t('admin-billing.plans.dialog.priceChangeImpactTitle'),
+                        message,
+                        variant: 'info'
+                    });
+                }
 
                 onOpenChange(false);
                 form.reset();

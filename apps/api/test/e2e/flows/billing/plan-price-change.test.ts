@@ -177,11 +177,28 @@ describe('SPEC-168 T-020 — plan price change charges new amount', () => {
             readonly data: {
                 readonly id: string;
                 readonly monthlyPriceArs: number;
+                readonly priceChangeEffects: ReadonlyArray<{
+                    readonly billingInterval: 'month' | 'year';
+                    readonly direction: 'increase' | 'decrease';
+                    readonly effectiveAt: string;
+                    readonly affectedSubscriberCount: number;
+                }>;
             };
         };
         expect(body.success).toBe(true);
         expect(body.data.id).toBe(planId);
         expect(body.data.monthlyPriceArs).toBe(NEW_MONTHLY_PRICE);
+
+        // HOS-176: the admin response surfaces the price-change propagation effect so the
+        // UI can show "affects N subscribers, applies on <date>". 250k > 100k → increase.
+        expect(body.data.priceChangeEffects).toHaveLength(1);
+        const effect = body.data.priceChangeEffects[0];
+        expect(effect?.billingInterval).toBe('month');
+        expect(effect?.direction).toBe('increase');
+        expect(typeof effect?.effectiveAt).toBe('string');
+        expect(Number.isNaN(Date.parse(effect?.effectiveAt ?? ''))).toBe(false);
+        expect(typeof effect?.affectedSubscriberCount).toBe('number');
+        expect(effect?.affectedSubscriberCount).toBeGreaterThanOrEqual(0);
 
         // ASSERT — the billing_prices row in the DB now carries the new unitAmount.
         // This is the exact value the subscription checkout would use when creating

@@ -23,6 +23,7 @@ import {
     HardDeleteConfirmDialog,
     type ParsedPlanRecord,
     PlanDialog,
+    type PlanSubmitResult,
     SoftDeleteConfirmDialog,
     useCreatePlanMutation,
     useDeletePlanMutation,
@@ -111,16 +112,22 @@ function BillingPlansPage() {
      * depending on whether `editingPlan` is set.
      *
      * @param payload - Form payload from PlanDialog.
+     * @returns The mutation's `priceChangeEffects` (HOS-176) so the dialog can
+     * surface a subscriber-impact toast after a price edit. Always empty on create.
      */
-    const handleSubmit = async (payload: CreatePlanPayload) => {
+    const handleSubmit = async (payload: CreatePlanPayload): Promise<PlanSubmitResult> => {
         if (editingPlan) {
             // Update: use id (UUID) as the mutation identifier per D1.
             // slug is stripped from the payload (immutable after creation).
             const { slug: _slug, ...updateFields } = payload;
-            await updateMutation.mutateAsync({ id: editingPlan.id, ...updateFields });
-        } else {
-            await createMutation.mutateAsync(payload);
+            const result = await updateMutation.mutateAsync({
+                id: editingPlan.id,
+                ...updateFields
+            });
+            return { priceChangeEffects: result.priceChangeEffects };
         }
+        await createMutation.mutateAsync(payload);
+        return { priceChangeEffects: [] };
     };
 
     /**

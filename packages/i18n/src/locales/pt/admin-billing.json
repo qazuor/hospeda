@@ -273,7 +273,12 @@
             "successMessageCreate": "foi criado com sucesso",
             "successMessageUpdate": "foi atualizado com sucesso",
             "errorTitle": "Erro",
-            "errorMessage": "Erro ao salvar o plano"
+            "errorMessage": "Erro ao salvar o plano",
+            "priceChangeImpactTitle": "Impacto nos assinantes",
+            "priceChangeImpactDecrease": "O novo preço {interval} alcança {count} assinantes e é aplicado imediatamente.",
+            "priceChangeImpactIncrease": "O aumento {interval} alcança {count} assinantes; será aplicado em {date}.",
+            "priceChangeIntervalMonth": "mensal",
+            "priceChangeIntervalYear": "anual"
         }
     },
     "addons": {

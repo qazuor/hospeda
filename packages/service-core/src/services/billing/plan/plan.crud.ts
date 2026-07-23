@@ -28,7 +28,11 @@ import {
     sql,
     withTransaction
 } from '@repo/db';
-import type { AdminBillingPlanResponse, BillingPlanResponse } from '@repo/schemas';
+import type {
+    AdminBillingPlanResponse,
+    BillingPlanResponse,
+    PlanPriceChangeEffect
+} from '@repo/schemas';
 import { ServiceErrorCode } from '@repo/schemas';
 import { diffPlanFields, insertPlanAuditLog } from './plan.audit.js';
 import type { CreatePlanInput, ListPlansFilters, UpdatePlanInput } from './plan.types.js';
@@ -578,6 +582,11 @@ export async function updatePlan(
 
             const existingMeta = (existingPlan.metadata ?? {}) as Record<string, unknown>;
 
+            // HOS-176: collect the price-change propagation effect(s) triggered by this
+            // update (monthly and/or annual) so the admin response can surface "affects N
+            // subscribers, applies on <date>". Empty when no existing price changed.
+            const priceChangeEffects: PlanPriceChangeEffect[] = [];
+
             // Build updated metadata (merge)
             const updatedMeta: Record<string, unknown> = {
                 ...existingMeta
@@ -646,7 +655,7 @@ export async function updatePlan(
                     // changed (a no-op write or a brand-new price with no subscribers
                     // needs no propagation). Same transaction → atomic with the price write.
                     if (monthlyPrice.unitAmount !== input.monthlyPriceArs) {
-                        await enqueuePlanPriceChange({
+                        const enqueued = await enqueuePlanPriceChange({
                             db,
                             planId: id,
                             priceId: monthlyPrice.id,
@@ -654,6 +663,12 @@ export async function updatePlan(
                             oldAmount: monthlyPrice.unitAmount,
                             newAmount: input.monthlyPriceArs,
                             actorId
+                        });
+                        priceChangeEffects.push({
+                            billingInterval: 'month',
+                            direction: enqueued.direction,
+                            effectiveAt: enqueued.effectiveAt.toISOString(),
+                            affectedSubscriberCount: enqueued.affectedSubscriberCount
                         });
                     }
                 } else {
@@ -699,7 +714,7 @@ export async function updatePlan(
                     // a recurring MP preapproval too). Deactivation (null/0, handled above)
                     // is NOT a price change to propagate.
                     if (annualPrice.unitAmount !== input.annualPriceArs) {
-                        await enqueuePlanPriceChange({
+                        const enqueued = await enqueuePlanPriceChange({
                             db,
                             planId: id,
                             priceId: annualPrice.id,
@@ -707,6 +722,12 @@ export async function updatePlan(
                             oldAmount: annualPrice.unitAmount,
                             newAmount: input.annualPriceArs,
                             actorId
+                        });
+                        priceChangeEffects.push({
+                            billingInterval: 'year',
+                            direction: enqueued.direction,
+                            effectiveAt: enqueued.effectiveAt.toISOString(),
+                            affectedSubscriberCount: enqueued.affectedSubscriberCount
                         });
                     }
                 } else {
@@ -756,7 +777,10 @@ export async function updatePlan(
                 .from(billingPrices)
                 .where(and(eq(billingPrices.planId, id), eq(billingPrices.active, true)));
 
-            return { success: true as const, data: mapDbToPlan(updatedPlan, priceRows) };
+            return {
+                success: true as const,
+                data: { ...mapDbToPlan(updatedPlan, priceRows), priceChangeEffects }
+            };
         };
 
         return ctx?.tx ? await doUpdate(ctx.tx) : await withTransaction(doUpdate);
