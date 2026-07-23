@@ -63,7 +63,7 @@ export function checkCanViewEvent(actor: Actor, event: Event): void {
     // findOneWithRelations does not filter deleted_at IS NULL, so this check
     // enforces it here to prevent ghost rows from leaking on public reads. Only
     // events that were PUBLIC (indexable) surface as GONE (410) so crawlers/LLM
-    // fetchers deindex the URL fast; deleted PRIVATE/DRAFT content that was
+    // fetchers deindex the URL fast; deleted PRIVATE/RESTRICTED content that was
     // never public returns NOT_FOUND (404, uniform) to preserve the
     // anti-enumeration contract (SPEC-092 T-087). Staff with EVENT_VIEW_ALL are
     // exempt: events have no separate admin-view bypass, so admin/getById relies
@@ -80,11 +80,16 @@ export function checkCanViewEvent(actor: Actor, event: Event): void {
     }
 
     // Public events: anyone can view
-    if (event.visibility === 'PUBLIC') return;
-    // Private/draft: only with permission
+    if (event.visibility === VisibilityEnum.PUBLIC) return;
+    // Private/restricted: only with the relevant view permission. EVENT_VIEW_ALL
+    // is accepted here too so the soft-deleted exemption above is self-sufficient
+    // and does not silently rely on seed roles bundling EVENT_VIEW_ALL with
+    // EVENT_VIEW_PRIVATE/EVENT_VIEW_DRAFT (matches the isStaff pattern in
+    // gastronomy/experience `_canView`).
     if (
         actor.permissions?.includes(PermissionEnum.EVENT_VIEW_PRIVATE) ||
-        actor.permissions?.includes(PermissionEnum.EVENT_VIEW_DRAFT)
+        actor.permissions?.includes(PermissionEnum.EVENT_VIEW_DRAFT) ||
+        actor.permissions?.includes(PermissionEnum.EVENT_VIEW_ALL)
     ) {
         return;
     }
