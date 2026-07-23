@@ -55,5 +55,6 @@ export {
     getCommerceListingSubscriptionStatus,
     type ReconcileCommerceListingVisibilityInput,
     type ReconcileCommerceListingVisibilityResult,
+    type ResolveCommerceListingCompleteness,
     reconcileCommerceListingVisibility
 } from './commerce-visibility';

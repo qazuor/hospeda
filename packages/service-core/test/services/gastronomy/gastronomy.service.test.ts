@@ -153,6 +153,13 @@ function makeService(entity: Gastronomy | null = null): GastronomyService {
     service._featureJunctionModelInstance = makeJunctionModel();
     service._amenityModelInstance = makeCatalogModel();
     service._featureModelInstance = makeCatalogModel();
+    // HOS-166 D-1: destinationId is now owner-editable, so `_beforeUpdate`'s
+    // CITY-type validation (`_assertDestinationIsCity`) can run in these unit
+    // tests too — stub `_destinationModel` (real `DestinationModel` by
+    // default, per the base class's constructor) so it never touches a real DB.
+    service._destinationModel = {
+        findById: vi.fn().mockResolvedValue({ destinationType: 'CITY' })
+    };
     return service as GastronomyService;
 }
 
@@ -313,13 +320,17 @@ describe('GastronomyService.updateOwn', () => {
 // updateOwn — AC-3 identity-field regression (SPEC-249 T-022)
 // ---------------------------------------------------------------------------
 
-// SPEC-249 AC-3 regression updated per SPEC-253 AC-5:
-// `type` is NO LONGER stripped — owners can now edit the listing sub-category.
-// `summary` is also now owner-editable. Only legal identity fields (name/slug),
-// base description, destinationId, lifecycle/visibility/moderation/isFeatured/ownerId
-// remain admin-only and are stripped by the schema.
-describe('GastronomyService.updateOwn — AC-5 identity-field regression (SPEC-249 T-022 updated for SPEC-253)', () => {
-    it('strips admin-only identity fields; type/summary/i18n now PERSIST for owners', async () => {
+// SPEC-249 AC-3 regression, updated per SPEC-253 AC-5 and then HOS-166 D-1:
+// `type` is NO LONGER stripped (SPEC-253) — owners can now edit the listing
+// sub-category. `summary` is also owner-editable. HOS-166 D-1 REVERSES
+// SPEC-239 decision #5 further: `name`, `description`, `destinationId` are
+// now owner-editable identity fields too (the admin no longer creates every
+// listing, so the owner has to own their own identity). `slug` stays
+// admin-only post-create (HOS-166 OQ-3 — derived server-side from `name` at
+// create, staff-only rename after). Only true control fields
+// (lifecycle/visibility/moderation/isFeatured/ownerId) remain stripped.
+describe('GastronomyService.updateOwn — identity-field regression (SPEC-249 T-022, SPEC-253, HOS-166 D-1)', () => {
+    it('persists name/description/destinationId/type/summary/i18n; strips control fields + slug', async () => {
         const entity = makeGastronomyEntity();
         const service = makeService(entity);
         const mockUpdate = (service as AnyService).model.update;
@@ -327,16 +338,18 @@ describe('GastronomyService.updateOwn — AC-5 identity-field regression (SPEC-2
         // biome-ignore lint/suspicious/noExplicitAny: simulating a forged HTTP body
         const payload: any = {
             priceRange: PriceRangeEnum.MID, // operational — must persist
-            type: GastronomyTypeEnum.CAFE, // NOW owner-editable (SPEC-253 D1) — must persist
+            type: GastronomyTypeEnum.CAFE, // owner-editable (SPEC-253 D1) — must persist
             summary: 'Un nuevo resumen válido de diez caracteres o más.', // owner-editable
-            name: 'FORGED_NAME', // admin-only legal identity — stripped
-            slug: 'forged-slug', // admin-only legal identity — stripped
-            destinationId: '00000000-0000-4000-a000-0000000000ff', // admin-only — stripped
-            lifecycleState: LifecycleStatusEnum.ARCHIVED, // lifecycle — stripped
-            visibility: VisibilityEnum.PRIVATE, // visibility — stripped
-            moderationState: ModerationStatusEnum.REJECTED, // moderation — stripped
-            isFeatured: true, // admin-only — stripped
-            ownerId: '00000000-0000-4000-a000-0000000000fe' // admin-only — stripped
+            name: 'Nuevo nombre del local', // HOS-166 D-1: owner-editable identity — must persist
+            description:
+                'Una descripción base actualizada por el propio dueño del comercio para su ficha.', // HOS-166 D-1 — must persist
+            destinationId: '00000000-0000-4000-a000-0000000000ff', // HOS-166 D-1 — must persist
+            slug: 'forged-slug', // immutable post-create (OQ-3) — stripped
+            lifecycleState: LifecycleStatusEnum.ARCHIVED, // control field — stripped
+            visibility: VisibilityEnum.PRIVATE, // control field — stripped
+            moderationState: ModerationStatusEnum.REJECTED, // control field — stripped
+            isFeatured: true, // control field — stripped
+            ownerId: '00000000-0000-4000-a000-0000000000fe' // control field — stripped
         };
 
         const result = await service.updateOwn(ENTITY_ID, payload, ownerActor);
@@ -345,16 +358,17 @@ describe('GastronomyService.updateOwn — AC-5 identity-field regression (SPEC-2
         expect(mockUpdate).toHaveBeenCalledTimes(1);
         const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
 
-        // Operational and now-owner-editable fields persist.
+        // Operational and owner-editable identity fields persist.
         expect(updatePayload.priceRange).toBe(PriceRangeEnum.MID);
-        expect(updatePayload.type).toBe(GastronomyTypeEnum.CAFE); // SPEC-253 AC-5: type persists
-        expect(updatePayload.summary).toBeDefined(); // owner-editable
+        expect(updatePayload.type).toBe(GastronomyTypeEnum.CAFE);
+        expect(updatePayload.summary).toBeDefined();
+        expect(updatePayload.name).toBe('Nuevo nombre del local');
+        expect(updatePayload.description).toBe(payload.description);
+        expect(updatePayload.destinationId).toBe(payload.destinationId);
 
-        // Admin-only identity fields are still stripped by the owner-update schema.
+        // Control fields + immutable slug are still stripped by the owner-update schema.
         for (const forbidden of [
-            'name',
             'slug',
-            'destinationId',
             'lifecycleState',
             'visibility',
             'moderationState',

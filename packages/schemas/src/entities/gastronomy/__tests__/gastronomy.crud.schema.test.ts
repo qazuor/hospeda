@@ -14,6 +14,7 @@ import { GastronomyTypeEnum } from '../../../enums/gastronomy-type.enum.js';
 import {
     GastronomyAdminCreateInputSchema,
     GastronomyDeleteInputSchema,
+    GastronomyOwnerCreateInputSchema,
     GastronomyOwnerUpdateInputSchema,
     GastronomyRestoreInputSchema,
     GastronomyUpdateInputSchema
@@ -280,44 +281,55 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
     });
 
     // -------------------------------------------------------------------------
-    // Admin-only identity fields — still stripped (AC-5 regression guard)
+    // HOS-166 D-1: identity fields are now owner-editable (reverses SPEC-239 #5)
     // -------------------------------------------------------------------------
 
-    describe('admin-only identity fields are still stripped by owner schema (AC-5 regression)', () => {
-        it('should strip "name" (legal identity — admin-only)', () => {
+    describe('owner-editable identity fields (HOS-166 D-1)', () => {
+        it('should accept and persist "name" (owner now controls identity)', () => {
             const result = GastronomyOwnerUpdateInputSchema.safeParse({ name: 'New Name' });
+            expect(result.success).toBe(true);
             if (result.success) {
-                expect((result.data as Record<string, unknown>).name).toBeUndefined();
+                expect(result.data.name).toBe('New Name');
             }
         });
 
-        it('should strip "slug" (legal identity — admin-only)', () => {
+        it('should accept and persist "description" (owner now controls identity)', () => {
+            const description =
+                'A long base description that is now valid for an owner-submitted payload.';
+            const result = GastronomyOwnerUpdateInputSchema.safeParse({ description });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.description).toBe(description);
+            }
+        });
+
+        it('should accept and persist "destinationId" (owner now controls identity)', () => {
+            const result = GastronomyOwnerUpdateInputSchema.safeParse({
+                destinationId: VALID_UUID
+            });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.destinationId).toBe(VALID_UUID);
+            }
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Admin-only fields — still stripped (AC-19 regression guard)
+    // -------------------------------------------------------------------------
+
+    describe('admin-only control + immutable-identity fields are still stripped (AC-19)', () => {
+        it('should strip "slug" (immutable post-create — HOS-166 OQ-3)', () => {
             const result = GastronomyOwnerUpdateInputSchema.safeParse({ slug: 'new-slug' });
+            expect(result.success).toBe(true);
             if (result.success) {
                 expect((result.data as Record<string, unknown>).slug).toBeUndefined();
             }
         });
 
-        it('should strip "description" (base description — owner edits i18n variants)', () => {
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({
-                description: 'A long base description that would normally be valid for the schema.'
-            });
-            if (result.success) {
-                expect((result.data as Record<string, unknown>).description).toBeUndefined();
-            }
-        });
-
-        it('should strip "destinationId" (admin-only classification)', () => {
-            const result = GastronomyOwnerUpdateInputSchema.safeParse({
-                destinationId: VALID_UUID
-            });
-            if (result.success) {
-                expect((result.data as Record<string, unknown>).destinationId).toBeUndefined();
-            }
-        });
-
         it('should strip "ownerId" (admin-only)', () => {
             const result = GastronomyOwnerUpdateInputSchema.safeParse({ ownerId: VALID_UUID });
+            expect(result.success).toBe(true);
             if (result.success) {
                 expect((result.data as Record<string, unknown>).ownerId).toBeUndefined();
             }
@@ -325,10 +337,123 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
 
         it('should strip "isFeatured" (admin-only)', () => {
             const result = GastronomyOwnerUpdateInputSchema.safeParse({ isFeatured: true });
+            expect(result.success).toBe(true);
             if (result.success) {
                 expect((result.data as Record<string, unknown>).isFeatured).toBeUndefined();
             }
         });
+
+        it('should strip "lifecycleState" (control field — admin-only)', () => {
+            const result = GastronomyOwnerUpdateInputSchema.safeParse({ lifecycleState: 'ACTIVE' });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect((result.data as Record<string, unknown>).lifecycleState).toBeUndefined();
+            }
+        });
+
+        it('should strip "visibility" (control field — admin-only)', () => {
+            const result = GastronomyOwnerUpdateInputSchema.safeParse({ visibility: 'PUBLIC' });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect((result.data as Record<string, unknown>).visibility).toBeUndefined();
+            }
+        });
+
+        it('should strip "moderationState" (control field — admin-only)', () => {
+            const result = GastronomyOwnerUpdateInputSchema.safeParse({
+                moderationState: 'APPROVED'
+            });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect((result.data as Record<string, unknown>).moderationState).toBeUndefined();
+            }
+        });
+    });
+});
+
+// ============================================================================
+// GastronomyOwnerCreateInputSchema — HOS-166 §7.2
+// ============================================================================
+
+describe('GastronomyOwnerCreateInputSchema', () => {
+    const buildOwnerCreateInput = (
+        overrides: Record<string, unknown> = {}
+    ): Record<string, unknown> => ({
+        name: 'La Parrilla del Sur',
+        summary: 'La mejor parrilla de la ciudad, con productos de campo.',
+        description:
+            'Un espacio único para disfrutar de la mejor gastronomía rioplatense con carnes seleccionadas y vinos de la región.',
+        type: GastronomyTypeEnum.PARRILLA,
+        ...overrides
+    });
+
+    it('should parse a valid owner create input', () => {
+        const result = GastronomyOwnerCreateInputSchema.safeParse(buildOwnerCreateInput());
+        expect(result.success).toBe(true);
+    });
+
+    it('should allow omitting destinationId (checked at publish time, not create — §6.6)', () => {
+        const result = GastronomyOwnerCreateInputSchema.safeParse(
+            buildOwnerCreateInput({ destinationId: undefined })
+        );
+        expect(result.success).toBe(true);
+    });
+
+    it('should strip "ownerId" even if supplied — the route forces actor.id (D-3)', () => {
+        const result = GastronomyOwnerCreateInputSchema.safeParse(
+            buildOwnerCreateInput({ ownerId: VALID_UUID })
+        );
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect((result.data as Record<string, unknown>).ownerId).toBeUndefined();
+        }
+    });
+
+    it('should strip "slug" even if supplied — derived server-side from name (OQ-3)', () => {
+        const result = GastronomyOwnerCreateInputSchema.safeParse(
+            buildOwnerCreateInput({ slug: 'owner-chosen-slug' })
+        );
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect((result.data as Record<string, unknown>).slug).toBeUndefined();
+        }
+    });
+
+    it('should strip "visibility" even if supplied — the route forces PRIVATE (D-3)', () => {
+        const result = GastronomyOwnerCreateInputSchema.safeParse(
+            buildOwnerCreateInput({ visibility: 'PUBLIC' })
+        );
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect((result.data as Record<string, unknown>).visibility).toBeUndefined();
+        }
+    });
+
+    it('should strip "lifecycleState" even if supplied — the route forces DRAFT (D-3)', () => {
+        const result = GastronomyOwnerCreateInputSchema.safeParse(
+            buildOwnerCreateInput({ lifecycleState: 'ACTIVE' })
+        );
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect((result.data as Record<string, unknown>).lifecycleState).toBeUndefined();
+        }
+    });
+
+    it('should strip "isFeatured" even if supplied (control field)', () => {
+        const result = GastronomyOwnerCreateInputSchema.safeParse(
+            buildOwnerCreateInput({ isFeatured: true })
+        );
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect((result.data as Record<string, unknown>).isFeatured).toBeUndefined();
+        }
+    });
+
+    it('should accept optional amenityIds and featureIds (write-only)', () => {
+        const result = GastronomyOwnerCreateInputSchema.safeParse(
+            buildOwnerCreateInput({ amenityIds: [VALID_UUID], featureIds: [VALID_UUID] })
+        );
+        expect(result.success).toBe(true);
     });
 });
 

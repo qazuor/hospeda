@@ -13,10 +13,14 @@ import { CommerceEntityTypeEnumSchema } from '../enums/commerce-entity-type.sche
 /**
  * Summary row for one commerce listing owned by the current actor.
  *
- * Deliberately minimal: identity is read-only for owners, so the summary
+ * Deliberately minimal — this is an INDEX row, not the editable payload: it
  * carries only what the listing index needs (label, slug, sub-type badge,
- * subscription/visibility state). The full editable payload is fetched
- * per-listing via the protected getById endpoint of the matching vertical.
+ * subscription/visibility state). NOTE: as of HOS-166 D-1, `name` (and other
+ * identity fields not present here) ARE owner-editable — "read-only" no
+ * longer describes the identity fields generally, only this summary
+ * projection specifically. The full editable payload (including `name`,
+ * `description`, `destinationId`) is fetched per-listing via the protected
+ * getById endpoint of the matching vertical.
  */
 export const CommerceOwnerListingSummarySchema = z.object({
     /** Listing UUID (primary key of the gastronomy/experience row). */

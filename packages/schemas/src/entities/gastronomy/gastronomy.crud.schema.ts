@@ -87,16 +87,33 @@ export type GastronomyAdminCreateOutput = z.infer<typeof GastronomyAdminCreateOu
 // ============================================================================
 
 /**
- * Schema for owner-managed operational updates to a gastronomy listing.
+ * Schema for owner-managed updates to a gastronomy listing.
  *
- * Deliberately restricted to the fields a COMMERCE_OWNER may edit via the
- * single `COMMERCE_EDIT_OWN` permission (SPEC-253 D2=b). Identity fields that
- * remain admin-only (`name`, `slug`, `description`, `destinationId`) are
- * **intentionally absent** — unknown keys are stripped (Zod's default behaviour)
- * so forged identity fields in the payload are silently dropped before reaching
- * the service layer.
+ * **HOS-166 D-1 — SPEC-239 decision #5 is deliberately REVERSED here.** That
+ * decision was coherent only under SPEC-239's decision #1 (admin creates every
+ * listing) — once the admin's only action is approving a lead, somebody has to
+ * type the identity in, and the only remaining candidate is the owner. So the
+ * owner now loads their own identity: `name`, `description`, `destinationId`
+ * are owner-editable, on top of the operational sections. Do NOT "restore" the
+ * old admin-only identity-strip — that would silently re-weld the admin into
+ * every listing's core content, which is the exact regression this reversal
+ * exists to prevent.
  *
- * Per SPEC-253 §3, the following fields are now owner-editable:
+ * **`slug` stays out of this schema on purpose (HOS-166 OQ-3).** It is
+ * owner-*visible* but not owner-*editable* post-create: it is derived
+ * server-side from `name` at creation time (`_beforeCreate` slug
+ * auto-generation) and a public URL, so a free rename vector would enable
+ * slug-squatting and break indexed links. Post-publish renames are staff-only.
+ * Any `slug` key in an owner PATCH body is silently stripped (Zod's default
+ * unknown-key behaviour).
+ *
+ * **Control fields stay admin-only (HOS-166 §6.2 / AC-19):** `lifecycleState`,
+ * `visibility`, `moderationState`, `isFeatured`, `ownerId` are **intentionally
+ * absent** from this schema — these are the *control* fields (as opposed to
+ * *identity*), and the reversal above is scoped to identity only. Any of these
+ * keys in an owner PATCH body is silently stripped.
+ *
+ * Per SPEC-253 §3, the following fields are also owner-editable:
  * - `type`             — listing sub-category (SPEC-253 D1: YES; removed from
  *                        identity-strip guard, AC-5)
  * - `summary`          — short marketing summary
@@ -116,13 +133,18 @@ export type GastronomyAdminCreateOutput = z.infer<typeof GastronomyAdminCreateOu
  * - `amenityIds`     — junction sync (gated by `COMMERCE_EDIT_OWN`)
  * - `featureIds`     — junction sync (gated by `COMMERCE_EDIT_OWN`)
  *
- * NOT permitted for owner (admin-only):
- * - `name`, `slug` (legal identity)
- * - `description` (base description — owner edits the i18n variants)
- * - `destinationId`, lifecycle/visibility/moderation/`isFeatured`/`ownerId`
+ * NOT permitted for owner (admin-only — control fields + immutable identity):
+ * - `slug` (immutable post-create — HOS-166 OQ-3)
+ * - `lifecycleState`, `visibility`, `moderationState`, `isFeatured`, `ownerId`
+ *   (control fields — HOS-166 §6.2)
  * - `priceFrom`, `priceUnit` (gastronomy uses `priceRange` + `menuUrl` instead)
  */
 export const GastronomyOwnerUpdateInputSchema = GastronomySchema.pick({
+    // HOS-166 D-1: identity fields the owner now controls.
+    name: true,
+    description: true,
+    destinationId: true,
+    // Previously owner-editable (SPEC-253 §3 / operational sections).
     type: true,
     summary: true,
     openingHours: true,
@@ -157,6 +179,76 @@ export const GastronomyOwnerUpdateInputSchema = GastronomySchema.pick({
 
 /** TypeScript type for {@link GastronomyOwnerUpdateInputSchema}. */
 export type GastronomyOwnerUpdateInput = z.infer<typeof GastronomyOwnerUpdateInputSchema>;
+
+// ============================================================================
+// OWNER CREATE SCHEMA (HOS-166 §7.2)
+// ============================================================================
+
+/**
+ * Schema for a `COMMERCE_OWNER` self-service listing create
+ * (`POST /api/v1/protected/commerce/listings/:entityType`, HOS-166 §7.2).
+ *
+ * Unlike {@link GastronomyAdminCreateInputSchema} (which trusts the caller for
+ * `ownerId`/`slug`/lifecycle/visibility because only staff can reach it), this
+ * schema **omits every server-forced or control field** so the route handler
+ * is the only place those values can come from:
+ *
+ * - `ownerId` — never accepted from the body; the route always sets it to
+ *   `actor.id` (D-3 — an owner can only ever create a listing for themselves).
+ * - `slug` — never accepted from the body; derived server-side from `name` at
+ *   create time by `BaseCommerceListingService._beforeCreate` (HOS-166 OQ-3).
+ * - `lifecycleState`, `visibility`, `isFeatured`, `moderationState` — control
+ *   fields; the route always forces `visibility: PRIVATE` and
+ *   `lifecycleState: DRAFT` on create (HOS-166 D-3 — complete first, pay
+ *   after). `isFeatured`/`moderationState` are left to their schema defaults.
+ * - `reviewsCount`, `averageRating`, `rating` — server-computed aggregates;
+ *   nonsensical on a brand-new listing with no reviews yet.
+ *
+ * `destinationId` stays `.optional()` (mirrors the admin create schema): the
+ * create schema is deliberately permissive — publish-readiness is a SEPARATE
+ * gate evaluated by `resolveListingCompleteness` at checkout time, not by this
+ * schema (HOS-166 §6.6).
+ */
+export const GastronomyOwnerCreateInputSchema = GastronomySchema.omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    createdById: true,
+    updatedById: true,
+    deletedAt: true,
+    deletedById: true,
+    // Server-forced — never accepted from the owner's request body.
+    ownerId: true,
+    slug: true,
+    lifecycleState: true,
+    visibility: true,
+    isFeatured: true,
+    moderationState: true,
+    // Server-computed aggregates — nonsensical on create.
+    reviewsCount: true,
+    averageRating: true,
+    rating: true
+}).extend({
+    /** Optional at create — publish-readiness is checked separately (§6.6). */
+    destinationId: DestinationIdSchema.optional(),
+    /**
+     * Optional list of amenity UUIDs to associate on create (write-only).
+     * Syncs the junction table transactionally alongside the gastronomy row.
+     */
+    amenityIds: z
+        .array(z.string().uuid({ message: 'zodError.gastronomy.amenityIds.invalidUuid' }))
+        .optional(),
+    /**
+     * Optional list of feature UUIDs to associate on create (write-only).
+     * Syncs the junction table transactionally alongside the gastronomy row.
+     */
+    featureIds: z
+        .array(z.string().uuid({ message: 'zodError.gastronomy.featureIds.invalidUuid' }))
+        .optional()
+});
+
+/** TypeScript type for {@link GastronomyOwnerCreateInputSchema}. */
+export type GastronomyOwnerCreateInput = z.infer<typeof GastronomyOwnerCreateInputSchema>;
 
 // ============================================================================
 // GENERAL UPDATE SCHEMAS (admin path)

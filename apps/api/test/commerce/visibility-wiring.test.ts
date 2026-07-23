@@ -1,15 +1,21 @@
 /**
- * Tests for the commerce visibility reconcile wiring (SPEC-239 T-050).
+ * Tests for the commerce visibility reconcile wiring (SPEC-239 T-050,
+ * predicate widened + completeness injection HOS-166 §6.5).
  *
  * Verifies that `reconcileCommerceListingForSubscription` (the bridge invoked by
  * the MP webhook + dunning/finalize crons) flips a linked commerce listing:
- *   - active  → PUBLIC  + ACTIVE
- *   - cancelled → PRIVATE + INACTIVE
+ *   - active + complete    → PUBLIC  + ACTIVE
+ *   - active + incomplete  → stays PRIVATE + INACTIVE (HOS-166 AC-6)
+ *   - REJECTED moderation  → stays PRIVATE regardless of completeness (AC-9)
+ *   - cancelled            → PRIVATE + INACTIVE
  * and is a no-op when the subscription has no commerce link row.
  *
- * `@repo/db` is stubbed for the link lookup/update; the gastronomy model is
- * stubbed via `resolveCommerceEntityModel`-compatible behaviour. The real
- * reconciler (`reconcileCommerceListingVisibility` from @repo/service-core) runs.
+ * `@repo/db` is stubbed for the link lookup/update; the gastronomy/experience
+ * models are stubbed via `resolveCommerceEntityModel`-compatible behaviour.
+ * The real reconciler (`reconcileCommerceListingVisibility` from
+ * @repo/service-core) AND the real completeness wiring
+ * (`resolveCommerceListingCompleteness` from `commerce-reconcile.service.ts`,
+ * which reads the SAME mocked `gastronomyModel`/`experienceModel`) both run.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -26,10 +32,96 @@ const updateWhere = vi.fn(() => Promise.resolve(undefined));
 const updateSet = vi.fn(() => ({ where: updateWhere }));
 const dbUpdate = vi.fn(() => ({ set: updateSet }));
 
-// ── gastronomy entity store the fake model reads/writes ────────────────────
-// Backed directly into the mocked @repo/db `gastronomyModel`, so the REAL
-// `resolveCommerceEntityModel` → REAL reconciler runs end-to-end against it.
-const entityStore = new Map<string, { id: string; visibility: string; lifecycleState: string }>();
+/**
+ * Shape of a fake entity row. Beyond `id`/`visibility`/`lifecycleState`
+ * (required by the reconciler's own read), every field
+ * `resolveListingCompleteness` reads is optional — a row missing them is
+ * genuinely incomplete, exactly like a real DRAFT listing (HOS-166 §6.6).
+ */
+interface FakeEntityRow {
+    id: string;
+    visibility: string;
+    lifecycleState: string;
+    moderationState?: string;
+    name?: string;
+    summary?: string;
+    description?: string;
+    destinationId?: string;
+    ownerId?: string;
+    type?: string;
+    media?: { featuredImage?: { url: string } };
+    contactInfo?: { personalEmail?: string };
+    openingHours?: {
+        timezone: string;
+        days: Record<string, { closed: boolean; shifts: { open: string; close: string }[] }>;
+    };
+    priceRange?: string;
+    priceFrom?: number;
+    isPriceOnRequest?: boolean;
+}
+
+/** A fully-complete gastronomy row — satisfies every shared + gastronomy-specific requirement. */
+function makeCompleteGastronomyRow(base: {
+    id: string;
+    visibility: string;
+    lifecycleState: string;
+    moderationState?: string;
+}): FakeEntityRow {
+    return {
+        ...base,
+        name: 'La Parrilla del Puerto',
+        summary: 'A riverside parrilla with fresh grilled fish and steak.',
+        description:
+            'La Parrilla del Puerto has served the waterfront for over a decade, specializing in grilled fish and classic asado.',
+        destinationId: '00000000-0000-4000-a000-000000000002',
+        ownerId: '00000000-0000-4000-a000-000000000001',
+        type: 'RESTAURANT',
+        media: { featuredImage: { url: 'https://example.com/img.jpg' } },
+        contactInfo: { personalEmail: 'owner@example.com' },
+        openingHours: {
+            timezone: 'America/Argentina/Buenos_Aires',
+            days: {
+                mon: { closed: false, shifts: [{ open: '09:00', close: '22:00' }] },
+                tue: { closed: true, shifts: [] },
+                wed: { closed: true, shifts: [] },
+                thu: { closed: true, shifts: [] },
+                fri: { closed: true, shifts: [] },
+                sat: { closed: true, shifts: [] },
+                sun: { closed: true, shifts: [] }
+            }
+        },
+        priceRange: 'MODERATE'
+    };
+}
+
+/** A fully-complete experience row — satisfies shared + experience-specific requirements. */
+function makeCompleteExperienceRow(base: {
+    id: string;
+    visibility: string;
+    lifecycleState: string;
+    moderationState?: string;
+}): FakeEntityRow {
+    return {
+        ...base,
+        name: 'Kayak tour on the Uruguay river',
+        summary: 'A guided two-hour kayak tour along the riverside.',
+        description:
+            'Explore the Uruguay river coastline by kayak with a certified local guide, including all safety equipment.',
+        destinationId: '00000000-0000-4000-a000-000000000002',
+        ownerId: '00000000-0000-4000-a000-000000000001',
+        type: 'TOUR_GUIDE',
+        media: { featuredImage: { url: 'https://example.com/kayak.jpg' } },
+        contactInfo: { personalEmail: 'guide@example.com' },
+        priceFrom: 1500000,
+        isPriceOnRequest: false
+    };
+}
+
+// ── entity store the fake model reads/writes ────────────────────────────────
+// Backed directly into the mocked @repo/db `gastronomyModel`/`experienceModel`,
+// so the REAL `resolveCommerceEntityModel` → REAL reconciler → REAL
+// `resolveCommerceListingCompleteness` all run end-to-end against it.
+const entityStore = new Map<string, FakeEntityRow>();
 
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(() => ({ select: dbSelect, update: dbUpdate })),
@@ -77,13 +169,16 @@ describe('reconcileCommerceListingForSubscription (SPEC-239 T-050)', () => {
         updateSet.mockClear();
     });
 
-    it('flips a linked listing PUBLIC + ACTIVE on an active subscription', async () => {
+    it('flips a linked listing PUBLIC + ACTIVE on an active subscription (complete listing)', async () => {
         linkRows.push({ entityType: 'gastronomy', entityId: ENTITY_ID });
-        entityStore.set(ENTITY_ID, {
-            id: ENTITY_ID,
-            visibility: 'PRIVATE',
-            lifecycleState: 'INACTIVE'
-        });
+        entityStore.set(
+            ENTITY_ID,
+            makeCompleteGastronomyRow({
+                id: ENTITY_ID,
+                visibility: 'PRIVATE',
+                lifecycleState: 'INACTIVE'
+            })
+        );
 
         await reconcileCommerceListingForSubscription({
             subscriptionId: SUB_ID,
@@ -91,22 +186,23 @@ describe('reconcileCommerceListingForSubscription (SPEC-239 T-050)', () => {
             source: 'mp-webhook'
         });
 
-        expect(entityStore.get(ENTITY_ID)).toEqual({
-            id: ENTITY_ID,
-            visibility: 'PUBLIC',
-            lifecycleState: 'ACTIVE'
-        });
+        const updated = entityStore.get(ENTITY_ID);
+        expect(updated?.visibility).toBe('PUBLIC');
+        expect(updated?.lifecycleState).toBe('ACTIVE');
         // Denormalized link status kept in sync.
         expect(updateSet).toHaveBeenCalled();
     });
 
     it('hides a linked listing PRIVATE + INACTIVE on a cancelled subscription', async () => {
         linkRows.push({ entityType: 'gastronomy', entityId: ENTITY_ID });
-        entityStore.set(ENTITY_ID, {
-            id: ENTITY_ID,
-            visibility: 'PUBLIC',
-            lifecycleState: 'ACTIVE'
-        });
+        entityStore.set(
+            ENTITY_ID,
+            makeCompleteGastronomyRow({
+                id: ENTITY_ID,
+                visibility: 'PUBLIC',
+                lifecycleState: 'ACTIVE'
+            })
+        );
 
         await reconcileCommerceListingForSubscription({
             subscriptionId: SUB_ID,
@@ -114,8 +210,7 @@ describe('reconcileCommerceListingForSubscription (SPEC-239 T-050)', () => {
             source: 'dunning-cron'
         });
 
-        expect(entityStore.get(ENTITY_ID)).toEqual({
-            id: ENTITY_ID,
+        expect(entityStore.get(ENTITY_ID)).toMatchObject({
             visibility: 'PRIVATE',
             lifecycleState: 'INACTIVE'
         });
@@ -148,6 +243,126 @@ describe('reconcileCommerceListingForSubscription (SPEC-239 T-050)', () => {
 });
 
 // ---------------------------------------------------------------------------
+// HOS-166 AC-6: active subscription + incomplete listing → stays PRIVATE
+// ---------------------------------------------------------------------------
+
+describe('reconcileCommerceListingForSubscription — incomplete listing (HOS-166 AC-6)', () => {
+    beforeEach(() => {
+        linkRows.length = 0;
+        entityStore.clear();
+        dbSelect.mockClear();
+        dbUpdate.mockClear();
+        updateSet.mockClear();
+    });
+
+    it('keeps a genuinely incomplete listing PRIVATE despite an active subscription', async () => {
+        linkRows.push({ entityType: 'gastronomy', entityId: ENTITY_ID });
+        // Minimal row — no media, contactInfo, openingHours, priceRange: a
+        // real DRAFT listing that was never completed.
+        entityStore.set(ENTITY_ID, {
+            id: ENTITY_ID,
+            visibility: 'PRIVATE',
+            lifecycleState: 'INACTIVE',
+            name: 'Draft Listing',
+            ownerId: '00000000-0000-4000-a000-000000000001'
+        });
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_ID,
+            subscriptionStatus: 'active',
+            source: 'mp-webhook'
+        });
+
+        const row = entityStore.get(ENTITY_ID);
+        expect(row?.visibility).toBe('PRIVATE');
+        expect(row?.lifecycleState).toBe('INACTIVE');
+    });
+
+    it('flips an already-PUBLIC listing back to PRIVATE if it becomes incomplete (R-2 race)', async () => {
+        linkRows.push({ entityType: 'experience', entityId: ENTITY_ID });
+        // Was complete+published; owner un-completed a required field
+        // (priceFrom un-set here to simulate the edit).
+        const row = makeCompleteExperienceRow({
+            id: ENTITY_ID,
+            visibility: 'PUBLIC',
+            lifecycleState: 'ACTIVE'
+        });
+        row.priceFrom = undefined;
+        row.isPriceOnRequest = false;
+        entityStore.set(ENTITY_ID, row);
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_ID,
+            subscriptionStatus: 'active',
+            source: 'dunning-cron'
+        });
+
+        const updated = entityStore.get(ENTITY_ID);
+        expect(updated?.visibility).toBe('PRIVATE');
+        expect(updated?.lifecycleState).toBe('INACTIVE');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-166 AC-9: moderationState=REJECTED → stays PRIVATE regardless of
+// completeness or subscription status.
+// ---------------------------------------------------------------------------
+
+describe('reconcileCommerceListingForSubscription — moderationState=REJECTED (HOS-166 AC-9)', () => {
+    beforeEach(() => {
+        linkRows.length = 0;
+        entityStore.clear();
+        dbSelect.mockClear();
+        dbUpdate.mockClear();
+        updateSet.mockClear();
+    });
+
+    it('keeps a REJECTED-moderation listing PRIVATE even when otherwise complete and paid', async () => {
+        linkRows.push({ entityType: 'gastronomy', entityId: ENTITY_ID });
+        entityStore.set(
+            ENTITY_ID,
+            makeCompleteGastronomyRow({
+                id: ENTITY_ID,
+                visibility: 'PRIVATE',
+                lifecycleState: 'INACTIVE',
+                moderationState: 'REJECTED'
+            })
+        );
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_ID,
+            subscriptionStatus: 'active',
+            source: 'mp-webhook'
+        });
+
+        const row = entityStore.get(ENTITY_ID);
+        expect(row?.visibility).toBe('PRIVATE');
+        expect(row?.lifecycleState).toBe('INACTIVE');
+    });
+
+    it('treats a PENDING moderationState as publishable (no moderation queue exists — §6.5 default)', async () => {
+        linkRows.push({ entityType: 'gastronomy', entityId: ENTITY_ID });
+        entityStore.set(
+            ENTITY_ID,
+            makeCompleteGastronomyRow({
+                id: ENTITY_ID,
+                visibility: 'PRIVATE',
+                lifecycleState: 'INACTIVE',
+                moderationState: 'PENDING'
+            })
+        );
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_ID,
+            subscriptionStatus: 'active',
+            source: 'mp-webhook'
+        });
+
+        expect(entityStore.get(ENTITY_ID)?.visibility).toBe('PUBLIC');
+    });
+});
+
+// ---------------------------------------------------------------------------
 // H-1 regression: experience entity arm is wired in resolveCommerceEntityModel
 // ---------------------------------------------------------------------------
 
@@ -160,13 +375,16 @@ describe('reconcileCommerceListingForSubscription — experience entity (H-1 reg
         updateSet.mockClear();
     });
 
-    it('flips a linked experience listing PUBLIC + ACTIVE on an active subscription', async () => {
+    it('flips a linked experience listing PUBLIC + ACTIVE on an active subscription (complete listing)', async () => {
         linkRows.push({ entityType: 'experience', entityId: ENTITY_ID });
-        entityStore.set(ENTITY_ID, {
-            id: ENTITY_ID,
-            visibility: 'PRIVATE',
-            lifecycleState: 'INACTIVE'
-        });
+        entityStore.set(
+            ENTITY_ID,
+            makeCompleteExperienceRow({
+                id: ENTITY_ID,
+                visibility: 'PRIVATE',
+                lifecycleState: 'INACTIVE'
+            })
+        );
 
         await reconcileCommerceListingForSubscription({
             subscriptionId: SUB_ID,
@@ -174,20 +392,21 @@ describe('reconcileCommerceListingForSubscription — experience entity (H-1 reg
             source: 'mp-webhook'
         });
 
-        expect(entityStore.get(ENTITY_ID)).toEqual({
-            id: ENTITY_ID,
-            visibility: 'PUBLIC',
-            lifecycleState: 'ACTIVE'
-        });
+        const updated = entityStore.get(ENTITY_ID);
+        expect(updated?.visibility).toBe('PUBLIC');
+        expect(updated?.lifecycleState).toBe('ACTIVE');
     });
 
     it('hides a linked experience listing PRIVATE + INACTIVE on a cancelled subscription', async () => {
         linkRows.push({ entityType: 'experience', entityId: ENTITY_ID });
-        entityStore.set(ENTITY_ID, {
-            id: ENTITY_ID,
-            visibility: 'PUBLIC',
-            lifecycleState: 'ACTIVE'
-        });
+        entityStore.set(
+            ENTITY_ID,
+            makeCompleteExperienceRow({
+                id: ENTITY_ID,
+                visibility: 'PUBLIC',
+                lifecycleState: 'ACTIVE'
+            })
+        );
 
         await reconcileCommerceListingForSubscription({
             subscriptionId: SUB_ID,
@@ -195,8 +414,7 @@ describe('reconcileCommerceListingForSubscription — experience entity (H-1 reg
             source: 'dunning-cron'
         });
 
-        expect(entityStore.get(ENTITY_ID)).toEqual({
-            id: ENTITY_ID,
+        expect(entityStore.get(ENTITY_ID)).toMatchObject({
             visibility: 'PRIVATE',
             lifecycleState: 'INACTIVE'
         });

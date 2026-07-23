@@ -696,6 +696,10 @@
 | `DELETE /api/v1/protected/gastronomies/{id}/faqs/{faqId}` | `gastronomy/protected/removeFaq.ts` | none | - | n/a | Deletion ungated; removing own FAQ always allowed (SPEC-239) |
 | `PUT /api/v1/protected/gastronomies/{id}/faqs/reorder` | `gastronomy/protected/reorderFaqs.ts` | none | - | n/a | Owner-scoped FAQ reorder; auth + ownership check (SPEC-239) |
 | `POST /api/v1/protected/gastronomies/{gastronomyId}/reviews` | `gastronomy/protected/createReview.ts` | none | - | n/a | Public-user review submission; auth-only, moderation enforced in service (SPEC-239) |
+| **COMMERCE — PROTECTED (self-checkout, HOS-166)** | | | | | |
+| `POST /api/v1/protected/commerce/listings/gastronomy` | `commerce/protected/create.ts` | none | - | n/a | HOS-166: owner self-service listing creation. PermissionEnum-gated (COMMERCE_CREATE); forces ownerId=actor.id, creates PRIVATE/DRAFT. NOT entitlement-gated — commerce visibility is driven by the link table + reconciler, not the entitlement engine (the commerce-listing plan ships entitlements:[]). |
+| `POST /api/v1/protected/commerce/listings/experience` | `commerce/protected/create.ts` | none | - | n/a | HOS-166: same handler file as the gastronomy create above, experience vertical. Same gating (COMMERCE_CREATE, ownerId forced, PRIVATE/DRAFT). |
+| `POST /api/v1/protected/commerce/listings/{entityType}/{entityId}/start-subscription` | `commerce/protected/start-subscription.ts` | none | - | n/a | HOS-166: owner-scoped commerce checkout (mirrors billing/start-paid). Auth + COMMERCE_EDIT_OWN + ownership check (actor.id===listing.ownerId else 403, AC-2); completeness 422; 409 if already subscribed. NOT entitlement-gated — commerce billing is binary (one plan), visibility via reconciler. Intentionally exempt from trial/pastDueGrace middlewares (cross-domain isolation, ADR-035). |
 | **GASTRONOMY — ADMIN** | | | | | |
 | `GET /api/v1/admin/gastronomies` | `gastronomy/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) |
 | `POST /api/v1/admin/gastronomies` | `gastronomy/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_CREATE) |

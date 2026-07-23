@@ -52,7 +52,7 @@ function makeCompleteGastronomyListing(): CommerceListingCompletenessListing {
     };
 }
 
-/** A fully-complete experience listing snapshot (shared block only). */
+/** A fully-complete experience listing snapshot (shared block + experience-specific price). */
 function makeCompleteExperienceListing(): CommerceListingCompletenessListing {
     return {
         name: 'Kayak tour on the Uruguay river',
@@ -68,7 +68,9 @@ function makeCompleteExperienceListing(): CommerceListingCompletenessListing {
                 moderationState: ModerationStatusEnum.APPROVED
             }
         },
-        contactInfo: { personalEmail: 'guide@example.com' }
+        contactInfo: { personalEmail: 'guide@example.com' },
+        priceFrom: 1500000,
+        isPriceOnRequest: false
     };
 }
 
@@ -322,5 +324,94 @@ describe('resolveListingCompleteness — experience', () => {
 
         expect(result.complete).toBe(false);
         expect(result.missing).toEqual(['name']);
+    });
+
+    // -------------------------------------------------------------------------
+    // HOS-166 PR-B: experience-specific `priceFrom` requirement
+    // -------------------------------------------------------------------------
+
+    describe('experience-specific priceFrom requirement (HOS-166 PR-B)', () => {
+        it('should report "priceFrom" missing when priceFrom is 0 and isPriceOnRequest is false', () => {
+            const listing = {
+                ...makeCompleteExperienceListing(),
+                priceFrom: 0,
+                isPriceOnRequest: false
+            };
+            const result = resolveListingCompleteness({
+                entityType: CommerceEntityTypeEnum.EXPERIENCE,
+                listing
+            });
+
+            expect(result.complete).toBe(false);
+            expect(result.missing).toContain('priceFrom');
+        });
+
+        it('should report "priceFrom" missing when priceFrom is absent', () => {
+            const listing = {
+                ...makeCompleteExperienceListing(),
+                priceFrom: undefined,
+                isPriceOnRequest: false
+            };
+            const result = resolveListingCompleteness({
+                entityType: CommerceEntityTypeEnum.EXPERIENCE,
+                listing
+            });
+
+            expect(result.missing).toContain('priceFrom');
+        });
+
+        it('should report "priceFrom" missing when priceFrom is negative', () => {
+            const listing = {
+                ...makeCompleteExperienceListing(),
+                priceFrom: -100,
+                isPriceOnRequest: false
+            };
+            const result = resolveListingCompleteness({
+                entityType: CommerceEntityTypeEnum.EXPERIENCE,
+                listing
+            });
+
+            expect(result.missing).toContain('priceFrom');
+        });
+
+        it('should NOT report "priceFrom" missing when isPriceOnRequest is true, even with priceFrom=0', () => {
+            const listing = {
+                ...makeCompleteExperienceListing(),
+                priceFrom: 0,
+                isPriceOnRequest: true
+            };
+            const result = resolveListingCompleteness({
+                entityType: CommerceEntityTypeEnum.EXPERIENCE,
+                listing
+            });
+
+            expect(result.complete).toBe(true);
+            expect(result.missing).not.toContain('priceFrom');
+        });
+
+        it('should NOT report "priceFrom" missing when priceFrom is a positive integer', () => {
+            const result = resolveListingCompleteness({
+                entityType: CommerceEntityTypeEnum.EXPERIENCE,
+                listing: makeCompleteExperienceListing()
+            });
+
+            expect(result.complete).toBe(true);
+            expect(result.missing).not.toContain('priceFrom');
+        });
+
+        it('should NOT apply the priceFrom rule to gastronomy listings', () => {
+            const listing = {
+                ...makeCompleteGastronomyListing(),
+                priceFrom: 0,
+                isPriceOnRequest: false
+            };
+            const result = resolveListingCompleteness({
+                entityType: CommerceEntityTypeEnum.GASTRONOMY,
+                listing
+            });
+
+            expect(result.complete).toBe(true);
+            expect(result.missing).not.toContain('priceFrom');
+        });
     });
 });

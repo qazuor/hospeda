@@ -636,6 +636,29 @@ describe('pastDueGraceMiddleware', () => {
             expect(ctx.json).not.toHaveBeenCalled();
         });
 
+        it('should call next() for commerce owner start-subscription even with expired grace (HOS-166)', async () => {
+            // Arrange — dual-persona user: accommodation subscription is past-due
+            // and grace-expired, but they are paying for a NEW commerce listing.
+            const pastDueSub = createMockSubscription({
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -3
+            });
+            setupBillingWith([pastDueSub]);
+            const ctx = createMockContext({
+                reqPath:
+                    '/api/v1/protected/commerce/listings/gastronomy/11111111-1111-1111-1111-111111111111/start-subscription'
+            });
+            const middleware = pastDueGraceMiddleware();
+
+            // Act
+            await middleware(ctx as never, next);
+
+            // Assert
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
+
         it('should still block non-exempt path /subscriptions with expired grace', async () => {
             // Arrange
             const pastDueSub = createMockSubscription({

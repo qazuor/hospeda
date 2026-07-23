@@ -326,6 +326,56 @@ describe('Trial Middleware', () => {
             expect(next).toHaveBeenCalledTimes(1);
             expect(TrialService).not.toHaveBeenCalled();
         });
+
+        it('should allow POST to the commerce owner start-subscription route even with an expired trial (HOS-166)', async () => {
+            // Arrange — a trial-expired host must still be able to pay for a
+            // brand-new COMMERCE listing subscription (cross-domain isolation).
+            const ctx = createMockContext({
+                path: '/api/v1/protected/commerce/listings/gastronomy/11111111-1111-1111-1111-111111111111/start-subscription',
+                method: 'POST'
+            });
+            const next = createMockNext();
+            const middleware = trialMiddleware();
+
+            // Act
+            await middleware(ctx, next);
+
+            // Assert — exempted before the trial status is even checked
+            expect(next).toHaveBeenCalledTimes(1);
+            expect(TrialService).not.toHaveBeenCalled();
+        });
+
+        it('should NOT exempt the admin-tier commerce start-subscription route (prefix scoped to /protected only)', async () => {
+            // Arrange — same trailing path shape, but on the ADMIN tier; must
+            // still go through the normal trial check (and block, since the
+            // trial is expired and this is a mutating POST).
+            const ctx = createMockContext({
+                path: '/api/v1/admin/commerce/listings/gastronomy/11111111-1111-1111-1111-111111111111/start-subscription',
+                method: 'POST'
+            });
+            const next = createMockNext();
+            const middleware = trialMiddleware();
+
+            const mockBilling = {};
+            const mockTrialService = {
+                getTrialStatus: vi.fn().mockResolvedValue({
+                    isExpired: true,
+                    isOnTrial: false,
+                    expiresAt: new Date('2024-06-01T00:00:00Z'),
+                    daysRemaining: 0,
+                    planSlug: null
+                })
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+            vi.mocked(TrialService).mockImplementation(function () {
+                return mockTrialService as any;
+            });
+
+            // Act & Assert
+            await expect(middleware(ctx, next)).rejects.toThrow(HTTPException);
+            expect(next).not.toHaveBeenCalled();
+        });
     });
 
     describe('Expired Trial', () => {

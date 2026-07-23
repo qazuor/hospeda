@@ -64,7 +64,18 @@ const GRACE_EXEMPT_PATH_SUFFIXES = [
     '/trial/reactivate-subscription',
     '/checkout',
     '/subscriptions/reactivate',
-    '/payment-methods'
+    '/payment-methods',
+    // HOS-166: commerce owner self-checkout. `billing_customers` is one row
+    // per user shared across accommodation + commerce (ADR-035), so a host
+    // whose ACCOMMODATION subscription is past-due/grace-expired must still
+    // be able to pay for a brand-new COMMERCE listing subscription — the
+    // same "can't block payment for being delinquent on a DIFFERENT domain"
+    // exemption as the other recovery paths above. Safe as a bare suffix
+    // because this middleware only runs on `/api/v1/protected/*`
+    // (see `routes/index.ts`) — the admin-tier equivalent
+    // (`/api/v1/admin/commerce/listings/:entityType/:entityId/start-subscription`)
+    // never reaches this middleware.
+    '/start-subscription'
 ] as const;
 
 /**
