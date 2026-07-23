@@ -372,7 +372,23 @@ export async function parseSessionUser({
         return null;
     }
 
-    const apiUrl = getMiddlewareApiUrl();
+    // HOS-254: resolve the API URL defensively. `getMiddlewareApiUrl()` throws
+    // when neither HOSPEDA_API_URL nor PUBLIC_API_URL is set, and this call
+    // sits OUTSIDE the try/catch that guards the fetch below. `parseSessionUser`
+    // is now reached directly from public, unauthenticated MercadoPago-return
+    // pages (checkout/index.astro, checkout/failure.astro) that have no local
+    // try/catch, so a config-drift throw here would surface a 500 at a
+    // payment-critical moment. Fail safe to an anonymous session instead, so
+    // `resolveSubscriptionPlansPath` maps null → the tourist plans page.
+    let apiUrl: string;
+    try {
+        apiUrl = getMiddlewareApiUrl();
+    } catch {
+        webLogger.warn(
+            '[middleware] API URL not configured; treating session as anonymous (parseSessionUser)'
+        );
+        return null;
+    }
 
     // Instrument the Better Auth round-trip so we can measure p50/p95 in
     // Sentry and decide whether server-side session caching (SPEC-111 §4.3
