@@ -237,8 +237,11 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * read via import.meta.env in the admin app but never registered (so it was
  * missing from .env.example AND from the Dockerfile build ARGs — see the
  * dockerfile-build-args I4b reverse gate). 272 + 1 = 273.
+ *
+ * +1 = HOSPEDA_BILLING_PRICE_INCREASE_ENABLED (HOS-176, billing category, optional,
+ * default false) — gates the plan price-INCREASE propagation flow. 273 + 1 = 274.
  */
-const EXPECTED_VAR_COUNT = 273;
+const EXPECTED_VAR_COUNT = 274;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
