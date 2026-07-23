@@ -1000,9 +1000,10 @@ describe('runIncreaseNoticePhase (notice phase)', () => {
 
         const outcome = await runIncreaseNoticePhase(noticeBilling(), logger);
 
-        // Nothing noticed, nothing sent — fail closed.
+        // Nothing noticed, nothing sent — fail closed. (The cron sends via
+        // trySendNotification; the overflow guard must bail BEFORE any send.)
         expect(outcome).toEqual({ noticed: 0, notified: 0 });
-        expect(mockSendNotification).not.toHaveBeenCalled();
+        expect(mockTrySendNotification).not.toHaveBeenCalled();
         // Change stays pending, noticeSentAt still null → never applied.
         expect(state.changes[0].status).toBe('pending');
         expect(state.changes[0].noticeSentAt).toBeNull();
@@ -1337,7 +1338,7 @@ describe('runIncreaseNoticePhase (notice phase)', () => {
         expect(mockCaptureException).toHaveBeenCalledTimes(1);
     });
 
-    it('rate-limits the blocked-notice Sentry alert via metadata.lastNoticeBlockAlertAt (no per-tick storm)', async () => {
+    it('rate-limit throttle end-to-end: tick 1 PERSISTS lastNoticeBlockAlertAt + alerts once; an in-window tick is suppressed; a stale (>6h) tick re-alerts and advances the timestamp', async () => {
         const state: GState = {
             changes: [
                 {
@@ -1350,9 +1351,8 @@ describe('runIncreaseNoticePhase (notice phase)', () => {
                     status: 'pending',
                     noticeSentAt: null,
                     effectiveAt: new Date(0),
-                    createdAt: new Date(),
-                    // A recent alert was already sent → this tick must NOT re-alert.
-                    metadata: { lastNoticeBlockAlertAt: new Date().toISOString() }
+                    createdAt: new Date()
+                    // No metadata seeded — the code itself must write the throttle timestamp.
                 }
             ],
             targets: [],
@@ -1372,11 +1372,27 @@ describe('runIncreaseNoticePhase (notice phase)', () => {
         mockGetDb.mockReturnValue(buildDb(state));
         mockTrySendNotification.mockResolvedValue({ delivered: false });
 
-        const outcome = await runIncreaseNoticePhase(noticeBilling(), mkLogger());
-        expect(outcome).toEqual({ noticed: 0, notified: 0 });
-        expect(state.changes[0].status).toBe('pending');
-        // Within the rate-limit window → NO new Sentry capture this tick.
-        expect(mockCaptureException).not.toHaveBeenCalled();
+        // Tick 1: blocked → ONE capture + the throttle timestamp is PERSISTED by the code.
+        await runIncreaseNoticePhase(noticeBilling(), mkLogger());
+        expect(mockCaptureException).toHaveBeenCalledTimes(1);
+        const meta = state.changes[0].metadata as Record<string, unknown> | undefined;
+        expect(typeof meta?.lastNoticeBlockAlertAt).toBe('string');
+
+        // Tick 2 (immediately): within the 6h window → NO new capture (throttled).
+        await runIncreaseNoticePhase(noticeBilling(), mkLogger());
+        expect(mockCaptureException).toHaveBeenCalledTimes(1);
+
+        // Simulate the window elapsing: backdate the persisted timestamp > 6h.
+        (state.changes[0].metadata as Record<string, unknown>).lastNoticeBlockAlertAt = new Date(
+            Date.now() - 7 * 60 * 60 * 1000
+        ).toISOString();
+
+        // Tick 3: stale timestamp → RE-alert and advance the timestamp to ~now.
+        await runIncreaseNoticePhase(noticeBilling(), mkLogger());
+        expect(mockCaptureException).toHaveBeenCalledTimes(2);
+        const advanced = (state.changes[0].metadata as Record<string, unknown>)
+            .lastNoticeBlockAlertAt as string;
+        expect(Date.parse(advanced)).toBeGreaterThan(Date.now() - 60_000);
     });
 });
 

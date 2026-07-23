@@ -1004,7 +1004,7 @@ async function findPendingIncreaseChangesToNotice(): Promise<NoticeChangeRow[]> 
 interface NoticePhaseOutcome {
     /** Number of changes flipped `pending` → `noticing` this tick. */
     readonly noticed: number;
-    /** Number of advance notices successfully attempted (subscribers). */
+    /** Number of advance notices confirmed DELIVERED (subscribers) this tick. */
     readonly notified: number;
 }
 
@@ -1066,6 +1066,23 @@ interface NoticePhaseOutcome {
  *      subs), flipping to `noticing` only once the ledger covers every affected sub.
  *   4. A STAGING SMOKE of the full increase flow (notice → grace → apply) against the real
  *      MP sandbox before enabling the flag in any environment.
+ *   5. PREFERENCE-BYPASS + PER-SUB NOTICE BUDGET: a legal advance notice must bypass user
+ *      email-preference opt-out (a `status:'skipped'` from a future PreferenceService maps
+ *      to `delivered:false` here), and a single permanently-undeliverable subscriber (a
+ *      bouncing address) must NOT wedge the whole cohort's lawful increase forever — add a
+ *      per-sub notice-attempt budget that marks a sub terminally un-notifiable (excluded
+ *      from the flip gate + surfaced to ops) instead of blocking every other subscriber.
+ *      NOT live today: the increase path is gated OFF and PreferenceService is null (never
+ *      skips), so no genuine opt-out reaches here yet. (Marking a sub terminally
+ *      un-notifiable is the owner product decision deferred in the item-b review.)
+ *   6. NEW-SUBSCRIBER FILTER: `findAllAffectedSubscribers` enumerates live subs with no
+ *      "subscribed before the change was enqueued" filter, so a user who subscribes AFTER an
+ *      increase is enqueued (already paying the NEW price) still receives an old→new notice
+ *      and a no-op re-price. Filter to `subscription.createdAt < change.createdAt`.
+ *   7. NO DOUBLE-RETRY: on a transport failure NotificationService both returns
+ *      `success:false` (this cron re-sends next tick) AND `enqueueForRetry` into Redis — two
+ *      retry mechanisms for the same notice. Pass a skip-retry option for
+ *      `PLAN_PRICE_CHANGE_NOTICE` so the cron owns the retry cadence exclusively.
  * ─────────────────────────────────────────────────────────────────────────────────────
  *
  * Best-effort throughout: never throws to the caller (the caller also wraps it).
