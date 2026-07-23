@@ -42,11 +42,21 @@ vi.mock('@repo/db', () => {
         or: (...conds: unknown[]) => ({ __op: 'or', conds }),
         asc: (c: unknown) => ({ __op: 'asc', col: c }),
         eq: (c: unknown, val: unknown) => ({ __op: 'eq', col: c, val }),
+        gt: (c: unknown, val: unknown) => ({ __op: 'gt', col: c, val }),
         inArray: (c: unknown, vals: unknown[]) => ({ __op: 'in', col: c, vals }),
         isNotNull: (c: unknown) => ({ __op: 'notnull', col: c }),
         isNull: (c: unknown) => ({ __op: 'isnull', col: c }),
         lte: (c: unknown, val: unknown) => ({ __op: 'lte', col: c, val }),
-        sql: () => ({ __sql: true }),
+        // Capture the FIRST interpolated table object so the fake-db harness can tell a
+        // `NOT EXISTS (... FROM <notices>)` (notice-phase pagination) from a
+        // `NOT EXISTS (... FROM <targets>)` (decrease apply). Count(*) fragments interpolate
+        // no table → `notExistsTable` stays null.
+        sql: (_strings: unknown, ...vals: unknown[]) => {
+            const tableArg = vals.find(
+                (v) => v && typeof v === 'object' && '__table' in (v as Record<string, unknown>)
+            ) as { __table?: string } | undefined;
+            return { __sql: true, notExistsTable: tableArg?.__table ?? null };
+        },
         getDb: mockGetDb,
         billingPlanPriceChanges: tbl('changes', {
             id: col('id'),
@@ -647,6 +657,8 @@ function gMatch(where: W, row: W): boolean {
             return where.conds.some((c: W) => gMatch(c, row));
         case 'eq':
             return row[where.col.__col] === where.val;
+        case 'gt':
+            return row[where.col.__col] > where.val;
         case 'in':
             return where.vals.includes(row[where.col.__col]);
         case 'notnull':
@@ -680,16 +692,48 @@ function gRunSelect(state: GState, q: W): unknown[] {
                   : [];
     let rows = src.filter((r) => gMatch(q.where, r));
     if (table === 'subs') {
-        // findAffectedSubscribers carries a NOT EXISTS sql fragment; findAllAffected does not.
-        const hasNotExists = gCondList(q.where).some((c: W) => c?.__sql);
-        if (hasNotExists) {
-            rows = rows.filter((s) => !state.targets.some((t) => t.subscriptionId === s.id));
+        // A NOT EXISTS sql fragment carries the anti-joined table:
+        //   - findAffectedSubscribers (decrease apply) → excludes already-TARGETED subs;
+        //   - findUnnoticedAffectedSubscribers / countUnnoticedAffectedSubscribers (increase
+        //     notice) → excludes already-NOTICED subs.
+        const notExists = gCondList(q.where).find((c: W) => c?.__sql);
+        if (notExists) {
+            const antiTable = notExists.notExistsTable;
+            if (antiTable === 'notices') {
+                rows = rows.filter(
+                    (s) => !(state.notices ?? []).some((n) => n.subscriptionId === s.id)
+                );
+            } else {
+                rows = rows.filter((s) => !state.targets.some((t) => t.subscriptionId === s.id));
+            }
         }
     }
     const proj = q.projection ?? {};
     const projVals = Object.values(proj);
     if (projVals.length === 1 && (projVals[0] as W)?.__sql) {
-        return [{ n: rows.length }]; // count(*)::int projection
+        return [{ n: rows.length }]; // count(*)::int projection (ignores any limit — total)
+    }
+    // Honor `.orderBy(asc(col), ...)` (ascending) so the APPLY cursor pagination
+    // (subscriptionId ASC + `> cursor` + limit) is deterministic and the batch's MAX is its
+    // last element. Only asc fragments are used in this module.
+    if (Array.isArray(q.orderBy) && q.orderBy.length > 0) {
+        const keys = (q.orderBy as W[])
+            .filter((o) => o?.__op === 'asc' && o.col?.__col)
+            .map((o) => o.col.__col as string);
+        if (keys.length > 0) {
+            rows = [...rows].sort((a, b) => {
+                for (const k of keys) {
+                    if (a[k] < b[k]) return -1;
+                    if (a[k] > b[k]) return 1;
+                }
+                return 0;
+            });
+        }
+    }
+    // Honor `.limit(n)` so cross-tick batching (notice pagination + apply cursor) can be
+    // exercised: a batch query returns only the first `n` rows, the remainder next tick.
+    if (typeof q.limit === 'number') {
+        rows = rows.slice(0, q.limit);
     }
     return rows.map((r) => gProject(r, proj));
 }
@@ -709,8 +753,14 @@ function buildDb(state: GState) {
             q.where = c;
             return p;
         };
-        p.orderBy = () => p;
-        p.limit = () => p;
+        p.orderBy = (...o: W[]) => {
+            q.orderBy = o;
+            return p;
+        };
+        p.limit = (n: number) => {
+            q.limit = n;
+            return p;
+        };
         return p;
     };
     const update = (table: W) => ({
@@ -963,13 +1013,14 @@ describe('runIncreaseNoticePhase (notice phase)', () => {
         expect(logger.warn).toHaveBeenCalled();
     });
 
-    it('W1 FAIL-CLOSED: an increase whose affected-subs query returns >= the per-tick cap is NOT flipped to noticing, sends no notices, and captures to Sentry', async () => {
-        // Seed exactly MAX_TARGETS_PER_CHANGE affected subs → the enumeration returns
-        // `>=` the cap, signalling possible un-enumerable overflow. The change must be
-        // left `pending` (never applied without full notice) and surfaced to ops.
+    it('HOS-176 piece c (was W1 fail-closed): a cohort AT the per-tick cap now NOTIFIES the batch and flips — it no longer bails to manual handling', async () => {
+        // Seed exactly MAX_TARGETS_PER_CHANGE affected subs. The OLD behavior fail-closed
+        // here (sent 0 notices, stayed pending, Sentry "manual handling"). The NEW behavior
+        // notifies the whole batch in one tick (it fits the cap) and flips to noticing —
+        // NO bail, NO Sentry.
         const cap = _internals.MAX_TARGETS_PER_CHANGE;
         const subs: W[] = Array.from({ length: cap }, (_v, i) => ({
-            id: `sub-${i}`,
+            id: `sub-${String(i).padStart(4, '0')}`,
             customerId: `cus-${i}`,
             planId: 'plan-1',
             billingInterval: 'month',
@@ -993,6 +1044,7 @@ describe('runIncreaseNoticePhase (notice phase)', () => {
             ],
             targets: [],
             subs,
+            notices: [],
             seq: 0
         };
         mockGetDb.mockReturnValue(buildDb(state));
@@ -1000,16 +1052,156 @@ describe('runIncreaseNoticePhase (notice phase)', () => {
 
         const outcome = await runIncreaseNoticePhase(noticeBilling(), logger);
 
-        // Nothing noticed, nothing sent — fail closed. (The cron sends via
-        // trySendNotification; the overflow guard must bail BEFORE any send.)
-        expect(outcome).toEqual({ noticed: 0, notified: 0 });
-        expect(mockTrySendNotification).not.toHaveBeenCalled();
-        // Change stays pending, noticeSentAt still null → never applied.
+        // The whole batch was notified (NOT zero — the old bail sent nothing) and the change
+        // flipped in one tick because the cohort fits the cap exactly.
+        expect(outcome).toEqual({ noticed: 1, notified: cap });
+        expect(mockTrySendNotification).toHaveBeenCalledTimes(cap);
+        expect(state.changes[0].status).toBe('noticing');
+        expect(state.changes[0].noticeSentAt).toBeInstanceOf(Date);
+        expect((state.notices ?? []).length).toBe(cap);
+        // No manual-handling bail → no Sentry.
+        expect(mockCaptureException).not.toHaveBeenCalled();
+    });
+
+    it('HOS-176 piece c: a cohort ABOVE the per-tick cap is notified in batches across ticks (info-only pagination), flipping only once the ledger covers every affected sub', async () => {
+        // cap + 2 affected subs forces the batch to cap out and leave a remainder, so the
+        // change needs a SECOND tick to finish noticing — the cross-tick pagination path.
+        const cap = _internals.MAX_TARGETS_PER_CHANGE;
+        const total = cap + 2;
+        const subs: W[] = Array.from({ length: total }, (_v, i) => ({
+            id: `sub-${String(i).padStart(4, '0')}`,
+            customerId: `cus-${i}`,
+            planId: 'plan-1',
+            billingInterval: 'month',
+            status: 'active',
+            mpSubscriptionId: `mp-${i}`
+        }));
+        const state: GState = {
+            changes: [
+                {
+                    id: 'inc-huge',
+                    planId: 'plan-1',
+                    billingInterval: 'month',
+                    oldAmount: 100000,
+                    newAmount: 120000,
+                    direction: 'increase',
+                    status: 'pending',
+                    noticeSentAt: null,
+                    effectiveAt: new Date(0),
+                    createdAt: new Date()
+                }
+            ],
+            targets: [],
+            subs,
+            notices: [],
+            seq: 0
+        };
+        mockGetDb.mockReturnValue(buildDb(state));
+
+        // ── Tick 1: notify the first `cap` subs; remainder still un-noticed → stay pending. ──
+        const logger1 = mkLogger();
+        const t1 = await runIncreaseNoticePhase(noticeBilling(), logger1);
+        expect(t1).toEqual({ noticed: 0, notified: cap });
+        expect(mockTrySendNotification).toHaveBeenCalledTimes(cap);
+        expect((state.notices ?? []).length).toBe(cap);
+        // Pagination progress is INFO-only: NOT flipped, NO Sentry, NO error log.
         expect(state.changes[0].status).toBe('pending');
         expect(state.changes[0].noticeSentAt).toBeNull();
-        // Surfaced to ops.
-        expect(mockCaptureException).toHaveBeenCalled();
-        expect(logger.error).toHaveBeenCalled();
+        expect(mockCaptureException).not.toHaveBeenCalled();
+        expect(logger1.error).not.toHaveBeenCalled();
+        const firstBatchIds = new Set((state.notices ?? []).map((n) => n.subscriptionId));
+
+        // ── Tick 2: the ledger-excluding batch advances — ONLY the remaining 2 are emailed. ──
+        mockTrySendNotification.mockClear();
+        const logger2 = mkLogger();
+        const t2 = await runIncreaseNoticePhase(noticeBilling(), logger2);
+        // Exactly the remainder is re-emailed; tick 1's subs are NOT re-notified.
+        expect(mockTrySendNotification).toHaveBeenCalledTimes(2);
+        const tick2Ids = mockTrySendNotification.mock.calls.map(
+            (c) => (c[0] as { idempotencyKey: string }).idempotencyKey
+        );
+        for (const key of tick2Ids) {
+            const subId = key.replace('price-notice:inc-huge:', '');
+            expect(firstBatchIds.has(subId)).toBe(false);
+        }
+        // Ledger now covers every affected sub → flip to noticing.
+        expect(t2).toEqual({ noticed: 1, notified: 2 });
+        expect((state.notices ?? []).length).toBe(total);
+        expect(state.changes[0].status).toBe('noticing');
+        expect(state.changes[0].noticeSentAt).toBeInstanceOf(Date);
+        expect(mockCaptureException).not.toHaveBeenCalled();
+    });
+
+    it('CHURN premature-flip fix: a previously-noticed sub CANCELS mid-pagination — the change does NOT flip while an affected sub beyond the batch is still un-noticed (the old ledgerCount>=totalAffected gate WOULD have flipped on the stale ledger row)', async () => {
+        // total = 2*cap + 1 so a single tick's batch can NEVER cover all un-noticed subs, i.e.
+        // this tick ends with a still-un-noticed affected sub → the flip must be gated on
+        // "unnoticedRemaining", not a raw ledger-count comparison.
+        const cap = _internals.MAX_TARGETS_PER_CHANGE;
+        const total = 2 * cap + 1;
+        const subId = (i: number) => `sub-${String(i).padStart(4, '0')}`;
+        const subs: W[] = Array.from({ length: total }, (_v, i) => ({
+            id: subId(i),
+            customerId: `cus-${i}`,
+            planId: 'plan-1',
+            billingInterval: 'month',
+            status: 'active',
+            mpSubscriptionId: `mp-${i}`
+        }));
+        // Simulate a PRIOR tick that already noticed the first `cap` subs (ledger rows present).
+        const notices: W[] = Array.from({ length: cap }, (_v, i) => ({
+            id: `n-${i}`,
+            priceChangeId: 'inc-churn',
+            subscriptionId: subId(i)
+        }));
+        // A previously-noticed sub CANCELS → it LEAVES the affected set, but its ledger row
+        // lingers (stale). Under the old `ledgerCount >= countAllAffectedSubscribers` gate this
+        // stale row would let the change flip prematurely this tick (ledger 2*cap, affected
+        // 2*cap) while sub-(2*cap) is still un-noticed. The new gate must NOT flip.
+        subs[0].status = 'cancelled';
+        const state: GState = {
+            changes: [
+                {
+                    id: 'inc-churn',
+                    planId: 'plan-1',
+                    billingInterval: 'month',
+                    oldAmount: 100000,
+                    newAmount: 120000,
+                    direction: 'increase',
+                    status: 'pending',
+                    noticeSentAt: null,
+                    effectiveAt: new Date(0),
+                    createdAt: new Date()
+                }
+            ],
+            targets: [],
+            subs,
+            notices,
+            seq: cap
+        };
+        mockGetDb.mockReturnValue(buildDb(state));
+        const logger = mkLogger();
+
+        // This tick notices the next `cap` un-noticed affected subs, but sub-(2*cap) is still
+        // un-noticed → unnoticedRemaining = 1 → NO flip (pagination progress, info-only).
+        const outcome = await runIncreaseNoticePhase(noticeBilling(), logger);
+        expect(mockTrySendNotification).toHaveBeenCalledTimes(cap);
+        expect(outcome.noticed).toBe(0);
+        expect(state.changes[0].status).toBe('pending');
+        expect(state.changes[0].noticeSentAt).toBeNull();
+        // Not a failure and NOT a premature flip: no Sentry, no error log.
+        expect(mockCaptureException).not.toHaveBeenCalled();
+        expect(logger.error).not.toHaveBeenCalled();
+        // The stale ledger row for the cancelled sub is still there and did NOT cause the flip.
+        expect((state.notices ?? []).some((n) => n.subscriptionId === subId(0))).toBe(true);
+
+        // A subsequent tick notices the last sub → every CURRENTLY-affected sub now has a
+        // ledger row (the cancelled sub is not affected) → unnoticedRemaining = 0 → flip.
+        mockTrySendNotification.mockClear();
+        const outcome2 = await runIncreaseNoticePhase(noticeBilling(), mkLogger());
+        expect(mockTrySendNotification).toHaveBeenCalledTimes(1);
+        expect(outcome2.noticed).toBe(1);
+        expect(state.changes[0].status).toBe('noticing');
+        expect(state.changes[0].noticeSentAt).toBeInstanceOf(Date);
     });
 
     it('FIX 3: a change with an unresolvable customer stays pending; a companion on a DIFFERENT plan (all subs resolve) still flips — proving the hard-failure flag is per-change scoped', async () => {
@@ -1654,5 +1846,267 @@ describe('applyChange — MP amount guards (skipped, MP never called)', () => {
         expect(updateSpy).toHaveBeenCalledWith('mp-1', { transactionAmount: 1500 });
         expect(state.targets[0].status).toBe('applied');
         expect(state.changes[0].status).toBe('done');
+    });
+});
+
+// ─── HOS-176 piece c: increase APPLY cursor pagination ──────────────────────
+//
+// The notice ledger is FIXED once a change reaches `noticing`, so the apply phase
+// paginates it by a `subscriptionId` cursor stored in `change.metadata.applyCursor`.
+// These tests drive applyChange across ticks, RE-READING the change from state each
+// tick (exactly what `findDueChanges` does in production — fresh metadata per tick).
+describe('applyChange — increase APPLY cursor pagination (HOS-176 piece c)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockLoadDiscountState.mockResolvedValue(null); // no discount → amount = newAmount
+    });
+
+    function okBilling(updateSpy: () => Promise<void>): QZPayBilling {
+        return {
+            getPaymentAdapter: () => ({ subscriptions: { update: vi.fn(updateSpy) } })
+        } as unknown as QZPayBilling;
+    }
+
+    /** Zero-padded sub id so lexical order == numeric order (matches uuid ASC ordering). */
+    const subId = (i: number) => `sub-${String(i).padStart(4, '0')}`;
+
+    /**
+     * Drive applyChange until `done`, re-reading the change (incl. the persisted
+     * `applyCursor` metadata) from state each tick — the production per-tick findDueChanges.
+     */
+    async function driveIncrease(
+        state: GState,
+        changeId: string,
+        newAmount: number,
+        billing: QZPayBilling,
+        cap = 10
+    ): Promise<number> {
+        let done = false;
+        let ticks = 0;
+        while (!done && ticks < cap) {
+            ticks += 1;
+            const row = state.changes.find((c) => c.id === changeId) as W;
+            const change = {
+                id: changeId,
+                planId: 'plan-1',
+                billingInterval: 'month',
+                newAmount,
+                direction: 'increase',
+                metadata: (row?.metadata ?? null) as Record<string, unknown> | null
+            };
+            done = (await applyChange(change, billing, mkLogger())).done;
+        }
+        return ticks;
+    }
+
+    it('a >cap notice ledger is targeted+re-priced in batches across ticks; EVERY chargeable sub gets a target (none stranded past position cap), then finalizes done', async () => {
+        const cap = _internals.MAX_TARGETS_PER_CHANGE;
+        const total = cap + 2; // forces a second batch
+        const subs: W[] = Array.from({ length: total }, (_v, i) => ({
+            id: subId(i),
+            customerId: `cus-${i}`,
+            planId: 'plan-1',
+            billingInterval: 'month',
+            status: 'active',
+            mpSubscriptionId: `mp-${i}`
+        }));
+        const notices: W[] = subs.map((s, i) => ({
+            id: `n-${i}`,
+            priceChangeId: 'pc-huge',
+            subscriptionId: s.id
+        }));
+        const state: GState = {
+            changes: [{ id: 'pc-huge', status: 'noticing' }],
+            targets: [],
+            subs,
+            notices,
+            seq: 0
+        };
+        mockGetDb.mockReturnValue(buildDb(state));
+        const updateSpy = vi.fn(async () => undefined);
+
+        const ticks = await driveIncrease(state, 'pc-huge', 150000, okBilling(updateSpy));
+
+        // Two ticks: cap in the first, the remaining 2 in the second.
+        expect(ticks).toBe(2);
+        // EVERY chargeable ledger sub got a target — none stranded past position cap.
+        expect(state.targets).toHaveLength(total);
+        expect(state.targets.every((t) => t.status === 'applied')).toBe(true);
+        const targetedIds = new Set(state.targets.map((t) => t.subscriptionId));
+        expect(targetedIds.size).toBe(total);
+        expect(targetedIds.has(subId(total - 1))).toBe(true); // the last sub, past position cap
+        // MP was called once per chargeable sub.
+        expect(updateSpy).toHaveBeenCalledTimes(total);
+        // Finalized, and the cursor was persisted/advanced to the MAX sub id.
+        expect(state.changes[0].status).toBe('done');
+        expect((state.changes[0].metadata as Record<string, unknown>).applyCursor).toBe(
+            subId(total - 1)
+        );
+    });
+
+    it('resumes from the persisted cursor across ticks: tick 1 targets the first cap, tick 2 the remainder (cursor advances, no re-work of tick-1 subs)', async () => {
+        const cap = _internals.MAX_TARGETS_PER_CHANGE;
+        const total = cap + 3;
+        const subs: W[] = Array.from({ length: total }, (_v, i) => ({
+            id: subId(i),
+            customerId: `cus-${i}`,
+            planId: 'plan-1',
+            billingInterval: 'month',
+            status: 'active',
+            mpSubscriptionId: `mp-${i}`
+        }));
+        const notices: W[] = subs.map((s, i) => ({
+            id: `n-${i}`,
+            priceChangeId: 'pc-x',
+            subscriptionId: s.id
+        }));
+        const state: GState = {
+            changes: [{ id: 'pc-x', status: 'noticing' }],
+            targets: [],
+            subs,
+            notices,
+            seq: 0
+        };
+        mockGetDb.mockReturnValue(buildDb(state));
+        const updateSpy = vi.fn(async () => undefined);
+        const billing = okBilling(updateSpy);
+
+        // Tick 1: first `cap` subs targeted; cursor at subId(cap-1); NOT finalized.
+        const row1 = state.changes.find((c) => c.id === 'pc-x') as W;
+        const done1 = (
+            await applyChange(
+                {
+                    id: 'pc-x',
+                    planId: 'plan-1',
+                    billingInterval: 'month',
+                    newAmount: 150000,
+                    direction: 'increase',
+                    metadata: (row1?.metadata ?? null) as Record<string, unknown> | null
+                },
+                billing,
+                mkLogger()
+            )
+        ).done;
+        expect(done1).toBe(false);
+        expect(state.targets).toHaveLength(cap);
+        expect((state.changes[0].metadata as Record<string, unknown>).applyCursor).toBe(
+            subId(cap - 1)
+        );
+
+        // Tick 2: resumes past the cursor → ONLY the remaining 3 are targeted; finalize.
+        const row2 = state.changes.find((c) => c.id === 'pc-x') as W;
+        const done2 = (
+            await applyChange(
+                {
+                    id: 'pc-x',
+                    planId: 'plan-1',
+                    billingInterval: 'month',
+                    newAmount: 150000,
+                    direction: 'increase',
+                    metadata: (row2?.metadata ?? null) as Record<string, unknown> | null
+                },
+                billing,
+                mkLogger()
+            )
+        ).done;
+        expect(done2).toBe(true);
+        expect(state.targets).toHaveLength(total); // cap + 3, no re-work of the first cap
+        expect(state.changes[0].status).toBe('done');
+    });
+
+    it('grandfathered subs interleaved in a >cap ledger: the cursor moves PAST them (no target), they do NOT deadlock or block finalization', async () => {
+        const cap = _internals.MAX_TARGETS_PER_CHANGE;
+        const total = cap + 4;
+        // Every 5th sub is trialing (grandfathered — no target); the rest are chargeable.
+        const subs: W[] = Array.from({ length: total }, (_v, i) => ({
+            id: subId(i),
+            customerId: `cus-${i}`,
+            planId: 'plan-1',
+            billingInterval: 'month',
+            status: i % 5 === 0 ? 'trialing' : 'active',
+            mpSubscriptionId: `mp-${i}`
+        }));
+        const notices: W[] = subs.map((s, i) => ({
+            id: `n-${i}`,
+            priceChangeId: 'pc-gf',
+            subscriptionId: s.id
+        }));
+        const chargeableIds = subs.filter((s) => s.status === 'active').map((s) => s.id);
+        const state: GState = {
+            changes: [{ id: 'pc-gf', status: 'noticing' }],
+            targets: [],
+            subs,
+            notices,
+            seq: 0
+        };
+        mockGetDb.mockReturnValue(buildDb(state));
+        const updateSpy = vi.fn(async () => undefined);
+
+        const ticks = await driveIncrease(state, 'pc-gf', 150000, okBilling(updateSpy));
+
+        // No deadlock: finishes in a bounded number of ticks and finalizes done.
+        expect(ticks).toBeLessThanOrEqual(3);
+        expect(state.changes[0].status).toBe('done');
+        // ONLY the chargeable subs got targets; the grandfathered (trialing) ones did NOT,
+        // and did not prevent finalization.
+        expect(state.targets.map((t) => t.subscriptionId).sort()).toEqual(
+            [...chargeableIds].sort()
+        );
+        expect(updateSpy).toHaveBeenCalledTimes(chargeableIds.length);
+        // Cursor advanced to the MAX ledger sub id even though it (and others) were skipped.
+        expect((state.changes[0].metadata as Record<string, unknown>).applyCursor).toBe(
+            subId(total - 1)
+        );
+    });
+
+    it('idempotent re-run of an already-processed batch (cursor rewound → ON CONFLICT + already-targeted skip) creates NO duplicate targets', async () => {
+        const total = 3;
+        const subs: W[] = Array.from({ length: total }, (_v, i) => ({
+            id: subId(i),
+            customerId: `cus-${i}`,
+            planId: 'plan-1',
+            billingInterval: 'month',
+            status: 'active',
+            mpSubscriptionId: `mp-${i}`
+        }));
+        const notices: W[] = subs.map((s, i) => ({
+            id: `n-${i}`,
+            priceChangeId: 'pc-idem',
+            subscriptionId: s.id
+        }));
+        const state: GState = {
+            changes: [{ id: 'pc-idem', status: 'noticing' }],
+            targets: [],
+            subs,
+            notices,
+            seq: 0
+        };
+        mockGetDb.mockReturnValue(buildDb(state));
+        const updateSpy = vi.fn(async () => undefined);
+        const billing = okBilling(updateSpy);
+
+        // First pass: all 3 targeted + applied, cursor at the last id, finalized.
+        await driveIncrease(state, 'pc-idem', 150000, billing);
+        expect(state.targets).toHaveLength(total);
+
+        // Simulate a crash-replay: rewind the cursor to START and re-run one tick. The batch
+        // re-reads the same subs, but the already-targeted skip + ON CONFLICT DO NOTHING mean
+        // NO duplicate target rows are created.
+        (state.changes[0].metadata as Record<string, unknown>).applyCursor =
+            _internals.APPLY_CURSOR_START;
+        const row = state.changes.find((c) => c.id === 'pc-idem') as W;
+        await applyChange(
+            {
+                id: 'pc-idem',
+                planId: 'plan-1',
+                billingInterval: 'month',
+                newAmount: 150000,
+                direction: 'increase',
+                metadata: (row?.metadata ?? null) as Record<string, unknown> | null
+            },
+            billing,
+            mkLogger()
+        );
+        expect(state.targets).toHaveLength(total); // still 3 — no duplicates
     });
 });

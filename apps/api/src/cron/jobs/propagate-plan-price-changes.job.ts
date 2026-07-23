@@ -73,6 +73,7 @@ import {
     billingSubscriptions,
     eq,
     getDb,
+    gt,
     inArray,
     isNotNull,
     isNull,
@@ -103,6 +104,17 @@ const MAX_CHANGES_PER_TICK = 50;
  * not finalized until every affected sub has a target.
  */
 const MAX_TARGETS_PER_CHANGE = 500;
+
+/**
+ * Sentinel start value for the increase APPLY cursor (HOS-176 piece c). The apply phase
+ * paginates the (immutable, post-flip) notice ledger by `subscriptionId ASC`, storing the
+ * last-processed id in `change.metadata.applyCursor`. The initial cursor must sort BEFORE
+ * every real subscription id AND be a valid `uuid` (the ledger's `subscription_id` column
+ * is `uuid`, so an empty string would raise "invalid input syntax for type uuid"). The
+ * all-zeros UUID satisfies both — it is the minimum uuid and `defaultRandom()` never
+ * produces it.
+ */
+const APPLY_CURSOR_START = '00000000-0000-0000-0000-000000000000';
 
 /**
  * Subscription statuses whose preapproval we re-price for a DECREASE (all live,
@@ -205,6 +217,14 @@ interface DueChangeRow {
     readonly billingInterval: string;
     readonly newAmount: number;
     readonly direction: string;
+    /**
+     * Header jsonb metadata. Carries `applyCursor` — the increase APPLY-phase pagination
+     * cursor (HOS-176 piece c), the last notice-ledger `subscriptionId` processed into a
+     * target. Read/advanced by {@link ensureTargetsFromNotices}. Never null in the DB
+     * (`.notNull().default({})`); optional + `| null` so unit tests can construct a change
+     * row without it (defaults to an empty cursor via `?? {}`).
+     */
+    readonly metadata?: Record<string, unknown> | null;
 }
 
 interface AffectedSubRow {
@@ -382,7 +402,9 @@ async function findDueChanges(input: {
         planId: billingPlanPriceChanges.planId,
         billingInterval: billingPlanPriceChanges.billingInterval,
         newAmount: billingPlanPriceChanges.newAmount,
-        direction: billingPlanPriceChanges.direction
+        direction: billingPlanPriceChanges.direction,
+        // Carries `applyCursor` for the increase APPLY-phase pagination (HOS-176 piece c).
+        metadata: billingPlanPriceChanges.metadata
     };
     const decreaseCond = and(
         eq(billingPlanPriceChanges.direction, 'decrease'),
@@ -451,18 +473,27 @@ interface NoticeSubRow {
 }
 
 /**
- * ALL live subscribers on a plan+interval carrying an MP preapproval, WITHOUT the
- * NOT-EXISTS-target filter (unlike {@link findAffectedSubscribers}). Used by the
- * increase notice phase, which must notify every affected subscriber — including
- * trialing subs (grandfathered at apply time, but still legally notified).
+ * (INCREASE notice phase) Affected subscribers for a change that do NOT yet have a
+ * notice-ledger row — the "to notify THIS tick" batch. Anti-joined against
+ * {@link billingPlanPriceChangeNotices} on `(priceChangeId, subscriptionId)` via a
+ * `NOT EXISTS`, so each tick advances to the next un-noticed cohort (cross-tick
+ * pagination — HOS-176 piece c). Capped at {@link MAX_TARGETS_PER_CHANGE} per tick
+ * (the same batch size as the apply phase) and ordered by id ASC for stable batching.
+ *
+ * Unlike {@link findAffectedSubscribers} (the DECREASE apply carril, which excludes
+ * already-TARGETED subs), this excludes already-NOTICED subs — the ledger, not the
+ * target table, is the notice-phase progress marker. Includes trialing subs
+ * (grandfathered at apply time, but still legally notified).
  *
  * @param planId - Plan UUID.
  * @param billingInterval - `month` | `year`.
+ * @param changeId - The price-change id whose notice ledger to exclude against.
  * @param statuses - Affected statuses (notice phase uses the full live set).
  */
-async function findAllAffectedSubscribers(
+async function findUnnoticedAffectedSubscribers(
     planId: string,
     billingInterval: string,
+    changeId: string,
     statuses: readonly string[]
 ): Promise<NoticeSubRow[]> {
     const db = getDb();
@@ -477,12 +508,53 @@ async function findAllAffectedSubscribers(
                 eq(billingSubscriptions.planId, planId),
                 eq(billingSubscriptions.billingInterval, billingInterval),
                 inArray(billingSubscriptions.status, [...statuses]),
-                isNotNull(billingSubscriptions.mpSubscriptionId)
+                isNotNull(billingSubscriptions.mpSubscriptionId),
+                sql`NOT EXISTS (SELECT 1 FROM ${billingPlanPriceChangeNotices} n WHERE n.price_change_id = ${changeId} AND n.subscription_id = ${billingSubscriptions.id})`
             )
         )
         .orderBy(asc(billingSubscriptions.id))
         .limit(MAX_TARGETS_PER_CHANGE);
     return rows;
+}
+
+/**
+ * (INCREASE notice phase) Count of affected subscribers that do NOT yet have a notice-ledger
+ * row for a change — the EXACT `count(*)` companion to {@link findUnnoticedAffectedSubscribers}
+ * (same plan+interval+statuses+`mpSubscriptionId IS NOT NULL`+`NOT EXISTS(notice ledger)`
+ * predicate), WITHOUT a limit. This is the flip-gate invariant: the change advances to
+ * `noticing` iff this returns 0, i.e. every CURRENTLY-affected sub has been notified.
+ *
+ * Gating on this (rather than comparing a raw ledger count to a total-affected count) is
+ * immune to STALE ledger rows: a sub that was noticed then LEFT the affected set (e.g.
+ * cancelled) is no longer counted here, and its lingering ledger row is irrelevant — so a
+ * genuinely-affected, still-un-noticed sub sorted beyond the current batch can never be
+ * masked into a premature flip.
+ *
+ * @param planId - Plan UUID.
+ * @param billingInterval - `month` | `year`.
+ * @param statuses - Affected statuses (notice phase uses the full live set).
+ * @param changeId - The price-change id whose notice ledger to exclude against.
+ */
+async function countUnnoticedAffectedSubscribers(
+    planId: string,
+    billingInterval: string,
+    changeId: string,
+    statuses: readonly string[]
+): Promise<number> {
+    const db = getDb();
+    const [row] = await db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(billingSubscriptions)
+        .where(
+            and(
+                eq(billingSubscriptions.planId, planId),
+                eq(billingSubscriptions.billingInterval, billingInterval),
+                inArray(billingSubscriptions.status, [...statuses]),
+                isNotNull(billingSubscriptions.mpSubscriptionId),
+                sql`NOT EXISTS (SELECT 1 FROM ${billingPlanPriceChangeNotices} n WHERE n.price_change_id = ${changeId} AND n.subscription_id = ${billingSubscriptions.id})`
+            )
+        );
+    return row?.n ?? 0;
 }
 
 /** Create (idempotently) a target row per affected subscriber for this change. */
@@ -537,106 +609,170 @@ async function ensureTargets(
  * re-prices a subscriber iff that subscriber has a notice-ledger row (was legally
  * notified), never a freshly-enumerated live sub.
  *
- * For each ledger sub WITHOUT a target row yet:
+ * For each ledger sub in the current cursor batch WITHOUT a target row yet:
  *   - CURRENT status NOT in {@link INCREASE_AFFECTED_SUB_STATUSES} — trialing
  *     (grandfathered D-4: kept at the OLD amount through the trial) OR no longer
  *     chargeable (cancelled/paused/…) OR a future `trialEnd` (see the derived-status guard
  *     below): NO target is created. The notice row remains the permanent record; the sub
  *     keeps its OLD amount and does NOT fail the change. A trialing sub that converts to
- *     `active` BEFORE the change finalizes is picked up on a later tick (status now
- *     qualifies); if it converts AFTER the change has finalized to `done` it is NOT
- *     re-priced by this change (the acknowledged v1 grandfather limitation — the divergence
- *     detector follow-up surfaces it, and the post-first-charge re-price hook is separate).
+ *     `active` BEFORE the cursor passes it is picked up (status now qualifies); if it
+ *     converts AFTER the cursor has moved past it (or after the change finalized to `done`)
+ *     it is NOT re-priced by this change (the acknowledged v1 grandfather limitation — the
+ *     divergence detector follow-up surfaces it, and the post-first-charge re-price hook is
+ *     separate).
  *   - `active` / `past_due` with no future `trialEnd`: resolve the discount-aware amount
  *     and insert a `pending` (or `deferred`, when the amount is not yet determinable)
  *     target, snapshotting the CURRENT `mpSubscriptionId`.
  *
- * Idempotent: the `NOT EXISTS` filter + `ON CONFLICT DO NOTHING` mean re-running never
- * duplicates a target. Because the notice ledger is a fixed, sub-cap set (the notice
- * phase's overflow guard keeps it below {@link MAX_TARGETS_PER_CHANGE}), every qualifying
- * sub is targeted on the first apply tick — there is no cross-tick batching here.
+ * CURSOR-BASED APPLY PAGINATION (HOS-176 piece c). Because the notice phase now flips to
+ * `noticing` only when the ledger covers every affected sub, that ledger is FIXED and
+ * immutable once apply begins — so it is paginated deterministically by `subscriptionId ASC`
+ * with a cursor stored in `change.metadata.applyCursor` (same jsonb already used for
+ * `lastNoticeBlockAlertAt`; no schema change; single-instance cron ⇒ no concurrent writes,
+ * and a change is never in the notice and apply phases simultaneously). Each tick:
+ *   1. Read the cursor ({@link APPLY_CURSOR_START} on the first tick).
+ *   2. Fetch up to {@link MAX_TARGETS_PER_CHANGE} ledger rows with `subscriptionId > cursor`,
+ *      ordered ASC — this tick's batch.
+ *   3. Target the chargeable ones (grandfather rules above); grandfathered rows get NO target.
+ *   4. Advance the cursor to the MAX `subscriptionId` in the batch. Crucially the cursor moves
+ *      forward REGARDLESS of whether a target was created, so grandfathered subs cannot pile
+ *      up and crowd out chargeable subs past position 500 (the deadlock a naive
+ *      "ledger NOT EXISTS target" batch would hit, since random UUIDs re-accumulate them at
+ *      the front of every batch).
+ *   5. Return the REMAINING count (`subscriptionId > newCursor`). `applyChange` feeds this into
+ *      `newSubsFound`, so the change is not finalized until the cursor has drained the ledger.
  *
+ * Idempotent: `ON CONFLICT DO NOTHING` + a monotonic cursor mean a crash mid-batch (cursor
+ * not yet advanced) simply re-reads the same batch next tick — created targets are protected
+ * and grandfathered subs are harmlessly re-skipped, then the cursor advances. The cursor never
+ * rewinds, so a sub the cursor already passed (targeted OR grandfathered) is never re-examined.
+ *
+ * @returns The number of notice-ledger rows still beyond the (advanced) cursor — 0 once this
+ *          batch reached the end of the ledger.
  * @internal
  */
 async function ensureTargetsFromNotices(
     change: DueChangeRow,
     logger: CronJobContextLogger
-): Promise<void> {
+): Promise<number> {
     const db = getDb();
-    // 1. The notice ledger for this change (the ONLY source of apply-eligible subs).
-    const notices = await db
+    const changeMeta = (change.metadata ?? {}) as Record<string, unknown>;
+    const cursorRaw = changeMeta.applyCursor;
+    const cursor =
+        typeof cursorRaw === 'string' && cursorRaw.length > 0 ? cursorRaw : APPLY_CURSOR_START;
+
+    // 1. This tick's ledger batch: rows past the cursor, ordered by subscriptionId ASC so the
+    //    cursor advances monotonically across ticks. The ledger is the ONLY source of
+    //    apply-eligible subs (notice-set = apply-set, HOS-176 item b).
+    const batch = await db
         .select({ subscriptionId: billingPlanPriceChangeNotices.subscriptionId })
         .from(billingPlanPriceChangeNotices)
-        .where(eq(billingPlanPriceChangeNotices.priceChangeId, change.id))
+        .where(
+            and(
+                eq(billingPlanPriceChangeNotices.priceChangeId, change.id),
+                gt(billingPlanPriceChangeNotices.subscriptionId, cursor)
+            )
+        )
+        .orderBy(asc(billingPlanPriceChangeNotices.subscriptionId))
         .limit(MAX_TARGETS_PER_CHANGE);
-    if (notices.length === 0) return;
+    // Cursor already drained the ledger → nothing left to target.
+    if (batch.length === 0) return 0;
+    const batchIds = batch.map((n) => n.subscriptionId);
+    const newCursor = batchIds[batchIds.length - 1] as string; // MAX (batch is ASC-ordered).
 
-    // 2. Subs already targeted for this change (skip — idempotent, mirrors the
-    //    ensureTargets NOT-EXISTS filter without a fresh live enumeration).
+    // 2. Skip subs already targeted for this change (idempotent — a re-read after a mid-batch
+    //    crash must not duplicate work).
     const targeted = await db
         .select({ subscriptionId: billingPlanPriceChangeTargets.subscriptionId })
         .from(billingPlanPriceChangeTargets)
-        .where(eq(billingPlanPriceChangeTargets.priceChangeId, change.id));
+        .where(
+            and(
+                eq(billingPlanPriceChangeTargets.priceChangeId, change.id),
+                inArray(billingPlanPriceChangeTargets.subscriptionId, batchIds)
+            )
+        );
     const targetedSet = new Set(targeted.map((r) => r.subscriptionId));
-    const candidateIds = notices.map((n) => n.subscriptionId).filter((id) => !targetedSet.has(id));
-    if (candidateIds.length === 0) return;
+    const candidateIds = batchIds.filter((id) => !targetedSet.has(id));
 
-    // 3. CURRENT state of the notified-but-not-yet-targeted subs (status decides the
-    //    grandfather; mpSubscriptionId is snapshotted onto the target).
-    const subs = await db
-        .select({
-            id: billingSubscriptions.id,
-            status: billingSubscriptions.status,
-            trialEnd: billingSubscriptions.trialEnd,
-            mpSubscriptionId: billingSubscriptions.mpSubscriptionId
-        })
-        .from(billingSubscriptions)
-        .where(inArray(billingSubscriptions.id, candidateIds));
-
-    const chargeableStatuses = INCREASE_AFFECTED_SUB_STATUSES as readonly string[];
-    const nowMs = Date.now();
-    for (const sub of subs) {
-        // Grandfather (D-4): only active / past_due notified subs are re-priced on an
-        // increase. A trialing (or no-longer-live) notified sub gets NO target — its notice
-        // ledger row is the permanent record and it keeps the OLD amount, without failing the
-        // change. NEVER resolve a discount / call MP for a grandfathered sub.
-        //
-        // Secondary guard on `trialEnd`: `trialing` is a DERIVED status (HOS-171) — MP
-        // reports an authorized preapproval as `active` and a webhook later flips it to
-        // `trialing`, so there is a lag window where a genuinely-trialing sub still carries
-        // `status='active'`. Grandfather ANY sub whose `trialEnd` is still in the future,
-        // regardless of stored status, so a mid-trial increase is never applied.
-        const inTrialByDate = sub.trialEnd != null && sub.trialEnd.getTime() > nowMs;
-        if (!chargeableStatuses.includes(sub.status) || inTrialByDate) {
-            continue;
-        }
-        const resolution = await resolveDiscountAwareTargetCentavos(sub.id, change.newAmount);
-        const deferred = 'defer' in resolution;
-        if (deferred) {
-            // Amount undeterminable this tick — persist a `deferred` target (placeholder
-            // amount, not used while deferred); re-resolved by applyChange under a bounded
-            // budget (mirrors ensureTargets).
-            logger.info('Price propagation: deferring subscriber (amount undetermined)', {
-                priceChangeId: change.id,
-                subscriptionId: sub.id
-            });
-        }
-        await db
-            .insert(billingPlanPriceChangeTargets)
-            .values({
-                priceChangeId: change.id,
-                subscriptionId: sub.id,
-                mpSubscriptionId: sub.mpSubscriptionId,
-                targetAmount: deferred ? change.newAmount : resolution.amount,
-                status: deferred ? 'deferred' : 'pending'
+    if (candidateIds.length > 0) {
+        // 3. CURRENT state of the not-yet-targeted batch subs (status decides the grandfather;
+        //    mpSubscriptionId is snapshotted onto the target).
+        const subs = await db
+            .select({
+                id: billingSubscriptions.id,
+                status: billingSubscriptions.status,
+                trialEnd: billingSubscriptions.trialEnd,
+                mpSubscriptionId: billingSubscriptions.mpSubscriptionId
             })
-            .onConflictDoNothing({
-                target: [
-                    billingPlanPriceChangeTargets.priceChangeId,
-                    billingPlanPriceChangeTargets.subscriptionId
-                ]
-            });
+            .from(billingSubscriptions)
+            .where(inArray(billingSubscriptions.id, candidateIds));
+
+        const chargeableStatuses = INCREASE_AFFECTED_SUB_STATUSES as readonly string[];
+        const nowMs = Date.now();
+        for (const sub of subs) {
+            // Grandfather (D-4): only active / past_due notified subs are re-priced on an
+            // increase. A trialing (or no-longer-live) notified sub gets NO target — its notice
+            // ledger row is the permanent record and it keeps the OLD amount, without failing the
+            // change. NEVER resolve a discount / call MP for a grandfathered sub.
+            //
+            // Secondary guard on `trialEnd`: `trialing` is a DERIVED status (HOS-171) — MP
+            // reports an authorized preapproval as `active` and a webhook later flips it to
+            // `trialing`, so there is a lag window where a genuinely-trialing sub still carries
+            // `status='active'`. Grandfather ANY sub whose `trialEnd` is still in the future,
+            // regardless of stored status, so a mid-trial increase is never applied.
+            const inTrialByDate = sub.trialEnd != null && sub.trialEnd.getTime() > nowMs;
+            if (!chargeableStatuses.includes(sub.status) || inTrialByDate) {
+                continue;
+            }
+            const resolution = await resolveDiscountAwareTargetCentavos(sub.id, change.newAmount);
+            const deferred = 'defer' in resolution;
+            if (deferred) {
+                // Amount undeterminable this tick — persist a `deferred` target (placeholder
+                // amount, not used while deferred); re-resolved by applyChange under a bounded
+                // budget (mirrors ensureTargets).
+                logger.info('Price propagation: deferring subscriber (amount undetermined)', {
+                    priceChangeId: change.id,
+                    subscriptionId: sub.id
+                });
+            }
+            await db
+                .insert(billingPlanPriceChangeTargets)
+                .values({
+                    priceChangeId: change.id,
+                    subscriptionId: sub.id,
+                    mpSubscriptionId: sub.mpSubscriptionId,
+                    targetAmount: deferred ? change.newAmount : resolution.amount,
+                    status: deferred ? 'deferred' : 'pending'
+                })
+                .onConflictDoNothing({
+                    target: [
+                        billingPlanPriceChangeTargets.priceChangeId,
+                        billingPlanPriceChangeTargets.subscriptionId
+                    ]
+                });
+        }
     }
+
+    // 4. Advance the cursor (merge into metadata, preserving other keys like
+    //    lastNoticeBlockAlertAt) so the next tick resumes past this batch. Done AFTER the
+    //    inserts so a crash before this point safely re-reads the same batch.
+    const now = new Date();
+    await db
+        .update(billingPlanPriceChanges)
+        .set({ metadata: { ...changeMeta, applyCursor: newCursor }, updatedAt: now })
+        .where(eq(billingPlanPriceChanges.id, change.id));
+
+    // 5. Remaining ledger rows beyond the advanced cursor (0 when this batch hit the end).
+    const [remaining] = await db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(billingPlanPriceChangeNotices)
+        .where(
+            and(
+                eq(billingPlanPriceChangeNotices.priceChangeId, change.id),
+                gt(billingPlanPriceChangeNotices.subscriptionId, newCursor)
+            )
+        );
+    return remaining?.n ?? 0;
 }
 
 /** Best-effort MP amount mutation with bounded retry. Never throws. */
@@ -763,15 +899,21 @@ async function applyChange(
     //     ({@link ensureTargetsFromNotices}) — never a fresh live enumeration — so the
     //     apply-set can never diverge from the notice-set (a sub is re-priced iff it was
     //     legally notified). Trialing / no-longer-live notified subs are grandfathered
-    //     there (no target). The ledger is a fixed, sub-cap set fully present once the
-    //     change reached `noticing`, so there is NO cross-tick overflow batching:
-    //     `newSubsFound` is 0 and finalization gates purely on pending/deferred drain.
+    //     there (no target). The ledger is paginated by a cursor across ticks (HOS-176
+    //     piece c): `ensureTargetsFromNotices` returns the count of ledger rows STILL
+    //     BEYOND the cursor, which becomes `newSubsFound`.
     //   - DECREASE has no notice, so it enumerates affected subs live (trialing INCLUDED —
-    //     lowering a trialing sub is harmless) and batches overflow across ticks (I1).
+    //     lowering a trialing sub is harmless) and batches overflow across ticks (I1);
+    //     `newSubsFound` is the count of not-yet-targeted subs found this tick.
+    //
+    // The finalize predicate (`pendingCount === 0 && deferredCount === 0 &&
+    // newSubsFound === 0`) reads `newSubsFound` uniformly, but its MEANING is
+    // direction-dependent: "ledger rows remaining beyond the cursor" for an increase vs
+    // "un-targeted subs found this tick" for a decrease. Both correctly gate finalization on
+    // `=== 0` (nothing left to enumerate/paginate this change).
     let newSubsFound: number;
     if (change.direction === 'increase') {
-        await ensureTargetsFromNotices(change, logger);
-        newSubsFound = 0;
+        newSubsFound = await ensureTargetsFromNotices(change, logger);
     } else {
         const subs = await findAffectedSubscribers(
             change.planId,
@@ -1011,21 +1153,26 @@ interface NoticePhaseOutcome {
 /**
  * Increase NOTICE phase (HOS-176 Increment A, gated by the caller on the increase flag).
  * For each pending, not-yet-fully-noticed increase change:
- *   1. Enumerate ALL affected subscribers (includes trialing — grandfathered at apply but
- *      still legally notified) via {@link findAllAffectedSubscribers}.
- *   2. FAIL-CLOSED overflow guard (W1): `>=` {@link MAX_TARGETS_PER_CHANGE} affected subs
- *      means possible un-enumerable overflow, so notifying a subset then flipping would
- *      apply an increase to the overflow WITHOUT the legally-required advance notice
- *      (Disp. 954/2025 gap). The change is NOT noticed this tick — left `pending` and
- *      surfaced to ops. (Cross-tick paginated notice = pre-enable follow-up item 3.)
- *   3. Resolve the plan display name (best-effort).
- *   4. Notify each affected sub that does NOT already have a NOTICE-LEDGER row for this
- *      change (exactly-once — see below). On a successful send, persist a
- *      {@link billingPlanPriceChangeNotices} row.
- *   5. Flip the change to `noticing` (stamp `noticeSentAt`, recompute `effectiveAt =
- *      now + 15 days`) ONLY when EVERY affected sub has a notice-ledger row. A single
- *      un-notified sub (customer-not-found / send throw) blocks the flip; the change stays
- *      `pending` and is retried next tick.
+ *   1. CROSS-TICK PAGINATED batch (HOS-176 piece c): fetch up to {@link MAX_TARGETS_PER_CHANGE}
+ *      affected subs (incl. trialing — grandfathered at apply but still legally notified) that
+ *      are NOT yet in the notice ledger for this change ({@link findUnnoticedAffectedSubscribers}).
+ *      Each tick advances to the next un-noticed cohort, so a `>=`-cap plan is notified in
+ *      batches across ticks (the old fail-closed ">= cap ⇒ manual handling" bail is GONE). The
+ *      ledger-exclusion in the query is the progress mechanism — no per-sub in-memory skip.
+ *   2. Resolve the plan display name (best-effort) — only when the batch is non-empty.
+ *   3. Notify each sub in the batch (delivery-gated — see below). On a successful,
+ *      DELIVERED send, persist a {@link billingPlanPriceChangeNotices} row.
+ *   4. FLIP GATE keyed on {@link countUnnoticedAffectedSubscribers} (= 0 ⟺ every CURRENTLY-
+ *      affected sub has a ledger row), in fail-closed order:
+ *        - a delivery failure this tick (`notifyFailures` non-empty) → genuine BLOCK: stays
+ *          `pending`, rate-limited change-level Sentry alert, retried next tick (fail-closed);
+ *        - else `unnoticedRemaining === 0` → flip to `noticing` (stamp `noticeSentAt = now`,
+ *          recompute `effectiveAt = now + 15 days`);
+ *        - else (`unnoticedRemaining > 0`, no failure) → NORMAL pagination progress: stays
+ *          `pending`, INFO log only (no Sentry), next tick notices the next batch.
+ *      Gating on "un-noticed affected subs remaining" (not a raw ledger-count vs total-affected
+ *      comparison) is immune to STALE ledger rows (a noticed-then-cancelled sub), so an affected
+ *      sub beyond the current batch can never be masked into a premature flip.
  *
  * EXACTLY-ONCE NOTICE-LEDGER (HOS-176 item b — replaces the old FIX A + FIX B stop-gaps).
  * The per-subscriber {@link billingPlanPriceChangeNotices} row is the durable marker of
@@ -1037,17 +1184,19 @@ interface NoticePhaseOutcome {
  *     (per-sub, never all-subs); we never UNDER-send. The `idempotencyKey` on
  *     `sendNotification` only dedups notification LOG rows, not delivery — DELIVERY
  *     exactly-once now comes from this ledger's skip-if-present, not from that key.
- *   - The flip gate is "every affected sub has a ledger row", so a change can only advance
- *     to apply once the notice is provably complete (fail-closed, robust — no reliance on
- *     an in-memory failure flag).
+ *   - The flip gate is "no CURRENTLY-affected sub is still un-noticed" ({@link
+ *     countUnnoticedAffectedSubscribers} === 0), so a change can only advance to apply once the
+ *     notice is provably complete (fail-closed, robust — no reliance on an in-memory flag, and
+ *     immune to stale ledger rows from subs that left the affected set after being noticed).
  *   - The increase APPLY ({@link ensureTargetsFromNotices}) sources subscribers ONLY from
  *     this ledger, so the apply-set can never diverge from the notice-set and an
  *     unresolved-customer sub can never be re-priced without a notice.
  *
- * SCALE LIMIT (v1): auto-increase is supported only for plans with FEWER than
- * {@link MAX_TARGETS_PER_CHANGE} affected subscribers (step 2). A plan at/above that scale
- * requires a human; the cross-tick paginated notice that would lift this limit is a
- * deliberate pre-enable follow-up (item 3).
+ * SCALE (HOS-176 piece c): both halves now paginate across ticks, so a plan with `>=`
+ * {@link MAX_TARGETS_PER_CHANGE} affected subscribers is handled end-to-end instead of
+ * failing closed to manual handling — the NOTICE phase batches by a ledger-excluding query
+ * (here) and the APPLY phase batches by a metadata cursor over the immutable notice ledger
+ * (see {@link ensureTargetsFromNotices} CURSOR-BASED APPLY PAGINATION).
  *
  * ─────────────────────────────────────────────────────────────────────────────────────
  * PRE-ENABLE FOLLOW-UP (before setting HOSPEDA_BILLING_PRICE_INCREASE_ENABLED=true in ANY
@@ -1059,11 +1208,14 @@ interface NoticePhaseOutcome {
  *      {@link billingPlanPriceChangeNotices} + {@link ensureTargetsFromNotices}. Closes
  *      the crash-replay duplicate-email window, the customer-not-found notice→apply gap,
  *      and the notice-set vs apply-set divergence in one mechanism.
- *   3. CROSS-TICK PAGINATED NOTICE for plans with >= {@link MAX_TARGETS_PER_CHANGE}
- *      affected subscribers (today those fail closed to manual handling — see SCALE LIMIT
- *      above). The notice-ledger makes this straightforward: drop the overflow guard and
- *      drain the affected set across ticks (each tick's ledger excludes already-noticed
- *      subs), flipping to `noticing` only once the ledger covers every affected sub.
+ *   3. ✅ DONE (HOS-176 piece c): cross-tick pagination for `>=` {@link MAX_TARGETS_PER_CHANGE}
+ *      cohorts, BOTH halves. NOTICE — each tick batches up to {@link MAX_TARGETS_PER_CHANGE}
+ *      not-yet-noticed affected subs ({@link findUnnoticedAffectedSubscribers}) and flips only
+ *      once the ledger count covers the affected count. APPLY — {@link ensureTargetsFromNotices}
+ *      paginates the immutable notice ledger by a `subscriptionId` cursor stored in
+ *      `metadata.applyCursor`, returning the remaining-beyond-cursor count that drives
+ *      `applyChange`'s `newSubsFound`, so the change finalizes only once every ledger sub has
+ *      been targeted (the cursor advances past grandfathered subs, so they cannot deadlock it).
  *   4. A STAGING SMOKE of the full increase flow (notice → grace → apply) against the real
  *      MP sandbox before enabling the flag in any environment.
  *   5. PREFERENCE-BYPASS + PER-SUB NOTICE BUDGET: a legal advance notice must bypass user
@@ -1075,7 +1227,7 @@ interface NoticePhaseOutcome {
  *      NOT live today: the increase path is gated OFF and PreferenceService is null (never
  *      skips), so no genuine opt-out reaches here yet. (Marking a sub terminally
  *      un-notifiable is the owner product decision deferred in the item-b review.)
- *   6. NEW-SUBSCRIBER FILTER: `findAllAffectedSubscribers` enumerates live subs with no
+ *   6. NEW-SUBSCRIBER FILTER: the affected-subscriber queries enumerate live subs with no
  *      "subscribed before the change was enqueued" filter, so a user who subscribes AFTER an
  *      increase is enqueued (already paying the NEW price) still receives an old→new notice
  *      and a no-op re-price. Filter to `subscription.createdAt < change.createdAt`.
@@ -1098,75 +1250,51 @@ async function runIncreaseNoticePhase(
     const changes = await findPendingIncreaseChangesToNotice();
     for (const change of changes) {
         const now = new Date();
+        // effectiveAt is stamped at FLIP time (below) as `now + grace`, computed on the
+        // tick that completes the notice. For a `>=`-cap cohort noticed across several
+        // ticks, an EARLY batch's email carries an `effectiveDate` computed as THAT tick's
+        // `now + grace`, which may be a few minutes/hours EARLIER than the final stamped
+        // effectiveAt. This is intentional and safe: the email UNDER-states the apply date,
+        // so every subscriber (including the last batch) gets AT LEAST the ≥15-day advance
+        // notice the copy promises. Anchoring effectiveAt to the first batch would instead
+        // give late-batch subs < 15 days — so we do NOT pre-stamp a shared effectiveAt.
         const effectiveAt = new Date(now.getTime() + INCREASE_NOTICE_GRACE_MS);
 
-        // ALL affected subscribers (incl. trialing — grandfathered at apply, still legally
-        // notified). Capped at MAX_TARGETS_PER_CHANGE. Enumerated FIRST so the overflow
-        // guard can bail before we send any notice or resolve the plan name.
-        const affected = await findAllAffectedSubscribers(change.planId, change.billingInterval, [
-            ...AFFECTED_SUB_STATUSES
-        ]);
+        // CROSS-TICK PAGINATED batch (HOS-176 piece c): affected subs that are NOT yet in the
+        // notice ledger for this change, capped at MAX_TARGETS_PER_CHANGE. Each tick advances
+        // to the next un-noticed cohort, so a `>=`-cap plan is drained batch-by-batch across
+        // ticks instead of failing closed to manual handling. The query's ledger-exclusion is
+        // the primary progress mechanism — no in-memory skip set is needed.
+        const batch = await findUnnoticedAffectedSubscribers(
+            change.planId,
+            change.billingInterval,
+            change.id,
+            [...AFFECTED_SUB_STATUSES]
+        );
 
-        // W1 FAIL-CLOSED overflow guard: `>=` the cap means there may be un-enumerable
-        // overflow subscribers, so notifying a subset then flipping to `noticing` would
-        // apply an increase to the overflow without the mandatory advance notice. Bail
-        // before sending anything: leave the change `pending` (noticeSentAt stays NULL, so
-        // it is never applied) and surface it for manual handling. (Cross-tick paginated
-        // notice = pre-enable follow-up item 3.)
-        if (affected.length >= MAX_TARGETS_PER_CHANGE) {
-            Sentry.captureException(
-                new Error(
-                    `HOS-176: plan price INCREASE on plan ${change.planId}/${change.billingInterval} affects >= ${MAX_TARGETS_PER_CHANGE} subscribers — auto-notice not supported at this scale; manual handling required. Change ${change.id} left pending, NOT applied.`
-                ),
-                {
-                    extra: {
-                        priceChangeId: change.id,
-                        planId: change.planId,
-                        billingInterval: change.billingInterval
-                    },
-                    tags: { module: 'propagate-plan-price-changes' }
-                }
-            );
-            logger.error(
-                'Price propagation notice: increase affects >= per-tick cap subscribers — auto-notice unsupported at this scale; change left pending for manual handling (NOT applied)',
-                {
+        // Resolve the plan display name once per tick (best-effort — falls back to the plan
+        // id), only when there is a batch to notify. An empty batch means every affected sub
+        // is already in the ledger, so the flip gate below advances without sending anything.
+        let planName = change.planId;
+        if (batch.length > 0) {
+            try {
+                const plan = await billing.plans.get(change.planId);
+                if (plan) planName = planDisplayNameFromPlan(plan);
+            } catch (planErr) {
+                logger.warn('Price propagation notice: could not resolve plan name', {
                     priceChangeId: change.id,
                     planId: change.planId,
-                    billingInterval: change.billingInterval,
-                    cap: MAX_TARGETS_PER_CHANGE
-                }
-            );
-            continue;
+                    error: planErr instanceof Error ? planErr.message : String(planErr)
+                });
+            }
         }
-
-        // Resolve the plan display name once (best-effort — falls back to the plan id).
-        let planName = change.planId;
-        try {
-            const plan = await billing.plans.get(change.planId);
-            if (plan) planName = planDisplayNameFromPlan(plan);
-        } catch (planErr) {
-            logger.warn('Price propagation notice: could not resolve plan name', {
-                priceChangeId: change.id,
-                planId: change.planId,
-                error: planErr instanceof Error ? planErr.message : String(planErr)
-            });
-        }
-
-        // EXACTLY-ONCE (item b): skip subs already in the notice ledger for this change, so
-        // a retry tick re-notifies ONLY the still-missing subs (no all-subs re-email storm).
-        const existing = await db
-            .select({ subscriptionId: billingPlanPriceChangeNotices.subscriptionId })
-            .from(billingPlanPriceChangeNotices)
-            .where(eq(billingPlanPriceChangeNotices.priceChangeId, change.id));
-        const alreadyNoticed = new Set(existing.map((r) => r.subscriptionId));
 
         // Per-sub notice failures (unresolvable customer / non-delivery / throw). Collected
         // and surfaced as ONE rate-limited change-level Sentry alert below, instead of a
         // per-sub capture every tick (which would storm Sentry while a change stays blocked).
         const notifyFailures: { subscriptionId: string; reason: string }[] = [];
 
-        for (const sub of affected) {
-            if (alreadyNoticed.has(sub.subscriptionId)) continue;
+        for (const sub of batch) {
             try {
                 const customer = await billing.customers.get(sub.customerId);
                 if (!customer) {
@@ -1257,26 +1385,44 @@ async function runIncreaseNoticePhase(
             }
         }
 
-        // FLIP GATE (fail-closed, robust): advance to `noticing` ONLY when EVERY affected
-        // sub has a notice-ledger row. Re-query the ledger (includes rows inserted this
-        // tick). A single un-notified sub blocks the flip; the change stays `pending` so it
-        // is never applied without a complete advance notice, and is retried next tick.
-        const ledger = await db
-            .select({ subscriptionId: billingPlanPriceChangeNotices.subscriptionId })
-            .from(billingPlanPriceChangeNotices)
-            .where(eq(billingPlanPriceChangeNotices.priceChangeId, change.id));
-        const ledgerSet = new Set(ledger.map((r) => r.subscriptionId));
-        const allNoticed = affected.every((a) => ledgerSet.has(a.subscriptionId));
+        // FLIP GATE (fail-closed, cross-tick pagination). Gate on the EXACT invariant the flip
+        // needs — "no CURRENTLY-affected sub is still un-noticed" — via a single count with the
+        // real ledger-excluding predicate (the `count(*)` companion of the batch query). Three
+        // outcomes, in fail-closed order:
+        //
+        //   A. GENUINE BLOCK — `notifyFailures` non-empty: at least one sub in THIS tick's
+        //      batch could not be delivered (customer-not-found / not_delivered / threw), so
+        //      it has no ledger row. Never flip (a permanently-undeliverable sub → never
+        //      applied); keep the rate-limited change-level Sentry alert + error log.
+        //   B. COMPLETE — `unnoticedRemaining === 0`, no failure this tick: every currently-
+        //      affected sub has a ledger row → flip to `noticing` (stamp `noticeSentAt = now`,
+        //      `effectiveAt = now + 15 days`).
+        //   C. PAGINATION PROGRESS — no failure but un-noticed affected subs remain: this
+        //      tick's batch delivered cleanly and more batches remain → INFO log only (no
+        //      Sentry, no error log), retried next tick.
+        //
+        // Gating on `unnoticedRemaining` (not `ledgerCount >= totalAffected`) is immune to
+        // STALE ledger rows: a sub noticed then cancelled is no longer affected, so it neither
+        // inflates a numerator nor blocks the flip — a still-un-noticed affected sub beyond the
+        // current batch can never be masked into a premature flip. It also cannot wedge: if
+        // un-noticed affected subs remain but all fail delivery, `notifyFailures > 0` blocks
+        // (A); if they simply were not reached this tick, (C) paginates.
+        const unnoticedRemaining = await countUnnoticedAffectedSubscribers(
+            change.planId,
+            change.billingInterval,
+            change.id,
+            [...AFFECTED_SUB_STATUSES]
+        );
 
-        if (!allNoticed) {
+        if (notifyFailures.length > 0) {
             logger.error(
                 'Price propagation notice: change left pending — at least one affected subscriber could not be notified; NOT flipped to noticing (retried next tick, already-noticed subs excluded)',
                 {
                     priceChangeId: change.id,
                     planId: change.planId,
                     billingInterval: change.billingInterval,
-                    affected: affected.length,
-                    noticed: ledgerSet.size
+                    unnoticedRemaining,
+                    failures: notifyFailures.length
                 }
             );
             // ONE rate-limited change-level Sentry alert: a blocked change is re-evaluated
@@ -1301,8 +1447,7 @@ async function runIncreaseNoticePhase(
                             priceChangeId: change.id,
                             planId: change.planId,
                             billingInterval: change.billingInterval,
-                            affected: affected.length,
-                            noticed: ledgerSet.size,
+                            unnoticedRemaining,
                             failures: notifyFailures
                         },
                         tags: { module: 'propagate-plan-price-changes' }
@@ -1319,6 +1464,22 @@ async function runIncreaseNoticePhase(
             continue;
         }
 
+        if (unnoticedRemaining > 0) {
+            // PAGINATION PROGRESS (not a failure): this tick's batch was delivered cleanly but
+            // more affected subscribers remain un-noticed. Stay `pending` — the next tick's
+            // ledger-excluding batch notices the next cohort. INFO only: no Sentry, no error.
+            logger.info(
+                'Price propagation notice: notice pagination in progress, continuing next tick',
+                {
+                    priceChangeId: change.id,
+                    planId: change.planId,
+                    billingInterval: change.billingInterval,
+                    unnoticedRemaining
+                }
+            );
+            continue;
+        }
+
         await db
             .update(billingPlanPriceChanges)
             .set({ status: 'noticing', noticeSentAt: now, effectiveAt, updatedAt: now })
@@ -1327,7 +1488,6 @@ async function runIncreaseNoticePhase(
         logger.info('Price propagation notice: change moved to noticing', {
             priceChangeId: change.id,
             planId: change.planId,
-            subscribersFound: affected.length,
             effectiveAt: effectiveAt.toISOString()
         });
     }
@@ -1445,6 +1605,7 @@ export const propagatePlanPriceChangesJob: CronJobDefinition = {
 export const _internals = {
     MAX_CHANGES_PER_TICK,
     MAX_TARGETS_PER_CHANGE,
+    APPLY_CURSOR_START,
     MP_UPDATE_MAX_ATTEMPTS,
     MAX_TARGET_TICK_ATTEMPTS,
     MP_MAX_TRANSACTION_AMOUNT_ARS,
@@ -1457,7 +1618,8 @@ export const _internals = {
     classifyTargetAmountGuard,
     findDueChanges,
     findAffectedSubscribers,
-    findAllAffectedSubscribers,
+    findUnnoticedAffectedSubscribers,
+    countUnnoticedAffectedSubscribers,
     findPendingIncreaseChangesToNotice,
     runIncreaseNoticePhase,
     ensureTargets,
