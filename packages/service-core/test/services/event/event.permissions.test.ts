@@ -100,6 +100,45 @@ describe('EventService permissions', () => {
         expect(() => checkCanViewEvent(staffActor, deletedEvent)).not.toThrow();
     });
 
+    it('should throw NOT_FOUND for a soft-deleted RESTRICTED event — anti-enumeration', () => {
+        const deletedRestrictedEvent = createMockEvent({
+            visibility: VisibilityEnum.RESTRICTED,
+            deletedAt: new Date()
+        });
+        try {
+            checkCanViewEvent(baseActor, deletedRestrictedEvent);
+            throw new Error('Should have thrown');
+        } catch (err) {
+            expect(err).toBeInstanceOf(ServiceError);
+            if (err instanceof ServiceError) {
+                expect(err.code).toBe(ServiceErrorCode.NOT_FOUND);
+            }
+        }
+    });
+
+    // HOS-117 T-022 follow-up: EVENT_VIEW_ALL alone (without the
+    // EVENT_VIEW_PRIVATE/EVENT_VIEW_DRAFT companions the seed roles normally
+    // bundle) must be enough to view a soft-deleted PRIVATE/RESTRICTED event —
+    // the deletedAt exemption is self-sufficient and no longer falls through to a
+    // FORBIDDEN in the downstream visibility block.
+    it('should allow an actor with ONLY EVENT_VIEW_ALL to view a soft-deleted PRIVATE event', () => {
+        const deletedPrivateEvent = createMockEvent({
+            visibility: VisibilityEnum.PRIVATE,
+            deletedAt: new Date()
+        });
+        const staffActor = createUser({ permissions: [PermissionEnum.EVENT_VIEW_ALL] });
+        expect(() => checkCanViewEvent(staffActor, deletedPrivateEvent)).not.toThrow();
+    });
+
+    it('should allow an actor with ONLY EVENT_VIEW_ALL to view a soft-deleted RESTRICTED event', () => {
+        const deletedRestrictedEvent = createMockEvent({
+            visibility: VisibilityEnum.RESTRICTED,
+            deletedAt: new Date()
+        });
+        const staffActor = createUser({ permissions: [PermissionEnum.EVENT_VIEW_ALL] });
+        expect(() => checkCanViewEvent(staffActor, deletedRestrictedEvent)).not.toThrow();
+    });
+
     it('should allow view for a live (non-deleted) PUBLIC event', () => {
         const liveEvent = createMockEvent({
             visibility: VisibilityEnum.PUBLIC,

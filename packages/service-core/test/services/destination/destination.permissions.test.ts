@@ -115,6 +115,46 @@ describe('Destination Permission Helpers', () => {
             expect(() => checkCanViewDestination(actor, destination)).not.toThrow();
         });
 
+        it('throws NOT_FOUND for a soft-deleted RESTRICTED destination — anti-enumeration', () => {
+            const actor = createActor({ permissions: [] });
+            const destination = createTestDestination({
+                visibility: VisibilityEnum.RESTRICTED,
+                deletedAt: new Date()
+            });
+            try {
+                checkCanViewDestination(actor, destination);
+                throw new Error('Should have thrown');
+            } catch (err: unknown) {
+                expect(err).toBeInstanceOf(ServiceError);
+                if (err instanceof ServiceError) {
+                    expect(err.code).toBe(ServiceErrorCode.NOT_FOUND);
+                }
+            }
+        });
+
+        // HOS-117 T-022 follow-up: DESTINATION_VIEW_ALL alone (without the
+        // VIEW_PRIVATE/VIEW_DRAFT companions the seed roles normally bundle) must
+        // be enough to view a soft-deleted PRIVATE/RESTRICTED destination — the
+        // deletedAt exemption is self-sufficient and no longer falls through to a
+        // FORBIDDEN in the downstream visibility block.
+        it('allows an actor with ONLY DESTINATION_VIEW_ALL to view a soft-deleted PRIVATE destination', () => {
+            const actor = createActor({ permissions: [PermissionEnum.DESTINATION_VIEW_ALL] });
+            const destination = createTestDestination({
+                visibility: VisibilityEnum.PRIVATE,
+                deletedAt: new Date()
+            });
+            expect(() => checkCanViewDestination(actor, destination)).not.toThrow();
+        });
+
+        it('allows an actor with ONLY DESTINATION_VIEW_ALL to view a soft-deleted RESTRICTED destination', () => {
+            const actor = createActor({ permissions: [PermissionEnum.DESTINATION_VIEW_ALL] });
+            const destination = createTestDestination({
+                visibility: VisibilityEnum.RESTRICTED,
+                deletedAt: new Date()
+            });
+            expect(() => checkCanViewDestination(actor, destination)).not.toThrow();
+        });
+
         it('allows viewing a live (non-deleted) PUBLIC destination', () => {
             const actor = createActor();
             const destination = createTestDestination({
