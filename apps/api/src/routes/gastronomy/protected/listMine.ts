@@ -14,7 +14,11 @@ import {
     CommerceOwnerListingListSchema,
     VisibilityEnum
 } from '@repo/schemas';
-import { GastronomyService, ServiceError } from '@repo/service-core';
+import {
+    GastronomyService,
+    getCommerceListingSubscriptionStatuses,
+    ServiceError
+} from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -41,13 +45,24 @@ export const protectedListMyGastronomyRoute = createProtectedRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        const listings = (result.data?.listings ?? []).map((listing) => ({
+        const ownListings = result.data?.listings ?? [];
+
+        // HOS-166 W1: batch-resolve each listing's commerce subscription
+        // status (dunning/suspended surfacing) — one query for the whole
+        // page instead of one per listing.
+        const subscriptionStatuses = await getCommerceListingSubscriptionStatuses({
+            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityIds: ownListings.map((listing) => listing.id)
+        });
+
+        const listings = ownListings.map((listing) => ({
             id: listing.id,
             vertical: CommerceEntityTypeEnum.GASTRONOMY,
             name: listing.name,
             slug: listing.slug,
             type: listing.type,
-            isPublic: listing.visibility === VisibilityEnum.PUBLIC
+            isPublic: listing.visibility === VisibilityEnum.PUBLIC,
+            subscriptionStatus: subscriptionStatuses.get(listing.id) ?? null
         }));
 
         return { listings };

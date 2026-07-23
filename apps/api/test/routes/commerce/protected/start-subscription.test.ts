@@ -9,7 +9,7 @@
  * Covers:
  * - AC-2: ownership check — 403 for a non-owner, no MP call.
  * - AC-5: completeness gate — 422 with `missing`.
- * - AC-16: already-subscribed guard — 409.
+ * - AC-16: already-subscribed guard — 409 (active/trialing/past_due — HOS-166 W1).
  * - AC-4: missing billing customer self-heals instead of 400.
  * - D-7: plan-slug resolution — 503 when unset.
  * - 503 when billing is not configured.
@@ -321,6 +321,20 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
                 entityId: ENTITY_ID
             })
         ).rejects.toMatchObject({ status: 409 });
+    });
+
+    it('returns 409 when a past_due (dunning) subscription already exists (HOS-166 W1)', async () => {
+        mockGetCommerceListingSubscriptionStatus.mockResolvedValue('past_due');
+        const ctx = createMockContext();
+
+        await expect(
+            handleCommerceStartSubscription(ctx as never, {
+                entityType: CommerceEntityTypeEnum.GASTRONOMY,
+                entityId: ENTITY_ID
+            })
+        ).rejects.toMatchObject({ status: 409 });
+
+        expect(mockInitiateCommerceMonthlySubscription).not.toHaveBeenCalled();
     });
 
     it('does NOT 409 for a cancelled prior subscription', async () => {

@@ -27,7 +27,7 @@
  */
 
 import type { DrizzleClient } from '@repo/db';
-import { and, commerceListingSubscriptions, eq, getDb } from '@repo/db';
+import { and, commerceListingSubscriptions, eq, getDb, inArray } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import { createLogger } from '@repo/logger';
 import {
@@ -311,4 +311,52 @@ export async function getCommerceListingSubscriptionStatus(
 
     const row = rows[0];
     return row === undefined ? null : row.status;
+}
+
+/**
+ * Batched variant of {@link getCommerceListingSubscriptionStatus} — resolves
+ * the current subscription status for MULTIPLE commerce entities of the same
+ * `entityType` in a single query (HOS-166 judgment-day W1: surfaces
+ * dunning/suspended state on the owner's listing index without an N+1 query
+ * per listing).
+ *
+ * The `commerce_listing_subscriptions` link table only ever links commerce
+ * entities (its rows are always `product_domain = 'commerce'` by
+ * construction — see the table's own doc comment), so this naturally never
+ * leaks accommodation or partner billing state.
+ *
+ * @param input.entityType - Commerce entity discriminator shared by every id
+ *   in `entityIds` (the link table's unique index is on `(entityType,
+ *   entityId)`, so a batched lookup must stay within one entity type).
+ * @param input.entityIds - UUIDs of the commerce entities to resolve. An
+ *   empty array short-circuits to an empty map without querying.
+ * @param tx - Optional transaction client.
+ * @returns A `Map` from `entityId` to its current subscription status.
+ *   Entities with no link row (never subscribed) are simply absent from the
+ *   map — callers should treat a missing key as "no subscription".
+ */
+export async function getCommerceListingSubscriptionStatuses(
+    input: { entityType: string; entityIds: readonly string[] },
+    tx?: DrizzleClient
+): Promise<Map<string, string>> {
+    const { entityType, entityIds } = input;
+    if (entityIds.length === 0) {
+        return new Map();
+    }
+
+    const db = tx ?? getDb();
+    const rows = await db
+        .select({
+            entityId: commerceListingSubscriptions.entityId,
+            status: commerceListingSubscriptions.status
+        })
+        .from(commerceListingSubscriptions)
+        .where(
+            and(
+                eq(commerceListingSubscriptions.entityType, entityType),
+                inArray(commerceListingSubscriptions.entityId, [...entityIds])
+            )
+        );
+
+    return new Map(rows.map((row) => [row.entityId, row.status]));
 }

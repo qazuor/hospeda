@@ -34,10 +34,10 @@ import {
     PermissionEnum,
     PriceRangeEnum,
     RoleEnum,
+    resolveListingCompleteness,
     VisibilityEnum
 } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { resolveListingCompleteness } from '../../../src/services/commerce/commerce-completeness';
 import type { CreateUserPortResult } from '../../../src/services/commerce/commerce-owner-provisioning.service';
 import { CommerceOwnerProvisioningService } from '../../../src/services/commerce/commerce-owner-provisioning.service';
 import type {

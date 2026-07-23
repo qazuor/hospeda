@@ -32,10 +32,27 @@ const MOCK_LISTINGS = [
     }
 ];
 
+// HOS-166 W1: the route now batch-resolves each listing's commerce
+// subscription status via `getCommerceListingSubscriptionStatuses`. The real
+// implementation queries `@repo/db` directly (not through a service class),
+// and this suite's generic `@repo/db` mock does not resolve a bare
+// `select().from().where()` chain to an array — so it must be overridden
+// here rather than exercised for real, mirroring how DB-touching
+// service-core helpers are always overridden in route-level tests. Declared
+// via `vi.hoisted` (not a bare `mock`-prefixed const) to match this
+// codebase's established convention for referencing a mock inside a
+// `vi.mock` factory — see `start-subscription.test.ts`.
+const { mockGetCommerceListingSubscriptionStatuses } = vi.hoisted(() => ({
+    mockGetCommerceListingSubscriptionStatuses: vi
+        .fn()
+        .mockResolvedValue(new Map([['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'past_due']]))
+}));
+
 vi.mock('@repo/service-core', async (importOriginal) => {
     const orig = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...orig,
+        getCommerceListingSubscriptionStatuses: mockGetCommerceListingSubscriptionStatuses,
         GastronomyService: class MockGastronomyService extends orig.GastronomyService {
             // biome-ignore lint/complexity/noUselessConstructor: need to call super
             constructor(...args: ConstructorParameters<typeof orig.GastronomyService>) {
@@ -121,6 +138,10 @@ describe('GET /api/v1/protected/gastronomies/mine', () => {
             expect(listings[0]?.slug).toBe('la-parrilla');
             expect(listings[0]?.isPublic).toBe(true);
             expect(listings[1]?.isPublic).toBe(false);
+            // HOS-166 W1: subscriptionStatus is resolved per listing (present
+            // when a link row exists, null when the listing was never subscribed).
+            expect(listings[0]?.subscriptionStatus).toBe('past_due');
+            expect(listings[1]?.subscriptionStatus).toBeNull();
         });
     });
 });
