@@ -100,13 +100,13 @@
                 },
                 "gastronomy": {
                     "title": "Dining",
-                    "description": "Add your restaurant, bar, or café to Hospeda: tell us about your business and we'll reach out to publish it.",
-                    "cta": "Tell us and we'll reach out"
+                    "description": "Add your restaurant, bar, or café to Hospeda. Leave your details, we approve your request, and from your account you complete and publish your own listing.",
+                    "cta": "List your restaurant"
                 },
                 "experience": {
                     "title": "Experiences",
-                    "description": "Do you offer tours, activities, or experiences for travelers? Tell us and we'll reach out to add them to Hospeda.",
-                    "cta": "Tell us and we'll reach out"
+                    "description": "Do you offer tours, activities, or experiences for travelers? Leave your details, we approve your request, and from your account you complete and publish your own listing.",
+                    "cta": "List your experience"
                 }
             }
         },

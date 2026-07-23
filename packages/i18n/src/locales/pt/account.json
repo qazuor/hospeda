@@ -100,13 +100,13 @@
                 },
                 "gastronomy": {
                     "title": "Gastronomia",
-                    "description": "Some seu restaurante, bar ou café ao Hospeda: conte-nos sobre o seu negócio e entraremos em contato para publicá-lo.",
-                    "cta": "Conte-nos e entraremos em contato"
+                    "description": "Some seu restaurante, bar ou café ao Hospeda. Deixe seus dados, aprovamos sua solicitação e, a partir da sua conta, você completa e publica sua própria ficha.",
+                    "cta": "Publique seu restaurante"
                 },
                 "experience": {
                     "title": "Experiências",
-                    "description": "Você oferece passeios, atividades ou experiências para viajantes? Conte-nos e entraremos em contato para somá-las ao Hospeda.",
-                    "cta": "Conte-nos e entraremos em contato"
+                    "description": "Você oferece passeios, atividades ou experiências para viajantes? Deixe seus dados, aprovamos sua solicitação e, a partir da sua conta, você completa e publica sua própria ficha.",
+                    "cta": "Publique sua experiência"
                 }
             }
         },
