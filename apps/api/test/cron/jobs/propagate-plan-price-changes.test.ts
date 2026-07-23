@@ -22,6 +22,8 @@ const { mockGetDb } = vi.hoisted(() => ({ mockGetDb: vi.fn() }));
 const { mockCaptureException } = vi.hoisted(() => ({ mockCaptureException: vi.fn() }));
 // HOS-176 Increment A collaborators (notice phase).
 const { mockSendNotification } = vi.hoisted(() => ({ mockSendNotification: vi.fn() }));
+// Delivery-aware send (item b fix): the cron gates the ledger insert on `delivered`.
+const { mockTrySendNotification } = vi.hoisted(() => ({ mockTrySendNotification: vi.fn() }));
 const { mockPlanDisplayName } = vi.hoisted(() => ({ mockPlanDisplayName: vi.fn(() => 'Plan') }));
 // Mock env so importing the job never triggers eager env validation (the job reads
 // env.HOSPEDA_BILLING_PRICE_INCREASE_ENABLED only in the handler, not at import).
@@ -56,6 +58,7 @@ vi.mock('@repo/db', () => {
             status: col('status'),
             noticeSentAt: col('noticeSentAt'),
             effectiveAt: col('effectiveAt'),
+            metadata: col('metadata'),
             createdAt: col('createdAt')
         }),
         billingPlanPriceChangeTargets: tbl('targets', {
@@ -80,7 +83,8 @@ vi.mock('@repo/db', () => {
             mpSubscriptionId: col('mpSubscriptionId'),
             planId: col('planId'),
             billingInterval: col('billingInterval'),
-            status: col('status')
+            status: col('status'),
+            trialEnd: col('trialEnd')
         })
     };
 });
@@ -99,7 +103,8 @@ vi.mock('@repo/notifications', () => ({
     NotificationType: { PLAN_PRICE_CHANGE_NOTICE: 'plan_price_change_notice' }
 }));
 vi.mock('../../../src/utils/notification-helper.js', () => ({
-    sendNotification: mockSendNotification
+    sendNotification: mockSendNotification,
+    trySendNotification: mockTrySendNotification
 }));
 vi.mock('../../../src/services/billing/plan-change-reason.js', () => ({
     planDisplayNameFromPlan: mockPlanDisplayName
@@ -814,7 +819,11 @@ describe('findDueChanges — increase flag gate', () => {
 });
 
 describe('runIncreaseNoticePhase (notice phase)', () => {
-    beforeEach(() => vi.clearAllMocks());
+    beforeEach(() => {
+        vi.clearAllMocks();
+        // Default: sends succeed (delivered). Individual tests override for non-delivery.
+        mockTrySendNotification.mockResolvedValue({ delivered: true });
+    });
 
     function noticeBilling(): QZPayBilling {
         return {
@@ -874,21 +883,23 @@ describe('runIncreaseNoticePhase (notice phase)', () => {
 
         // Trialing sub IS notified (grandfathered at apply, still legally notified).
         expect(outcome).toEqual({ noticed: 1, notified: 2 });
-        expect(mockSendNotification).toHaveBeenCalledTimes(2);
+        expect(mockTrySendNotification).toHaveBeenCalledTimes(2);
         // A notice-ledger row was persisted per successfully-notified sub (item b).
         expect((state.notices ?? []).map((n) => n.subscriptionId).sort()).toEqual([
             'sub-1',
             'sub-2'
         ]);
-        expect(mockSendNotification.mock.calls[0]?.[0] as Record<string, unknown>).toMatchObject({
-            type: 'plan_price_change_notice',
-            planName: 'Plan Uno',
-            oldPriceArs: 100000,
-            newPriceArs: 120000,
-            billingInterval: 'month',
-            // I1: deterministic dedup key `price-notice:<changeId>:<subscriptionId>`.
-            idempotencyKey: 'price-notice:inc-1:sub-1'
-        });
+        expect(mockTrySendNotification.mock.calls[0]?.[0] as Record<string, unknown>).toMatchObject(
+            {
+                type: 'plan_price_change_notice',
+                planName: 'Plan Uno',
+                oldPriceArs: 100000,
+                newPriceArs: 120000,
+                billingInterval: 'month',
+                // I1: deterministic dedup key `price-notice:<changeId>:<subscriptionId>`.
+                idempotencyKey: 'price-notice:inc-1:sub-1'
+            }
+        );
         // Header flipped to noticing with a stamped noticeSentAt.
         expect(state.changes[0].status).toBe('noticing');
         expect(state.changes[0].noticeSentAt).toBeInstanceOf(Date);
@@ -902,7 +913,7 @@ describe('runIncreaseNoticePhase (notice phase)', () => {
         mockGetDb.mockReturnValue(buildDb({ changes: [], targets: [], subs: [], seq: 0 }));
         const outcome = await runIncreaseNoticePhase(noticeBilling(), mkLogger());
         expect(outcome).toEqual({ noticed: 0, notified: 0 });
-        expect(mockSendNotification).not.toHaveBeenCalled();
+        expect(mockTrySendNotification).not.toHaveBeenCalled();
     });
 
     it('FIX 1: a notice send that THROWS is a HARD failure — batch continues but the change is NOT flipped to noticing (fail-closed, symmetric)', async () => {
@@ -936,9 +947,9 @@ describe('runIncreaseNoticePhase (notice phase)', () => {
         };
         mockGetDb.mockReturnValue(buildDb(state));
         mockPlanDisplayName.mockReturnValue('Plan Uno');
-        // A throw here stands in for a customer/plan resolution failure — sendNotification
-        // itself never throws. FIX 1 makes this a hard failure that blocks the flip.
-        mockSendNotification.mockRejectedValueOnce(new Error('smtp down'));
+        // A throw here stands in for a customer/plan resolution failure — trySendNotification
+        // itself never throws. This exercises the catch branch: a hard failure blocks the flip.
+        mockTrySendNotification.mockRejectedValueOnce(new Error('smtp down'));
         const logger = mkLogger();
 
         const outcome = await runIncreaseNoticePhase(noticeBilling(), logger);
@@ -1196,9 +1207,9 @@ describe('runIncreaseNoticePhase (notice phase)', () => {
 
         const outcome = await runIncreaseNoticePhase(noticeBilling(), mkLogger());
         // Only the still-missing sub-2 is emailed; sub-1 is skipped (already in the ledger).
-        expect(mockSendNotification).toHaveBeenCalledTimes(1);
+        expect(mockTrySendNotification).toHaveBeenCalledTimes(1);
         expect(
-            (mockSendNotification.mock.calls[0]?.[0] as Record<string, unknown>).idempotencyKey
+            (mockTrySendNotification.mock.calls[0]?.[0] as Record<string, unknown>).idempotencyKey
         ).toBe('price-notice:inc-1:sub-2');
         // Both subs now covered → change flips.
         expect(outcome).toEqual({ noticed: 1, notified: 1 });
@@ -1270,14 +1281,102 @@ describe('runIncreaseNoticePhase (notice phase)', () => {
         expect((state.notices ?? []).map((n) => n.subscriptionId)).toEqual(['sub-1']);
 
         // Tick 2: sub-1 is skipped (already noticed — no re-email); only sub-2 is emailed → flip.
-        mockSendNotification.mockClear();
+        mockTrySendNotification.mockClear();
         const t2 = await runIncreaseNoticePhase(flakyBilling, mkLogger());
-        expect(mockSendNotification).toHaveBeenCalledTimes(1);
+        expect(mockTrySendNotification).toHaveBeenCalledTimes(1);
         expect(
-            (mockSendNotification.mock.calls[0]?.[0] as Record<string, unknown>).idempotencyKey
+            (mockTrySendNotification.mock.calls[0]?.[0] as Record<string, unknown>).idempotencyKey
         ).toBe('price-notice:inc-1:sub-2');
         expect(t2).toEqual({ noticed: 1, notified: 1 });
         expect(state.changes[0].status).toBe('noticing');
+    });
+
+    it('DELIVERY-GATED: a send that resolves but is NOT delivered writes NO ledger row and leaves the change pending', async () => {
+        const state: GState = {
+            changes: [
+                {
+                    id: 'inc-1',
+                    planId: 'plan-1',
+                    billingInterval: 'month',
+                    oldAmount: 100000,
+                    newAmount: 120000,
+                    direction: 'increase',
+                    status: 'pending',
+                    noticeSentAt: null,
+                    effectiveAt: new Date(0),
+                    createdAt: new Date()
+                }
+            ],
+            targets: [],
+            subs: [
+                {
+                    id: 'sub-1',
+                    customerId: 'cus-1',
+                    planId: 'plan-1',
+                    billingInterval: 'month',
+                    status: 'active',
+                    mpSubscriptionId: 'mp-1'
+                }
+            ],
+            notices: [],
+            seq: 0
+        };
+        mockGetDb.mockReturnValue(buildDb(state));
+        // The send RESOLVES but reports NON-delivery (email service unavailable / non-success
+        // result). A fire-and-forget send returning is NOT proof of delivery — for a legal
+        // advance notice, no ledger row may be written and the change must not flip.
+        mockTrySendNotification.mockResolvedValue({ delivered: false });
+        const logger = mkLogger();
+
+        const outcome = await runIncreaseNoticePhase(noticeBilling(), logger);
+        expect(outcome).toEqual({ noticed: 0, notified: 0 });
+        expect(state.notices ?? []).toHaveLength(0);
+        expect(state.changes[0].status).toBe('pending');
+        expect(state.changes[0].noticeSentAt).toBeNull();
+        // Surfaced to ops via ONE rate-limited change-level alert.
+        expect(mockCaptureException).toHaveBeenCalledTimes(1);
+    });
+
+    it('rate-limits the blocked-notice Sentry alert via metadata.lastNoticeBlockAlertAt (no per-tick storm)', async () => {
+        const state: GState = {
+            changes: [
+                {
+                    id: 'inc-1',
+                    planId: 'plan-1',
+                    billingInterval: 'month',
+                    oldAmount: 100000,
+                    newAmount: 120000,
+                    direction: 'increase',
+                    status: 'pending',
+                    noticeSentAt: null,
+                    effectiveAt: new Date(0),
+                    createdAt: new Date(),
+                    // A recent alert was already sent → this tick must NOT re-alert.
+                    metadata: { lastNoticeBlockAlertAt: new Date().toISOString() }
+                }
+            ],
+            targets: [],
+            subs: [
+                {
+                    id: 'sub-1',
+                    customerId: 'cus-1',
+                    planId: 'plan-1',
+                    billingInterval: 'month',
+                    status: 'active',
+                    mpSubscriptionId: 'mp-1'
+                }
+            ],
+            notices: [],
+            seq: 0
+        };
+        mockGetDb.mockReturnValue(buildDb(state));
+        mockTrySendNotification.mockResolvedValue({ delivered: false });
+
+        const outcome = await runIncreaseNoticePhase(noticeBilling(), mkLogger());
+        expect(outcome).toEqual({ noticed: 0, notified: 0 });
+        expect(state.changes[0].status).toBe('pending');
+        // Within the rate-limit window → NO new Sentry capture this tick.
+        expect(mockCaptureException).not.toHaveBeenCalled();
     });
 });
 
@@ -1363,6 +1462,41 @@ describe('applyChange — trialing grandfather at apply (increase vs decrease)',
             okBilling(),
             mkLogger()
         );
+        expect(state.targets).toHaveLength(0);
+    });
+
+    it('INCREASE grandfathers a notified sub with a FUTURE trialEnd even if status=active (HOS-171 derived-status guard)', async () => {
+        const state: GState = {
+            changes: [{ id: 'pc-inc', status: 'pending' }],
+            targets: [],
+            subs: [
+                {
+                    id: 'sub-derived-trial',
+                    customerId: 'c1',
+                    planId: 'plan-1',
+                    billingInterval: 'month',
+                    // Stored status is `active` (webhook lag) but the trial has NOT ended.
+                    status: 'active',
+                    mpSubscriptionId: 'mp-a',
+                    trialEnd: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
+                }
+            ],
+            notices: [{ id: 'n-1', priceChangeId: 'pc-inc', subscriptionId: 'sub-derived-trial' }],
+            seq: 0
+        };
+        mockGetDb.mockReturnValue(buildDb(state));
+        await applyChange(
+            {
+                id: 'pc-inc',
+                planId: 'plan-1',
+                billingInterval: 'month',
+                newAmount: 120000,
+                direction: 'increase'
+            },
+            okBilling(),
+            mkLogger()
+        );
+        // Future trialEnd → grandfathered despite status=active → NO target (never re-priced mid-trial).
         expect(state.targets).toHaveLength(0);
     });
 

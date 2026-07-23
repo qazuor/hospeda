@@ -90,7 +90,7 @@ import * as Sentry from '@sentry/node';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { planDisplayNameFromPlan } from '../../services/billing/plan-change-reason.js';
 import { env } from '../../utils/env.js';
-import { sendNotification } from '../../utils/notification-helper.js';
+import { trySendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
 
 /** Hard cap on price-change rows processed per tick (safety valve). */
@@ -133,6 +133,16 @@ const MP_MAX_TRANSACTION_AMOUNT_ARS = 2_000_000;
 
 /** Grace window (ms) between an increase's advance notice and its apply (15 days, D-3). */
 const INCREASE_NOTICE_GRACE_MS = 15 * 24 * 60 * 60 * 1000;
+
+/**
+ * Minimum interval between Sentry alerts for a SINGLE increase whose notice phase is
+ * blocked (≥1 affected sub un-notifiable). A blocked change is re-evaluated every tick
+ * (15 min); without this rate-limit a permanently-unresolvable customer would capture to
+ * Sentry on every tick forever (alert fatigue). The change stays fail-closed either way
+ * (never applied without a complete notice); this only throttles the alert. Tracked per
+ * change via `metadata.lastNoticeBlockAlertAt`.
+ */
+const NOTICE_BLOCK_ALERT_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
 /**
  * Pure: the apply-time affected-subscriber status filter for a price change,
@@ -530,13 +540,16 @@ async function ensureTargets(
  * For each ledger sub WITHOUT a target row yet:
  *   - CURRENT status NOT in {@link INCREASE_AFFECTED_SUB_STATUSES} — trialing
  *     (grandfathered D-4: kept at the OLD amount through the trial) OR no longer
- *     chargeable (cancelled/paused/…): NO target is created. The notice row remains the
- *     permanent record; the sub keeps its OLD amount and does NOT fail the change. A
- *     trialing sub that later converts to `active` is picked up on a subsequent tick
- *     (its status now qualifies), so a mid-grace conversion is still re-priced.
- *   - `active` / `past_due`: resolve the discount-aware amount and insert a `pending`
- *     (or `deferred`, when the amount is not yet determinable) target, snapshotting the
- *     CURRENT `mpSubscriptionId`.
+ *     chargeable (cancelled/paused/…) OR a future `trialEnd` (see the derived-status guard
+ *     below): NO target is created. The notice row remains the permanent record; the sub
+ *     keeps its OLD amount and does NOT fail the change. A trialing sub that converts to
+ *     `active` BEFORE the change finalizes is picked up on a later tick (status now
+ *     qualifies); if it converts AFTER the change has finalized to `done` it is NOT
+ *     re-priced by this change (the acknowledged v1 grandfather limitation — the divergence
+ *     detector follow-up surfaces it, and the post-first-charge re-price hook is separate).
+ *   - `active` / `past_due` with no future `trialEnd`: resolve the discount-aware amount
+ *     and insert a `pending` (or `deferred`, when the amount is not yet determinable)
+ *     target, snapshotting the CURRENT `mpSubscriptionId`.
  *
  * Idempotent: the `NOT EXISTS` filter + `ON CONFLICT DO NOTHING` mean re-running never
  * duplicates a target. Because the notice ledger is a fixed, sub-cap set (the notice
@@ -574,18 +587,27 @@ async function ensureTargetsFromNotices(
         .select({
             id: billingSubscriptions.id,
             status: billingSubscriptions.status,
+            trialEnd: billingSubscriptions.trialEnd,
             mpSubscriptionId: billingSubscriptions.mpSubscriptionId
         })
         .from(billingSubscriptions)
         .where(inArray(billingSubscriptions.id, candidateIds));
 
     const chargeableStatuses = INCREASE_AFFECTED_SUB_STATUSES as readonly string[];
+    const nowMs = Date.now();
     for (const sub of subs) {
         // Grandfather (D-4): only active / past_due notified subs are re-priced on an
-        // increase. A trialing (or no-longer-live) notified sub gets NO target — its
-        // notice ledger row is the permanent record and it keeps the OLD amount, without
-        // failing the change. NEVER resolve a discount / call MP for a grandfathered sub.
-        if (!chargeableStatuses.includes(sub.status)) {
+        // increase. A trialing (or no-longer-live) notified sub gets NO target — its notice
+        // ledger row is the permanent record and it keeps the OLD amount, without failing the
+        // change. NEVER resolve a discount / call MP for a grandfathered sub.
+        //
+        // Secondary guard on `trialEnd`: `trialing` is a DERIVED status (HOS-171) — MP
+        // reports an authorized preapproval as `active` and a webhook later flips it to
+        // `trialing`, so there is a lag window where a genuinely-trialing sub still carries
+        // `status='active'`. Grandfather ANY sub whose `trialEnd` is still in the future,
+        // regardless of stored status, so a mid-trial increase is never applied.
+        const inTrialByDate = sub.trialEnd != null && sub.trialEnd.getTime() > nowMs;
+        if (!chargeableStatuses.includes(sub.status) || inTrialByDate) {
             continue;
         }
         const resolution = await resolveDiscountAwareTargetCentavos(sub.id, change.newAmount);
@@ -946,6 +968,8 @@ interface NoticeChangeRow {
     readonly billingInterval: string;
     readonly oldAmount: number;
     readonly newAmount: number;
+    /** Header metadata — carries `lastNoticeBlockAlertAt` for the blocked-notice Sentry rate-limit. */
+    readonly metadata: Record<string, unknown> | null;
 }
 
 /**
@@ -960,7 +984,8 @@ async function findPendingIncreaseChangesToNotice(): Promise<NoticeChangeRow[]> 
             planId: billingPlanPriceChanges.planId,
             billingInterval: billingPlanPriceChanges.billingInterval,
             oldAmount: billingPlanPriceChanges.oldAmount,
-            newAmount: billingPlanPriceChanges.newAmount
+            newAmount: billingPlanPriceChanges.newAmount,
+            metadata: billingPlanPriceChanges.metadata
         })
         .from(billingPlanPriceChanges)
         .where(
@@ -1118,28 +1143,23 @@ async function runIncreaseNoticePhase(
             .where(eq(billingPlanPriceChangeNotices.priceChangeId, change.id));
         const alreadyNoticed = new Set(existing.map((r) => r.subscriptionId));
 
+        // Per-sub notice failures (unresolvable customer / non-delivery / throw). Collected
+        // and surfaced as ONE rate-limited change-level Sentry alert below, instead of a
+        // per-sub capture every tick (which would storm Sentry while a change stays blocked).
+        const notifyFailures: { subscriptionId: string; reason: string }[] = [];
+
         for (const sub of affected) {
             if (alreadyNoticed.has(sub.subscriptionId)) continue;
             try {
                 const customer = await billing.customers.get(sub.customerId);
                 if (!customer) {
-                    // Unresolvable customer: no notice can be produced and there is no
-                    // out-of-band retry that will fix it. Persist NO ledger row → the flip
-                    // gate below refuses to advance this change (fail-closed) and the sub is
-                    // retried next tick WITHOUT re-emailing the subs already in the ledger.
-                    Sentry.captureException(
-                        new Error(
-                            `HOS-176: increase notice could not resolve customer for subscription ${sub.subscriptionId} on change ${change.id} — no ledger row written, change stays pending`
-                        ),
-                        {
-                            extra: {
-                                priceChangeId: change.id,
-                                subscriptionId: sub.subscriptionId,
-                                customerId: sub.customerId
-                            },
-                            tags: { module: 'propagate-plan-price-changes' }
-                        }
-                    );
+                    // Unresolvable customer: no notice can be produced. Persist NO ledger row →
+                    // the flip gate below refuses to advance (fail-closed); retried next tick
+                    // WITHOUT re-emailing the subs already in the ledger.
+                    notifyFailures.push({
+                        subscriptionId: sub.subscriptionId,
+                        reason: 'customer_not_found'
+                    });
                     logger.error(
                         'Price propagation notice: customer not found — no ledger row, change stays pending (retried next tick)',
                         {
@@ -1152,16 +1172,20 @@ async function runIncreaseNoticePhase(
                 }
                 const meta = customer.metadata as Record<string, unknown> | null | undefined;
                 const customerName = String(meta?.name ?? customer.email);
-                await sendNotification({
+                // DELIVERY-GATED: `trySendNotification` reports whether the send actually went
+                // out. A legal advance notice (Disp. 954/2025) must be SENT before we record
+                // it — a fire-and-forget `sendNotification` that merely returns is NOT proof of
+                // delivery (missing email service / non-success result / swallowed throw). Only
+                // persist the ledger row when `delivered` is true.
+                const { delivered } = await trySendNotification({
                     type: NotificationType.PLAN_PRICE_CHANGE_NOTICE,
                     recipientEmail: customer.email,
                     recipientName: customerName,
                     userId: meta?.userId == null ? null : String(meta.userId),
                     customerId: sub.customerId,
-                    // idempotencyKey only dedups notification LOG rows, not delivery (send
-                    // happens before the idempotent log insert). DELIVERY exactly-once is
-                    // provided by the notice ledger below (skip-if-present), not by this key;
-                    // kept because it is harmless.
+                    // idempotencyKey only dedups notification LOG rows, not delivery. DELIVERY
+                    // exactly-once comes from the notice ledger below (skip-if-present) + this
+                    // delivery gate, not from this key; kept because it is harmless.
                     idempotencyKey: `price-notice:${change.id}:${sub.subscriptionId}`,
                     planName,
                     oldPriceArs: change.oldAmount,
@@ -1169,9 +1193,22 @@ async function runIncreaseNoticePhase(
                     effectiveDate: effectiveAt.toISOString(),
                     billingInterval: change.billingInterval
                 });
-                // Persist the notice AFTER a successful send (idempotent). Send-then-insert
-                // means the only residual duplicate window is a crash between THIS sub's send
-                // and its insert — per-sub, never all-subs — and we never UNDER-send.
+                if (!delivered) {
+                    // Send did NOT go out. No ledger row → flip stays blocked; retried next
+                    // tick. Never record an un-delivered notice as "notified".
+                    notifyFailures.push({
+                        subscriptionId: sub.subscriptionId,
+                        reason: 'not_delivered'
+                    });
+                    logger.warn(
+                        'Price propagation notice: send NOT delivered — no ledger row, change stays pending (retried next tick)',
+                        { priceChangeId: change.id, subscriptionId: sub.subscriptionId }
+                    );
+                    continue;
+                }
+                // Persist the notice AFTER a confirmed-delivered send (idempotent). The only
+                // residual duplicate window is a crash between THIS sub's send and its insert —
+                // per-sub, never all-subs — and we never UNDER-send.
                 await db
                     .insert(billingPlanPriceChangeNotices)
                     .values({
@@ -1188,19 +1225,10 @@ async function runIncreaseNoticePhase(
                     });
                 notified += 1;
             } catch (sendErr) {
-                // `sendNotification` never throws (swallows + retries out-of-band), so a
-                // throw here is practically a customer/plan resolution failure — "could not
-                // notify this sub". Persist NO ledger row → same fail-closed handling as the
-                // customer-not-found case: the flip gate refuses to advance; retried next tick.
-                Sentry.captureException(
-                    new Error(
-                        `HOS-176: increase notice threw resolving/sending for subscription ${sub.subscriptionId} on change ${change.id} — no ledger row written, change stays pending`
-                    ),
-                    {
-                        extra: { priceChangeId: change.id, subscriptionId: sub.subscriptionId },
-                        tags: { module: 'propagate-plan-price-changes' }
-                    }
-                );
+                // A throw here is practically a customer/plan resolution failure
+                // (`trySendNotification` never throws). Persist NO ledger row → same
+                // fail-closed handling; retried next tick.
+                notifyFailures.push({ subscriptionId: sub.subscriptionId, reason: 'threw' });
                 logger.warn(
                     'Price propagation notice: notice threw (no ledger row — change stays pending, retried next tick)',
                     {
@@ -1234,6 +1262,43 @@ async function runIncreaseNoticePhase(
                     noticed: ledgerSet.size
                 }
             );
+            // ONE rate-limited change-level Sentry alert: a blocked change is re-evaluated
+            // every tick; without this a permanently-unresolvable customer would capture on
+            // EVERY tick forever (alert fatigue). Alert at most once per
+            // NOTICE_BLOCK_ALERT_INTERVAL_MS, tracked via `metadata.lastNoticeBlockAlertAt`.
+            // The change stays fail-closed regardless of whether we alert this tick.
+            const changeMeta = (change.metadata ?? {}) as Record<string, unknown>;
+            const lastAlertRaw = changeMeta.lastNoticeBlockAlertAt;
+            const lastAlertMs =
+                typeof lastAlertRaw === 'string' ? Date.parse(lastAlertRaw) : Number.NaN;
+            const shouldAlert =
+                Number.isNaN(lastAlertMs) ||
+                now.getTime() - lastAlertMs >= NOTICE_BLOCK_ALERT_INTERVAL_MS;
+            if (shouldAlert) {
+                Sentry.captureException(
+                    new Error(
+                        `HOS-176: increase notice for change ${change.id} is BLOCKED — ${notifyFailures.length} affected subscriber(s) could not be notified; change stays pending, NOT applied`
+                    ),
+                    {
+                        extra: {
+                            priceChangeId: change.id,
+                            planId: change.planId,
+                            billingInterval: change.billingInterval,
+                            affected: affected.length,
+                            noticed: ledgerSet.size,
+                            failures: notifyFailures
+                        },
+                        tags: { module: 'propagate-plan-price-changes' }
+                    }
+                );
+                await db
+                    .update(billingPlanPriceChanges)
+                    .set({
+                        metadata: { ...changeMeta, lastNoticeBlockAlertAt: now.toISOString() },
+                        updatedAt: now
+                    })
+                    .where(eq(billingPlanPriceChanges.id, change.id));
+            }
             continue;
         }
 
