@@ -1039,16 +1039,34 @@ export class DestinationModel extends BaseModelImpl<Destination> {
 
     /**
      * Finds a destination by its materialized path.
+     *
+     * By default soft-deleted rows are excluded (the historical behaviour).
+     * Callers that need to enforce visibility/GONE semantics at the service
+     * layer (e.g. `DestinationService.getByPath`, which routes the row through
+     * `checkCanViewDestination` to emit 410 for soft-deleted PUBLIC
+     * destinations reached by path) pass `includeDeleted = true` so the
+     * `deleted_at IS NULL` filter is not applied here.
+     *
      * @param path - The materialized path (e.g., '/argentina/entre-rios/concepcion-del-uruguay')
+     * @param tx - Optional transaction client
+     * @param includeDeleted - When true, do not filter out soft-deleted rows. Defaults to false.
      * @returns Promise resolving to the destination or null
      */
-    async findByPath(path: string, tx?: DrizzleClient): Promise<Destination | null> {
+    async findByPath(
+        path: string,
+        tx?: DrizzleClient,
+        includeDeleted = false
+    ): Promise<Destination | null> {
         const db = this.getClient(tx);
         try {
+            const conditions = [eq(destinations.path, path)];
+            if (!includeDeleted) {
+                conditions.push(isNull(destinations.deletedAt));
+            }
             const results = await db
                 .select()
                 .from(destinations)
-                .where(and(eq(destinations.path, path), isNull(destinations.deletedAt)))
+                .where(and(...conditions))
                 .limit(1);
 
             const result = results[0] ?? null;

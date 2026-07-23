@@ -1513,14 +1513,30 @@ export class DestinationService extends BaseCrudService<
             input: { actor, ...params },
             schema: GetDestinationByPathInputSchema,
             ctx,
-            execute: async (validData, _actor, resolvedCtx) => {
-                const destination = await this.model.findByPath(validData.path, resolvedCtx.tx);
+            execute: async (validData, actorFromRun, resolvedCtx) => {
+                // Read soft-deleted rows too (`includeDeleted = true`) so
+                // `checkCanViewDestination` — not the model's SQL filter —
+                // decides the outcome, exactly like `getBySlug` (which routes
+                // through `findOne`/`_canView`). This is what makes the 410 GONE
+                // path reachable for the common multi-segment destination URL
+                // (e.g. `/destinos/entre-rios/colon/`): a soft-deleted PUBLIC
+                // destination surfaces as GONE, and a live PRIVATE/RESTRICTED
+                // destination has its visibility enforced instead of leaking
+                // (HOS-117 T-022). Without this the SQL-level `deleted_at IS NULL`
+                // filter would collapse every deleted row to NOT_FOUND and never
+                // reach the gate.
+                const destination = await this.model.findByPath(
+                    validData.path,
+                    resolvedCtx.tx,
+                    true
+                );
                 if (!destination) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         `Destination not found at path: ${validData.path}`
                     );
                 }
+                checkCanViewDestination(actorFromRun, destination);
                 const withAttractions = await this._withAttractions(destination, resolvedCtx);
                 return this._withPointsOfInterest(withAttractions, resolvedCtx);
             }
