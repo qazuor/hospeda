@@ -5,16 +5,17 @@
  * §7.2, §8 point 2). Fetches the destination catalog SSR (mirrors
  * `publicar-restaurante/index.astro`) and mounts `CommerceCreateForm`.
  *
- * D-4 (HOS-166 §6.1): this page never reads the commerce-leads DB table — there is no
- * protected "my lead" read endpoint (see `CommerceCreateForm.client.tsx`'s
- * module doc). `CommerceCreateForm` accepts an optional `prefill.name`
- * sourced from the owner's own profile, but this page deliberately does NOT
- * pass `Astro.locals.user.name` into it: that field is the owner's PERSONAL
- * name, not their business name, and forcing it into the listing-name input
- * would plant actively wrong data the owner would have to notice and
- * overwrite — worse than leaving the field empty. The form renders fully
- * empty and equally usable for every owner regardless of lead history
- * (AC-10/AC-11).
+ * ## D-4 pre-fill (HOS-257)
+ *
+ * This page fetches the caller's own lead via `fetchMyCommerceLead`
+ * (`GET /api/v1/protected/commerce/leads/mine` — a protected READ endpoint;
+ * this surface never imports the lead service or table directly, enforced by
+ * the AC-14 static guard). The fetch is PRE-FILL ONLY, never a gate: a `null`
+ * result (no lead, or the request failed) still renders the form fully
+ * usable with no `prefill` (AC-10/AC-11) — exactly the behaviour this page
+ * already had before HOS-257. `Astro.locals.user.name` is still NEVER used
+ * for `prefill.name` — that field is the owner's PERSONAL name, not their
+ * business name, and forcing it in would plant actively wrong data.
  *
  * @route     /[lang]/mi-cuenta/comercio/nuevo/[vertical]/
  * @rendering SSR (prerender = false — authenticated, owner-scoped)
@@ -25,6 +26,7 @@ import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { CommerceCreateForm } from '@/components/commerce/CommerceCreateForm.client';
 import { isCommerceOwnerRole } from '@/lib/account-roles';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
+import { fetchMyCommerceLead } from '@/lib/commerce/owner-listings';
 import { destinationsApi } from '@/lib/api/endpoints';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -59,7 +61,16 @@ const subtitle = t(
     'Completá lo básico ahora — vas a poder sumar fotos, horarios y más detalles después.'
 );
 
-const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 });
+// The destinations catalog and the caller's own lead are independent SSR
+// fetches — run them in parallel to save a round-trip on every create-page load.
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const [destinationsResult, myLead] = await Promise.all([
+    destinationsApi.list({ destinationType: 'CITY', pageSize: 100 }),
+    // HOS-257 D-4: pre-fill ONLY — `myLead` is `null` for the common case (no
+    // provisioned lead) or on any fetch failure, and the form renders
+    // identically usable either way (AC-10/AC-11). See module doc.
+    fetchMyCommerceLead({ cookieHeader })
+]);
 const destinations = destinationsResult.ok
     ? destinationsResult.data.items.map((item) => ({ id: item.id, name: item.name }))
     : [];
@@ -68,6 +79,12 @@ const destinations = destinationsResult.ok
 // instead of silently omitting a REQUIRED completeness field — see
 // `CommerceCreateForm`'s `destinationsLoadFailed` prop doc.
 const destinationsLoadFailed = !destinationsResult.ok;
+const prefill = myLead
+    ? {
+          name: myLead.name,
+          ...(myLead.destinationId ? { destinationId: myLead.destinationId } : {})
+      }
+    : undefined;
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="comercio">
@@ -80,6 +97,7 @@ const destinationsLoadFailed = !destinationsResult.ok;
             locale={locale}
             destinations={destinations}
             destinationsLoadFailed={destinationsLoadFailed}
+            prefill={prefill}
         />
     </AccountSectionCard>
 </AccountLayout>

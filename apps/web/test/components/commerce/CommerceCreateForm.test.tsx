@@ -103,6 +103,35 @@ describe('CommerceCreateForm', () => {
 
             expect(input).toHaveValue('Otro nombre');
         });
+
+        it('pre-fills destinationId from the prefill prop when one is provided (HOS-257)', () => {
+            render(
+                <CommerceCreateForm
+                    vertical="gastronomy"
+                    locale="es"
+                    destinations={destinations}
+                    prefill={{ name: 'La Parrilla de Juan', destinationId: 'dest-1' }}
+                />
+            );
+
+            expect(screen.getByLabelText('Ciudad / Destino')).toHaveValue('dest-1');
+        });
+
+        it('lets the owner overwrite a pre-filled destinationId freely (AC-12)', () => {
+            render(
+                <CommerceCreateForm
+                    vertical="gastronomy"
+                    locale="es"
+                    destinations={[...destinations, { id: 'dest-2', name: 'Colón' }]}
+                    prefill={{ destinationId: 'dest-1' }}
+                />
+            );
+
+            const select = screen.getByLabelText('Ciudad / Destino');
+            fireEvent.change(select, { target: { value: 'dest-2' } });
+
+            expect(select).toHaveValue('dest-2');
+        });
     });
 
     describe('gastronomy submit', () => {
@@ -183,7 +212,7 @@ describe('CommerceCreateForm', () => {
             expect(screen.queryByLabelText('Ciudad / Destino')).not.toBeInTheDocument();
         });
 
-        it('renders nothing extra when destinations legitimately loaded empty and no failure occurred', () => {
+        it('shows an empty-catalog message (not the load-failed one) when destinations legitimately loaded empty', () => {
             render(
                 <CommerceCreateForm
                     vertical="gastronomy"
@@ -192,7 +221,11 @@ describe('CommerceCreateForm', () => {
                 />
             );
 
-            expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+            // HOS-260: a genuinely empty catalog must not leave the required
+            // destinationId field silently missing with zero explanation.
+            expect(screen.getByRole('alert')).toHaveTextContent(
+                'Todavía no hay ciudades / destinos cargados.'
+            );
             expect(screen.queryByLabelText('Ciudad / Destino')).not.toBeInTheDocument();
         });
     });

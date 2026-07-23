@@ -90,7 +90,8 @@
                 "name": "Nome do comércio",
                 "destination": "Cidade / Destino",
                 "description": "Descrição",
-                "destinationLoadError": "Não conseguimos carregar a lista de cidades / destinos. Recarregue a página para tentar novamente."
+                "destinationLoadError": "Não conseguimos carregar a lista de cidades / destinos. Recarregue a página para tentar novamente.",
+                "destinationEmpty": "Ainda não há cidades / destinos cadastrados. Entre em contato para que possamos ajudar a preencher este campo."
             },
             "contactField": {
                 "mobilePhone": "Telefone",
@@ -220,7 +221,8 @@
                 "summary": "Resumo",
                 "description": "Descrição",
                 "destination": "Cidade / Destino",
-                "destinationLoadError": "Não conseguimos carregar a lista de cidades / destinos. Recarregue a página para tentar novamente."
+                "destinationLoadError": "Não conseguimos carregar a lista de cidades / destinos. Recarregue a página para tentar novamente.",
+                "destinationEmpty": "Ainda não há cidades / destinos cadastrados. Entre em contato para que possamos ajudar a preencher este campo."
             },
             "submit": "Criar comércio",
             "submitting": "Criando...",

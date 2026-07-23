@@ -90,7 +90,8 @@
                 "name": "Business name",
                 "destination": "City / Destination",
                 "description": "Description",
-                "destinationLoadError": "We couldn't load the list of cities / destinations. Reload the page to try again."
+                "destinationLoadError": "We couldn't load the list of cities / destinations. Reload the page to try again.",
+                "destinationEmpty": "There are no cities / destinations available yet. Contact us so we can help you complete this field."
             },
             "contactField": {
                 "mobilePhone": "Phone",
@@ -220,7 +221,8 @@
                 "summary": "Summary",
                 "description": "Description",
                 "destination": "City / Destination",
-                "destinationLoadError": "We couldn't load the list of cities / destinations. Reload the page to try again."
+                "destinationLoadError": "We couldn't load the list of cities / destinations. Reload the page to try again.",
+                "destinationEmpty": "There are no cities / destinations available yet. Contact us so we can help you complete this field."
             },
             "submit": "Create business",
             "submitting": "Creating...",
