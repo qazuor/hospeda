@@ -59,9 +59,9 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
         'Tu calendario de {providerLabel} dejó de sincronizarse — {accommodationName}',
 
     // Plan price-increase advance notice (HOS-176)
-    // TODO(HOS-176 D-3): final legal copy pending owner/legal sign-off.
+    // TODO(HOS-176 D-3): PROVISIONAL copy — pending legal sign-off before enabling the increase flag.
     [NotificationType.PLAN_PRICE_CHANGE_NOTICE]:
-        'Aviso de cambio de precio de tu plan {planName} — vigente desde el {effectiveDate}'
+        'Aviso previo: el precio de tu plan {planName} aumentará desde el {effectiveDate}'
 };
 
 /**

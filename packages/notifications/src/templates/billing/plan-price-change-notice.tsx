@@ -33,9 +33,13 @@ export interface PlanPriceChangeNoticeProps {
  * only after the grace window elapses. The body states the old price, the new
  * price, the effective date, and that the subscriber may cancel before then.
  *
- * TODO(HOS-176 D-3): final legal copy pending owner/legal sign-off. The body
- * text below is a reasonable PLACEHOLDER — it MUST be replaced with the copy
- * approved by the owner/legal before the increase flag is enabled in prod.
+ * TODO(HOS-176 D-3): PROVISIONAL copy in place — pending legal sign-off. The
+ * body and subject are a provisional, good-faith draft covering the elements a
+ * price-increase prior notice is expected to carry (the increase itself, the
+ * old/new amounts, the effective date, the >=15-day advance window, and the
+ * free right to cancel before then). It has NOT been reviewed by counsel. It
+ * MUST be reviewed/approved by the owner/legal, and this marker removed, BEFORE
+ * the increase flag (HOSPEDA_BILLING_PRICE_INCREASE_ENABLED) is enabled in prod.
  *
  * @param props - Plan price-change notice data.
  */
@@ -59,10 +63,12 @@ export function PlanPriceChangeNotice({
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>
 
-            {/* TODO(HOS-176 D-3): final legal copy pending owner/legal sign-off. */}
+            {/* PROVISIONAL(HOS-176 D-3): pending legal sign-off — see JSDoc above. */}
             <Text style={styles.paragraph}>
-                Te informamos que el precio de tu suscripción al plan {planName} ({intervalLabel})
-                se actualizará. Este aviso se envía con anticipación para que puedas revisarlo antes
+                Te escribimos para avisarte, con al menos 15 días de anticipación, que el precio de
+                tu suscripción al plan {planName} ({intervalLabel}) va a aumentar. Te enviamos este
+                aviso previo, conforme a la normativa de defensa del consumidor aplicable
+                (Disposición 954/2025), para que puedas revisar el cambio y decidir con tiempo antes
                 de que el nuevo precio entre en vigencia.
             </Text>
 
@@ -81,11 +87,13 @@ export function PlanPriceChangeNotice({
                 />
             </Section>
 
-            {/* TODO(HOS-176 D-3): final legal copy pending owner/legal sign-off. */}
+            {/* PROVISIONAL(HOS-176 D-3): pending legal sign-off — see JSDoc above. */}
             <Text style={styles.paragraph}>
-                El nuevo precio comenzará a aplicarse a partir del {formattedEffectiveDate}. Si no
-                estás de acuerdo con este cambio, podés cancelar tu suscripción antes de esa fecha
-                sin ningún costo adicional.
+                El nuevo precio del plan entrará en vigencia a partir del {formattedEffectiveDate}.
+                Si no estás de acuerdo con el aumento, podés cancelar tu suscripción en cualquier
+                momento antes de esa fecha, sin costo ni penalidad, desde tu cuenta. Si mantenés la
+                suscripción activa después de esa fecha, el nuevo precio se considerará aceptado y
+                se facturará según tu plan a partir de tu próximo período.
             </Text>
 
             <Section style={styles.buttonContainer}>
