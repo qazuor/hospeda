@@ -19,6 +19,7 @@
  * @module services/commerce-reconcile.service
  */
 
+import type { DrizzleClient } from '@repo/db';
 import {
     commerceListingSubscriptions,
     eq,
@@ -26,7 +27,13 @@ import {
     gastronomyModel,
     getDb
 } from '@repo/db';
-import { type CommerceEntityModel, reconcileCommerceListingVisibility } from '@repo/service-core';
+import type { CommerceEntityType } from '@repo/schemas';
+import {
+    type CommerceEntityModel,
+    type ResolveCommerceListingCompleteness,
+    reconcileCommerceListingVisibility,
+    resolveListingCompleteness
+} from '@repo/service-core';
 import { apiLogger } from '../utils/logger.js';
 
 /**
@@ -54,6 +61,69 @@ export function resolveCommerceEntityModel(entityType: string): CommerceEntityMo
                 `resolveCommerceEntityModel: no commerce entity model for entityType '${entityType}'`
             );
     }
+}
+
+/**
+ * Resolves a commerce listing's publish-readiness for the reconciler's
+ * predicate (HOS-166 §6.5). Deliberately does its OWN `findById` read via the
+ * FULL `gastronomyModel`/`experienceModel` (not the narrow
+ * `CommerceEntityModel` from `resolveCommerceEntityModel`) so it can read
+ * every field `resolveListingCompleteness` needs (`name`, `summary`,
+ * `description`, `media`, `contactInfo`, `openingHours`, `priceRange`,
+ * `priceFrom`, `isPriceOnRequest`, …) — see {@link CommerceEntityModel}'s
+ * JSDoc for why completeness stays a separate injected resolver rather than
+ * widening that narrow structural contract.
+ *
+ * @param entityType - Commerce entity discriminator (`'gastronomy'` | `'experience'`).
+ * @param entityId - UUID of the commerce entity to evaluate.
+ * @param tx - Optional Drizzle transaction client, forwarded from the reconciler.
+ * @returns `{ complete, missing }` — `complete: false` with a synthetic
+ *   `missing: ['listing_not_found']` when the row cannot be found (defensive;
+ *   the reconciler's own `model.findById` call already 404s first in the
+ *   normal path, so this branch is a belt-and-suspenders guard against a
+ *   race between the two independent reads).
+ * @throws {Error} When `entityType` has no registered model (mirrors
+ *   {@link resolveCommerceEntityModel}).
+ */
+export async function resolveCommerceListingCompleteness(
+    entityType: string,
+    entityId: string,
+    tx?: DrizzleClient
+): Promise<{ complete: boolean; missing: readonly string[] }> {
+    let listing: Record<string, unknown> | null;
+    switch (entityType) {
+        case 'gastronomy':
+            listing = await gastronomyModel.findById(entityId, tx);
+            break;
+        case 'experience':
+            listing = await experienceModel.findById(entityId, tx);
+            break;
+        default:
+            throw new Error(
+                `resolveCommerceListingCompleteness: no commerce entity model for entityType '${entityType}'`
+            );
+    }
+
+    if (!listing) {
+        return { complete: false, missing: ['listing_not_found'] };
+    }
+
+    return resolveListingCompleteness({
+        entityType: entityType as CommerceEntityType,
+        listing
+    });
+}
+
+/**
+ * Builds a {@link ResolveCommerceListingCompleteness} resolver bound to a
+ * fixed `entityType`, matching the shape `reconcileCommerceListingVisibility`
+ * expects (`(entityId, tx?) => Promise<{complete, missing}>`).
+ *
+ * @param entityType - Commerce entity discriminator for this reconcile call.
+ * @returns A resolver closed over `entityType`.
+ */
+function bindCompletenessResolver(entityType: string): ResolveCommerceListingCompleteness {
+    return (entityId, tx) => resolveCommerceListingCompleteness(entityType, entityId, tx);
 }
 
 /**
@@ -107,7 +177,8 @@ export async function reconcileCommerceListingForSubscription(input: {
                         entityId: link.entityId,
                         subscriptionStatus
                     },
-                    model
+                    model,
+                    bindCompletenessResolver(link.entityType)
                 );
                 apiLogger.info(
                     {

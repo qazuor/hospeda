@@ -18,12 +18,6 @@
 
 import { describe, expect, it, vi } from 'vitest';
 
-// HOS-234: the helper logs the payload SHAPE when no usable payer_id is found.
-vi.mock('../../src/utils/logger', () => ({
-    apiLogger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
-}));
-
-import { apiLogger } from '../../src/utils/logger';
 import { _internals, fetchAuthorizedPaymentDetails } from '../../src/utils/mp-authorized-payment';
 
 const VALID_RESPONSE = {
@@ -33,7 +27,6 @@ const VALID_RESPONSE = {
     currency_id: 'ARS',
     status: 'processed',
     debit_date: '2026-06-15T10:00:00.000Z',
-    payer_id: 219902101,
     payment: {
         id: 987654321,
         status: 'approved',
@@ -71,51 +64,8 @@ describe('fetchAuthorizedPaymentDetails', () => {
             paymentId: '987654321',
             status: 'processed',
             paymentStatus: 'approved',
-            debitDate: '2026-06-15T10:00:00.000Z',
-            mpPayerId: '219902101'
+            debitDate: '2026-06-15T10:00:00.000Z'
         });
-    });
-
-    // ── HOS-234: payload-shape diagnostic when payer_id is absent ──────────────
-    it('logs the payload shape (keys only, no values) when no usable payer_id is present (HOS-234)', async () => {
-        vi.mocked(apiLogger.info).mockClear();
-        const { payer_id: _drop, ...noPayer } = VALID_RESPONSE;
-        const fetchImpl = mockFetchOk(noPayer);
-
-        const result = await fetchAuthorizedPaymentDetails({
-            authorizedPaymentId: '123456789',
-            accessToken: 'TEST-abc',
-            fetchImpl: fetchImpl as unknown as typeof fetch
-        });
-
-        expect(result.kind).toBe('ok');
-        if (result.kind !== 'ok') throw new Error('unreachable');
-        expect(result.details.mpPayerId).toBeNull();
-
-        // The diagnostic logs the SHAPE — top-level keys + inner payment keys +
-        // the payer_id type — never the sensitive values themselves.
-        expect(apiLogger.info).toHaveBeenCalledWith(
-            expect.objectContaining({
-                authorizedPaymentId: '123456789',
-                topLevelKeys: expect.arrayContaining(['preapproval_id', 'payment']),
-                paymentKeys: expect.arrayContaining(['id', 'status']),
-                payerIdType: 'undefined'
-            }),
-            expect.stringContaining('no usable payer_id')
-        );
-    });
-
-    it('does NOT log the payload-shape diagnostic when a payer_id is present (HOS-234)', async () => {
-        vi.mocked(apiLogger.info).mockClear();
-        const fetchImpl = mockFetchOk(VALID_RESPONSE); // has payer_id
-
-        await fetchAuthorizedPaymentDetails({
-            authorizedPaymentId: '123456789',
-            accessToken: 'TEST-abc',
-            fetchImpl: fetchImpl as unknown as typeof fetch
-        });
-
-        expect(apiLogger.info).not.toHaveBeenCalled();
     });
 
     it('uses the configured URL, method, and headers (Bearer auth, URL-encoded id)', async () => {
@@ -278,48 +228,5 @@ describe('_internals.parseAuthorizedPaymentResponse', () => {
     it('preserves the input authorizedPaymentId verbatim', () => {
         const parsed = _internals.parseAuthorizedPaymentResponse(VALID_RESPONSE, 'INPUT-ID');
         expect(parsed?.authorizedPaymentId).toBe('INPUT-ID');
-    });
-
-    // HOS-225 defect #4: the parser now surfaces the top-level payer_id so the
-    // webhook handler can back-fill billing_customers.mp_customer_id.
-    describe('mpPayerId (HOS-225 #4)', () => {
-        it('coerces a numeric payer_id to string', () => {
-            const parsed = _internals.parseAuthorizedPaymentResponse(
-                { ...VALID_RESPONSE, payer_id: 219902101 },
-                '123'
-            );
-            expect(parsed?.mpPayerId).toBe('219902101');
-        });
-
-        it('accepts a string payer_id without coercion', () => {
-            const parsed = _internals.parseAuthorizedPaymentResponse(
-                { ...VALID_RESPONSE, payer_id: 'payer-string-id' },
-                '123'
-            );
-            expect(parsed?.mpPayerId).toBe('payer-string-id');
-        });
-
-        it('returns null when payer_id is absent (never fails the whole parse)', () => {
-            const { payer_id: _ignored, ...rest } = VALID_RESPONSE;
-            const parsed = _internals.parseAuthorizedPaymentResponse(rest, '123');
-            expect(parsed).not.toBeNull();
-            expect(parsed?.mpPayerId).toBeNull();
-        });
-
-        it('returns null when payer_id is an empty string', () => {
-            const parsed = _internals.parseAuthorizedPaymentResponse(
-                { ...VALID_RESPONSE, payer_id: '' },
-                '123'
-            );
-            expect(parsed?.mpPayerId).toBeNull();
-        });
-
-        it('returns null when payer_id has an unexpected type', () => {
-            const parsed = _internals.parseAuthorizedPaymentResponse(
-                { ...VALID_RESPONSE, payer_id: { nested: true } as unknown as number },
-                '123'
-            );
-            expect(parsed?.mpPayerId).toBeNull();
-        });
     });
 });

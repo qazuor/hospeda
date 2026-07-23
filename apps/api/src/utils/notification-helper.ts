@@ -116,37 +116,35 @@ async function getNotificationService(): Promise<NotificationService | null> {
 }
 
 /**
- * Send a notification asynchronously (fire-and-forget)
+ * Delivery-aware outcome of an attempted notification send.
  *
- * This function returns a promise but is designed to be called without await.
- * Errors are logged but not thrown, allowing the calling code to continue.
- *
- * @param payload - Notification payload
- * @returns Promise that resolves/rejects silently
- *
- * @example
- * ```ts
- * // Fire-and-forget (recommended)
- * sendNotification({
- *   type: NotificationType.ADDON_PURCHASE,
- *   recipientEmail: 'user@example.com',
- *   ...
- * }).catch(() => {}); // Silent catch
- *
- * // Or with explicit catch
- * try {
- *   sendNotification(...).catch((err) => {
- *     logger.debug('Notification failed (will retry)', err);
- *   });
- * } catch (err) {
- *   // This shouldn't happen
- * }
- * ```
+ * `delivered` is TRUE only when the notification service reported a successful send
+ * (`result.success`). A missing service (email key unset / init failure), a non-success
+ * result, or a thrown error all yield `delivered: false`. Callers with a correctness or
+ * legal dependency on the send actually going out (e.g. the HOS-176 price-increase advance
+ * notice) MUST gate on this, never on `sendNotification` merely returning.
  */
-export async function sendNotification(
+export interface NotificationSendOutcome {
+    readonly delivered: boolean;
+}
+
+/**
+ * Send a notification and REPORT whether it was delivered.
+ *
+ * Same fire-and-forget safety as {@link sendNotification} (never throws), but returns a
+ * {@link NotificationSendOutcome} so a caller that must not proceed on a silent
+ * non-delivery can branch on it. Use this instead of {@link sendNotification} whenever
+ * "the notice was actually sent" is a precondition for a subsequent state change.
+ *
+ * @param payload - Notification payload.
+ * @param options - Optional send options.
+ * @returns `{ delivered: true }` only on a successful send; `{ delivered: false }` for a
+ *   missing service, a non-success result, or any thrown error.
+ */
+export async function trySendNotification(
     payload: NotificationPayload,
     options?: SendNotificationOptions
-): Promise<void> {
+): Promise<NotificationSendOutcome> {
     try {
         apiLogger.debug(
             {
@@ -161,7 +159,7 @@ export async function sendNotification(
         // Get NotificationService instance
         const notificationService = await getNotificationService();
 
-        // If service not available, log and skip gracefully
+        // If service not available, log and skip gracefully. NOT delivered.
         if (!notificationService) {
             apiLogger.debug(
                 {
@@ -170,7 +168,7 @@ export async function sendNotification(
                 },
                 'NotificationService not available, skipping notification'
             );
-            return;
+            return { delivered: false };
         }
 
         // Send notification via NotificationService
@@ -185,19 +183,20 @@ export async function sendNotification(
                 },
                 'Notification sent successfully'
             );
-        } else {
-            apiLogger.warn(
-                {
-                    type: payload.type,
-                    recipientEmail: payload.recipientEmail,
-                    status: result.status,
-                    error: 'error' in result ? result.error : result.skippedReason
-                },
-                'Notification not sent'
-            );
+            return { delivered: true };
         }
+        apiLogger.warn(
+            {
+                type: payload.type,
+                recipientEmail: payload.recipientEmail,
+                status: result.status,
+                error: 'error' in result ? result.error : result.skippedReason
+            },
+            'Notification not sent'
+        );
+        return { delivered: false };
     } catch (error) {
-        // Log but don't throw - fire-and-forget pattern
+        // Log but don't throw - fire-and-forget pattern. NOT delivered.
         apiLogger.error(
             {
                 type: payload.type,
@@ -205,5 +204,24 @@ export async function sendNotification(
             },
             'Failed to send notification'
         );
+        return { delivered: false };
     }
+}
+
+/**
+ * Send a notification asynchronously (fire-and-forget)
+ *
+ * This function returns a promise but is designed to be called without await.
+ * Errors are logged but not thrown, allowing the calling code to continue. Thin wrapper
+ * over {@link trySendNotification} that discards the delivery outcome — use
+ * {@link trySendNotification} directly when delivery matters.
+ *
+ * @param payload - Notification payload
+ * @returns Promise that resolves/rejects silently
+ */
+export async function sendNotification(
+    payload: NotificationPayload,
+    options?: SendNotificationOptions
+): Promise<void> {
+    await trySendNotification(payload, options);
 }

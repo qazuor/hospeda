@@ -90,6 +90,20 @@ export interface CommerceListingCompletenessListing {
     readonly openingHours?: OpeningHours | null;
     /** Price-range tier. Gastronomy-only requirement. */
     readonly priceRange?: string | null;
+    /**
+     * Starting price in integer centavos. Experience-only requirement (see
+     * {@link resolveListingCompleteness}'s experience-specific block): must be
+     * a positive integer unless {@link isPriceOnRequest} is `true`. Mirrors
+     * gastronomy's `priceRange` requirement — a listing with no real price
+     * information is not viable to publish.
+     */
+    readonly priceFrom?: number | null;
+    /**
+     * When `true`, the experience shows "Consultar precio" instead of a
+     * numeric price, so {@link priceFrom} being `0` is expected and not a
+     * completeness gap. Experience-only requirement.
+     */
+    readonly isPriceOnRequest?: boolean | null;
 }
 
 /** Input to {@link resolveListingCompleteness}. */
@@ -174,10 +188,11 @@ function hasAtLeastOneOpeningShift(openingHours: OpeningHours | null | undefined
  *
  * - `gastronomy` — additionally requires `openingHours` (≥ 1 day with ≥ 1
  *   shift) and `priceRange`.
- * - `experience` — currently evaluates the shared block only. The spec
- *   explicitly leaves experience-specific required fields to a follow-up
- *   (unverified against the experience entity's field set at spec-authoring
- *   time) — see the TODO below.
+ * - `experience` — additionally requires real price information: `priceFrom`
+ *   must be a positive integer unless `isPriceOnRequest` is `true` (HOS-166
+ *   PR-B). `openingHours` is deliberately NOT required for experience — see
+ *   the NOTE below the experience-specific block for why that one field was
+ *   left as a judgment call rather than a hard rule.
  *
  * Deliberately does NOT require: `menuUrl`, `richDescription`,
  * `socialNetworks`, `amenityIds`, `featureIds`, gallery beyond the featured
@@ -241,10 +256,30 @@ export function resolveListingCompleteness(
     }
 
     // ── Experience-specific required fields ───────────────────────────────
-    // TODO(HOS-166 PR-B): confirm experience-specific required fields against
-    // the experience entity schema (`packages/schemas/src/entities/experience/`)
-    // and add them here. The spec explicitly did not enumerate these — only
-    // the shared block above is binding for experience today.
+    // HOS-166 PR-B resolution of the PR-A TODO. `priceFrom`/`priceUnit` are
+    // already non-nullable on `ExperienceSchema` (no `.default()`, no
+    // `.nullish()`), so a listing that satisfies the Create schema always has
+    // SOME price data — but "some" is not "meaningful": `priceFrom: 0` with
+    // `isPriceOnRequest: false` reads as "$0 per day", a broken listing. This
+    // mirrors gastronomy's `priceRange` requirement (real price information is
+    // viability, not quality) and is the one experience-specific rule that is
+    // both obvious and derivable from the schema's own shape.
+    //
+    // NOTE (deferred, not decided here): `openingHours` was deliberately NOT
+    // added as a required field for experience, unlike gastronomy. A
+    // restaurant has a fixed weekly schedule by nature; an "experience" (tour,
+    // rental, on-demand activity) may legitimately run on flexible or
+    // by-request hours with no weekly shift pattern to fill in. Whether
+    // experience listings should require SOME availability signal to publish
+    // is a real product question the spec did not answer (§6.6 explicitly
+    // left experience-specific fields to the implementer's judgment) — flagged
+    // for the orchestrator/product owner rather than guessed at here.
+    if (entityType === CommerceEntityTypeEnum.EXPERIENCE) {
+        const hasRealPrice = typeof listing.priceFrom === 'number' && listing.priceFrom > 0;
+        if (listing.isPriceOnRequest !== true && !hasRealPrice) {
+            missing.push('priceFrom');
+        }
+    }
 
     return { complete: missing.length === 0, missing };
 }

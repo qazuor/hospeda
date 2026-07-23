@@ -4,6 +4,7 @@ import { ExperienceTypeEnum } from '../../../enums/experience-type.enum.js';
 import {
     ExperienceAdminCreateInputSchema,
     ExperienceDeleteInputSchema,
+    ExperienceOwnerCreateInputSchema,
     ExperienceOwnerUpdateInputSchema,
     ExperienceRestoreInputSchema,
     ExperienceUpdateInputSchema
@@ -234,41 +235,48 @@ describe('ExperienceOwnerUpdateInputSchema', () => {
     });
 
     // -------------------------------------------------------------------------
-    // Admin-only identity fields — still stripped (AC-5 regression guard)
+    // HOS-166 D-1: identity fields are now owner-editable (reverses SPEC-239 #5)
     // -------------------------------------------------------------------------
 
-    describe('admin-only identity fields are still stripped by owner schema (AC-5 regression)', () => {
-        it('should strip "name" from owner update payload (legal identity — admin-only)', () => {
-            const result = ExperienceOwnerUpdateInputSchema.safeParse({
-                name: 'New Name'
-            });
+    describe('owner-editable identity fields (HOS-166 D-1)', () => {
+        it('should accept and persist "name" (owner now controls identity)', () => {
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({ name: 'New Name' });
+            expect(result.success).toBe(true);
             if (result.success) {
-                expect((result.data as Record<string, unknown>).name).toBeUndefined();
+                expect(result.data.name).toBe('New Name');
             }
         });
 
-        it('should strip "slug" (legal identity — admin-only)', () => {
-            const result = ExperienceOwnerUpdateInputSchema.safeParse({ slug: 'new-slug' });
+        it('should accept and persist "description" (owner now controls identity)', () => {
+            const description = 'A base description that now persists for an owner payload.';
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({ description });
+            expect(result.success).toBe(true);
             if (result.success) {
-                expect((result.data as Record<string, unknown>).slug).toBeUndefined();
+                expect(result.data.description).toBe(description);
             }
         });
 
-        it('should strip "description" (base description — owner edits i18n variants)', () => {
-            const result = ExperienceOwnerUpdateInputSchema.safeParse({
-                description: 'A base description that should be stripped for owners.'
-            });
-            if (result.success) {
-                expect((result.data as Record<string, unknown>).description).toBeUndefined();
-            }
-        });
-
-        it('should strip "destinationId" (admin-only classification)', () => {
+        it('should accept and persist "destinationId" (owner now controls identity)', () => {
             const result = ExperienceOwnerUpdateInputSchema.safeParse({
                 destinationId: VALID_UUID
             });
+            expect(result.success).toBe(true);
             if (result.success) {
-                expect((result.data as Record<string, unknown>).destinationId).toBeUndefined();
+                expect(result.data.destinationId).toBe(VALID_UUID);
+            }
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Admin-only fields — still stripped (AC-19 regression guard)
+    // -------------------------------------------------------------------------
+
+    describe('admin-only control + immutable-identity fields are still stripped (AC-19)', () => {
+        it('should strip "slug" (immutable post-create — HOS-166 OQ-3)', () => {
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({ slug: 'new-slug' });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect((result.data as Record<string, unknown>).slug).toBeUndefined();
             }
         });
 
@@ -276,6 +284,7 @@ describe('ExperienceOwnerUpdateInputSchema', () => {
             const result = ExperienceOwnerUpdateInputSchema.safeParse({
                 hasActiveSubscription: true
             });
+            expect(result.success).toBe(true);
             if (result.success) {
                 expect(
                     (result.data as Record<string, unknown>).hasActiveSubscription
@@ -285,6 +294,7 @@ describe('ExperienceOwnerUpdateInputSchema', () => {
 
         it('should strip "ownerId" (admin-only)', () => {
             const result = ExperienceOwnerUpdateInputSchema.safeParse({ ownerId: VALID_UUID });
+            expect(result.success).toBe(true);
             if (result.success) {
                 expect((result.data as Record<string, unknown>).ownerId).toBeUndefined();
             }
@@ -292,10 +302,126 @@ describe('ExperienceOwnerUpdateInputSchema', () => {
 
         it('should strip "isFeatured" (admin-only)', () => {
             const result = ExperienceOwnerUpdateInputSchema.safeParse({ isFeatured: true });
+            expect(result.success).toBe(true);
             if (result.success) {
                 expect((result.data as Record<string, unknown>).isFeatured).toBeUndefined();
             }
         });
+
+        it('should strip "lifecycleState" (control field — admin-only)', () => {
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({ lifecycleState: 'ACTIVE' });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect((result.data as Record<string, unknown>).lifecycleState).toBeUndefined();
+            }
+        });
+
+        it('should strip "visibility" (control field — admin-only)', () => {
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({ visibility: 'PUBLIC' });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect((result.data as Record<string, unknown>).visibility).toBeUndefined();
+            }
+        });
+
+        it('should strip "moderationState" (control field — admin-only)', () => {
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({
+                moderationState: 'APPROVED'
+            });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect((result.data as Record<string, unknown>).moderationState).toBeUndefined();
+            }
+        });
+    });
+});
+
+// ============================================================================
+// ExperienceOwnerCreateInputSchema — HOS-166 §7.2
+// ============================================================================
+
+describe('ExperienceOwnerCreateInputSchema', () => {
+    const buildOwnerCreateInput = (
+        overrides: Record<string, unknown> = {}
+    ): Record<string, unknown> => ({
+        name: 'Tour Litoral Histórico',
+        summary: 'Recorrido guiado por los puntos históricos de la ciudad.',
+        description:
+            'Un recorrido completo por los sitios históricos más importantes de Concepción del Uruguay, con guía certificado y materiales incluidos.',
+        type: ExperienceTypeEnum.CULTURAL_TOUR,
+        priceFrom: 2000000,
+        priceUnit: ExperiencePriceUnitEnum.PER_PERSON,
+        isPriceOnRequest: false,
+        ...overrides
+    });
+
+    it('should parse a valid owner create input', () => {
+        const result = ExperienceOwnerCreateInputSchema.safeParse(buildOwnerCreateInput());
+        expect(result.success).toBe(true);
+    });
+
+    it('should allow omitting destinationId (checked at publish time, not create — §6.6)', () => {
+        const result = ExperienceOwnerCreateInputSchema.safeParse(
+            buildOwnerCreateInput({ destinationId: undefined })
+        );
+        expect(result.success).toBe(true);
+    });
+
+    it('should strip "ownerId" even if supplied — the route forces actor.id (D-3)', () => {
+        const result = ExperienceOwnerCreateInputSchema.safeParse(
+            buildOwnerCreateInput({ ownerId: VALID_UUID })
+        );
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect((result.data as Record<string, unknown>).ownerId).toBeUndefined();
+        }
+    });
+
+    it('should strip "slug" even if supplied — derived server-side from name (OQ-3)', () => {
+        const result = ExperienceOwnerCreateInputSchema.safeParse(
+            buildOwnerCreateInput({ slug: 'owner-chosen-slug' })
+        );
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect((result.data as Record<string, unknown>).slug).toBeUndefined();
+        }
+    });
+
+    it('should strip "visibility" even if supplied — the route forces PRIVATE (D-3)', () => {
+        const result = ExperienceOwnerCreateInputSchema.safeParse(
+            buildOwnerCreateInput({ visibility: 'PUBLIC' })
+        );
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect((result.data as Record<string, unknown>).visibility).toBeUndefined();
+        }
+    });
+
+    it('should strip "lifecycleState" even if supplied — the route forces DRAFT (D-3)', () => {
+        const result = ExperienceOwnerCreateInputSchema.safeParse(
+            buildOwnerCreateInput({ lifecycleState: 'ACTIVE' })
+        );
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect((result.data as Record<string, unknown>).lifecycleState).toBeUndefined();
+        }
+    });
+
+    it('should strip "hasActiveSubscription" even if supplied (subscription lifecycle only)', () => {
+        const result = ExperienceOwnerCreateInputSchema.safeParse(
+            buildOwnerCreateInput({ hasActiveSubscription: true })
+        );
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect((result.data as Record<string, unknown>).hasActiveSubscription).toBeUndefined();
+        }
+    });
+
+    it('should accept optional amenityIds and featureIds (write-only)', () => {
+        const result = ExperienceOwnerCreateInputSchema.safeParse(
+            buildOwnerCreateInput({ amenityIds: [VALID_UUID], featureIds: [VALID_UUID] })
+        );
+        expect(result.success).toBe(true);
     });
 });
 
