@@ -145,6 +145,53 @@ export const billingPlanPriceChangeTargets = pgTable(
     })
 );
 
+/**
+ * Per-subscriber advance-notice ledger for an INCREASE price change (HOS-176, item b).
+ *
+ * Disposición 954/2025 requires a PRIOR notice before an increase applies. This table is
+ * the exactly-once audit ledger of that notice: one row per subscriber who was
+ * successfully sent the advance notice for a given {@link billingPlanPriceChanges}.
+ *
+ * Deliberately SEPARATE from {@link billingPlanPriceChangeTargets} (which records the MP
+ * mutation): a notice is a legal/audit fact ("we told sub X on date T"), a target is a
+ * payment side effect. Keeping them apart is what makes the increase flow robust:
+ *   - the notice phase persists a row ONLY after a successful send, so the next tick
+ *     EXCLUDES already-notified subs (exactly-once on the happy path — no re-email storm
+ *     when a companion sub on the same change fails to resolve);
+ *   - the increase APPLY sources subscribers ONLY from this ledger (never a fresh live
+ *     enumeration), so the apply-set can never diverge from the notice-set — a sub is
+ *     re-priced iff it was legally notified.
+ *
+ * `customerId` is a snapshot of the notified customer (no FK — decoupled audit, like the
+ * header's `actorId`). Decreases never write here (they need no notice).
+ */
+export const billingPlanPriceChangeNotices = pgTable(
+    'billing_plan_price_change_notices',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        priceChangeId: uuid('price_change_id')
+            .notNull()
+            .references(() => billingPlanPriceChanges.id, { onDelete: 'cascade' }),
+        subscriptionId: uuid('subscription_id')
+            .notNull()
+            .references(() => billingSubscriptions.id, { onDelete: 'cascade' }),
+        /** Snapshot of the notified customer id (audit; no FK to keep this decoupled). */
+        customerId: uuid('customer_id'),
+        /** When the advance notice was successfully sent to this subscriber. */
+        notifiedAt: timestamp('notified_at', { withTimezone: true }).defaultNow().notNull(),
+        createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+    },
+    (table) => ({
+        // Exactly-once: one notice per (price change, subscription).
+        planPriceChangeNotices_change_sub_uniq: uniqueIndex(
+            'planPriceChangeNotices_change_sub_uniq'
+        ).on(table.priceChangeId, table.subscriptionId),
+        planPriceChangeNotices_priceChangeId_idx: index(
+            'planPriceChangeNotices_priceChangeId_idx'
+        ).on(table.priceChangeId)
+    })
+);
+
 export const billingPlanPriceChangesRelations = relations(
     billingPlanPriceChanges,
     ({ one, many }) => ({
@@ -156,7 +203,22 @@ export const billingPlanPriceChangesRelations = relations(
             fields: [billingPlanPriceChanges.priceId],
             references: [billingPrices.id]
         }),
-        targets: many(billingPlanPriceChangeTargets)
+        targets: many(billingPlanPriceChangeTargets),
+        notices: many(billingPlanPriceChangeNotices)
+    })
+);
+
+export const billingPlanPriceChangeNoticesRelations = relations(
+    billingPlanPriceChangeNotices,
+    ({ one }) => ({
+        priceChange: one(billingPlanPriceChanges, {
+            fields: [billingPlanPriceChangeNotices.priceChangeId],
+            references: [billingPlanPriceChanges.id]
+        }),
+        subscription: one(billingSubscriptions, {
+            fields: [billingPlanPriceChangeNotices.subscriptionId],
+            references: [billingSubscriptions.id]
+        })
     })
 );
 
@@ -182,3 +244,7 @@ export type SelectBillingPlanPriceChange = typeof billingPlanPriceChanges.$infer
 export type InsertBillingPlanPriceChangeTarget = typeof billingPlanPriceChangeTargets.$inferInsert;
 /** Type-inferred select type for billing_plan_price_change_targets rows. */
 export type SelectBillingPlanPriceChangeTarget = typeof billingPlanPriceChangeTargets.$inferSelect;
+/** Type-inferred insert type for billing_plan_price_change_notices rows. */
+export type InsertBillingPlanPriceChangeNotice = typeof billingPlanPriceChangeNotices.$inferInsert;
+/** Type-inferred select type for billing_plan_price_change_notices rows. */
+export type SelectBillingPlanPriceChangeNotice = typeof billingPlanPriceChangeNotices.$inferSelect;

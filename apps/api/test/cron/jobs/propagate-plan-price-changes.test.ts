@@ -67,6 +67,13 @@ vi.mock('@repo/db', () => {
             attemptCount: col('attemptCount'),
             status: col('status')
         }),
+        billingPlanPriceChangeNotices: tbl('notices', {
+            id: col('id'),
+            priceChangeId: col('priceChangeId'),
+            subscriptionId: col('subscriptionId'),
+            customerId: col('customerId'),
+            notifiedAt: col('notifiedAt')
+        }),
         billingSubscriptions: tbl('subs', {
             id: col('id'),
             customerId: col('customerId'),
@@ -611,6 +618,8 @@ interface GState {
     changes: W[];
     targets: W[];
     subs: W[];
+    /** Notice-ledger rows (HOS-176 item b). Optional: lazily initialised to [] by buildDb. */
+    notices?: W[];
     seq: number;
 }
 
@@ -661,7 +670,9 @@ function gRunSelect(state: GState, q: W): unknown[] {
               ? state.targets
               : table === 'subs'
                 ? state.subs
-                : [];
+                : table === 'notices'
+                  ? (state.notices ?? [])
+                  : [];
     let rows = src.filter((r) => gMatch(q.where, r));
     if (table === 'subs') {
         // findAffectedSubscribers carries a NOT EXISTS sql fragment; findAllAffected does not.
@@ -712,9 +723,24 @@ function buildDb(state: GState) {
             }
         })
     });
-    const insert = (_table: W) => ({
+    const insert = (table: W) => ({
         values: (v: W) => ({
             onConflictDoNothing: () => {
+                // Route by table: notice-ledger inserts (HOS-176 item b) go to state.notices,
+                // everything else to state.targets. Both are unique on (change, sub).
+                if (table.__table === 'notices') {
+                    state.notices ??= [];
+                    const exists = state.notices.some(
+                        (n) =>
+                            n.priceChangeId === v.priceChangeId &&
+                            n.subscriptionId === v.subscriptionId
+                    );
+                    if (!exists) {
+                        state.seq += 1;
+                        state.notices.push({ id: `n-${state.seq}`, ...v });
+                    }
+                    return Promise.resolve();
+                }
                 const exists = state.targets.some(
                     (t) =>
                         t.priceChangeId === v.priceChangeId && t.subscriptionId === v.subscriptionId
@@ -849,6 +875,11 @@ describe('runIncreaseNoticePhase (notice phase)', () => {
         // Trialing sub IS notified (grandfathered at apply, still legally notified).
         expect(outcome).toEqual({ noticed: 1, notified: 2 });
         expect(mockSendNotification).toHaveBeenCalledTimes(2);
+        // A notice-ledger row was persisted per successfully-notified sub (item b).
+        expect((state.notices ?? []).map((n) => n.subscriptionId).sort()).toEqual([
+            'sub-1',
+            'sub-2'
+        ]);
         expect(mockSendNotification.mock.calls[0]?.[0] as Record<string, unknown>).toMatchObject({
             type: 'plan_price_change_notice',
             planName: 'Plan Uno',
@@ -1121,6 +1152,133 @@ describe('runIncreaseNoticePhase (notice phase)', () => {
         expect(state.changes[0].status).toBe('noticing');
         expect(mockCaptureException).not.toHaveBeenCalled();
     });
+
+    it('EXACTLY-ONCE: a sub already in the notice ledger is NOT re-emailed on a later tick', async () => {
+        const state: GState = {
+            changes: [
+                {
+                    id: 'inc-1',
+                    planId: 'plan-1',
+                    billingInterval: 'month',
+                    oldAmount: 100000,
+                    newAmount: 120000,
+                    direction: 'increase',
+                    status: 'pending',
+                    noticeSentAt: null,
+                    effectiveAt: new Date(0),
+                    createdAt: new Date()
+                }
+            ],
+            targets: [],
+            subs: [
+                {
+                    id: 'sub-1',
+                    customerId: 'cus-1',
+                    planId: 'plan-1',
+                    billingInterval: 'month',
+                    status: 'active',
+                    mpSubscriptionId: 'mp-1'
+                },
+                {
+                    id: 'sub-2',
+                    customerId: 'cus-2',
+                    planId: 'plan-1',
+                    billingInterval: 'month',
+                    status: 'active',
+                    mpSubscriptionId: 'mp-2'
+                }
+            ],
+            // sub-1 was already notified on a prior tick (ledger row present).
+            notices: [{ id: 'n-1', priceChangeId: 'inc-1', subscriptionId: 'sub-1' }],
+            seq: 1
+        };
+        mockGetDb.mockReturnValue(buildDb(state));
+
+        const outcome = await runIncreaseNoticePhase(noticeBilling(), mkLogger());
+        // Only the still-missing sub-2 is emailed; sub-1 is skipped (already in the ledger).
+        expect(mockSendNotification).toHaveBeenCalledTimes(1);
+        expect(
+            (mockSendNotification.mock.calls[0]?.[0] as Record<string, unknown>).idempotencyKey
+        ).toBe('price-notice:inc-1:sub-2');
+        // Both subs now covered → change flips.
+        expect(outcome).toEqual({ noticed: 1, notified: 1 });
+        expect(state.changes[0].status).toBe('noticing');
+        expect((state.notices ?? []).map((n) => n.subscriptionId).sort()).toEqual([
+            'sub-1',
+            'sub-2'
+        ]);
+    });
+
+    it('cross-tick: a first-tick customer-not-found blocks the flip; the second tick re-notifies ONLY the missing sub (no re-email storm)', async () => {
+        const state: GState = {
+            changes: [
+                {
+                    id: 'inc-1',
+                    planId: 'plan-1',
+                    billingInterval: 'month',
+                    oldAmount: 100000,
+                    newAmount: 120000,
+                    direction: 'increase',
+                    status: 'pending',
+                    noticeSentAt: null,
+                    effectiveAt: new Date(0),
+                    createdAt: new Date()
+                }
+            ],
+            targets: [],
+            subs: [
+                {
+                    id: 'sub-1',
+                    customerId: 'cus-1',
+                    planId: 'plan-1',
+                    billingInterval: 'month',
+                    status: 'active',
+                    mpSubscriptionId: 'mp-1'
+                },
+                {
+                    id: 'sub-2',
+                    customerId: 'cus-2',
+                    planId: 'plan-1',
+                    billingInterval: 'month',
+                    status: 'active',
+                    mpSubscriptionId: 'mp-2'
+                }
+            ],
+            notices: [],
+            seq: 0
+        };
+        mockGetDb.mockReturnValue(buildDb(state));
+        // cus-2 is unresolvable on the FIRST tick, then resolvable on the second.
+        let cus2Calls = 0;
+        const flakyBilling = {
+            plans: { get: vi.fn(async () => ({ name: 'plan', metadata: {} })) },
+            customers: {
+                get: vi.fn(async (id: string) => {
+                    if (id === 'cus-2') {
+                        cus2Calls += 1;
+                        if (cus2Calls === 1) return null;
+                    }
+                    return { email: `${id}@example.com`, metadata: { userId: `u-${id}` } };
+                })
+            }
+        } as unknown as QZPayBilling;
+
+        // Tick 1: sub-1 notified, sub-2 unresolvable → change stays pending.
+        const t1 = await runIncreaseNoticePhase(flakyBilling, mkLogger());
+        expect(t1).toEqual({ noticed: 0, notified: 1 });
+        expect(state.changes[0].status).toBe('pending');
+        expect((state.notices ?? []).map((n) => n.subscriptionId)).toEqual(['sub-1']);
+
+        // Tick 2: sub-1 is skipped (already noticed — no re-email); only sub-2 is emailed → flip.
+        mockSendNotification.mockClear();
+        const t2 = await runIncreaseNoticePhase(flakyBilling, mkLogger());
+        expect(mockSendNotification).toHaveBeenCalledTimes(1);
+        expect(
+            (mockSendNotification.mock.calls[0]?.[0] as Record<string, unknown>).idempotencyKey
+        ).toBe('price-notice:inc-1:sub-2');
+        expect(t2).toEqual({ noticed: 1, notified: 1 });
+        expect(state.changes[0].status).toBe('noticing');
+    });
 });
 
 describe('applyChange — trialing grandfather at apply (increase vs decrease)', () => {
@@ -1155,11 +1313,17 @@ describe('applyChange — trialing grandfather at apply (increase vs decrease)',
         } as unknown as QZPayBilling;
     }
 
-    it('INCREASE excludes a trialing sub — no target is created for it', async () => {
+    it('INCREASE excludes a trialing sub — no target is created for it (sourced from the notice ledger)', async () => {
+        // Both subs were legally notified (ledger rows). At apply the trialing one is
+        // grandfathered (no target); only the active one is re-priced.
         const state: GState = {
             changes: [{ id: 'pc-inc', status: 'pending' }],
             targets: [],
             subs: twoSubs(),
+            notices: [
+                { id: 'n-1', priceChangeId: 'pc-inc', subscriptionId: 'sub-active' },
+                { id: 'n-2', priceChangeId: 'pc-inc', subscriptionId: 'sub-trial' }
+            ],
             seq: 0
         };
         mockGetDb.mockReturnValue(buildDb(state));
@@ -1175,6 +1339,31 @@ describe('applyChange — trialing grandfather at apply (increase vs decrease)',
             mkLogger()
         );
         expect(state.targets.map((t) => t.subscriptionId).sort()).toEqual(['sub-active']);
+    });
+
+    it('INCREASE apply sources ONLY the notice ledger — a live active sub with NO ledger row is NOT re-priced (divergence closed)', async () => {
+        // sub-active is live+active but was never notified (no ledger row) → it must NOT be
+        // re-priced. This is the notice-set vs apply-set divergence closure (item b).
+        const state: GState = {
+            changes: [{ id: 'pc-inc', status: 'pending' }],
+            targets: [],
+            subs: twoSubs(),
+            notices: [], // nobody notified
+            seq: 0
+        };
+        mockGetDb.mockReturnValue(buildDb(state));
+        await applyChange(
+            {
+                id: 'pc-inc',
+                planId: 'plan-1',
+                billingInterval: 'month',
+                newAmount: 120000,
+                direction: 'increase'
+            },
+            okBilling(),
+            mkLogger()
+        );
+        expect(state.targets).toHaveLength(0);
     });
 
     it('DECREASE includes a trialing sub — a target IS created for it', async () => {
@@ -1267,6 +1456,8 @@ describe('applyChange — MP amount guards (skipped, MP never called)', () => {
             changes: [{ id: 'pc-big', status: 'pending' }],
             targets: [],
             subs: oneSub(),
+            // Increase sources from the notice ledger — sub-1 was notified.
+            notices: [{ id: 'n-1', priceChangeId: 'pc-big', subscriptionId: 'sub-1' }],
             seq: 0
         };
         mockGetDb.mockReturnValue(buildDb(state));
@@ -1294,6 +1485,8 @@ describe('applyChange — MP amount guards (skipped, MP never called)', () => {
             changes: [{ id: 'pc-ok', status: 'pending' }],
             targets: [],
             subs: oneSub(),
+            // Increase sources from the notice ledger — sub-1 was notified.
+            notices: [{ id: 'n-1', priceChangeId: 'pc-ok', subscriptionId: 'sub-1' }],
             seq: 0
         };
         mockGetDb.mockReturnValue(buildDb(state));
