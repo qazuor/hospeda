@@ -124,6 +124,52 @@ describe('PlanDialog — price-change impact toast (HOS-176)', () => {
         );
         // Success toast fires too — the impact toast is a follow-up, not a replacement.
         expect(addToastMock).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+
+        // The single info toast picked the INCREASE branch (message references the increase
+        // key). The unit env renders raw i18n keys, so the key name is what surfaces.
+        const infoCalls = addToastMock.mock.calls.filter(
+            (c) => (c[0] as { variant?: string }).variant === 'info'
+        );
+        expect(infoCalls).toHaveLength(1);
+        expect((infoCalls[0]?.[0] as { message: string }).message).toContain(
+            'priceChangeImpactIncrease'
+        );
+    });
+
+    it('fires ONE info toast per effect — two effects (monthly increase + annual decrease) → two toasts, each on the correct branch', async () => {
+        const onSubmit = vi.fn().mockResolvedValue({
+            priceChangeEffects: [
+                {
+                    billingInterval: 'month',
+                    direction: 'increase',
+                    effectiveAt: '2026-08-01T00:00:00.000Z',
+                    affectedSubscriberCount: 12
+                },
+                {
+                    billingInterval: 'year',
+                    direction: 'decrease',
+                    effectiveAt: '2026-07-23T00:00:00.000Z',
+                    affectedSubscriberCount: 1
+                }
+            ]
+        } satisfies PlanSubmitResult);
+
+        renderDialog(basePlan(), onSubmit);
+        submitForm();
+
+        await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+        await waitFor(() => {
+            const infoCalls = addToastMock.mock.calls.filter(
+                (c) => (c[0] as { variant?: string }).variant === 'info'
+            );
+            expect(infoCalls).toHaveLength(2);
+        });
+        const infoMessages = addToastMock.mock.calls
+            .filter((c) => (c[0] as { variant?: string }).variant === 'info')
+            .map((c) => (c[0] as { message: string }).message);
+        // Branch selection is per-effect: increase for the monthly, decrease for the annual.
+        expect(infoMessages.some((m) => m.includes('priceChangeImpactIncrease'))).toBe(true);
+        expect(infoMessages.some((m) => m.includes('priceChangeImpactDecrease'))).toBe(true);
     });
 
     it('does NOT fire an impact toast when onSubmit resolves with an empty priceChangeEffects array', async () => {

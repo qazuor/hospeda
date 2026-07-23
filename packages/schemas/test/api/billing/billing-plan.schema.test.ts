@@ -234,25 +234,28 @@ describe('AdminBillingPlanUpdateResponseSchema (HOS-176)', () => {
         ).toBe(true);
     });
 
-    it('accepts up to two effects (monthly + annual, mixed direction)', () => {
+    it('accepts up to two effects (monthly + annual, mixed direction) and PRESERVES them through the parse', () => {
+        const priceChangeEffects = [
+            {
+                billingInterval: 'month' as const,
+                direction: 'increase' as const,
+                effectiveAt: '2026-06-14T00:00:00.000Z',
+                affectedSubscriberCount: 12
+            },
+            {
+                billingInterval: 'year' as const,
+                direction: 'decrease' as const,
+                effectiveAt: '2026-05-30T00:00:00.000Z',
+                affectedSubscriberCount: 3
+            }
+        ];
         const result = AdminBillingPlanUpdateResponseSchema.safeParse({
             ...baseResponse,
-            priceChangeEffects: [
-                {
-                    billingInterval: 'month',
-                    direction: 'increase',
-                    effectiveAt: '2026-06-14T00:00:00.000Z',
-                    affectedSubscriberCount: 12
-                },
-                {
-                    billingInterval: 'year',
-                    direction: 'decrease',
-                    effectiveAt: '2026-05-30T00:00:00.000Z',
-                    affectedSubscriberCount: 3
-                }
-            ]
+            priceChangeEffects
         });
         expect(result.success).toBe(true);
+        // The extended (non-strict) schema must NOT strip the new field — it round-trips.
+        expect(result.success && result.data.priceChangeEffects).toEqual(priceChangeEffects);
     });
 
     it('rejects an unknown billingInterval', () => {

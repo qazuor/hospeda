@@ -7,7 +7,7 @@
  */
 
 import { type EntitlementKey, LIMIT_METADATA, LimitKey } from '@repo/billing';
-import { type ApiErrorShape, defaultIntlLocale, formatDate, type TranslationKey } from '@repo/i18n';
+import { type ApiErrorShape, formatDate, type TranslationKey } from '@repo/i18n';
 import { LoaderIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
@@ -60,7 +60,7 @@ export function PlanDialog({
     isSubmitting = false
 }: PlanDialogProps) {
     const { addToast } = useToast();
-    const { t } = useTranslations();
+    const { t, tPlural, locale } = useTranslations();
 
     const form = useForm({
         defaultValues: {
@@ -121,20 +121,23 @@ export function PlanDialog({
                         effect.billingInterval === 'month'
                             ? t('admin-billing.plans.dialog.priceChangeIntervalMonth')
                             : t('admin-billing.plans.dialog.priceChangeIntervalYear');
+                    // Plural-aware "N subscriber(s)" phrase (avoids "1 subscribers").
+                    const subscribers = tPlural(
+                        'admin-billing.plans.dialog.priceChangeSubscribersCount',
+                        effect.affectedSubscriberCount
+                    );
 
                     const message =
                         effect.direction === 'decrease'
                             ? t('admin-billing.plans.dialog.priceChangeImpactDecrease', {
                                   interval,
-                                  count: effect.affectedSubscriberCount
+                                  subscribers
                               })
                             : t('admin-billing.plans.dialog.priceChangeImpactIncrease', {
                                   interval,
-                                  count: effect.affectedSubscriberCount,
-                                  date: formatDate({
-                                      date: effect.effectiveAt,
-                                      locale: defaultIntlLocale
-                                  })
+                                  subscribers,
+                                  // Localized effective date in the admin's active locale.
+                                  date: formatDate({ date: effect.effectiveAt, locale })
                               });
 
                     addToast({

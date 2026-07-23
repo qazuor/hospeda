@@ -100,28 +100,38 @@ export interface EnqueuePlanPriceChangeResult {
     readonly direction: PriceChangeDirection;
     /** When the propagation may be applied (`now` for decrease, `now + grace` for increase). */
     readonly effectiveAt: Date;
-    /** Count of live subscribers (with an MP preapproval) currently on this plan — the
-     *  approximate blast radius for the admin confirmation copy. The propagation cron
+    /** Count of live subscribers (with an MP preapproval) on this plan+interval — the
+     *  approximate blast radius for the admin confirmation copy (interval-scoped, so a
+     *  monthly change is not inflated by annual subscribers). The propagation cron
      *  re-enumerates the exact set at `effectiveAt`. */
     readonly affectedSubscriberCount: number;
 }
 
 /**
- * Count live subscribers on a plan that carry an MP preapproval — the approximate
- * set the propagation will re-price. Precise interval-matched targeting is done by
- * the cron at apply time; this is for the admin confirmation message.
+ * Count live subscribers on a plan+interval that carry an MP preapproval — the set the
+ * propagation will re-price for THIS interval's price change. Interval-scoped so the admin
+ * confirmation ("affects N subscribers") is not inflated by subscribers on the plan's OTHER
+ * interval (a monthly price change does not re-price annual subscribers, and vice-versa —
+ * the cron matches `billing_interval` at apply time, HOS-176). Still an approximation of the
+ * exact apply-time set (an increase further excludes trialing subs — D-4).
  *
  * @param db - Drizzle client (transaction or root).
  * @param planId - The plan UUID (`billing_subscriptions.plan_id` stores it as varchar).
- * @returns Number of affected live subscribers.
+ * @param billingInterval - The interval whose price changed (`month` | `year`).
+ * @returns Number of affected live subscribers on that plan+interval.
  */
-async function countAffectedSubscribers(db: DrizzleClient, planId: string): Promise<number> {
+async function countAffectedSubscribers(
+    db: DrizzleClient,
+    planId: string,
+    billingInterval: 'month' | 'year'
+): Promise<number> {
     const [row] = await db
         .select({ n: count() })
         .from(billingSubscriptions)
         .where(
             and(
                 eq(billingSubscriptions.planId, planId),
+                eq(billingSubscriptions.billingInterval, billingInterval),
                 inArray(billingSubscriptions.status, [...AFFECTED_SUB_STATUSES]),
                 isNotNull(billingSubscriptions.mpSubscriptionId)
             )
@@ -207,7 +217,7 @@ export async function enqueuePlanPriceChange(input: {
         throw new Error('Failed to enqueue plan price change');
     }
 
-    const affectedSubscriberCount = await countAffectedSubscribers(db, planId);
+    const affectedSubscriberCount = await countAffectedSubscribers(db, planId, billingInterval);
 
     return { priceChangeId: inserted.id, direction, effectiveAt, affectedSubscriberCount };
 }
