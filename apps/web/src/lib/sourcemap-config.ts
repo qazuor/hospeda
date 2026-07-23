@@ -38,3 +38,37 @@ export const resolveSourcemapSetting = ({
 }: ResolveSourcemapSettingParams): 'hidden' | false => {
     return authToken ? 'hidden' : false;
 };
+
+/**
+ * The `sourcemaps` option passed to the `@sentry/astro` integration.
+ *
+ * - With a token: keep the upload path and delete the generated `.map` files
+ *   from the output directory afterwards so they never ship to the CDN.
+ * - Without a token: explicitly disable all source-map functionality so the
+ *   Sentry Vite plugin does not emit its "no auth token, skipping source map
+ *   upload" warning at every tokenless build.
+ */
+export type SentrySourcemapsOption =
+    | { readonly disable: true }
+    | { readonly filesToDeleteAfterUpload: readonly string[] };
+
+/**
+ * Resolves the `sourcemaps` sub-option for the `@sentry/astro` integration.
+ *
+ * This is DECOUPLED from whether the integration itself runs: the integration
+ * must always be active so it injects the client/server runtime
+ * instrumentation (`sentry.client.config.ts` / `sentry.server.config.ts`).
+ * Only source-map UPLOAD depends on `SENTRY_AUTH_TOKEN`, because uploading is
+ * the only step that needs the token. Gating the whole integration on the
+ * token (the previous behavior) silently disabled browser error tracking in
+ * every build where the token was not forwarded as a build arg.
+ *
+ * @param params - See {@link ResolveSourcemapSettingParams}.
+ * @returns `{ disable: true }` when no token is present, otherwise
+ *   `{ filesToDeleteAfterUpload: ['**\/*.map'] }`.
+ */
+export const resolveSentrySourcemapsOption = ({
+    authToken
+}: ResolveSourcemapSettingParams): SentrySourcemapsOption => {
+    return authToken ? { filesToDeleteAfterUpload: ['**/*.map'] } : { disable: true };
+};

@@ -9,7 +9,10 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import { validateWebEnv } from './src/env.ts';
 import { ALLOWED_REMOTE_HOSTS } from './src/lib/media.ts';
 import { buildSitemapAlternateLinks, isExcludedSitemapPage } from './src/lib/seo-config.ts';
-import { resolveSourcemapSetting } from './src/lib/sourcemap-config.ts';
+import {
+    resolveSentrySourcemapsOption,
+    resolveSourcemapSetting
+} from './src/lib/sourcemap-config.ts';
 
 const rootDir = resolve(new URL('.', import.meta.url).pathname, '../../');
 const appDir = resolve(new URL('.', import.meta.url).pathname);
@@ -123,34 +126,31 @@ export default defineConfig({
     },
     integrations: [
         // Sentry runtime config lives in `sentry.client.config.ts` and
-        // `sentry.server.config.ts` (auto-discovered by @sentry/astro).
-        // Here we only configure build-time concerns: which org/project the
-        // source maps belong to, and the auth token used to upload them.
-        // `dsn` is intentionally NOT passed here (deprecated path in
-        // @sentry/astro >= 10; would warn at every build).
+        // `sentry.server.config.ts` (auto-discovered by @sentry/astro). The
+        // integration MUST run unconditionally: activating it is what injects
+        // that browser/server instrumentation into the build. `dsn` is
+        // intentionally NOT passed here (deprecated path in @sentry/astro >= 10;
+        // would warn at every build) — the DSN is read at runtime by those
+        // config files from PUBLIC_SENTRY_DSN.
         //
-        // SPEC-180 BETA-66: gate on SENTRY_AUTH_TOKEN, NOT on PUBLIC_SENTRY_DSN.
-        // The DSN lives in sentry.client.config.ts and sentry.server.config.ts
-        // (runtime). The plugin only needs the token to upload source maps at
-        // build time. Gating on the DSN skips source-map upload even when a
-        // valid token is present but the DSN env var was not passed as a build arg.
-        ...(process.env.SENTRY_AUTH_TOKEN
-            ? [
-                  sentry({
-                      org: 'qazuor',
-                      project: 'hospeda-web',
-                      authToken: process.env.SENTRY_AUTH_TOKEN,
-                      // BETA-66: delete the generated `.map` files from the
-                      // output directory once they have been uploaded to
-                      // Sentry, so they never ship to the client/CDN. Paired
-                      // with the explicit `vite.build.sourcemap: 'hidden'`
-                      // below (parity with the admin app's Vite config).
-                      sourcemaps: {
-                          filesToDeleteAfterUpload: ['**/*.map']
-                      }
-                  })
-              ]
-            : []),
+        // DECOUPLED GATE: only source-map UPLOAD depends on SENTRY_AUTH_TOKEN,
+        // because uploading is the only step that needs the token. The previous
+        // version gated the ENTIRE integration on the token, so when the token
+        // was not forwarded as a build arg (it is a Coolify secret), the client
+        // instrumentation was never injected and browser error tracking was
+        // silently dead in production. `resolveSentrySourcemapsOption` disables
+        // source-map functionality when the token is absent (suppressing the
+        // Vite plugin's "no auth token" warning, BETA-66) and, when present,
+        // deletes the generated `.map` files after upload so they never ship to
+        // the CDN — paired with `vite.build.sourcemap: 'hidden'` below.
+        sentry({
+            org: 'qazuor',
+            project: 'hospeda-web',
+            authToken: process.env.SENTRY_AUTH_TOKEN,
+            sourcemaps: resolveSentrySourcemapsOption({
+                authToken: process.env.SENTRY_AUTH_TOKEN
+            })
+        }),
         react(),
         sitemap({
             // Exclude private/redirecting pages. The bare root `/` 301-redirects
