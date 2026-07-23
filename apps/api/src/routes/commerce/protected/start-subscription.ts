@@ -114,6 +114,10 @@ async function loadRawListing(
             message: `Commerce listing not found: ${entityType}/${entityId}`
         });
     }
+    // TYPE-WORKAROUND: model.findById returns the full Gastronomy/Experience
+    // entity type; we only read the RawCommerceListingRow subset (id/ownerId) for
+    // the ownership check. The two entity types share no nameable structural
+    // supertype, so a double-cast to the narrow row shape is required here.
     return entity as unknown as RawCommerceListingRow;
 }
 
