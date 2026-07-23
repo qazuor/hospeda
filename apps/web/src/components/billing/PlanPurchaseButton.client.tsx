@@ -570,6 +570,12 @@ export function PlanPurchaseButton({
         }
 
         if (effectKind === 'trial_extension' && extraDays !== null) {
+            if (extraDays === 1) {
+                return t(
+                    'billing.checkout.promoApply.trialExtensionSingular',
+                    '{{days}} día de prueba gratis adicional'
+                ).replace('{{days}}', String(extraDays));
+            }
             return t(
                 'billing.checkout.promoApply.trialExtension',
                 '{{days}} días de prueba gratis adicionales'
