@@ -64,6 +64,65 @@ describe('Destination Permission Helpers', () => {
             const destination = createTestDestination({ visibility: VisibilityEnum.PRIVATE });
             expect(() => checkCanViewDestination(actor, destination)).not.toThrow();
         });
+
+        // HOS-117 T-022: soft-deleted destinations previously leaked a full 200
+        // (checkCanViewDestination had no deletedAt guard at all). Now any actor
+        // without DESTINATION_VIEW_ALL gets GONE (410, deindex) when the
+        // destination was PUBLIC before deletion; a deleted PRIVATE/RESTRICTED
+        // destination stays NOT_FOUND (404, uniform) to preserve the
+        // anti-enumeration contract (SPEC-092 T-087). Staff with
+        // DESTINATION_VIEW_ALL are exempt so the admin panel can still manage it.
+        it('throws GONE for a soft-deleted PUBLIC destination when actor lacks DESTINATION_VIEW_ALL', () => {
+            const actor = createActor({ permissions: [] });
+            const destination = createTestDestination({
+                visibility: VisibilityEnum.PUBLIC,
+                deletedAt: new Date()
+            });
+            try {
+                checkCanViewDestination(actor, destination);
+                throw new Error('Should have thrown');
+            } catch (err: unknown) {
+                expect(err).toBeInstanceOf(ServiceError);
+                if (err instanceof ServiceError) {
+                    expect(err.code).toBe(ServiceErrorCode.GONE);
+                }
+            }
+        });
+
+        it('throws NOT_FOUND (not GONE) for a soft-deleted PRIVATE destination — anti-enumeration (SPEC-092 T-087)', () => {
+            const actor = createActor({ permissions: [] });
+            const destination = createTestDestination({
+                visibility: VisibilityEnum.PRIVATE,
+                deletedAt: new Date()
+            });
+            try {
+                checkCanViewDestination(actor, destination);
+                throw new Error('Should have thrown');
+            } catch (err: unknown) {
+                expect(err).toBeInstanceOf(ServiceError);
+                if (err instanceof ServiceError) {
+                    expect(err.code).toBe(ServiceErrorCode.NOT_FOUND);
+                }
+            }
+        });
+
+        it('allows staff with DESTINATION_VIEW_ALL to view a soft-deleted destination', () => {
+            const actor = createActor({ permissions: [PermissionEnum.DESTINATION_VIEW_ALL] });
+            const destination = createTestDestination({
+                visibility: VisibilityEnum.PUBLIC,
+                deletedAt: new Date()
+            });
+            expect(() => checkCanViewDestination(actor, destination)).not.toThrow();
+        });
+
+        it('allows viewing a live (non-deleted) PUBLIC destination', () => {
+            const actor = createActor();
+            const destination = createTestDestination({
+                visibility: VisibilityEnum.PUBLIC,
+                deletedAt: undefined
+            });
+            expect(() => checkCanViewDestination(actor, destination)).not.toThrow();
+        });
     });
 
     describe('checkCanCreateDestination', () => {
