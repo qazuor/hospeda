@@ -15,8 +15,6 @@
  * @module utils/mp-authorized-payment
  */
 
-import { apiLogger } from './logger';
-
 const MP_API_BASE = 'https://api.mercadopago.com';
 const DEFAULT_TIMEOUT_MS = 10_000;
 
@@ -59,17 +57,6 @@ export interface MPAuthorizedPaymentDetails {
      * campaign matched. Also never set by us; see {@link couponAmount}.
      */
     readonly campaignId: string | null;
-    /**
-     * `payer_id` — MercadoPago's own user ID for the subscriber who is being
-     * charged, reported as a TOP-LEVEL field on the authorized-payment
-     * resource (NOT nested under `payment`). Unlike `preapproval_id` /
-     * `transaction_amount` / `currency_id` / `status`, this is treated as
-     * OPTIONAL rather than required: it is only consumed to back-fill
-     * `billing_customers.mp_customer_id` (HOS-225 defect #4), a best-effort
-     * enrichment, so its absence must never fail the whole parse and block
-     * payment recording.
-     */
-    readonly mpPayerId: string | null;
 }
 
 /**
@@ -151,29 +138,6 @@ export async function fetchAuthorizedPaymentDetails(
             };
         }
 
-        // HOS-234/HOS-233: when the parse found no usable `payer_id`, log the
-        // SHAPE of the payload (top-level keys + inner `payment` keys) — never the
-        // values, which may be sensitive — so a smoke can CONFIRM whether MP
-        // actually sends a `payer_id` on this authorized-payment flow (the leading
-        // hypothesis for the NULL `mp_customer_id`). INFO on purpose: it is only
-        // needed live during a diagnostic run (`hops logs api -f -g payer`), not
-        // as a persistent prod signal (that is the WARN in backfillMpCustomerId).
-        if (!parsed.mpPayerId) {
-            const paymentKeys =
-                raw.payment && typeof raw.payment === 'object'
-                    ? Object.keys(raw.payment as Record<string, unknown>)
-                    : null;
-            apiLogger.info(
-                {
-                    authorizedPaymentId,
-                    topLevelKeys: Object.keys(raw),
-                    paymentKeys,
-                    payerIdType: typeof raw.payer_id
-                },
-                'MercadoPago authorized_payment: no usable payer_id — logging payload shape for HOS-233 root-cause confirmation'
-            );
-        }
-
         return { kind: 'ok', details: parsed };
     } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') {
@@ -216,18 +180,6 @@ function parseAuthorizedPaymentResponse(
 
     const debitDate = typeof raw.debit_date === 'string' ? raw.debit_date : null;
 
-    // MercadoPago reports the subscriber's own user id as a top-level
-    // `payer_id` on the authorized-payment resource (numeric in practice,
-    // per MP's SDK — see `InvoiceResponse.payer_id?: number` in
-    // sdk-nodejs). Coerce defensively and degrade to null rather than fail
-    // the whole parse — HOS-225 #4 only uses it as a best-effort enrichment.
-    let mpPayerId: string | null = null;
-    if (typeof raw.payer_id === 'number') {
-        mpPayerId = String(raw.payer_id);
-    } else if (typeof raw.payer_id === 'string' && raw.payer_id.length > 0) {
-        mpPayerId = raw.payer_id;
-    }
-
     let paymentId: string | null = null;
     let paymentStatus: string | null = null;
     // MercadoPago reports its own campaign discounts on the inner payment block.
@@ -266,8 +218,7 @@ function parseAuthorizedPaymentResponse(
         paymentStatus,
         debitDate,
         couponAmount,
-        campaignId,
-        mpPayerId
+        campaignId
     };
 }
 

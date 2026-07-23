@@ -101,13 +101,6 @@ const subLookupResult: {
     }>;
 } = { rows: [] };
 const dedupeResult: { rows: Array<{ id: string }> } = { rows: [] };
-// HOS-225 #4: third `db.select()` performed by `backfillMpCustomerId` to read
-// the customer's current `mp_customer_id` before deciding whether to write.
-// Default: a found customer with the column still unset, so most existing
-// happy-path tests exercise the write branch without needing to opt in.
-const customerLookupResult: { rows: Array<{ mpCustomerId: string | null }> } = {
-    rows: [{ mpCustomerId: null }]
-};
 let nextSelectCall = 0;
 
 // The transaction the trial conversion writes through (HOS-171). Hoisted so the
@@ -128,18 +121,6 @@ const { mockTx, mockTxUpdateChain, mockTxInsertChain } = vi.hoisted(() => {
     };
 });
 
-// HOS-225 #4: the plain `db.update(billingCustomers)` chain used by
-// `backfillMpCustomerId` — a separate, non-transactional write from the
-// trial-conversion transaction above. Hoisted so the `@repo/db` mock factory
-// below can reference it.
-const { mockDbUpdateChain } = vi.hoisted(() => {
-    const chain = {
-        set: vi.fn().mockReturnThis(),
-        where: vi.fn().mockResolvedValue(undefined)
-    };
-    return { mockDbUpdateChain: chain };
-});
-
 function makeQueryBuilder<T>(rows: T[]) {
     const builder = {
         from: vi.fn(() => builder),
@@ -153,19 +134,14 @@ vi.mock('@repo/db', () => ({
     getDb: vi.fn(() => ({
         select: vi.fn(() => {
             // Per-handler invocation: first select is the subscription
-            // lookup; second select is the payments dedupe lookup; third
-            // (HOS-225 #4) is backfillMpCustomerId's mp_customer_id read.
+            // lookup; second select is the payments dedupe lookup.
             const i = nextSelectCall;
             nextSelectCall += 1;
             if (i === 0) {
                 return makeQueryBuilder(subLookupResult.rows);
             }
-            if (i === 1) {
-                return makeQueryBuilder(dedupeResult.rows);
-            }
-            return makeQueryBuilder(customerLookupResult.rows);
-        }),
-        update: vi.fn(() => mockDbUpdateChain)
+            return makeQueryBuilder(dedupeResult.rows);
+        })
     })),
     billingPayments: {
         providerPaymentIds: 'PROVIDER_PAYMENT_IDS_COL',
@@ -184,11 +160,6 @@ vi.mock('@repo/db', () => ({
         id: 'EVENT_ID_COL',
         subscriptionId: 'EVENT_SUB_ID_COL',
         eventType: 'EVENT_TYPE_COL'
-    },
-    billingCustomers: {
-        id: 'BC_ID_COL',
-        mpCustomerId: 'BC_MP_CUSTOMER_ID_COL',
-        deletedAt: 'BC_DELETED_AT_COL'
     },
     and: (...args: unknown[]) => ({ _and: args }),
     eq: (a: unknown, b: unknown) => ({ _eq: [a, b] }),
@@ -213,7 +184,6 @@ import {
     markEventProcessedByProviderId
 } from '../../src/routes/webhooks/mercadopago/utils';
 import { restoreFullPriceMutation } from '../../src/services/promo-renewal-mp.service';
-import { apiLogger } from '../../src/utils/logger';
 import {
     fetchAuthorizedPaymentDetails,
     type MPAuthorizedPaymentDetails,
@@ -260,10 +230,6 @@ function makeDetails(
         // touch it. Non-null here is what the §7.5 accounting defense alerts on.
         couponAmount: null,
         campaignId: null,
-        // HOS-225 #4: the subscriber's MP user id, as MercadoPago reports it on
-        // the authorized-payment resource. Default non-null so the mp_customer_id
-        // back-fill path is exercised by default; individual tests override it.
-        mpPayerId: 'mp-payer-99',
         ...overrides
     };
 }
@@ -275,7 +241,6 @@ function fetchOk(details: MPAuthorizedPaymentDetails): MPAuthorizedPaymentResult
 function resetState() {
     subLookupResult.rows = [];
     dedupeResult.rows = [];
-    customerLookupResult.rows = [{ mpCustomerId: null }];
     nextSelectCall = 0;
     // Default: renewal decision is a no-op so existing happy-path tests are
     // unaffected; individual SPEC-262 tests override this.
@@ -877,155 +842,6 @@ describe('handleSubscriptionAuthorizedPayment', () => {
             await expect(
                 handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent())
             ).resolves.toBeUndefined();
-            expect(markEventProcessedByProviderId).toHaveBeenCalled();
-        });
-    });
-
-    // ── HOS-225 defect #4: mp_customer_id back-fill ─────────────────────────
-    //
-    // billing_customers.mp_customer_id is never populated after a real MP
-    // charge. This handler is the first reliable signal of the subscriber's
-    // MP payer id, so it back-fills the column — idempotently (only when
-    // unset) and soft-fail (never breaks payment recording).
-    describe('mp_customer_id back-fill (HOS-225 #4)', () => {
-        it('writes mp_customer_id when it is currently unset', async () => {
-            subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1' }];
-            dedupeResult.rows = [];
-            customerLookupResult.rows = [{ mpCustomerId: null }];
-            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(
-                fetchOk(makeDetails({ mpPayerId: 'mp-payer-abc' }))
-            );
-            setupBillingMock();
-
-            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
-
-            expect(mockDbUpdateChain.set).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    mpCustomerId: 'mp-payer-abc',
-                    updatedAt: expect.any(Date)
-                })
-            );
-            expect(mockDbUpdateChain.where).toHaveBeenCalled();
-        });
-
-        it('does NOT overwrite an already-set mp_customer_id', async () => {
-            subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1' }];
-            dedupeResult.rows = [];
-            customerLookupResult.rows = [{ mpCustomerId: 'already-set-mp-cus' }];
-            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(
-                fetchOk(makeDetails({ mpPayerId: 'mp-payer-abc' }))
-            );
-            setupBillingMock();
-
-            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
-
-            expect(mockDbUpdateChain.set).not.toHaveBeenCalled();
-        });
-
-        it('does not overwrite even when the observed payer id differs from the stored one', async () => {
-            // Divergence is a reconciliation question, not something the
-            // webhook should resolve unilaterally — the idempotency contract
-            // is "only write when unset", full stop.
-            subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1' }];
-            dedupeResult.rows = [];
-            customerLookupResult.rows = [{ mpCustomerId: 'different-mp-cus' }];
-            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(
-                fetchOk(makeDetails({ mpPayerId: 'mp-payer-abc' }))
-            );
-            setupBillingMock();
-
-            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
-
-            expect(mockDbUpdateChain.set).not.toHaveBeenCalled();
-        });
-
-        it('skips the back-fill entirely AND warns when no payer id was parsed (HOS-234)', async () => {
-            subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1' }];
-            dedupeResult.rows = [];
-            vi.mocked(apiLogger.warn).mockClear();
-            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(
-                fetchOk(makeDetails({ mpPayerId: null }))
-            );
-            setupBillingMock();
-
-            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
-
-            expect(mockDbUpdateChain.set).not.toHaveBeenCalled();
-            // HOS-234: the (previously silent) early-return now logs at WARN so a
-            // NULL mp_customer_id in prod is attributable to an absent payer_id.
-            expect(apiLogger.warn).toHaveBeenCalledWith(
-                expect.objectContaining({ customerId: 'cust-1' }),
-                expect.stringContaining('no payer_id')
-            );
-        });
-
-        it('is a no-op (warns, does not throw) when the local customer row is not found', async () => {
-            subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1' }];
-            dedupeResult.rows = [];
-            customerLookupResult.rows = [];
-            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(
-                fetchOk(makeDetails({ mpPayerId: 'mp-payer-abc' }))
-            );
-            setupBillingMock();
-
-            await expect(
-                handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent())
-            ).resolves.toBeUndefined();
-
-            expect(mockDbUpdateChain.set).not.toHaveBeenCalled();
-            expect(markEventProcessedByProviderId).toHaveBeenCalled();
-        });
-
-        it('soft-fails (does not break the webhook) when the customer lookup throws', async () => {
-            // The handler resolves `getDb()` freshly in each of its three
-            // helpers (subscription lookup, dedupe lookup, mp_customer_id
-            // back-fill). Let the first two calls behave normally via the
-            // default mock implementation, and intercept only the third
-            // (backfillMpCustomerId's) to throw — isolating the soft-fail to
-            // that single step, mirroring the "DB throws" test pattern above.
-            subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1' }];
-            dedupeResult.rows = [];
-            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(
-                fetchOk(makeDetails({ mpPayerId: 'mp-payer-abc' }))
-            );
-            setupBillingMock();
-
-            const { getDb } = await import('@repo/db');
-            const defaultImpl = vi.mocked(getDb).getMockImplementation();
-            if (!defaultImpl) throw new Error('getDb has no default mock implementation');
-            vi.mocked(getDb).mockReturnValueOnce(defaultImpl());
-            vi.mocked(getDb).mockReturnValueOnce(defaultImpl());
-            vi.mocked(getDb).mockReturnValueOnce({
-                select: vi.fn(() => {
-                    throw new Error('customer lookup DB down');
-                }),
-                update: vi.fn(() => mockDbUpdateChain)
-            } as never);
-
-            await expect(
-                handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent())
-            ).resolves.toBeUndefined();
-
-            expect(mockDbUpdateChain.set).not.toHaveBeenCalled();
-            // The payment itself still recorded and the event is still ACKed —
-            // a back-fill failure must never turn into a retry storm.
-            expect(markEventProcessedByProviderId).toHaveBeenCalled();
-        });
-
-        it('soft-fails (does not break the webhook) when the update itself throws', async () => {
-            subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1' }];
-            dedupeResult.rows = [];
-            customerLookupResult.rows = [{ mpCustomerId: null }];
-            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(
-                fetchOk(makeDetails({ mpPayerId: 'mp-payer-abc' }))
-            );
-            setupBillingMock();
-            mockDbUpdateChain.where.mockRejectedValueOnce(new Error('update failed'));
-
-            await expect(
-                handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent())
-            ).resolves.toBeUndefined();
-
             expect(markEventProcessedByProviderId).toHaveBeenCalled();
         });
     });
