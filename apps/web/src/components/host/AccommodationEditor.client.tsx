@@ -109,9 +109,25 @@ export const AccommodationEditFormSchema = AccommodationUpdateHttpSchema.extend(
         .min(30, { message: 'zodError.accommodation.description.min' })
         .max(2000, { message: 'zodError.accommodation.description.max' })
         .optional(),
-    latitude: z.number().min(-90).max(90).nullable().optional(),
-    longitude: z.number().min(-180).max(180).nullable().optional(),
-    maxGuests: z.number().int().min(1).max(200).nullable().optional(),
+    latitude: z
+        .number()
+        .min(-90, { message: 'zodError.accommodation.location.coordinates.lat.min' })
+        .max(90, { message: 'zodError.accommodation.location.coordinates.lat.max' })
+        .nullable()
+        .optional(),
+    longitude: z
+        .number()
+        .min(-180, { message: 'zodError.accommodation.location.coordinates.long.min' })
+        .max(180, { message: 'zodError.accommodation.location.coordinates.long.max' })
+        .nullable()
+        .optional(),
+    maxGuests: z
+        .number()
+        .int()
+        .min(1, { message: 'zodError.accommodation.extraInfo.capacity.min' })
+        .max(200, { message: 'zodError.accommodation.extraInfo.capacity.max' })
+        .nullable()
+        .optional(),
     bedrooms: z
         .number()
         .int()

@@ -145,6 +145,88 @@ describe('AccommodationCreateHttpSchema — capacity validation message keys (HO
     });
 });
 
+describe('AccommodationCreateHttpSchema — sibling numeric field validation message keys (HOS-251)', () => {
+    // Same regression as HOS-243 above, extended to the sibling numeric fields
+    // (maxGuests, latitude, longitude, basePrice) left un-messaged in that fix.
+    const findIssueMessage = (
+        result: ReturnType<typeof AccommodationCreateHttpSchema.safeParse>,
+        field: string
+    ): string | undefined =>
+        result.success
+            ? undefined
+            : result.error.issues.find((issue) => issue.path[0] === field)?.message;
+
+    it('emits the extraInfo.capacity.min key when maxGuests is below 1', () => {
+        const result = AccommodationCreateHttpSchema.safeParse({
+            ...baseCreatePayload,
+            maxGuests: 0
+        });
+        expect(findIssueMessage(result, 'maxGuests')).toBe(
+            'zodError.accommodation.extraInfo.capacity.min'
+        );
+    });
+
+    it('emits the extraInfo.capacity.max key when maxGuests is above 200', () => {
+        const result = AccommodationCreateHttpSchema.safeParse({
+            ...baseCreatePayload,
+            maxGuests: 201
+        });
+        expect(findIssueMessage(result, 'maxGuests')).toBe(
+            'zodError.accommodation.extraInfo.capacity.max'
+        );
+    });
+
+    it('emits the location.coordinates.lat.min key when latitude is below -90', () => {
+        const result = AccommodationCreateHttpSchema.safeParse({
+            ...baseCreatePayload,
+            latitude: -91
+        });
+        expect(findIssueMessage(result, 'latitude')).toBe(
+            'zodError.accommodation.location.coordinates.lat.min'
+        );
+    });
+
+    it('emits the location.coordinates.lat.max key when latitude is above 90', () => {
+        const result = AccommodationCreateHttpSchema.safeParse({
+            ...baseCreatePayload,
+            latitude: 91
+        });
+        expect(findIssueMessage(result, 'latitude')).toBe(
+            'zodError.accommodation.location.coordinates.lat.max'
+        );
+    });
+
+    it('emits the location.coordinates.long.min key when longitude is below -180', () => {
+        const result = AccommodationCreateHttpSchema.safeParse({
+            ...baseCreatePayload,
+            longitude: -181
+        });
+        expect(findIssueMessage(result, 'longitude')).toBe(
+            'zodError.accommodation.location.coordinates.long.min'
+        );
+    });
+
+    it('emits the location.coordinates.long.max key when longitude is above 180', () => {
+        const result = AccommodationCreateHttpSchema.safeParse({
+            ...baseCreatePayload,
+            longitude: 181
+        });
+        expect(findIssueMessage(result, 'longitude')).toBe(
+            'zodError.accommodation.location.coordinates.long.max'
+        );
+    });
+
+    it('emits the price.price.min key when basePrice is below 0', () => {
+        const result = AccommodationCreateHttpSchema.safeParse({
+            ...baseCreatePayload,
+            basePrice: -1
+        });
+        expect(findIssueMessage(result, 'basePrice')).toBe(
+            'zodError.accommodation.price.price.min'
+        );
+    });
+});
+
 // ---------------------------------------------------------------------------
 // socialNetworks — HTTP schema parsing
 // ---------------------------------------------------------------------------

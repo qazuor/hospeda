@@ -274,7 +274,7 @@ export function PlanPurchaseButton({
     // (a hardcoded id would collide across cards and break <label htmlFor>).
     const promoInputId = useId();
 
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
 
     const isAuthenticated = !sessionPending && Boolean(session?.user);
     const hasAnnual = annualPrice !== null && annualPrice > 0;
@@ -570,10 +570,9 @@ export function PlanPurchaseButton({
         }
 
         if (effectKind === 'trial_extension' && extraDays !== null) {
-            return t(
-                'billing.checkout.promoApply.trialExtension',
-                '{{days}} días de prueba gratis adicionales'
-            ).replace('{{days}}', String(extraDays));
+            return tPlural('billing.checkout.promoApply.trialExtension', extraDays, {
+                days: extraDays
+            });
         }
 
         if (effectKind === 'discount') {
@@ -585,20 +584,10 @@ export function PlanPurchaseButton({
                         '{{percent}}% de descuento para siempre'
                     ).replace('{{percent}}', String(value));
                 }
-                if (months === 1) {
-                    return t(
-                        'billing.checkout.promoApply.discountPercentCycle',
-                        '{{percent}}% de descuento por {{months}} mes'
-                    )
-                        .replace('{{percent}}', String(value))
-                        .replace('{{months}}', String(months));
-                }
-                return t(
-                    'billing.checkout.promoApply.discountPercentCycles',
-                    '{{percent}}% de descuento por {{months}} meses'
-                )
-                    .replace('{{percent}}', String(value))
-                    .replace('{{months}}', String(months));
+                return tPlural('billing.checkout.promoApply.discountPercentCycle', months, {
+                    percent: value,
+                    months
+                });
             }
             if (valueKind === 'fixed' && value !== null) {
                 // `value` is the discount amount in centavos — the copy reads
@@ -612,20 +601,10 @@ export function PlanPurchaseButton({
                         '${{amount}} de descuento para siempre'
                     ).replace('{{amount}}', displayAmount);
                 }
-                if (months === 1) {
-                    return t(
-                        'billing.checkout.promoApply.discountFixedCycle',
-                        '${{amount}} de descuento por {{months}} mes'
-                    )
-                        .replace('{{amount}}', displayAmount)
-                        .replace('{{months}}', String(months));
-                }
-                return t(
-                    'billing.checkout.promoApply.discountFixedCycles',
-                    '${{amount}} de descuento por {{months}} meses'
-                )
-                    .replace('{{amount}}', displayAmount)
-                    .replace('{{months}}', String(months));
+                return tPlural('billing.checkout.promoApply.discountFixedCycle', months, {
+                    amount: displayAmount,
+                    months
+                });
             }
         }
 
