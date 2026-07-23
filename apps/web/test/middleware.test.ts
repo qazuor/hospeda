@@ -135,6 +135,9 @@ describe('middleware onRequest — 410 Gone rewrite keeps the 410 status (soft-d
         expect(result).toBeInstanceOf(Response);
         expect((result as Response).status).toBe(410);
         expect(context.rewrite).toHaveBeenCalledWith('/404');
+        // Body must be the /404 chrome, not empty — a regression that forces the
+        // 410 status but drops `rendered.body` would reintroduce the blank-page bug.
+        expect(await (result as Response).text()).toBe('<html>chrome</html>');
     });
 });
 
