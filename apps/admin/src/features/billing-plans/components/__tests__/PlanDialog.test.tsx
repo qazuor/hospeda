@@ -167,7 +167,9 @@ describe('PlanDialog — price-change impact toast (HOS-176)', () => {
         const infoMessages = addToastMock.mock.calls
             .filter((c) => (c[0] as { variant?: string }).variant === 'info')
             .map((c) => (c[0] as { message: string }).message);
-        // Branch selection is per-effect: increase for the monthly, decrease for the annual.
+        // Both direction branches are exercised — one toast selects the increase message
+        // key, one the decrease. (The unit env renders raw i18n keys, which don't surface the
+        // interval, so this asserts branch coverage, not the interval↔direction pairing.)
         expect(infoMessages.some((m) => m.includes('priceChangeImpactIncrease'))).toBe(true);
         expect(infoMessages.some((m) => m.includes('priceChangeImpactDecrease'))).toBe(true);
     });

@@ -295,8 +295,9 @@ export const PlanPriceChangeEffectSchema = z.object({
      */
     effectiveAt: z.string().datetime(),
     /**
-     * Approximate count of live subscribers (with an MP preapproval) on the plan the change
-     * will re-price. Plan-wide, not interval-scoped — the exact set is resolved by the cron.
+     * Approximate count of live subscribers (with an MP preapproval) the change will
+     * re-price — scoped to this effect's `billingInterval` (a monthly change does not count
+     * annual subscribers, and vice-versa). The exact set is resolved by the cron at apply time.
      */
     affectedSubscriberCount: z.number().int().nonnegative()
 });

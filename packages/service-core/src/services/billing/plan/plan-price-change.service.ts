@@ -115,6 +115,12 @@ export interface EnqueuePlanPriceChangeResult {
  * the cron matches `billing_interval` at apply time, HOS-176). Still an approximation of the
  * exact apply-time set (an increase further excludes trialing subs — D-4).
  *
+ * `billing_subscriptions.billing_interval` stores `'month'`/`'year'` (the storage values —
+ * `'monthly'`/`'annual'` are API labels only, per CLAUDE.md), matching the enqueued
+ * `billingInterval`. This predicate mirrors the cron's `findAffectedSubscribers` exactly, so
+ * a subscriber with a NULL `billing_interval` is excluded from BOTH the count and the cron's
+ * re-price set — consistent by construction, not a drift.
+ *
  * @param db - Drizzle client (transaction or root).
  * @param planId - The plan UUID (`billing_subscriptions.plan_id` stores it as varchar).
  * @param billingInterval - The interval whose price changed (`month` | `year`).

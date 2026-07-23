@@ -7,7 +7,7 @@
  */
 
 import { type EntitlementKey, LIMIT_METADATA, LimitKey } from '@repo/billing';
-import { type ApiErrorShape, formatDate, type TranslationKey } from '@repo/i18n';
+import { type ApiErrorShape, formatDate, type TranslationKey, toBcp47Locale } from '@repo/i18n';
 import { LoaderIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
@@ -136,8 +136,13 @@ export function PlanDialog({
                             : t('admin-billing.plans.dialog.priceChangeImpactIncrease', {
                                   interval,
                                   subscribers,
-                                  // Localized effective date in the admin's active locale.
-                                  date: formatDate({ date: effect.effectiveAt, locale })
+                                  // Localized effective date. `useTranslations().locale` is a
+                                  // short code ('es'); formatDate wants a BCP 47 tag, and
+                                  // toBcp47Locale restores the region ('es' → 'es-AR').
+                                  date: formatDate({
+                                      date: effect.effectiveAt,
+                                      locale: toBcp47Locale(locale)
+                                  })
                               });
 
                     addToast({

@@ -21,7 +21,8 @@ vi.mock('@repo/db', () => ({
     billingSubscriptions: {
         planId: 'planId',
         status: 'status',
-        mpSubscriptionId: 'mpSubscriptionId'
+        mpSubscriptionId: 'mpSubscriptionId',
+        billingInterval: 'sub.billingInterval'
     },
     and: vi.fn((...args: unknown[]) => ({ type: 'and', args })),
     eq: vi.fn((col: unknown, val: unknown) => ({ type: 'eq', col, val })),
@@ -74,6 +75,7 @@ describe('enqueuePlanPriceChange', () => {
     const now = new Date('2026-07-22T12:00:00.000Z');
     let insertedValues: Record<string, unknown> | undefined;
     let supersedeSet: Record<string, unknown> | undefined;
+    let countWhere: unknown;
     let callOrder: string[];
 
     // Minimal chainable mock:
@@ -83,6 +85,7 @@ describe('enqueuePlanPriceChange', () => {
     function makeMockDb(affectedCount: number) {
         insertedValues = undefined;
         supersedeSet = undefined;
+        countWhere = undefined;
         callOrder = [];
         return {
             update: vi.fn(() => ({
@@ -104,7 +107,10 @@ describe('enqueuePlanPriceChange', () => {
             })),
             select: vi.fn(() => ({
                 from: vi.fn(() => ({
-                    where: vi.fn(async () => [{ n: affectedCount }])
+                    where: vi.fn(async (cond: unknown) => {
+                        countWhere = cond;
+                        return [{ n: affectedCount }];
+                    })
                 }))
             }))
         } as unknown as Parameters<typeof enqueuePlanPriceChange>[0]['db'];
@@ -161,6 +167,25 @@ describe('enqueuePlanPriceChange', () => {
         expect(result.effectiveAt.getTime()).toBe(now.getTime());
         expect(result.affectedSubscriberCount).toBe(0);
         expect(insertedValues).toMatchObject({ direction: 'decrease', status: 'pending' });
+    });
+
+    it('interval-scopes the affected count — the count query filters billing_subscriptions by the CHANGED interval (regression: a monthly change must not count annual subs)', async () => {
+        const db = makeMockDb(2);
+        await enqueuePlanPriceChange({
+            db,
+            planId: 'plan-1',
+            priceId: 'price-1',
+            billingInterval: 'month',
+            oldAmount: 1000,
+            newAmount: 1500,
+            now
+        });
+        // The count SELECT's WHERE is `and(eq(planId), eq(sub.billingInterval, 'month'), …)`.
+        // Without the interval filter (the pre-fix plan-wide bug that over-counted annual
+        // subscribers) this `eq` would be absent — deleting it must fail this test.
+        const cond = countWhere as { type: string; args: ReadonlyArray<Record<string, unknown>> };
+        expect(cond.type).toBe('and');
+        expect(cond.args).toContainEqual({ type: 'eq', col: 'sub.billingInterval', val: 'month' });
     });
 
     it('supersedes prior still-open changes (UPDATE) BEFORE inserting the new one (W2)', async () => {
