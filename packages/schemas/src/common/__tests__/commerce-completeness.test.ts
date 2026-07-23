@@ -3,14 +3,18 @@
  *
  * Unit tests for the publish-readiness ("complete") contract (HOS-166 §6.6).
  * Pure function — no DB, no mocks needed.
+ *
+ * Moved from `packages/service-core/test/services/commerce/commerce-completeness.test.ts`
+ * (HOS-166 R-5) alongside the function's relocation to `@repo/schemas`.
  */
 
-import { CommerceEntityTypeEnum, ModerationStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { CommerceEntityTypeEnum } from '../../enums/commerce-entity-type.enum.js';
+import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
 import {
     type CommerceListingCompletenessListing,
     resolveListingCompleteness
-} from '../../../src/services/commerce/commerce-completeness';
+} from '../commerce-completeness.js';
 
 // ---------------------------------------------------------------------------
 // Fixtures

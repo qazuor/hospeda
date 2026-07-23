@@ -38,13 +38,17 @@
  * @module routes/commerce/protected/start-subscription
  */
 import { experienceModel, gastronomyModel } from '@repo/db';
-import type { StartPaidSubscriptionResponse } from '@repo/schemas';
-import { PermissionEnum, StartPaidSubscriptionResponseSchema } from '@repo/schemas';
-import type { CommerceEntityType, CommerceListingCompletenessListing } from '@repo/service-core';
+import type {
+    CommerceEntityType,
+    CommerceListingCompletenessListing,
+    StartPaidSubscriptionResponse
+} from '@repo/schemas';
 import {
-    getCommerceListingSubscriptionStatus,
-    resolveListingCompleteness
-} from '@repo/service-core';
+    PermissionEnum,
+    resolveListingCompleteness,
+    StartPaidSubscriptionResponseSchema
+} from '@repo/schemas';
+import { getCommerceListingSubscriptionStatus } from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
@@ -83,6 +87,23 @@ const StartSubscriptionParamsSchema = {
     entityType: CommerceEntityTypeSchema,
     entityId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 };
+
+/**
+ * Subscription statuses (`commerce_listing_subscriptions.status`, mirroring
+ * `billing_subscriptions.status` — see `SubscriptionStatusEnum`) that
+ * indicate the listing already has a LIVE-ish subscription and must block a
+ * new checkout (AC-16 / HOS-166 judgment-day W1).
+ *
+ * `past_due` is included alongside `active`/`trialing`: a dunning
+ * subscription is still a real MercadoPago preapproval mid-retry, not a dead
+ * one, so letting the owner start a SECOND checkout here would create a
+ * second concurrent preapproval for the same listing rather than resolving
+ * the first one (the dunning flow — grace period, retries, eventual
+ * cancel/reactivate — is the correct path back to `active`). Deliberately
+ * excludes `cancelled`, `expired`, `abandoned`, and `paused` — those ARE
+ * terminal/inactive enough that a fresh checkout is the correct next step.
+ */
+const LIVE_SUBSCRIPTION_STATUSES = new Set(['active', 'trialing', 'past_due']);
 
 /**
  * Subset of the raw `gastronomies`/`experiences` row this route reads —
@@ -185,14 +206,16 @@ export async function handleCommerceStartSubscription(
         );
     }
 
-    // ── Already-subscribed guard (AC-16) — 409, never silently overwrite
-    // a paying subscription (the link table's unique index would reject a
-    // second row anyway; failing loudly here is a better error message). ───
+    // ── Already-subscribed guard (AC-16, hardened by HOS-166 judgment-day
+    // W1) — 409, never silently overwrite a live subscription (the link
+    // table's unique index would reject a second row anyway; failing loudly
+    // here is a better error message, and blocks a SECOND MercadoPago
+    // preapproval from ever being created mid-dunning). ─────────────────────
     const existingStatus = await getCommerceListingSubscriptionStatus({
         entityType,
         entityId
     });
-    if (existingStatus === 'active' || existingStatus === 'trialing') {
+    if (existingStatus !== null && LIVE_SUBSCRIPTION_STATUSES.has(existingStatus)) {
         throw new HTTPException(409, {
             message: 'This listing already has an active subscription.'
         });

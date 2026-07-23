@@ -28,11 +28,11 @@ import {
     getDb
 } from '@repo/db';
 import type { CommerceEntityType } from '@repo/schemas';
+import { resolveListingCompleteness } from '@repo/schemas';
 import {
     type CommerceEntityModel,
     type ResolveCommerceListingCompleteness,
-    reconcileCommerceListingVisibility,
-    resolveListingCompleteness
+    reconcileCommerceListingVisibility
 } from '@repo/service-core';
 import { apiLogger } from '../utils/logger.js';
 

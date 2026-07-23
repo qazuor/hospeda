@@ -49,15 +49,27 @@
         "list": {
             "title": "Mi comercio",
             "subtitle": "Gestioná la información de tus comercios publicados.",
-            "empty": "Todavía no tenés comercios asignados. Un administrador debe crear tu ficha.",
+            "empty": "Todavía no tenés comercios. Creá tu primera ficha para empezar.",
             "edit": "Editar",
             "badge": {
                 "gastronomy": "Gastronomía",
                 "experience": "Experiencia"
+            },
+            "emptyCta": "Crear mi primer comercio",
+            "createCta": "+ Nuevo comercio",
+            "state": {
+                "published": "Publicado",
+                "viewPublic": "Ver ficha pública",
+                "pendingPayment": "Pago en proceso",
+                "suspended": "Suspendido",
+                "suspendedHint": "Tu pago no pudo procesarse. Revisá tu método de pago para reactivar la publicación.",
+                "recoverCta": "Revisar mi suscripción",
+                "unknown": "Estado no disponible",
+                "draftComplete": "Borrador — listo para publicar",
+                "draftIncomplete": "Borrador — incompleto"
             }
         },
         "editor": {
-            "readOnlyNotice": "El nombre, la categoría y la ubicación los gestiona el equipo de Hospeda. Vos podés editar la información operativa.",
             "sections": {
                 "type": "Categoría",
                 "summary": "Resumen",
@@ -74,7 +86,11 @@
                 "amenities": "Servicios",
                 "features": "Características",
                 "translations": "Traducciones",
-                "faqs": "Preguntas frecuentes"
+                "faqs": "Preguntas frecuentes",
+                "name": "Nombre del comercio",
+                "destination": "Ciudad / Destino",
+                "description": "Descripción",
+                "destinationLoadError": "No pudimos cargar el listado de ciudades / destinos. Recargá la página para reintentar."
             },
             "contactField": {
                 "mobilePhone": "Teléfono",
@@ -163,7 +179,52 @@
                 "tooLarge": "El archivo no puede superar 5MB",
                 "uploadFailed": "Error al subir la imagen",
                 "capReached": "Límite de galería alcanzado (máx. {{cap}} fotos)"
-            }
+            },
+            "slugImmutableNotice": "La URL pública se genera a partir del nombre al crear el comercio y no se puede cambiar después."
+        },
+        "checklist": {
+            "field": {
+                "name": "Nombre",
+                "summary": "Resumen",
+                "description": "Descripción",
+                "destinationId": "Ciudad / Destino",
+                "ownerId": "Propietario",
+                "type": "Categoría",
+                "featuredImage": "Foto principal",
+                "contactInfo": "Un dato de contacto (teléfono o email)",
+                "openingHours": "Horarios de atención",
+                "priceRange": "Rango de precios",
+                "priceFrom": "Precio"
+            },
+            "publishCta": "Publicar y pagar",
+            "publishing": "Iniciando pago...",
+            "incompleteError": "Todavía faltan datos para publicar.",
+            "alreadySubscribedError": "Este comercio ya tiene una suscripción activa.",
+            "checkoutError": "No pudimos iniciar el pago. Probá de nuevo."
+        },
+        "create": {
+            "pickVertical": {
+                "title": "Crear nuevo comercio",
+                "subtitle": "Elegí qué tipo de comercio querés publicar.",
+                "gastronomyDescription": "Restaurantes, bares, cafés y otros locales gastronómicos.",
+                "experienceDescription": "Tours, excursiones, alquileres y otras experiencias."
+            },
+            "title": {
+                "gastronomy": "Crear ficha de gastronomía",
+                "experience": "Crear ficha de experiencia"
+            },
+            "subtitle": "Completá lo básico ahora — vas a poder sumar fotos, horarios y más detalles después.",
+            "fields": {
+                "name": "Nombre del comercio",
+                "type": "Categoría",
+                "summary": "Resumen",
+                "description": "Descripción",
+                "destination": "Ciudad / Destino",
+                "destinationLoadError": "No pudimos cargar el listado de ciudades / destinos. Recargá la página para reintentar."
+            },
+            "submit": "Crear comercio",
+            "submitting": "Creando...",
+            "error": "No pudimos crear el comercio. Probá de nuevo."
         }
     }
 }

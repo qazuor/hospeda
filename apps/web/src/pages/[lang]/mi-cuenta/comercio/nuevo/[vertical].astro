@@ -1,0 +1,85 @@
+---
+/**
+ * @file mi-cuenta/comercio/nuevo/[vertical].astro
+ * @description Owner self-service commerce-listing create page (HOS-166
+ * §7.2, §8 point 2). Fetches the destination catalog SSR (mirrors
+ * `publicar-restaurante/index.astro`) and mounts `CommerceCreateForm`.
+ *
+ * D-4 (HOS-166 §6.1): this page never reads the commerce-leads DB table — there is no
+ * protected "my lead" read endpoint (see `CommerceCreateForm.client.tsx`'s
+ * module doc). `CommerceCreateForm` accepts an optional `prefill.name`
+ * sourced from the owner's own profile, but this page deliberately does NOT
+ * pass `Astro.locals.user.name` into it: that field is the owner's PERSONAL
+ * name, not their business name, and forcing it into the listing-name input
+ * would plant actively wrong data the owner would have to notice and
+ * overwrite — worse than leaving the field empty. The form renders fully
+ * empty and equally usable for every owner regardless of lead history
+ * (AC-10/AC-11).
+ *
+ * @route     /[lang]/mi-cuenta/comercio/nuevo/[vertical]/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped)
+ */
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import { CommerceCreateForm } from '@/components/commerce/CommerceCreateForm.client';
+import { isCommerceOwnerRole } from '@/lib/account-roles';
+import type { CommerceVertical } from '@/lib/commerce/owner-listings';
+import { destinationsApi } from '@/lib/api/endpoints';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+if (!isCommerceOwnerRole(user.role)) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+}
+
+const verticalParam = Astro.params.vertical;
+const isVertical = verticalParam === 'gastronomy' || verticalParam === 'experience';
+if (!isVertical) {
+    return new Response(null, { status: 404 });
+}
+const vertical = verticalParam as CommerceVertical;
+
+const title =
+    vertical === 'gastronomy'
+        ? t('commerce.owner.create.title.gastronomy', 'Crear ficha de gastronomía')
+        : t('commerce.owner.create.title.experience', 'Crear ficha de experiencia');
+const subtitle = t(
+    'commerce.owner.create.subtitle',
+    'Completá lo básico ahora — vas a poder sumar fotos, horarios y más detalles después.'
+);
+
+const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 });
+const destinations = destinationsResult.ok
+    ? destinationsResult.data.items.map((item) => ({ id: item.id, name: item.name }))
+    : [];
+// HOS-166 judgment-day fix: distinguish "the catalog fetch failed" from "the
+// catalog genuinely has zero destinations" so the form can surface an error
+// instead of silently omitting a REQUIRED completeness field — see
+// `CommerceCreateForm`'s `destinationsLoadFailed` prop doc.
+const destinationsLoadFailed = !destinationsResult.ok;
+---
+
+<AccountLayout locale={locale} title={title} description={subtitle} activeSection="comercio">
+    <AccountPageHeader title={title} description={subtitle} />
+
+    <AccountSectionCard>
+        <CommerceCreateForm
+            client:load
+            vertical={vertical}
+            locale={locale}
+            destinations={destinations}
+            destinationsLoadFailed={destinationsLoadFailed}
+        />
+    </AccountSectionCard>
+</AccountLayout>

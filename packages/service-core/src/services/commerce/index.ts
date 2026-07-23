@@ -30,12 +30,11 @@ export {
     checkCanViewAll
 } from './commerce.permissions';
 export type { CommerceEntityType, CommerceListingHookState } from './commerce.types';
-export {
-    type CommerceListingCompletenessListing,
-    type ResolveListingCompletenessInput,
-    type ResolveListingCompletenessResult,
-    resolveListingCompleteness
-} from './commerce-completeness';
+// NOTE (HOS-166 R-5): `resolveListingCompleteness` and its types moved to
+// `@repo/schemas` (`packages/schemas/src/common/commerce-completeness.ts`) —
+// it is a PURE function with no DB/service-core-specific imports, and the web
+// app needs to call it without pulling in service-core's DB dependency.
+// Import it directly from `@repo/schemas` instead of re-exporting it here.
 export {
     CommerceLeadService,
     type LeadNotificationPort,
@@ -53,6 +52,7 @@ export {
 export {
     type CommerceEntityModel,
     getCommerceListingSubscriptionStatus,
+    getCommerceListingSubscriptionStatuses,
     type ReconcileCommerceListingVisibilityInput,
     type ReconcileCommerceListingVisibilityResult,
     type ResolveCommerceListingCompleteness,

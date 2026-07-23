@@ -88,13 +88,26 @@ const galleryImage = {
     moderationState: 'APPROVED' as const
 };
 
+// destinationId is `.uuid()`-validated on the domain schema (mirrors the
+// amenityIds/featureIds UUID requirement in the seeding test below) — use
+// UUID-shaped fixture ids throughout, not short human-readable ones.
+const DESTINATION_1 = '11111111-1111-4111-8111-111111111111';
+const DESTINATION_2 = '22222222-2222-4222-8222-222222222222';
+
 const baseData = {
     id: 'abc',
     ownerId: 'owner-1',
     name: 'La Parrilla',
     slug: 'la-parrilla',
+    destinationId: DESTINATION_1,
+    description: 'Descripción original con suficiente longitud para pasar validación.',
     richDescription: 'old text'
 } as unknown as CommerceListingDetail;
+
+const destinationOptions = [
+    { id: DESTINATION_1, name: 'Concepción del Uruguay' },
+    { id: DESTINATION_2, name: 'Colón' }
+];
 
 function renderEditor(vertical: 'gastronomy' | 'experience') {
     return render(
@@ -404,6 +417,161 @@ describe('CommerceListingEditor', () => {
         };
         expect(body.amenityIds).toEqual([AMENITY_A1, AMENITY_A2]);
         expect(body.featureIds).toEqual([FEATURE_F1]);
+    });
+
+    describe('D-1 identity fields (name/destinationId/description) — HOS-166', () => {
+        it('renders name, destinationId, and description seeded from initialData', () => {
+            render(
+                <CommerceListingEditor
+                    vertical="gastronomy"
+                    listingId="abc"
+                    locale="es"
+                    initialData={baseData}
+                    destinations={destinationOptions}
+                />
+            );
+
+            expect(screen.getByLabelText('Nombre del comercio')).toHaveValue('La Parrilla');
+            expect(screen.getByLabelText('Ciudad / Destino')).toHaveValue(DESTINATION_1);
+            expect(screen.getByLabelText('Descripción')).toHaveValue(
+                'Descripción original con suficiente longitud para pasar validación.'
+            );
+        });
+
+        it('dirty-tracks name and PATCHes only name when changed', async () => {
+            mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+            render(
+                <CommerceListingEditor
+                    vertical="gastronomy"
+                    listingId="abc"
+                    locale="es"
+                    initialData={baseData}
+                    destinations={destinationOptions}
+                />
+            );
+
+            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
+                target: { value: 'La Nueva Parrilla' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+            await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+            expect(mockPatch).toHaveBeenCalledWith({
+                path: '/api/v1/protected/gastronomies/abc',
+                body: { name: 'La Nueva Parrilla' }
+            });
+        });
+
+        it('dirty-tracks destinationId and PATCHes only destinationId when changed', async () => {
+            mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+            render(
+                <CommerceListingEditor
+                    vertical="gastronomy"
+                    listingId="abc"
+                    locale="es"
+                    initialData={baseData}
+                    destinations={destinationOptions}
+                />
+            );
+
+            fireEvent.change(screen.getByLabelText('Ciudad / Destino'), {
+                target: { value: DESTINATION_2 }
+            });
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+            await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+            expect(mockPatch).toHaveBeenCalledWith({
+                path: '/api/v1/protected/gastronomies/abc',
+                body: { destinationId: DESTINATION_2 }
+            });
+        });
+
+        it('dirty-tracks description and PATCHes only description when changed (AC-19)', async () => {
+            mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+            render(
+                <CommerceListingEditor
+                    vertical="gastronomy"
+                    listingId="abc"
+                    locale="es"
+                    initialData={baseData}
+                    destinations={destinationOptions}
+                />
+            );
+
+            fireEvent.change(screen.getByLabelText('Descripción'), {
+                target: { value: 'Una descripción completamente nueva y suficientemente larga.' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+            await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+            expect(mockPatch).toHaveBeenCalledWith({
+                path: '/api/v1/protected/gastronomies/abc',
+                body: {
+                    description: 'Una descripción completamente nueva y suficientemente larga.'
+                }
+            });
+        });
+
+        it('control fields (visibility/lifecycleState/moderationState/isFeatured/ownerId) stay absent from the payload', async () => {
+            mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+            render(
+                <CommerceListingEditor
+                    vertical="gastronomy"
+                    listingId="abc"
+                    locale="es"
+                    initialData={baseData}
+                    destinations={destinationOptions}
+                />
+            );
+
+            fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
+                target: { value: 'Otro nombre' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+            await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+            const body = mockPatch.mock.calls[0]?.[0]?.body as Record<string, unknown>;
+            expect(body).not.toHaveProperty('visibility');
+            expect(body).not.toHaveProperty('lifecycleState');
+            expect(body).not.toHaveProperty('moderationState');
+            expect(body).not.toHaveProperty('isFeatured');
+            expect(body).not.toHaveProperty('ownerId');
+        });
+    });
+
+    describe('destinationsLoadFailed (judgment-day fix)', () => {
+        it('shows an error message instead of silently hiding the destination select', () => {
+            render(
+                <CommerceListingEditor
+                    vertical="gastronomy"
+                    listingId="abc"
+                    locale="es"
+                    initialData={baseData}
+                    destinations={[]}
+                    destinationsLoadFailed
+                />
+            );
+
+            expect(screen.getByRole('alert')).toHaveTextContent(
+                'No pudimos cargar el listado de ciudades / destinos.'
+            );
+            expect(screen.queryByLabelText('Ciudad / Destino')).not.toBeInTheDocument();
+        });
+
+        it('renders nothing extra when destinations legitimately loaded empty and no failure occurred', () => {
+            render(
+                <CommerceListingEditor
+                    vertical="gastronomy"
+                    listingId="abc"
+                    locale="es"
+                    initialData={baseData}
+                    destinations={[]}
+                />
+            );
+
+            expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+            expect(screen.queryByLabelText('Ciudad / Destino')).not.toBeInTheDocument();
+        });
     });
 
     it('removes a gallery image (best-effort delete) and PATCHes the trimmed gallery', async () => {

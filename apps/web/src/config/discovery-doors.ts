@@ -130,10 +130,15 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 i18nKey: 'account.doors.publish.options.gastronomy.title',
                 descriptionI18nKey: 'account.doors.publish.options.gastronomy.description',
                 icon: ForkKnifeIcon,
-                // Gastronomy and experience are both admin-provisioned, NOT
-                // instant self-service — these are LEAD forms, not publish
-                // flows (see each option's `cta` copy, which asks the user to
-                // leave their info rather than implying an immediate listing).
+                // HOS-166: the door's `href` still points at the lead form
+                // (`publicar-restaurante`) — an admin still approves the lead
+                // and provisions the owner account (D-4, the lead is a DOOR).
+                // But once acquired (COMMERCE_EDIT_OWN), `manageHref` below
+                // goes to `mi-cuenta/comercio`, which is now a REAL
+                // self-service publish flow (create → complete → checklist →
+                // publish + pay), not admin-provisioned end to end. Do not
+                // "restore" the old "these are lead forms, not publish flows"
+                // framing — that is the exact premise HOS-166 removed.
                 href: 'publicar-restaurante',
                 ctaI18nKey: 'account.doors.publish.options.gastronomy.cta',
                 acquiredPermission: PermissionEnum.COMMERCE_EDIT_OWN,
@@ -144,7 +149,8 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 i18nKey: 'account.doors.publish.options.experience.title',
                 descriptionI18nKey: 'account.doors.publish.options.experience.description',
                 icon: CompassIcon,
-                // See the `gastronomy` option above — same lead-form nature.
+                // See the `gastronomy` option above (HOS-166) — same lead-door,
+                // real-self-service-once-acquired shape.
                 href: 'publicar-experiencia',
                 ctaI18nKey: 'account.doors.publish.options.experience.cta',
                 acquiredPermission: PermissionEnum.COMMERCE_EDIT_OWN,
