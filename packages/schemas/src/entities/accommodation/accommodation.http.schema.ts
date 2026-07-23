@@ -217,15 +217,25 @@ export const AccommodationCreateHttpSchema = z.object({
         .optional(),
     type: AccommodationTypeEnumSchema,
     address: z.string().min(1, { message: 'zodError.accommodation.address.required' }).max(500),
-    latitude: z.coerce.number().min(-90).max(90),
-    longitude: z.coerce.number().min(-180).max(180),
+    latitude: z.coerce
+        .number()
+        .min(-90, { message: 'zodError.accommodation.location.coordinates.lat.min' })
+        .max(90, { message: 'zodError.accommodation.location.coordinates.lat.max' }),
+    longitude: z.coerce
+        .number()
+        .min(-180, { message: 'zodError.accommodation.location.coordinates.long.min' })
+        .max(180, { message: 'zodError.accommodation.location.coordinates.long.max' }),
 
     // Capacity
     // High technical ceilings so large accommodations (hotels, multi-unit
     // complexes) are accepted. The domain schema imposes no max; these caps are
     // anti-abuse guards, not product limits. Per-unit capacity modelling for
     // hotels/complexes is tracked as a dedicated follow-up spec.
-    maxGuests: z.coerce.number().int().min(1).max(200),
+    maxGuests: z.coerce
+        .number()
+        .int()
+        .min(1, { message: 'zodError.accommodation.extraInfo.capacity.min' })
+        .max(200, { message: 'zodError.accommodation.extraInfo.capacity.max' }),
     bedrooms: z.coerce
         .number()
         .int()
@@ -238,7 +248,7 @@ export const AccommodationCreateHttpSchema = z.object({
         .max(100, { message: 'zodError.accommodation.extraInfo.bathrooms.max' }),
 
     // Pricing
-    basePrice: z.coerce.number().min(0),
+    basePrice: z.coerce.number().min(0, { message: 'zodError.accommodation.price.price.min' }),
     currency: PriceCurrencyEnumSchema.default(PriceCurrencyEnum.USD),
 
     // Boolean properties
