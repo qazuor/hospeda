@@ -4,7 +4,7 @@
  * Follows the pattern of other service permission helpers.
  */
 import type { Event } from '@repo/schemas';
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import { type Actor, ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
 
@@ -58,6 +58,27 @@ export function checkCanRestoreEvent(actor: Actor): void {
  */
 export function checkCanViewEvent(actor: Actor, event: Event): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+
+    // Soft-deleted events existed but are permanently gone. The base model's
+    // findOneWithRelations does not filter deleted_at IS NULL, so this check
+    // enforces it here to prevent ghost rows from leaking on public reads. Only
+    // events that were PUBLIC (indexable) surface as GONE (410) so crawlers/LLM
+    // fetchers deindex the URL fast; deleted PRIVATE/DRAFT content that was
+    // never public returns NOT_FOUND (404, uniform) to preserve the
+    // anti-enumeration contract (SPEC-092 T-087). Staff with EVENT_VIEW_ALL are
+    // exempt: events have no separate admin-view bypass, so admin/getById relies
+    // on this same check to manage deleted rows. HOS-117 T-022.
+    if (
+        event.deletedAt !== null &&
+        event.deletedAt !== undefined &&
+        !hasPermission(actor, PermissionEnum.EVENT_VIEW_ALL)
+    ) {
+        if (event.visibility === VisibilityEnum.PUBLIC) {
+            throw new ServiceError(ServiceErrorCode.GONE, 'Event is gone');
+        }
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Event not found');
+    }
+
     // Public events: anyone can view
     if (event.visibility === 'PUBLIC') return;
     // Private/draft: only with permission

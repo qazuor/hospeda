@@ -13,6 +13,28 @@ import { hasPermission } from '../../utils/permission';
  */
 export function checkCanViewDestination(actor: Actor, entity: Destination): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
+
+    // Soft-deleted destinations existed but are permanently gone. The base
+    // model's findOneWithRelations does not filter deleted_at IS NULL, so this
+    // check enforces it here to prevent ghost rows from leaking on public
+    // reads. Only destinations that were PUBLIC (indexable) surface as GONE
+    // (410) so crawlers/LLM fetchers deindex the URL fast; deleted
+    // PRIVATE/RESTRICTED content that was never public returns NOT_FOUND (404,
+    // uniform) to preserve the anti-enumeration contract (SPEC-092 T-087).
+    // Staff with DESTINATION_VIEW_ALL are exempt: destinations have no
+    // separate admin-view bypass, so admin/getById relies on this same check
+    // to manage deleted rows. HOS-117 T-022.
+    if (
+        entity.deletedAt !== null &&
+        entity.deletedAt !== undefined &&
+        !hasPermission(actor, PermissionEnum.DESTINATION_VIEW_ALL)
+    ) {
+        if (entity.visibility === VisibilityEnum.PUBLIC) {
+            throw new ServiceError(ServiceErrorCode.GONE, 'Destination is gone');
+        }
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
+    }
+
     if (
         entity.visibility === VisibilityEnum.PUBLIC ||
         hasPermission(actor, PermissionEnum.DESTINATION_VIEW_PRIVATE) ||
