@@ -284,6 +284,14 @@ export interface SubscriptionData {
     readonly planSlug: string;
     readonly planName: string;
     readonly status: SubscriptionStatus;
+    /**
+     * True when the subscription is complimentary (`comp`, SPEC-262) — an
+     * admin-granted, never-charged, permanent plan surfaced with `status:
+     * 'active'`. The UI hides the self-service Cancel / Pause / Change-plan
+     * actions when this is true, since the backend rejects all three for a comp
+     * (there is no MP preapproval to act on). HOS-242.
+     */
+    readonly isComplimentary: boolean;
     readonly currentPeriodStart: string | null;
     readonly currentPeriodEnd: string | null;
     readonly cancelAtPeriodEnd: boolean;
@@ -372,19 +380,29 @@ export const userApi = {
      * Get the authenticated user's current subscription details.
      *
      * @param params - Optional SSR cookie header (see {@link protectedConversationsApi.list})
+     *   plus an optional `productDomain` (HOS-259) to scope which of the
+     *   caller's subscriptions to resolve when they hold more than one under
+     *   the same billing customer (e.g. an accommodation host who also owns
+     *   a commerce listing). Defaults to `'accommodation'` server-side when
+     *   omitted — matches every pre-existing caller's behaviour.
      * @returns Current subscription data or null if no active subscription
      *
      * @example
      * ```ts
      * const result = await userApi.getSubscription();
      * if (result.ok && result.data.subscription) { ... }
+     *
+     * // Scope to the commerce subscription instead:
+     * const commerce = await userApi.getSubscription({ productDomain: 'commerce' });
      * ```
      */
     getSubscription(params?: {
         readonly cookieHeader?: string;
+        readonly productDomain?: 'accommodation' | 'commerce';
     }): Promise<ApiResult<{ readonly subscription: SubscriptionData | null }>> {
         return apiClient.getProtected({
             path: `${PROTECTED}/users/me/subscription`,
+            params: params?.productDomain ? { productDomain: params.productDomain } : undefined,
             cookieHeader: params?.cookieHeader
         });
     },
@@ -612,6 +630,29 @@ export const billingApi = {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/subscriptions/${subscriptionId}/cancel`,
             body: { reason }
+        });
+    },
+
+    /**
+     * Un-cancel (reverse a soft-cancel) the authenticated user's subscription
+     * (HOS-232). While still inside the access window (`cancelAtPeriodEnd = true`),
+     * this clears the pending cancellation and re-authorizes the MercadoPago
+     * preapproval — no new checkout and no charge. The mirror of
+     * {@link cancelSubscription}. Idempotent.
+     *
+     * Calls `POST /subscriptions/:id/uncancel`.
+     *
+     * @param params - Subscription ID.
+     * @returns `{ subscriptionId, cancelAtPeriodEnd: false }` on success.
+     */
+    uncancelSubscription({
+        subscriptionId
+    }: {
+        readonly subscriptionId: string;
+    }): Promise<ApiResult<{ subscriptionId: string; cancelAtPeriodEnd: false }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/subscriptions/${subscriptionId}/uncancel`,
+            body: {}
         });
     },
 
@@ -2017,6 +2058,44 @@ export const protectedAccommodationsApi = {
         readonly id: string;
     }): Promise<ApiResult<AccommodationContactResponse>> {
         return apiClient.getProtected({ path: `${PROTECTED}/accommodations/${id}/contact` });
+    },
+
+    /**
+     * Get the accommodation's WhatsApp contact number, gated by the CALLER's
+     * (viewer's) billing plan (HOS-19).
+     *
+     * - `number`: the WhatsApp number, present ONLY when the caller has
+     *   `CAN_CONTACT_WHATSAPP_DISPLAY` (tourist-plus+) AND the owner set one;
+     *   `null` otherwise (never leaked to unentitled callers).
+     * - `direct`: `true` when the caller also has `CAN_CONTACT_WHATSAPP_DIRECT`
+     *   (tourist-vip+) — authorizes rendering a one-click `wa.me` deep link.
+     * - `entitled`: whether the caller has the DISPLAY entitlement — lets the
+     *   web decide between rendering the number vs an upsell.
+     *
+     * Lives on the protected (per-user, no-store) tier on purpose: the public
+     * detail payload is shared-cached, so the number cannot ride it safely.
+     *
+     * @param params - Accommodation ID + optional SSR cookie header.
+     * @returns `{ number, direct, entitled }`.
+     */
+    getWhatsApp({
+        id,
+        cookieHeader
+    }: {
+        readonly id: string;
+        /** SSR-only: raw `Cookie` header so the request carries the session. */
+        readonly cookieHeader?: string;
+    }): Promise<
+        ApiResult<{
+            readonly number: string | null;
+            readonly direct: boolean;
+            readonly entitled: boolean;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/${id}/whatsapp`,
+            cookieHeader
+        });
     },
 
     /**

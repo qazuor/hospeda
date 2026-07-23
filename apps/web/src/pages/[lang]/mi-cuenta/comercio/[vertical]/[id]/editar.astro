@@ -1,9 +1,13 @@
 ---
 /**
  * @file mi-cuenta/comercio/[vertical]/[id]/editar.astro
- * @description Operational editor for one commerce listing owned by the
- * authenticated COMMERCE_OWNER (SPEC-249 Part A). Shows identity/core fields
- * read-only and mounts the editor island for the operational fields.
+ * @description Operational + identity editor for one commerce listing owned
+ * by the authenticated COMMERCE_OWNER (SPEC-249 Part A). Mounts the editor
+ * island, which now ALSO covers `name`/`destinationId` (HOS-166 D-1 — SPEC-239
+ * decision #5 reversed: the owner loads their own identity). `slug` stays
+ * shown read-only in the page header — it is server-derived at create time
+ * and immutable post-create (HOS-166 OQ-3), the one identity field that did
+ * NOT flip owner-editable.
  *
  * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
@@ -13,6 +17,7 @@ import type { CommerceFaq } from '@/components/commerce/CommerceFaqManager.clien
 import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import { destinationsApi } from '@/lib/api/endpoints';
 import { transformAmenityList } from '@/lib/api/transforms';
 import { isCommerceOwnerRole } from '@/lib/account-roles';
 import {
@@ -83,9 +88,22 @@ try {
     // Catalog unavailable — the editor renders without the amenities/features group.
 }
 
+// HOS-166 D-1: `name`/`destinationId` are now owner-editable (SPEC-239
+// decision #5 reversed — see gastronomy.crud.schema.ts's JSDoc), so the
+// destination catalog is needed here too, mirroring
+// `publicar-restaurante/index.astro` and the create page.
+const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 });
+const destinations = destinationsResult.ok
+    ? destinationsResult.data.items.map((item) => ({ id: item.id, name: item.name }))
+    : [];
+// HOS-166 judgment-day fix: distinguish "the catalog fetch failed" from "the
+// catalog genuinely has zero destinations" so the editor can surface an error
+// instead of silently omitting a REQUIRED completeness field — see
+// `CommerceListingEditor`'s `destinationsLoadFailed` prop doc.
+const destinationsLoadFailed = !destinationsResult.ok;
+
 const title = t('commerce.owner.list.edit', 'Editar');
 const verticalLabel = t(`commerce.owner.list.badge.${vertical}`, vertical);
-const readOnlyNotice = t('commerce.owner.editor.readOnlyNotice', '');
 
 // Extract FAQs for the CommerceFaqManager — safe cast via unknown bridge.
 // The protected schema includes faqs when available; fallback to empty array.
@@ -108,7 +126,12 @@ const initialFaqs: CommerceFaq[] = Array.isArray(rawFaqs)
             <span class="ce-identity__badge">{verticalLabel}</span>
         </div>
         <p class="ce-identity__slug"><code>{detail.slug}</code></p>
-        {readOnlyNotice && <p class="ce-identity__notice">{readOnlyNotice}</p>}
+        <p class="ce-identity__notice">
+            {t(
+                'commerce.owner.editor.slugImmutableNotice',
+                'La URL pública se genera a partir del nombre al crear el comercio y no se puede cambiar después.'
+            )}
+        </p>
     </div>
 
     <AccountSectionCard>
@@ -120,6 +143,8 @@ const initialFaqs: CommerceFaq[] = Array.isArray(rawFaqs)
             initialData={detail}
             amenities={amenities}
             features={features}
+            destinations={destinations}
+            destinationsLoadFailed={destinationsLoadFailed}
         />
     </AccountSectionCard>
 

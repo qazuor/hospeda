@@ -164,8 +164,10 @@ describe('features-content — brochure cupo spot-checks', () => {
 // ─── Próximamente ───────────────────────────────────────────────────────────
 
 describe('features-content — próximamente items', () => {
-    it('has exactly 7 items', () => {
-        expect(SOON_ITEMS).toHaveLength(7);
+    it('has exactly 6 items', () => {
+        // HOS-19 removed the shipped `whatsapp-listing` entry (WhatsApp contact
+        // is now live on the accommodation detail page, no longer "coming soon").
+        expect(SOON_ITEMS).toHaveLength(6);
     });
 
     it('every item has a unique id', () => {
@@ -187,8 +189,16 @@ describe('features-content — no price-looking strings', () => {
         expect(FEATURES_CONTENT_SRC).not.toMatch(/\/mes/);
     });
 
-    it('no plan-table cell carries a raw numeric price (only limit/unlimited/yes/no/addon/text kinds)', () => {
-        const allowedKinds = new Set(['yes', 'no', 'limit', 'unlimited', 'addon', 'text']);
+    it('no plan-table cell carries a raw numeric price (only limit/unlimited/yes/no/addon/upcoming/text kinds)', () => {
+        const allowedKinds = new Set([
+            'yes',
+            'no',
+            'limit',
+            'unlimited',
+            'addon',
+            'upcoming',
+            'text'
+        ]);
         for (const row of [...VIAJEROS_TABLE_ROWS, ...ANFITRIONES_TABLE_ROWS]) {
             for (const cell of row.cells) {
                 expect(allowedKinds.has(cell.kind)).toBe(true);

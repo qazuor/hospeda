@@ -100,13 +100,13 @@
                 },
                 "gastronomy": {
                     "title": "Gastronomia",
-                    "description": "Some seu restaurante, bar ou café ao Hospeda: conte-nos sobre o seu negócio e entraremos em contato para publicá-lo.",
-                    "cta": "Conte-nos e entraremos em contato"
+                    "description": "Some seu restaurante, bar ou café ao Hospeda. Deixe seus dados, aprovamos sua solicitação e, a partir da sua conta, você completa e publica sua própria ficha.",
+                    "cta": "Publique seu restaurante"
                 },
                 "experience": {
                     "title": "Experiências",
-                    "description": "Você oferece passeios, atividades ou experiências para viajantes? Conte-nos e entraremos em contato para somá-las ao Hospeda.",
-                    "cta": "Conte-nos e entraremos em contato"
+                    "description": "Você oferece passeios, atividades ou experiências para viajantes? Deixe seus dados, aprovamos sua solicitação e, a partir da sua conta, você completa e publica sua própria ficha.",
+                    "cta": "Publique sua experiência"
                 }
             }
         },
@@ -543,6 +543,7 @@
         },
         "subscription": {
             "title": "Minha assinatura",
+            "titleCommerce": "Assinatura de comércio",
             "description": "Gerencie seu plano e assinatura no Hospeda",
             "heading": "Minha assinatura",
             "headingDesc": "Gerencie seu plano e preferencias de pagamento",
@@ -554,6 +555,8 @@
             "statusLabel": "Status",
             "nextBillingLabel": "Próxima cobrança",
             "accessUntilLabel": "Acesso até",
+            "complimentaryLabel": "Plano de cortesia",
+            "complimentaryNoBilling": "Sem vencimento",
             "paymentMethodLabel": "Método de pagamento",
             "paymentMercadoPago": "MercadoPago",
             "noBillingDate": "Sem data de faturamento disponível",
@@ -575,6 +578,9 @@
             "pauseError": "Não foi possível pausar a assinatura.",
             "resumeSuccess": "Assinatura retomada.",
             "resumeError": "Não foi possível retomar a assinatura.",
+            "uncancelButton": "Descartar cancelamento",
+            "uncancelSuccess": "Cancelamento descartado. Sua assinatura continua ativa.",
+            "uncancelError": "Não foi possível descartar o cancelamento.",
             "status": {
                 "active": "Ativa",
                 "trial": "Teste",
@@ -972,6 +978,32 @@
         "errors": {
             "purchaseFailed": "Não foi possível iniciar a compra. Tente novamente.",
             "missingAccommodation": "Escolha uma hospedagem para continuar."
+        },
+        "catalog": {
+            "visibility-boost-7d": {
+                "name": "Impulso de visibilidade (7 dias)",
+                "description": "Sua hospedagem aparece em destaque nos resultados de busca por 7 dias."
+            },
+            "visibility-boost-30d": {
+                "name": "Impulso de visibilidade (30 dias)",
+                "description": "Sua hospedagem aparece em destaque nos resultados de busca por 30 dias."
+            },
+            "extra-photos-20": {
+                "name": "Pacote de fotos extra (+20 fotos)",
+                "description": "Adiciona 20 fotos adicionais a cada hospedagem. Renova mensalmente."
+            },
+            "extra-accommodations-5": {
+                "name": "Pacote de hospedagens extra (+5)",
+                "description": "Adiciona 5 hospedagens adicionais ao seu plano. Renova mensalmente."
+            },
+            "extra-properties-5": {
+                "name": "Pacote de propriedades extra (+5)",
+                "description": "Adiciona 5 propriedades adicionais ao seu complexo. Renova mensalmente."
+            },
+            "ai-support-monthly": {
+                "name": "Suporte com IA (mensal)",
+                "description": "Desbloqueia ferramentas de suporte com IA para anfitriões, incluindo sugestões de resposta inteligentes e tratamento automático de perguntas frequentes de hóspedes. Renova mensalmente."
+            }
         }
     }
 }

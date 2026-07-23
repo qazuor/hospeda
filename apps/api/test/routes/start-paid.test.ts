@@ -110,16 +110,12 @@ vi.mock('../../src/utils/env', () => ({
 //  - 'FREEMONTH' → { kind: 'trial', freeTrialDays: 30 } (SPEC-126 D9 trial extension).
 //  - any other non-empty code → { kind: 'invalid', message: '...' } so that the
 //    existing 422 rejection tests (NOT_A_REAL_CODE) continue to pass.
-// The discount seam mutates the live MercadoPago preapproval amount and redeems the
-// code, fail-closed. These are ROUTE tests — the seam has its own suite — so stub it
-// to "MP accepted the lowered amount". Needed since HOS-171: a discount now coexists
-// with a trial, so the trial-flavoured cases reach this call instead of returning
-// early with the code discarded.
+// HOS-244: the discount bookkeeping moved inline into link-preapproval's
+// `applyPendingDiscountBestEffort` (not in this route's import graph); this module
+// now only exports the pure `computeSignupDiscountCycleSeed`. Stub it as its real
+// identity behavior in case the import graph ever pulls it in.
 vi.mock('../../src/services/subscription-discount-signup.service', () => ({
-    applySignupDiscountToMonthly: vi.fn(async () => ({
-        success: true as const,
-        data: { discountedAmountCentavos: 4_500_000, remainingCyclesSeed: null }
-    }))
+    computeSignupDiscountCycleSeed: (n: number) => n
 }));
 
 vi.mock('../../src/services/subscription-checkout-promo.service', () => ({
@@ -288,8 +284,10 @@ mockCreatePendingProviderSubscription.mockImplementation(async () => ({
  * given the module-level `resolveCheckoutMpPlanId` mock always returns
  * `'mp_plan_test'`.
  */
+// HOS-209: the share-link now carries the pending-checkout nonce (mocked to
+// 'nonce-test-1234') as external_reference for exact-nonce (Tier 2) linking.
 const EXPECTED_SHARE_LINK =
-    'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=mp_plan_test';
+    'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=mp_plan_test&external_reference=nonce-test-1234';
 const MONTHLY_PRICE_ID = 'price_monthly_1';
 const ANNUAL_PRICE_ID = 'price_annual_1';
 
@@ -1767,8 +1765,10 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
     });
 
     it('AC-4: a trial checkout that ALSO gets a discount keeps both, and the event reports both', async () => {
-        // ARRANGE — a trial-eligible annual checkout that ALSO supplies a
-        // `discount` code.
+        // ARRANGE — a trial-eligible MONTHLY checkout that ALSO supplies a
+        // `discount` code. (HOS-244: discount codes are now blocked on ANNUAL
+        // checkout — born-discounted is monthly-only — so this AC, which is about
+        // trial + discount coexisting on the analytics event, uses monthly.)
         //
         // This AC is INVERTED versus what it pinned. It used to assert the trial
         // DISCARDED the discount (promoCodeIgnored: true) because the trial "won"
@@ -1776,7 +1776,7 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
         // coexist — the trial defers the first charge, the discount lowers what
         // that charge will be. The old rule left a first-time owner, the only
         // customer who gets a trial, unable to use a discount code at all.
-        const billing = createAnnualTrialBillingMock();
+        const billing = createMonthlyTrialBillingMock();
         mockBilling(billing);
         vi.mocked(resolveCheckoutPromoPlan).mockResolvedValueOnce({
             kind: 'discount',
@@ -1794,7 +1794,7 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
         const ctx = createMockContext();
         const result = await handleStartPaidSubscription(ctx as never, {
             planSlug: 'owner-premium',
-            billingInterval: 'annual',
+            billingInterval: 'monthly',
             promoCode: 'SAVE10'
         });
 

@@ -405,3 +405,75 @@ describe('Accommodation read⊇write (HOS-190)', () => {
         expect(AccommodationAdminSchema.safeParse(payload).success).toBe(true);
     });
 });
+
+// ---------------------------------------------------------------------------
+// BETA-186: the OWNER's editor reads *I18n translations off the protected
+// schema to drive the TranslationPanel. Before the fix the protected schema
+// omitted them, so stripWithSchema deleted the DB auto-translations and the
+// panel showed "—" for en/pt even when the DB had them. name/summary/description
+// I18n are the SAME translations the public schema already exposes ungated;
+// richDescriptionI18n stays out (premium, protected route lacks the strip).
+// ---------------------------------------------------------------------------
+
+describe('AccommodationProtectedSchema — i18n translation fields for the editor (BETA-186)', () => {
+    const i18nPayload = {
+        ...entityPayload,
+        nameI18n: { es: 'Hotel', en: 'Hotel', pt: 'Hotel' },
+        summaryI18n: { es: 'Resumen', en: 'Summary', pt: 'Resumo' },
+        descriptionI18n: { es: 'Descripción', en: 'Description', pt: 'Descrição' },
+        richDescriptionI18n: { es: 'Rico', en: 'Rich', pt: 'Rico' }
+    };
+
+    it('preserves nameI18n/summaryI18n/descriptionI18n (so the panel shows en/pt as present)', () => {
+        const result = AccommodationProtectedSchema.safeParse(i18nPayload);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            const data = result.data as Record<string, unknown>;
+            expect(data.nameI18n).toEqual({ es: 'Hotel', en: 'Hotel', pt: 'Hotel' });
+            expect(data.summaryI18n).toEqual({ es: 'Resumen', en: 'Summary', pt: 'Resumo' });
+            expect(data.descriptionI18n).toEqual({
+                es: 'Descripción',
+                en: 'Description',
+                pt: 'Descrição'
+            });
+        }
+    });
+
+    it('does NOT expose richDescriptionI18n (premium; protected route lacks the entitlement strip)', () => {
+        const result = AccommodationProtectedSchema.safeParse(i18nPayload);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect((result.data as Record<string, unknown>).richDescriptionI18n).toBeUndefined();
+        }
+    });
+
+    it('the public schema exposes the same three ungated I18n fields (parity — safe to surface to the owner)', () => {
+        const result = AccommodationPublicSchema.safeParse(i18nPayload);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            const data = result.data as Record<string, unknown>;
+            expect(data.nameI18n).toBeDefined();
+            expect(data.summaryI18n).toBeDefined();
+            expect(data.descriptionI18n).toBeDefined();
+        }
+    });
+
+    it('read⊇write (HOS-190): a PARTIAL i18n value (only es) must NOT fail-close the owner GET to 500', () => {
+        // The strict I18nTextSchema requires a complete {es,en,pt} triple. A
+        // legacy/imported/partial value must parse (stripWithSchema fail-closes to
+        // 500 otherwise, locking the owner out of editing every accommodation).
+        const partialPayload = {
+            ...entityPayload,
+            summaryI18n: { es: 'Solo español' },
+            nameI18n: { es: 'Nombre', en: null },
+            descriptionI18n: null
+        };
+        const result = AccommodationProtectedSchema.safeParse(partialPayload);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            const data = result.data as Record<string, unknown>;
+            expect((data.summaryI18n as Record<string, unknown>).es).toBe('Solo español');
+            expect((data.summaryI18n as Record<string, unknown>).en).toBeUndefined();
+        }
+    });
+});

@@ -2,17 +2,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const postProtected = vi.fn();
 const post = vi.fn();
+const getProtected = vi.fn();
 
 vi.mock('../../../src/lib/api/client', () => ({
     apiClient: {
         postProtected: (args: unknown) => postProtected(args),
         // Non-credentialed variant: exposed so tests can assert that protected
         // mutations do NOT route through it (would send no session cookie → 401).
-        post: (args: unknown) => post(args)
+        post: (args: unknown) => post(args),
+        getProtected: (args: unknown) => getProtected(args)
     }
 }));
 
-import { accommodationCalendarSyncApi } from '../../../src/lib/api/endpoints-protected';
+import { accommodationCalendarSyncApi, userApi } from '../../../src/lib/api/endpoints-protected';
 
 describe('accommodationCalendarSyncApi credentialed mutations (HOS-157 regression)', () => {
     beforeEach(() => {
@@ -45,5 +47,42 @@ describe('accommodationCalendarSyncApi credentialed mutations (HOS-157 regressio
             body: {}
         });
         expect(post).not.toHaveBeenCalled();
+    });
+});
+
+describe('userApi.getSubscription productDomain param (HOS-259)', () => {
+    beforeEach(() => {
+        getProtected.mockReset();
+        getProtected.mockResolvedValue({ ok: true, data: { subscription: null } });
+    });
+
+    it('omits the productDomain query param when none is passed (server default applies)', async () => {
+        await userApi.getSubscription();
+
+        expect(getProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/users/me/subscription',
+            params: undefined,
+            cookieHeader: undefined
+        });
+    });
+
+    it('forwards productDomain=commerce as a query param', async () => {
+        await userApi.getSubscription({ productDomain: 'commerce' });
+
+        expect(getProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/users/me/subscription',
+            params: { productDomain: 'commerce' },
+            cookieHeader: undefined
+        });
+    });
+
+    it('forwards the cookieHeader alongside productDomain for SSR callers', async () => {
+        await userApi.getSubscription({ productDomain: 'accommodation', cookieHeader: 'sid=abc' });
+
+        expect(getProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/users/me/subscription',
+            params: { productDomain: 'accommodation' },
+            cookieHeader: 'sid=abc'
+        });
     });
 });

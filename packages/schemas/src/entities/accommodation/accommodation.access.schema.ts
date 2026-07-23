@@ -73,6 +73,25 @@ const AccommodationLocationReadSchema = z.object({
 });
 
 /**
+ * i18n read shape (HOS-190 / BETA-186) — each locale is individually optional and
+ * nullable, unlike the strict `I18nTextSchema` which requires a complete
+ * `{es,en,pt}` string triple. The single write path
+ * (`apps/api/src/services/ai-translate.service.ts`) always persists a complete
+ * triple, but a legacy/imported/partial value in `name_i18n`/`summary_i18n`/
+ * `description_i18n` must never fail-close the owner's GET to HTTP 500 and lock
+ * them out of editing (`stripWithSchema` fail-closes). Mirrors the lenient-read
+ * overlays for the other free-form columns above. The TranslationPanel only reads
+ * per-locale presence, so a partial shape degrades gracefully.
+ */
+const AccommodationI18nTextReadSchema = z
+    .object({
+        es: z.string().nullish(),
+        en: z.string().nullish(),
+        pt: z.string().nullish()
+    })
+    .nullish();
+
+/**
  * Price read shape — drops `.positive()` on the nightly amount AND on every
  * nested fee/discount amount, so a legacy/"consultar precio" `0` never 500s the
  * response at ANY nesting level (the shared `PriceSchema.price` positivity is a
@@ -313,7 +332,19 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
      * can show a "Chat IA" badge. Optional: absent on responses that don't enrich
      * it (only the public list endpoint populates it today).
      */
-    hasAiChat: z.boolean().optional()
+    hasAiChat: z.boolean().optional(),
+    /**
+     * Whether this accommodation carries a WhatsApp contact number
+     * (`contactInfo.whatsapp`). This is a cache-safe, OWNER-derived boolean —
+     * the number itself is NEVER exposed on this public payload because the
+     * `/public/accommodations` endpoint is shared-cached (a per-viewer field
+     * would leak the first viewer's plan result to everyone). HOS-19 gates the
+     * actual number by the VIEWER's plan on a separate per-user protected
+     * endpoint (`GET /protected/accommodations/:id/whatsapp`); this flag only
+     * tells the web whether to render the WhatsApp block / upsell at all.
+     * Resolved per-accommodation at the API route layer, not stored as a column.
+     */
+    hasWhatsapp: z.boolean().optional()
 });
 
 export type AccommodationPublic = z.infer<typeof AccommodationPublicSchema>;
@@ -334,6 +365,19 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     type: true,
     summary: true,
     description: true,
+    // SPEC-212 / BETA-186: I18nText translations of the free-form content fields.
+    // The owner's editor reads these to show the TranslationPanel status per locale;
+    // without them here `stripWithSchema` deleted the auto-translations from the GET
+    // response, so the panel always showed "—" for en/pt even when the DB had them.
+    // These three are the SAME content translations the public schema exposes
+    // UNGATED to anonymous visitors, so surfacing them to the authenticated OWNER
+    // adds no exposure. richDescriptionI18n is intentionally NOT added: it is
+    // premium/entitlement-gated and the protected getById route does not run the
+    // richDescription entitlement strip (unlike the public route), so exposing it
+    // here would need that gate first — tracked as a follow-up.
+    nameI18n: true,
+    summaryI18n: true,
+    descriptionI18n: true,
     isFeatured: true,
     destinationId: true,
     media: true,
@@ -385,6 +429,13 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     name: z.string(),
     summary: z.string(),
     description: z.string(),
+    // BETA-186 / HOS-190: lenient i18n read overlay so a legacy/partial value in
+    // these columns never fail-closes the owner's editor GET (and the list/patch/
+    // publish/unpublish/create routes that reuse this schema). See the lenient
+    // AccommodationI18nTextReadSchema definition above.
+    nameI18n: AccommodationI18nTextReadSchema,
+    summaryI18n: AccommodationI18nTextReadSchema,
+    descriptionI18n: AccommodationI18nTextReadSchema,
     seo: AccommodationSeoReadSchema.nullish(),
     price: AccommodationPriceReadSchema.nullish(),
     contactInfo: AccommodationContactInfoReadSchema.nullish(),

@@ -220,10 +220,14 @@ describe('HOS-115/HOS-171 T-011 — annual trial-vs-pay branch (POST /start-paid
             email: user.email,
             providerCustomerIds: { mercadopago: `mp_cust_test_${user.id.slice(0, 8)}` }
         });
+        // `expired` = an authorized subscription that ran its course. Post-HOS-230
+        // the trial gate no longer counts never-authorized backouts (a bare
+        // `cancelled` row with no authorizing event history reads as eligible), so
+        // this fixture uses an unambiguously-authorized prior sub to stay ineligible.
         await createTestSubscription({
             customerId: customer.customerId,
             planId: seed.cheap.planId,
-            status: 'cancelled'
+            status: 'expired'
         });
 
         const expectedCheckoutUrl = 'https://stub.example/preapproval/sub_annual_trial_ineligible';

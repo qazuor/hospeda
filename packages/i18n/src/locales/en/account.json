@@ -100,13 +100,13 @@
                 },
                 "gastronomy": {
                     "title": "Dining",
-                    "description": "Add your restaurant, bar, or café to Hospeda: tell us about your business and we'll reach out to publish it.",
-                    "cta": "Tell us and we'll reach out"
+                    "description": "Add your restaurant, bar, or café to Hospeda. Leave your details, we approve your request, and from your account you complete and publish your own listing.",
+                    "cta": "List your restaurant"
                 },
                 "experience": {
                     "title": "Experiences",
-                    "description": "Do you offer tours, activities, or experiences for travelers? Tell us and we'll reach out to add them to Hospeda.",
-                    "cta": "Tell us and we'll reach out"
+                    "description": "Do you offer tours, activities, or experiences for travelers? Leave your details, we approve your request, and from your account you complete and publish your own listing.",
+                    "cta": "List your experience"
                 }
             }
         },
@@ -543,6 +543,7 @@
         },
         "subscription": {
             "title": "My Subscription",
+            "titleCommerce": "Commerce Subscription",
             "description": "Manage your plan and subscription on Hospeda",
             "heading": "My Subscription",
             "headingDesc": "Manage your plan and payment preferences",
@@ -554,6 +555,8 @@
             "statusLabel": "Status",
             "nextBillingLabel": "Next billing date",
             "accessUntilLabel": "Access until",
+            "complimentaryLabel": "Complimentary plan",
+            "complimentaryNoBilling": "No expiry",
             "paymentMethodLabel": "Payment method",
             "paymentMercadoPago": "MercadoPago",
             "noBillingDate": "No billing date available",
@@ -575,6 +578,9 @@
             "pauseError": "Could not pause the subscription.",
             "resumeSuccess": "Subscription resumed.",
             "resumeError": "Could not resume the subscription.",
+            "uncancelButton": "Discard cancellation",
+            "uncancelSuccess": "Cancellation discarded. Your subscription stays active.",
+            "uncancelError": "Could not discard the cancellation.",
             "status": {
                 "active": "Active",
                 "trial": "Trial",
@@ -972,6 +978,32 @@
         "errors": {
             "purchaseFailed": "Could not start the purchase. Please try again.",
             "missingAccommodation": "Choose an accommodation to continue."
+        },
+        "catalog": {
+            "visibility-boost-7d": {
+                "name": "Visibility Boost (7 days)",
+                "description": "Your accommodation appears featured in search results for 7 days."
+            },
+            "visibility-boost-30d": {
+                "name": "Visibility Boost (30 days)",
+                "description": "Your accommodation appears featured in search results for 30 days."
+            },
+            "extra-photos-20": {
+                "name": "Extra Photos Pack (+20 photos)",
+                "description": "Adds 20 additional photos to each accommodation. Renews monthly."
+            },
+            "extra-accommodations-5": {
+                "name": "Extra Accommodations Pack (+5)",
+                "description": "Adds 5 additional accommodations to your plan. Renews monthly."
+            },
+            "extra-properties-5": {
+                "name": "Extra Properties Pack (+5)",
+                "description": "Adds 5 additional properties to your complex. Renews monthly."
+            },
+            "ai-support-monthly": {
+                "name": "AI Support (monthly)",
+                "description": "Unlocks AI-powered support tools for hosts, including smart reply suggestions and automated guest FAQ handling. Renews monthly."
+            }
         }
     }
 }

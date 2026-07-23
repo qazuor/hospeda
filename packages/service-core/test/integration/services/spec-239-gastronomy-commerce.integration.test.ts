@@ -27,19 +27,39 @@
 
 import type { CommerceLead } from '@repo/schemas';
 import {
+    CommerceEntityTypeEnum,
     GastronomyTypeEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
     PriceRangeEnum,
     RoleEnum,
+    resolveListingCompleteness,
     VisibilityEnum
 } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { CreateUserPortResult } from '../../../src/services/commerce/commerce-owner-provisioning.service';
 import { CommerceOwnerProvisioningService } from '../../../src/services/commerce/commerce-owner-provisioning.service';
-import type { CommerceEntityModel } from '../../../src/services/commerce/commerce-visibility';
+import type {
+    CommerceEntityModel,
+    ResolveCommerceListingCompleteness
+} from '../../../src/services/commerce/commerce-visibility';
 import { reconcileCommerceListingVisibility } from '../../../src/services/commerce/commerce-visibility';
+
+/**
+ * Resolver stub used by tests (T-4, T-5, T-9) that exercise the reconciler's
+ * pure status-driven transition — NOT completeness. These predate HOS-166 §6.5
+ * and assert "does the reconciler flip on subscriptionStatus", so they stub
+ * completeness as always-true rather than depending on `seedGastronomy`'s
+ * field shape (which is deliberately minimal and, per HOS-166, genuinely
+ * INCOMPLETE — see the dedicated AC-6/AC-9 tests below for real-completeness
+ * coverage against that same seed).
+ */
+const ALWAYS_COMPLETE: ResolveCommerceListingCompleteness = async () => ({
+    complete: true,
+    missing: []
+});
+
 import { GastronomyReviewService } from '../../../src/services/gastronomy/gastronomy.review.service';
 import { GastronomyService } from '../../../src/services/gastronomy/gastronomy.service';
 import type { Actor, ServiceContext } from '../../../src/types';
@@ -413,7 +433,8 @@ describe('SPEC-239 — Gastronomy commerce admin-sells lifecycle (integration)',
                         subscriptionStatus: 'active',
                         tx
                     },
-                    modelAdapter
+                    modelAdapter,
+                    ALWAYS_COMPLETE
                 );
 
                 // Assert reconciler result
@@ -475,7 +496,8 @@ describe('SPEC-239 — Gastronomy commerce admin-sells lifecycle (integration)',
                         subscriptionStatus: 'active',
                         tx
                     },
-                    modelAdapter
+                    modelAdapter,
+                    ALWAYS_COMPLETE
                 );
 
                 expect(activeResult.updated).toBe(true);
@@ -496,7 +518,8 @@ describe('SPEC-239 — Gastronomy commerce admin-sells lifecycle (integration)',
                         subscriptionStatus: 'canceled',
                         tx
                     },
-                    modelAdapter
+                    modelAdapter,
+                    ALWAYS_COMPLETE
                 );
 
                 expect(cancelResult.updated).toBe(true);
@@ -840,13 +863,124 @@ describe('SPEC-239 — Gastronomy commerce admin-sells lifecycle (integration)',
                         subscriptionStatus: 'active',
                         tx
                     },
-                    modelAdapter
+                    modelAdapter,
+                    ALWAYS_COMPLETE
                 );
 
                 // Assert: no write performed (already in desired state)
                 expect(result.updated).toBe(false);
                 expect(result.visibility).toBe('PUBLIC');
                 expect(result.lifecycleState).toBe('ACTIVE');
+            });
+        }
+    );
+
+    // -----------------------------------------------------------------------
+    // T-10: HOS-166 AC-6 — active subscription + genuinely incomplete listing
+    // → stays PRIVATE. Uses the REAL resolveListingCompleteness against
+    // seedGastronomy's default row, which deliberately carries no media,
+    // contactInfo, openingHours, or priceRange.
+    // -----------------------------------------------------------------------
+
+    it.skipIf(!dbAvailable)(
+        'T-10: reconciler keeps an active-but-incomplete listing PRIVATE (HOS-166 AC-6)',
+        async () => {
+            await withServiceTestTransaction(async (tx) => {
+                // Arrange: seedGastronomy's default row has no media/contactInfo/
+                // openingHours/priceRange — genuinely incomplete for publish.
+                const { gastronomyId } = await seedGastronomy(tx, {
+                    visibility: 'PRIVATE',
+                    lifecycleState: 'INACTIVE'
+                });
+                const { gastronomyModel } = await import('@repo/db');
+
+                const modelAdapter: CommerceEntityModel = {
+                    findById: (id, tx2) => gastronomyModel.findById(id, tx2),
+                    update: (where, data, tx2) =>
+                        gastronomyModel.update(
+                            where,
+                            data as Parameters<typeof gastronomyModel.update>[1],
+                            tx2
+                        )
+                };
+                const resolveCompleteness: ResolveCommerceListingCompleteness = async (
+                    entityId,
+                    resolveTx
+                ) => {
+                    const listing = await gastronomyModel.findById(entityId, resolveTx);
+                    return resolveListingCompleteness({
+                        entityType: CommerceEntityTypeEnum.GASTRONOMY,
+                        listing: listing ?? {}
+                    });
+                };
+
+                // Act: reconcile with an active subscription against an incomplete listing.
+                const result = await reconcileCommerceListingVisibility(
+                    {
+                        entityType: 'gastronomy',
+                        entityId: gastronomyId,
+                        subscriptionStatus: 'active',
+                        tx
+                    },
+                    modelAdapter,
+                    resolveCompleteness
+                );
+
+                // Assert: stays PRIVATE despite the active subscription.
+                expect(result.updated).toBe(false);
+                expect(result.visibility).toBe(VisibilityEnum.PRIVATE);
+                expect(result.lifecycleState).toBe(LifecycleStatusEnum.INACTIVE);
+
+                const afterReconcile = await gastronomyModel.findById(gastronomyId, tx);
+                expect(afterReconcile?.visibility).toBe('PRIVATE');
+                expect(afterReconcile?.lifecycleState).toBe('INACTIVE');
+            });
+        }
+    );
+
+    // -----------------------------------------------------------------------
+    // T-11: HOS-166 AC-9 — moderationState=REJECTED + active subscription
+    // → stays PRIVATE even when the listing would otherwise be complete.
+    // -----------------------------------------------------------------------
+
+    it.skipIf(!dbAvailable)(
+        'T-11: reconciler keeps a REJECTED listing PRIVATE regardless of subscription (HOS-166 AC-9)',
+        async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const { gastronomyId } = await seedGastronomy(tx, {
+                    visibility: 'PRIVATE',
+                    lifecycleState: 'INACTIVE',
+                    moderationState: 'REJECTED'
+                });
+                const { gastronomyModel } = await import('@repo/db');
+
+                const modelAdapter: CommerceEntityModel = {
+                    findById: (id, tx2) => gastronomyModel.findById(id, tx2),
+                    update: (where, data, tx2) =>
+                        gastronomyModel.update(
+                            where,
+                            data as Parameters<typeof gastronomyModel.update>[1],
+                            tx2
+                        )
+                };
+
+                // Act: reconcile with an active subscription; stub completeness as
+                // always-true so the ONLY thing under test is the moderation gate.
+                const result = await reconcileCommerceListingVisibility(
+                    {
+                        entityType: 'gastronomy',
+                        entityId: gastronomyId,
+                        subscriptionStatus: 'active',
+                        tx
+                    },
+                    modelAdapter,
+                    ALWAYS_COMPLETE
+                );
+
+                // Assert: stays PRIVATE — moderation rejection overrides completeness.
+                expect(result.updated).toBe(false);
+                expect(result.visibility).toBe(VisibilityEnum.PRIVATE);
+                expect(result.lifecycleState).toBe(LifecycleStatusEnum.INACTIVE);
             });
         }
     );

@@ -56,7 +56,10 @@ import * as Sentry from '@sentry/node';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { handlePlanChangeAddonRecalculation } from '../../services/addon-plan-change.service.js';
-import { resolvePlanChangeReason } from '../../services/billing/plan-change-reason.js';
+import {
+    planDisplayNameFromPlan,
+    resolvePlanChangeReason
+} from '../../services/billing/plan-change-reason.js';
 import { applyDowngradeRestrictions } from '../../services/plan-downgrade-remediation.service.js';
 import { getKeepSelectionsForChange } from '../../services/subscription-downgrade.service.js';
 import { PlanCatalogMissError } from '../../services/subscription-downgrade-excess.service.js';
@@ -654,8 +657,9 @@ async function applyOne(
                     billing.plans.get(currentPlanId),
                     billing.plans.get(newPlanId)
                 ]);
-                oldPlanName = oldPlan?.name ?? currentPlanId;
-                newPlanName = newPlan?.name ?? newPlanId;
+                // HOS-231: display names (metadata.displayName), not the raw slugs.
+                oldPlanName = oldPlan ? planDisplayNameFromPlan(oldPlan) : currentPlanId;
+                newPlanName = newPlan ? planDisplayNameFromPlan(newPlan) : newPlanId;
             } catch (planErr) {
                 logger.warn(
                     'Scheduled plan change: could not resolve plan names for confirmation',

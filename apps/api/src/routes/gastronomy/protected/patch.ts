@@ -4,9 +4,13 @@
  *
  * ## Enforcement contract
  *
- * - Validates the payload through GastronomyOwnerUpdateInputSchema (operational
- *   fields only). Identity fields (name, slug, type, destinationId) are ABSENT
- *   from the schema so any forged keys are silently stripped by Zod.
+ * - Validates the payload through GastronomyOwnerUpdateInputSchema. Since
+ *   HOS-166 D-1, `name`, `description`, and `destinationId` are
+ *   owner-editable identity fields (SPEC-239 decision #5 reversed — see the
+ *   schema's docstring). Only `slug` (immutable post-create, HOS-166 OQ-3)
+ *   plus the control fields (`lifecycleState`, `visibility`,
+ *   `moderationState`, `isFeatured`, `ownerId`) are ABSENT from the schema,
+ *   so any forged keys for those are silently stripped by Zod.
  * - GastronomyService.updateOwn() enforces ownership (non-owner → NOT_FOUND) and
  *   per-section COMMERCE_*_EDIT_OWN permission checks.
  */

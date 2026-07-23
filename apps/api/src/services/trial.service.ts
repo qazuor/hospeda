@@ -40,6 +40,7 @@ import { and, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
 import { createPaidSubscription } from './billing/paid-subscription-create.js';
+import { planDisplayNameFromPlan } from './billing/plan-change-reason.js';
 import { resolveReactivationPlan } from './billing/reactivation-plan-guard.js';
 import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
 
@@ -539,6 +540,32 @@ export class TrialService {
                         apiLogger.debug(
                             { subscriptionId: subscription.id },
                             'reconcileExpiredTrials: TRIAL_RECONCILED event already exists, skipping (idempotent)'
+                        );
+                        continue;
+                    }
+
+                    // ── HOS-237: a soft-cancelled trial is a finalization, not a mirror ──
+                    // If the user soft-cancelled this trial (`cancelAtPeriodEnd=true`),
+                    // its MercadoPago preapproval is `paused`. Mirroring that to a local
+                    // `paused` status here would STRAND the row: `paused` is excluded from
+                    // finalize-cancelled-subs' eligible set forever, so the sub would never
+                    // reach `cancelled` locally and the preapproval would linger paused with
+                    // no automatic close (only a manual admin hard-cancel would resolve it).
+                    //
+                    // Leave the row `trialing` and defer to finalize-cancelled-subs, which
+                    // runs later the same night (04:30 vs 02:00) and whose trial-aware query
+                    // (`trialing` + `cancelAtPeriodEnd` + `trial_end <= now`) finalizes it:
+                    // flips status to `cancelled`, revokes addons, and hard-cancels the MP
+                    // preapproval. No TRIAL_RECONCILED event is written here, so the row
+                    // stays re-claimable until that finalization succeeds.
+                    if (subscription.cancelAtPeriodEnd) {
+                        apiLogger.info(
+                            {
+                                subscriptionId: subscription.id,
+                                customerId: subscription.customerId,
+                                trialEnd: trialEnd.toISOString()
+                            },
+                            'reconcileExpiredTrials: soft-cancelled trial — deferring finalization to finalize-cancelled-subs (HOS-237)'
                         );
                         continue;
                     }
@@ -1361,6 +1388,7 @@ export class TrialService {
                             userName: String(customer.metadata?.name || customer.email),
                             userId: String(customer.metadata?.userId || ''),
                             planSlug: plan.name,
+                            planDisplayName: planDisplayNameFromPlan(plan),
                             trialEnd,
                             daysRemaining,
                             ...(intendedInterval ? { intendedInterval } : {})

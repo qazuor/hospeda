@@ -24,9 +24,19 @@ export interface AccommodationData {
     description?: string;
     richDescription?: string | null;
     videoUrl?: string;
-    whatsappNumber?: string;
-    whatsappDirectLink?: boolean;
-    enableWhatsAppDirect?: boolean;
+    /**
+     * Contact info blob (JSONB `contact_info`). The WhatsApp number lives at
+     * `contactInfo.whatsapp` (BETA-151) — there is NO dedicated column. HOS-19
+     * reads this to derive the cache-safe `hasWhatsapp` flag; the number itself
+     * is never emitted on the shared-cached public payload.
+     */
+    contactInfo?: { whatsapp?: string | null } | null;
+    /**
+     * HOS-19: owner-derived, cache-safe flag — whether `contactInfo.whatsapp`
+     * is present. Set by {@link filterAccommodationByEntitlements}. The number
+     * is gated by the VIEWER's plan on a separate per-user protected endpoint.
+     */
+    hasWhatsapp?: boolean;
     isVerified?: boolean;
     media?: unknown; // May be array of {type, url} (test mocks) or object with featuredImage/gallery/videos (DB)
     [key: string]: unknown;
@@ -38,8 +48,10 @@ export interface AccommodationData {
  * Removes or modifies premium content that the caller should not expose:
  * - Omits `richDescription` when the OWNING HOST lacks CAN_USE_RICH_DESCRIPTION
  * - Removes video content if viewer lacks CAN_EMBED_VIDEO
- * - Hides WhatsApp number if viewer lacks CAN_CONTACT_WHATSAPP_DISPLAY
- * - Disables WhatsApp direct link if viewer lacks CAN_CONTACT_WHATSAPP_DIRECT
+ * - Sets `hasWhatsapp` (owner-derived boolean) from `contactInfo.whatsapp`
+ *   (HOS-19). The WhatsApp NUMBER is deliberately NOT emitted here — this
+ *   endpoint is shared-cached, so the number is gated by the viewer's plan on
+ *   the per-user protected endpoint instead.
  * - Forces `isVerified` to false when the OWNING HOST lacks HAS_VERIFICATION_BADGE
  *
  * @param c - Hono context (contains viewer entitlements)
@@ -76,8 +88,17 @@ export function filterAccommodationByEntitlements(
     try {
         // Check viewer entitlements
         const canEmbedVideo = hasEntitlement(c, EntitlementKey.CAN_EMBED_VIDEO);
-        const canDisplayWhatsApp = hasEntitlement(c, EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY);
-        const canUseWhatsAppDirect = hasEntitlement(c, EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT);
+
+        // HOS-19: WhatsApp display is VIEWER-gated, but `/public/accommodations`
+        // is shared-cached (cache key has no auth), so the number MUST NOT ride
+        // this payload — a per-viewer field would leak the first viewer's plan
+        // result to everyone. Instead we emit only a cache-safe, owner-derived
+        // boolean here; the actual number is gated by the viewer's plan on the
+        // per-user protected endpoint GET /protected/accommodations/:id/whatsapp.
+        // Trim to stay consistent with that endpoint's own non-empty check —
+        // a whitespace-only legacy value must NOT flip hasWhatsapp true (it would
+        // otherwise surface a misleading upsell for a listing with no real number).
+        filtered.hasWhatsapp = Boolean(filtered.contactInfo?.whatsapp?.trim());
 
         // OWNER-gated richDescription omission (FR-3b): when ownerEntitlements
         // are provided, presence of CAN_USE_RICH_DESCRIPTION is the ONLY signal
@@ -130,27 +151,6 @@ export function filterAccommodationByEntitlements(
 
             apiLogger.debug(
                 `Stripped video content from accommodation ${filtered.id} - viewer lacks ${EntitlementKey.CAN_EMBED_VIDEO}`
-            );
-        }
-
-        // Hide WhatsApp number if not entitled
-        if (!canDisplayWhatsApp && filtered.whatsappNumber) {
-            filtered.whatsappNumber = undefined;
-            apiLogger.debug(
-                `Removed WhatsApp number from accommodation ${filtered.id} - viewer lacks ${EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY}`
-            );
-        }
-
-        // Disable WhatsApp direct link if not entitled
-        if (!canUseWhatsAppDirect) {
-            if (filtered.whatsappDirectLink) {
-                filtered.whatsappDirectLink = false;
-            }
-            if (filtered.enableWhatsAppDirect) {
-                filtered.enableWhatsAppDirect = false;
-            }
-            apiLogger.debug(
-                `Disabled WhatsApp direct link for accommodation ${filtered.id} - viewer lacks ${EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT}`
             );
         }
     } catch (error) {
@@ -356,7 +356,6 @@ export function checkPremiumFeatures(accommodation: AccommodationData): {
     hasRichDescription: boolean;
     hasVideo: boolean;
     hasWhatsApp: boolean;
-    hasWhatsAppDirect: boolean;
     isVerified: boolean;
 } {
     // Check for markdown in description
@@ -371,13 +370,9 @@ export function checkPremiumFeatures(accommodation: AccommodationData): {
                 accommodation.media.some((item: { type?: string }) => item.type === 'video'))
     );
 
-    // Check for WhatsApp
-    const hasWhatsApp = Boolean(accommodation.whatsappNumber);
-
-    // Check for WhatsApp direct link
-    const hasWhatsAppDirect = Boolean(
-        accommodation.whatsappDirectLink || accommodation.enableWhatsAppDirect
-    );
+    // Check for WhatsApp (HOS-19: the number lives at contactInfo.whatsapp;
+    // there is no stored "direct link" flag — DIRECT is a VIEWER capability).
+    const hasWhatsApp = Boolean(accommodation.contactInfo?.whatsapp?.trim());
 
     // Check for verification badge (owner-gated, derived from isVerified column)
     const isVerified = Boolean(accommodation.isVerified);
@@ -386,7 +381,6 @@ export function checkPremiumFeatures(accommodation: AccommodationData): {
         hasRichDescription,
         hasVideo,
         hasWhatsApp,
-        hasWhatsAppDirect,
         isVerified
     };
 }
@@ -421,10 +415,6 @@ export function getRequiredEntitlements(accommodation: AccommodationData): Entit
 
     if (premiumFeatures.hasWhatsApp) {
         required.push(EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY);
-    }
-
-    if (premiumFeatures.hasWhatsAppDirect) {
-        required.push(EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT);
     }
 
     if (premiumFeatures.isVerified) {

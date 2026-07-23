@@ -52,8 +52,8 @@ describe('GastronomyAdminCreateInputSchema', () => {
 });
 
 describe('GastronomyOwnerUpdateInputSchema', () => {
-    // The owner-update schema must NOT contain identity fields (name/slug/type/destinationId)
-    // Those are admin-controlled. Unknown keys are silently stripped by Zod.
+    // HOS-166 D-1: the owner now controls identity fields (name/description/destinationId).
+    // `slug` remains admin-only (immutable post-create, derived from name — OQ-3).
 
     it('should validate a valid owner-update payload with operational fields', () => {
         const data = {
@@ -67,10 +67,10 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
         expect(() => GastronomyOwnerUpdateInputSchema.parse({})).not.toThrow();
     });
 
-    it('should strip identity field "name" (unknown key)', () => {
+    it('should accept identity field "name" (HOS-166 D-1: owner now controls identity)', () => {
         const data = { name: 'New Name', priceRange: 'HIGH' };
         const result = GastronomyOwnerUpdateInputSchema.parse(data);
-        expect('name' in result).toBe(false);
+        expect(result.name).toBe('New Name');
     });
 
     it('should strip identity field "slug" (unknown key)', () => {
@@ -86,10 +86,11 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
         expect(result.type).toBe('BAR');
     });
 
-    it('should strip identity field "destinationId" (unknown key)', () => {
-        const data = { destinationId: faker.string.uuid(), priceRange: 'PREMIUM' };
+    it('should accept identity field "destinationId" (HOS-166 D-1: owner now controls identity)', () => {
+        const destinationId = faker.string.uuid();
+        const data = { destinationId, priceRange: 'PREMIUM' };
         const result = GastronomyOwnerUpdateInputSchema.parse(data);
-        expect('destinationId' in result).toBe(false);
+        expect(result.destinationId).toBe(destinationId);
     });
 
     it('should accept amenityIds and featureIds arrays', () => {

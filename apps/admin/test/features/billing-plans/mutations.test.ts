@@ -25,7 +25,14 @@ import { server } from '../../mocks/server';
 
 const API_BASE = 'http://localhost:3001';
 
-/** Minimal valid BillingPlanResponse for mutation responses */
+/**
+ * Minimal valid BillingPlanResponse for mutation responses.
+ *
+ * Includes `priceChangeEffects: []` (HOS-176) so it also satisfies
+ * `AdminBillingPlanUpdateResponseSchema`, used by `useUpdatePlanMutation`.
+ * The plain (non-admin) `BillingPlanResponseSchema` used by create/delete/toggle
+ * mutations ignores the extra field since it is not `.strict()`.
+ */
 const planResponse = {
     id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
     slug: 'owner-basico',
@@ -43,7 +50,8 @@ const planResponse = {
     limits: {},
     isActive: true,
     createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-15T00:00:00.000Z'
+    updatedAt: '2024-01-15T00:00:00.000Z',
+    priceChangeEffects: []
 };
 
 /** Wraps a BillingPlanResponse in the standard API envelope */

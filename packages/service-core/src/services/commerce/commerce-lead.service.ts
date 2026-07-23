@@ -168,11 +168,16 @@ const approveAndProvisionInputSchema = z.object({
  * - `createLead(actor, data, ctx?)` — submit a new lead (public).
  * - `listLeads(actor, input, ctx?)` — list leads with optional filters (admin).
  * - `markHandled(actor, input, ctx?)` — approve or reject a lead (admin).
+ * - `getMyLead(actor, ctx?)` — the caller's OWN most-recent provisioned lead
+ *   (HOS-257 pre-fill source, protected/self-service).
  *
  * ## Permissions
  * - `createLead`: no permission required (public form endpoint).
  * - `listLeads`: requires `COMMERCE_VIEW_ALL`.
  * - `markHandled`: requires `COMMERCE_EDIT_ALL`.
+ * - `getMyLead`: no permission required beyond authentication — the caller
+ *   only ever reads their OWN lead (scoped by `provisionedUserId = actor.id`,
+ *   never by an arbitrary id), so there is nothing to gate beyond being logged in.
  *
  * ## Notification
  * Inject a `LeadNotificationPort` via the constructor to enable email delivery
@@ -259,6 +264,54 @@ export class CommerceLeadService extends BaseService {
                 }
 
                 return created;
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // getMyLead — self-service, auth-only (HOS-257)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Returns the authenticated caller's own most-recent PROVISIONED lead, for
+     * pre-filling the commerce create form (HOS-257 D-4).
+     *
+     * Scoped by `provisionedUserId = actor.id` — the FK set by
+     * {@link approveAndProvision} when the owner account was created from this
+     * lead. This is the only reliable "own lead" link: `commerce_leads` rows
+     * have no `ownerId`/`createdById` (leads are anonymous public-form
+     * submissions, see the schema doc), so any OTHER lead matching the actor's
+     * email would NOT be provably theirs. A caller with no provisioned lead
+     * (the common case for most owners — provisioning is admin-driven and
+     * optional) gets `null`, never an error — this is a pre-fill convenience,
+     * not a gate (D-4 golden rule).
+     *
+     * No permission check beyond `validateActor` — the query is inherently
+     * self-scoped, so there is nothing an elevated permission would unlock.
+     *
+     * @param actor - The authenticated actor requesting their own lead.
+     * @param ctx - Optional service execution context.
+     * @returns `ServiceOutput<CommerceLead | null>` — `null` when the caller
+     *   has no provisioned lead on record.
+     */
+    public async getMyLead(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<CommerceLead | null>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getMyLead',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, a, execCtx) => {
+                const result = await this._model.findAll(
+                    { provisionedUserId: a.id },
+                    { page: 1, pageSize: 1, sortBy: 'createdAt', sortOrder: 'desc' },
+                    undefined,
+                    execCtx?.tx
+                );
+                const [mostRecent] = result.items;
+                return (mostRecent as CommerceLead | undefined) ?? null;
             }
         });
     }

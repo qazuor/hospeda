@@ -55,12 +55,12 @@ import {
     isNull
 } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { getPromoCodeById, withServiceTransaction } from '@repo/service-core';
+import { getPromoCodeById, redeemAndRecordUsage, withServiceTransaction } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 import { fetchPreapprovalPlanId } from '../../utils/mp-preapproval-plan-lookup.js';
-import { applySignupDiscountToMonthly } from '../subscription-discount-signup.service.js';
+import { computeSignupDiscountCycleSeed } from '../subscription-discount-signup.service.js';
 
 /**
  * How far back (from "now") the heuristic (Tier 3) reconciliation path
@@ -451,14 +451,50 @@ type OwnershipTier = 'ownership' | 'nonce' | 'heuristic';
  * `checkout` row — no async lookup, so no lookup-failure mode to fail closed
  * on either.
  *
- * TODO(HOS-191 follow-up): Tier 1 still lacks a positive NON-email ownership
- * factor. Add one to fully harden it — either match the live preapproval's
- * `payer_id` (which MercadoPago DOES reliably return) against the customer's
- * own MP identity, or mint a single-use server-side link token returned only
- * to the owner at `/start-paid` and required back on the `back_url` return.
- * Also have the web return page strip `preapproval_id` from the URL (e.g.
- * `history.replaceState`) BEFORE any analytics/third-party script runs, to
- * shrink the weak-secrecy leak surface described above.
+ * ## HOS-209: Tier 1's positive non-email factor is now the `external_reference`
+ *
+ * The chosen hardening (owner decision, 2026-07-22) is NOT payer_id or a link
+ * token — it is stamping the per-checkout `nonce` onto the hosted-checkout
+ * share-link URL as `external_reference` (see `buildPreapprovalPlanShareLink`,
+ * HOS-209), so MercadoPago carries it onto the authorized preapproval FROM THE
+ * START. That closes the Tier-1 forward-hijack residual through the ALREADY
+ * EXISTING Step-3 IDOR guard in {@link linkPreapprovalToLocalSub}, at no extra
+ * cost here: an attacker who quotes their own `expectedLocalSubscriptionId`
+ * plus a victim's leaked `preapproval_id` now hits `live.externalReference`
+ * (the victim's nonce) !== `checkout.nonce` (the attacker's) → `idor`. Before
+ * HOS-209 that guard was inert on Tier 1 because a fresh preapproval carried no
+ * `external_reference` until Step 4 stamped it post-hoc, which is exactly why
+ * payer-email had to carry the load. The web return page already strips
+ * `preapproval_id` from the URL before analytics run (HOS-209 web part, merged
+ * in #2374), shrinking the leak surface in parallel.
+ *
+ * Leak-surface tradeoff (HOS-209): stamping the nonce onto the hosted-checkout
+ * URL means it now travels through the buyer's browser (history, and any script
+ * MercadoPago's own hosted page loads) — the same weak-secrecy class the
+ * `preapproval_id` leak is described under above. That does NOT weaken the nonce
+ * as an ownership factor, because NO code path ever trusts a client-supplied
+ * `external_reference`: the Step-3 IDOR guard compares against
+ * `live.externalReference` re-`retrieve`d directly from MercadoPago (F2 back_url,
+ * `routes/billing/link-preapproval.ts` passes exactly that live value, plus
+ * `expectedCustomerId` from the authenticated session — never a body/query
+ * field), and Tier 2 matches the `external_reference` read from a live
+ * MercadoPago `retrieve()` triggered by a signature-verified webhook event (F3)
+ * — the webhook body carries only the resource id, never `external_reference`,
+ * so the value is always MP-sourced, not attacker-supplied. A leaked nonce also cannot be turned into a hijack: the
+ * comparand `checkout.nonce` is read from the caller's OWN server-generated
+ * `billing_pending_checkouts` row (`randomBytes`), so an attacker cannot make
+ * their `checkout.nonce` equal a victim's — knowing the victim's nonce grants no
+ * new capability. The "unforgeable" framing for Tier 2 above therefore still
+ * holds against the values this guard actually trusts (MP-sourced), even though
+ * the nonce is no longer strictly server-side-only in transit.
+ *
+ * Belt-and-suspenders: the post-hoc Step-4 `adapter.subscriptions.update({
+ * externalReference })` REMAINS as a fallback for the case MercadoPago does not
+ * honor the URL param. Whether MP actually stamps the URL `external_reference`
+ * onto the preapproval is EMPIRICAL and DEFERRED to a real-MP staging smoke
+ * (HOS-174, this issue carries `status-needs-smoke-staging`). If the smoke shows
+ * MP drops the param, fall back to the payer_id consistency guard or a
+ * single-use link token — but do not build either blind.
  *
  * @internal
  */
@@ -595,12 +631,35 @@ async function verifyPreapprovalOwnership(params: {
 }
 
 /**
- * Apply a checkout-time pending discount (SPEC-262) to a just-linked
- * preapproval, best-effort. Never throws and never blocks the linking outcome
- * — a discount-application failure means the customer is (safely) charged
- * full price and the failure is logged loudly for manual reconciliation,
- * matching the FAIL-CLOSED-on-amount-but-never-block-checkout posture used
- * throughout the promo-code system (see `subscription-discount-signup.service.ts`).
+ * Record the checkout-time pending discount bookkeeping on a just-linked
+ * preapproval (SPEC-262, rearchitected by HOS-244).
+ *
+ * HOS-244: the preapproval is already BORN discounted at the plan level, so this
+ * no longer mutates MercadoPago. It has two phases with DIFFERENT failure
+ * postures — a deliberate split, because a born-discounted preapproval that never
+ * gets `promo_code_id` stamped would be treated by `resolveRenewalPromoEffect` as
+ * "no discount" and NEVER restore to full → the customer stays discounted forever
+ * (revenue leak). Under the old born-full-then-PUT-down design a skip was safe
+ * (full price); it is NOT safe now.
+ *
+ * 1. **CRITICAL, fail-closed**: stamp `promo_code_id` + seed
+ *    `promo_effect_remaining_cycles` from the SELF-SUFFICIENT snapshot
+ *    (`promoCodeId` + `durationCycles`). Depends ONLY on the snapshot — never on
+ *    re-resolving the promo code or the price — so a transient lookup failure can
+ *    no longer skip it. If this DB write itself fails, it is surfaced to Sentry
+ *    with the CORRECT semantics (the subscription is UNDER-charged), not the old
+ *    misleading "customer charged full price".
+ * 2. **BEST-EFFORT**: record the redemption usage row. Needs the code + full price;
+ *    if either cannot be resolved, or the record fails, the discount is already
+ *    live AND will restore correctly — only the usage counter is missing, logged
+ *    for reconcile.
+ *
+ * `durationCycles` fallback: pre-HOS-244 in-flight snapshots lack it; re-resolve
+ * from the promo code, and if THAT also fails, seed `null` so the renewal
+ * "inconsistent state" defensive branch restores to full after cycle 1 (charges
+ * MORE, never less — no leak) instead of never restoring.
+ *
+ * Never throws; never blocks the linking outcome.
  *
  * @internal
  */
@@ -613,6 +672,7 @@ async function applyPendingDiscountBestEffort(params: {
     readonly pendingDiscount: {
         readonly promoCodeId: string;
         readonly finalAmountCentavos: number;
+        readonly durationCycles?: number | null;
     };
     readonly livemode: boolean;
 }): Promise<void> {
@@ -626,78 +686,182 @@ async function applyPendingDiscountBestEffort(params: {
         livemode
     } = params;
 
+    // ── Resolve durationCycles (snapshot-first; fall back to the promo code for
+    //    pre-HOS-244 in-flight rows). Reuse any resolved code for phase 2.
+    let durationCycles = pendingDiscount.durationCycles;
+    let resolvedCode: string | undefined;
+    if (durationCycles === undefined) {
+        try {
+            const r = await getPromoCodeById(pendingDiscount.promoCodeId);
+            const effect = r.success ? r.data?.effect : undefined;
+            if (effect && effect.kind === 'discount') {
+                durationCycles = effect.durationCycles;
+                resolvedCode = r.success ? r.data?.code : undefined;
+            }
+        } catch {
+            // Fall through: durationCycles stays undefined → null seed below.
+        }
+    }
+    // number → seed N; null (forever) or undefined (unresolved) → null seed. A null
+    // seed with a finite discount lets the renewal defensive branch restore after
+    // cycle 1 (over-charge, never under-charge).
+    const seed =
+        typeof durationCycles === 'number' ? computeSignupDiscountCycleSeed(durationCycles) : null;
+
+    // ── Phase 1 (CRITICAL, fail-closed): stamp promo_code_id + seed the counter.
     try {
-        // NOTE: `getPromoCodeById`'s inferred return type does not narrow `data`
-        // to non-optional after checking `success` (see the same pattern in
-        // `payment-logic.ts`'s `resolveActiveDiscountAmount` and
-        // `promo-code.trial-extension.ts`) — guard both `success` and `data`/`effect`
-        // explicitly via optional chaining rather than a non-null assertion.
-        const promoCodeResult = await getPromoCodeById(pendingDiscount.promoCodeId);
-        const effect = promoCodeResult.success ? promoCodeResult.data?.effect : undefined;
-        if (!promoCodeResult.success || !effect || effect.kind !== 'discount') {
-            apiLogger.error(
-                { localSubscriptionId, preapprovalId, promoCodeId: pendingDiscount.promoCodeId },
-                'HOS-191 link-preapproval: pending discount promo code is no longer resolvable to a valid discount effect — skipping (customer charged full price)'
-            );
-            return;
-        }
-        const code = promoCodeResult.data?.code;
-        if (!code) {
-            apiLogger.error(
-                { localSubscriptionId, preapprovalId, promoCodeId: pendingDiscount.promoCodeId },
-                'HOS-191 link-preapproval: pending discount promo code resolved with no code string — skipping (customer charged full price)'
-            );
-            return;
-        }
-
-        const plan = await billing.plans.get(planId);
-        const monthlyPrice = plan?.prices.find((p) => p.billingInterval === 'month');
-        if (!monthlyPrice) {
-            apiLogger.error(
-                { localSubscriptionId, preapprovalId, planId },
-                'HOS-191 link-preapproval: could not resolve full monthly price for pending discount — skipping (customer charged full price)'
-            );
-            return;
-        }
-
-        const result = await applySignupDiscountToMonthly({
-            billing,
-            subscriptionId: localSubscriptionId,
-            mpSubscriptionId: preapprovalId,
-            customerId,
-            promoCodeId: pendingDiscount.promoCodeId,
-            code,
-            effect,
-            fullPriceCentavos: monthlyPrice.unitAmount,
-            livemode
-        });
-
-        if (!result.success) {
-            apiLogger.error(
-                {
-                    localSubscriptionId,
-                    preapprovalId,
-                    error: result.error.message
-                },
-                'HOS-191 link-preapproval: deferred discount application failed — customer charged full price, needs manual reconcile'
-            );
-            Sentry.captureException(
-                new Error(
-                    `HOS-191 link-preapproval: deferred discount apply failed: ${result.error.message}`
-                ),
-                { extra: { localSubscriptionId, preapprovalId } }
-            );
-        }
+        await getDb()
+            .update(billingSubscriptions)
+            .set({ promoCodeId: pendingDiscount.promoCodeId, promoEffectRemainingCycles: seed })
+            .where(eq(billingSubscriptions.id, localSubscriptionId));
     } catch (err) {
         apiLogger.error(
             {
                 localSubscriptionId,
                 preapprovalId,
+                promoCodeId: pendingDiscount.promoCodeId,
                 error: err instanceof Error ? err.message : String(err)
             },
-            'HOS-191 link-preapproval: unexpected error applying deferred discount — customer charged full price, needs manual reconcile'
+            'HOS-244 link-preapproval: FAILED to stamp promo + seed the cycle counter on a born-discounted preapproval — the discount will NOT auto-restore; the subscription is UNDER-charged and needs manual reconcile',
+            { capture: true }
         );
-        Sentry.captureException(err, { extra: { localSubscriptionId, preapprovalId } });
+        Sentry.captureException(err, {
+            extra: { localSubscriptionId, preapprovalId, promoCodeId: pendingDiscount.promoCodeId }
+        });
+        return;
+    }
+
+    // ── Phase 2 (BEST-EFFORT): record the redemption usage row.
+    try {
+        let code = resolvedCode;
+        if (!code) {
+            const r = await getPromoCodeById(pendingDiscount.promoCodeId);
+            code = r.success ? r.data?.code : undefined;
+        }
+        const plan = await billing.plans.get(planId);
+        const monthlyPrice = plan?.prices.find((p) => p.billingInterval === 'month');
+        if (!code || !monthlyPrice) {
+            apiLogger.warn(
+                { localSubscriptionId, preapprovalId, promoCodeId: pendingDiscount.promoCodeId },
+                'HOS-244 link-preapproval: promo stamped + counter seeded, but could not resolve code/price to record the redemption usage — the discount IS live and will restore; reconcile the usage counter only'
+            );
+            return;
+        }
+        const discountAmount = monthlyPrice.unitAmount - pendingDiscount.finalAmountCentavos;
+        const redeemResult = await redeemAndRecordUsage({
+            promoCodeId: pendingDiscount.promoCodeId,
+            customerId,
+            subscriptionId: localSubscriptionId,
+            discountAmount,
+            currency: 'ARS',
+            livemode
+        });
+        if (!redeemResult.success) {
+            apiLogger.error(
+                { localSubscriptionId, preapprovalId, error: redeemResult.error.message },
+                'HOS-244 link-preapproval: redemption record failed — the discount IS live and will restore; only the usage record is missing (reconcile usage counter)'
+            );
+        }
+    } catch (err) {
+        apiLogger.warn(
+            {
+                localSubscriptionId,
+                preapprovalId,
+                error: err instanceof Error ? err.message : String(err)
+            },
+            'HOS-244 link-preapproval: unexpected error recording the redemption usage — the discount IS live and will restore; reconcile usage counter only'
+        );
+    }
+}
+
+/**
+ * Record a checkout-time pending `trial_extension` redemption (HOS-240) against
+ * a just-linked preapproval, best-effort. Never throws and never blocks the
+ * linking outcome.
+ *
+ * The redemption is DEFERRED to here (instead of being recorded at checkout, on
+ * the unauthorized `pending_provider` sub) so an abandoned MercadoPago checkout
+ * never burns a capped code (`max_uses`/`max_per_customer`) for a subscription
+ * that never activated. By the time this runs the customer HAS authorized the
+ * hosted checkout and the preapproval is linked — a real, converting trial.
+ *
+ * The extra trial days themselves were already baked into the MP
+ * `preapproval_plan` at checkout, so there is nothing to APPLY here — only the
+ * redemption to RECORD (`used_count++`, usage row) and the `promo_code_id` FK to
+ * stamp. Both are done atomically. Best-effort posture mirrors the discount
+ * path: a recording failure (e.g. a `max_uses` race lost to a concurrent
+ * converter) leaves the trial granted and is logged loudly for manual
+ * reconciliation rather than blocking the link.
+ *
+ * @internal
+ */
+async function applyPendingTrialExtensionBestEffort(params: {
+    readonly localSubscriptionId: string;
+    readonly preapprovalId: string;
+    readonly customerId: string;
+    readonly pendingTrialExtension: { readonly promoCodeId: string; readonly code: string };
+    readonly livemode: boolean;
+}): Promise<void> {
+    const { localSubscriptionId, preapprovalId, customerId, pendingTrialExtension, livemode } =
+        params;
+
+    try {
+        // Guard: the code must still resolve to a valid trial_extension effect
+        // (same optional-chaining pattern as the discount path — `getPromoCodeById`
+        // does not narrow `data` after `success`).
+        const promoCodeResult = await getPromoCodeById(pendingTrialExtension.promoCodeId);
+        const effect = promoCodeResult.success ? promoCodeResult.data?.effect : undefined;
+        if (!promoCodeResult.success || effect?.kind !== 'trial_extension') {
+            apiLogger.error(
+                {
+                    localSubscriptionId,
+                    preapprovalId,
+                    promoCodeId: pendingTrialExtension.promoCodeId
+                },
+                'HOS-240 link-preapproval: pending trial_extension promo no longer resolvable to a valid effect — skipping redemption (the trial was already granted in the MP plan)'
+            );
+            return;
+        }
+
+        // Record the redemption + stamp promo_code_id atomically. `discountAmount`
+        // is 0 — a trial extension grants free days, not a monetary discount.
+        await withServiceTransaction(async (ctx) => {
+            // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
+            const tx = ctx.tx!;
+            const redeemResult = await redeemAndRecordUsage({
+                promoCodeId: pendingTrialExtension.promoCodeId,
+                customerId,
+                subscriptionId: localSubscriptionId,
+                discountAmount: 0,
+                currency: 'ARS',
+                livemode,
+                tx
+            });
+            if (!redeemResult.success) {
+                throw new Error(redeemResult.error.message);
+            }
+            await tx
+                .update(billingSubscriptions)
+                .set({ promoCodeId: pendingTrialExtension.promoCodeId })
+                .where(eq(billingSubscriptions.id, localSubscriptionId));
+        });
+    } catch (err) {
+        apiLogger.error(
+            {
+                localSubscriptionId,
+                preapprovalId,
+                promoCodeId: pendingTrialExtension.promoCodeId,
+                error: err instanceof Error ? err.message : String(err)
+            },
+            'HOS-240 link-preapproval: deferred trial_extension redemption failed — the trial was granted (baked into the MP plan) but its usage was NOT recorded; needs manual reconcile'
+        );
+        Sentry.captureException(err, {
+            extra: {
+                localSubscriptionId,
+                preapprovalId,
+                promoCodeId: pendingTrialExtension.promoCodeId
+            }
+        });
     }
 }
 
@@ -899,6 +1063,25 @@ export async function linkPreapprovalToLocalSub(
             customerId: checkout.customerId,
             planId: checkout.planId,
             pendingDiscount: checkout.pendingDiscount,
+            livemode: subRow?.livemode ?? false
+        });
+    }
+
+    // Step 7: record a deferred trial_extension redemption (HOS-240), best-effort,
+    // non-blocking — the caps were validated at checkout; this only records the
+    // usage now that the preapproval is authorized+linked (never on an abandon).
+    if (checkout.pendingTrialExtension) {
+        const [subRow] = await client
+            .select({ livemode: billingSubscriptions.livemode })
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, checkout.localSubscriptionId))
+            .limit(1);
+
+        await applyPendingTrialExtensionBestEffort({
+            localSubscriptionId: checkout.localSubscriptionId,
+            preapprovalId,
+            customerId: checkout.customerId,
+            pendingTrialExtension: checkout.pendingTrialExtension,
             livemode: subRow?.livemode ?? false
         });
     }

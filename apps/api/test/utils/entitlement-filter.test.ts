@@ -4,8 +4,11 @@
  * The public accommodation payload follows a strict contract:
  * - `richDescription` presence means the OWNING HOST is entitled to publish it (CAN_USE_RICH_DESCRIPTION).
  * - `isVerified` presence (truthy) means the OWNING HOST has the HAS_VERIFICATION_BADGE entitlement.
- * The viewer does NOT decide these owner-gated fields. Viewer-gated branches (video,
- * WhatsApp) still depend on `hasEntitlement(c, ...)` / `userEntitlements`.
+ * The viewer does NOT decide these owner-gated fields. Video is still viewer-gated
+ * via `hasEntitlement(c, CAN_EMBED_VIDEO)`. WhatsApp (HOS-19) is NO LONGER stripped
+ * here: the shared-cached public payload only carries the owner-derived `hasWhatsapp`
+ * boolean (derived from `contactInfo.whatsapp`); the number is gated per-viewer on a
+ * separate protected endpoint.
  */
 
 import { EntitlementKey } from '@repo/billing';
@@ -19,9 +22,7 @@ const BASE_ACCOMMODATION = {
     description: 'Plain description',
     richDescription: '## Premium\n\n**luxury**',
     videoUrl: 'https://youtube.com/watch?v=demo',
-    whatsappNumber: '+5493442123456',
-    whatsappDirectLink: true,
-    enableWhatsAppDirect: true,
+    contactInfo: { whatsapp: '+5493442123456' },
     isVerified: true,
     media: [{ type: 'video', url: 'https://youtube.com/watch?v=demo' }]
 } as const;
@@ -91,7 +92,7 @@ describe('filterAccommodationByEntitlements', () => {
         expect(body.isVerified).toBe(true);
     });
 
-    it('keeps viewer-gated branches (video, WhatsApp) stripped when viewer lacks entitlements', async () => {
+    it('keeps video viewer-gated but never emits the WhatsApp number (HOS-19: only hasWhatsapp)', async () => {
         const app = createViewerContext([]);
 
         app.get('/', (c) => {
@@ -108,9 +109,49 @@ describe('filterAccommodationByEntitlements', () => {
         expect(body.richDescription).toBe('## Premium\n\n**luxury**');
         expect(body.videoUrl).toBeUndefined();
         expect(body.media).toEqual([]);
+        // HOS-19: the number is never stripped/emitted here — it is not the
+        // viewer-gated surface. Only the owner-derived boolean is set, and it is
+        // TRUE regardless of the viewer's plan (cache-safe).
+        expect(body.hasWhatsapp).toBe(true);
         expect(body.whatsappNumber).toBeUndefined();
-        expect(body.whatsappDirectLink).toBe(false);
-        expect(body.enableWhatsAppDirect).toBe(false);
+    });
+
+    it('sets hasWhatsapp=false when the accommodation has no contactInfo.whatsapp', async () => {
+        const app = createViewerContext([EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY]);
+
+        app.get('/', (c) => {
+            const filtered = filterAccommodationByEntitlements(
+                c,
+                { id: 'acc-002', contactInfo: { whatsapp: null } },
+                []
+            );
+            return c.json(filtered);
+        });
+
+        const res = await app.request('/');
+        const body = await res.json();
+
+        expect(body.hasWhatsapp).toBe(false);
+    });
+
+    it('sets hasWhatsapp=false for a whitespace-only number (consistent with the /whatsapp endpoint trim)', async () => {
+        // A legacy whitespace-only value must NOT flip hasWhatsapp true, otherwise
+        // the web would surface a misleading upsell for a listing with no real number.
+        const app = createViewerContext([EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY]);
+
+        app.get('/', (c) => {
+            const filtered = filterAccommodationByEntitlements(
+                c,
+                { id: 'acc-003', contactInfo: { whatsapp: '   ' } },
+                []
+            );
+            return c.json(filtered);
+        });
+
+        const res = await app.request('/');
+        const body = await res.json();
+
+        expect(body.hasWhatsapp).toBe(false);
     });
 
     // -------------------------------------------------------------------------

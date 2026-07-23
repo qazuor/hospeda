@@ -2527,6 +2527,51 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             expect(payload.params.radius).toBe(12);
         });
 
+        it('regression HOS-207: radius:0 falls back to the 5km POI default, not a 0km search', async () => {
+            // The model emits radius:0 for a "near the autódromo" query with no
+            // radius mentioned. The schema now accepts 0 (was .positive() → 500),
+            // and the POI branch must treat 0 as absent — using the 5km default
+            // rather than silently overriding it with a degenerate 0km search.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { poiSlugs: [AUTODROMO_POI_SLUG], radius: 0 }
+                },
+                usage: { promptTokens: 12, completionTokens: 6, totalTokens: 18 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextPoiGetBySlugResult.current = {
+                data: {
+                    id: 'poi-1',
+                    slug: AUTODROMO_POI_SLUG,
+                    lat: AUTODROMO_LAT,
+                    long: AUTODROMO_LONG
+                }
+            };
+            nextPoiDestinationIdsResult.current = {
+                data: { destinationIds: [CONCEPCION_DEL_URUGUAY_UUID] }
+            };
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cerca del autódromo' }],
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            expect(payload.params.radius).toBe(5);
+        });
+
         it('does not call the POI resolver when poiSlugs is absent, and poiSlugs defaults to []', async () => {
             nextGenerateObjectResult.current = {
                 object: {

@@ -34,6 +34,7 @@ import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../../services/addon-lifecycle.service.js';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service.js';
 import { linkPreapprovalToLocalSub } from '../../../services/billing/link-preapproval.service.js';
+import { planDisplayNameFromPlan } from '../../../services/billing/plan-change-reason.js';
 import { completeSupersessionPairing } from '../../../services/billing/reactivation-supersession-complete.js';
 import { reconcileCommerceListingForSubscription } from '../../../services/commerce-reconcile.service.js';
 import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service.js';
@@ -804,10 +805,11 @@ export async function processSubscriptionUpdated({
         updateData.canceledAt = new Date();
     }
 
-    // Reset cancel_at_period_end when reactivating
-    if (mappedStatus === SubscriptionStatusEnum.ACTIVE && localSubscription.cancelAtPeriodEnd) {
-        updateData.cancelAtPeriodEnd = false;
-    }
+    // NB: the `cancelAtPeriodEnd = false` reset on reactivation is NOT decided
+    // here. HOS-236 gates it on a genuine resume (paused → active), and that
+    // decision must read the FOR-UPDATE-locked `freshStatus`/`freshRow`, not this
+    // pre-transaction snapshot — see the reset block just before the `tx.update`
+    // write below.
 
     // Track whether the transaction observed a status change so callers can decide
     // whether to run the post-commit side effects (notifications, addon cleanup, etc.).
@@ -970,6 +972,27 @@ export async function processSubscriptionUpdated({
             return;
         }
 
+        // HOS-236: reset cancel_at_period_end ONLY on a genuine resume
+        // (paused → active), using the FOR-UPDATE-locked values (freshStatus +
+        // freshRow.cancelAtPeriodEnd) for consistency with the TOCTOU guards
+        // above — NOT the stale pre-transaction snapshot.
+        //
+        // Without the `freshStatus === PAUSED` gate, a `past_due → active`
+        // (dunning recovery) or `trialing → active` (trial conversion) webhook on
+        // a soft-cancelled row (cancelAtPeriodEnd=true) would silently clear the
+        // flag, reviving a subscription the user explicitly cancelled and losing
+        // the cancellation (finalize-cancelled-subs would then never finalize it).
+        // A deliberate resume is the ONLY transition that should un-cancel, and it
+        // always comes FROM paused. (An `active → active` webhook can never reach
+        // here — it is dropped by the same-status idempotent skip above.)
+        if (
+            mappedStatus === SubscriptionStatusEnum.ACTIVE &&
+            freshRow.cancelAtPeriodEnd === true &&
+            freshStatus === SubscriptionStatusEnum.PAUSED
+        ) {
+            updateData.cancelAtPeriodEnd = false;
+        }
+
         await tx
             .update(billingSubscriptions)
             .set(updateData)
@@ -1016,7 +1039,12 @@ export async function processSubscriptionUpdated({
         } catch (auditError) {
             apiLogger.error(
                 { error: auditError, subscriptionId: localSubscription.id },
-                'Failed to insert subscription audit log entry'
+                'Failed to insert subscription audit log entry',
+                // Page Sentry: this audit row is now load-bearing for the HOS-230
+                // trial-eligibility decision (a cancelled subscription's
+                // authorization is read back from billing_subscription_events), so
+                // a silently-lost authorization event can wrongly re-grant a trial.
+                { capture: true }
             );
             // Do NOT throw - audit failure is non-blocking; status update must still commit
         }
@@ -1391,7 +1419,13 @@ export async function processSubscriptionUpdated({
         return { success: true, statusChanged: true, newStatus: mappedStatus };
     }
 
+    // `plan.name` from the qzpay adapter is the SLUG (`owner-basico`) — fine for
+    // the `planSlug` log below, but the customer-facing cancelled/paused/
+    // reactivated emails must show the display name (`Basic`). Derive it from the
+    // already-fetched plan object (metadata.displayName, slug fallback) — no extra
+    // query (HOS-231).
     const planName = plan?.name ?? 'Plan';
+    const planDisplayName = plan ? planDisplayNameFromPlan(plan) : planName;
     const customerName =
         typeof customer?.metadata?.name === 'string'
             ? customer.metadata.name
@@ -1410,7 +1444,7 @@ export async function processSubscriptionUpdated({
             customerEmail: customer?.email ?? '',
             customerName,
             userId,
-            planName,
+            planName: planDisplayName,
             currentPeriodEnd,
             mpSubscriptionId: mpPreapprovalId,
             previousStatus
@@ -1425,7 +1459,7 @@ export async function processSubscriptionUpdated({
             customerEmail: customer?.email ?? '',
             customerName,
             userId,
-            planName
+            planName: planDisplayName
         }).catch((err) => {
             apiLogger.debug({ error: err }, 'Subscription paused notification failed');
         });
@@ -1437,7 +1471,7 @@ export async function processSubscriptionUpdated({
             customerEmail: customer?.email ?? '',
             customerName,
             userId,
-            planName,
+            planName: planDisplayName,
             nextBillingDate
         }).catch((err) => {
             apiLogger.debug({ error: err }, 'Subscription reactivated notification failed');

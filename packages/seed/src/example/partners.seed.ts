@@ -8,8 +8,14 @@ import { createSeedFactory } from '../utils/seedFactory.js';
  * Strips seed-only metadata (`$schema`, `id`) and forwards the remaining
  * fields as-is — `startsAt`/`endsAt` are ISO date strings, which
  * `createPartnerSchema`'s `z.coerce.date()` accepts directly.
+ *
+ * Exported so the HOS-172 dual-write data-migration
+ * (`data-migrations/0019-backfill-example-partners.ts`) can reuse the exact
+ * same normalization when backfilling these fixtures on an already-seeded
+ * environment, the same way `pointsOfInterest.seed.ts` exports
+ * `normalizePointOfInterestSeedItem` for its own dual-write migration.
  */
-const partnerNormalizer = (data: Record<string, unknown>) => {
+export const partnerNormalizer = (data: Record<string, unknown>) => {
     const { $schema: _schema, id: _id, ...cleanData } = data;
     return cleanData;
 };

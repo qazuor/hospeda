@@ -33,7 +33,31 @@ vi.mock('../../../src/lib/auth-client', () => ({
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
         t: (_key: string, fallback?: string) => fallback ?? _key,
-        tPlural: (_key: string, _count: number, fallback?: string) => fallback ?? _key
+        // Minimal es-only stand-in mirroring the real `_one`/`_other` locale
+        // templates for the three count-driven promo-preview keys (HOS-253).
+        // `tPlural`'s real signature has no fallback param — it always resolves
+        // from the locale dictionary — so this dispatches on `key` + `params`
+        // instead of a passed-in template, matching the pattern used by other
+        // component test mocks (e.g. CalendarSection.test.tsx).
+        tPlural: (key: string, count: number, params?: Record<string, unknown>) => {
+            const p = params ?? {};
+            switch (key) {
+                case 'billing.checkout.promoApply.discountPercentCycle':
+                    return count === 1
+                        ? `${p.percent}% de descuento por ${p.months} mes`
+                        : `${p.percent}% de descuento por ${p.months} meses`;
+                case 'billing.checkout.promoApply.discountFixedCycle':
+                    return count === 1
+                        ? `$${p.amount} de descuento por ${p.months} mes`
+                        : `$${p.amount} de descuento por ${p.months} meses`;
+                case 'billing.checkout.promoApply.trialExtension':
+                    return count === 1
+                        ? `${p.days} día de prueba gratis adicional`
+                        : `${p.days} días de prueba gratis adicionales`;
+                default:
+                    return key;
+            }
+        }
     })
 }));
 
@@ -1141,6 +1165,96 @@ describe('PlanPurchaseButton', () => {
             });
         });
 
+        it('uses the SINGULAR form ("1 mes") for a single-cycle percentage discount', async () => {
+            // Regression (BETA-202): a 1-cycle discount must read "por 1 mes"
+            // (singular), never the pluralised "por 1 meses".
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: () =>
+                        Promise.resolve({
+                            data: {
+                                valid: true,
+                                effectPreview: {
+                                    effectKind: 'discount',
+                                    valueKind: 'percentage',
+                                    value: 30,
+                                    durationCycles: 1,
+                                    extraDays: null,
+                                    finalAmount: 105000
+                                }
+                            }
+                        })
+                })
+            );
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'BIENVENIDO30');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            await waitFor(() => {
+                // Anchored regex — `toHaveTextContent('...1 mes')` alone is a
+                // substring match and would also pass on the buggy "1 meses"
+                // output ("1 mes" ⊂ "1 meses"). `$` closes the door on that.
+                expect(screen.getByRole('status')).toHaveTextContent(
+                    /^30% de descuento por 1 mes$/
+                );
+            });
+            // Belt-and-suspenders: the pluralised copy must NOT leak through.
+            expect(screen.getByRole('status')).not.toHaveTextContent('1 meses');
+        });
+
+        it('uses the SINGULAR form ("1 mes") for a single-cycle fixed discount', async () => {
+            // Regression (BETA-202): mirrors the percentage case for the
+            // fixed-amount branch.
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: () =>
+                        Promise.resolve({
+                            data: {
+                                valid: true,
+                                effectPreview: {
+                                    effectKind: 'discount',
+                                    valueKind: 'fixed',
+                                    value: 50000,
+                                    durationCycles: 1,
+                                    extraDays: null,
+                                    finalAmount: 100000
+                                }
+                            }
+                        })
+                })
+            );
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'FIXED500X1');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            await waitFor(() => {
+                // Anchored regex — see the percentage case above for why a bare
+                // substring assertion is insufficient here.
+                expect(screen.getByRole('status')).toHaveTextContent(
+                    /^\$500 de descuento por 1 mes$/
+                );
+            });
+            expect(screen.getByRole('status')).not.toHaveTextContent('1 meses');
+        });
+
         it('shows the trial-extension days for a trial_extension code', async () => {
             mockAuthenticated();
             vi.stubGlobal(
@@ -1178,6 +1292,53 @@ describe('PlanPurchaseButton', () => {
                     '7 días de prueba gratis adicionales'
                 );
             });
+        });
+
+        it('uses the SINGULAR form ("1 día ... adicional") for a 1-day trial extension', async () => {
+            // Regression (HOS-252): a trial_extension of exactly 1 day must read
+            // "1 día de prueba gratis adicional" (singular), never the pluralised
+            // "1 días de prueba gratis adicionales".
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: () =>
+                        Promise.resolve({
+                            data: {
+                                valid: true,
+                                effectPreview: {
+                                    effectKind: 'trial_extension',
+                                    valueKind: null,
+                                    value: null,
+                                    durationCycles: null,
+                                    extraDays: 1,
+                                    finalAmount: null
+                                }
+                            }
+                        })
+                })
+            );
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'ONEDAY');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            await waitFor(() => {
+                // Anchored regex — `toHaveTextContent('1 día')` alone is a
+                // substring match and would also pass on the buggy "1 días"
+                // output ("1 día" ⊂ "1 días"). `$` closes the door on that.
+                expect(screen.getByRole('status')).toHaveTextContent(
+                    /^1 día de prueba gratis adicional$/
+                );
+            });
+            // Belt-and-suspenders: the pluralised copy must NOT leak through.
+            expect(screen.getByRole('status')).not.toHaveTextContent('1 días');
         });
 
         it('clears an applied promo when the billing interval changes', async () => {

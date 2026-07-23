@@ -6,12 +6,13 @@
 
 import { DestinationModel } from '@repo/db';
 import type { GetDestinationByPathInput } from '@repo/schemas';
-import { DestinationTypeEnum, RoleEnum } from '@repo/schemas';
+import { DestinationTypeEnum, PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DestinationService } from '../../../src/services/destination/destination.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { DestinationFactoryBuilder } from '../../factories/destinationFactory';
 import {
+    expectForbiddenError,
     expectInternalError,
     expectNotFoundError,
     expectSuccess,
@@ -64,7 +65,9 @@ describe('DestinationService.getByPath', () => {
         // Assert
         expectSuccess(result);
         expect(result.data?.name).toBe('Concepcion del Uruguay');
-        expect(asMock(modelMock.findByPath)).toHaveBeenCalledWith(params.path, undefined);
+        // getByPath reads soft-deleted rows too (includeDeleted = true) and lets
+        // checkCanViewDestination decide the outcome, mirroring getBySlug.
+        expect(asMock(modelMock.findByPath)).toHaveBeenCalledWith(params.path, undefined, true);
     });
 
     it('should return a root-level destination by path', async () => {
@@ -101,6 +104,110 @@ describe('DestinationService.getByPath', () => {
 
         // Assert
         expectNotFoundError(result);
+    });
+
+    // HOS-117 T-022: getByPath must route the row through checkCanViewDestination
+    // (like getBySlug) instead of relying on the model's SQL deletedAt filter, so
+    // the 410 GONE path is reachable for the common multi-segment destination URL
+    // and live PRIVATE/RESTRICTED destinations do not leak via path.
+    it('should throw GONE for a soft-deleted PUBLIC destination reached by a multi-segment path', async () => {
+        // Arrange
+        const path = '/argentina/entre-rios/colon';
+        const destination = new DestinationFactoryBuilder()
+            .with({
+                name: 'Colon',
+                slug: 'colon',
+                path,
+                visibility: VisibilityEnum.PUBLIC,
+                deletedAt: new Date()
+            })
+            .build();
+        asMock(modelMock.findByPath).mockResolvedValue(destination);
+        const actor = { id: 'user-1', role: RoleEnum.USER, permissions: [] };
+        const params: GetDestinationByPathInput = { path };
+
+        // Act
+        const result = await service.getByPath(actor, params);
+
+        // Assert
+        expect(result.error?.code).toBe('GONE');
+        // Reads soft-deleted rows so the gate — not the SQL filter — decides.
+        expect(asMock(modelMock.findByPath)).toHaveBeenCalledWith(path, undefined, true);
+    });
+
+    it('should enforce visibility (FORBIDDEN) for a live PRIVATE destination reached by path', async () => {
+        // Arrange
+        const path = '/argentina/entre-rios/secret';
+        const destination = new DestinationFactoryBuilder()
+            .with({
+                name: 'Secret',
+                slug: 'secret',
+                path,
+                visibility: VisibilityEnum.PRIVATE,
+                deletedAt: undefined
+            })
+            .build();
+        asMock(modelMock.findByPath).mockResolvedValue(destination);
+        const actor = { id: 'user-1', role: RoleEnum.USER, permissions: [] };
+        const params: GetDestinationByPathInput = { path };
+
+        // Act
+        const result = await service.getByPath(actor, params);
+
+        // Assert
+        expectForbiddenError(result);
+    });
+
+    it('should succeed for a live PUBLIC destination reached by path', async () => {
+        // Arrange
+        const path = '/argentina/entre-rios/gualeguaychu';
+        const destination = new DestinationFactoryBuilder()
+            .with({
+                name: 'Gualeguaychu',
+                slug: 'gualeguaychu',
+                path,
+                visibility: VisibilityEnum.PUBLIC,
+                deletedAt: undefined
+            })
+            .build();
+        asMock(modelMock.findByPath).mockResolvedValue(destination);
+        const actor = { id: 'user-1', role: RoleEnum.USER, permissions: [] };
+        const params: GetDestinationByPathInput = { path };
+
+        // Act
+        const result = await service.getByPath(actor, params);
+
+        // Assert
+        expectSuccess(result);
+        expect(result.data?.name).toBe('Gualeguaychu');
+    });
+
+    it('should allow staff with DESTINATION_VIEW_ALL to reach a soft-deleted destination by path', async () => {
+        // Arrange
+        const path = '/argentina/entre-rios/colon';
+        const destination = new DestinationFactoryBuilder()
+            .with({
+                name: 'Colon',
+                slug: 'colon',
+                path,
+                visibility: VisibilityEnum.PUBLIC,
+                deletedAt: new Date()
+            })
+            .build();
+        asMock(modelMock.findByPath).mockResolvedValue(destination);
+        const actor = {
+            id: 'staff-1',
+            role: RoleEnum.ADMIN,
+            permissions: [PermissionEnum.DESTINATION_VIEW_ALL]
+        };
+        const params: GetDestinationByPathInput = { path };
+
+        // Act
+        const result = await service.getByPath(actor, params);
+
+        // Assert
+        expectSuccess(result);
+        expect(result.data?.name).toBe('Colon');
     });
 
     it('should return VALIDATION_ERROR for empty path', async () => {

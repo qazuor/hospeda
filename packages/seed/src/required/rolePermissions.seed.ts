@@ -1055,6 +1055,11 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // per-section COMMERCE_*_EDIT_OWN permissions removed from PermissionEnum.
         PermissionEnum.COMMERCE_EDIT_OWN,
 
+        // COMMERCE_CREATE (HOS-166 PR-A): the owner creates their own listing
+        // self-service after lead approval — see the 0021 data-migration for
+        // the companion delta on already-seeded environments.
+        PermissionEnum.COMMERCE_CREATE,
+
         // USER: Basic profile permissions
         PermissionEnum.USER_VIEW_PROFILE,
         PermissionEnum.USER_UPDATE_PROFILE,

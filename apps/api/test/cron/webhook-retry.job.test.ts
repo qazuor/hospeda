@@ -720,8 +720,7 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
                 paymentStatus: 'approved',
                 debitDate: '2026-06-05',
                 couponAmount: null,
-                campaignId: null,
-                mpPayerId: null
+                campaignId: null
             }
         });
 
@@ -731,7 +730,8 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
             customerId: 'cust-resolved-1',
             planId: 'plan-1',
             status: 'active',
-            trialEnd: null
+            trialEnd: null,
+            billingInterval: 'month'
         });
         vi.mocked(paymentAlreadyRecorded).mockResolvedValue(false);
 
@@ -794,8 +794,7 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
                 paymentStatus: 'approved',
                 debitDate: null,
                 couponAmount: null,
-                campaignId: null,
-                mpPayerId: null
+                campaignId: null
             }
         });
 
@@ -804,7 +803,8 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
             customerId: 'cust-2',
             planId: 'plan-1',
             status: 'active',
-            trialEnd: null
+            trialEnd: null,
+            billingInterval: 'month'
         });
         // Already recorded — must NOT call billing.payments.record
         vi.mocked(paymentAlreadyRecorded).mockResolvedValue(true);
@@ -854,8 +854,7 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
                 paymentStatus: 'approved',
                 debitDate: null,
                 couponAmount: null,
-                campaignId: null,
-                mpPayerId: null
+                campaignId: null
             }
         });
 

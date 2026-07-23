@@ -812,6 +812,22 @@
       "howToObtainEs": "Dejá en \"true\" (default) para que el cron de polling corra y start-paid encole jobs de fallback. Poné \"false\" como kill-switch si el polling se rompe en prod y hay que desactivarlo sin redeploy. El webhook handler sigue funcionando igual."
     },
     {
+      "name": "HOSPEDA_BILLING_PRICE_INCREASE_ENABLED",
+      "description": "Feature flag for the plan price-INCREASE propagation path (HOS-176 Increment A). Ships dark (default false): while false the propagate-plan-price-changes cron leaves every \"increase\" price change in \"pending\" and never sends an advance notice or raises a subscriber MercadoPago transaction_amount. Set to \"true\" to enable the Disp. 954/2025 advance-notice phase plus the post-grace amount mutation. Decrease propagation is unaffected (always active).",
+      "descriptionEs": "Feature flag del camino de propagación de AUMENTOS de precio de plan (HOS-176 Incremento A). Se entrega apagado (default false): mientras esté en false, el cron propagate-plan-price-changes deja todo cambio \"increase\" en \"pending\" y nunca manda el aviso previo ni sube el transaction_amount del subscriptor en MercadoPago. Poné \"true\" para habilitar la fase de aviso previo (Disp. 954/2025) más la mutación de monto post-gracia. La propagación de bajas no se ve afectada (siempre activa).",
+      "type": "boolean",
+      "required": false,
+      "secret": false,
+      "defaultValue": "false",
+      "exampleValue": "false",
+      "apps": [
+        "api"
+      ],
+      "category": "billing",
+      "howToObtain": "Leave unset or \"false\" to keep the increase path dark (safe default: increases stay pending, nothing is charged differently). Set \"true\" ONLY after the legal notice copy (Disp. 954/2025) is signed off and a staging smoke has passed. Internally Zod transforms via `(v) => v === \"true\"` — only the literal string \"true\" enables it.",
+      "howToObtainEs": "Dejalo sin setear o en \"false\" para mantener el camino de aumentos apagado (default seguro: los aumentos quedan pending, no se cobra distinto). Poné \"true\" SOLO después de que la copia legal del aviso (Disp. 954/2025) esté aprobada y haya pasado un smoke en staging. Zod usa `(v) => v === \"true\"` internamente — solo el string literal \"true\" lo activa."
+    },
+    {
       "name": "HOSPEDA_AUTH_LOCKOUT_MAX_ATTEMPTS",
       "description": "Max failed login attempts before temporary lockout",
       "descriptionEs": "Intentos fallidos máximos de login antes del lockout temporal",

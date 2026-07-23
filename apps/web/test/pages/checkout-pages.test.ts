@@ -5,7 +5,8 @@
  *
  * SPEC-143 T-143-44 part 2 — sub-flows D1 (success-redirect),
  * D2 (failure-redirect), D3 (pending-redirect), plus the supporting
- * `index.astro` redirect to `/planes/`.
+ * `index.astro` role-aware redirect to the owner/tourist pricing page
+ * (BETA-201).
  *
  * Astro components cannot be rendered in Vitest/jsdom (sealed pattern,
  * see apps/web/CLAUDE.md "Testing"), so these tests assert on the source
@@ -160,9 +161,32 @@ describe('SPEC-143 T-143-44 — checkout return pages (D1, D2, D3, index)', () =
             expect(failureSrc).toContain('billing.checkout.failure.genericMessage');
         });
 
-        it('routes the retry CTA to /suscriptores/planes', () => {
-            expect(failureSrc).toContain("path: 'suscriptores/planes'");
+        it('routes the retry CTA role-aware via resolveSubscriptionPlansPath (BETA-201)', () => {
+            // The retry target is no longer hardcoded to the owner plans page:
+            // an owner whose owner-plan payment failed retries on the owner page,
+            // a tourist/anonymous MP return on the tourist page. The role is
+            // resolved server-side here (middleware does not parse the session
+            // for /suscriptores/*). The actual planes-vs-turistas decision is
+            // unit-tested in src/lib/__tests__/account-roles.test.ts.
+            expect(failureSrc).toContain('resolveSubscriptionPlansPath({ role:');
             expect(failureSrc).toContain('href: planesUrl');
+            // The bug was a hardcoded owner-page link; it must no longer appear.
+            expect(failureSrc).not.toContain("path: 'suscriptores/planes'");
+        });
+
+        it('gates the get-session lookup behind requestHasSessionCookie (auth rate-limit)', () => {
+            // An unconditional parseSessionUser on a public page floods the API
+            // auth bucket; the cheap cookie check must run first.
+            expect(failureSrc).toContain('requestHasSessionCookie');
+            expect(failureSrc).toMatch(
+                /requestHasSessionCookie\(cookieHeader\)\s*\?\s*await parseSessionUser/
+            );
+        });
+
+        it('opts the now role-variant page out of any CDN edge cache', () => {
+            // The retry CTA is per-visitor now; caching it at the edge would leak
+            // the first visitor's role to the next.
+            expect(failureSrc).toContain("Cache-Control', 'private, no-store'");
         });
 
         it('routes the support CTA to /contacto', () => {
@@ -245,10 +269,22 @@ describe('SPEC-143 T-143-44 — checkout return pages (D1, D2, D3, index)', () =
             expect(indexSrc).toContain('export const prerender = false');
         });
 
-        it('redirects to /suscriptores/planes with HTTP 302', () => {
-            expect(indexSrc).toContain('Astro.redirect');
-            expect(indexSrc).toContain("path: 'suscriptores/planes'");
-            expect(indexSrc).toContain('302');
+        it('redirects role-aware (planes vs turistas) with HTTP 302 (BETA-201)', () => {
+            // A bookmarked hit on the bare checkout root now redirects an owner
+            // to the owner plans page and a tourist/anonymous visitor to the
+            // tourist page, resolved via the shared helper (unit-tested in
+            // src/lib/__tests__/account-roles.test.ts) — no longer a hardcoded
+            // owner link. Emitted as an explicit Response (not Astro.redirect) so
+            // the Cache-Control header rides along with the 302.
+            expect(indexSrc).toContain('requestHasSessionCookie');
+            expect(indexSrc).toContain('resolveSubscriptionPlansPath({ role:');
+            expect(indexSrc).toContain('status: 302');
+            expect(indexSrc).toContain('Location:');
+            expect(indexSrc).not.toContain("path: 'suscriptores/planes'");
+        });
+
+        it('opts the per-visitor redirect out of any CDN edge cache', () => {
+            expect(indexSrc).toContain("'Cache-Control': 'private, no-store'");
         });
 
         it('uses the request locale via Astro.locals.locale, not Astro.params.lang', () => {

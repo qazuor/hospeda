@@ -1,0 +1,1 @@
+ALTER TABLE "billing_pending_checkouts" ADD COLUMN "pending_trial_extension" jsonb;

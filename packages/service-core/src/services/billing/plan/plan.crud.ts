@@ -28,11 +28,16 @@ import {
     sql,
     withTransaction
 } from '@repo/db';
-import type { AdminBillingPlanResponse, BillingPlanResponse } from '@repo/schemas';
+import type {
+    AdminBillingPlanResponse,
+    BillingPlanResponse,
+    PlanPriceChangeEffect
+} from '@repo/schemas';
 import { ServiceErrorCode } from '@repo/schemas';
 import { diffPlanFields, insertPlanAuditLog } from './plan.audit.js';
 import type { CreatePlanInput, ListPlansFilters, UpdatePlanInput } from './plan.types.js';
 import { findCapabilityFieldViolation } from './plan.types.js';
+import { enqueuePlanPriceChange } from './plan-price-change.service.js';
 
 // ---------------------------------------------------------------------------
 // Mapping
@@ -577,6 +582,11 @@ export async function updatePlan(
 
             const existingMeta = (existingPlan.metadata ?? {}) as Record<string, unknown>;
 
+            // HOS-176: collect the price-change propagation effect(s) triggered by this
+            // update (monthly and/or annual) so the admin response can surface "affects N
+            // subscribers, applies on <date>". Empty when no existing price changed.
+            const priceChangeEffects: PlanPriceChangeEffect[] = [];
+
             // Build updated metadata (merge)
             const updatedMeta: Record<string, unknown> = {
                 ...existingMeta
@@ -641,6 +651,26 @@ export async function updatePlan(
                         .update(billingPrices)
                         .set({ unitAmount: input.monthlyPriceArs })
                         .where(eq(billingPrices.id, monthlyPrice.id));
+                    // HOS-176: enqueue MP propagation when an EXISTING price actually
+                    // changed (a no-op write or a brand-new price with no subscribers
+                    // needs no propagation). Same transaction → atomic with the price write.
+                    if (monthlyPrice.unitAmount !== input.monthlyPriceArs) {
+                        const enqueued = await enqueuePlanPriceChange({
+                            db,
+                            planId: id,
+                            priceId: monthlyPrice.id,
+                            billingInterval: 'month',
+                            oldAmount: monthlyPrice.unitAmount,
+                            newAmount: input.monthlyPriceArs,
+                            actorId
+                        });
+                        priceChangeEffects.push({
+                            billingInterval: 'month',
+                            direction: enqueued.direction,
+                            effectiveAt: enqueued.effectiveAt.toISOString(),
+                            affectedSubscriberCount: enqueued.affectedSubscriberCount
+                        });
+                    }
                 } else {
                     await db.insert(billingPrices).values({
                         planId: id,
@@ -680,6 +710,26 @@ export async function updatePlan(
                         .update(billingPrices)
                         .set({ unitAmount: input.annualPriceArs })
                         .where(eq(billingPrices.id, annualPrice.id));
+                    // HOS-176: propagate an annual price change (since HOS-171 annual is
+                    // a recurring MP preapproval too). Deactivation (null/0, handled above)
+                    // is NOT a price change to propagate.
+                    if (annualPrice.unitAmount !== input.annualPriceArs) {
+                        const enqueued = await enqueuePlanPriceChange({
+                            db,
+                            planId: id,
+                            priceId: annualPrice.id,
+                            billingInterval: 'year',
+                            oldAmount: annualPrice.unitAmount,
+                            newAmount: input.annualPriceArs,
+                            actorId
+                        });
+                        priceChangeEffects.push({
+                            billingInterval: 'year',
+                            direction: enqueued.direction,
+                            effectiveAt: enqueued.effectiveAt.toISOString(),
+                            affectedSubscriberCount: enqueued.affectedSubscriberCount
+                        });
+                    }
                 } else {
                     await db.insert(billingPrices).values({
                         planId: id,
@@ -727,7 +777,10 @@ export async function updatePlan(
                 .from(billingPrices)
                 .where(and(eq(billingPrices.planId, id), eq(billingPrices.active, true)));
 
-            return { success: true as const, data: mapDbToPlan(updatedPlan, priceRows) };
+            return {
+                success: true as const,
+                data: { ...mapDbToPlan(updatedPlan, priceRows), priceChangeEffects }
+            };
         };
 
         return ctx?.tx ? await doUpdate(ctx.tx) : await withTransaction(doUpdate);

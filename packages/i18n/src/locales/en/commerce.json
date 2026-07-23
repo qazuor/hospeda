@@ -49,15 +49,27 @@
         "list": {
             "title": "My business",
             "subtitle": "Manage the information of your published listings.",
-            "empty": "You don't have any listings assigned yet. An administrator must create your listing.",
+            "empty": "You don't have any businesses yet. Create your first listing to get started.",
             "edit": "Edit",
             "badge": {
                 "gastronomy": "Gastronomy",
                 "experience": "Experience"
+            },
+            "emptyCta": "Create my first business",
+            "createCta": "+ New business",
+            "state": {
+                "published": "Published",
+                "viewPublic": "View public listing",
+                "pendingPayment": "Payment in progress",
+                "suspended": "Suspended",
+                "suspendedHint": "Your payment could not be processed. Check your payment method to reactivate the listing.",
+                "recoverCta": "Review my subscription",
+                "unknown": "Status unavailable",
+                "draftComplete": "Draft — ready to publish",
+                "draftIncomplete": "Draft — incomplete"
             }
         },
         "editor": {
-            "readOnlyNotice": "Name, category and location are managed by the Hospeda team. You can edit the operational information.",
             "sections": {
                 "type": "Category",
                 "summary": "Summary",
@@ -74,7 +86,12 @@
                 "amenities": "Amenities",
                 "features": "Features",
                 "translations": "Translations",
-                "faqs": "FAQ"
+                "faqs": "FAQ",
+                "name": "Business name",
+                "destination": "City / Destination",
+                "description": "Description",
+                "destinationLoadError": "We couldn't load the list of cities / destinations. Reload the page to try again.",
+                "destinationEmpty": "There are no cities / destinations available yet. Contact us so we can help you complete this field."
             },
             "contactField": {
                 "mobilePhone": "Phone",
@@ -163,7 +180,53 @@
                 "tooLarge": "The file cannot exceed 5MB",
                 "uploadFailed": "Error uploading the image",
                 "capReached": "Gallery limit reached (max. {{cap}} photos)"
-            }
+            },
+            "slugImmutableNotice": "The public URL is generated from the name when the business is created and cannot be changed afterward."
+        },
+        "checklist": {
+            "field": {
+                "name": "Name",
+                "summary": "Summary",
+                "description": "Description",
+                "destinationId": "City / Destination",
+                "ownerId": "Owner",
+                "type": "Category",
+                "featuredImage": "Main photo",
+                "contactInfo": "A contact detail (phone or email)",
+                "openingHours": "Opening hours",
+                "priceRange": "Price range",
+                "priceFrom": "Price"
+            },
+            "publishCta": "Publish and pay",
+            "publishing": "Starting payment...",
+            "incompleteError": "Some data is still missing to publish.",
+            "alreadySubscribedError": "This business already has an active subscription.",
+            "checkoutError": "We couldn't start the payment. Please try again."
+        },
+        "create": {
+            "pickVertical": {
+                "title": "Create new business",
+                "subtitle": "Choose which type of business you want to publish.",
+                "gastronomyDescription": "Restaurants, bars, cafés, and other dining venues.",
+                "experienceDescription": "Tours, excursions, rentals, and other experiences."
+            },
+            "title": {
+                "gastronomy": "Create dining listing",
+                "experience": "Create experience listing"
+            },
+            "subtitle": "Fill in the basics now — you'll be able to add photos, hours, and more details afterward.",
+            "fields": {
+                "name": "Business name",
+                "type": "Category",
+                "summary": "Summary",
+                "description": "Description",
+                "destination": "City / Destination",
+                "destinationLoadError": "We couldn't load the list of cities / destinations. Reload the page to try again.",
+                "destinationEmpty": "There are no cities / destinations available yet. Contact us so we can help you complete this field."
+            },
+            "submit": "Create business",
+            "submitting": "Creating...",
+            "error": "We couldn't create the business. Please try again."
         }
     }
 }

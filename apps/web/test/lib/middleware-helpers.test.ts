@@ -3,7 +3,7 @@
  * @description Unit tests for middleware helper functions.
  */
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ALLOWED_REMOTE_HOSTS } from '../../src/lib/media';
 import {
     buildAdminLoginRedirect,
@@ -26,6 +26,7 @@ import {
     isServerIslandRoute,
     isSetPasswordRoute,
     isStaticAssetRoute,
+    parseSessionUser,
     requestHasSessionCookie,
     resolveSentryReportUri
 } from '../../src/lib/middleware-helpers';
@@ -873,5 +874,53 @@ describe('SPEC-249 — commerce area force-password gating (T-020 / T-023)', () 
 
     it('exempts the change-password route itself (no redirect loop)', () => {
         expect(isChangePasswordRoute({ path: '/es/mi-cuenta/cambiar-contrasena/' })).toBe(true);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-254 — parseSessionUser must fail safe on API-URL config drift
+// ---------------------------------------------------------------------------
+
+/**
+ * `parseSessionUser` is reached directly from public, unauthenticated
+ * MercadoPago-return pages (checkout/index.astro, checkout/failure.astro) that
+ * have no local try/catch. The internal `getMiddlewareApiUrl()` throws when
+ * neither `HOSPEDA_API_URL` nor `PUBLIC_API_URL` is set, and that call sits
+ * outside the try/catch guarding the fetch. Before HOS-254 that throw would
+ * reject the caller and surface a 500 at a payment-critical moment; the guard
+ * must now return `null` (anonymous session) instead.
+ *
+ * The env vars are deleted (not set to `''`) so `getMiddlewareApiUrl()`'s
+ * `||` truthiness check actually fails — a locally-leaked value would otherwise
+ * mask the regression (memory: `process.env X=undefined ≠ unset`).
+ */
+describe('parseSessionUser — API URL config drift (HOS-254)', () => {
+    const ENV_KEYS = ['HOSPEDA_API_URL', 'PUBLIC_API_URL'] as const;
+    const saved: Record<string, string | undefined> = {};
+
+    beforeEach(() => {
+        for (const key of ENV_KEYS) {
+            saved[key] = process.env[key];
+            delete process.env[key];
+        }
+    });
+
+    afterEach(() => {
+        for (const key of ENV_KEYS) {
+            if (saved[key] === undefined) {
+                delete process.env[key];
+            } else {
+                process.env[key] = saved[key];
+            }
+        }
+    });
+
+    it('returns null (fail-safe) instead of throwing when neither API URL var is set', async () => {
+        // A non-null cookie header would otherwise proceed to resolve the API
+        // URL and fetch; with both env vars unset the resolver throws before any
+        // fetch, so the guard short-circuits to null without a network call.
+        await expect(
+            parseSessionUser({ cookieHeader: 'better-auth.session_token=abc' })
+        ).resolves.toBeNull();
     });
 });

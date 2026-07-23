@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    AdminBillingPlanUpdateResponseSchema,
     type BillingPlanResponse,
     BillingPlanResponseSchema,
     BillingPlanSearchSchema,
@@ -200,5 +201,94 @@ describe('BillingPlanResponseSchema', () => {
             createdAt: 'yesterday'
         });
         expect(result.success).toBe(false);
+    });
+});
+
+describe('AdminBillingPlanUpdateResponseSchema (HOS-176)', () => {
+    const baseResponse = {
+        id: '11111111-1111-4111-8111-111111111111',
+        slug: 'owner-basico',
+        name: 'Basic',
+        description: 'Basic plan.',
+        category: 'owner' as const,
+        monthlyPriceArs: 1_500_000,
+        annualPriceArs: 15_000_000,
+        monthlyPriceUsdRef: 15,
+        hasTrial: true,
+        trialDays: 14,
+        isDefault: true,
+        sortOrder: 1,
+        entitlements: ['publish_accommodations'],
+        limits: { max_accommodations: 1 },
+        isActive: true,
+        createdAt: '2026-05-30T00:00:00.000Z',
+        updatedAt: '2026-05-30T00:00:00.000Z'
+    };
+
+    it('accepts an update response with an empty priceChangeEffects array', () => {
+        expect(
+            AdminBillingPlanUpdateResponseSchema.safeParse({
+                ...baseResponse,
+                priceChangeEffects: []
+            }).success
+        ).toBe(true);
+    });
+
+    it('accepts up to two effects (monthly + annual, mixed direction) and PRESERVES them through the parse', () => {
+        const priceChangeEffects = [
+            {
+                billingInterval: 'month' as const,
+                direction: 'increase' as const,
+                effectiveAt: '2026-06-14T00:00:00.000Z',
+                affectedSubscriberCount: 12
+            },
+            {
+                billingInterval: 'year' as const,
+                direction: 'decrease' as const,
+                effectiveAt: '2026-05-30T00:00:00.000Z',
+                affectedSubscriberCount: 3
+            }
+        ];
+        const result = AdminBillingPlanUpdateResponseSchema.safeParse({
+            ...baseResponse,
+            priceChangeEffects
+        });
+        expect(result.success).toBe(true);
+        // The extended (non-strict) schema must NOT strip the new field — it round-trips.
+        expect(result.success && result.data.priceChangeEffects).toEqual(priceChangeEffects);
+    });
+
+    it('rejects an unknown billingInterval', () => {
+        const result = AdminBillingPlanUpdateResponseSchema.safeParse({
+            ...baseResponse,
+            priceChangeEffects: [
+                {
+                    billingInterval: 'week',
+                    direction: 'increase',
+                    effectiveAt: '2026-06-14T00:00:00.000Z',
+                    affectedSubscriberCount: 1
+                }
+            ]
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects a negative affectedSubscriberCount', () => {
+        const result = AdminBillingPlanUpdateResponseSchema.safeParse({
+            ...baseResponse,
+            priceChangeEffects: [
+                {
+                    billingInterval: 'month',
+                    direction: 'increase',
+                    effectiveAt: '2026-06-14T00:00:00.000Z',
+                    affectedSubscriberCount: -1
+                }
+            ]
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('requires priceChangeEffects (missing → invalid)', () => {
+        expect(AdminBillingPlanUpdateResponseSchema.safeParse(baseResponse).success).toBe(false);
     });
 });

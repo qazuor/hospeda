@@ -44,6 +44,14 @@ export interface ApiErrorResponse {
          */
         readonly reason?: string;
         readonly details?: unknown;
+        /**
+         * List of missing/invalid field names, sent as a SIBLING of
+         * `code`/`message` (NOT nested under `details`) by
+         * `LISTING_INCOMPLETE` 422 responses — e.g.
+         * `POST /commerce/listings/:entityType/:entityId/start-subscription`
+         * (HOS-166 §7.1). `resolveListingCompleteness`'s `missing` vocabulary.
+         */
+        readonly missing?: readonly string[];
     };
     readonly metadata?: {
         readonly timestamp: string;
@@ -62,6 +70,12 @@ export interface ApiError {
      */
     readonly reason?: string;
     readonly details?: unknown;
+    /**
+     * List of missing/invalid field names carried by a `LISTING_INCOMPLETE`
+     * 422 error body (sibling of `code`/`message`, see {@link ApiErrorResponse}).
+     * Undefined for every other error shape.
+     */
+    readonly missing?: readonly string[];
 }
 
 /** Result type for API calls: either success data or error */

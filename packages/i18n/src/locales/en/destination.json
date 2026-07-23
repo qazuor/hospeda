@@ -175,6 +175,15 @@
         "bookmark_count_one": "Saved by {{count}} person",
         "bookmark_count_other": "Saved by {{count}} people",
         "bookmark_count_zero": "Be the first to save it",
+        "location": "Location",
+        "stats": {
+            "title": "In this destination",
+            "accommodations": "accommodations",
+            "events": "events",
+            "attractions": "attractions",
+            "rating": "rating",
+            "reviews": "reviews"
+        },
         "reviews": {
             "modal": {
                 "loading": "Loading reviews…"

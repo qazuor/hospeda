@@ -277,3 +277,46 @@ export const AdminBillingPlanResponseSchema = BillingPlanResponseSchema.extend({
 
 /** TypeScript type inferred from {@link AdminBillingPlanResponseSchema} */
 export type AdminBillingPlanResponse = z.infer<typeof AdminBillingPlanResponseSchema>;
+
+/**
+ * One propagated price-change effect surfaced to the admin after a plan price edit
+ * (HOS-176). Populated only when `updatePlan` actually changed an EXISTING price —
+ * monthly and/or annual, so a single update yields 0–2 effects. Informational: it lets
+ * the admin see how many subscribers a change reaches and when it takes effect.
+ */
+export const PlanPriceChangeEffectSchema = z.object({
+    /** Which interval's price changed. */
+    billingInterval: z.enum(['month', 'year']),
+    /** `increase` (advance notice + grace window) or `decrease` (applies immediately). */
+    direction: z.enum(['increase', 'decrease']),
+    /**
+     * ISO 8601 earliest time the change applies: `now` for a decrease, `now + grace` for
+     * an increase. The propagation cron re-enumerates the exact subscriber set at this time.
+     */
+    effectiveAt: z.string().datetime(),
+    /**
+     * Approximate count of live subscribers (with an MP preapproval) the change will
+     * re-price — scoped to this effect's `billingInterval` (a monthly change does not count
+     * annual subscribers, and vice-versa). The exact set is resolved by the cron at apply time.
+     */
+    affectedSubscriberCount: z.number().int().nonnegative()
+});
+
+/** TypeScript type inferred from {@link PlanPriceChangeEffectSchema} */
+export type PlanPriceChangeEffect = z.infer<typeof PlanPriceChangeEffectSchema>;
+
+/**
+ * Admin response schema for the plan UPDATE route (HOS-176).
+ *
+ * Extends {@link BillingPlanResponseSchema} with the price-change propagation effects
+ * triggered by THIS update (empty array when no price changed). Route-scoped — like
+ * {@link AdminBillingPlanResponseSchema} — so the base DTO shared with the public plans
+ * endpoint stays free of these admin-only, update-only fields.
+ */
+export const AdminBillingPlanUpdateResponseSchema = BillingPlanResponseSchema.extend({
+    /** Price-change effects triggered by this update (0–2: monthly and/or annual). */
+    priceChangeEffects: z.array(PlanPriceChangeEffectSchema)
+});
+
+/** TypeScript type inferred from {@link AdminBillingPlanUpdateResponseSchema} */
+export type AdminBillingPlanUpdateResponse = z.infer<typeof AdminBillingPlanUpdateResponseSchema>;

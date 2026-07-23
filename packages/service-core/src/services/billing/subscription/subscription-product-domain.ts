@@ -95,6 +95,37 @@ export function isAccommodationSubscription(sub: unknown): boolean {
 }
 
 /**
+ * Returns `true` when the subscription belongs to the `'commerce'` product
+ * domain (SPEC-239 commerce-listing subscriptions).
+ *
+ * Unlike {@link isAccommodationSubscription}, this predicate is deliberately
+ * **fail-closed**: `null`/`undefined`/non-object input, or any
+ * `productDomain` value other than the literal `'commerce'`, returns `false`.
+ * A commerce subscription is always created with an explicit
+ * `product_domain = 'commerce'` (there is no legacy-row ambiguity to resolve
+ * in this domain's favor the way there is for accommodation), so silently
+ * including an unrelated row here would leak an accommodation/partner
+ * subscription into a commerce-scoped read (HOS-259).
+ *
+ * @param sub - Any object returned by `billing.subscriptions.getByCustomerId()`.
+ * @returns `true` only when the row's `productDomain` is exactly `'commerce'`.
+ *
+ * @example
+ * ```ts
+ * const commerceSub = subscriptions.find(
+ *   (sub) => isEntitlementGrantingStatus(sub.status) && isCommerceSubscription(sub)
+ * );
+ * ```
+ */
+export function isCommerceSubscription(sub: unknown): boolean {
+    if (sub === null || sub === undefined || typeof sub !== 'object') {
+        return false;
+    }
+    const record = sub as Record<string, unknown>;
+    return record.productDomain === 'commerce';
+}
+
+/**
  * Returns `true` when the subscription's plan belongs to the `'owner'` or
  * `'complex'` billing-plan category (HOS-217).
  *

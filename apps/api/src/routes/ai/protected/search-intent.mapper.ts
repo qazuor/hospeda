@@ -117,7 +117,11 @@ export function mapIntentToSearchParams(
         params.latitude = String(entities.latitude);
         params.longitude = String(entities.longitude);
 
-        if (entities.radius !== undefined) {
+        // HOS-207: the model emits `radius: 0` to mean "no radius specified"
+        // (0 !== undefined, so the schema keeps it). Treat 0 as unset — emitting
+        // `radius: '0'` would 400 the downstream accommodation search, whose
+        // `radius` is still `.positive()`. Only forward a real positive radius.
+        if (entities.radius !== undefined && entities.radius > 0) {
             // Clamp radius to MAX_RADIUS_KM; only emit when lat+lng present.
             const clampedRadius = Math.min(entities.radius, MAX_RADIUS_KM);
             params.radius = String(clampedRadius);

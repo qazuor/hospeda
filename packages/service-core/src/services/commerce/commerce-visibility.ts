@@ -1,25 +1,41 @@
 /**
  * commerce-visibility.ts
  *
- * Visibility reconciler for commerce listing entities (SPEC-239 T-032).
+ * Visibility reconciler for commerce listing entities (SPEC-239 T-032,
+ * predicate widened HOS-166 §6.5).
  *
  * `reconcileCommerceListingVisibility` reads the `commerce_listing_subscriptions`
  * link table to find the associated entity, then flips its `visibility` and
- * `lifecycleState` based on the subscription status.
+ * `lifecycleState` based on the subscription status **and** (HOS-166 G-3) the
+ * listing's publish-readiness ("complete") and moderation state:
+ *
+ * ```
+ * shouldBePublic = subscriptionActive AND listingComplete AND NOT moderationRejected
+ * ```
+ *
+ * This is the LAST line of defense against a paid-but-empty listing reaching
+ * the public site (spec §6.5) — the completeness gate on the owner checkout
+ * route (§6.3) makes that hard, but this reconciler also fires from the
+ * dunning cron and finalize-cancelled-subs, independent of the checkout path.
  *
  * Intentionally INDEPENDENT of the billing entitlement engine — it only reads
  * the link table and writes the listing.  No QZPay / MercadoPago calls happen
  * here.  This function is generic over `entityType` so both gastronomy and
- * future experience entities can be reconciled with the same code.
+ * experience entities are reconciled with the same code.
  *
  * @module commerce-visibility
  */
 
 import type { DrizzleClient } from '@repo/db';
-import { commerceListingSubscriptions, eq, getDb } from '@repo/db';
+import { and, commerceListingSubscriptions, eq, getDb, inArray } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import { createLogger } from '@repo/logger';
-import { LifecycleStatusEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    ServiceErrorCode,
+    VisibilityEnum
+} from '@repo/schemas';
 import { ServiceError } from '../../types';
 
 // ---------------------------------------------------------------------------
@@ -70,18 +86,48 @@ export interface ReconcileCommerceListingVisibilityResult {
  *
  * Note: `update` takes a `where` record (matching BaseModel.update signature),
  * not a bare ID string.  Call with `{ id: entityId }` as the first argument.
+ *
+ * `moderationState` is included (HOS-166 §6.5) because the reconciler's
+ * predicate reads it directly off the same row it already fetches for
+ * `visibility`/`lifecycleState` — it is plain data already present on every
+ * commerce entity (`...BaseModerationFields`), not a computed value, so
+ * widening this narrow read-only field costs every implementer nothing.
+ * Contrast with completeness (see {@link ResolveCommerceListingCompleteness}),
+ * which is business logic and stays a SEPARATE injected resolver on purpose.
  */
 export interface CommerceEntityModel {
     findById: (
         id: string,
         tx?: DrizzleClient
-    ) => Promise<{ id: string; visibility: string; lifecycleState: string } | null>;
+    ) => Promise<{
+        id: string;
+        visibility: string;
+        lifecycleState: string;
+        moderationState?: string | null;
+    } | null>;
     update: (
         where: Record<string, unknown>,
         data: Partial<{ visibility: string; lifecycleState: string }>,
         tx?: DrizzleClient
     ) => Promise<unknown>;
 }
+
+/**
+ * Resolves a commerce listing's publish-readiness ("complete") for the
+ * reconciler's predicate (HOS-166 §6.5). Injected alongside the model rather
+ * than folded into `CommerceEntityModel.findById`'s return shape — completeness
+ * is business logic derived from `resolveListingCompleteness`, and forcing
+ * every `CommerceEntityModel` implementer to compute it inline would widen a
+ * structural contract that today is (deliberately) just data access.
+ *
+ * @param entityId - UUID of the commerce entity to evaluate.
+ * @param tx - Optional Drizzle transaction client, forwarded from the caller.
+ * @returns `{ complete, missing }` — see `resolveListingCompleteness`.
+ */
+export type ResolveCommerceListingCompleteness = (
+    entityId: string,
+    tx?: DrizzleClient
+) => Promise<{ complete: boolean; missing: readonly string[] }>;
 
 // ---------------------------------------------------------------------------
 // Implementation
@@ -91,19 +137,33 @@ const logger: ILogger = createLogger('commerce-visibility');
 
 /**
  * Reconciles a commerce listing's `visibility` and `lifecycleState` against the
- * current billing subscription status.
+ * current billing subscription status, publish-readiness, and moderation state.
+ *
+ * **Predicate (HOS-166 G-3, §6.5):**
+ * ```
+ * shouldBePublic = subscriptionActive AND listingComplete AND NOT moderationRejected
+ * ```
  *
  * **Transition table:**
- * | subscriptionStatus  | visibility | lifecycleState |
- * |---------------------|-----------|----------------|
- * | `active` / `trialing` | `PUBLIC`  | `ACTIVE`       |
- * | anything else         | `PRIVATE` | `INACTIVE`     |
+ * | shouldBePublic | visibility | lifecycleState |
+ * |----------------|-----------|----------------|
+ * | `true`         | `PUBLIC`  | `ACTIVE`       |
+ * | `false`        | `PRIVATE` | `INACTIVE`     |
  *
  * The function:
- * 1. Looks up the entity via the injected model (`findById`).
- * 2. Computes the desired `visibility` and `lifecycleState` from `subscriptionStatus`.
- * 3. Writes only when the current state differs (idempotent).
- * 4. Returns a typed result describing what happened.
+ * 1. Looks up the entity via the injected model (`findById`) — this also
+ *    reads `moderationState` off the same row (see {@link CommerceEntityModel}).
+ * 2. When the subscription is active, resolves completeness via the injected
+ *    `resolveCompleteness` (skipped when the subscription is already inactive
+ *    — the desired state is PRIVATE regardless, so there is nothing to gain
+ *    from the extra query).
+ * 3. Computes the desired `visibility` and `lifecycleState` from the predicate.
+ * 4. Writes only when the current state differs (idempotent).
+ * 5. Returns a typed result describing what happened.
+ *
+ * **Incomplete + paid stays PRIVATE and logs loudly** (AC-6): a paid
+ * subscription on an incomplete listing is a money-taken-nothing-delivered
+ * state and must be visible in logs, not silent.
  *
  * It is intentionally decoupled from the entitlement engine — callers should
  * invoke this from billing webhook handlers or cron jobs, never from inside a
@@ -111,6 +171,8 @@ const logger: ILogger = createLogger('commerce-visibility');
  *
  * @param input - {@link ReconcileCommerceListingVisibilityInput}
  * @param model - Entity model that implements `findById` and `update`.
+ * @param resolveCompleteness - Resolves publish-readiness for the entity;
+ *   see {@link ResolveCommerceListingCompleteness}.
  * @returns {@link ReconcileCommerceListingVisibilityResult}
  * @throws {ServiceError} NOT_FOUND when the entity does not exist.
  *
@@ -120,6 +182,7 @@ const logger: ILogger = createLogger('commerce-visibility');
  * const result = await reconcileCommerceListingVisibility(
  *   { entityType: 'gastronomy', entityId, subscriptionStatus: 'active' },
  *   gastronomyModel,
+ *   resolveCommerceListingCompleteness,
  * );
  * if (result.updated) {
  *   logger.info('Gastronomy visibility reconciled', { entityId, ...result });
@@ -128,18 +191,12 @@ const logger: ILogger = createLogger('commerce-visibility');
  */
 export async function reconcileCommerceListingVisibility(
     input: ReconcileCommerceListingVisibilityInput,
-    model: CommerceEntityModel
+    model: CommerceEntityModel,
+    resolveCompleteness: ResolveCommerceListingCompleteness
 ): Promise<ReconcileCommerceListingVisibilityResult> {
     const { entityType, entityId, subscriptionStatus, tx } = input;
 
-    // Determine the desired state based on subscription status.
-    const isActive = ACTIVE_STATUSES.has(subscriptionStatus as 'active' | 'trialing');
-    const desiredVisibility: VisibilityEnum = isActive
-        ? VisibilityEnum.PUBLIC
-        : VisibilityEnum.PRIVATE;
-    const desiredLifecycleState: LifecycleStatusEnum = isActive
-        ? LifecycleStatusEnum.ACTIVE
-        : LifecycleStatusEnum.INACTIVE;
+    const subscriptionActive = ACTIVE_STATUSES.has(subscriptionStatus as 'active' | 'trialing');
 
     // Fetch the entity.
     const entity = await model.findById(entityId, tx);
@@ -147,6 +204,37 @@ export async function reconcileCommerceListingVisibility(
         throw new ServiceError(
             ServiceErrorCode.NOT_FOUND,
             `Commerce entity not found: entityType=${entityType} entityId=${entityId}`
+        );
+    }
+
+    const moderationRejected = entity.moderationState === ModerationStatusEnum.REJECTED;
+
+    // Only resolve completeness when the subscription is active — when it is
+    // not, the desired state is PRIVATE regardless of completeness, so the
+    // extra query buys nothing.
+    let complete = false;
+    let missing: readonly string[] = [];
+    if (subscriptionActive) {
+        const completeness = await resolveCompleteness(entityId, tx);
+        complete = completeness.complete;
+        missing = completeness.missing;
+    }
+
+    const shouldBePublic = subscriptionActive && complete && !moderationRejected;
+    const desiredVisibility: VisibilityEnum = shouldBePublic
+        ? VisibilityEnum.PUBLIC
+        : VisibilityEnum.PRIVATE;
+    const desiredLifecycleState: LifecycleStatusEnum = shouldBePublic
+        ? LifecycleStatusEnum.ACTIVE
+        : LifecycleStatusEnum.INACTIVE;
+
+    // HOS-166 AC-6: a paid-but-incomplete listing is money-taken-nothing-
+    // delivered — log loudly (not silently) every time the reconciler observes
+    // this state, whether or not a write happens.
+    if (subscriptionActive && !complete) {
+        logger.warn(
+            { entityType, entityId, subscriptionStatus, missing },
+            'Commerce listing has an active subscription but is not complete — staying PRIVATE'
         );
     }
 
@@ -209,9 +297,66 @@ export async function getCommerceListingSubscriptionStatus(
     const rows = await db
         .select({ status: commerceListingSubscriptions.status })
         .from(commerceListingSubscriptions)
-        .where(eq(commerceListingSubscriptions.entityId, input.entityId))
+        // The link table's unique index is (entity_type, entity_id) — filtering
+        // on entityId alone would match a different entityType's row that
+        // happens to reuse the same UUID (a real risk since gastronomy and
+        // experience ids are drawn from independent primary key spaces).
+        .where(
+            and(
+                eq(commerceListingSubscriptions.entityType, input.entityType),
+                eq(commerceListingSubscriptions.entityId, input.entityId)
+            )
+        )
         .limit(1);
 
     const row = rows[0];
     return row === undefined ? null : row.status;
+}
+
+/**
+ * Batched variant of {@link getCommerceListingSubscriptionStatus} — resolves
+ * the current subscription status for MULTIPLE commerce entities of the same
+ * `entityType` in a single query (HOS-166 judgment-day W1: surfaces
+ * dunning/suspended state on the owner's listing index without an N+1 query
+ * per listing).
+ *
+ * The `commerce_listing_subscriptions` link table only ever links commerce
+ * entities (its rows are always `product_domain = 'commerce'` by
+ * construction — see the table's own doc comment), so this naturally never
+ * leaks accommodation or partner billing state.
+ *
+ * @param input.entityType - Commerce entity discriminator shared by every id
+ *   in `entityIds` (the link table's unique index is on `(entityType,
+ *   entityId)`, so a batched lookup must stay within one entity type).
+ * @param input.entityIds - UUIDs of the commerce entities to resolve. An
+ *   empty array short-circuits to an empty map without querying.
+ * @param tx - Optional transaction client.
+ * @returns A `Map` from `entityId` to its current subscription status.
+ *   Entities with no link row (never subscribed) are simply absent from the
+ *   map — callers should treat a missing key as "no subscription".
+ */
+export async function getCommerceListingSubscriptionStatuses(
+    input: { entityType: string; entityIds: readonly string[] },
+    tx?: DrizzleClient
+): Promise<Map<string, string>> {
+    const { entityType, entityIds } = input;
+    if (entityIds.length === 0) {
+        return new Map();
+    }
+
+    const db = tx ?? getDb();
+    const rows = await db
+        .select({
+            entityId: commerceListingSubscriptions.entityId,
+            status: commerceListingSubscriptions.status
+        })
+        .from(commerceListingSubscriptions)
+        .where(
+            and(
+                eq(commerceListingSubscriptions.entityType, entityType),
+                inArray(commerceListingSubscriptions.entityId, [...entityIds])
+            )
+        );
+
+    return new Map(rows.map((row) => [row.entityId, row.status]));
 }

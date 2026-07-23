@@ -694,8 +694,12 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
             params.destinationIds = poiResolution.destinationIds;
             params.latitude = poiResolution.lat;
             params.longitude = poiResolution.long;
+            // HOS-207: the model emits `radius: 0` to mean "no radius specified"
+            // (0 !== undefined, so the schema keeps it). Treat 0 the same as
+            // absent — fall back to the Phase-2 default rather than letting a
+            // degenerate 0 km search silently override it.
             const radiusKm =
-                validatedEntities.radius === undefined
+                validatedEntities.radius === undefined || validatedEntities.radius === 0
                     ? DEFAULT_POI_PROXIMITY_RADIUS_KM
                     : Math.min(validatedEntities.radius, MAX_POI_RADIUS_KM);
             params.radius = radiusKm;

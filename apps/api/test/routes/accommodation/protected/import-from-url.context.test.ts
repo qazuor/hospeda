@@ -11,7 +11,7 @@
 
 import type { AccommodationImportResponse } from '@repo/schemas';
 import { PermissionEnum } from '@repo/schemas';
-import type { ImportContext } from '@repo/service-core';
+import { AccommodationImportService, type ImportContext } from '@repo/service-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockDispatchImportFromUrl, mockGetValidMercadoLibreToken } = vi.hoisted(() => ({
@@ -92,5 +92,25 @@ describe('import-from-url ImportContext.mercadoLibreTokenProvider wiring', () =>
         const token = await context.mercadoLibreTokenProvider?.();
         expect(token).toBe('mock-ml-access-token');
         expect(mockGetValidMercadoLibreToken).toHaveBeenCalledOnce();
+    });
+
+    it('constructs AccommodationImportService with exchange-rate deps wired (BETA-181)', async () => {
+        // Act
+        const res = await app.request(ENDPOINT, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ url: 'https://example.com/listing/1', legalConfirmed: true })
+        });
+
+        // Assert
+        expect(res.status).toBe(200);
+        const MockedAccommodationImportService = vi.mocked(AccommodationImportService);
+        expect(MockedAccommodationImportService).toHaveBeenCalledOnce();
+        const [, deps] = MockedAccommodationImportService.mock.calls[0] as [
+            unknown,
+            { exchangeRateFetcher?: unknown; exchangeRateConfigService?: unknown }
+        ];
+        expect(deps.exchangeRateFetcher).toBeDefined();
+        expect(deps.exchangeRateConfigService).toBeDefined();
     });
 });

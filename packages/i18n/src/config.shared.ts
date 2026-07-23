@@ -27,6 +27,7 @@ export const webNamespaces = [
     'nav',
     'footer',
     'accommodations',
+    'auth',
     'auth-ui',
     'billing',
     'blog',
@@ -110,6 +111,7 @@ import accommodationsEn from './locales/en/accommodations.json';
 import accountEn from './locales/en/account.json';
 import aiSearchEn from './locales/en/aiSearch.json';
 import apiEn from './locales/en/api.json';
+import authEn from './locales/en/auth.json';
 import authUiEn from './locales/en/auth-ui.json';
 import benefitsEn from './locales/en/benefits.json';
 import billingEn from './locales/en/billing.json';
@@ -163,6 +165,7 @@ import accommodationsEs from './locales/es/accommodations.json';
 import accountEs from './locales/es/account.json';
 import aiSearchEs from './locales/es/aiSearch.json';
 import apiEs from './locales/es/api.json';
+import authEs from './locales/es/auth.json';
 import authUiEs from './locales/es/auth-ui.json';
 import benefitsEs from './locales/es/benefits.json';
 import billingEs from './locales/es/billing.json';
@@ -217,6 +220,7 @@ import accommodationsPt from './locales/pt/accommodations.json';
 import accountPt from './locales/pt/account.json';
 import aiSearchPt from './locales/pt/aiSearch.json';
 import apiPt from './locales/pt/api.json';
+import authPt from './locales/pt/auth.json';
 import authUiPt from './locales/pt/auth-ui.json';
 import benefitsPt from './locales/pt/benefits.json';
 import billingPt from './locales/pt/billing.json';
@@ -279,6 +283,7 @@ export const rawWebTranslations = {
         aiSearch: aiSearchEs,
         accommodations: accommodationsEs,
         api: apiEs,
+        auth: authEs,
         'auth-ui': authUiEs,
         billing: billingEs,
         benefits: benefitsEs,
@@ -331,6 +336,7 @@ export const rawWebTranslations = {
         aiSearch: aiSearchEn,
         accommodations: accommodationsEn,
         api: apiEn,
+        auth: authEn,
         'auth-ui': authUiEn,
         billing: billingEn,
         benefits: benefitsEn,
@@ -383,6 +389,7 @@ export const rawWebTranslations = {
         aiSearch: aiSearchPt,
         accommodations: accommodationsPt,
         api: apiPt,
+        auth: authPt,
         'auth-ui': authUiPt,
         billing: billingPt,
         benefits: benefitsPt,

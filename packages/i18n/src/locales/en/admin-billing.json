@@ -273,7 +273,14 @@
             "successMessageCreate": "was created successfully",
             "successMessageUpdate": "was updated successfully",
             "errorTitle": "Error",
-            "errorMessage": "Error saving the plan"
+            "errorMessage": "Error saving the plan",
+            "priceChangeImpactTitle": "Subscriber impact",
+            "priceChangeImpactDecrease": "The new {interval} price reaches {subscribers} and applies immediately.",
+            "priceChangeImpactIncrease": "The {interval} increase reaches {subscribers}; it applies on {date}.",
+            "priceChangeIntervalMonth": "monthly",
+            "priceChangeIntervalYear": "annual",
+            "priceChangeSubscribersCount_one": "{count} subscriber",
+            "priceChangeSubscribersCount_other": "{count} subscribers"
         }
     },
     "addons": {

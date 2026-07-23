@@ -44,6 +44,7 @@ import { destinationsApi } from '@/lib/api/endpoints';
 import { billingApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
 import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
+import { formatPrice } from '@/lib/format-utils';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -136,6 +137,15 @@ type DestinationHint = {
     readonly scrapedLocality?: string;
     readonly candidates: ReadonlyArray<{ readonly id: string; readonly name: string }>;
 };
+
+/**
+ * Advisory note carried from the import response when the scraped price was
+ * auto-converted from a foreign currency (USD) to ARS (BETA-181). Purely
+ * informational — the pre-filled `extras.basePrice`/`extras.currency` are
+ * already the converted ARS value and stay fully editable; this only tells
+ * the host it happened so they can review/confirm before publishing.
+ */
+type PriceConversionHint = NonNullable<AccommodationImportResponse['priceConversion']>;
 
 type OnboardingStartStatus = 'created' | 'resumed';
 
@@ -267,6 +277,7 @@ export function CreatePropertyMiniForm({
     const [importMeta, setImportMeta] = useState<ImportMeta>({});
     const [importedOnce, setImportedOnce] = useState(false);
     const [destinationHint, setDestinationHint] = useState<DestinationHint | null>(null);
+    const [priceConversion, setPriceConversion] = useState<PriceConversionHint | null>(null);
 
     // SPEC-258: extras from the import (editable by the host, submitted flat)
     const [extras, setExtras] = useState<ImportedExtras>({});
@@ -429,6 +440,13 @@ export function CreatePropertyMiniForm({
             if (typeof response.draft.price?.currency?.value === 'string') {
                 nextExtras.currency = response.draft.price.currency.value;
             }
+
+            // BETA-181: `extras.basePrice`/`nextExtras.currency` above are already
+            // the (post-conversion) ARS values when the API converted a scraped
+            // USD price — the draft itself was rewritten server-side. This just
+            // captures the advisory note so the banner can tell the host it
+            // happened; it never overwrites the pre-filled price.
+            setPriceConversion(response.priceConversion ?? null);
 
             // ── Location ───────────────────────────────────────────────────
 
@@ -1370,6 +1388,71 @@ export function CreatePropertyMiniForm({
                                         id={fieldErrorId('basePrice')}
                                         message={fieldErrors.basePrice}
                                     />
+                                    {/* Price conversion advisory — non-binding (BETA-181). The
+                                        pre-filled price above is already the converted ARS value
+                                        and stays fully editable; this banner only explains why it
+                                        changed so the host reviews before publishing. */}
+                                    {priceConversion ? (
+                                        <div
+                                            className={styles.priceConversion}
+                                            data-testid="price-conversion-hint"
+                                        >
+                                            <span className={styles.priceConversionLabel}>
+                                                {t(
+                                                    'host.importFromUrl.prefill.priceConversion.label',
+                                                    'Precio convertido automáticamente'
+                                                )}
+                                            </span>
+                                            <span className={styles.priceConversionText}>
+                                                {/* Interpolate in-component via .replace (the established
+                                                    pattern for this file's advisory banners, e.g. destinationHint):
+                                                    t() returns the placeholder-bearing string and the two
+                                                    formatPrice values are substituted here, once each. */}
+                                                {t(
+                                                    'host.importFromUrl.prefill.priceConversion.banner',
+                                                    'Convertimos {{original}} a {{converted}}.'
+                                                )
+                                                    .replace(
+                                                        '{{original}}',
+                                                        formatPrice({
+                                                            amount: priceConversion.originalPrice,
+                                                            currency:
+                                                                priceConversion.originalCurrency,
+                                                            locale,
+                                                            showDecimals: true
+                                                        })
+                                                    )
+                                                    .replace(
+                                                        '{{converted}}',
+                                                        formatPrice({
+                                                            amount: priceConversion.convertedPrice,
+                                                            currency: priceConversion.currency,
+                                                            locale
+                                                        })
+                                                    )}
+                                            </span>
+                                            <span className={styles.priceConversionText}>
+                                                {t(
+                                                    'host.importFromUrl.prefill.priceConversion.rateLabel',
+                                                    'Tipo de cambio aplicado: {{rate}} ({{rateType}})'
+                                                )
+                                                    .replace(
+                                                        '{{rate}}',
+                                                        String(priceConversion.rate)
+                                                    )
+                                                    .replace(
+                                                        '{{rateType}}',
+                                                        priceConversion.rateType
+                                                    )}
+                                            </span>
+                                            <span className={styles.priceConversionCallout}>
+                                                {t(
+                                                    'host.importFromUrl.prefill.priceConversion.reviewNote',
+                                                    'Revisá y confirmá el precio antes de publicar.'
+                                                )}
+                                            </span>
+                                        </div>
+                                    ) : null}
                                 </div>
                             )}
 

@@ -35,6 +35,7 @@ import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { idempotencyKeyMiddleware } from '../../middlewares/idempotency-key';
 import { applyImmediatePaidPlanSwap } from '../../services/billing/immediate-plan-swap.service';
+import { planDisplayNameFromPlan } from '../../services/billing/plan-change-reason';
 import { applyTrialingPlanUpgrade } from '../../services/billing/trialing-plan-upgrade.service';
 import {
     initiatePaidPlanUpgrade,
@@ -700,7 +701,8 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
                                 oldLimit: dim.activeCount,
                                 newLimit: dim.cap,
                                 currentUsage: dim.activeCount,
-                                planName: targetPlan.name as string
+                                // HOS-231: display name, not the raw slug.
+                                planName: planDisplayNameFromPlan(targetPlan)
                             })
                         ).catch((notifErr: unknown) => {
                             // SOFT: notification failure must never block the schedule response.

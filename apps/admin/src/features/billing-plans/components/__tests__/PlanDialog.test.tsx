@@ -11,14 +11,16 @@
 
 // @vitest-environment jsdom
 
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const addToastMock = vi.fn();
 
 vi.mock('@/hooks/use-toast', () => ({
-    useToast: () => ({ addToast: vi.fn() })
+    useToast: () => ({ addToast: addToastMock })
 }));
 
-import type { ParsedPlanRecord } from '../../types';
+import type { CreatePlanPayload, ParsedPlanRecord, PlanSubmitResult } from '../../types';
 import { PlanDialog } from '../PlanDialog';
 
 function basePlan(overrides: Partial<ParsedPlanRecord> = {}): ParsedPlanRecord {
@@ -42,15 +44,35 @@ function basePlan(overrides: Partial<ParsedPlanRecord> = {}): ParsedPlanRecord {
     } as ParsedPlanRecord;
 }
 
-function renderDialog(plan: ParsedPlanRecord | null) {
-    render(
+function renderDialog(
+    plan: ParsedPlanRecord | null,
+    onSubmit: (payload: CreatePlanPayload) => Promise<PlanSubmitResult> = vi.fn()
+) {
+    return render(
         <PlanDialog
             open={true}
             onOpenChange={vi.fn()}
             plan={plan}
-            onSubmit={vi.fn()}
+            onSubmit={onSubmit}
         />
     );
+}
+
+/**
+ * Submits the dialog's form directly via its `type="submit"` button.
+ *
+ * Deliberately NOT queried by translated label text: this unit suite runs
+ * without the i18n translation bundle loaded, so `t()` renders raw dot-path
+ * keys rather than actual copy — matching on a real Spanish/English string
+ * would be fragile either way. Queried against `document` (not the RTL
+ * `container`) because Radix's `DialogContent` portals into `document.body`.
+ */
+function submitForm() {
+    const submitButton = document.querySelector('button[type="submit"]');
+    if (!submitButton) {
+        throw new Error('Expected a type="submit" button in the rendered dialog');
+    }
+    fireEvent.click(submitButton);
 }
 
 describe('PlanDialog — Model C edit-mode field lock (HOS-39 T-026)', () => {
@@ -72,5 +94,101 @@ describe('PlanDialog — Model C edit-mode field lock (HOS-39 T-026)', () => {
         renderDialog(basePlan());
 
         expect(screen.getByLabelText(/slug/i)).toBeDisabled();
+    });
+});
+
+describe('PlanDialog — price-change impact toast (HOS-176)', () => {
+    beforeEach(() => {
+        addToastMock.mockClear();
+    });
+
+    it('fires a follow-up impact toast per price-change effect when onSubmit resolves non-empty', async () => {
+        const onSubmit = vi.fn().mockResolvedValue({
+            priceChangeEffects: [
+                {
+                    billingInterval: 'month',
+                    direction: 'increase',
+                    effectiveAt: '2026-08-01T00:00:00.000Z',
+                    affectedSubscriberCount: 12
+                }
+            ]
+        } satisfies PlanSubmitResult);
+
+        renderDialog(basePlan(), onSubmit);
+
+        submitForm();
+
+        await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+        await waitFor(() =>
+            expect(addToastMock).toHaveBeenCalledWith(expect.objectContaining({ variant: 'info' }))
+        );
+        // Success toast fires too — the impact toast is a follow-up, not a replacement.
+        expect(addToastMock).toHaveBeenCalledWith(expect.objectContaining({ variant: 'success' }));
+
+        // The single info toast picked the INCREASE branch (message references the increase
+        // key). The unit env renders raw i18n keys, so the key name is what surfaces.
+        const infoCalls = addToastMock.mock.calls.filter(
+            (c) => (c[0] as { variant?: string }).variant === 'info'
+        );
+        expect(infoCalls).toHaveLength(1);
+        expect((infoCalls[0]?.[0] as { message: string }).message).toContain(
+            'priceChangeImpactIncrease'
+        );
+    });
+
+    it('fires ONE info toast per effect — two effects (monthly increase + annual decrease) → two toasts, each on the correct branch', async () => {
+        const onSubmit = vi.fn().mockResolvedValue({
+            priceChangeEffects: [
+                {
+                    billingInterval: 'month',
+                    direction: 'increase',
+                    effectiveAt: '2026-08-01T00:00:00.000Z',
+                    affectedSubscriberCount: 12
+                },
+                {
+                    billingInterval: 'year',
+                    direction: 'decrease',
+                    effectiveAt: '2026-07-23T00:00:00.000Z',
+                    affectedSubscriberCount: 1
+                }
+            ]
+        } satisfies PlanSubmitResult);
+
+        renderDialog(basePlan(), onSubmit);
+        submitForm();
+
+        await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+        await waitFor(() => {
+            const infoCalls = addToastMock.mock.calls.filter(
+                (c) => (c[0] as { variant?: string }).variant === 'info'
+            );
+            expect(infoCalls).toHaveLength(2);
+        });
+        const infoMessages = addToastMock.mock.calls
+            .filter((c) => (c[0] as { variant?: string }).variant === 'info')
+            .map((c) => (c[0] as { message: string }).message);
+        // Both direction branches are exercised — one toast selects the increase message
+        // key, one the decrease. (The unit env renders raw i18n keys, which don't surface the
+        // interval, so this asserts branch coverage, not the interval↔direction pairing.)
+        expect(infoMessages.some((m) => m.includes('priceChangeImpactIncrease'))).toBe(true);
+        expect(infoMessages.some((m) => m.includes('priceChangeImpactDecrease'))).toBe(true);
+    });
+
+    it('does NOT fire an impact toast when onSubmit resolves with an empty priceChangeEffects array', async () => {
+        const onSubmit = vi
+            .fn()
+            .mockResolvedValue({ priceChangeEffects: [] } satisfies PlanSubmitResult);
+
+        renderDialog(basePlan(), onSubmit);
+
+        submitForm();
+
+        await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+        await waitFor(() =>
+            expect(addToastMock).toHaveBeenCalledWith(
+                expect.objectContaining({ variant: 'success' })
+            )
+        );
+        expect(addToastMock).not.toHaveBeenCalledWith(expect.objectContaining({ variant: 'info' }));
     });
 });

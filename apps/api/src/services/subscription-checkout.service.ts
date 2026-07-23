@@ -45,6 +45,7 @@ import {
 import { createPaidSubscription } from './billing/paid-subscription-create.js';
 import type { PendingCheckoutDiscount } from './billing/pending-provider-subscription-create.js';
 import { createPendingProviderSubscription } from './billing/pending-provider-subscription-create.js';
+import { planDisplayNameFromPlan } from './billing/plan-change-reason.js';
 import type { SubscriptionCheckoutErrorCode } from './billing/subscription-checkout-error.js';
 import { SubscriptionCheckoutError } from './billing/subscription-checkout-error.js';
 import { hasAnyPriorSubscription } from './billing/trial-eligibility.service.js';
@@ -187,32 +188,6 @@ async function resolvePlanBySlug(billing: QZPayBilling, planSlug: string) {
     }
     const plansResult = await billing.plans.list();
     return plansResult.data.find((p) => p.name === planSlug) ?? null;
-}
-
-/**
- * Get the human-facing display name for a plan, falling back to the slug
- * when no display name is configured.
- *
- * Hospeda stores the slug as `billing_plans.name` (the QZPay-facing lookup
- * key) and the human label in `billing_plans.metadata.displayName` (set by
- * the seed from `PlanDefinition.name`). MercadoPago shows whatever string we
- * pass as the line-item title to the buyer, so this helper centralises the
- * "prefer display name, fall back to slug" rule used by every checkout
- * builder in this file. Slugs like `owner-basico` look bad in the MP
- * checkout screen — display names like `Basic` are what we want.
- */
-function getPlanDisplayName(plan: { readonly name: string; readonly metadata?: unknown }): string {
-    if (
-        typeof plan.metadata === 'object' &&
-        plan.metadata !== null &&
-        'displayName' in plan.metadata
-    ) {
-        const displayName = (plan.metadata as Record<string, unknown>).displayName;
-        if (typeof displayName === 'string' && displayName.length > 0) {
-            return displayName;
-        }
-    }
-    return plan.name;
 }
 
 interface PriceShape {
@@ -564,11 +539,14 @@ export async function initiatePaidMonthlySubscription(
     // short-circuit in front of `TrialService.startTrial`, which re-checked it
     // and was the authoritative gate. `startTrial` is gone, so this is now the
     // single authoritative gate and has no second checker behind it: any prior
-    // subscription — any status, any product domain, including cancelled —
-    // disqualifies. Only queried when the plan actually declares a trial, since
-    // otherwise the answer cannot change the outcome. `hasAnyPriorSubscription`
-    // (HOS-226) is the SAME query the read-only `GET /trial-eligibility` route
-    // runs, so the two can never disagree on who is still trial-eligible.
+    // subscription the provider AUTHORIZED at least once — any authorized status,
+    // any product domain, including cancelled — disqualifies. Never-authorized
+    // checkouts the user backed out of (`abandoned` / `pending_provider`, or the
+    // raw qzpay `incomplete`/`incomplete_expired`) do NOT count (HOS-230). Only
+    // queried when the plan actually declares a trial, since otherwise the answer
+    // cannot change the outcome. `hasAnyPriorSubscription` (HOS-226) is the SAME
+    // query the read-only `GET /trial-eligibility` route runs, so the two can
+    // never disagree on who is still trial-eligible.
     const hasPriorSubscription =
         planHasTrial && planTrialDays > 0
             ? await hasAnyPriorSubscription({ billing, customerId })
@@ -588,17 +566,39 @@ export async function initiatePaidMonthlySubscription(
     // customer rather than silently pocketing it.
     const promoCodeIgnored = promoExtensionIgnored;
 
-    // SPEC-262 L1: reject a discount that would reduce the monthly price to zero.
-    // A 0-amount preapproval is meaningless (MP would reject it) and semantically
-    // wrong — the right tool for a free subscription is a comp code, not a 100%
-    // discount code. Fail early before the preapproval is created.
+    // ── DISCOUNT resolution (SPEC-262 + HOS-244) ──────────────────────────────
+    // Resolve the signup discount ONCE here, BEFORE the MP plan is resolved, so the
+    // `preapproval_plan` can be provisioned already at the discounted cycle-1 price
+    // (HOS-244) instead of being born full-price and PUT-down reactively after
+    // authorization (which raced MP's cycle-1 charge for no-trial checkouts).
+    //
+    // SPEC-262 L1 guard: a discount that reduces the monthly price to zero is
+    // invalid — a 0-amount preapproval is meaningless (MP rejects it) and the right
+    // tool for a free subscription is a comp code, not a 100% discount.
+    let pendingDiscount: PendingCheckoutDiscount | undefined;
+    // HOS-244: the cycle-1 amount to bake into the MP plan (0 = no discount).
+    let discountCycle1AmountCentavos = 0;
     if (promoPlan.kind === 'discount') {
         const mutation = calculatePromoCodeEffect(promoPlan.effect, monthlyPrice.unitAmount);
-        if (mutation.type === 'apply-discount' && mutation.finalAmount === 0) {
-            throw new SubscriptionCheckoutError(
-                'INVALID_PROMO_CODE',
-                'This discount code reduces the price to zero. Use a comp code for free subscriptions.'
-            );
+        if (mutation.type === 'apply-discount') {
+            if (mutation.finalAmount === 0) {
+                throw new SubscriptionCheckoutError(
+                    'INVALID_PROMO_CODE',
+                    'This discount code reduces the price to zero. Use a comp code for free subscriptions.'
+                );
+            }
+            // Snapshot on the pending-checkout row so F2/F3 stamps promoCodeId,
+            // seeds the cycle counter, and records the redemption once the real
+            // preapproval is linked — the MP amount itself is already discounted at
+            // the plan level, so linking no longer performs a reactive PUT-down.
+            pendingDiscount = {
+                promoCodeId: promoPlan.promoCodeId,
+                finalAmountCentavos: mutation.finalAmount,
+                // HOS-244: snapshot durationCycles so link-time bookkeeping can seed
+                // the cycle counter fail-closed without re-resolving the promo code.
+                durationCycles: promoPlan.effect.durationCycles
+            };
+            discountCycle1AmountCentavos = mutation.finalAmount;
         }
     }
 
@@ -618,8 +618,12 @@ export async function initiatePaidMonthlySubscription(
         commercialPlanId: plan.id,
         // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
         customerId,
-        planName: getPlanDisplayName(plan),
+        planName: planDisplayNameFromPlan(plan),
         amountCentavos: monthlyPrice.unitAmount,
+        // HOS-244: provision the MP plan at the discounted cycle-1 amount when a
+        // signup discount applies (0 = no discount → full price). This is what
+        // makes the preapproval born discounted, closing the cycle-1 charge race.
+        discountCycle1AmountCentavos,
         currency: monthlyPrice.currency,
         // The hidden TEST_DAILY_PLAN resolves the `'day'` price above (into
         // `monthlyPrice`), so its MP plan must be provisioned on a DAILY cadence —
@@ -633,24 +637,6 @@ export async function initiatePaidMonthlySubscription(
         backUrl: urls.paymentMethodReturnUrl
     });
 
-    // ── DISCOUNT (deferred, SPEC-262 T-012 P2) ────────────────────────────────
-    // Path C creates no preapproval synchronously, so there is nothing to mutate
-    // yet. Snapshot the resolved discount on the pending-checkout correlation row
-    // instead — F2/F3 applies it as a follow-up mutation once the real
-    // preapproval is linked. Reuses `monthlyPrice.unitAmount` — the same amount
-    // already validated non-zero by the SPEC-262 L1 guard above — so no second
-    // price lookup is needed.
-    let pendingDiscount: PendingCheckoutDiscount | undefined;
-    if (promoPlan.kind === 'discount') {
-        const mutation = calculatePromoCodeEffect(promoPlan.effect, monthlyPrice.unitAmount);
-        if (mutation.type === 'apply-discount') {
-            pendingDiscount = {
-                promoCodeId: promoPlan.promoCodeId,
-                finalAmountCentavos: mutation.finalAmount
-            };
-        }
-    }
-
     const customer = await billing.customers.get(customerId);
     if (!customer) {
         throw new SubscriptionCheckoutError(
@@ -659,7 +645,7 @@ export async function initiatePaidMonthlySubscription(
         );
     }
 
-    const { localSubscriptionId, expiresAt } = await createPendingProviderSubscription({
+    const { localSubscriptionId, expiresAt, nonce } = await createPendingProviderSubscription({
         customerId,
         planId: plan.id,
         priceId: monthlyPrice.id,
@@ -669,13 +655,37 @@ export async function initiatePaidMonthlySubscription(
         trialGranted: freeTrialDays !== undefined,
         freeTrialDays,
         ...(pendingDiscount ? { pendingDiscount } : {}),
+        // HOS-240: snapshot the trial_extension promo so its redemption is
+        // DEFERRED to link time (like `pendingDiscount`) — recorded only once the
+        // MP preapproval is authorized+linked, never on an abandoned checkout.
+        // Only for a DB-backed code that actually granted the extra days (not a
+        // config code, not kill-switched/ineligible where the extension was ignored).
+        ...(promoPlan.kind === 'trial' &&
+        promoPlan.promoCodeId &&
+        promoPlan.code &&
+        !promoExtensionIgnored
+            ? {
+                  pendingTrialExtension: {
+                      promoCodeId: promoPlan.promoCodeId,
+                      code: promoPlan.code
+                  }
+              }
+            : {}),
         livemode: customer.livemode
     });
 
     // No `schedulePollingForSubscription` here — Path C creates no MP resource
     // synchronously, so there is no `providerResourceId` yet to poll. Polling
     // (if still warranted) resumes once F2/F3 links the real preapproval.
-    const checkoutUrl = buildPreapprovalPlanShareLink({ mpPreapprovalPlanId: providerPriceId });
+    //
+    // HOS-209: stamp the per-checkout nonce as external_reference on the hosted
+    // checkout URL so MP carries it onto the authorized preapproval, enabling
+    // exact-nonce (Tier 2) linking from the start (belt-and-suspenders with the
+    // post-hoc Step-4 stamp in link-preapproval.service.ts).
+    const checkoutUrl = buildPreapprovalPlanShareLink({
+        mpPreapprovalPlanId: providerPriceId,
+        externalReference: nonce
+    });
 
     return {
         checkoutUrl,
@@ -773,7 +783,7 @@ export async function initiateCommerceMonthlySubscription(
         commercialPlanId: plan.id,
         // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
         customerId,
-        planName: getPlanDisplayName(plan),
+        planName: planDisplayNameFromPlan(plan),
         amountCentavos: monthlyPrice.unitAmount,
         currency: monthlyPrice.currency,
         billingInterval: 'monthly',
@@ -899,7 +909,7 @@ export async function initiatePartnerMonthlySubscription(
         commercialPlanId: plan.id,
         // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
         customerId,
-        planName: getPlanDisplayName(plan),
+        planName: planDisplayNameFromPlan(plan),
         amountCentavos: monthlyPrice.unitAmount,
         currency: monthlyPrice.currency,
         billingInterval: 'monthly',
@@ -1180,17 +1190,21 @@ export async function initiatePaidAnnualSubscription(
     // customer rather than silently pocketing it.
     const promoCodeIgnored = promoExtensionIgnored;
 
-    // SPEC-262 L1: reject a discount that would reduce the price to zero. A
-    // 0-amount preapproval is meaningless (MP rejects it) and semantically wrong
-    // — the right tool for a free subscription is a comp code.
+    // HOS-244: annual checkout does NOT support signup discounts yet. The
+    // born-discounted MP-plan mechanism (`discountCycle1AmountCentavos` threaded
+    // into `resolveCheckoutMpPlanId`) was implemented for the MONTHLY path only —
+    // annual preapprovals are still provisioned at full price. Accepting a discount
+    // code here would stamp a discount at link time that MercadoPago never actually
+    // charges (the annual preapproval stays full price), and could later drive the
+    // interval-agnostic renewal restore path to mutate the annual preapproval to a
+    // monthly-scale amount. Reject explicitly (fail-fast, before any resource is
+    // created) until annual is migrated to the born-discounted design. Trial and
+    // comp codes are unaffected — only `discount` is blocked here.
     if (promoPlan.kind === 'discount') {
-        const mutation = calculatePromoCodeEffect(promoPlan.effect, annualPrice.unitAmount);
-        if (mutation.type === 'apply-discount' && mutation.finalAmount === 0) {
-            throw new SubscriptionCheckoutError(
-                'INVALID_PROMO_CODE',
-                'This discount code reduces the price to zero. Use a comp code for free subscriptions.'
-            );
-        }
+        throw new SubscriptionCheckoutError(
+            'INVALID_PROMO_CODE',
+            'Discount codes are not available on annual plans yet. Choose a monthly plan to use this discount.'
+        );
     }
 
     // ── Path C: MercadoPago hosted preapproval-plan share link (HOS-191) ─────
@@ -1211,7 +1225,7 @@ export async function initiatePaidAnnualSubscription(
         commercialPlanId: plan.id,
         // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
         customerId,
-        planName: getPlanDisplayName(plan),
+        planName: planDisplayNameFromPlan(plan),
         amountCentavos: annualPrice.unitAmount,
         currency: annualPrice.currency,
         billingInterval: 'annual',
@@ -1222,20 +1236,9 @@ export async function initiatePaidAnnualSubscription(
         backUrl: urls.successUrl
     });
 
-    // ── DISCOUNT (deferred) ───────────────────────────────────────────────────
-    // Same reasoning as monthly: no preapproval exists yet to mutate, so the
-    // resolved discount is snapshotted on the pending-checkout correlation row
-    // for F2/F3 to apply once the real preapproval is linked.
-    let pendingDiscount: PendingCheckoutDiscount | undefined;
-    if (promoPlan.kind === 'discount') {
-        const mutation = calculatePromoCodeEffect(promoPlan.effect, annualPrice.unitAmount);
-        if (mutation.type === 'apply-discount') {
-            pendingDiscount = {
-                promoCodeId: promoPlan.promoCodeId,
-                finalAmountCentavos: mutation.finalAmount
-            };
-        }
-    }
+    // No DISCOUNT snapshot for annual: HOS-244 blocks discount codes on annual
+    // checkout above (born-discounted is monthly-only for now), so an annual
+    // pending checkout never carries a pendingDiscount.
 
     const customer = await billing.customers.get(customerId);
     if (!customer) {
@@ -1245,7 +1248,7 @@ export async function initiatePaidAnnualSubscription(
         );
     }
 
-    const { localSubscriptionId, expiresAt } = await createPendingProviderSubscription({
+    const { localSubscriptionId, expiresAt, nonce } = await createPendingProviderSubscription({
         customerId,
         planId: plan.id,
         priceId: annualPrice.id,
@@ -1254,20 +1257,40 @@ export async function initiatePaidAnnualSubscription(
         payerEmail: customer.email,
         trialGranted: freeTrialDays !== undefined,
         freeTrialDays,
-        ...(pendingDiscount ? { pendingDiscount } : {}),
+        // HOS-240: snapshot the trial_extension promo so its redemption is
+        // DEFERRED to link time (like `pendingDiscount`) — recorded only once the
+        // MP preapproval is authorized+linked, never on an abandoned checkout.
+        // Only for a DB-backed code that actually granted the extra days (not a
+        // config code, not kill-switched/ineligible where the extension was ignored).
+        ...(promoPlan.kind === 'trial' &&
+        promoPlan.promoCodeId &&
+        promoPlan.code &&
+        !promoExtensionIgnored
+            ? {
+                  pendingTrialExtension: {
+                      promoCodeId: promoPlan.promoCodeId,
+                      code: promoPlan.code
+                  }
+              }
+            : {}),
         livemode: customer.livemode
     });
 
     // No `schedulePollingForSubscription` here — see the monthly path's
     // identical note: Path C creates no MP resource synchronously.
-    const checkoutUrl = buildPreapprovalPlanShareLink({ mpPreapprovalPlanId: providerPriceId });
+    // HOS-209: stamp the per-checkout nonce as external_reference (see monthly).
+    const checkoutUrl = buildPreapprovalPlanShareLink({
+        mpPreapprovalPlanId: providerPriceId,
+        externalReference: nonce
+    });
 
     return {
         checkoutUrl,
         localSubscriptionId,
         expiresAt,
         ...(freeTrialDays === undefined ? {} : { trialGranted: true as const }),
-        ...(pendingDiscount ? { appliedEffect: 'discount' as const } : {}),
+        // No `appliedEffect: 'discount'` for annual — discount codes are blocked
+        // on annual checkout (HOS-244, born-discounted is monthly-only for now).
         ...(promoCodeIgnored ? { promoCodeIgnored: true } : {})
     };
 }
@@ -1486,7 +1509,7 @@ export async function initiatePaidPlanUpgrade(
                 unitAmount: deltaCentavos,
                 currency: 'ARS',
                 quantity: 1,
-                title: `${getPlanDisplayName(targetPlan)} (Upgrade prorated)`,
+                title: `${planDisplayNameFromPlan(targetPlan)} (Upgrade prorated)`,
                 categoryId: 'services'
             }
         ],

@@ -442,6 +442,13 @@ export const dunningJob: CronJobDefinition = {
                                             customerEmail: customer.email ?? '',
                                             customerName,
                                             userId,
+                                            // HOS-231 dormant leak: `event.data.planName` is the raw
+                                            // slug from qzpay's dunning-engine event blob. This branch
+                                            // is DEAD today (DUNNING_MUTATIONS_ENABLED = false, HOS-191
+                                            // F5) so it never sends; when dunning mutations are
+                                            // re-enabled, resolve the display name here (subscription
+                                            // by mpSubscriptionId -> planId -> resolvePlanDisplayName),
+                                            // mirroring the sibling cancel paths.
                                             planName:
                                                 ((event.data as Record<string, unknown>)
                                                     .planName as string) ?? 'Unknown',

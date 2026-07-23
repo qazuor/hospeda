@@ -130,7 +130,8 @@ export const CompareModeToggle: FC<CompareModeToggleProps> = ({
         ? t('accommodations.comparison.mode.on', 'Modo comparación activado')
         : t('accommodations.comparison.mode.off', 'Modo comparación desactivado');
 
-    const pricingHref = `/${locale}/suscriptores/planes/`;
+    // Compare is a tourist feature → tourist plans page, not owner plans (BETA-200).
+    const pricingHref = `/${locale}/suscriptores/turistas/`;
 
     /**
      * Safely resolves the current page URL for the auth return-redirect.

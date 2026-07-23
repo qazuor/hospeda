@@ -56,13 +56,14 @@ const ADMIN_ONLY_RULES: ReadonlyArray<{
     // (Users manage their own subscriptions via the custom endpoints listed in
     //  allowedSubPaths — start-paid is the entry point for paid subscriptions,
     //  change-plan upgrades/downgrades an existing subscription, cancel is the
-    //  user self-service soft-cancel (SPEC-147) at /subscriptions/:id/cancel.
-    //  Self-serve pause/resume live OUTSIDE /subscriptions, at /me/subscription-pause,
-    //  so they never reach this rule.)
+    //  user self-service soft-cancel (SPEC-147) at /subscriptions/:id/cancel, and
+    //  uncancel is the user self-service un-cancel (HOS-232) at
+    //  /subscriptions/:id/uncancel. Self-serve pause/resume live OUTSIDE
+    //  /subscriptions, at /me/subscription-pause, so they never reach this rule.)
     {
         segment: 'subscriptions',
         methods: new Set(['POST', 'PUT', 'DELETE']),
-        allowedSubPaths: new Set(['start-paid', 'change-plan', 'cancel'])
+        allowedSubPaths: new Set(['start-paid', 'change-plan', 'cancel', 'uncancel'])
     },
 
     // Invoice creation and voiding are admin operations

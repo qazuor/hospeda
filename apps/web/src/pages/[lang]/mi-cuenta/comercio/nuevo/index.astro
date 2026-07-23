@@ -1,0 +1,112 @@
+---
+/**
+ * @file mi-cuenta/comercio/nuevo/index.astro
+ * @description Vertical picker for the owner self-service commerce-listing
+ * create flow (HOS-166 §8 point 2). The owner picks gastronomy or experience,
+ * then lands on `[vertical].astro`'s create form.
+ *
+ * @route     /[lang]/mi-cuenta/comercio/nuevo/
+ * @rendering SSR (prerender = false — authenticated, role-gated)
+ */
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import { isCommerceOwnerRole } from '@/lib/account-roles';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+if (!isCommerceOwnerRole(user.role)) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+}
+
+const title = t('commerce.owner.create.pickVertical.title', 'Crear nuevo comercio');
+const subtitle = t(
+    'commerce.owner.create.pickVertical.subtitle',
+    'Elegí qué tipo de comercio querés publicar.'
+);
+
+const options = [
+    {
+        vertical: 'gastronomy' as const,
+        title: t('commerce.owner.list.badge.gastronomy', 'Gastronomía'),
+        description: t(
+            'commerce.owner.create.pickVertical.gastronomyDescription',
+            'Restaurantes, bares, cafés y otros locales gastronómicos.'
+        )
+    },
+    {
+        vertical: 'experience' as const,
+        title: t('commerce.owner.list.badge.experience', 'Experiencia'),
+        description: t(
+            'commerce.owner.create.pickVertical.experienceDescription',
+            'Tours, excursiones, alquileres y otras experiencias.'
+        )
+    }
+];
+---
+
+<AccountLayout locale={locale} title={title} description={subtitle} activeSection="comercio">
+    <AccountPageHeader title={title} description={subtitle} />
+
+    <div class="cv-options">
+        {
+            options.map((option) => (
+                <a
+                    class="cv-option"
+                    href={buildUrl({ locale, path: `mi-cuenta/comercio/nuevo/${option.vertical}` })}
+                >
+                    <span class="cv-option__title">{option.title}</span>
+                    <span class="cv-option__description">{option.description}</span>
+                </a>
+            ))
+        }
+    </div>
+</AccountLayout>
+
+<style>
+    .cv-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: var(--space-4);
+    }
+
+    .cv-option {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        padding: var(--space-5);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 0.625rem);
+        background: var(--core-card, var(--core-background));
+        text-decoration: none;
+        transition:
+            border-color 150ms ease,
+            box-shadow 150ms ease;
+    }
+
+    .cv-option:hover {
+        border-color: var(--brand-accent);
+        box-shadow: var(--shadow-card-hover);
+    }
+
+    .cv-option__title {
+        font-family: var(--font-heading, var(--font-sans));
+        font-weight: 700;
+        font-size: var(--text-body-lg, 1.0625rem);
+        color: var(--core-foreground);
+    }
+
+    .cv-option__description {
+        font-size: var(--text-body-sm, 0.9375rem);
+        color: var(--core-muted-foreground);
+    }
+</style>

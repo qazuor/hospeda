@@ -23,12 +23,22 @@
         },
         "extraInfo": {
             "bathrooms": {
+                "max": "[EN] La cantidad de baños no puede superar los {{max}}",
+                "min": "[EN] La cantidad de baños no puede ser menor a {{min}}",
                 "required": "[EN] La cantidad de baños es obligatoria"
             },
             "bedrooms": {
+                "max": "[EN] La cantidad de habitaciones no puede superar los {{max}}",
+                "min": "[EN] La cantidad de habitaciones no puede ser menor a {{min}}",
                 "required": "[EN] La cantidad de habitaciones es obligatoria"
             },
+            "beds": {
+                "max": "[EN] La cantidad de camas no puede superar los {{max}}",
+                "min": "[EN] La cantidad de camas no puede ser menor a {{min}}"
+            },
             "capacity": {
+                "max": "[EN] La capacidad no puede superar los {{max}}",
+                "min": "[EN] La capacidad no puede ser menor a {{min}}",
                 "required": "[EN] La capacidad es obligatoria"
             },
             "minNights": {
@@ -57,6 +67,16 @@
                 "max": "[EN] El apartment no puede superar los {{max}} caracteres",
                 "min": "[EN] El apartment debe tener al menos {{min}} caracteres",
                 "required": "[EN] El apartment es obligatorio"
+            },
+            "coordinates": {
+                "lat": {
+                    "max": "[EN] La latitud no puede superar los {{max}}",
+                    "min": "[EN] La latitud no puede ser menor a {{min}}"
+                },
+                "long": {
+                    "max": "[EN] La longitud no puede superar los {{max}}",
+                    "min": "[EN] La longitud no puede ser menor a {{min}}"
+                }
             },
             "floor": {
                 "max": "[EN] El floor no puede superar los {{max}} caracteres",
@@ -133,6 +153,9 @@
                         "required": "[EN] El nombre es obligatorio"
                     }
                 }
+            },
+            "price": {
+                "min": "[EN] El precio no puede ser menor a {{min}}"
             }
         },
         "richDescription": {
@@ -1726,6 +1749,22 @@
         "message": {
             "max": "[EN] El mensaje no puede superar los {{max}} caracteres",
             "min": "[EN] El mensaje debe tener al menos {{min}} caracteres"
+        }
+    },
+    "conversation": {
+        "guestEmail": {
+            "invalid": "[EN] El email no es válido"
+        },
+        "guestName": {
+            "max": "[EN] El nombre no puede superar los {{max}} caracteres",
+            "min": "[EN] El nombre es obligatorio"
+        },
+        "guestPhone": {
+            "max": "[EN] El teléfono no puede superar los {{max}} caracteres"
+        },
+        "message": {
+            "max": "[EN] El mensaje no puede superar los {{max}} caracteres",
+            "min": "[EN] El mensaje es obligatorio"
         }
     },
     "dateRange": {

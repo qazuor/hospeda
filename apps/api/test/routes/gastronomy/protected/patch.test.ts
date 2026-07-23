@@ -4,7 +4,9 @@
  * Covers:
  * - Route registration
  * - 401 when unauthenticated
- * - Identity field rejection (name, slug, type, destinationId must be stripped)
+ * - Identity field handling (HOS-166 D-1): `name`/`destinationId` now PERSIST
+ *   for owners; `slug` stays stripped (immutable post-create, OQ-3); `type`
+ *   persists (SPEC-253, unrelated to this spec but exercised by the same body)
  * - Non-owner gets NOT_FOUND (ownership enforcement in updateOwn)
  * - Operational fields accepted without error
  */
@@ -99,11 +101,11 @@ describe('PATCH /api/v1/protected/gastronomies/:id', () => {
     });
 
     // -------------------------------------------------------------------------
-    // Identity field stripping — updateOwn contract
+    // Identity field handling — updateOwn contract (HOS-166 D-1)
     // -------------------------------------------------------------------------
 
-    describe('Identity Field Stripping', () => {
-        it('should strip identity fields (name, slug, type, destinationId) from the payload', async () => {
+    describe('Identity Field Handling (HOS-166 D-1)', () => {
+        it('persists name/type/destinationId for owners; still strips slug (OQ-3)', async () => {
             await app.request(`${BASE}/${VALID_UUID}`, {
                 method: 'PATCH',
                 headers: {
@@ -113,7 +115,7 @@ describe('PATCH /api/v1/protected/gastronomies/:id', () => {
                     'x-mock-actor-id': 'user-owner-1'
                 },
                 body: JSON.stringify({
-                    name: 'Forged Name',
+                    name: 'Updated Name',
                     slug: 'forged-slug',
                     type: 'PARRILLA',
                     destinationId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
@@ -128,10 +130,12 @@ describe('PATCH /api/v1/protected/gastronomies/:id', () => {
             // Skip assertion if mock auth isn't wired (CI without actor middleware)
             if (!captured) return;
 
-            expect(captured.data.name).toBeUndefined();
+            // HOS-166 D-1: owner now controls identity fields.
+            expect(captured.data.name).toBe('Updated Name');
+            expect(captured.data.type).toBe('PARRILLA');
+            expect(captured.data.destinationId).toBe('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+            // `slug` stays admin-only post-create (OQ-3) — still stripped.
             expect(captured.data.slug).toBeUndefined();
-            expect(captured.data.type).toBeUndefined();
-            expect(captured.data.destinationId).toBeUndefined();
             // Operational field must be present
             expect(captured.data.priceRange).toBe('MID');
         });

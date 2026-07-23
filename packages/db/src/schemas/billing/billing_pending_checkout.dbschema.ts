@@ -60,11 +60,32 @@ export const billingPendingCheckouts = pgTable(
          * follow-up mutation once the MercadoPago preapproval is linked
          * (Path C cannot apply a discount before the preapproval exists).
          *
-         * Shape: `{ promoCodeId: string, finalAmountCentavos: number }`.
+         * Shape: `{ promoCodeId, finalAmountCentavos, durationCycles? }`.
+         * `durationCycles` (HOS-244) lets link-time bookkeeping seed the cycle
+         * counter without re-resolving the promo code. Optional so pre-HOS-244
+         * in-flight rows still deserialize. JSONB → no migration to add it.
          */
         pendingDiscount: jsonb('pending_discount').$type<{
             promoCodeId: string;
             finalAmountCentavos: number;
+            durationCycles?: number | null;
+        }>(),
+        /**
+         * Snapshot of a `trial_extension` promo code resolved (and granted) at
+         * checkout time, whose redemption is DEFERRED to link time (HOS-240).
+         * Path C's redirect flow must not record the redemption before the
+         * customer authorizes on MercadoPago — otherwise an abandoned checkout
+         * permanently burns a capped code (`max_uses`/`max_per_customer`) for a
+         * subscription that never activated. Mirrors {@link pendingDiscount}:
+         * only when the real preapproval is linked (F2/F3) does
+         * `link-preapproval.service.ts` record the redemption (`used_count++`,
+         * usage row) and stamp `promo_code_id` on the now-linked subscription.
+         *
+         * Shape: `{ promoCodeId: string, code: string }`.
+         */
+        pendingTrialExtension: jsonb('pending_trial_extension').$type<{
+            promoCodeId: string;
+            code: string;
         }>(),
         /**
          * Correlation lifecycle: `pending` | `linked` | `reconcile_assisted`.

@@ -17,7 +17,23 @@ export interface CommerceOwnerCredentialsProps {
 }
 
 /**
- * Email template sent to a newly provisioned COMMERCE_OWNER account.
+ * Email template sent to a newly provisioned COMMERCE_OWNER account
+ * (HOS-166 PR-C §7.5 rework).
+ *
+ * Historically this ended at a single "Activar mi cuenta" CTA to the
+ * change-password page. It now doubles as the "lead approved → complete and
+ * publish" notification (see the HOS-166 PR-C report for why: it is sent at
+ * exactly the lead-approved moment, through the already-live
+ * `ProvisioningNotificationPort`, rather than reviving the dead
+ * `LeadNotificationPort` — HOS-166 §7.5/R-8) — it walks the owner through
+ * the FULL path: credentials → change password → complete your listing →
+ * publish → pay.
+ *
+ * It deliberately links ONLY to the change-password page, never straight to
+ * payment or even to `/mi-cuenta/comercio`: `mustChangePasswordGate()` 403s
+ * EVERY protected route (including listing create/edit and checkout) until
+ * the password changes (HOS-166 §5.4), so any link past that gate would
+ * dead-end the very first click.
  *
  * Displays the temporary password and a CTA button directing the owner to
  * the mandatory change-password page before they can use the platform.
@@ -35,7 +51,7 @@ export function CommerceOwnerCredentials({
 }: CommerceOwnerCredentialsProps) {
     return (
         <EmailLayout
-            previewText="Tus credenciales de acceso a Hospeda — activá tu cuenta ahora"
+            previewText="Tus credenciales de acceso a Hospeda — activá tu cuenta y publicá tu comercio"
             showUnsubscribe={false}
         >
             <Heading>¡Bienvenido a Hospeda!</Heading>
@@ -61,6 +77,24 @@ export function CommerceOwnerCredentials({
 
             <Section style={styles.buttonContainer}>
                 <Button href={changePasswordUrl}>Activar mi cuenta</Button>
+            </Section>
+
+            <Text style={styles.paragraph}>
+                Una vez que cambies tu contraseña, estos son los próximos pasos para publicar tu
+                comercio:
+            </Text>
+
+            <Section style={styles.stepsBox}>
+                <Text style={styles.stepItem}>
+                    1. Completá los datos de tu comercio (nombre, descripción, fotos, horarios y
+                    contacto).
+                </Text>
+                <Text style={styles.stepItem}>
+                    2. Cuando esté completo, vas a poder publicarlo desde tu cuenta.
+                </Text>
+                <Text style={styles.stepItem}>
+                    3. Publicá y pagá la suscripción — recién ahí tu ficha se muestra al público.
+                </Text>
             </Section>
 
             <Text style={styles.securityNote}>
@@ -90,6 +124,18 @@ const styles = {
         borderLeft: '4px solid #22c55e',
         padding: '24px',
         margin: '24px 0'
+    },
+    stepsBox: {
+        backgroundColor: '#f8fafc',
+        borderRadius: '8px',
+        padding: '20px 24px',
+        margin: '16px 0 24px'
+    },
+    stepItem: {
+        color: '#334155',
+        fontSize: '15px',
+        lineHeight: '22px',
+        margin: '0 0 8px'
     },
     buttonContainer: {
         margin: '32px 0',

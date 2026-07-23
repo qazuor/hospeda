@@ -47,12 +47,14 @@ import type { QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
 import {
     and,
-    billingCustomers,
     billingPayments,
+    billingPlanPriceChanges,
+    billingPlanPriceChangeTargets,
     billingSubscriptionEvents,
     billingSubscriptions,
     eq,
     getDb,
+    inArray,
     isNull,
     sql
 } from '@repo/db';
@@ -61,7 +63,10 @@ import {
     BILLING_EVENT_TYPES,
     checkSubscriptionStatusTransition,
     detectExternalChargeInterference,
+    detectPlanPriceDivergence,
+    resolveDiscountAwareExpectedCentavos,
     resolveFullPlanPriceCentavos,
+    resolveIntervalScopedPlanPriceCentavos,
     resolveRenewalPromoEffect,
     withServiceTransaction
 } from '@repo/service-core';
@@ -133,6 +138,12 @@ async function findLocalSubscriptionByPreapprovalId(preapprovalId: string): Prom
     planId: string | null;
     status: string;
     trialEnd: Date | null;
+    /**
+     * Subscription-vocabulary interval (`'month' | 'year'`), or `null`. Additive
+     * for HOS-176's plan-price divergence detector; the other caller
+     * (`webhook-retry.job.ts`) simply ignores the extra field.
+     */
+    billingInterval: string | null;
 } | null> {
     const db = getDb();
     const rows = await db
@@ -141,7 +152,8 @@ async function findLocalSubscriptionByPreapprovalId(preapprovalId: string): Prom
             customerId: billingSubscriptions.customerId,
             planId: billingSubscriptions.planId,
             status: billingSubscriptions.status,
-            trialEnd: billingSubscriptions.trialEnd
+            trialEnd: billingSubscriptions.trialEnd,
+            billingInterval: billingSubscriptions.billingInterval
         })
         .from(billingSubscriptions)
         .where(
@@ -332,6 +344,196 @@ async function reportExternalChargeInterference(params: {
 }
 
 /**
+ * Report a recurring charge whose amount SILENTLY diverges from the current plan
+ * price for a reason OTHER than a MercadoPago discount campaign (HOS-176).
+ *
+ * Sibling to {@link reportExternalChargeInterference}: that one catches MP's own
+ * campaign engine (`coupon_amount` / `campaign_id`); this one catches the case
+ * those fields are absent yet the charge still differs from the current
+ * (discount-aware, interval-scoped) plan price — e.g. a plan price change whose
+ * propagation to this subscriber's preapproval failed, or a stale/lagging
+ * preapproval the propagate-plan-price-changes cron never re-priced.
+ *
+ * Suppression (all EXPECTED, non-divergence reasons — checked in order):
+ *   1. MP reported a coupon/campaign → {@link reportExternalChargeInterference}'s
+ *      job; skip to avoid double-alerting.
+ *   2. Non-ARS currency → plan prices are ARS; a cross-currency compare is meaningless.
+ *   3. No plan id or no interval → cannot resolve an expected price.
+ *   4. An in-flight price change for this plan+interval (`pending`/`applying`/
+ *      `noticing`) → a divergence is EXPECTED while propagation is mid-flight.
+ *   5. An active target for THIS subscription (`pending`/`deferred`) → this sub is
+ *      queued to be (or is being) re-priced right now. A terminal `skipped`/`failed`
+ *      target is NOT suppressed — a failed propagation IS a real revenue divergence
+ *      worth re-alerting until an operator reconciles it.
+ *   6. Expected price unresolvable → warn + skip (cannot compare).
+ *   7. Discount-aware expected amount indeterminate → skip (avoid a false positive).
+ *
+ * Never fail-closed and never throws: the card was already debited and MP considers
+ * the matter settled. We record the money that arrived (done upstream) and, if it
+ * does not match, shout about it (`capture: true`).
+ *
+ * KNOWN LIMITATION (HOS-176 v1): a GRANDFATHERED trialing subscriber — one that
+ * received an INCREASE notice but was kept at the OLD price through its in-flight
+ * trial (owner decision D-4) — will trip this detector once it converts and charges
+ * the old (lower) price, because no in-flight change or active target suppresses it
+ * by then. This is ACCEPTABLE for now: the increase path is gated OFF
+ * (`HOSPEDA_BILLING_PRICE_INCREASE_ENABLED=false`), so it cannot occur in production,
+ * and the future "re-price a grandfathered trialing sub after its first charge" item
+ * is the real fix. Do NOT special-case trialing subs here to hide it.
+ *
+ * @internal
+ */
+async function reportPlanPriceDivergence(params: {
+    details: MPAuthorizedPaymentDetails;
+    localSubscriptionId: string;
+    planId: string | null;
+    billingInterval: string | null;
+    chargedAmountCentavos: number;
+    currency: string;
+    eventId: string | number;
+    requestId: string;
+}): Promise<void> {
+    const {
+        details,
+        localSubscriptionId,
+        planId,
+        billingInterval,
+        chargedAmountCentavos,
+        currency,
+        eventId,
+        requestId
+    } = params;
+
+    try {
+        // 1. MP campaign already owns this charge — reportExternalChargeInterference
+        //    handles it; skip so we do not double-alert on the same gap.
+        if (
+            (details.couponAmount !== null && details.couponAmount > 0) ||
+            (details.campaignId !== null && details.campaignId.length > 0)
+        ) {
+            return;
+        }
+
+        // 2. Plan prices are ARS — a cross-currency comparison is meaningless.
+        if (currency !== 'ARS') {
+            return;
+        }
+
+        // 3. Without a plan id there is no expected price to resolve. The interval
+        //    must ALSO be exactly a productized single-period value (`'month'` or
+        //    `'year'`) — a lagging row may carry neither, and a non-productized
+        //    interval (e.g. the hidden test-`'day'` plan) has no comparable price
+        //    row. This narrows `billingInterval` to `'month' | 'year'`, so the
+        //    interval-scoped price lookup below receives a correct, safe value.
+        if (planId == null || (billingInterval !== 'month' && billingInterval !== 'year')) {
+            return;
+        }
+
+        const db = getDb();
+
+        // 4. In-flight propagation for this plan+interval → divergence is EXPECTED
+        //    while the cron is mid-flight. (No soft-delete column on this table.)
+        const inflightChange = await db
+            .select({ id: billingPlanPriceChanges.id })
+            .from(billingPlanPriceChanges)
+            .where(
+                and(
+                    eq(billingPlanPriceChanges.planId, planId),
+                    eq(billingPlanPriceChanges.billingInterval, billingInterval),
+                    inArray(billingPlanPriceChanges.status, ['pending', 'applying', 'noticing'])
+                )
+            )
+            .limit(1);
+        if (inflightChange.length > 0) {
+            return;
+        }
+
+        // 5. An active (non-terminal) target for THIS sub → it is queued to be, or is
+        //    being, re-priced right now. `skipped`/`failed` are terminal and NOT
+        //    suppressed: a failed propagation is a genuine revenue divergence to re-alert.
+        const activeTarget = await db
+            .select({ id: billingPlanPriceChangeTargets.id })
+            .from(billingPlanPriceChangeTargets)
+            .where(
+                and(
+                    eq(billingPlanPriceChangeTargets.subscriptionId, localSubscriptionId),
+                    inArray(billingPlanPriceChangeTargets.status, ['pending', 'deferred'])
+                )
+            )
+            .limit(1);
+        if (activeTarget.length > 0) {
+            return;
+        }
+
+        // 6. Interval-SCOPED full plan price (NOT the interval-ambiguous
+        //    resolveFullPlanPriceCentavos, which would return a monthly price for an
+        //    annual sub and manufacture a false positive). `billingInterval` is
+        //    already narrowed to `'month' | 'year'` by the step-3 guard above.
+        const fullCentavos = await resolveIntervalScopedPlanPriceCentavos({
+            db,
+            planId,
+            billingInterval
+        });
+        if (fullCentavos === null) {
+            apiLogger.warn(
+                { eventId, requestId, localSubscriptionId, planId, billingInterval },
+                'MercadoPago webhook: cannot determine the expected plan price for divergence check — skipping'
+            );
+            return;
+        }
+
+        // 7. Discount-aware expected amount. Indeterminate → skip (never a false positive).
+        const expected = await resolveDiscountAwareExpectedCentavos({
+            subscriptionId: localSubscriptionId,
+            fullCentavos
+        });
+        if ('indeterminate' in expected) {
+            return;
+        }
+
+        const divergence = detectPlanPriceDivergence({
+            chargedAmountCentavos,
+            expectedAmountCentavos: expected.amount
+        });
+        if (!divergence) {
+            return;
+        }
+
+        const detail = {
+            eventId,
+            requestId,
+            localSubscriptionId,
+            mpPaymentId: details.paymentId,
+            planId,
+            billingInterval,
+            chargedAmountCentavos: divergence.chargedAmountCentavos,
+            expectedAmountCentavos: divergence.expectedAmountCentavos,
+            deltaCentavos: divergence.deltaCentavos,
+            direction: divergence.direction
+        };
+
+        // Actionable: MP charged an amount that does not match the current plan price,
+        // and it is NOT an MP campaign, NOT mid-propagation, NOT a queued re-price.
+        // Revenue does not match the plan — an operator must reconcile.
+        apiLogger.error(
+            detail,
+            'MercadoPago webhook: subscription charge diverges from the current plan price (no MP campaign, no in-flight propagation) — payment accepted, revenue does not match the plan',
+            { capture: true }
+        );
+    } catch (err) {
+        apiLogger.warn(
+            {
+                eventId,
+                requestId,
+                localSubscriptionId,
+                error: err instanceof Error ? err.message : String(err)
+            },
+            'MercadoPago webhook: plan-price divergence check failed — payment recording unaffected'
+        );
+    }
+}
+
+/**
  * Check whether a `billing_payments` row already exists for the given
  * MercadoPago payment ID. Uses the JSONB `provider_payment_ids` map
  * (shape `{ mercadopago: paymentId }`) for the lookup, matching the
@@ -350,117 +552,6 @@ async function paymentAlreadyRecorded(providerPaymentId: string): Promise<boolea
         )
         .limit(1);
     return rows.length > 0;
-}
-
-/**
- * Back-fill `billing_customers.mp_customer_id` from the payer id surfaced on
- * a settled MercadoPago authorized payment (HOS-225 defect #4).
- *
- * Nothing else in Hospeda ever writes this column: `billing_customers` is
- * created with `mp_customer_id = NULL` and no call site fills it in
- * afterward, even though qzpay-drizzle's customer repository already
- * exposes the primitive (`updateMpCustomerId` / `findByMpCustomerId`). This
- * is the first real MP interaction after checkout that reliably carries the
- * subscriber's own MP user id (`payer_id`), so it is the natural place to
- * close that gap.
- *
- * Deliberately reads-then-writes with a typed Drizzle query directly against
- * `billing_customers` (mirroring how this same file already looks up
- * `billing_subscriptions` — see {@link findLocalSubscriptionByPreapprovalId})
- * rather than going through `billing.customers.update()`: the generic
- * `QZPayUpdateCustomerInput` facade type has no `mpCustomerId` slot, and
- * forcing it through would need an unsafe cast for a single-column write
- * that a plain typed Drizzle update already covers cleanly.
- *
- * **Idempotency**: only writes when the column is currently unset. A
- * customer that already carries an `mp_customer_id` (from a previous
- * payment, or from a future dedicated checkout-time write) is left alone —
- * this function never overwrites an existing value, even if it differs from
- * the freshly observed `mpPayerId` (that divergence would be a
- * reconciliation question, not something a webhook should resolve
- * unilaterally).
- *
- * **Soft-fail by design**: swallows every error. The payment has already
- * been recorded by the time this runs — a failure to back-fill an
- * enrichment column must never turn into a webhook retry storm or block
- * payment recording.
- *
- * **Note on the stored value**: this writes the authorized-payment's
- * `payer_id` — the subscriber's MercadoPago *user/account* id — NOT an MP
- * Customers-API (`/v1/customers`) resource id. Treat the column as advisory
- * (e.g. for display/reconciliation), not as an authoritative Customers-API
- * handle, and never as a sole ownership/authorization factor.
- *
- * @internal
- */
-async function backfillMpCustomerId(params: {
-    customerId: string;
-    mpPayerId: string | null;
-    eventId: string | number;
-    requestId: string;
-}): Promise<void> {
-    const { customerId, mpPayerId, eventId, requestId } = params;
-
-    if (!mpPayerId) {
-        return;
-    }
-
-    try {
-        const db = getDb();
-
-        const rows = await db
-            .select({ mpCustomerId: billingCustomers.mpCustomerId })
-            .from(billingCustomers)
-            .where(and(eq(billingCustomers.id, customerId), isNull(billingCustomers.deletedAt)))
-            .limit(1);
-
-        const customer = rows[0];
-        if (!customer) {
-            apiLogger.warn(
-                { eventId, requestId, customerId, mpPayerId },
-                'MercadoPago webhook: could not back-fill mp_customer_id — local customer row not found'
-            );
-            return;
-        }
-
-        if (customer.mpCustomerId) {
-            // Already set — never overwrite, even on a mismatch (HOS-225 #4
-            // idempotency contract). Nothing to log; this is the steady state.
-            return;
-        }
-
-        // Compare-and-swap: re-assert mp_customer_id IS NULL in the UPDATE
-        // itself, not just the earlier SELECT. This makes the "never
-        // overwrites" contract atomic even if a future concurrent writer
-        // (e.g. a checkout-time write) sets the column between our SELECT and
-        // this UPDATE — the write simply no-ops instead of clobbering it.
-        await db
-            .update(billingCustomers)
-            .set({ mpCustomerId: mpPayerId, updatedAt: new Date() })
-            .where(
-                and(
-                    eq(billingCustomers.id, customerId),
-                    isNull(billingCustomers.deletedAt),
-                    isNull(billingCustomers.mpCustomerId)
-                )
-            );
-
-        apiLogger.info(
-            { eventId, requestId, customerId, mpPayerId },
-            'MercadoPago webhook: back-filled billing_customers.mp_customer_id from the authorized-payment payer id'
-        );
-    } catch (err) {
-        apiLogger.warn(
-            {
-                eventId,
-                requestId,
-                customerId,
-                mpPayerId,
-                error: err instanceof Error ? err.message : String(err)
-            },
-            'MercadoPago webhook: failed to back-fill mp_customer_id — non-blocking, payment already recorded'
-        );
-    }
 }
 
 /**
@@ -495,14 +586,30 @@ async function safeMarkProcessed(eventId: string | number): Promise<void> {
 async function handleRenewalPromoEffect(params: {
     localSubscriptionId: string;
     mpSubscriptionId: string;
+    /**
+     * Amount actually charged for this confirmed cycle, in integer centavos.
+     * HOS-245: passed through so `resolveRenewalPromoEffect` only advances the
+     * discount countdown when the charge reflected the discounted amount.
+     */
+    chargedAmountCentavos: number;
     billing: NonNullable<ReturnType<typeof getQZPayBilling>>;
     eventId: string | number;
     requestId: string;
 }): Promise<void> {
-    const { localSubscriptionId, mpSubscriptionId, billing, eventId, requestId } = params;
+    const {
+        localSubscriptionId,
+        mpSubscriptionId,
+        chargedAmountCentavos,
+        billing,
+        eventId,
+        requestId
+    } = params;
 
     try {
-        const decision = await resolveRenewalPromoEffect({ subscriptionId: localSubscriptionId });
+        const decision = await resolveRenewalPromoEffect({
+            subscriptionId: localSubscriptionId,
+            chargedAmountCentavos
+        });
 
         if (!decision.success) {
             apiLogger.warn(
@@ -757,18 +864,6 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
             'MercadoPago webhook: recurring payment recorded in billing_payments'
         );
 
-        // HOS-225 #4: the authorized payment just resolved the subscriber's own
-        // MP user id — back-fill billing_customers.mp_customer_id if it is still
-        // unset. Awaited (not fire-and-forget): it is two cheap, single-row
-        // queries, and it is internally soft-fail (see backfillMpCustomerId), so
-        // awaiting it adds no risk to the webhook ACK path.
-        await backfillMpCustomerId({
-            customerId: sub.customerId,
-            mpPayerId: details.mpPayerId,
-            eventId: event.id,
-            requestId
-        });
-
         // Accounting defense (HOS-171 §7.5): the money that arrived is now on
         // record; check whether MercadoPago's own campaign engine is the reason
         // it is not the amount we asked for. Fire-and-forget so an accounting
@@ -779,6 +874,22 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
             localSubscriptionId: sub.id,
             planId: sub.planId,
             chargedAmountCentavos: amountInCentavos,
+            eventId: event.id,
+            requestId
+        });
+
+        // Accounting defense (HOS-176): the SILENT sibling of the campaign check
+        // above — catch a charge that diverges from the current plan price for a
+        // reason MP does NOT report (failed/lagging price propagation), suppressing
+        // every expected divergence (MP campaign, in-flight change, active re-price
+        // target). Fire-and-forget + never fail-closed, same as its sibling.
+        void reportPlanPriceDivergence({
+            details,
+            localSubscriptionId: sub.id,
+            planId: sub.planId,
+            billingInterval: sub.billingInterval,
+            chargedAmountCentavos: amountInCentavos,
+            currency,
             eventId: event.id,
             requestId
         });
@@ -814,6 +925,10 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
             void handleRenewalPromoEffect({
                 localSubscriptionId: sub.id,
                 mpSubscriptionId: details.preapprovalId,
+                // HOS-245: the amount actually settled for this cycle (integer
+                // centavos) so the discount countdown only advances on a charge
+                // that reflected the discount.
+                chargedAmountCentavos: amountInCentavos,
                 billing,
                 eventId: event.id,
                 requestId
@@ -867,8 +982,8 @@ export const _internals = {
     mapMpStatusToQZPayStatus,
     findLocalSubscriptionByPreapprovalId,
     paymentAlreadyRecorded,
-    backfillMpCustomerId,
-    safeMarkProcessed
+    safeMarkProcessed,
+    reportPlanPriceDivergence
 };
 
 // ---------------------------------------------------------------------------

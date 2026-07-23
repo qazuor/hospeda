@@ -11,8 +11,71 @@
  * never sets on any call path — prove the campaign engine touched the charge.
  */
 
-import { describe, expect, it } from 'vitest';
-import { detectExternalChargeInterference } from '../../src/services/billing/subscription/subscription-charge-reconcile.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// ---------------------------------------------------------------------------
+// Mocks for the HOS-176 divergence resolvers (below). The pure detectors
+// (`detectExternalChargeInterference`, `detectPlanPriceDivergence`) need none —
+// they are I/O-free. `resolveIntervalScopedPlanPriceCentavos` takes its db as a
+// param, so only `sql` / `getDb` need stubbing; the discount-aware resolver
+// pulls three sibling functions we control here.
+// ---------------------------------------------------------------------------
+
+vi.mock('@repo/db', () => ({
+    // Tagged-template stub: capture the interpolated values + literal string parts
+    // so a test can assert the query carries the subscription vocabulary DIRECTLY
+    // ('month'/'year', never 'monthly'/'annual') and the interval_count = 1 scope,
+    // without a real DB.
+    sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
+        strings,
+        values,
+        _type: 'sql'
+    })),
+    getDb: vi.fn()
+}));
+
+vi.mock('@repo/logger', () => ({
+    createLogger: vi.fn(() => ({
+        error: vi.fn(),
+        warn: vi.fn(),
+        info: vi.fn(),
+        debug: vi.fn()
+    }))
+}));
+
+vi.mock('../../src/services/billing/subscription/subscription-product-domain.js', () => ({
+    loadSubscriptionDiscountState: vi.fn()
+}));
+
+vi.mock('../../src/services/billing/promo-code/promo-code.crud.js', () => ({
+    getPromoCodeById: vi.fn()
+}));
+
+vi.mock('../../src/services/billing/promo-code/effect-reducer.js', () => ({
+    calculatePromoCodeEffect: vi.fn()
+}));
+
+import { calculatePromoCodeEffect } from '../../src/services/billing/promo-code/effect-reducer.js';
+import { getPromoCodeById } from '../../src/services/billing/promo-code/promo-code.crud.js';
+import {
+    detectExternalChargeInterference,
+    detectPlanPriceDivergence,
+    resolveDiscountAwareExpectedCentavos,
+    resolveIntervalScopedPlanPriceCentavos
+} from '../../src/services/billing/subscription/subscription-charge-reconcile.js';
+import { loadSubscriptionDiscountState } from '../../src/services/billing/subscription/subscription-product-domain.js';
+
+const mockLoadDiscountState = vi.mocked(loadSubscriptionDiscountState);
+const mockGetPromoCodeById = vi.mocked(getPromoCodeById);
+const mockCalculatePromoCodeEffect = vi.mocked(calculatePromoCodeEffect);
+
+type ScopedDb = Parameters<typeof resolveIntervalScopedPlanPriceCentavos>[0]['db'];
+
+/** Build a fake db exposing only `.execute`, resolving the given price rows. */
+function makeExecuteDb(rows: Array<{ unit_amount: unknown }>) {
+    const execute = vi.fn(async (_query: unknown) => ({ rows }));
+    return { db: { execute } as unknown as ScopedDb, execute };
+}
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -183,5 +246,329 @@ describe('detectExternalChargeInterference — AC-14: external campaign detected
         expect(result).not.toBeNull();
         expect(result?.shortfallCentavos).toBeNull();
         expect(result?.expectedAmountCentavos).toBeNull();
+    });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// HOS-176 — silent plan-price divergence detector
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('resolveIntervalScopedPlanPriceCentavos', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('queries the "month" interval DIRECTLY (never "monthly") scoped to interval_count = 1', async () => {
+        // Arrange
+        const { db, execute } = makeExecuteDb([{ unit_amount: 1_500_000 }]);
+
+        // Act
+        const result = await resolveIntervalScopedPlanPriceCentavos({
+            db,
+            planId: 'plan-1',
+            billingInterval: 'month'
+        });
+
+        // Assert — all three billing tables speak 'month'/'year'; the resolver must
+        // pass the subscription vocabulary straight through, NOT remap to 'monthly',
+        // and must scope to the productized single-period price (interval_count = 1).
+        expect(result).toBe(1_500_000);
+        const query = execute.mock.calls[0]?.[0] as { strings: string[]; values: unknown[] };
+        expect(query.values).toContain('month');
+        expect(query.values).not.toContain('monthly');
+        expect(query.strings.join('')).toContain('interval_count = 1');
+    });
+
+    it('queries the "year" interval DIRECTLY (never "annual") scoped to interval_count = 1', async () => {
+        // Arrange
+        const { db, execute } = makeExecuteDb([{ unit_amount: 15_000_000 }]);
+
+        // Act
+        const result = await resolveIntervalScopedPlanPriceCentavos({
+            db,
+            planId: 'plan-1',
+            billingInterval: 'year'
+        });
+
+        // Assert
+        expect(result).toBe(15_000_000);
+        const query = execute.mock.calls[0]?.[0] as { strings: string[]; values: unknown[] };
+        expect(query.values).toContain('year');
+        expect(query.values).not.toContain('annual');
+        expect(query.strings.join('')).toContain('interval_count = 1');
+    });
+
+    it('returns null when no active price row exists for the interval', async () => {
+        // Arrange
+        const { db } = makeExecuteDb([]);
+
+        // Act
+        const result = await resolveIntervalScopedPlanPriceCentavos({
+            db,
+            planId: 'plan-1',
+            billingInterval: 'month'
+        });
+
+        // Assert
+        expect(result).toBeNull();
+    });
+
+    it('returns null (and never queries) when the plan id is null', async () => {
+        // Arrange
+        const { db, execute } = makeExecuteDb([{ unit_amount: 999 }]);
+
+        // Act
+        const result = await resolveIntervalScopedPlanPriceCentavos({
+            db,
+            planId: null,
+            billingInterval: 'month'
+        });
+
+        // Assert
+        expect(result).toBeNull();
+        expect(execute).not.toHaveBeenCalled();
+    });
+
+    it('returns null when unit_amount is not a number', async () => {
+        // Arrange — malformed row
+        const { db } = makeExecuteDb([{ unit_amount: 'oops' }]);
+
+        // Act
+        const result = await resolveIntervalScopedPlanPriceCentavos({
+            db,
+            planId: 'plan-1',
+            billingInterval: 'month'
+        });
+
+        // Assert
+        expect(result).toBeNull();
+    });
+});
+
+describe('resolveDiscountAwareExpectedCentavos', () => {
+    const FULL = 1_500_000;
+    const SUB_ID = 'sub-1';
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('returns the full price when there is no discount state', async () => {
+        // Arrange
+        mockLoadDiscountState.mockResolvedValue(null);
+
+        // Act
+        const result = await resolveDiscountAwareExpectedCentavos({
+            subscriptionId: SUB_ID,
+            fullCentavos: FULL
+        });
+
+        // Assert
+        expect(result).toEqual({ amount: FULL });
+        expect(mockGetPromoCodeById).not.toHaveBeenCalled();
+    });
+
+    it('returns the full price when there is no promo code linked', async () => {
+        // Arrange
+        mockLoadDiscountState.mockResolvedValue({
+            id: SUB_ID,
+            status: 'active',
+            planId: 'plan-1',
+            customerId: 'cust-1',
+            mpSubscriptionId: 'pa-1',
+            promoCodeId: null,
+            promoEffectRemainingCycles: null
+        } as never);
+
+        // Act
+        const result = await resolveDiscountAwareExpectedCentavos({
+            subscriptionId: SUB_ID,
+            fullCentavos: FULL
+        });
+
+        // Assert
+        expect(result).toEqual({ amount: FULL });
+    });
+
+    it('returns the full price when the discount is exhausted (remaining <= 0)', async () => {
+        // Arrange
+        mockLoadDiscountState.mockResolvedValue({
+            promoCodeId: 'pc-1',
+            promoEffectRemainingCycles: 0
+        } as never);
+
+        // Act
+        const result = await resolveDiscountAwareExpectedCentavos({
+            subscriptionId: SUB_ID,
+            fullCentavos: FULL
+        });
+
+        // Assert — never looks the promo up: the countdown proved it is spent
+        expect(result).toEqual({ amount: FULL });
+        expect(mockGetPromoCodeById).not.toHaveBeenCalled();
+    });
+
+    it('is INDETERMINATE when an active promo cannot be looked up', async () => {
+        // Arrange — transient failure OR deleted promo: cannot determine the amount
+        mockLoadDiscountState.mockResolvedValue({
+            promoCodeId: 'pc-1',
+            promoEffectRemainingCycles: 2
+        } as never);
+        mockGetPromoCodeById.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'gone' }
+        } as never);
+
+        // Act
+        const result = await resolveDiscountAwareExpectedCentavos({
+            subscriptionId: SUB_ID,
+            fullCentavos: FULL
+        });
+
+        // Assert
+        expect(result).toEqual({ indeterminate: true });
+    });
+
+    it('returns the full price when the promo has no effect', async () => {
+        // Arrange
+        mockLoadDiscountState.mockResolvedValue({
+            promoCodeId: 'pc-1',
+            promoEffectRemainingCycles: 2
+        } as never);
+        mockGetPromoCodeById.mockResolvedValue({
+            success: true,
+            data: { effect: null }
+        } as never);
+
+        // Act
+        const result = await resolveDiscountAwareExpectedCentavos({
+            subscriptionId: SUB_ID,
+            fullCentavos: FULL
+        });
+
+        // Assert
+        expect(result).toEqual({ amount: FULL });
+    });
+
+    it('returns the DISCOUNTED amount for an apply-discount effect', async () => {
+        // Arrange — 30% off
+        mockLoadDiscountState.mockResolvedValue({
+            promoCodeId: 'pc-1',
+            promoEffectRemainingCycles: 2
+        } as never);
+        mockGetPromoCodeById.mockResolvedValue({
+            success: true,
+            data: { effect: { kind: 'discount' } }
+        } as never);
+        mockCalculatePromoCodeEffect.mockReturnValue({
+            type: 'apply-discount',
+            discountAmount: 450_000,
+            finalAmount: 1_050_000,
+            remainingCycles: 1
+        } as never);
+
+        // Act
+        const result = await resolveDiscountAwareExpectedCentavos({
+            subscriptionId: SUB_ID,
+            fullCentavos: FULL
+        });
+
+        // Assert
+        expect(result).toEqual({ amount: 1_050_000 });
+    });
+
+    it('returns the full price for a non-amount effect (comp / trial-extension)', async () => {
+        // Arrange — a comp effect does not reduce the recurring amount
+        mockLoadDiscountState.mockResolvedValue({
+            promoCodeId: 'pc-1',
+            promoEffectRemainingCycles: null
+        } as never);
+        mockGetPromoCodeById.mockResolvedValue({
+            success: true,
+            data: { effect: { kind: 'comp' } }
+        } as never);
+        mockCalculatePromoCodeEffect.mockReturnValue({
+            type: 'comp-subscription'
+        } as never);
+
+        // Act
+        const result = await resolveDiscountAwareExpectedCentavos({
+            subscriptionId: SUB_ID,
+            fullCentavos: FULL
+        });
+
+        // Assert — full price, NEVER indeterminate for a non-amount effect
+        expect(result).toEqual({ amount: FULL });
+    });
+
+    it('is INDETERMINATE when the discount-state load throws', async () => {
+        // Arrange
+        mockLoadDiscountState.mockRejectedValue(new Error('db down'));
+
+        // Act
+        const result = await resolveDiscountAwareExpectedCentavos({
+            subscriptionId: SUB_ID,
+            fullCentavos: FULL
+        });
+
+        // Assert — a throw is not proof of "no discount": never flag a possibly
+        // legitimate discounted charge
+        expect(result).toEqual({ indeterminate: true });
+    });
+
+    it('is INDETERMINATE when the promo lookup throws', async () => {
+        // Arrange
+        mockLoadDiscountState.mockResolvedValue({
+            promoCodeId: 'pc-1',
+            promoEffectRemainingCycles: 2
+        } as never);
+        mockGetPromoCodeById.mockRejectedValue(new Error('boom'));
+
+        // Act
+        const result = await resolveDiscountAwareExpectedCentavos({
+            subscriptionId: SUB_ID,
+            fullCentavos: FULL
+        });
+
+        // Assert
+        expect(result).toEqual({ indeterminate: true });
+    });
+});
+
+describe('detectPlanPriceDivergence', () => {
+    it('returns null when charged equals expected', () => {
+        // Arrange / Act
+        const result = detectPlanPriceDivergence({
+            chargedAmountCentavos: 1_500_000,
+            expectedAmountCentavos: 1_500_000
+        });
+        // Assert
+        expect(result).toBeNull();
+    });
+
+    it('flags an UNDERCHARGE (charged below the plan price)', () => {
+        // Arrange — MP charged the OLD lower price after a failed propagation
+        const result = detectPlanPriceDivergence({
+            chargedAmountCentavos: 1_400_000,
+            expectedAmountCentavos: 1_500_000
+        });
+        // Assert — delta = expected - charged = +100_000
+        expect(result).not.toBeNull();
+        expect(result?.direction).toBe('undercharge');
+        expect(result?.deltaCentavos).toBe(100_000);
+        expect(result?.chargedAmountCentavos).toBe(1_400_000);
+        expect(result?.expectedAmountCentavos).toBe(1_500_000);
+    });
+
+    it('flags an OVERCHARGE (charged above the plan price)', () => {
+        // Arrange
+        const result = detectPlanPriceDivergence({
+            chargedAmountCentavos: 1_600_000,
+            expectedAmountCentavos: 1_500_000
+        });
+        // Assert — delta = expected - charged = -100_000
+        expect(result).not.toBeNull();
+        expect(result?.direction).toBe('overcharge');
+        expect(result?.deltaCentavos).toBe(-100_000);
     });
 });

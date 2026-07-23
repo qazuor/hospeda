@@ -86,6 +86,13 @@ export interface AccommodationHookState extends Record<string, unknown> {
      */
     previousLifecycleState?: string;
     /**
+     * Whether the accommodation was publicly visible (lifecycle ACTIVE + visibility
+     * PUBLIC) BEFORE an update. Captured by `_beforeUpdate` and read by `_afterUpdate`
+     * to decide whether public-page revalidation is warranted (HOS-203). `undefined`
+     * when the pre-update state could not be resolved — treated as "revalidate" (safe).
+     */
+    previousPubliclyVisible?: boolean;
+    /**
      * Amenity UUIDs extracted from create/update input (SPEC-172 write-only sync).
      * Stored here by `_beforeCreate`/`_beforeUpdate` so `_afterCreate`/`_afterUpdate`
      * can perform the transactional junction sync without re-reading the original input.

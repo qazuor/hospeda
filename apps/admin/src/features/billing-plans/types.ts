@@ -1,4 +1,5 @@
 import type { EntitlementKey, LimitKey, PlanDefinition } from '@repo/billing';
+import type { PlanPriceChangeEffect } from '@repo/schemas';
 
 /**
  * Parsed plan record shape used by DataTable cells and column definitions.
@@ -91,4 +92,18 @@ export interface UpdatePlanPayload extends Partial<Omit<CreatePlanPayload, 'slug
     readonly id: string;
 }
 
-export type { EntitlementKey, LimitKey, PlanDefinition };
+export type { EntitlementKey, LimitKey, PlanDefinition, PlanPriceChangeEffect };
+
+/**
+ * Result surfaced back to `PlanDialog`'s `onSubmit` caller after a successful
+ * create/update mutation (HOS-176).
+ *
+ * `priceChangeEffects` is populated only by the UPDATE route when a save
+ * actually changed an existing price (monthly and/or annual, so 0-2 entries).
+ * Create-mode submissions always resolve with an empty array since the create
+ * route never returns price-change effects — there is no "prior price" to
+ * compare against on first save.
+ */
+export interface PlanSubmitResult {
+    readonly priceChangeEffects: readonly PlanPriceChangeEffect[];
+}

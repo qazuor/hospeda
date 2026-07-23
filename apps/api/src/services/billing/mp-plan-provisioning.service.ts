@@ -58,11 +58,23 @@ export interface ResolveOrProvisionMpPlanInput {
      */
     readonly trialDays: number;
     /**
-     * Current commercial price for this variant, in **centavos** (matches
-     * `billing_prices.unit_amount`). Used both to build the MP plan and to detect
-     * drift against the registry snapshot.
+     * Current commercial FULL price for this variant, in **centavos** (matches
+     * `billing_prices.unit_amount`). Stored as the drift snapshot (`amount_ars`)
+     * and used as the MP plan amount when there is NO signup discount.
      */
     readonly amountCentavos: number;
+    /**
+     * Cycle-1 discounted amount to bake into the MP plan, in **centavos**
+     * (HOS-244). `0` (default sentinel) = no signup discount → the plan is
+     * provisioned at the full `amountCentavos` (historical behavior). A non-zero
+     * value = provision the MP plan's `transaction_amount` ALREADY discounted, so
+     * the customer sees and pays the discounted cycle-1 price on MercadoPago and
+     * cycle 1 is charged correctly without a post-authorization mutation race. It
+     * is a second dimension of the registry key: `(commercial_plan, interval,
+     * trial_days, discount_cycle1_amount)`. `amountCentavos` (the full price) stays
+     * the drift snapshot regardless.
+     */
+    readonly discountCycle1AmountCentavos: number;
     /** ISO currency code (e.g. `'ARS'`). */
     readonly currency: string;
     /** Human-readable plan name, used as the MP plan `reason` (dashboard label). */
@@ -126,10 +138,17 @@ function buildPlanReason(input: {
     planName: string;
     billingInterval: BillingIntervalLabel;
     trialDays: number;
+    discountCycle1AmountCentavos?: number;
 }): string {
     const intervalLabel = BILLING_INTERVAL_LABELS_ES[input.billingInterval];
     const trialLabel = input.trialDays > 0 ? `${input.trialDays} días de prueba` : 'sin prueba';
-    return `${input.planName} — ${intervalLabel} — ${trialLabel}`;
+    // HOS-244: mark discounted variants so operators can tell them apart from the
+    // full-price plan in the MercadoPago dashboard. Only appended when discounted.
+    const discountLabel =
+        input.discountCycle1AmountCentavos && input.discountCycle1AmountCentavos > 0
+            ? ` — desc. 1er ciclo $${(input.discountCycle1AmountCentavos / 100).toFixed(2)}`
+            : '';
+    return `${input.planName} — ${intervalLabel} — ${trialLabel}${discountLabel}`;
 }
 
 /**
@@ -139,13 +158,21 @@ function buildPlanReason(input: {
  * `billing_day` so billing follows the rolling anniversary (HOS-191).
  */
 async function createMpPlan(input: ResolveOrProvisionMpPlanInput): Promise<string> {
+    // HOS-244: bake the discounted cycle-1 amount when a signup discount applies
+    // (sentinel 0 = no discount → full commercial price). This is what makes the
+    // preapproval born at the discounted price instead of being PUT-down reactively
+    // after authorization.
+    const bakedAmount =
+        input.discountCycle1AmountCentavos > 0
+            ? input.discountCycle1AmountCentavos
+            : input.amountCentavos;
     const priceInput: QZPayCreatePriceInput = {
         // The MercadoPago price adapter ignores `planId` (a preapproval_plan is
         // self-contained), but the qzpay contract requires it; pass the commercial
         // plan id for traceability.
         planId: input.commercialPlanId,
         currency: input.currency as QZPayCurrency,
-        unitAmount: input.amountCentavos,
+        unitAmount: bakedAmount,
         billingInterval: toQZPayBillingInterval(input.billingInterval),
         intervalCount: 1,
         // `0` is falsy, so the adapter omits `free_trial` for the no-trial variant.
@@ -154,7 +181,12 @@ async function createMpPlan(input: ResolveOrProvisionMpPlanInput): Promise<strin
         // fails fast (before the MP call) if it is absent or not absolute.
         backUrl: input.backUrl
     };
-    const reason = buildPlanReason(input);
+    const reason = buildPlanReason({
+        planName: input.planName,
+        billingInterval: input.billingInterval,
+        trialDays: input.trialDays,
+        discountCycle1AmountCentavos: input.discountCycle1AmountCentavos
+    });
     return input.adapter.prices.create(priceInput, reason);
 }
 
@@ -197,7 +229,9 @@ export async function resolveOrProvisionMpPlan(
     const key = {
         commercialPlanId: input.commercialPlanId,
         billingInterval: input.billingInterval,
-        trialDays: input.trialDays
+        trialDays: input.trialDays,
+        // HOS-244: the cycle-1 discount is a second key dimension (0 = no discount).
+        discountCycle1AmountArs: input.discountCycle1AmountCentavos
     };
 
     const existing = await billingMpPlanModel.findOne(key);
@@ -262,6 +296,8 @@ export async function resolveOrProvisionMpPlan(
             commercialPlanId: input.commercialPlanId,
             billingInterval: input.billingInterval,
             trialDays: input.trialDays,
+            // HOS-244: persist the discount dimension (0 = no discount).
+            discountCycle1AmountArs: input.discountCycle1AmountCentavos,
             mpPreapprovalPlanId: newId,
             amountArs: input.amountCentavos,
             status: 'active'
@@ -289,8 +325,15 @@ export interface ResolveCheckoutMpPlanIdInput {
     readonly commercialPlanId: string;
     /** Human-readable plan name, used as the MP plan `reason` (dashboard label). */
     readonly planName: string;
-    /** Current commercial price for this variant, in centavos. */
+    /** Current commercial FULL price for this variant, in centavos. */
     readonly amountCentavos: number;
+    /**
+     * Cycle-1 discounted amount in centavos (HOS-244), or `0` for no signup
+     * discount. When non-zero the resolved MP plan is provisioned at this amount
+     * so the preapproval is born discounted. Optional for backward-compat with
+     * non-discount callers; defaults to `0`.
+     */
+    readonly discountCycle1AmountCentavos?: number;
     /** ISO currency code (e.g. `'ARS'`). */
     readonly currency: string;
     /** Billing cadence of this variant. */
@@ -365,6 +408,8 @@ export async function resolveCheckoutMpPlanId(
                     billingInterval: input.billingInterval,
                     trialDays: input.trialDays,
                     amountCentavos: input.amountCentavos,
+                    // HOS-244: default 0 = no discount (backward-compat).
+                    discountCycle1AmountCentavos: input.discountCycle1AmountCentavos ?? 0,
                     currency: input.currency,
                     planName: input.planName,
                     backUrl: input.backUrl
@@ -391,6 +436,27 @@ export async function resolveCheckoutMpPlanId(
 export interface BuildPreapprovalPlanShareLinkInput {
     /** The MercadoPago `preapproval_plan` id to build a hosted checkout link for. */
     readonly mpPreapprovalPlanId: string;
+    /**
+     * The pending checkout's anti-IDOR `nonce` (HOS-209). When provided it is
+     * appended to the hosted-checkout URL as `external_reference`, so
+     * MercadoPago stamps it on whichever preapproval the customer authorizes on
+     * that page — making the nonce present on the preapproval FROM THE START,
+     * before any `back_url` return or webhook.
+     *
+     * Why this matters: the `preapproval_plan_id` is shared across every buyer
+     * of the same plan/interval/trial variant, so a webhook-only (F3) linking
+     * with multiple concurrent pending checkouts for the same customer+plan
+     * falls back to heuristic reconciliation and can refuse ambiguous
+     * candidates (observed in prod, SMOKE-19-07). A per-checkout
+     * `external_reference` lets the linker resolve by exact-nonce (Tier 2)
+     * immediately, independent of whether the browser ever returns.
+     *
+     * The post-hoc `adapter.subscriptions.update({ externalReference })` in
+     * `link-preapproval.service.ts` (Step 4) remains as a fallback for the case
+     * MercadoPago does not honor the URL param — this is belt-and-suspenders.
+     * Whether MP actually stamps it is deferred to a real-MP smoke (HOS-174).
+     */
+    readonly externalReference?: string;
 }
 
 /**
@@ -416,6 +482,12 @@ export interface BuildPreapprovalPlanShareLinkInput {
  */
 export function buildPreapprovalPlanShareLink(input: BuildPreapprovalPlanShareLinkInput): string {
     const params = new URLSearchParams({ preapproval_plan_id: input.mpPreapprovalPlanId });
+    // HOS-209: stamp the per-checkout nonce so MercadoPago carries it onto the
+    // authorized preapproval as external_reference, enabling exact-nonce (Tier 2)
+    // linking from the start. URLSearchParams handles the encoding.
+    if (input.externalReference) {
+        params.set('external_reference', input.externalReference);
+    }
     return `https://www.mercadopago.com.ar/subscriptions/checkout?${params.toString()}`;
 }
 

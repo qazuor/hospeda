@@ -6,6 +6,20 @@
  */
 
 /**
+ * Commerce vertical discriminator (HOS-166 D-5): the two commerce listing
+ * verticals in scope for owner self-checkout. Deliberately excludes editor /
+ * proveedores, partner, and sponsor — see spec §4.1.
+ *
+ * Re-exported from `@repo/schemas` (the canonical source — see
+ * `packages/schemas/src/enums/commerce-entity-type.schema.ts`) so both the API
+ * layer (which needs env access to resolve the plan slug) and this pure
+ * service-core layer (which evaluates listing completeness) share the exact
+ * same discriminator instead of each declaring its own local union that could
+ * drift.
+ */
+export type { CommerceEntityType } from '@repo/schemas';
+
+/**
  * Per-request hook state for BaseCommerceListingService lifecycle hooks.
  *
  * Stored in `ctx.hookState` (a `Record<string, unknown>` scoped to a single

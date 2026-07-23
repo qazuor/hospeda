@@ -20,5 +20,6 @@ export * from './extractors/jsonld.js';
 export * from './extractors/meta.js';
 export * from './finalize-import-draft.js';
 export * from './mapping.js';
+export * from './price-conversion.js';
 export * from './resolvers/amenities.js';
 export * from './resolvers/destination.js';

@@ -163,6 +163,13 @@ function makeService(entity: Experience | null = null): ExperienceService {
     service._featureJunctionModelInstance = makeJunctionModel();
     service._amenityModelInstance = makeCatalogModel();
     service._featureModelInstance = makeCatalogModel();
+    // HOS-166 D-1: destinationId is now owner-editable, so `_beforeUpdate`'s
+    // CITY-type validation (`_assertDestinationIsCity`) can run in these unit
+    // tests too — stub `_destinationModel` (real `DestinationModel` by
+    // default, per the base class's constructor) so it never touches a real DB.
+    service._destinationModel = {
+        findById: vi.fn().mockResolvedValue({ destinationType: 'CITY' })
+    };
     return service as ExperienceService;
 }
 
@@ -323,30 +330,46 @@ describe('ExperienceService.updateOwn — single COMMERCE_EDIT_OWN gate (SPEC-25
 
 describe('ExperienceService.updateOwn — schema enforcement', () => {
     // SPEC-253 AC-5: type/priceFrom/priceUnit are now owner-editable.
-    // Only name/slug/description/destinationId/lifecycle/visibility/moderation remain admin-only.
-    it('should strip admin-only identity fields (name/slug/destinationId) but accept type/priceFrom/priceUnit', async () => {
+    // HOS-166 D-1: name/description/destinationId are ALSO now owner-editable
+    // identity fields (reverses SPEC-239 decision #5). Only `slug` (immutable
+    // post-create, OQ-3) and true control fields remain admin-only.
+    it('accepts type/priceFrom/priceUnit AND name/destinationId (HOS-166 D-1 identity reversal)', async () => {
         const entity = makeExperienceEntity();
         const service = makeService(entity);
         const mockUpdate = (service as AnyService).model.update;
         // biome-ignore lint/suspicious/noExplicitAny: test coercion — simulating mixed HTTP body
         const mixedPayload: any = {
             isPriceOnRequest: false, // valid operational field — persists
-            type: ExperienceTypeEnum.TOUR_GUIDE, // NOW owner-editable — persists
-            priceFrom: 150000, // NOW owner-editable — persists (non-negative integer)
-            name: 'FORGED_NAME', // admin-only legal identity — stripped
-            destinationId: 'forged-dest-uuid' // admin-only — stripped
+            type: ExperienceTypeEnum.TOUR_GUIDE, // owner-editable — persists
+            priceFrom: 150000, // owner-editable — persists (non-negative integer)
+            name: 'Nuevo nombre', // HOS-166 D-1: owner-editable identity — persists
+            destinationId: '00000000-0000-4000-a000-0000000000aa' // HOS-166 D-1 — persists
         };
         const result = await service.updateOwn(ENTITY_ID, mixedPayload, ownerActor);
         expect(result.error).toBeUndefined();
         const updateArgs = mockUpdate.mock.calls[0];
         if (updateArgs) {
             const updatePayload = updateArgs[1] as Record<string, unknown>;
-            // type and priceFrom now persist (SPEC-253 AC-5)
+            // type and priceFrom persist (SPEC-253 AC-5)
             expect(updatePayload.type).toBe(ExperienceTypeEnum.TOUR_GUIDE);
             expect(updatePayload.priceFrom).toBe(150000);
-            // Legal identity fields are still stripped
-            expect(updatePayload).not.toHaveProperty('name');
-            expect(updatePayload).not.toHaveProperty('destinationId');
+            // Identity fields now persist too (HOS-166 D-1)
+            expect(updatePayload.name).toBe('Nuevo nombre');
+            expect(updatePayload.destinationId).toBe(mixedPayload.destinationId);
+        }
+    });
+
+    it('still strips slug (immutable post-create — HOS-166 OQ-3)', async () => {
+        const entity = makeExperienceEntity();
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+        // biome-ignore lint/suspicious/noExplicitAny: test coercion — simulating a forged HTTP body
+        const payload: any = { isPriceOnRequest: false, slug: 'forged-slug' };
+        await service.updateOwn(ENTITY_ID, payload, ownerActor);
+        const updateArgs = mockUpdate.mock.calls[0];
+        if (updateArgs) {
+            const updatePayload = updateArgs[1] as Record<string, unknown>;
+            expect(updatePayload).not.toHaveProperty('slug');
         }
     });
 
@@ -374,13 +397,15 @@ describe('ExperienceService.updateOwn — schema enforcement', () => {
 // updateOwn — AC-3 identity-field regression (SPEC-249 T-022)
 // ---------------------------------------------------------------------------
 
-// SPEC-249 AC-3 regression updated per SPEC-253 AC-5:
-// `type`, `priceFrom`, `priceUnit` are NO LONGER stripped — owners can now edit them.
-// `summary` is also now owner-editable. Only legal identity fields (name/slug),
-// base description, destinationId, lifecycle/visibility/moderation/isFeatured/
-// hasActiveSubscription/ownerId remain admin-only and are stripped by the schema.
-describe('ExperienceService.updateOwn — AC-5 identity-field regression (SPEC-249 T-022 updated for SPEC-253)', () => {
-    it('strips admin-only fields; type/priceFrom/priceUnit/summary/i18n now PERSIST for owners', async () => {
+// SPEC-249 AC-3 regression, updated per SPEC-253 AC-5 and then HOS-166 D-1:
+// `type`, `priceFrom`, `priceUnit` are NO LONGER stripped (SPEC-253) — owners
+// can now edit them. `summary` is also owner-editable. HOS-166 D-1 further
+// reverses SPEC-239 decision #5: `name`, `description`, `destinationId` are
+// now owner-editable identity fields too. `slug` stays admin-only post-create
+// (OQ-3); only true control fields (lifecycle/visibility/moderation/
+// isFeatured/hasActiveSubscription/ownerId) remain stripped.
+describe('ExperienceService.updateOwn — identity-field regression (SPEC-249 T-022, SPEC-253, HOS-166 D-1)', () => {
+    it('persists name/description/destinationId/type/priceFrom/priceUnit/summary/i18n; strips slug + control fields', async () => {
         const entity = makeExperienceEntity();
         const service = makeService(entity);
         const mockUpdate = (service as AnyService).model.update;
@@ -388,18 +413,20 @@ describe('ExperienceService.updateOwn — AC-5 identity-field regression (SPEC-2
         // biome-ignore lint/suspicious/noExplicitAny: simulating a mixed HTTP body
         const payload: any = {
             isPriceOnRequest: true, // operational — must persist
-            type: ExperienceTypeEnum.TOUR_GUIDE, // NOW owner-editable (SPEC-253 D1) — must persist
-            priceFrom: 100000, // NOW owner-editable — must persist
-            priceUnit: ExperiencePriceUnitEnum.PER_GROUP, // NOW owner-editable — must persist
-            name: 'FORGED_NAME', // admin-only legal identity — stripped
-            slug: 'forged-slug', // admin-only legal identity — stripped
-            destinationId: '00000000-0000-4000-a000-0000000000ff', // admin-only — stripped
-            lifecycleState: LifecycleStatusEnum.ARCHIVED, // lifecycle — stripped
-            visibility: VisibilityEnum.PRIVATE, // visibility — stripped
-            moderationState: ModerationStatusEnum.REJECTED, // moderation — stripped
-            isFeatured: true, // admin-only — stripped
+            type: ExperienceTypeEnum.TOUR_GUIDE, // owner-editable (SPEC-253 D1) — must persist
+            priceFrom: 100000, // owner-editable — must persist
+            priceUnit: ExperiencePriceUnitEnum.PER_GROUP, // owner-editable — must persist
+            name: 'Nuevo nombre del tour', // HOS-166 D-1: owner-editable identity — must persist
+            description:
+                'Una descripción base actualizada por el propio dueño del comercio para su ficha.', // HOS-166 D-1 — must persist
+            destinationId: '00000000-0000-4000-a000-0000000000ff', // HOS-166 D-1 — must persist
+            slug: 'forged-slug', // immutable post-create (OQ-3) — stripped
+            lifecycleState: LifecycleStatusEnum.ARCHIVED, // control field — stripped
+            visibility: VisibilityEnum.PRIVATE, // control field — stripped
+            moderationState: ModerationStatusEnum.REJECTED, // control field — stripped
+            isFeatured: true, // control field — stripped
             hasActiveSubscription: false, // subscription lifecycle only — stripped
-            ownerId: '00000000-0000-4000-a000-0000000000fe' // admin-only — stripped
+            ownerId: '00000000-0000-4000-a000-0000000000fe' // control field — stripped
         };
 
         const result = await service.updateOwn(ENTITY_ID, payload, ownerActor);
@@ -408,17 +435,18 @@ describe('ExperienceService.updateOwn — AC-5 identity-field regression (SPEC-2
         expect(mockUpdate).toHaveBeenCalledTimes(1);
         const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
 
-        // Operational and now-owner-editable fields persist.
+        // Operational and owner-editable fields persist.
         expect(updatePayload.isPriceOnRequest).toBe(true);
         expect(updatePayload.type).toBe(ExperienceTypeEnum.TOUR_GUIDE); // SPEC-253 AC-5
         expect(updatePayload.priceFrom).toBe(100000); // SPEC-253 AC-5
         expect(updatePayload.priceUnit).toBe(ExperiencePriceUnitEnum.PER_GROUP); // SPEC-253 AC-5
+        expect(updatePayload.name).toBe('Nuevo nombre del tour'); // HOS-166 D-1
+        expect(updatePayload.description).toBe(payload.description); // HOS-166 D-1
+        expect(updatePayload.destinationId).toBe(payload.destinationId); // HOS-166 D-1
 
-        // Admin-only identity fields are still stripped by the owner-update schema.
+        // Immutable slug + control fields are still stripped by the owner-update schema.
         for (const forbidden of [
-            'name',
             'slug',
-            'destinationId',
             'lifecycleState',
             'visibility',
             'moderationState',

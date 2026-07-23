@@ -68,5 +68,9 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
 
     // Broken iCal feed alert to the host (HOS-162 Phase 3) — TRANSACTIONAL:
     // overbooking risk, always sent, never opted out of
-    [NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN]: NotificationCategory.TRANSACTIONAL
+    [NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN]: NotificationCategory.TRANSACTIONAL,
+
+    // Plan price-increase advance notice (HOS-176) — TRANSACTIONAL: legally
+    // mandated advance notice (Disp. 954/2025), always sent, never opted out of
+    [NotificationType.PLAN_PRICE_CHANGE_NOTICE]: NotificationCategory.TRANSACTIONAL
 };

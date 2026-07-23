@@ -84,7 +84,9 @@ const STUB_PLAN = {
     limits: {},
     isActive: true,
     createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z'
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    // HOS-176: updatePlan's success DTO now carries the price-change effects (empty here).
+    priceChangeEffects: []
 };
 
 const successResult = { success: true as const, data: STUB_PLAN };

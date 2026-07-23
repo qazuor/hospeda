@@ -83,6 +83,13 @@ interface UserSubscriptionApiResponse {
             readonly planSlug: string;
             readonly planName: string;
             readonly status: string;
+            /**
+             * True for a complimentary (`comp`, SPEC-262) subscription — mapped
+             * to status `active` but never charged (its `currentPeriodEnd` is a
+             * ~100-year sentinel). Used to suppress the bogus "next charge" date.
+             * HOS-242. Optional for backward-compat with older API responses.
+             */
+            readonly isComplimentary?: boolean;
             readonly currentPeriodStart: string | null;
             readonly currentPeriodEnd: string | null;
             readonly cancelAtPeriodEnd: boolean;
@@ -471,8 +478,12 @@ registerDataSource('host.billing.plan', (ctx) => ({
             subscription.status === 'trial'
                 ? (subscription.trialEndsAt ?? subscription.currentPeriodEnd ?? undefined)
                 : undefined;
+        // HOS-242: a complimentary (comp) subscription is never charged — its
+        // currentPeriodEnd is a ~100-year sentinel — so it has no next-charge
+        // date. Without this guard the card would render "Próximo cobro: <date
+        // ~100 years out>".
         const nextChargeDate =
-            status === 'active' || status === 'expiring'
+            (status === 'active' || status === 'expiring') && !subscription.isComplimentary
                 ? (subscription.currentPeriodEnd ?? undefined)
                 : undefined;
 
