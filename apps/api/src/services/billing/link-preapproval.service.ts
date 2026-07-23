@@ -103,19 +103,21 @@ const RECONCILE_WINDOW_MS = 24 * 60 * 60 * 1000;
  *   MercadoPago plan or payer email does not match the resolved checkout, FIX
  *   A). Never overwrites someone else's linking.
  * - `'reconcile_assisted'` — the heuristic (Tier 3) path found zero or
- *   multiple candidates, or a single heuristic candidate failed to positively
- *   verify the payer-email identity (mismatch or absence — Tier 3 has no
- *   upstream ownership proof, so email absence cannot be waved through). Since
- *   HOS-191 FIX #5, a Tier 1 (`ownership`, back_url) attempt with an absent
- *   live/snapshot payer email no longer downgrades here — ownership is already
- *   proven upstream and email is defense-in-depth only there, so it resolves
- *   to `'linked'` instead. Since HOS-191 FIX #6, a Tier 1 attempt whose live
- *   `preapproval_plan_id` could not be resolved at all (MP access token
- *   unset, or the lookup failed) DOES downgrade here — the plan-id match is
- *   the tier's other load-bearing signal, so an unresolved lookup fails
- *   closed rather than silently skipping that check. Refused, not accused;
- *   flagged for manual follow-up (recoverable — no money linked to the wrong
- *   subscription).
+ *   multiple candidates (`resolvePendingCheckout`'s `candidates.length !== 1`
+ *   guard — unchanged). Since HOS-191 FIX #5, a Tier 1 (`ownership`, back_url)
+ *   attempt with an absent live/snapshot payer email no longer downgrades
+ *   here — ownership is already proven upstream and email is defense-in-depth
+ *   only there, so it resolves to `'linked'` instead. Since HOS-191 FIX #6, a
+ *   Tier 1 attempt whose live `preapproval_plan_id` could not be resolved at
+ *   all (MP access token unset, or the lookup failed) DOES downgrade here —
+ *   the plan-id match is the tier's other load-bearing signal, so an
+ *   unresolved lookup fails closed rather than silently skipping that check.
+ *   Since HOS-276, a SINGLE heuristic (Tier 3) candidate no longer downgrades
+ *   here on an absent payer email either — see {@link verifyPreapprovalOwnership}
+ *   for the full rationale. A CONFIRMED Tier-3 email mismatch does NOT land in
+ *   this state: it returns `'idor'` (see that bullet) and never marks the row
+ *   `reconcile_assisted`. Refused, not accused; flagged for manual follow-up
+ *   (recoverable — no money linked to the wrong subscription).
  * - `'not_found'` — no pending checkout could be resolved at all (unknown
  *   `localSubscriptionId`, unknown nonce).
  */
@@ -421,11 +423,58 @@ type OwnershipTier = 'ownership' | 'nonce' | 'heuristic';
  * absent live/snapshot email — resolves to `ok`. Email can still block, but
  * it can never be the sole reason a genuine owner gets refused.
  *
- * **Tier 3 (`heuristic`) is unchanged and much stricter**, because it has NO
- * upstream ownership proof at all (no authenticated caller, no unforgeable
- * nonce — just a plan-id + time-window candidate search). There, payer email
- * is the PRIMARY identity discriminant: a positive match is REQUIRED, and a
- * mismatch or absence refuses to `reconcile_assisted` (refuse, don't accuse).
+ * **Tier 3 (`heuristic`) is now VETO-ONLY too (HOS-276)**, matching Tier 1's
+ * posture rather than requiring a positive match. Disambiguation for this tier
+ * is NOT actually payer email — it is already provided further upstream, in
+ * `resolvePendingCheckout`'s heuristic branch: the hard `candidates.length ===
+ * 1` gate (zero or multiple candidates refuse to `reconcile_assisted` before
+ * this function is ever called), combined with the `mpPreapprovalPlanId` match
+ * (checked first, above) and the 24h `RECONCILE_WINDOW_MS` window. Once
+ * exactly one candidate survives that gate, requiring a POSITIVE payer-email
+ * match on top of it was over-strict for the same reason as Tier 1: MercadoPago
+ * does not always populate `payer_email` on a preapproval (confirmed
+ * empirically — `GET /preapproval/{id}` routinely returns `payer_email: ""`),
+ * so the old fail-closed-on-absence behavior downgraded a legitimate,
+ * already-disambiguated single-candidate match to `reconcile_assisted` on
+ * every such preapproval. This was the root cause of a second launch-blocking
+ * incident (HOS-276, SMOKE-23-07): a Path C checkout whose `back_url` handler
+ * never fired and whose `subscription_preapproval.updated` webhook landed on
+ * this tier settled a real ~$7.500 ARS charge that was never recorded, because
+ * Tier 3 refused to link a single, already-unambiguous candidate purely for
+ * lack of a payer email MercadoPago never sends. The guard now only VETOES
+ * here too: a CONFIRMED mismatch between the live and snapshotted payer emails
+ * still refuses (`reconcile_assisted`) — an attacker exploiting this tier would
+ * need to ALSO land as the only pending checkout for that exact plan within the
+ * 24h window, and a mismatched email on top of that remains a useful signal to
+ * refuse on — but a positive match, or an absent live/snapshot email, both
+ * resolve to `ok`. The webhook that reaches this tier is HMAC-signature-verified
+ * (the `preapprovalId` is MP-sourced, never attacker-supplied — see the module
+ * JSDoc's "Correlation model"), so this is not attacker-reachable in the IDOR
+ * sense. But — corrected from an earlier, overstated version of this comment —
+ * the `candidates.length === 1` gate does NOT prove the single candidate IS the
+ * real payer's row; it only proves exactly one candidate EXISTS. A residual
+ * **cross-customer mislink** is possible, and it is irreducible via payer_email:
+ * it requires (a) the real payer's own pending row to be ABSENT from the
+ * candidate set — its `createdAt` aged out of the 24h `RECONCILE_WINDOW_MS`, or
+ * it was already marked `reconcile_assisted` by an earlier ambiguous collision —
+ * AND (b) a DIFFERENT customer to be the lone `pending` row for the same plan
+ * within the window, AND (c) the live `payer_email` to be absent (so the
+ * mismatch veto never fires). Condition (c) is the SAME state as the HOS-276
+ * orphan bug this fix targets (MercadoPago routinely omits `payer_email`), so
+ * no payer_email-based rule can separate "safe absence" from "unsafe absence" —
+ * there is no signal left to fail closed on without reintroducing the orphan
+ * bug. This residual is deliberately accepted, not solved, by this fix; its
+ * true closure is a verified `external_reference` (HOS-209 stamping, see below,
+ * confirmed empirically via the HOS-174 staging smoke), which does not depend
+ * on payer_email at all.
+ *
+ * There is deliberately no `payer_id`-based alternative disambiguator on this
+ * tier either: `billing_pending_checkouts` has no `payer_id` snapshot column,
+ * because the payer does not exist yet when the checkout row is created (see
+ * the HOS-209 section below for the equivalent gap on Tier 1, which explored
+ * and rejected the same idea for the same reason) — candidate-uniqueness is
+ * the disambiguator this tier actually has, not a payer_id guard that was
+ * never buildable.
  *
  * **Tier 2 (`nonce`) trusts the unforgeable nonce** — only an
  * already-ownership-verified Tier 1 could have stamped it — so a live-email
@@ -493,8 +542,15 @@ type OwnershipTier = 'ownership' | 'nonce' | 'heuristic';
  * honor the URL param. Whether MP actually stamps the URL `external_reference`
  * onto the preapproval is EMPIRICAL and DEFERRED to a real-MP staging smoke
  * (HOS-174, this issue carries `status-needs-smoke-staging`). If the smoke shows
- * MP drops the param, fall back to the payer_id consistency guard or a
- * single-use link token — but do not build either blind.
+ * MP drops the param, a payer_id consistency guard or a single-use link token
+ * were the previously-proposed fallbacks — HOS-276 confirmed the former is not
+ * buildable: `billing_pending_checkouts` has no `payer_id` snapshot column,
+ * because the payer does not exist yet at checkout-row-creation time (the
+ * customer has not authorized anything with MercadoPago yet). Candidate
+ * uniqueness (the `candidates.length === 1` gate in `resolvePendingCheckout`)
+ * is the disambiguator that actually exists on both Tier 1 and Tier 3 today;
+ * a single-use link token remains the only still-open alternative if the
+ * staging smoke shows MP drops the URL param.
  *
  * @internal
  */
@@ -610,24 +666,68 @@ async function verifyPreapprovalOwnership(params: {
         return 'ok';
     }
 
-    // Tier 3 (heuristic): the ONLY tier with no upstream ownership proof at
-    // all, so a POSITIVE email match is REQUIRED to disambiguate — this is
-    // real money on a caller-uncontrolled but otherwise unverified candidate.
-    if (emailMatches) {
-        return 'ok';
+    // Tier 3 (heuristic, HOS-276): disambiguation for this tier is already
+    // provided upstream by `resolvePendingCheckout`'s `candidates.length === 1`
+    // gate + the plan-id match checked above + the 24h reconcile window — see
+    // this function's JSDoc for the full rationale. Payer email is
+    // VETO-ONLY here too, mirroring Tier 1: a CONFIRMED mismatch still refuses
+    // (real hijack signal on top of an already-narrowed single candidate), but
+    // an absent live/snapshot email — which MercadoPago structurally omits on
+    // many real preapprovals — no longer downgrades a legitimate, unambiguous
+    // match to `reconcile_assisted`.
+    if (emailMismatch) {
+        apiLogger.error(
+            { preapprovalId, customerId: checkout.customerId, tier },
+            'HOS-276 link-preapproval: heuristic (Tier 3) candidate payer email differs from the checkout customer — refusing (possible IDOR)'
+        );
+        Sentry.captureException(
+            new Error('HOS-276 link-preapproval: payer email mismatch (heuristic tier)'),
+            { extra: { preapprovalId, customerId: checkout.customerId, tier } }
+        );
+        return 'idor';
     }
 
-    apiLogger.warn(
-        {
-            preapprovalId,
-            customerId: checkout.customerId,
-            tier,
-            hasLivePayerEmail: !!livePayerEmail,
-            hasSnapshotPayerEmail: !!snapshotEmail
-        },
-        'HOS-191 link-preapproval: could not positively verify preapproval payer identity — refusing to link blindly (reconcile_assisted)'
-    );
-    return 'reconcile_assisted';
+    if (!emailMatches) {
+        // Not a mismatch and not a positive match (both checked above) — i.e.
+        // an absent live/snapshot email. Log at info (not warn): this is now the
+        // EXPECTED, common case for this tier, not a refusal — the audit trail
+        // is preserved via these fields, not via a warn-level "could not
+        // verify" that would suggest something went wrong.
+        apiLogger.info(
+            {
+                preapprovalId,
+                customerId: checkout.customerId,
+                tier,
+                hasLivePayerEmail: !!livePayerEmail,
+                hasSnapshotPayerEmail: !!snapshotEmail
+            },
+            'HOS-276 link-preapproval: linking a heuristic (Tier 3) candidate without a positive payer-email match — relying on candidate-uniqueness + plan-id + window (see verifyPreapprovalOwnership JSDoc)'
+        );
+        // Also emit to Sentry (warning, not error — this is expected, not a
+        // failure) so a provisional heuristic link is auditable and reversible
+        // via the existing manual `link-preapproval` recovery path, given the
+        // residual cross-customer mislink risk documented above this function's
+        // Tier 3 rationale. `livePayerId` is intentionally NOT included: the MP
+        // adapter's `QZPayProviderSubscription.retrieve()` mapping
+        // (`mapToProviderSubscription` in `@qazuor/qzpay-mercadopago`) never
+        // surfaces a payer id field, so there is nothing to thread here without
+        // inventing one.
+        Sentry.captureMessage(
+            'HOS-276 link-preapproval: provisional heuristic link without positive payer-email match — audit for possible cross-customer mislink',
+            {
+                level: 'warning',
+                extra: {
+                    preapprovalId,
+                    customerId: checkout.customerId,
+                    localSubscriptionId: checkout.localSubscriptionId,
+                    tier,
+                    hasLivePayerEmail: !!livePayerEmail
+                }
+            }
+        );
+    }
+
+    return 'ok';
 }
 
 /**
