@@ -60,11 +60,15 @@ export const billingPendingCheckouts = pgTable(
          * follow-up mutation once the MercadoPago preapproval is linked
          * (Path C cannot apply a discount before the preapproval exists).
          *
-         * Shape: `{ promoCodeId: string, finalAmountCentavos: number }`.
+         * Shape: `{ promoCodeId, finalAmountCentavos, durationCycles? }`.
+         * `durationCycles` (HOS-244) lets link-time bookkeeping seed the cycle
+         * counter without re-resolving the promo code. Optional so pre-HOS-244
+         * in-flight rows still deserialize. JSONB → no migration to add it.
          */
         pendingDiscount: jsonb('pending_discount').$type<{
             promoCodeId: string;
             finalAmountCentavos: number;
+            durationCycles?: number | null;
         }>(),
         /**
          * Snapshot of a `trial_extension` promo code resolved (and granted) at
