@@ -730,7 +730,8 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
             customerId: 'cust-resolved-1',
             planId: 'plan-1',
             status: 'active',
-            trialEnd: null
+            trialEnd: null,
+            billingInterval: 'month'
         });
         vi.mocked(paymentAlreadyRecorded).mockResolvedValue(false);
 
@@ -802,7 +803,8 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
             customerId: 'cust-2',
             planId: 'plan-1',
             status: 'active',
-            trialEnd: null
+            trialEnd: null,
+            billingInterval: 'month'
         });
         // Already recorded — must NOT call billing.payments.record
         vi.mocked(paymentAlreadyRecorded).mockResolvedValue(true);
