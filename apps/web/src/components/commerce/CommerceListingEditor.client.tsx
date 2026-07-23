@@ -547,46 +547,59 @@ export function CommerceListingEditor({
                         )}
                     </p>
                 </section>
+            ) : destinations.length > 0 ? (
+                <section className={styles.section}>
+                    <label
+                        className={styles.label}
+                        htmlFor="ce-destinationId"
+                    >
+                        {t('commerce.owner.editor.sections.destination', 'Ciudad / Destino')}
+                    </label>
+                    <select
+                        id="ce-destinationId"
+                        className={styles.input}
+                        value={destinationId}
+                        aria-invalid={fieldErrors.destinationId ? 'true' : 'false'}
+                        aria-describedby={
+                            fieldErrors.destinationId ? fieldErrorId('destinationId') : undefined
+                        }
+                        onChange={(event) => {
+                            setDestinationId(event.target.value);
+                            markDirty('destinationId');
+                        }}
+                    >
+                        <option value="">—</option>
+                        {destinations.map((d) => (
+                            <option
+                                key={d.id}
+                                value={d.id}
+                            >
+                                {d.name}
+                            </option>
+                        ))}
+                    </select>
+                    <FieldError
+                        id={fieldErrorId('destinationId')}
+                        message={fieldErrors.destinationId}
+                    />
+                </section>
             ) : (
-                destinations.length > 0 && (
-                    <section className={styles.section}>
-                        <label
-                            className={styles.label}
-                            htmlFor="ce-destinationId"
-                        >
-                            {t('commerce.owner.editor.sections.destination', 'Ciudad / Destino')}
-                        </label>
-                        <select
-                            id="ce-destinationId"
-                            className={styles.input}
-                            value={destinationId}
-                            aria-invalid={fieldErrors.destinationId ? 'true' : 'false'}
-                            aria-describedby={
-                                fieldErrors.destinationId
-                                    ? fieldErrorId('destinationId')
-                                    : undefined
-                            }
-                            onChange={(event) => {
-                                setDestinationId(event.target.value);
-                                markDirty('destinationId');
-                            }}
-                        >
-                            <option value="">—</option>
-                            {destinations.map((d) => (
-                                <option
-                                    key={d.id}
-                                    value={d.id}
-                                >
-                                    {d.name}
-                                </option>
-                            ))}
-                        </select>
-                        <FieldError
-                            id={fieldErrorId('destinationId')}
-                            message={fieldErrors.destinationId}
-                        />
-                    </section>
-                )
+                // HOS-260: catalog fetch SUCCEEDED but returned zero rows. The old
+                // `destinations.length > 0` gate silently omitted the field here
+                // too, leaving `destinationId` (required for completeness)
+                // unfillable with no indication why. Distinct from the
+                // `destinationsLoadFailed` branch above (fetch failure).
+                <section className={styles.section}>
+                    <p
+                        className={styles.error}
+                        role="alert"
+                    >
+                        {t(
+                            'commerce.owner.editor.sections.destinationEmpty',
+                            'Todavía no hay ciudades / destinos cargados. Contactanos para poder completar este campo.'
+                        )}
+                    </p>
+                </section>
             )}
 
             {/* T-020: type select */}

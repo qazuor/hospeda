@@ -543,6 +543,7 @@
         },
         "subscription": {
             "title": "Mi suscripción",
+            "titleCommerce": "Suscripción de comercio",
             "description": "Administrá tu plan y suscripción en Hospeda",
             "heading": "Mi suscripción",
             "headingDesc": "Administrá tu plan y preferencias de pago",

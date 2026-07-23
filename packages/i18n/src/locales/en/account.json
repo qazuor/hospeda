@@ -543,6 +543,7 @@
         },
         "subscription": {
             "title": "My Subscription",
+            "titleCommerce": "Commerce Subscription",
             "description": "Manage your plan and subscription on Hospeda",
             "heading": "My Subscription",
             "headingDesc": "Manage your plan and payment preferences",

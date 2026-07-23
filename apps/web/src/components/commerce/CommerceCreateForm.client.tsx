@@ -19,22 +19,19 @@
  * create endpoint itself validates against, so there is only one set of
  * rules, just scoped to the fields this form actually collects.
  *
- * ## D-4 compliance (HOS-166 §6.1 — the golden rule)
+ * ## D-4 compliance (HOS-166 §6.1 / HOS-257 — the golden rule)
  *
- * `prefill` is OPTIONAL and, when present, MUST only ever be sourced from the
- * owner's own profile data — never from the commerce-leads DB table. There is no
- * protected "my lead" read endpoint today (see the HOS-166 PR-C report for
- * why one was not built here), so this form cannot pre-fill
- * `businessName`/`contactName`/`destinationId` from a lead even when one
- * exists. In practice the current caller (`nuevo/[vertical].astro`) passes
- * NO `prefill` at all — `Astro.locals.user.name` is the owner's PERSONAL
- * name, not a business name, and forcing it into the `name` (listing name)
- * field would plant actively wrong data rather than a helpful default (see
- * that page's comment). The prop stays wired for a real future source (a
- * lead-read endpoint, or a dedicated "business name" profile field). Either
- * way, an owner with NO lead at all gets the identical form — AC-10/AC-11
- * hold trivially because there is no lead-conditioned branch anywhere in
- * this component.
+ * `prefill` is OPTIONAL and PRE-FILL ONLY, never a gate. `nuevo/[vertical].astro`
+ * (the sole caller) sources it from `GET /api/v1/protected/commerce/leads/mine`
+ * — a protected READ endpoint that returns the CALLER's own most-recent
+ * provisioned lead (`{ lead: null }` when there is none). This component itself
+ * never talks to the lead subsystem — it only receives the
+ * already-shaped `prefill` object over props, same as it always has. Every
+ * field is optional and an absent/empty value degrades silently to a blank
+ * input, so an owner with no lead gets the IDENTICAL, fully usable form
+ * (AC-10/AC-11) — there is no lead-conditioned branch anywhere in this
+ * component. Overwriting a pre-filled value is always allowed (AC-12): these
+ * are plain `useState` initial values, editable like any other input.
  *
  * Hydration: caller MUST use `client:load` (the primary interactive surface
  * of the create page).
@@ -77,12 +74,16 @@ export interface CommerceCreateFormProps {
      */
     readonly destinationsLoadFailed?: boolean;
     /**
-     * Optional pre-fill values, sourced from the owner's OWN profile (see
-     * module doc — never from the commerce-leads DB table). Every field is optional and
-     * an absent/empty value degrades silently to a blank input.
+     * Optional pre-fill values (HOS-257), sourced by the caller from the
+     * caller's own commerce lead (see module doc). Every field is optional and
+     * an absent/empty value degrades silently to a blank input. Only the
+     * fields this form actually collects are pre-fillable — `contactName` /
+     * `email` / `phone` live on the lead but have no equivalent input here
+     * (they are `CommerceListingEditor` fields, filled in after create).
      */
     readonly prefill?: {
         readonly name?: string;
+        readonly destinationId?: string;
     };
 }
 
@@ -131,7 +132,7 @@ export function CommerceCreateForm({
     const [listingType, setListingType] = useState('');
     const [summary, setSummary] = useState('');
     const [description, setDescription] = useState('');
-    const [destinationId, setDestinationId] = useState('');
+    const [destinationId, setDestinationId] = useState(prefill?.destinationId ?? '');
     const [priceFrom, setPriceFrom] = useState<number | null>(null);
     const [priceUnit, setPriceUnit] = useState('');
     const [isPriceOnRequest, setIsPriceOnRequest] = useState(false);
@@ -322,43 +323,56 @@ export function CommerceCreateForm({
                         )}
                     </p>
                 </div>
+            ) : destinations.length > 0 ? (
+                <div className={styles.field}>
+                    <label
+                        className={styles.label}
+                        htmlFor="cc-destinationId"
+                    >
+                        {t('commerce.owner.create.fields.destination', 'Ciudad / Destino')}
+                    </label>
+                    <select
+                        id="cc-destinationId"
+                        className={styles.input}
+                        value={destinationId}
+                        onChange={(event) => setDestinationId(event.target.value)}
+                        aria-invalid={fieldErrors.destinationId ? 'true' : 'false'}
+                        aria-describedby={
+                            fieldErrors.destinationId ? fieldErrorId('destinationId') : undefined
+                        }
+                    >
+                        <option value="">—</option>
+                        {destinations.map((d) => (
+                            <option
+                                key={d.id}
+                                value={d.id}
+                            >
+                                {d.name}
+                            </option>
+                        ))}
+                    </select>
+                    <FieldError
+                        id={fieldErrorId('destinationId')}
+                        message={fieldErrors.destinationId}
+                    />
+                </div>
             ) : (
-                destinations.length > 0 && (
-                    <div className={styles.field}>
-                        <label
-                            className={styles.label}
-                            htmlFor="cc-destinationId"
-                        >
-                            {t('commerce.owner.create.fields.destination', 'Ciudad / Destino')}
-                        </label>
-                        <select
-                            id="cc-destinationId"
-                            className={styles.input}
-                            value={destinationId}
-                            onChange={(event) => setDestinationId(event.target.value)}
-                            aria-invalid={fieldErrors.destinationId ? 'true' : 'false'}
-                            aria-describedby={
-                                fieldErrors.destinationId
-                                    ? fieldErrorId('destinationId')
-                                    : undefined
-                            }
-                        >
-                            <option value="">—</option>
-                            {destinations.map((d) => (
-                                <option
-                                    key={d.id}
-                                    value={d.id}
-                                >
-                                    {d.name}
-                                </option>
-                            ))}
-                        </select>
-                        <FieldError
-                            id={fieldErrorId('destinationId')}
-                            message={fieldErrors.destinationId}
-                        />
-                    </div>
-                )
+                // HOS-260: catalog fetch SUCCEEDED but returned zero rows. The old
+                // `destinations.length > 0` gate silently omitted the field here
+                // too, leaving `destinationId` (required for completeness)
+                // unfillable with no indication why. Distinct from the
+                // `destinationsLoadFailed` branch above (fetch failure).
+                <div className={styles.field}>
+                    <p
+                        className={styles.error}
+                        role="alert"
+                    >
+                        {t(
+                            'commerce.owner.create.fields.destinationEmpty',
+                            'Todavía no hay ciudades / destinos cargados. Contactanos para poder completar este campo.'
+                        )}
+                    </p>
+                </div>
             )}
 
             {vertical === 'experience' && (

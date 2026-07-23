@@ -30,7 +30,7 @@ import type { CommerceOwnerListingSummaryWithState } from '@/lib/commerce/owner-
 import { startOwnerListingCheckout } from '@/lib/commerce/owner-listings';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
+import { buildUrl, buildUrlWithParams } from '@/lib/urls';
 import styles from './CommerceListingActions.module.css';
 
 export interface CommerceListingActionsProps {
@@ -173,15 +173,18 @@ export function CommerceListingActions({
         // re-triggering `startOwnerListingCheckout`, which the backend now
         // 409s for `past_due` (a second checkout would try to open a SECOND
         // MercadoPago preapproval instead of recovering the existing one).
-        // NOTE: `GET /users/me/subscription` resolves the caller's first
-        // subscription matching an entitlement-granting/`past_due`/`paused`
-        // status without filtering by `product_domain` (SPEC-239's
-        // accommodation/commerce isolation is enforced by `loadEntitlements`,
-        // not by this endpoint) — for an owner who holds BOTH an
-        // accommodation host plan and a commerce listing subscription, this
-        // page may show the wrong one. A commerce-specific recovery surface
-        // is a real follow-up, flagged here rather than guessed at.
-        const subscriptionHref = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
+        // HOS-259: `?domain=commerce` tells the subscription page (and, via
+        // it, `GET /users/me/subscription?productDomain=commerce`) to resolve
+        // the caller's COMMERCE subscription specifically — an owner who
+        // holds BOTH an accommodation host plan and a commerce listing
+        // subscription would otherwise land on whichever one the endpoint's
+        // default (`accommodation`) resolves, not necessarily the one that
+        // actually needs recovering.
+        const subscriptionHref = buildUrlWithParams({
+            locale,
+            path: 'mi-cuenta/suscripcion',
+            params: { domain: 'commerce' }
+        });
         return (
             <div className={styles.actions}>
                 <span className={`${styles.badge} ${styles.badgeSuspended}`}>

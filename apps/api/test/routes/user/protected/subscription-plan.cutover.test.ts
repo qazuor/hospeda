@@ -104,7 +104,21 @@ vi.mock('@repo/service-core', () => ({
             this.code = code;
         }
     },
-    RoleEnum: { HOST: 'host', USER: 'user' }
+    RoleEnum: { HOST: 'host', USER: 'user' },
+    // HOS-259: subscription.ts now domain-scopes the resolved subscription via
+    // these predicates. Mirror the real fail-open (accommodation) / fail-closed
+    // (commerce) semantics so the default-accommodation path resolves as before.
+    isAccommodationSubscription: (sub: unknown): boolean => {
+        if (typeof sub !== 'object' || sub === null) {
+            return false;
+        }
+        const domain = (sub as { productDomain?: unknown }).productDomain;
+        return domain === null || domain === undefined || domain === 'accommodation';
+    },
+    isCommerceSubscription: (sub: unknown): boolean =>
+        typeof sub === 'object' &&
+        sub !== null &&
+        (sub as { productDomain?: unknown }).productDomain === 'commerce'
 }));
 
 // ─── Mock logger + actor ──────────────────────────────────────────────────────

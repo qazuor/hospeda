@@ -12,6 +12,7 @@ import {
     protectedCreateExperienceListingRoute,
     protectedCreateGastronomyListingRoute
 } from './create';
+import { protectedGetMyLeadRoute } from './my-lead';
 import { startCommerceSubscriptionRouter } from './start-subscription';
 
 const router = createRouter();
@@ -22,11 +23,14 @@ router.route('/', protectedCreateGastronomyListingRoute);
 router.route('/', protectedCreateExperienceListingRoute);
 // POST /listings/:entityType/:entityId/start-subscription — owner checkout (§6.3)
 router.route('/', startCommerceSubscriptionRouter);
+// GET /leads/mine — owner self-service pre-fill read (HOS-257)
+router.route('/', protectedGetMyLeadRoute);
 
 /**
  * Protected commerce routes:
  * - POST /listings/gastronomy
  * - POST /listings/experience
  * - POST /listings/:entityType/:entityId/start-subscription
+ * - GET /leads/mine
  */
 export const protectedCommerceRoutes = router;

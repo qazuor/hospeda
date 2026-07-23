@@ -116,6 +116,11 @@ function renderEditor(vertical: 'gastronomy' | 'experience') {
             listingId="abc"
             locale="es"
             initialData={baseData}
+            // A non-empty destination catalog keeps this default helper free of
+            // the HOS-260 empty-catalog `role="alert"` message, which would
+            // otherwise collide with (and resolve before) the API-error alerts
+            // several tests below assert on.
+            destinations={destinationOptions}
         />
     );
 }
@@ -558,7 +563,7 @@ describe('CommerceListingEditor', () => {
             expect(screen.queryByLabelText('Ciudad / Destino')).not.toBeInTheDocument();
         });
 
-        it('renders nothing extra when destinations legitimately loaded empty and no failure occurred', () => {
+        it('shows an empty-catalog message (not the load-failed one) when destinations legitimately loaded empty', () => {
             render(
                 <CommerceListingEditor
                     vertical="gastronomy"
@@ -569,7 +574,11 @@ describe('CommerceListingEditor', () => {
                 />
             );
 
-            expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+            // HOS-260: a genuinely empty catalog must not leave the required
+            // destinationId field silently missing with zero explanation.
+            expect(screen.getByRole('alert')).toHaveTextContent(
+                'Todavía no hay ciudades / destinos cargados.'
+            );
             expect(screen.queryByLabelText('Ciudad / Destino')).not.toBeInTheDocument();
         });
     });

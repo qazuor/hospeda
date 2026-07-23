@@ -249,6 +249,71 @@ describe('CommerceLeadService', () => {
         });
     });
 
+    describe('getMyLead (HOS-257)', () => {
+        const OWNER_ACTOR_ID = '00000000-0000-4000-a000-000000000042';
+
+        const ownerActor: Actor = {
+            id: OWNER_ACTOR_ID,
+            role: RoleEnum.HOST,
+            permissions: []
+        };
+
+        it('returns the actor own most-recent provisioned lead', async () => {
+            const service = makeService();
+            const model = makeLeadModel({
+                ...mockLead,
+                provisionedUserId: OWNER_ACTOR_ID
+            } as typeof mockLead);
+            (service as any)._model = model;
+
+            const result = await service.getMyLead(ownerActor);
+
+            expect(result.error).toBeUndefined();
+            expect(result.data?.id).toBe(LEAD_ID);
+            expect(result.data?.businessName).toBe('La Parrilla de Juan');
+            // Scoped by provisionedUserId — never an arbitrary/admin-supplied id.
+            expect(model.findAll).toHaveBeenCalledWith(
+                { provisionedUserId: OWNER_ACTOR_ID },
+                expect.objectContaining({ page: 1, pageSize: 1, sortOrder: 'desc' }),
+                undefined,
+                undefined
+            );
+        });
+
+        it('returns null (not an error) when the actor has no provisioned lead', async () => {
+            const service = makeService();
+            const model = {
+                create: vi.fn(),
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+                findById: vi.fn(),
+                update: vi.fn()
+            };
+            (service as any)._model = model;
+
+            const result = await service.getMyLead(ownerActor);
+
+            expect(result.error).toBeUndefined();
+            expect(result.data).toBeNull();
+        });
+
+        it('never requires a permission — any authenticated actor may call it', async () => {
+            const service = makeService();
+            const model = {
+                create: vi.fn(),
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+                findById: vi.fn(),
+                update: vi.fn()
+            };
+            (service as any)._model = model;
+
+            // guestActor has NO permissions at all, and no gate should block it.
+            const result = await service.getMyLead(guestActor);
+
+            expect(result.error).toBeUndefined();
+            expect(result.data).toBeNull();
+        });
+    });
+
     describe('approveAndProvision (SPEC-249 Part D)', () => {
         const PROVISIONED_USER_ID = '00000000-0000-4000-a000-000000000099';
 

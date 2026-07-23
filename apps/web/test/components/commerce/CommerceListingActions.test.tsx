@@ -27,7 +27,16 @@ vi.mock('../../../src/components/commerce/CommerceListingActions.module.css', ()
 }));
 
 vi.mock('../../../src/lib/urls', () => ({
-    buildUrl: ({ locale, path = '' }: { locale: string; path?: string }) => `/${locale}/${path}/`
+    buildUrl: ({ locale, path = '' }: { locale: string; path?: string }) => `/${locale}/${path}/`,
+    buildUrlWithParams: ({
+        locale,
+        path,
+        params
+    }: {
+        locale: string;
+        path: string;
+        params: Record<string, string>;
+    }) => `/${locale}/${path}/?${new URLSearchParams(params).toString()}`
 }));
 
 vi.mock('../../../src/lib/billing/checkout-pending', () => ({
@@ -235,7 +244,7 @@ describe('CommerceListingActions', () => {
     });
 
     describe('suspended state (HOS-166 judgment-day W1)', () => {
-        it('renders the suspended badge + a recover CTA linking to the subscription page when subscriptionStatus is past_due', () => {
+        it('renders the suspended badge + a recover CTA linking to the commerce-scoped subscription page when subscriptionStatus is past_due', () => {
             render(
                 <CommerceListingActions
                     listing={buildListing({
@@ -248,9 +257,15 @@ describe('CommerceListingActions', () => {
             );
 
             expect(screen.getByText('Suspendido')).toBeInTheDocument();
+            // HOS-259: `?domain=commerce` scopes the account subscription page
+            // (and the underlying `productDomain` query filter) to the caller's
+            // COMMERCE subscription — a dual-role owner (accommodation host +
+            // commerce owner) would otherwise land on whichever subscription
+            // the default (accommodation) resolves, not necessarily the one
+            // that needs recovering.
             expect(screen.getByText('Revisar mi suscripción')).toHaveAttribute(
                 'href',
-                '/es/mi-cuenta/suscripcion/'
+                '/es/mi-cuenta/suscripcion/?domain=commerce'
             );
         });
 
