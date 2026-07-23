@@ -72,3 +72,21 @@ export function isCommerceOwnerRole(role: string | null): boolean {
     }
     return ROLES_WITH_COMMERCE_NAV.has(role);
 }
+
+/**
+ * Resolves which subscription pricing page a role-aware upsell or redirect
+ * should target: host-level roles (owners) belong on the owner plans page,
+ * while tourists and unauthenticated visitors belong on the tourist plans page.
+ *
+ * Centralizes the `isHostRole(role) ? 'suscriptores/planes' : 'suscriptores/turistas'`
+ * decision shared across role-aware surfaces (BETA-165 dashboard/addons, BETA-201
+ * checkout return pages). A `null` role (anonymous, e.g. a MercadoPago redirect
+ * without a session cookie) resolves to the tourist page — the safe default.
+ *
+ * @param params.role - The user's role string, or `null` for unauthenticated visitors.
+ * @returns The locale-agnostic path segment: `'suscriptores/planes'` (owner) or
+ *          `'suscriptores/turistas'` (tourist / anonymous).
+ */
+export function resolveSubscriptionPlansPath({ role }: { role: string | null }): string {
+    return isHostRole(role) ? 'suscriptores/planes' : 'suscriptores/turistas';
+}

@@ -299,9 +299,9 @@ schema gets the same treatment.
 
 > **Slug caveat.** `slug` is owner-settable at *create* time but must stay unique
 > and must not become a free rename vector after publish (it is the public URL).
-> Recommendation: derive the slug server-side from `name` on create (the
-> accommodation precedent), keep it owner-visible, and leave post-publish renames
-> to staff. This is the conservative default; see OQ-3.
+> **Binding (OQ-3 resolved, owner 2026-07-22):** derive the slug server-side from
+> `name` on create (the accommodation precedent), keep it owner-visible, and leave
+> post-publish renames to staff.
 
 ### 6.3 The new protected checkout route
 
@@ -540,6 +540,32 @@ dual-write rule, the same PR must do **both**:
 Editing only the baseline is a silent bug: fresh DBs work, staging/prod owners get
 403 on create forever. The CI drift guard enforces this.
 
+**Price data-migration (MANDATORY — OQ-2 resolved, owner 2026-07-15/22).** The plan
+price moves from the ARS 5.000 placeholder to the confirmed **ARS 15.000/mes
+(`1500000` centavos)**. This is **not** a one-line config edit, because of Model C:
+`monthlyPriceArs` and `billing_prices.unitAmount` are both classified `'commercial'`
+(`packages/billing/src/config/model-c-field-split.ts` — DB wins, the seed sync NEVER
+overwrites them). So editing `plans.config.ts` alone corrects **only fresh DBs**;
+staging/prod already hold the `500000` row and would keep charging it forever. The
+same PR must do **both**:
+
+1. **Baseline** — `COMMERCE_LISTING_PLAN.monthlyPriceArs: 500000 → 1500000` in
+   `plans.config.ts` (+ `monthlyPriceUsdRef` — see below), and **rewrite the two
+   PLACEHOLDER comments** (`plans.config.ts:525-527` JSDoc and the seed log line in
+   `commercePlan.seed.ts`) — the price is confirmed, not a TODO. Fresh
+   `db:fresh-dev` then seeds `1500000` directly.
+2. **Data-migration** — `pnpm db:seed:make raise-commerce-listing-price-to-15000`,
+   which `UPDATE`s **both** `billing_plans.monthlyPriceArs` **and the sibling
+   `billing_prices.unitAmount` row** (the one MP actually reads for the ARS/month
+   preapproval) from `500000` to `1500000`, **guarded `WHERE ... = 500000`**. The
+   guard is Model-C-correct: it moves only the untouched placeholder and preserves
+   any value an operator already set via the SPEC-168 admin UI. Idempotent (a
+   second run affects zero rows).
+
+> `monthlyPriceUsdRef` is a display/reference field only (never charged). The
+> placeholder pair was `5000 ARS / 5 USD`; keeping the ratio makes it `15000 ARS /
+> 15 USD`. **Needs owner confirmation** — see OQ-2.
+
 **No structural (Carril 1) migration is expected.** No new tables, no new columns
 — `moderationState` already exists on the entity (`gastronomy.schema.ts:80`),
 `commerce_leads.domain` is already open (`commerce_lead.dbschema.ts:26`), and the
@@ -704,10 +730,12 @@ to billing or subscription**:
   permission (the obvious reading of "make the admin route protected"), any owner
   can pay for any listing. **Mitigation:** AC-2 is the guard; §5.3 spells out that
   the admin route never makes this comparison.
-- **R-4 — Placeholder price ships.** `monthlyPriceArs = 500000`
-  (`plans.config.ts:541`) is a PLACEHOLDER nobody confirmed. Shipping self-checkout
-  means **real customers are charged this number**. **This is a launch blocker, not
-  a nice-to-have** — see OQ-2.
+- **R-4 — Placeholder price ships.** ✅ **RESOLVED** (owner 2026-07-15/22): the real
+  price is **ARS 15.000/mes**. The residual risk is the Model-C trap — editing
+  `plans.config.ts` alone leaves staging/prod on the `500000` row (both price fields
+  are `'commercial'`, DB-wins). **Mitigation:** the mandatory price data-migration in
+  §7.4 that `UPDATE`s both `billing_plans.monthlyPriceArs` and
+  `billing_prices.unitAmount` with a `WHERE = 500000` guard.
 - **R-5 — Completeness definition forks.** Three consumers (§6.6). If web
   reimplements the checklist client-side, they drift and the UI lies.
   **Mitigation:** one pure function in service-core, surfaced via `missing`.
@@ -726,19 +754,20 @@ to billing or subscription**:
   admin filtered at the lead, a real card is involved, and the admin keeps reactive
   control via `visibility`/`lifecycle`. No moderation machinery is built (NG-1);
   the cheap per-vertical flag seam stays open (§6.5).
-- **OQ-2 — The real price. ⛔ OPEN — LAUNCH BLOCKER.**
-  `COMMERCE_LISTING_PLAN.monthlyPriceArs = 500000` (ARS 5.000) is a **PLACEHOLDER**
-  (`plans.config.ts:541`). Its own comment says *"the owner must confirm / override
-  the real commerce-listing price via the admin UI"* (`:525-527`) — **nobody ever
-  confirmed it.** Until now that was harmless (only an admin could start a
-  subscription, and would notice). With self-checkout, this number is what real
-  merchants are charged. Needs an owner decision before go-live, in the DB
-  (commercial field, DB-wins — the seed never overwrites it once set) or in the
-  baseline.
-- **OQ-3 — Slug policy.** Owner-settable at create, derived from `name`,
-  staff-only rename post-publish? (§6.2 recommendation.) Confirm.
-- **OQ-4 — Draft quota.** Cap on drafts per `COMMERCE_OWNER`? Recommendation: none
-  in v1 (§7.2). Confirm.
+- **OQ-2 — The real price.** ✅ **RESOLVED** (owner 2026-07-15/22): **ARS 15.000/mes
+  (`1500000` centavos)**. Applied via the mandatory baseline + price data-migration
+  in §7.4 (Model-C-correct, guarded `WHERE = 500000`, touches both
+  `billing_plans.monthlyPriceArs` and `billing_prices.unitAmount`). **Residual sub-
+  question:** `monthlyPriceUsdRef` (reference-only, never charged) — kept ratio-
+  proportional at `15`; confirm or override.
+- **OQ-3 — Slug policy.** ✅ **RESOLVED** (owner 2026-07-22): **derive the slug
+  server-side from `name` at create** (owner-visible, not freely editable); **post-
+  publish renames are staff-only.** Prevents slug-squatting and broken indexed URLs
+  (R-6). The owner create endpoint (§7.2) must NOT accept a caller-supplied slug on
+  a published listing; §6.2's slug caveat is now binding, not a recommendation.
+- **OQ-4 — Draft quota.** ✅ **RESOLVED** (owner 2026-07-22): **no cap in v1.**
+  Drafts are free until publish and each needs its own subscription to go live, so N
+  drafts are not a revenue leak — only a DB-row abuse surface. Revisit if abused.
 
 ## 12. Implementation notes
 
@@ -749,15 +778,17 @@ to billing or subscription**:
   and the injected completeness resolver change.
 - The admin route survives as a staff escape hatch (NG-7); it can keep resolving
   the owner from the listing — that is correct *for an admin*.
-- **Suggested slicing** (chained PRs; each independently green):
-  1. Seed: `COMMERCE_CREATE` → `COMMERCE_OWNER` (baseline + data-migration).
-  2. `resolveListingCompleteness` (pure, unit-tested) + `resolveCommercePlanSlug`.
-  3. Schema widening (D-1) + owner create endpoint.
-  4. Protected start-subscription route (+ ownership check, AC-2).
-  5. Reconciler predicate + completeness injection.
-  6. Web: create page, checklist, publish+pay CTA, states.
-  7. Notifications + i18n + doors copy.
-  8. AC-14 guard test.
+- **Slicing → 3 grouped PRs** (owner-approved 2026-07-22; each independently green,
+  merged in order to `staging`):
+  - **PR-A — backend base** (slices 1+2): seed `COMMERCE_CREATE` → `COMMERCE_OWNER`
+    **and** the ARS 15.000 price (baseline + data-migrations, §7.4); the pure
+    `resolveListingCompleteness` + `resolveCommercePlanSlug`. No new runtime routes.
+  - **PR-B — API complete** (slices 3+4+5): schema widening (D-1) + owner create
+    endpoint; the protected `start-subscription` route + ownership check (AC-2);
+    reconciler predicate "paid AND complete" + completeness injection.
+  - **PR-C — owner surface** (slices 6+7+8): web create page + checklist +
+    publish/pay CTA + states; notifications rework + i18n + doors copy; the AC-14
+    static guard test.
 - **Smoke labels:** this touches the billing surface, so
   `status-needs-smoke-staging` applies (real MP sandbox checkout). Whether it is
   billing **CORE** (→ also `status-needs-smoke-prod`) is arguable: it adds a new

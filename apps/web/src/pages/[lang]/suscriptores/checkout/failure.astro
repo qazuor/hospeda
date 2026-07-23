@@ -16,8 +16,10 @@
 
 import CheckoutResult from '@/components/billing/CheckoutResult.astro';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
 import { resolveReasonI18nKey } from '@/lib/checkout/resolve-reason';
 import { createTranslations } from '@/lib/i18n';
+import { parseSessionUser, requestHasSessionCookie } from '@/lib/middleware-helpers';
 import { buildUrl } from '@/lib/urls';
 
 export const prerender = false;
@@ -42,8 +44,28 @@ const reasonMessage = t(
 	)
 );
 
-const planesUrl = buildUrl({ locale, path: 'suscriptores/planes' });
+// Role-aware retry target (BETA-201): an owner whose owner-plan payment failed
+// should retry on the owner plans page; a tourist — or an anonymous MercadoPago
+// return with no session cookie — belongs on the tourist page. The middleware
+// does NOT parse the session for /suscriptores/* (public), so resolve the actor
+// here. Gate the get-session round-trip behind `requestHasSessionCookie` first:
+// an unconditional `parseSessionUser` on a public page floods the API auth
+// rate-limit bucket (see NextEventsSection.astro / middleware.ts). A null role
+// (anonymous / failed lookup) maps to the tourist page (safe default).
+const cookieHeader = Astro.request.headers.get('cookie');
+const sessionUser = requestHasSessionCookie(cookieHeader)
+	? await parseSessionUser({ cookieHeader })
+	: null;
+const planesUrl = buildUrl({
+	locale,
+	path: resolveSubscriptionPlansPath({ role: sessionUser?.role ?? null })
+});
 const supportUrl = buildUrl({ locale, path: 'contacto' });
+
+// The retry CTA is now role-variant (per-visitor), so this page must never be
+// shared from a CDN edge cache — otherwise the first visitor's role would leak
+// to the next. The sibling pricing pages opt INTO edge caching; this one opts OUT.
+Astro.response.headers.set('Cache-Control', 'private, no-store');
 ---
 
 <MarketingLayout

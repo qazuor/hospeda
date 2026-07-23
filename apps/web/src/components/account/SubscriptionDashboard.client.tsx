@@ -9,7 +9,7 @@
 
 import { ArrowRightIcon, CancelIcon, DownloadIcon, PlayIcon, PowerOffIcon } from '@repo/icons';
 import { useCallback, useEffect, useState } from 'react';
-import { isHostRole } from '@/lib/account-roles';
+import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
 import type { InvoiceItem, SubscriptionData } from '@/lib/api/endpoints-protected';
 import { billingApi, userApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
@@ -101,19 +101,6 @@ function getBadgeClass(status: SubscriptionStatus): string {
 }
 
 /**
- * Resolve which pricing page a "Ver planes" CTA should point to, based on the
- * user's role. Host-level roles (see `isHostRole`) go to the owner pricing
- * page; every other role (plain tourist `USER`) goes to the tourist pricing
- * page (BETA-165 — the CTA used to always point to the owner page).
- *
- * @param role - The user's role string
- * @returns The `buildUrl` path for the matching pricing page
- */
-function resolvePlansPath(role: string): string {
-    return isHostRole(role) ? 'suscriptores/planes' : 'suscriptores/turistas';
-}
-
-/**
  * Format the payment method display string.
  * If a card brand + last4 is available, shows "Visa •••• 4242".
  * Otherwise falls back to "MercadoPago".
@@ -191,7 +178,7 @@ function ErrorState({
 /** Empty state when the user has no subscription. */
 function EmptyState({ locale, role }: { readonly locale: SupportedLocale; readonly role: string }) {
     const { t } = createTranslations(locale);
-    const plansHref = buildUrl({ locale, path: resolvePlansPath(role) });
+    const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPath({ role }) });
 
     return (
         <div className={styles.emptyContainer}>
@@ -868,7 +855,7 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
         t('account.pages.subscription.paymentMercadoPago', 'MercadoPago')
     );
 
-    const plansHref = buildUrl({ locale, path: resolvePlansPath(user.role) });
+    const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPath({ role: user.role }) });
 
     let adminUrl = '';
     try {
