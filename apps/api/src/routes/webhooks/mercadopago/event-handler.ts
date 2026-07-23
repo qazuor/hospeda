@@ -233,10 +233,16 @@ export const handleWebhookEvent: QZPayWebhookHandler = async (c, event) => {
 /**
  * Error handler for webhook processing failures.
  *
- * Logs errors but still returns 200 OK to MercadoPago to prevent retries
- * for non-recoverable errors.
- * Updates webhook event status to failed if event was persisted.
- * Captures errors in Sentry for monitoring.
+ * Logs the error, marks the persisted webhook event `failed` (our own
+ * bookkeeping — for retry/dead-letter accounting, not MercadoPago's), and
+ * captures it in Sentry for monitoring. Returning `undefined` here does NOT
+ * make the response 200 OK: the `@qazuor/qzpay-hono@1.6.1` router's `onError`
+ * falls through to its own default when the handler returns `undefined`,
+ * which is `response.error(message, 500)`. MercadoPago therefore WILL retry
+ * the delivery on this path (its documented retry/backoff schedule for
+ * non-2xx responses) — that retry-until-success behavior is intentional and
+ * is what feeds the dead-letter queue on repeated failure, not a
+ * "swallow-and-ack" 200.
  *
  * @param error - The error that occurred during processing
  * @param c - Hono context
@@ -276,5 +282,5 @@ export const handleWebhookError = async (
         requestProviderEventIds.delete(requestId);
     }
 
-    return undefined; // Use default error response (200 OK)
+    return undefined; // Falls through to the router's default error response (HTTP 500) — MercadoPago retries
 };

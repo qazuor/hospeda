@@ -23,7 +23,8 @@ const {
     mockWithTransactionWebhook,
     mockCaptureMessage,
     mockFindLocalSubscriptionByPreapprovalId,
-    mockPaymentAlreadyRecorded
+    mockPaymentAlreadyRecorded,
+    mockLinkPreapprovalToLocalSub
 } = vi.hoisted(() => {
     const getDbFn = vi.fn();
     // withTransaction passes the db returned by getDb as the tx to the callback.
@@ -36,7 +37,8 @@ const {
         mockWithTransactionWebhook: withTx,
         mockCaptureMessage: vi.fn(),
         mockFindLocalSubscriptionByPreapprovalId: vi.fn(),
-        mockPaymentAlreadyRecorded: vi.fn()
+        mockPaymentAlreadyRecorded: vi.fn(),
+        mockLinkPreapprovalToLocalSub: vi.fn()
     };
 });
 
@@ -113,6 +115,10 @@ vi.mock('../../src/routes/webhooks/mercadopago/subscription-logic', () => ({
 vi.mock('../../src/routes/webhooks/mercadopago/subscription-payment-handler', () => ({
     findLocalSubscriptionByPreapprovalId: mockFindLocalSubscriptionByPreapprovalId,
     paymentAlreadyRecorded: mockPaymentAlreadyRecorded
+}));
+
+vi.mock('../../src/services/billing/link-preapproval.service', () => ({
+    linkPreapprovalToLocalSub: mockLinkPreapprovalToLocalSub
 }));
 
 vi.mock('../../src/utils/mp-authorized-payment', () => ({
@@ -228,6 +234,9 @@ beforeEach(() => {
     vi.mocked(findLocalSubscriptionByPreapprovalId).mockResolvedValue(null);
     // Default: payment not yet recorded (safe fallback)
     vi.mocked(paymentAlreadyRecorded).mockResolvedValue(false);
+    // Default: the HOS-276 linking fallback finds nothing either (tests that
+    // exercise the fallback override this per-case).
+    mockLinkPreapprovalToLocalSub.mockResolvedValue({ outcome: 'not_found' });
 });
 
 afterEach(() => {
@@ -822,9 +831,10 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
     });
 
     // -------------------------------------------------------------------------
-    // Test 5i: authorized_payment — subscription not resolvable → returns true + no record
+    // Test 5i: authorized_payment — subscription not resolvable even after the
+    // HOS-276 linking fallback ('not_found') → returns true + no record
     // -------------------------------------------------------------------------
-    it('should resolve without recording when local subscription cannot be found (no preapproval match)', async () => {
+    it('should resolve without recording when local subscription cannot be found (no preapproval match, linking fallback also not_found)', async () => {
         // Arrange
         const event = makeDeadLetterEvent({
             type: 'subscription_authorized_payment.created',
@@ -858,20 +868,159 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
             }
         });
 
-        // No local subscription found → permanent skip
+        // No local subscription found, and the HOS-276 linking fallback also
+        // resolves to 'not_found' (genuinely terminal) → permanent skip
         vi.mocked(findLocalSubscriptionByPreapprovalId).mockResolvedValue(null);
+        mockLinkPreapprovalToLocalSub.mockResolvedValue({ outcome: 'not_found' });
 
         const ctx = makeCronContext();
 
         // Act
         const result = await webhookRetryJob.handler(ctx);
 
-        // Assert — permanent skip: no record, resolves dead-letter
+        // Assert — permanent skip: linking fallback was attempted but found
+        // nothing, no record, resolves dead-letter
         expect(result.success).toBe(true);
         expect(result.errors).toBe(0);
+        expect(mockLinkPreapprovalToLocalSub).toHaveBeenCalledWith(
+            expect.objectContaining({ preapprovalId: 'preapproval-nonexistent' })
+        );
         expect(paymentsRecord).not.toHaveBeenCalled();
         expect(paymentAlreadyRecorded).not.toHaveBeenCalled();
         expect(db.update).toHaveBeenCalled();
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 5j (HOS-276): authorized_payment — no sub initially, but the linking
+    // fallback resolves ('linked') → subscription is re-resolved and the
+    // payment IS recorded, instead of being silently dropped.
+    // -------------------------------------------------------------------------
+    it('should link via the HOS-276 fallback and record the payment when the linking outcome is linked', async () => {
+        // Arrange
+        const event = makeDeadLetterEvent({
+            type: 'subscription_authorized_payment.created',
+            providerEventId: 'mp-auth-pay-link',
+            payload: { data: { id: 'authorized-payment-link' } }
+        });
+        const { db } = arrangeDb([event]);
+
+        const paymentsRecord = vi.fn().mockResolvedValue({ id: 'payment-record-linked' });
+        const billing = {
+            customers: { get: vi.fn().mockResolvedValue(null) },
+            payments: { record: paymentsRecord }
+        };
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue({
+            kind: 'ok',
+            details: {
+                authorizedPaymentId: 'authorized-payment-link',
+                preapprovalId: 'preapproval-linkable',
+                paymentId: 'mp-payment-linked',
+                transactionAmount: 250,
+                currencyId: 'ARS',
+                status: 'processed',
+                paymentStatus: 'approved',
+                debitDate: null,
+                couponAmount: null,
+                campaignId: null
+            }
+        });
+
+        // First lookup (before the fallback) finds nothing; after the fallback
+        // links it, the second lookup resolves the subscription.
+        vi.mocked(findLocalSubscriptionByPreapprovalId)
+            .mockResolvedValueOnce(null)
+            .mockResolvedValueOnce({
+                id: 'sub-linked-1',
+                customerId: 'cust-linked-1',
+                planId: 'plan-1',
+                status: 'pending_provider',
+                trialEnd: null,
+                billingInterval: 'month'
+            });
+        mockLinkPreapprovalToLocalSub.mockResolvedValue({
+            outcome: 'linked',
+            localSubscriptionId: 'sub-linked-1'
+        });
+        vi.mocked(paymentAlreadyRecorded).mockResolvedValue(false);
+
+        const ctx = makeCronContext();
+
+        // Act
+        const result = await webhookRetryJob.handler(ctx);
+
+        // Assert — the fallback linked the preapproval, and the payment was recorded
+        expect(result.success).toBe(true);
+        expect(result.errors).toBe(0);
+        expect(mockLinkPreapprovalToLocalSub).toHaveBeenCalledWith(
+            expect.objectContaining({ preapprovalId: 'preapproval-linkable' })
+        );
+        expect(paymentsRecord).toHaveBeenCalledOnce();
+        const recordArg = paymentsRecord.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(recordArg.customerId).toBe('cust-linked-1');
+        expect(recordArg.subscriptionId).toBe('sub-linked-1');
+        expect(db.update).toHaveBeenCalled();
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 5k (HOS-276): authorized_payment — no sub, linking fallback resolves
+    // to 'reconcile_assisted' → must NOT be resolved permanently; stays retryable.
+    // -------------------------------------------------------------------------
+    it('should NOT resolve permanently when the linking fallback outcome is reconcile_assisted', async () => {
+        // Arrange
+        const event = makeDeadLetterEvent({
+            type: 'subscription_authorized_payment.created',
+            providerEventId: 'mp-auth-pay-ambiguous',
+            payload: { data: { id: 'authorized-payment-ambiguous' } }
+        });
+        const { db } = arrangeDb([event]);
+
+        const paymentsRecord = vi.fn();
+        const billing = {
+            customers: { get: vi.fn().mockResolvedValue(null) },
+            payments: { record: paymentsRecord }
+        };
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue({
+            kind: 'ok',
+            details: {
+                authorizedPaymentId: 'authorized-payment-ambiguous',
+                preapprovalId: 'preapproval-ambiguous',
+                paymentId: 'mp-payment-ambiguous',
+                transactionAmount: 100,
+                currencyId: 'ARS',
+                status: 'processed',
+                paymentStatus: 'approved',
+                debitDate: null,
+                couponAmount: null,
+                campaignId: null
+            }
+        });
+
+        vi.mocked(findLocalSubscriptionByPreapprovalId).mockResolvedValue(null);
+        mockLinkPreapprovalToLocalSub.mockResolvedValue({ outcome: 'reconcile_assisted' });
+
+        const ctx = makeCronContext();
+
+        // Act
+        const result = await webhookRetryJob.handler(ctx);
+
+        // Assert — the dead-letter row must stay retryable (errors incremented,
+        // NOT marked resolved/permanently-failed with a resolvedAt timestamp)
+        expect(result.success).toBe(true);
+        expect(result.errors).toBe(1);
+        expect(paymentsRecord).not.toHaveBeenCalled();
+        const setCalls = vi.mocked(db.set).mock.calls;
+        const anyResolvedAt = setCalls.some((callArgs) =>
+            Object.hasOwn(callArgs[0] as Record<string, unknown>, 'resolvedAt')
+        );
+        expect(anyResolvedAt).toBe(false);
     });
 
     // -------------------------------------------------------------------------
