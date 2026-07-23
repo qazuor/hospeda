@@ -33,7 +33,31 @@ vi.mock('../../../src/lib/auth-client', () => ({
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
         t: (_key: string, fallback?: string) => fallback ?? _key,
-        tPlural: (_key: string, _count: number, fallback?: string) => fallback ?? _key
+        // Minimal es-only stand-in mirroring the real `_one`/`_other` locale
+        // templates for the three count-driven promo-preview keys (HOS-253).
+        // `tPlural`'s real signature has no fallback param — it always resolves
+        // from the locale dictionary — so this dispatches on `key` + `params`
+        // instead of a passed-in template, matching the pattern used by other
+        // component test mocks (e.g. CalendarSection.test.tsx).
+        tPlural: (key: string, count: number, params?: Record<string, unknown>) => {
+            const p = params ?? {};
+            switch (key) {
+                case 'billing.checkout.promoApply.discountPercentCycle':
+                    return count === 1
+                        ? `${p.percent}% de descuento por ${p.months} mes`
+                        : `${p.percent}% de descuento por ${p.months} meses`;
+                case 'billing.checkout.promoApply.discountFixedCycle':
+                    return count === 1
+                        ? `$${p.amount} de descuento por ${p.months} mes`
+                        : `$${p.amount} de descuento por ${p.months} meses`;
+                case 'billing.checkout.promoApply.trialExtension':
+                    return count === 1
+                        ? `${p.days} día de prueba gratis adicional`
+                        : `${p.days} días de prueba gratis adicionales`;
+                default:
+                    return key;
+            }
+        }
     })
 }));
 
