@@ -92,7 +92,20 @@ export enum NotificationType {
      * This is a TRANSACTIONAL notification: it is operationally important
      * (overbooking risk) and always sent, never opted out of.
      */
-    ACCOMMODATION_CALENDAR_FEED_BROKEN = 'accommodation_calendar_feed_broken'
+    ACCOMMODATION_CALENDAR_FEED_BROKEN = 'accommodation_calendar_feed_broken',
+    /**
+     * HOS-176 Increment A — advance notice sent to a subscriber before a plan
+     * price INCREASE is applied to their MercadoPago preapproval.
+     *
+     * Argentine consumer-protection law (Disposición 954/2025) requires PRIOR
+     * notice and a grace window before a recurring price is raised. The
+     * propagate-plan-price-changes cron sends this once per affected subscriber
+     * when an increase enters its notice phase; the higher amount is applied
+     * only after the grace window (15 days) elapses.
+     *
+     * TRANSACTIONAL: legally mandated, always sent, never opted out of.
+     */
+    PLAN_PRICE_CHANGE_NOTICE = 'plan_price_change_notice'
 }
 
 /**
@@ -654,6 +667,48 @@ export interface AccommodationCalendarFeedBrokenPayload extends BaseNotification
     readonly reconnectUrl: string;
 }
 
+/**
+ * Payload for the plan price-INCREASE advance notice (HOS-176 Increment A).
+ *
+ * Sent to each affected subscriber when a plan price increase enters its notice
+ * phase, before the higher amount is applied to their MercadoPago preapproval.
+ * Legally mandated advance notice (Disposición 954/2025): the body must state
+ * the old price, the new price, the effective date, and that the subscriber may
+ * cancel before then.
+ *
+ * @example
+ * ```ts
+ * const payload: PlanPriceChangeNoticePayload = {
+ *   type: NotificationType.PLAN_PRICE_CHANGE_NOTICE,
+ *   recipientEmail: 'owner@example.com',
+ *   recipientName: 'Juan',
+ *   userId: 'user-uuid',
+ *   customerId: 'cus-uuid',
+ *   planName: 'Plan Standard',
+ *   oldPriceArs: 1000000,
+ *   newPriceArs: 1200000,
+ *   effectiveDate: '2026-08-06T00:00:00.000Z',
+ *   billingInterval: 'month',
+ * };
+ * ```
+ */
+export interface PlanPriceChangeNoticePayload extends BaseNotificationPayload {
+    readonly type: NotificationType.PLAN_PRICE_CHANGE_NOTICE;
+    /** Human-readable plan name shown in the email body. */
+    readonly planName: string;
+    /** Current (old) recurring price in integer centavos (formatted at render). */
+    readonly oldPriceArs: number;
+    /** New (higher) recurring price in integer centavos (formatted at render). */
+    readonly newPriceArs: number;
+    /**
+     * ISO 8601 date-time string for when the new price takes effect (end of the
+     * legal grace window). Formatted to a locale date at render time.
+     */
+    readonly effectiveDate: string;
+    /** Which price interval is changing: `month` | `year`. */
+    readonly billingInterval: string;
+}
+
 /** Union of all notification payloads */
 export type NotificationPayload =
     | PurchaseConfirmationPayload
@@ -673,4 +728,5 @@ export type NotificationPayload =
     | SubscriptionAccessEndingSoonPayload
     | PlanBeingRetiredPayload
     | CommerceOwnerCredentialsPayload
-    | AccommodationCalendarFeedBrokenPayload;
+    | AccommodationCalendarFeedBrokenPayload
+    | PlanPriceChangeNoticePayload;

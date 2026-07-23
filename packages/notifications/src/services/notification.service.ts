@@ -22,6 +22,7 @@ import {
     PlanBeingRetired,
     PlanChangeConfirmation,
     PlanDowngradeLimitWarning,
+    PlanPriceChangeNotice,
     PurchaseConfirmation,
     RenewalReminder,
     SubscriptionAccessEndingSoon,
@@ -48,6 +49,7 @@ import type {
     PaymentRetryWarningPayload,
     PlanBeingRetiredPayload,
     PlanDowngradeLimitWarningPayload,
+    PlanPriceChangeNoticePayload,
     PurchaseConfirmationPayload,
     SendNotificationOptions,
     SubscriptionAccessEndingSoonPayload,
@@ -594,6 +596,19 @@ export class NotificationService {
                 });
             }
 
+            case 'plan_price_change_notice': {
+                const p = payload as PlanPriceChangeNoticePayload;
+                return PlanPriceChangeNotice({
+                    recipientName,
+                    baseUrl: this.deps.siteUrl,
+                    planName: p.planName,
+                    oldPriceArs: p.oldPriceArs,
+                    newPriceArs: p.newPriceArs,
+                    effectiveDate: p.effectiveDate,
+                    billingInterval: p.billingInterval
+                });
+            }
+
             default:
                 throw new Error(`No template found for notification type: ${type}`);
         }
@@ -686,6 +701,14 @@ export class NotificationService {
         if (payload.type === 'accommodation_calendar_feed_broken' && 'providerLabel' in payload) {
             subjectData.providerLabel = payload.providerLabel;
             subjectData.accommodationName = payload.accommodationName;
+        }
+
+        // Plan price-increase advance notice specific fields (HOS-176)
+        // Format effectiveDate from raw ISO string to a locale date string so the
+        // subject does not embed a raw ISO timestamp. planName is filled by the
+        // generic 'planName' in payload branch above.
+        if (payload.type === 'plan_price_change_notice' && 'effectiveDate' in payload) {
+            subjectData.effectiveDate = formatDate({ dateString: payload.effectiveDate });
         }
 
         return getSubject(payload.type, subjectData);
