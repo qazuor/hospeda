@@ -53,7 +53,7 @@ import { createBillingRoutesHandler } from './billing';
 import { adminBillingRoutes } from './billing/admin';
 import { publicBillingRoutes } from './billing/public';
 import { adminCommentRoutes, protectedCommentRoutes } from './comment';
-import { adminCommerceRoutes, publicCommerceRoutes } from './commerce';
+import { adminCommerceRoutes, protectedCommerceRoutes, publicCommerceRoutes } from './commerce';
 import { contactRoutes } from './contact';
 import { adminContentModerationRoutes } from './content-moderation/admin';
 import {
@@ -407,6 +407,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/gastronomies', protectedGastronomyRoutes);
         // Commerce listings: experience (SPEC-240 T-020)
         app.route('/api/v1/protected/experiences', protectedExperienceRoutes);
+        // Commerce owner self-checkout: create + start-subscription (HOS-166 §6.3, §7.2)
+        app.route('/api/v1/protected/commerce', protectedCommerceRoutes);
         app.route('/api/v1/protected/host', protectedHostRoutes);
         app.route('/api/v1/protected/host-trades', protectedHostTradeRoutes);
         app.route('/api/v1/protected/host-onboarding', protectedHostOnboardingRoutes);
