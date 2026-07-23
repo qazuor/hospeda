@@ -10,24 +10,34 @@
  * separate, explicit, per-vertical publish-readiness contract, evaluated by a
  * single pure function with THREE intended callers (§6.6):
  *
- * 1. The protected checkout route (PR-B) — 422 with `missing` when incomplete.
- * 2. The visibility reconciler (PR-B) — keeps an incomplete-but-paid listing
- *    `PRIVATE` (G-3 defense in depth).
- * 3. The web owner surface (PR-C) — renders the "what's missing" checklist.
+ * 1. The protected checkout route (`apps/api/.../start-subscription.ts`) — 422
+ *    with `missing` when incomplete.
+ * 2. The visibility reconciler (`@repo/service-core`'s
+ *    `commerce-visibility.ts` via `commerce-reconcile.service.ts`) — keeps an
+ *    incomplete-but-paid listing `PRIVATE` (G-3 defense in depth).
+ * 3. The web owner surface (`apps/web`) — renders the "what's missing"
+ *    checklist.
  *
  * One definition, three consumers. A second definition anywhere is a bug
- * (R-5). This function is PURE — no DB access, no I/O — so it is trivially
- * unit-testable and safe to call from any layer.
+ * (R-5). This function is PURE — no DB access, no I/O — which is exactly why
+ * it lives in `@repo/schemas` rather than `@repo/service-core`: the web app
+ * cannot import service-core (that would pull DB access into the client
+ * bundle), but every layer — web, service-core, apps/api — can already import
+ * `@repo/schemas`. `@repo/schemas` is therefore the only home all three
+ * callers can share.
  *
  * D-4 compliance: this module has never heard of `commerce_leads` and must
- * never import `CommerceLeadService` or reference lead data — see spec §6.1's
- * anti-pattern table and the AC-14 static guard (enforced in PR-C).
+ * never import lead-related types or reference lead data — see spec §6.1's
+ * anti-pattern table and the AC-14 static guard.
  *
- * @module commerce-completeness
+ * @module common/commerce-completeness
  */
 
-import type { CommerceEntityType, ContactInfo, Media, OpeningHours } from '@repo/schemas';
-import { CommerceEntityTypeEnum } from '@repo/schemas';
+import { CommerceEntityTypeEnum } from '../enums/commerce-entity-type.enum.js';
+import type { CommerceEntityType } from '../enums/commerce-entity-type.schema.js';
+import type { ContactInfo } from './contact.schema.js';
+import type { Media } from './media.schema.js';
+import type { OpeningHours } from './opening-hours.schema.js';
 
 // ---------------------------------------------------------------------------
 // Constants

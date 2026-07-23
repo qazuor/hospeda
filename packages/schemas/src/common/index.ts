@@ -17,6 +17,9 @@ export {
     SortingParamsSchema,
     UuidSchema
 } from './base.schema.js';
+// Commerce listing publish-readiness ("complete") contract — single
+// canonical definition shared by web, service-core, and apps/api (HOS-166 R-5)
+export * from './commerce-completeness.js';
 // Commerce common schemas (SPEC-239)
 export * from './commerce-identity.schema.js';
 export * from './commerce-owner-listing.schema.js';

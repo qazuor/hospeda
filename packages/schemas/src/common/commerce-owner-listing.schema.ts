@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CommerceEntityTypeEnumSchema } from '../enums/commerce-entity-type.schema.js';
+import { SubscriptionStatusEnumSchema } from '../enums/subscription-status.schema.js';
 
 // ============================================================================
 // CommerceOwnerListingSummary — lightweight view model for the owner's
@@ -52,7 +53,29 @@ export const CommerceOwnerListingSummarySchema = z.object({
      * per SPEC-249 §4), and it stays consistent across both verticals (gastronomy
      * has no `hasActiveSubscription` column; experiences does).
      */
-    isPublic: z.boolean()
+    isPublic: z.boolean(),
+
+    /**
+     * The listing's current commerce subscription status, or `null`/absent
+     * when it has never had one (still a `DRAFT` never taken to checkout).
+     *
+     * HOS-166 judgment-day W1: SPEC-249's original omission of raw billing
+     * state left the `SUSPENDED` card state (payment lapsed / dunning)
+     * permanently unreachable on the owner's listing index — there was no
+     * signal to derive it from (see `apps/web/src/lib/commerce/
+     * listing-card-state.ts`'s `resolveCommerceListingCardState` doc). This
+     * field is the minimal fix: it exposes the SAME status string stored on
+     * `commerce_listing_subscriptions.status` (mirroring
+     * `billing_subscriptions.status` — see `SubscriptionStatusEnum`), scoped
+     * to this one commerce listing. Resolved via `getCommerceListingSubscriptionStatuses`
+     * (`@repo/service-core`), which reads ONLY the commerce link table — that
+     * table's rows are always `product_domain = 'commerce'` by construction,
+     * so this can never leak accommodation or partner billing state.
+     *
+     * Optional AND nullable (not just nullable) so existing callers/fixtures
+     * that predate this field keep parsing unchanged.
+     */
+    subscriptionStatus: SubscriptionStatusEnumSchema.nullable().optional()
 });
 
 /** Inferred type for a single owner listing summary row. */
