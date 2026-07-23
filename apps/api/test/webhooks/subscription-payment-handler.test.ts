@@ -73,6 +73,11 @@ vi.mock('@repo/service-core', () => ({
     checkSubscriptionStatusTransition: vi.fn(() => ({ valid: true })),
     detectExternalChargeInterference: vi.fn(() => null),
     resolveFullPlanPriceCentavos: vi.fn(async () => null),
+    // HOS-176 silent-divergence detector helpers (pure/resolver logic unit-tested
+    // in @repo/service-core). Defaults keep the happy path a no-op.
+    detectPlanPriceDivergence: vi.fn(() => null),
+    resolveDiscountAwareExpectedCentavos: vi.fn(async () => ({ indeterminate: true })),
+    resolveIntervalScopedPlanPriceCentavos: vi.fn(async () => null),
     withServiceTransaction: vi.fn(async (cb: (ctx: { tx: unknown }) => Promise<unknown>) =>
         cb({ tx: mockTx })
     )
@@ -161,8 +166,21 @@ vi.mock('@repo/db', () => ({
         subscriptionId: 'EVENT_SUB_ID_COL',
         eventType: 'EVENT_TYPE_COL'
     },
+    // HOS-176 price-change tables for reportPlanPriceDivergence's suppression queries.
+    billingPlanPriceChanges: {
+        id: 'PPC_ID_COL',
+        planId: 'PPC_PLAN_ID_COL',
+        billingInterval: 'PPC_INTERVAL_COL',
+        status: 'PPC_STATUS_COL'
+    },
+    billingPlanPriceChangeTargets: {
+        id: 'PPCT_ID_COL',
+        subscriptionId: 'PPCT_SUB_ID_COL',
+        status: 'PPCT_STATUS_COL'
+    },
     and: (...args: unknown[]) => ({ _and: args }),
     eq: (a: unknown, b: unknown) => ({ _eq: [a, b] }),
+    inArray: (a: unknown, b: unknown) => ({ _inArray: [a, b] }),
     isNull: (a: unknown) => ({ _isNull: a }),
     sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ _sql: { strings, values } })
 }));
@@ -171,7 +189,13 @@ vi.mock('@repo/db', () => ({
 // Imports (after mocks).
 // ---------------------------------------------------------------------------
 
-import { resolveRenewalPromoEffect } from '@repo/service-core';
+import { getDb } from '@repo/db';
+import {
+    detectPlanPriceDivergence,
+    resolveDiscountAwareExpectedCentavos,
+    resolveIntervalScopedPlanPriceCentavos,
+    resolveRenewalPromoEffect
+} from '@repo/service-core';
 import { getQZPayBilling } from '../../src/middlewares/billing';
 import { clearEntitlementCache } from '../../src/middlewares/entitlement';
 import { cleanupRequestProviderEventId } from '../../src/routes/webhooks/mercadopago/event-handler';
@@ -184,6 +208,7 @@ import {
     markEventProcessedByProviderId
 } from '../../src/routes/webhooks/mercadopago/utils';
 import { restoreFullPriceMutation } from '../../src/services/promo-renewal-mp.service';
+import { apiLogger } from '../../src/utils/logger';
 import {
     fetchAuthorizedPaymentDetails,
     type MPAuthorizedPaymentDetails,
@@ -844,5 +869,179 @@ describe('handleSubscriptionAuthorizedPayment', () => {
             ).resolves.toBeUndefined();
             expect(markEventProcessedByProviderId).toHaveBeenCalled();
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-176 — reportPlanPriceDivergence (silent plan-price divergence detector)
+//
+// Tested directly via `_internals` (not through the full handler) so each test
+// controls exactly which suppression queries + resolvers run. The pure/resolver
+// logic itself lives in @repo/service-core and is unit-tested there; here we
+// verify the api-layer ORCHESTRATION: suppression order, the flag, and that it
+// never throws.
+// ---------------------------------------------------------------------------
+
+describe('reportPlanPriceDivergence (HOS-176)', () => {
+    /** A db whose successive `.select().from().where().limit()` chains resolve the queued rows. */
+    function makeSuppressionDb(queued: Array<Array<{ id: string }>>) {
+        let i = 0;
+        const select = vi.fn(() => {
+            const rows = queued[i] ?? [];
+            i += 1;
+            return {
+                from: vi.fn(() => ({
+                    where: vi.fn(() => ({
+                        limit: vi.fn(async () => rows)
+                    }))
+                }))
+            };
+        });
+        return { select };
+    }
+
+    function divergenceParams(
+        overrides: Partial<Parameters<typeof _internals.reportPlanPriceDivergence>[0]> = {}
+    ): Parameters<typeof _internals.reportPlanPriceDivergence>[0] {
+        return {
+            details: makeDetails({ couponAmount: null, campaignId: null }),
+            localSubscriptionId: 'sub-1',
+            planId: 'plan-1',
+            billingInterval: 'month',
+            chargedAmountCentavos: 1_400_000,
+            currency: 'ARS',
+            eventId: 'evt-1',
+            requestId: 'req-1',
+            ...overrides
+        };
+    }
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        // Default: no suppression rows (empty header + target queries).
+        vi.mocked(getDb).mockReturnValue(makeSuppressionDb([[], []]) as never);
+        vi.mocked(resolveIntervalScopedPlanPriceCentavos).mockResolvedValue(null);
+        vi.mocked(resolveDiscountAwareExpectedCentavos).mockResolvedValue({ indeterminate: true });
+        vi.mocked(detectPlanPriceDivergence).mockReturnValue(null);
+    });
+
+    it('suppressed when MP reported a coupon/campaign (leave it to the campaign detector)', async () => {
+        await _internals.reportPlanPriceDivergence(
+            divergenceParams({ details: makeDetails({ couponAmount: 500, campaignId: 'c-1' }) })
+        );
+
+        expect(resolveIntervalScopedPlanPriceCentavos).not.toHaveBeenCalled();
+        expect(apiLogger.error).not.toHaveBeenCalled();
+    });
+
+    it('suppressed for a non-ARS charge', async () => {
+        await _internals.reportPlanPriceDivergence(divergenceParams({ currency: 'USD' }));
+
+        expect(resolveIntervalScopedPlanPriceCentavos).not.toHaveBeenCalled();
+        expect(apiLogger.error).not.toHaveBeenCalled();
+    });
+
+    it('suppressed when a null planId/billingInterval cannot resolve a price', async () => {
+        await _internals.reportPlanPriceDivergence(divergenceParams({ planId: null }));
+
+        expect(resolveIntervalScopedPlanPriceCentavos).not.toHaveBeenCalled();
+        expect(apiLogger.error).not.toHaveBeenCalled();
+    });
+
+    it('suppressed for a non-productized interval (e.g. the hidden test "day" plan)', async () => {
+        // Arrange — a `'day'` interval has no comparable single-period price row.
+        // The step-3 guard must skip it (no price query, no alert) rather than
+        // pass a non-`'month'|'year'` value to the interval-scoped resolver.
+        await _internals.reportPlanPriceDivergence(divergenceParams({ billingInterval: 'day' }));
+
+        // Assert
+        expect(resolveIntervalScopedPlanPriceCentavos).not.toHaveBeenCalled();
+        expect(apiLogger.error).not.toHaveBeenCalled();
+    });
+
+    it('suppressed while an in-flight price change is propagating', async () => {
+        // Arrange — the header query returns a row (pending/applying/noticing)
+        vi.mocked(getDb).mockReturnValue(makeSuppressionDb([[{ id: 'ppc-1' }]]) as never);
+
+        await _internals.reportPlanPriceDivergence(divergenceParams());
+
+        expect(resolveIntervalScopedPlanPriceCentavos).not.toHaveBeenCalled();
+        expect(apiLogger.error).not.toHaveBeenCalled();
+    });
+
+    it('suppressed when THIS subscription has an active re-price target', async () => {
+        // Arrange — no header row, but the target query returns a pending/deferred row
+        vi.mocked(getDb).mockReturnValue(makeSuppressionDb([[], [{ id: 'ppct-1' }]]) as never);
+
+        await _internals.reportPlanPriceDivergence(divergenceParams());
+
+        expect(resolveIntervalScopedPlanPriceCentavos).not.toHaveBeenCalled();
+        expect(apiLogger.error).not.toHaveBeenCalled();
+    });
+
+    it('skips (warn) when the expected plan price is unresolvable', async () => {
+        // Arrange — no suppression, but the interval-scoped price is null
+        vi.mocked(resolveIntervalScopedPlanPriceCentavos).mockResolvedValue(null);
+
+        await _internals.reportPlanPriceDivergence(divergenceParams());
+
+        expect(apiLogger.warn).toHaveBeenCalled();
+        expect(resolveDiscountAwareExpectedCentavos).not.toHaveBeenCalled();
+        expect(apiLogger.error).not.toHaveBeenCalled();
+    });
+
+    it('skips when the discount-aware expected amount is indeterminate', async () => {
+        // Arrange — price resolved, but the discount amount cannot be determined
+        vi.mocked(resolveIntervalScopedPlanPriceCentavos).mockResolvedValue(1_500_000);
+        vi.mocked(resolveDiscountAwareExpectedCentavos).mockResolvedValue({ indeterminate: true });
+
+        await _internals.reportPlanPriceDivergence(divergenceParams());
+
+        expect(detectPlanPriceDivergence).not.toHaveBeenCalled();
+        expect(apiLogger.error).not.toHaveBeenCalled();
+    });
+
+    it('FLAGS (error + capture) when the charge diverges and nothing suppresses it', async () => {
+        // Arrange — full pipeline: price resolved, expected resolved, divergence found
+        vi.mocked(resolveIntervalScopedPlanPriceCentavos).mockResolvedValue(1_500_000);
+        vi.mocked(resolveDiscountAwareExpectedCentavos).mockResolvedValue({ amount: 1_500_000 });
+        vi.mocked(detectPlanPriceDivergence).mockReturnValue({
+            chargedAmountCentavos: 1_400_000,
+            expectedAmountCentavos: 1_500_000,
+            deltaCentavos: 100_000,
+            direction: 'undercharge'
+        });
+
+        await _internals.reportPlanPriceDivergence(divergenceParams());
+
+        expect(apiLogger.error).toHaveBeenCalledWith(
+            expect.objectContaining({
+                localSubscriptionId: 'sub-1',
+                planId: 'plan-1',
+                billingInterval: 'month',
+                chargedAmountCentavos: 1_400_000,
+                expectedAmountCentavos: 1_500_000,
+                deltaCentavos: 100_000,
+                direction: 'undercharge'
+            }),
+            expect.any(String),
+            { capture: true }
+        );
+    });
+
+    it('never throws on a DB error (warns instead)', async () => {
+        // Arrange — the suppression query throws
+        vi.mocked(getDb).mockReturnValue({
+            select: vi.fn(() => {
+                throw new Error('DB connection refused');
+            })
+        } as never);
+
+        // Act & Assert — resolves, does not reject
+        await expect(
+            _internals.reportPlanPriceDivergence(divergenceParams())
+        ).resolves.toBeUndefined();
+        expect(apiLogger.warn).toHaveBeenCalled();
+        expect(apiLogger.error).not.toHaveBeenCalled();
     });
 });

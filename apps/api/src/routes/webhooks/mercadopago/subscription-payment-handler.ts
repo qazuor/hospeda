@@ -48,10 +48,13 @@ import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
 import {
     and,
     billingPayments,
+    billingPlanPriceChanges,
+    billingPlanPriceChangeTargets,
     billingSubscriptionEvents,
     billingSubscriptions,
     eq,
     getDb,
+    inArray,
     isNull,
     sql
 } from '@repo/db';
@@ -60,7 +63,10 @@ import {
     BILLING_EVENT_TYPES,
     checkSubscriptionStatusTransition,
     detectExternalChargeInterference,
+    detectPlanPriceDivergence,
+    resolveDiscountAwareExpectedCentavos,
     resolveFullPlanPriceCentavos,
+    resolveIntervalScopedPlanPriceCentavos,
     resolveRenewalPromoEffect,
     withServiceTransaction
 } from '@repo/service-core';
@@ -132,6 +138,12 @@ async function findLocalSubscriptionByPreapprovalId(preapprovalId: string): Prom
     planId: string | null;
     status: string;
     trialEnd: Date | null;
+    /**
+     * Subscription-vocabulary interval (`'month' | 'year'`), or `null`. Additive
+     * for HOS-176's plan-price divergence detector; the other caller
+     * (`webhook-retry.job.ts`) simply ignores the extra field.
+     */
+    billingInterval: string | null;
 } | null> {
     const db = getDb();
     const rows = await db
@@ -140,7 +152,8 @@ async function findLocalSubscriptionByPreapprovalId(preapprovalId: string): Prom
             customerId: billingSubscriptions.customerId,
             planId: billingSubscriptions.planId,
             status: billingSubscriptions.status,
-            trialEnd: billingSubscriptions.trialEnd
+            trialEnd: billingSubscriptions.trialEnd,
+            billingInterval: billingSubscriptions.billingInterval
         })
         .from(billingSubscriptions)
         .where(
@@ -326,6 +339,196 @@ async function reportExternalChargeInterference(params: {
                 error: err instanceof Error ? err.message : String(err)
             },
             'MercadoPago webhook: charge-interference check failed — payment recording unaffected'
+        );
+    }
+}
+
+/**
+ * Report a recurring charge whose amount SILENTLY diverges from the current plan
+ * price for a reason OTHER than a MercadoPago discount campaign (HOS-176).
+ *
+ * Sibling to {@link reportExternalChargeInterference}: that one catches MP's own
+ * campaign engine (`coupon_amount` / `campaign_id`); this one catches the case
+ * those fields are absent yet the charge still differs from the current
+ * (discount-aware, interval-scoped) plan price — e.g. a plan price change whose
+ * propagation to this subscriber's preapproval failed, or a stale/lagging
+ * preapproval the propagate-plan-price-changes cron never re-priced.
+ *
+ * Suppression (all EXPECTED, non-divergence reasons — checked in order):
+ *   1. MP reported a coupon/campaign → {@link reportExternalChargeInterference}'s
+ *      job; skip to avoid double-alerting.
+ *   2. Non-ARS currency → plan prices are ARS; a cross-currency compare is meaningless.
+ *   3. No plan id or no interval → cannot resolve an expected price.
+ *   4. An in-flight price change for this plan+interval (`pending`/`applying`/
+ *      `noticing`) → a divergence is EXPECTED while propagation is mid-flight.
+ *   5. An active target for THIS subscription (`pending`/`deferred`) → this sub is
+ *      queued to be (or is being) re-priced right now. A terminal `skipped`/`failed`
+ *      target is NOT suppressed — a failed propagation IS a real revenue divergence
+ *      worth re-alerting until an operator reconciles it.
+ *   6. Expected price unresolvable → warn + skip (cannot compare).
+ *   7. Discount-aware expected amount indeterminate → skip (avoid a false positive).
+ *
+ * Never fail-closed and never throws: the card was already debited and MP considers
+ * the matter settled. We record the money that arrived (done upstream) and, if it
+ * does not match, shout about it (`capture: true`).
+ *
+ * KNOWN LIMITATION (HOS-176 v1): a GRANDFATHERED trialing subscriber — one that
+ * received an INCREASE notice but was kept at the OLD price through its in-flight
+ * trial (owner decision D-4) — will trip this detector once it converts and charges
+ * the old (lower) price, because no in-flight change or active target suppresses it
+ * by then. This is ACCEPTABLE for now: the increase path is gated OFF
+ * (`HOSPEDA_BILLING_PRICE_INCREASE_ENABLED=false`), so it cannot occur in production,
+ * and the future "re-price a grandfathered trialing sub after its first charge" item
+ * is the real fix. Do NOT special-case trialing subs here to hide it.
+ *
+ * @internal
+ */
+async function reportPlanPriceDivergence(params: {
+    details: MPAuthorizedPaymentDetails;
+    localSubscriptionId: string;
+    planId: string | null;
+    billingInterval: string | null;
+    chargedAmountCentavos: number;
+    currency: string;
+    eventId: string | number;
+    requestId: string;
+}): Promise<void> {
+    const {
+        details,
+        localSubscriptionId,
+        planId,
+        billingInterval,
+        chargedAmountCentavos,
+        currency,
+        eventId,
+        requestId
+    } = params;
+
+    try {
+        // 1. MP campaign already owns this charge — reportExternalChargeInterference
+        //    handles it; skip so we do not double-alert on the same gap.
+        if (
+            (details.couponAmount !== null && details.couponAmount > 0) ||
+            (details.campaignId !== null && details.campaignId.length > 0)
+        ) {
+            return;
+        }
+
+        // 2. Plan prices are ARS — a cross-currency comparison is meaningless.
+        if (currency !== 'ARS') {
+            return;
+        }
+
+        // 3. Without a plan id there is no expected price to resolve. The interval
+        //    must ALSO be exactly a productized single-period value (`'month'` or
+        //    `'year'`) — a lagging row may carry neither, and a non-productized
+        //    interval (e.g. the hidden test-`'day'` plan) has no comparable price
+        //    row. This narrows `billingInterval` to `'month' | 'year'`, so the
+        //    interval-scoped price lookup below receives a correct, safe value.
+        if (planId == null || (billingInterval !== 'month' && billingInterval !== 'year')) {
+            return;
+        }
+
+        const db = getDb();
+
+        // 4. In-flight propagation for this plan+interval → divergence is EXPECTED
+        //    while the cron is mid-flight. (No soft-delete column on this table.)
+        const inflightChange = await db
+            .select({ id: billingPlanPriceChanges.id })
+            .from(billingPlanPriceChanges)
+            .where(
+                and(
+                    eq(billingPlanPriceChanges.planId, planId),
+                    eq(billingPlanPriceChanges.billingInterval, billingInterval),
+                    inArray(billingPlanPriceChanges.status, ['pending', 'applying', 'noticing'])
+                )
+            )
+            .limit(1);
+        if (inflightChange.length > 0) {
+            return;
+        }
+
+        // 5. An active (non-terminal) target for THIS sub → it is queued to be, or is
+        //    being, re-priced right now. `skipped`/`failed` are terminal and NOT
+        //    suppressed: a failed propagation is a genuine revenue divergence to re-alert.
+        const activeTarget = await db
+            .select({ id: billingPlanPriceChangeTargets.id })
+            .from(billingPlanPriceChangeTargets)
+            .where(
+                and(
+                    eq(billingPlanPriceChangeTargets.subscriptionId, localSubscriptionId),
+                    inArray(billingPlanPriceChangeTargets.status, ['pending', 'deferred'])
+                )
+            )
+            .limit(1);
+        if (activeTarget.length > 0) {
+            return;
+        }
+
+        // 6. Interval-SCOPED full plan price (NOT the interval-ambiguous
+        //    resolveFullPlanPriceCentavos, which would return a monthly price for an
+        //    annual sub and manufacture a false positive). `billingInterval` is
+        //    already narrowed to `'month' | 'year'` by the step-3 guard above.
+        const fullCentavos = await resolveIntervalScopedPlanPriceCentavos({
+            db,
+            planId,
+            billingInterval
+        });
+        if (fullCentavos === null) {
+            apiLogger.warn(
+                { eventId, requestId, localSubscriptionId, planId, billingInterval },
+                'MercadoPago webhook: cannot determine the expected plan price for divergence check — skipping'
+            );
+            return;
+        }
+
+        // 7. Discount-aware expected amount. Indeterminate → skip (never a false positive).
+        const expected = await resolveDiscountAwareExpectedCentavos({
+            subscriptionId: localSubscriptionId,
+            fullCentavos
+        });
+        if ('indeterminate' in expected) {
+            return;
+        }
+
+        const divergence = detectPlanPriceDivergence({
+            chargedAmountCentavos,
+            expectedAmountCentavos: expected.amount
+        });
+        if (!divergence) {
+            return;
+        }
+
+        const detail = {
+            eventId,
+            requestId,
+            localSubscriptionId,
+            mpPaymentId: details.paymentId,
+            planId,
+            billingInterval,
+            chargedAmountCentavos: divergence.chargedAmountCentavos,
+            expectedAmountCentavos: divergence.expectedAmountCentavos,
+            deltaCentavos: divergence.deltaCentavos,
+            direction: divergence.direction
+        };
+
+        // Actionable: MP charged an amount that does not match the current plan price,
+        // and it is NOT an MP campaign, NOT mid-propagation, NOT a queued re-price.
+        // Revenue does not match the plan — an operator must reconcile.
+        apiLogger.error(
+            detail,
+            'MercadoPago webhook: subscription charge diverges from the current plan price (no MP campaign, no in-flight propagation) — payment accepted, revenue does not match the plan',
+            { capture: true }
+        );
+    } catch (err) {
+        apiLogger.warn(
+            {
+                eventId,
+                requestId,
+                localSubscriptionId,
+                error: err instanceof Error ? err.message : String(err)
+            },
+            'MercadoPago webhook: plan-price divergence check failed — payment recording unaffected'
         );
     }
 }
@@ -675,6 +878,22 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
             requestId
         });
 
+        // Accounting defense (HOS-176): the SILENT sibling of the campaign check
+        // above — catch a charge that diverges from the current plan price for a
+        // reason MP does NOT report (failed/lagging price propagation), suppressing
+        // every expected divergence (MP campaign, in-flight change, active re-price
+        // target). Fire-and-forget + never fail-closed, same as its sibling.
+        void reportPlanPriceDivergence({
+            details,
+            localSubscriptionId: sub.id,
+            planId: sub.planId,
+            billingInterval: sub.billingInterval,
+            chargedAmountCentavos: amountInCentavos,
+            currency,
+            eventId: event.id,
+            requestId
+        });
+
         // SPEC-262 T-007 (B2 fix): Only decrement the cycle counter when the
         // charge SUCCEEDED. A rejected/failed/pending charge must not consume a
         // discounted cycle — the next MP retry (different paymentId, passes the
@@ -763,7 +982,8 @@ export const _internals = {
     mapMpStatusToQZPayStatus,
     findLocalSubscriptionByPreapprovalId,
     paymentAlreadyRecorded,
-    safeMarkProcessed
+    safeMarkProcessed,
+    reportPlanPriceDivergence
 };
 
 // ---------------------------------------------------------------------------
