@@ -350,4 +350,12 @@ export type AdminSearchExecuteParams<TEntityFilters = Record<string, unknown>> =
     readonly actor: Actor;
     /** Service execution context carrying transaction and hookState */
     readonly ctx?: ServiceContext;
+    /**
+     * Whether the admin caller opted in to seeing soft-deleted rows (trash/restore
+     * view). Forwarded to `model.findAllWithRelations`/`model.findAll` so models
+     * that default to excluding soft-deleted rows (e.g. `EventModel`, `PostModel`
+     * — HOS-274) can honor the same opt-in the base class already applies to
+     * `where.deletedAt` (see `adminList()` in `base.crud.read.ts`).
+     */
+    readonly includeDeleted?: boolean;
 };

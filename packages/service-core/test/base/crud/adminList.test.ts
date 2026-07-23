@@ -661,11 +661,17 @@ describe('BaseCrudRead: adminList', () => {
             // Assert
             const findAllCall = asMock(modelMock.findAll).mock.calls[0];
             const options = findAllCall?.[1] as Record<string, unknown>;
+            // HOS-274: options now also carries `includeDeleted` (defaults to
+            // `false` here per TestAdminSearchSchema), forwarded so models that
+            // default to excluding soft-deleted rows (EventModel, PostModel) can
+            // honor the same includeDeleted decision adminList() already applies
+            // to `where.deletedAt`.
             expect(options).toEqual({
                 page: 2,
                 pageSize: 30,
                 sortBy: 'name',
-                sortOrder: 'asc'
+                sortOrder: 'asc',
+                includeDeleted: false
             });
         });
 

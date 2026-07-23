@@ -120,35 +120,52 @@ export interface BaseModel<T extends Record<string, unknown>> {
      * Count entities matching `where` conditions.
      * NOTE: `tx` is nested inside `options` (not a positional parameter) to match
      * the implementation signature where `additionalConditions` and `tx` share
-     * the same options object.
+     * the same options object. `includeDeleted` is accepted as a passthrough
+     * option only — the base implementation does not act on it; subclasses whose
+     * table has a `deletedAt` column and default to excluding soft-deleted rows
+     * (e.g. `EventModel`, `PostModel` — HOS-274) read it to opt back in.
      * @throws {DbError} When the database operation fails
      */
     count(
         where: Record<string, unknown>,
-        options?: { additionalConditions?: SQL[]; tx?: DrizzleClient }
+        options?: { additionalConditions?: SQL[]; tx?: DrizzleClient; includeDeleted?: boolean }
     ): Promise<number>;
 
     /**
      * Find all entities matching `where` with pagination and optional sorting.
-     * Returns `{ items: T[], total: number }`.
+     * Returns `{ items: T[], total: number }`. See {@link count} for the
+     * `includeDeleted` passthrough note.
      * @throws {DbError} When the database operation fails
      */
     findAll(
         where: Record<string, unknown>,
-        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
+        options?: {
+            page?: number;
+            pageSize?: number;
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
+            includeDeleted?: boolean;
+        },
         additionalConditions?: SQL[],
         tx?: DrizzleClient
     ): Promise<PaginatedListOutput<T>>;
 
     /**
      * Find all entities with specified relations populated.
-     * Uses Drizzle's relational query API (`db.query[table].findMany()`).
+     * Uses Drizzle's relational query API (`db.query[table].findMany()`). See
+     * {@link count} for the `includeDeleted` passthrough note.
      * @throws {DbError} When the database operation fails
      */
     findAllWithRelations(
         relations: Record<string, boolean | Record<string, unknown>>,
         where?: Record<string, unknown>,
-        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
+        options?: {
+            page?: number;
+            pageSize?: number;
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
+            includeDeleted?: boolean;
+        },
         additionalConditions?: SQL[],
         tx?: DrizzleClient
     ): Promise<PaginatedListOutput<T>>;
