@@ -1,14 +1,16 @@
 /**
  * @file CommerceListingEditor.client.tsx
- * @description Operational editor island for a commerce owner's listing
- * (SPEC-249 Part A, extended in SPEC-253). Native HTML form (no TanStack Form,
- * per web conventions) that edits ONLY the operational fields the owner may
- * change and persists them through the vertical's protected PATCH endpoint
- * (`updateOwn`).
+ * @description Operational + identity editor island for a commerce owner's
+ * listing (SPEC-249 Part A, extended in SPEC-253 and HOS-166 D-1). Native
+ * HTML form (no TanStack Form, per web conventions) that persists changes
+ * through the vertical's protected PATCH endpoint (`updateOwn`).
  *
- * Identity/core fields are rendered read-only by the hosting page, not here.
+ * `slug` stays out of this form — it is server-derived at create time and
+ * immutable post-create (HOS-166 OQ-3), shown read-only by the hosting page.
  *
- * Field-group coverage (SPEC-253 additions marked *):
+ * Field-group coverage (SPEC-253 additions marked *, HOS-166 D-1 marked †):
+ *   † name + destinationId (SPEC-239 decision #5 reversed — the owner now
+ *     loads their own identity, see `GastronomyOwnerUpdateInputSchema`'s JSDoc)
  *   * type select (per-vertical enum, T-020)
  *   * summary textarea (min 10 / max 300, T-020)
  *   T-012 mechanics + richDescription
@@ -30,6 +32,7 @@ import {
     PriceRangeEnum
 } from '@repo/schemas';
 import { type JSX, useCallback, useState } from 'react';
+import type { DestinationOption } from '@/components/gastronomy/CommerceLead.client';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { apiClient } from '@/lib/api/client';
 import type { AmenityData } from '@/lib/api/types';
@@ -61,6 +64,21 @@ export interface CommerceListingEditorProps {
     readonly amenities?: readonly AmenityData[];
     /** Feature catalog for the multi-select (fetched SSR from the public endpoint). */
     readonly features?: readonly AmenityData[];
+    /**
+     * Destination options for the destination select (HOS-166 D-1). Fetched
+     * SSR by the hosting page, same pattern as `amenities`/`features`.
+     */
+    readonly destinations?: readonly DestinationOption[];
+    /**
+     * `true` when the SSR destination catalog fetch failed (as opposed to
+     * succeeding with a genuinely empty catalog). `destinationId` is REQUIRED
+     * for publish-readiness (`resolveListingCompleteness`), so silently
+     * hiding the select on a failed fetch (the old `destinations.length > 0`
+     * gate) left the owner with no way to ever complete their listing and no
+     * indication why the field was missing. Defaults to `false` so existing
+     * callers/tests that omit it keep the prior behaviour.
+     */
+    readonly destinationsLoadFailed?: boolean;
 }
 
 type SaveStatus =
@@ -141,7 +159,9 @@ export function CommerceListingEditor({
     locale,
     initialData,
     amenities = [],
-    features = []
+    features = [],
+    destinations = [],
+    destinationsLoadFailed = false
 }: CommerceListingEditorProps): JSX.Element {
     const { t } = createTranslations(locale);
 
@@ -164,6 +184,15 @@ export function CommerceListingEditor({
     const initialContact = (data.contactInfo ?? {}) as Record<string, unknown>;
     const initialSocial = (data.socialNetworks ?? {}) as Record<string, unknown>;
     const initialMedia = (data.media ?? {}) as Record<string, unknown>;
+
+    // HOS-166 D-1: name + destinationId + description — identity fields now
+    // owner-editable (description was widened alongside name/destinationId on
+    // the schema — see `GastronomyOwnerUpdateInputSchema`/
+    // `ExperienceOwnerUpdateInputSchema` — but the FORM never exposed it,
+    // leaving it settable only at create, contradicting AC-19).
+    const [name, setName] = useState<string>(strField(data, 'name'));
+    const [destinationId, setDestinationId] = useState<string>(strField(data, 'destinationId'));
+    const [description, setDescription] = useState<string>(strField(data, 'description'));
 
     // T-020: type select state (per-vertical enum value)
     const [listingType, setListingType] = useState<string>(strField(data, 'type'));
@@ -314,11 +343,20 @@ export function CommerceListingEditor({
     /** Build the PATCH payload from the dirty field groups only. */
     const buildPayload = useCallback((): Record<string, unknown> => {
         const payload: Record<string, unknown> = {};
+        if (dirty.has('name')) {
+            payload.name = name;
+        }
+        if (dirty.has('destinationId')) {
+            payload.destinationId = destinationId || undefined;
+        }
         if (dirty.has('type')) {
             payload.type = listingType || undefined;
         }
         if (dirty.has('summary')) {
             payload.summary = summary || undefined;
+        }
+        if (dirty.has('description')) {
+            payload.description = description || undefined;
         }
         // T-023: include i18n fields when any locale was edited
         if (dirty.has('i18n')) {
@@ -386,8 +424,11 @@ export function CommerceListingEditor({
         return payload;
     }, [
         dirty,
+        name,
+        destinationId,
         listingType,
         summary,
+        description,
         i18nValues,
         richDescription,
         contact,
@@ -464,6 +505,90 @@ export function CommerceListingEditor({
             aria-busy={isSaving}
             noValidate
         >
+            {/* HOS-166 D-1: name — identity field, now owner-editable */}
+            <section className={styles.section}>
+                <label
+                    className={styles.label}
+                    htmlFor="ce-name"
+                >
+                    {t('commerce.owner.editor.sections.name', 'Nombre del comercio')}
+                </label>
+                <input
+                    id="ce-name"
+                    className={styles.input}
+                    type="text"
+                    value={name}
+                    aria-invalid={fieldErrors.name ? 'true' : 'false'}
+                    aria-describedby={fieldErrors.name ? fieldErrorId('name') : undefined}
+                    onChange={(event) => {
+                        setName(event.target.value);
+                        markDirty('name');
+                    }}
+                />
+                <FieldError
+                    id={fieldErrorId('name')}
+                    message={fieldErrors.name}
+                />
+            </section>
+
+            {/* HOS-166 D-1: destinationId — identity field, now owner-editable.
+                `destinationsLoadFailed` (judgment-day fix) surfaces a failed SSR
+                catalog fetch explicitly instead of silently omitting a REQUIRED
+                field (completeness needs `destinationId`) — see the prop's doc. */}
+            {destinationsLoadFailed ? (
+                <section className={styles.section}>
+                    <p
+                        className={styles.error}
+                        role="alert"
+                    >
+                        {t(
+                            'commerce.owner.editor.sections.destinationLoadError',
+                            'No pudimos cargar el listado de ciudades / destinos. Recargá la página para reintentar.'
+                        )}
+                    </p>
+                </section>
+            ) : (
+                destinations.length > 0 && (
+                    <section className={styles.section}>
+                        <label
+                            className={styles.label}
+                            htmlFor="ce-destinationId"
+                        >
+                            {t('commerce.owner.editor.sections.destination', 'Ciudad / Destino')}
+                        </label>
+                        <select
+                            id="ce-destinationId"
+                            className={styles.input}
+                            value={destinationId}
+                            aria-invalid={fieldErrors.destinationId ? 'true' : 'false'}
+                            aria-describedby={
+                                fieldErrors.destinationId
+                                    ? fieldErrorId('destinationId')
+                                    : undefined
+                            }
+                            onChange={(event) => {
+                                setDestinationId(event.target.value);
+                                markDirty('destinationId');
+                            }}
+                        >
+                            <option value="">—</option>
+                            {destinations.map((d) => (
+                                <option
+                                    key={d.id}
+                                    value={d.id}
+                                >
+                                    {d.name}
+                                </option>
+                            ))}
+                        </select>
+                        <FieldError
+                            id={fieldErrorId('destinationId')}
+                            message={fieldErrors.destinationId}
+                        />
+                    </section>
+                )
+            )}
+
             {/* T-020: type select */}
             <section className={styles.section}>
                 <label
@@ -529,6 +654,35 @@ export function CommerceListingEditor({
                 <FieldError
                     id={fieldErrorId('summary')}
                     message={fieldErrors.summary}
+                />
+            </section>
+
+            {/* HOS-166 judgment-day W2: description — identity field, already
+                owner-editable server-side (D-1) but never exposed here. */}
+            <section className={styles.section}>
+                <label
+                    className={styles.label}
+                    htmlFor="ce-description"
+                >
+                    {t('commerce.owner.editor.sections.description', 'Descripción')}
+                </label>
+                <textarea
+                    id="ce-description"
+                    className={styles.textarea}
+                    value={description}
+                    rows={5}
+                    aria-invalid={fieldErrors.description ? 'true' : 'false'}
+                    aria-describedby={
+                        fieldErrors.description ? fieldErrorId('description') : undefined
+                    }
+                    onChange={(event) => {
+                        setDescription(event.target.value);
+                        markDirty('description');
+                    }}
+                />
+                <FieldError
+                    id={fieldErrorId('description')}
+                    message={fieldErrors.description}
                 />
             </section>
 

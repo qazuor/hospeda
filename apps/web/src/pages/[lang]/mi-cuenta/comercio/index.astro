@@ -1,7 +1,9 @@
 ---
 /**
  * @file mi-cuenta/comercio/index.astro
- * @description Commerce owner self-service listing index (SPEC-249 Part A).
+ * @description Commerce owner self-service listing index (SPEC-249 Part A,
+ * extended in HOS-166 PR-C with the create CTA and the per-listing state
+ * machine — badge, completeness checklist, and publish+pay CTA).
  * Lists the authenticated COMMERCE_OWNER's own listings across both verticals
  * (gastronomy + experiences) and deep-links each to its operational editor.
  *
@@ -14,8 +16,9 @@
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import { CommerceListingActions } from '@/components/commerce/CommerceListingActions.client';
 import { isCommerceOwnerRole } from '@/lib/account-roles';
-import { fetchOwnerCommerceListings } from '@/lib/commerce/owner-listings';
+import { fetchOwnerCommerceListingsWithState } from '@/lib/commerce/owner-listings';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -39,16 +42,39 @@ const title = t('commerce.owner.list.title', 'Mi comercio');
 const subtitle = t('commerce.owner.list.subtitle', '');
 
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-const listings = await fetchOwnerCommerceListings({ cookieHeader });
+const listings = await fetchOwnerCommerceListingsWithState({ cookieHeader });
+
+const createUrl = buildUrl({ locale, path: 'mi-cuenta/comercio/nuevo' });
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="comercio">
-    <AccountPageHeader title={title} description={subtitle || undefined} />
+    <div class="mc-header">
+        <AccountPageHeader title={title} description={subtitle || undefined} />
+        <a
+            class="mc-create-cta"
+            href={createUrl}
+        >
+            {t('commerce.owner.list.createCta', '+ Nuevo comercio')}
+        </a>
+    </div>
 
     <AccountSectionCard>
         {
             listings.length === 0 ? (
-                <p class="mc-empty">{t('commerce.owner.list.empty', '')}</p>
+                <div class="mc-empty">
+                    <p class="mc-empty__text">
+                        {t(
+                            'commerce.owner.list.empty',
+                            'Todavía no tenés comercios. Creá tu primera ficha para empezar.'
+                        )}
+                    </p>
+                    <a
+                        class="mc-empty__cta"
+                        href={createUrl}
+                    >
+                        {t('commerce.owner.list.emptyCta', 'Crear mi primer comercio')}
+                    </a>
+                </div>
             ) : (
                 <ul class="mc-list">
                     {listings.map((listing) => (
@@ -58,17 +84,14 @@ const listings = await fetchOwnerCommerceListings({ cookieHeader });
                                 <span class="mc-badge">
                                     {t(`commerce.owner.list.badge.${listing.vertical}`, listing.vertical)}
                                 </span>
-                                <span
-                                    class:list={[
-                                        'mc-visibility',
-                                        listing.isPublic ? 'mc-visibility--public' : 'mc-visibility--hidden'
-                                    ]}
-                                >
-                                    {listing.isPublic
-                                        ? t('commerce.visibility.active', 'Activo')
-                                        : t('commerce.visibility.hidden', 'Oculto')}
-                                </span>
                             </div>
+
+                            <CommerceListingActions
+                                client:visible
+                                listing={listing}
+                                locale={locale}
+                            />
+
                             <a
                                 class="mc-list__edit"
                                 href={buildUrl({
@@ -87,9 +110,55 @@ const listings = await fetchOwnerCommerceListings({ cookieHeader });
 </AccountLayout>
 
 <style>
+    .mc-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-4);
+        flex-wrap: wrap;
+    }
+
+    .mc-create-cta {
+        flex-shrink: 0;
+        padding: var(--space-2) var(--space-4);
+        border-radius: var(--radius-button, 0.5rem);
+        background: var(--brand-accent);
+        color: var(--accent-foreground);
+        font-weight: 600;
+        font-size: var(--text-body-sm, 0.9375rem);
+        text-decoration: none;
+        transition: opacity 150ms ease;
+    }
+
+    .mc-create-cta:hover {
+        opacity: 0.85;
+    }
+
     .mc-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-4);
+    }
+
+    .mc-empty__text {
+        margin: 0;
         color: var(--core-muted-foreground);
         font-size: var(--text-body-sm, 0.9375rem);
+    }
+
+    .mc-empty__cta {
+        padding: var(--space-3) var(--space-8);
+        border-radius: var(--radius-button, 0.5rem);
+        background: var(--brand-accent);
+        color: var(--accent-foreground);
+        font-weight: 600;
+        text-decoration: none;
+        transition: opacity 150ms ease;
+    }
+
+    .mc-empty__cta:hover {
+        opacity: 0.85;
     }
 
     .mc-list {
@@ -106,6 +175,7 @@ const listings = await fetchOwnerCommerceListings({ cookieHeader });
         align-items: center;
         justify-content: space-between;
         gap: var(--space-4);
+        flex-wrap: wrap;
         padding: var(--space-4);
         border: 1px solid var(--border);
         border-radius: var(--radius-md, 0.5rem);
@@ -130,19 +200,6 @@ const listings = await fetchOwnerCommerceListings({ cookieHeader });
         padding: 0.125rem 0.5rem;
         border-radius: var(--radius-pill, 999px);
         background: var(--surface-warm, rgba(0, 0, 0, 0.06));
-        color: var(--core-muted-foreground);
-    }
-
-    .mc-visibility {
-        font-size: var(--text-caption, 0.75rem);
-        font-weight: 600;
-    }
-
-    .mc-visibility--public {
-        color: var(--success, #15803d);
-    }
-
-    .mc-visibility--hidden {
         color: var(--core-muted-foreground);
     }
 
