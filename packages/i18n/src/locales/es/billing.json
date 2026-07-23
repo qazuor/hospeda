@@ -243,6 +243,7 @@
             "discountFixedForever": "${{amount}} de descuento para siempre",
             "discountFixedCycle": "${{amount}} de descuento por {{months}} mes",
             "discountFixedCycles": "${{amount}} de descuento por {{months}} meses",
+            "trialExtensionSingular": "{{days}} día de prueba gratis adicional",
             "trialExtension": "{{days}} días de prueba gratis adicionales",
             "comp": "Gratis para siempre",
             "errorInvalid": "El código ingresado no es válido. Revisalo e intentá de nuevo.",

@@ -1270,6 +1270,53 @@ describe('PlanPurchaseButton', () => {
             });
         });
 
+        it('uses the SINGULAR form ("1 día ... adicional") for a 1-day trial extension', async () => {
+            // Regression (HOS-252): a trial_extension of exactly 1 day must read
+            // "1 día de prueba gratis adicional" (singular), never the pluralised
+            // "1 días de prueba gratis adicionales".
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: () =>
+                        Promise.resolve({
+                            data: {
+                                valid: true,
+                                effectPreview: {
+                                    effectKind: 'trial_extension',
+                                    valueKind: null,
+                                    value: null,
+                                    durationCycles: null,
+                                    extraDays: 1,
+                                    finalAmount: null
+                                }
+                            }
+                        })
+                })
+            );
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'ONEDAY');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            await waitFor(() => {
+                // Anchored regex — `toHaveTextContent('1 día')` alone is a
+                // substring match and would also pass on the buggy "1 días"
+                // output ("1 día" ⊂ "1 días"). `$` closes the door on that.
+                expect(screen.getByRole('status')).toHaveTextContent(
+                    /^1 día de prueba gratis adicional$/
+                );
+            });
+            // Belt-and-suspenders: the pluralised copy must NOT leak through.
+            expect(screen.getByRole('status')).not.toHaveTextContent('1 días');
+        });
+
         it('clears an applied promo when the billing interval changes', async () => {
             // Regression: a code previewed against the monthly price must not
             // silently carry over to the annual checkout. Switching the interval
