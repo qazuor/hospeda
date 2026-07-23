@@ -13,6 +13,7 @@
  * 6. Parse session only for routes that need it (protected + auth)
  * 7. Protect /mi-cuenta/* routes (redirect to login if unauthenticated)
  * 8. Rewrite 404 responses to the custom 404 page
+ * 8b. Rewrite 410 (Gone) responses to the same styled page, forcing the 410 status
  * 9. Set Content-Security-Policy header (enforce mode, HOS-30 Phase 2) on HTML responses
  * 10. Set X-Robots-Tag noindex on hosts in HOSPEDA_NOINDEX_HOSTS (e.g. staging)
  */
@@ -326,6 +327,25 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // so it renders with the full site layout and i18n context.
     if (response.status === 404) {
         return context.rewrite('/404');
+    }
+
+    // Step 8b: A soft-deleted PUBLIC entity returns 410 Gone (the SEO desindex
+    // signal — HOS-117 T-022 for accommodations/posts, HOS-256 for events/
+    // destinations). Without this branch a 410 falls straight through with an
+    // empty body — a blank page, no site chrome, i18n, or navigation. Render the
+    // same styled error page for chrome, but FORCE the status back to 410:
+    // Astro assigns `/404` a 404 status by convention, so a bare
+    // `rewrite('/404')` would coerce the 410 → 404 and lose the desindex signal
+    // (verified empirically). The rewrite re-runs middleware for `/404`, so the
+    // CSP header + nonces are already on `rendered.headers`; we only override the
+    // status line.
+    if (response.status === 410) {
+        const rendered = await context.rewrite('/404');
+        return new Response(rendered.body, {
+            status: 410,
+            statusText: 'Gone',
+            headers: rendered.headers
+        });
     }
 
     // Step 9: Attach a Content-Security-Policy header (enforce mode, HOS-30 Phase 2,

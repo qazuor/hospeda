@@ -121,6 +121,28 @@ describe('CSP_HEADER_NAME — enforce mode, not Report-Only (HOS-30 T-020)', () 
 });
 
 // ---------------------------------------------------------------------------
+// Regression guard — 410 Gone responses render chrome AND keep the 410 status
+// ---------------------------------------------------------------------------
+
+describe('middleware.ts — 410 Gone rewrite guard (soft-delete SEO desindex)', () => {
+    it('handles a downstream 410 response, not just 404', () => {
+        expect(MIDDLEWARE_SRC).toContain('response.status === 410');
+    });
+
+    it('rewrites the 410 to the styled error page but FORCES the 410 status back', () => {
+        // A bare `return context.rewrite('/404')` for a 410 would ship a 404 to
+        // crawlers (Astro assigns /404 a 404 status by convention), losing the
+        // desindex signal. The fix must re-wrap the rendered response with an
+        // explicit 410 status. This guard fails if someone "simplifies" it back.
+        const idx = MIDDLEWARE_SRC.indexOf('response.status === 410');
+        expect(idx).toBeGreaterThan(0);
+        const branch = MIDDLEWARE_SRC.slice(idx, idx + 500);
+        expect(branch).toContain("await context.rewrite('/404')");
+        expect(branch).toContain('status: 410');
+    });
+});
+
+// ---------------------------------------------------------------------------
 // index.astro (home) — HOS-30 2.C regression guard
 // ---------------------------------------------------------------------------
 
