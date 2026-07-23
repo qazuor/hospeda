@@ -34,6 +34,7 @@
 
 import {
     AdminBillingPlanResponseSchema,
+    AdminBillingPlanUpdateResponseSchema,
     BillingPlanResponseSchema,
     BillingPlanSearchSchema,
     CreateBillingPlanSchema,
@@ -252,7 +253,9 @@ export const adminUpdatePlanRoute = createAdminRoute({
         id: z.string().uuid('Plan ID must be a valid UUID')
     },
     requestBody: UpdateBillingPlanSchema,
-    responseSchema: BillingPlanResponseSchema,
+    // HOS-176: extends the base plan DTO with `priceChangeEffects` (0–2) so the admin UI
+    // can surface "affects N subscribers, applies on <date>" after a price edit.
+    responseSchema: AdminBillingPlanUpdateResponseSchema,
     options: {
         customRateLimit: { requests: 20, windowMs: 60_000 }
     },

@@ -11,11 +11,14 @@
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { PlanDialog } from '../../../src/features/billing-plans/components/PlanDialog';
-import type { ParsedPlanRecord } from '../../../src/features/billing-plans/types';
+import type { ParsedPlanRecord, PlanSubmitResult } from '../../../src/features/billing-plans/types';
 import { renderWithProviders } from '../../helpers/render-with-providers';
 
 // @repo/billing resolves to its TypeScript source via the vitest.config.ts alias.
 // No vi.mock needed — the source module is loaded directly.
+
+/** No-op submit handler resolving with no price-change effects (HOS-176). */
+const noopSubmit = async (): Promise<PlanSubmitResult> => ({ priceChangeEffects: [] });
 
 /** Full ParsedPlanRecord fixture for edit-mode tests */
 const existingPlan: ParsedPlanRecord = {
@@ -49,7 +52,7 @@ describe('PlanDialog — T-014 (CRUD wiring + slug disabled on edit)', () => {
                     open={true}
                     onOpenChange={() => {}}
                     plan={null}
-                    onSubmit={async () => {}}
+                    onSubmit={noopSubmit}
                 />
             );
 
@@ -65,7 +68,7 @@ describe('PlanDialog — T-014 (CRUD wiring + slug disabled on edit)', () => {
                     open={true}
                     onOpenChange={() => {}}
                     plan={null}
-                    onSubmit={async () => {}}
+                    onSubmit={noopSubmit}
                 />
             );
 
@@ -83,7 +86,7 @@ describe('PlanDialog — T-014 (CRUD wiring + slug disabled on edit)', () => {
                     open={true}
                     onOpenChange={() => {}}
                     plan={existingPlan}
-                    onSubmit={async () => {}}
+                    onSubmit={noopSubmit}
                 />
             );
 
@@ -99,7 +102,7 @@ describe('PlanDialog — T-014 (CRUD wiring + slug disabled on edit)', () => {
                     open={true}
                     onOpenChange={() => {}}
                     plan={existingPlan}
-                    onSubmit={async () => {}}
+                    onSubmit={noopSubmit}
                 />
             );
 
@@ -115,7 +118,7 @@ describe('PlanDialog — T-014 (CRUD wiring + slug disabled on edit)', () => {
                     open={true}
                     onOpenChange={() => {}}
                     plan={existingPlan}
-                    onSubmit={async () => {}}
+                    onSubmit={noopSubmit}
                 />
             );
 
@@ -131,7 +134,7 @@ describe('PlanDialog — T-014 (CRUD wiring + slug disabled on edit)', () => {
                     open={true}
                     onOpenChange={() => {}}
                     plan={existingPlan}
-                    onSubmit={async () => {}}
+                    onSubmit={noopSubmit}
                 />
             );
 
@@ -149,7 +152,7 @@ describe('PlanDialog — T-014 (CRUD wiring + slug disabled on edit)', () => {
                     open={true}
                     onOpenChange={() => {}}
                     plan={null}
-                    onSubmit={async () => {}}
+                    onSubmit={noopSubmit}
                 />
             );
 
@@ -165,7 +168,7 @@ describe('PlanDialog — T-014 (CRUD wiring + slug disabled on edit)', () => {
                     open={true}
                     onOpenChange={() => {}}
                     plan={existingPlan}
-                    onSubmit={async () => {}}
+                    onSubmit={noopSubmit}
                 />
             );
 
