@@ -977,6 +977,59 @@
             "info": "Página {{page}} de {{totalPages}} · {{total}} leads"
         }
     },
+    "allianceLeads": {
+        "page": {
+            "title": "Leads de aliados",
+            "empty": "No hay leads para mostrar.",
+            "loadError": "Error al cargar los leads. Intentá de nuevo."
+        },
+        "filter": {
+            "kindLabel": "Tipo:",
+            "statusLabel": "Estado:",
+            "allKinds": "Todos los tipos",
+            "allStatuses": "Todos los estados"
+        },
+        "kind": {
+            "partner": "Partner",
+            "sponsor": "Sponsor",
+            "editor": "Editor",
+            "service_provider": "Prestador de servicios"
+        },
+        "status": {
+            "pending": "Pendiente",
+            "reviewing": "En revisión",
+            "approved": "Aprobado",
+            "rejected": "Rechazado"
+        },
+        "columns": {
+            "kind": "Tipo",
+            "contactName": "Contacto",
+            "email": "Email",
+            "status": "Estado",
+            "createdAt": "Fecha",
+            "actions": "Acciones"
+        },
+        "actions": {
+            "handle": "Resolver"
+        },
+        "handle": {
+            "title": "Resolver lead",
+            "decisionLabel": "Decisión",
+            "approve": "Aprobar",
+            "reject": "Rechazar",
+            "noteLabel": "Nota (opcional)",
+            "notePlaceholder": "Comentario interno para el equipo...",
+            "submit": "Confirmar",
+            "submitting": "Guardando...",
+            "successApproved": "Lead aprobado exitosamente.",
+            "successRejected": "Lead rechazado."
+        },
+        "pagination": {
+            "prev": "Anterior",
+            "next": "Siguiente",
+            "info": "Página {{page}} de {{totalPages}} · {{total}} leads"
+        }
+    },
     "hostTrade": {
         "create": {
             "title": "Nuevo Oficio",
