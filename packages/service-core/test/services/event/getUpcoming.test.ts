@@ -1,5 +1,10 @@
 import { EventModel } from '@repo/db';
-import { DestinationTypeEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
+import {
+    DestinationTypeEnum,
+    EventDatePrecisionEnum,
+    PermissionEnum,
+    VisibilityEnum
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
@@ -55,11 +60,11 @@ describe('EventService.getUpcoming', () => {
         // Arrange
         const events = [
             createMockEvent({
-                date: { start: fromDate, end: toDate },
+                date: { start: fromDate, end: toDate, precision: EventDatePrecisionEnum.EXACT },
                 visibility: VisibilityEnum.PUBLIC
             }),
             createMockEvent({
-                date: { start: fromDate, end: toDate },
+                date: { start: fromDate, end: toDate, precision: EventDatePrecisionEnum.EXACT },
                 visibility: VisibilityEnum.PRIVATE
             })
         ];
@@ -94,7 +99,7 @@ describe('EventService.getUpcoming', () => {
         // Arrange
         const events = [
             createMockEvent({
-                date: { start: fromDate, end: toDate },
+                date: { start: fromDate, end: toDate, precision: EventDatePrecisionEnum.EXACT },
                 visibility: VisibilityEnum.PUBLIC
             })
         ];
@@ -130,7 +135,7 @@ describe('EventService.getUpcoming', () => {
         // Arrange
         const events = [
             createMockEvent({
-                date: { start: fromDate, end: fromDate },
+                date: { start: fromDate, end: fromDate, precision: EventDatePrecisionEnum.EXACT },
                 visibility: VisibilityEnum.PUBLIC
             })
         ];
@@ -215,7 +220,7 @@ describe('EventService.getUpcoming', () => {
         // Arrange: an event whose eager-loaded location carries a destination relation
         const eventWithCity = {
             ...createMockEvent({
-                date: { start: fromDate, end: toDate },
+                date: { start: fromDate, end: toDate, precision: EventDatePrecisionEnum.EXACT },
                 visibility: VisibilityEnum.PUBLIC
             }),
             // Partial location on purpose: the projection only reads
@@ -249,7 +254,7 @@ describe('EventService.getUpcoming', () => {
     it('leaves events without a loaded location untouched', async () => {
         // Arrange: an event with no location relation (defensive — should not throw)
         const eventNoLocation = createMockEvent({
-            date: { start: fromDate, end: toDate },
+            date: { start: fromDate, end: toDate, precision: EventDatePrecisionEnum.EXACT },
             visibility: VisibilityEnum.PUBLIC
         });
         (modelMock.findAllWithRelations as Mock).mockResolvedValue({

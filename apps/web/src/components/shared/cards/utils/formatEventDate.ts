@@ -58,6 +58,13 @@ export interface FormatEventDateParams {
      *                      Returns the same shape as `'compact'` plus `monthAbbr`.
      */
     readonly mode: 'short' | 'compact' | 'rangeWithTime';
+    /**
+     * Date precision (HOS-280). `'MONTH'` events only have a known month/year
+     * (the day is a storage placeholder, always the 1st) — the tile MUST NOT
+     * render a day number or a time. Defaults to `'EXACT'` (today's behavior,
+     * unchanged byte-for-byte).
+     */
+    readonly precision?: 'EXACT' | 'MONTH';
 }
 
 /**
@@ -109,11 +116,17 @@ export type FormatEventDateResult = FormatEventDateShortResult | FormatEventDate
  *
  * @param date - The date to extract the month from.
  * @param intlLocale - Full BCP 47 locale tag.
+ * @param timeZone - Optional IANA time zone forced onto the `Intl` call.
+ *   Pass `'UTC'` when the underlying date is a calendar value (e.g. a
+ *   MONTH-precision placeholder stored as the 1st of the month at UTC
+ *   midnight) to avoid the runtime-local-timezone day/month shift documented
+ *   in `formatDate` (BETA-88). Omitted by default so EXACT-precision
+ *   behavior stays byte-for-byte identical.
  * @returns Uppercase 3-char abbreviation, e.g. `'AGO'`, `'MAR'`.
  */
-function getMonthAbbr(date: Date, intlLocale: string): string {
+function getMonthAbbr(date: Date, intlLocale: string, timeZone?: string): string {
     return date
-        .toLocaleDateString(intlLocale, { month: 'short' })
+        .toLocaleDateString(intlLocale, { month: 'short', ...(timeZone ? { timeZone } : {}) })
         .replace('.', '')
         .toUpperCase()
         .slice(0, 3);
@@ -201,6 +214,50 @@ function buildTimeLine(
     return `${startTime} - ${endTime}`;
 }
 
+/**
+ * Builds card-tile date output for MONTH-precision events (HOS-280).
+ *
+ * The day-of-month component is a storage placeholder (always the 1st) and
+ * MUST be ignored — the tile shows the month only, never a day or a time.
+ * `timeZone: 'UTC'` is forced on every `Intl` call so the calendar month read
+ * from the stored placeholder date never shifts backward a day/month in a
+ * non-UTC runtime timezone (the same class of bug documented for `formatDate`
+ * under BETA-88).
+ */
+function formatMonthOnlyEventDate({
+    start,
+    end,
+    intlLocale,
+    mode
+}: {
+    readonly start: string;
+    readonly end?: string;
+    readonly intlLocale: string;
+    readonly mode: 'short' | 'compact' | 'rangeWithTime';
+}): FormatEventDateResult {
+    const startDate = new Date(start);
+
+    if (mode === 'short') {
+        const endDate = end ? new Date(end) : null;
+        const monthYearOptions: Intl.DateTimeFormatOptions = {
+            year: 'numeric',
+            month: 'long',
+            timeZone: 'UTC'
+        };
+        const startLabel = startDate.toLocaleDateString(intlLocale, monthYearOptions);
+        const endLabel = endDate ? endDate.toLocaleDateString(intlLocale, monthYearOptions) : null;
+        return { mode: 'short', startLabel, endLabel };
+    }
+
+    const monthAbbr = getMonthAbbr(startDate, intlLocale, 'UTC');
+    return {
+        mode,
+        dateLine: monthAbbr,
+        timeLine: null,
+        monthAbbr: mode === 'rangeWithTime' ? monthAbbr : null
+    };
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -215,6 +272,11 @@ function buildTimeLine(
  * | `'short'` | `EventCard` (list) | `startLabel` + `endLabel` |
  * | `'compact'` | `EventCardFeatured` | `dateLine` + `timeLine` |
  * | `'rangeWithTime'` | `EventCardHorizontal` | `dateLine` + `timeLine` + `monthAbbr` |
+ *
+ * When `precision: 'MONTH'` (HOS-280) the day-of-month is a storage
+ * placeholder and is never shown: `'short'` returns a month-year label per
+ * side (e.g. `'febrero de 2027'`), and `'compact'`/`'rangeWithTime'` return
+ * only the month abbreviation with `timeLine: null`.
  *
  * @param params - {@link FormatEventDateParams}
  * @returns {@link FormatEventDateResult}
@@ -253,8 +315,12 @@ function buildTimeLine(
  * ```
  */
 export function formatEventDate(params: FormatEventDateParams): FormatEventDateResult {
-    const { start, end, locale, mode } = params;
+    const { start, end, locale, mode, precision = 'EXACT' } = params;
     const intlLocale = BCP47_MAP[locale];
+
+    if (precision === 'MONTH') {
+        return formatMonthOnlyEventDate({ start, end, intlLocale, mode });
+    }
 
     if (mode === 'short') {
         const startDate = new Date(start);

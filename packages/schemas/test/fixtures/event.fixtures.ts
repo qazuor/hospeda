@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { EventDatePrecisionEnum } from '../../src/enums/index.js';
 import type { EventCategoryEnum } from '../../src/enums/index.js';
 import {
     createBaseAdminFields,
@@ -56,7 +57,12 @@ export const createValidEvent = (): any => ({
         recurrence: faker.helpers.maybe(
             () => faker.helpers.arrayElement(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),
             { probability: 0.3 }
-        )
+        ),
+        // HOS-280: most fixtures are day-precise (EXACT); a small share
+        // exercises MONTH precision (imported content with no known day)
+        precision: faker.helpers.maybe(() => EventDatePrecisionEnum.MONTH, {
+            probability: 0.1
+        })
     },
 
     // Event pricing
@@ -127,7 +133,8 @@ export const createMinimalEvent = (): any => ({
     date: {
         start: faker.date.future(),
         end: faker.date.future(),
-        isAllDay: false
+        isAllDay: false,
+        precision: EventDatePrecisionEnum.EXACT
     },
 
     // Required pricing
@@ -259,7 +266,8 @@ export const createLargeEvent = (): any => ({
         start: faker.date.future(),
         end: faker.date.future(),
         isAllDay: faker.datatype.boolean(),
-        recurrence: faker.helpers.arrayElement(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'])
+        recurrence: faker.helpers.arrayElement(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),
+        precision: EventDatePrecisionEnum.EXACT
     },
     tags: Array.from({ length: 5 }, () => ({
         id: faker.string.uuid(),

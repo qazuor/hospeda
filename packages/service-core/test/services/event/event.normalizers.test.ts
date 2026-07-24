@@ -1,6 +1,7 @@
 import type { EventCreateInputSchema, EventOrganizerIdType } from '@repo/schemas';
 import {
     EventCategoryEnum,
+    EventDatePrecisionEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
     VisibilityEnum
@@ -25,7 +26,11 @@ const createMockEventSchemaInput = (
     description: 'A test event description',
     media: undefined,
     category: EventCategoryEnum.FESTIVAL,
-    date: { start: new Date('2024-01-01T10:00:00Z'), end: new Date('2024-01-01T12:00:00Z') },
+    date: {
+        start: new Date('2024-01-01T10:00:00Z'),
+        end: new Date('2024-01-01T12:00:00Z'),
+        precision: EventDatePrecisionEnum.EXACT
+    },
     authorId: getMockId('user'),
     locationId: getMockId('event'),
     organizerId: getMockId('event') as EventOrganizerIdType, // Optional field
@@ -67,7 +72,8 @@ describe('EventService normalizers', () => {
             name: 'Updated Event',
             date: {
                 start: new Date('2024-01-01T10:00:00Z'),
-                end: new Date('2024-01-01T12:00:00Z')
+                end: new Date('2024-01-01T12:00:00Z'),
+                precision: EventDatePrecisionEnum.EXACT
             },
             locationId: getMockId('event'),
             organizerId: getMockId('event')

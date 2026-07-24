@@ -8,6 +8,7 @@ import type {
 } from '@repo/schemas';
 import {
     EventCategoryEnum,
+    EventDatePrecisionEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
     VisibilityEnum
@@ -32,7 +33,8 @@ export const getMockEvent = (overrides: Partial<Event> = {}): Event => ({
     category: EventCategoryEnum.FESTIVAL,
     date: {
         start: new Date(),
-        end: new Date()
+        end: new Date(),
+        precision: EventDatePrecisionEnum.EXACT
     },
     authorId: getMockId('user') as UserIdType,
     locationId: getMockId('event') as EventLocationIdType,

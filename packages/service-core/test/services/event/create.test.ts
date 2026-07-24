@@ -1,6 +1,7 @@
 import { EventModel } from '@repo/db';
 import {
     EventCategoryEnum,
+    EventDatePrecisionEnum,
     ModerationStatusEnum,
     PermissionEnum,
     VisibilityEnum
@@ -86,7 +87,11 @@ describe('EventService.create', () => {
             ...createEventInput(),
             category: EventCategoryEnum.MUSIC,
             name: 'Jazz Night',
-            date: { start: new Date('2024-07-01'), end: new Date('2024-07-01') },
+            date: {
+                start: new Date('2024-07-01'),
+                end: new Date('2024-07-01'),
+                precision: EventDatePrecisionEnum.EXACT
+            },
             locationId: createEventInput().locationId,
             organizerId: createEventInput().organizerId,
             moderationState: ModerationStatusEnum.PENDING,
@@ -110,7 +115,11 @@ describe('EventService.create', () => {
         const input = {
             ...createEventInput(),
             name: '',
-            date: { start: new Date('invalid'), end: new Date('invalid') },
+            date: {
+                start: new Date('invalid'),
+                end: new Date('invalid'),
+                precision: EventDatePrecisionEnum.EXACT
+            },
             locationId: createEventInput().locationId,
             organizerId: createEventInput().organizerId,
             moderationState: ModerationStatusEnum.PENDING

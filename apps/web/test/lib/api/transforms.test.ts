@@ -296,6 +296,45 @@ describe('toEventCardProps', () => {
     });
 });
 
+describe('toEventCardProps — date.precision (HOS-280)', () => {
+    it('defaults date.precision to EXACT when item.date has no precision field', () => {
+        const item = {
+            slug: 'evento-exacto',
+            date: { start: '2026-02-15T20:00:00Z', end: '2026-02-16T02:00:00Z' }
+        };
+        const result = toEventCardProps({ item });
+        expect(result.date.precision).toBe('EXACT');
+    });
+
+    it('defaults date.precision to EXACT when item.date is entirely absent', () => {
+        const item = { slug: 'sin-fecha-estructurada', startDate: '2026-02-15' };
+        const result = toEventCardProps({ item });
+        expect(result.date.precision).toBe('EXACT');
+    });
+
+    it('reads MONTH precision from the nested item.date.precision field', () => {
+        const item = {
+            slug: 'evento-estimado',
+            date: {
+                start: '2027-02-01T00:00:00.000Z',
+                precision: 'MONTH'
+            }
+        };
+        const result = toEventCardProps({ item });
+        expect(result.date.precision).toBe('MONTH');
+        expect(result.date.start).toBe('2027-02-01T00:00:00.000Z');
+    });
+
+    it('ignores an unrecognized precision value and falls back to EXACT', () => {
+        const item = {
+            slug: 'valor-raro',
+            date: { start: '2026-02-15T20:00:00Z', precision: 'BOGUS' }
+        };
+        const result = toEventCardProps({ item });
+        expect(result.date.precision).toBe('EXACT');
+    });
+});
+
 describe('toArticleCardProps', () => {
     it('should transform blog post data', () => {
         const item = {
@@ -1463,6 +1502,52 @@ describe('SPEC-212 locale-aware transform resolution', () => {
             });
             expect(result.name).toBe('Solo español');
         });
+    });
+});
+
+describe('toEventDetailProps — precision (HOS-280)', () => {
+    it('defaults precision to EXACT when item.date has no precision field', () => {
+        const result = toEventDetailProps({
+            item: {
+                slug: 'evento-exacto',
+                date: { start: '2026-02-15T20:00:00Z', end: '2026-02-16T02:00:00Z' }
+            }
+        });
+        expect(result.precision).toBe('EXACT');
+    });
+
+    it('defaults precision to EXACT when item.date is entirely absent', () => {
+        const result = toEventDetailProps({
+            item: { slug: 'sin-fecha-estructurada', startDate: '2026-02-15' }
+        });
+        expect(result.precision).toBe('EXACT');
+    });
+
+    it('reads MONTH precision from the nested item.date.precision field, NOT a top-level field', () => {
+        // Regression guard for the exact bug this spec calls out: isAllDay is
+        // read from the (incorrect) top-level item.isAllDay elsewhere in this
+        // function — precision must NOT repeat that mistake. It must be read
+        // from item.date.precision (nested, same level as start/end).
+        const result = toEventDetailProps({
+            item: {
+                slug: 'evento-estimado',
+                date: { start: '2027-02-01T00:00:00.000Z', precision: 'MONTH' },
+                // A top-level `precision` field must be ignored if present.
+                precision: 'EXACT'
+            }
+        });
+        expect(result.precision).toBe('MONTH');
+        expect(result.startDate).toBe('2027-02-01T00:00:00.000Z');
+    });
+
+    it('ignores an unrecognized precision value and falls back to EXACT', () => {
+        const result = toEventDetailProps({
+            item: {
+                slug: 'valor-raro',
+                date: { start: '2026-02-15T20:00:00Z', precision: 'BOGUS' }
+            }
+        });
+        expect(result.precision).toBe('EXACT');
     });
 });
 

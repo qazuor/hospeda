@@ -11,7 +11,11 @@ import {
     createArrayQueryParam,
     createBooleanQueryParam
 } from '../../api/http/base-http.schema.js';
-import { EventCategoryEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
+import {
+    EventCategoryEnumSchema,
+    EventDatePrecisionEnum,
+    PriceCurrencyEnumSchema
+} from '../../enums/index.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
@@ -285,9 +289,12 @@ export const httpToDomainEventCreate = (httpData: EventCreateHttp): EventCreateI
     category: httpData.category,
 
     // Map HTTP dates to domain date object
+    // HTTP-originated events are always day-precise (HOS-280 MONTH precision is
+    // only assigned via data migration / import tooling, not this HTTP mapping).
     date: {
         start: httpData.startDate,
-        end: httpData.endDate
+        end: httpData.endDate,
+        precision: EventDatePrecisionEnum.EXACT
     },
 
     // Map HTTP pricing to domain pricing object
@@ -323,9 +330,12 @@ export const httpToDomainEventUpdate = (httpData: EventUpdateHttp): EventUpdateI
     category: httpData.category,
 
     // Map HTTP dates to domain date object (if provided)
+    // HTTP-originated events are always day-precise (HOS-280 MONTH precision is
+    // only assigned via data migration / import tooling, not this HTTP mapping).
     ...(httpData.startDate && {
         date: {
             start: httpData.startDate,
+            precision: EventDatePrecisionEnum.EXACT,
             ...(httpData.endDate && { end: httpData.endDate })
         }
     }),

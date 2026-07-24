@@ -24,7 +24,7 @@ import HeaderBackButton from '@/components/shared/ui/HeaderBackButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getEventCategoryColor, getBadgeStatusColor } from '@/lib/colors';
-import { formatDate } from '@/lib/format-utils';
+import { formatEventDetailDateRange } from '@/lib/format-utils';
 import { CalendarDotsIcon, LocationIcon } from '@repo/icons';
 
 interface Props {
@@ -33,6 +33,8 @@ interface Props {
     readonly category: string;
     readonly startDate: string | Date;
     readonly endDate?: string | Date | null;
+    /** Date precision (HOS-280). Defaults to `'EXACT'`. */
+    readonly precision?: 'EXACT' | 'MONTH';
     readonly locationCity?: string | null;
     readonly locationName?: string | null;
     readonly isPast: boolean;
@@ -50,6 +52,7 @@ const {
     category,
     startDate,
     endDate,
+    precision = 'EXACT',
     locationCity,
     locationName,
     isPast,
@@ -62,6 +65,8 @@ const {
 } = Astro.props;
 
 const { t, tPlural } = createTranslations(locale);
+
+const dateRange = formatEventDetailDateRange({ startDate, endDate, precision, locale });
 
 const categoryColors = getEventCategoryColor({ category: category.toLowerCase() });
 const pastColors = getBadgeStatusColor({ status: 'past' });
@@ -100,6 +105,11 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
                         {t('event.detail.cancelled', 'Cancelado')}
                     </span>
                 )}
+                {precision === 'MONTH' && (
+                    <span class="event-header__estimated-badge wh-compact-badge">
+                        {t('events.detail.monthOnlyBadge', 'Fecha estimada · programación a confirmar')}
+                    </span>
+                )}
             </div>
 
             <h1 class="event-header__title wh-compact-title">{name}</h1>
@@ -108,11 +118,17 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
                 {startDate && (
                     <span class="event-header__meta-item">
                         <CalendarDotsIcon size={15} aria-hidden="true" />
-                        {formatDate({ date: String(startDate), locale })}
-                        {endDate && (
-                            <span class="event-header__meta-separator" aria-hidden="true">–</span>
+                        {dateRange.precision === 'EXACT' ? (
+                            <>
+                                {dateRange.startLabel}
+                                {dateRange.endLabel && (
+                                    <span class="event-header__meta-separator" aria-hidden="true">–</span>
+                                )}
+                                {dateRange.endLabel}
+                            </>
+                        ) : (
+                            dateRange.label
                         )}
-                        {endDate && formatDate({ date: String(endDate), locale })}
                     </span>
                 )}
                 {locationLabel && (
@@ -231,6 +247,26 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         transition: padding 0.3s ease, font-size 0.3s ease;
     }
 
+    /* Estimated-date badge (HOS-280): a plain-language pill (not uppercase, not
+       color-coded to a status) that flags MONTH-precision events — the text
+       itself carries the meaning, so it reads correctly without relying on
+       color alone. Reuses the `--muted` / `--core-muted-foreground` pair,
+       matching the neutral "past" status scheme in getBadgeStatusColor(). */
+    .event-header__estimated-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: var(--radius-pill, 9999px);
+        font-family: var(--font-sans);
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        padding: 4px 14px;
+        line-height: 1.4;
+        background-color: var(--muted);
+        color: var(--core-muted-foreground);
+        transition: padding 0.3s ease, font-size 0.3s ease;
+    }
+
     .event-header__title {
         font-family: var(--font-heading);
         font-size: clamp(1.5rem, 4vw, 2.5rem);
@@ -306,6 +342,7 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         .event-header__badges,
         .event-header__category-badge,
         .event-header__status-pill,
+        .event-header__estimated-badge,
         .event-header__title,
         .event-header__meta {
             transition: none;
