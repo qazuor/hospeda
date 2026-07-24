@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0025-alliance-lead-permissions
+ * Data migration: 0026-alliance-lead-permissions
  *
  * Grants the two new HOS-277 alliance-leads permissions
  * (`allianceLead.viewAll` / `allianceLead.manage`) to the `ADMIN` and
@@ -33,7 +33,7 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0025-alliance-lead-permissions',
+    name: '0026-alliance-lead-permissions',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];
