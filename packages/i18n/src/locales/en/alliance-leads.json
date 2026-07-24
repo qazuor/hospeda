@@ -1,0 +1,86 @@
+{
+    "form": {
+        "fields": {
+            "contactName": "Your name",
+            "email": "Email address",
+            "phone": "Phone (optional)",
+            "message": "Tell us more (optional)",
+            "businessName": "Business name",
+            "website": "Website",
+            "partnershipType": "Partnership type",
+            "sponsorshipInterest": "Sponsorship interest",
+            "serviceType": "Service type",
+            "coverageArea": "Coverage area",
+            "portfolioLinks": "Portfolio links (optional)",
+            "topics": "Topics you'd like to write about",
+            "experience": "Previous experience (optional)"
+        },
+        "messageIntro": "Message:",
+        "submit": "Submit request",
+        "submitting": "Submitting...",
+        "success": "Thank you! We received your request and will be in touch shortly.",
+        "error": "An error occurred while submitting the request. Please try again.",
+        "rateLimited": "Too many attempts. Please wait a few minutes before trying again.",
+        "validation": {
+            "required": "This field is required.",
+            "email": "Please enter a valid email address.",
+            "url": "Please enter a valid URL (starting with http:// or https://)."
+        }
+    },
+    "partner": {
+        "title": "Become a Hospeda partner",
+        "subtitle": "Join us as an agency or business ally and let's work together to connect travelers with the Litoral region.",
+        "benefits": {
+            "item1": "Access to a network of verified accommodations and businesses across the region.",
+            "item2": "Joint visibility in our campaigns and outreach channels.",
+            "item3": "Tailored commercial terms depending on the partnership type.",
+            "item4": "A team that reviews every proposal individually."
+        },
+        "form": {
+            "heading": "Tell us about your proposal"
+        }
+    },
+    "sponsor": {
+        "title": "Sponsor Hospeda",
+        "subtitle": "Associate your brand with the leading tourism platform of the Litoral region and reach thousands of travelers.",
+        "benefits": {
+            "item1": "Brand presence on the website and in featured content.",
+            "item2": "Access to audiences segmented by destination and interests.",
+            "item3": "Flexible sponsorship packages tailored to your goals.",
+            "item4": "Reach and impact reports for every campaign."
+        },
+        "form": {
+            "heading": "Tell us about your brand"
+        }
+    },
+    "serviceProvider": {
+        "title": "Join as a service provider",
+        "subtitle": "If you offer a service for accommodations or hosts (maintenance, cleaning, supplies, and more), apply to our provider directory.",
+        "benefits": {
+            "item1": "Visibility with dozens of active hosts on the platform.",
+            "item2": "A direct contact channel with people who need your service.",
+            "item3": "Curated by the Hospeda team: only reviewed providers make it into the directory.",
+            "item4": "No listing cost — our team adds you manually after reviewing your request."
+        },
+        "form": {
+            "heading": "Tell us about your service"
+        }
+    },
+    "editor": {
+        "title": "Join as an editor",
+        "subtitle": "Our blog and event calendar grow through people who know and love the Litoral region. If you enjoy writing or curating content, apply.",
+        "roleHeading": "What does an editor do?",
+        "role": {
+            "item1": "Write or review blog articles about the destinations of the Litoral region.",
+            "item2": "Load and curate calendar events: dates, venues, descriptions.",
+            "item3": "Propose topics and help keep content up to date."
+        },
+        "form": {
+            "heading": "Apply now"
+        },
+        "crossIncentive": {
+            "title": "Are you an accommodation owner or Hospeda partner?",
+            "body": "Collaborating as an editor can also unlock benefits on your subscription. Apply and tell us your case — we'll review it and reach out with the details."
+        }
+    }
+}

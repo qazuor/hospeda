@@ -769,6 +769,9 @@
 | `POST /api/v1/admin/commerce/leads/{id}/provision-owner` | `commerce/admin/provision-owner.ts` | none | - | n/a | Admin commerce owner provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-239 T-050) |
 | `POST /api/v1/admin/commerce/leads/{id}/approve-and-provision` | `commerce/admin/approve-and-provision.ts` | none | - | n/a | Admin combined approve+provision action; idempotent via lead.provisionedUserId; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-249 Part D / T-018) |
 | `POST /api/v1/admin/commerce/listings/{entityType}/{entityId}/start-subscription` | `commerce/admin/start-subscription.ts` | none | - | n/a | Admin commerce subscription provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-239 T-048) |
+| **ALLIANCE LEADS — ADMIN (HOS-277)** | | | | | |
+| `GET /api/v1/admin/alliance/leads` | `alliance/admin/list-leads.ts` | none | - | n/a | Admin read; PermissionEnum-gated (ALLIANCE_LEAD_VIEW_ALL) (HOS-277) |
+| `POST /api/v1/admin/alliance/leads/{id}/mark-handled` | `alliance/admin/mark-handled.ts` | none | - | n/a | Admin lead handling (approve/reject + note), never auto-provisions (HOS-277 NG-1); PermissionEnum-gated (ALLIANCE_LEAD_MANAGE) (HOS-277) |
 | **SOCIAL AUTOMATION (SPEC-254)** | | | | | |
 | `GET /api/v1/admin/social/audiences` | `social/admin/audiences/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `GET /api/v1/admin/social/audiences/{id}` | `social/admin/audiences/getById.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |

@@ -1,0 +1,86 @@
+{
+    "form": {
+        "fields": {
+            "contactName": "Seu nome",
+            "email": "E-mail",
+            "phone": "Telefone (opcional)",
+            "message": "Conte mais (opcional)",
+            "businessName": "Nome do negócio",
+            "website": "Site",
+            "partnershipType": "Tipo de parceria",
+            "sponsorshipInterest": "Interesse de patrocínio",
+            "serviceType": "Tipo de serviço",
+            "coverageArea": "Área de cobertura",
+            "portfolioLinks": "Links do seu portfólio (opcional)",
+            "topics": "Temas sobre os quais gostaria de escrever",
+            "experience": "Experiência anterior (opcional)"
+        },
+        "messageIntro": "Mensagem:",
+        "submit": "Enviar solicitação",
+        "submitting": "Enviando...",
+        "success": "Obrigado! Recebemos sua solicitação e entraremos em contato em breve.",
+        "error": "Ocorreu um erro ao enviar a solicitação. Por favor, tente novamente.",
+        "rateLimited": "Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.",
+        "validation": {
+            "required": "Este campo é obrigatório.",
+            "email": "Digite um e-mail válido.",
+            "url": "Digite uma URL válida (começando com http:// ou https://)."
+        }
+    },
+    "partner": {
+        "title": "Torne-se parceiro da Hospeda",
+        "subtitle": "Junte-se a nós como agência ou parceiro comercial e vamos trabalhar juntos para conectar viajantes ao Litoral.",
+        "benefits": {
+            "item1": "Acesso a uma rede de hospedagens e comércios verificados na região.",
+            "item2": "Visibilidade conjunta em nossas campanhas e canais de divulgação.",
+            "item3": "Condições comerciais personalizadas de acordo com o tipo de parceria.",
+            "item4": "Uma equipe que avalia cada proposta individualmente."
+        },
+        "form": {
+            "heading": "Conte sobre sua proposta"
+        }
+    },
+    "sponsor": {
+        "title": "Patrocine a Hospeda",
+        "subtitle": "Associe sua marca à plataforma líder de turismo do Litoral e alcance milhares de viajantes.",
+        "benefits": {
+            "item1": "Presença de marca no site e em conteúdo em destaque.",
+            "item2": "Acesso a públicos segmentados por destino e interesses.",
+            "item3": "Pacotes de patrocínio flexíveis, sob medida para seu objetivo.",
+            "item4": "Relatórios de alcance e impacto de cada campanha."
+        },
+        "form": {
+            "heading": "Conte sobre sua marca"
+        }
+    },
+    "serviceProvider": {
+        "title": "Cadastre-se como prestador de serviços",
+        "subtitle": "Se você oferece um serviço para hospedagens ou anfitriões (manutenção, limpeza, insumos e mais), candidate-se ao nosso diretório de prestadores.",
+        "benefits": {
+            "item1": "Visibilidade perante dezenas de anfitriões ativos na plataforma.",
+            "item2": "Um canal direto de contato com quem precisa do seu serviço.",
+            "item3": "Curadoria da equipe Hospeda: só prestadores avaliados entram no diretório.",
+            "item4": "Sem custo de inclusão — nossa equipe cadastra manualmente após avaliar sua solicitação."
+        },
+        "form": {
+            "heading": "Conte sobre seu serviço"
+        }
+    },
+    "editor": {
+        "title": "Cadastre-se como editor",
+        "subtitle": "O blog e a agenda de eventos crescem com pessoas que conhecem e amam o Litoral. Se você gosta de escrever ou curar conteúdo, candidate-se.",
+        "roleHeading": "O que faz um editor?",
+        "role": {
+            "item1": "Escrever ou revisar artigos do blog sobre os destinos do Litoral.",
+            "item2": "Cadastrar e curar eventos da agenda: datas, locais, descrições.",
+            "item3": "Propor temas e ajudar a manter o conteúdo atualizado."
+        },
+        "form": {
+            "heading": "Candidate-se"
+        },
+        "crossIncentive": {
+            "title": "Você é dono de uma hospedagem ou parceiro da Hospeda?",
+            "body": "Colaborar como editor também pode gerar benefícios na sua assinatura. Candidate-se e conte seu caso — vamos avaliar e entrar em contato com os detalhes."
+        }
+    }
+}

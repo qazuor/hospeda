@@ -977,6 +977,61 @@
             "info": "Page {{page}} of {{totalPages}} · {{total}} leads"
         }
     },
+    "allianceLeads": {
+        "page": {
+            "title": "Alliance leads",
+            "empty": "No leads to display.",
+            "loadError": "Failed to load leads. Please try again."
+        },
+        "filter": {
+            "kindLabel": "Kind:",
+            "statusLabel": "Status:",
+            "allKinds": "All kinds",
+            "allStatuses": "All statuses"
+        },
+        "kind": {
+            "partner": "Partner",
+            "sponsor": "Sponsor",
+            "editor": "Editor",
+            "service_provider": "Service provider"
+        },
+        "status": {
+            "pending": "Pending",
+            "reviewing": "Reviewing",
+            "approved": "Approved",
+            "rejected": "Rejected"
+        },
+        "columns": {
+            "kind": "Kind",
+            "contactName": "Contact",
+            "email": "Email",
+            "status": "Status",
+            "createdAt": "Date",
+            "actions": "Actions"
+        },
+        "actions": {
+            "handle": "Handle"
+        },
+        "handle": {
+            "title": "Handle lead",
+            "phoneLabel": "Phone",
+            "detailsLabel": "Applicant details",
+            "decisionLabel": "Decision",
+            "approve": "Approve",
+            "reject": "Reject",
+            "noteLabel": "Note (optional)",
+            "notePlaceholder": "Internal comment for the team...",
+            "submit": "Confirm",
+            "submitting": "Saving...",
+            "successApproved": "Lead approved successfully.",
+            "successRejected": "Lead rejected."
+        },
+        "pagination": {
+            "prev": "Previous",
+            "next": "Next",
+            "info": "Page {{page}} of {{totalPages}} · {{total}} leads"
+        }
+    },
     "hostTrade": {
         "create": {
             "title": "New Trade",

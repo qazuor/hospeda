@@ -259,6 +259,20 @@ const catalogoSidebar: SidebarInput = {
             route: '/platform/commerce-leads',
             permissions: ['COMMERCE_VIEW_ALL']
         },
+        { type: 'separator', id: 'sep-alliance-leads' },
+        // ── Leads de aliados (HOS-277) ─────────────────────────────────────
+        {
+            type: 'link',
+            id: 'alliance-leads',
+            label: {
+                es: 'Leads de aliados',
+                en: 'Alliance leads',
+                pt: 'Leads de aliados'
+            },
+            icon: 'MailIcon',
+            route: '/platform/alliance-leads',
+            permissions: ['ALLIANCE_LEAD_VIEW_ALL']
+        },
         { type: 'separator', id: 'sep-content-moderation' },
         // ── Content Moderation (SPEC-195) ─────────────────────────────────
         {
