@@ -195,8 +195,7 @@
                 "aiGuestChat": { "label": "IA: chat para tus huéspedes", "note": "por mes" }
             },
             "note": "Editar tu propiedad, cargar amenities, FAQs, ubicación y SEO va incluido en todos los planes.",
-            "addonCell": "con addon",
-            "upcomingCell": "Próximamente"
+            "addonCell": "con addon"
         },
         "addonsTitle": "¿Necesitás un poco más? Sumá un addon.",
         "addons": {

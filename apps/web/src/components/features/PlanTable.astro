@@ -69,9 +69,6 @@ const { headerLabel, planLabels, rows, noteLabel, t } = Astro.props;
 							{cell.kind === 'addon' && (
 								<span class="fx-table__addon">{t('features.anfitriones.table.addonCell')}</span>
 							)}
-							{cell.kind === 'upcoming' && (
-								<span class="fx-table__upcoming">{t('features.anfitriones.table.upcomingCell')}</span>
-							)}
 							{cell.kind === 'text' && <span>{t(cell.labelKey)}</span>}
 						</td>
 					))}

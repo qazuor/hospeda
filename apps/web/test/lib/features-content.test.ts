@@ -189,16 +189,8 @@ describe('features-content — no price-looking strings', () => {
         expect(FEATURES_CONTENT_SRC).not.toMatch(/\/mes/);
     });
 
-    it('no plan-table cell carries a raw numeric price (only limit/unlimited/yes/no/addon/upcoming/text kinds)', () => {
-        const allowedKinds = new Set([
-            'yes',
-            'no',
-            'limit',
-            'unlimited',
-            'addon',
-            'upcoming',
-            'text'
-        ]);
+    it('no plan-table cell carries a raw numeric price (only limit/unlimited/yes/no/addon/text kinds)', () => {
+        const allowedKinds = new Set(['yes', 'no', 'limit', 'unlimited', 'addon', 'text']);
         for (const row of [...VIAJEROS_TABLE_ROWS, ...ANFITRIONES_TABLE_ROWS]) {
             for (const cell of row.cells) {
                 expect(allowedKinds.has(cell.kind)).toBe(true);
