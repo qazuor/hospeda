@@ -70,6 +70,8 @@ export enum PermissionCategoryEnum {
     HOST_TRADE = 'HOST_TRADE',
     /** Partners program (SPEC-271). */
     PARTNER = 'PARTNER',
+    /** Alliance leads admin inbox — partner/sponsor/editor/service_provider (HOS-277). */
+    ALLIANCE_LEAD = 'ALLIANCE_LEAD',
     /** Social media publish pipeline (SPEC-254). */
     SOCIAL_POST = 'SOCIAL_POST',
     SOCIAL_HASHTAG = 'SOCIAL_HASHTAG',
@@ -919,6 +921,10 @@ export enum PermissionEnum {
     PARTNER_DELETE = 'partner.delete', // Allows soft-deleting a partner.
     PARTNER_VIEW_ALL = 'partner.viewAll', // Allows viewing all partners (admin).
     PARTNER_MANAGE = 'partner.manage', // Allows managing partner (create, update, delete, send link, manual payment).
+
+    // ALLIANCE_LEAD: Alliance leads admin inbox — partner/sponsor/editor/service_provider (HOS-277)
+    ALLIANCE_LEAD_VIEW_ALL = 'allianceLead.viewAll', // Allows viewing all alliance leads (admin inbox, filterable by kind/status).
+    ALLIANCE_LEAD_MANAGE = 'allianceLead.manage', // Allows approving/rejecting an alliance lead (mark-handled) with an admin note.
 
     // HOST_TRADE: Admin-curated host trades/services directory (SPEC-241). Host-only read perk; admin-only CRUD.
     HOST_TRADE_VIEW = 'hostTrade.view', // Allows an authenticated host to read active trade listings for their accommodation destinations.
