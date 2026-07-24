@@ -374,6 +374,10 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.PARTNER_VIEW_ALL,
         PermissionEnum.PARTNER_MANAGE,
 
+        // ALLIANCE_LEAD: Alliance leads admin inbox — partner/sponsor/editor/service_provider (HOS-277).
+        PermissionEnum.ALLIANCE_LEAD_VIEW_ALL,
+        PermissionEnum.ALLIANCE_LEAD_MANAGE,
+
         // HOST_TRADE: Admin-curated host trades directory (SPEC-241) — full CRUD.
         PermissionEnum.HOST_TRADE_VIEW,
         PermissionEnum.HOST_TRADE_VIEW_ALL,
@@ -703,6 +707,10 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // PARTNER: Partner directory billing + admin management (SPEC-271).
         PermissionEnum.PARTNER_VIEW_ALL,
         PermissionEnum.PARTNER_MANAGE,
+
+        // ALLIANCE_LEAD: Alliance leads admin inbox — partner/sponsor/editor/service_provider (HOS-277).
+        PermissionEnum.ALLIANCE_LEAD_VIEW_ALL,
+        PermissionEnum.ALLIANCE_LEAD_MANAGE,
 
         // HOST_TRADE: Admin-curated host trades directory (SPEC-241) — full CRUD.
         PermissionEnum.HOST_TRADE_VIEW,

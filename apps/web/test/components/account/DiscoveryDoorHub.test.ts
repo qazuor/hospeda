@@ -130,15 +130,15 @@ describe('DiscoveryDoorHub — per-option state resolution (engine integration)'
         }
     });
 
-    it('resolves the three placeholder partner-door options to comingSoon regardless of role (NG-2, no acquiredPermission exists)', () => {
-        const placeholders = partner?.options.filter((option) => option.id !== 'editor') ?? [];
-        for (const option of placeholders) {
+    it('resolves the sponsor/partner/serviceProvider lead-only options to unacquired regardless of role (HOS-277 NG-1, no acquiredPermission exists)', () => {
+        const leadOnlyOptions = partner?.options.filter((option) => option.id !== 'editor') ?? [];
+        for (const option of leadOnlyOptions) {
             expect(
                 resolveDoorOptionState({
                     option,
                     visibility: (node) => isVisibleByRole(node, RoleEnum.ADMIN)
                 })
-            ).toBe('comingSoon');
+            ).toBe('unacquired');
         }
     });
 

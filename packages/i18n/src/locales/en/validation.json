@@ -45,8 +45,10 @@
                 "required": "[EN] La cantidad mínima de noches es obligatoria"
             }
         },
-        "featureIds": {
-            "invalidUuid": "[EN] El ID de característica debe ser un UUID válido"
+        "featuredToggle": {
+            "isFeatured": {
+                "required": "[EN] El destacado es obligatorio"
+            }
         },
         "featureFlag": {
             "description": {
@@ -61,6 +63,9 @@
             "reason": {
                 "max": "Reason cannot exceed {{max}} characters"
             }
+        },
+        "featureIds": {
+            "invalidUuid": "[EN] El ID de característica debe ser un UUID válido"
         },
         "location": {
             "apartment": {
@@ -92,6 +97,20 @@
                 "max": "[EN] El street no puede superar los {{max}} caracteres",
                 "min": "[EN] El street debe tener al menos {{min}} caracteres",
                 "required": "[EN] El street es obligatorio"
+            }
+        },
+        "media": {
+            "reorder": {
+                "orderedIds": {
+                    "invalid": "The ordered list must be an array of valid UUIDs",
+                    "min": "The ordered list must contain at least {{min}} item"
+                }
+            },
+            "sortOrder": {
+                "int": "Display order must be an integer"
+            },
+            "state": {
+                "invalid": "Media state must be 'visible' or 'archived'"
             }
         },
         "name": {
@@ -168,25 +187,6 @@
         "summary": {
             "max": "[EN] El resumen no puede superar los {{max}} caracteres",
             "min": "[EN] El resumen debe tener al menos {{min}} caracteres"
-        },
-        "media": {
-            "state": {
-                "invalid": "Media state must be 'visible' or 'archived'"
-            },
-            "sortOrder": {
-                "int": "Display order must be an integer"
-            },
-            "reorder": {
-                "orderedIds": {
-                    "invalid": "The ordered list must be an array of valid UUIDs",
-                    "min": "The ordered list must contain at least {{min}} item"
-                }
-            }
-        },
-        "featuredToggle": {
-            "isFeatured": {
-                "required": "[EN] El destacado es obligatorio"
-            }
         }
     },
     "accommodationAmenity": {
@@ -197,6 +197,42 @@
         },
         "isOptional": {
             "required": "[EN] El indicador de opcionalidad es obligatorio"
+        }
+    },
+    "accommodationCalendarSync": {
+        "accessTokenAuthTag": {
+            "required": "The access token auth tag is required"
+        },
+        "accessTokenCiphertext": {
+            "required": "The access token ciphertext is required"
+        },
+        "accessTokenIv": {
+            "required": "The access token IV is required"
+        },
+        "calendarProviderToken": {
+            "invalid": "The calendar provider is invalid"
+        },
+        "createdAt": {
+            "required": "The creation date is required"
+        },
+        "externalCalendarId": {
+            "max": "The external calendar ID cannot exceed 255 characters",
+            "required": "The external calendar ID is required"
+        },
+        "feedUrl": {
+            "httpsRequired": "The feed URL must use HTTPS",
+            "invalid": "The feed URL is invalid",
+            "max": "The feed URL cannot exceed 2048 characters",
+            "required": "The feed URL is required"
+        },
+        "icalProviderToken": {
+            "invalid": "The iCal calendar provider is invalid"
+        },
+        "isActive": {
+            "required": "The active status is required"
+        },
+        "updatedAt": {
+            "required": "The update date is required"
         }
     },
     "accommodationExternalListing": {
@@ -220,6 +256,52 @@
         "hostReWriteName": {
             "max": "[EN] El host re write name no puede superar los {{max}} caracteres",
             "min": "[EN] El host re write name debe tener al menos {{min}} caracteres"
+        }
+    },
+    "accommodationOccupancy": {
+        "createdAt": {
+            "required": "The creation date is required"
+        },
+        "date": {
+            "invalid": "The date is not a valid calendar date",
+            "pattern": "The date must be in YYYY-MM-DD format",
+            "required": "The date is required"
+        },
+        "dates": {
+            "max": "No more than 366 dates can be submitted",
+            "min": "At least one date is required",
+            "required": "Dates are required"
+        },
+        "eventTitle": {
+            "max": "The event title cannot exceed 500 characters",
+            "required": "The event title is required"
+        },
+        "eventUpdate": {
+            "newRange": {
+                "invalid": "The new start date must be on or before the new end date",
+                "tooLong": "The new date range cannot span more than 366 days"
+            },
+            "oldRange": {
+                "invalid": "The original start date must be on or before the original end date",
+                "tooLong": "The original date range cannot span more than 366 days"
+            }
+        },
+        "externalEventId": {
+            "max": "The external event ID cannot exceed 255 characters",
+            "required": "The external event ID is required"
+        },
+        "isBlocked": {
+            "required": "The blocked status is required"
+        },
+        "note": {
+            "max": "The note cannot exceed 500 characters",
+            "required": "The note is required"
+        },
+        "range": {
+            "fromBeforeTo": "The start date must be before the end date"
+        },
+        "updatedAt": {
+            "required": "The update date is required"
         }
     },
     "accommodationReview": {
@@ -425,7 +507,51 @@
             }
         }
     },
+    "allianceLead": {
+        "adminList": {
+            "page": {
+                "positive": "Page must be a positive number"
+            },
+            "pageSize": {
+                "max": "Page size must not exceed {{max}}",
+                "positive": "Page size must be a positive number"
+            }
+        },
+        "adminNote": {
+            "max": "Note must not exceed {{max}} characters"
+        },
+        "contactName": {
+            "max": "Contact name must not exceed {{max}} characters",
+            "min": "Contact name must be at least {{min}} characters"
+        },
+        "email": {
+            "invalid": "Email is invalid",
+            "max": "Email must not exceed {{max}} characters"
+        },
+        "kind": {
+            "invalid": "Type is invalid"
+        },
+        "markHandled": {
+            "status": {
+                "invalid": "Status is invalid"
+            }
+        },
+        "message": {
+            "max": "Message must not exceed {{max}} characters",
+            "min": "Message must be at least {{min}} characters"
+        },
+        "phone": {
+            "max": "Phone must not exceed {{max}} characters"
+        },
+        "status": {
+            "invalid": "Status is invalid"
+        }
+    },
     "amenity": {
+        "applicableVerticals": {
+            "min": "[EN] El applicable verticals debe tener al menos {{min}} caracteres",
+            "required": "[EN] El applicable verticals es obligatorio"
+        },
         "bulkOperation": {
             "force": {
                 "invalidType": "[EN] El valor de forzar debe ser un booleano"
@@ -539,10 +665,6 @@
             "min": "[EN] El slug debe tener al menos {{min}} caracteres",
             "pattern": "[EN] El formato del slug no es válido",
             "required": "[EN] El slug es obligatorio"
-        },
-        "applicableVerticals": {
-            "min": "[EN] El applicable verticals debe tener al menos {{min}} caracteres",
-            "required": "[EN] El applicable verticals es obligatorio"
         }
     },
     "attraction": {
@@ -602,20 +724,6 @@
         }
     },
     "billing": {
-        "linkPreapproval": {
-            "localSubscriptionId": {
-                "invalid": "The local subscription ID is not valid",
-                "invalidType": "The local subscription ID has an invalid data type"
-            },
-            "outcome": {
-                "invalid": "The link outcome is not valid"
-            },
-            "preapprovalId": {
-                "invalidType": "The preapproval ID has an invalid data type",
-                "max": "The preapproval ID cannot exceed {{max}} characters",
-                "min": "The preapproval ID must have at least {{min}} characters"
-            }
-        },
         "addon": {
             "cancel": {
                 "reason": {
@@ -647,6 +755,20 @@
                     "max": "[EN] El slug no puede superar los {{max}} caracteres",
                     "min": "[EN] El slug debe tener al menos {{min}} caracteres"
                 }
+            }
+        },
+        "linkPreapproval": {
+            "localSubscriptionId": {
+                "invalid": "The local subscription ID is not valid",
+                "invalidType": "The local subscription ID has an invalid data type"
+            },
+            "outcome": {
+                "invalid": "The link outcome is not valid"
+            },
+            "preapprovalId": {
+                "invalidType": "The preapproval ID has an invalid data type",
+                "max": "The preapproval ID cannot exceed {{max}} characters",
+                "min": "The preapproval ID must have at least {{min}} characters"
             }
         },
         "plan": {
@@ -1304,14 +1426,14 @@
             "mobilePhone": {
                 "international": "[EN] El mobile phone no es válido"
             },
-            "whatsapp": {
-                "international": "[EN] El WhatsApp no es válido"
-            },
             "personalEmail": {
                 "invalid": "[EN] El personal email no es válido"
             },
             "website": {
                 "invalid": "[EN] El sitio web no es válido"
+            },
+            "whatsapp": {
+                "international": "[EN] El WhatsApp no es válido"
             },
             "workEmail": {
                 "invalid": "[EN] El work email no es válido"
@@ -1558,11 +1680,11 @@
                         "max": "[EN] El photographer no puede superar los {{max}} caracteres",
                         "min": "[EN] El photographer debe tener al menos {{min}} caracteres"
                     },
-                    "sourceUrl": {
-                        "invalid": "[EN] El source url no es válido"
-                    },
                     "provider": {
                         "invalid": "Provider must be unsplash, pexels, or user-upload"
+                    },
+                    "sourceUrl": {
+                        "invalid": "[EN] El source url no es válido"
                     }
                 },
                 "caption": {
@@ -2038,6 +2160,9 @@
         "billingInterval": {
             "invalid": "[EN] El billing interval no es válido"
         },
+        "calendarSyncStatus": {
+            "invalid": "The calendar sync status is invalid"
+        },
         "clientType": {
             "invalid": "[EN] El client type no es válido"
         },
@@ -2121,6 +2246,9 @@
         },
         "notificationRecipientSide": {
             "invalid": "[EN] El notification recipient side no es válido"
+        },
+        "occupancySource": {
+            "invalid": "The occupancy source is invalid"
         },
         "ownerPromotionDiscountType": {
             "invalid": "[EN] El owner promotion discount type no es válido"
@@ -2220,12 +2348,6 @@
         },
         "visibility": {
             "invalid": "[EN] El visibility no es válido"
-        },
-        "occupancySource": {
-            "invalid": "The occupancy source is invalid"
-        },
-        "calendarSyncStatus": {
-            "invalid": "The calendar sync status is invalid"
         }
     },
     "event": {
@@ -2598,6 +2720,10 @@
         }
     },
     "feature": {
+        "applicableVerticals": {
+            "min": "[EN] El applicable verticals debe tener al menos {{min}} caracteres",
+            "required": "[EN] El applicable verticals es obligatorio"
+        },
         "availabilityUpdate": {
             "featureIds": {
                 "max": "[EN] El feature ids no puede superar los {{max}} caracteres",
@@ -2742,10 +2868,6 @@
             "min": "[EN] El slug debe tener al menos {{min}} caracteres",
             "pattern": "[EN] El formato del slug no es válido",
             "required": "[EN] El slug es obligatorio"
-        },
-        "applicableVerticals": {
-            "min": "[EN] El applicable verticals debe tener al menos {{min}} caracteres",
-            "required": "[EN] El applicable verticals es obligatorio"
         }
     },
     "featureFlag": {
@@ -3110,25 +3232,10 @@
         }
     },
     "pointOfInterest": {
-        "distanceKm": {
-            "min": "Distance cannot be negative"
-        },
-        "nearby": {
-            "radius": {
-                "invalidType": "Radius must be a number",
-                "min": "Radius must be at least {{min}} km",
-                "max": "Radius cannot exceed {{max}} km"
-            },
-            "limit": {
-                "invalidType": "Limit must be a number",
-                "min": "Limit must be at least {{min}}",
-                "max": "Limit cannot exceed {{max}}"
-            }
-        },
         "address": {
-            "required": "[EN] La dirección es obligatoria",
+            "max": "[EN] La dirección no puede superar los {{max}} caracteres",
             "min": "[EN] La dirección debe tener al menos {{min}} caracteres",
-            "max": "[EN] La dirección no puede superar los {{max}} caracteres"
+            "required": "[EN] La dirección es obligatoria"
         },
         "bulkAdd": {
             "pointOfInterestIds": {
@@ -3158,6 +3265,9 @@
             "min": "[EN] El peso de visualización debe tener al menos {{min}} caracteres",
             "required": "[EN] El peso de visualización es obligatorio"
         },
+        "distanceKm": {
+            "min": "Distance cannot be negative"
+        },
         "icon": {
             "max": "[EN] El ícono no puede superar los {{max}} caracteres",
             "min": "[EN] El ícono debe tener al menos {{min}} caracteres",
@@ -3165,8 +3275,8 @@
         },
         "keywords": {
             "item": {
-                "min": "[EN] Cada palabra clave debe tener al menos {{min}} caracteres",
-                "max": "[EN] Cada palabra clave no puede superar los {{max}} caracteres"
+                "max": "[EN] Cada palabra clave no puede superar los {{max}} caracteres",
+                "min": "[EN] Cada palabra clave debe tener al menos {{min}} caracteres"
             },
             "max": "[EN] No se pueden superar las {{max}} palabras clave"
         },
@@ -3185,6 +3295,18 @@
             "max": "[EN] El long no puede superar los {{max}} caracteres",
             "min": "[EN] El long debe tener al menos {{min}} caracteres",
             "required": "[EN] El long es obligatorio"
+        },
+        "nearby": {
+            "limit": {
+                "invalidType": "Limit must be a number",
+                "max": "Limit cannot exceed {{max}}",
+                "min": "Limit must be at least {{min}}"
+            },
+            "radius": {
+                "invalidType": "Radius must be a number",
+                "max": "Radius cannot exceed {{max}} km",
+                "min": "Radius must be at least {{min}} km"
+            }
         },
         "notes": {
             "max": "[EN] Las notas no pueden superar los {{max}} caracteres"
@@ -3632,8 +3754,8 @@
         },
         "image": {
             "openaiFileIdRefs": {
-                "required": "[EN] At least one OpenAI file reference is required",
-                "invalidUrl": "[EN] The OpenAI download URL is invalid"
+                "invalidUrl": "[EN] The OpenAI download URL is invalid",
+                "required": "[EN] At least one OpenAI file reference is required"
             },
             "url": {
                 "invalid": "[EN] El url no es válido"
@@ -3745,12 +3867,12 @@
         "timezone": {
             "required": "[EN] El timezone es obligatorio"
         },
+        "title": {
+            "required": "[EN] El title es obligatorio"
+        },
         "weekday": {
             "invalid": "[EN] El día de la semana no es válido",
             "requiredForWeekly": "[EN] El día de la semana es obligatorio para la recurrencia semanal"
-        },
-        "title": {
-            "required": "[EN] El title es obligatorio"
         }
     },
     "socialPostFooter": {
@@ -4441,88 +4563,6 @@
         },
         "zod": {
             "failed": "[EN] La validación del esquema ha fallado"
-        }
-    },
-    "accommodationOccupancy": {
-        "createdAt": {
-            "required": "The creation date is required"
-        },
-        "date": {
-            "invalid": "The date is not a valid calendar date",
-            "pattern": "The date must be in YYYY-MM-DD format",
-            "required": "The date is required"
-        },
-        "dates": {
-            "max": "No more than 366 dates can be submitted",
-            "min": "At least one date is required",
-            "required": "Dates are required"
-        },
-        "eventTitle": {
-            "max": "The event title cannot exceed 500 characters",
-            "required": "The event title is required"
-        },
-        "eventUpdate": {
-            "newRange": {
-                "invalid": "The new start date must be on or before the new end date",
-                "tooLong": "The new date range cannot span more than 366 days"
-            },
-            "oldRange": {
-                "invalid": "The original start date must be on or before the original end date",
-                "tooLong": "The original date range cannot span more than 366 days"
-            }
-        },
-        "externalEventId": {
-            "max": "The external event ID cannot exceed 255 characters",
-            "required": "The external event ID is required"
-        },
-        "isBlocked": {
-            "required": "The blocked status is required"
-        },
-        "note": {
-            "max": "The note cannot exceed 500 characters",
-            "required": "The note is required"
-        },
-        "range": {
-            "fromBeforeTo": "The start date must be before the end date"
-        },
-        "updatedAt": {
-            "required": "The update date is required"
-        }
-    },
-    "accommodationCalendarSync": {
-        "accessTokenAuthTag": {
-            "required": "The access token auth tag is required"
-        },
-        "accessTokenCiphertext": {
-            "required": "The access token ciphertext is required"
-        },
-        "accessTokenIv": {
-            "required": "The access token IV is required"
-        },
-        "calendarProviderToken": {
-            "invalid": "The calendar provider is invalid"
-        },
-        "createdAt": {
-            "required": "The creation date is required"
-        },
-        "externalCalendarId": {
-            "max": "The external calendar ID cannot exceed 255 characters",
-            "required": "The external calendar ID is required"
-        },
-        "feedUrl": {
-            "httpsRequired": "The feed URL must use HTTPS",
-            "invalid": "The feed URL is invalid",
-            "max": "The feed URL cannot exceed 2048 characters",
-            "required": "The feed URL is required"
-        },
-        "icalProviderToken": {
-            "invalid": "The iCal calendar provider is invalid"
-        },
-        "isActive": {
-            "required": "The active status is required"
-        },
-        "updatedAt": {
-            "required": "The update date is required"
         }
     }
 }

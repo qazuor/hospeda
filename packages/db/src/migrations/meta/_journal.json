@@ -470,6 +470,20 @@
       "when": 1784770894569,
       "tag": "0066_young_wendell_vaughn",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1784851410130,
+      "tag": "0067_little_red_wolf",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1784861141190,
+      "tag": "0068_flashy_fat_cobra",
+      "breakpoints": true
     }
   ]
 }

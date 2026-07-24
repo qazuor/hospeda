@@ -1,0 +1,148 @@
+---
+/**
+ * @file sumate/partner/index.astro
+ * @description Public "Convertite en partner" alliance-lead landing (HOS-277).
+ *
+ * A prospective business/tourism-agency partner submits their interest via
+ * the alliance-lead form (`kind: 'partner'`), which posts to
+ * `POST /api/v1/public/alliance/leads`. An admin reviews the lead by hand and
+ * decides whether to move forward — there is NO automatic role/entity
+ * provisioning on submission (HOS-277 NG-1). Structure cloned from the
+ * `/publicar-restaurante` commerce-lead molde: hero + benefits + form.
+ *
+ * @route     /[lang]/sumate/partner/
+ * @rendering SSR (on-demand, no prerender)
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { AllianceLead } from '@/components/alliance/AllianceLead.client';
+import { CheckCircleIcon } from '@repo/icons';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const title = t('alliance-leads.partner.title', 'Convertite en partner de Hospeda');
+const subtitle = t(
+    'alliance-leads.partner.subtitle',
+    'Sumate como agencia o aliado comercial y trabajemos juntos para conectar viajeros con el Litoral.'
+);
+
+const benefits = [
+    t('alliance-leads.partner.benefits.item1', ''),
+    t('alliance-leads.partner.benefits.item2', ''),
+    t('alliance-leads.partner.benefits.item3', ''),
+    t('alliance-leads.partner.benefits.item4', '')
+].filter((item) => item.length > 0);
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+---
+
+<BaseLayout locale={locale} title={title} description={subtitle}>
+    <SEOHead
+        slot="head"
+        title={title}
+        description={subtitle}
+        locale={locale}
+        canonical={canonicalUrl}
+        noindex={false}
+    />
+
+    <Breadcrumbs locale={locale} items={[{ label: title }]} />
+
+    <section class="sumate__hero section">
+        <div class="sumate__container section__container">
+            <div class="sumate__header" data-reveal="up">
+                <h1 class="sumate__title">{title}</h1>
+                <p class="sumate__subtitle">{subtitle}</p>
+            </div>
+
+            {benefits.length > 0 && (
+                <ul class="sumate__benefits" data-reveal="up">
+                    {benefits.map((item) => (
+                        <li class="sumate__benefit">
+                            <span class="sumate__benefit-icon" aria-hidden="true">
+                                <CheckCircleIcon size="sm" weight="fill" />
+                            </span>
+                            <span>{item}</span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    </section>
+
+    <section class="sumate__form section section--warm">
+        <div class="sumate__form-container section__container">
+            <AllianceLead client:load locale={locale} kind="partner" />
+        </div>
+    </section>
+</BaseLayout>
+
+<style>
+    .sumate__hero {
+        padding-block: var(--space-section, 120px);
+        background-color: var(--core-background);
+    }
+    .sumate__container {
+        max-width: var(--container-max, 1350px);
+        margin-inline: auto;
+        padding-inline: var(--space-5, 1.25rem);
+    }
+    .sumate__header {
+        text-align: center;
+        max-width: 700px;
+        margin-inline: auto;
+    }
+    .sumate__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.875rem, 5vw, 3rem);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-4, 1rem);
+        line-height: 1.15;
+    }
+    .sumate__subtitle {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-lg, 1.0625rem);
+        color: var(--core-muted-foreground);
+        margin: 0;
+        line-height: 1.6;
+    }
+    .sumate__benefits {
+        list-style: none;
+        margin: var(--space-8, 2rem) auto 0;
+        padding: 0;
+        max-width: 560px;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 0.75rem);
+    }
+    .sumate__benefit {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-2, 0.5rem);
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        color: var(--core-muted-foreground);
+        line-height: 1.6;
+        text-align: left;
+    }
+    .sumate__benefit-icon {
+        display: inline-flex;
+        color: var(--brand-tertiary);
+        flex-shrink: 0;
+        margin-top: 0.2em;
+    }
+    .sumate__form {
+        padding-block: var(--space-section, 120px);
+    }
+    .sumate__form-container {
+        max-width: 720px;
+        margin-inline: auto;
+        padding-inline: var(--space-5, 1.25rem);
+    }
+</style>
