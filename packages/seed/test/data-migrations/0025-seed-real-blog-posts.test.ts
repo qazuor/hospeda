@@ -70,7 +70,7 @@ function loadFixtures(): { file: string; data: RealPostFixture }[] {
         }));
 }
 
-const EXPECTED_POST_COUNT = 16;
+const EXPECTED_POST_COUNT = 22;
 /** Destination slugs that exist in the required seed (the mock resolves only these). */
 const KNOWN_DESTINATION_SLUGS = new Set([
     'federacion',
