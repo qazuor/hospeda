@@ -1,5 +1,10 @@
 import { EventModel } from '@repo/db';
-import { EventCategoryEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
+import {
+    EventCategoryEnum,
+    EventDatePrecisionEnum,
+    PermissionEnum,
+    VisibilityEnum
+} from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import * as helpers from '../../../src/services/event/event.helpers';
 import { EventService } from '../../../src/services/event/event.service';
@@ -129,7 +134,8 @@ describe('EventService.update', () => {
                 start: new Date('2024-09-01'),
                 end: new Date('2024-09-01'),
                 isAllDay: false,
-                recurrence: undefined
+                recurrence: undefined,
+                precision: EventDatePrecisionEnum.EXACT
             }
         });
         const result = await service.update(actorWithPerm, eventId, input);
@@ -165,7 +171,8 @@ describe('EventService.update', () => {
                 start: new Date('2024-01-01'),
                 end: new Date('2024-01-01'),
                 isAllDay: false,
-                recurrence: undefined
+                recurrence: undefined,
+                precision: EventDatePrecisionEnum.EXACT
             }
         });
         const result = await service.update(actorWithPerm, eventId, input);

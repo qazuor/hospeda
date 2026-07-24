@@ -16,6 +16,7 @@
  */
 
 import JsonLd from './JsonLd.astro';
+import { toJsonLdEventDate } from '@/lib/seo/event-json-ld-date';
 
 /** Event location interface */
 export interface EventLocation {
@@ -51,6 +52,15 @@ interface Props {
 	readonly startDate: string;
 	/** End date and time in ISO 8601 format */
 	readonly endDate?: string;
+	/**
+	 * Date precision (HOS-280). `'MONTH'` events only have a known month/year
+	 * (the day is a storage placeholder, always the 1st) — `startDate`/
+	 * `endDate` are truncated to `YYYY-MM` so the structured data never
+	 * claims a specific day it doesn't actually have. schema.org's `Date`
+	 * type accepts a bare `YYYY-MM` value. Defaults to `'EXACT'` (today's
+	 * behavior: full ISO date-time strings, unchanged).
+	 */
+	readonly precision?: 'EXACT' | 'MONTH';
 	/** URL of the event page */
 	readonly url: string;
 	/** Image URL for the event */
@@ -74,6 +84,7 @@ const {
 	description,
 	startDate,
 	endDate,
+	precision = 'EXACT',
 	url,
 	image,
 	location,
@@ -82,12 +93,15 @@ const {
 	offers,
 } = Astro.props;
 
+const jsonLdStartDate = toJsonLdEventDate({ isoDate: startDate, precision });
+const jsonLdEndDate = endDate ? toJsonLdEventDate({ isoDate: endDate, precision }) : endDate;
+
 const structuredData: Record<string, unknown> = {
 	'@context': 'https://schema.org',
 	'@type': 'Event',
 	name,
 	description,
-	startDate,
+	startDate: jsonLdStartDate,
 	url,
 	location: {
 		'@type': 'Place',
@@ -100,8 +114,8 @@ const structuredData: Record<string, unknown> = {
 	},
 };
 
-if (endDate) {
-	structuredData.endDate = endDate;
+if (jsonLdEndDate) {
+	structuredData.endDate = jsonLdEndDate;
 }
 
 if (image) {

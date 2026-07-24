@@ -121,6 +121,129 @@ export function formatDate({ date, locale, options }: FormatDateParams): string 
 }
 
 // ---------------------------------------------------------------------------
+// Event detail date range (HOS-280 — month-only precision)
+// ---------------------------------------------------------------------------
+
+/**
+ * Input for {@link formatEventDetailDateRange}.
+ */
+export interface FormatEventDetailDateRangeParams {
+    /** Event start date value. Accepts `Date` or ISO string. */
+    readonly startDate: Date | string;
+    /** Optional event end date value. */
+    readonly endDate?: Date | string | null;
+    /**
+     * Date precision (HOS-280). Defaults to `'EXACT'` (today's behavior:
+     * full day-precision start/end labels, unchanged).
+     */
+    readonly precision?: 'EXACT' | 'MONTH';
+    /** Short locale code used to select formatting conventions. */
+    readonly locale: SupportedLocale;
+}
+
+/**
+ * Result of {@link formatEventDetailDateRange}.
+ *
+ * `'EXACT'` keeps the pre-existing two-part shape (`startLabel`/`endLabel`,
+ * rendered by the caller with its own separator) so `EventDetailHeader`'s
+ * current EXACT markup stays byte-for-byte identical. `'MONTH'` collapses to
+ * a single pre-joined `label` because the month/year range logic (same
+ * month, cross-month same year, cross-year) is not a simple two-value join.
+ */
+export type FormatEventDetailDateRangeResult =
+    | { readonly precision: 'EXACT'; readonly startLabel: string; readonly endLabel: string | null }
+    | { readonly precision: 'MONTH'; readonly label: string };
+
+/**
+ * Formats an event's start/end date for the detail page header.
+ *
+ * For `'EXACT'` precision this reproduces the existing `EventDetailHeader`
+ * output verbatim (two independent `formatDate` calls with the default
+ * long-form date style).
+ *
+ * For `'MONTH'` precision the day-of-month is a storage placeholder (always
+ * the 1st) and MUST be ignored — the result is a month/year label:
+ * - No end date, or end in the same month+year as start: a single
+ *   month-year label (e.g. `'febrero de 2027'`).
+ * - End in a different month, same year: `'febrero – marzo de 2027'`
+ *   (start month name only, en dash, full end month+year — year appears once).
+ * - End in a different year: `'febrero de 2027 – marzo de 2028'` (full
+ *   month+year on both sides).
+ *
+ * `timeZone: 'UTC'` is forced on every `Intl` call so the calendar month
+ * read from the stored placeholder date never shifts backward a day/month
+ * in a non-UTC runtime timezone (the same class of bug documented in
+ * `formatDate`'s BETA-88 test coverage).
+ *
+ * @param params - {@link FormatEventDetailDateRangeParams}
+ * @returns {@link FormatEventDetailDateRangeResult}
+ *
+ * @example
+ * ```ts
+ * formatEventDetailDateRange({
+ *   startDate: '2027-02-01T00:00:00.000Z',
+ *   precision: 'MONTH',
+ *   locale: 'es',
+ * });
+ * // { precision: 'MONTH', label: 'febrero de 2027' }
+ *
+ * formatEventDetailDateRange({
+ *   startDate: '2027-02-01T00:00:00.000Z',
+ *   endDate: '2027-03-01T00:00:00.000Z',
+ *   precision: 'MONTH',
+ *   locale: 'es',
+ * });
+ * // { precision: 'MONTH', label: 'febrero – marzo de 2027' }
+ * ```
+ */
+export function formatEventDetailDateRange({
+    startDate,
+    endDate,
+    precision = 'EXACT',
+    locale
+}: FormatEventDetailDateRangeParams): FormatEventDetailDateRangeResult {
+    if (precision !== 'MONTH') {
+        return {
+            precision: 'EXACT',
+            startLabel: formatDate({ date: startDate, locale }),
+            endLabel: endDate ? formatDate({ date: endDate, locale }) : null
+        };
+    }
+
+    const start = startDate instanceof Date ? startDate : new Date(startDate);
+    const end = endDate ? (endDate instanceof Date ? endDate : new Date(endDate)) : null;
+
+    const monthYearOptions: Intl.DateTimeFormatOptions = {
+        year: 'numeric',
+        month: 'long',
+        timeZone: 'UTC'
+    };
+    const monthOnlyOptions: Intl.DateTimeFormatOptions = { month: 'long', timeZone: 'UTC' };
+
+    const startMonthYearLabel = formatDate({ date: start, locale, options: monthYearOptions });
+
+    if (!end) {
+        return { precision: 'MONTH', label: startMonthYearLabel };
+    }
+
+    const sameMonthAndYear =
+        start.getUTCFullYear() === end.getUTCFullYear() &&
+        start.getUTCMonth() === end.getUTCMonth();
+    if (sameMonthAndYear) {
+        return { precision: 'MONTH', label: startMonthYearLabel };
+    }
+
+    const endMonthYearLabel = formatDate({ date: end, locale, options: monthYearOptions });
+
+    if (start.getUTCFullYear() === end.getUTCFullYear()) {
+        const startMonthOnlyLabel = formatDate({ date: start, locale, options: monthOnlyOptions });
+        return { precision: 'MONTH', label: `${startMonthOnlyLabel} – ${endMonthYearLabel}` };
+    }
+
+    return { precision: 'MONTH', label: `${startMonthYearLabel} – ${endMonthYearLabel}` };
+}
+
+// ---------------------------------------------------------------------------
 // Relative time
 // ---------------------------------------------------------------------------
 

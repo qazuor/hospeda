@@ -74,6 +74,7 @@ const dateResult = formatEventDate({
     end: data.date.end,
     locale,
     mode: "rangeWithTime",
+    precision: data.date.precision,
 });
 const dateLabel = dateResult.mode !== "short" ? dateResult.dateLine : "";
 const timeLabel = dateResult.mode !== "short" ? dateResult.timeLine : null;

@@ -52,6 +52,7 @@ const {
 	category,
 	startDate,
 	endDate,
+	precision,
 	featuredImage,
 	gallery,
 	location,
@@ -168,6 +169,7 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 		description={seoDescription}
 		startDate={startDate}
 		endDate={endDate}
+		precision={precision}
 		url={canonical}
 		image={!featuredIsPlaceholder ? featuredImage.url : undefined}
 		location={{
@@ -208,6 +210,7 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 			category={category}
 			startDate={startDate}
 			endDate={endDate}
+			precision={precision}
 			locationCity={location.city}
 			locationName={location.name}
 			isPast={isPast}

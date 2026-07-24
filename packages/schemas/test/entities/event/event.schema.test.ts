@@ -196,6 +196,57 @@ describe('EventSchema', () => {
             });
         });
 
+        describe('date.precision field (HOS-280)', () => {
+            it('should default to EXACT when precision is omitted', () => {
+                // Arrange
+                const validData = createValidEvent();
+                const { precision: _precision, ...dateWithoutPrecision } = validData.date;
+                const data = { ...validData, date: dateWithoutPrecision };
+
+                // Act
+                const result = EventSchema.parse(data);
+
+                // Assert
+                expect(result.date.precision).toBe('EXACT');
+            });
+
+            it('should accept an explicit MONTH precision', () => {
+                // Arrange
+                const validData = createValidEvent();
+                const data = { ...validData, date: { ...validData.date, precision: 'MONTH' } };
+
+                // Act
+                const result = EventSchema.parse(data);
+
+                // Assert
+                expect(result.date.precision).toBe('MONTH');
+            });
+
+            it('should accept an explicit EXACT precision', () => {
+                // Arrange
+                const validData = createValidEvent();
+                const data = { ...validData, date: { ...validData.date, precision: 'EXACT' } };
+
+                // Act
+                const result = EventSchema.parse(data);
+
+                // Assert
+                expect(result.date.precision).toBe('EXACT');
+            });
+
+            it('should reject an invalid precision value', () => {
+                // Arrange
+                const validData = createValidEvent();
+                const data = { ...validData, date: { ...validData.date, precision: 'WEEK' } };
+
+                // Act
+                const result = EventSchema.safeParse(data);
+
+                // Assert
+                expect(result.success).toBe(false);
+            });
+        });
+
         describe('price field', () => {
             it('should accept valid pricing data', () => {
                 const validData = createValidEvent();

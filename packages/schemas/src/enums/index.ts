@@ -33,6 +33,9 @@ export * from './entity-type.enum.js';
 export * from './entity-type.schema.js';
 export * from './event-category.enum.js';
 export * from './event-category.schema.js';
+// Event date precision enum (HOS-280)
+export * from './event-date-precision.enum.js';
+export * from './event-date-precision.schema.js';
 export * from './exchange-rate-source.enum.js';
 export * from './exchange-rate-source.schema.js';
 export * from './exchange-rate-type.enum.js';

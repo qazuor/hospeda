@@ -13,7 +13,7 @@
  */
 
 import { EventModel } from '@repo/db';
-import { EventCategoryEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
+import { EventCategoryEnum, EventDatePrecisionEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import {
@@ -105,7 +105,11 @@ describe('EventService — SPEC-212 AC-5: translation diff on update', () => {
             summary: 'Resumen sin cambios',
             description: 'Descripción sin cambios',
             category: EventCategoryEnum.FESTIVAL,
-            date: { start: new Date('2026-07-01'), end: new Date('2026-07-01') }
+            date: {
+                start: new Date('2026-07-01'),
+                end: new Date('2026-07-01'),
+                precision: EventDatePrecisionEnum.EXACT
+            }
         });
         const updatedEvent = { ...event, name: 'Evento Modificado' };
 
@@ -123,7 +127,11 @@ describe('EventService — SPEC-212 AC-5: translation diff on update', () => {
         const result = await service.update(actor, event.id, {
             name: 'Evento Modificado',
             category: EventCategoryEnum.FESTIVAL,
-            date: { start: new Date('2026-07-01'), end: new Date('2026-07-01') }
+            date: {
+                start: new Date('2026-07-01'),
+                end: new Date('2026-07-01'),
+                precision: EventDatePrecisionEnum.EXACT
+            }
         });
 
         expect(result.error).toBeUndefined();
@@ -142,7 +150,11 @@ describe('EventService — SPEC-212 AC-5: translation diff on update', () => {
             summary: 'Resumen sin cambios',
             description: 'Descripción sin cambios',
             category: EventCategoryEnum.FESTIVAL,
-            date: { start: new Date('2026-07-01'), end: new Date('2026-07-01') }
+            date: {
+                start: new Date('2026-07-01'),
+                end: new Date('2026-07-01'),
+                precision: EventDatePrecisionEnum.EXACT
+            }
         });
         const updatedEvent = { ...event };
 
@@ -154,7 +166,11 @@ describe('EventService — SPEC-212 AC-5: translation diff on update', () => {
         await service.update(actor, event.id, {
             name: 'Evento Original',
             category: EventCategoryEnum.FESTIVAL,
-            date: { start: new Date('2026-07-01'), end: new Date('2026-07-01') }
+            date: {
+                start: new Date('2026-07-01'),
+                end: new Date('2026-07-01'),
+                precision: EventDatePrecisionEnum.EXACT
+            }
         });
 
         expect(translateMock).not.toHaveBeenCalled();
@@ -166,7 +182,11 @@ describe('EventService — SPEC-212 AC-5: translation diff on update', () => {
             summary: 'Resumen viejo',
             description: 'Descripción fija',
             category: EventCategoryEnum.FESTIVAL,
-            date: { start: new Date('2026-07-01'), end: new Date('2026-07-01') }
+            date: {
+                start: new Date('2026-07-01'),
+                end: new Date('2026-07-01'),
+                precision: EventDatePrecisionEnum.EXACT
+            }
         });
         const updatedEvent = {
             ...event,
@@ -182,7 +202,11 @@ describe('EventService — SPEC-212 AC-5: translation diff on update', () => {
             name: 'Evento Nuevo',
             summary: 'Resumen nuevo',
             category: EventCategoryEnum.FESTIVAL,
-            date: { start: new Date('2026-07-01'), end: new Date('2026-07-01') }
+            date: {
+                start: new Date('2026-07-01'),
+                end: new Date('2026-07-01'),
+                precision: EventDatePrecisionEnum.EXACT
+            }
         });
 
         expect(translateMock).toHaveBeenCalledOnce();

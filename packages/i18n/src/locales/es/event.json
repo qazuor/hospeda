@@ -76,7 +76,8 @@
         "relatedEvents": "Eventos Relacionados",
         "shareEvent": "Compartir Evento",
         "pastEvent": "Evento Finalizado",
-        "cancelled": "Cancelado"
+        "cancelled": "Cancelado",
+        "monthOnlyBadge": "Fecha estimada · programación a confirmar"
     },
     "categoryPage": {
         "tagline": "Categoría",
