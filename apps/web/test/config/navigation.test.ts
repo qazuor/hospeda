@@ -134,15 +134,20 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         ]);
     });
 
-    it('keeps sponsor, partner, and serviceProvider as coming-soon placeholders with no acquiredPermission (NG-2)', () => {
+    it('routes sponsor, partner, and serviceProvider to their alliance-lead landings with no acquiredPermission (HOS-277 NG-1)', () => {
         const partner = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'partner');
-        const comingSoonOptions = partner?.options.filter((option) => option.id !== 'editor') ?? [];
-        expect(comingSoonOptions).toHaveLength(3);
-        for (const option of comingSoonOptions) {
-            expect(option.comingSoon).toBe(true);
+        const leadOptions = partner?.options.filter((option) => option.id !== 'editor') ?? [];
+        expect(leadOptions).toHaveLength(3);
+        for (const option of leadOptions) {
+            expect(option.comingSoon).toBeUndefined();
             expect(option.acquiredPermission).toBeUndefined();
-            expect(option.href).toBe('contacto');
         }
+        const sponsor = leadOptions.find((option) => option.id === 'sponsor');
+        const partnerOption = leadOptions.find((option) => option.id === 'partner');
+        const serviceProvider = leadOptions.find((option) => option.id === 'serviceProvider');
+        expect(sponsor?.href).toBe('sumate/sponsor');
+        expect(partnerOption?.href).toBe('sumate/partner');
+        expect(serviceProvider?.href).toBe('sumate/proveedor');
     });
 
     it('gives the editor option a real acquired signal (POST_CREATE), no comingSoon, and admin-panel management (HOS-134 D-4)', () => {
