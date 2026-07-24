@@ -3,6 +3,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { fetchApi } from '@/lib/api/client';
 import { adminLogger } from '@/utils/logger';
+import { normalizeEventDatePrecision } from '../utils/normalize-event-date-precision';
+
+/**
+ * Applies HOS-280 month-only date normalization to an event payload's `date`
+ * sub-object before it's sent to the API. No-op when `date` is absent from
+ * the payload (e.g. a partial update that didn't touch date fields).
+ */
+function withNormalizedDate(data: Partial<Event>): Partial<Event> {
+    if (!data.date) {
+        return data;
+    }
+    return { ...data, date: normalizeEventDatePrecision(data.date) };
+}
 
 /**
  * Query keys for event operations
@@ -32,7 +45,7 @@ async function updateEvent(id: string, data: Partial<Event>) {
     const result = await fetchApi<{ success: boolean; data: Event }>({
         path: `/api/v1/admin/events/${id}`,
         method: 'PATCH',
-        body: data
+        body: withNormalizedDate(data)
     });
     return result.data.data;
 }
@@ -44,7 +57,7 @@ async function createEvent(data: Partial<Event>) {
     const result = await fetchApi<{ success: boolean; data: Event }>({
         path: '/api/v1/admin/events',
         method: 'POST',
-        body: data
+        body: withNormalizedDate(data)
     });
     return result.data.data;
 }
