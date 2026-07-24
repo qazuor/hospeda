@@ -841,6 +841,7 @@
         "zodError.enums.entityPermissionReason.invalid",
         "zodError.enums.entityType.invalid",
         "zodError.enums.eventCategory.invalid",
+        "zodError.enums.eventDatePrecision.invalid",
         "zodError.enums.exchangeRateSource.invalid",
         "zodError.enums.exchangeRateType.invalid",
         "zodError.enums.experiencePriceUnit.invalid",
@@ -1736,7 +1737,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1735,
+    "total": 1736,
     "byNamespace": {
         "accommodation": 68,
         "accommodationAmenity": 4,
@@ -1764,7 +1765,7 @@
         "entityTag": 1,
         "entityTags": 1,
         "entityView": 20,
-        "enums": 67,
+        "enums": 68,
         "event": 51,
         "eventLocation": 22,
         "eventOrganizer": 13,

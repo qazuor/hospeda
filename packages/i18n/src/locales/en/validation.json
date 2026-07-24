@@ -2059,6 +2059,9 @@
         "eventCategory": {
             "invalid": "[EN] El event category no es válido"
         },
+        "eventDatePrecision": {
+            "invalid": "The event date precision is not valid"
+        },
         "exchangeRateSource": {
             "invalid": "[EN] El exchange rate source no es válido"
         },
