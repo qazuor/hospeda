@@ -24,13 +24,15 @@
  * patron-saint day) and "Conmemoración de la Batalla de Caseros" (3 de
  * febrero, a fixed historical-anniversary date).
  *
- * ## Scope decision: `group: 'example'`
+ * ## Scope decision: `group: 'required'`
  *
- * Same classification as the sibling confirmed-events migration
- * (`0025-add-confirmed-events-entre-rios-2026`): real-world tourist events
- * are time-bound calendar content, not canonical system/catalog data, so
- * they follow the `example` track. `events` is on the seed dual-write
- * guard's demo-exempt list, so this migration alone is a complete delta.
+ * Same as the sibling confirmed-events migration (`0027`) and
+ * `0025-seed-real-blog-posts`: these are real-world tourist events bound for
+ * production, so they use the `required` track. `example`-group migrations
+ * are refused in production by the seed runner (not overridable), so
+ * `required` is what actually reaches prod. `events` is on the seed
+ * dual-write guard's demo-exempt list, so this migration alone is a complete
+ * delta.
  *
  * ## Idempotency
  *
@@ -88,7 +90,7 @@ import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from 
 
 export const meta = {
     name: '0028-add-estimated-events-entre-rios',
-    group: 'example',
+    group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];
 
