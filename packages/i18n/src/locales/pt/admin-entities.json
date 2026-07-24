@@ -1014,6 +1014,8 @@
         },
         "handle": {
             "title": "Resolver lead",
+            "phoneLabel": "Telefone",
+            "detailsLabel": "Detalhes do candidato",
             "decisionLabel": "Decisão",
             "approve": "Aprovar",
             "reject": "Rejeitar",

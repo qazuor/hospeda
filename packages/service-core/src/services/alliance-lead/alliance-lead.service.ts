@@ -208,7 +208,7 @@ export class AllianceLeadService extends BaseService {
                 }
 
                 const { kind, status, page, pageSize } = validated;
-                const where: Record<string, unknown> = {};
+                const where: Record<string, unknown> = { deletedAt: null };
                 if (kind !== undefined) where.kind = kind;
                 if (status !== undefined) where.status = status;
 

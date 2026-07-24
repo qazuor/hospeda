@@ -221,6 +221,44 @@ describe('AllianceLeadInbox — filters', () => {
 // ---------------------------------------------------------------------------
 
 describe('AllianceLeadInbox — handle dialog', () => {
+    it('renders the applicant message and phone so the admin can review before deciding', async () => {
+        const leadWithPhone: AllianceLead = { ...MOCK_LEAD_PENDING, phone: '+5491112345678' };
+        mockedFetchApi.mockResolvedValue({
+            data: {
+                success: true,
+                data: {
+                    items: [leadWithPhone],
+                    pagination: { total: 1, page: 1, pageSize: 20, totalPages: 1 }
+                }
+            },
+            status: 200
+        });
+
+        renderInbox();
+
+        await waitFor(() => {
+            expect(screen.getByText('Juan Pérez')).toBeInTheDocument();
+        });
+
+        const handleButtons = screen.getAllByText('admin-entities.allianceLeads.actions.handle');
+        fireEvent.click(handleButtons[0]);
+
+        await waitFor(() => {
+            expect(
+                screen.getByText('admin-entities.allianceLeads.handle.title')
+            ).toBeInTheDocument();
+        });
+
+        // Full message content is rendered, not just serialized into a summary.
+        // Newlines are preserved (whitespace-pre-line), so disable the default
+        // whitespace-collapsing normalizer for this exact-match assertion.
+        expect(
+            screen.getByText(leadWithPhone.message, { normalizer: (str) => str })
+        ).toBeInTheDocument();
+        // Phone is shown alongside the contact info.
+        expect(screen.getByText('+5491112345678')).toBeInTheDocument();
+    });
+
     it('calls mark-handled mutation with approved status when user clicks Confirm', async () => {
         mockedFetchApi
             // First call → list query

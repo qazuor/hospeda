@@ -93,6 +93,26 @@ function HandleDialog({ lead, onClose }: HandleDialogProps) {
             </DialogHeader>
 
             <div className="space-y-4 py-2">
+                {/* Applicant details — phone + full free-text message (AC-4) */}
+                <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+                    {lead.phone && (
+                        <p className="text-sm">
+                            <span className="font-medium">
+                                {t('admin-entities.allianceLeads.handle.phoneLabel')}:
+                            </span>{' '}
+                            {lead.phone}
+                        </p>
+                    )}
+                    <div className="space-y-1">
+                        <p className="font-medium text-sm">
+                            {t('admin-entities.allianceLeads.handle.detailsLabel')}
+                        </p>
+                        <p className="whitespace-pre-line text-muted-foreground text-sm">
+                            {lead.message}
+                        </p>
+                    </div>
+                </div>
+
                 {/* Decision radio */}
                 <fieldset className="space-y-2">
                     <legend className="font-medium text-sm">

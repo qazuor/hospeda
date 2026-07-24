@@ -179,6 +179,21 @@ describe('AllianceLeadService', () => {
                 undefined
             );
         });
+
+        it('should filter out soft-deleted leads (deletedAt: null) from the admin list', async () => {
+            const service = makeService();
+            const model = makeLeadModel();
+            (service as any)._model = model;
+
+            await service.listForAdmin({ actor: adminActor, query: {} });
+
+            expect(model.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({ deletedAt: null }),
+                expect.any(Object),
+                undefined,
+                undefined
+            );
+        });
     });
 
     describe('markHandled', () => {

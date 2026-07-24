@@ -1014,6 +1014,8 @@
         },
         "handle": {
             "title": "Handle lead",
+            "phoneLabel": "Phone",
+            "detailsLabel": "Applicant details",
             "decisionLabel": "Decision",
             "approve": "Approve",
             "reject": "Reject",
