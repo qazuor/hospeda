@@ -933,6 +933,12 @@ export function createDbMock() {
         // data needed; the service layer is exercised via mock actor headers).
         CommerceLeadModel: GenericMockModel,
 
+        // HOS-277: AllianceLeadModel — instantiated at module scope by
+        // AllianceLeadService when the alliance lead routes load. Same rationale as
+        // CommerceLeadModel above: a GenericMockModel no-op stub is sufficient for
+        // route-level permission-gate tests.
+        AllianceLeadModel: GenericMockModel,
+
         // SPEC-240: Experience singleton model instances. ExperienceService,
         // ExperienceReviewService, and the standalone FAQ helpers access these at module
         // scope (via service constructor or direct import). They are exported as singleton
