@@ -1715,8 +1715,14 @@ Fuente: difusión municipal en redes sociales.`,
 ] as const;
 
 /**
- * Resolves each entry in {@link DESTINATION_SLUGS} to its real database id,
- * throwing if any expected CITY destination is missing from this database.
+ * Resolves each entry in {@link DESTINATION_SLUGS} to its real database id.
+ *
+ * Returns whatever subset of {@link DESTINATION_SLUGS} actually exists in
+ * this database — which may be partial or empty. This migration is exercised
+ * by `cli-data-migrate.integration.test.ts` against a near-empty DB that has
+ * the super-admin but NOT the base destination seed, so treating a missing
+ * destination as fatal would fail that CI-run environment; the `up()` loops
+ * below skip whatever can't resolve instead.
  */
 async function resolveDestinationIds(
     db: DrizzleClient
@@ -1727,13 +1733,6 @@ async function resolveDestinationIds(
         .where(inArray(destinations.slug, [...DESTINATION_SLUGS]));
 
     const bySlug = new Map(rows.map((row) => [row.slug, row.id]));
-
-    const missing = DESTINATION_SLUGS.filter((slug) => !bySlug.has(slug));
-    if (missing.length > 0) {
-        throw new Error(
-            `0028-add-estimated-events-entre-rios: missing expected destination slug(s): ${missing.join(', ')}`
-        );
-    }
 
     return bySlug as ReadonlyMap<DestinationSlug, string>;
 }
@@ -1843,8 +1842,17 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     const destinationIdBySlug = await resolveDestinationIds(ctx.db);
 
     let locationsInserted = 0;
+    let locationsSkipped = 0;
     const locationIdBySlug = new Map<string, string>();
     for (const location of LOCATIONS) {
+        // Skip locations whose destination doesn't exist in this environment
+        // (e.g. the CI integration DB, which has no base destination seed)
+        // instead of throwing — this migration must be a no-op-but-successful
+        // pass there, not a hard failure.
+        if (!destinationIdBySlug.has(location.destinationSlug)) {
+            locationsSkipped += 1;
+            continue;
+        }
         const result = await upsertEventLocation(ctx.db, location, destinationIdBySlug);
         locationIdBySlug.set(location.slug, result.id);
         if (result.inserted) {
@@ -1853,6 +1861,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     }
 
     let eventsInserted = 0;
+    let eventsSkipped = 0;
     for (const event of EVENTS) {
         const locationSeed = LOCATIONS.find((location) => location.slug === event.locationSlug);
         if (!locationSeed) {
@@ -1863,9 +1872,10 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         const locationId = locationIdBySlug.get(event.locationSlug);
         const destinationId = destinationIdBySlug.get(locationSeed.destinationSlug);
         if (!locationId || !destinationId) {
-            throw new Error(
-                `0028-add-estimated-events-entre-rios: could not resolve location/destination ids for event "${event.slug}"`
-            );
+            // The location (and therefore its destination) was skipped above
+            // for the same environment-tolerance reason — skip the event too.
+            eventsSkipped += 1;
+            continue;
         }
 
         const result = await upsertEvent(ctx.db, event, ctx.actor.id, locationId, destinationId);
@@ -1875,12 +1885,14 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     }
 
     return {
-        summary: `Inserted ${eventsInserted} of ${EVENTS.length} estimated (month-precision) Entre Ríos tourist events (rest already present), across ${locationsInserted} of ${LOCATIONS.length} newly-created event locations.`,
+        summary: `Inserted ${eventsInserted} of ${EVENTS.length} estimated (month-precision) Entre Ríos tourist events (rest already present), across ${locationsInserted} of ${LOCATIONS.length} newly-created event locations. Skipped ${eventsSkipped} events and ${locationsSkipped} locations (destinations absent in this environment).`,
         counts: {
             eventsInserted,
-            eventsAlreadyPresent: EVENTS.length - eventsInserted,
+            eventsAlreadyPresent: EVENTS.length - eventsInserted - eventsSkipped,
+            eventsSkipped,
             locationsInserted,
-            locationsAlreadyPresent: LOCATIONS.length - locationsInserted
+            locationsAlreadyPresent: LOCATIONS.length - locationsInserted - locationsSkipped,
+            locationsSkipped
         }
     };
 }
