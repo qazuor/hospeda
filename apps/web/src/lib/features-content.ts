@@ -243,8 +243,10 @@ export const GASTRO_LIST: readonly FeatureListItem[] = [
 /**
  * A single plan-table cell value. `yes`/`no` render as check/dash icons,
  * `limit`/`unlimited` render numeric-limit chips, `addon` renders the
- * "con addon" pill, and `text` renders an arbitrary short i18n-sourced label
- * (e.g. "ver" / "directo" for the WhatsApp row).
+ * "con addon" pill, `upcoming` renders the "Próximamente" pill for a
+ * phantom entitlement (announced but not yet shipped — HOS-213), and `text`
+ * renders an arbitrary short i18n-sourced label (e.g. "ver" / "directo" for
+ * the WhatsApp row).
  */
 export type PlanCellValue =
     | { readonly kind: 'yes' }
@@ -252,6 +254,7 @@ export type PlanCellValue =
     | { readonly kind: 'limit'; readonly value: string }
     | { readonly kind: 'unlimited' }
     | { readonly kind: 'addon' }
+    | { readonly kind: 'upcoming' }
     | { readonly kind: 'text'; readonly labelKey: string };
 
 /** One row of a plan comparison table: a feature label plus one cell per plan column. */
@@ -371,12 +374,14 @@ export const ANFITRIONES_TABLE_ROWS: readonly PlanTableRow[] = [
         cells: [{ kind: 'no' }, { kind: 'no' }, { kind: 'yes' }]
     },
     {
+        // Phantom entitlement (no gate shipped yet, HOS-213): Premium never a plain "yes".
         labelKey: 'features.anfitriones.table.rows.customBranding.label',
-        cells: [{ kind: 'no' }, { kind: 'no' }, { kind: 'yes' }]
+        cells: [{ kind: 'no' }, { kind: 'no' }, { kind: 'upcoming' }]
     },
     {
+        // Phantom entitlement (no gate shipped yet, HOS-213): Pro/Premium never a plain "yes".
         labelKey: 'features.anfitriones.table.rows.prioritySupport.label',
-        cells: [{ kind: 'no' }, { kind: 'yes' }, { kind: 'yes' }]
+        cells: [{ kind: 'no' }, { kind: 'upcoming' }, { kind: 'upcoming' }]
     },
     {
         labelKey: 'features.anfitriones.table.rows.aiImport.label',

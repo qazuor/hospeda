@@ -5,7 +5,8 @@
  * (HOS-119). Renders a horizontally-scrollable table with a feature-label
  * column plus three plan columns; the middle plan is marked "popular". No
  * prices are ever rendered — cells only carry check/dash icons, numeric
- * limits, an infinity glyph, an "addon" pill, or a short text label.
+ * limits, an infinity glyph, an "addon" pill, an "upcoming" pill (phantom
+ * entitlement, HOS-213), or a short text label.
  *
  * Shared by the Viajeros (Gratis/Plus/VIP) and Anfitriones (Básico/Pro/Premium)
  * tables so the row-rendering logic (and its accessibility semantics) lives
@@ -68,6 +69,9 @@ const { headerLabel, planLabels, rows, noteLabel, t } = Astro.props;
 							)}
 							{cell.kind === 'addon' && (
 								<span class="fx-table__addon">{t('features.anfitriones.table.addonCell')}</span>
+							)}
+							{cell.kind === 'upcoming' && (
+								<span class="fx-table__upcoming">{t('billing.comparison.upcoming', 'Próximamente')}</span>
 							)}
 							{cell.kind === 'text' && <span>{t(cell.labelKey)}</span>}
 						</td>
