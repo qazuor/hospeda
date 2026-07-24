@@ -5,6 +5,7 @@
 import type {
     AccommodationPublic,
     AccommodationSummary,
+    AllianceLeadCreateInput,
     AmenityPublic,
     AnnouncementItem,
     CommerceLeadCreateInput,
@@ -1659,6 +1660,35 @@ export const commerceLeadApi = {
      */
     submit(body: CommerceLeadSubmitBody): Promise<ApiResult<Record<string, unknown>>> {
         return apiClient.post({ path: `${BASE}/commerce/leads`, body });
+    }
+};
+
+// --- Alliance lead (HOS-277) ---
+
+/**
+ * Alliance lead submission — wraps the honeypot field so the caller does
+ * not need to know the field name.
+ *
+ * The server silently returns 200 on honeypot rejection, so the success
+ * path is indistinguishable from a real submission to bots.
+ */
+export type AllianceLeadSubmitBody = AllianceLeadCreateInput & {
+    /** Honeypot field — must be sent as empty string by real users. */
+    readonly _hp?: string;
+};
+
+/** Public alliance lead API endpoints (HOS-277). */
+export const allianceLeadApi = {
+    /**
+     * Submit an "aliados" lead (partner, sponsor, editor, service_provider).
+     *
+     * POST /api/v1/public/alliance/leads
+     *
+     * Always include `_hp: ''` in the body — the server silently drops
+     * submissions where `_hp` is non-empty (honeypot spam guard).
+     */
+    submit(body: AllianceLeadSubmitBody): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.post({ path: `${BASE}/alliance/leads`, body });
     }
 };
 
