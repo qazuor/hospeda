@@ -807,6 +807,25 @@ The day-1 production seed must therefore be a curated `--required` run that **ex
     for why this is still a manual step and the caveat about migrations that might depend on
     the excluded `users` step.
 
+    > **Content-only migrations must be re-run for real after a from-scratch build.**
+    > A few data-migrations INSERT curated content that is deliberately NOT part of the
+    > baseline seed (it lives only in the migration, not under `src/data/**`). Baseline-stamping
+    > marks them applied WITHOUT running their `up()`, so on a fresh build (prod day-1 or a
+    > local `db:fresh-dev`) that content never lands. After the baseline-stamp above, re-run
+    > these specific migrations for real so the content is created:
+    >
+    > ```bash
+    > # Delete their ledger rows, then apply for real. Each is idempotent (insert-if-missing).
+    > # Currently: 0025-seed-real-blog-posts (9 editorial blog posts + "Equipo Hospeda" author).
+    > psql "$HOSPEDA_DATABASE_URL" -c "DELETE FROM seed_migrations WHERE name = '0025-seed-real-blog-posts';"
+    > pnpm db:seed:migrate
+    > ```
+    >
+    > On an already-live environment (the normal deploy path, not a from-scratch build) this is a
+    > no-op: the migration runs for real the first time via `pnpm db:seed:migrate` and is skipped
+    > on every run after that. This note only matters for a fresh/DR rebuild. Keep the list above
+    > current when adding another content-only migration.
+
 5. Create the first admin user through Better Auth signup, then promote.
 
     a. Visit `https://hospeda.com.ar/auth/sign-up` (or the staging URL during dry-runs) and complete the signup flow with the **real** admin email address. Use Google OAuth or email/password — both flows produce a row in `users` with `role = 'USER'`.

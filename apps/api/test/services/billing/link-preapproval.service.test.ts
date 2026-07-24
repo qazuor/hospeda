@@ -21,13 +21,18 @@
  *   defense-in-depth ONLY -> an absent live or snapshot payer email now
  *   resolves to 'linked' (was 'reconcile_assisted'); a CONFIRMED mismatch
  *   still resolves to 'idor'; a positive match still resolves to 'linked'.
- *   Tier 3 (heuristic) is unchanged: still requires a positive match, still
- *   downgrades to 'reconcile_assisted' on mismatch or absence.
  * - FIX #6 (HOS-191): Tier 1 (`ownership`, back_url) fails CLOSED when the
  *   live `preapproval_plan_id` cannot be resolved at all (lookup error / no
  *   access token) -> 'reconcile_assisted', never a silent skip of the
  *   plan-match veto; a resolved AND matching plan id still resolves to
  *   'linked'.
+ * - HOS-276: Tier 3 (heuristic) email is now ALSO veto-only, mirroring Tier 1
+ *   -> a single, already-unambiguous candidate (`candidates.length === 1`)
+ *   with an absent live/snapshot payer email now resolves to 'linked' (was
+ *   'reconcile_assisted' — the launch-blocking regression this fix closes); a
+ *   CONFIRMED mismatch still resolves to 'idor' (was 'reconcile_assisted');
+ *   zero/multiple candidates are unaffected (decided upstream in
+ *   `resolvePendingCheckout`, still 'reconcile_assisted').
  *
  * @module test/services/billing/link-preapproval.service
  */
@@ -168,7 +173,8 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 });
 
 vi.mock('@sentry/node', () => ({
-    captureException: vi.fn()
+    captureException: vi.fn(),
+    captureMessage: vi.fn()
 }));
 
 const findByNonceMock = vi.fn();
@@ -548,7 +554,12 @@ describe('linkPreapprovalToLocalSub', () => {
         expect(markLinkedMock).not.toHaveBeenCalled();
     });
 
-    it('FIX 1: refuses a heuristic link (reconcile_assisted) when the live preapproval exposes no payer email', async () => {
+    it('HOS-276: links a heuristic (Tier 3) candidate when the live preapproval exposes no payer email (regression)', async () => {
+        // Regression test for the HOS-276 launch-blocking incident: a single,
+        // already-unambiguous heuristic candidate (candidates.length === 1) must
+        // link even though MercadoPago returned `payer_email: ""` on the live
+        // preapproval — disambiguation is already provided by candidate
+        // uniqueness + plan-id + window, not by a positive email match.
         queueSelectResult([]);
         fetchPreapprovalPlanIdMock.mockResolvedValue({
             kind: 'ok',
@@ -561,13 +572,29 @@ describe('linkPreapprovalToLocalSub', () => {
             externalReference: null,
             payerEmail: 'user@example.com',
             billing: makeBilling('user@example.com') as never,
-            // Heuristic candidate resolved, but the live preapproval has no payer
-            // email → cannot positively verify → refuse (never blind-link).
+            // MercadoPago structurally omits payer_email on many real
+            // preapprovals — an absent email must no longer refuse a single,
+            // unambiguous heuristic candidate.
             adapter: makeAdapter({ payerEmail: null }) as never
         });
 
-        expect(result).toEqual({ outcome: 'reconcile_assisted' });
+        expect(result).toEqual({ outcome: 'linked', localSubscriptionId: 'sub-1' });
+        expect(markReconcileAssistedMock).toHaveBeenCalledWith({ id: 'pc-1' }, expect.anything());
         expect(markLinkedMock).not.toHaveBeenCalled();
+        // HOS-276 FIX 1b: a Tier 3 link without a positive payer-email match
+        // must emit an auditable Sentry warning (mislink risk is documented,
+        // not silent) — the outcome still resolves to 'linked'.
+        expect(Sentry.captureMessage).toHaveBeenCalledWith(
+            expect.stringContaining('provisional heuristic link'),
+            expect.objectContaining({
+                level: 'warning',
+                extra: expect.objectContaining({
+                    preapprovalId: 'pa-1',
+                    tier: 'heuristic',
+                    hasLivePayerEmail: false
+                })
+            })
+        );
     });
 
     it('returns "reconcile_assisted" and marks nothing when zero candidates match', async () => {
@@ -1052,7 +1079,11 @@ describe('linkPreapprovalToLocalSub', () => {
         expect(Sentry.captureException).toHaveBeenCalled();
     });
 
-    it('downgrades a payer-email mismatch on the HEURISTIC path to "reconcile_assisted"', async () => {
+    it('HOS-276: a CONFIRMED payer-email mismatch on the HEURISTIC path still refuses as "idor"', async () => {
+        // Tier 3 email is veto-only since HOS-276 (absence no longer refuses —
+        // see the regression test above), but a CONFIRMED mismatch between the
+        // live preapproval and the checkout-time snapshot remains a hijack
+        // signal and must still refuse — never a blind link.
         queueSelectResult([]);
         fetchPreapprovalPlanIdMock.mockResolvedValue({
             kind: 'ok',
@@ -1070,8 +1101,10 @@ describe('linkPreapprovalToLocalSub', () => {
             adapter: makeAdapter({ payerEmail: 'attacker@evil.test' }) as never
         });
 
-        expect(result).toEqual({ outcome: 'reconcile_assisted' });
+        expect(result).toEqual({ outcome: 'idor' });
+        expect(markLinkedMock).not.toHaveBeenCalled();
         expect(markReconcileAssistedMock).not.toHaveBeenCalled();
+        expect(Sentry.captureException).toHaveBeenCalled();
     });
 
     it('links when both the plan and the payer email match (case-insensitive)', async () => {

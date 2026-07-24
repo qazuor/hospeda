@@ -70,8 +70,9 @@ import {
     resolveRenewalPromoEffect,
     withServiceTransaction
 } from '@repo/service-core';
-import { getQZPayBilling } from '../../../middlewares/billing.js';
+import type { getQZPayBilling } from '../../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
+import { linkPreapprovalToLocalSub } from '../../../services/billing/link-preapproval.service.js';
 import { restoreFullPriceMutation } from '../../../services/promo-renewal-mp.service.js';
 import { env } from '../../../utils/env.js';
 import { apiLogger } from '../../../utils/logger.js';
@@ -80,10 +81,32 @@ import {
     type MPAuthorizedPaymentDetails
 } from '../../../utils/mp-authorized-payment.js';
 import { cleanupRequestProviderEventId } from './event-handler.js';
-import { markEventFailedByProviderId, markEventProcessedByProviderId } from './utils.js';
+import {
+    getWebhookDependencies,
+    markEventFailedByProviderId,
+    markEventProcessedByProviderId
+} from './utils.js';
 
 const MP_PROVIDER_KEY = 'mercadopago';
 const FALLBACK_CURRENCY: QZPayCurrency = 'ARS';
+
+/**
+ * Marker error (HOS-276) for "a settled charge could not be attributed to any
+ * local subscription, even after the linking fallback". Thrown inside the
+ * payment-recording try block below, and deliberately RE-thrown (not
+ * swallowed) by that block's own catch — see the throw site and catch site
+ * comments for the full non-2xx / dead-letter mechanism this relies on.
+ *
+ * A dedicated class (rather than a plain `Error` + message-sniffing) keeps
+ * the catch block's swallow-vs-rethrow decision a simple `instanceof` check,
+ * immune to message-text changes.
+ */
+class SubscriptionNotResolvedError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'SubscriptionNotResolvedError';
+    }
+}
 
 /**
  * Extract the authorized-payment ID from a MercadoPago webhook event
@@ -698,9 +721,18 @@ async function handleRenewalPromoEffect(params: {
  * on state transitions. Both share the same payload shape, so one
  * handler covers both.
  *
- * Errors are intentionally swallowed (logged, not re-thrown) — a single
- * noisy event must not block the webhook bucket. The event is always
- * marked processed so MP stops retrying.
+ * Recording errors (DB hiccups, `record()` failures, and similar transient
+ * failures caught by the payment-recording try/catch below) are intentionally
+ * swallowed (logged, not re-thrown) — a single noisy event must not block the
+ * webhook bucket, and the event is marked processed so MP stops retrying.
+ *
+ * ONE case is a deliberate exception (HOS-276): if a settled charge
+ * (`details.paymentId` present) cannot be attributed to ANY local
+ * subscription — even after attempting the same linking fallback
+ * `processSubscriptionUpdated` uses — this handler THROWS instead of
+ * acking. A real MercadoPago charge with nowhere to land is exactly the
+ * silent-drop bug this fix closes; see the throw site's own comment for the
+ * exact non-2xx / dead-letter mechanism this relies on.
  */
 export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c, event) => {
     const requestId = String(c.get('requestId') || event.id);
@@ -729,8 +761,11 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
         return undefined;
     }
 
-    const billing = getQZPayBilling();
-    if (!billing) {
+    // HOS-276: fetch both the billing facade AND the MercadoPago adapter up
+    // front (not just `billing` as before) — the adapter is needed below for
+    // the linking fallback when no local subscription is found yet.
+    const deps = getWebhookDependencies();
+    if (!deps) {
         // SPEC-180: billing instance unavailable is a config error — actionable.
         apiLogger.error(
             { eventId: event.id, requestId, authorizedPaymentId },
@@ -741,6 +776,7 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
         cleanupRequestProviderEventId(requestId);
         return undefined;
     }
+    const { billing, paymentAdapter } = deps;
 
     const fetchResult = await fetchAuthorizedPaymentDetails({
         authorizedPaymentId,
@@ -784,20 +820,78 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
     }
 
     try {
-        const sub = await findLocalSubscriptionByPreapprovalId(details.preapprovalId);
+        // HOS-276: resolve the local subscription. A real MercadoPago charge
+        // has already settled by this point (`details.paymentId` is set), so
+        // an unresolved subscription is handled specially below (thrown as a
+        // {@link SubscriptionNotResolvedError} and deliberately RE-thrown by
+        // this try's own catch, instead of being swallowed like every other
+        // error here) — see that catch block for the exact non-2xx mechanism.
+        let sub = await findLocalSubscriptionByPreapprovalId(details.preapprovalId);
+
         if (!sub) {
-            apiLogger.warn(
-                {
-                    eventId: event.id,
-                    requestId,
-                    authorizedPaymentId,
-                    preapprovalId: details.preapprovalId
-                },
-                'MercadoPago webhook: no local subscription found for preapproval ID — payment NOT recorded'
-            );
-            await safeMarkProcessed(event.id);
-            cleanupRequestProviderEventId(requestId);
-            return undefined;
+            // This authorized-payment webhook may be the FIRST signal for a
+            // Path C share-link checkout whose `back_url` handler never ran
+            // AND whose `subscription_preapproval.updated` webhook either
+            // never arrived or could not resolve it either (see
+            // `link-preapproval.service.ts`). Attempt the identical fallback
+            // `processSubscriptionUpdated` uses.
+            const linkResult = await linkPreapprovalToLocalSub({
+                preapprovalId: details.preapprovalId,
+                // The authorized-payment REST payload (MPAuthorizedPaymentDetails)
+                // carries neither `external_reference` nor `payer_email` —
+                // unlike `mpSubscription` in subscription-logic.ts, which comes
+                // from a full `subscriptions.retrieve()`. Passing `null` for
+                // both only affects which resolution tier is attempted here
+                // (Tier 2/heuristic fall through to Tier 3 directly);
+                // `linkPreapprovalToLocalSub` itself still re-`retrieve()`s the
+                // live preapproval internally for the IDOR/ownership guard, so
+                // identity is still verified against MP-sourced data, not this
+                // handler's absent fields.
+                externalReference: null,
+                payerEmail: null,
+                billing,
+                adapter: paymentAdapter
+            });
+
+            if (linkResult.outcome === 'linked' || linkResult.outcome === 'already') {
+                sub = await findLocalSubscriptionByPreapprovalId(details.preapprovalId);
+            }
+
+            if (sub) {
+                apiLogger.info(
+                    {
+                        eventId: event.id,
+                        requestId,
+                        authorizedPaymentId,
+                        preapprovalId: details.preapprovalId,
+                        linkOutcome: linkResult.outcome,
+                        localSubscriptionId: sub.id
+                    },
+                    'HOS-276: linked share-link checkout preapproval to local subscription via authorized-payment webhook fallback'
+                );
+            } else {
+                // Still unresolved after the fallback link attempt: a real
+                // charge has nowhere to land. Do NOT silently ack (the
+                // launch-blocking HOS-276 bug this fix closes). This custom
+                // error class is the marker the catch block below checks for
+                // to distinguish "deliberately force a retry" from every other
+                // (genuinely transient) recording failure.
+                apiLogger.error(
+                    {
+                        eventId: event.id,
+                        requestId,
+                        authorizedPaymentId,
+                        preapprovalId: details.preapprovalId,
+                        mpPaymentId: details.paymentId,
+                        linkOutcome: linkResult.outcome
+                    },
+                    'MercadoPago webhook: no local subscription found for preapproval ID even after the HOS-276 linking fallback — payment NOT recorded, forcing a retry',
+                    { capture: true }
+                );
+                throw new SubscriptionNotResolvedError(
+                    `HOS-276: unable to resolve a local subscription for preapproval ${details.preapprovalId} (link outcome: ${linkResult.outcome}) — authorized payment ${details.paymentId} not recorded`
+                );
+            }
         }
 
         if (await paymentAlreadyRecorded(details.paymentId)) {
@@ -935,6 +1029,28 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
             });
         }
     } catch (recordErr) {
+        // HOS-276: a settled charge with NO resolvable local subscription
+        // (even after the linking fallback) is NOT a transient recording
+        // error — it is the launch-blocking silent-drop bug this fix closes,
+        // and it must NOT be swallowed like the errors below. Deliberately
+        // RE-throw so it propagates past this handler entirely, reaching the
+        // qzpay-hono webhook router's dispatch try/catch, which invokes
+        // `onError` (`handleWebhookError`, registered in router.ts). That
+        // marks this event `failed` (visible for manual reconciliation / the
+        // webhook-retry dead-letter cron) and, since `handleWebhookError`
+        // itself returns `undefined`, the router falls back to its own
+        // `response.error(message, 500)` — an actual non-2xx, so MercadoPago
+        // retries the delivery instead of us swallowing a settled charge.
+        // Mirrors the established pattern in `subscription-handler.ts`
+        // (`processSubscriptionUpdated` failures propagate the same way).
+        if (recordErr instanceof SubscriptionNotResolvedError) {
+            // Deliberately do NOT call cleanupRequestProviderEventId here — the
+            // requestId -> providerEventId mapping (set by the router's onEvent,
+            // `handleWebhookEvent`) must survive so `handleWebhookError` can
+            // still find it and mark this event failed.
+            throw recordErr;
+        }
+
         // Transient / unexpected error (DB hiccup, record() failure). Mark the
         // event failed so the dead-letter queue can retry it rather than
         // silently treating it as processed. MP will not retry acknowledged
