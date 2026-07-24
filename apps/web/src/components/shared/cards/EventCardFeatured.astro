@@ -72,6 +72,7 @@ const dateResult = formatEventDate({
   end: data.date.end,
   locale,
   mode: 'compact',
+  precision: data.date.precision,
 });
 const dateLine = dateResult.mode !== 'short' ? dateResult.dateLine : '';
 const timeLine = dateResult.mode !== 'short' ? dateResult.timeLine : null;
