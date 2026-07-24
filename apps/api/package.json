@@ -31,7 +31,7 @@
     "dependencies": {
         "@ai-sdk/gateway": "4.0.19",
         "@better-auth/expo": "1.6.23",
-        "@hono/node-server": "^2.0.8",
+        "@hono/node-server": "^2.0.10",
         "@hono/swagger-ui": "^0.6.1",
         "@hono/zod-openapi": "^1.4.0",
         "@linear/sdk": "^88.1.0",
