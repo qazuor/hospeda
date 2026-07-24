@@ -30,11 +30,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../src/routes/webhooks/mercadopago/utils', () => ({
     markEventProcessedByProviderId: vi.fn(),
-    markEventFailedByProviderId: vi.fn()
+    markEventFailedByProviderId: vi.fn(),
+    // HOS-276: the handler now fetches billing + the MP adapter together.
+    getWebhookDependencies: vi.fn()
 }));
 
 vi.mock('../../src/routes/webhooks/mercadopago/event-handler', () => ({
     cleanupRequestProviderEventId: vi.fn()
+}));
+
+// HOS-276: the linking fallback attempted when no local subscription is found
+// yet (a Path C share-link checkout whose back_url + subscription.updated
+// paths both missed).
+vi.mock('../../src/services/billing/link-preapproval.service', () => ({
+    linkPreapprovalToLocalSub: vi.fn()
 }));
 
 vi.mock('../../src/utils/logger', () => ({
@@ -107,6 +116,12 @@ const subLookupResult: {
 } = { rows: [] };
 const dedupeResult: { rows: Array<{ id: string }> } = { rows: [] };
 let nextSelectCall = 0;
+// HOS-276: when set, the SECOND select call (the post-link re-lookup of
+// findLocalSubscriptionByPreapprovalId, only reached when the linking
+// fallback resolves to 'linked'/'already') returns this instead of the
+// dedupe rows. `null` (the default) preserves the pre-HOS-276 2-call shape
+// (sub lookup, then dedupe) for every test that never exercises the fallback.
+let postLinkSubRows: Array<{ id: string; customerId: string }> | null = null;
 
 // The transaction the trial conversion writes through (HOS-171). Hoisted so the
 // `@repo/service-core` mock's `withServiceTransaction` can hand it to callbacks.
@@ -139,11 +154,17 @@ vi.mock('@repo/db', () => ({
     getDb: vi.fn(() => ({
         select: vi.fn(() => {
             // Per-handler invocation: first select is the subscription
-            // lookup; second select is the payments dedupe lookup.
+            // lookup; second select is EITHER the payments dedupe lookup
+            // (the common case) OR (HOS-276) the post-link re-lookup of the
+            // subscription, when `postLinkSubRows` is set; any select after
+            // that is the payments dedupe lookup.
             const i = nextSelectCall;
             nextSelectCall += 1;
             if (i === 0) {
                 return makeQueryBuilder(subLookupResult.rows);
+            }
+            if (i === 1 && postLinkSubRows !== null) {
+                return makeQueryBuilder(postLinkSubRows);
             }
             return makeQueryBuilder(dedupeResult.rows);
         })
@@ -196,7 +217,6 @@ import {
     resolveIntervalScopedPlanPriceCentavos,
     resolveRenewalPromoEffect
 } from '@repo/service-core';
-import { getQZPayBilling } from '../../src/middlewares/billing';
 import { clearEntitlementCache } from '../../src/middlewares/entitlement';
 import { cleanupRequestProviderEventId } from '../../src/routes/webhooks/mercadopago/event-handler';
 import {
@@ -204,9 +224,11 @@ import {
     handleSubscriptionAuthorizedPayment
 } from '../../src/routes/webhooks/mercadopago/subscription-payment-handler';
 import {
+    getWebhookDependencies,
     markEventFailedByProviderId,
     markEventProcessedByProviderId
 } from '../../src/routes/webhooks/mercadopago/utils';
+import { linkPreapprovalToLocalSub } from '../../src/services/billing/link-preapproval.service';
 import { restoreFullPriceMutation } from '../../src/services/promo-renewal-mp.service';
 import { apiLogger } from '../../src/utils/logger';
 import {
@@ -267,6 +289,7 @@ function resetState() {
     subLookupResult.rows = [];
     dedupeResult.rows = [];
     nextSelectCall = 0;
+    postLinkSubRows = null;
     // Default: renewal decision is a no-op so existing happy-path tests are
     // unaffected; individual SPEC-262 tests override this.
     vi.mocked(resolveRenewalPromoEffect).mockResolvedValue({
@@ -274,15 +297,25 @@ function resetState() {
         data: { action: 'noop', subscriptionId: 'sub-1' }
     });
     vi.mocked(restoreFullPriceMutation).mockResolvedValue({ success: true });
+    // HOS-276: default linking-fallback outcome. Tests that hit the `!sub`
+    // branch (subLookupResult.rows = []) override this explicitly.
+    vi.mocked(linkPreapprovalToLocalSub).mockResolvedValue({ outcome: 'not_found' });
 }
 
 const RECORD_OK = { id: 'billing-payment-uuid' };
 
+/**
+ * Configures `getWebhookDependencies()` (HOS-276: the handler now fetches
+ * billing + the MP adapter together, not `getQZPayBilling()` alone) to
+ * return a working billing facade whose `payments.record` is the returned
+ * spy, plus a minimal adapter stub.
+ */
 function setupBillingMock(): { record: ReturnType<typeof vi.fn> } {
     const record = vi.fn().mockResolvedValue(RECORD_OK);
-    vi.mocked(getQZPayBilling).mockReturnValue({
-        payments: { record }
-    } as unknown as ReturnType<typeof getQZPayBilling>);
+    vi.mocked(getWebhookDependencies).mockReturnValue({
+        billing: { payments: { record } },
+        paymentAdapter: {}
+    } as never);
     return { record };
 }
 
@@ -424,15 +457,56 @@ describe('handleSubscriptionAuthorizedPayment', () => {
         expect(markEventProcessedByProviderId).toHaveBeenCalledOnce();
     });
 
-    it('does not record when no local subscription matches the preapproval id', async () => {
-        subLookupResult.rows = []; // no match
+    // HOS-276: a settled charge with no matching local subscription no longer
+    // silently acks — it first attempts the same linking fallback
+    // `processSubscriptionUpdated` uses (see link-preapproval.service.ts).
+
+    it('HOS-276: links via the fallback when no local subscription matches yet, then records the payment', async () => {
+        subLookupResult.rows = []; // initial lookup misses
+        postLinkSubRows = [{ id: 'local-sub-linked', customerId: 'cust-linked' }]; // post-link lookup hits
+        dedupeResult.rows = [];
         vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
         const { record } = setupBillingMock();
+        vi.mocked(linkPreapprovalToLocalSub).mockResolvedValue({
+            outcome: 'linked',
+            localSubscriptionId: 'local-sub-linked'
+        });
 
         await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
 
-        expect(record).not.toHaveBeenCalled();
+        expect(linkPreapprovalToLocalSub).toHaveBeenCalledWith(
+            expect.objectContaining({
+                preapprovalId: 'pa-1',
+                externalReference: null,
+                payerEmail: null
+            })
+        );
+        expect(record).toHaveBeenCalledOnce();
+        const arg = record.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(arg.customerId).toBe('cust-linked');
+        expect(arg.subscriptionId).toBe('local-sub-linked');
         expect(markEventProcessedByProviderId).toHaveBeenCalledOnce();
+        expect(markEventFailedByProviderId).not.toHaveBeenCalled();
+    });
+
+    it('HOS-276: still unresolved after the linking fallback → throws instead of acking (forces a retry)', async () => {
+        subLookupResult.rows = []; // no match, before or after the fallback attempt
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+        setupBillingMock();
+        vi.mocked(linkPreapprovalToLocalSub).mockResolvedValue({ outcome: 'not_found' });
+
+        await expect(
+            handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent())
+        ).rejects.toThrow(/HOS-276/);
+
+        // Deliberately NOT acked: no processed mark, no internal failed mark
+        // (this handler leaves the failed-marking to the qzpay-hono router's
+        // onError callback, which runs the requestId -> providerEventId
+        // lookup this handler must NOT clean up before rethrowing), and no
+        // cleanup call from THIS handler either.
+        expect(markEventProcessedByProviderId).not.toHaveBeenCalled();
+        expect(markEventFailedByProviderId).not.toHaveBeenCalled();
+        expect(cleanupRequestProviderEventId).not.toHaveBeenCalled();
     });
 
     it('acknowledges when fetchAuthorizedPaymentDetails returns not-found', async () => {
@@ -491,9 +565,7 @@ describe('handleSubscriptionAuthorizedPayment', () => {
     });
 
     it('acknowledges when billing instance is unavailable', async () => {
-        vi.mocked(getQZPayBilling).mockReturnValue(
-            undefined as unknown as ReturnType<typeof getQZPayBilling>
-        );
+        vi.mocked(getWebhookDependencies).mockReturnValue(null);
 
         await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
 
@@ -506,9 +578,10 @@ describe('handleSubscriptionAuthorizedPayment', () => {
         dedupeResult.rows = [];
         vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
         const record = vi.fn().mockRejectedValue(new Error('storage offline'));
-        vi.mocked(getQZPayBilling).mockReturnValue({
-            payments: { record }
-        } as unknown as ReturnType<typeof getQZPayBilling>);
+        vi.mocked(getWebhookDependencies).mockReturnValue({
+            billing: { payments: { record } },
+            paymentAdapter: {}
+        } as never);
 
         await expect(
             handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent())
@@ -570,9 +643,10 @@ describe('handleSubscriptionAuthorizedPayment', () => {
         dedupeResult.rows = [];
         vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
         const record = vi.fn().mockRejectedValue(new Error('storage offline'));
-        vi.mocked(getQZPayBilling).mockReturnValue({
-            payments: { record }
-        } as unknown as ReturnType<typeof getQZPayBilling>);
+        vi.mocked(getWebhookDependencies).mockReturnValue({
+            billing: { payments: { record } },
+            paymentAdapter: {}
+        } as never);
         vi.mocked(markEventFailedByProviderId).mockRejectedValue(new Error('mark-failed down'));
 
         await expect(

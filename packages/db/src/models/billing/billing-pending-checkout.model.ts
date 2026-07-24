@@ -23,6 +23,10 @@ type BillingPendingCheckout = typeof billingPendingCheckouts.$inferSelect;
  *   used when the `back_url` handler never fired.
  * - {@link markLinked} / {@link markReconcileAssisted} — the two successful
  *   terminal states (`back_url`-driven vs. webhook-driven reconciliation).
+ * - {@link findReconcileAssistedByLocalSubscriptionId} — used by the
+ *   `abandoned-pending-subs` reaper (HOS-276) to recognize a `pending_provider`
+ *   row whose correlation checkout already resolved to `reconcile_assisted` —
+ *   a REAL payment that could not be auto-linked, never an abandoned checkout.
  */
 export class BillingPendingCheckoutModel extends BaseModelImpl<BillingPendingCheckout> {
     protected table = billingPendingCheckouts;
@@ -210,6 +214,78 @@ export class BillingPendingCheckoutModel extends BaseModelImpl<BillingPendingChe
                 logError(this.entityName, 'findReconcileCandidates', logContext, err);
             } catch {}
             throw new DbError(this.entityName, 'findReconcileCandidates', logContext, err.message);
+        }
+    }
+
+    /**
+     * Finds the most recent `reconcile_assisted` correlation row for a given
+     * local subscription (HOS-276).
+     *
+     * Unlike {@link findByLocalSubscriptionId} (which only returns `pending`
+     * rows), this deliberately looks for an already-TERMINAL
+     * `reconcile_assisted` row — the heuristic (Tier 3) linking path's outcome
+     * when it could not positively resolve a single, unambiguous match (see
+     * `link-preapproval.service.ts`). That status means a REAL MercadoPago
+     * charge landed for this subscription attempt but could not be
+     * auto-linked; it is NOT an abandoned checkout, and the
+     * `abandoned-pending-subs` reaper must never mark it `abandoned` — it
+     * needs manual reconciliation instead. Ordered most-recent-first and
+     * limited to one row since a single local subscription can only ever
+     * accumulate one live correlation attempt per checkout flow.
+     *
+     * @param params.localSubscriptionId - The `billing_subscriptions` row id
+     *   created in `pending_provider` status for this checkout attempt.
+     * @param tx - Optional transaction client.
+     * @returns The most recent matching `reconcile_assisted` row, or `null`
+     *   if none exists.
+     */
+    async findReconcileAssistedByLocalSubscriptionId(
+        params: { localSubscriptionId: string },
+        tx?: DrizzleClient
+    ): Promise<BillingPendingCheckout | null> {
+        const { localSubscriptionId } = params;
+        const db = this.getClient(tx);
+        const logContext = { localSubscriptionId };
+
+        try {
+            const rows = await db
+                .select()
+                .from(billingPendingCheckouts)
+                .where(
+                    and(
+                        eq(billingPendingCheckouts.localSubscriptionId, localSubscriptionId),
+                        eq(billingPendingCheckouts.status, 'reconcile_assisted')
+                    )
+                )
+                .orderBy(desc(billingPendingCheckouts.createdAt))
+                .limit(1);
+
+            const row = rows[0] ?? null;
+            try {
+                logQuery(
+                    this.entityName,
+                    'findReconcileAssistedByLocalSubscriptionId',
+                    logContext,
+                    row
+                );
+            } catch {}
+            return row;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(
+                    this.entityName,
+                    'findReconcileAssistedByLocalSubscriptionId',
+                    logContext,
+                    err
+                );
+            } catch {}
+            throw new DbError(
+                this.entityName,
+                'findReconcileAssistedByLocalSubscriptionId',
+                logContext,
+                err.message
+            );
         }
     }
 
