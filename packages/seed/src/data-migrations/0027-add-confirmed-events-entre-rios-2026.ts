@@ -7,15 +7,16 @@
  * municipal/tourism-board announcement (source link at the bottom of every
  * `description`).
  *
- * ## Scope decision: `group: 'example'`
+ * ## Scope decision: `group: 'required'`
  *
- * These are real-world tourist events, not synthetic demo content, but they
- * follow the `example` seed-data track (not `required`) because they are
- * time-bound calendar content rather than canonical system/catalog data —
- * the same classification every other `src/data/event/*.json` fixture uses.
- * Per `packages/seed/CLAUDE.md`'s dual-write guard exemption list, `events`
- * is one of the explicitly demo-exempt entities, so this migration alone
- * (no baseline JSON fixture edit) is a complete, compliant delta.
+ * These are real-world tourist events — real content bound for production —
+ * so they use the `required` track, exactly like `0025-seed-real-blog-posts`.
+ * The seed runner refuses `example`-group migrations in production outright
+ * (not overridable), so `example` would (and did) block these from prod;
+ * `required` is what actually reaches production. `events` remains on
+ * `packages/seed/CLAUDE.md`'s dual-write guard exemption list, so this
+ * migration alone (no baseline JSON fixture edit) is a complete, compliant
+ * delta.
  *
  * ## Idempotency
  *
@@ -41,8 +42,7 @@
  * `false` — this migration only ever INSERTs new rows (guarded by
  * `onConflictDoNothing` on each table's unique `slug`). It never updates or
  * deletes existing data, so the production destructive-migration gate does
- * not apply. (Not that it matters here — as an `example`-group migration it
- * never runs against production regardless.)
+ * not apply.
  */
 
 import type { DrizzleClient } from '@repo/db';
@@ -58,7 +58,7 @@ import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from 
 
 export const meta = {
     name: '0027-add-confirmed-events-entre-rios-2026',
-    group: 'example',
+    group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];
 
