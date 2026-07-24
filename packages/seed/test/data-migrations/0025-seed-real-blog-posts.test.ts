@@ -70,14 +70,20 @@ function loadFixtures(): { file: string; data: RealPostFixture }[] {
         }));
 }
 
-const EXPECTED_POST_COUNT = 9;
-/** Destination slugs the fixtures link to that exist in the required seed. */
+const EXPECTED_POST_COUNT = 16;
+/** Destination slugs that exist in the required seed (the mock resolves only these). */
 const KNOWN_DESTINATION_SLUGS = new Set([
     'federacion',
     'gualeguaychu',
     'concepcion-del-uruguay',
     'colon'
 ]);
+/** How many fixtures carry a destination slug the mock will resolve (computed, not hardcoded). */
+const EXPECTED_RESOLVED_LINKS = loadFixtures().filter(
+    ({ data }) =>
+        data.relatedDestinationSlug !== null &&
+        KNOWN_DESTINATION_SLUGS.has(data.relatedDestinationSlug)
+).length;
 
 describe('0025-seed-real-blog-posts — fixture integrity', () => {
     const fixtures = loadFixtures();
@@ -207,12 +213,12 @@ describe('0025-seed-real-blog-posts — up()', () => {
         expect(result.counts?.postsSkipped).toBe(0);
     });
 
-    it('resolves the four known destination links and leaves the rest null', async () => {
+    it('resolves the known destination links and leaves multi-destination posts null', async () => {
         const result = await postsMigration.up(buildCtx(store, created));
 
         const withDest = created.filter((p) => p.relatedDestinationId != null);
-        expect(withDest).toHaveLength(KNOWN_DESTINATION_SLUGS.size);
-        expect(result.counts?.destinationLinksResolved).toBe(KNOWN_DESTINATION_SLUGS.size);
+        expect(withDest).toHaveLength(EXPECTED_RESOLVED_LINKS);
+        expect(result.counts?.destinationLinksResolved).toBe(EXPECTED_RESOLVED_LINKS);
         expect(result.counts?.destinationLinksMissing).toBe(0);
     });
 
