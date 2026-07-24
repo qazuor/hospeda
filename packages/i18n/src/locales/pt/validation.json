@@ -45,8 +45,10 @@
                 "required": "[PT] La cantidad mínima de noches es obligatoria"
             }
         },
-        "featureIds": {
-            "invalidUuid": "[PT] El ID de característica debe ser un UUID válido"
+        "featuredToggle": {
+            "isFeatured": {
+                "required": "[PT] El destacado es obligatorio"
+            }
         },
         "featureFlag": {
             "description": {
@@ -61,6 +63,9 @@
             "reason": {
                 "max": "O motivo não pode exceder {{max}} caracteres"
             }
+        },
+        "featureIds": {
+            "invalidUuid": "[PT] El ID de característica debe ser un UUID válido"
         },
         "location": {
             "apartment": {
@@ -92,6 +97,20 @@
                 "max": "[PT] El street no puede superar los {{max}} caracteres",
                 "min": "[PT] El street debe tener al menos {{min}} caracteres",
                 "required": "[PT] El street es obligatorio"
+            }
+        },
+        "media": {
+            "reorder": {
+                "orderedIds": {
+                    "invalid": "A lista ordenada deve ser um arranjo de UUIDs válidos",
+                    "min": "A lista ordenada deve conter ao menos {{min}} item"
+                }
+            },
+            "sortOrder": {
+                "int": "A ordem de exibição deve ser um número inteiro"
+            },
+            "state": {
+                "invalid": "O estado da mídia deve ser 'visible' ou 'archived'"
             }
         },
         "name": {
@@ -168,25 +187,6 @@
         "summary": {
             "max": "[PT] El resumen no puede superar los {{max}} caracteres",
             "min": "[PT] El resumen debe tener al menos {{min}} caracteres"
-        },
-        "media": {
-            "state": {
-                "invalid": "O estado da mídia deve ser 'visible' ou 'archived'"
-            },
-            "sortOrder": {
-                "int": "A ordem de exibição deve ser um número inteiro"
-            },
-            "reorder": {
-                "orderedIds": {
-                    "invalid": "A lista ordenada deve ser um arranjo de UUIDs válidos",
-                    "min": "A lista ordenada deve conter ao menos {{min}} item"
-                }
-            }
-        },
-        "featuredToggle": {
-            "isFeatured": {
-                "required": "[PT] El destacado es obligatorio"
-            }
         }
     },
     "accommodationAmenity": {
@@ -197,6 +197,42 @@
         },
         "isOptional": {
             "required": "[PT] El indicador de opcionalidad es obligatorio"
+        }
+    },
+    "accommodationCalendarSync": {
+        "accessTokenAuthTag": {
+            "required": "A tag de autenticação do token de acesso é obrigatória"
+        },
+        "accessTokenCiphertext": {
+            "required": "O texto cifrado do token de acesso é obrigatório"
+        },
+        "accessTokenIv": {
+            "required": "O IV do token de acesso é obrigatório"
+        },
+        "calendarProviderToken": {
+            "invalid": "O provedor de calendário é inválido"
+        },
+        "createdAt": {
+            "required": "A data de criação é obrigatória"
+        },
+        "externalCalendarId": {
+            "max": "O ID do calendário externo não pode ultrapassar 255 caracteres",
+            "required": "O ID do calendário externo é obrigatório"
+        },
+        "feedUrl": {
+            "httpsRequired": "A URL do feed deve usar HTTPS",
+            "invalid": "A URL do feed é inválida",
+            "max": "A URL do feed não pode ultrapassar 2048 caracteres",
+            "required": "A URL do feed é obrigatória"
+        },
+        "icalProviderToken": {
+            "invalid": "O provedor de calendário iCal é inválido"
+        },
+        "isActive": {
+            "required": "O status ativo é obrigatório"
+        },
+        "updatedAt": {
+            "required": "A data de atualização é obrigatória"
         }
     },
     "accommodationExternalListing": {
@@ -220,6 +256,52 @@
         "hostReWriteName": {
             "max": "[PT] El host re write name no puede superar los {{max}} caracteres",
             "min": "[PT] El host re write name debe tener al menos {{min}} caracteres"
+        }
+    },
+    "accommodationOccupancy": {
+        "createdAt": {
+            "required": "A data de criação é obrigatória"
+        },
+        "date": {
+            "invalid": "A data não é uma data de calendário válida",
+            "pattern": "A data deve estar no formato AAAA-MM-DD",
+            "required": "A data é obrigatória"
+        },
+        "dates": {
+            "max": "Não é possível enviar mais de 366 datas",
+            "min": "É necessário indicar pelo menos uma data",
+            "required": "As datas são obrigatórias"
+        },
+        "eventTitle": {
+            "max": "O título do evento não pode ultrapassar 500 caracteres",
+            "required": "O título do evento é obrigatório"
+        },
+        "eventUpdate": {
+            "newRange": {
+                "invalid": "A data inicial nova deve ser anterior ou igual à data final nova",
+                "tooLong": "O novo intervalo de datas não pode ultrapassar 366 dias"
+            },
+            "oldRange": {
+                "invalid": "A data inicial original deve ser anterior ou igual à data final original",
+                "tooLong": "O intervalo de datas original não pode ultrapassar 366 dias"
+            }
+        },
+        "externalEventId": {
+            "max": "O ID do evento externo não pode ultrapassar 255 caracteres",
+            "required": "O ID do evento externo é obrigatório"
+        },
+        "isBlocked": {
+            "required": "O status de bloqueio é obrigatório"
+        },
+        "note": {
+            "max": "A nota não pode ultrapassar 500 caracteres",
+            "required": "A nota é obrigatória"
+        },
+        "range": {
+            "fromBeforeTo": "A data inicial deve ser anterior à data final"
+        },
+        "updatedAt": {
+            "required": "A data de atualização é obrigatória"
         }
     },
     "accommodationReview": {
@@ -425,7 +507,51 @@
             }
         }
     },
+    "allianceLead": {
+        "adminList": {
+            "page": {
+                "positive": "A página deve ser um número positivo"
+            },
+            "pageSize": {
+                "max": "O tamanho da página não pode exceder {{max}}",
+                "positive": "O tamanho da página deve ser um número positivo"
+            }
+        },
+        "adminNote": {
+            "max": "A nota não pode exceder {{max}} caracteres"
+        },
+        "contactName": {
+            "max": "O nome de contato não pode exceder {{max}} caracteres",
+            "min": "O nome de contato deve ter pelo menos {{min}} caracteres"
+        },
+        "email": {
+            "invalid": "O email é inválido",
+            "max": "O email não pode exceder {{max}} caracteres"
+        },
+        "kind": {
+            "invalid": "O tipo é inválido"
+        },
+        "markHandled": {
+            "status": {
+                "invalid": "O status é inválido"
+            }
+        },
+        "message": {
+            "max": "A mensagem não pode exceder {{max}} caracteres",
+            "min": "A mensagem deve ter pelo menos {{min}} caracteres"
+        },
+        "phone": {
+            "max": "O telefone não pode exceder {{max}} caracteres"
+        },
+        "status": {
+            "invalid": "O status é inválido"
+        }
+    },
     "amenity": {
+        "applicableVerticals": {
+            "min": "[PT] El applicable verticals debe tener al menos {{min}} caracteres",
+            "required": "[PT] El applicable verticals es obligatorio"
+        },
         "bulkOperation": {
             "force": {
                 "invalidType": "[PT] El valor de forzar debe ser un booleano"
@@ -539,10 +665,6 @@
             "min": "[PT] El slug debe tener al menos {{min}} caracteres",
             "pattern": "[PT] El formato del slug no es válido",
             "required": "[PT] El slug es obligatorio"
-        },
-        "applicableVerticals": {
-            "min": "[PT] El applicable verticals debe tener al menos {{min}} caracteres",
-            "required": "[PT] El applicable verticals es obligatorio"
         }
     },
     "attraction": {
@@ -602,20 +724,6 @@
         }
     },
     "billing": {
-        "linkPreapproval": {
-            "localSubscriptionId": {
-                "invalid": "O ID de assinatura local não é válido",
-                "invalidType": "O ID de assinatura local tem um tipo de dado inválido"
-            },
-            "outcome": {
-                "invalid": "O resultado do vínculo não é válido"
-            },
-            "preapprovalId": {
-                "invalidType": "O ID de pré-aprovação tem um tipo de dado inválido",
-                "max": "O ID de pré-aprovação não pode exceder {{max}} caracteres",
-                "min": "O ID de pré-aprovação deve ter pelo menos {{min}} caracteres"
-            }
-        },
         "addon": {
             "cancel": {
                 "reason": {
@@ -647,6 +755,20 @@
                     "max": "[PT] El slug no puede superar los {{max}} caracteres",
                     "min": "[PT] El slug debe tener al menos {{min}} caracteres"
                 }
+            }
+        },
+        "linkPreapproval": {
+            "localSubscriptionId": {
+                "invalid": "O ID de assinatura local não é válido",
+                "invalidType": "O ID de assinatura local tem um tipo de dado inválido"
+            },
+            "outcome": {
+                "invalid": "O resultado do vínculo não é válido"
+            },
+            "preapprovalId": {
+                "invalidType": "O ID de pré-aprovação tem um tipo de dado inválido",
+                "max": "O ID de pré-aprovação não pode exceder {{max}} caracteres",
+                "min": "O ID de pré-aprovação deve ter pelo menos {{min}} caracteres"
             }
         },
         "plan": {
@@ -1304,14 +1426,14 @@
             "mobilePhone": {
                 "international": "[PT] El mobile phone no es válido"
             },
-            "whatsapp": {
-                "international": "[PT] El WhatsApp no es válido"
-            },
             "personalEmail": {
                 "invalid": "[PT] El personal email no es válido"
             },
             "website": {
                 "invalid": "[PT] El sitio web no es válido"
+            },
+            "whatsapp": {
+                "international": "[PT] El WhatsApp no es válido"
             },
             "workEmail": {
                 "invalid": "[PT] El work email no es válido"
@@ -1558,11 +1680,11 @@
                         "max": "[PT] El photographer no puede superar los {{max}} caracteres",
                         "min": "[PT] El photographer debe tener al menos {{min}} caracteres"
                     },
-                    "sourceUrl": {
-                        "invalid": "[PT] El source url no es válido"
-                    },
                     "provider": {
                         "invalid": "O provedor deve ser unsplash, pexels ou user-upload"
+                    },
+                    "sourceUrl": {
+                        "invalid": "[PT] El source url no es válido"
                     }
                 },
                 "caption": {
@@ -2038,6 +2160,9 @@
         "billingInterval": {
             "invalid": "[PT] El billing interval no es válido"
         },
+        "calendarSyncStatus": {
+            "invalid": "O status de sincronização do calendário é inválido"
+        },
         "clientType": {
             "invalid": "[PT] El client type no es válido"
         },
@@ -2118,6 +2243,9 @@
         },
         "notificationRecipientSide": {
             "invalid": "[PT] El notification recipient side no es válido"
+        },
+        "occupancySource": {
+            "invalid": "A origem de ocupação é inválida"
         },
         "ownerPromotionDiscountType": {
             "invalid": "[PT] El owner promotion discount type no es válido"
@@ -2217,12 +2345,6 @@
         },
         "visibility": {
             "invalid": "[PT] El visibility no es válido"
-        },
-        "occupancySource": {
-            "invalid": "A origem de ocupação é inválida"
-        },
-        "calendarSyncStatus": {
-            "invalid": "O status de sincronização do calendário é inválido"
         }
     },
     "event": {
@@ -2595,6 +2717,10 @@
         }
     },
     "feature": {
+        "applicableVerticals": {
+            "min": "[PT] El applicable verticals debe tener al menos {{min}} caracteres",
+            "required": "[PT] El applicable verticals es obligatorio"
+        },
         "availabilityUpdate": {
             "featureIds": {
                 "max": "[PT] El feature ids no puede superar los {{max}} caracteres",
@@ -2739,10 +2865,6 @@
             "min": "[PT] El slug debe tener al menos {{min}} caracteres",
             "pattern": "[PT] El formato del slug no es válido",
             "required": "[PT] El slug es obligatorio"
-        },
-        "applicableVerticals": {
-            "min": "[PT] El applicable verticals debe tener al menos {{min}} caracteres",
-            "required": "[PT] El applicable verticals es obligatorio"
         }
     },
     "featureFlag": {
@@ -3107,25 +3229,10 @@
         }
     },
     "pointOfInterest": {
-        "distanceKm": {
-            "min": "A distância não pode ser negativa"
-        },
-        "nearby": {
-            "radius": {
-                "invalidType": "O raio deve ser um número",
-                "min": "O raio deve ser de pelo menos {{min}} km",
-                "max": "O raio não pode ultrapassar {{max}} km"
-            },
-            "limit": {
-                "invalidType": "O limite deve ser um número",
-                "min": "O limite deve ser de pelo menos {{min}}",
-                "max": "O limite não pode ultrapassar {{max}}"
-            }
-        },
         "address": {
-            "required": "[PT] La dirección es obligatoria",
+            "max": "[PT] La dirección no puede superar los {{max}} caracteres",
             "min": "[PT] La dirección debe tener al menos {{min}} caracteres",
-            "max": "[PT] La dirección no puede superar los {{max}} caracteres"
+            "required": "[PT] La dirección es obligatoria"
         },
         "bulkAdd": {
             "pointOfInterestIds": {
@@ -3155,6 +3262,9 @@
             "min": "[PT] El peso de visualización debe tener al menos {{min}} caracteres",
             "required": "[PT] El peso de visualización es obligatorio"
         },
+        "distanceKm": {
+            "min": "A distância não pode ser negativa"
+        },
         "icon": {
             "max": "[PT] El ícono no puede superar los {{max}} caracteres",
             "min": "[PT] El ícono debe tener al menos {{min}} caracteres",
@@ -3162,8 +3272,8 @@
         },
         "keywords": {
             "item": {
-                "min": "[PT] Cada palabra clave debe tener al menos {{min}} caracteres",
-                "max": "[PT] Cada palabra clave no puede superar los {{max}} caracteres"
+                "max": "[PT] Cada palabra clave no puede superar los {{max}} caracteres",
+                "min": "[PT] Cada palabra clave debe tener al menos {{min}} caracteres"
             },
             "max": "[PT] No se pueden superar las {{max}} palabras clave"
         },
@@ -3182,6 +3292,18 @@
             "max": "[PT] El long no puede superar los {{max}} caracteres",
             "min": "[PT] El long debe tener al menos {{min}} caracteres",
             "required": "[PT] El long es obligatorio"
+        },
+        "nearby": {
+            "limit": {
+                "invalidType": "O limite deve ser um número",
+                "max": "O limite não pode ultrapassar {{max}}",
+                "min": "O limite deve ser de pelo menos {{min}}"
+            },
+            "radius": {
+                "invalidType": "O raio deve ser um número",
+                "max": "O raio não pode ultrapassar {{max}} km",
+                "min": "O raio deve ser de pelo menos {{min}} km"
+            }
         },
         "notes": {
             "max": "[PT] Las notas no pueden superar los {{max}} caracteres"
@@ -3629,8 +3751,8 @@
         },
         "image": {
             "openaiFileIdRefs": {
-                "required": "[PT] É necessária pelo menos uma referência de arquivo da OpenAI",
-                "invalidUrl": "[PT] A URL de download da OpenAI é inválida"
+                "invalidUrl": "[PT] A URL de download da OpenAI é inválida",
+                "required": "[PT] É necessária pelo menos uma referência de arquivo da OpenAI"
             },
             "url": {
                 "invalid": "[PT] El url no es válido"
@@ -3742,12 +3864,12 @@
         "timezone": {
             "required": "[PT] El timezone es obligatorio"
         },
+        "title": {
+            "required": "[PT] El title es obligatorio"
+        },
         "weekday": {
             "invalid": "[PT] El día de la semana no es válido",
             "requiredForWeekly": "[PT] El día de la semana es obligatorio para la recurrencia semanal"
-        },
-        "title": {
-            "required": "[PT] El title es obligatorio"
         }
     },
     "socialPostFooter": {
@@ -4438,88 +4560,6 @@
         },
         "zod": {
             "failed": "[PT] La validación del esquema ha fallado"
-        }
-    },
-    "accommodationOccupancy": {
-        "createdAt": {
-            "required": "A data de criação é obrigatória"
-        },
-        "date": {
-            "invalid": "A data não é uma data de calendário válida",
-            "pattern": "A data deve estar no formato AAAA-MM-DD",
-            "required": "A data é obrigatória"
-        },
-        "dates": {
-            "max": "Não é possível enviar mais de 366 datas",
-            "min": "É necessário indicar pelo menos uma data",
-            "required": "As datas são obrigatórias"
-        },
-        "eventTitle": {
-            "max": "O título do evento não pode ultrapassar 500 caracteres",
-            "required": "O título do evento é obrigatório"
-        },
-        "eventUpdate": {
-            "newRange": {
-                "invalid": "A data inicial nova deve ser anterior ou igual à data final nova",
-                "tooLong": "O novo intervalo de datas não pode ultrapassar 366 dias"
-            },
-            "oldRange": {
-                "invalid": "A data inicial original deve ser anterior ou igual à data final original",
-                "tooLong": "O intervalo de datas original não pode ultrapassar 366 dias"
-            }
-        },
-        "externalEventId": {
-            "max": "O ID do evento externo não pode ultrapassar 255 caracteres",
-            "required": "O ID do evento externo é obrigatório"
-        },
-        "isBlocked": {
-            "required": "O status de bloqueio é obrigatório"
-        },
-        "note": {
-            "max": "A nota não pode ultrapassar 500 caracteres",
-            "required": "A nota é obrigatória"
-        },
-        "range": {
-            "fromBeforeTo": "A data inicial deve ser anterior à data final"
-        },
-        "updatedAt": {
-            "required": "A data de atualização é obrigatória"
-        }
-    },
-    "accommodationCalendarSync": {
-        "accessTokenAuthTag": {
-            "required": "A tag de autenticação do token de acesso é obrigatória"
-        },
-        "accessTokenCiphertext": {
-            "required": "O texto cifrado do token de acesso é obrigatório"
-        },
-        "accessTokenIv": {
-            "required": "O IV do token de acesso é obrigatório"
-        },
-        "calendarProviderToken": {
-            "invalid": "O provedor de calendário é inválido"
-        },
-        "createdAt": {
-            "required": "A data de criação é obrigatória"
-        },
-        "externalCalendarId": {
-            "max": "O ID do calendário externo não pode ultrapassar 255 caracteres",
-            "required": "O ID do calendário externo é obrigatório"
-        },
-        "feedUrl": {
-            "httpsRequired": "A URL do feed deve usar HTTPS",
-            "invalid": "A URL do feed é inválida",
-            "max": "A URL do feed não pode ultrapassar 2048 caracteres",
-            "required": "A URL do feed é obrigatória"
-        },
-        "icalProviderToken": {
-            "invalid": "O provedor de calendário iCal é inválido"
-        },
-        "isActive": {
-            "required": "O status ativo é obrigatório"
-        },
-        "updatedAt": {
-            "required": "A data de atualização é obrigatória"
         }
     }
 }
