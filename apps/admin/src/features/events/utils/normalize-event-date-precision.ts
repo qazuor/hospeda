@@ -80,5 +80,9 @@ export function normalizeEventDatePrecision<T extends NormalizableEventDate>(dat
         normalized.end = toFirstOfMonthUtc(date.end);
     }
 
+    // TYPE-WORKAROUND: `normalized` is built as the fixed, non-generic `MutableEventDate`
+    // working copy, so TS cannot statically prove it still matches the caller's generic
+    // `T` (a structurally-narrowed subtype); the cast reconstructs `T` for the return
+    // since only day-of-month fields were mutated, not the object's shape.
     return normalized as unknown as T;
 }
