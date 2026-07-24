@@ -49,6 +49,7 @@ import type { DrizzleClient } from '@repo/db';
 import { destinations, eq, eventLocations, events, inArray } from '@repo/db';
 import {
     EventCategoryEnum,
+    EventDatePrecisionEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
     VisibilityEnum
@@ -528,7 +529,10 @@ async function upsertEvent(
                 // stores a normalized value in the jsonb column either way.
                 start: new Date(event.date.start),
                 ...(event.date.end ? { end: new Date(event.date.end) } : {}),
-                isAllDay: event.date.isAllDay
+                isAllDay: event.date.isAllDay,
+                // These are all confirmed exact-date events (post-#2487 `precision`
+                // is required on EventDate; staging now carries that field).
+                precision: EventDatePrecisionEnum.EXACT
             },
             authorId,
             locationId,
