@@ -40,6 +40,7 @@ import {
     findLocalSubscriptionByPreapprovalId,
     paymentAlreadyRecorded
 } from '../../routes/webhooks/mercadopago/subscription-payment-handler.js';
+import { linkPreapprovalToLocalSub } from '../../services/billing/link-preapproval.service.js';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 import { fetchAuthorizedPaymentDetails } from '../../utils/mp-authorized-payment.js';
@@ -164,6 +165,16 @@ async function retrySubscriptionUpdated(
  * permanent condition (returns true — no point retrying) while `error` results
  * return false so the retry cron increments attempts and tries again later.
  *
+ * HOS-276: when no local subscription is found for the preapproval, this
+ * mirrors the linking fallback the live handler (`subscription-payment-handler.ts`)
+ * already performs — attempting `linkPreapprovalToLocalSub` before giving up.
+ * Without this, a dead-lettered charge would be "resolved permanently" (dropped)
+ * without ever being linked, reintroducing the silent-drop bug via the dead-letter
+ * back door. Only a genuinely terminal `not_found` link outcome resolves the
+ * dead-letter entry permanently; `reconcile_assisted` and `idor` outcomes leave it
+ * retryable (return `false`) since a real charge may still need manual
+ * reconciliation or is flagged as a possible mislink — never silently dropped.
+ *
  * @param payload - Stored event payload from the dead letter queue
  * @returns Promise resolving to true if processing succeeded or is permanently
  *          not retryable, false on transient errors that warrant a retry
@@ -243,16 +254,90 @@ async function retrySubscriptionAuthorizedPayment(payload: unknown): Promise<boo
     }
 
     // Resolve the local subscription from MP's preapproval ID — mirrors the live handler.
-    // If we cannot resolve the subscription we cannot record the payment against a customer;
-    // treat this as a permanent skip (same as the live handler's no-local-subscription path).
-    const sub = details.preapprovalId
+    let sub = details.preapprovalId
         ? await findLocalSubscriptionByPreapprovalId(details.preapprovalId)
         : null;
+
+    if (!sub && details.preapprovalId) {
+        // HOS-276: this dead-lettered charge may be the FIRST signal for a
+        // Path C share-link checkout whose `back_url` handler never ran and
+        // whose `subscription_preapproval.updated` webhook either never arrived
+        // or could not resolve it either. Attempt the identical fallback the
+        // live handler (`subscription-payment-handler.ts`) uses before giving
+        // up — without this, the dead-letter retry would silently drop a real
+        // charge instead of linking it.
+        let linkAdapter: ReturnType<typeof createMercadoPagoAdapter>;
+        try {
+            linkAdapter = createMercadoPagoAdapter({ logger: qzpayLogger });
+        } catch (adapterError) {
+            apiLogger.error(
+                {
+                    authorizedPaymentId,
+                    preapprovalId: details.preapprovalId,
+                    error:
+                        adapterError instanceof Error ? adapterError.message : String(adapterError)
+                },
+                'Failed to create MercadoPago adapter for subscription_authorized_payment linking fallback — will retry'
+            );
+            return false;
+        }
+
+        const linkResult = await linkPreapprovalToLocalSub({
+            preapprovalId: details.preapprovalId,
+            // Same rationale as the live handler: the authorized-payment REST
+            // payload carries neither `external_reference` nor `payer_email`.
+            externalReference: null,
+            payerEmail: null,
+            billing,
+            adapter: linkAdapter
+        });
+
+        if (linkResult.outcome === 'linked' || linkResult.outcome === 'already') {
+            sub = await findLocalSubscriptionByPreapprovalId(details.preapprovalId);
+        }
+
+        if (sub) {
+            apiLogger.info(
+                {
+                    authorizedPaymentId,
+                    preapprovalId: details.preapprovalId,
+                    linkOutcome: linkResult.outcome,
+                    localSubscriptionId: sub.id
+                },
+                'HOS-276: linked share-link checkout preapproval to local subscription via dead-letter retry linking fallback'
+            );
+        } else if (linkResult.outcome === 'not_found') {
+            // Genuinely terminal: no pending checkout could be resolved at all
+            // (unknown localSubscriptionId, unknown nonce, or no candidate to
+            // heuristically match). Nothing to link to — resolve permanently.
+            apiLogger.warn(
+                { authorizedPaymentId, preapprovalId: details.preapprovalId },
+                'Subscription authorized payment dead-letter retry: no local subscription found for preapproval ID even after the HOS-276 linking fallback — resolving permanently'
+            );
+            return true;
+        } else {
+            // `reconcile_assisted` (ambiguous — needs manual reconciliation) or
+            // `idor` (possible mislink, flagged upstream) — never silently drop
+            // a real charge on these outcomes. Leave the dead-letter entry
+            // retryable; it will keep surfacing until a human resolves it (or
+            // the 5-attempt cap escalates it to a loud permanent-failure alert).
+            apiLogger.error(
+                {
+                    authorizedPaymentId,
+                    preapprovalId: details.preapprovalId,
+                    linkOutcome: linkResult.outcome
+                },
+                'Subscription authorized payment dead-letter retry: local subscription still unresolved after the HOS-276 linking fallback — leaving retryable, NOT resolving permanently',
+                { capture: true }
+            );
+            return false;
+        }
+    }
 
     if (!sub) {
         apiLogger.warn(
             { authorizedPaymentId, preapprovalId: details.preapprovalId ?? null },
-            'Subscription authorized payment dead-letter retry: no local subscription found for preapproval ID — resolving permanently'
+            'Subscription authorized payment dead-letter retry: no preapproval ID available to resolve or link — resolving permanently'
         );
         return true;
     }

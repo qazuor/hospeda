@@ -63,6 +63,24 @@ export const createDatePricingConsolidatedSection = (): ConsolidatedSectionConfi
             typeConfig: {}
         },
         {
+            id: 'date.precision',
+            type: FieldTypeEnum.SELECT,
+            required: false,
+            modes: ['view', 'edit', 'create'],
+            label: 'Precisión de fecha',
+            description: 'Exacta (día y hora) o solo mes (fecha estimada)',
+            permissions: {
+                view: [PermissionEnum.EVENT_VIEW_ALL],
+                edit: [PermissionEnum.EVENT_UPDATE]
+            },
+            typeConfig: {
+                options: [
+                    { value: 'EXACT', label: 'Exacta' },
+                    { value: 'MONTH', label: 'Solo mes (estimada)' }
+                ]
+            }
+        },
+        {
             id: 'pricing.isFree',
             type: FieldTypeEnum.SWITCH,
             required: false,

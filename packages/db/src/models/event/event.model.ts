@@ -96,6 +96,14 @@ function extractEventCategoryCondition(where: Record<string, unknown>): {
 }
 
 /**
+ * Options accepted by {@link EventModel.findAll}, {@link EventModel.findAllWithRelations},
+ * and {@link EventModel.count} that this model's soft-delete default cares about.
+ */
+interface EventIncludeDeletedOption {
+    includeDeleted?: boolean;
+}
+
+/**
  * Input parameters for EventModel.search() and EventModel.searchWithRelations().
  */
 export interface EventSearchParams {
@@ -138,6 +146,39 @@ export class EventModel extends BaseModelImpl<Event> {
     }
 
     /**
+     * Computes the soft-delete exclusion condition injected by default into every
+     * {@link findAll}, {@link findAllWithRelations}, and {@link count} query on this
+     * model (HOS-274). Public list/count/getByX endpoints (e.g. `getByAuthor`,
+     * `getByCategory`, `_executeSearch`) never explicitly filtered `deletedAt`
+     * themselves, so soft-deleted events leaked into public responses. Centralizing
+     * the rule here — rather than fixing each call site — closes the gap for every
+     * current and future caller of these three methods.
+     *
+     * Returns `undefined` (no condition injected, i.e. soft-deleted rows are
+     * included) when EITHER escape hatch applies, mirroring the existing
+     * convention in `BaseCrudRead.list()` (`packages/service-core/src/base/base.crud.read.ts`):
+     *   (a) `options.includeDeleted === true` — explicit opt-in, e.g. the admin
+     *       trash/restore view via `adminList({ includeDeleted: true })`, or
+     *   (b) the caller's `where` record already specifies a `deletedAt` key —
+     *       explicit caller intent always wins over the default.
+     *
+     * @param where - The raw filter record as received by the caller, BEFORE
+     *   {@link extractEventCategoryCondition} strips `category`/`categories` (that
+     *   extraction never touches `deletedAt`, so checking the raw or sanitized
+     *   record is equivalent here — the raw record is used for clarity).
+     * @param options - Optional read options; only `includeDeleted` is read.
+     * @returns `isNull(events.deletedAt)`, or `undefined` when either escape hatch applies.
+     */
+    #softDeleteCondition(
+        where: Record<string, unknown>,
+        options?: EventIncludeDeletedOption
+    ): SQL<unknown> | undefined {
+        if (options?.includeDeleted) return undefined;
+        if ('deletedAt' in where) return undefined;
+        return isNull(events.deletedAt);
+    }
+
+    /**
      * Overrides {@link BaseModelImpl.findAll} to add support for the synthetic
      * `mostSaved` sort field. When `options.sortBy === 'mostSaved'`, the query
      * orders rows by the count of active bookmarks via a correlated subquery on
@@ -150,7 +191,13 @@ export class EventModel extends BaseModelImpl<Event> {
      */
     override async findAll(
         where: Record<string, unknown>,
-        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
+        options?: {
+            page?: number;
+            pageSize?: number;
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
+            includeDeleted?: boolean;
+        },
         additionalConditions?: SQL[],
         tx?: DrizzleClient
     ): Promise<{ items: Event[]; total: number }> {
@@ -159,9 +206,12 @@ export class EventModel extends BaseModelImpl<Event> {
         // below builds its query — see extractEventCategoryCondition() JSDoc.
         const { where: sanitizedWhere, condition: categoryCondition } =
             extractEventCategoryCondition(where ?? {});
+        // HOS-274: default-exclude soft-deleted rows — see #softDeleteCondition() JSDoc.
+        const softDeleteCondition = this.#softDeleteCondition(where ?? {}, options);
         const mergedConditions: SQL[] = [
             ...(additionalConditions ?? []),
-            ...(categoryCondition ? [categoryCondition] : [])
+            ...(categoryCondition ? [categoryCondition] : []),
+            ...(softDeleteCondition ? [softDeleteCondition] : [])
         ];
 
         const sortBy = options?.sortBy;
@@ -218,9 +268,13 @@ export class EventModel extends BaseModelImpl<Event> {
 
             const [items, total] = await Promise.all([
                 itemsQuery,
+                // includeDeleted is forwarded so `total` makes the same soft-delete
+                // include/exclude decision as `items` above (HOS-274 — see
+                // #softDeleteCondition() JSDoc).
                 this.count(safeWhere, {
                     additionalConditions: mergedConditions,
-                    tx
+                    tx,
+                    includeDeleted: options?.includeDeleted
                 })
             ]);
 
@@ -258,6 +312,7 @@ export class EventModel extends BaseModelImpl<Event> {
             pageSize?: number;
             sortBy?: string;
             sortOrder?: 'asc' | 'desc';
+            includeDeleted?: boolean;
         } = {},
         additionalConditions?: SQL[],
         tx?: DrizzleClient
@@ -267,9 +322,12 @@ export class EventModel extends BaseModelImpl<Event> {
         // below builds its query — see extractEventCategoryCondition() JSDoc.
         const { where: sanitizedWhere, condition: categoryCondition } =
             extractEventCategoryCondition(where ?? {});
+        // HOS-274: default-exclude soft-deleted rows — see #softDeleteCondition() JSDoc.
+        const softDeleteCondition = this.#softDeleteCondition(where ?? {}, options);
         const mergedConditions: SQL[] = [
             ...(additionalConditions ?? []),
-            ...(categoryCondition ? [categoryCondition] : [])
+            ...(categoryCondition ? [categoryCondition] : []),
+            ...(softDeleteCondition ? [softDeleteCondition] : [])
         ];
 
         const sortBy = options.sortBy;
@@ -327,7 +385,13 @@ export class EventModel extends BaseModelImpl<Event> {
                     limit: pageSize,
                     offset
                 }),
-                this.count(safeWhere, { additionalConditions: mergedConditions, tx })
+                // includeDeleted forwarded for items/total consistency (HOS-274 — see
+                // #softDeleteCondition() JSDoc).
+                this.count(safeWhere, {
+                    additionalConditions: mergedConditions,
+                    tx,
+                    includeDeleted: options.includeDeleted
+                })
             ]);
 
             // DRIZZLE-LIMITATION: relational query widens nullable JSONB columns vs the Event entity type; the projection returns the same row shape used elsewhere.
@@ -509,17 +573,20 @@ export class EventModel extends BaseModelImpl<Event> {
      * `categories`/`category` branch as {@link findAll} and
      * {@link findAllWithRelations} (HOS-96 US-2/US-9), so the public count
      * endpoint (which drives pagination totals) reflects the exact same
-     * OR-union filter as the items query.
+     * OR-union filter as the items query. Also applies the same default
+     * soft-delete exclusion (HOS-274) — see {@link #softDeleteCondition} JSDoc.
      */
     override async count(
         where: Record<string, unknown>,
-        options?: { additionalConditions?: SQL[]; tx?: DrizzleClient }
+        options?: { additionalConditions?: SQL[]; tx?: DrizzleClient; includeDeleted?: boolean }
     ): Promise<number> {
         const { where: sanitizedWhere, condition: categoryCondition } =
             extractEventCategoryCondition(where ?? {});
+        const softDeleteCondition = this.#softDeleteCondition(where ?? {}, options);
         const mergedConditions: SQL[] = [
             ...(options?.additionalConditions ?? []),
-            ...(categoryCondition ? [categoryCondition] : [])
+            ...(categoryCondition ? [categoryCondition] : []),
+            ...(softDeleteCondition ? [softDeleteCondition] : [])
         ];
         return super.count(sanitizedWhere, { ...options, additionalConditions: mergedConditions });
     }

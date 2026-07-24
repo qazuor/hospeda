@@ -33,6 +33,11 @@
  *   the lock-holding transaction commits (R-2) so no MercadoPago network
  *   call is ever made while a DB transaction is open; each abandon write is
  *   idempotent (guarded by `status IN pending`).
+ * - HOS-276: an `mp_subscription_id`-null row whose `billing_pending_checkouts`
+ *   correlation row already resolved to `reconcile_assisted` (a REAL charge
+ *   that could not be auto-linked — see `link-preapproval.service.ts`) is
+ *   likewise never abandoned; it is left pending for manual reconciliation,
+ *   surfaced as `reconcileAssistedManual` in the job result.
  *
  * @module cron/jobs/abandoned-pending-subs
  */
@@ -118,7 +123,11 @@ type ReapOutcome =
     | { abandoned: true; info: AbandonedSubInfo }
     | {
           abandoned: false;
-          reason: 'cancel-unverified' | 'already-reaped' | 'checkout-in-progress';
+          reason:
+              | 'cancel-unverified'
+              | 'already-reaped'
+              | 'checkout-in-progress'
+              | 'reconcile-assisted-manual';
       };
 
 /**
@@ -229,6 +238,27 @@ async function reapPendingCandidate(params: {
         });
         if (pendingCheckout && pendingCheckout.expiresAt.getTime() > Date.now()) {
             return { abandoned: false, reason: 'checkout-in-progress' };
+        }
+
+        // HOS-276: a `reconcile_assisted` correlation row means the heuristic
+        // (Tier 3) linking path found MULTIPLE candidates for this
+        // checkout attempt — a real charge that could not be auto-disambiguated
+        // (see `link-preapproval.service.ts`, `resolvePendingCheckout`). It is
+        // NOT the confirmed-payer-email-mismatch case: since HOS-276, a
+        // confirmed Tier 3 mismatch returns `'idor'` directly and never marks
+        // the row `reconcile_assisted`. That is money already charged with
+        // nowhere to land locally, not an abandoned checkout —
+        // abandoning it here would permanently strand the payment instead of
+        // leaving it for manual reconciliation. This check runs regardless of
+        // the correlation row's own `expiresAt` (unlike the guard above),
+        // since `reconcile_assisted` is a terminal outcome the row's TTL is
+        // irrelevant to.
+        const reconcileAssisted =
+            await billingPendingCheckoutModel.findReconcileAssistedByLocalSubscriptionId({
+                localSubscriptionId: candidate.id
+            });
+        if (reconcileAssisted) {
+            return { abandoned: false, reason: 'reconcile-assisted-manual' };
         }
     }
 
@@ -472,6 +502,7 @@ export const abandonedPendingSubsJob: CronJobDefinition = {
             const abandonedSubs: AbandonedSubInfo[] = [];
             let cancelUnverified = 0;
             let checkoutInProgress = 0;
+            let reconcileAssistedManual = 0;
 
             for (const candidate of cronResult.candidates) {
                 const outcome = await reapPendingCandidate({
@@ -489,6 +520,11 @@ export const abandonedPendingSubsJob: CronJobDefinition = {
                     // Healthy in-progress Path C checkout — deliberately left
                     // pending, not an error (FIX B layer 1).
                     checkoutInProgress++;
+                } else if (outcome.reason === 'reconcile-assisted-manual') {
+                    // HOS-276: a real charge landed but could not be auto-linked —
+                    // genuinely needs a human, so it is surfaced like
+                    // cancel-unverified (non-zero signal), never silently reaped.
+                    reconcileAssistedManual++;
                 }
             }
 
@@ -542,6 +578,7 @@ export const abandonedPendingSubsJob: CronJobDefinition = {
                 abandoned: abandonedSubs.length,
                 cancelUnverified,
                 checkoutInProgress,
+                reconcileAssistedManual,
                 durationMs,
                 dryRun
             });
@@ -556,20 +593,29 @@ export const abandonedPendingSubsJob: CronJobDefinition = {
                     checkoutInProgress > 0
                         ? ` (${checkoutInProgress} left pending — Path C checkout still in progress)`
                         : ''
+                }${
+                    reconcileAssistedManual > 0
+                        ? ` (${reconcileAssistedManual} left pending — HOS-276 reconcile_assisted, needs manual reconciliation)`
+                        : ''
                 }`,
                 processed: abandonedSubs.length,
-                // A cancel/verify that could not be confirmed is surfaced as an
-                // error count (the row was intentionally NOT abandoned) so ops
-                // sees a non-zero signal, even though the run itself succeeded.
-                // An in-progress Path C checkout is NOT an error — it is a healthy
-                // pending state — so it is reported separately, not in `errors`.
+                // A cancel/verify that could not be confirmed IS a genuine error
+                // (the row was intentionally NOT abandoned and needs ops
+                // attention on a live preapproval). `reconcile_assisted`
+                // (HOS-276) is NOT an error — it is an expected "needs manual
+                // reconciliation" signal for a real charge, and folding it into
+                // `errors` would pin the hourly count permanently non-zero
+                // (a stuck row is re-selected every run, forever, until a human
+                // resolves it). It gets its own field/counter instead, mirroring
+                // `checkoutInProgress`'s separate, non-error treatment.
                 errors: cancelUnverified,
                 durationMs,
                 details: {
                     dryRun,
                     abandoned: abandonedSubs.length,
                     cancelUnverified,
-                    checkoutInProgress
+                    checkoutInProgress,
+                    reconcileAssistedManual
                 }
             };
         } catch (error) {

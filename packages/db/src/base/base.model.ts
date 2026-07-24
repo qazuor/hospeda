@@ -139,14 +139,24 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      * - pageSize is capped at MAX_PAGE_SIZE (200) to prevent memory issues
      *
      * @param where - The filter object to apply.
-     * @param options - Optional pagination parameters: `{ page, pageSize }`.
+     * @param options - Optional pagination parameters: `{ page, pageSize }`. `includeDeleted` is
+     *   accepted here as a passthrough option only — this base implementation does not act on it
+     *   (it has no `deletedAt` column awareness). Subclasses whose table has a `deletedAt` column
+     *   and default their read paths to excluding soft-deleted rows (e.g. `EventModel`, `PostModel`
+     *   — HOS-274) read this flag to opt back in (e.g. for admin trash/restore views).
      * @param additionalConditions - Optional extra SQL conditions to combine with the where clause.
      * @param tx - Optional transaction client.
      * @returns A promise resolving to an object containing the `items` array and `total` count.
      */
     async findAll(
         where: Record<string, unknown>,
-        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
+        options?: {
+            page?: number;
+            pageSize?: number;
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
+            includeDeleted?: boolean;
+        },
         additionalConditions?: SQL[],
         tx?: DrizzleClient
     ): Promise<{ items: T[]; total: number }> {
@@ -186,9 +196,18 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             const baseQuery = db.select().from(this.table).where(finalWhereClause).$dynamic();
             const sortedQuery = orderClause ? baseQuery.orderBy(orderClause) : baseQuery;
 
+            // Forward `includeDeleted` verbatim so subclasses whose `count()` override
+            // applies a default soft-delete filter (HOS-274) make the SAME
+            // include/exclude decision for `total` that this method made for `items` —
+            // otherwise a caller-provided `includeDeleted: true` would filter `items`
+            // but leave `total` counting only non-deleted rows (or vice versa).
             const [items, total] = await Promise.all([
                 sortedQuery.limit(pageSize).offset(offset),
-                this.count(safeWhere, { additionalConditions, tx })
+                this.count(safeWhere, {
+                    additionalConditions,
+                    tx,
+                    includeDeleted: options?.includeDeleted
+                })
             ]);
 
             const result = { items: items as T[], total };
@@ -475,12 +494,14 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      * Counts entities matching the given where clause and optional additional conditions.
      *
      * @param where - Record of column-value pairs for filtering
-     * @param options - Optional configuration: tx for transaction, additionalConditions for extra SQL
+     * @param options - Optional configuration: tx for transaction, additionalConditions for extra SQL.
+     *   `includeDeleted` is accepted here as a passthrough option only — this base implementation
+     *   does not act on it (see {@link findAll} for the same note).
      * @returns Promise resolving to the count
      */
     async count(
         where: Record<string, unknown>,
-        options?: { additionalConditions?: SQL[]; tx?: DrizzleClient }
+        options?: { additionalConditions?: SQL[]; tx?: DrizzleClient; includeDeleted?: boolean }
     ): Promise<number> {
         const { additionalConditions = [], tx } = options ?? {};
         const db = this.getClient(tx);
@@ -919,7 +940,9 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      *
      * @param relations Relations to include (e.g., { destination: true, sponsorship: { sponsor: true } })
      * @param where Filter conditions
-     * @param options Pagination and other options
+     * @param options Pagination and other options. `includeDeleted` is accepted here as a
+     *   passthrough option only — this base implementation does not act on it (see {@link findAll}
+     *   for the same note).
      * @param additionalConditions Optional extra SQL conditions to combine with the where clause.
      *   Must reference base table columns only. Conditions on related table columns will fail
      *   silently because the parallel count() query has no joins.
@@ -930,7 +953,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
     async findAllWithRelations(
         relations: Record<string, boolean | Record<string, unknown>>,
         where: Record<string, unknown> = {},
-        options: Omit<PaginatedListOptions, 'relations'> = {},
+        options: Omit<PaginatedListOptions, 'relations'> & { includeDeleted?: boolean } = {},
         additionalConditions?: SQL[],
         tx?: DrizzleClient
     ): Promise<{ items: T[]; total: number }> {
@@ -1036,9 +1059,16 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             // committed data if concurrent writes occur between the two queries.
             // Also: additionalConditions must reference base table columns only — count()
             // has no joins, so conditions on related table columns will fail silently.
+            // `includeDeleted` is forwarded verbatim for the same reason as in findAll()
+            // above — keeps `items` and `total` in agreement for subclasses that default
+            // to excluding soft-deleted rows (HOS-274).
             const [items, totalCount] = await Promise.all([
                 typedQueryTable.findMany(queryOptions),
-                this.count(where, { additionalConditions, tx })
+                this.count(where, {
+                    additionalConditions,
+                    tx,
+                    includeDeleted: options.includeDeleted
+                })
             ]);
 
             const result = { items: items as T[], total: totalCount };

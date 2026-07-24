@@ -5,6 +5,7 @@ export * from './accommodation-external/index.js';
 export * from './accommodation-occupancy/index.js';
 export * from './accommodationReview/index.js';
 export * from './ai/index.js';
+export * from './alliance-lead/index.js';
 export * from './amenity/index.js';
 export * from './appLogEntry/index.js';
 export * from './attraction/index.js';

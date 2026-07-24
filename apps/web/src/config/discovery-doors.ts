@@ -24,9 +24,10 @@ import type { ComponentType } from 'react';
  *
  * "Acquired" state (HOS-131 OQ-3, owner-decided): the signal is PERMISSIONS,
  * not billing entitlements — a user has "acquired" an option once they hold
- * `acquiredPermission`. Options with no `acquiredPermission` (the
- * sponsor/service-provider placeholders, NG-2) can never be acquired; they
- * render as `comingSoon` instead.
+ * `acquiredPermission`. Options with no `acquiredPermission` (`sponsor`,
+ * `partner`, `serviceProvider` — lead-only flows with no auto-provisioning,
+ * HOS-277 NG-1) can never be acquired; they render as `unacquired`, always
+ * linking their lead-capture landing.
  */
 export interface DiscoveryDoorOption {
     /** Stable identifier. */
@@ -55,8 +56,12 @@ export interface DiscoveryDoorOption {
     readonly manageHref?: string;
     /**
      * `true` renders a "Próximamente" badge + a "Contactanos" CTA instead of
-     * an acquire flow — for verticals/roles that don't exist yet (sponsor,
-     * service provider). Never combined with `acquiredPermission`.
+     * an acquire flow — for verticals/roles that don't exist yet at all (no
+     * landing, no lead form). As of HOS-277, `sponsor`/`partner`/
+     * `serviceProvider` moved off this flag onto real alliance-lead landings
+     * (see below) — currently no option uses `comingSoon`, but the flag stays
+     * available for a future vertical with no capture flow yet. Never
+     * combined with `acquiredPermission`.
      */
     readonly comingSoon?: boolean;
     /**
@@ -177,33 +182,43 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 i18nKey: 'account.doors.partner.options.sponsor.title',
                 descriptionI18nKey: 'account.doors.partner.options.sponsor.description',
                 icon: MegaphoneIcon,
-                href: 'contacto',
-                ctaI18nKey: 'account.doors.common.contactCta',
-                // No acquiredPermission: sponsor roles don't exist yet (NG-2) —
-                // this option can never resolve to 'acquired'.
-                comingSoon: true
+                // HOS-277: routes to the sponsor alliance-lead landing (a
+                // qualified, typed lead that persists in `alliance_leads`) —
+                // no longer the generic '/contacto' form.
+                href: 'sumate/sponsor',
+                ctaI18nKey: 'account.doors.common.contactCta'
+                // No acquiredPermission: sponsor is a lead-only flow (HOS-277
+                // NG-1) — the admin evaluates and provisions manually, so this
+                // option never resolves to 'acquired'.
             },
             {
                 id: 'partner',
                 i18nKey: 'account.doors.partner.options.partner.title',
                 descriptionI18nKey: 'account.doors.partner.options.partner.description',
                 icon: StarIcon,
-                href: 'contacto',
-                ctaI18nKey: 'account.doors.common.contactCta',
-                // No acquiredPermission: the home-ad partner role doesn't exist
-                // yet (NG-2) — this option can never resolve to 'acquired'.
-                comingSoon: true
+                // HOS-277: routes to the partner alliance-lead landing (a
+                // qualified, typed lead that persists in `alliance_leads`) —
+                // no longer the generic '/contacto' form.
+                href: 'sumate/partner',
+                ctaI18nKey: 'account.doors.common.contactCta'
+                // No acquiredPermission: partner is a lead-only flow (HOS-277
+                // NG-1) — the admin evaluates and provisions manually, so this
+                // option never resolves to 'acquired'.
             },
             {
                 id: 'serviceProvider',
                 i18nKey: 'account.doors.partner.options.serviceProvider.title',
                 descriptionI18nKey: 'account.doors.partner.options.serviceProvider.description',
                 icon: WrenchIcon,
-                href: 'contacto',
-                ctaI18nKey: 'account.doors.common.contactCta',
-                // No acquiredPermission: service-provider roles don't exist yet
-                // (NG-2) — this option can never resolve to 'acquired'.
-                comingSoon: true
+                // HOS-277: routes to the service-provider alliance-lead
+                // landing (a qualified, typed lead that persists in
+                // `alliance_leads`, feeding the HostTrade directory once
+                // approved) — no longer the generic '/contacto' form.
+                href: 'sumate/proveedor',
+                ctaI18nKey: 'account.doors.common.contactCta'
+                // No acquiredPermission: service_provider is a lead-only flow
+                // (HOS-277 NG-1) — the admin evaluates and provisions
+                // manually, so this option never resolves to 'acquired'.
             },
             {
                 id: 'editor',

@@ -34,7 +34,8 @@ const {
     mockCreateMercadoPagoAdapter,
     mockSentryCapture,
     mockGetDb,
-    mockFindByLocalSubscriptionId
+    mockFindByLocalSubscriptionId,
+    mockFindReconcileAssistedByLocalSubscriptionId
 } = vi.hoisted(() => ({
     mockBillingCustomersGet: vi.fn(),
     mockBillingPlansGet: vi.fn(),
@@ -44,7 +45,8 @@ const {
     mockCreateMercadoPagoAdapter: vi.fn(),
     mockSentryCapture: vi.fn(),
     mockGetDb: vi.fn(),
-    mockFindByLocalSubscriptionId: vi.fn()
+    mockFindByLocalSubscriptionId: vi.fn(),
+    mockFindReconcileAssistedByLocalSubscriptionId: vi.fn()
 }));
 
 // ─── DB mock ──────────────────────────────────────────────────────────────────
@@ -76,7 +78,9 @@ vi.mock('@repo/db', async (importOriginal) => {
         getDb: mockGetDb,
         withTransaction: vi.fn(async (cb: (tx: typeof mockTx) => Promise<unknown>) => cb(mockTx)),
         billingPendingCheckoutModel: {
-            findByLocalSubscriptionId: mockFindByLocalSubscriptionId
+            findByLocalSubscriptionId: mockFindByLocalSubscriptionId,
+            findReconcileAssistedByLocalSubscriptionId:
+                mockFindReconcileAssistedByLocalSubscriptionId
         }
     };
 });
@@ -208,6 +212,9 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
     beforeEach(() => {
         vi.clearAllMocks();
         mockBillingSubscriptionsCancel.mockResolvedValue(undefined);
+        // HOS-276: no reconcile_assisted correlation row by default — tests that
+        // exercise it override this explicitly.
+        mockFindReconcileAssistedByLocalSubscriptionId.mockResolvedValue(null);
     });
 
     it('abandons a row directly when it has NO preapproval id (nothing to cancel)', async () => {
@@ -330,6 +337,37 @@ describe('reapPendingCandidate (HOS-151 Bug B: cancel + verify before abandon)',
 
         expect(outcome).toEqual({ abandoned: true, info: ABANDONED_ROW });
         expect(update).toHaveBeenCalledOnce();
+    });
+
+    it('HOS-276: does NOT abandon an mp-null row whose correlation row already resolved to reconcile_assisted', async () => {
+        // No in-progress `pending` checkout (that guard already passed), but a
+        // REAL charge landed and the heuristic linking path could not
+        // auto-resolve it — the row must be left for manual reconciliation,
+        // never silently abandoned.
+        mockFindByLocalSubscriptionId.mockResolvedValue(null);
+        mockFindReconcileAssistedByLocalSubscriptionId.mockResolvedValue({
+            id: 'pc-1',
+            localSubscriptionId: 'sub-1',
+            status: 'reconcile_assisted'
+        });
+        const { db, update } = makeDbMock([ABANDONED_ROW]);
+
+        const outcome = await _internals.reapPendingCandidate({
+            candidate: {
+                id: 'sub-1',
+                customerId: 'cust-1',
+                planId: 'plan-1',
+                mpSubscriptionId: null
+            },
+            billing: billing as any,
+            paymentAdapter: paymentAdapter as any,
+            db: db as any,
+            logger: makeLogger()
+        });
+
+        expect(outcome).toEqual({ abandoned: false, reason: 'reconcile-assisted-manual' });
+        expect(update).not.toHaveBeenCalled();
+        expect(mockBillingSubscriptionsCancel).not.toHaveBeenCalled();
     });
 
     it('cancels then verifies via retrieve, and abandons once MP confirms cancelled', async () => {
@@ -505,6 +543,8 @@ describe('abandonedPendingSubsJob handler', () => {
         mockSendNotification.mockResolvedValue(undefined);
         // Default getDb: abandon UPDATE echoes one row.
         mockGetDb.mockReturnValue(makeDbMock([ABANDONED_ROW]).db);
+        // HOS-276: no reconcile_assisted correlation row by default.
+        mockFindReconcileAssistedByLocalSubscriptionId.mockResolvedValue(null);
     });
 
     /** Configure the candidate SELECT to resolve `rows`. */
@@ -639,6 +679,54 @@ describe('abandonedPendingSubsJob handler', () => {
         expect(result.errors).toBe(1);
         expect(mockSendNotification).not.toHaveBeenCalled();
         expect(mockSentryCapture).toHaveBeenCalledOnce();
+    });
+
+    it('HOS-276: leaves a reconcile_assisted mp-null candidate pending, surfaced in its own field — NOT in errors', async () => {
+        withCandidates([
+            {
+                id: 'sub-reconcile',
+                customerId: 'cust-1',
+                planId: 'plan-1',
+                mpSubscriptionId: null
+            }
+        ]);
+        mockFindByLocalSubscriptionId.mockResolvedValue(null);
+        mockFindReconcileAssistedByLocalSubscriptionId.mockResolvedValue({
+            id: 'pc-1',
+            localSubscriptionId: 'sub-reconcile',
+            status: 'reconcile_assisted'
+        });
+
+        const result = await abandonedPendingSubsJob.handler(makeCronCtx(false));
+
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(0);
+        // `reconcile_assisted` is an expected "needs manual reconciliation"
+        // signal, not an error — it must NOT pin the hourly `errors` count
+        // non-zero forever. It gets its own dedicated field instead.
+        expect(result.errors).toBe(0);
+        expect(result.details?.reconcileAssistedManual).toBe(1);
+        expect(result.message).toContain('reconcile_assisted');
+        expect(mockSendNotification).not.toHaveBeenCalled();
+    });
+
+    it('HOS-276: a cancel-unverified live preapproval STILL counts in errors, unlike reconcile_assisted', async () => {
+        withCandidates([
+            {
+                id: 'sub-live-2',
+                customerId: 'cust-1',
+                planId: 'plan-1',
+                mpSubscriptionId: 'mp-live-2'
+            }
+        ]);
+        mockAdapterRetrieve.mockResolvedValue({ status: 'authorized' });
+
+        const result = await abandonedPendingSubsJob.handler(makeCronCtx(false));
+
+        expect(result.success).toBe(true);
+        expect(result.errors).toBe(1);
+        expect(result.details?.cancelUnverified).toBe(1);
+        expect(result.details?.reconcileAssistedManual).toBe(0);
     });
 
     it('continues the sweep when one notification fails (non-fatal)', async () => {

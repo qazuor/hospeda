@@ -1,146 +1,165 @@
 ---
 /**
  * @file colaborar/editores/index.astro
- * @description Volunteer-editor recruitment page (SPEC-191 FR-5, BETA-65):
- * recruitment copy for the blog (publicaciones) and events sections, plus a
- * contribution form locked to `editor_application`.
- * @route /{lang}/colaborar/editores/
- * @rendering SSR + Cloudflare cache (HOS-74 — see [lang]/index.astro)
+ * @description Public "Sumate como editor" alliance-lead landing (HOS-277
+ * G-5): volunteer-editor recruitment copy for the blog and events sections,
+ * plus the alliance-lead form locked to `kind: 'editor'`.
+ *
+ * Migrated from the SPEC-191/BETA-65 `ContributionForm` preset
+ * (`editor_application`), which posted to `POST /api/v1/public/contact` with
+ * `skipDb: true` and never persisted anything. This page now posts to
+ * `POST /api/v1/public/alliance/leads` (same molde as the other three
+ * "aliados" landings under `/sumate/*`), so editor applications persist and
+ * appear in the admin alliance-leads inbox. An admin still promotes the
+ * applicant to `RoleEnum.EDITOR` by hand — no automatic role grant
+ * (HOS-277 NG-1).
+ *
+ * @route     /[lang]/colaborar/editores/
+ * @rendering SSR (on-demand, no prerender)
  */
 
-import ContributionBackLink from '@/components/contributions/ContributionBackLink.astro';
-import { ContributionForm } from '@/components/contributions/ContributionForm.client';
-import DefaultLayout from '@/layouts/DefaultLayout.astro';
-import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { AllianceLead } from '@/components/alliance/AllianceLead.client';
 import { CheckCircleIcon } from '@repo/icons';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
-// What volunteer editors do — sets expectations before the application form.
+const title = t('alliance-leads.editor.title', 'Sumate como editor');
+const subtitle = t(
+    'alliance-leads.editor.subtitle',
+    'El blog y la agenda de eventos crecen con gente que conoce y quiere al Litoral. Si te gusta escribir o curar contenido, postulate.'
+);
+
 const roleItems = [
-    t(
-        'contributions.editors.role.item1',
-        'Escribir o revisar artículos del blog sobre los destinos del Litoral.'
-    ),
-    t(
-        'contributions.editors.role.item2',
-        'Cargar y curar eventos de la agenda: fechas, lugares, descripciones.'
-    ),
-    t(
-        'contributions.editors.role.item3',
-        'Proponer temas y ayudar a mantener el contenido al día.'
-    )
-];
+    t('alliance-leads.editor.role.item1', ''),
+    t('alliance-leads.editor.role.item2', ''),
+    t('alliance-leads.editor.role.item3', '')
+].filter((item) => item.length > 0);
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 ---
 
-<DefaultLayout
-    locale={locale}
-    title={t('contributions.editors.title', 'Sumate como editor')}
-    description={t(
-        'contributions.editors.description',
-        'Buscamos editores voluntarios para el blog y la agenda de eventos de Hospeda. Postulate y escribí con nosotros.'
-    )}
->
-    <section class="editores section">
-        <div class="editores__container">
-            <ContributionBackLink locale={locale} />
+<BaseLayout locale={locale} title={title} description={subtitle}>
+    <SEOHead
+        slot="head"
+        title={title}
+        description={subtitle}
+        locale={locale}
+        canonical={canonicalUrl}
+        noindex={false}
+    />
 
-            <div data-reveal="up">
-                <SectionHeader
-                    tagline={t('contributions.editors.tagline', 'Convocatoria abierta')}
-                    title={t('contributions.editors.heading', 'Sumate como editor')}
-                    subtitle={t(
-                        'contributions.editors.subtitle',
-                        'El blog y la agenda de eventos crecen con gente que conoce y quiere al Litoral. Si te gusta escribir o curar contenido, postulate.'
-                    )}
-                />
+    <Breadcrumbs locale={locale} items={[{ label: title }]} />
+
+    <section class="sumate__hero section">
+        <div class="sumate__container section__container">
+            <div class="sumate__header" data-reveal="up">
+                <h1 class="sumate__title">{title}</h1>
+                <p class="sumate__subtitle">{subtitle}</p>
             </div>
 
-            <!-- ───── What editors do ─────────────────────────────────────── -->
-            <div
-                class="editores__role"
-                data-reveal="up"
-            >
-                <h2 class="editores__subheading">
-                    {t('contributions.editors.role.heading', '¿Qué hace un editor?')}
-                </h2>
-                <ul class="editores__list">
-                    {
-                        roleItems.map((item) => (
-                            <li class="editores__item">
-                                <span
-                                    class="editores__item-icon"
-                                    aria-hidden="true"
-                                >
-                                    <CheckCircleIcon
-                                        size="sm"
-                                        weight="fill"
-                                    />
+            {roleItems.length > 0 && (
+                <div class="sumate__role" data-reveal="up">
+                    <h2 class="sumate__role-heading">
+                        {t('alliance-leads.editor.roleHeading', '¿Qué hace un editor?')}
+                    </h2>
+                    <ul class="sumate__benefits">
+                        {roleItems.map((item) => (
+                            <li class="sumate__benefit">
+                                <span class="sumate__benefit-icon" aria-hidden="true">
+                                    <CheckCircleIcon size="sm" weight="fill" />
                                 </span>
                                 <span>{item}</span>
                             </li>
-                        ))
-                    }
-                </ul>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            <!-- Cross-incentive copy (HOS-277 §6.6, NG-2): invites accommodation
+                 owners / partners to collaborate as editors for subscription
+                 benefits. Copy ONLY — no billing logic, no calculation, no link
+                 to a subscription record. -->
+            <div class="sumate__cross-incentive" data-reveal="up">
+                <h2 class="sumate__cross-incentive-title">
+                    {t(
+                        'alliance-leads.editor.crossIncentive.title',
+                        '¿Sos dueño de un alojamiento o partner de Hospeda?'
+                    )}
+                </h2>
+                <p class="sumate__cross-incentive-body">
+                    {t(
+                        'alliance-leads.editor.crossIncentive.body',
+                        'Colaborar como editor también puede sumarte beneficios en tu suscripción. Postulate y contanos tu caso — lo evaluamos y te contactamos con los detalles.'
+                    )}
+                </p>
             </div>
         </div>
     </section>
 
-    <!-- ───── Application form ───────────────────────────────────────────── -->
-    <section class="editores-form section section--warm">
-        <div class="editores__container">
-            <h2 class="editores__subheading">
-                {t('contributions.editors.form.heading', 'Postulate')}
-            </h2>
-            <p class="editores-form__hint">
-                {t(
-                    'contributions.editors.form.hint',
-                    'Contanos quién sos, sobre qué te gustaría escribir y si tenés experiencia (no es excluyente).'
-                )}
-            </p>
-            <div data-reveal="up">
-                <ContributionForm
-                    presetType="editor_application"
-                    locale={locale}
-                    client:visible
-                />
-            </div>
+    <section class="sumate__form section section--warm">
+        <div class="sumate__form-container section__container">
+            <AllianceLead client:load locale={locale} kind="editor" />
         </div>
     </section>
-</DefaultLayout>
+</BaseLayout>
 
 <style>
-    .editores__container {
-        max-width: 760px;
-        margin: 0 auto;
-        padding: 0 var(--space-container-x);
+    .sumate__hero {
+        padding-block: var(--space-section, 120px);
+        background-color: var(--core-background);
     }
-
-    .editores__subheading {
+    .sumate__container {
+        max-width: var(--container-max, 1350px);
+        margin-inline: auto;
+        padding-inline: var(--space-5, 1.25rem);
+    }
+    .sumate__header {
+        text-align: center;
+        max-width: 700px;
+        margin-inline: auto;
+    }
+    .sumate__title {
         font-family: var(--font-heading);
         font-weight: 700;
-        font-size: var(--text-h3);
+        font-size: clamp(1.875rem, 5vw, 3rem);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-4, 1rem);
+        line-height: 1.15;
+    }
+    .sumate__subtitle {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-lg, 1.0625rem);
+        color: var(--core-muted-foreground);
+        margin: 0;
+        line-height: 1.6;
+    }
+    .sumate__role {
+        margin: var(--space-8, 2rem) auto 0;
+        max-width: 560px;
+        text-align: left;
+    }
+    .sumate__role-heading {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: var(--text-h4, 1.25rem);
         color: var(--core-foreground);
         margin: 0 0 var(--space-4, 1rem);
     }
-
-    .editores__role {
-        margin-top: var(--space-6, 1.5rem);
-    }
-
-    .editores__list {
+    .sumate__benefits {
         list-style: none;
-        padding: 0;
         margin: 0;
+        padding: 0;
         display: flex;
         flex-direction: column;
         gap: var(--space-3, 0.75rem);
     }
-
-    .editores__item {
+    .sumate__benefit {
         display: flex;
         align-items: flex-start;
         gap: var(--space-2, 0.5rem);
@@ -148,20 +167,42 @@ const roleItems = [
         font-size: var(--text-body);
         color: var(--core-muted-foreground);
         line-height: 1.6;
+        text-align: left;
     }
-
-    .editores__item-icon {
+    .sumate__benefit-icon {
         display: inline-flex;
         color: var(--brand-tertiary);
         flex-shrink: 0;
         margin-top: 0.2em;
     }
-
-    .editores-form__hint {
+    .sumate__cross-incentive {
+        margin: var(--space-6, 1.5rem) auto 0;
+        max-width: 560px;
+        padding: var(--space-5, 1.25rem);
+        background-color: var(--surface-warm);
+        border-radius: var(--radius-card);
+        text-align: left;
+    }
+    .sumate__cross-incentive-title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: var(--text-body-lg, 1.0625rem);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-2, 0.5rem);
+    }
+    .sumate__cross-incentive-body {
         font-family: var(--font-sans);
         font-size: var(--text-body);
         color: var(--core-muted-foreground);
-        margin: 0 0 var(--space-5, 1.25rem);
+        margin: 0;
         line-height: 1.6;
+    }
+    .sumate__form {
+        padding-block: var(--space-section, 120px);
+    }
+    .sumate__form-container {
+        max-width: 720px;
+        margin-inline: auto;
+        padding-inline: var(--space-5, 1.25rem);
     }
 </style>

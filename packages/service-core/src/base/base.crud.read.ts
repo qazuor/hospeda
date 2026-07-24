@@ -318,6 +318,12 @@ export abstract class BaseCrudRead<
                 }
                 const sortOrder = processedOptions.sortOrder;
 
+                // HOS-274: forward includeDeleted so models that default to excluding
+                // soft-deleted rows (EventModel, PostModel) don't re-filter them out
+                // when includeDeleted=true and where.deletedAt was therefore left
+                // absent above — without this, findAll/findAllWithRelations would
+                // apply their own default exclusion on top of the already-permissive
+                // whereClause, silently undoing the includeDeleted opt-in.
                 const result = relationsToUse
                     ? await this.model.findAllWithRelations(
                           relationsToUse,
@@ -326,7 +332,8 @@ export abstract class BaseCrudRead<
                               page: processedOptions.page,
                               pageSize: processedOptions.pageSize,
                               sortBy,
-                              sortOrder
+                              sortOrder,
+                              includeDeleted: processedOptions.includeDeleted
                           },
                           additionalConditions,
                           execCtx?.tx
@@ -337,7 +344,8 @@ export abstract class BaseCrudRead<
                               page: processedOptions.page,
                               pageSize: processedOptions.pageSize,
                               sortBy,
-                              sortOrder
+                              sortOrder,
+                              includeDeleted: processedOptions.includeDeleted
                           },
                           additionalConditions,
                           execCtx?.tx
@@ -537,6 +545,11 @@ export abstract class BaseCrudRead<
                     pagination: { page, pageSize },
                     sort: { sortBy, sortOrder },
                     search: searchCondition,
+                    // HOS-274: forward so _executeAdminSearch can pass it through to
+                    // model.findAllWithRelations/findAll — otherwise a model that
+                    // defaults to excluding soft-deleted rows (EventModel, PostModel)
+                    // would silently undo the admin trash view's includeDeleted=true.
+                    includeDeleted,
                     actor: validatedActor,
                     ctx: execCtx
                 });
@@ -562,12 +575,23 @@ export abstract class BaseCrudRead<
      * @param params.search - Optional SQL condition for text search.
      * @param params.extraConditions - Optional additional SQL conditions.
      * @param params.actor - The actor performing the action.
+     * @param params.includeDeleted - Whether the admin caller opted in to soft-deleted
+     *   rows; forwarded to the model call (see {@link AdminSearchExecuteParams}).
      * @returns A paginated list of matching entities.
      */
     protected async _executeAdminSearch(
         params: AdminSearchExecuteParams
     ): Promise<PaginatedListOutput<TEntity>> {
-        const { where, entityFilters, pagination, sort, search, extraConditions, ctx } = params;
+        const {
+            where,
+            entityFilters,
+            pagination,
+            sort,
+            search,
+            extraConditions,
+            ctx,
+            includeDeleted
+        } = params;
 
         const mergedWhere: Record<string, unknown> = { ...where, ...entityFilters };
 
@@ -591,7 +615,8 @@ export abstract class BaseCrudRead<
                     page: pagination.page,
                     pageSize: pagination.pageSize,
                     sortBy: sort.sortBy,
-                    sortOrder: sort.sortOrder
+                    sortOrder: sort.sortOrder,
+                    includeDeleted
                 },
                 conditionsToPass,
                 ctx?.tx
@@ -604,7 +629,8 @@ export abstract class BaseCrudRead<
                 page: pagination.page,
                 pageSize: pagination.pageSize,
                 sortBy: sort.sortBy,
-                sortOrder: sort.sortOrder
+                sortOrder: sort.sortOrder,
+                includeDeleted
             },
             conditionsToPass,
             ctx?.tx

@@ -326,6 +326,21 @@ export interface DestinationCardData {
 }
 
 /**
+ * Precision of an event's date fields (HOS-280).
+ *
+ * Mirrors `EventDatePrecisionEnum` from `@repo/schemas` as a plain string
+ * union so web display types stay decoupled from backend schemas (per the
+ * "no raw @repo/schemas in components" rule) while remaining structurally
+ * compatible.
+ *
+ * - `'EXACT'` — day, month, and year are all known and meaningful.
+ * - `'MONTH'` — only month and year are known; `start`/`end` still carry a
+ *   full date for storage/sorting (day is a placeholder, always the 1st),
+ *   but the day-of-month MUST be ignored by any UI rendering the date.
+ */
+export type EventDatePrecision = 'EXACT' | 'MONTH';
+
+/**
  * Event date range nested inside {@link EventCardData}.
  */
 export interface EventDateRange {
@@ -333,6 +348,12 @@ export interface EventDateRange {
     readonly start: string;
     /** Optional ISO 8601 end date-time string. */
     readonly end?: string;
+    /**
+     * Date precision (HOS-280). Defaults to `'EXACT'` when absent — older
+     * fixtures/tests that construct this object without `precision` keep
+     * working unchanged.
+     */
+    readonly precision?: EventDatePrecision;
 }
 
 /**
@@ -824,6 +845,8 @@ export interface EventDetailData {
     readonly startDate: string;
     readonly endDate?: string;
     readonly isAllDay: boolean;
+    /** Date precision (HOS-280). Defaults to `'EXACT'`. */
+    readonly precision: EventDatePrecision;
 
     // --- Pricing ---
     readonly pricing: EventDetailPricing;

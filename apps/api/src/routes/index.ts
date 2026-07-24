@@ -38,6 +38,7 @@ import {
     aiSocialDraftsRoute,
     aiSocialPublicDataRoute
 } from './ai/social/index.js';
+import { adminAllianceRoutes, publicAllianceRoutes } from './alliance/index.js';
 import { adminAmenityRoutes, protectedAmenityRoutes, publicAmenityRoutes } from './amenity';
 import { adminAppLogRoutes } from './app-logs';
 import {
@@ -268,6 +269,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/partners', publicPartnersRoutes);
         // Commerce lead intake — public acquisition form (SPEC-239 T-047 US-1)
         app.route('/api/v1/public/commerce', publicCommerceRoutes);
+        // Alliance lead intake — public "aliados" acquisition forms (HOS-277)
+        app.route('/api/v1/public/alliance', publicAllianceRoutes);
         app.route('/api/v1/public/destinations', publicDestinationRoutes);
         app.route('/api/v1/public/events', publicEventRoutes);
 
@@ -488,6 +491,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/partners', adminManualPaymentRoute);
         // Commerce leads admin management (SPEC-239 T-047)
         app.route('/api/v1/admin/commerce', adminCommerceRoutes);
+        // Alliance leads admin inbox (HOS-277)
+        app.route('/api/v1/admin/alliance', adminAllianceRoutes);
         app.route('/api/v1/admin/destinations', adminDestinationRoutes);
         app.route('/api/v1/admin/events', adminEventRoutes);
 

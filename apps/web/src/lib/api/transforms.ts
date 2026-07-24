@@ -610,7 +610,7 @@ export function toEventCardProps({
         fallback: '/images/placeholder-event.svg'
     });
 
-    const dateObj = item.date as { start?: string; end?: string } | undefined;
+    const dateObj = item.date as { start?: string; end?: string; precision?: string } | undefined;
     const locationObj = item.location as Record<string, unknown> | undefined;
     const organizerObj = item.organizer as Record<string, unknown> | undefined;
     const { cityName, cityPath, cityDestinationSlug } = deriveCityFields(locationObj);
@@ -642,7 +642,9 @@ export function toEventCardProps({
                 ? String(dateObj.end)
                 : item.endDate
                   ? String(item.endDate)
-                  : undefined
+                  : undefined,
+            // HOS-280: precision is nested at item.date.precision.
+            precision: dateObj?.precision === 'MONTH' ? 'MONTH' : 'EXACT'
         },
         isFeatured: Boolean(item.isFeatured),
         location: locationObj
@@ -1391,7 +1393,7 @@ export function toEventDetailProps({
     const tags: readonly string[] = Array.isArray(rawTags) ? rawTags.map(String) : [];
 
     // --- Dates ---
-    const dateObj = item.date as { start?: string; end?: string } | undefined;
+    const dateObj = item.date as { start?: string; end?: string; precision?: string } | undefined;
     const startDate = String(dateObj?.start || item.startDate || '');
     const endDate = dateObj?.end
         ? String(dateObj.end)
@@ -1399,6 +1401,12 @@ export function toEventDetailProps({
           ? String(item.endDate)
           : undefined;
     const isAllDay = Boolean(item.isAllDay);
+    // HOS-280: precision lives nested at item.date.precision (same level as
+    // start/end), NOT at the top level — unlike isAllDay above, which reads
+    // from item.isAllDay (a separate pre-existing inconsistency, not one to
+    // replicate here).
+    const precision: EventDetailData['precision'] =
+        dateObj?.precision === 'MONTH' ? 'MONTH' : 'EXACT';
 
     // --- Status flags ---
     const isCancelled = Boolean(item.isCancelled);
@@ -1589,6 +1597,7 @@ export function toEventDetailProps({
         startDate,
         endDate,
         isAllDay,
+        precision,
         pricing,
         featuredImage,
         gallery,
