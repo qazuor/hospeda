@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { UserPublicSchema } from './user.access.schema.js';
-import { UserSchema } from './user.schema.js';
+import { UserReadSchema } from './user.schema.js';
 
 /**
  * Batch request schema for user operations
@@ -59,8 +59,16 @@ export const UserPublicBatchResponseSchema = z.array(
  * Admin batch item schema. All fields are optional except `id`, which the
  * handler always emits. The handler best-effort copies selector fields
  * (displayName, firstName, lastName) when present on the loaded user.
+ *
+ * HOS-302: derives from `UserReadSchema`, NOT `UserSchema`. `.partial()` makes a
+ * key optional but does NOT drop `.min(2)` — a persisted empty `display_name`
+ * still fails it. This schema is the declared `responseSchema` of
+ * `POST /api/v1/admin/users/batch`, where `stripWithSchema` FAIL-CLOSES to HTTP
+ * 500, and the handler force-includes `displayName`/`firstName`/`lastName` even
+ * when the caller passes `fields`, so field selection cannot dodge it. Reached
+ * from every `USER_SELECT` field (posts, accommodations, commerce configs).
  */
-export const UserBatchItemSchema = UserSchema.partial().required({
+export const UserBatchItemSchema = UserReadSchema.partial().required({
     id: true
 });
 
