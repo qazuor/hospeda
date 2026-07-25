@@ -15,6 +15,14 @@ import { CoordinatesSchema } from '../../common/location.schema.js';
 
 /**
  * EventLocation Address Schema — postal address fields plus destinationId FK.
+ *
+ * `street` is bounded at 150 chars (raised from 50 in HOS-300). The old bound
+ * could not hold a real rural Argentine address such as
+ * `"Ruta Provincial N.º 39, km 128 (zona rural, Departamento Uruguay)"` (65
+ * chars), which is exactly what a production venue carries — so the venue was
+ * readable but not editable, since the admin entity form submits the WHOLE
+ * form and re-validated the persisted value on every save. The DB column is
+ * `text`, so the bound is a product decision, not a storage constraint.
  */
 export const EventLocationAddressSchema = z.object({
     destinationId: DestinationIdSchema,
@@ -22,7 +30,7 @@ export const EventLocationAddressSchema = z.object({
     street: z
         .string({ message: 'zodError.eventLocation.street.required' })
         .min(2, { message: 'zodError.eventLocation.street.min' })
-        .max(50, { message: 'zodError.eventLocation.street.max' })
+        .max(150, { message: 'zodError.eventLocation.street.max' })
         .nullish(),
     number: z
         .string({ message: 'zodError.eventLocation.number.required' })

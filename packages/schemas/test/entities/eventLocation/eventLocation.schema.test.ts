@@ -116,11 +116,11 @@ describe('EventLocationSchema', () => {
                 })
             ).toThrow(ZodError);
 
-            // Too long street
+            // Too long street (write max is 150 since HOS-300)
             expect(() =>
                 EventLocationSchema.parse({
                     ...baseData,
-                    street: 'A'.repeat(60)
+                    street: 'A'.repeat(160)
                 })
             ).toThrow(ZodError);
         });

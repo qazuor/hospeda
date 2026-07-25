@@ -29,7 +29,8 @@ export const createAddressConsolidatedSection = (): ConsolidatedSectionConfig =>
                 edit: [PermissionEnum.EVENT_LOCATION_UPDATE]
             },
             typeConfig: {
-                maxLength: 50,
+                // Mirrors EventLocationAddressSchema.street (150 since HOS-300).
+                maxLength: 150,
                 minLength: 2
             }
         },

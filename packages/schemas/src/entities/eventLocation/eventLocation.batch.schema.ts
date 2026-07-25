@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { EventLocationSchema } from './eventLocation.schema.js';
+import { EventLocationReadSchema } from './eventLocation.schema.js';
 
 /**
  * Batch request schema for event location operations
@@ -43,8 +43,11 @@ export const EventLocationBatchRequestSchema = z.object({
  *   { id: 'loc_789', city: 'Córdoba', ... }
  * ];
  * ```
+ *
+ * HOS-300: read path — derives from `EventLocationReadSchema` so persisted
+ * postal-address values longer than the write maxima never fail the parse.
  */
-export const EventLocationBatchResponseSchema = z.array(EventLocationSchema.nullable());
+export const EventLocationBatchResponseSchema = z.array(EventLocationReadSchema.nullable());
 
 /**
  * Type definitions for batch operations
