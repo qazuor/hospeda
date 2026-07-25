@@ -1,5 +1,6 @@
 import type { z } from 'zod';
 import { CityDestinationRefSchema } from '../destination/destination.refs.schema.js';
+import { EventLocationAddressReadFields } from './eventLocation.address.schema.js';
 import { EventLocationSchema } from './eventLocation.schema.js';
 
 /**
@@ -28,6 +29,9 @@ export const EventLocationPublicSchema = EventLocationSchema.pick({
     placeName: true,
     coordinates: true
 }).extend({
+    // HOS-300: read⊇write — a persisted placeName longer than the write max
+    // must never 500 the response. Length stays enforced on write.
+    placeName: EventLocationAddressReadFields.placeName,
     /** City projection of the linked destination (SPEC-095). */
     cityDestination: CityDestinationRefSchema.optional()
 });
@@ -63,6 +67,9 @@ export const EventLocationProtectedSchema = EventLocationSchema.pick({
     createdAt: true,
     updatedAt: true
 }).extend({
+    // HOS-300: read⊇write — persisted postal-address values can exceed the
+    // write-side maxima (seed data-migrations and model inserts skip Zod).
+    ...EventLocationAddressReadFields,
     /** City projection of the linked destination (SPEC-095). */
     cityDestination: CityDestinationRefSchema.optional()
 });
@@ -78,6 +85,8 @@ export type EventLocationProtected = z.infer<typeof EventLocationProtectedSchema
  * This is essentially the full schema plus the cityDestination projection.
  */
 export const EventLocationAdminSchema = EventLocationSchema.extend({
+    // HOS-300: read⊇write — see EventLocationProtectedSchema.
+    ...EventLocationAddressReadFields,
     /** City projection of the linked destination (SPEC-095). */
     cityDestination: CityDestinationRefSchema.optional()
 });

@@ -52,6 +52,31 @@ export const EventLocationAddressSchema = z.object({
 export type EventLocationAddressType = z.infer<typeof EventLocationAddressSchema>;
 
 /**
+ * READ-side overlay for the postal address fields (HOS-300).
+ *
+ * Same fields, same types, no length bounds. Rows reach `event_locations`
+ * through seed data-migrations and direct model inserts, both of which bypass
+ * the create/update Zod schemas — so a persisted address can legitimately be
+ * longer than the write-side maximum. Since the API's `stripWithSchema` is
+ * fail-closed, enforcing those bounds on read turns one over-long row into a
+ * 500 for an entire paginated response.
+ *
+ * Read schemas therefore validate the SHAPE and leave the LENGTH to the write
+ * path, keeping read ⊇ write. Do not add bounds here — add them to
+ * {@link EventLocationAddressSchema}, which the create/update schemas inherit.
+ *
+ * @see HOS-190 / `ContactInfoReadSchema` for the same pattern on contact info.
+ */
+export const EventLocationAddressReadFields = {
+    street: z.string().nullish(),
+    number: z.string().nullish(),
+    floor: z.string().nullish(),
+    apartment: z.string().nullish(),
+    placeName: z.string().nullish()
+} as const;
+export type EventLocationAddressReadFieldsType = typeof EventLocationAddressReadFields;
+
+/**
  * Spread helper for composing EventLocationAddressSchema into the main
  * EventLocationSchema via object spread.
  */
