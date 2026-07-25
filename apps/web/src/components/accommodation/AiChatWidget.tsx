@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { useAccommodationChat } from '@/hooks/useAccommodationChat';
+import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
 import { renderChatMarkdown } from '@/lib/ai-search/render-chat-markdown';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -46,6 +47,11 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
      *  the focus-return effect from stealing focus on the initial render when
      *  `isOpen` is already `false` (WCAG dialog focus-return guard). */
     const hasBeenOpenedRef = useRef(false);
+
+    // Back button closes the panel instead of leaving the accommodation page
+    // (HOS-310). This widget builds its own `role="dialog"` rather than using
+    // the shared `Dialog`, so it wires the same hook directly.
+    useDialogHistoryBack({ isOpen, onClose: () => setIsOpen(false) });
 
     // Focus trap + ESC close
     useEffect(() => {
