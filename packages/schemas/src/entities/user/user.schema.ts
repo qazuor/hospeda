@@ -170,3 +170,45 @@ export const UserSchema = z.object({
  * Type export for the main User entity
  */
 export type User = z.infer<typeof UserSchema>;
+
+/**
+ * READ-side overlay for the user name fields (HOS-302).
+ *
+ * `display_name`, `first_name` and `last_name` are unbounded `text` columns, and
+ * rows reach them without ever passing the create/update Zod schemas — Better
+ * Auth signup writes the row directly, which is how production ended up with
+ * users whose `display_name` is the empty string. `.optional()` does not rescue
+ * that: the key is present, it is just empty, so `.min(2)` fires.
+ *
+ * Read schemas therefore validate the TYPE and leave the LENGTH to the write
+ * path, keeping read ⊇ write. Bounds stay on {@link UserSchema}, which the
+ * create/update schemas inherit.
+ *
+ * @see HOS-190, which introduced this same leniency inline on `UserPublicSchema`
+ *   but only for the access family.
+ * @see HOS-300 for the same two-read-family gap on event locations.
+ */
+export const UserNameReadFields = {
+    displayName: z.string().nullish(),
+    firstName: z.string().nullish(),
+    lastName: z.string().nullish()
+} as const;
+
+/** Shape of {@link UserNameReadFields}, for consumers composing read schemas. */
+export type UserNameReadFieldsType = typeof UserNameReadFields;
+
+/**
+ * READ-side variant of {@link UserSchema} (HOS-302).
+ *
+ * Identical shape, with the name-field length bounds dropped. Every read schema
+ * derived from the full user entity — notably the query family consumed by the
+ * admin entity-list client, whose `safeParse` is fail-closed and THROWS — must
+ * derive from this rather than from `UserSchema`. Deriving a read schema from
+ * the strict base is what took the admin users list down.
+ */
+export const UserReadSchema = UserSchema.extend({
+    ...UserNameReadFields
+});
+
+/** Inferred type for the read-side user entity. */
+export type UserRead = z.infer<typeof UserReadSchema>;
