@@ -299,7 +299,7 @@
                 "formats": "JPG, PNG ou WebP — máx. 5MB",
                 "remove": "Remover",
                 "invalidType": "Apenas arquivos JPG, PNG ou WebP são permitidos",
-                "tooLarge": "O arquivo não pode exceder 5MB",
+                "tooLarge": "O arquivo não pode exceder {{maxSize}}MB",
                 "uploadFailed": "Falha ao fazer upload da imagem",
                 "galleryCapReached": "Limite da galeria atingido (máx. {{cap}} fotos)",
                 "galleryCapLabel": "Galeria cheia"

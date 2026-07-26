@@ -177,7 +177,7 @@
                 "remove": "Remove",
                 "uploadHint": "JPG, PNG or WebP — max. 5MB",
                 "invalidType": "Only JPG, PNG or WebP files are allowed",
-                "tooLarge": "The file cannot exceed 5MB",
+                "tooLarge": "The file cannot exceed {{maxSize}}MB",
                 "uploadFailed": "Error uploading the image",
                 "capReached": "Gallery limit reached (max. {{cap}} photos)"
             },

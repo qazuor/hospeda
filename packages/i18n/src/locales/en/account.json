@@ -142,7 +142,7 @@
         }
     },
     "avatar": {
-        "hint": "JPEG, PNG and WebP only · Max. 5 MB",
+        "hint": "JPEG, PNG and WebP only · Max. {{maxSize}} MB",
         "actions": {
             "change": "Change avatar",
             "uploading": "Uploading..."
@@ -151,7 +151,7 @@
         "success": "Avatar updated successfully",
         "errors": {
             "invalidType": "Only JPEG, PNG and WebP are accepted",
-            "fileTooLarge": "File too large (max. 5 MB)",
+            "fileTooLarge": "File too large (max. {{maxSize}} MB)",
             "uploadFailed": "Failed to upload the image",
             "updateFailed": "Failed to update the profile",
             "unexpectedResponse": "Unexpected server response"
