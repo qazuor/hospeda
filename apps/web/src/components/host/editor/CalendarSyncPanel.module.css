@@ -39,35 +39,12 @@
     padding: var(--space-2, 0.5rem) 0;
 }
 
-/* --- Banners --- */
+/* --- Banner --- */
 
-.bannerSuccess,
-.bannerError,
-.bannerInfo {
-    padding: 0.625rem 0.875rem;
-    border-radius: var(--radius-md, 10px);
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
+/* Layout only: the panel-level banner's visual treatment lives in
+   CalendarSyncMessage.module.css, shared with the per-provider rows. */
+.banner {
     margin-bottom: var(--space-3, 0.75rem);
-    border: 1px solid transparent;
-}
-
-.bannerSuccess {
-    background-color: var(--palette-success-50, oklch(0.95 0.03 150));
-    color: var(--brand-tertiary, oklch(0.5 0.1 150));
-    border-color: var(--palette-success-200, oklch(0.85 0.06 150));
-}
-
-.bannerError {
-    background-color: var(--destructive-a10, oklch(0.96 0.02 25));
-    color: var(--destructive);
-    border-color: var(--destructive-a25, oklch(0.88 0.06 25));
-}
-
-.bannerInfo {
-    background-color: var(--brand-primary-a10, oklch(0.95 0.03 250));
-    color: var(--brand-primary);
-    border-color: var(--brand-primary-a25, oklch(0.85 0.06 250));
 }
 
 /* --- Connected state --- */
@@ -266,34 +243,6 @@
 }
 
 /* --- Row-scoped inline feedback (smaller than the panel-level banners) --- */
-
-.rowError,
-.rowInfo,
-.rowSuccess {
-    padding: 0.5rem 0.75rem;
-    border-radius: var(--radius-md, 10px);
-    font-family: var(--font-sans);
-    font-size: 0.75rem;
-    border: 1px solid transparent;
-}
-
-.rowError {
-    background-color: var(--destructive-a10, oklch(0.96 0.02 25));
-    color: var(--destructive);
-    border-color: var(--destructive-a25, oklch(0.88 0.06 25));
-}
-
-.rowInfo {
-    background-color: var(--brand-primary-a10, oklch(0.95 0.03 250));
-    color: var(--brand-primary);
-    border-color: var(--brand-primary-a25, oklch(0.85 0.06 250));
-}
-
-.rowSuccess {
-    background-color: var(--palette-success-50, oklch(0.95 0.03 150));
-    color: var(--brand-tertiary, oklch(0.5 0.1 150));
-    border-color: var(--palette-success-200, oklch(0.85 0.06 150));
-}
 
 @media (max-width: 480px) {
     .actions {

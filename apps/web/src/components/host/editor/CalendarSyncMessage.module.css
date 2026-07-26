@@ -1,0 +1,102 @@
+/**
+ * Status messages inside the calendar-sync dialog (HOS-320).
+ *
+ * Colours come from the design-token ramps rather than hand-picked values, so
+ * the pairing is deterministic: a `-50` surface with `-700` text clears WCAG AA
+ * for normal text in light mode, and `-800` with `-200` does the same in dark.
+ *
+ * The previous styles used `--brand-tertiary` as the success TEXT colour. That
+ * token is a surface tint (L 0.92) sitting on an L 0.99 background — roughly
+ * 1.1:1, which is why the success message read as unstyled text. Error and
+ * info fared better but still landed at 3.81:1 and 3.19:1, both under the 4.5
+ * AA floor.
+ */
+
+.message {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.625rem 0.875rem;
+    border-radius: var(--radius-md, 10px);
+    border: 1px solid transparent;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+}
+
+/* Row-level variant: tighter, to sit under a provider without crowding it. */
+.compact {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    gap: 0.4375rem;
+}
+
+.icon {
+    flex-shrink: 0;
+    /* Optical alignment with the first line of text rather than its box. */
+    margin-top: 0.0625rem;
+}
+
+.text {
+    min-width: 0;
+    /* Sync errors carry provider URLs, which must not widen the dialog. */
+    overflow-wrap: anywhere;
+}
+
+/* --- Kinds ------------------------------------------------------------- */
+
+.message[data-kind="success"] {
+    background-color: var(--palette-success-50);
+    border-color: var(--palette-success-200);
+    color: var(--palette-success-700);
+}
+
+.message[data-kind="error"] {
+    background-color: var(--palette-danger-50);
+    border-color: var(--palette-danger-200);
+    color: var(--palette-danger-700);
+}
+
+.message[data-kind="warning"] {
+    background-color: var(--palette-warning-50);
+    border-color: var(--palette-warning-200);
+    color: var(--palette-warning-700);
+}
+
+.message[data-kind="info"] {
+    background-color: var(--palette-info-50);
+    border-color: var(--palette-info-200);
+    color: var(--palette-info-700);
+}
+
+/* --- Dark theme --------------------------------------------------------- */
+
+[data-theme="dark"] .message[data-kind="success"] {
+    background-color: var(--palette-success-800);
+    border-color: var(--palette-success-600);
+    color: var(--palette-success-200);
+}
+
+[data-theme="dark"] .message[data-kind="error"] {
+    background-color: var(--palette-danger-800);
+    border-color: var(--palette-danger-600);
+    color: var(--palette-danger-200);
+}
+
+[data-theme="dark"] .message[data-kind="warning"] {
+    background-color: var(--palette-warning-800);
+    border-color: var(--palette-warning-600);
+    color: var(--palette-warning-200);
+}
+
+[data-theme="dark"] .message[data-kind="info"] {
+    background-color: var(--palette-info-800);
+    border-color: var(--palette-info-600);
+    color: var(--palette-info-200);
+}
+
+@media (prefers-contrast: more) {
+    .message {
+        border-width: 2px;
+    }
+}
