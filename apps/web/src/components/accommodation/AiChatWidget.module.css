@@ -4,6 +4,17 @@
  */
 
 .panel {
+    /*
+     * Defaults for the two properties the widget overrides inline from
+     * `visualViewport`. Declaring them here rather than relying on a `var()`
+     * fallback keeps the token checker satisfied and makes the no-API
+     * behaviour explicit: `100dvh` is what a browser without visualViewport
+     * (or SSR) gets.
+     */
+    --chat-visible-height: 100dvh;
+    --chat-keyboard-inset: 0px;
+    --chat-bottom-gap: 96px;
+    --chat-height-reserve: 120px;
     position: fixed;
     right: 24px;
     z-index: 1000;
@@ -16,9 +27,9 @@
        while the panel is open. It is the only measurement that shrinks for the
        mobile keyboard on BOTH platforms: `vh` never does, and `dvh` does not on
        iOS Safari. `dvh` is the fallback for browsers without visualViewport. */
-    max-height: calc(var(--chat-visible-height, 100dvh) - var(--chat-height-reserve, 120px));
+    max-height: calc(var(--chat-visible-height) - var(--chat-height-reserve));
     /* Lift clear of the keyboard when one is open. */
-    bottom: calc(var(--chat-bottom-gap, 96px) + var(--chat-keyboard-inset, 0px));
+    bottom: calc(var(--chat-bottom-gap) + var(--chat-keyboard-inset));
     border: 1px solid var(--core-muted-foreground, #e5e7eb);
     border-radius: var(--radius-card, 24px);
     background-color: var(--core-card, #ffffff);
@@ -32,7 +43,7 @@
 .panelExpanded {
     width: 560px;
     height: 700px;
-    max-height: calc(var(--chat-visible-height, 100dvh) - var(--chat-height-reserve, 120px));
+    max-height: calc(var(--chat-visible-height) - var(--chat-height-reserve));
 }
 
 /* With the keyboard up, the FAB it normally clears is hidden behind it, and
