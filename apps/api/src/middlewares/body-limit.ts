@@ -69,15 +69,41 @@ const AVATAR_UPLOAD_PATHS = new Set(['/api/v1/protected/media/upload']);
  * @param path - The request path
  * @returns The ceiling in MB, before multipart slack is added
  */
-const resolveLimitMb = (path: string): number => {
-    // `env` is populated by `validateApiEnv()` at startup, which always runs
-    // before a request arrives. The fallbacks are the canonical constants, so
-    // a caller that somehow beats startup still gets the documented cap rather
-    // than a NaN ceiling that would reject every upload.
+/** Which ceiling a request path falls under. */
+type LimitKind = 'entity' | 'avatar' | 'global';
+
+/**
+ * Classify a request path.
+ *
+ * @param path - The normalised request path
+ * @returns The kind of ceiling that applies
+ */
+const resolveKind = (path: string): LimitKind => {
     if (ENTITY_UPLOAD_PATHS.has(path)) {
-        return env?.HOSPEDA_MEDIA_MAX_FILE_SIZE_MB ?? DEFAULT_ENTITY_MAX_FILE_SIZE_MB;
+        return 'entity';
     }
     if (AVATAR_UPLOAD_PATHS.has(path)) {
+        return 'avatar';
+    }
+    return 'global';
+};
+
+/**
+ * Resolve the ceiling, in MB, for a classified path.
+ *
+ * `env` is populated by `validateApiEnv()` at startup, which always runs before
+ * a request arrives. The fallbacks are the canonical constants, so a caller
+ * that somehow beats startup still gets the documented cap rather than a NaN
+ * ceiling that would reject every upload.
+ *
+ * @param kind - The kind of ceiling that applies
+ * @returns The ceiling in MB
+ */
+const resolveLimitMb = (kind: LimitKind): number => {
+    if (kind === 'entity') {
+        return env?.HOSPEDA_MEDIA_MAX_FILE_SIZE_MB ?? DEFAULT_ENTITY_MAX_FILE_SIZE_MB;
+    }
+    if (kind === 'avatar') {
         return env?.HOSPEDA_AVATAR_MAX_FILE_SIZE_MB ?? DEFAULT_AVATAR_MAX_FILE_SIZE_MB;
     }
     return GLOBAL_BODY_LIMIT_MB;
@@ -92,15 +118,16 @@ const resolveLimitMb = (path: string): number => {
  */
 const limiters = new Map<string, MiddlewareHandler>();
 
-const getLimiter = (limitMb: number, isUpload: boolean): MiddlewareHandler => {
+const getLimiter = (limitMb: number, kind: LimitKind): MiddlewareHandler => {
     // Keyed by BOTH inputs: an upload ceiling that happens to equal the global
     // one still needs the multipart slack and the upload-specific error.
-    const key = `${limitMb}:${isUpload}`;
+    const key = `${limitMb}:${kind}`;
     const cached = limiters.get(key);
     if (cached) {
         return cached;
     }
 
+    const isUpload = kind !== 'global';
     const maxSize = mbToBytes(limitMb) + (isUpload ? MULTIPART_ENVELOPE_SLACK_BYTES : 0);
     const limiter = bodyLimit({
         maxSize,
@@ -108,14 +135,17 @@ const getLimiter = (limitMb: number, isUpload: boolean): MiddlewareHandler => {
             c.json(
                 {
                     success: false,
+                    // Upload routes reuse the code AND the exact wording their
+                    // own handler uses for a size rejection, so the owner sees
+                    // one consistent message naming the real limit no matter
+                    // which of the two guards fires first.
                     error: isUpload
                         ? {
-                              // Same code and wording the upload handlers use for
-                              // their own size rejection, so the owner sees one
-                              // consistent message stating the real limit no
-                              // matter which guard fires first.
                               code: 'PAYLOAD_TOO_LARGE',
-                              message: `File exceeds the ${limitMb}MB limit`
+                              message:
+                                  kind === 'avatar'
+                                      ? `Avatar file exceeds the ${limitMb}MB limit`
+                                      : `File exceeds the ${limitMb}MB limit`
                           }
                         : {
                               code: 'REQUEST_TOO_LARGE',
@@ -144,14 +174,17 @@ const normalisePath = (path: string): string =>
  */
 export const bodyLimitMiddleware = (): MiddlewareHandler => {
     return async (c, next) => {
-        const path = normalisePath(c.req.path);
-        const isUpload = ENTITY_UPLOAD_PATHS.has(path) || AVATAR_UPLOAD_PATHS.has(path);
-        return getLimiter(resolveLimitMb(path), isUpload)(c, next);
+        const kind = resolveKind(normalisePath(c.req.path));
+        return getLimiter(resolveLimitMb(kind), kind)(c, next);
     };
 };
 
-/** Exported for tests and documentation. */
-export const BODY_LIMIT_CONSTANTS = {
-    GLOBAL_BODY_LIMIT_MB,
-    MULTIPART_ENVELOPE_SLACK_BYTES
-} as const;
+/**
+ * The upload paths this middleware widens the ceiling for.
+ *
+ * Exported so a guard test can assert every literal still resolves to a
+ * registered route: they are copies of paths owned by `routes/index.ts` and the
+ * route modules, and a rename there would otherwise silently drop an upload
+ * route back to the tight global cap.
+ */
+export const WIDENED_UPLOAD_PATHS = [...ENTITY_UPLOAD_PATHS, ...AVATAR_UPLOAD_PATHS] as const;

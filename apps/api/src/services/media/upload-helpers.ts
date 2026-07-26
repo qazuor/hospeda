@@ -257,14 +257,6 @@ export function buildEntityFolder(entityType: string, entityId: string): string 
     return `hospeda/${environment}/${entityType}s/${entityId}`;
 }
 
-/**
- * Current max file size in bytes for entity uploads.
- *
- * A function, not a constant: the cap comes from the environment and must be
- * read after startup validation has populated it.
- */
-export const getEntityMaxBytes = (): number => getEntityMaxFileSizeMb() * 1024 * 1024;
-
 /** Content-length margin for the pre-check. */
 export const CONTENT_LENGTH_MARGIN_BYTES = CONTENT_LENGTH_MARGIN;
 

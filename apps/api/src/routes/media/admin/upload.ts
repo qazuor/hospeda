@@ -47,8 +47,8 @@ import { buildLimitReachedDetails } from '../../../middlewares/limit-enforcement
 import { incrementDomainCounter } from '../../../middlewares/metrics';
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getMediaProvider } from '../../../services/media';
+import { getEntityMaxFileSizeMb } from '../../../services/media/upload-helpers';
 import { getActorFromContext } from '../../../utils/actor';
-import { env } from '../../../utils/env.js';
 import { calculateThreshold, calculateUsagePercent, checkLimit } from '../../../utils/limit-check';
 import { apiLogger } from '../../../utils/logger';
 import { createErrorResponse } from '../../../utils/response-helpers';
@@ -161,7 +161,7 @@ export const adminUploadMediaRoute = createAdminRoute({
         // headers) on a file that is exactly at the byte limit does not
         // trigger a false-positive 413. The downstream `validateMediaFile`
         // call enforces the strict file-size limit on the parsed file body.
-        const maxMb = env.HOSPEDA_MEDIA_MAX_FILE_SIZE_MB;
+        const maxMb = getEntityMaxFileSizeMb();
         const maxBytes = maxMb * 1024 * 1024;
         const contentLengthMaxBytes = maxBytes + 1024;
         const contentLength = Number(ctx.req.header('content-length') ?? 0);

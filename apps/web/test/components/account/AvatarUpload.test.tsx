@@ -46,13 +46,24 @@ vi.mock('../../../src/components/account/AvatarUpload.module.css', () => ({
  * localized string prefixed with `[es]` so tests can verify the translated
  * path was taken vs. the raw English message path.
  */
-const mockT = vi.fn((key: string, fallback?: string): string => {
-    if (key.startsWith('common.apiError.')) {
-        const code = key.replace('common.apiError.', '');
-        return `[es] ${code}`;
+const mockT = vi.fn(
+    (key: string, fallback?: string, params?: Record<string, string | number>): string => {
+        if (key.startsWith('common.apiError.')) {
+            const code = key.replace('common.apiError.', '');
+            return `[es] ${code}`;
+        }
+        const raw = fallback ?? key;
+        // Interpolate like the real `createTranslations().t` does. A stub that
+        // dropped params would happily let a size message ship with a raw
+        // `{{maxSize}}` in it (HOS-322).
+        return params
+            ? Object.entries(params).reduce(
+                  (acc, [name, value]) => acc.replaceAll(`{{${name}}}`, String(value)),
+                  raw
+              )
+            : raw;
     }
-    return fallback ?? key;
-});
+);
 
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({ t: mockT })
