@@ -11,11 +11,18 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { useAccommodationChat } from '@/hooks/useAccommodationChat';
 import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
+import { useVisualViewportInset } from '@/hooks/useVisualViewportInset';
 import { renderChatMarkdown } from '@/lib/ai-search/render-chat-markdown';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { AiChatFab } from './AiChatFab';
 import styles from './AiChatWidget.module.css';
+
+/**
+ * Below this many pixels a bottom inset is browser chrome (a collapsing
+ * toolbar), not a keyboard, and the panel should keep its normal spacing.
+ */
+const KEYBOARD_INSET_THRESHOLD_PX = 120;
 
 export interface AiChatWidgetProps {
     readonly accommodationId: string;
@@ -125,6 +132,12 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
     // the shared `Dialog`, so it wires the same hook directly.
     useDialogHistoryBack({ isOpen, onClose: () => setIsOpen(false) });
 
+    // Keep the panel inside the area the user can actually see. Without this
+    // the mobile keyboard covers the composer: the panel is anchored with
+    // `bottom` against a layout viewport that does not shrink for it (HOS-309).
+    const { height: visibleHeight, bottomInset } = useVisualViewportInset({ enabled: isOpen });
+    const isKeyboardOpen = bottomInset > KEYBOARD_INSET_THRESHOLD_PX;
+
     // Focus trap + ESC close
     useEffect(() => {
         if (!isOpen) return;
@@ -211,6 +224,15 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                     aria-modal="true"
                     aria-label={t('accommodations.aiChat.panelLabel')}
                     className={`${styles.panel} ${isExpanded ? styles.panelExpanded : ''}`}
+                    data-keyboard-open={isKeyboardOpen ? 'true' : undefined}
+                    style={
+                        {
+                            '--chat-keyboard-inset': `${bottomInset}px`,
+                            ...(visibleHeight === null
+                                ? {}
+                                : { '--chat-visible-height': `${visibleHeight}px` })
+                        } as React.CSSProperties
+                    }
                 >
                     <div className={styles.header}>
                         <h2 className={styles.title}>{t('accommodations.aiChat.panelLabel')}</h2>

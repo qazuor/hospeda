@@ -8,9 +8,9 @@
  * and composer textarea autofocus on open (W14).
  */
 
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AiChatWidget } from '../../../src/components/accommodation/AiChatWidget';
 
 // --- Mocks ---
@@ -545,6 +545,104 @@ describe('AiChatWidget', () => {
 
             expect(screen.queryByText('HTTP 502')).not.toBeInTheDocument();
             expect(screen.getByText('Se cortó la conexión. Reintentá.')).toBeInTheDocument();
+        });
+    });
+
+    describe('mobile keyboard (HOS-309)', () => {
+        const LAYOUT_HEIGHT = 844;
+        let viewport: {
+            height: number;
+            offsetTop: number;
+            addEventListener: (t: string, f: () => void) => void;
+            removeEventListener: (t: string, f: () => void) => void;
+        };
+        let resizeListeners: Array<() => void>;
+        /** Restored in afterEach so a stubbed viewport cannot outlive its test. */
+        let originalInnerHeight: PropertyDescriptor | undefined;
+
+        beforeEach(() => {
+            originalInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+            resizeListeners = [];
+            viewport = {
+                height: LAYOUT_HEIGHT,
+                offsetTop: 0,
+                addEventListener: (type, fn) => {
+                    if (type === 'resize') resizeListeners.push(fn);
+                },
+                removeEventListener: () => undefined
+            };
+            Object.defineProperty(window, 'visualViewport', {
+                configurable: true,
+                value: viewport
+            });
+            Object.defineProperty(window, 'innerHeight', {
+                configurable: true,
+                value: LAYOUT_HEIGHT
+            });
+        });
+
+        afterEach(() => {
+            Reflect.deleteProperty(window, 'visualViewport');
+            if (originalInnerHeight) {
+                Object.defineProperty(window, 'innerHeight', originalInnerHeight);
+            } else {
+                Reflect.deleteProperty(window, 'innerHeight');
+            }
+        });
+
+        async function openPanel() {
+            const user = userEvent.setup();
+            render(<AiChatWidget {...defaultProps} />);
+            await user.click(
+                screen.getByRole('button', { name: 'Ask AI about this accommodation' })
+            );
+            return screen.getByRole('dialog');
+        }
+
+        it('sizes itself to the visible viewport, not the layout one', async () => {
+            const panel = await openPanel();
+
+            expect(panel.style.getPropertyValue('--chat-visible-height')).toBe('844px');
+            expect(panel.style.getPropertyValue('--chat-keyboard-inset')).toBe('0px');
+            expect(panel).not.toHaveAttribute('data-keyboard-open');
+        });
+
+        it('lifts clear of the keyboard when it opens', async () => {
+            const panel = await openPanel();
+
+            await act(async () => {
+                viewport.height = LAYOUT_HEIGHT - 336;
+                for (const fn of resizeListeners) fn();
+            });
+
+            // The layout viewport is still 844 here, which is why `100vh` left
+            // the composer buried under the keyboard.
+            expect(panel.style.getPropertyValue('--chat-keyboard-inset')).toBe('336px');
+            expect(panel.style.getPropertyValue('--chat-visible-height')).toBe('508px');
+            expect(panel).toHaveAttribute('data-keyboard-open', 'true');
+        });
+
+        it('treats a small inset as browser chrome rather than a keyboard', async () => {
+            const panel = await openPanel();
+
+            await act(async () => {
+                viewport.height = LAYOUT_HEIGHT - 60;
+                for (const fn of resizeListeners) fn();
+            });
+
+            // A collapsing toolbar must not make the panel jump up.
+            expect(panel).not.toHaveAttribute('data-keyboard-open');
+            expect(panel.style.getPropertyValue('--chat-keyboard-inset')).toBe('60px');
+        });
+
+        it('falls back cleanly when the browser has no visualViewport', async () => {
+            Reflect.deleteProperty(window, 'visualViewport');
+
+            const panel = await openPanel();
+
+            // No inline height at all, so the stylesheet's `100dvh` applies.
+            expect(panel.style.getPropertyValue('--chat-visible-height')).toBe('');
+            expect(panel.style.getPropertyValue('--chat-keyboard-inset')).toBe('0px');
         });
     });
 });
