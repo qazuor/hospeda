@@ -18,6 +18,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
     buildEntityFolder,
     buildPatchPayload,
+    getEntityMaxFileSizeMb,
     uploadToProvider,
     validateContentLength,
     validateFile
@@ -25,19 +26,22 @@ import {
 
 describe('upload-helpers', () => {
     describe('validateContentLength', () => {
+        // Derived from the configured cap, not a literal: the entity limit is
+        // env-driven since HOS-322, and a literal here would go on asserting a
+        // boundary the code no longer applies.
+        const maxBytes = getEntityMaxFileSizeMb() * 1024 * 1024;
+
         it('should return null for content length within limit', () => {
             const result = validateContentLength(1024);
             expect(result).toBeNull();
         });
 
         it('should return null for content length at exact limit', () => {
-            const maxBytes = 5 * 1024 * 1024;
             const result = validateContentLength(maxBytes);
             expect(result).toBeNull();
         });
 
         it('should return error for content length over limit', () => {
-            const maxBytes = 5 * 1024 * 1024;
             const result = validateContentLength(maxBytes + 2048);
             expect(result).not.toBeNull();
             expect(result?.code).toBe('PAYLOAD_TOO_LARGE');
@@ -45,7 +49,6 @@ describe('upload-helpers', () => {
         });
 
         it('should accept content length with margin above limit', () => {
-            const maxBytes = 5 * 1024 * 1024;
             // 1024 bytes margin is allowed
             const result = validateContentLength(maxBytes + 512);
             expect(result).toBeNull();

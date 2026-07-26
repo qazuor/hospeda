@@ -568,8 +568,24 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_CLOUDINARY_API_KEY: z.string().optional(),
     /** Cloudinary API secret */
     HOSPEDA_CLOUDINARY_API_SECRET: z.string().optional(),
-    /** Maximum upload file size in MB for media endpoints (default: 10) */
-    HOSPEDA_MEDIA_MAX_FILE_SIZE_MB: z.coerce.number().positive().default(10),
+    /**
+     * Maximum size in MB of a single entity photo (default: 15).
+     *
+     * MUST stay in sync with `DEFAULT_ENTITY_MAX_FILE_SIZE_MB` in
+     * `@repo/media`, which is what every client validates against. This file
+     * may only import `zod` (see the header), so the default is spelled out
+     * here and pinned against the shared constant by
+     * `test/utils/media-limit-defaults.guard.test.ts`.
+     */
+    HOSPEDA_MEDIA_MAX_FILE_SIZE_MB: z.coerce.number().positive().default(15),
+    /**
+     * Maximum size in MB of a user avatar (default: 5).
+     *
+     * Deliberately lower than the entity cap — an avatar is cropped to a
+     * thumbnail, so a 15 MB original would be bandwidth and storage spent on
+     * discarded pixels. Mirrors `DEFAULT_AVATAR_MAX_FILE_SIZE_MB`.
+     */
+    HOSPEDA_AVATAR_MAX_FILE_SIZE_MB: z.coerce.number().positive().default(5),
 
     // Account lockout (brute-force protection)
     /** Max failed login attempts before temporary lockout (default: 5) */

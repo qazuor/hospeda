@@ -1231,19 +1231,35 @@ export const HOSPEDA_ENV_VARS = [
     },
     {
         name: 'HOSPEDA_MEDIA_MAX_FILE_SIZE_MB',
-        description: 'Maximum upload file size in megabytes',
-        descriptionEs: 'Tamaño máximo de archivo a subir en megabytes',
+        description: 'Maximum size in megabytes of a single entity photo',
+        descriptionEs: 'Tamaño máximo en megabytes de una foto de entidad',
         type: 'number',
         required: false,
         secret: false,
-        defaultValue: '10',
-        exampleValue: '10',
+        defaultValue: '15',
+        exampleValue: '15',
         apps: ['api', 'seed'],
         category: 'integrations',
         howToObtain:
-            'Cap on a single uploaded file size in MB. Default 10. Must stay at or below the global API_BODY_LIMIT bodyLimit (currently 10MB). Lower it if a tighter cap suits your storage plan.',
+            'Cap on a single entity photo (accommodation, destination, event, post, commerce listing) in MB. Default 15, which covers a high-quality JPEG from any current phone camera. The upload routes carry their own body-size ceiling derived from this value, so it is NOT bound by the tighter global body limit that applies to every other endpoint (HOS-322). Keep it in sync with DEFAULT_ENTITY_MAX_FILE_SIZE_MB in @repo/media, which is the value the web and admin clients pre-validate against.',
         howToObtainEs:
-            'Tope al tamaño de un archivo subido en MB. Por defecto 10. Tiene que ser igual o menor al bodyLimit global de la API (actualmente 10MB). Bajalo si conviene un tope más ajustado por tu plan de almacenamiento.'
+            'Tope en MB para una foto de entidad (alojamiento, destino, evento, post, listado de comercio). Por defecto 15, que cubre un JPEG de alta calidad de cualquier cámara de celular actual. Las rutas de subida tienen su propio techo de body derivado de este valor, así que NO está atado al límite global de body más ajustado que aplica al resto de los endpoints (HOS-322). Mantenelo sincronizado con DEFAULT_ENTITY_MAX_FILE_SIZE_MB en @repo/media, que es el valor que los clientes de web y admin validan antes de subir.'
+    },
+    {
+        name: 'HOSPEDA_AVATAR_MAX_FILE_SIZE_MB',
+        description: 'Maximum size in megabytes of a user avatar',
+        descriptionEs: 'Tamaño máximo en megabytes de un avatar de usuario',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '5',
+        exampleValue: '5',
+        apps: ['api'],
+        category: 'integrations',
+        howToObtain:
+            'Cap on a user avatar in MB. Default 5 — deliberately lower than the entity-photo cap because avatars are cropped to a thumbnail, so a larger original is bandwidth and storage spent on discarded pixels. Keep it in sync with DEFAULT_AVATAR_MAX_FILE_SIZE_MB in @repo/media.',
+        howToObtainEs:
+            'Tope en MB para un avatar de usuario. Por defecto 5, a propósito más bajo que el de fotos de entidad: el avatar se recorta a un thumbnail, así que un original más grande es ancho de banda y storage gastados en píxeles que se descartan. Mantenelo sincronizado con DEFAULT_AVATAR_MAX_FILE_SIZE_MB en @repo/media.'
     },
 
     // -------------------------------------------------------------------------

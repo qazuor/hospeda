@@ -6,15 +6,28 @@
  * duplicating the Cloudinary interaction pattern.
  */
 
+import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB } from '@repo/media';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
 import { UploadResponseDataSchema } from '@repo/schemas';
 import { Sentry } from '../../lib/sentry';
 import { incrementDomainCounter } from '../../middlewares/metrics';
+import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger';
 
-/** Maximum file size in megabytes for entity uploads. */
-const ENTITY_MAX_FILE_SIZE_MB = 5;
+/**
+ * Resolve the entity-photo cap, in MB, from the environment.
+ *
+ * Read lazily rather than captured at module load: `env` is only populated
+ * once `validateApiEnv()` has run at startup, so a module-level read would
+ * capture `undefined`. The fallback covers callers that run before startup
+ * validation (unit tests, tooling) and is not an arbitrary number — it is the
+ * same canonical constant every client validates against.
+ *
+ * @returns The configured maximum entity file size in megabytes
+ */
+export const getEntityMaxFileSizeMb = (): number =>
+    env?.HOSPEDA_MEDIA_MAX_FILE_SIZE_MB ?? DEFAULT_ENTITY_MAX_FILE_SIZE_MB;
 
 /** Margin above the strict file-size limit for Content-Length pre-check. */
 const CONTENT_LENGTH_MARGIN = 1024;
@@ -71,7 +84,7 @@ export interface UploadHelperError {
  */
 export function validateContentLength(
     contentLength: number,
-    maxMb: number = ENTITY_MAX_FILE_SIZE_MB
+    maxMb: number = getEntityMaxFileSizeMb()
 ): UploadHelperError | null {
     const maxBytes = maxMb * 1024 * 1024;
     if (contentLength > maxBytes + CONTENT_LENGTH_MARGIN) {
@@ -97,7 +110,7 @@ export function validateFile(
     buffer: Buffer,
     mimeType: string,
     context: 'entity' | 'avatar' = 'entity',
-    maxFileSizeMb: number = ENTITY_MAX_FILE_SIZE_MB
+    maxFileSizeMb: number = getEntityMaxFileSizeMb()
 ): UploadHelperError | null {
     const validation = validateMediaFile({
         buffer,
@@ -244,8 +257,13 @@ export function buildEntityFolder(entityType: string, entityId: string): string 
     return `hospeda/${environment}/${entityType}s/${entityId}`;
 }
 
-/** Fixed max file size in bytes for entity uploads. */
-export const ENTITY_MAX_BYTES = ENTITY_MAX_FILE_SIZE_MB * 1024 * 1024;
+/**
+ * Current max file size in bytes for entity uploads.
+ *
+ * A function, not a constant: the cap comes from the environment and must be
+ * read after startup validation has populated it.
+ */
+export const getEntityMaxBytes = (): number => getEntityMaxFileSizeMb() * 1024 * 1024;
 
 /** Content-length margin for the pre-check. */
 export const CONTENT_LENGTH_MARGIN_BYTES = CONTENT_LENGTH_MARGIN;

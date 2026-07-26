@@ -50,6 +50,7 @@ import {
 
 import { initApp } from '../../../src/app';
 import { clearRateLimitStore } from '../../../src/middlewares/rate-limit';
+import { getEntityMaxFileSizeMb } from '../../../src/services/media/upload-helpers';
 import type { AppOpenAPI } from '../../../src/types';
 
 const ADMIN_ENTITY_ID = '00000000-0000-4000-8000-0000000000aa';
@@ -152,8 +153,9 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
 
     describe('GAP-078-021: Content-Length pre-check uses +1KB margin', () => {
         it('admin upload accepts a Content-Length declared exactly at the byte limit', async () => {
-            // Arrange: 10 MB default cap → 10 * 1024 * 1024 bytes
-            const limitBytes = 10 * 1024 * 1024;
+            // Arrange: derived from the configured entity cap, which is
+            // env-driven since HOS-322.
+            const limitBytes = getEntityMaxFileSizeMb() * 1024 * 1024;
             const actor = createUploadReadyAdminActor();
             const req = new Request(ADMIN_URL, {
                 method: 'POST',
@@ -180,7 +182,7 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
 
         it('admin upload rejects a Content-Length 2KB above the limit with 413', async () => {
             // Arrange
-            const limitBytes = 10 * 1024 * 1024;
+            const limitBytes = getEntityMaxFileSizeMb() * 1024 * 1024;
             const actor = createUploadReadyAdminActor();
             const req = new Request(ADMIN_URL, {
                 method: 'POST',
@@ -196,14 +198,14 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
             const res = await app.request(req);
             const body = (await res.json()) as { success: boolean; error?: { code: string } };
 
-            // Assert: 413 with either the global bodyLimit code
-            // (`REQUEST_TOO_LARGE`, fired by the platform-level middleware
-            // configured at exactly 10MB) or the route-level
-            // `PAYLOAD_TOO_LARGE`. Both are valid rejections that prove the
-            // 1KB margin does not let oversized payloads through.
+            // Assert: 413 with the route-level `PAYLOAD_TOO_LARGE`. Since
+            // HOS-322 the upload routes carry a body ceiling of the cap plus a
+            // 16KB multipart slack, so a payload only 2KB over is deliberately
+            // rejected by the precise per-file check — whose message names the
+            // real limit — rather than by the blunt stream guard.
             expect(res.status).toBe(413);
             expect(body.success).toBe(false);
-            expect(['PAYLOAD_TOO_LARGE', 'REQUEST_TOO_LARGE']).toContain(body.error?.code);
+            expect(body.error?.code).toBe('PAYLOAD_TOO_LARGE');
             expect(mockUpload).not.toHaveBeenCalled();
         });
 
