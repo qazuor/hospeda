@@ -569,23 +569,31 @@ export const ApiEnvBaseSchema = z.object({
     /** Cloudinary API secret */
     HOSPEDA_CLOUDINARY_API_SECRET: z.string().optional(),
     /**
-     * Maximum size in MB of a single entity photo (default: 15).
+     * Maximum size in MB of a single entity photo (default: 10).
      *
-     * MUST stay in sync with `DEFAULT_ENTITY_MAX_FILE_SIZE_MB` in
-     * `@repo/media`, which is what every client validates against. This file
-     * may only import `zod` (see the header), so the default is spelled out
-     * here and pinned against the shared constant by
-     * `test/utils/media-limit-defaults.guard.test.ts`.
+     * The `.max(10)` is not cosmetic: it is the image provider's own hard
+     * ceiling per asset. Above it an upload passes every check of ours, spends
+     * the full transfer time, and only then dies at the provider as a generic
+     * upstream error — so the value must never be configurable past it. It also
+     * restores the structural bound that the global body limit used to provide
+     * before the ceiling became per-path.
+     *
+     * MUST stay in sync with `DEFAULT_ENTITY_MAX_FILE_SIZE_MB` and
+     * `PROVIDER_MAX_IMAGE_FILE_SIZE_MB` in `@repo/media`, which is what every
+     * client validates against. This file may only import `zod` (see the
+     * header), so both numbers are spelled out here and pinned against the
+     * shared constants by `test/utils/media-limit-defaults.guard.test.ts`.
      */
-    HOSPEDA_MEDIA_MAX_FILE_SIZE_MB: z.coerce.number().positive().default(15),
+    HOSPEDA_MEDIA_MAX_FILE_SIZE_MB: z.coerce.number().positive().max(10).default(10),
     /**
      * Maximum size in MB of a user avatar (default: 5).
      *
      * Deliberately lower than the entity cap — an avatar is cropped to a
-     * thumbnail, so a 15 MB original would be bandwidth and storage spent on
-     * discarded pixels. Mirrors `DEFAULT_AVATAR_MAX_FILE_SIZE_MB`.
+     * thumbnail, so a full-size original would be bandwidth and storage spent
+     * on discarded pixels. Mirrors `DEFAULT_AVATAR_MAX_FILE_SIZE_MB`, and is
+     * bounded by the same provider ceiling.
      */
-    HOSPEDA_AVATAR_MAX_FILE_SIZE_MB: z.coerce.number().positive().default(5),
+    HOSPEDA_AVATAR_MAX_FILE_SIZE_MB: z.coerce.number().positive().max(10).default(5),
 
     // Account lockout (brute-force protection)
     /** Max failed login attempts before temporary lockout (default: 5) */

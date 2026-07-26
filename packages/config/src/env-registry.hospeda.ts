@@ -1236,14 +1236,14 @@ export const HOSPEDA_ENV_VARS = [
         type: 'number',
         required: false,
         secret: false,
-        defaultValue: '15',
-        exampleValue: '15',
+        defaultValue: '10',
+        exampleValue: '10',
         apps: ['api', 'seed'],
         category: 'integrations',
         howToObtain:
-            'Cap on a single entity photo (accommodation, destination, event, post, commerce listing) in MB. Default 15, which covers a high-quality JPEG from any current phone camera. The upload routes carry their own body-size ceiling derived from this value, so it is NOT bound by the tighter global body limit that applies to every other endpoint (HOS-322). Keep it in sync with DEFAULT_ENTITY_MAX_FILE_SIZE_MB in @repo/media, which is the value the web and admin clients pre-validate against.',
+            'Cap on a single entity photo (accommodation, destination, event, post, commerce listing) in MB. Default 10, which is also the hard maximum the schema accepts: Cloudinary rejects a larger image outright on the current plan, so a higher value would let an upload burn the full transfer time and only then fail as a generic upstream error. The upload routes carry their own body-size ceiling derived from this value, so a photo exactly at the cap is not killed by the multipart envelope pushing it past the global body limit (HOS-322). Keep it in sync with DEFAULT_ENTITY_MAX_FILE_SIZE_MB in @repo/media, which is what the web and admin clients pre-validate against. Raising it requires a Cloudinary plan change first.',
         howToObtainEs:
-            'Tope en MB para una foto de entidad (alojamiento, destino, evento, post, listado de comercio). Por defecto 15, que cubre un JPEG de alta calidad de cualquier cámara de celular actual. Las rutas de subida tienen su propio techo de body derivado de este valor, así que NO está atado al límite global de body más ajustado que aplica al resto de los endpoints (HOS-322). Mantenelo sincronizado con DEFAULT_ENTITY_MAX_FILE_SIZE_MB en @repo/media, que es el valor que los clientes de web y admin validan antes de subir.'
+            'Tope en MB para una foto de entidad (alojamiento, destino, evento, post, listado de comercio). Por defecto 10, que además es el máximo que acepta el schema: Cloudinary rechaza una imagen más grande en el plan actual, así que un valor mayor haría que la subida consuma todo el tiempo de transferencia y recién ahí falle con un error genérico de upstream. Las rutas de subida tienen su propio techo de body derivado de este valor, para que una foto justo en el tope no muera porque el sobre multipart la pasa del límite global (HOS-322). Mantenelo sincronizado con DEFAULT_ENTITY_MAX_FILE_SIZE_MB en @repo/media, que es lo que validan los clientes de web y admin antes de subir. Subirlo requiere primero cambiar el plan de Cloudinary.'
     },
     {
         name: 'HOSPEDA_AVATAR_MAX_FILE_SIZE_MB',
