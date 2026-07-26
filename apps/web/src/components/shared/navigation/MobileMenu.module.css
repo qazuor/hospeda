@@ -98,40 +98,6 @@
     box-shadow: 0 0 0 2px var(--brand-accent);
 }
 
-.footer {
-    padding: 1rem 1.25rem 1.25rem;
-    border-top: 1px solid var(--border-a60);
-}
-
-.searchLink {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    padding: 0.625rem 0.875rem;
-    border-radius: var(--radius-button);
-    background-color: var(--surface-warm);
-    color: var(--core-foreground);
-    text-decoration: none;
-    font-size: 0.9375rem;
-    transition:
-        color var(--duration-normal) ease,
-        background-color var(--duration-normal) ease;
-}
-
-.searchLink:hover {
-    background-color: var(--brand-accent);
-    color: white;
-}
-
-.searchLink:focus-visible {
-    box-shadow: 0 0 0 2px var(--brand-accent);
-}
-
-.searchLabel {
-    font-family: var(--font-sans);
-    font-weight: 500;
-}
-
 /* Auth section */
 .authSection {
     padding: 1rem 1.25rem;

@@ -5,7 +5,7 @@
         "description": "Desculpe, a página que você está procurando não existe ou foi movida.",
         "message": "Desculpe, a página que você está procurando não existe ou foi movida.",
         "goHome": "Voltar ao início",
-        "search": "Buscar",
+        "searchAccommodations": "Buscar acomodações",
         "reportBrokenLink": "Reportar link quebrado"
     },
     "500": {

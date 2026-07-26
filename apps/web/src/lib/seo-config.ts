@@ -21,12 +21,7 @@
  * page URL in the sitemap filter, and emitted as a `Disallow:` directive in
  * `robots.txt`. The leading `/` is mandatory.
  */
-export const SITEMAP_EXCLUDED_PATHS = [
-    '/auth/',
-    '/mi-cuenta/',
-    '/busqueda/',
-    '/feedback/'
-] as const;
+export const SITEMAP_EXCLUDED_PATHS = ['/auth/', '/mi-cuenta/', '/feedback/'] as const;
 
 /** Inferred union type of all excluded path prefixes. */
 export type SitemapExcludedPath = (typeof SITEMAP_EXCLUDED_PATHS)[number];

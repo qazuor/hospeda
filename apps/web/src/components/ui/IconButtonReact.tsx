@@ -43,7 +43,7 @@
  *
  * <IconButton
  *   as="a"
- *   href="/es/busqueda/"
+ *   href="/es/alojamientos/"
  *   ariaLabel="Buscar alojamientos"
  *   variant="outline"
  *   size="sm"

@@ -35,7 +35,7 @@
  */
 
 import { EntitlementKey } from '@repo/billing';
-import { CloseIcon, SearchIcon } from '@repo/icons';
+import { CloseIcon } from '@repo/icons';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
@@ -493,24 +493,6 @@ export function MobileMenu({
                     </a>
                 </div>
             )}
-
-            {/* Bottom search link */}
-            <div className={styles.footer}>
-                <a
-                    href="/busqueda/"
-                    onClick={handleClose}
-                    tabIndex={isOpen ? 0 : -1}
-                    aria-label={t('nav.goToSearch', 'Go to search')}
-                    className={styles.searchLink}
-                >
-                    <SearchIcon
-                        size={20}
-                        weight="regular"
-                        aria-hidden="true"
-                    />
-                    <span className={styles.searchLabel}>Buscar alojamientos</span>
-                </a>
-            </div>
         </div>
     );
 }
