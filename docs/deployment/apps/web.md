@@ -447,7 +447,7 @@ adapter: vercel({
 
 - **expiration**: 86400 seconds (24h). After a page is rendered, the cached HTML is served for 24h. The next request after that triggers a fresh SSR.
 - **bypassToken**: when present, allows on-demand revalidation. The API can ping the page with this token in a header, and Vercel will evict the cache and re-render immediately.
-- **exclude**: SSR-only routes that must always render fresh. Auth, user account, search, and feedback are never cached because they depend on session state.
+- **exclude**: SSR-only routes that must always render fresh. Auth, user account, and feedback are never cached because they depend on session state.
 
 ### On-Demand Revalidation Flow
 

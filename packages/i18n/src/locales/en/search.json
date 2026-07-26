@@ -1,22 +1,8 @@
 {
-    "label": "Search",
-    "submit": "Search",
-    "loading": "Searching...",
-    "searching": "Searching…",
-    "resultsFor": "Results for \"{{query}}\"",
-    "popular": "Popular searches",
-    "groups": {
-        "accommodations": "Accommodations",
-        "destinations": "Destinations",
-        "events": "Events",
-        "posts": "Posts"
-    },
     "fewerAdults": "Fewer adults",
     "moreAdults": "More adults",
     "fewerChildren": "Fewer children",
     "moreChildren": "More children",
-    "title": "Search",
-    "description": "Search and find the perfect accommodation for your next trip. Filter by location, price, and amenities.",
     "heading": "Search Accommodations",
     "subheading": "Find the perfect place for your next adventure",
     "form": {
