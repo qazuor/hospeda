@@ -6,7 +6,7 @@
  * duplicating the Cloudinary interaction pattern.
  */
 
-import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB } from '@repo/media';
+import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, MULTIPART_ENVELOPE_SLACK_BYTES } from '@repo/media';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
 import { UploadResponseDataSchema } from '@repo/schemas';
@@ -29,8 +29,22 @@ import { apiLogger } from '../../utils/logger';
 export const getEntityMaxFileSizeMb = (): number =>
     env?.HOSPEDA_MEDIA_MAX_FILE_SIZE_MB ?? DEFAULT_ENTITY_MAX_FILE_SIZE_MB;
 
-/** Margin above the strict file-size limit for Content-Length pre-check. */
-const CONTENT_LENGTH_MARGIN = 1024;
+/**
+ * Margin above the strict file-size limit for the Content-Length pre-check.
+ *
+ * Content-Length measures the whole multipart BODY — the file plus boundaries,
+ * per-part headers, the filename and every other form field — while the cap it
+ * is compared against measures the FILE. The margin must therefore cover a
+ * realistic envelope, or a file exactly at the cap is refused for bytes that
+ * are not its own. That false 413 is the precise bug class HOS-322 exists to
+ * remove, so the margin is the same generous allowance the body-size guard
+ * uses rather than a tighter number of its own: the guards would otherwise
+ * disagree about which one rejects, and the smaller margin would silently win.
+ *
+ * Being generous costs nothing, because the strict check on the parsed buffer
+ * runs immediately afterwards and is what actually enforces the cap.
+ */
+const CONTENT_LENGTH_MARGIN = MULTIPART_ENVELOPE_SLACK_BYTES;
 
 /**
  * Single-attempt upstream timeout (ms) for the interactive entity-upload

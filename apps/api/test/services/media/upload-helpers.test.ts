@@ -18,6 +18,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
     buildEntityFolder,
     buildPatchPayload,
+    CONTENT_LENGTH_MARGIN_BYTES,
     getEntityMaxFileSizeMb,
     uploadToProvider,
     validateContentLength,
@@ -41,17 +42,21 @@ describe('upload-helpers', () => {
             expect(result).toBeNull();
         });
 
-        it('should return error for content length over limit', () => {
-            const result = validateContentLength(maxBytes + 2048);
+        it('should return error for content length past the envelope margin', () => {
+            const result = validateContentLength(maxBytes + CONTENT_LENGTH_MARGIN_BYTES + 1);
             expect(result).not.toBeNull();
             expect(result?.code).toBe('PAYLOAD_TOO_LARGE');
             expect(result?.status).toBe(413);
         });
 
-        it('should accept content length with margin above limit', () => {
-            // 1024 bytes margin is allowed
-            const result = validateContentLength(maxBytes + 512);
-            expect(result).toBeNull();
+        it('should accept a file at the cap plus a realistic multipart envelope', () => {
+            // Content-Length measures the whole body, the cap measures the file.
+            // The margin has to cover boundaries, field parts and — crucially —
+            // a filename the user controls, which is why it is generous rather
+            // than the old 1 KB. Rejecting here would be a false 413 on a legal
+            // file, the exact bug HOS-322 exists to remove.
+            expect(validateContentLength(maxBytes + 512)).toBeNull();
+            expect(validateContentLength(maxBytes + CONTENT_LENGTH_MARGIN_BYTES)).toBeNull();
         });
     });
 

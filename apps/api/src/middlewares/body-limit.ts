@@ -2,18 +2,29 @@
  * @file body-limit.ts
  * @description Request body size guard, with a wider ceiling on upload routes.
  *
- * A single global cap cannot serve both purposes. Most endpoints carry JSON and
- * should be capped tightly — that cap is what protects auth, search, PATCH and
- * webhook handlers from oversized payloads. Upload endpoints legitimately carry
- * a photo, and since HOS-322 that photo may be up to
- * `HOSPEDA_MEDIA_MAX_FILE_SIZE_MB` (15 MB by default), well above the global
- * cap.
+ * The entity cap and the global cap are currently the SAME number (10 MB), so
+ * be precise about what resolving the ceiling per path actually buys — the
+ * answer is not "uploads may carry more":
  *
- * Raising the global cap to fit the photo would widen the exposed surface of
- * every other endpoint to enable exactly three routes — a bad trade. So the
- * ceiling is resolved per request path: the three upload routes get their own,
- * derived from the same env vars the upload handlers validate against, and
- * everything else keeps the tight global cap.
+ * 1. **16 KB of envelope slack on upload routes.** The global cap measures the
+ *    whole request body; the media cap measures the FILE. A photo exactly at
+ *    the cap arrives as body = file + boundaries + field parts, which exceeds a
+ *    flat 10 MB guard. That guard's error is blunt and generic
+ *    (`REQUEST_TOO_LARGE`, no size, no i18n mapping), so the owner was told
+ *    nothing useful about a file that was in fact legal. With the slack, the
+ *    precise per-file check decides instead — and says which limit it applied.
+ * 2. **A LOWER ceiling on avatars (5 MB, not 10).** This is the only place that
+ *    can enforce it early: the avatar handler's own pre-check reads
+ *    `content-length`, so a chunked request without that header used to stream
+ *    up to the full global 10 MB into memory before being refused. Deleting
+ *    this branch would quietly double that surface.
+ * 3. **A ceiling that tracks the env vars.** Lowering
+ *    `HOSPEDA_MEDIA_MAX_FILE_SIZE_MB` narrows the body guard too, instead of
+ *    leaving a 10 MB hole behind a 3 MB file cap.
+ *
+ * Raising the global cap instead would widen the exposed surface of every other
+ * endpoint — auth, search, PATCH, webhooks — to serve three routes, and would
+ * still not give avatars their tighter bound.
  *
  * This MUST live in the global middleware chain rather than in a route's
  * `options.middlewares`: Hono runs `app.use()` middleware before any route-level
@@ -25,6 +36,7 @@
 import {
     DEFAULT_AVATAR_MAX_FILE_SIZE_MB,
     DEFAULT_ENTITY_MAX_FILE_SIZE_MB,
+    MULTIPART_ENVELOPE_SLACK_BYTES,
     mbToBytes
 } from '@repo/media';
 import type { MiddlewareHandler } from 'hono';
@@ -41,19 +53,6 @@ import { env } from '../utils/env.js';
  */
 const GLOBAL_BODY_LIMIT_MB = 10;
 
-/**
- * Slack added on top of a file cap when it is used as a BODY cap.
- *
- * The body of a multipart upload is the file plus the envelope: boundaries,
- * per-part headers, filename, and the other form fields (`entityType`,
- * `entityId`, `role`, `tags`...). Without this slack, a file exactly at the
- * cap would be rejected by the stream guard, whose error is blunt and generic.
- * The slack keeps the precise, per-file check in the handler as the thing that
- * actually rejects an oversized photo, leaving this guard as a backstop
- * against payloads that are not merely a little over.
- */
-const MULTIPART_ENVELOPE_SLACK_BYTES = 16 * 1024;
-
 /** Upload route that carries an entity photo, capped by the media limit. */
 const ENTITY_UPLOAD_PATHS = new Set([
     '/api/v1/protected/media/upload-entity',
@@ -63,12 +62,6 @@ const ENTITY_UPLOAD_PATHS = new Set([
 /** Upload route that carries an avatar, capped by the (lower) avatar limit. */
 const AVATAR_UPLOAD_PATHS = new Set(['/api/v1/protected/media/upload']);
 
-/**
- * Resolve the body ceiling, in MB, that applies to a request path.
- *
- * @param path - The request path
- * @returns The ceiling in MB, before multipart slack is added
- */
 /** Which ceiling a request path falls under. */
 type LimitKind = 'entity' | 'avatar' | 'global';
 

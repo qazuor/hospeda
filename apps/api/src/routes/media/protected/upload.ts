@@ -26,6 +26,7 @@ import { Sentry } from '../../../lib/sentry';
 import { incrementDomainCounter } from '../../../middlewares/metrics';
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getMediaProvider } from '../../../services/media';
+import { CONTENT_LENGTH_MARGIN_BYTES } from '../../../services/media/upload-helpers';
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env.js';
 import { apiLogger } from '../../../utils/logger';
@@ -47,13 +48,15 @@ const getAvatarMaxFileSizeMb = (): number =>
 /**
  * Allowance above the strict file-size limit for the Content-Length
  * pre-check (SPEC-078-GAPS T-033 / GAP-078-021). Multipart envelope
- * overhead (boundaries, field headers) on a file exactly at the byte
- * limit can push the declared Content-Length a few hundred bytes past
- * the cap even though the parsed file body is within the limit. The
- * downstream `validateMediaFile` enforces the strict limit on the
- * parsed buffer.
+ * overhead (boundaries, field headers, the user-supplied filename) on a
+ * file exactly at the byte limit pushes the declared Content-Length past
+ * the cap even though the parsed file body is within it. Shared with the
+ * other upload guards rather than re-declared: when each picks its own
+ * allowance the smallest one silently decides, and the generous ones
+ * become decoration. The downstream `validateMediaFile` enforces the
+ * strict limit on the parsed buffer.
  */
-const CONTENT_LENGTH_MARGIN = 1024;
+const CONTENT_LENGTH_MARGIN = CONTENT_LENGTH_MARGIN_BYTES;
 
 /**
  * POST /api/v1/protected/media/upload

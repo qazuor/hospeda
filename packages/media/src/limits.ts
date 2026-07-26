@@ -57,6 +57,25 @@ export const DEFAULT_ENTITY_MAX_FILE_SIZE_MB = PROVIDER_MAX_IMAGE_FILE_SIZE_MB;
 export const DEFAULT_AVATAR_MAX_FILE_SIZE_MB = 5;
 
 /**
+ * Allowance, in bytes, for the multipart envelope around an uploaded file.
+ *
+ * Every guard that compares a whole request BODY against a cap that describes
+ * the FILE needs this: the body also carries boundaries, per-part headers, the
+ * filename and the other form fields. Without it a file exactly at the cap is
+ * refused for bytes that are not its own — the false 413 this module exists to
+ * prevent.
+ *
+ * Deliberately shared rather than re-derived per guard. When two guards pick
+ * their own allowance, the smaller one silently decides, and the design comment
+ * on the larger one becomes a lie about which check actually rejects.
+ *
+ * Being generous is free: the strict check on the parsed file buffer runs
+ * afterwards and is what truly enforces the cap. These allowances only decide
+ * how early an obviously-oversized request is cut off.
+ */
+export const MULTIPART_ENVELOPE_SLACK_BYTES = 16 * 1024;
+
+/**
  * Convert a size in MB to bytes.
  *
  * @param mb - Size in megabytes

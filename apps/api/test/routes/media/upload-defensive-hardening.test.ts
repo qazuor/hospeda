@@ -50,7 +50,10 @@ import {
 
 import { initApp } from '../../../src/app';
 import { clearRateLimitStore } from '../../../src/middlewares/rate-limit';
-import { getEntityMaxFileSizeMb } from '../../../src/services/media/upload-helpers';
+import {
+    CONTENT_LENGTH_MARGIN_BYTES,
+    getEntityMaxFileSizeMb
+} from '../../../src/services/media/upload-helpers';
 import type { AppOpenAPI } from '../../../src/types';
 
 const ADMIN_ENTITY_ID = '00000000-0000-4000-8000-0000000000aa';
@@ -180,16 +183,19 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
             expect(res.status).not.toBe(413);
         });
 
-        it('admin upload rejects a Content-Length 2KB above the limit with 413', async () => {
-            // Arrange
+        it('admin upload rejects a Content-Length past the envelope margin with 413', async () => {
+            // Arrange — one byte past the margin. Derived from the shared
+            // constant: the margin was widened in HOS-322 so that a file AT the
+            // cap is never refused for envelope bytes it does not control (a
+            // user-supplied filename is part of that envelope), and a literal
+            // here would keep asserting the old boundary.
             const limitBytes = getEntityMaxFileSizeMb() * 1024 * 1024;
             const actor = createUploadReadyAdminActor();
             const req = new Request(ADMIN_URL, {
                 method: 'POST',
                 headers: {
                     ...buildAuthHeaders(actor),
-                    // 2KB over the strict limit and ALSO above the 1KB margin.
-                    'content-length': String(limitBytes + 2048)
+                    'content-length': String(limitBytes + CONTENT_LENGTH_MARGIN_BYTES + 1)
                 },
                 body: buildAdminMultipartBody(buildPngFile())
             });
@@ -198,15 +204,33 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
             const res = await app.request(req);
             const body = (await res.json()) as { success: boolean; error?: { code: string } };
 
-            // Assert: 413 with the route-level `PAYLOAD_TOO_LARGE`. Since
-            // HOS-322 the upload routes carry a body ceiling of the cap plus a
-            // 16KB multipart slack, so a payload only 2KB over is deliberately
-            // rejected by the precise per-file check — whose message names the
-            // real limit — rather than by the blunt stream guard.
+            // Assert: 413 from the route-level check, whose message names the
+            // real limit — NOT the blunt stream guard's generic error.
             expect(res.status).toBe(413);
             expect(body.success).toBe(false);
             expect(body.error?.code).toBe('PAYLOAD_TOO_LARGE');
             expect(mockUpload).not.toHaveBeenCalled();
+        });
+
+        it('admin upload accepts a file at the cap plus a realistic envelope', async () => {
+            // The false-413 case the margin exists to prevent: the FILE is
+            // legal, the BODY is larger because of boundaries and field parts.
+            const limitBytes = getEntityMaxFileSizeMb() * 1024 * 1024;
+            const actor = createUploadReadyAdminActor();
+            const req = new Request(ADMIN_URL, {
+                method: 'POST',
+                headers: {
+                    ...buildAuthHeaders(actor),
+                    'content-length': String(limitBytes + 2048)
+                },
+                body: buildAdminMultipartBody(buildPngFile())
+            });
+
+            const res = await app.request(req);
+            const body = (await res.json()) as { success: boolean; error?: { code: string } };
+
+            expect(res.status).not.toBe(413);
+            expect(body.error?.code).not.toBe('PAYLOAD_TOO_LARGE');
         });
 
         it('protected upload accepts a Content-Length declared exactly at the avatar 5MB limit', async () => {
@@ -233,8 +257,9 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
             expect(res.status).not.toBe(413);
         });
 
-        it('protected upload rejects a Content-Length 2KB above the avatar limit with 413', async () => {
-            // Arrange
+        it('protected upload rejects a Content-Length past the avatar envelope margin', async () => {
+            // Arrange — one byte past the shared margin, so this keeps testing
+            // the boundary rather than a number that used to be past it.
             const limitBytes = 5 * 1024 * 1024;
             const actor = createMockUserActor({
                 id: '00000000-0000-4000-8000-0000000000bd'
@@ -243,7 +268,7 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
                 method: 'POST',
                 headers: {
                     ...buildAuthHeaders(actor),
-                    'content-length': String(limitBytes + 2048)
+                    'content-length': String(limitBytes + CONTENT_LENGTH_MARGIN_BYTES + 1)
                 },
                 body: buildProtectedMultipartBody(buildPngFile('avatar.png'))
             });
@@ -252,10 +277,10 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
             const res = await app.request(req);
             const body = (await res.json()) as { success: boolean; error?: { code: string } };
 
-            // Assert: 413 from either route-level or global bodyLimit.
+            // Assert: 413 naming the avatar cap, not the blunt global guard.
             expect(res.status).toBe(413);
             expect(body.success).toBe(false);
-            expect(['PAYLOAD_TOO_LARGE', 'REQUEST_TOO_LARGE']).toContain(body.error?.code);
+            expect(body.error?.code).toBe('PAYLOAD_TOO_LARGE');
             expect(mockUpload).not.toHaveBeenCalled();
         });
     });
