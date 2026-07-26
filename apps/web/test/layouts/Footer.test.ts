@@ -60,8 +60,16 @@ describe('Footer.astro', () => {
     });
 
     describe('Explorar column', () => {
-        it('includes /busqueda/ search link', () => {
-            expect(src).toContain('/busqueda/');
+        // The global site-search feature was cut from the product: the `/busqueda/`
+        // page and the `GET /api/v1/public/search` endpoint behind it were deleted.
+        // The footer "Buscar" link was removed with NO replacement, so these assert
+        // the link stays gone rather than that it exists.
+        it('does not link to /busqueda/ (global search removed)', () => {
+            expect(src).not.toContain('/busqueda/');
+        });
+
+        it('does not use the footer.search i18n key (global search removed)', () => {
+            expect(src).not.toContain('footer.search');
         });
 
         it('includes /alojamientos/ link', () => {
@@ -78,10 +86,6 @@ describe('Footer.astro', () => {
 
         it('includes /publicaciones/ link', () => {
             expect(src).toContain('/publicaciones/');
-        });
-
-        it('uses i18n key for search label', () => {
-            expect(src).toContain('footer.search');
         });
 
         it('uses i18n key for the column title', () => {

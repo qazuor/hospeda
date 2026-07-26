@@ -93,7 +93,7 @@ try {
 const formattedCount = new Intl.NumberFormat(locale === "es" ? "es-AR" : locale).format(statsAccommodations);
 const formattedRating = statsAverageRating.toFixed(1).replace(".", ",");
 
-/** EXPLORAR column — top-level sections + search */
+/** EXPLORAR column — top-level sections */
 const exploreLinks = [
     { label: t("footer.accommodations"), href: buildUrl({ locale, path: "/alojamientos/" }) },
     { label: t("footer.destinations"), href: buildUrl({ locale, path: "/destinos/" }) },
@@ -101,7 +101,6 @@ const exploreLinks = [
     { label: t("footer.gastronomy"), href: buildUrl({ locale, path: "/gastronomia/" }) },
     { label: t("footer.experiences"), href: buildUrl({ locale, path: "/experiencias/" }) },
     { label: t("footer.publications"), href: buildUrl({ locale, path: "/publicaciones/" }) },
-    { label: t("footer.search", "Buscar"), href: buildUrl({ locale, path: "/busqueda/" }) },
 ] as const;
 
 /** PARA VOS column — owner + tourist value props */

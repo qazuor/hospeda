@@ -148,7 +148,6 @@ import { protectedProfileRoutes } from './profile';
 import { protectedRecommendationsRoutes } from './recommendations';
 import { revalidationRouter } from './revalidation';
 import { robotsRoute } from './robots';
-import { publicSearchRoutes } from './search/public';
 import { protectedSearchHistoryRoutes } from './search-history';
 import {
     adminGetGptActionSchemaRoute,
@@ -314,9 +313,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Admin:     /api/v1/admin/conversations/*   (T-011)
         app.route('/api/v1/public/conversations', publicConversationsRouter);
         app.route('/api/v1/protected/conversations', protectedConversationRoutes);
-
-        // Unified public search (SPEC-096 / REQ-096-04)
-        app.route('/api/v1/public/search', publicSearchRoutes);
 
         // Feature flags (public key-value map — no auth)
         app.route('/api/v1/public/flags', publicFeatureFlagRoutes);

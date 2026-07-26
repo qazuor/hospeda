@@ -120,7 +120,6 @@ function detectContextTags(pathname: string): ReadonlyArray<string> {
     if (path.startsWith('/contacto')) tags.add('contact');
     if (path.startsWith('/publicar')) tags.add('publicar');
     if (path.startsWith('/suscriptores')) tags.add('suscriptores');
-    if (path.startsWith('/busqueda')) tags.add('listing');
 
     return Array.from(tags);
 }

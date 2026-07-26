@@ -6,8 +6,11 @@
  * - SPEC-228 T-022: sign-out button shows LoadingButton/Spinner, NOT '...'
  * - sign-out button is aria-busy while signing out
  * - sign-out button is disabled while signing out
+ * - removal guard: the bottom global-search CTA stays gone
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MobileMenu } from '../../../../src/components/shared/navigation/MobileMenu.client';
@@ -81,8 +84,7 @@ vi.mock('@repo/icons', async (importOriginal) => {
         BuildingIcon: () => <span data-testid="icon-building" />,
         ChevronDownIcon: () => <span data-testid="icon-chevron" />,
         UserIcon: () => <span data-testid="icon-user" />,
-        LogoutIcon: () => <span data-testid="icon-logout" />,
-        SearchIcon: () => <span data-testid="icon-search" />
+        LogoutIcon: () => <span data-testid="icon-logout" />
     };
 });
 
@@ -251,5 +253,39 @@ describe('MobileMenu — sign-out loading state (SPEC-228 T-022)', () => {
         });
 
         expect(document.body.textContent).not.toContain('...');
+    });
+});
+
+// ─── Global-search CTA removal guard ─────────────────────────────────────────
+
+describe('MobileMenu — bottom search CTA (removed)', () => {
+    // The global site-search feature was cut from the product: the page it led
+    // to and the API endpoint behind it were both deleted. The menu's bottom CTA
+    // went with them, together with its icon import and its nav i18n key.
+    //
+    // Nothing ever asserted the CTA existed, so its deletion broke no test and
+    // nothing would catch it coming back. These are source-level assertions in
+    // the same style as Header.test.ts, which guards the equivalent removal of
+    // the header search icon.
+    const componentSrc = readFileSync(
+        resolve(__dirname, '../../../../src/components/shared/navigation/MobileMenu.client.tsx'),
+        'utf8'
+    );
+
+    it('does not link to the removed search page', () => {
+        expect(componentSrc).not.toContain('busqueda');
+    });
+
+    it('does not import SearchIcon (the CTA that used it is gone)', () => {
+        expect(componentSrc).not.toContain('SearchIcon');
+    });
+
+    it('does not use the nav.goToSearch i18n key (deleted with the CTA)', () => {
+        expect(componentSrc).not.toContain('goToSearch');
+    });
+
+    it('does not reference the CTA styles that were dropped from the module', () => {
+        expect(componentSrc).not.toContain('styles.searchLink');
+        expect(componentSrc).not.toContain('styles.searchLabel');
     });
 });
