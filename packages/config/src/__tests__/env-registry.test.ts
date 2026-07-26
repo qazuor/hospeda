@@ -240,8 +240,13 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *
  * +1 = HOSPEDA_BILLING_PRICE_INCREASE_ENABLED (HOS-176, billing category, optional,
  * default false) — gates the plan price-INCREASE propagation flow. 273 + 1 = 274.
+ *
+ * +1 = HOSPEDA_AVATAR_MAX_FILE_SIZE_MB (HOS-322, integrations category, optional,
+ * default 5) — gives avatars a cap of their own, replacing a hardcoded byte
+ * literal in the upload route. Deliberately lower than the entity-photo cap
+ * because avatars are cropped to a thumbnail. 274 + 1 = 275.
  */
-const EXPECTED_VAR_COUNT = 274;
+const EXPECTED_VAR_COUNT = 275;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
