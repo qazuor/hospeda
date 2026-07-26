@@ -42,19 +42,19 @@ describe('buildUrlWithParams', () => {
     it('should append query parameters', () => {
         const result = buildUrlWithParams({
             locale: 'es',
-            path: 'busqueda',
+            path: 'alojamientos',
             params: { q: 'hotel' }
         });
-        expect(result).toBe('/es/busqueda/?q=hotel');
+        expect(result).toBe('/es/alojamientos/?q=hotel');
     });
 
     it('should handle multiple parameters', () => {
         const result = buildUrlWithParams({
             locale: 'es',
-            path: 'busqueda',
+            path: 'alojamientos',
             params: { q: 'hotel', page: '2' }
         });
-        expect(result).toContain('/es/busqueda/?');
+        expect(result).toContain('/es/alojamientos/?');
         expect(result).toContain('q=hotel');
         expect(result).toContain('page=2');
     });

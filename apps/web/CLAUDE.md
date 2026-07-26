@@ -87,7 +87,7 @@ src/
 
 | Strategy | When to use | Example pages |
 |----------|------------|---------------|
-| **SSR** (default) | Dynamic content, auth-aware, search, fresh data | `/busqueda/`, `/mi-cuenta/*`, `/auth/*` |
+| **SSR** (default) | Dynamic content, auth-aware, fresh data | `/mi-cuenta/*`, `/auth/*`, `/feedback/*` |
 | **SSG** (`prerender = true`) | Static content that rarely changes | `/nosotros/`, `/faq/`, `/legal/*`, `/contacto/` |
 | **SSR + Cloudflare cache** | Content-heavy pages that change via CMS — pages re-render on demand and Cloudflare caches the response; the API triggers `/api/revalidate` to purge the cache when data changes | `/alojamientos/`, `/destinos/`, `/eventos/`, `/publicaciones/` |
 | **Server Islands** (`server:defer`) | Auth-dependent fragments on otherwise static pages | FavoriteButton, UserNav, ReviewList |

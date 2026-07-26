@@ -1174,63 +1174,6 @@ export const usersApi = {
     }
 };
 
-// --- Search ---
-
-/** Single search result item across entity groups. */
-export interface PublicSearchResultItem {
-    readonly id: string;
-    readonly slug: string;
-    readonly name: string;
-    readonly coverImage?: string;
-    readonly type?: string;
-    readonly category?: string;
-}
-
-/** A group of search results with count. */
-export interface PublicSearchGroup {
-    readonly items: readonly PublicSearchResultItem[];
-    readonly total: number;
-}
-
-/** Full unified search response. */
-export interface PublicSearchResponse {
-    readonly accommodations: PublicSearchGroup;
-    readonly destinations: PublicSearchGroup;
-    readonly events: PublicSearchGroup;
-    readonly posts: PublicSearchGroup;
-}
-
-/** Public unified search API endpoints */
-export const searchApi = {
-    /**
-     * Unified cross-entity search across accommodations, destinations, events, and posts.
-     * Requires q.length >= 2. Rate-limited at 30 req/min per IP.
-     *
-     * @param params - Search query and optional item limit per group
-     * @returns Groups of matching items per entity type with total counts
-     *
-     * @example
-     * ```ts
-     * const result = await searchApi.search({ q: 'cabaña', limit: 5 });
-     * if (result.ok) {
-     *   console.log(result.data.accommodations.items);
-     * }
-     * ```
-     */
-    search({
-        q,
-        limit
-    }: {
-        readonly q: string;
-        readonly limit?: number;
-    }): Promise<ApiResult<PublicSearchResponse>> {
-        return apiClient.get({
-            path: `${BASE}/search`,
-            params: limit == null ? { q } : { q, limit }
-        });
-    }
-};
-
 // --- Comments (Public — SPEC-165) ---
 
 /**

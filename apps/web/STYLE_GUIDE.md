@@ -677,7 +677,7 @@ import { GradientButton } from '@/components/ui/GradientButtonReact';
   as="button"
   type="submit"
   shape="rounded"
-  label={isLoading ? t('common.loading') : t('search.submit')}
+  label={isLoading ? t('common.loading') : t('common.submit')}
   disabled={isLoading}
   aria={{ busy: isLoading }}
 />
