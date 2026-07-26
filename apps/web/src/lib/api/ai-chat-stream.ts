@@ -61,13 +61,28 @@ export async function streamChat(params: StreamChatParams): Promise<void> {
         });
 
         if (!response.ok || !response.body) {
-            const errBody = await response.json().catch(() => ({}));
+            const errBody = (await response.json().catch(() => ({}))) as {
+                error?: { code?: string; message?: string };
+            };
+            const code = errBody.error?.code;
+            const message = errBody.error?.message;
+
+            // Emit the structured shape whenever the API sent one. Collapsing
+            // it into a bare `Error` used to discard `code`, leaving the UI
+            // with nothing but a message that is often an i18n key — which it
+            // then rendered verbatim (HOS-310's sibling bug, HOS-292).
+            if (code !== undefined || message !== undefined) {
+                params.onEvent({
+                    type: 'error',
+                    code: code ?? 'INTERNAL_ERROR',
+                    message: message ?? ''
+                });
+                return;
+            }
+
             params.onEvent({
                 type: 'stream_error',
-                error: new Error(
-                    (errBody as { error?: { message?: string } })?.error?.message ??
-                        `HTTP ${response.status}`
-                )
+                error: new Error(`HTTP ${response.status}`)
             });
             return;
         }
