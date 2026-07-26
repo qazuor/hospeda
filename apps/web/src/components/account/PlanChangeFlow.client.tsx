@@ -16,6 +16,7 @@
 import type { DowngradePreview, KeepSelections, PlanChangeResponse } from '@repo/schemas';
 import { useEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
+import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
 import { billingApi } from '@/lib/api/endpoints-protected';
 import { isRetryableApiError, translateApiError } from '@/lib/api-errors';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
@@ -208,6 +209,19 @@ export function PlanChangeFlow({
         readonly retryable: boolean;
     } | null>(null);
     const backdropRef = useRef<HTMLDivElement>(null);
+
+    // ── Back button (HOS-310) ───────────────────────────────────────────────
+    //
+    // This flow is mounted only while open, so the entry is claimed for its
+    // whole lifetime. `isLoading` gates the dismissal exactly like the Escape
+    // handler below: a plan change in flight must not be abandoned halfway.
+
+    useDialogHistoryBack({
+        isOpen: true,
+        onClose: () => {
+            if (!isLoading) onDismiss();
+        }
+    });
 
     // ── Escape key handler ──────────────────────────────────────────────────
 
