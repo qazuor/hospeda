@@ -16,6 +16,11 @@
 export { extractPublicId } from './extract-public-id.js';
 export type { GetMediaUrlOptions } from './get-media-url.js';
 export { getMediaUrl, stripCloudinaryTransform } from './get-media-url.js';
+export {
+    DEFAULT_AVATAR_MAX_FILE_SIZE_MB,
+    DEFAULT_ENTITY_MAX_FILE_SIZE_MB,
+    mbToBytes
+} from './limits.js';
 export type { MediaPreset } from './presets.js';
 export { MEDIA_PRESETS } from './presets.js';
 
