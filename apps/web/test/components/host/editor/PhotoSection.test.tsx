@@ -636,6 +636,20 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             expect(mockUploadEntityImage).not.toHaveBeenCalled();
         });
 
+        it('states the real limit in the hint shown before a file is chosen', async () => {
+            // Round-1 review caught this exact gap: the rejection message was
+            // interpolated while the hint the host reads FIRST still said a
+            // flat "5MB". The hint is the one that changes behaviour — an owner
+            // who reads it never attempts the photo.
+            mockListMedia.mockReturnValue(makeListEmpty());
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+            const hint = screen.getByText((content) => content.includes('máx.'));
+            expect(hint.textContent).toContain(String(DEFAULT_ENTITY_MAX_FILE_SIZE_MB));
+            expect(hint.textContent).not.toContain('{{');
+        });
+
         it('states the real limit in the rejection message', async () => {
             // The message used to say a flat "5MB" regardless of what the
             // server actually enforced. It must name the cap in force.

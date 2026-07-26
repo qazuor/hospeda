@@ -19,6 +19,7 @@
  *   - `@/lib/avatar-utils` → mocked to return "TU"
  */
 
+import { DEFAULT_AVATAR_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AvatarUpload } from '../../../src/components/account/AvatarUpload.client';
@@ -252,5 +253,38 @@ describe('AvatarUpload — translateApiError integration (T-006)', () => {
             // reason wins → '[es] NEWSLETTER_NOT_CONFIGURED'
             expect(screen.getByRole('alert')).toHaveTextContent('[es] NEWSLETTER_NOT_CONFIGURED');
         });
+    });
+});
+
+describe('AvatarUpload — size limit messaging (HOS-322)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('states the avatar cap in the hint, interpolated', () => {
+        // The hint is what the user reads BEFORE picking a file, so a stale or
+        // un-interpolated value here shapes their behaviour even when the
+        // validation itself is correct.
+        render(<AvatarUpload {...DEFAULT_PROPS} />);
+
+        const hint = screen.getByText((content) => content.includes('Máx.'));
+        expect(hint.textContent).toContain(String(DEFAULT_AVATAR_MAX_FILE_SIZE_MB));
+        expect(hint.textContent).not.toContain('{{');
+    });
+
+    it('refuses a file over the cap without calling the API, naming the cap', async () => {
+        global.fetch = vi.fn();
+
+        render(<AvatarUpload {...DEFAULT_PROPS} />);
+        await triggerFileChange(
+            makeFile('image/png', mbToBytes(DEFAULT_AVATAR_MAX_FILE_SIZE_MB) + 1)
+        );
+
+        await waitFor(() => {
+            const alert = screen.getByRole('alert');
+            expect(alert.textContent).toContain(String(DEFAULT_AVATAR_MAX_FILE_SIZE_MB));
+            expect(alert.textContent).not.toContain('{{');
+        });
+        expect(global.fetch).not.toHaveBeenCalled();
     });
 });
