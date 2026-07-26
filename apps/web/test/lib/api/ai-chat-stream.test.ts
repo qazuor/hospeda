@@ -20,10 +20,22 @@ function createSseResponse(lines: string[], status = 200): Response {
     });
 }
 
-function createJsonErrorResponse(status: number, message = 'Unauthorized'): Response {
-    return new Response(JSON.stringify({ error: { message } }), {
+function createJsonErrorResponse(
+    status: number,
+    message = 'Unauthorized',
+    code?: string
+): Response {
+    return new Response(JSON.stringify({ error: { ...(code ? { code } : {}), message } }), {
         status,
         headers: { 'Content-Type': 'application/json' }
+    });
+}
+
+/** A non-2xx with no parseable error body at all (gateway page, etc.). */
+function createOpaqueErrorResponse(status: number): Response {
+    return new Response('<html>gateway</html>', {
+        status,
+        headers: { 'Content-Type': 'text/html' }
     });
 }
 
@@ -80,7 +92,36 @@ describe('streamChat (SSE client)', () => {
         ]);
     });
 
-    it('emits stream_error on non-2xx response and does not parse', async () => {
+    it('preserves the error code on a non-2xx response (HOS-292)', async () => {
+        vi.stubGlobal(
+            'fetch',
+            vi
+                .fn()
+                .mockResolvedValue(
+                    createJsonErrorResponse(
+                        403,
+                        'accommodations.aiChat.unavailable',
+                        'ENTITLEMENT_REQUIRED'
+                    )
+                )
+        );
+
+        const events: SseEvent[] = [];
+        await streamChat({ ...baseParams, onEvent: (e) => events.push(e) });
+
+        // This used to collapse into `stream_error` with a bare Error, throwing
+        // the code away and leaving the widget holding a message that is an
+        // i18n key — which it then rendered verbatim.
+        expect(events).toEqual([
+            {
+                type: 'error',
+                code: 'ENTITLEMENT_REQUIRED',
+                message: 'accommodations.aiChat.unavailable'
+            }
+        ]);
+    });
+
+    it('still reports a structured error when the body carries no code', async () => {
         vi.stubGlobal(
             'fetch',
             vi.fn().mockResolvedValue(createJsonErrorResponse(401, 'Unauthorized'))
@@ -89,10 +130,21 @@ describe('streamChat (SSE client)', () => {
         const events: SseEvent[] = [];
         await streamChat({ ...baseParams, onEvent: (e) => events.push(e) });
 
+        expect(events).toEqual([
+            { type: 'error', code: 'INTERNAL_ERROR', message: 'Unauthorized' }
+        ]);
+    });
+
+    it('emits stream_error when the response has no parseable error body', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(createOpaqueErrorResponse(502)));
+
+        const events: SseEvent[] = [];
+        await streamChat({ ...baseParams, onEvent: (e) => events.push(e) });
+
         expect(events).toHaveLength(1);
         expect(events[0]).toEqual({
             type: 'stream_error',
-            error: expect.objectContaining({ message: 'Unauthorized' })
+            error: expect.objectContaining({ message: 'HTTP 502' })
         });
     });
 

@@ -28,7 +28,14 @@ export interface ChatState {
     readonly hasPartialContent: boolean;
     readonly conversationId: string | null;
     readonly status: ChatStatus;
+    /**
+     * Raw `message` from the API. Often an i18n KEY rather than prose, so it
+     * must never be rendered as-is — resolve it through the widget's error
+     * resolver together with {@link ChatState.errorCode}.
+     */
     readonly errorMessage: string | null;
+    /** Machine-readable error code, when the failure carried one. */
+    readonly errorCode: string | null;
     readonly showPriceDisclaimer: boolean;
 }
 
@@ -52,6 +59,7 @@ const INITIAL_STATE: ChatState = {
     conversationId: null,
     status: 'idle',
     errorMessage: null,
+    errorCode: null,
     showPriceDisclaimer: false
 };
 
@@ -138,7 +146,8 @@ export function useAccommodationChat(
                                 currentAssistantContent: '',
                                 hasPartialContent: false,
                                 status: 'error',
-                                errorMessage: event.message
+                                errorMessage: event.message,
+                                errorCode: event.code
                             };
                         }
 
@@ -148,7 +157,10 @@ export function useAccommodationChat(
                                 currentAssistantContent: '',
                                 hasPartialContent: false,
                                 status: 'error',
-                                errorMessage: event.error.message
+                                errorMessage: event.error.message,
+                                // A transport failure, not an API verdict: the
+                                // widget shows its network copy for this.
+                                errorCode: 'NETWORK_INTERRUPTED'
                             };
                         }
 
