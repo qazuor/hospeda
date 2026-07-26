@@ -175,10 +175,11 @@
                 "gallery": "Galería de fotos",
                 "add": "Agregar foto",
                 "remove": "Eliminar",
-                "uploadHint": "JPG, PNG o WebP — máx. 5MB",
+                "uploadHint": "JPG, PNG o WebP — máx. {{maxSize}}MB",
                 "invalidType": "Solo se permiten archivos JPG, PNG o WebP",
-                "tooLarge": "El archivo no puede superar 5MB",
+                "tooLarge": "El archivo no puede superar {{maxSize}}MB",
                 "uploadFailed": "Error al subir la imagen",
+                "uploadTimeout": "La subida tardó demasiado. Probá de nuevo.",
                 "capReached": "Límite de galería alcanzado (máx. {{cap}} fotos)"
             },
             "slugImmutableNotice": "La URL pública se genera a partir del nombre al crear el comercio y no se puede cambiar después."

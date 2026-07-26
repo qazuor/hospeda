@@ -19,6 +19,7 @@
  *   - `@/lib/avatar-utils` → mocked to return "TU"
  */
 
+import { DEFAULT_AVATAR_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AvatarUpload } from '../../../src/components/account/AvatarUpload.client';
@@ -46,13 +47,24 @@ vi.mock('../../../src/components/account/AvatarUpload.module.css', () => ({
  * localized string prefixed with `[es]` so tests can verify the translated
  * path was taken vs. the raw English message path.
  */
-const mockT = vi.fn((key: string, fallback?: string): string => {
-    if (key.startsWith('common.apiError.')) {
-        const code = key.replace('common.apiError.', '');
-        return `[es] ${code}`;
+const mockT = vi.fn(
+    (key: string, fallback?: string, params?: Record<string, string | number>): string => {
+        if (key.startsWith('common.apiError.')) {
+            const code = key.replace('common.apiError.', '');
+            return `[es] ${code}`;
+        }
+        const raw = fallback ?? key;
+        // Interpolate like the real `createTranslations().t` does. A stub that
+        // dropped params would happily let a size message ship with a raw
+        // `{{maxSize}}` in it (HOS-322).
+        return params
+            ? Object.entries(params).reduce(
+                  (acc, [name, value]) => acc.replaceAll(`{{${name}}}`, String(value)),
+                  raw
+              )
+            : raw;
     }
-    return fallback ?? key;
-});
+);
 
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({ t: mockT })
@@ -71,7 +83,12 @@ vi.mock('@repo/icons', () => ({
     UploadIcon: () => null
 }));
 
-vi.mock('@repo/media', () => ({
+// Only `getMediaUrl` is stubbed. Everything else — notably the canonical size
+// caps the component validates against — must come from the real module: a
+// fabricated cap would make the size assertions test a limit that does not
+// exist in production.
+vi.mock('@repo/media', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/media')>()),
     getMediaUrl: (url: string) => url
 }));
 
@@ -236,5 +253,38 @@ describe('AvatarUpload — translateApiError integration (T-006)', () => {
             // reason wins → '[es] NEWSLETTER_NOT_CONFIGURED'
             expect(screen.getByRole('alert')).toHaveTextContent('[es] NEWSLETTER_NOT_CONFIGURED');
         });
+    });
+});
+
+describe('AvatarUpload — size limit messaging (HOS-322)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('states the avatar cap in the hint, interpolated', () => {
+        // The hint is what the user reads BEFORE picking a file, so a stale or
+        // un-interpolated value here shapes their behaviour even when the
+        // validation itself is correct.
+        render(<AvatarUpload {...DEFAULT_PROPS} />);
+
+        const hint = screen.getByText((content) => content.includes('Máx.'));
+        expect(hint.textContent).toContain(String(DEFAULT_AVATAR_MAX_FILE_SIZE_MB));
+        expect(hint.textContent).not.toContain('{{');
+    });
+
+    it('refuses a file over the cap without calling the API, naming the cap', async () => {
+        global.fetch = vi.fn();
+
+        render(<AvatarUpload {...DEFAULT_PROPS} />);
+        await triggerFileChange(
+            makeFile('image/png', mbToBytes(DEFAULT_AVATAR_MAX_FILE_SIZE_MB) + 1)
+        );
+
+        await waitFor(() => {
+            const alert = screen.getByRole('alert');
+            expect(alert.textContent).toContain(String(DEFAULT_AVATAR_MAX_FILE_SIZE_MB));
+            expect(alert.textContent).not.toContain('{{');
+        });
+        expect(global.fetch).not.toHaveBeenCalled();
     });
 });

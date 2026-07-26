@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_AVATAR_MAX_FILE_SIZE_MB, DEFAULT_ENTITY_MAX_FILE_SIZE_MB } from '../../limits.js';
 import {
     AVATAR_ALLOWED_MIME_TYPES,
     ENTITY_ALLOWED_MIME_TYPES,
@@ -161,9 +162,12 @@ describe('validateMediaFile', () => {
     // -----------------------------------------------------------------------
 
     describe('FILE_TOO_LARGE', () => {
-        it('should fail when entity buffer exceeds the default 10 MB limit', () => {
-            // Arrange — 10 MB + 1 byte exceeds the limit
-            const buffer = createZeroBuffer(10 * MB + 1);
+        it('should fail when an entity buffer exceeds the default entity limit', () => {
+            // Arrange — one byte over the canonical cap. Derived from the
+            // constant deliberately: a literal would keep passing after the cap
+            // moves, asserting a limit that is no longer the real one.
+            const maxBytes = DEFAULT_ENTITY_MAX_FILE_SIZE_MB * MB;
+            const buffer = createZeroBuffer(maxBytes + 1);
 
             // Act
             const result = validateMediaFile({ buffer, mimeType: 'image/jpeg', context: 'entity' });
@@ -172,8 +176,8 @@ describe('validateMediaFile', () => {
             expect(result.valid).toBe(false);
             if (!result.valid) {
                 expect(result.error).toBe('FILE_TOO_LARGE');
-                expect(result.details.maxBytes).toBe(10 * MB);
-                expect(result.details.actualBytes).toBe(10 * MB + 1);
+                expect(result.details.maxBytes).toBe(maxBytes);
+                expect(result.details.actualBytes).toBe(maxBytes + 1);
             }
         });
 
@@ -189,6 +193,35 @@ describe('validateMediaFile', () => {
             if (!result.valid) {
                 expect(result.error).toBe('FILE_TOO_LARGE');
                 expect(result.details.maxBytes).toBe(5 * MB);
+            }
+        });
+
+        it('applies the canonical per-context defaults, not private copies', () => {
+            // The remaining assertions in this block use byte literals. This one
+            // is what ties those literals to the shared constants: if a cap
+            // moves in `limits.ts` without the validator following, it fails
+            // here rather than silently letting the clients and the server
+            // disagree (HOS-322).
+            const overAvatar = createZeroBuffer(DEFAULT_AVATAR_MAX_FILE_SIZE_MB * MB + 1);
+            const avatarResult = validateMediaFile({
+                buffer: overAvatar,
+                mimeType: 'image/png',
+                context: 'avatar'
+            });
+            expect(avatarResult.valid).toBe(false);
+            if (!avatarResult.valid) {
+                expect(avatarResult.details.maxBytes).toBe(DEFAULT_AVATAR_MAX_FILE_SIZE_MB * MB);
+            }
+
+            const overEntity = createZeroBuffer(DEFAULT_ENTITY_MAX_FILE_SIZE_MB * MB + 1);
+            const entityResult = validateMediaFile({
+                buffer: overEntity,
+                mimeType: 'image/png',
+                context: 'entity'
+            });
+            expect(entityResult.valid).toBe(false);
+            if (!entityResult.valid) {
+                expect(entityResult.details.maxBytes).toBe(DEFAULT_ENTITY_MAX_FILE_SIZE_MB * MB);
             }
         });
 
@@ -371,16 +404,20 @@ describe('validateMediaFile', () => {
             });
         });
 
-        // GAP-078-090: deterministic 10 MB boundary regression
-        describe('GAP-078-090: 10 MB byte-exact boundary', () => {
-            it('passes a PNG-padded buffer weighing EXACTLY 10 MB (10 * 1024 * 1024 bytes)', () => {
+        // GAP-078-090: deterministic byte-exact boundary regression. The cap
+        // itself moved in HOS-322, so the boundary is derived from the shared
+        // constant rather than pinned to the value it had at the time.
+        describe('GAP-078-090: entity byte-exact boundary', () => {
+            const ENTITY_MAX_BYTES = DEFAULT_ENTITY_MAX_FILE_SIZE_MB * MB;
+
+            it('passes a PNG-padded buffer weighing EXACTLY the entity cap', () => {
                 // Arrange — concatenate a real PNG header with padding to reach the
-                // exact byte count. byteLength MUST be 10 * 1024 * 1024.
+                // exact byte count.
                 const pngBuffer = createMinimalPng();
-                const padding = Buffer.alloc(10 * MB - pngBuffer.length);
+                const padding = Buffer.alloc(ENTITY_MAX_BYTES - pngBuffer.length);
                 const buffer = Buffer.concat([pngBuffer, padding]);
 
-                expect(buffer.byteLength).toBe(10 * MB);
+                expect(buffer.byteLength).toBe(ENTITY_MAX_BYTES);
 
                 // Act
                 const result = validateMediaFile({
@@ -389,7 +426,7 @@ describe('validateMediaFile', () => {
                     context: 'entity'
                 });
 
-                // Assert — size check uses strict `>`, so 10 MB exactly is allowed.
+                // Assert — size check uses strict `>`, so exactly the cap is allowed.
                 // Either the parser tolerates the padded image (valid: true) or it
                 // rejects it as INVALID_IMAGE — but it MUST NOT be FILE_TOO_LARGE.
                 if (!result.valid) {
@@ -397,13 +434,13 @@ describe('validateMediaFile', () => {
                 }
             });
 
-            it('fails a PNG-padded buffer weighing EXACTLY 10 MB + 1 byte with FILE_TOO_LARGE', () => {
+            it('fails a PNG-padded buffer weighing EXACTLY the entity cap + 1 byte', () => {
                 // Arrange — same padding strategy, +1 byte over the limit.
                 const pngBuffer = createMinimalPng();
-                const padding = Buffer.alloc(10 * MB - pngBuffer.length + 1);
+                const padding = Buffer.alloc(ENTITY_MAX_BYTES - pngBuffer.length + 1);
                 const buffer = Buffer.concat([pngBuffer, padding]);
 
-                expect(buffer.byteLength).toBe(10 * MB + 1);
+                expect(buffer.byteLength).toBe(ENTITY_MAX_BYTES + 1);
 
                 // Act
                 const result = validateMediaFile({
@@ -416,8 +453,8 @@ describe('validateMediaFile', () => {
                 expect(result.valid).toBe(false);
                 if (!result.valid) {
                     expect(result.error).toBe('FILE_TOO_LARGE');
-                    expect(result.details.maxBytes).toBe(10 * MB);
-                    expect(result.details.actualBytes).toBe(10 * MB + 1);
+                    expect(result.details.maxBytes).toBe(ENTITY_MAX_BYTES);
+                    expect(result.details.actualBytes).toBe(ENTITY_MAX_BYTES + 1);
                 }
             });
         });

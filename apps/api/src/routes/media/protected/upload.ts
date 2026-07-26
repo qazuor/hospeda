@@ -1,3 +1,4 @@
+import { DEFAULT_AVATAR_MAX_FILE_SIZE_MB, MULTIPART_ENVELOPE_SLACK_BYTES } from '@repo/media';
 import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
 /**
  * Protected avatar upload endpoint.
@@ -5,7 +6,8 @@ import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
  * POST /api/v1/protected/media/upload
  *
  * Accepts multipart/form-data with:
- * - `file` (required) image binary (JPEG, PNG, or WebP, max 5MB)
+ * - `file` (required) image binary (JPEG, PNG, or WebP), capped by
+ *   `HOSPEDA_AVATAR_MAX_FILE_SIZE_MB`
  *
  * Uploads to Cloudinary under hospeda/{env}/avatars/{userId}.
  * Always overwrites the existing avatar for the user.
@@ -25,23 +27,35 @@ import { incrementDomainCounter } from '../../../middlewares/metrics';
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
+import { env } from '../../../utils/env.js';
 import { apiLogger } from '../../../utils/logger';
 import { createErrorResponse } from '../../../utils/response-helpers';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-/** Fixed avatar upload limit in bytes (5MB). */
-const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
+/**
+ * Resolve the avatar cap, in MB, from the environment (HOS-322).
+ *
+ * Read lazily: `env` is only populated once `validateApiEnv()` has run at
+ * startup, so a module-level read would capture `undefined`; the fallback is
+ * the same canonical constant the clients validate against. Avatars keep a cap
+ * of their own, lower than the entity-photo cap, because they are cropped to a
+ * thumbnail.
+ */
+const getAvatarMaxFileSizeMb = (): number =>
+    env?.HOSPEDA_AVATAR_MAX_FILE_SIZE_MB ?? DEFAULT_AVATAR_MAX_FILE_SIZE_MB;
 
 /**
  * Allowance above the strict file-size limit for the Content-Length
  * pre-check (SPEC-078-GAPS T-033 / GAP-078-021). Multipart envelope
- * overhead (boundaries, field headers) on a file exactly at the byte
- * limit can push the declared Content-Length a few hundred bytes past
- * `AVATAR_MAX_BYTES` even though the parsed file body is within the
- * limit. The downstream `validateMediaFile` enforces the strict limit on
- * the parsed buffer.
+ * overhead (boundaries, field headers, the user-supplied filename) on a
+ * file exactly at the byte limit pushes the declared Content-Length past
+ * the cap even though the parsed file body is within it. Shared with the
+ * other upload guards rather than re-declared: when each picks its own
+ * allowance the smallest one silently decides, and the generous ones
+ * become decoration. The downstream `validateMediaFile` enforces the
+ * strict limit on the parsed buffer.
  */
-const CONTENT_LENGTH_MARGIN = 1024;
+const CONTENT_LENGTH_MARGIN = MULTIPART_ENVELOPE_SLACK_BYTES;
 
 /**
  * POST /api/v1/protected/media/upload
@@ -56,7 +70,8 @@ export const protectedUploadAvatarRoute = createProtectedRoute({
     path: '/upload',
     summary: 'Upload user avatar',
     description:
-        'Uploads a JPEG, PNG, or WebP avatar image (max 5MB) for the authenticated user. ' +
+        'Uploads a JPEG, PNG, or WebP avatar image for the authenticated user. ' +
+        'The size cap is configured by HOSPEDA_AVATAR_MAX_FILE_SIZE_MB. ' +
         'Overwrites any previously uploaded avatar.',
     tags: ['Media'],
     responseSchema: UploadResponseDataSchema,
@@ -88,12 +103,13 @@ export const protectedUploadAvatarRoute = createProtectedRoute({
         }
 
         // ── 1. Content-Length pre-check ───────────────────────────────────────
+        const maxMb = getAvatarMaxFileSizeMb();
         const contentLength = Number(ctx.req.header('content-length') ?? 0);
-        if (contentLength > AVATAR_MAX_BYTES + CONTENT_LENGTH_MARGIN) {
+        if (contentLength > maxMb * 1024 * 1024 + CONTENT_LENGTH_MARGIN) {
             return createErrorResponse(
                 {
                     code: 'PAYLOAD_TOO_LARGE',
-                    message: 'Avatar file exceeds the 5MB limit'
+                    message: `Avatar file exceeds the ${maxMb}MB limit`
                 },
                 ctx,
                 413
@@ -147,7 +163,8 @@ export const protectedUploadAvatarRoute = createProtectedRoute({
         const validation = validateMediaFile({
             buffer,
             mimeType: fileEntry.type,
-            context: 'avatar'
+            context: 'avatar',
+            maxFileSizeMb: maxMb
         });
 
         if (!validation.valid) {

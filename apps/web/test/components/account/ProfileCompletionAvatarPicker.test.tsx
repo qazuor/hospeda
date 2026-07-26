@@ -11,12 +11,23 @@
  *   - SPEC-183 T-006: upload error with known code surfaces localized text
  */
 
+import { DEFAULT_AVATAR_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfileCompletionAvatarPicker } from '../../../src/components/account/ProfileCompletionAvatarPicker';
 
-/** Minimal translation stub — returns the fallback verbatim. */
-const t = (_key: string, fallback: string) => fallback;
+/**
+ * Minimal translation stub. Interpolates `{{param}}` placeholders the way the
+ * real `createTranslations().t` does — a stub that returned the fallback
+ * verbatim would happily let a message ship with a raw `{{maxSize}}` in it.
+ */
+const t = (_key: string, fallback: string, params?: Record<string, string | number>): string =>
+    params
+        ? Object.entries(params).reduce(
+              (acc, [key, value]) => acc.replaceAll(`{{${key}}}`, String(value)),
+              fallback
+          )
+        : fallback;
 
 const API_URL = 'http://api.test';
 
@@ -114,7 +125,12 @@ describe('ProfileCompletionAvatarPicker', () => {
         );
 
         const fileInput = document.querySelector('input#pc-avatar-upload') as HTMLInputElement;
-        const bigFile = makeFile({ type: 'image/png', size: 6 * 1024 * 1024 });
+        // One byte over the canonical avatar cap, derived so the case stays
+        // "just over the limit" if the cap is ever retuned.
+        const bigFile = makeFile({
+            type: 'image/png',
+            size: mbToBytes(DEFAULT_AVATAR_MAX_FILE_SIZE_MB) + 1
+        });
 
         fireEvent.change(fileInput, { target: { files: [bigFile] } });
 
@@ -123,7 +139,10 @@ describe('ProfileCompletionAvatarPicker', () => {
         });
         expect(onUploaded).not.toHaveBeenCalled();
         expect(fetchMock).not.toHaveBeenCalled();
-        expect(screen.getByRole('alert')).toHaveTextContent(/5 MB/);
+        // The message must name the cap actually applied.
+        expect(screen.getByRole('alert')).toHaveTextContent(
+            new RegExp(`${DEFAULT_AVATAR_MAX_FILE_SIZE_MB}\\s*MB`)
+        );
     });
 
     it('on successful upload, calls onUploaded with the URL from the API', async () => {
