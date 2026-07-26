@@ -38,6 +38,18 @@ const ASSUMED_UPLINK_BYTES_PER_SEC = 125_000;
 const MIN_UPLOAD_TIMEOUT_MS = 40_000;
 
 /**
+ * Ceiling for the client timeout (ms).
+ *
+ * The API sits behind Cloudflare, which abandons an origin response at 100s and
+ * returns its own HTML error page. Waiting past that point gains nothing and
+ * costs the user the clearest error available: the HTML lands in this module's
+ * `JSON.parse` branch and degrades into "invalid response" — exactly the
+ * BETA-134 symptom the timeout exists to prevent. Stopping first yields a
+ * typed, honest timeout instead.
+ */
+const MAX_UPLOAD_TIMEOUT_MS = 90_000;
+
+/**
  * Compute the client-side XHR timeout for a given payload.
  *
  * BETA-134: without a client ceiling this XHR would wait forever, and if an
@@ -49,11 +61,18 @@ const MIN_UPLOAD_TIMEOUT_MS = 40_000;
  * @param fileSizeBytes - Size of the file being uploaded
  * @returns The timeout in milliseconds
  */
-const resolveUploadTimeoutMs = (fileSizeBytes: number): number =>
-    Math.max(
-        MIN_UPLOAD_TIMEOUT_MS,
-        SERVER_BUDGET_MS + Math.ceil((fileSizeBytes / ASSUMED_UPLINK_BYTES_PER_SEC) * 1000)
+export const resolveUploadTimeoutMs = (fileSizeBytes: number): number => {
+    // A non-finite size must not poison the arithmetic: `Math.max(n, NaN)` is
+    // NaN, and `xhr.timeout = NaN` coerces to 0 — meaning NO timeout. The guard
+    // fails safe (toward the floor) rather than silently deleting the very
+    // protection this function provides.
+    const bytes = Number.isFinite(fileSizeBytes) && fileSizeBytes > 0 ? fileSizeBytes : 0;
+    const transferMs = Math.ceil((bytes / ASSUMED_UPLINK_BYTES_PER_SEC) * 1000);
+    return Math.min(
+        MAX_UPLOAD_TIMEOUT_MS,
+        Math.max(MIN_UPLOAD_TIMEOUT_MS, SERVER_BUDGET_MS + transferMs)
     );
+};
 
 /**
  * Upload a file to the protected media upload-entity endpoint via XHR.

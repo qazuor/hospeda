@@ -19,6 +19,7 @@ import { protectedMediaApi } from '@/lib/api/endpoints-protected';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { getApiUrl } from '@/lib/env';
 import { webLogger } from '@/lib/logger';
+import { resolveUploadTimeoutMs } from '@/lib/media/upload-entity';
 
 /** Translator function shape (matches the editor's `createTranslations().t`). */
 type Translate = (
@@ -72,10 +73,16 @@ async function uploadEntityImage({
     formData.append('entityId', listingId);
     formData.append('role', role);
 
+    // Bounded like the accommodation editor's XHR helper (BETA-134). Without a
+    // signal this `fetch` waits forever, so a stalled connection leaves the
+    // owner on a spinner with no error and no way out but a reload — a risk
+    // that grew with the raised size cap, since a bigger photo spends longer on
+    // the wire. Uses the same size-scaled budget so both editors behave alike.
     const response = await fetch(`${getApiUrl()}/api/v1/protected/media/upload-entity`, {
         method: 'POST',
         body: formData,
-        credentials: 'include'
+        credentials: 'include',
+        signal: AbortSignal.timeout(resolveUploadTimeoutMs(file.size))
     });
 
     const json = (await response.json().catch(() => null)) as {

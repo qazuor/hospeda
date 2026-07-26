@@ -110,9 +110,13 @@ export function AvatarUpload({
 
         if (file.size > MAX_FILE_BYTES) {
             setError(
-                t('account.avatar.errors.fileTooLarge', undefined, {
-                    maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB
-                })
+                t(
+                    'account.avatar.errors.fileTooLarge',
+                    'Archivo muy grande (máx. {{maxSize}} MB)',
+                    {
+                        maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB
+                    }
+                )
             );
             return;
         }
@@ -257,7 +261,7 @@ export function AvatarUpload({
             </button>
 
             <p className={styles.hint}>
-                {t('account.avatar.hint', undefined, {
+                {t('account.avatar.hint', 'Solo JPEG, PNG y WebP · Máx. {{maxSize}} MB', {
                     maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB
                 })}
             </p>

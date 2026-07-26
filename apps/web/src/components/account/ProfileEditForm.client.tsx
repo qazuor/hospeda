@@ -281,9 +281,11 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
         if (file.size > MAX_AVATAR_BYTES) {
             addToast({
                 type: 'error',
-                message: t('account.avatar.errors.fileTooLarge', undefined, {
-                    maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB
-                })
+                message: t(
+                    'account.avatar.errors.fileTooLarge',
+                    'Archivo muy grande (máx. {{maxSize}} MB)',
+                    { maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB }
+                )
             });
             return;
         }
