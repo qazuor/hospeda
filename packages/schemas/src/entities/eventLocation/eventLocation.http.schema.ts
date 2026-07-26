@@ -70,7 +70,8 @@ export const EventLocationCreateHttpSchema = z.object({
 
     // Postal address information
     placeName: z.string().min(2).max(100).optional(),
-    street: z.string().min(2).max(50).optional(),
+    // Kept in sync with EventLocationAddressSchema.street (150 since HOS-300).
+    street: z.string().min(2).max(150).optional(),
     number: z.string().min(1).max(10).optional(),
     floor: z.string().max(10).optional(),
 

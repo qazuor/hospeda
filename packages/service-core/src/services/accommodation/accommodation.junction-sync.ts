@@ -16,6 +16,9 @@
  * same transaction as the accommodation write. An unknown catalog ID causes
  * a `ServiceError(VALIDATION_ERROR)` which rolls back the whole transaction.
  *
+ * The "sync to exact set" diff is only correct if the CURRENT set is read in
+ * full — see `readAllJunctionRows` and HOS-321 for what a truncated read does.
+ *
  * @module accommodation.junction-sync
  */
 
@@ -26,8 +29,7 @@ import type {
     RAccommodationAmenityModel,
     RAccommodationFeatureModel
 } from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
-import { ServiceError } from '../../types';
+import { readAllJunctionRows, validateCatalogIds } from '../../utils/junction-sync';
 
 // ---------------------------------------------------------------------------
 // Input types
@@ -72,37 +74,6 @@ interface SyncFeatureJunctionInput {
 }
 
 // ---------------------------------------------------------------------------
-// Private helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Validates that every ID in `ids` exists in the catalog via `findById`.
- * Throws `ServiceError(VALIDATION_ERROR)` on the first unknown ID so the
- * surrounding transaction rolls back with no partial writes.
- *
- * @param ids - UUIDs to validate against the catalog.
- * @param findById - Catalog lookup (e.g. `amenityModel.findById`).
- * @param entityLabel - Human-readable name for error messages ("amenity" / "feature").
- * @param tx - Transaction client passed through to the catalog lookup.
- */
-async function validateCatalogIds(
-    ids: readonly string[],
-    findById: (id: string, tx?: DrizzleClient) => Promise<unknown>,
-    entityLabel: string,
-    tx: DrizzleClient
-): Promise<void> {
-    for (const id of ids) {
-        const row = await findById(id, tx);
-        if (!row) {
-            throw new ServiceError(
-                ServiceErrorCode.VALIDATION_ERROR,
-                `${entityLabel} not found: ${id}`
-            );
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
 // Public sync functions
 // ---------------------------------------------------------------------------
 
@@ -137,29 +108,33 @@ export async function syncAmenityJunction({
 
     // Validate all supplied IDs exist before touching any rows.
     if (amenityIds.length > 0) {
-        await validateCatalogIds(
-            amenityIds,
-            (id, txClient) => amenityModel.findById(id, txClient),
-            'amenity',
+        await validateCatalogIds({
+            ids: amenityIds,
+            findByIds: (ids, txClient) => amenityModel.findByIds(ids, txClient),
+            entityLabel: 'amenity',
             tx
-        );
+        });
     }
 
-    // Fetch current junction rows for this accommodation.
-    // findAll(where, options?, additionalConditions?, tx?)
-    const { items: existing } = await junctionModel.findAll(
-        { accommodationId },
-        undefined,
-        undefined,
+    // Fetch ALL current junction rows for this accommodation (HOS-321: this
+    // must not be truncated by the model's default page size — see
+    // `readAllJunctionRows`).
+    const existing = await readAllJunctionRows<{ amenityId: string }>({
+        where: { accommodationId },
+        junctionModel,
+        sortBy: 'amenityId',
         tx
-    );
-    const existingIds = new Set(existing.map((row) => row.amenityId as string));
+    });
+    const existingIds = new Set(existing.map((row) => row.amenityId));
     const targetIds = new Set(amenityIds);
 
-    // Delete rows NOT in the target set.
+    // Delete rows NOT in the target set, in ONE statement. `buildWhereClause`
+    // turns an array value on a scalar column into `IN (...)`, so clearing a
+    // fully-populated accommodation costs one round trip instead of ~92 inside
+    // the open write transaction.
     const toDelete = [...existingIds].filter((id) => !targetIds.has(id));
-    for (const amenityId of toDelete) {
-        await junctionModel.hardDelete({ accommodationId, amenityId }, tx);
+    if (toDelete.length > 0) {
+        await junctionModel.hardDelete({ accommodationId, amenityId: toDelete }, tx);
     }
 
     // Insert rows that are in the target set but not yet in the junction table.
@@ -210,29 +185,31 @@ export async function syncFeatureJunction({
 
     // Validate all supplied IDs exist before touching any rows.
     if (featureIds.length > 0) {
-        await validateCatalogIds(
-            featureIds,
-            (id, txClient) => featureModel.findById(id, txClient),
-            'feature',
+        await validateCatalogIds({
+            ids: featureIds,
+            findByIds: (ids, txClient) => featureModel.findByIds(ids, txClient),
+            entityLabel: 'feature',
             tx
-        );
+        });
     }
 
-    // Fetch current junction rows for this accommodation.
-    // findAll(where, options?, additionalConditions?, tx?)
-    const { items: existing } = await junctionModel.findAll(
-        { accommodationId },
-        undefined,
-        undefined,
+    // Fetch ALL current junction rows for this accommodation (HOS-321: this
+    // must not be truncated by the model's default page size — see
+    // `readAllJunctionRows`).
+    const existing = await readAllJunctionRows<{ featureId: string }>({
+        where: { accommodationId },
+        junctionModel,
+        sortBy: 'featureId',
         tx
-    );
-    const existingIds = new Set(existing.map((row) => row.featureId as string));
+    });
+    const existingIds = new Set(existing.map((row) => row.featureId));
     const targetIds = new Set(featureIds);
 
-    // Delete rows NOT in the target set.
+    // Delete rows NOT in the target set, in ONE statement — see the amenity
+    // counterpart for why.
     const toDelete = [...existingIds].filter((id) => !targetIds.has(id));
-    for (const featureId of toDelete) {
-        await junctionModel.hardDelete({ accommodationId, featureId }, tx);
+    if (toDelete.length > 0) {
+        await junctionModel.hardDelete({ accommodationId, featureId: toDelete }, tx);
     }
 
     // Insert rows that are in the target set but not yet in the junction table.

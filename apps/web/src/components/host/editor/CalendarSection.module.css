@@ -307,19 +307,19 @@
 }
 
 .barGoogle {
-    --bar-color: var(--brand-primary, #3885f9);
+    --bar-color: var(--brand-primary);
 }
 
 .barAirbnb {
-    --bar-color: var(--palette-rose-500, #e6598a);
+    --bar-color: var(--palette-rose-500);
 }
 
 .barBooking {
-    --bar-color: var(--palette-cyan-600, #2f8fa8);
+    --bar-color: var(--palette-cyan-600);
 }
 
 .barOther {
-    --bar-color: var(--palette-purple-500, #8b5cf6);
+    --bar-color: var(--palette-purple-500);
 }
 
 .dayOccupied {
@@ -368,15 +368,15 @@
 }
 
 .dotAirbnb {
-    background-color: var(--palette-rose-500, #e6598a);
+    background-color: var(--palette-rose-500);
 }
 
 .dotBooking {
-    background-color: var(--palette-cyan-600, #2f8fa8);
+    background-color: var(--palette-cyan-600);
 }
 
 .dotOther {
-    background-color: var(--palette-purple-500, #8b5cf6);
+    background-color: var(--palette-purple-500);
 }
 
 .dotFree {
@@ -539,6 +539,34 @@
     border-top: 1px solid var(--border);
 }
 
+.legendToggle {
+    display: none;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.5rem;
+    margin: -0.375rem -0.5rem;
+    border: 0;
+    border-radius: var(--radius-md, 10px);
+    background: none;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+}
+
+.legendToggleIcon {
+    transition: transform 0.15s ease;
+}
+
+.legend[data-expanded="true"] .legendToggleIcon {
+    transform: rotate(180deg);
+}
+
+.legendItems {
+    display: contents;
+}
+
 .legendTitle {
     font-family: var(--font-sans);
     font-weight: 600;
@@ -582,5 +610,52 @@
 
     .legend {
         gap: var(--space-2, 0.5rem);
+    }
+}
+
+/* --- Mobile (HOS-316) -------------------------------------------------- */
+
+@media (max-width: 600px) {
+    /*
+     * Full-bleed the grid out of the card's horizontal padding. Seven columns
+     * need 308px to clear the 44px touch-target guideline, and the padded
+     * content box on a 390px screen is only 294px — the padding is the whole
+     * shortfall, so reclaiming it is what buys the target size rather than
+     * shrinking anything else.
+     *
+     * Below roughly 355px viewport the columns dip under 44px again; at that
+     * width no horizontal padding at all would be enough for seven of them, and
+     * the cells stay far above the 24x24 WCAG minimum thanks to their height.
+     */
+    .grid {
+        margin-inline: calc(-1 * var(--space-6, 1.5rem));
+        border-inline: 0;
+        border-radius: 0;
+    }
+
+    /* One tap opens the legend; it stays out of the way until asked for. */
+    .legendToggle {
+        display: inline-flex;
+    }
+
+    .legend {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .legend .legendItems {
+        display: none;
+    }
+
+    .legend[data-expanded="true"] .legendItems {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-2, 0.5rem);
+        width: 100%;
+    }
+
+    .legendTitle {
+        display: none;
     }
 }

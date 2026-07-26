@@ -87,29 +87,34 @@ function makeModel(entity: TestEntity | null = null) {
 // Mock catalog / junction models
 // ---------------------------------------------------------------------------
 
+/**
+ * HOS-321: catalog validation batches through `findByIds`, so the stub echoes
+ * back only the ids that "exist" instead of answering one id at a time.
+ */
 function makeAmenityModel(existsForIds: string[] = []) {
     return {
-        findById: vi
+        findByIds: vi
             .fn()
-            .mockImplementation((id: string) =>
-                Promise.resolve(existsForIds.includes(id) ? { id } : null)
+            .mockImplementation((ids: readonly string[]) =>
+                Promise.resolve(ids.filter((id) => existsForIds.includes(id)).map((id) => ({ id })))
             )
     };
 }
 
 function makeFeatureModel(existsForIds: string[] = []) {
     return {
-        findById: vi
+        findByIds: vi
             .fn()
-            .mockImplementation((id: string) =>
-                Promise.resolve(existsForIds.includes(id) ? { id } : null)
+            .mockImplementation((ids: readonly string[]) =>
+                Promise.resolve(ids.filter((id) => existsForIds.includes(id)).map((id) => ({ id })))
             )
     };
 }
 
 function makeJunctionModel() {
+    // `total` is part of the reader contract now (HOS-321).
     return {
-        findAll: vi.fn().mockResolvedValue({ items: [] }),
+        findAll: vi.fn().mockResolvedValue({ items: [], total: 0 }),
         hardDelete: vi.fn().mockResolvedValue(1),
         create: vi.fn().mockResolvedValue({})
     };
