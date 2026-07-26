@@ -3,7 +3,7 @@ import { z } from '@hono/zod-openapi';
  * Public user by slug endpoint
  * Returns minimal public profile fields for an author page
  */
-import { ServiceErrorCode, UserSchema } from '@repo/schemas';
+import { ServiceErrorCode, UserNameReadFields, UserSchema } from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor.js';
@@ -15,10 +15,26 @@ const userService = new UserService({ logger: apiLogger });
 /**
  * Public author profile response schema — only exposes safe public fields.
  * Deliberately excludes email, phone, role, settings, and any audit fields.
+ *
+ * `displayName` is the ONLY lenient field here, and deliberately so (HOS-302).
+ * `id` and `slug` keep their strict {@link UserSchema} shapes because the
+ * database genuinely guarantees them: `id` is a UUID primary key and `slug` is a
+ * NOT NULL column the route already matched a non-empty value against.
+ * `display_name` guarantees nothing — it is a NULLABLE, unbounded `text` column
+ * that Better Auth signup writes directly, bypassing the create/update Zod
+ * schemas, which is how production ended up with rows holding `''`. The strict
+ * shape is `.min(2).optional()`, so it rejects BOTH the persisted empty string
+ * and the `null` this handler emits, and `stripWithSchema` FAIL-CLOSES to HTTP
+ * 500 — on a PUBLIC author page. {@link UserNameReadFields} is the single source
+ * of truth for that read-side leniency (type-only, bounds stay on the write
+ * path), so it is imported rather than re-inlined here.
+ *
+ * Exported so the response contract can be asserted directly in tests without
+ * standing up a seeded database.
  */
-const UserAuthorPublicResponseSchema = z.object({
+export const UserAuthorPublicResponseSchema = z.object({
     id: UserSchema.shape.id,
-    displayName: UserSchema.shape.displayName,
+    displayName: UserNameReadFields.displayName,
     slug: UserSchema.shape.slug,
     avatar: z.string().url().optional().nullable(),
     bio: z.string().optional().nullable()

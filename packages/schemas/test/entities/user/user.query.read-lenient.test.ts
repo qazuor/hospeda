@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { ContactInfoSchema } from '../../../src/common/contact.schema.js';
+import { UserLocationSchema } from '../../../src/common/location.schema.js';
+import { SocialNetworkSchema } from '../../../src/common/social.schema.js';
 import { UserBatchItemSchema } from '../../../src/entities/user/user.batch.schema.js';
 import { UserCreateInputSchema } from '../../../src/entities/user/user.crud.schema.js';
 import { UserProfileSchema } from '../../../src/entities/user/user.profile.schema.js';
@@ -42,6 +45,17 @@ import { createPaginatedResponse } from '../../helpers/pagination.helpers.js';
 
 /** Verbatim shape of the three affected production rows. */
 const EMPTY_DISPLAY_NAME = '';
+
+/**
+ * A `displayName` that satisfies the WRITE bounds.
+ *
+ * Used by the `firstName`/`lastName` cases so the field under test is the ONLY
+ * violation in the payload. Spreading `baseListItem` alone would carry
+ * `displayName: ''` along, leaving a reader unable to tell which field an
+ * assertion protects — and keeping those cases red for the wrong reason if a
+ * future revert touched `displayName` only.
+ */
+const VALID_DISPLAY_NAME = 'Valid Name';
 
 const baseListItem = {
     id: '550e8400-e29b-41d4-a716-446655440000',
@@ -108,6 +122,29 @@ const OVER_MAX_OCCUPATION = 'E'.repeat(
     writeBound(UserProfileSchema.shape.occupation, 'maxLength', 'UserProfileSchema.occupation') + 1
 );
 
+/**
+ * The other three lenient JSONB families — `contactInfo`, `location` and
+ * `socialNetworks`. All three are unbounded JSONB columns shallow-merged at the
+ * DB layer, so a legacy/imported/partially-edited row can hold a value the
+ * strict WRITE shape rejects. Without these fixtures, reverting
+ * `ContactInfoReadSchema` / `UserLocationReadSchema` / `SocialNetworkReadSchema`
+ * off the read base would go entirely undetected.
+ */
+
+/** Legacy AR local mobile format; fails the write `InternationalPhoneRegex`. */
+const LEGACY_AR_MOBILE_PHONE = '0223-155-1234';
+
+/** Non-canonical Facebook URL; fails both the write `.url()` and `FacebookUrlRegex`. */
+const NON_CANONICAL_FACEBOOK_URL = 'm.facebook.com/x';
+
+const UNDER_MIN_COUNTRY = 'G'.repeat(
+    writeBound(UserLocationSchema.shape.country, 'minLength', 'UserLocationSchema.country') - 1
+);
+const OVER_MAX_POSTAL_CODE = 'H'.repeat(
+    writeBound(UserLocationSchema.shape.postalCode, 'maxLength', 'UserLocationSchema.postalCode') +
+        1
+);
+
 describe('User query schemas — HOS-302 read⊇write', () => {
     it('UserListItemSchema accepts a persisted empty displayName', () => {
         const result = UserListItemSchema.safeParse(baseListItem);
@@ -152,7 +189,14 @@ describe('User query schemas — HOS-302 read⊇write', () => {
         ['empty', EMPTY_DISPLAY_NAME],
         ['over the write maximum', OVER_MAX_FIRST_NAME]
     ])('accepts a firstName that is %s', (_label, firstName) => {
-        const result = UserListItemSchema.safeParse({ ...baseListItem, firstName });
+        // `displayName` is overridden to a VALID value so `firstName` is the only
+        // field violating the write bounds — otherwise this case would also pass
+        // (or fail) on `displayName`, and could not tell you which.
+        const result = UserListItemSchema.safeParse({
+            ...baseListItem,
+            displayName: VALID_DISPLAY_NAME,
+            firstName
+        });
 
         expect(result.success).toBe(true);
         if (result.success) {
@@ -164,7 +208,13 @@ describe('User query schemas — HOS-302 read⊇write', () => {
         ['empty', EMPTY_DISPLAY_NAME],
         ['over the write maximum', OVER_MAX_LAST_NAME]
     ])('accepts a lastName that is %s', (_label, lastName) => {
-        const result = UserListItemSchema.safeParse({ ...baseListItem, lastName });
+        // Same isolation as the `firstName` cases above: `lastName` is the only
+        // field in this payload that breaks a write bound.
+        const result = UserListItemSchema.safeParse({
+            ...baseListItem,
+            displayName: VALID_DISPLAY_NAME,
+            lastName
+        });
 
         expect(result.success).toBe(true);
         if (result.success) {
@@ -231,6 +281,99 @@ describe('User query schemas — HOS-302 read⊇write', () => {
                     (issue) => issue.path.includes('occupation') && issue.code === 'too_big'
                 )
             ).toBe(true);
+        }
+    });
+
+    it('accepts a contactInfo mobilePhone in the legacy AR local format', () => {
+        const result = UserListItemSchema.safeParse({
+            ...baseListItem,
+            contactInfo: { mobilePhone: LEGACY_AR_MOBILE_PHONE }
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.contactInfo?.mobilePhone).toBe(LEGACY_AR_MOBILE_PHONE);
+        }
+    });
+
+    it('the write schema stays strict on the phone format it owns', () => {
+        const result = ContactInfoSchema.safeParse({ mobilePhone: LEGACY_AR_MOBILE_PHONE });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues.some((issue) => issue.path.includes('mobilePhone'))).toBe(
+                true
+            );
+        }
+    });
+
+    it('accepts a location with a country under the write minimum', () => {
+        const result = UserListItemSchema.safeParse({
+            ...baseListItem,
+            location: { country: UNDER_MIN_COUNTRY }
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.location?.country).toBe(UNDER_MIN_COUNTRY);
+        }
+    });
+
+    it('accepts a location with a postalCode over the write maximum', () => {
+        const result = UserListItemSchema.safeParse({
+            ...baseListItem,
+            location: { postalCode: OVER_MAX_POSTAL_CODE }
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.location?.postalCode).toBe(OVER_MAX_POSTAL_CODE);
+        }
+    });
+
+    it('the write schema stays strict on the location bounds it owns', () => {
+        const result = UserLocationSchema.safeParse({
+            country: UNDER_MIN_COUNTRY,
+            postalCode: OVER_MAX_POSTAL_CODE
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(
+                result.error.issues.some(
+                    (issue) => issue.path.includes('country') && issue.code === 'too_small'
+                )
+            ).toBe(true);
+            expect(
+                result.error.issues.some(
+                    (issue) => issue.path.includes('postalCode') && issue.code === 'too_big'
+                )
+            ).toBe(true);
+        }
+    });
+
+    it('accepts a non-canonical socialNetworks URL — asserted through the batch item', () => {
+        // `UserListItemSchema` does not pick `socialNetworks`, so the leniency has
+        // to be asserted through a read schema that actually exposes the column.
+        // `UserBatchItemSchema` is `UserReadSchema.partial().required({ id })` and
+        // is the declared `responseSchema` of `POST /api/v1/admin/users/batch`.
+        const result = UserBatchItemSchema.safeParse({
+            id: baseListItem.id,
+            socialNetworks: { facebook: NON_CANONICAL_FACEBOOK_URL }
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.socialNetworks?.facebook).toBe(NON_CANONICAL_FACEBOOK_URL);
+        }
+    });
+
+    it('the write schema stays strict on the social URL format it owns', () => {
+        const result = SocialNetworkSchema.safeParse({ facebook: NON_CANONICAL_FACEBOOK_URL });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues.some((issue) => issue.path.includes('facebook'))).toBe(true);
         }
     });
 

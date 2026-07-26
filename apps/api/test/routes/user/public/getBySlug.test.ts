@@ -19,8 +19,10 @@
  * across requests. Cover this in a dedicated load test / e2e suite.
  */
 
+import { UserSchema } from '@repo/schemas';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
+import { UserAuthorPublicResponseSchema } from '../../../../src/routes/user/public/getBySlug.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
 
 const BASE = '/api/v1/public/users/by-slug';
@@ -222,5 +224,74 @@ describe('GET /api/v1/public/users/by-slug/:slug', () => {
             });
             expect([404, 405]).toContain(res.status);
         });
+    });
+});
+
+/**
+ * HOS-302 — read⊇write regression coverage for this route's response schema.
+ *
+ * The status-code tests above never reach the success path without a seeded DB,
+ * so they cannot see a schema mismatch. These assert the response contract
+ * directly instead.
+ *
+ * `display_name` is a NULLABLE, unbounded `text` column that Better Auth signup
+ * writes without passing through the create/update Zod schemas, so production
+ * carries rows holding `''`. The handler additionally emits
+ * `user.displayName ?? null`. Both values were rejected by the previous strict
+ * `.min(2).optional()` shape, and `stripWithSchema` fail-closes to HTTP 500 — a
+ * PUBLIC 500 on the author page.
+ */
+
+/** Reads the write-side bound off `UserSchema` so a moved bound fails loudly. */
+const writeMaxDisplayName = (): number => {
+    const max = UserSchema.shape.displayName.unwrap().maxLength;
+    if (typeof max !== 'number') {
+        throw new Error('HOS-302 test guard: UserSchema.displayName lost its maxLength');
+    }
+    return max;
+};
+
+const OVER_MAX_DISPLAY_NAME = 'A'.repeat(writeMaxDisplayName() + 1);
+
+/** Everything the handler emits except the field under test. */
+const baseAuthorPayload = {
+    id: '550e8400-e29b-41d4-a716-446655440000',
+    slug: 'user-ea10dbb3',
+    avatar: null,
+    bio: null
+};
+
+describe('UserAuthorPublicResponseSchema — HOS-302 read⊇write', () => {
+    it.each([
+        ['null — the handler emits `user.displayName ?? null` unconditionally', null],
+        ['the empty string — the exact value 3 production rows carry', ''],
+        ['a single character — under the write `.min(2)`', 'A'],
+        ['longer than the write maximum', OVER_MAX_DISPLAY_NAME]
+    ])('accepts a displayName that is %s', (_label, displayName) => {
+        const result = UserAuthorPublicResponseSchema.safeParse({
+            ...baseAuthorPayload,
+            displayName
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.displayName).toBe(displayName);
+        }
+    });
+
+    it('still rejects a displayName of the wrong type — leniency is on LENGTH, not TYPE', () => {
+        const result = UserAuthorPublicResponseSchema.safeParse({
+            ...baseAuthorPayload,
+            displayName: 42
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(
+                result.error.issues.some(
+                    (issue) => issue.path.includes('displayName') && issue.code === 'invalid_type'
+                )
+            ).toBe(true);
+        }
     });
 });
