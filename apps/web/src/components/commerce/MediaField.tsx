@@ -12,6 +12,7 @@
  * the parent always sends the complete media state on save).
  */
 
+import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { getGalleryCap, type Image } from '@repo/schemas';
 import { type JSX, useCallback, useRef, useState } from 'react';
 import { protectedMediaApi } from '@/lib/api/endpoints-protected';
@@ -20,7 +21,11 @@ import { getApiUrl } from '@/lib/env';
 import { webLogger } from '@/lib/logger';
 
 /** Translator function shape (matches the editor's `createTranslations().t`). */
-type Translate = (key: string, fallback?: string) => string;
+type Translate = (
+    key: string,
+    fallback?: string,
+    params?: Record<string, string | number>
+) => string;
 
 interface MediaFieldProps {
     /** Vertical of the listing (drives the upload entityType + gallery cap). */
@@ -43,7 +48,7 @@ interface MediaFieldProps {
 }
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_SIZE_BYTES = mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB);
 
 /**
  * Upload a single image to the protected entity-upload endpoint.
@@ -117,7 +122,11 @@ export function MediaField({
                 );
             }
             if (file.size > MAX_SIZE_BYTES) {
-                return t('commerce.owner.editor.media.tooLarge', 'El archivo no puede superar 5MB');
+                return t(
+                    'commerce.owner.editor.media.tooLarge',
+                    'El archivo no puede superar {{maxSize}}MB',
+                    { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
+                );
             }
             return null;
         },

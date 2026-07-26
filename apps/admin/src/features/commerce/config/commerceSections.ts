@@ -37,6 +37,7 @@ import {
     RichTextFeatureEnum
 } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/consolidated-config.types';
+import { DEFAULT_MEDIA_MAX_SIZE_BYTES } from '@/lib/constants';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -485,7 +486,7 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 },
                 typeConfig: {
                     type: 'IMAGE',
-                    maxSize: 10_000_000,
+                    maxSize: DEFAULT_MEDIA_MAX_SIZE_BYTES,
                     allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
                     maxWidth: 1920,
                     maxHeight: 1080,
@@ -508,7 +509,7 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 typeConfig: {
                     type: 'GALLERY',
                     maxImages: 20,
-                    maxSize: 10_000_000,
+                    maxSize: DEFAULT_MEDIA_MAX_SIZE_BYTES,
                     allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
                     maxWidth: 1920,
                     maxHeight: 1080,

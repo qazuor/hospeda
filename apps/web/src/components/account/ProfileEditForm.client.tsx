@@ -20,6 +20,7 @@
  * Hydration: caller must use `client:load`.
  */
 
+import { DEFAULT_AVATAR_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { useRef, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
 import { getInitials } from '@/lib/avatar-utils';
@@ -43,7 +44,7 @@ import { ProfileEditSocialSection } from './ProfileEditSocialSection';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
-const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+const MAX_AVATAR_BYTES = mbToBytes(DEFAULT_AVATAR_MAX_FILE_SIZE_MB);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -278,7 +279,12 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
             return;
         }
         if (file.size > MAX_AVATAR_BYTES) {
-            addToast({ type: 'error', message: t('account.avatar.errors.fileTooLarge') });
+            addToast({
+                type: 'error',
+                message: t('account.avatar.errors.fileTooLarge', undefined, {
+                    maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB
+                })
+            });
             return;
         }
 
