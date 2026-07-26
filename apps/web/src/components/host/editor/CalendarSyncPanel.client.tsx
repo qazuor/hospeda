@@ -42,6 +42,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { CalendarProviderRow, type ProviderRowBusy } from './CalendarProviderRow.client';
+import { CalendarSyncMessage } from './CalendarSyncMessage.client';
 import styles from './CalendarSyncPanel.module.css';
 
 // ---------------------------------------------------------------------------
@@ -362,18 +363,12 @@ export function CalendarSyncPanel({ locale, accommodationId }: CalendarSyncPanel
             </p>
 
             {oauthBanner && (
-                <div
-                    className={
-                        oauthBanner.kind === 'error'
-                            ? styles.bannerError
-                            : oauthBanner.kind === 'success'
-                              ? styles.bannerSuccess
-                              : styles.bannerInfo
-                    }
-                    role={oauthBanner.kind === 'error' ? 'alert' : 'status'}
+                <CalendarSyncMessage
+                    kind={oauthBanner.kind}
+                    className={styles.banner}
                 >
                     {oauthBanner.message}
-                </div>
+                </CalendarSyncMessage>
             )}
 
             {isLoading ? (
