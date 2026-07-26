@@ -25,10 +25,17 @@ const SERVER_BUDGET_MS = 25_000;
  *
  * 1 Mbps — a deliberately pessimistic floor for Argentine mobile data, which is
  * the connection the owner uploading a phone photo is actually on. Budgeting
- * for a good connection is what makes a slow one fail: HOS-322 raised the cap
- * to 10 MB, and at the previous flat 40s ceiling only ~15s was left for the
- * transfer, which needs ~5 Mbps sustained UPLINK to clear. That is a timeout on
- * any ordinary cell connection.
+ * for a good connection is what makes a slow one fail: at the previous flat 40s
+ * ceiling only ~15s was left for the transfer, which needs ~5 Mbps sustained
+ * UPLINK to clear. That is a timeout on any ordinary cell connection.
+ *
+ * Note what this does NOT promise. Above roughly 7.75 MB the scaling is
+ * truncated by {@link MAX_UPLOAD_TIMEOUT_MS}, so a file at the 10 MB cap gets
+ * ~6s of the server's 25s budget rather than the full amount. That is not a
+ * flaw in the clamp: such an upload needs ~109s end to end and dies at the
+ * proxy anyway. It means a full-size photo over ~1 Mbps mobile simply cannot
+ * complete, and raising the cap does not change that — only shrinking the file
+ * before it leaves the browser does.
  */
 const ASSUMED_UPLINK_BYTES_PER_SEC = 125_000;
 

@@ -21,8 +21,9 @@
  *   against the web origin. The XHR must open the `getApiUrl()`-prefixed URL.
  */
 
+import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { uploadEntityImage } from '../../../src/lib/media/upload-entity';
+import { resolveUploadTimeoutMs, uploadEntityImage } from '../../../src/lib/media/upload-entity';
 
 /**
  * Minimal XHR stub sufficient to drive `uploadEntityImage`'s event-driven
@@ -193,6 +194,47 @@ describe('uploadEntityImage', () => {
             xhr.trigger('load');
 
             await expect(promise).rejects.toThrow('Image upload failed');
+        });
+    });
+
+    describe('resolveUploadTimeoutMs (HOS-322)', () => {
+        // The clamp and the finite-size guard are the load-bearing parts of
+        // this function, and a review found both could be deleted with the
+        // whole suite still green — the only existing assertion was
+        // `timeout > 0`, which passes for any positive number.
+
+        it('gives a small file the floor, not a proportionally tiny budget', () => {
+            expect(resolveUploadTimeoutMs(mbToBytes(1))).toBe(40_000);
+        });
+
+        it('scales with the file between the floor and the ceiling', () => {
+            // 5 MB at the assumed 1 Mbps uplink: 25s server budget + ~42s wire.
+            expect(resolveUploadTimeoutMs(mbToBytes(5))).toBe(66_944);
+        });
+
+        it('never waits past the proxy window, even at the size cap', () => {
+            // Unclamped this would be ~109s, past Cloudflare's 100s origin
+            // window — where the reply becomes an HTML page that dies in
+            // JSON.parse instead of a typed timeout.
+            expect(resolveUploadTimeoutMs(mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB))).toBe(90_000);
+        });
+
+        it('falls back to the floor for a size that is not a usable number', () => {
+            // `Math.max(floor, NaN)` is NaN, and `xhr.timeout = NaN` coerces to
+            // 0 — meaning NO timeout at all. Failing toward the floor keeps the
+            // protection this function exists to provide.
+            expect(resolveUploadTimeoutMs(Number.NaN)).toBe(40_000);
+            expect(resolveUploadTimeoutMs(0)).toBe(40_000);
+            expect(resolveUploadTimeoutMs(-1)).toBe(40_000);
+            expect(resolveUploadTimeoutMs(Number.POSITIVE_INFINITY)).toBe(40_000);
+        });
+
+        it('stays within its own bounds for every size up to the cap', () => {
+            for (let mb = 0; mb <= DEFAULT_ENTITY_MAX_FILE_SIZE_MB; mb += 1) {
+                const value = resolveUploadTimeoutMs(mbToBytes(mb));
+                expect(value).toBeGreaterThanOrEqual(40_000);
+                expect(value).toBeLessThanOrEqual(90_000);
+            }
         });
     });
 

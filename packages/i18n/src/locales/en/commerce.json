@@ -179,6 +179,7 @@
                 "invalidType": "Only JPG, PNG or WebP files are allowed",
                 "tooLarge": "The file cannot exceed {{maxSize}}MB",
                 "uploadFailed": "Error uploading the image",
+                "uploadTimeout": "The upload took too long. Please try again.",
                 "capReached": "Gallery limit reached (max. {{cap}} photos)"
             },
             "slugImmutableNotice": "The public URL is generated from the name when the business is created and cannot be changed afterward."
