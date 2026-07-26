@@ -13,9 +13,11 @@
  * - Rate-limit (429): shows rate-limit message with computed minutes
  */
 
+import { AccommodationExternalListingsResponseSchema } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExternalReputationSection } from '@/components/host/ExternalReputationSection.client';
+import { getApiUrl } from '@/lib/env';
 
 // ─── Module mocks ──────────────────────────────────────────────────────────
 
@@ -40,10 +42,28 @@ vi.mock('@/components/shared/feedback/Spinner.module.css', () => ({
 
 // ─── Fixtures ──────────────────────────────────────────────────────────────
 
-const ACC_ID = 'acc-uuid-123';
+const ACC_ID = '11111111-1111-4111-8111-111111111111';
+
+/**
+ * Audit + lifecycle fields every listing row carries. The old fixtures omitted
+ * them and nothing noticed, because the payload was hand-built rather than
+ * validated (HOS-290) — the server has always returned the full row.
+ */
+const LISTING_BASE = {
+    accommodationId: ACC_ID,
+    externalId: null,
+    lifecycleState: 'ACTIVE' as const,
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    createdById: '22222222-2222-4222-8222-222222222222',
+    updatedById: '22222222-2222-4222-8222-222222222222',
+    deletedAt: null,
+    deletedById: null
+};
 
 const LISTING_GOOGLE = {
-    id: 'listing-g1',
+    ...LISTING_BASE,
+    id: '44444444-4444-4444-8444-444444444444',
     platform: 'GOOGLE' as const,
     url: 'https://maps.google.com/?cid=123',
     showLink: true,
@@ -52,7 +72,8 @@ const LISTING_GOOGLE = {
 };
 
 const LISTING_BOOKING = {
-    id: 'listing-b1',
+    ...LISTING_BASE,
+    id: '55555555-5555-4555-8555-555555555555',
     platform: 'BOOKING' as const,
     url: 'https://booking.com/hotel/example',
     showLink: false,
@@ -70,17 +91,27 @@ const EMPTY_REPUTATION_META = {
     aggregateFetchedAt: null
 };
 
-/** Factory: returns a mock successful Response for GET /external-listings. */
+/**
+ * Factory: returns a mock successful Response for GET /external-listings.
+ *
+ * HOS-290: this used to hand-build `{data: {listings, reputation}}` — a shape
+ * the server NEVER sent (it returned a bare array). That is why every test here
+ * stayed green while the section was 100% broken in production. The payload is
+ * now built THROUGH the shared response schema, so a fixture that does not
+ * match the real contract fails here instead of shipping.
+ */
 function makeListingsOkResponse(
     listings: (typeof LISTING_GOOGLE)[] = [LISTING_GOOGLE],
     reputation = REPUTATION_META
 ): Response {
+    const data = AccommodationExternalListingsResponseSchema.parse({ listings, reputation });
     return {
         ok: true,
         status: 200,
-        json: async () => ({
-            data: { listings, reputation }
-        }),
+        // Round-trips through JSON exactly like a real response would, so the
+        // Date the schema coerces reaches the component as the ISO string it
+        // would actually receive over the wire.
+        json: async () => JSON.parse(JSON.stringify({ data })),
         headers: new Headers()
     } as unknown as Response;
 }
@@ -158,6 +189,117 @@ describe('ExternalReputationSection', () => {
 
             await waitFor(() => {
                 expect(screen.queryByRole('listitem')).not.toBeInTheDocument();
+            });
+        });
+    });
+
+    // ── 2b. The two values HOS-290 was actually about ───────────────────────
+
+    describe('Reputation metadata (HOS-290)', () => {
+        it('reflects the master toggle from the response', async () => {
+            // The whole user-visible symptom was that `showExternalReputation`
+            // and `aggregateFetchedAt` never reached the UI. Without these two
+            // assertions, deleting the `setMasterToggle`/`setAggregateFetchedAt`
+            // calls from `loadListings` leaves the suite green.
+            vi.mocked(global.fetch).mockResolvedValue(
+                makeListingsOkResponse([LISTING_GOOGLE], {
+                    showExternalReputation: true,
+                    aggregateFetchedAt: '2026-06-01T12:00:00.000Z'
+                })
+            );
+            renderSection();
+
+            await waitFor(() => {
+                expect(document.querySelector('#ext-rep-master-toggle')).toBeChecked();
+            });
+        });
+
+        it('leaves the master toggle off when the response says so', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(
+                makeListingsOkResponse([LISTING_GOOGLE], EMPTY_REPUTATION_META)
+            );
+            renderSection();
+
+            await waitFor(() => {
+                expect(document.querySelector('#ext-rep-master-toggle')).not.toBeChecked();
+            });
+        });
+
+        it('calls the API on an ABSOLUTE url, not a relative path (HOS-290)', async () => {
+            // The single defect that made this section unusable in production:
+            // a relative `/api/v1/...` goes to the Astro server, which serves no
+            // such route. Substring assertions on the path cannot catch a
+            // revert — this one can.
+            vi.mocked(global.fetch).mockResolvedValue(
+                makeListingsOkResponse([LISTING_GOOGLE], EMPTY_REPUTATION_META)
+            );
+            renderSection();
+
+            await waitFor(() => {
+                const url = String(vi.mocked(global.fetch).mock.calls[0]?.[0]);
+                expect(url.startsWith(getApiUrl())).toBe(true);
+            });
+        });
+
+        it('PATCHes the master toggle with the body the route declares', async () => {
+            // `MasterToggleBodySchema` is `{ value: boolean }`. The client used
+            // to send `{ showExternalReputation }`, so every toggle 400'd — the
+            // third client/server contract mismatch in this one component, and
+            // invisible because the handler only checks `res.ok`.
+            vi.mocked(global.fetch).mockResolvedValue(
+                makeListingsOkResponse([LISTING_GOOGLE], EMPTY_REPUTATION_META)
+            );
+            renderSection();
+
+            const toggle = await waitFor(() => {
+                const el = document.querySelector('#ext-rep-master-toggle');
+                expect(el).not.toBeNull();
+                return el as HTMLInputElement;
+            });
+
+            vi.mocked(global.fetch).mockClear();
+            vi.mocked(global.fetch).mockResolvedValue(makeOkResponse());
+            fireEvent.click(toggle);
+
+            await waitFor(() => {
+                const call = vi.mocked(global.fetch).mock.calls[0];
+                expect(String(call?.[0])).toContain('/external-reputation/master-toggle');
+                expect(JSON.parse(String((call?.[1] as RequestInit).body))).toEqual({
+                    value: true
+                });
+            });
+        });
+
+        it('renders the last-updated line from aggregateFetchedAt', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(
+                makeListingsOkResponse([LISTING_GOOGLE], {
+                    showExternalReputation: true,
+                    aggregateFetchedAt: '2026-06-01T12:00:00.000Z'
+                })
+            );
+            renderSection();
+
+            await waitFor(() => {
+                expect(screen.getByText(/Última actualización/)).toBeInTheDocument();
+            });
+        });
+
+        it('shows the error banner when the server sends the OLD bare-array shape', async () => {
+            // This IS the regression: the route used to return `data` as a bare
+            // array while the client read `data.reputation` off it. Reproduced
+            // here so a revert on either side fails on the client too.
+            vi.mocked(global.fetch).mockResolvedValue({
+                ok: true,
+                status: 200,
+                json: async () => ({ data: [LISTING_GOOGLE] }),
+                headers: new Headers()
+            } as unknown as Response);
+            renderSection();
+
+            await waitFor(() => {
+                expect(
+                    screen.getByText(/No se pudieron cargar las reseñas externas/)
+                ).toBeInTheDocument();
             });
         });
     });
@@ -537,15 +679,23 @@ describe('ExternalReputationSection', () => {
     // ── 8. Rate-limit message on 429 ────────────────────────────────────────
 
     describe('Rate-limit (429)', () => {
-        it('shows rate-limit message when refresh returns 429 with Retry-After: 300', async () => {
+        it('reads retryAfter from the 429 BODY, not the header (HOS-290)', async () => {
+            // `Retry-After` is not CORS-safelisted and the API does not expose
+            // it, so a browser can never read it on this now cross-origin
+            // request. The route always puts the same value in the JSON body.
             vi.mocked(global.fetch).mockImplementation((url, opts) => {
                 const urlStr = typeof url === 'string' ? url : url.toString();
                 if ((opts as RequestInit)?.method === 'POST' && urlStr.includes('/refresh')) {
                     return Promise.resolve({
                         ok: false,
                         status: 429,
-                        headers: new Headers({ 'Retry-After': '300' }) // 5 minutes
-                    } as Response);
+                        json: async () => ({
+                            success: false,
+                            error: { details: { retryAfter: 300 } } // 5 minutes
+                        }),
+                        // Deliberately absent, mirroring what the browser sees.
+                        headers: new Headers()
+                    } as unknown as Response);
                 }
                 return Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]));
             });
@@ -567,15 +717,19 @@ describe('ExternalReputationSection', () => {
             });
         });
 
-        it('computes minutes correctly from Retry-After header of 120 seconds', async () => {
+        it('computes minutes correctly from a 120-second retryAfter', async () => {
             vi.mocked(global.fetch).mockImplementation((url, opts) => {
                 const urlStr = typeof url === 'string' ? url : url.toString();
                 if ((opts as RequestInit)?.method === 'POST' && urlStr.includes('/refresh')) {
                     return Promise.resolve({
                         ok: false,
                         status: 429,
-                        headers: new Headers({ 'Retry-After': '120' }) // exactly 2 minutes
-                    } as Response);
+                        json: async () => ({
+                            success: false,
+                            error: { details: { retryAfter: 120 } } // exactly 2 minutes
+                        }),
+                        headers: new Headers()
+                    } as unknown as Response);
                 }
                 return Promise.resolve(makeListingsOkResponse([LISTING_GOOGLE]));
             });

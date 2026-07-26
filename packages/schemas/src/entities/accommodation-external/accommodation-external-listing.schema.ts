@@ -135,3 +135,54 @@ export const UpdateAccommodationExternalListingSchema = AccommodationExternalLis
 export type UpdateAccommodationExternalListingInput = z.infer<
     typeof UpdateAccommodationExternalListingSchema
 >;
+
+// ============================================================================
+// LIST RESPONSE SCHEMA (HOS-290)
+// ============================================================================
+
+/**
+ * Reputation metadata that accompanies the owner's listing list.
+ *
+ * Both values are things the editor needs to render the section but that do
+ * NOT live on a listing row: the master toggle is a column on `accommodations`,
+ * and the "last updated" timestamp is the most recent successful aggregate
+ * fetch across every platform row in `accommodation_external_reputation`.
+ */
+export const AccommodationExternalReputationMetaSchema = z.object({
+    /** `accommodations.show_external_reputation` — the owner's master switch. */
+    showExternalReputation: z.boolean(),
+    /**
+     * Most recent `aggregate_fetched_at` across all platforms for this
+     * accommodation, or `null` when nothing has ever been fetched.
+     */
+    aggregateFetchedAt: z.coerce.date().nullable()
+});
+export type AccommodationExternalReputationMeta = z.infer<
+    typeof AccommodationExternalReputationMetaSchema
+>;
+
+/**
+ * Response contract for `GET /api/v1/protected/accommodations/:id/external-listings`.
+ *
+ * HOS-290: the route used to return a BARE ARRAY while
+ * `ExternalReputationSection.client.tsx` read `body.data.reputation
+ * .showExternalReputation` off it — a `TypeError` on every mount, caught by the
+ * component's own try/catch, so the entire "Reputación externa" section showed
+ * nothing but a red error banner in production. Nothing caught it because the
+ * client declared its own hand-written response interface and the component
+ * test mocked THAT invented shape rather than the real one.
+ *
+ * Declaring the contract here is the actual fix: the route validates against it
+ * (fail-closed, via `stripWithSchema`), the client consumes the inferred type
+ * instead of re-describing it, and the test builds its fixture through it. One
+ * definition, verifiable by the type system, instead of two that can drift.
+ */
+export const AccommodationExternalListingsResponseSchema = z.object({
+    /** Every non-deleted listing config registered for the accommodation. */
+    listings: z.array(AccommodationExternalListingSchema),
+    /** Accommodation-level reputation metadata (not per-listing). */
+    reputation: AccommodationExternalReputationMetaSchema
+});
+export type AccommodationExternalListingsResponse = z.infer<
+    typeof AccommodationExternalListingsResponseSchema
+>;
