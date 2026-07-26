@@ -30,6 +30,78 @@ export interface AiChatWidgetProps {
     readonly apiUrl: string;
 }
 
+// ---------------------------------------------------------------------------
+// Error resolution (HOS-292)
+// ---------------------------------------------------------------------------
+
+/**
+ * Sentinel passed as `t()`'s fallback to tell a real translation apart from a
+ * miss. Necessary because `t()` returns the KEY ITSELF for an unknown key in
+ * production (only DEV yields `[MISSING: ...]`) - which is exactly how a raw
+ * `accommodations.aiChat.unavailable` ended up on screen.
+ */
+const UNRESOLVED = '__hospeda_unresolved__';
+
+/** Looks like a dotted i18n key rather than human prose. */
+const I18N_KEY_PATTERN = /^[a-zA-Z][\w-]*(\.[\w-]+)+$/;
+
+/**
+ * Localized copy per error code, used when the API's `message` is not a key we
+ * can resolve. Mirrors `AiTextImprovePanel.client.tsx`'s `ERROR_FALLBACKS`
+ * convention: Spanish fallbacks so the widget stays sensible even before the
+ * `accommodations.aiChat.error.*` keys exist in every locale bundle.
+ */
+const ERROR_FALLBACKS: Readonly<Record<string, string>> = Object.freeze({
+    UNAUTHORIZED: 'Necesitás iniciar sesión para usar el chat.',
+    NOT_FOUND: 'No encontramos este alojamiento.',
+    ENTITLEMENT_REQUIRED: 'El chat de IA no está disponible para este alojamiento.',
+    LIMIT_REACHED: 'El chat de IA no está disponible para este alojamiento en este momento.',
+    MODERATION_BLOCKED: 'Tu mensaje no pasa las políticas de uso. Probá reformularlo.',
+    RATE_LIMIT_EXCEEDED: 'Demasiadas consultas seguidas. Esperá un momento e intentá de nuevo.',
+    ENGINE_EXHAUSTED:
+        'Los proveedores de IA no están disponibles temporalmente. Intentá más tarde.',
+    FEATURE_DISABLED: 'El chat de IA está deshabilitado temporalmente.',
+    CEILING_HIT: 'Se alcanzó el límite de costo de IA. Intentá más tarde.',
+    SERVICE_UNAVAILABLE: 'Servicio temporalmente no disponible. Intentá más tarde.',
+    NETWORK_INTERRUPTED: 'Se cortó la conexión. Reintentá.',
+    INTERNAL_ERROR: 'Ocurrió un error inesperado. Intentá de nuevo.'
+});
+
+/**
+ * Turns an API failure into copy a person can read.
+ *
+ * Precedence matters. The API sends a resolvable i18n key as the `message`
+ * where it wants a SPECIFIC message - notably to tell the consumer-side quota
+ * (`consumerLimitReached`, actionable: upgrade) apart from the owner-side one,
+ * which share the `LIMIT_REACHED` code and would otherwise collapse into one
+ * misleading string. So the message is tried first, the code second, and the
+ * generic copy last. The raw message is never rendered: it is either an i18n
+ * key or Spanish prose from the API, and both are wrong to show as-is.
+ */
+function resolveChatError({
+    t,
+    code,
+    message
+}: {
+    readonly t: (key: string, fallback?: string) => string;
+    readonly code: string | null;
+    readonly message: string | null;
+}): string {
+    if (message && I18N_KEY_PATTERN.test(message)) {
+        const translated = t(message, UNRESOLVED);
+        if (translated !== UNRESOLVED) return translated;
+    }
+
+    if (code) {
+        const fallback = ERROR_FALLBACKS[code];
+        const translated = t(`accommodations.aiChat.error.${code}`, UNRESOLVED);
+        if (translated !== UNRESOLVED) return translated;
+        if (fallback) return fallback;
+    }
+
+    return t('accommodations.aiChat.errorDefault');
+}
+
 /**
  * Root component for the AI accommodation chat.
  * Renders both the FAB and the chat panel (single Astro island).
@@ -254,7 +326,11 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                         )}
                         {chat.state.status === 'error' && (
                             <div className={styles.errorBubble}>
-                                {chat.state.errorMessage || t('accommodations.aiChat.errorDefault')}
+                                {resolveChatError({
+                                    t,
+                                    code: chat.state.errorCode,
+                                    message: chat.state.errorMessage
+                                })}
                             </div>
                         )}
                         {chat.state.status === 'at_cap' && (

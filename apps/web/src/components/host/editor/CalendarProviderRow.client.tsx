@@ -36,6 +36,7 @@ import { formatDate } from '@/lib/format-utils';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale, TranslationFn } from '@/lib/i18n';
 import { sourceFallbackLabel, sourceKeySuffix } from './CalendarDayCell.client';
+import { CalendarSyncMessage } from './CalendarSyncMessage.client';
 import styles from './CalendarSyncPanel.module.css';
 
 // ---------------------------------------------------------------------------
@@ -435,20 +436,20 @@ export function CalendarProviderRow({
             )}
 
             {inlineError && (
-                <div
-                    className={styles.rowError}
-                    role="alert"
+                <CalendarSyncMessage
+                    kind="error"
+                    compact
                 >
                     {inlineError}
-                </div>
+                </CalendarSyncMessage>
             )}
             {inlineInfo && (
-                <div
-                    className={inlineInfo.kind === 'success' ? styles.rowSuccess : styles.rowInfo}
-                    role="status"
+                <CalendarSyncMessage
+                    kind={inlineInfo.kind}
+                    compact
                 >
                     {inlineInfo.message}
-                </div>
+                </CalendarSyncMessage>
             )}
         </div>
     );
