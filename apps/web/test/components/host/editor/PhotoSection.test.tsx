@@ -14,6 +14,7 @@
  * - Section title / description always rendered
  */
 
+import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { ENTITY_GALLERY_CAPS } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -585,6 +586,64 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             await waitFor(() => {
                 expect(screen.getByText('+')).toBeInTheDocument();
             });
+        });
+    });
+
+    // ── 6. File-size validation (HOS-322) ──────────────────────────────────
+
+    describe('file-size validation (HOS-322)', () => {
+        /** A file of an exact byte length, shaped like a JPEG. */
+        const fileOfBytes = (bytes: number): File =>
+            new File([new Uint8Array(new ArrayBuffer(bytes))], 'phone-photo.jpg', {
+                type: 'image/jpeg'
+            });
+
+        const CAP_BYTES = mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB);
+
+        const selectGalleryFile = async (file: File): Promise<void> => {
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+            const input = document.querySelector('#gallery-image-input') as HTMLInputElement;
+            fireEvent.change(input, { target: { files: [file] } });
+        };
+
+        it('accepts a photo well above the old 5 MB ceiling', async () => {
+            // The reported bug: an ordinary mid-range phone photo was rejected
+            // before it ever left the browser. Sized relative to the cap so
+            // this keeps meaning "comfortably inside the limit" if it moves.
+            mockUploadEntityImage.mockReturnValue(makeUploadOk());
+            mockAddMedia.mockReturnValue(makeAddOk());
+
+            await selectGalleryFile(fileOfBytes(CAP_BYTES - mbToBytes(1)));
+
+            await waitFor(() => expect(mockUploadEntityImage).toHaveBeenCalled());
+            expect(mockAddToast).not.toHaveBeenCalled();
+        });
+
+        it('accepts a photo weighing exactly the cap', async () => {
+            mockUploadEntityImage.mockReturnValue(makeUploadOk());
+            mockAddMedia.mockReturnValue(makeAddOk());
+
+            await selectGalleryFile(fileOfBytes(CAP_BYTES));
+
+            await waitFor(() => expect(mockUploadEntityImage).toHaveBeenCalled());
+        });
+
+        it('rejects a photo one byte over the cap without uploading', async () => {
+            await selectGalleryFile(fileOfBytes(CAP_BYTES + 1));
+
+            await waitFor(() => expect(mockAddToast).toHaveBeenCalled());
+            expect(mockUploadEntityImage).not.toHaveBeenCalled();
+        });
+
+        it('states the real limit in the rejection message', async () => {
+            // The message used to say a flat "5MB" regardless of what the
+            // server actually enforced. It must name the cap in force.
+            await selectGalleryFile(fileOfBytes(CAP_BYTES + 1));
+
+            await waitFor(() => expect(mockAddToast).toHaveBeenCalled());
+            const message = mockAddToast.mock.calls[0]?.[0]?.message as string;
+            expect(message).toContain(String(DEFAULT_ENTITY_MAX_FILE_SIZE_MB));
         });
     });
 });

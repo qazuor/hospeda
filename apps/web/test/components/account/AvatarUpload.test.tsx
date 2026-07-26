@@ -71,7 +71,12 @@ vi.mock('@repo/icons', () => ({
     UploadIcon: () => null
 }));
 
-vi.mock('@repo/media', () => ({
+// Only `getMediaUrl` is stubbed. Everything else — notably the canonical size
+// caps the component validates against — must come from the real module: a
+// fabricated cap would make the size assertions test a limit that does not
+// exist in production.
+vi.mock('@repo/media', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/media')>()),
     getMediaUrl: (url: string) => url
 }));
 
