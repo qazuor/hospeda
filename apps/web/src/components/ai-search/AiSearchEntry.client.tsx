@@ -19,6 +19,7 @@
 
 import { FullscreenIcon, MinimizeIcon, SearchIcon, SparkleIcon } from '@repo/icons';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './AiSearchEntry.module.css';
@@ -171,6 +172,9 @@ export function AiSearchEntry({
         observer.observe(target);
         return () => observer.disconnect();
     }, []);
+
+    // Back button closes the drawer instead of leaving the page (HOS-310).
+    useDialogHistoryBack({ isOpen, onClose: handleClose });
 
     // Lock body scroll while the drawer is open (SPEC-265 D).
     useEffect(() => {

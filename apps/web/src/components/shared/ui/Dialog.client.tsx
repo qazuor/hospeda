@@ -11,6 +11,8 @@
  *     fails when `<html>` is the scroll root).
  *   - Closes on `Escape` (when `closeOnEscape !== false`).
  *   - Closes on click on the overlay (when `closeOnOverlayClick !== false`).
+ *   - Closes on the browser/system back button instead of navigating away
+ *     (HOS-310, see `@/lib/dialog-history`).
  *   - Focus management: focuses the panel on open, restores focus to the
  *     element that had it before opening on close.
  *   - Lightweight focus-trap so Tab cannot escape the panel.
@@ -26,6 +28,10 @@
 import type { JSX, ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+// Aliased, unlike this file's other imports: the hook's manager keeps a
+// module-level singleton stack shared across every island, and a second
+// specifier for the same module risks bundling a second copy of it.
+import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
 import { cn } from '../../../lib/cn';
 import styles from './Dialog.module.css';
 
@@ -153,6 +159,10 @@ export function Dialog({
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, mounted, onClose, closeOnEscape]);
+
+    // Back button closes the dialog instead of leaving the page (HOS-310).
+    // Gated on `mounted` so the entry is only claimed once the portal is real.
+    useDialogHistoryBack({ isOpen: isOpen && mounted, onClose });
 
     const handleOverlayClick = useCallback(
         (event: React.MouseEvent<HTMLDivElement>): void => {
