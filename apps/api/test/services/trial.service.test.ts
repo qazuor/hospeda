@@ -420,6 +420,360 @@ describe('TrialService', () => {
             expect(result.planSlug).toBe('owner-pro');
         });
 
+        describe('HOS-285 regression — comp-aware and date-aware', () => {
+            it('treats a comp subscription as live: not on trial, not expired', async () => {
+                // Arrange — a complimentary subscription (SPEC-262) is the customer's
+                // ONLY subscription. The selection used to be `trialing || active`, so
+                // the comp sub was invisible and the resolver fell through to the
+                // historical branch (or to the never-had-a-trial defaults).
+                const customerId = 'customer-comp-live';
+                const compSub = {
+                    id: 'sub-comp',
+                    customerId,
+                    planId: 'plan-owner-pro',
+                    status: 'comp',
+                    trialStart: null,
+                    trialEnd: null
+                };
+                const mockPlan = { id: 'plan-owner-pro', name: 'owner-pro' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    compSub
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert — a comp never trials and never expires.
+                // NOTE: `planSlug` is the load-bearing assertion. The other three also
+                // held before the fix (via the never-had-a-trial defaults), so do not
+                // "simplify" it away — without it the test stops discriminating.
+                expect(result.isOnTrial).toBe(false);
+                expect(result.isExpired).toBe(false);
+                expect(result.daysRemaining).toBe(0);
+                expect(result.planSlug).toBe('owner-pro');
+            });
+
+            it('reports no countdown for a comp subscription that still carries a FUTURE trialEnd', async () => {
+                // Arrange — a subscription flipped from `trialing` to `comp` keeps its
+                // `trialEnd`. Without the explicit comp short-circuit the generic branch
+                // would compute "N days remaining" and surface an expiry date for what
+                // is a PERMANENT grant.
+                const customerId = 'customer-comp-with-trial-end';
+                const now = new Date();
+                const futureTrialEnd = new Date(now);
+                futureTrialEnd.setDate(futureTrialEnd.getDate() + 9);
+
+                const compSubWithTrialWindow = {
+                    id: 'sub-comp-from-trial',
+                    customerId,
+                    planId: 'plan-owner-pro',
+                    status: 'comp',
+                    trialStart: now.toISOString(),
+                    trialEnd: futureTrialEnd.toISOString()
+                };
+                const mockPlan = { id: 'plan-owner-pro', name: 'owner-pro' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    compSubWithTrialWindow
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert — no countdown, no end date, and still not expired.
+                expect(result.isOnTrial).toBe(false);
+                expect(result.isExpired).toBe(false);
+                expect(result.daysRemaining).toBe(0);
+                expect(result.startedAt).toBeNull();
+                expect(result.expiresAt).toBeNull();
+            });
+
+            it('does not lock out a comp customer who also has a canceled sub with a FUTURE trialEnd (prod repro)', async () => {
+                // Arrange — the exact PROD shape from SMOKE-23-07: a live `comp` sub plus
+                // an older CANCELED sub whose trialEnd is still in the future. Three
+                // compounding defects made this return isExpired:true, and trialMiddleware
+                // (global) answered every write with 402: the comp sub was invisible, so
+                // the historical branch picked up a subscription unrelated to the current
+                // state, and that branch reported expiry without comparing the date to now.
+                //
+                // NOTE: this is a SCENARIO test, not a pin — it stays green if either the
+                // comp membership fix or the date comparison is present on its own. The
+                // individual pins are the tests around it.
+                const customerId = 'customer-comp-plus-canceled';
+                const now = new Date();
+                const futureTrialEnd = new Date(now);
+                futureTrialEnd.setDate(futureTrialEnd.getDate() + 42);
+
+                const canceledSubWithFutureTrial = {
+                    id: 'sub-canceled-future',
+                    customerId,
+                    planId: 'plan-owner-pro',
+                    status: 'canceled' as const,
+                    trialStart: now.toISOString(),
+                    trialEnd: futureTrialEnd.toISOString()
+                };
+                const compSub = {
+                    id: 'sub-comp',
+                    customerId,
+                    planId: 'plan-owner-pro',
+                    status: 'comp',
+                    trialStart: null,
+                    trialEnd: null
+                };
+                const mockPlan = { id: 'plan-owner-pro', name: 'owner-pro' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    canceledSubWithFutureTrial,
+                    compSub
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert — writes must NOT be paywalled.
+                expect(result.isExpired).toBe(false);
+                expect(result.isOnTrial).toBe(false);
+            });
+
+            it('prefers the comp subscription over a stale elapsed trialing row (deterministic precedence)', async () => {
+                // Arrange — both rows are entitlement-granting and the stale `trialing`
+                // one is returned FIRST. A bare `find` would take it, compute an elapsed
+                // trial and 402 a comped host: the original HOS-285 symptom, reached
+                // through provider row order instead of a missing status.
+                const customerId = 'customer-comp-behind-stale-trial';
+                const now = new Date();
+                const elapsedTrialEnd = new Date(now);
+                elapsedTrialEnd.setDate(elapsedTrialEnd.getDate() - 5);
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    {
+                        id: 'sub-stale-trialing',
+                        customerId,
+                        planId: 'plan-owner-basico',
+                        status: 'trialing',
+                        trialStart: null,
+                        trialEnd: elapsedTrialEnd.toISOString()
+                    },
+                    {
+                        id: 'sub-comp',
+                        customerId,
+                        planId: 'plan-owner-pro',
+                        status: 'comp',
+                        trialStart: null,
+                        trialEnd: null
+                    }
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                    id: 'plan-owner-pro',
+                    name: 'owner-pro'
+                } as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert — comp wins, so no expiry and no countdown.
+                expect(result.isExpired).toBe(false);
+                expect(result.isOnTrial).toBe(false);
+                expect(result.planSlug).toBe('owner-pro');
+            });
+
+            it('does not report a canceled trial as expired while its trialEnd is still in the future', async () => {
+                // Arrange — the date defect in isolation: no live subscription at all,
+                // and the only historical trial ends in the future. The historical branch
+                // used to return isExpired:true unconditionally, without comparing to now.
+                const customerId = 'customer-canceled-future-trial';
+                const now = new Date();
+                const trialStart = new Date(now);
+                trialStart.setDate(trialStart.getDate() - 2);
+                const futureTrialEnd = new Date(now);
+                futureTrialEnd.setDate(futureTrialEnd.getDate() + 10);
+
+                const canceledSub = {
+                    id: 'sub-canceled-future-only',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'canceled' as const,
+                    trialStart: trialStart.toISOString(),
+                    trialEnd: futureTrialEnd.toISOString()
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    canceledSub
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert — a future date is not an expiry. Timestamps are still surfaced
+                // so the UI can explain the state.
+                expect(result.isExpired).toBe(false);
+                expect(result.isOnTrial).toBe(false);
+                expect(result.expiresAt).toBe(futureTrialEnd.toISOString());
+            });
+
+            it('fails CLOSED on a corrupt trialEnd instead of dropping the paywall', async () => {
+                // `new Date('not-a-date').toISOString()` throws, and the method's own
+                // catch would turn that RangeError into the safe "no trial" defaults —
+                // i.e. straight back to fail-open. The verdict must stay `expired` and
+                // the timestamps must degrade to null rather than blow up.
+                const customerId = 'customer-corrupt-trial-end';
+
+                const corruptSub = {
+                    id: 'sub-corrupt',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'canceled' as const,
+                    trialStart: 'also-not-a-date',
+                    trialEnd: 'not-a-date'
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    corruptSub
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert
+                expect(result.isExpired).toBe(true);
+                expect(result.expiresAt).toBeNull();
+                expect(result.startedAt).toBeNull();
+                // Proof it did NOT go through the catch: the catch returns planSlug null.
+                expect(result.planSlug).toBe('owner-basico');
+            });
+
+            it('keeps the 402 on a live trialing row whose trialStart is corrupt', async () => {
+                // The live branch's half of the defensive formatting. `trial_end` is
+                // valid and elapsed, so the paywall SHOULD fire — but the inline
+                // `new Date(trialStart).toISOString()` used to throw a RangeError on the
+                // corrupt `trial_start`, and the method's catch answered with the "no
+                // trial" defaults: the 402 vanished, fail-open.
+                const customerId = 'customer-live-corrupt-start';
+                const now = new Date();
+                const elapsedTrialEnd = new Date(now);
+                elapsedTrialEnd.setDate(elapsedTrialEnd.getDate() - 3);
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    {
+                        id: 'sub-live-corrupt-start',
+                        customerId,
+                        planId: 'plan-owner-basico',
+                        status: 'trialing',
+                        trialStart: 'not-a-date',
+                        trialEnd: elapsedTrialEnd.toISOString()
+                    }
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                    id: 'plan-owner-basico',
+                    name: 'owner-basico'
+                } as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert — expired, with the corrupt timestamp degraded to null.
+                expect(result.isExpired).toBe(true);
+                expect(result.startedAt).toBeNull();
+                expect(result.expiresAt).toBe(elapsedTrialEnd.toISOString());
+                expect(result.daysRemaining).toBe(0);
+                // Proof it did NOT go through the catch (which returns planSlug null).
+                expect(result.planSlug).toBe('owner-basico');
+            });
+
+            it('prefers an active subscription over a stale elapsed trialing row', async () => {
+                // The other half of the precedence map, and the "paying customer 402'd
+                // by row order" case that justifies it: the supersession window leaves a
+                // `trialing` row alive next to the `active` replacement
+                // (`reactivation-supersession-complete`'s `cancel-did-not-take`). With a
+                // bare `find` the stale trial wins and paywalls a customer who just paid.
+                const customerId = 'customer-active-behind-stale-trial';
+                const now = new Date();
+                const elapsedTrialEnd = new Date(now);
+                elapsedTrialEnd.setDate(elapsedTrialEnd.getDate() - 4);
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    {
+                        id: 'sub-stale-trialing',
+                        customerId,
+                        planId: 'plan-owner-basico',
+                        status: 'trialing',
+                        trialStart: null,
+                        trialEnd: elapsedTrialEnd.toISOString()
+                    },
+                    {
+                        id: 'sub-active-replacement',
+                        customerId,
+                        planId: 'plan-owner-pro',
+                        status: 'active',
+                        trialStart: null,
+                        trialEnd: null
+                    }
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                    id: 'plan-owner-pro',
+                    name: 'owner-pro'
+                } as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert — the paid row wins; no expiry, no trial.
+                expect(result.isExpired).toBe(false);
+                expect(result.isOnTrial).toBe(false);
+                expect(result.planSlug).toBe('owner-pro');
+            });
+
+            it('keeps blocking a genuinely elapsed trial when the only other sub is past_due (negative pin)', async () => {
+                // Widening the live-subscription selection to include `comp` must not let
+                // any other status through. `past_due` is not entitlement-granting, so the
+                // historical branch still applies and the elapsed trial still reports
+                // expired. (Whether the dunning grace SHOULD pre-empt this gate is a
+                // separate question, tracked in HOS-337 with the paywall-activation work.)
+                const customerId = 'customer-past-due-expired';
+                const now = new Date();
+                const trialEnd = new Date(now);
+                trialEnd.setDate(trialEnd.getDate() - 3);
+
+                const pastDueSub = {
+                    id: 'sub-past-due',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'past_due',
+                    trialStart: null,
+                    trialEnd: null
+                };
+                const canceledExpiredTrial = {
+                    id: 'sub-canceled-expired',
+                    customerId,
+                    planId: 'plan-owner-basico',
+                    status: 'canceled' as const,
+                    trialStart: now.toISOString(),
+                    trialEnd: trialEnd.toISOString()
+                };
+                const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+                vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                    pastDueSub,
+                    canceledExpiredTrial
+                ] as never);
+                vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+                // Act
+                const result = await trialService.getTrialStatus({ customerId });
+
+                // Assert
+                expect(result.isExpired).toBe(true);
+            });
+        });
+
         describe('intendedInterval (HOS-115 §5 T-008 — nudge delivery path 2)', () => {
             it('returns the annual interval stamped on an active trial subscription', async () => {
                 // Arrange
