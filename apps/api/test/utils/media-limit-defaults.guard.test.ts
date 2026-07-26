@@ -16,6 +16,7 @@
 import {
     DEFAULT_AVATAR_MAX_FILE_SIZE_MB,
     DEFAULT_ENTITY_MAX_FILE_SIZE_MB,
+    MULTIPART_ENVELOPE_SLACK_BYTES,
     PROVIDER_MAX_IMAGE_FILE_SIZE_MB
 } from '@repo/media';
 import { describe, expect, it } from 'vitest';
@@ -50,6 +51,14 @@ describe('HOS-322 — media limit defaults', () => {
             expect(DEFAULT_ENTITY_MAX_FILE_SIZE_MB).toBeLessThanOrEqual(
                 PROVIDER_MAX_IMAGE_FILE_SIZE_MB
             );
+        });
+
+        it('pins the multipart envelope allowance', () => {
+            // Shared by the body guard and all three Content-Length pre-checks.
+            // Shrinking it back toward the old 1 KB reintroduces a false 413 on
+            // a photo exactly at the cap, since part of the envelope is a
+            // filename the user controls.
+            expect(MULTIPART_ENVELOPE_SLACK_BYTES).toBe(16 * 1024);
         });
 
         it('keeps the avatar cap below the entity cap', () => {

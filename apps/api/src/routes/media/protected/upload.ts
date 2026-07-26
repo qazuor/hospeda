@@ -1,4 +1,4 @@
-import { DEFAULT_AVATAR_MAX_FILE_SIZE_MB } from '@repo/media';
+import { DEFAULT_AVATAR_MAX_FILE_SIZE_MB, MULTIPART_ENVELOPE_SLACK_BYTES } from '@repo/media';
 import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
 /**
  * Protected avatar upload endpoint.
@@ -26,7 +26,6 @@ import { Sentry } from '../../../lib/sentry';
 import { incrementDomainCounter } from '../../../middlewares/metrics';
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getMediaProvider } from '../../../services/media';
-import { CONTENT_LENGTH_MARGIN_BYTES } from '../../../services/media/upload-helpers';
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env.js';
 import { apiLogger } from '../../../utils/logger';
@@ -56,7 +55,7 @@ const getAvatarMaxFileSizeMb = (): number =>
  * become decoration. The downstream `validateMediaFile` enforces the
  * strict limit on the parsed buffer.
  */
-const CONTENT_LENGTH_MARGIN = CONTENT_LENGTH_MARGIN_BYTES;
+const CONTENT_LENGTH_MARGIN = MULTIPART_ENVELOPE_SLACK_BYTES;
 
 /**
  * POST /api/v1/protected/media/upload

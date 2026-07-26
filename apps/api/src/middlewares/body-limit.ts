@@ -11,8 +11,13 @@
  *    the cap arrives as body = file + boundaries + field parts, which exceeds a
  *    flat 10 MB guard. That guard's error is blunt and generic
  *    (`REQUEST_TOO_LARGE`, no size, no i18n mapping), so the owner was told
- *    nothing useful about a file that was in fact legal. With the slack, the
- *    precise per-file check decides instead — and says which limit it applied.
+ *    nothing useful about a file that was in fact legal. With the slack the
+ *    request survives to the handler, where the check on the parsed buffer
+ *    decides and names the limit it applied.
+ *
+ *    This middleware remains the guard that rejects an oversized upload — the
+ *    routes' own Content-Length pre-checks share its threshold deliberately, so
+ *    that none of them can be tighter than it and reintroduce the false 413.
  * 2. **A LOWER ceiling on avatars (5 MB, not 10).** This is the only place that
  *    can enforce it early: the avatar handler's own pre-check reads
  *    `content-length`, so a chunked request without that header used to stream

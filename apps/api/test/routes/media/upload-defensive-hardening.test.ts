@@ -7,10 +7,11 @@
  * - GAP-078-068: interim per-route rate limit (10 req / 60s) returns 429
  *   on the 11th request inside the window. Replaces nothing; placeholder
  *   for the billing-tier-aware limits planned in SPEC-079.
- * - GAP-078-021: Content-Length pre-check uses a +1KB margin so that a
- *   multipart upload whose declared length sits exactly at the byte limit
- *   does not trip the fast-fail 413; a payload meaningfully larger than
- *   the limit (limit + 2KB) still IS rejected.
+ * - GAP-078-021: the Content-Length pre-check allows an envelope margin so a
+ *   multipart upload whose declared length sits exactly at the byte limit does
+ *   not trip the fast-fail 413; a payload past that margin still IS rejected.
+ *   HOS-322 widened the margin and unified it with the global body guard, so
+ *   no guard can be tighter than another and silently become the real limit.
  * - GAP-078-071: server-side hard cap of 50 gallery items per entity. A
  *   `role: 'gallery'` upload against an entity already at 50 items must
  *   return 422 `GALLERY_LIMIT_EXCEEDED` BEFORE the provider is called.
@@ -154,7 +155,7 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
 
     // ── GAP-078-021 — Content-Length margin ─────────────────────────────────
 
-    describe('GAP-078-021: Content-Length pre-check uses +1KB margin', () => {
+    describe('GAP-078-021: Content-Length pre-check honours the envelope margin', () => {
         it('admin upload accepts a Content-Length declared exactly at the byte limit', async () => {
             // Arrange: derived from the configured entity cap, which is
             // env-driven since HOS-322.
@@ -204,8 +205,11 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
             const res = await app.request(req);
             const body = (await res.json()) as { success: boolean; error?: { code: string } };
 
-            // Assert: 413 from the route-level check, whose message names the
-            // real limit — NOT the blunt stream guard's generic error.
+            // Assert: 413 naming the real limit. WHICH guard produced it is
+            // deliberately indistinguishable — they share the threshold and the
+            // wording, so the owner sees one message either way. What this pins
+            // is that the rejection says "10MB" instead of the generic
+            // REQUEST_TOO_LARGE the global cap used to emit for a legal photo.
             expect(res.status).toBe(413);
             expect(body.success).toBe(false);
             expect(body.error?.code).toBe('PAYLOAD_TOO_LARGE');
@@ -277,7 +281,8 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
             const res = await app.request(req);
             const body = (await res.json()) as { success: boolean; error?: { code: string } };
 
-            // Assert: 413 naming the avatar cap, not the blunt global guard.
+            // Assert: 413 naming the avatar cap — that path keeps a ceiling
+            // of its own, lower than the entity one.
             expect(res.status).toBe(413);
             expect(body.success).toBe(false);
             expect(body.error?.code).toBe('PAYLOAD_TOO_LARGE');

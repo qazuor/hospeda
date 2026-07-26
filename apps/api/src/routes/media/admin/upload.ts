@@ -23,7 +23,7 @@
  */
 import { LimitKey } from '@repo/billing';
 import { accommodationMediaModel } from '@repo/db';
-import { generateGalleryId } from '@repo/media';
+import { generateGalleryId, MULTIPART_ENVELOPE_SLACK_BYTES } from '@repo/media';
 import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
 import {
     AdminUploadRequestSchema,
@@ -47,10 +47,7 @@ import { buildLimitReachedDetails } from '../../../middlewares/limit-enforcement
 import { incrementDomainCounter } from '../../../middlewares/metrics';
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getMediaProvider } from '../../../services/media';
-import {
-    CONTENT_LENGTH_MARGIN_BYTES,
-    getEntityMaxFileSizeMb
-} from '../../../services/media/upload-helpers';
+import { getEntityMaxFileSizeMb } from '../../../services/media/upload-helpers';
 import { getActorFromContext } from '../../../utils/actor';
 import { calculateThreshold, calculateUsagePercent, checkLimit } from '../../../utils/limit-check';
 import { apiLogger } from '../../../utils/logger';
@@ -168,7 +165,7 @@ export const adminUploadMediaRoute = createAdminRoute({
         // limit on the parsed file body.
         const maxMb = getEntityMaxFileSizeMb();
         const maxBytes = maxMb * 1024 * 1024;
-        const contentLengthMaxBytes = maxBytes + CONTENT_LENGTH_MARGIN_BYTES;
+        const contentLengthMaxBytes = maxBytes + MULTIPART_ENVELOPE_SLACK_BYTES;
         const contentLength = Number(ctx.req.header('content-length') ?? 0);
 
         if (contentLength > contentLengthMaxBytes) {

@@ -37,12 +37,15 @@ export const getEntityMaxFileSizeMb = (): number =>
  * is compared against measures the FILE. The margin must therefore cover a
  * realistic envelope, or a file exactly at the cap is refused for bytes that
  * are not its own. That false 413 is the precise bug class HOS-322 exists to
- * remove, so the margin is the same generous allowance the body-size guard
- * uses rather than a tighter number of its own: the guards would otherwise
- * disagree about which one rejects, and the smaller margin would silently win.
+ * remove.
  *
- * Being generous costs nothing, because the strict check on the parsed buffer
- * runs immediately afterwards and is what actually enforces the cap.
+ * It is the SAME allowance the global body guard uses, and that is the point:
+ * this pre-check's remaining job is not to enforce the cap — the guard runs
+ * first and already rejects anything past that threshold — but to never be
+ * TIGHTER than it. A pre-check with a smaller margin of its own silently
+ * becomes the real limit, which is exactly how the ~494-byte headroom this
+ * replaced came about. What actually enforces the cap is the strict check on
+ * the parsed buffer, further down.
  */
 const CONTENT_LENGTH_MARGIN = MULTIPART_ENVELOPE_SLACK_BYTES;
 
