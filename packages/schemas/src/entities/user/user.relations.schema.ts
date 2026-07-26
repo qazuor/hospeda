@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createAverageRatingField } from '../../common/helpers.schema.js';
-import { UserSchema } from './user.schema.js';
+import { UserReadSchema } from './user.schema.js';
 
 /**
  * User Relations Schemas
@@ -12,6 +12,12 @@ import { UserSchema } from './user.schema.js';
  * - UserWithReviews
  * - UserWithPayments
  * - UserWithFull (all relations)
+ *
+ * HOS-302: every schema here is read-direction (a user PLUS already-persisted
+ * relations), so they all extend `UserReadSchema` rather than the strict
+ * `UserSchema`. A row whose `display_name` is the empty string — Better Auth
+ * signup writes those directly, bypassing the write schemas — must not fail a
+ * read contract.
  */
 
 // Import related schemas (these will be created later)
@@ -136,7 +142,7 @@ const PaymentSummarySchema = z.object({
  * User with accommodations
  * Includes an array of owned accommodations
  */
-export const UserWithAccommodationsSchema = UserSchema.extend({
+export const UserWithAccommodationsSchema = UserReadSchema.extend({
     accommodations: z.array(AccommodationSummarySchema).optional(),
     accommodationsCount: z.number().int().min(0).optional()
 });
@@ -145,7 +151,7 @@ export const UserWithAccommodationsSchema = UserSchema.extend({
  * User with subscriptions
  * Includes subscription information
  */
-export const UserWithSubscriptionsSchema = UserSchema.extend({
+export const UserWithSubscriptionsSchema = UserReadSchema.extend({
     subscriptions: z.array(SubscriptionSummarySchema).optional(),
     activeSubscription: SubscriptionSummarySchema.optional(),
     subscriptionsCount: z.number().int().min(0).optional()
@@ -155,7 +161,7 @@ export const UserWithSubscriptionsSchema = UserSchema.extend({
  * User with permissions
  * Includes permission assignments
  */
-export const UserWithPermissionsSchema = UserSchema.extend({
+export const UserWithPermissionsSchema = UserReadSchema.extend({
     permissions: z.array(PermissionAssignmentSummarySchema).optional(),
     permissionsCount: z.number().int().min(0).optional()
 });
@@ -164,7 +170,7 @@ export const UserWithPermissionsSchema = UserSchema.extend({
  * User with reviews
  * Includes reviews written by the user
  */
-export const UserWithReviewsSchema = UserSchema.extend({
+export const UserWithReviewsSchema = UserReadSchema.extend({
     reviews: z.array(ReviewSummarySchema).optional(),
     reviewsCount: z.number().int().min(0).optional(),
     averageRatingGiven: createAverageRatingField({ optional: true })
@@ -174,7 +180,7 @@ export const UserWithReviewsSchema = UserSchema.extend({
  * User with payments
  * Includes payment history
  */
-export const UserWithPaymentsSchema = UserSchema.extend({
+export const UserWithPaymentsSchema = UserReadSchema.extend({
     payments: z.array(PaymentSummarySchema).optional(),
     paymentsCount: z.number().int().min(0).optional(),
     totalSpent: z.number().min(0).optional(),
@@ -185,7 +191,7 @@ export const UserWithPaymentsSchema = UserSchema.extend({
  * User with business relations
  * Includes accommodations, subscriptions, and payments
  */
-export const UserWithBusinessRelationsSchema = UserSchema.extend({
+export const UserWithBusinessRelationsSchema = UserReadSchema.extend({
     // Accommodations
     accommodations: z.array(AccommodationSummarySchema).optional(),
     accommodationsCount: z.number().int().min(0).optional(),
@@ -206,7 +212,7 @@ export const UserWithBusinessRelationsSchema = UserSchema.extend({
  * User with activity relations
  * Includes reviews and permissions
  */
-export const UserWithActivityRelationsSchema = UserSchema.extend({
+export const UserWithActivityRelationsSchema = UserReadSchema.extend({
     // Reviews
     reviews: z.array(ReviewSummarySchema).optional(),
     reviewsCount: z.number().int().min(0).optional(),
@@ -221,7 +227,7 @@ export const UserWithActivityRelationsSchema = UserSchema.extend({
  * User with all relations
  * Includes all possible related entities
  */
-export const UserWithFullRelationsSchema = UserSchema.extend({
+export const UserWithFullRelationsSchema = UserReadSchema.extend({
     // Accommodations
     accommodations: z.array(AccommodationSummarySchema).optional(),
     accommodationsCount: z.number().int().min(0).optional(),
@@ -255,7 +261,7 @@ export const UserWithFullRelationsSchema = UserSchema.extend({
  * User with admin details
  * Includes sensitive information for admin views
  */
-export const UserWithAdminDetailsSchema = UserSchema.extend({
+export const UserWithAdminDetailsSchema = UserReadSchema.extend({
     // Login statistics
     loginHistory: z
         .array(

@@ -1,15 +1,15 @@
 import { z } from 'zod';
+import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { UserIdSchema } from '../../common/id.schema.js';
+import { UserLocationReadSchema } from '../../common/location.schema.js';
+import { SocialNetworkReadSchema } from '../../common/social.schema.js';
 import { AuthProviderEnumSchema } from '../../enums/auth-provider.schema.js';
-import {
-    PermissionEnumSchema,
-    PreferredContactEnumSchema,
-    RoleEnumSchema
-} from '../../enums/index.js';
+import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
+import { UserProfileReadSchema } from './user.profile.schema.js';
 import { UserSettingsSchema } from './user.settings.schema.js';
 
 // ============================================================================
-// READ⊇WRITE LENIENT SHAPES (HOS-190)
+// READ⊇WRITE LENIENT SHAPES (HOS-190, HOS-302)
 // ============================================================================
 //
 // These access schemas are RESPONSE contracts: `stripWithSchema`
@@ -18,52 +18,18 @@ import { UserSettingsSchema } from './user.settings.schema.js';
 // (`display_name`/`first_name`/`last_name` `text`; `profile`/`location`/
 // `contact_info`/`social_networks` JSONB) are unbounded, so a legacy/imported
 // value stricter than today's WRITE bounds used to 500 the profile GET and lock
-// the owner out of editing. These lenient shapes assert TYPE + PRESENCE only for
-// the free-form fields; content bounds (length, phone/URL format) stay enforced
-// on the WRITE path (`UserProfileSchema`, `UserLocationSchema`,
-// `ContactInfoSchema`, `SocialNetworkSchema` — from which the user
-// create/update schemas derive). This mirrors the accommodation access-schema
-// overlay and never touches the shared base/write schemas.
-
-/** Profile read shape — drops bio/occupation length bounds; keeps avatar/website as URLs (read == write there). */
-const UserProfileReadSchema = z.object({
-    avatar: z.string().url({ message: 'zodError.user.profile.avatar.url' }).optional(),
-    bio: z.string().optional(),
-    website: z.string().url({ message: 'zodError.user.profile.website.url' }).optional(),
-    occupation: z.string().optional()
-});
-
-/** Location read shape — postal string fields as plain strings (legacy 1-char country / over-length postal must not 500). */
-const UserLocationReadSchema = z.object({
-    country: z.string().optional(),
-    region: z.string().optional(),
-    city: z.string().optional(),
-    addressLine1: z.string().optional(),
-    postalCode: z.string().optional()
-});
-
-/** Contact read shape — phones/emails/website as plain strings (legacy AR local-format phones like `0223-155-1234` lack the `+` the write regex requires). */
-const ContactInfoReadSchema = z.object({
-    personalEmail: z.string().optional(),
-    workEmail: z.string().optional(),
-    homePhone: z.string().optional(),
-    workPhone: z.string().optional(),
-    mobilePhone: z.string().optional(),
-    whatsapp: z.string().optional(),
-    website: z.string().optional(),
-    preferredEmail: PreferredContactEnumSchema.optional(),
-    preferredPhone: PreferredContactEnumSchema.optional()
-});
-
-/** Social read shape — plain strings (legacy variant URLs fail the platform regex). */
-const SocialNetworkReadSchema = z.object({
-    facebook: z.string().optional(),
-    instagram: z.string().optional(),
-    twitter: z.string().optional(),
-    linkedIn: z.string().optional(),
-    tiktok: z.string().optional(),
-    youtube: z.string().optional()
-});
+// the owner out of editing. The lenient shapes below assert TYPE + PRESENCE only
+// for the free-form fields; content bounds (length, phone/URL format) stay
+// enforced on the WRITE path (`UserProfileSchema`, `UserLocationSchema`,
+// `ContactInfoSchema`, `SocialNetworkSchema` — from which the user create/update
+// schemas derive). This mirrors the accommodation access-schema overlay and
+// never touches the shared base/write schemas.
+//
+// HOS-302: they used to be module-private consts HERE, so the OTHER read family
+// (the query schemas the admin entity-list client re-parses) could not reuse
+// them and silently kept the strict WRITE shapes. Each now lives next to its
+// WRITE counterpart as the single definition, and both families import it —
+// `UserReadSchema` in `user.schema.ts` composes exactly the same four.
 
 /**
  * User Public Schema

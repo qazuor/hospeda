@@ -54,9 +54,10 @@ export type ContactInfo = z.infer<typeof ContactInfoSchema>;
  * schemas assert TYPE + PRESENCE only for the free-form contact fields; the phone
  * format stays enforced on the WRITE path via {@link ContactInfoSchema}.
  *
- * This mirrors accommodation's `AccommodationContactInfoReadSchema` and user's
- * local `ContactInfoReadSchema` — promoted here to a shared source of truth so
- * every entity read schema can use the same lenient shape.
+ * This mirrors accommodation's `AccommodationContactInfoReadSchema` — promoted
+ * here to a shared source of truth so every entity read schema can use the same
+ * lenient shape. HOS-302 deleted the last duplicate (a module-private copy in
+ * `user.access.schema.ts`); the user access AND query families both import this.
  */
 export const ContactInfoReadSchema = z.object({
     personalEmail: z.string().optional(),

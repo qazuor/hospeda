@@ -1,17 +1,17 @@
 import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
-import { BaseContactFields } from '../../common/contact.schema.js';
+import { BaseContactFields, ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { UserIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
-import { UserLocationFields } from '../../common/location.schema.js';
-import { SocialNetworkFields } from '../../common/social.schema.js';
+import { UserLocationFields, UserLocationReadSchema } from '../../common/location.schema.js';
+import { SocialNetworkFields, SocialNetworkReadSchema } from '../../common/social.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { AuthProviderEnumSchema } from '../../enums/auth-provider.schema.js';
 import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
 import { ModerationStatusEnumSchema } from '../../enums/moderation-status.schema.js';
 import { UserBookmarkSchema } from '../userBookmark/userBookmark.schema.js';
-import { UserProfileSchema } from './user.profile.schema.js';
+import { UserProfileReadSchema, UserProfileSchema } from './user.profile.schema.js';
 import { UserSettingsSchema } from './user.settings.schema.js';
 
 /**
@@ -170,3 +170,67 @@ export const UserSchema = z.object({
  * Type export for the main User entity
  */
 export type User = z.infer<typeof UserSchema>;
+
+/**
+ * READ-side overlay for the user name fields (HOS-302).
+ *
+ * `display_name`, `first_name` and `last_name` are unbounded `text` columns, and
+ * rows reach them without ever passing the create/update Zod schemas — Better
+ * Auth signup writes the row directly, which is how production ended up with
+ * users whose `display_name` is the empty string. `.optional()` does not rescue
+ * that: the key is present, it is just empty, so `.min(2)` fires.
+ *
+ * Read schemas therefore validate the TYPE and leave the LENGTH to the write
+ * path, keeping read ⊇ write. Bounds stay on {@link UserSchema}, which the
+ * create/update schemas inherit.
+ *
+ * `displayName` is `.nullish()` here, not `.optional()` as on {@link UserSchema}.
+ * That widening is deliberate: `users.display_name` is a NULLABLE column, so a
+ * read schema that only tolerates `undefined` rejects a row the database is
+ * entitled to return. `firstName`/`lastName` were already `.nullish()` on the
+ * strict base; this aligns the third field with them.
+ *
+ * @see HOS-190, which introduced this same leniency inline on `UserPublicSchema`
+ *   but only for the access family.
+ * @see HOS-300 for the same two-read-family gap on event locations.
+ */
+export const UserNameReadFields = {
+    displayName: z.string().nullish(),
+    firstName: z.string().nullish(),
+    lastName: z.string().nullish()
+} as const;
+
+/** Shape of {@link UserNameReadFields}, for consumers composing read schemas. */
+export type UserNameReadFieldsType = typeof UserNameReadFields;
+
+/**
+ * READ-side variant of {@link UserSchema} (HOS-302).
+ *
+ * Identical KEY SET, with every content bound that the write path enforces but
+ * the database does not relaxed to a type assertion:
+ *
+ * - the three name fields ({@link UserNameReadFields});
+ * - the four unbounded JSONB columns — `profile`, `location`, `contactInfo`,
+ *   `socialNetworks` — via the shared lenient shapes that already back the
+ *   access family (HOS-190).
+ *
+ * Every read schema derived from the full user entity — notably the query family
+ * consumed by the admin entity-list client, whose `safeParse` is fail-closed and
+ * THROWS — must derive from this rather than from `UserSchema`. Deriving a read
+ * schema from the strict base is what took the admin users list down.
+ *
+ * The JSONB relaxation is not theoretical: `GET /api/v1/admin/users` responds
+ * with `UserAdminSchema`, whose `profile` is already `UserProfileReadSchema`, so
+ * the API happily emits a 5-character bio that a strict client-side re-parse then
+ * rejects — the identical failure mode, same page, same request.
+ */
+export const UserReadSchema = UserSchema.extend({
+    ...UserNameReadFields,
+    profile: UserProfileReadSchema.nullish(),
+    location: UserLocationReadSchema.nullish(),
+    contactInfo: ContactInfoReadSchema.nullish(),
+    socialNetworks: SocialNetworkReadSchema.nullish()
+});
+
+/** Inferred type for the read-side user entity. */
+export type UserRead = z.infer<typeof UserReadSchema>;
