@@ -557,8 +557,11 @@ describe('AiChatWidget', () => {
             removeEventListener: (t: string, f: () => void) => void;
         };
         let resizeListeners: Array<() => void>;
+        /** Restored in afterEach so a stubbed viewport cannot outlive its test. */
+        let originalInnerHeight: PropertyDescriptor | undefined;
 
         beforeEach(() => {
+            originalInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
             resizeListeners = [];
             viewport = {
                 height: LAYOUT_HEIGHT,
@@ -580,6 +583,11 @@ describe('AiChatWidget', () => {
 
         afterEach(() => {
             Reflect.deleteProperty(window, 'visualViewport');
+            if (originalInnerHeight) {
+                Object.defineProperty(window, 'innerHeight', originalInnerHeight);
+            } else {
+                Reflect.deleteProperty(window, 'innerHeight');
+            }
         });
 
         async function openPanel() {

@@ -23,8 +23,11 @@ interface FakeViewport {
 
 let viewport: FakeViewport;
 let listeners: Record<string, Array<() => void>>;
+/** Restored in afterEach so a stubbed viewport cannot outlive its test. */
+let originalInnerHeight: PropertyDescriptor | undefined;
 
 function installViewport(): void {
+    originalInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
     listeners = {};
     viewport = {
         height: LAYOUT_HEIGHT,
@@ -58,6 +61,11 @@ describe('useVisualViewportInset', () => {
 
     afterEach(() => {
         Reflect.deleteProperty(window, 'visualViewport');
+        if (originalInnerHeight) {
+            Object.defineProperty(window, 'innerHeight', originalInnerHeight);
+        } else {
+            Reflect.deleteProperty(window, 'innerHeight');
+        }
     });
 
     it('reports no inset while the keyboard is closed', () => {
