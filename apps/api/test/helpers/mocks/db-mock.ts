@@ -59,6 +59,14 @@ class GenericMockModel {
     async findById(_id: string) {
         return null;
     }
+    /**
+     * HOS-321: catalog validation batches through `findByIds`. Without this the
+     * junction sync throws `TypeError: findByIds is not a function` (a 500)
+     * instead of the clean VALIDATION_ERROR 400 the route contract promises.
+     */
+    async findByIds(_ids: readonly string[]) {
+        return [];
+    }
     async findOne(_filters: unknown) {
         return null;
     }

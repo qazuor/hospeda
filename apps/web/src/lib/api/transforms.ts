@@ -1766,8 +1766,22 @@ export function transformAccommodationEdit({
 }
 
 /**
- * Extracts a list of string IDs from either relation-join objects
- * (with a nested key) or plain string entries.
+ * Extracts a list of string IDs from relation entries, tolerating the four
+ * shapes the API emits for the same relation:
+ *  - junction projection — `{ amenityId, slug, … }` (public `getBySlug`)
+ *  - relation join — `{ amenity: { id, … } }`
+ *  - catalog projection — `{ id, slug, … }` (protected `getById`, HOS-321;
+ *    `AmenityProtectedSchema` / `FeatureProtectedSchema` key the catalog row
+ *    by `id`, so without this branch the editor read an empty selection)
+ *  - plain string ids
+ *
+ * The fallback order is deliberate and load-bearing, not incidental: `idKey`
+ * and `nestedKey` are the CALLER's explicit statement of which field holds the
+ * relation's id, so they must win over the generic `entry.id`. A payload can
+ * legitimately carry both (a junction row with its own `id`), and picking
+ * `entry.id` there would yield a well-formed but WRONG id list — which the
+ * exact-set junction sync would then act on destructively. Reordering these
+ * requires a matching change at both call sites.
  */
 function extractIdList(
     items: readonly (Record<string, unknown> | string)[] | undefined,
@@ -1779,7 +1793,7 @@ function extractIdList(
         .map((entry) => {
             if (typeof entry === 'string') return entry;
             const nested = entry[nestedKey] as Record<string, unknown> | undefined;
-            return String(entry[idKey] ?? nested?.id ?? '');
+            return String(entry[idKey] ?? nested?.id ?? entry.id ?? '');
         })
         .filter((id) => id.length > 0);
 }

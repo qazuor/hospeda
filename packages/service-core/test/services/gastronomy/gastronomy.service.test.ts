@@ -122,19 +122,25 @@ function makeGastronomyModel(entity: Gastronomy | null = null) {
 }
 
 function makeJunctionModel() {
+    // `total` is part of the reader contract (HOS-321).
     return {
-        findAll: vi.fn().mockResolvedValue({ items: [] }),
+        findAll: vi.fn().mockResolvedValue({ items: [], total: 0 }),
         hardDelete: vi.fn().mockResolvedValue(1),
         create: vi.fn().mockResolvedValue({})
     };
 }
 
+/**
+ * HOS-321: `CommerceCatalogModel` validates the whole set through `findByIds`
+ * in one query. These stubs are injected onto an `any`-typed field, so nothing
+ * would flag a stale `findById`-only shape until it blew up at runtime.
+ */
 function makeCatalogModel(validIds: string[] = []) {
     return {
-        findById: vi
+        findByIds: vi
             .fn()
-            .mockImplementation((id: string) =>
-                Promise.resolve(validIds.includes(id) ? { id } : null)
+            .mockImplementation((ids: readonly string[]) =>
+                Promise.resolve(ids.filter((id) => validIds.includes(id)).map((id) => ({ id })))
             )
     };
 }

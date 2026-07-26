@@ -97,16 +97,35 @@ function createMockJunctionModel() {
     };
 }
 
-/** Creates a minimal mock for the catalog models. */
+/**
+ * Creates a minimal mock for the catalog models.
+ *
+ * HOS-321: `validateCatalogIds` now batches through `findByIds` instead of one
+ * `findById` per id. `findByIds` here delegates to `findById` so the existing
+ * `(amenityModel.findById as Mock).mockResolvedValue(null)` stubs keep meaning
+ * "this catalog id does not exist" — the id is echoed back rather than reading
+ * it off the canned row, which is the same id-shaped answer a real batch
+ * lookup gives.
+ */
 function createMockCatalogModel() {
-    return {
+    const model = {
         findById: vi.fn().mockResolvedValue({ id: 'catalog-id' }), // exists by default
+        findByIds: vi.fn(),
         findAll: vi.fn().mockResolvedValue({ items: [], total: 0 }),
         create: vi.fn(),
         update: vi.fn(),
         hardDelete: vi.fn(),
         softDelete: vi.fn()
     };
+
+    model.findByIds.mockImplementation(async (ids: readonly string[]) => {
+        const rows = await Promise.all(
+            ids.map(async (id) => ((await model.findById(id)) ? { id } : null))
+        );
+        return rows.filter((row): row is { id: string } => row !== null);
+    });
+
+    return model;
 }
 
 /**
@@ -385,16 +404,20 @@ describe('AccommodationService junction sync (SPEC-172)', () => {
             // Assert
             expect(result.error).toBeUndefined();
 
-            // A was deleted (not in target)
+            // A was deleted (not in target). HOS-321: deletes are batched into a
+            // single `IN (...)` statement, so the id travels as an array.
             expect(rAmenityModel.hardDelete).toHaveBeenCalledWith(
-                expect.objectContaining({ accommodationId: 'acc-001', amenityId: UUID_AMENITY_A }),
+                expect.objectContaining({
+                    accommodationId: 'acc-001',
+                    amenityId: [UUID_AMENITY_A]
+                }),
                 mockTx
             );
 
             // B was NOT deleted (present in both)
             const deleteCalls = (rAmenityModel.hardDelete as Mock).mock.calls;
-            const deletedIds = deleteCalls.map(
-                (c: unknown[]) => (c[0] as Record<string, string>).amenityId
+            const deletedIds = deleteCalls.flatMap(
+                (c: unknown[]) => (c[0] as Record<string, string[]>).amenityId
             );
             expect(deletedIds).not.toContain(UUID_AMENITY_B);
 
@@ -424,9 +447,16 @@ describe('AccommodationService junction sync (SPEC-172)', () => {
             // Act — clear all
             const result = await service.update(actor, 'acc-001', { amenityIds: [] }, ctxWithTx);
 
-            // Assert — both deleted, none inserted
+            // Assert — both deleted in ONE batched statement, none inserted
             expect(result.error).toBeUndefined();
-            expect(rAmenityModel.hardDelete).toHaveBeenCalledTimes(2);
+            expect(rAmenityModel.hardDelete).toHaveBeenCalledTimes(1);
+            expect(rAmenityModel.hardDelete).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    accommodationId: 'acc-001',
+                    amenityId: expect.arrayContaining([UUID_AMENITY_A, UUID_AMENITY_B])
+                }),
+                mockTx
+            );
             expect(rAmenityModel.create).not.toHaveBeenCalled();
         });
 

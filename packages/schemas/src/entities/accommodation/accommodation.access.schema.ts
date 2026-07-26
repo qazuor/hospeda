@@ -92,6 +92,46 @@ const AccommodationI18nTextReadSchema = z
     .nullish();
 
 /**
+ * Linked-catalog read shapes (HOS-321) — the amenity/feature rows the owner's
+ * `GET /protected/accommodations/:id` embeds.
+ *
+ * The catalog is ADMIN-owned but this response is fail-closed for the HOST: a
+ * single row that trips a bound in `AmenityProtectedSchema` /
+ * `FeatureProtectedSchema` makes `stripWithSchema` throw INTERNAL_ERROR, the
+ * GET 500s, and `editar.astro` silently redirects the owner away — they cannot
+ * edit the accommodation at all and get no message explaining why. That is the
+ * exact HOS-190 lock-out the lenient overlays above exist to prevent, so the
+ * same treatment applies one level down.
+ *
+ * Relaxed: `slug`/`icon` drop their length+regex bounds (feature `slug` is
+ * REQUIRED on the strict schema, so `.nullish()` here is the load-bearing half),
+ * `description` accepts any partial i18n triple (the strict shape needs all
+ * three locales at ≥10 chars each), `applicableVerticals` drops `.min(1)` (the
+ * DB column defaults to `[]`, which the strict schema rejects outright) and its
+ * enum while STAYING required, and `displayWeight` drops its `.int()` + 1..100
+ * range (no DB CHECK backs it) while KEEPING `.default(50)`.
+ *
+ * Every relaxation here has to be ONE-DIRECTIONAL: anything this block makes
+ * newly invalid — a dropped `.default()`, a widened-but-now-required key — is a
+ * lock-out introduced by the very block that exists to prevent lock-outs.
+ *
+ * `id` stays strict because it is the only field a consumer of THIS payload
+ * reads: the host editor takes the id list and resolves every label from
+ * `@repo/i18n` against the separately-fetched catalog (SPEC-266). A malformed
+ * `id` SHOULD fail loudly rather than silently yield a wrong selection that the
+ * exact-set junction sync would then write.
+ */
+const LenientCatalogRowFields = {
+    slug: z.string().nullish(),
+    description: AccommodationI18nTextReadSchema,
+    icon: z.string().nullish(),
+    applicableVerticals: z.array(z.string()),
+    displayWeight: z.number().default(50)
+};
+const AccommodationAmenityReadSchema = AmenityProtectedSchema.extend(LenientCatalogRowFields);
+const AccommodationFeatureReadSchema = FeatureProtectedSchema.extend(LenientCatalogRowFields);
+
+/**
  * Price read shape — drops `.positive()` on the nightly amount AND on every
  * nested fee/discount amount, so a legacy/"consultar precio" `0` never 500s the
  * response at ANY nesting level (the shared `PriceSchema.price` positivity is a
@@ -451,10 +491,14 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     owner: UserProtectedSchema.optional(),
     /** City projection of the linked destination (SPEC-095). */
     cityDestination: CityDestinationRefSchema.optional(),
-    /** Amenities with junction table data from r_accommodation_amenity (protected tier). */
-    amenities: z.array(AmenityProtectedSchema).optional(),
-    /** Features with junction table data from r_accommodation_feature (protected tier). */
-    features: z.array(FeatureProtectedSchema).optional(),
+    /**
+     * Amenities linked through r_accommodation_amenity (protected tier).
+     * Uses the lenient read overlay — see `AccommodationAmenityReadSchema`
+     * (HOS-321): an admin-owned catalog row must never 500 the owner's GET.
+     */
+    amenities: z.array(AccommodationAmenityReadSchema).optional(),
+    /** Features linked through r_accommodation_feature (protected tier). Same overlay rationale. */
+    features: z.array(AccommodationFeatureReadSchema).optional(),
     /** SPEC-097 — Approximate location preview ("how a public visitor sees this"). */
     approximateLocation: ApproximateLocationSchema.optional()
 });

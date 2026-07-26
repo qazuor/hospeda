@@ -134,6 +134,45 @@ describe('transformAccommodationEdit', () => {
         expect(result.amenityIds).toEqual(['am-1', 'am-2']);
         expect(result.featureIds).toEqual(['ft-1']);
     });
+
+    it('should handle the catalog-projection shape the protected getById returns (HOS-321)', () => {
+        // `GET /api/v1/protected/accommodations/:id` — the endpoint the host
+        // editor loads its baseline from — emits catalog rows shaped by
+        // `AmenityProtectedSchema` / `FeatureProtectedSchema`, which key the
+        // row by `id` (NOT `amenityId`, and with no nested `amenity` object).
+        // Before HOS-321 this shape produced empty selections, so every saved
+        // amenity/feature rendered unchecked and the next save wiped them.
+        const raw = {
+            id: 'a4',
+            amenities: [
+                { id: 'am-1', slug: 'wifi' },
+                { id: 'am-2', slug: 'pool' }
+            ],
+            features: [{ id: 'ft-1', slug: 'parking' }]
+        };
+
+        const result = transformAccommodationEdit({ item: raw });
+
+        expect(result.amenityIds).toEqual(['am-1', 'am-2']);
+        expect(result.featureIds).toEqual(['ft-1']);
+    });
+
+    it('prefers the junction key over a top-level id when a row carries both (HOS-321)', () => {
+        // The `entry.id` fallback is appended LAST on purpose. A junction row
+        // carrying its own `id` alongside `amenityId` must still resolve to the
+        // catalog id — resolving to the junction-row id would produce a
+        // well-formed but wrong selection that the exact-set sync then writes.
+        const raw = {
+            id: 'a5',
+            amenities: [{ id: 'junction-row-1', amenityId: 'am-1' }],
+            features: [{ id: 'junction-row-2', feature: { id: 'ft-1' } }]
+        };
+
+        const result = transformAccommodationEdit({ item: raw });
+
+        expect(result.amenityIds).toEqual(['am-1']);
+        expect(result.featureIds).toEqual(['ft-1']);
+    });
 });
 
 // ---------------------------------------------------------------------------
