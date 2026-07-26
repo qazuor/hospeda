@@ -17,6 +17,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
+import { isEntitlementGrantingStatus } from '@repo/billing';
 import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
@@ -133,6 +134,54 @@ export function buildTrialUpgradeUrl(input: {
 }
 
 /**
+ * Precedence used to pick ONE live subscription when a customer holds several.
+ *
+ * Lower wins. `comp` first because a permanent grant can never expire, then
+ * `active` (paid up), then `trialing` (the only status whose trial can lapse).
+ * Statuses absent from this map rank last but stay selectable — membership is
+ * decided by `isEntitlementGrantingStatus`, never by this map, so a status added
+ * to that predicate tomorrow is still found instead of silently dropped.
+ *
+ * A `Map`, not an object literal: a plain `Record` lookup inherits
+ * `Object.prototype`, so a status named `toString` or `constructor` would return
+ * a Function instead of `undefined` and defeat the `?? ` fallback that guarantee
+ * rests on.
+ */
+const LIVE_STATUS_PRECEDENCE: ReadonlyMap<string, number> = new Map<string, number>([
+    [SubscriptionStatusEnum.COMP, 0],
+    [SubscriptionStatusEnum.ACTIVE, 1],
+    [SubscriptionStatusEnum.TRIALING, 2]
+]);
+
+/**
+ * Format a raw stored timestamp as an ISO string, or `null` when it is absent or
+ * unparseable.
+ *
+ * Exists because `new Date(NaN).toISOString()` THROWS: building a response
+ * inline from a corrupt `trial_start` / `trial_end` would raise a RangeError
+ * that {@link TrialService.getTrialStatus}'s own catch converts into the "no
+ * trial" defaults — silently dropping the paywall the surrounding code just
+ * decided to apply.
+ *
+ * Total by construction: anything that is not a string, number or `Date` returns
+ * `null` rather than reaching the `Date` constructor, which itself throws on a
+ * `Symbol` or `BigInt`.
+ *
+ * @param value - Raw value read off a billing subscription row.
+ * @returns The ISO-8601 string, or `null` if there is no usable date.
+ */
+function toIsoOrNull(value: unknown): string | null {
+    if (typeof value !== 'string' && typeof value !== 'number' && !(value instanceof Date)) {
+        return null;
+    }
+    if (value === '') {
+        return null;
+    }
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+/**
  * Result of a reconciliation run for a single customer.
  */
 export interface ReconcileResult {
@@ -163,11 +212,29 @@ export class TrialService {
     constructor(private readonly billing: QZPayBilling | null) {}
 
     /**
-     * Get trial status for a customer
-     * Returns information about current trial state
+     * Get trial status for a customer.
      *
-     * @param customerId - Billing customer ID
-     * @returns Trial status information
+     * Backs `trialMiddleware`, which is mounted globally and answers every
+     * non-GET/HEAD request with HTTP 402 when `isExpired` is true — so this
+     * result is a paywall decision, not just display data.
+     *
+     * Resolution order (HOS-285):
+     * 1. The customer's LIVE subscription — `active | trialing | comp` per the
+     *    shared `isEntitlementGrantingStatus` predicate, and when several are
+     *    live, the one that wins {@link LIVE_STATUS_PRECEDENCE}.
+     *    - `comp` (SPEC-262) short-circuits to `isOnTrial: false`,
+     *      `isExpired: false`, `daysRemaining: 0` and NULL trial timestamps: a
+     *      complimentary grant is permanent, it neither trials nor expires, even
+     *      when the row still carries the `trialEnd` it had before being comped.
+     *    - `trialing` is the only status whose trial can expire (HOS-171: a
+     *      converted card-first row keeps its `trialEnd` while `active`).
+     * 2. Only when there is NO live subscription, the most recent historical
+     *    canceled trial, reported as expired **iff** its `trialEnd` has actually
+     *    elapsed — or if the stored date is corrupt, which fails closed.
+     *
+     * @param input - Receives the billing customer ID.
+     * @returns Trial status information. Never throws: on error it returns the
+     *   safe "no trial" defaults so a billing outage cannot paywall the site.
      */
     async getTrialStatus(input: { customerId: string }): Promise<TrialStatus> {
         if (!this.billing) {
@@ -200,24 +267,104 @@ export class TrialService {
                 };
             }
 
-            // Find active or trial subscription
-            const activeSubscription = subscriptions.find(
-                (sub) => sub.status === 'trialing' || sub.status === 'active'
-            );
+            // Find the customer's LIVE subscription (HOS-285).
+            //
+            // This used to be a hand-rolled `trialing || active`, which omitted
+            // `'comp'` (SPEC-262) and therefore contradicted the entitlement
+            // middleware running immediately before it in the same chain
+            // (utils/create-app.ts mounts entitlementMiddleware, then
+            // trialMiddleware): a comped host resolved full entitlements there and
+            // was then answered 402 here on every write.
+            // `isEntitlementGrantingStatus` is the shared definition of "which
+            // statuses are live right now", so that divergence cannot come back.
+            //
+            // DELIBERATELY NOT domain-filtered, unlike `entitlement.ts` and
+            // `start-paid.ts`, which AND this predicate with
+            // `isAccommodationSubscription` (SPEC-239): `trialMiddleware` is global
+            // and paywalls writes of EVERY domain, so scoping the lookup to
+            // accommodation subs would start answering a commerce owner's commerce
+            // writes with a 402 about an accommodation trial. Known consequence: a
+            // live commerce sub can mask an elapsed accommodation trial — and this
+            // change EXTENDS that hole to `comp`, since a comp row could not be
+            // selected at all before. Narrowing it needs per-domain trial state, not a
+            // one-line predicate change (HOS-337).
+            //
+            // Second consequence of the ordering below: a customer holding a live
+            // commerce `active` sub AND a genuine accommodation trial now
+            // deterministically resolves the commerce row, so the trial countdown
+            // disappears from the account/pricing surfaces. Deliberate — the paywall
+            // verdict matters more than the banner — but it is a display regression
+            // for that combination.
+            //
+            // Membership comes from the shared predicate; the precedence map only
+            // ORDERS what it already accepted. A customer can legitimately hold
+            // several live rows — an accommodation sub coexists with a commerce one by
+            // design (SPEC-239), and `reactivation-supersession-complete` has a
+            // `'cancel-did-not-take'` outcome where the superseded `trialing` row
+            // survives while its replacement is already `active` — and with a bare
+            // `find` the verdict would depend on the order `getByCustomerId` happens to
+            // return, which has no documented contract. A stale elapsed `trialing` row winning
+            // over a `comp` row is the original HOS-285 symptom, reached through row
+            // order instead of a missing status.
+            const activeSubscription = subscriptions
+                .filter((sub) => isEntitlementGrantingStatus(sub.status))
+                .sort(
+                    (a, b) =>
+                        (LIVE_STATUS_PRECEDENCE.get(a.status as string) ??
+                            Number.MAX_SAFE_INTEGER) -
+                        (LIVE_STATUS_PRECEDENCE.get(b.status as string) ?? Number.MAX_SAFE_INTEGER)
+                )[0];
 
             if (!activeSubscription) {
-                // No active/trialing subscription — check whether there is a historical
-                // canceled/ended subscription with a trial_end set. If found, surface the
-                // trial as expired rather than returning the "never had a trial" defaults.
+                // No LIVE subscription (active | trialing | comp) — check whether there
+                // is a historical canceled subscription with a trial_end set. If found,
+                // surface the trial as expired rather than returning the "never had a
+                // trial" defaults.
                 // Note: a trial that converted to a paid plan (trialing → canceled + new active)
                 // won't reach this branch because the new active sub was found above.
+                // Neither does a comped customer, since `comp` is live (HOS-285) — which
+                // is the point of the guard: this branch reads a subscription that is by
+                // definition NOT the customer's current state, so it must only be
+                // consulted when there is no current state to read.
+                //
+                // KNOWN, DELIBERATELY UNFIXED HERE — see HOS-337. This filter matches
+                // only the 1-L `'canceled'` that qzpay-core writes, while every DIRECT
+                // Hospeda writer stores the 2-L `'cancelled'`, and it ignores `expired`
+                // entirely. The branch is NOT dead (the HOS-285 prod lockout came
+                // through it) but it is blind to the dominant cancellation paths, so
+                // for most cancelled customers the paywall never fires. Closing that
+                // activates the gate for a large population and needs its own scoping:
+                // owner-category only (tourist plans carry a 14-day trial too),
+                // `trial_converted` as the conversion signal (`current_period_start` is
+                // insert-only, so period arithmetic cannot detect a charge), the
+                // dunning/pause interaction, and a staging smoke.
+                //
+                // Note one behaviour change this fix DOES make here: with the date
+                // comparison below, a subscription hard-cancelled mid-trial keeps write
+                // access until its original `trialEnd` instead of losing it at once.
+                // Whether an admin revocation should be immediate is part of HOS-337.
                 const historicalTrialSub = subscriptions
                     .filter((sub) => sub.status === 'canceled' && sub.trialEnd != null)
                     .sort((a, b) => {
-                        // Most-recent first: use trialEnd as the ordering key.
-                        const aTime = a.trialEnd ? new Date(a.trialEnd).getTime() : 0;
-                        const bTime = b.trialEnd ? new Date(b.trialEnd).getTime() : 0;
-                        return bTime - aTime;
+                        // Most-recent first: use trialEnd as the ordering key. An
+                        // unparseable value sorts FIRST (not as NaN, which would make
+                        // the comparator inconsistent and the winner engine-defined):
+                        // now that the verdict below is date-derived, the corrupt row
+                        // has to win so the branch stays fail-closed.
+                        const toTime = (value: unknown): number => {
+                            const iso = toIsoOrNull(value);
+                            return iso === null
+                                ? Number.POSITIVE_INFINITY
+                                : new Date(iso).getTime();
+                        };
+                        const aTime = toTime(a.trialEnd);
+                        const bTime = toTime(b.trialEnd);
+                        // Compared, not subtracted: two corrupt rows would make
+                        // `Infinity - Infinity` NaN and the order arbitrary again.
+                        if (aTime === bTime) {
+                            return 0;
+                        }
+                        return bTime > aTime ? 1 : -1;
                     })[0];
 
                 if (!historicalTrialSub) {
@@ -243,15 +390,25 @@ export class TrialService {
                     (historicalTrialSub.metadata as Record<string, unknown> | undefined)
                         ?.intendedInterval
                 );
+                // HOS-285: compare the date. This branch used to report
+                // `isExpired: true` UNCONDITIONALLY, so a canceled subscription whose
+                // trialEnd is still in the FUTURE paywalled every write for a window
+                // that had not elapsed. The live branch below has always done this
+                // comparison; it was simply missing here.
+                //
+                // Fails CLOSED on a corrupt date: the filter above guarantees
+                // `trialEnd != null`, so an unusable value here means the stored data
+                // is broken, and every relational comparison against an `Invalid Date`
+                // is `false` — which would silently drop the paywall. The timestamps go
+                // through {@link toIsoOrNull} for the reason documented there.
+                const historicalTrialEndIso = toIsoOrNull(historicalTrialSub.trialEnd);
+                const isHistoricalTrialExpired =
+                    historicalTrialEndIso === null || new Date() > new Date(historicalTrialEndIso);
                 return {
                     isOnTrial: false,
-                    isExpired: true,
-                    startedAt: historicalTrialSub.trialStart
-                        ? new Date(historicalTrialSub.trialStart).toISOString()
-                        : null,
-                    expiresAt: historicalTrialSub.trialEnd
-                        ? new Date(historicalTrialSub.trialEnd).toISOString()
-                        : null,
+                    isExpired: isHistoricalTrialExpired,
+                    startedAt: toIsoOrNull(historicalTrialSub.trialStart),
+                    expiresAt: toIsoOrNull(historicalTrialSub.trialEnd),
                     daysRemaining: 0,
                     planSlug: historicalPlan?.name || null,
                     intendedInterval: historicalIntendedInterval
@@ -260,6 +417,27 @@ export class TrialService {
 
             // Get plan information
             const plan = await this.billing.plans.get(activeSubscription.planId);
+
+            // HOS-285: a complimentary subscription is never on trial and never
+            // expires — it is a permanent grant with no end date (SPEC-262). Short-
+            // circuit explicitly rather than letting it fall through the trial-window
+            // arithmetic below: a row flipped from `trialing` to `comp` KEEPS its
+            // `trialEnd`, and surfacing a countdown or an expiry date for a permanent
+            // grant is wrong on every surface that reads this.
+            if ((activeSubscription.status as string) === SubscriptionStatusEnum.COMP) {
+                return {
+                    isOnTrial: false,
+                    isExpired: false,
+                    startedAt: null,
+                    expiresAt: null,
+                    daysRemaining: 0,
+                    planSlug: plan?.name || null,
+                    intendedInterval: resolveIntendedInterval(
+                        (activeSubscription.metadata as Record<string, unknown> | undefined)
+                            ?.intendedInterval
+                    )
+                };
+            }
 
             const isOnTrial = activeSubscription.status === 'trialing';
             const now = new Date();
@@ -274,9 +452,16 @@ export class TrialService {
             // `trialing` can have an expired trial.
             const isExpired = isOnTrial && trialEnd ? now > trialEnd : false;
 
-            // Calculate days remaining
-            const daysRemaining =
+            // Calculate days remaining. Clamped to a finite number: with a corrupt
+            // `trial_end`, `calculateTrialDaysRemaining` returns `Math.max(0, NaN)` =
+            // NaN. On staging the inline `.toISOString()` below threw first and the
+            // catch swallowed it; formatting defensively removed that accidental
+            // safety net, and `daysRemaining: z.number()` on
+            // `GET /billing/trial/status` REJECTS NaN — a 500 in dev/test, and a
+            // silent `null` on the wire in prod.
+            const rawDaysRemaining =
                 trialEnd && !isExpired ? calculateTrialDaysRemaining({ trialEnd, now }) : 0;
+            const daysRemaining = Number.isFinite(rawDaysRemaining) ? rawDaysRemaining : 0;
 
             // HOS-115 §5 nudge delivery path 2 (see comment above the historical
             // branch). Read regardless of status — harmless when the sub already
@@ -290,10 +475,15 @@ export class TrialService {
             return {
                 isOnTrial,
                 isExpired,
-                startedAt: activeSubscription.trialStart
-                    ? new Date(activeSubscription.trialStart).toISOString()
-                    : null,
-                expiresAt: trialEnd ? trialEnd.toISOString() : null,
+                // Same defensive formatting as the historical branch. The case it
+                // protects is a corrupt `trial_start` alongside a VALID, elapsed
+                // `trial_end`: staging's inline `.toISOString()` threw a RangeError
+                // there, the catch below answered with the "no trial" defaults, and the
+                // 402 this branch had just decided on was silently dropped. (A corrupt
+                // `trial_end` still resolves `isExpired: false` above — that branch is
+                // fail-open, unlike the historical one. Tracked in HOS-337.)
+                startedAt: toIsoOrNull(activeSubscription.trialStart),
+                expiresAt: toIsoOrNull(activeSubscription.trialEnd),
                 daysRemaining,
                 planSlug: plan?.name || null,
                 intendedInterval
