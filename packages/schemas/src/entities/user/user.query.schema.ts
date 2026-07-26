@@ -7,7 +7,7 @@ import {
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { RoleEnumSchema } from '../../enums/index.js';
 import { applyOpenApiMetadata, type OpenApiSchemaMetadata } from '../../utils/openapi.utils.js';
-import { UserSchema } from './user.schema.js';
+import { UserReadSchema } from './user.schema.js';
 
 /**
  * User Query Schemas - Standardized Implementation
@@ -81,8 +81,12 @@ export const UserSearchSchema = BaseSearchSchema.extend({
 
 /**
  * Standard user search result schema
+ *
+ * HOS-302: read-direction, so it wraps `UserReadSchema`. It has no consumer
+ * today, but leaving a result schema on the strict base is exactly how this
+ * bug class comes back.
  */
-export const UserSearchResultSchema = PaginationResultSchema(UserSchema);
+export const UserSearchResultSchema = PaginationResultSchema(UserReadSchema);
 
 // ============================================================================
 // HTTP-COMPATIBLE SCHEMAS
@@ -228,8 +232,13 @@ export const UserSearchSchemaWithMetadata = applyOpenApiMetadata(
 
 /**
  * Schema for user list items (public-safe fields)
+ *
+ * HOS-302: derives from `UserReadSchema`, NOT `UserSchema`. The admin
+ * entity-list client parses this shape with a fail-closed `safeParse` that
+ * throws, so one persisted name outside the write bounds takes the whole
+ * users page down.
  */
-export const UserListItemSchema = UserSchema.pick({
+export const UserListItemSchema = UserReadSchema.pick({
     id: true,
     slug: true,
     email: true,
@@ -249,8 +258,11 @@ export const UserListItemSchema = UserSchema.pick({
 
 /**
  * Schema for user summary (essential fields only)
+ *
+ * HOS-302: read-direction, so it derives from `UserReadSchema` like the list
+ * item above.
  */
-export const UserSummarySchema = UserSchema.pick({
+export const UserSummarySchema = UserReadSchema.pick({
     id: true,
     displayName: true,
     firstName: true,

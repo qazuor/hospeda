@@ -12,15 +12,21 @@
  * the parent always sends the complete media state on save).
  */
 
+import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { getGalleryCap, type Image } from '@repo/schemas';
 import { type JSX, useCallback, useRef, useState } from 'react';
 import { protectedMediaApi } from '@/lib/api/endpoints-protected';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { getApiUrl } from '@/lib/env';
 import { webLogger } from '@/lib/logger';
+import { resolveUploadTimeoutMs } from '@/lib/media/upload-entity';
 
 /** Translator function shape (matches the editor's `createTranslations().t`). */
-type Translate = (key: string, fallback?: string) => string;
+type Translate = (
+    key: string,
+    fallback?: string,
+    params?: Record<string, string | number>
+) => string;
 
 interface MediaFieldProps {
     /** Vertical of the listing (drives the upload entityType + gallery cap). */
@@ -43,7 +49,21 @@ interface MediaFieldProps {
 }
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_SIZE_BYTES = mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB);
+
+/**
+ * Thrown when the upload exceeds its client-side budget.
+ *
+ * A distinct type because the browser's own abort error carries a
+ * vendor-specific English message, and the catch path renders `err.message`
+ * directly.
+ */
+class UploadTimeoutError extends Error {
+    constructor() {
+        super('upload-timeout');
+        this.name = 'UploadTimeoutError';
+    }
+}
 
 /**
  * Upload a single image to the protected entity-upload endpoint.
@@ -67,11 +87,41 @@ async function uploadEntityImage({
     formData.append('entityId', listingId);
     formData.append('role', role);
 
-    const response = await fetch(`${getApiUrl()}/api/v1/protected/media/upload-entity`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
-    });
+    // Bounded like the accommodation editor's XHR helper (BETA-134). Without a
+    // signal this `fetch` waits forever, so a stalled connection leaves the
+    // owner on a spinner with no error and no way out but a reload — a risk
+    // that grew with the raised size cap, since a bigger photo spends longer on
+    // the wire. Uses the same size-scaled budget so both editors behave alike.
+    //
+    // `AbortController` + `setTimeout` rather than `AbortSignal.timeout`: the
+    // latter needs Safari 16, and nothing else this app ships to a browser
+    // requires anything that recent. On an older iOS it would not degrade — the
+    // property access throws before `fetch` runs, breaking commerce uploads
+    // outright. This pairing also matches how the rest of the codebase cancels
+    // requests.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), resolveUploadTimeoutMs(file.size));
+
+    let response: Response;
+    try {
+        response = await fetch(`${getApiUrl()}/api/v1/protected/media/upload-entity`, {
+            method: 'POST',
+            body: formData,
+            credentials: 'include',
+            signal: controller.signal
+        });
+    } catch (error) {
+        // An abort surfaces as a vendor-specific English DOMException whose
+        // `message` would otherwise be rendered verbatim in a Spanish UI, since
+        // `DOMException` satisfies `instanceof Error`. Re-throw a typed marker
+        // the caller can translate.
+        if (controller.signal.aborted) {
+            throw new UploadTimeoutError();
+        }
+        throw error;
+    } finally {
+        clearTimeout(timer);
+    }
 
     const json = (await response.json().catch(() => null)) as {
         readonly success?: boolean;
@@ -83,6 +133,30 @@ async function uploadEntityImage({
         throw new Error(json?.error?.message ?? 'Upload failed');
     }
     return json.data;
+}
+
+/**
+ * Turn an upload failure into a message worth showing.
+ *
+ * A timeout gets its own localized sentence: the browser's abort error carries
+ * vendor-specific English text ("signal timed out"), and because `DOMException`
+ * satisfies `instanceof Error`, a naive `err.message` would render it verbatim
+ * in a Spanish UI.
+ *
+ * @param err - The thrown value
+ * @param t - Active translator
+ * @returns A user-facing message
+ */
+function describeUploadError(err: unknown, t: Translate): string {
+    if (err instanceof UploadTimeoutError) {
+        return t(
+            'commerce.owner.editor.media.uploadTimeout',
+            'La subida tardó demasiado. Probá de nuevo.'
+        );
+    }
+    return err instanceof Error
+        ? err.message
+        : t('commerce.owner.editor.media.uploadFailed', 'Error al subir la imagen');
 }
 
 /**
@@ -117,7 +191,11 @@ export function MediaField({
                 );
             }
             if (file.size > MAX_SIZE_BYTES) {
-                return t('commerce.owner.editor.media.tooLarge', 'El archivo no puede superar 5MB');
+                return t(
+                    'commerce.owner.editor.media.tooLarge',
+                    'El archivo no puede superar {{maxSize}}MB',
+                    { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
+                );
             }
             return null;
         },
@@ -146,11 +224,7 @@ export function MediaField({
                 });
                 onChange({ featuredImage: uploaded, gallery });
             } catch (err) {
-                setError(
-                    err instanceof Error
-                        ? err.message
-                        : t('commerce.owner.editor.media.uploadFailed', 'Error al subir la imagen')
-                );
+                setError(describeUploadError(err, t));
             } finally {
                 setIsUploading(false);
                 if (featuredInputRef.current) {
@@ -205,11 +279,7 @@ export function MediaField({
                 });
                 onChange({ featuredImage, gallery: [...gallery, uploaded] });
             } catch (err) {
-                setError(
-                    err instanceof Error
-                        ? err.message
-                        : t('commerce.owner.editor.media.uploadFailed', 'Error al subir la imagen')
-                );
+                setError(describeUploadError(err, t));
             } finally {
                 setIsUploading(false);
                 if (galleryInputRef.current) {
@@ -333,7 +403,11 @@ export function MediaField({
                     onChange={handleGallerySelect}
                 />
                 <span className={classes.mediaHint}>
-                    {t('commerce.owner.editor.media.uploadHint', 'JPG, PNG o WebP — máx. 5MB')}
+                    {t(
+                        'commerce.owner.editor.media.uploadHint',
+                        'JPG, PNG o WebP — máx. {{maxSize}}MB',
+                        { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
+                    )}
                 </span>
             </div>
 

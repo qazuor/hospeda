@@ -6,7 +6,7 @@ import {
 } from '../../api/http/base-http.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { applyOpenApiMetadata, type OpenApiSchemaMetadata } from '../../utils/openapi.utils.js';
-import { EventLocationSchema } from './eventLocation.schema.js';
+import { EventLocationReadSchema } from './eventLocation.schema.js';
 
 /**
  * EventLocation Query Schemas
@@ -122,8 +122,13 @@ export type EventLocationSearchInput = z.infer<typeof EventLocationSearchSchema>
 
 /**
  * EventLocation list item schema - contains essential fields for list display
+ *
+ * HOS-300: derives from `EventLocationReadSchema`, NOT from `EventLocationSchema`.
+ * This schema is parsed client-side by the admin entity-list API layer, which is
+ * fail-closed (it throws on a parse failure), so a persisted street longer than
+ * the write-side maximum would break the whole Event Locations page.
  */
-export const EventLocationListItemSchema = EventLocationSchema.pick({
+export const EventLocationListItemSchema = EventLocationReadSchema.pick({
     id: true,
     placeName: true,
     street: true,
@@ -167,8 +172,11 @@ export type EventLocationSearchResponse = z.infer<typeof EventLocationSearchResp
 
 /**
  * EventLocation summary schema for quick display
+ *
+ * HOS-300: read path — derives from `EventLocationReadSchema` so persisted
+ * postal-address values longer than the write maxima never fail the parse.
  */
-export const EventLocationSummarySchema = EventLocationSchema.pick({
+export const EventLocationSummarySchema = EventLocationReadSchema.pick({
     id: true,
     placeName: true,
     street: true,

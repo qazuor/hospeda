@@ -4,7 +4,7 @@ import { StrongPasswordSchema } from '../../common/password.schema.js';
 import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
 import { ModerationStatusEnumSchema } from '../../enums/moderation-status.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
-import { UserSchema } from './user.schema.js';
+import { UserReadSchema, UserSchema } from './user.schema.js';
 
 /**
  * User CRUD Schemas
@@ -15,6 +15,11 @@ import { UserSchema } from './user.schema.js';
  * - Patch (input)
  * - Delete (input/output)
  * - Restore (input/output)
+ *
+ * HOS-302 direction rule: `*InputSchema` derives from the strict `UserSchema`
+ * (it gates persistence and MUST keep its bounds); `*OutputSchema` derives from
+ * `UserReadSchema`, because an output schema describes a row that already exists
+ * — including rows Better Auth wrote without ever passing the write bounds.
  */
 
 // ============================================================================
@@ -39,7 +44,7 @@ export const UserCreateInputSchema = UserSchema.omit({
  * Schema for user creation response
  * Returns the complete user object
  */
-export const UserCreateOutputSchema = UserSchema;
+export const UserCreateOutputSchema = UserReadSchema;
 
 // ============================================================================
 // UPDATE SCHEMAS
@@ -104,7 +109,7 @@ export const UserPatchInputSchema = UserUpdateInputSchema;
  * Schema for user update response
  * Returns the complete updated user object
  */
-export const UserUpdateOutputSchema = UserSchema;
+export const UserUpdateOutputSchema = UserReadSchema;
 
 // ============================================================================
 // HTTP-LAYER FIELD OVERRIDES
@@ -185,7 +190,7 @@ export const UserRestoreInputSchema = z.object({
  * Schema for user restoration response
  * Returns the complete restored user object
  */
-export const UserRestoreOutputSchema = UserSchema;
+export const UserRestoreOutputSchema = UserReadSchema;
 
 // ============================================================================
 // ACTIVATION/DEACTIVATION SCHEMAS
@@ -218,7 +223,7 @@ export const UserDeactivateInputSchema = z.object({
  * Schema for user activation/deactivation response
  * Returns the updated user object
  */
-export const UserActivationOutputSchema = UserSchema;
+export const UserActivationOutputSchema = UserReadSchema;
 
 // ============================================================================
 // PASSWORD SCHEMAS
@@ -296,7 +301,7 @@ export const UserUpdateAvatarInputSchema = z.object({
  * Output schema for the updateAvatar operation.
  * Returns the complete updated user.
  */
-export const UserUpdateAvatarOutputSchema = UserSchema;
+export const UserUpdateAvatarOutputSchema = UserReadSchema;
 
 export type UserUpdateAvatarInput = z.infer<typeof UserUpdateAvatarInputSchema>;
 export type UserUpdateAvatarOutput = z.infer<typeof UserUpdateAvatarOutputSchema>;
@@ -352,7 +357,7 @@ export const UserSetPermissionsInputSchema = z.object({
  * Returns the updated user
  */
 export const UserRolePermissionOutputSchema = z.object({
-    user: UserSchema
+    user: UserReadSchema
 });
 
 // ============================================================================

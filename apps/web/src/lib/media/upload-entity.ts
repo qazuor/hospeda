@@ -10,19 +10,76 @@
 import { getApiUrl } from '@/lib/env';
 
 /**
- * Client-side upload timeout (ms).
+ * Server-side budget (ms) the client must always allow for, on top of the
+ * transfer itself.
  *
- * BETA-134: the API's own Cloudinary upload has a single bounded timeout
- * (`UPLOAD_TIMEOUT_MS` in `apps/api/src/services/media/upload-helpers.ts`,
- * currently 25s). Without a matching client-side ceiling, this XHR would
- * otherwise wait forever for a response — and if an upstream reverse proxy
- * kills the connection first, the client only learns about it as a generic,
- * unhelpful `JSON.parse` failure. This value MUST exceed the server's own
- * upload timeout plus the time it takes to transfer the file itself, so the
- * client never times out before the server can. Both values are pending
- * calibration during staging smoke.
+ * Mirrors the API's own single bounded Cloudinary timeout (`UPLOAD_TIMEOUT_MS`
+ * in `apps/api/src/services/media/upload-helpers.ts`). The client must never
+ * time out before the server can, or the user gets a bare abort instead of the
+ * server's typed error.
  */
-const UPLOAD_TIMEOUT_MS = 40_000;
+const SERVER_BUDGET_MS = 25_000;
+
+/**
+ * Uplink assumed when budgeting transfer time, in bytes per second.
+ *
+ * 1 Mbps — a deliberately pessimistic floor for Argentine mobile data, which is
+ * the connection the owner uploading a phone photo is actually on. Budgeting
+ * for a good connection is what makes a slow one fail: at the previous flat 40s
+ * ceiling only ~15s was left for the transfer, which needs ~5 Mbps sustained
+ * UPLINK to clear. That is a timeout on any ordinary cell connection.
+ *
+ * Note what this does NOT promise. Above roughly 7.75 MB the scaling is
+ * truncated by {@link MAX_UPLOAD_TIMEOUT_MS}, so a file at the 10 MB cap gets
+ * ~6s of the server's 25s budget rather than the full amount. That is not a
+ * flaw in the clamp: such an upload needs ~109s end to end and dies at the
+ * proxy anyway. It means a full-size photo over ~1 Mbps mobile simply cannot
+ * complete, and raising the cap does not change that — only shrinking the file
+ * before it leaves the browser does.
+ */
+const ASSUMED_UPLINK_BYTES_PER_SEC = 125_000;
+
+/**
+ * Floor for the client timeout (ms), so a small file still gets a sane ceiling.
+ */
+const MIN_UPLOAD_TIMEOUT_MS = 40_000;
+
+/**
+ * Ceiling for the client timeout (ms).
+ *
+ * The API sits behind Cloudflare, which abandons an origin response at 100s and
+ * returns its own HTML error page. Waiting past that point gains nothing and
+ * costs the user the clearest error available: the HTML lands in this module's
+ * `JSON.parse` branch and degrades into "invalid response" — exactly the
+ * BETA-134 symptom the timeout exists to prevent. Stopping first yields a
+ * typed, honest timeout instead.
+ */
+const MAX_UPLOAD_TIMEOUT_MS = 90_000;
+
+/**
+ * Compute the client-side XHR timeout for a given payload.
+ *
+ * BETA-134: without a client ceiling this XHR would wait forever, and if an
+ * upstream reverse proxy killed the connection first the client would only
+ * learn about it as a generic `JSON.parse` failure. Scaling with the file
+ * rather than using one flat value keeps that protection without punishing the
+ * large uploads the raised cap now permits.
+ *
+ * @param fileSizeBytes - Size of the file being uploaded
+ * @returns The timeout in milliseconds
+ */
+export const resolveUploadTimeoutMs = (fileSizeBytes: number): number => {
+    // A non-finite size must not poison the arithmetic: `Math.max(n, NaN)` is
+    // NaN, and `xhr.timeout = NaN` coerces to 0 — meaning NO timeout. The guard
+    // fails safe (toward the floor) rather than silently deleting the very
+    // protection this function provides.
+    const bytes = Number.isFinite(fileSizeBytes) && fileSizeBytes > 0 ? fileSizeBytes : 0;
+    const transferMs = Math.ceil((bytes / ASSUMED_UPLINK_BYTES_PER_SEC) * 1000);
+    return Math.min(
+        MAX_UPLOAD_TIMEOUT_MS,
+        Math.max(MIN_UPLOAD_TIMEOUT_MS, SERVER_BUDGET_MS + transferMs)
+    );
+};
 
 /**
  * Upload a file to the protected media upload-entity endpoint via XHR.
@@ -63,7 +120,7 @@ export async function uploadEntityImage({
         // response, or a reverse proxy that kills the connection) surfaces a
         // clear, typed timeout error instead of leaving the caller waiting
         // forever or falling through to the generic parse-failure branch below.
-        xhr.timeout = UPLOAD_TIMEOUT_MS;
+        xhr.timeout = resolveUploadTimeoutMs(file.size);
 
         xhr.upload.addEventListener('progress', (e) => {
             if (e.lengthComputable && onProgress) {

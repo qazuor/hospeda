@@ -5,7 +5,7 @@
         "description": "Sorry, the page you are looking for does not exist or has been moved.",
         "message": "Sorry, the page you are looking for does not exist or has been moved.",
         "goHome": "Go to home",
-        "search": "Search",
+        "searchAccommodations": "Search accommodations",
         "reportBrokenLink": "Report broken link"
     },
     "500": {

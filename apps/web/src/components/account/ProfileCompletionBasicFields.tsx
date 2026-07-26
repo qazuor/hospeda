@@ -52,8 +52,16 @@ export interface ProfileCompletionBasicFieldsProps {
     readonly errors: FieldErrors;
     /** Whether the form is currently submitting (disables all inputs). */
     readonly submitting: boolean;
-    /** Translation function from the parent island. */
-    readonly t: (key: string, fallback: string) => string;
+    /**
+     * Translation function from the parent island.
+     *
+     * The `params` argument is part of the contract, not optional detail: this
+     * component forwards `t` to the avatar picker, whose size message
+     * interpolates `{{maxSize}}`. Typing it away here would still compile —
+     * TypeScript accepts a function that takes fewer arguments — and the raw
+     * placeholder would reach the user.
+     */
+    readonly t: (key: string, fallback: string, params?: Record<string, string | number>) => string;
     /** Handler for firstName changes (parent manages display-name sync). */
     readonly onFirstNameChange: (value: string) => void;
     /** Handler for lastName changes (parent manages display-name sync). */

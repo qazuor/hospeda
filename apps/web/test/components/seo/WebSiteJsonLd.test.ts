@@ -31,8 +31,9 @@ describe('WebSiteJsonLd.astro (SPEC-157 REQ-5)', () => {
             expect(src).toContain('readonly url: string');
         });
 
-        it('declares locale prop', () => {
-            expect(src).toContain('readonly locale: string');
+        // The `locale` prop existed only to build the SearchAction target URL.
+        it('no longer declares a locale prop (SearchAction removed)', () => {
+            expect(src).not.toContain('readonly locale: string');
         });
     });
 
@@ -44,21 +45,28 @@ describe('WebSiteJsonLd.astro (SPEC-157 REQ-5)', () => {
         it('uses WebSite @type', () => {
             expect(src).toContain("'@type': 'WebSite'");
         });
+    });
 
-        it('includes a potentialAction of type SearchAction', () => {
-            expect(src).toContain("'@type': 'SearchAction'");
+    // The global site-search feature was cut from the product: the `/busqueda/`
+    // page and the `GET /api/v1/public/search` endpoint behind it were deleted.
+    // The `WebSite` structured data (name + url) is still valid and stays; the
+    // sitelinks-searchbox `SearchAction` is gone, because advertising a search
+    // target that 404s is worse than advertising none.
+    describe('SearchAction removed (global search cut)', () => {
+        it('does not emit a potentialAction', () => {
+            expect(src).not.toContain('potentialAction');
         });
 
-        it('SearchAction target contains the literal {search_term_string} placeholder', () => {
-            expect(src).toContain('{search_term_string}');
+        it('does not emit a SearchAction @type', () => {
+            expect(src).not.toContain("'@type': 'SearchAction'");
         });
 
-        it('SearchAction includes query-input required name=search_term_string', () => {
-            expect(src).toContain('required name=search_term_string');
+        it('does not emit the {search_term_string} placeholder', () => {
+            expect(src).not.toContain('{search_term_string}');
         });
 
-        it('SearchAction target points to /busqueda/ search path', () => {
-            expect(src).toContain('busqueda');
+        it('does not reference the removed /busqueda/ path', () => {
+            expect(src).not.toContain('busqueda');
         });
     });
 

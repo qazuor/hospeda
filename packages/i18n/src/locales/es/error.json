@@ -5,7 +5,7 @@
         "description": "Lo sentimos, la página que buscas no existe o fue movida.",
         "message": "Lo sentimos, la página que buscas no existe o fue movida.",
         "goHome": "Volver al inicio",
-        "search": "Buscar",
+        "searchAccommodations": "Buscar alojamientos",
         "reportBrokenLink": "Reportar enlace roto"
     },
     "500": {

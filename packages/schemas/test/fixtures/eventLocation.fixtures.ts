@@ -87,7 +87,7 @@ export const createInvalidEventLocation = () => ({
     // Invalid coordinates
     coordinates: createInvalidCoordinates(),
     // Invalid string lengths
-    street: createTooLongString(100),
+    street: createTooLongString(160),
     number: createTooLongString(20),
     floor: createTooLongString(20),
     apartment: createTooLongString(20),
@@ -126,7 +126,7 @@ export const createEventLocationEdgeCases = () => [
     {
         ...createMinimalEventLocation(),
         slug: 'a'.repeat(100),
-        street: 'A'.repeat(50),
+        street: 'A'.repeat(150),
         number: '1'.repeat(10),
         floor: '1'.repeat(10),
         apartment: 'A'.repeat(10),
@@ -145,7 +145,7 @@ export const createEventLocationInvalidCases = () => [
     // Invalid string lengths - too long
     {
         ...createMinimalEventLocation(),
-        street: createTooLongString(60),
+        street: createTooLongString(160),
         number: createTooLongString(20),
         floor: createTooLongString(20),
         apartment: createTooLongString(20),

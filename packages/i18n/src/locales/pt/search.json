@@ -1,22 +1,8 @@
 {
-    "label": "Buscar",
-    "submit": "Buscar",
-    "loading": "Buscando...",
-    "searching": "Buscando…",
-    "resultsFor": "Resultados para \"{{query}}\"",
-    "popular": "Buscas populares",
-    "groups": {
-        "accommodations": "Acomodações",
-        "destinations": "Destinos",
-        "events": "Eventos",
-        "posts": "Publicações"
-    },
     "fewerAdults": "Menos adultos",
     "moreAdults": "Mais adultos",
     "fewerChildren": "Menos criancas",
     "moreChildren": "Mais criancas",
-    "title": "Busca",
-    "description": "Busque e encontre a hospedagem perfeita para a sua proxima viagem. Filtre por localizacao, preco e comodidades.",
     "heading": "Buscar Hospedagens",
     "subheading": "Encontre o lugar perfeito para a sua proxima aventura",
     "form": {

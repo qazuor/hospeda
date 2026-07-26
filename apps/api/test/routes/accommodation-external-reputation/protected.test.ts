@@ -23,7 +23,12 @@
  *   - 202 on async enqueue (SPEC-250 Phase 5)
  */
 
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    AccommodationExternalListingsResponseSchema,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -44,7 +49,8 @@ const MOCK_ACCOMMODATION = {
     id: ACCOMMODATION_ID,
     ownerId: OWNER_ID,
     deletedAt: null,
-    name: 'Test Hotel'
+    name: 'Test Hotel',
+    showExternalReputation: false
 };
 
 const MOCK_LISTING = {
@@ -75,7 +81,8 @@ const {
     mockRemove,
     mockSetMasterToggle,
     mockRefresh,
-    mockGetRefreshStatus
+    mockGetRefreshStatus,
+    mockReputationFindAll
 } = vi.hoisted(() => ({
     mockFindById: vi.fn(),
     mockFindByAccommodation: vi.fn(),
@@ -84,7 +91,8 @@ const {
     mockRemove: vi.fn(),
     mockSetMasterToggle: vi.fn(),
     mockRefresh: vi.fn(),
-    mockGetRefreshStatus: vi.fn()
+    mockGetRefreshStatus: vi.fn(),
+    mockReputationFindAll: vi.fn()
 }));
 
 // Mock AccommodationExternalListingModel + AccommodationExternalReputationModel
@@ -103,7 +111,7 @@ vi.mock('@repo/db', async (importActual) => {
         }),
         AccommodationExternalReputationModel: vi.fn().mockImplementation(function () {
             return {
-                findAll: vi.fn().mockResolvedValue({ items: [] }),
+                findAll: mockReputationFindAll,
                 findForDisplay: vi.fn().mockResolvedValue([]),
                 upsertReputation: vi.fn()
             };
@@ -293,6 +301,7 @@ const MOCK_STATUS_RESULT = {
 beforeEach(() => {
     mockFindById.mockResolvedValue(MOCK_ACCOMMODATION);
     mockFindByAccommodation.mockResolvedValue([MOCK_LISTING]);
+    mockReputationFindAll.mockResolvedValue({ items: [], total: 0 });
     mockAdd.mockResolvedValue({ data: MOCK_LISTING });
     mockUpdate.mockResolvedValue({ data: MOCK_LISTING });
     mockRemove.mockResolvedValue({ data: true });
@@ -313,15 +322,81 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('GET /:id/external-listings', () => {
-    it('returns 200 with listings array for the owner', async () => {
+    it('returns 200 with the listings for the owner', async () => {
         const app = buildApp(ownerActor, protectedListExternalListingsRoute);
         const res = await app.request(`/${ACCOMMODATION_ID}/external-listings`);
         expect(res.status).toBe(200);
         const body = await res.json();
         expect(body.success).toBe(true);
-        expect(Array.isArray(body.data)).toBe(true);
-        expect(body.data).toHaveLength(1);
-        expect(body.data[0].id).toBe(LISTING_ID);
+        expect(body.data.listings).toHaveLength(1);
+        expect(body.data.listings[0].id).toBe(LISTING_ID);
+    });
+
+    it('returns the shape the editor actually reads (HOS-290)', async () => {
+        // The route used to return a BARE ARRAY while the editor read
+        // `body.data.reputation.showExternalReputation` off it — a TypeError on
+        // every mount, swallowed by the component's try/catch, so the whole
+        // "Reputación externa" section showed nothing but a red banner in prod.
+        // Asserting against the SHARED schema is the point: this can only pass
+        // if the server and the client agree on one definition.
+        const app = buildApp(ownerActor, protectedListExternalListingsRoute);
+        const res = await app.request(`/${ACCOMMODATION_ID}/external-listings`);
+        const body = await res.json();
+
+        const parsed = AccommodationExternalListingsResponseSchema.safeParse(body.data);
+        expect(parsed.success).toBe(true);
+    });
+
+    it('reports the master toggle from the accommodation row', async () => {
+        mockFindById.mockResolvedValue({ ...MOCK_ACCOMMODATION, showExternalReputation: true });
+        const app = buildApp(ownerActor, protectedListExternalListingsRoute);
+        const res = await app.request(`/${ACCOMMODATION_ID}/external-listings`);
+        const body = await res.json();
+
+        // Lives on `accommodations`, not on a listing row — and there is no
+        // other GET that exposes it, which is why the list endpoint carries it.
+        expect(body.data.reputation.showExternalReputation).toBe(true);
+    });
+
+    it('reports the MOST RECENT aggregate fetch across platforms', async () => {
+        // One reputation row per (accommodation, platform); the editor shows a
+        // single "last updated", so the newest wins.
+        mockReputationFindAll.mockResolvedValue({
+            items: [
+                { aggregateFetchedAt: new Date('2026-01-01T00:00:00.000Z') },
+                { aggregateFetchedAt: new Date('2026-06-15T10:30:00.000Z') },
+                { aggregateFetchedAt: null }
+            ],
+            total: 3
+        });
+
+        const app = buildApp(ownerActor, protectedListExternalListingsRoute);
+        const res = await app.request(`/${ACCOMMODATION_ID}/external-listings`);
+        const body = await res.json();
+
+        expect(body.data.reputation.aggregateFetchedAt).toBe('2026-06-15T10:30:00.000Z');
+    });
+
+    it('reads the reputation rows with an EXPLICIT page size', async () => {
+        // `BaseModelImpl.findAll` always paginates and silently defaults to 20.
+        // Only four platforms exist today so nothing truncates, but the guard is
+        // the reason this is safe — assert it so it cannot be dropped silently.
+        const app = buildApp(ownerActor, protectedListExternalListingsRoute);
+        await app.request(`/${ACCOMMODATION_ID}/external-listings`);
+
+        // `expect.any(Number)` would pass with the very default (20) the guard
+        // exists to avoid — assert it clears the platform count instead.
+        const options = mockReputationFindAll.mock.calls[0]?.[1] as { pageSize: number };
+        expect(options.pageSize).toBeGreaterThan(20);
+    });
+
+    it('reports a null aggregate fetch when nothing was ever fetched', async () => {
+        mockReputationFindAll.mockResolvedValue({ items: [], total: 0 });
+        const app = buildApp(ownerActor, protectedListExternalListingsRoute);
+        const res = await app.request(`/${ACCOMMODATION_ID}/external-listings`);
+        const body = await res.json();
+
+        expect(body.data.reputation.aggregateFetchedAt).toBeNull();
     });
 
     it('returns 403 for a non-owner authenticated user', async () => {

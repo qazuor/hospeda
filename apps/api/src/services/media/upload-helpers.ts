@@ -6,18 +6,48 @@
  * duplicating the Cloudinary interaction pattern.
  */
 
+import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, MULTIPART_ENVELOPE_SLACK_BYTES } from '@repo/media';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
 import { UploadResponseDataSchema } from '@repo/schemas';
 import { Sentry } from '../../lib/sentry';
 import { incrementDomainCounter } from '../../middlewares/metrics';
+import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger';
 
-/** Maximum file size in megabytes for entity uploads. */
-const ENTITY_MAX_FILE_SIZE_MB = 5;
+/**
+ * Resolve the entity-photo cap, in MB, from the environment.
+ *
+ * Read lazily rather than captured at module load: `env` is only populated
+ * once `validateApiEnv()` has run at startup, so a module-level read would
+ * capture `undefined`. The fallback covers callers that run before startup
+ * validation (unit tests, tooling) and is not an arbitrary number — it is the
+ * same canonical constant every client validates against.
+ *
+ * @returns The configured maximum entity file size in megabytes
+ */
+export const getEntityMaxFileSizeMb = (): number =>
+    env?.HOSPEDA_MEDIA_MAX_FILE_SIZE_MB ?? DEFAULT_ENTITY_MAX_FILE_SIZE_MB;
 
-/** Margin above the strict file-size limit for Content-Length pre-check. */
-const CONTENT_LENGTH_MARGIN = 1024;
+/**
+ * Margin above the strict file-size limit for the Content-Length pre-check.
+ *
+ * Content-Length measures the whole multipart BODY — the file plus boundaries,
+ * per-part headers, the filename and every other form field — while the cap it
+ * is compared against measures the FILE. The margin must therefore cover a
+ * realistic envelope, or a file exactly at the cap is refused for bytes that
+ * are not its own. That false 413 is the precise bug class HOS-322 exists to
+ * remove.
+ *
+ * It is the SAME allowance the global body guard uses, and that is the point:
+ * this pre-check's remaining job is not to enforce the cap — the guard runs
+ * first and already rejects anything past that threshold — but to never be
+ * TIGHTER than it. A pre-check with a smaller margin of its own silently
+ * becomes the real limit, which is exactly how the ~494-byte headroom this
+ * replaced came about. What actually enforces the cap is the strict check on
+ * the parsed buffer, further down.
+ */
+const CONTENT_LENGTH_MARGIN = MULTIPART_ENVELOPE_SLACK_BYTES;
 
 /**
  * Single-attempt upstream timeout (ms) for the interactive entity-upload
@@ -71,7 +101,7 @@ export interface UploadHelperError {
  */
 export function validateContentLength(
     contentLength: number,
-    maxMb: number = ENTITY_MAX_FILE_SIZE_MB
+    maxMb: number = getEntityMaxFileSizeMb()
 ): UploadHelperError | null {
     const maxBytes = maxMb * 1024 * 1024;
     if (contentLength > maxBytes + CONTENT_LENGTH_MARGIN) {
@@ -97,7 +127,7 @@ export function validateFile(
     buffer: Buffer,
     mimeType: string,
     context: 'entity' | 'avatar' = 'entity',
-    maxFileSizeMb: number = ENTITY_MAX_FILE_SIZE_MB
+    maxFileSizeMb: number = getEntityMaxFileSizeMb()
 ): UploadHelperError | null {
     const validation = validateMediaFile({
         buffer,
@@ -243,9 +273,6 @@ export function buildEntityFolder(entityType: string, entityId: string): string 
     const environment = resolveEnvironment();
     return `hospeda/${environment}/${entityType}s/${entityId}`;
 }
-
-/** Fixed max file size in bytes for entity uploads. */
-export const ENTITY_MAX_BYTES = ENTITY_MAX_FILE_SIZE_MB * 1024 * 1024;
 
 /** Content-length margin for the pre-check. */
 export const CONTENT_LENGTH_MARGIN_BYTES = CONTENT_LENGTH_MARGIN;

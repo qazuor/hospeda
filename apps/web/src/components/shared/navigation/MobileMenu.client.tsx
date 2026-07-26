@@ -35,13 +35,14 @@
  */
 
 import { EntitlementKey } from '@repo/billing';
-import { CloseIcon, SearchIcon } from '@repo/icons';
+import { CloseIcon } from '@repo/icons';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
 import { IconButton } from '@/components/ui/IconButtonReact';
 import type { NavItem as AccountNavItem } from '@/config/navigation';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
+import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
 import { useMyEntitlements } from '@/hooks/useMyEntitlements';
 import { buildAdminPanelItem } from '@/lib/admin-panel-link';
 import type { AuthMeUser } from '@/lib/auth-cache';
@@ -286,6 +287,13 @@ export function MobileMenu({
     }, [isOpen]);
 
     // ------------------------------------------------------------------
+    // Back button closes the menu instead of leaving the page (HOS-310).
+    // This is the single most-expected instance of that behaviour: the menu
+    // is a full-screen overlay, so on a phone it reads as its own screen.
+    // ------------------------------------------------------------------
+    useDialogHistoryBack({ isOpen, onClose: () => setIsOpen(false) });
+
+    // ------------------------------------------------------------------
     // astro:before-swap closes the menu on ClientRouter navigation
     // ------------------------------------------------------------------
     useEffect(() => {
@@ -485,24 +493,6 @@ export function MobileMenu({
                     </a>
                 </div>
             )}
-
-            {/* Bottom search link */}
-            <div className={styles.footer}>
-                <a
-                    href="/busqueda/"
-                    onClick={handleClose}
-                    tabIndex={isOpen ? 0 : -1}
-                    aria-label={t('nav.goToSearch', 'Go to search')}
-                    className={styles.searchLink}
-                >
-                    <SearchIcon
-                        size={20}
-                        weight="regular"
-                        aria-hidden="true"
-                    />
-                    <span className={styles.searchLabel}>Buscar alojamientos</span>
-                </a>
-            </div>
         </div>
     );
 }

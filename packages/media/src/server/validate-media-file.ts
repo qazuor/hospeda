@@ -1,4 +1,5 @@
 import { imageSize } from 'image-size';
+import { DEFAULT_AVATAR_MAX_FILE_SIZE_MB, DEFAULT_ENTITY_MAX_FILE_SIZE_MB } from '../limits.js';
 
 /** Validation context determines which limits apply. */
 export type ValidationContext = 'entity' | 'avatar';
@@ -16,9 +17,10 @@ export interface ValidateMediaFileInput {
     /**
      * Maximum file size in MB.
      *
-     * - For `entity` context: defaults to 10 MB when omitted.
-     * - For `avatar` context: defaults to 5 MB when omitted
-     *   (matches `DEFAULT_AVATAR_MAX_SIZE_MB` on the admin client).
+     * Defaults to the canonical caps in `@repo/media` when omitted:
+     * {@link DEFAULT_ENTITY_MAX_FILE_SIZE_MB} for the `entity` context and
+     * {@link DEFAULT_AVATAR_MAX_FILE_SIZE_MB} for `avatar`. The API overrides
+     * both from env vars so an operator can retune them without a redeploy.
      *
      * Callers can override either default to tighten or loosen the cap. The
      * resulting byte count is surfaced in `details.maxBytes` of a
@@ -82,12 +84,6 @@ const AVATAR_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 const ENTITY_MAX_DIMENSION = 8000;
 const AVATAR_MAX_DIMENSION = 4000;
-/**
- * Default avatar size cap when the caller does not override `maxFileSizeMb`.
- * Matches `DEFAULT_AVATAR_MAX_SIZE_MB` on the admin client.
- */
-const DEFAULT_AVATAR_MAX_SIZE_MB = 5;
-const DEFAULT_MAX_SIZE_MB = 10;
 
 /**
  * Maximum total pixel count (width * height) accepted for any image.
@@ -221,8 +217,8 @@ function isMimeCompatible(declared: string, detected: string): boolean {
  * Performs the following checks in order:
  * 1. **File size** — compares buffer byte length against the context-specific
  *    limit. Both `entity` and `avatar` contexts honour the caller-supplied
- *    `maxFileSizeMb` when provided; defaults fall back to 10 MB (entity) and
- *    5 MB (avatar). The resulting cap is reflected in `details.maxBytes` on
+ *    `maxFileSizeMb` when provided; defaults fall back to the canonical caps
+ *    in `@repo/media`. The resulting cap is reflected in `details.maxBytes` on
  *    a `FILE_TOO_LARGE` failure.
  * 2. **MIME type allowlist** — verifies the declared Content-Type against the
  *    context-specific allowlist.
@@ -259,12 +255,13 @@ export function validateMediaFile(input: ValidateMediaFileInput): ValidationResu
 
     // 1. File size check.
     //    Both contexts honour the caller-supplied `maxFileSizeMb`. When it is
-    //    omitted we fall back to the context-specific default (5 MB avatar,
-    //    10 MB entity). The resolved cap is surfaced in `details.maxBytes` so
+    //    omitted we fall back to the canonical per-context default shared with
+    //    every client. The resolved cap is surfaced in `details.maxBytes` so
     //    the error reflects the ACTUAL limit applied rather than a hardcoded
     //    constant — callers that tighten or loosen the cap see accurate caps
     //    in their error UIs.
-    const defaultMb = context === 'avatar' ? DEFAULT_AVATAR_MAX_SIZE_MB : DEFAULT_MAX_SIZE_MB;
+    const defaultMb =
+        context === 'avatar' ? DEFAULT_AVATAR_MAX_FILE_SIZE_MB : DEFAULT_ENTITY_MAX_FILE_SIZE_MB;
     const maxMb = maxFileSizeMb ?? defaultMb;
     const maxBytes = maxMb * 1024 * 1024;
 

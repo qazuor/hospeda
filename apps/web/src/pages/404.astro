@@ -27,7 +27,7 @@ const { locale: pathLocale } = extractLocaleFromPath({ path: originalPath });
 const locale = (pathLocale ?? Astro.locals?.locale ?? DEFAULT_LOCALE) as SupportedLocale;
 const { t } = createTranslations(locale);
 const homeUrl = buildUrl({ locale, path: '/' });
-const searchUrl = buildUrl({ locale, path: 'busqueda' });
+const accommodationsUrl = buildUrl({ locale, path: '/alojamientos/' });
 const feedbackUrl = buildUrl({ locale, path: 'feedback' });
 
 const feedbackParams = new URLSearchParams({
@@ -71,8 +71,8 @@ const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 
 		<GradientButton
 			slot="actions"
-			href={searchUrl}
-			label={t('error.404.search')}
+			href={accommodationsUrl}
+			label={t('error.404.searchAccommodations')}
 			variant="primary"
 			shape="rounded"
 		>

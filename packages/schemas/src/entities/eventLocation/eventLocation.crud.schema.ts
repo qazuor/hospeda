@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { EventLocationIdSchema } from '../../common/id.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
-import { EventLocationSchema } from './eventLocation.schema.js';
+import { EventLocationReadSchema, EventLocationSchema } from './eventLocation.schema.js';
 
 /**
  * EventLocation CRUD Schemas
@@ -36,8 +36,11 @@ export type EventLocationCreateInput = z.infer<typeof EventLocationCreateInputSc
 /**
  * Schema for event location creation response
  * Returns the complete event location object
+ *
+ * Read-direction: derives from `EventLocationReadSchema` per the invariant in
+ * `eventLocation.schema.ts` (HOS-300).
  */
-export const EventLocationCreateOutputSchema = EventLocationSchema;
+export const EventLocationCreateOutputSchema = EventLocationReadSchema;
 export type EventLocationCreateOutput = z.infer<typeof EventLocationCreateOutputSchema>;
 
 // ============================================================================
@@ -77,8 +80,11 @@ export type EventLocationPatchInput = z.infer<typeof EventLocationPatchInputSche
 /**
  * Schema for event location update response
  * Returns the complete updated event location object
+ *
+ * Read-direction: derives from `EventLocationReadSchema` per the invariant in
+ * `eventLocation.schema.ts` (HOS-300).
  */
-export const EventLocationUpdateOutputSchema = EventLocationSchema;
+export const EventLocationUpdateOutputSchema = EventLocationReadSchema;
 export type EventLocationUpdateOutput = z.infer<typeof EventLocationUpdateOutputSchema>;
 
 // ============================================================================
@@ -134,6 +140,9 @@ export type EventLocationRestoreInput = z.infer<typeof EventLocationRestoreInput
 /**
  * Schema for event location restoration response
  * Returns the complete restored event location object
+ *
+ * Read-direction: derives from `EventLocationReadSchema` per the invariant in
+ * `eventLocation.schema.ts` (HOS-300).
  */
-export const EventLocationRestoreOutputSchema = EventLocationSchema;
+export const EventLocationRestoreOutputSchema = EventLocationReadSchema;
 export type EventLocationRestoreOutput = z.infer<typeof EventLocationRestoreOutputSchema>;

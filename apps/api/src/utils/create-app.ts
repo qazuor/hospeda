@@ -1,11 +1,11 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Context, MiddlewareHandler, Schema } from 'hono';
-import { bodyLimit } from 'hono/body-limit';
 import { requestId } from 'hono/request-id';
 import { actorMiddleware } from '../middlewares/actor';
 import { authMiddleware } from '../middlewares/auth';
 import { billingMiddleware } from '../middlewares/billing';
 import { billingCustomerMiddleware } from '../middlewares/billing-customer';
+import { bodyLimitMiddleware } from '../middlewares/body-limit';
 import { cacheMiddleware } from '../middlewares/cache';
 import { compressionMiddleware } from '../middlewares/compression';
 import { corsMiddleware } from '../middlewares/cors';
@@ -139,28 +139,11 @@ export function createApp() {
         // Performance: compression early for all responses
         .use(wrapMiddleware(compressionMiddleware()))
 
-        // Body size limit (enforced at stream level, covers chunked transfer encoding)
-        // 10MB matches the long-running Node server on the VPS; tune via env if
-        // a specific upload flow needs a different ceiling.
-        .use(
-            wrapMiddleware(
-                bodyLimit({
-                    maxSize: 10 * 1024 * 1024, // 10MB
-                    onError: (c) => {
-                        return c.json(
-                            {
-                                success: false,
-                                error: {
-                                    code: 'REQUEST_TOO_LARGE',
-                                    message: 'Request body exceeds the maximum allowed size'
-                                }
-                            },
-                            413
-                        );
-                    }
-                })
-            )
-        )
+        // Body size limit (enforced at stream level, covers chunked transfer
+        // encoding). The ceiling is resolved per path: tight everywhere, wider
+        // on the three upload routes that legitimately carry a photo. See
+        // `middlewares/body-limit.ts` for why this cannot live on the routes.
+        .use(wrapMiddleware(bodyLimitMiddleware()))
 
         // Request processing: validation BEFORE caching to avoid caching invalid requests
         .use(wrapMiddleware(validationMiddleware()))

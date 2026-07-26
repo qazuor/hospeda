@@ -14,6 +14,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getApiUrl } from '@/lib/env';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -77,7 +78,9 @@ interface StatusApiResponse {
 // ---------------------------------------------------------------------------
 
 const POLL_INTERVAL_MS = 10_000;
-const STATUS_BASE = '/api/v1/protected/accommodations';
+// HOS-290: absolute base — a relative path here 404s against the Astro server
+// (the API lives on a different host and the web serves no `/api/v1/*` route).
+const STATUS_BASE = `${getApiUrl()}/api/v1/protected/accommodations`;
 
 // ---------------------------------------------------------------------------
 // Hook

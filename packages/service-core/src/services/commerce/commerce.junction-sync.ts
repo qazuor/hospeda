@@ -19,8 +19,7 @@
  */
 
 import type { DrizzleClient } from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
-import { ServiceError } from '../../types';
+import { readAllJunctionRows, validateCatalogIds } from '../../utils/junction-sync';
 
 // ---------------------------------------------------------------------------
 // Internal types
@@ -28,10 +27,10 @@ import { ServiceError } from '../../types';
 
 /**
  * Minimal interface for a catalog model (amenity / feature) used by the
- * validator.  Only `findById` is required.
+ * validator. HOS-321: batch lookup, not one `findById` per id.
  */
 interface CatalogModel {
-    findById: (id: string, tx?: DrizzleClient) => Promise<unknown>;
+    findByIds: (ids: readonly string[], tx?: DrizzleClient) => Promise<readonly { id: string }[]>;
 }
 
 /**
@@ -41,10 +40,10 @@ interface CatalogModel {
 interface JunctionModel<TRow extends Record<string, unknown>> {
     findAll: (
         where: Record<string, unknown>,
-        options?: unknown,
-        additionalConditions?: unknown,
+        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
+        additionalConditions?: undefined,
         tx?: DrizzleClient
-    ) => Promise<{ items: TRow[] }>;
+    ) => Promise<{ items: TRow[]; total: number }>;
     hardDelete: (where: Record<string, unknown>, tx?: DrizzleClient) => Promise<unknown>;
     create: (data: Record<string, unknown>, tx?: DrizzleClient) => Promise<unknown>;
 }
@@ -106,37 +105,6 @@ export interface SyncCommerceFeatureJunctionInput<TRow extends Record<string, un
 }
 
 // ---------------------------------------------------------------------------
-// Private helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Validates that every ID in `ids` exists in the catalog.
- * Throws `ServiceError(VALIDATION_ERROR)` on the first unknown ID, which
- * causes the surrounding transaction to roll back with no partial writes.
- *
- * @param ids - UUIDs to validate.
- * @param findById - Catalog lookup function.
- * @param entityLabel - Human-readable label for error messages.
- * @param tx - Transaction client threaded through to the catalog lookup.
- */
-async function validateCatalogIds(
-    ids: readonly string[],
-    findById: (id: string, tx?: DrizzleClient) => Promise<unknown>,
-    entityLabel: string,
-    tx: DrizzleClient
-): Promise<void> {
-    for (const id of ids) {
-        const row = await findById(id, tx);
-        if (!row) {
-            throw new ServiceError(
-                ServiceErrorCode.VALIDATION_ERROR,
-                `${entityLabel} not found: ${id}`
-            );
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
 // Public sync functions
 // ---------------------------------------------------------------------------
 
@@ -178,28 +146,31 @@ export async function syncCommerceAmenityJunction<TRow extends Record<string, un
 
     // Validate all supplied IDs before touching any rows.
     if (amenityIds.length > 0) {
-        await validateCatalogIds(
-            amenityIds,
-            (id, txClient) => amenityModel.findById(id, txClient),
-            'amenity',
+        await validateCatalogIds({
+            ids: amenityIds,
+            findByIds: (ids, txClient) => amenityModel.findByIds(ids, txClient),
+            entityLabel: 'amenity',
             tx
-        );
+        });
     }
 
-    // Fetch current junction rows for this entity.
-    const { items: existing } = await junctionModel.findAll(
-        { [entityFkColumn]: entityId },
-        undefined,
-        undefined,
+    // Fetch ALL current junction rows for this entity (HOS-321: an unpaginated
+    // `findAll` silently truncates at the model's 20-row default page, which
+    // makes the exact-set diff re-insert rows past page 1 — a composite-PK
+    // violation that rolls the whole save back).
+    const existing = await readAllJunctionRows<TRow>({
+        where: { [entityFkColumn]: entityId },
+        junctionModel,
+        sortBy: 'amenityId' as keyof TRow & string,
         tx
-    );
+    });
     const existingIds = new Set(existing.map((row) => row.amenityId as string));
     const targetIds = new Set(amenityIds);
 
-    // Delete rows NOT in the target set.
+    // Delete rows NOT in the target set, in ONE batched statement.
     const toDelete = [...existingIds].filter((id) => !targetIds.has(id));
-    for (const amenityId of toDelete) {
-        await junctionModel.hardDelete({ [entityFkColumn]: entityId, amenityId }, tx);
+    if (toDelete.length > 0) {
+        await junctionModel.hardDelete({ [entityFkColumn]: entityId, amenityId: toDelete }, tx);
     }
 
     // Insert rows that are in the target set but missing from the junction table.
@@ -229,28 +200,29 @@ export async function syncCommerceFeatureJunction<TRow extends Record<string, un
 
     // Validate all supplied IDs before touching any rows.
     if (featureIds.length > 0) {
-        await validateCatalogIds(
-            featureIds,
-            (id, txClient) => featureModel.findById(id, txClient),
-            'feature',
+        await validateCatalogIds({
+            ids: featureIds,
+            findByIds: (ids, txClient) => featureModel.findByIds(ids, txClient),
+            entityLabel: 'feature',
             tx
-        );
+        });
     }
 
-    // Fetch current junction rows for this entity.
-    const { items: existing } = await junctionModel.findAll(
-        { [entityFkColumn]: entityId },
-        undefined,
-        undefined,
+    // Fetch ALL current junction rows for this entity — see the amenity
+    // counterpart for why an unpaginated read corrupts the diff.
+    const existing = await readAllJunctionRows<TRow>({
+        where: { [entityFkColumn]: entityId },
+        junctionModel,
+        sortBy: 'featureId' as keyof TRow & string,
         tx
-    );
+    });
     const existingIds = new Set(existing.map((row) => row.featureId as string));
     const targetIds = new Set(featureIds);
 
-    // Delete rows NOT in the target set.
+    // Delete rows NOT in the target set, in ONE batched statement.
     const toDelete = [...existingIds].filter((id) => !targetIds.has(id));
-    for (const featureId of toDelete) {
-        await junctionModel.hardDelete({ [entityFkColumn]: entityId, featureId }, tx);
+    if (toDelete.length > 0) {
+        await junctionModel.hardDelete({ [entityFkColumn]: entityId, featureId: toDelete }, tx);
     }
 
     // Insert rows that are in the target set but missing from the junction table.

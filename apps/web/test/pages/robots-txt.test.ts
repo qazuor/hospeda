@@ -163,7 +163,12 @@ describe('robots.txt — GET handler', () => {
             expect(body).toContain('Disallow: /mi-cuenta/');
         });
 
-        it('contains Disallow: /busqueda/', async () => {
+        // The global site-search feature was cut from the product: the
+        // `/busqueda/` page and the `GET /api/v1/public/search` endpoint behind it
+        // were deleted. There is nothing left to keep out of the index, so the
+        // Disallow must be gone too — a Disallow for a non-existent path is noise
+        // that outlives the feature it described.
+        it('does not contain Disallow: /busqueda/ (global search removed)', async () => {
             const { getSiteUrl } = await import('@/lib/env');
             vi.mocked(getSiteUrl).mockReturnValue('https://hospeda.test');
 
@@ -171,7 +176,7 @@ describe('robots.txt — GET handler', () => {
             const response = await GET({ request: makeRequest('hospeda.com.ar') } as never);
             const body = await response.text();
 
-            expect(body).toContain('Disallow: /busqueda/');
+            expect(body).not.toContain('busqueda');
         });
 
         it('contains Disallow: /feedback/', async () => {
@@ -185,14 +190,15 @@ describe('robots.txt — GET handler', () => {
             expect(body).toContain('Disallow: /feedback/');
         });
 
-        it('SITEMAP_EXCLUDED_PATHS contains exactly the 4 expected paths', () => {
+        it('SITEMAP_EXCLUDED_PATHS contains exactly the 3 expected paths', () => {
             // This test locks the shared constant content so any accidental
-            // drift is caught immediately.
-            expect(SITEMAP_EXCLUDED_PATHS).toHaveLength(4);
+            // drift is caught immediately. `/busqueda/` was dropped when the
+            // global site-search feature was cut from the product.
+            expect(SITEMAP_EXCLUDED_PATHS).toHaveLength(3);
             expect(SITEMAP_EXCLUDED_PATHS).toContain('/auth/');
             expect(SITEMAP_EXCLUDED_PATHS).toContain('/mi-cuenta/');
-            expect(SITEMAP_EXCLUDED_PATHS).toContain('/busqueda/');
             expect(SITEMAP_EXCLUDED_PATHS).toContain('/feedback/');
+            expect(SITEMAP_EXCLUDED_PATHS).not.toContain('/busqueda/');
         });
     });
 

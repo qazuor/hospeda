@@ -54,7 +54,8 @@ import type { CommerceListingHookState } from './commerce.types';
  * from the full model type.
  */
 export interface CommerceCatalogModel {
-    findById: (id: string, tx?: DrizzleClient) => Promise<unknown>;
+    /** HOS-321: batch lookup — one query for the whole set, not one per id. */
+    findByIds: (ids: readonly string[], tx?: DrizzleClient) => Promise<readonly { id: string }[]>;
 }
 
 /**
@@ -62,12 +63,17 @@ export interface CommerceCatalogModel {
  * Only the three operations needed by the diff-sync algorithm are declared.
  */
 export interface CommerceJunctionModel<TRow extends Record<string, unknown>> {
+    /**
+     * HOS-321: `options` and `total` are part of the contract now — the sync
+     * pages through the CURRENT set explicitly instead of accepting the
+     * model's silently-truncating 20-row default.
+     */
     findAll: (
         where: Record<string, unknown>,
-        options?: unknown,
-        additionalConditions?: unknown,
+        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
+        additionalConditions?: undefined,
         tx?: DrizzleClient
-    ) => Promise<{ items: TRow[] }>;
+    ) => Promise<{ items: TRow[]; total: number }>;
     hardDelete: (where: Record<string, unknown>, tx?: DrizzleClient) => Promise<unknown>;
     create: (data: Record<string, unknown>, tx?: DrizzleClient) => Promise<unknown>;
 }

@@ -121,7 +121,10 @@ function buildService(
     } as unknown as RAccommodationAmenityModel;
     // @ts-expect-error: override internal for test isolation
     service._amenityModel = {
-        findById: vi.fn().mockResolvedValue({ id: 'amenity-exists' })
+        findById: vi.fn().mockResolvedValue({ id: 'amenity-exists' }),
+        // HOS-321: `validateCatalogIds` batches through `findByIds`. Echo the
+        // requested ids back — every one of them exists in this stub.
+        findByIds: vi.fn(async (ids: readonly string[]) => ids.map((id) => ({ id })))
     };
     return service;
 }

@@ -23,7 +23,7 @@
  */
 import { LimitKey } from '@repo/billing';
 import { accommodationMediaModel } from '@repo/db';
-import { generateGalleryId } from '@repo/media';
+import { generateGalleryId, MULTIPART_ENVELOPE_SLACK_BYTES } from '@repo/media';
 import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
 import {
     AdminUploadRequestSchema,
@@ -47,8 +47,8 @@ import { buildLimitReachedDetails } from '../../../middlewares/limit-enforcement
 import { incrementDomainCounter } from '../../../middlewares/metrics';
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getMediaProvider } from '../../../services/media';
+import { getEntityMaxFileSizeMb } from '../../../services/media/upload-helpers';
 import { getActorFromContext } from '../../../utils/actor';
-import { env } from '../../../utils/env.js';
 import { calculateThreshold, calculateUsagePercent, checkLimit } from '../../../utils/limit-check';
 import { apiLogger } from '../../../utils/logger';
 import { createErrorResponse } from '../../../utils/response-helpers';
@@ -156,14 +156,16 @@ export const adminUploadMediaRoute = createAdminRoute({
         }
 
         // ── 1. Content-Length pre-check (anti-DoS) ────────────────────────────
-        // SPEC-078-GAPS T-033 / GAP-078-021: allow a 1KB margin above the
-        // declared limit so multipart envelope overhead (boundaries, field
-        // headers) on a file that is exactly at the byte limit does not
-        // trigger a false-positive 413. The downstream `validateMediaFile`
-        // call enforces the strict file-size limit on the parsed file body.
-        const maxMb = env.HOSPEDA_MEDIA_MAX_FILE_SIZE_MB;
+        // SPEC-078-GAPS T-033 / GAP-078-021: allow a margin above the declared
+        // limit so multipart envelope overhead (boundaries, field headers, the
+        // user-supplied filename) on a file that is exactly at the byte limit
+        // does not trigger a false-positive 413. The margin is the shared one —
+        // when each guard picks its own, the smallest silently decides. The
+        // downstream `validateMediaFile` call enforces the strict file-size
+        // limit on the parsed file body.
+        const maxMb = getEntityMaxFileSizeMb();
         const maxBytes = maxMb * 1024 * 1024;
-        const contentLengthMaxBytes = maxBytes + 1024;
+        const contentLengthMaxBytes = maxBytes + MULTIPART_ENVELOPE_SLACK_BYTES;
         const contentLength = Number(ctx.req.header('content-length') ?? 0);
 
         if (contentLength > contentLengthMaxBytes) {

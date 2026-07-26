@@ -165,9 +165,9 @@ export type FullLocationType = z.infer<typeof FullLocationSchema>;
  *
  * This is the WRITE/entity shape (embedded in `UserSchema`, from which the user
  * create/update schemas derive), so its bounds gate persistence and MUST stay
- * strict. The read⊇write relaxation for the profile RESPONSE lives in the
- * access overlay (`UserLocationReadSchema` in `user.access.schema.ts`), so a
- * legacy value never 500s a GET while writes stay validated (HOS-190).
+ * strict. The read⊇write relaxation for the profile RESPONSE lives in
+ * {@link UserLocationReadSchema}, so a legacy value never 500s a GET while
+ * writes stay validated (HOS-190).
  */
 export const UserLocationSchema = z.object({
     country: z
@@ -195,6 +195,30 @@ export const UserLocationSchema = z.object({
         .optional()
 });
 export type UserLocationType = z.infer<typeof UserLocationSchema>;
+
+/**
+ * Lenient READ overlay for the user `location` JSONB column (HOS-190, HOS-302).
+ *
+ * Postal string fields as plain strings: a legacy 1-char country or an
+ * over-length postal code must not 500 a GET. `users.location` is an unbounded
+ * JSONB column shallow-merged at the DB layer, so a row can legitimately hold a
+ * value stricter than today's WRITE bounds allow. Every read path that surfaces
+ * it — the self access family AND the query family the admin entity-list client
+ * re-parses with a fail-closed `safeParse` — must use this shape.
+ *
+ * Lives next to {@link UserLocationSchema} (the WRITE shape) as the SINGLE
+ * definition, mirroring `ContactInfoReadSchema` in `./contact.schema.js`. It was
+ * module-private inside `user.access.schema.ts` until HOS-302, which is how the
+ * query family ended up with a second, stricter idea of "lenient user".
+ */
+export const UserLocationReadSchema = z.object({
+    country: z.string().optional(),
+    region: z.string().optional(),
+    city: z.string().optional(),
+    addressLine1: z.string().optional(),
+    postalCode: z.string().optional()
+});
+export type UserLocationReadType = z.infer<typeof UserLocationReadSchema>;
 
 /**
  * User location field (using UserLocationSchema structure).

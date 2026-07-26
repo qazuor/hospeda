@@ -20,6 +20,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useReputationStatus } from '../../src/hooks/use-reputation-status';
+import { getApiUrl } from '../../src/lib/env';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -27,7 +28,14 @@ import { useReputationStatus } from '../../src/hooks/use-reputation-status';
 
 const ACC_ID = 'acc-uuid-spec250';
 const POLL_MS = 10_000;
-const STATUS_URL = `/api/v1/protected/accommodations/${ACC_ID}/external-reputation/status`;
+/**
+ * HOS-290: the polled URL is ABSOLUTE now. It used to be relative, which sent
+ * the request to the Astro server rather than the API — they are different
+ * hosts and the web app serves no `/api/v1/*` route, so every poll 404'd. This
+ * assertion previously pinned that broken behaviour in place.
+ */
+const API_BASE = getApiUrl();
+const STATUS_URL = `${API_BASE}/api/v1/protected/accommodations/${ACC_ID}/external-reputation/status`;
 
 // ---------------------------------------------------------------------------
 // Fixtures
