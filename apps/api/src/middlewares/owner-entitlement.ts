@@ -37,12 +37,13 @@ import {
     type EntitlementKey,
     getDefaultEntitlements,
     getUnlimitedEntitlements,
+    isEntitlementGrantingStatus,
     isEntitlementKey,
     isLimitKey,
     type LimitKey
 } from '@repo/billing';
 import { accommodations, getDb, users } from '@repo/db';
-import { RoleEnum } from '@repo/service-core';
+import { isAccommodationSubscription, RoleEnum } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { eq, inArray, type SQL } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
@@ -112,14 +113,19 @@ async function loadOwnerCustomerId(ownerId: string): Promise<string | null> {
 /**
  * Resolve the plan entitlements for a given billing customer ID.
  *
- * Mirrors the path inside `loadEntitlements` (entitlement.ts) but is
- * intentionally extracted so the owner middleware does not pay for the
- * viewer-only concerns (caller-keyed cache, staff bypass, actor-role
- * defaults). Returns a fresh `Set<EntitlementKey>` for every call.
+ * Shares the SUBSCRIPTION SELECTION contract with `loadEntitlements`
+ * (entitlement.ts): entitlement-granting status (`active | trialing | comp`,
+ * HOS-291) AND accommodation product domain (SPEC-239 T-034). It is a
+ * deliberately reduced re-implementation of the rest: it does NOT carry the
+ * viewer-only concerns (caller-keyed cache, staff bypass, actor-role defaults),
+ * NOR the HOS-217 HOST tourist-plan discard, NOR the customer-level entitlement
+ * merge (`billing.entitlements.getByCustomerId`) that the consumer-side loader
+ * applies — so an admin-granted customer-level entitlement is NOT visible on
+ * owner-gated surfaces. Returns a fresh `Set<EntitlementKey>` for every call.
  *
  * @param customerId - The QZPay customer ID.
- * @returns A set of entitlement keys. Empty if no active subscription
- *   or the plan carries no entitlements.
+ * @returns A set of entitlement keys. Empty if no entitlement-granting
+ *   accommodation subscription exists, or the plan carries no entitlements.
  */
 async function loadCustomerEntitlements(customerId: string): Promise<Set<EntitlementKey>> {
     const billing = getQZPayBilling();
@@ -129,8 +135,31 @@ async function loadCustomerEntitlements(customerId: string): Promise<Set<Entitle
     const entitlements = new Set<EntitlementKey>();
     try {
         const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
+        // HOS-291: route through the shared predicate (active | trialing | comp)
+        // instead of re-deriving the status set inline. The inline check omitted
+        // `comp` (SPEC-262), so an admin-comped owner resolved to an EMPTY
+        // entitlement set and every owner-gated feature was silently off for
+        // them — while the consumer-side loader (`loadEntitlements` in
+        // entitlement.ts, HOS-238) already resolved the same subscription
+        // correctly.
+        //
+        // The domain filter closes a PRE-EXISTING hole in the same selection
+        // (SPEC-239 T-034: a commerce sub could already be picked here while
+        // `active`), and it must land together with the status widening because
+        // `comp` is USER-reachable on a commerce subscription — the promo-code
+        // apply path flips whatever subscription the caller owns, with no domain
+        // guard — and the commerce plan carries `entitlements: []` / `limits: []`.
+        // Selecting it would shadow the owner's live accommodation subscription
+        // and reproduce the very symptom this fix removes. The predicate treats
+        // null/undefined productDomain as 'accommodation' (legacy rows + column
+        // default), so it can never drop a real accommodation sub.
+        //
+        // There should only ever be ONE live accommodation subscription per
+        // customer (`start-paid.ts` rejects a second one with this same predicate
+        // pair), so `find` order is not load-bearing.
         const active = subscriptions?.find(
-            (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
+            (sub: { status: string }) =>
+                isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
         );
         if (!active) {
             return entitlements;
@@ -420,7 +449,8 @@ function setOwnerLimitsCacheEntry(customerId: string, limits: Map<LimitKey, numb
  *
  * Mirrors the `buildHostDraftDefaultsResult` logic in entitlement.ts but
  * returns only the limits half (a `Map<LimitKey, number>`). Called when an
- * owner has no active subscription — they get the `owner-basico` DB-row limits
+ * owner has no entitlement-granting accommodation subscription — they get the
+ * `owner-basico` DB-row limits
  * so the chat quota check has a concrete finite value rather than an empty map.
  *
  * Falls back to an empty map on lookup error or plan-not-found (the chat route
@@ -447,11 +477,13 @@ async function buildOwnerBasicoFallbackLimits(): Promise<Map<LimitKey, number>> 
 }
 
 /**
- * Load the active-subscription plan limits + customer-level overrides for a
- * given QZPay customer ID.
+ * Load the plan limits + customer-level overrides of the owner's live
+ * accommodation subscription (status `active | trialing | comp`), for a given
+ * QZPay customer ID.
  *
- * Mirrors the plan-limits portion of `loadEntitlements` in entitlement.ts.
- * Returns `null` when billing is unavailable. Returns the plan-level-only
+ * Mirrors the plan-limits portion of `loadEntitlements` in entitlement.ts, and
+ * uses the same subscription-selection contract as `loadCustomerEntitlements`
+ * above. Returns `null` when billing is unavailable. Returns the plan-level-only
  * limits (with `shouldCache: false`) when the customer-override call fails.
  *
  * @param customerId - The QZPay customer ID.
@@ -467,12 +499,21 @@ async function loadCustomerLimits(
 
     try {
         const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
+        // HOS-291: same selection contract as `loadCustomerEntitlements` above
+        // (entitlement-granting status AND accommodation domain) — a comp owner
+        // must resolve the limits of the plan they were comped on, not the
+        // owner-basico fallback quota. Keeping the domain filter matters even
+        // more here: a commerce plan is FOUND but carries no limits, so the
+        // resolver would cache an empty map for 5 minutes (`shouldCache: true`)
+        // instead of falling back to owner-basico.
         const active = subscriptions?.find(
-            (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
+            (sub: { status: string }) =>
+                isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
         );
 
         if (!active) {
-            // No active subscription — caller falls back to owner-basico.
+            // No entitlement-granting accommodation subscription — caller falls
+            // back to owner-basico.
             return { limits: new Map<LimitKey, number>(), shouldCache: false };
         }
 
@@ -480,7 +521,7 @@ async function loadCustomerLimits(
         if (!plan) {
             apiLogger.warn(
                 { customerId, planId: active.planId },
-                'resolveOwnerLimitsForOwnerId: plan not found for active subscription; returning empty limits'
+                'resolveOwnerLimitsForOwnerId: plan not found for the live subscription; returning empty limits'
             );
             return { limits: new Map<LimitKey, number>(), shouldCache: true };
         }
@@ -543,12 +584,12 @@ async function loadCustomerLimits(
  * (SPEC-211 Phase 1).
  *
  * **Resolution path:**
- * `ownerId` → billing customer (`customers.getByExternalId`) → active
- * subscription (`subscriptions.getByCustomerId`) → plan `limits` JSONB
- * (`plans.get`) → customer-level limit overrides merged on top
- * (`limits.getByCustomerId`). Falls back to the `owner-basico` DB-row limits
- * when the owner has no active subscription (matching the HOST fallback in
- * `loadEntitlements`).
+ * `ownerId` → billing customer (`customers.getByExternalId`) → live
+ * accommodation subscription (`subscriptions.getByCustomerId`, status
+ * `active | trialing | comp`) → plan `limits` JSONB (`plans.get`) →
+ * customer-level limit overrides merged on top (`limits.getByCustomerId`).
+ * Falls back to the `owner-basico` DB-row limits when the owner has no such
+ * subscription (matching the HOST fallback in `loadEntitlements`).
  *
  * **Staff bypass (INV-6):** staff owners (SUPER_ADMIN, ADMIN, EDITOR,
  * CLIENT_MANAGER) receive the unlimited entitlement set's limits (`-1` for
@@ -613,8 +654,9 @@ export async function resolveOwnerLimitsForOwnerId(
         return new Map<LimitKey, number>(defaults.limits.map((l) => [l.key, l.value]));
     }
 
-    // When the owner has no active subscription (result.limits is empty and
-    // shouldCache is false from loadCustomerLimits), fall back to owner-basico.
+    // When the owner has no entitlement-granting accommodation subscription
+    // (result.limits is empty and shouldCache is false from loadCustomerLimits),
+    // fall back to owner-basico.
     if (result.limits.size === 0 && !result.shouldCache) {
         return await buildOwnerBasicoFallbackLimits();
     }

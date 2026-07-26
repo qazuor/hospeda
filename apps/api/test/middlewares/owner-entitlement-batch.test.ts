@@ -79,9 +79,12 @@ function mockDbSelectReturning(rows: Array<{ id: string; role: RoleEnum | null }
 function buildBillingMock(
     customerId: string,
     planEntitlements: EntitlementKey[],
-    status: 'active' | 'trialing' | 'inactive' = 'active'
+    status: 'active' | 'trialing' | 'comp' | 'inactive' = 'active'
 ) {
-    const sub = status === 'inactive' ? [] : [{ id: 'sub-001', status, planId: 'plan-001' }];
+    const sub =
+        status === 'inactive'
+            ? []
+            : [{ id: 'sub-001', status, planId: 'plan-001', productDomain: 'accommodation' }];
     return {
         customers: {
             getByExternalId: vi.fn().mockResolvedValue({ id: customerId })
@@ -160,6 +163,27 @@ describe('resolveOwnerEntitlementsForOwnerIds', () => {
         // Critically: only ONE select call (not one per owner)
         expect(mockSelect).toHaveBeenCalledTimes(1);
         expect(whereChain.where).toHaveBeenCalledTimes(1);
+    });
+
+    it('HOS-291: resolves the badge entitlement for a comp owner (batch path)', async () => {
+        // The batch resolver drives the `isVerified` badge on every listing
+        // endpoint — the highest-traffic consumer of the owner-side resolver.
+        // Before HOS-291 an admin-comped owner lost their badge on all of them.
+        const ownerId = 'owner-comp-batch';
+        mockDbSelectReturning([{ id: ownerId, role: RoleEnum.HOST }]);
+
+        const billing = buildBillingMock(
+            'cust-comp-batch',
+            [EntitlementKey.HAS_VERIFICATION_BADGE],
+            'comp'
+        );
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        const result = await resolveOwnerEntitlementsForOwnerIds([ownerId]);
+
+        expect(result.get(ownerId)).toContain(EntitlementKey.HAS_VERIFICATION_BADGE);
     });
 
     it('returns empty array for an owner with no active subscription', async () => {

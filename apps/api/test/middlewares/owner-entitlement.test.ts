@@ -22,17 +22,20 @@
  * for the `resolveOwnerRole` branch (no `innerJoin`, users-only query).
  */
 import {
+    ENTITLEMENT_GRANTING_STATUSES,
     EntitlementKey,
     getDefaultEntitlements,
     getUnlimitedEntitlements,
     LimitKey
 } from '@repo/billing';
+import { SubscriptionStatusEnum } from '@repo/schemas';
 import { RoleEnum } from '@repo/service-core';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getQZPayBilling } from '../../src/middlewares/billing';
 import {
     ownerEntitlementMiddleware,
+    resolveOwnerEntitlementsForOwnerId,
     resolveOwnerLimitsForOwnerId
 } from '../../src/middlewares/owner-entitlement';
 import { createErrorHandler } from '../../src/middlewares/response';
@@ -361,6 +364,160 @@ describe('ownerEntitlementMiddleware', () => {
         });
     });
 
+    describe('HOS-291 regression — owner-side resolver is comp-aware', () => {
+        it('resolves the plan entitlements of a comp owner (comp is an entitlement-granting status)', async () => {
+            // Arrange — owner-comp is a HOST whose ONLY subscription is a
+            // complimentary one (SPEC-262 `status = 'comp'`, no MercadoPago
+            // preapproval) on a plan that grants AI_CHAT. The owner-side
+            // resolver used to hardcode `active || trialing`, so this owner
+            // resolved to an EMPTY set and every owner-gated feature (AI chat
+            // among them) returned 403 for admin-comped owners.
+            mockUserRoleLookup(RoleEnum.HOST);
+            mockBilling.customers.getByExternalId.mockResolvedValue({ id: 'cust-comp' });
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                {
+                    id: 'sub-comp',
+                    status: 'comp',
+                    planId: 'plan-owner-pro',
+                    productDomain: 'accommodation'
+                }
+            ]);
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-owner-pro',
+                slug: 'owner-pro',
+                entitlements: [EntitlementKey.AI_CHAT, EntitlementKey.CAN_USE_RICH_DESCRIPTION],
+                limits: {}
+            });
+
+            // Act — this is the exact path the AI-chat gate takes.
+            const entitlements = await resolveOwnerEntitlementsForOwnerId('owner-comp');
+
+            // Assert — the comped plan's entitlements resolve, matching the
+            // consumer-side loader (entitlement.ts) for the same subscription.
+            expect(entitlements).toContain(EntitlementKey.AI_CHAT);
+            expect(entitlements).toContain(EntitlementKey.CAN_USE_RICH_DESCRIPTION);
+            expect(mockBilling.plans.get).toHaveBeenCalledWith('plan-owner-pro');
+        });
+
+        // Over-widening pin on the FULL status vocabulary (NOT regression
+        // coverage — this passes both before and after the fix, by construction;
+        // the regression signal lives in the positive cases above and below).
+        // `comp` must be the ONLY status added: every other member of
+        // `SubscriptionStatusEnum` (plus the QZPay-only `incomplete`/`unpaid`)
+        // must keep resolving to an empty set. `pending_provider` / `abandoned`
+        // are the load-bearing ones — they are the pre-authorization states that
+        // stop someone who abandons the MercadoPago page from walking away with
+        // free entitlements.
+        //
+        // The list is DERIVED from the enum minus the granting set, so a 10th
+        // status added tomorrow is pinned automatically instead of silently
+        // escaping the guard.
+        it.each([
+            ...Object.values(SubscriptionStatusEnum).filter(
+                (status) => !(ENTITLEMENT_GRANTING_STATUSES as readonly string[]).includes(status)
+            ),
+            'incomplete',
+            'unpaid'
+        ])('does NOT resolve plan entitlements for a non-granting status (%s)', async (status) => {
+            mockUserRoleLookup(RoleEnum.HOST);
+            mockBilling.customers.getByExternalId.mockResolvedValue({ id: `cust-${status}` });
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                {
+                    id: `sub-${status}`,
+                    status,
+                    planId: 'plan-owner-pro',
+                    productDomain: 'accommodation'
+                }
+            ]);
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-owner-pro',
+                slug: 'owner-pro',
+                entitlements: [EntitlementKey.AI_CHAT],
+                limits: {}
+            });
+
+            // Act
+            const entitlements = await resolveOwnerEntitlementsForOwnerId(`owner-${status}`);
+
+            // Assert — no subscription matched, so no plan was ever looked up.
+            // `toEqual([])` rather than `not.toContain`: it also catches an
+            // accidental fall-through to the tourist-free default set.
+            expect(entitlements).toEqual([]);
+            expect(mockBilling.plans.get).not.toHaveBeenCalled();
+        });
+
+        it('ignores a comp COMMERCE subscription and resolves the accommodation one (SPEC-239 domain isolation)', async () => {
+            // Arrange — the owner holds BOTH a live accommodation subscription
+            // and a commerce-listing subscription that was flipped to `comp`
+            // (the promo-code apply path has no product-domain guard). The
+            // commerce row is returned FIRST, so a status-only `find()` would
+            // select it: its plan carries `entitlements: []`, silently switching
+            // every owner-gated surface off — the exact symptom HOS-291 fixes.
+            mockUserRoleLookup(RoleEnum.HOST);
+            mockBilling.customers.getByExternalId.mockResolvedValue({ id: 'cust-two-domains' });
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                {
+                    id: 'sub-commerce',
+                    status: 'comp',
+                    planId: 'plan-commerce',
+                    productDomain: 'commerce'
+                },
+                {
+                    id: 'sub-accommodation',
+                    status: 'active',
+                    planId: 'plan-owner-pro',
+                    productDomain: 'accommodation'
+                }
+            ]);
+            mockBilling.plans.get.mockImplementation(async (planId: string) =>
+                planId === 'plan-owner-pro'
+                    ? {
+                          id: 'plan-owner-pro',
+                          slug: 'owner-pro',
+                          entitlements: [EntitlementKey.AI_CHAT],
+                          limits: {}
+                      }
+                    : {
+                          id: 'plan-commerce',
+                          slug: 'commerce-listing',
+                          entitlements: [],
+                          limits: {}
+                      }
+            );
+
+            // Act
+            const entitlements = await resolveOwnerEntitlementsForOwnerId('owner-two-domains');
+
+            // Assert — the accommodation subscription won; commerce never consulted.
+            expect(entitlements).toContain(EntitlementKey.AI_CHAT);
+            expect(mockBilling.plans.get).toHaveBeenCalledWith('plan-owner-pro');
+            expect(mockBilling.plans.get).not.toHaveBeenCalledWith('plan-commerce');
+        });
+
+        it('treats a subscription with no productDomain as accommodation (legacy rows)', async () => {
+            // `product_domain` was added by SPEC-239; rows predating it are NULL
+            // and MUST still resolve. The domain filter can only ever narrow the
+            // commerce case — it must never drop a real accommodation sub.
+            mockUserRoleLookup(RoleEnum.HOST);
+            mockBilling.customers.getByExternalId.mockResolvedValue({ id: 'cust-legacy' });
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-legacy', status: 'comp', planId: 'plan-owner-pro', productDomain: null }
+            ]);
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-owner-pro',
+                slug: 'owner-pro',
+                entitlements: [EntitlementKey.AI_CHAT],
+                limits: {}
+            });
+
+            // Act
+            const entitlements = await resolveOwnerEntitlementsForOwnerId('owner-legacy');
+
+            // Assert
+            expect(entitlements).toContain(EntitlementKey.AI_CHAT);
+        });
+    });
+
     describe('regression — default entitlements do not include rich description', () => {
         it('owner on the default free plan does NOT get CAN_USE_RICH_DESCRIPTION (pins the gate)', async () => {
             // The default (tourist-free) entitlements are the resolved source
@@ -391,6 +548,11 @@ describe('ownerEntitlementMiddleware', () => {
  * and PlanService are stubbed to avoid real-network/DB calls. The DB mock
  * is set up via `mockUserRoleLookup` to handle the `resolveOwnerRole` users
  * query shape (no innerJoin).
+ *
+ * **Test isolation caveat:** `ownerLimitsCache` is module-global, keyed by QZPay
+ * `customerId`, and survives `vi.clearAllMocks()` — there is no reset seam. Every
+ * test here MUST use a unique `customerId`, or a later test silently reads the
+ * cached limits of an earlier one and passes for the wrong reason.
  */
 describe('resolveOwnerLimitsForOwnerId (SPEC-211 T-007 AC-1.1)', () => {
     let mockBilling: {
@@ -495,6 +657,81 @@ describe('resolveOwnerLimitsForOwnerId (SPEC-211 T-007 AC-1.1)', () => {
             // PlanService was consulted for the fallback.
             expect(mockGetBySlug).toHaveBeenCalledWith('owner-basico');
             // billing.plans.get was NOT called (no active subscription to look up).
+            expect(mockBilling.plans.get).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('HOS-291 regression — comp subscription resolves plan limits, not the fallback', () => {
+        it('returns the comped plan limits instead of the owner-basico fallback', async () => {
+            // Arrange — same comp owner as the entitlement regression above.
+            // The limits resolver reimplemented the SAME narrow status check, so
+            // a comp owner silently got the owner-basico fallback quota (20)
+            // instead of the quota of the plan they were comped on (100).
+            mockUserRoleLookup(RoleEnum.HOST);
+            mockBilling.customers.getByExternalId.mockResolvedValue({ id: 'cust-comp-limits' });
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                {
+                    id: 'sub-comp',
+                    status: 'comp',
+                    planId: 'plan-owner-pro',
+                    productDomain: 'accommodation'
+                }
+            ]);
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-owner-pro',
+                slug: 'owner-pro',
+                entitlements: [],
+                limits: {
+                    [LimitKey.MAX_AI_CHAT_PER_MONTH]: 100,
+                    [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH]: 100
+                }
+            });
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            // Act
+            const result = await resolveOwnerLimitsForOwnerId('owner-comp-limits');
+
+            // Assert — plan limits win; the owner-basico fallback never runs.
+            expect(result.get(LimitKey.MAX_AI_CHAT_PER_MONTH)).toBe(100);
+            expect(result.get(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH)).toBe(100);
+            expect(mockGetBySlug).not.toHaveBeenCalled();
+        });
+
+        it('falls back to owner-basico when the only comp subscription is commerce-domain', async () => {
+            // A comp COMMERCE subscription must not be selected here either. If
+            // it were, `plans.get` would return the commerce plan (found, but
+            // `limits: {}`), so `shouldCache` stays true and an EMPTY limits map
+            // gets cached for 5 minutes — denying the owner's AI chat at `?? 0`
+            // instead of applying the owner-basico fallback quota.
+            mockUserRoleLookup(RoleEnum.HOST);
+            mockBilling.customers.getByExternalId.mockResolvedValue({
+                id: 'cust-commerce-only'
+            });
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                {
+                    id: 'sub-commerce',
+                    status: 'comp',
+                    planId: 'plan-commerce',
+                    productDomain: 'commerce'
+                }
+            ]);
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-commerce',
+                slug: 'commerce-listing',
+                entitlements: [],
+                limits: {}
+            });
+            // Stubbed so the counterfactual plays out exactly as described above:
+            // without it the override lookup throws, `shouldCache` flips to false
+            // and the fallback would fire for the wrong reason.
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            // Act
+            const result = await resolveOwnerLimitsForOwnerId('owner-commerce-only');
+
+            // Assert — owner-basico fallback (20), NOT an empty map.
+            expect(result.get(LimitKey.MAX_AI_CHAT_PER_MONTH)).toBe(20);
+            expect(mockGetBySlug).toHaveBeenCalledWith('owner-basico');
             expect(mockBilling.plans.get).not.toHaveBeenCalled();
         });
     });
