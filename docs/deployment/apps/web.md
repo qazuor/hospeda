@@ -68,7 +68,7 @@ The web app mixes rendering modes per page (set in `astro.config.mjs`):
 
 | Strategy | Cache | Used by |
 |----------|-------|---------|
-| **SSR** (default) | Bypass cache | `/auth/*`, `/mi-cuenta/*`, `/busqueda/`, `/feedback/*` |
+| **SSR** (default) | Bypass cache | `/auth/*`, `/mi-cuenta/*`, `/feedback/*` |
 | **ISR** (default for content pages) | 24h, revalidated by API | `/alojamientos/*`, `/destinos/*`, `/eventos/*`, `/publicaciones/*` |
 | **SSG** (`prerender = true`) | Forever (until rebuild) | `/nosotros/`, `/legal/*`, `/faq/`, `/contacto/` |
 | **Server Islands** (`server:defer`) | Lazy-rendered fragment | Auth-aware widgets on cached pages |
@@ -440,7 +440,7 @@ adapter: vercel({
   isr: {
     expiration: 86400,   // 24h
     bypassToken: process.env.HOSPEDA_REVALIDATION_SECRET,
-    exclude: [/^(\/(?:en|pt))?\/(auth|mi-cuenta|busqueda|feedback)(\/.*)?$/]
+    exclude: [/^(\/(?:en|pt))?\/(auth|mi-cuenta|feedback)(\/.*)?$/]
   }
 })
 ```
@@ -551,7 +551,7 @@ These need a real browser. Use Playwright, Chrome DevTools, or just clicking aro
 - [ ] Homepage at `/es/` renders with hero, accommodation cards, and footer.
 - [ ] Locale switcher works: navigate from `/es/` to `/en/` and back. The page does not flash unstyled content.
 - [ ] An accommodation detail page like `/es/alojamientos/cabana-rio/` (replace with a real slug) shows photos via Cloudinary, price, amenities, and a "Reservar" button.
-- [ ] Search at `/es/busqueda/?q=cabin` returns results.
+- [ ] The accommodations listing at `/es/alojamientos/` renders cards and paginates.
 - [ ] `/es/auth/sign-in/` shows the Better Auth form (no console errors).
 - [ ] After signing in, `/es/mi-cuenta/` loads. Sign out works.
 - [ ] Theme toggle (light/dark) persists across page reloads.
@@ -699,7 +699,7 @@ NEVER `git revert` and force-push to `main` to "undo" a deploy. The CI/CD model 
 
 1. Add `export const prerender = true;` to any static page that does not need fresh data.
 2. Audit existing pages in `src/pages/[lang]/` to confirm the right strategy. See the [Render Strategy table](#render-strategy-per-page) above.
-3. Conversely, if a page that needs fresh data (e.g., `/es/busqueda/`) is being statically prerendered and shows stale results, remove `export const prerender = true;` and confirm the route is in the `isr.exclude` regex in `astro.config.mjs`.
+3. Conversely, if a page that needs fresh data (e.g., `/es/mi-cuenta/`) is being statically prerendered and shows stale results, remove `export const prerender = true;` and confirm the route is in the `isr.exclude` regex in `astro.config.mjs`.
 
 ### Vercel Function Timeout (10-60s)
 

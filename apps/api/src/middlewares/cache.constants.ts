@@ -23,7 +23,6 @@ export const PUBLIC_CACHE_ENDPOINTS = [
     '/api/v1/public/event-organizers',
     '/api/v1/public/exchange-rates',
     '/api/v1/public/posts/tags',
-    '/api/v1/public/search',
     '/api/v1/public/stats',
     '/api/v1/public/testimonials',
     '/health'

@@ -48,8 +48,8 @@ export function buildUrl({
  *
  * @example
  * ```ts
- * buildUrlWithParams({ locale: 'es', path: 'busqueda', params: { q: 'hotel' } });
- * // Returns: '/es/busqueda/?q=hotel'
+ * buildUrlWithParams({ locale: 'es', path: 'alojamientos', params: { q: 'hotel' } });
+ * // Returns: '/es/alojamientos/?q=hotel'
  * ```
  */
 export function buildUrlWithParams({
