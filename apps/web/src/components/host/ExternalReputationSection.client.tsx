@@ -17,13 +17,18 @@
  *  - Always-visible Google-only explainer note
  */
 
-import { AccommodationExternalListingSchema } from '@repo/schemas';
+import type { AccommodationExternalListingsResponse } from '@repo/schemas';
+import {
+    AccommodationExternalListingSchema,
+    AccommodationExternalListingsResponseSchema
+} from '@repo/schemas';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { PlatformStatusEntry } from '@/components/host/PlatformStatusChips';
 import { PlatformStatusChips } from '@/components/host/PlatformStatusChips';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { useReputationStatus } from '@/hooks/use-reputation-status';
+import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './ExternalReputationSection.module.css';
@@ -36,21 +41,20 @@ import chipStyles from './ReputationStatus.module.css';
 /** Platform values mirroring ExternalPlatformEnum (schema dependency-free). */
 type ExternalPlatform = 'GOOGLE' | 'BOOKING' | 'AIRBNB' | 'OTHER';
 
-/** A single external listing row returned by the API. */
-export interface ExternalListingRow {
-    readonly id: string;
-    readonly platform: ExternalPlatform;
-    readonly url: string;
-    readonly showLink: boolean;
-    readonly showReviews: boolean;
-    readonly verified: boolean;
-}
+/**
+ * A single external listing row returned by the API.
+ *
+ * HOS-290: INFERRED from the shared response schema rather than hand-written.
+ * A local interface describing the server's payload is what let the client and
+ * the server drift far enough for this whole section to break in production.
+ */
+export type ExternalListingRow = AccommodationExternalListingsResponse['listings'][number];
 
-/** Reputation metadata returned by the GET listings endpoint. */
-export interface ReputationMeta {
-    readonly showExternalReputation: boolean;
-    readonly aggregateFetchedAt: string | null;
-}
+/**
+ * Reputation metadata returned by the GET listings endpoint. Same rationale as
+ * {@link ExternalListingRow}: inferred, never re-described.
+ */
+export type ReputationMeta = AccommodationExternalListingsResponse['reputation'];
 
 /** Props for ExternalReputationSection. */
 export interface ExternalReputationSectionProps {
@@ -85,16 +89,48 @@ const URL_HINT_FALLBACK: Readonly<Record<ExternalPlatform, string>> = {
     OTHER: 'Pegá el enlace público directo a tu anuncio en esa plataforma.'
 };
 
-const PROTECTED = '/api/v1/protected';
+/**
+ * Absolute API base + protected prefix, resolved PER CALL.
+ *
+ * HOS-290: these fetches used to be RELATIVE (`/api/v1/protected/...`), which
+ * sends them to the Astro server rather than the API — `PUBLIC_API_URL` points
+ * at a different host (`api.hospeda.com.ar` vs `hospeda.com.ar`) and the web
+ * app serves no `/api/v1/*` route. Every call 404'd, which is the FIRST reason
+ * this section only ever rendered its error banner; the response-shape mismatch
+ * fixed alongside it was the second.
+ *
+ * Resolved inside the callbacks rather than at module scope on purpose:
+ * `getApiUrl()` runs the whole env validation and THROWS when it fails, and
+ * this module is imported statically by `AccommodationEditor.client.tsx`
+ * (`client:load`). A module-scope throw would take down the entire property
+ * editor; inside a callback it degrades to this section's own error banner.
+ * That is also what the other ~20 `getApiUrl()` call sites in the app do.
+ */
+function protectedBase(): string {
+    return `${getApiUrl()}/api/v1/protected`;
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 /** Compute retry minutes from a Retry-After header value (seconds). */
-function retryAfterMinutes(retryAfterSeconds: string | null): number {
-    if (!retryAfterSeconds) return 5;
-    const secs = Number.parseInt(retryAfterSeconds, 10);
+/**
+ * Minutes to show in the rate-limit message.
+ *
+ * HOS-290: reads the value from the 429 JSON body (`error.details.retryAfter`,
+ * which `refresh.ts` always sends) and only falls back to the `Retry-After`
+ * header. Now that the request is genuinely cross-origin, that header is
+ * unreadable — it is not CORS-safelisted and `API_CORS_EXPOSE_HEADERS` does not
+ * include it — so header-only parsing would always yield the 5-minute default
+ * while the real window is 10.
+ */
+function retryAfterMinutes(retryAfterSeconds: number | string | null | undefined): number {
+    if (retryAfterSeconds === null || retryAfterSeconds === undefined) return 5;
+    const secs =
+        typeof retryAfterSeconds === 'number'
+            ? retryAfterSeconds
+            : Number.parseInt(retryAfterSeconds, 10);
     if (Number.isNaN(secs) || secs <= 0) return 5;
     return Math.ceil(secs / 60);
 }
@@ -123,7 +159,9 @@ export function ExternalReputationSection({
     // --- Remote state ---
     const [listings, setListings] = useState<readonly ExternalListingRow[]>([]);
     const [masterToggle, setMasterToggle] = useState(false);
-    const [aggregateFetchedAt, setAggregateFetchedAt] = useState<string | null>(null);
+    // Held as the `Date` the shared schema already coerced — no ISO round trip.
+    const [aggregateFetchedAt, setAggregateFetchedAt] =
+        useState<ReputationMeta['aggregateFetchedAt']>(null);
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -162,6 +200,7 @@ export function ExternalReputationSection({
 
     // --- Master toggle state ---
     const [isTogglingMaster, setIsTogglingMaster] = useState(false);
+    const [masterToggleError, setMasterToggleError] = useState<string | null>(null);
 
     // --- Load listings ---
     const loadListings = useCallback(async () => {
@@ -169,21 +208,24 @@ export function ExternalReputationSection({
         setLoadError(null);
         try {
             const res = await fetch(
-                `${PROTECTED}/accommodations/${accommodationId}/external-listings`,
+                `${protectedBase()}/accommodations/${accommodationId}/external-listings`,
                 { credentials: 'include' }
             );
             if (!res.ok) {
                 throw new Error(`HTTP ${res.status}`);
             }
-            const body = (await res.json()) as {
-                data: {
-                    listings: ExternalListingRow[];
-                    reputation: ReputationMeta;
-                };
-            };
-            setListings(body.data.listings ?? []);
-            setMasterToggle(body.data.reputation.showExternalReputation ?? false);
-            setAggregateFetchedAt(body.data.reputation.aggregateFetchedAt ?? null);
+            // Parsed through the SHARED schema rather than an inline cast: a
+            // cast would happily "type" whatever the server actually sent, which
+            // is exactly how this section shipped broken.
+            const envelope = (await res.json()) as { data: unknown };
+            const parsed = AccommodationExternalListingsResponseSchema.safeParse(envelope.data);
+            if (!parsed.success) {
+                throw new Error('Unexpected external-listings response shape');
+            }
+
+            setListings(parsed.data.listings);
+            setMasterToggle(parsed.data.reputation.showExternalReputation);
+            setAggregateFetchedAt(parsed.data.reputation.aggregateFetchedAt);
         } catch {
             setLoadError(
                 t(
@@ -205,21 +247,44 @@ export function ExternalReputationSection({
         setIsTogglingMaster(true);
         try {
             const res = await fetch(
-                `${PROTECTED}/accommodations/${accommodationId}/external-reputation/master-toggle`,
+                `${protectedBase()}/accommodations/${accommodationId}/external-reputation/master-toggle`,
                 {
                     method: 'PATCH',
                     credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ showExternalReputation: !masterToggle })
+                    // HOS-290: the route's body schema is `{ value: boolean }`
+                    // (`MasterToggleBodySchema`). This used to send
+                    // `{ showExternalReputation }`, so the toggle 400'd every
+                    // time — the third client/server contract mismatch in this
+                    // one component.
+                    body: JSON.stringify({ value: !masterToggle })
                 }
             );
             if (res.ok) {
                 setMasterToggle((prev) => !prev);
+                setMasterToggleError(null);
+            } else {
+                // Never fail silently here: a 400 on EVERY toggle went unnoticed
+                // all the way to production precisely because this branch did
+                // nothing and the checkbox just snapped back (HOS-290).
+                setMasterToggleError(
+                    t(
+                        'external-reputation.errors.masterToggleFailed',
+                        'No se pudo cambiar la visibilidad. Intentá de nuevo.'
+                    )
+                );
             }
+        } catch {
+            setMasterToggleError(
+                t(
+                    'external-reputation.errors.masterToggleFailed',
+                    'No se pudo cambiar la visibilidad. Intentá de nuevo.'
+                )
+            );
         } finally {
             setIsTogglingMaster(false);
         }
-    }, [accommodationId, masterToggle]);
+    }, [accommodationId, masterToggle, t]);
 
     // --- Add listing handler ---
     const handleAddListing = useCallback(async () => {
@@ -246,13 +311,16 @@ export function ExternalReputationSection({
         setAddError(null);
         try {
             const res = await fetch(
-                `${PROTECTED}/accommodations/${accommodationId}/external-listings`,
+                `${protectedBase()}/accommodations/${accommodationId}/external-listings`,
                 {
                     method: 'POST',
                     credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
+                    // `accommodationId` is deliberately absent: the route's body
+                    // schema omits it (it comes from the path param), and Zod
+                    // only tolerates the extra key because the object is not
+                    // strict.
                     body: JSON.stringify({
-                        accommodationId,
                         platform: addPlatform,
                         url: trimmedUrl,
                         showLink: addShowLink,
@@ -294,7 +362,7 @@ export function ExternalReputationSection({
         async (listingId: string, field: 'showLink' | 'showReviews', current: boolean) => {
             try {
                 const res = await fetch(
-                    `${PROTECTED}/accommodations/${accommodationId}/external-listings/${listingId}`,
+                    `${protectedBase()}/accommodations/${accommodationId}/external-listings/${listingId}`,
                     {
                         method: 'PATCH',
                         credentials: 'include',
@@ -319,7 +387,7 @@ export function ExternalReputationSection({
         async (listingId: string) => {
             try {
                 const res = await fetch(
-                    `${PROTECTED}/accommodations/${accommodationId}/external-listings/${listingId}`,
+                    `${protectedBase()}/accommodations/${accommodationId}/external-listings/${listingId}`,
                     {
                         method: 'DELETE',
                         credentials: 'include'
@@ -343,15 +411,21 @@ export function ExternalReputationSection({
         setRefreshFeedback(null);
         try {
             const res = await fetch(
-                `${PROTECTED}/accommodations/${accommodationId}/external-reputation/refresh`,
+                `${protectedBase()}/accommodations/${accommodationId}/external-reputation/refresh`,
                 {
                     method: 'POST',
                     credentials: 'include'
                 }
             );
             if (res.status === 429) {
-                const minutes = retryAfterMinutes(res.headers.get('Retry-After'));
-                setRateLimitMinutes(minutes);
+                const body = (await res.json().catch(() => null)) as {
+                    error?: { details?: { retryAfter?: number } };
+                } | null;
+                setRateLimitMinutes(
+                    retryAfterMinutes(
+                        body?.error?.details?.retryAfter ?? res.headers.get('Retry-After')
+                    )
+                );
             } else if (res.status === 202) {
                 // Async enqueue: Apify runs started in background — begin polling.
                 setAsyncRefreshPending(true);
@@ -468,6 +542,16 @@ export function ExternalReputationSection({
                     disabled={isTogglingMaster || isLoadingData}
                 />
             </div>
+
+            {/* Master-toggle error (HOS-290: this used to fail silently) */}
+            {masterToggleError && (
+                <div
+                    className={styles.errorBanner}
+                    role="alert"
+                >
+                    {masterToggleError}
+                </div>
+            )}
 
             {/* Load error */}
             {loadError && (
@@ -743,7 +827,7 @@ export function ExternalReputationSection({
                         {t(
                             'external-reputation.ownerConfig.lastUpdated',
                             'Última actualización: {{date}}'
-                        ).replace('{{date}}', new Date(aggregateFetchedAt).toLocaleString(locale))}
+                        ).replace('{{date}}', aggregateFetchedAt.toLocaleString(locale))}
                     </span>
                 )}
 
