@@ -296,7 +296,7 @@
                 "gallery": "Photo gallery",
                 "galleryAlt": "Photo {{index}}",
                 "dropOrClick": "Drag an image or click to select",
-                "formats": "JPG, PNG or WebP — max 5MB",
+                "formats": "JPG, PNG or WebP — max {{maxSize}}MB",
                 "remove": "Remove",
                 "invalidType": "Only JPG, PNG or WebP files are allowed",
                 "tooLarge": "File cannot exceed {{maxSize}}MB",

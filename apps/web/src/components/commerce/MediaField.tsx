@@ -342,7 +342,11 @@ export function MediaField({
                     onChange={handleGallerySelect}
                 />
                 <span className={classes.mediaHint}>
-                    {t('commerce.owner.editor.media.uploadHint', 'JPG, PNG o WebP — máx. 5MB')}
+                    {t(
+                        'commerce.owner.editor.media.uploadHint',
+                        'JPG, PNG o WebP — máx. {{maxSize}}MB',
+                        { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
+                    )}
                 </span>
             </div>
 

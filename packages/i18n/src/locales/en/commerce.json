@@ -175,7 +175,7 @@
                 "gallery": "Photo gallery",
                 "add": "Add photo",
                 "remove": "Remove",
-                "uploadHint": "JPG, PNG or WebP — max. 5MB",
+                "uploadHint": "JPG, PNG or WebP — max. {{maxSize}}MB",
                 "invalidType": "Only JPG, PNG or WebP files are allowed",
                 "tooLarge": "The file cannot exceed {{maxSize}}MB",
                 "uploadFailed": "Error uploading the image",
