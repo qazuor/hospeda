@@ -63,7 +63,9 @@ import {
     GetDestinationPointsOfInterestInputSchema,
     GetDestinationStatsInputSchema,
     GetDestinationSummaryInputSchema,
-    ServiceErrorCode
+    LifecycleStatusEnum,
+    ServiceErrorCode,
+    VisibilityEnum
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
@@ -599,8 +601,21 @@ export class DestinationService extends BaseCrudService<
                     );
                 }
                 checkCanViewDestination(actor, destination);
+                // HOS-288: this is a PUBLIC read path (GET /public/destinations/:id/accommodations),
+                // so it must be restricted to publicly visible, live listings. The
+                // `visibility`/`lifecycleState` predicates are stated HERE rather than
+                // defaulted in `AccommodationModel` on purpose — the admin panel must
+                // still see `PRIVATE` rows and an owner their own `DRAFT`. Mirrors the
+                // same where-record shape used by `SocialPublicDataService.fetchAccommodations`.
+                // `deletedAt` is deliberately NOT passed: `AccommodationModel` excludes
+                // soft-deleted rows by default (see `AccommodationModel#softDeleteCondition`),
+                // and passing it here would trip that default's explicit-intent escape hatch.
                 const { items } = await this.accommodationModel.findAll(
-                    { destinationId },
+                    {
+                        destinationId,
+                        visibility: VisibilityEnum.PUBLIC,
+                        lifecycleState: LifecycleStatusEnum.ACTIVE
+                    },
                     undefined,
                     undefined,
                     resolvedCtx.tx

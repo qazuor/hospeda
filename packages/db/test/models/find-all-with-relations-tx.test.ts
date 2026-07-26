@@ -121,7 +121,9 @@ describe('findAllWithRelations - transaction propagation', () => {
         expect(findAllSpy).toHaveBeenCalledWith(
             expect.anything(),
             expect.anything(),
-            undefined,
+            // HOS-288: AccommodationModel injects its default soft-delete condition
+            // into additionalConditions, so this is an array rather than undefined.
+            expect.any(Array),
             mockTxDb
         );
         expect(getDb).not.toHaveBeenCalled();

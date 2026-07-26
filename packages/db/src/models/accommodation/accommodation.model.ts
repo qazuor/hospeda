@@ -3,6 +3,7 @@ import type {
     AccommodationRatingInput,
     AccommodationSearchInput,
     DestinationSummary,
+    PaginatedListOptions,
     SortField,
     UserSummary
 } from '@repo/schemas';
@@ -409,6 +410,15 @@ function buildOccupancyAvailabilityClause(checkIn: Date, checkOut: Date): SQL<un
     )`;
 }
 
+/**
+ * Options accepted by {@link AccommodationModel.findAll},
+ * {@link AccommodationModel.findAllWithRelations}, and
+ * {@link AccommodationModel.count} that this model's soft-delete default cares about.
+ */
+interface AccommodationIncludeDeletedOption {
+    includeDeleted?: boolean;
+}
+
 export class AccommodationModel extends BaseModelImpl<Accommodation> {
     protected table = accommodations;
     public entityName = 'accommodations';
@@ -452,6 +462,126 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
 
     protected getTableName(): string {
         return 'accommodations';
+    }
+
+    /**
+     * Computes the soft-delete exclusion condition injected by default into every
+     * {@link findAll}, {@link findAllWithRelations}, and {@link count} query on this
+     * model (HOS-288).
+     *
+     * Until this fix `AccommodationModel` had NO default: accommodation reads were
+     * safe only because the CUSTOM methods on this class (`search`,
+     * `searchWithRelations`, `countByFilters`, `findTopRated`, `findIdsByOwnerId`,
+     * `getMarketComparisonByOwnerId`) each add `isNull(accommodations.deletedAt)` by
+     * hand. Every caller reaching for the inherited `findAll`/`count`/
+     * `findAllWithRelations` instead fell straight through and leaked soft-deleted
+     * rows into public responses (e.g. `DestinationService.getAccommodations`,
+     * `FeatureService.getAccommodationsByFeature`). Centralizing the rule here —
+     * rather than fixing each call site — closes the gap for every current and
+     * future caller of these three methods. Same mechanism `EventModel` and
+     * `PostModel` got in HOS-274.
+     *
+     * NOTE: only `deletedAt` belongs at the model layer. `visibility` and
+     * `lifecycleState` must NOT become model defaults — the admin panel has to see
+     * `PRIVATE` accommodations and an owner has to see their own `DRAFT`, so those
+     * two predicates stay explicit at each public read path.
+     *
+     * Returns `undefined` (no condition injected, i.e. soft-deleted rows are
+     * included) when EITHER escape hatch applies, mirroring the existing
+     * convention in `BaseCrudRead.list()` (`packages/service-core/src/base/base.crud.read.ts`):
+     *   (a) `options.includeDeleted === true` — explicit opt-in, e.g. the admin
+     *       trash/restore view via `adminList({ includeDeleted: true })`, or
+     *   (b) the caller's `where` record already specifies a `deletedAt` key —
+     *       explicit caller intent always wins over the default.
+     *
+     * @param where - The filter record as received by the caller.
+     * @param options - Optional read options; only `includeDeleted` is read.
+     * @returns `isNull(accommodations.deletedAt)`, or `undefined` when either escape hatch applies.
+     */
+    #softDeleteCondition(
+        where: Record<string, unknown>,
+        options?: AccommodationIncludeDeletedOption
+    ): SQL<unknown> | undefined {
+        if (options?.includeDeleted) return undefined;
+        if ('deletedAt' in where) return undefined;
+        return isNull(accommodations.deletedAt);
+    }
+
+    /**
+     * Overrides {@link BaseModelImpl.findAll} to default-exclude soft-deleted rows
+     * (HOS-288) — see {@link #softDeleteCondition} JSDoc for the rationale and the
+     * two escape hatches. Everything else delegates to the base implementation
+     * unchanged; `options` (including `includeDeleted`) is forwarded verbatim so
+     * the internal `this.count()` call made by the base keeps `items` and `total`
+     * in agreement.
+     */
+    override async findAll(
+        where: Record<string, unknown>,
+        options?: {
+            page?: number;
+            pageSize?: number;
+            sortBy?: string;
+            sortOrder?: 'asc' | 'desc';
+            includeDeleted?: boolean;
+        },
+        additionalConditions?: SQL[],
+        tx?: DrizzleClient
+    ): Promise<{ items: Accommodation[]; total: number }> {
+        const softDeleteCondition = this.#softDeleteCondition(where ?? {}, options);
+        const mergedConditions: SQL[] = [
+            ...(additionalConditions ?? []),
+            ...(softDeleteCondition ? [softDeleteCondition] : [])
+        ];
+        return super.findAll(
+            where,
+            options,
+            mergedConditions.length > 0 ? mergedConditions : undefined,
+            tx
+        );
+    }
+
+    /**
+     * Overrides {@link BaseModelImpl.findAllWithRelations} to apply the same default
+     * soft-delete exclusion as {@link findAll} (HOS-288) — see
+     * {@link #softDeleteCondition} JSDoc.
+     */
+    override async findAllWithRelations(
+        relations: Record<string, boolean | Record<string, unknown>>,
+        where: Record<string, unknown> = {},
+        options: Omit<PaginatedListOptions, 'relations'> & { includeDeleted?: boolean } = {},
+        additionalConditions?: SQL[],
+        tx?: DrizzleClient
+    ): Promise<{ items: Accommodation[]; total: number }> {
+        const softDeleteCondition = this.#softDeleteCondition(where ?? {}, options);
+        const mergedConditions: SQL[] = [
+            ...(additionalConditions ?? []),
+            ...(softDeleteCondition ? [softDeleteCondition] : [])
+        ];
+        return super.findAllWithRelations(
+            relations,
+            where,
+            options,
+            mergedConditions.length > 0 ? mergedConditions : undefined,
+            tx
+        );
+    }
+
+    /**
+     * Overrides {@link BaseModelImpl.count} to apply the same default soft-delete
+     * exclusion as {@link findAll} (HOS-288), so counts (and the pagination totals
+     * derived from them) never include soft-deleted rows the items query already
+     * excluded. See {@link #softDeleteCondition} JSDoc.
+     */
+    override async count(
+        where: Record<string, unknown>,
+        options?: { additionalConditions?: SQL[]; tx?: DrizzleClient; includeDeleted?: boolean }
+    ): Promise<number> {
+        const softDeleteCondition = this.#softDeleteCondition(where ?? {}, options);
+        const mergedConditions: SQL[] = [
+            ...(options?.additionalConditions ?? []),
+            ...(softDeleteCondition ? [softDeleteCondition] : [])
+        ];
+        return super.count(where, { ...options, additionalConditions: mergedConditions });
     }
 
     public async countByFilters(

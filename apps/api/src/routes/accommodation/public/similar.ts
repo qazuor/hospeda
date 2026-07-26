@@ -5,7 +5,7 @@
 import { accommodations, getDb } from '@repo/db';
 import { AccommodationPublicSchema, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
-import { and, desc, eq, ne, or, type SQL } from 'drizzle-orm';
+import { and, desc, eq, isNull, ne, or, type SQL } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
@@ -87,7 +87,14 @@ export const publicGetSimilarRoute = createPublicRoute({
             orCondition,
             ne(accommodations.id, id),
             eq(accommodations.lifecycleState, 'ACTIVE'),
-            eq(accommodations.visibility, 'PUBLIC')
+            eq(accommodations.visibility, 'PUBLIC'),
+            // HOS-288: soft-deleted rows must never reach a public response.
+            // `AccommodationModel` defaults to excluding them on findAll/count/
+            // findAllWithRelations, but this handler is a RAW relational query on
+            // `getDb()` (see the @remarks above on why no model method fits the
+            // two-step OR-similarity pattern), so the model default cannot reach
+            // it and the predicate has to be written out here.
+            isNull(accommodations.deletedAt)
         ) as SQL<unknown>;
 
         const rows = await db.query.accommodations.findMany({

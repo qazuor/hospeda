@@ -168,7 +168,12 @@ describe('AccommodationModel', () => {
             });
 
             expect(mockFindMany).toHaveBeenCalledWith({
-                where: undefined, // buildWhereClause returns undefined for empty object
+                // HOS-288: buildWhereClause still returns undefined for the empty
+                // filter object, but AccommodationModel now injects its default
+                // soft-delete exclusion, so `where` is that condition rather than
+                // undefined. The precise shape is asserted in
+                // accommodation.model.soft-delete.test.ts.
+                where: expect.anything(),
                 with: { destination: true, owner: true },
                 limit: 20,
                 offset: 0
@@ -238,7 +243,10 @@ describe('AccommodationModel', () => {
 
             const result = await model.findAllWithRelations({});
 
-            expect(mockFindAll).toHaveBeenCalledWith({}, {}, undefined, undefined);
+            // HOS-288: the 3rd argument is no longer undefined — findAllWithRelations
+            // now passes down its default soft-delete condition (asserted precisely in
+            // accommodation.model.soft-delete.test.ts).
+            expect(mockFindAll).toHaveBeenCalledWith({}, {}, expect.any(Array), undefined);
             expect(result.items).toHaveLength(1);
             expect(logQuery).toHaveBeenCalledWith(
                 'accommodations',
