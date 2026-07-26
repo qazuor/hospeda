@@ -45,25 +45,25 @@
 
 /* --- Kinds ------------------------------------------------------------- */
 
-.message[data-kind='success'] {
+.message[data-kind="success"] {
     background-color: var(--palette-success-50);
     border-color: var(--palette-success-200);
     color: var(--palette-success-700);
 }
 
-.message[data-kind='error'] {
+.message[data-kind="error"] {
     background-color: var(--palette-danger-50);
     border-color: var(--palette-danger-200);
     color: var(--palette-danger-700);
 }
 
-.message[data-kind='warning'] {
+.message[data-kind="warning"] {
     background-color: var(--palette-warning-50);
     border-color: var(--palette-warning-200);
     color: var(--palette-warning-700);
 }
 
-.message[data-kind='info'] {
+.message[data-kind="info"] {
     background-color: var(--palette-info-50);
     border-color: var(--palette-info-200);
     color: var(--palette-info-700);
@@ -71,25 +71,25 @@
 
 /* --- Dark theme --------------------------------------------------------- */
 
-[data-theme='dark'] .message[data-kind='success'] {
+[data-theme="dark"] .message[data-kind="success"] {
     background-color: var(--palette-success-800);
     border-color: var(--palette-success-600);
     color: var(--palette-success-200);
 }
 
-[data-theme='dark'] .message[data-kind='error'] {
+[data-theme="dark"] .message[data-kind="error"] {
     background-color: var(--palette-danger-800);
     border-color: var(--palette-danger-600);
     color: var(--palette-danger-200);
 }
 
-[data-theme='dark'] .message[data-kind='warning'] {
+[data-theme="dark"] .message[data-kind="warning"] {
     background-color: var(--palette-warning-800);
     border-color: var(--palette-warning-600);
     color: var(--palette-warning-200);
 }
 
-[data-theme='dark'] .message[data-kind='info'] {
+[data-theme="dark"] .message[data-kind="info"] {
     background-color: var(--palette-info-800);
     border-color: var(--palette-info-600);
     color: var(--palette-info-200);
