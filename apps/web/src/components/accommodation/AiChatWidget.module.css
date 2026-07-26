@@ -5,7 +5,6 @@
 
 .panel {
     position: fixed;
-    bottom: 96px;
     right: 24px;
     z-index: 1000;
     display: flex;
@@ -13,7 +12,13 @@
     width: 380px;
     max-width: calc(100vw - 48px);
     height: 520px;
-    max-height: calc(100vh - 120px);
+    /* `--chat-visible-height` is the visual viewport, published by the widget
+       while the panel is open. It is the only measurement that shrinks for the
+       mobile keyboard on BOTH platforms: `vh` never does, and `dvh` does not on
+       iOS Safari. `dvh` is the fallback for browsers without visualViewport. */
+    max-height: calc(var(--chat-visible-height, 100dvh) - var(--chat-height-reserve, 120px));
+    /* Lift clear of the keyboard when one is open. */
+    bottom: calc(var(--chat-bottom-gap, 96px) + var(--chat-keyboard-inset, 0px));
     border: 1px solid var(--core-muted-foreground, #e5e7eb);
     border-radius: var(--radius-card, 24px);
     background-color: var(--core-card, #ffffff);
@@ -27,7 +32,15 @@
 .panelExpanded {
     width: 560px;
     height: 700px;
-    max-height: calc(100vh - 120px);
+    max-height: calc(var(--chat-visible-height, 100dvh) - var(--chat-height-reserve, 120px));
+}
+
+/* With the keyboard up, the FAB it normally clears is hidden behind it, and
+   vertical space is exactly what is scarce — so the panel sits closer to the
+   keyboard and reserves less room for browser chrome. */
+.panel[data-keyboard-open="true"] {
+    --chat-bottom-gap: 12px;
+    --chat-height-reserve: 24px;
 }
 
 .header {
