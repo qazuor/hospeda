@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model';
 import * as logger from '../../src/utils/logger';
+import { flattenAndConditions, hasSoftDeleteCondition } from '../utils/soft-delete-clause';
 
 const mockFindOne = vi.fn();
 
@@ -167,17 +168,19 @@ describe('AccommodationModel', () => {
                 owner: true
             });
 
-            expect(mockFindMany).toHaveBeenCalledWith({
-                // HOS-288: buildWhereClause still returns undefined for the empty
-                // filter object, but AccommodationModel now injects its default
-                // soft-delete exclusion, so `where` is that condition rather than
-                // undefined. The precise shape is asserted in
-                // accommodation.model.soft-delete.test.ts.
-                where: expect.anything(),
+            // HOS-288: buildWhereClause still returns undefined for the empty
+            // filter object, but AccommodationModel now injects its default
+            // soft-delete exclusion, so `where` is exactly that condition (and
+            // nothing else) rather than undefined.
+            const { where: findManyWhere, ...findManyRest } = (mockFindMany.mock.calls[0]?.[0] ??
+                {}) as { where?: unknown };
+            expect(findManyRest).toEqual({
                 with: { destination: true, owner: true },
                 limit: 20,
                 offset: 0
             });
+            expect(flattenAndConditions(findManyWhere)).toHaveLength(1);
+            expect(hasSoftDeleteCondition(findManyWhere)).toBe(true);
             expect(result.items).toHaveLength(1);
             expect(result.items[0]).toHaveProperty('destination');
             expect(logQuery).toHaveBeenCalledWith(
@@ -223,12 +226,16 @@ describe('AccommodationModel', () => {
                 { page: 2, pageSize: 3 }
             );
 
-            expect(mockFindMany).toHaveBeenCalledWith({
-                where: expect.anything(), // buildWhereClause result - can be complex object or undefined
+            const { where: findManyWhere, ...findManyRest } = (mockFindMany.mock.calls[0]?.[0] ??
+                {}) as { where?: unknown };
+            expect(findManyRest).toEqual({
                 with: { destination: true },
                 limit: 3,
                 offset: 3
             });
+            // The caller's `name` filter AND the HOS-288 soft-delete default.
+            expect(flattenAndConditions(findManyWhere)).toHaveLength(2);
+            expect(hasSoftDeleteCondition(findManyWhere)).toBe(true);
             expect(result.total).toBe(10);
             expect(result.items).toHaveLength(2);
 
@@ -244,9 +251,14 @@ describe('AccommodationModel', () => {
             const result = await model.findAllWithRelations({});
 
             // HOS-288: the 3rd argument is no longer undefined — findAllWithRelations
-            // now passes down its default soft-delete condition (asserted precisely in
-            // accommodation.model.soft-delete.test.ts).
-            expect(mockFindAll).toHaveBeenCalledWith({}, {}, expect.any(Array), undefined);
+            // passes down its default soft-delete condition as the only entry.
+            const [whereArg, optionsArg, additionalConditions, txArg] =
+                mockFindAll.mock.calls[0] ?? [];
+            expect(whereArg).toEqual({});
+            expect(optionsArg).toEqual({});
+            expect(txArg).toBeUndefined();
+            expect(additionalConditions).toHaveLength(1);
+            expect(hasSoftDeleteCondition(additionalConditions?.[0])).toBe(true);
             expect(result.items).toHaveLength(1);
             expect(logQuery).toHaveBeenCalledWith(
                 'accommodations',

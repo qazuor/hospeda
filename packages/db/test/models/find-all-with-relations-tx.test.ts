@@ -5,6 +5,7 @@ import * as dbUtils from '../../src/client';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model';
 import { DestinationModel } from '../../src/models/destination/destination.model';
 import { DbError } from '../../src/utils/error';
+import { hasSoftDeleteCondition } from '../utils/soft-delete-clause';
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
@@ -118,14 +119,15 @@ describe('findAllWithRelations - transaction propagation', () => {
 
         await model.findAllWithRelations({}, {}, {}, undefined, mockTxDb);
 
-        expect(findAllSpy).toHaveBeenCalledWith(
-            expect.anything(),
-            expect.anything(),
-            // HOS-288: AccommodationModel injects its default soft-delete condition
-            // into additionalConditions, so this is an array rather than undefined.
-            expect.any(Array),
-            mockTxDb
-        );
+        // HOS-288: AccommodationModel injects its default soft-delete condition
+        // into additionalConditions, so the 3rd argument is an array carrying
+        // exactly that condition rather than undefined.
+        const [whereArg, optionsArg, additionalConditions, txArg] = findAllSpy.mock.calls[0] ?? [];
+        expect(whereArg).toEqual({});
+        expect(optionsArg).toEqual({});
+        expect(txArg).toBe(mockTxDb);
+        expect(additionalConditions).toHaveLength(1);
+        expect(hasSoftDeleteCondition(additionalConditions?.[0])).toBe(true);
         expect(getDb).not.toHaveBeenCalled();
     });
 

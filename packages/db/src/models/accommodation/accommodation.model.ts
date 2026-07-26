@@ -465,21 +465,26 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
     }
 
     /**
-     * Computes the soft-delete exclusion condition injected by default into every
-     * {@link findAll}, {@link findAllWithRelations}, and {@link count} query on this
+     * Computes the soft-delete exclusion condition injected by default into the
+     * {@link findAll}, {@link findAllWithRelations}, and {@link count} queries of this
      * model (HOS-288).
      *
-     * Until this fix `AccommodationModel` had NO default: accommodation reads were
-     * safe only because the CUSTOM methods on this class (`search`,
+     * SCOPE — the guarantee covers EXACTLY those three methods, not every read on this
+     * model. `findWithRelations`, `findOne`, `findById`, `findByIds` and
+     * `findOneWithRelations` are NOT covered: they stay unfiltered id-lookups, so a
+     * caller that hands one of them the id of a soft-deleted row still gets that row
+     * back and remains responsible for the check. That is the same boundary
+     * `EventModel` and `PostModel` drew in HOS-274, deliberately kept identical here.
+     *
+     * Until this fix `AccommodationModel` had NO default at all: accommodation list
+     * reads were safe only because the CUSTOM methods on this class (`search`,
      * `searchWithRelations`, `countByFilters`, `findTopRated`, `findIdsByOwnerId`,
      * `getMarketComparisonByOwnerId`) each add `isNull(accommodations.deletedAt)` by
      * hand. Every caller reaching for the inherited `findAll`/`count`/
      * `findAllWithRelations` instead fell straight through and leaked soft-deleted
-     * rows into public responses (e.g. `DestinationService.getAccommodations`,
-     * `FeatureService.getAccommodationsByFeature`). Centralizing the rule here —
-     * rather than fixing each call site — closes the gap for every current and
-     * future caller of these three methods. Same mechanism `EventModel` and
-     * `PostModel` got in HOS-274.
+     * rows into public responses (e.g. `DestinationService.getAccommodations`).
+     * Centralizing the rule here — rather than fixing each of those call sites —
+     * closes the gap for every current and future caller of these three methods.
      *
      * NOTE: only `deletedAt` belongs at the model layer. `visibility` and
      * `lifecycleState` must NOT become model defaults — the admin panel has to see

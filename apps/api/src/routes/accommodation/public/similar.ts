@@ -49,14 +49,26 @@ export const publicGetSimilarRoute = createPublicRoute({
          */
         const db = getDb();
 
-        // Fetch current accommodation to get type and destinationId
+        // Fetch current accommodation to get type and destinationId.
+        // HOS-288: this lookup carries the same public predicates as the similarity
+        // query below. A bare `eq(id)` answered 200 with a full recommendation list
+        // for a soft-deleted / DRAFT / PRIVATE id, confirming to an anonymous caller
+        // that the listing exists. With these predicates the row is simply not found
+        // and the NOT_FOUND throw right below fires (no 410 path by design).
         const current = await db
             .select({
                 type: accommodations.type,
                 destinationId: accommodations.destinationId
             })
             .from(accommodations)
-            .where(eq(accommodations.id, id))
+            .where(
+                and(
+                    eq(accommodations.id, id),
+                    isNull(accommodations.deletedAt),
+                    eq(accommodations.lifecycleState, 'ACTIVE'),
+                    eq(accommodations.visibility, 'PUBLIC')
+                )
+            )
             .limit(1);
 
         const source = current[0];

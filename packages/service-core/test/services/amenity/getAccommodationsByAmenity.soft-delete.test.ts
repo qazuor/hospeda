@@ -1,6 +1,6 @@
 /**
  * HOS-288 regression — `AmenityService.getAccommodationsByAmenity` must not
- * return soft-deleted, non-PUBLIC or non-ACTIVE accommodations.
+ * return soft-deleted accommodations.
  *
  * This is the exact twin of the `FeatureService.getAccommodationsByFeature`
  * defect fixed in the same change: the method read the accommodations through
@@ -10,27 +10,29 @@
  * cannot help there — the query runs against the junction model, not
  * `AccommodationModel`.
  *
- * Unlike the feature twin, this method is NOT wired to any route today
- * (`apps/api/src/routes/amenity/public/` exposes only `getById`, `list`), so
- * this is a latent defect, not a live production leak. It is hardened anyway,
- * with the same predicates as its twin, so wiring the symmetric public route
- * cannot silently reintroduce the leak.
- *
  * The fix resolves the amenity's accommodation ids from the junction and then
  * loads the rows through `AccommodationModel.findAll`, which is what applies
- * the soft-delete default; `visibility`/`lifecycleState` are passed explicitly
- * (they must NOT become model defaults — admin has to see `PRIVATE`, an owner
- * their own `DRAFT`).
+ * the soft-delete default.
+ *
+ * NOTE on the real gate: this method backs NO route today
+ * (`apps/api/src/routes/amenity/public/` exposes only `getById`, `list`), so
+ * the leak was latent, not live. It is also gated by
+ * `checkCanGetAccommodationsByAmenity`, i.e. `ACCOMMODATION_AMENITIES_EDIT` — a
+ * permission no guest actor carries. DECISION (HOS-288 review): visibility/
+ * lifecycle policy is deliberately NOT baked in here — its audience is
+ * staff/hosts, and an editor auditing where an amenity is used must see
+ * `PRIVATE` and `DRAFT` rows. The first suite pins that so nobody re-adds those
+ * predicates silently.
  *
  * Two suites:
  *   1. Both models mocked — asserts the accommodation rows are re-read through
- *      `AccommodationModel` with the PUBLIC/ACTIVE predicates.
+ *      `AccommodationModel` by id, with no visibility/lifecycle narrowing.
  *   2. REAL `AccommodationModel` + a Drizzle client injected via `setDb()` —
  *      proves the soft-delete default actually reaches SQL from this call site.
  */
 import type { AmenityModel, RAccommodationAmenityModel } from '@repo/db';
 import { AccommodationModel, resetDb, setDb } from '@repo/db';
-import { LifecycleStatusEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { AmenityService } from '../../../src/services/amenity/amenity.service';
@@ -127,8 +129,8 @@ describe('AmenityService.getAccommodationsByAmenity — HOS-288 read predicates'
         vi.clearAllMocks();
     });
 
-    describe('visibility / lifecycleState (explicit at this call site)', () => {
-        it('re-reads the joined accommodations through AccommodationModel with PUBLIC/ACTIVE predicates', async () => {
+    describe('predicates passed to AccommodationModel', () => {
+        it('re-reads the joined accommodations through AccommodationModel by id only', async () => {
             // One shared mock stands in for the amenity model, the junction model
             // and the accommodation model (the convention in this directory), so
             // `findAll` is called twice: junction rows first, accommodations second.
@@ -159,13 +161,15 @@ describe('AmenityService.getAccommodationsByAmenity — HOS-288 read predicates'
 
             expect((model.findAll as Mock).mock.calls.length).toBeGreaterThanOrEqual(2);
             const [accommodationWhere] = (model.findAll as Mock).mock.calls[1] ?? [];
-            expect(accommodationWhere).toMatchObject({
-                id: [accommodationId],
-                visibility: VisibilityEnum.PUBLIC,
-                lifecycleState: LifecycleStatusEnum.ACTIVE
-            });
-            // `deletedAt` must NOT be passed: the model default owns it, and passing
-            // it would trip that default's explicit-intent escape hatch.
+            expect(accommodationWhere).toMatchObject({ id: [accommodationId] });
+            // DECISION (HOS-288 review): this method is gated by
+            // ACCOMMODATION_AMENITIES_EDIT, so its audience is staff/hosts, not
+            // anonymous visitors. It must NOT narrow visibility or lifecycle —
+            // an editor auditing an amenity's usage needs PRIVATE and DRAFT rows.
+            expect(accommodationWhere).not.toHaveProperty('visibility');
+            expect(accommodationWhere).not.toHaveProperty('lifecycleState');
+            // `deletedAt` must NOT be passed either: the model default owns it, and
+            // passing it would trip that default's explicit-intent escape hatch.
             expect(accommodationWhere).not.toHaveProperty('deletedAt');
         });
 

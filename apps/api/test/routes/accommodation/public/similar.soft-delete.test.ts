@@ -146,12 +146,19 @@ function hasDeletedAtIsNull(clause: unknown): boolean {
 const SOURCE_ID = 'aaaaaaaa-0000-4000-8000-000000000001';
 const DESTINATION_ID = 'dddddddd-0000-4000-8000-000000000001';
 
+/** WHERE clause handed to the SOURCE lookup (`db.select()…where()`). */
+let sourceLookupWhere: unknown;
+
 function buildSelectChain(rows: unknown[]) {
-    return {
-        from: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
+    const chain = {
+        from: vi.fn(() => chain),
+        where: vi.fn((clause: unknown) => {
+            sourceLookupWhere = clause;
+            return chain;
+        }),
         limit: vi.fn().mockResolvedValue(rows)
     };
+    return chain;
 }
 
 async function buildApp() {
@@ -169,11 +176,26 @@ async function buildApp() {
 describe('publicGetSimilarRoute — HOS-288 soft-deleted rows must be excluded', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        sourceLookupWhere = undefined;
         // select() call: fetch source accommodation (type + destinationId)
         mockSelect.mockImplementation(() =>
             buildSelectChain([{ type: 'CABIN', destinationId: DESTINATION_ID }])
         );
         mockFindMany.mockResolvedValue([]);
+    });
+
+    // The SOURCE lookup is the first of the two queries this handler runs. It used
+    // to be a bare `eq(accommodations.id, id)`, so
+    // `GET /public/accommodations/<deleted-id>/similar` answered 200 with a full
+    // recommendation list — confirming to an anonymous caller that the deleted
+    // listing exists. With the predicate in place the row simply is not found and
+    // the handler's existing NOT_FOUND throw fires.
+    it('applies the soft-delete predicate to the SOURCE accommodation lookup', async () => {
+        const app = await buildApp();
+        await app.request(`/${SOURCE_ID}/similar`);
+
+        expect(mockSelect).toHaveBeenCalledTimes(1);
+        expect(hasDeletedAtIsNull(sourceLookupWhere)).toBe(true);
     });
 
     it('adds an IS NULL predicate on deletedAt to the similarity query', async () => {

@@ -123,7 +123,7 @@ describe('DestinationService.getAccommodations — HOS-288 public read predicate
                 accommodationModelMock;
         });
 
-        it('restricts the query to PUBLIC visibility and ACTIVE lifecycle', async () => {
+        it('restricts the query to the canonical public predicate set', async () => {
             const destination = new DestinationFactoryBuilder()
                 .with({ visibility: VisibilityEnum.PUBLIC })
                 .build();
@@ -139,10 +139,15 @@ describe('DestinationService.getAccommodations — HOS-288 public read predicate
 
             expectSuccess(result);
             const [where] = asMock(accommodationModelMock.findAll).mock.calls[0] ?? [];
+            // The canonical set, identical to the one
+            // `DestinationService.updateAccommodationsCount` counts with — the list
+            // and that destination's `accommodationsCount` must not disagree.
             expect(where).toMatchObject({
                 destinationId: destination.id,
                 visibility: VisibilityEnum.PUBLIC,
-                lifecycleState: LifecycleStatusEnum.ACTIVE
+                lifecycleState: LifecycleStatusEnum.ACTIVE,
+                ownerSuspended: false,
+                planRestricted: false
             });
         });
 

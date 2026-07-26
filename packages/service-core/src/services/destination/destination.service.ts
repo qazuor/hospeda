@@ -601,12 +601,19 @@ export class DestinationService extends BaseCrudService<
                     );
                 }
                 checkCanViewDestination(actor, destination);
-                // HOS-288: this is a PUBLIC read path (GET /public/destinations/:id/accommodations),
-                // so it must be restricted to publicly visible, live listings. The
-                // `visibility`/`lifecycleState` predicates are stated HERE rather than
-                // defaulted in `AccommodationModel` on purpose — the admin panel must
-                // still see `PRIVATE` rows and an owner their own `DRAFT`. Mirrors the
-                // same where-record shape used by `SocialPublicDataService.fetchAccommodations`.
+                // HOS-288: this is a genuinely PUBLIC read path
+                // (GET /public/destinations/:id/accommodations — `checkCanViewDestination`
+                // lets a guest through for PUBLIC destinations), so it must be restricted
+                // to publicly visible, live listings. These are the CANONICAL public
+                // predicates: ACTIVE lifecycle, PUBLIC visibility, not owner-suspended,
+                // not plan-restricted — the same set used by
+                // {@link DestinationService.updateAccommodationsCount} (which maintains
+                // `accommodationsCount` for this very destination) and by
+                // `AccommodationService.getByDestination`. `ownerSuspended`/`planRestricted`
+                // were missing here, so the list and that count disagreed.
+                // The predicates are stated HERE rather than defaulted in
+                // `AccommodationModel` on purpose — the admin panel must still see
+                // `PRIVATE` rows and an owner their own `DRAFT`.
                 // `deletedAt` is deliberately NOT passed: `AccommodationModel` excludes
                 // soft-deleted rows by default (see `AccommodationModel#softDeleteCondition`),
                 // and passing it here would trip that default's explicit-intent escape hatch.
@@ -614,7 +621,9 @@ export class DestinationService extends BaseCrudService<
                     {
                         destinationId,
                         visibility: VisibilityEnum.PUBLIC,
-                        lifecycleState: LifecycleStatusEnum.ACTIVE
+                        lifecycleState: LifecycleStatusEnum.ACTIVE,
+                        ownerSuspended: false,
+                        planRestricted: false
                     },
                     undefined,
                     undefined,

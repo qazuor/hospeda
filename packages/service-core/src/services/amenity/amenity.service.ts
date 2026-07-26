@@ -23,9 +23,8 @@ import {
     type AmenitySearchInput,
     AmenitySearchInputSchema,
     AmenityUpdateInputSchema,
-    LifecycleStatusEnum,
     ServiceErrorCode,
-    VisibilityEnum
+    type VisibilityEnum
 } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import type { z } from 'zod';
@@ -263,19 +262,21 @@ export class AmenityService extends BaseCrudRelatedService<
      * Retrieves all accommodations that have a specific amenity.
      *
      * HOS-288 — the exact twin of {@link FeatureService.getAccommodationsByFeature}.
-     * Reading the rows off the junction model
-     * (`findAllWithRelations({ accommodation: true }, …)`) joined `accommodations`
-     * WITHOUT filtering it and could not benefit from the `AccommodationModel`
-     * soft-delete default, so the read is now two steps: junction ids first, then
-     * the rows through `AccommodationModel.findAll`. Page semantics unchanged.
+     * This method backs NO route today (`apps/api/src/routes/amenity/public/`
+     * exposes only `getById` and `list`), and it is gated by
+     * `checkCanGetAccommodationsByAmenity`, i.e. `ACCOMMODATION_AMENITIES_EDIT` —
+     * a permission no guest actor carries. So it must NOT narrow `visibility` or
+     * `lifecycleState`: its audience is staff/hosts, and an editor auditing where
+     * an amenity is used has to see `PRIVATE` and `DRAFT` rows too.
      *
-     * Unlike its feature twin this method backs NO route today
-     * (`apps/api/src/routes/amenity/public/` exposes only `getById` and `list`),
-     * so the leak was latent, not live. It is hardened with the same PUBLIC/ACTIVE
-     * predicates as the twin — the obvious future consumer is the symmetric
-     * `GET /api/v1/public/amenities/:id/accommodations`, and the returned shape is
-     * already a public summary — so wiring that route cannot silently reintroduce
-     * the leak. Full rationale in `getAccommodationsByAmenity.soft-delete.test.ts`.
+     * The read is nevertheless two steps. Reading the rows off the junction model
+     * (`findAllWithRelations({ accommodation: true }, …)`) joins `accommodations`
+     * WITHOUT filtering it and cannot benefit from the `AccommodationModel`
+     * soft-delete default, and `additionalConditions` is not usable there either
+     * because the junction model forwards it to a join-less `count()`. So:
+     * junction ids first, then the rows through `AccommodationModel.findAll`,
+     * whose default excludes soft-deleted rows. Page semantics unchanged; full
+     * rationale in `getAccommodationsByAmenity.soft-delete.test.ts`.
      *
      * @param actor - The actor performing the action
      * @param params - The params containing the amenity ID
@@ -324,11 +325,7 @@ export class AmenityService extends BaseCrudRelatedService<
                 // `deletedAt` is deliberately absent: passing it would trip that default's
                 // explicit-intent escape hatch. See this method's JSDoc.
                 const { items: accommodations } = await this.accommodationModel.findAll(
-                    {
-                        id: accommodationIds,
-                        visibility: VisibilityEnum.PUBLIC,
-                        lifecycleState: LifecycleStatusEnum.ACTIVE
-                    },
+                    { id: accommodationIds },
                     { page: 1, pageSize: accommodationIds.length }
                 );
 

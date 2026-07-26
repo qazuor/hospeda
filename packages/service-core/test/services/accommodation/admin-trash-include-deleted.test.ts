@@ -16,6 +16,12 @@
  *   - `includeDeleted: true`  → NO soft-delete condition (trash view works)
  *   - `includeDeleted` absent → soft-delete condition present (the default)
  *
+ * The two cases are NOT of the same kind, and the names below say so. Only the
+ * second is a regression test: it goes red if the HOS-288 default is reverted.
+ * The first is a GUARD — with the default reverted nothing is injected either,
+ * so it passes identically before and after. Its job is to fail if someone later
+ * over-injects the condition and breaks the trash view, not to prove the fix.
+ *
  * (The generic `includeDeleted` plumbing through `list()`/`adminList()`/
  * `_executeAdminSearch()` is covered model-agnostically by
  * `test/base/admin-search-include-deleted.test.ts`; the model-level escape hatch
@@ -147,7 +153,10 @@ describe('AccommodationService admin trash view — includeDeleted escape hatch 
         vi.restoreAllMocks();
     });
 
-    it('returns soft-deleted rows when includeDeleted is true (no exclusion in the WHERE clause)', async () => {
+    // GUARD (not a regression test — passes with the HOS-288 default reverted too,
+    // since nothing is injected either way). It exists to catch a FUTURE
+    // over-injection that would break the trash view.
+    it('guard: no exclusion is injected when includeDeleted is true, so the trash view keeps working', async () => {
         let findManyArgs: unknown;
         setDb(
             makeRelationalDbMock({
