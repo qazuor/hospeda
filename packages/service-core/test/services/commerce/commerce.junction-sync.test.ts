@@ -40,31 +40,33 @@ const fakeTx = {} as Parameters<typeof syncCommerceAmenityJunction>[0]['tx'];
 // ---------------------------------------------------------------------------
 
 function makeJunctionModel(existingAmenityIds: string[] = []) {
+    const items = existingAmenityIds.map((id) => ({ [FK_COL]: ENTITY_ID, amenityId: id }));
     return {
-        findAll: vi.fn().mockResolvedValue({
-            items: existingAmenityIds.map((id) => ({ [FK_COL]: ENTITY_ID, amenityId: id }))
-        }),
+        findAll: vi.fn().mockResolvedValue({ items, total: items.length }),
         hardDelete: vi.fn().mockResolvedValue(1),
         create: vi.fn().mockResolvedValue({})
     };
 }
 
 function makeFeatureJunctionModel(existingFeatureIds: string[] = []) {
+    const items = existingFeatureIds.map((id) => ({ [FK_COL]: ENTITY_ID, featureId: id }));
     return {
-        findAll: vi.fn().mockResolvedValue({
-            items: existingFeatureIds.map((id) => ({ [FK_COL]: ENTITY_ID, featureId: id }))
-        }),
+        findAll: vi.fn().mockResolvedValue({ items, total: items.length }),
         hardDelete: vi.fn().mockResolvedValue(1),
         create: vi.fn().mockResolvedValue({})
     };
 }
 
+/**
+ * HOS-321: catalog validation batches through `findByIds` instead of one
+ * `findById` per id, so the stub echoes back only the ids that "exist".
+ */
 function makeCatalogModel(existsForIds: string[] = [UUID_A, UUID_B, UUID_C]) {
     return {
-        findById: vi
+        findByIds: vi
             .fn()
-            .mockImplementation((id: string) =>
-                Promise.resolve(existsForIds.includes(id) ? { id } : null)
+            .mockImplementation((ids: readonly string[]) =>
+                Promise.resolve(ids.filter((id) => existsForIds.includes(id)).map((id) => ({ id })))
             )
     };
 }
@@ -112,7 +114,12 @@ describe('syncCommerceAmenityJunction', () => {
                 tx: fakeTx
             });
 
-            expect(junctionModel.hardDelete).toHaveBeenCalledTimes(2);
+            // HOS-321: deletes are batched into ONE `IN (...)` statement.
+            expect(junctionModel.hardDelete).toHaveBeenCalledTimes(1);
+            expect(junctionModel.hardDelete).toHaveBeenCalledWith(
+                { [FK_COL]: ENTITY_ID, amenityId: expect.arrayContaining([UUID_A, UUID_B]) },
+                fakeTx
+            );
             expect(junctionModel.create).not.toHaveBeenCalled();
         });
     });
@@ -149,7 +156,7 @@ describe('syncCommerceAmenityJunction', () => {
             // UUID_A deleted (not in target)
             expect(junctionModel.hardDelete).toHaveBeenCalledTimes(1);
             expect(junctionModel.hardDelete).toHaveBeenCalledWith(
-                { [FK_COL]: ENTITY_ID, amenityId: UUID_A },
+                { [FK_COL]: ENTITY_ID, amenityId: [UUID_A] },
                 fakeTx
             );
             // UUID_C inserted (not in existing)
@@ -258,7 +265,7 @@ describe('syncCommerceFeatureJunction', () => {
 
         // UUID_A deleted
         expect(junctionModel.hardDelete).toHaveBeenCalledWith(
-            { [FK_COL]: ENTITY_ID, featureId: UUID_A },
+            { [FK_COL]: ENTITY_ID, featureId: [UUID_A] },
             fakeTx
         );
         // UUID_B inserted
