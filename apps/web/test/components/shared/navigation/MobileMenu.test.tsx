@@ -289,7 +289,12 @@ describe('MobileMenu — bottom search CTA (removed)', () => {
         expect(componentSrc).not.toContain('styles.searchLabel');
     });
 
-    it('does not wire the back-button history hook during the mobile-menu probe', () => {
+    it('does not use the shared dialog history hook directly', () => {
         expect(componentSrc).not.toContain('useDialogHistoryBack');
+    });
+
+    it('uses the dedicated mobile-menu history manager', () => {
+        expect(componentSrc).toContain('acquireDialogHistoryEntry');
+        expect(componentSrc).toContain('handleLinkClick');
     });
 });

@@ -10,6 +10,7 @@
  */
 
 import { BuildingIcon, ChevronDownIcon, LogoutIcon } from '@repo/icons';
+import type { MouseEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { LoadingButton } from '@/components/shared/feedback/LoadingButton';
 import type { NavItem as AccountNavItem } from '@/config/navigation';
@@ -50,8 +51,8 @@ export interface MobileMenuAccountSectionProps {
     readonly isSigningOut: boolean;
     /** Sign-out click handler. */
     readonly onSignOut: () => void;
-    /** Called on any link click (closes the whole overlay). */
-    readonly onClose: () => void;
+    /** Dedicated menu-link handler (may unwind history before navigating). */
+    readonly onLinkClick: (event: MouseEvent<HTMLAnchorElement>) => void;
 }
 
 /**
@@ -71,7 +72,7 @@ export function MobileMenuAccountSection({
     signingOutLabel,
     isSigningOut,
     onSignOut,
-    onClose
+    onLinkClick
 }: MobileMenuAccountSectionProps) {
     const [isAccountOpen, setIsAccountOpen] = useState(false);
 
@@ -87,7 +88,7 @@ export function MobileMenuAccountSection({
             {ctaLabel && ctaHref && (
                 <a
                     href={ctaHref}
-                    onClick={onClose}
+                    onClick={onLinkClick}
                     tabIndex={isOpen ? 0 : -1}
                     className={styles.ctaLink}
                 >
@@ -147,7 +148,7 @@ export function MobileMenuAccountSection({
                                     <a
                                         key={item.id}
                                         href={buildUrl({ locale, path: item.href })}
-                                        onClick={onClose}
+                                        onClick={onLinkClick}
                                         tabIndex={isOpen ? 0 : -1}
                                         className={styles.accountLink}
                                     >
@@ -178,7 +179,7 @@ export function MobileMenuAccountSection({
             ) : (
                 <a
                     href={`/${locale}/auth/signin/`}
-                    onClick={onClose}
+                    onClick={onLinkClick}
                     tabIndex={isOpen ? 0 : -1}
                     className={styles.authButton}
                 >

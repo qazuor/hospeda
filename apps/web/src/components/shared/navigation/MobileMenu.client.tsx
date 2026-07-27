@@ -36,6 +36,7 @@
 
 import { EntitlementKey } from '@repo/billing';
 import { CloseIcon } from '@repo/icons';
+import type { MouseEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
@@ -47,6 +48,7 @@ import { buildAdminPanelItem } from '@/lib/admin-panel-link';
 import type { AuthMeUser } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
+import { acquireDialogHistoryEntry } from '@/lib/dialog-history';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { getCuratedAccountNav } from '@/lib/nav-avatar';
@@ -153,6 +155,7 @@ export function MobileMenu({
     const [isOpen, setIsOpen] = useState(false);
     const [isSigningOut, setIsSigningOut] = useState(false);
     const closeButtonRef = useRef<HTMLButtonElement>(null);
+    const historyReleaseRef = useRef<(() => void) | null>(null);
     const authTexts = AUTH_TEXTS[locale] ?? AUTH_TEXTS.es;
 
     // ------------------------------------------------------------------
@@ -286,6 +289,32 @@ export function MobileMenu({
     }, [isOpen]);
 
     // ------------------------------------------------------------------
+    // Dedicated back-button handling for the mobile menu.
+    //
+    // The shared dialog hook is correct for local modal surfaces, but the
+    // mobile menu's primary action is real navigation. When its generic
+    // release/unwind raced a genuine menu-link navigation, production mobile
+    // Chrome got stuck in an endless loading state. Keep the "first back
+    // closes the menu" affordance, but own the history entry here so a menu
+    // link can unwind first and only then continue navigation.
+    // ------------------------------------------------------------------
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const { release } = acquireDialogHistoryEntry({
+            onPopped: () => setIsOpen(false)
+        });
+        historyReleaseRef.current = release;
+
+        return () => {
+            if (historyReleaseRef.current === release) {
+                historyReleaseRef.current = null;
+                release();
+            }
+        };
+    }, [isOpen]);
+
+    // ------------------------------------------------------------------
     // astro:before-swap closes the menu on ClientRouter navigation
     // ------------------------------------------------------------------
     useEffect(() => {
@@ -337,6 +366,56 @@ export function MobileMenu({
         setIsOpen(false);
     }, []);
 
+    const continueNavigation = useCallback(async (href: string) => {
+        try {
+            const { navigate } = await import('astro:transitions/client');
+            await navigate(href);
+        } catch {
+            window.location.assign(href);
+        }
+    }, []);
+
+    const handleLinkClick = useCallback(
+        (event: MouseEvent<HTMLAnchorElement>) => {
+            const anchor = event.currentTarget;
+            const href = anchor.href;
+
+            if (
+                !isOpen ||
+                href.length === 0 ||
+                anchor.target === '_blank' ||
+                anchor.origin !== window.location.origin
+            ) {
+                handleClose();
+                return;
+            }
+
+            event.preventDefault();
+            setIsOpen(false);
+
+            let settled = false;
+            const finishNavigation = () => {
+                if (settled) return;
+                settled = true;
+                window.removeEventListener('popstate', handlePopState);
+                window.clearTimeout(timeoutId);
+                void continueNavigation(href);
+            };
+
+            const handlePopState = () => {
+                finishNavigation();
+            };
+
+            window.addEventListener('popstate', handlePopState, { once: true });
+            const timeoutId = window.setTimeout(finishNavigation, 160);
+
+            const release = historyReleaseRef.current;
+            historyReleaseRef.current = null;
+            release?.();
+        },
+        [continueNavigation, handleClose, isOpen]
+    );
+
     // ------------------------------------------------------------------
     // Sign out handler
     // ------------------------------------------------------------------
@@ -380,7 +459,7 @@ export function MobileMenu({
             <div className={styles.header}>
                 <a
                     href={homeHref}
-                    onClick={handleClose}
+                    onClick={handleLinkClick}
                     tabIndex={isOpen ? 0 : -1}
                     className={styles.logoLink}
                     aria-label={t('nav.goHome', 'Hospeda - Go to home')}
@@ -420,7 +499,7 @@ export function MobileMenu({
                         <li key={item.href}>
                             <a
                                 href={item.href}
-                                onClick={handleClose}
+                                onClick={handleLinkClick}
                                 tabIndex={isOpen ? 0 : -1}
                                 className={styles.navLink}
                             >
@@ -444,7 +523,7 @@ export function MobileMenu({
                 signingOutLabel={authTexts.signingOut}
                 isSigningOut={isSigningOut}
                 onSignOut={() => void handleSignOut()}
-                onClose={handleClose}
+                onLinkClick={handleLinkClick}
             />
 
             {/* Language + theme controls — shared primitives */}
@@ -473,7 +552,7 @@ export function MobileMenu({
                         href={adminPanelItem.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={handleClose}
+                        onClick={handleLinkClick}
                         tabIndex={isOpen ? 0 : -1}
                         className={styles.accountLink}
                     >
