@@ -73,7 +73,7 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
             id: 'logo',
             type: FieldTypeEnum.IMAGE,
             required: false,
-            modes: ['view', 'edit', 'create'],
+            modes: ['view', 'edit'],
             label: 'Logo',
             description: 'Logo del organizador',
             permissions: {

@@ -22,25 +22,33 @@ import { adminLogger } from '@/utils/logger';
  * Subset of `MediaEntityType` that the admin gallery/featured upload flow
  * supports. The full union (which includes `user`, `postSponsor`,
  * `eventOrganizer`, `avatars`) is intentionally narrower here because the
- * `uploadEntityImage` mutation only handles the four CRUD content entities
- * via their `entityId` discriminator. Other variants (avatar by `userId`,
- * sponsor/organizer logos) require a different payload shape and should be
- * added as separate mutations rather than overloaded onto this one.
+ * mutation only handles the admin upload variants addressed by `entityId`.
+ * Avatar uploads remain separate because they use `userId` instead.
  *
  * Re-exported under the legacy `UploadEntityType` name for backward
  * compatibility with existing call sites.
  */
 export type UploadEntityType = Extract<
     MediaEntityType,
-    'accommodation' | 'destination' | 'event' | 'post'
+    | 'accommodation'
+    | 'destination'
+    | 'event'
+    | 'post'
+    | 'gastronomy'
+    | 'experience'
+    | 'postSponsor'
+    | 'eventOrganizer'
 >;
 
 /**
  * Subset of `MediaRole` that the `uploadEntityImage` mutation supports.
- * Mirrors the entity-type narrowing above: featured + gallery are the only
- * roles that pair with `entityId`-addressed CRUD entities.
+ * Mirrors the entity-type narrowing above: every supported role here is
+ * addressable by `entityId` on the admin upload route.
  */
-export type UploadImageRole = Extract<MediaRole, 'featured' | 'gallery'>;
+export type UploadImageRole = Extract<
+    MediaRole,
+    'featured' | 'gallery' | 'sponsorLogo' | 'organizerLogo'
+>;
 
 /**
  * Input for the uploadEntityImage mutation.

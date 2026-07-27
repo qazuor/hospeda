@@ -1,9 +1,11 @@
 import { PermissionEnum, PostSponsorUpdateInputSchema } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { useSponsorPage } from '@/features/sponsors/hooks/useSponsorPage';
+import { createUploadHandler, useMediaUpload } from '@/hooks/use-media-upload';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
 /**
@@ -21,8 +23,22 @@ export const Route = createFileRoute('/_authed/sponsors/$id_/edit')({
  */
 function SponsorEditPage() {
     const { id } = Route.useParams();
-    // Use the hook at the top level
     const entityData = useSponsorPage(id);
+    const { uploadEntityImage } = useMediaUpload();
+
+    const mediaFieldHandlers = useMemo(
+        () => ({
+            logo: {
+                onUpload: createUploadHandler({
+                    entityType: 'postSponsor',
+                    entityId: id,
+                    role: 'sponsorLogo',
+                    onUpload: (input) => uploadEntityImage.mutateAsync(input)
+                })
+            }
+        }),
+        [id, uploadEntityImage]
+    );
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.POST_SPONSOR_UPDATE]}>
@@ -35,6 +51,7 @@ function SponsorEditPage() {
             >
                 <EntityEditContent
                     entityType="sponsor"
+                    fieldHandlers={mediaFieldHandlers}
                     flat
                 />
             </EntityPageBase>
