@@ -433,4 +433,177 @@ describe('CommerceLead', () => {
             });
         });
     });
+
+    // ── Signed-in prefill (HOS-295) ───────────────────────────────────────────
+
+    describe('Signed-in prefill', () => {
+        const currentUser = {
+            name: 'Juan Pérez',
+            email: 'juan@example.com'
+        };
+
+        function renderSignedIn(
+            overrides: Partial<{
+                name: string | null;
+                email: string | null;
+            }> = {}
+        ) {
+            return render(
+                <CommerceLead
+                    locale="es"
+                    currentUser={{ ...currentUser, ...overrides }}
+                />
+            );
+        }
+
+        it('pre-fills contactName and email from the session', () => {
+            renderSignedIn();
+            expect(screen.getByLabelText(/tu nombre/i)).toHaveValue('Juan Pérez');
+            expect(screen.getByLabelText(/correo electrónico/i)).toHaveValue('juan@example.com');
+        });
+
+        it('leaves the business-specific fields empty', () => {
+            renderSignedIn();
+            expect(screen.getByLabelText(/nombre del negocio/i)).toHaveValue('');
+            expect(screen.getByLabelText(/teléfono/i)).toHaveValue('');
+            expect(screen.getByLabelText(/contanos sobre tu negocio/i)).toHaveValue('');
+        });
+
+        // Deliberately editable, not read-only: a merchant's business contact
+        // may legitimately differ from the address they signed in with, and the
+        // lead is a reply-to, not an identity claim. (The submitted email does
+        // NOT link the lead to an existing account — see the note in
+        // CommerceLead.client.tsx; that is HOS-296.)
+        it('keeps the pre-filled fields editable', () => {
+            renderSignedIn();
+            const email = screen.getByLabelText(/correo electrónico/i);
+            const contactName = screen.getByLabelText(/tu nombre/i);
+
+            expect(email).not.toHaveAttribute('readonly');
+            expect(email).not.toBeDisabled();
+            expect(contactName).not.toHaveAttribute('readonly');
+            expect(contactName).not.toBeDisabled();
+        });
+
+        it('submits an edited email instead of the session one', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ success: true })
+            } as Response);
+
+            renderSignedIn();
+            fireEvent.change(screen.getByLabelText(/nombre del negocio/i), {
+                target: { value: 'La Parrilla de Juan' }
+            });
+            fireEvent.change(screen.getByLabelText(/correo electrónico/i), {
+                target: { value: 'contacto@laparrilla.com' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                const callArgs = vi.mocked(global.fetch).mock.calls[0];
+                const body = JSON.parse((callArgs?.[1] as RequestInit).body as string) as Record<
+                    string,
+                    unknown
+                >;
+                expect(body.email).toBe('contacto@laparrilla.com');
+                expect(body.contactName).toBe('Juan Pérez');
+            });
+        });
+
+        it('submits the pre-filled values untouched when the visitor edits nothing else', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ success: true })
+            } as Response);
+
+            renderSignedIn();
+            fireEvent.change(screen.getByLabelText(/nombre del negocio/i), {
+                target: { value: 'La Parrilla de Juan' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                const callArgs = vi.mocked(global.fetch).mock.calls[0];
+                const body = JSON.parse((callArgs?.[1] as RequestInit).body as string) as Record<
+                    string,
+                    unknown
+                >;
+                expect(body.email).toBe('juan@example.com');
+                expect(body.contactName).toBe('Juan Pérez');
+            });
+        });
+
+        it('falls back to empty fields when the session carries no name or email', () => {
+            renderSignedIn({ name: null, email: null });
+            expect(screen.getByLabelText(/tu nombre/i)).toHaveValue('');
+            expect(screen.getByLabelText(/correo electrónico/i)).toHaveValue('');
+        });
+
+        it('renders the anonymous form empty when there is no session', () => {
+            renderForm();
+            expect(screen.getByLabelText(/tu nombre/i)).toHaveValue('');
+            expect(screen.getByLabelText(/correo electrónico/i)).toHaveValue('');
+        });
+
+        // Better Auth stores '' rather than null for an account that never set
+        // a name, so "signed in" is not the same as "something was pre-filled".
+        it('omits the notice when the session filled nothing in', () => {
+            renderSignedIn({ name: '', email: '' });
+            expect(document.getElementById('cl-prefill-notice')).toBeNull();
+            expect(screen.getByLabelText(/correo electrónico/i)).not.toHaveAttribute(
+                'aria-describedby'
+            );
+        });
+
+        it('still shows the notice when only the email came from the session', () => {
+            renderSignedIn({ name: '' });
+            expect(document.getElementById('cl-prefill-notice')).not.toBeNull();
+            expect(screen.getByLabelText(/tu nombre/i)).toHaveValue('');
+            expect(screen.getByLabelText(/correo electrónico/i)).toHaveValue('juan@example.com');
+        });
+
+        it('explains the prefill and does so only for signed-in visitors', () => {
+            const { unmount } = renderSignedIn();
+            const notice = document.getElementById('cl-prefill-notice');
+            expect(notice).not.toBeNull();
+            expect(notice?.textContent?.length).toBeGreaterThan(0);
+            unmount();
+
+            renderForm();
+            expect(document.getElementById('cl-prefill-notice')).toBeNull();
+        });
+
+        // The notice explains why the two seeded fields already have a value,
+        // so screen readers must reach it from those fields.
+        it('associates the notice with the two pre-filled fields', () => {
+            renderSignedIn();
+            expect(screen.getByLabelText(/tu nombre/i)).toHaveAttribute(
+                'aria-describedby',
+                'cl-prefill-notice'
+            );
+            expect(screen.getByLabelText(/correo electrónico/i)).toHaveAttribute(
+                'aria-describedby',
+                'cl-prefill-notice'
+            );
+        });
+
+        it('keeps the field error in aria-describedby alongside the notice', async () => {
+            renderSignedIn();
+            fireEvent.change(screen.getByLabelText(/nombre del negocio/i), {
+                target: { value: 'La Parrilla de Juan' }
+            });
+            fireEvent.change(screen.getByLabelText(/correo electrónico/i), {
+                target: { value: 'not-valid-email' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                expect(screen.getByLabelText(/correo electrónico/i)).toHaveAttribute(
+                    'aria-describedby',
+                    'cl-prefill-notice cl-email-error'
+                );
+            });
+        });
+    });
 });

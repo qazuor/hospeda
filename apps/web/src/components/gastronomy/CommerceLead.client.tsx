@@ -10,6 +10,19 @@
  *
  * Rate-limit (429) and generic API errors surface friendly i18n messages.
  *
+ * Signed-in visitors (HOS-295): the page frontmatter passes `currentUser` (read
+ * from `Astro.locals.user`) and the contact fields are seeded from it. They stay
+ * EDITABLE on purpose — a merchant's business contact may legitimately differ
+ * from the address they signed in with, and the lead is a reply-to, not an
+ * identity claim. The form must keep working unchanged for anonymous visitors,
+ * which is its primary case.
+ *
+ * NOTE: the submitted email does NOT link the lead to an existing account today.
+ * `createCommerceOwnerCreateUserPort` (`apps/api/src/lib/commerce-ports.ts`)
+ * calls `signUpEmail` unconditionally, so approving a lead whose email already
+ * belongs to a user fails with a duplicate-email error. That is HOS-296's
+ * subject; do not write copy here that promises linking until it exists.
+ *
  * Hydration: caller MUST use `client:load`.
  */
 
@@ -21,6 +34,8 @@ import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './CommerceLead.module.css';
+import type { CommerceLeadCurrentUser, FieldErrors, LeadFields } from './commerce-lead-fields';
+import { buildDescribedBy, buildInitialFields, hasSessionPrefill } from './commerce-lead-fields';
 
 // API base URL — must be absolute because the web app (host A) and the API
 // (host B) live on different origins both in dev (4321 vs 3001) and prod.
@@ -42,25 +57,12 @@ export interface CommerceLeadProps {
     readonly destinations?: ReadonlyArray<DestinationOption>;
     /** Commerce domain the lead applies to. Defaults to `'gastronomy'`. */
     readonly domain?: 'gastronomy' | 'experience';
+    /**
+     * The signed-in visitor, when there is one. Seeds `contactName` and `email`
+     * so a registered user does not retype what we already know (HOS-295).
+     */
+    readonly currentUser?: CommerceLeadCurrentUser | null;
 }
-
-type LeadFields = Omit<CommerceLeadCreateInput, 'domain'> & {
-    readonly _hp: string;
-};
-
-type FieldErrors = Partial<Record<keyof LeadFields, string>>;
-
-// ─── Initial state ────────────────────────────────────────────────────────────
-
-const INITIAL_FIELDS: LeadFields = {
-    businessName: '',
-    contactName: '',
-    email: '',
-    phone: '',
-    destinationId: undefined,
-    message: '',
-    _hp: ''
-};
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -77,7 +79,8 @@ const INITIAL_FIELDS: LeadFields = {
 export function CommerceLead({
     locale,
     destinations = [],
-    domain = 'gastronomy'
+    domain = 'gastronomy',
+    currentUser = null
 }: CommerceLeadProps) {
     const { t } = createTranslations(locale);
 
@@ -86,11 +89,15 @@ export function CommerceLead({
     const formTitleKey =
         domain === 'experience' ? 'commerce.lead.experience.title' : 'commerce.lead.title';
 
-    const [fields, setFields] = useState<LeadFields>(INITIAL_FIELDS);
+    const [fields, setFields] = useState<LeadFields>(() => buildInitialFields({ currentUser }));
     const [errors, setErrors] = useState<FieldErrors>({});
     const [formError, setFormError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+
+    // A session can carry an empty name, so "signed in" is not the same as
+    // "something was pre-filled" — the notice must only claim what happened.
+    const showsPrefillNotice = hasSessionPrefill({ currentUser });
 
     function handleChange(
         e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -224,6 +231,21 @@ export function CommerceLead({
                 />
             </div>
 
+            {/* Signed-in prefill notice — the contact fields carry account data
+                but stay editable, so say so explicitly (HOS-295). Described-by
+                the two seeded inputs, which is where the explanation applies. */}
+            {showsPrefillNotice && (
+                <p
+                    id="cl-prefill-notice"
+                    className={styles.prefillNotice}
+                >
+                    {t(
+                        'commerce.lead.prefillNotice',
+                        'Completamos tu nombre y tu correo con los datos de tu cuenta. Podés editarlos si el contacto del negocio es otro: a ese correo te vamos a responder.'
+                    )}
+                </p>
+            )}
+
             {/* Business name */}
             <div className={styles.field}>
                 <label
@@ -283,7 +305,12 @@ export function CommerceLead({
                     onChange={handleChange}
                     className={`${styles.input}${errors.contactName ? ` ${styles.inputError}` : ''}`}
                     autoComplete="name"
-                    aria-describedby={errors.contactName ? 'cl-contactName-error' : undefined}
+                    aria-describedby={buildDescribedBy({
+                        ids: [
+                            showsPrefillNotice ? 'cl-prefill-notice' : null,
+                            errors.contactName ? 'cl-contactName-error' : null
+                        ]
+                    })}
                     aria-invalid={!!errors.contactName}
                     required
                 />
@@ -320,7 +347,12 @@ export function CommerceLead({
                     onChange={handleChange}
                     className={`${styles.input}${errors.email ? ` ${styles.inputError}` : ''}`}
                     autoComplete="email"
-                    aria-describedby={errors.email ? 'cl-email-error' : undefined}
+                    aria-describedby={buildDescribedBy({
+                        ids: [
+                            showsPrefillNotice ? 'cl-prefill-notice' : null,
+                            errors.email ? 'cl-email-error' : null
+                        ]
+                    })}
                     aria-invalid={!!errors.email}
                     required
                 />

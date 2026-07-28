@@ -100,6 +100,20 @@
     opacity: 0;
 }
 
+/* ─── Signed-in prefill notice (HOS-295) ────────────────────────────────────── */
+
+.prefillNotice {
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    background-color: var(--brand-primary-a10);
+    border: 1px solid var(--brand-primary-a20);
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--core-foreground);
+    line-height: 1.5;
+    margin: 0;
+}
+
 /* ─── Error message ─────────────────────────────────────────────────────────── */
 
 .errorMsg {
