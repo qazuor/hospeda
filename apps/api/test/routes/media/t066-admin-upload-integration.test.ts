@@ -326,6 +326,77 @@ describe('POST /api/v1/admin/media/upload — integration (T-066)', () => {
         });
     });
 
+    describe('extended entity support', () => {
+        it('accepts gastronomy featured uploads through the shared admin route', async () => {
+            const actor = createMockAdminActor({
+                id: ADMIN_ACTOR_ID,
+                permissions: [
+                    PermissionEnum.ACCESS_PANEL_ADMIN,
+                    PermissionEnum.ACCESS_API_ADMIN,
+                    PermissionEnum.MEDIA_UPLOAD,
+                    PermissionEnum.COMMERCE_EDIT_ALL
+                ]
+            });
+
+            const req = new Request(ADMIN_UPLOAD_URL, {
+                method: 'POST',
+                headers: buildAuthHeaders(actor),
+                body: buildAdminMultipartBody({}, { entityType: 'gastronomy', role: 'featured' })
+            });
+            const res = await app.request(req);
+
+            expect(res.status).toBe(200);
+            const arg = mockUpload.mock.calls[0]?.[0] as { folder: string; publicId: string };
+            expect(arg.folder).toBe(`hospeda/test/gastronomies/${ADMIN_ENTITY_ID}`);
+            expect(arg.publicId).toBe('featured');
+        });
+
+        it('accepts sponsor logos and stores them under the fixed logo publicId', async () => {
+            const actor = createMockAdminActor({
+                id: ADMIN_ACTOR_ID,
+                permissions: [
+                    PermissionEnum.ACCESS_PANEL_ADMIN,
+                    PermissionEnum.ACCESS_API_ADMIN,
+                    PermissionEnum.MEDIA_UPLOAD,
+                    PermissionEnum.POST_SPONSOR_UPDATE
+                ]
+            });
+
+            mockUpload.mockImplementationOnce(async function ({
+                folder,
+                publicId
+            }: {
+                folder: string;
+                publicId: string;
+            }) {
+                return {
+                    url: `https://res.cloudinary.com/hospeda/image/upload/v1/${folder}/${publicId}.png`,
+                    publicId: `${folder}/${publicId}`,
+                    width: 512,
+                    height: 512
+                };
+            });
+
+            const req = new Request(ADMIN_UPLOAD_URL, {
+                method: 'POST',
+                headers: buildAuthHeaders(actor),
+                body: buildAdminMultipartBody(
+                    {},
+                    { entityType: 'postSponsor', role: 'sponsorLogo' }
+                )
+            });
+            const res = await app.request(req);
+
+            expect(res.status).toBe(200);
+            const arg = mockUpload.mock.calls[0]?.[0] as { folder: string; publicId: string };
+            expect(arg.folder).toBe(`hospeda/test/postSponsors/${ADMIN_ENTITY_ID}`);
+            expect(arg.publicId).toBe('logo');
+
+            const payload = (await res.json()) as { data: { publicId: string } };
+            expect(payload.data.publicId).toBe(`hospeda/test/postSponsors/${ADMIN_ENTITY_ID}/logo`);
+        });
+    });
+
     // ── REQ-04.1-D: Missing required field ─────────────────────────────────
     describe('REQ-04.1-D — missing required field', () => {
         it('rejects a request missing entityType before calling the provider', async () => {
