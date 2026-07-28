@@ -9,6 +9,7 @@ import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ZodIssue, ZodTypeAny } from 'zod';
+import { readEntitlementCause } from './entitlement-cause';
 import { env } from './env';
 import { apiLogger } from './logger';
 
@@ -472,9 +473,9 @@ export const handleRouteError = (error: unknown, c: Context) => {
         // renders as "something broke on our side". That is exactly how a 402
         // entitlement gate ended up blaming the platform (HOS-283).
         //
-        // All four 402 throws live in middleware today, so none reach this
-        // formatter; the entry is here so a future route-level 402 does not
-        // reintroduce the bug.
+        // All five 402 throws live in middleware today (four in trial.ts, one in
+        // past-due-grace.middleware.ts), so none reach this formatter; the entry
+        // is here so a future route-level 402 does not reintroduce the bug.
         const httpStatusToCode: Record<number, string> = {
             400: ServiceErrorCode.VALIDATION_ERROR,
             401: ServiceErrorCode.UNAUTHORIZED,
@@ -484,12 +485,18 @@ export const handleRouteError = (error: unknown, c: Context) => {
             409: ServiceErrorCode.ALREADY_EXISTS
         };
         const code = httpStatusToCode[statusCode] ?? ServiceErrorCode.INTERNAL_ERROR;
+        // Same whitelisted projection the global handler applies, so a 402 gets
+        // its cause-specific `reason` on BOTH paths. Emitting only the code here
+        // would send the client to the generic plan copy — which for a past-due
+        // customer is the wrong remedy, i.e. the very bug being fixed.
+        const entitlementCause = readEntitlementCause(error);
 
         return createErrorResponse(
             {
                 code,
                 message,
-                details: undefined
+                details: entitlementCause.details,
+                ...(entitlementCause.reason ? { reason: entitlementCause.reason } : {})
             },
             c,
             statusCode

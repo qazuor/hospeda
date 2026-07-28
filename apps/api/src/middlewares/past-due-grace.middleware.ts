@@ -180,10 +180,10 @@ export function pastDueGraceMiddleware(): AppMiddleware {
         try {
             const pastDueSub = await findPastDueSubscription(billingCustomerId);
 
-            // No past-due subscription found - pass through normally
+            // No past-due subscription found - pass through normally (the
+            // single `next()` at the bottom, outside the try).
             if (!pastDueSub) {
-                await next();
-                return;
+                return await next();
             }
 
             const isInGrace = pastDueSub.isInGracePeriod();
@@ -203,52 +203,49 @@ export function pastDueGraceMiddleware(): AppMiddleware {
                     },
                     'Request allowed within past-due grace period'
                 );
+            } else {
+                // Grace period has expired: calculate how many days overdue.
+                //
+                // qzpay-core's `daysRemainingInGrace()` returns `null` (not a negative
+                // number) once `isInGracePeriod()` is false, so the previous
+                // `Math.abs(daysRemainingInGrace() ?? 0)` would always collapse to 0.
+                // We compute the value directly from `current_period_end`:
+                //
+                //   daysOverdue = days since current_period_end - grace window length
+                //
+                // This matches what the helper would return if it had negative semantics.
+                const periodEnd = pastDueSub.currentPeriodEnd;
+                const daysSincePeriodEnd =
+                    periodEnd instanceof Date
+                        ? Math.ceil((Date.now() - periodEnd.getTime()) / ONE_DAY_MS)
+                        : 0;
+                const daysOverdue = Math.max(0, daysSincePeriodEnd - QZPAY_GRACE_WINDOW_DAYS);
 
-                await next();
-                return;
+                apiLogger.warn(
+                    {
+                        customerId: billingCustomerId,
+                        subscriptionId: pastDueSub.id,
+                        daysOverdue,
+                        path: c.req.path
+                    },
+                    'Blocked request: grace period expired'
+                );
+
+                // Thrown, not `c.json`-ed, so the body goes through the one error
+                // formatter every client already parses. The previous hand-rolled
+                // shape put a STRING in `error` instead of the `{code, message}`
+                // envelope, so `parseError` in the web client read `code`/`message`
+                // as undefined and the UI fell back to generic copy — the same class
+                // of bug HOS-283 fixes for the trial gate.
+                throw new HTTPException(402, {
+                    message:
+                        'Your grace period has expired. Please update your payment method to continue.',
+                    cause: {
+                        code: 'GRACE_PERIOD_EXPIRED',
+                        daysOverdue
+                    }
+                });
             }
-
-            // Grace period has expired: calculate how many days overdue.
-            //
-            // qzpay-core's `daysRemainingInGrace()` returns `null` (not a negative
-            // number) once `isInGracePeriod()` is false, so the previous
-            // `Math.abs(daysRemainingInGrace() ?? 0)` would always collapse to 0.
-            // We compute the value directly from `current_period_end`:
-            //
-            //   daysOverdue = days since current_period_end - grace window length
-            //
-            // This matches what the helper would return if it had negative semantics.
-            const periodEnd = pastDueSub.currentPeriodEnd;
-            const daysSincePeriodEnd =
-                periodEnd instanceof Date
-                    ? Math.ceil((Date.now() - periodEnd.getTime()) / ONE_DAY_MS)
-                    : 0;
-            const daysOverdue = Math.max(0, daysSincePeriodEnd - QZPAY_GRACE_WINDOW_DAYS);
-
-            apiLogger.warn(
-                {
-                    customerId: billingCustomerId,
-                    subscriptionId: pastDueSub.id,
-                    daysOverdue,
-                    path: c.req.path
-                },
-                'Blocked request: grace period expired'
-            );
-
-            // Thrown, not `c.json`-ed, so the body goes through the one error
-            // formatter every client already parses. The previous hand-rolled
-            // shape put a STRING in `error` instead of the `{code, message}`
-            // envelope, so `parseError` in the web client read `code`/`message`
-            // as undefined and the UI fell back to generic copy — the same class
-            // of bug HOS-283 fixes for the trial gate.
-            throw new HTTPException(402, {
-                message:
-                    'Your grace period has expired. Please update your payment method to continue.',
-                cause: {
-                    code: 'GRACE_PERIOD_EXPIRED',
-                    daysOverdue
-                }
-            });
         } catch (error) {
             // An entitlement gate is a decision, not a failure: it must escape
             // the fail-open below or a past-due customer would be let through
@@ -268,8 +265,13 @@ export function pastDueGraceMiddleware(): AppMiddleware {
                 },
                 'Unexpected error in past-due grace middleware - allowing request'
             );
-
-            await next();
         }
+
+        // Single exit for every non-blocking path, deliberately OUTSIDE the try:
+        // if `next()` sat inside it, a downstream error would land in the
+        // fail-open catch above and call `next()` a second time, which Hono
+        // rejects with "next() called multiple times" — masking the real error.
+        // The blocking path never reaches here; it throws.
+        await next();
     };
 }

@@ -958,6 +958,70 @@ describe('Response Middleware', () => {
             expect(data.error.details).toBeUndefined();
         });
 
+        it('logs a 402 at warn, not at error — it is a gate, not a fault', async () => {
+            // Arrange — without this the ERROR stream fills with a stack trace
+            // for every blocked write of every lapsed host, and the middleware
+            // already emits its own warn for the same event.
+            const { HTTPException } = await import('hono/http-exception');
+            const { apiLogger } = await import('../../src/utils/logger');
+            const warnSpy = vi.spyOn(apiLogger, 'warn').mockImplementation(() => undefined);
+            const errorSpy = vi.spyOn(apiLogger, 'error').mockImplementation(() => undefined);
+
+            app.get('/gate', () => {
+                throw new HTTPException(402, {
+                    message: 'Your trial has expired.',
+                    cause: { code: 'TRIAL_EXPIRED', upgradeAudience: 'host' }
+                });
+            });
+
+            // Act
+            const res = await app.request('/gate');
+
+            // Assert
+            expect(res.status).toBe(402);
+            expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Caught error'));
+            expect(errorSpy).not.toHaveBeenCalled();
+
+            warnSpy.mockRestore();
+            errorSpy.mockRestore();
+        });
+
+        it('masks `reason` on a 5xx in production, like message and details', async () => {
+            // Arrange — `reason` names an internal failure mode
+            // (BULLMQ_NOT_CONFIGURED, ...), so leaking it past the 5xx redaction
+            // would hand back exactly what that redaction hides.
+            const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
+            const originalNodeEnv = env.NODE_ENV;
+            const originalDebug = env.HOSPEDA_API_DEBUG_ERRORS;
+            (env as { NODE_ENV: string }).NODE_ENV = 'production';
+            (env as { HOSPEDA_API_DEBUG_ERRORS?: boolean }).HOSPEDA_API_DEBUG_ERRORS = false;
+
+            app.get('/boom', () => {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'pg pool timeout',
+                    undefined,
+                    'BULLMQ_NOT_CONFIGURED'
+                );
+            });
+
+            try {
+                // Act
+                const res = await app.request('/boom');
+
+                // Assert
+                expect(res.status).toBe(500);
+                const data = await res.json();
+                expect(data.error.reason).toBeUndefined();
+                expect(JSON.stringify(data)).not.toContain('BULLMQ_NOT_CONFIGURED');
+            } finally {
+                (env as { NODE_ENV: string }).NODE_ENV = originalNodeEnv;
+                (env as { HOSPEDA_API_DEBUG_ERRORS?: boolean }).HOSPEDA_API_DEBUG_ERRORS =
+                    originalDebug;
+            }
+        });
+
         it('drops a cause code that is NOT in the whitelist', async () => {
             // Arrange — the whitelist is the security control: without a
             // rejected-input case, dropping it entirely keeps every other test
@@ -978,6 +1042,9 @@ describe('Response Middleware', () => {
             const data = await res.json();
             expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
             expect(data.error.reason).toBeUndefined();
+            // A cause we do not recognise is not one of our gates, so nothing it
+            // carries is forwarded — not even an otherwise well-formed audience.
+            expect(data.error.details).toBeUndefined();
             expect(JSON.stringify(data)).not.toContain('SOME_INTERNAL_STATE');
         });
 

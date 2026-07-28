@@ -613,7 +613,6 @@ describe('ImportFromUrl i18n keys', () => {
             }
             // HOS-283: upgrade CTA shown next to an entitlement error.
             expect((block?.errors as Record<string, unknown>)?.entitlementCta).toBeTruthy();
-            expect((block?.errors as Record<string, unknown>)?.paymentMethodCta).toBeTruthy();
         });
 
         // HOS-283: the component test mocks `t`, so it can never prove the real
@@ -667,6 +666,31 @@ describe('ImportFromUrl — non-ok error mapping (BETA-154)', () => {
         return screen.findByRole('alert');
     }
 
+    it('labels an entitlement gate as its own cause, not "unknown" (HOS-283)', async () => {
+        // Arrange
+        const onError = vi.fn();
+        mockImportFromUrl.mockResolvedValueOnce({
+            ok: false,
+            error: { status: 402, code: 'ENTITLEMENT_REQUIRED', reason: 'TRIAL_EXPIRED' }
+        });
+        render(
+            <ImportFromUrl
+                locale="es"
+                onError={onError}
+            />
+        );
+
+        // Act
+        fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
+        fireEvent.change(screen.getByRole('textbox', { name: /URL/i }), {
+            target: { value: 'https://www.airbnb.com.ar/rooms/789' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: /Importar/i }));
+
+        // Assert
+        await waitFor(() => expect(onError).toHaveBeenCalledWith('entitlement_required'));
+    });
+
     it('shows the permission-specific message on a 403', async () => {
         const alert = await submitWithError({ status: 403, code: 'FORBIDDEN' });
         expect(alert).toHaveTextContent(/no tenés permiso para importar/i);
@@ -682,7 +706,7 @@ describe('ImportFromUrl — non-ok error mapping (BETA-154)', () => {
         expect(alert).toHaveTextContent('Bad specific input');
     });
 
-    it('fires onError("unknown") on any non-ok result', async () => {
+    it('fires onError("unknown") on a non-ok result that is not an entitlement gate', async () => {
         const onError = vi.fn();
         mockImportFromUrl.mockResolvedValueOnce({ ok: false, error: { status: 403 } });
         render(
@@ -792,9 +816,10 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
         expect(cta.getAttribute('href')).toContain('suscriptores/planes');
     });
 
-    it('sends an overdue payment to the subscription page, not to plans', async () => {
-        // Arrange / Act — the second 402 gate. Its remedy is updating the card,
-        // so routing it to the pricing page would be a dead end (HOS-283).
+    it('renders NO CTA for an overdue payment', async () => {
+        // Arrange / Act — the only page that could resolve it sits behind this
+        // same gate and no update-card flow exists, so a button would be a dead
+        // end. The message alone is the deliverable here (HOS-348).
         await submitWithError({
             status: 402,
             code: 'ENTITLEMENT_REQUIRED',
@@ -803,9 +828,8 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
         });
 
         // Assert
-        const cta = await screen.findByRole('link', { name: /actualizar medio de pago/i });
-        expect(cta.getAttribute('href')).toContain('mi-cuenta/suscripcion');
-        expect(screen.queryByRole('link', { name: /ver planes/i })).toBeNull();
+        await screen.findByRole('alert');
+        expect(screen.queryByRole('link')).toBeNull();
     });
 
     it('shows the overdue-payment copy, not the plan copy', async () => {

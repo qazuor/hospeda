@@ -159,8 +159,10 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                 // generic import message.
                 const status = result.error?.status;
                 // A7: an entitlement gate reports its own cause rather than
-                // 'unknown', so upsell moments stop inflating the generic
-                // import-failure rate in the funnel (HOS-283).
+                // 'unknown', so it can be told apart from a real import failure
+                // in the funnel. Note this does NOT change the failure RATE —
+                // `PropertyImportFailed` still fires — it only splits the
+                // `unknown` bucket (HOS-283).
                 onError?.(status === 402 ? 'entitlement_required' : 'unknown');
                 // 402 = entitlement gate, not a failure of ours. Two gates are
                 // mounted on /protected/*, and they have DIFFERENT remedies:
@@ -168,7 +170,6 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                 // payment by updating the card. Sending the second one to the
                 // pricing page would be a dead end (HOS-283).
                 if (status === 402) {
-                    const isPaymentOverdue = result.error?.reason === 'GRACE_PERIOD_EXPIRED';
                     setError(
                         translateApiError({
                             error: result.error,
@@ -179,28 +180,24 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                             )
                         })
                     );
-                    setErrorAction(
-                        isPaymentOverdue
-                            ? {
-                                  label: t(
-                                      'host.importFromUrl.errors.paymentMethodCta',
-                                      'Actualizar medio de pago'
-                                  ),
-                                  href: buildUrl({ locale, path: 'mi-cuenta/suscripcion' })
-                              }
-                            : {
-                                  label: t(
-                                      'host.importFromUrl.errors.entitlementCta',
-                                      'Ver planes'
-                                  ),
-                                  href: buildUrl({
-                                      locale,
-                                      path: resolveSubscriptionPlansPathForAudience({
-                                          audience: readUpgradeAudience(result.error?.details)
-                                      })
-                                  })
-                              }
-                    );
+                    // An expired trial is fixed by choosing a plan, so it gets a
+                    // link. An overdue payment deliberately gets NONE: the only
+                    // page that could resolve it (`mi-cuenta/suscripcion`) is
+                    // itself behind this same gate, and no self-service
+                    // update-card flow exists yet — the `/payment-methods`
+                    // exemption in the middleware matches no route. A button
+                    // into a dead end is worse than no button (HOS-348).
+                    if (result.error?.reason !== 'GRACE_PERIOD_EXPIRED') {
+                        setErrorAction({
+                            label: t('host.importFromUrl.errors.entitlementCta', 'Ver planes'),
+                            href: buildUrl({
+                                locale,
+                                path: resolveSubscriptionPlansPathForAudience({
+                                    audience: readUpgradeAudience(result.error?.details)
+                                })
+                            })
+                        });
+                    }
                     setIsSubmitting(false);
                     return;
                 }

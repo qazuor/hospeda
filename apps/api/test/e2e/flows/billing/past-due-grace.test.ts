@@ -74,6 +74,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import { resetBillingInstance } from '../../../../src/middlewares/billing.js';
 import { pastDueGraceMiddleware } from '../../../../src/middlewares/past-due-grace.middleware.js';
+import { createErrorHandler } from '../../../../src/middlewares/response.js';
 import {
     createTestBillingCustomer,
     createTestSubscription
@@ -119,6 +120,13 @@ interface GraceExpiredBody {
  */
 function buildProbeApp(customerId: string): Hono {
     const app = new Hono();
+    // The gate signals a block by THROWING an HTTPException (HOS-283), so the
+    // probe must mount the same error handler the real app does — a bare
+    // `new Hono()` answers an HTTPException with Hono's default handler, which
+    // returns `err.getResponse()`: text/plain carrying the message, not the
+    // project's JSON envelope. Without this the body assertions below cannot
+    // pass no matter how correct the middleware is.
+    app.onError(createErrorHandler());
     app.use((c, next) => {
         c.set('billingEnabled', true);
         c.set('billingCustomerId', customerId);

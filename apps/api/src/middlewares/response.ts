@@ -14,6 +14,7 @@ import type {
     ApiSuccessResponse,
     PaginationData
 } from '../schemas/response-schemas';
+import { readEntitlementCause } from '../utils/entitlement-cause';
 import { env, getResponseConfig } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
@@ -77,67 +78,6 @@ const formatSuccessResponse = <T>(
     }
 
     return response;
-};
-
-/**
- * Cause codes the entitlement middlewares attach to their `HTTPException(402)`.
- * Anything outside this set is dropped rather than forwarded — the cause is an
- * internal object (it also carries the full `trialStatus`) and only a known,
- * client-safe vocabulary may reach the browser.
- */
-const ENTITLEMENT_CAUSE_REASONS: ReadonlySet<string> = new Set([
-    // trialMiddleware — mounted globally (create-app.ts), the live case.
-    'TRIAL_EXPIRED',
-    // pastDueGraceMiddleware — mounted on /api/v1/protected/*. Distinct remedy:
-    // the customer updates their payment method, they do not buy a plan.
-    'GRACE_PERIOD_EXPIRED',
-    // requireActiveSubscription() — NOT mounted anywhere today (it exists only
-    // in its own JSDoc example). Whitelisted so the day it is mounted the copy
-    // already resolves, but treat these two as dormant, not live.
-    'NO_ACTIVE_SUBSCRIPTION',
-    'NO_BILLING_ACCOUNT'
-]);
-
-/**
- * Extracts the client-safe part of a 402's `cause`.
- *
- * @param error - The thrown `HTTPException`.
- * @returns The whitelisted `reason` and `details`, both possibly `undefined`.
- */
-const readEntitlementCause = (
-    error: Error
-): {
-    reason?: string;
-    details?: { upgradeAudience?: 'host' | 'tourist'; daysOverdue?: number };
-} => {
-    const cause: unknown = (error as { cause?: unknown }).cause;
-    if (cause === null || typeof cause !== 'object') {
-        return {};
-    }
-
-    const record = cause as Record<string, unknown>;
-    const code = record.code;
-    const rawAudience = record.upgradeAudience;
-    const rawDaysOverdue = record.daysOverdue;
-
-    const audience: 'host' | 'tourist' | undefined =
-        rawAudience === 'host' || rawAudience === 'tourist' ? rawAudience : undefined;
-    const daysOverdue =
-        typeof rawDaysOverdue === 'number' && Number.isFinite(rawDaysOverdue)
-            ? rawDaysOverdue
-            : undefined;
-
-    const details: { upgradeAudience?: 'host' | 'tourist'; daysOverdue?: number } = {
-        ...(audience === undefined ? {} : { upgradeAudience: audience }),
-        ...(daysOverdue === undefined ? {} : { daysOverdue })
-    };
-
-    return {
-        ...(typeof code === 'string' && ENTITLEMENT_CAUSE_REASONS.has(code)
-            ? { reason: code }
-            : {}),
-        ...(Object.keys(details).length > 0 ? { details } : {})
-    };
 };
 
 /**
