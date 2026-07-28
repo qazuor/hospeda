@@ -61,9 +61,7 @@ describe('HOS-299 — bounded catalog reads opt into the SSR cache', () => {
         const source = readFileSync(path, 'utf8');
 
         for (const apiCall of ['destinationsApi.list', 'amenitiesApi.list', 'featuresApi.list']) {
-            expect(callArgsOf(source, apiCall)).toContain(
-                'cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS'
-            );
+            expect(callArgsOf(source, apiCall)).toContain('cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS');
         }
     });
 
@@ -108,11 +106,15 @@ describe('HOS-299 — cacheTtlMs never reaches the API', () => {
     let fetchMock: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-        fetchMock = vi.fn(async () =>
-            new Response(JSON.stringify({ success: true, data: { items: [], pagination: {} } }), {
-                status: 200,
-                headers: { 'content-type': 'application/json' }
-            })
+        fetchMock = vi.fn(
+            async () =>
+                new Response(
+                    JSON.stringify({ success: true, data: { items: [], pagination: {} } }),
+                    {
+                        status: 200,
+                        headers: { 'content-type': 'application/json' }
+                    }
+                )
         );
         vi.stubGlobal('fetch', fetchMock);
     });
@@ -129,20 +131,20 @@ describe('HOS-299 — cacheTtlMs never reaches the API', () => {
      * with INVALID_PAGINATION_PARAMS — the page frontmatter already documents
      * that unknown params are rejected there.
      */
-    it.each(['amenitiesApi', 'featuresApi'])(
-        '%s.list strips cacheTtlMs from the querystring',
-        async (apiName) => {
-            const endpoints = await import('../../src/lib/api/endpoints');
-            const api = (endpoints as unknown as Record<string, { list: (p: unknown) => unknown }>)[
-                apiName
-            ];
+    it.each([
+        'amenitiesApi',
+        'featuresApi'
+    ])('%s.list strips cacheTtlMs from the querystring', async (apiName) => {
+        const endpoints = await import('../../src/lib/api/endpoints');
+        const api = (endpoints as unknown as Record<string, { list: (p: unknown) => unknown }>)[
+            apiName
+        ];
 
-            await api.list({ pageSize: 100, cacheTtlMs: 60_000 });
+        await api.list({ pageSize: 100, cacheTtlMs: 60_000 });
 
-            expect(fetchMock).toHaveBeenCalled();
-            const url = String(fetchMock.mock.calls[0]?.[0]);
-            expect(url).toContain('pageSize=100');
-            expect(url).not.toContain('cacheTtlMs');
-        }
-    );
+        expect(fetchMock).toHaveBeenCalled();
+        const url = String(fetchMock.mock.calls[0]?.[0]);
+        expect(url).toContain('pageSize=100');
+        expect(url).not.toContain('cacheTtlMs');
+    });
 });
