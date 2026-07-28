@@ -6,10 +6,14 @@
  *
  * Drizzle compiles `isNull(col)` to the chunk sequence `['', col, ' is null']`
  * and `and(a, b)` to `['(', <inner>, ')']`, so the clause can be walked without
- * a real database connection. Extracted from
- * `accommodation.model.soft-delete.test.ts` so tests that only need to assert
- * "the injected condition is really there" do not have to re-declare the walker
- * or fall back to a vacuous `expect.anything()`.
+ * a real database connection. The point is to give tests a real assertion where
+ * they would otherwise fall back to a vacuous `expect.anything()`.
+ *
+ * Scope of the sharing: every consumer inside `packages/db` imports from here.
+ * Near-identical copies still live in `packages/service-core` and `apps/api`
+ * test files — this monorepo has no mechanism for sharing test-only helpers
+ * across packages, so those are deliberate duplicates, not an unfinished
+ * extraction. If Drizzle changes its chunk layout, they all need the same edit.
  */
 
 type QueryChunk = { value?: unknown[] };
@@ -25,10 +29,19 @@ function operatorOf(clause: unknown): string | undefined {
 }
 
 /**
- * Flattens an `and(...)`-composed clause into its top-level conditions.
+ * Flattens an `and(...)`-composed clause into its leaf conditions, descending
+ * through nested AND groups.
+ *
+ * The recursion is load-bearing, not tidiness. `and(and(a, b), c)` is the normal
+ * shape on the admin path — `BaseModelImpl.findAllWithRelations` composes
+ * `and(buildWhereClause(where), ...additionalConditions)`, and `buildWhereClause`
+ * itself returns an `and(...)` as soon as `where` carries two or more keys. A
+ * single-level walk therefore cannot see a predicate one level down, which makes
+ * NEGATIVE assertions (`expect(hasSoftDeleteCondition(x)).toBe(false)`) unsound —
+ * and that is exactly the direction the admin-trash guard test uses this in.
  *
  * @param clause - The compiled Drizzle clause (or `undefined`).
- * @returns The top-level conditions; `[]` when the clause is `undefined`.
+ * @returns The leaf conditions; `[]` when the clause is `undefined`.
  */
 export function flattenAndConditions(clause: unknown): unknown[] {
     if (clause === undefined) return [];
@@ -39,12 +52,14 @@ export function flattenAndConditions(clause: unknown): unknown[] {
 
     const innerChunks = chunksOf(chunks?.[1]);
     if (!innerChunks) return [clause];
-    return innerChunks.filter((_, i) => i % 2 === 0);
+    return innerChunks
+        .filter((_, i) => i % 2 === 0)
+        .flatMap((child) => flattenAndConditions(child));
 }
 
 /**
- * True when the (possibly AND-composed) clause contains an `IS NULL` condition
- * on a column named `deleted_at`. The column name is checked too, so an
+ * True when the clause contains an `IS NULL` condition on a column named
+ * `deleted_at`, at any AND nesting depth. The column name is checked too, so an
  * unrelated `IS NULL` predicate can never satisfy the assertion.
  *
  * @param clause - The compiled Drizzle clause (or `undefined`).

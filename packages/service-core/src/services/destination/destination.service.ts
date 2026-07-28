@@ -604,16 +604,18 @@ export class DestinationService extends BaseCrudService<
                 // HOS-288: this is a genuinely PUBLIC read path
                 // (GET /public/destinations/:id/accommodations — `checkCanViewDestination`
                 // lets a guest through for PUBLIC destinations), so it must be restricted
-                // to publicly visible, live listings. These are the CANONICAL public
-                // predicates: ACTIVE lifecycle, PUBLIC visibility, not owner-suspended,
-                // not plan-restricted — the same set used by
-                // {@link DestinationService.updateAccommodationsCount} (which maintains
-                // `accommodationsCount` for this very destination) and by
-                // `AccommodationService.getByDestination`. `ownerSuspended`/`planRestricted`
-                // were missing here, so the list and that count disagreed.
+                // to publicly visible, live listings on its own merits: PUBLIC visibility
+                // and ACTIVE lifecycle are what an anonymous caller may see at all, and
+                // `ownerSuspended`/`planRestricted` are the two entitlement gates that
+                // withdraw an otherwise-public listing from public surfaces.
                 // The predicates are stated HERE rather than defaulted in
                 // `AccommodationModel` on purpose — the admin panel must still see
                 // `PRIVATE` rows and an owner their own `DRAFT`.
+                // KNOWN FOLLOW-UP: {@link DestinationService.updateAccommodationsCount}
+                // maintains `accommodationsCount` for this very destination WITHOUT any
+                // `visibility` predicate, so this list and that count still disagree for
+                // ACTIVE + PRIVATE rows (the count includes them, this list does not).
+                // Reconciling the two is deliberately out of scope for HOS-288.
                 // `deletedAt` is deliberately NOT passed: `AccommodationModel` excludes
                 // soft-deleted rows by default (see `AccommodationModel#softDeleteCondition`),
                 // and passing it here would trip that default's explicit-intent escape hatch.

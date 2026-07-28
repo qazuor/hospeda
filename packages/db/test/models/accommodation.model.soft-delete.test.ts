@@ -28,56 +28,13 @@ import type { SQL } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model';
+import { flattenAndConditions, hasSoftDeleteCondition } from '../utils/soft-delete-clause';
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
     logError: vi.fn(),
     dbLogger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() }
 }));
-
-// ---------------------------------------------------------------------------
-// Helpers (same SQL-chunk introspection as event.model.soft-delete.test.ts)
-// ---------------------------------------------------------------------------
-
-type QueryChunk = { value?: unknown[] };
-
-function chunksOf(clause: unknown): QueryChunk[] | undefined {
-    return (clause as { queryChunks?: QueryChunk[] } | undefined)?.queryChunks;
-}
-
-function operatorOf(clause: unknown): string | undefined {
-    const chunks = chunksOf(clause);
-    const middle = chunks?.[2]?.value?.[0];
-    return typeof middle === 'string' ? middle : undefined;
-}
-
-/** Flattens an `and(...)`-composed clause into its top-level conditions. */
-function flattenAndConditions(clause: unknown): unknown[] {
-    if (clause === undefined) return [];
-    const chunks = chunksOf(clause);
-    const isAndWrapper =
-        chunks?.length === 3 && chunks[0]?.value?.[0] === '(' && chunks[2]?.value?.[0] === ')';
-    if (!isAndWrapper) return [clause];
-
-    const innerChunks = chunksOf(chunks?.[1]);
-    if (!innerChunks) return [clause];
-    return innerChunks.filter((_, i) => i % 2 === 0);
-}
-
-/**
- * True when the (possibly AND-composed) clause contains an
- * `isNull(<column named deleted_at>)` condition. `isNull(col)` compiles to the
- * chunk sequence `['', col, ' is null']`, so the column sits at index 1 and the
- * operator at index 2 — the column name is checked too so an unrelated
- * `IS NULL` predicate can never satisfy the assertion.
- */
-function hasSoftDeleteCondition(clause: unknown): boolean {
-    return flattenAndConditions(clause).some((c) => {
-        if (operatorOf(c) !== ' is null') return false;
-        const column = chunksOf(c)?.[1] as unknown as { name?: string } | undefined;
-        return column?.name === 'deleted_at';
-    });
-}
 
 /**
  * Chainable mock for `db.select().from().where().$dynamic().limit().offset()`

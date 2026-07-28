@@ -123,7 +123,7 @@ describe('DestinationService.getAccommodations — HOS-288 public read predicate
                 accommodationModelMock;
         });
 
-        it('restricts the query to the canonical public predicate set', async () => {
+        it('restricts the query to PUBLIC/ACTIVE and the two entitlement gates', async () => {
             const destination = new DestinationFactoryBuilder()
                 .with({ visibility: VisibilityEnum.PUBLIC })
                 .build();
@@ -139,9 +139,13 @@ describe('DestinationService.getAccommodations — HOS-288 public read predicate
 
             expectSuccess(result);
             const [where] = asMock(accommodationModelMock.findAll).mock.calls[0] ?? [];
-            // The canonical set, identical to the one
-            // `DestinationService.updateAccommodationsCount` counts with — the list
-            // and that destination's `accommodationsCount` must not disagree.
+            // PUBLIC/ACTIVE is what an anonymous caller may see at all;
+            // `ownerSuspended`/`planRestricted` are the two entitlement gates that
+            // withdraw an otherwise-public listing from public surfaces.
+            // KNOWN FOLLOW-UP: `DestinationService.updateAccommodationsCount` counts
+            // WITHOUT any `visibility` predicate, so this list and that destination's
+            // `accommodationsCount` still disagree for ACTIVE + PRIVATE rows (the
+            // count includes them, this list does not). Out of scope for HOS-288.
             expect(where).toMatchObject({
                 destinationId: destination.id,
                 visibility: VisibilityEnum.PUBLIC,

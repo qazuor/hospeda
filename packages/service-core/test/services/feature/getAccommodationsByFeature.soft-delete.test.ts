@@ -1,37 +1,68 @@
 /**
- * HOS-288 regression — `FeatureService.getAccommodationsByFeature` must not leak
- * soft-deleted accommodations.
+ * HOS-288 regression — `FeatureService.getAccommodationsByFeature` must return
+ * ONLY what an anonymous caller may see: `PUBLIC` visibility, `ACTIVE`
+ * lifecycle, not soft-deleted.
+ *
+ * ## The soft-delete defect
  *
  * The method read the accommodations through the JUNCTION model
  * (`RAccommodationFeatureModel.findAllWithRelations({ accommodation: true }, …)`),
  * which joins `accommodations` without filtering it at all — so soft-deleted
  * rows (production had 107) came back. The `AccommodationModel` soft-delete
  * default added in HOS-288 cannot help there either: the query runs against the
- * junction model, not `AccommodationModel`.
+ * junction model, not `AccommodationModel`. The fix resolves the feature's
+ * accommodation ids from the junction and then loads the rows through
+ * `AccommodationModel.findAll`, which is what applies the soft-delete default.
+ * `deletedAt` is deliberately NOT passed by the service: the model default owns
+ * it, and passing it would trip that default's explicit-intent escape hatch.
  *
- * The fix resolves the feature's accommodation ids from the junction and then
- * loads the rows through `AccommodationModel.findAll`, which is what applies
- * the soft-delete default.
+ * ## Why `visibility`/`lifecycleState` are ALSO load-bearing (round-2 decision)
  *
- * NOTE on the real gate: `GET /api/v1/public/features/:id/accommodations` is
- * public in URL TIER ONLY. The method starts with
- * `checkCanGetAccommodationsByFeature`, which requires
- * `PermissionEnum.ACCOMMODATION_FEATURES_EDIT`; `createGuestActor()` grants only
- * `ACCESS_API_PUBLIC`, so an anonymous caller gets 403 and the real audience is
- * SUPER_ADMIN / ADMIN / HOST. DECISION (HOS-288 review): visibility/lifecycle
- * policy is deliberately NOT baked in here — an editor auditing where a feature
- * is used must see `PRIVATE` and `DRAFT` rows. The first suite pins that so
- * nobody re-adds those predicates silently.
+ * A first review removed them, reasoning that `checkCanGetAccommodationsByFeature`
+ * requires `PermissionEnum.ACCOMMODATION_FEATURES_EDIT` and `createGuestActor()`
+ * carries only `ACCESS_API_PUBLIC`, so guests get 403 and the surviving audience
+ * is staff who legitimately need `PRIVATE`/`DRAFT` rows. That reasoning is WRONG
+ * on two independent counts, both verified against the code:
+ *
+ *   1. **The audience is not staff — it is multi-tenant.**
+ *      `PermissionEnum.ACCOMMODATION_FEATURES_EDIT` is granted to `RoleEnum.HOST`
+ *      (`packages/seed/src/required/rolePermissions.seed.ts`). This method has NO
+ *      owner scoping, so any authenticated host could enumerate every OTHER
+ *      host's `DRAFT`/`PRIVATE` listings. The same seed block documents that
+ *      SPEC-169 stripped `ACCOMMODATION_VIEW_ALL` from `HOST` for exactly this
+ *      class of cross-tenant read leak.
+ *
+ *   2. **The response is cached under an actor-blind key, ahead of auth.**
+ *      `/api/v1/public/features` is listed in `PUBLIC_CACHE_ENDPOINTS`
+ *      (`apps/api/src/middlewares/cache.constants.ts`), and `generateCacheKey`
+ *      builds `public:${path}${suffix}` with NO Authorization component — only
+ *      the `private:` branch mixes in the token (`apps/api/src/middlewares/cache.ts`).
+ *      `cacheMiddleware()` is mounted at `apps/api/src/utils/create-app.ts` BEFORE
+ *      `authMiddleware`, and a cache HIT returns the stored body without calling
+ *      `next()`, so the permission check never runs. `API_CACHE_ENABLED` defaults
+ *      to `true` with a 300s TTL. One authenticated host request therefore
+ *      populates a shared slot, and every anonymous request for the next 300
+ *      seconds is served that `DRAFT`/`PRIVATE` payload.
+ *
+ * Point 2 also rules out the obvious alternative remedy: making the handler
+ * owner-aware on an actor-blind cache key converts a permission leak into cache
+ * poisoning. On a `public:`-cached route the handler MUST be actor-blind, and the
+ * only thing it may return is what an anonymous caller is allowed to see.
+ *
+ * The first suite pins the predicates so nobody removes them again, and also
+ * pins that `additionalConditions` (argument 3) stays `undefined` — a pin that
+ * only inspected argument 1 would let a future re-narrowing slip past.
  *
  * Two suites:
  *   1. Both models mocked — asserts the accommodation rows are re-read through
- *      `AccommodationModel` by id, with no visibility/lifecycle narrowing.
+ *      `AccommodationModel` by id, narrowed to PUBLIC/ACTIVE, with no
+ *      `deletedAt` and no `additionalConditions`.
  *   2. REAL `AccommodationModel` + a Drizzle client injected via `setDb()` —
  *      proves the soft-delete default actually reaches SQL from this call site.
  */
 import type { FeatureModel, RAccommodationFeatureModel } from '@repo/db';
 import { AccommodationModel, resetDb, setDb } from '@repo/db';
-import { PermissionEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { FeatureService } from '../../../src/services/feature/feature.service';
@@ -127,7 +158,7 @@ describe('FeatureService.getAccommodationsByFeature — HOS-288 public read pred
     });
 
     describe('predicates passed to AccommodationModel', () => {
-        it('re-reads the joined accommodations through AccommodationModel by id only', async () => {
+        it('re-reads the joined accommodations through AccommodationModel narrowed to PUBLIC/ACTIVE', async () => {
             // One shared mock stands in for the feature model, the junction model
             // and the accommodation model (the convention in this directory), so
             // `findAll` is called twice: junction rows first, accommodations second.
@@ -149,17 +180,24 @@ describe('FeatureService.getAccommodationsByFeature — HOS-288 public read pred
             expect(result.data?.accommodations).toEqual([accommodation]);
 
             expect((model.findAll as Mock).mock.calls.length).toBeGreaterThanOrEqual(2);
-            const [accommodationWhere] = (model.findAll as Mock).mock.calls[1] ?? [];
-            expect(accommodationWhere).toMatchObject({ id: [accommodationId] });
-            // DECISION (HOS-288 review): this method is gated by
-            // ACCOMMODATION_FEATURES_EDIT, so its audience is staff/hosts, not
-            // anonymous visitors. It must NOT narrow visibility or lifecycle —
-            // an editor auditing a feature's usage needs PRIVATE and DRAFT rows.
-            expect(accommodationWhere).not.toHaveProperty('visibility');
-            expect(accommodationWhere).not.toHaveProperty('lifecycleState');
-            // `deletedAt` must NOT be passed either: the model default owns it, and
+            const [accommodationWhere, , additionalConditions] =
+                (model.findAll as Mock).mock.calls[1] ?? [];
+            // DECISION (HOS-288 round 2): the response of this route is cached under
+            // an actor-blind `public:` key BEFORE authMiddleware runs, and
+            // ACCOMMODATION_FEATURES_EDIT is held by the multi-tenant RoleEnum.HOST.
+            // The handler must therefore be actor-blind and may only return what an
+            // anonymous caller may see. Full rationale in this file's header.
+            expect(accommodationWhere).toMatchObject({
+                id: [accommodationId],
+                visibility: VisibilityEnum.PUBLIC,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            });
+            // `deletedAt` must NOT be passed: the model default owns it, and
             // passing it would trip that default's explicit-intent escape hatch.
             expect(accommodationWhere).not.toHaveProperty('deletedAt');
+            // Argument 3 is `additionalConditions`. Pinning only argument 1 would let
+            // a future re-narrowing slip in through this channel unnoticed.
+            expect(additionalConditions).toBeUndefined();
         });
 
         it('short-circuits without querying accommodations when the feature has none', async () => {

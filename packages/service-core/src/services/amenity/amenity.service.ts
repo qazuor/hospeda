@@ -23,8 +23,9 @@ import {
     type AmenitySearchInput,
     AmenitySearchInputSchema,
     AmenityUpdateInputSchema,
+    LifecycleStatusEnum,
     ServiceErrorCode,
-    type VisibilityEnum
+    VisibilityEnum
 } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import type { z } from 'zod';
@@ -263,20 +264,17 @@ export class AmenityService extends BaseCrudRelatedService<
      *
      * HOS-288 — the exact twin of {@link FeatureService.getAccommodationsByFeature}.
      * This method backs NO route today (`apps/api/src/routes/amenity/public/`
-     * exposes only `getById` and `list`), and it is gated by
-     * `checkCanGetAccommodationsByAmenity`, i.e. `ACCOMMODATION_AMENITIES_EDIT` —
-     * a permission no guest actor carries. So it must NOT narrow `visibility` or
-     * `lifecycleState`: its audience is staff/hosts, and an editor auditing where
-     * an amenity is used has to see `PRIVATE` and `DRAFT` rows too.
-     *
-     * The read is nevertheless two steps. Reading the rows off the junction model
-     * (`findAllWithRelations({ accommodation: true }, …)`) joins `accommodations`
-     * WITHOUT filtering it and cannot benefit from the `AccommodationModel`
-     * soft-delete default, and `additionalConditions` is not usable there either
-     * because the junction model forwards it to a join-less `count()`. So:
-     * junction ids first, then the rows through `AccommodationModel.findAll`,
-     * whose default excludes soft-deleted rows. Page semantics unchanged; full
-     * rationale in `getAccommodationsByAmenity.soft-delete.test.ts`.
+     * exposes only `getById` and `list`); it is hardened to match its twin so the
+     * obvious future consumer (`GET /api/v1/public/amenities/:id/accommodations`)
+     * cannot silently ship a leak. The `PUBLIC`/`ACTIVE` predicates are
+     * load-bearing there: that prefix is in `PUBLIC_CACHE_ENDPOINTS`, the public
+     * cache key carries NO Authorization component, and `cacheMiddleware` runs
+     * BEFORE `authMiddleware`, so a HIT bypasses the permission check entirely —
+     * the handler must be actor-blind and may only ever return what an anonymous
+     * caller may see. Owner-scoping is NOT available for that same reason, and
+     * "the audience is staff" does not hold: `ACCOMMODATION_AMENITIES_EDIT` is
+     * held by the multi-tenant `RoleEnum.HOST`. Long form in
+     * `getAccommodationsByAmenity.soft-delete.test.ts`.
      *
      * @param actor - The actor performing the action
      * @param params - The params containing the amenity ID
@@ -322,10 +320,13 @@ export class AmenityService extends BaseCrudRelatedService<
                 }
 
                 // Step 2 — through AccommodationModel so its soft-delete default applies.
-                // `deletedAt` is deliberately absent: passing it would trip that default's
-                // explicit-intent escape hatch. See this method's JSDoc.
+                // `deletedAt` deliberately absent: it would trip that default's escape hatch.
                 const { items: accommodations } = await this.accommodationModel.findAll(
-                    { id: accommodationIds },
+                    {
+                        id: accommodationIds,
+                        visibility: VisibilityEnum.PUBLIC,
+                        lifecycleState: LifecycleStatusEnum.ACTIVE
+                    },
                     { page: 1, pageSize: accommodationIds.length }
                 );
 

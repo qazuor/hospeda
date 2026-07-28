@@ -50,11 +50,25 @@ export const publicGetSimilarRoute = createPublicRoute({
         const db = getDb();
 
         // Fetch current accommodation to get type and destinationId.
-        // HOS-288: this lookup carries the same public predicates as the similarity
-        // query below. A bare `eq(id)` answered 200 with a full recommendation list
-        // for a soft-deleted / DRAFT / PRIVATE id, confirming to an anonymous caller
-        // that the listing exists. With these predicates the row is simply not found
-        // and the NOT_FOUND throw right below fires (no 410 path by design).
+        // HOS-288: a bare `eq(id)` answered 200 with a full recommendation list for a
+        // soft-deleted / DRAFT / PRIVATE id, confirming to an anonymous caller that the
+        // listing exists. With these predicates the row is simply not found and the
+        // NOT_FOUND throw right below fires (no 410 path by design).
+        //
+        // The predicates are not merely "the same ones the similarity query uses" — they
+        // are forced. This route sits under the `/api/v1/public/accommodations` prefix in
+        // `PUBLIC_CACHE_ENDPOINTS`, and `generateCacheKey` builds public keys as
+        // `public:${path}${query}` with NO Authorization component, while `cacheMiddleware`
+        // is mounted BEFORE `authMiddleware` so a cache HIT never reaches the handler at
+        // all. The response is therefore shared across actors and the handler MUST be
+        // actor-blind: it may only ever return what an anonymous caller may see. That also
+        // rules out making this lookup actor-aware to serve owner previews — doing so
+        // would turn the leak into cache poisoning.
+        //
+        // Accepted cost: a token-bearing owner or VIP asking `/similar` for their own
+        // DRAFT/PRIVATE listing now gets 404 instead of recommendations. No first-party
+        // regression — `apps/web` issues this SSR call with no cookie header, so it is
+        // already anonymous, and the section degrades to empty via `Promise.allSettled`.
         const current = await db
             .select({
                 type: accommodations.type,

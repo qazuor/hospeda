@@ -12,10 +12,12 @@ import {
     FeatureAdminSearchSchema,
     GetAccommodationsByFeatureSchema,
     GetFeaturesForAccommodationSchema,
+    LifecycleStatusEnum,
     RemoveFeatureFromAccommodationInputSchema,
     HttpFeatureSearchSchema as SearchFeatureSchema,
     ServiceErrorCode,
-    FeatureUpdateInputSchema as UpdateFeatureSchema
+    FeatureUpdateInputSchema as UpdateFeatureSchema,
+    VisibilityEnum
 } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import type { z } from 'zod';
@@ -432,23 +434,13 @@ export class FeatureService extends BaseCrudRelatedService<
     /**
      * Retrieves all accommodations that have a specific feature.
      *
-     * HOS-288 — `GET /api/v1/public/features/:id/accommodations` is public in URL TIER
-     * ONLY. This method opens with `checkCanGetAccommodationsByFeature`, which requires
-     * `PermissionEnum.ACCOMMODATION_FEATURES_EDIT`; `createGuestActor()`
-     * (`apps/api/src/utils/actor.ts`) grants only `ACCESS_API_PUBLIC` and `hasPermission`
-     * is plain array membership with no role fallback, so an anonymous caller gets 403 and
-     * the real audience is SUPER_ADMIN / ADMIN / HOST. It therefore must NOT narrow
-     * `visibility` or `lifecycleState`: an editor auditing where a feature is used has to
-     * see `PRIVATE` and `DRAFT` rows too.
-     *
-     * The read is nevertheless two steps. Reading the rows off the junction model
-     * (`findAllWithRelations({ accommodation: true }, …)`) joins `accommodations` WITHOUT
-     * filtering it and cannot benefit from the `AccommodationModel` soft-delete default,
-     * and `additionalConditions` is not usable there either because the junction model
-     * forwards it to a join-less `count()`. So: junction ids first, then the rows through
-     * `AccommodationModel.findAll`, whose default excludes soft-deleted rows. Page
-     * semantics unchanged; full rationale in
-     * `getAccommodationsByFeature.soft-delete.test.ts`.
+     * HOS-288 — the `PUBLIC`/`ACTIVE` predicates below are load-bearing. This route's prefix
+     * is in `PUBLIC_CACHE_ENDPOINTS`, the public cache key carries NO Authorization
+     * component, and `cacheMiddleware` runs BEFORE `authMiddleware`, so a HIT bypasses the
+     * permission check entirely: the handler must be actor-blind and may only ever return
+     * what an anonymous caller may see. Owner-scoping is NOT available for that same reason,
+     * and "the audience is staff" does not hold — `ACCOMMODATION_FEATURES_EDIT` is held by
+     * the multi-tenant `RoleEnum.HOST`. Long form: `getAccommodationsByFeature.soft-delete.test.ts`.
      *
      * @param actor - The actor performing the action
      * @param params - The params containing the feature ID
@@ -490,10 +482,13 @@ export class FeatureService extends BaseCrudRelatedService<
                 }
 
                 // Step 2 — through AccommodationModel so its soft-delete default applies.
-                // `deletedAt` is deliberately absent: passing it would trip that default's
-                // explicit-intent escape hatch. See this method's JSDoc.
+                // `deletedAt` deliberately absent: it would trip that default's escape hatch.
                 const { items: accommodations } = await this.accommodationModel.findAll(
-                    { id: accommodationIds },
+                    {
+                        id: accommodationIds,
+                        visibility: VisibilityEnum.PUBLIC,
+                        lifecycleState: LifecycleStatusEnum.ACTIVE
+                    },
                     { page: 1, pageSize: accommodationIds.length }
                 );
 
