@@ -34,6 +34,12 @@ describe('publicar-experiencia/index.astro', () => {
         expect(src).toContain('destinations={destinations}');
         expect(src).toContain('domain="experience"');
     });
+    // HOS-295: an island has no access to Astro.locals, so the signed-in
+    // visitor has to be handed down as a prop for the name/email prefill.
+    it('forwards the signed-in visitor to the island for prefill', () => {
+        expect(src).toContain('Astro.locals.user');
+        expect(src).toContain('currentUser={currentUser}');
+    });
     it('does NOT redirect unauthenticated visitors (public page)', () => {
         expect(src).not.toContain('if (!user)');
     });

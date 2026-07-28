@@ -36,7 +36,20 @@ export const SESSION_OPTIONAL_SEGMENTS = [
     // Gastronomy public listing + detail (SPEC-239)
     'gastronomia',
     // Experiences & services public listing + detail (SPEC-240)
-    'experiencias'
+    'experiencias',
+    // Commerce lead forms — "Sumá tu negocio" (HOS-295).
+    //
+    // Both pages mount the CommerceLead island, which pre-fills the visitor's
+    // name and email when they are signed in. An island cannot read
+    // `Astro.locals`, so the page frontmatter has to hand the user down as a
+    // prop — and the frontmatter only has one if the middleware resolved the
+    // session here. The match is on the exact segment, so the pre-existing
+    // `publicar` entry does NOT cover `publicar-restaurante`; both need listing.
+    //
+    // These stay OUT of `PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS`
+    // on purpose — see the note on that constant.
+    'publicar-restaurante',
+    'publicar-experiencia'
 ] as const;
 
 /**
@@ -95,5 +108,11 @@ export type ProfileCompletionBypassRole = (typeof PROFILE_COMPLETION_BYPASS_ROLE
  * `profile_completed = FALSE` must still be bounced back to
  * `completar-perfil`. Without this list, a user who closed the tab mid-form
  * could sneak into the host onboarding flow.
+ *
+ * The commerce lead pages (`publicar-restaurante`, `publicar-experiencia`) are
+ * deliberately NOT here (HOS-295). They are a top-of-funnel capture form that
+ * creates no entity under the visitor's account and works fully anonymously;
+ * bouncing a signed-in visitor with an incomplete profile off them would leave
+ * them strictly worse off than a logged-out one, who can just submit.
  */
 export const PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS = ['publicar'] as const;

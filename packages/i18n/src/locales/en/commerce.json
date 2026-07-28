@@ -14,6 +14,7 @@
             "destination": "City / Destination (optional)",
             "message": "Tell us about your business (optional)"
         },
+        "prefillNotice": "We filled in your name and email from your account. If the business contact is different, edit them: we use that email to link the request.",
         "submit": "Submit request",
         "submitting": "Submitting...",
         "success": "Thank you! We received your request and will be in touch shortly.",

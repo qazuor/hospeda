@@ -10,6 +10,13 @@
  *
  * Rate-limit (429) and generic API errors surface friendly i18n messages.
  *
+ * Signed-in visitors (HOS-295): the page frontmatter passes `currentUser` (read
+ * from `Astro.locals.user`) and the contact fields are seeded from it. They stay
+ * EDITABLE on purpose — the submitted email is what decides whether an approved
+ * lead links to an existing account or provisions a new one, and a merchant's
+ * business contact may legitimately differ from their sign-in address. The form
+ * must keep working unchanged for anonymous visitors, which is its primary case.
+ *
  * Hydration: caller MUST use `client:load`.
  */
 
@@ -34,6 +41,16 @@ export interface DestinationOption {
     readonly name: string;
 }
 
+/**
+ * The signed-in visitor, forwarded from `Astro.locals.user` by the page
+ * frontmatter. `null` for anonymous visitors, which is the form's primary case.
+ */
+export interface CommerceLeadCurrentUser {
+    readonly id: string;
+    readonly name: string | null;
+    readonly email: string | null;
+}
+
 /** Props for the CommerceLead island. */
 export interface CommerceLeadProps {
     /** Active locale for i18n. */
@@ -42,6 +59,11 @@ export interface CommerceLeadProps {
     readonly destinations?: ReadonlyArray<DestinationOption>;
     /** Commerce domain the lead applies to. Defaults to `'gastronomy'`. */
     readonly domain?: 'gastronomy' | 'experience';
+    /**
+     * The signed-in visitor, when there is one. Seeds `contactName` and `email`
+     * so a registered user does not retype what we already know (HOS-295).
+     */
+    readonly currentUser?: CommerceLeadCurrentUser | null;
 }
 
 type LeadFields = Omit<CommerceLeadCreateInput, 'domain'> & {
@@ -62,6 +84,32 @@ const INITIAL_FIELDS: LeadFields = {
     _hp: ''
 };
 
+/**
+ * Builds the form's initial field values, seeding the contact fields from the
+ * session when the visitor is signed in.
+ *
+ * The business-specific fields (name, phone, city, description) are never
+ * seeded — we know nothing about the business yet.
+ *
+ * @param params.currentUser - Signed-in visitor, or null/undefined for guests
+ * @returns The initial {@link LeadFields} for `useState`
+ */
+function buildInitialFields({
+    currentUser
+}: {
+    readonly currentUser?: CommerceLeadCurrentUser | null;
+}): LeadFields {
+    if (!currentUser) {
+        return INITIAL_FIELDS;
+    }
+
+    return {
+        ...INITIAL_FIELDS,
+        contactName: currentUser.name ?? '',
+        email: currentUser.email ?? ''
+    };
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 /**
@@ -77,7 +125,8 @@ const INITIAL_FIELDS: LeadFields = {
 export function CommerceLead({
     locale,
     destinations = [],
-    domain = 'gastronomy'
+    domain = 'gastronomy',
+    currentUser = null
 }: CommerceLeadProps) {
     const { t } = createTranslations(locale);
 
@@ -86,7 +135,7 @@ export function CommerceLead({
     const formTitleKey =
         domain === 'experience' ? 'commerce.lead.experience.title' : 'commerce.lead.title';
 
-    const [fields, setFields] = useState<LeadFields>(INITIAL_FIELDS);
+    const [fields, setFields] = useState<LeadFields>(() => buildInitialFields({ currentUser }));
     const [errors, setErrors] = useState<FieldErrors>({});
     const [formError, setFormError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -223,6 +272,18 @@ export function CommerceLead({
                     autoComplete="off"
                 />
             </div>
+
+            {/* Signed-in prefill notice — the contact fields carry account data,
+                but they stay editable and the email drives how an approved lead
+                is linked, so say so explicitly (HOS-295). */}
+            {currentUser && (
+                <p className={styles.prefillNotice}>
+                    {t(
+                        'commerce.lead.prefillNotice',
+                        'Completamos tu nombre y tu correo con los datos de tu cuenta. Si el contacto del negocio es otro, editalos: usamos ese correo para vincular la solicitud.'
+                    )}
+                </p>
+            )}
 
             {/* Business name */}
             <div className={styles.field}>

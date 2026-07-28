@@ -32,6 +32,20 @@ const subtitle = t('commerce.lead.subtitle');
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
+// --- Auth (HOS-295) ---
+// The page stays public — an anonymous visitor is the primary case. When there
+// IS a session, hand the visitor down to the island so it can pre-fill the
+// contact fields; islands cannot read `Astro.locals` themselves. This is only
+// populated because `publicar-restaurante` is listed in
+// `SESSION_OPTIONAL_SEGMENTS` (see `@/lib/routes`).
+const currentUser = Astro.locals.user
+    ? {
+          id: Astro.locals.user.id,
+          name: Astro.locals.user.name ?? null,
+          email: Astro.locals.user.email ?? null
+      }
+    : null;
+
 const destinationsResult = await destinationsApi.list({
     destinationType: 'CITY',
     pageSize: 100
@@ -64,7 +78,12 @@ const destinations: ReadonlyArray<DestinationOption> = destinationsResult.ok
 
     <section class="pub-rest__form section section--warm">
         <div class="pub-rest__form-container section__container">
-            <CommerceLead client:load locale={locale} destinations={destinations} />
+            <CommerceLead
+                client:load
+                locale={locale}
+                destinations={destinations}
+                currentUser={currentUser}
+            />
         </div>
     </section>
 </BaseLayout>
