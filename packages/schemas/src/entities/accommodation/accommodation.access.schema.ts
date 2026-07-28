@@ -463,24 +463,34 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     // entirely from `richDescriptionI18n`, so with the pair absent it showed "—"
     // forever and the "generate missing translations" button never disappeared.
     //
-    // This schema is the `responseSchema` of EIGHT protected routes, so declaring
-    // the pair here declares it for all eight. The contract is therefore NOT "the
-    // schema decides" — it is:
+    // Declaring the pair here declares it for every consumer of this schema, and
+    // this schema has TWO kinds of consumer. The contract is therefore NOT "the
+    // schema decides" — parsing removes only UNDECLARED keys, so from here on it
+    // protects nothing. It is:
     //
-    //   ONLY `protected/getById` may emit these two, and only AFTER resolving the
-    //   OWNING host's entitlements. EVERY other route responding with this schema
-    //   drops them UNCONDITIONALLY via `stripRichDescriptionFields`.
+    //   1. TOP-LEVEL `responseSchema` (eight protected accommodation routes) —
+    //      ONLY `protected/getById` may emit the pair, and only AFTER resolving
+    //      the OWNING host's entitlements. The other seven drop it
+    //      UNCONDITIONALLY via `stripRichDescriptionFields`. None of them renders
+    //      rich text (they echo a mutated entity, or list cards), so the drop
+    //      keeps their payloads byte-identical to what they were before the pair
+    //      was declared — no entitlement lookup, and no gate to get wrong.
     //
-    // None of the other seven needs rich text (they echo a mutated entity, or list
-    // cards), so an unconditional drop keeps their payloads byte-identical to what
-    // they were before the pair was declared — no entitlement lookup added, and no
-    // gate to get wrong.
+    //   2. NESTED relation embeds (`ownerPromotion.accommodation`,
+    //      `post.relatedAccommodation`, `accommodationReview.accommodation`) —
+    //      these use `AccommodationProtectedCardSchema`, which omits the pair
+    //      outright. No data-level strip ever reaches an accommodation nested
+    //      inside another entity's payload, and the owning services eager-load
+    //      the relation with no column allowlist, so an embed of THIS schema is
+    //      an ungated leak by construction. Read that schema's comment before
+    //      embedding an accommodation anywhere.
     //
-    // A route added later would leak silently: a schema declaration is passive and
-    // enforces nothing. `apps/api/test/routes/accommodation/protected/
-    // rich-description-strip.guard.test.ts` enumerates the real route files and
-    // fails CI when one responds with this schema without applying the strip. That
-    // guard, not this comment, is the protection.
+    // A consumer added later would leak silently, on either axis. Two guards, not
+    // this comment, are the protection:
+    // `apps/api/test/routes/rich-description-strip.guard.test.ts` (every route
+    // under `apps/api/src/routes`) and
+    // `packages/schemas/test/entities/accommodation/nested-embed.guard.test.ts`
+    // (every schema that embeds an accommodation).
     richDescription: true,
     richDescriptionI18n: true,
     isFeatured: true,
@@ -575,6 +585,37 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
 });
 
 export type AccommodationProtected = z.infer<typeof AccommodationProtectedSchema>;
+
+/**
+ * PROTECTED ACCOMMODATION — CARD TIER, for NESTED embeds.
+ *
+ * Use this — never the full `AccommodationProtectedSchema` — when another entity's
+ * protected schema embeds an accommodation as a relation (`ownerPromotion.accommodation`,
+ * `post.relatedAccommodation`, `accommodationReview.accommodation`).
+ *
+ * The protected-tier twin of {@link AccommodationPublicCardSchema}, and it exists for
+ * the same reason: the rich-description gate is enforced by data-level helpers
+ * (`stripRichDescriptionFields`, and the owner-entitlement resolution in
+ * `protected/getById`) that operate on a FLAT, top-level accommodation object. They
+ * are never applied to an accommodation that arrives NESTED inside another entity's
+ * payload. So every schema embedding the full protected schema would silently reopen
+ * the hole those helpers exist to close — the owning service eager-loads the relation
+ * with no column allowlist (`getDefaultListRelations()` → Drizzle `with:` → every
+ * column), and `stripWithSchema` keeps whatever the schema declares.
+ *
+ * That was not a hazard while the pair was undeclared: an undeclared key is dropped
+ * by parsing, so the nested case was accidentally safe. Declaring the pair for the
+ * owner's editor (BETA-199) removed that accident, which is exactly why this variant
+ * had to arrive in the same change. Omitting the fields here makes the nested case
+ * fail-closed by construction: there is no per-route strip to forget, and no
+ * entitlement to resolve for a relation nobody renders rich text from.
+ */
+export const AccommodationProtectedCardSchema = AccommodationProtectedSchema.omit({
+    richDescription: true,
+    richDescriptionI18n: true
+});
+
+export type AccommodationProtectedCard = z.infer<typeof AccommodationProtectedCardSchema>;
 
 /**
  * ADMIN ACCESS SCHEMA

@@ -134,14 +134,30 @@ async function fetchProtectedFeatures(accommodationId: string): Promise<FeatureP
 }
 
 /**
- * Resolves the owning host's entitlement set for the rich-description gate,
- * containing any failure.
+ * Resolves the owning host's entitlement set for the rich-description gate.
  *
- * The lookup reaches billing. Letting it throw would 500 this GET, and
- * `editar.astro` redirects the owner away from a failed fetch — so a billing
- * hiccup would lock a host out of editing their own accommodation entirely (the
- * HOS-190 lock-out class). A failure therefore resolves to "no entitlement
- * proven": the premium pair is withheld, every other field is still served.
+ * Uses the UNCACHED single resolver, not the 5-minute-cached batch variant
+ * (`resolveOwnerEntitlementsForOwnerIds`) that the listing badge resolver uses.
+ * That costs a handful of round-trips on the editor's blocking SSR fetch, and it
+ * is deliberate: this gate decides whether a host sees a feature they just paid
+ * for. Serving it from a 5-minute cache means an upgrade appears not to have
+ * worked — the worst possible minute to be stale is the one right after payment.
+ * The badge resolver caches because it answers for many owners at once on a page
+ * nobody is watching for their own change; this answers for one owner, about
+ * their own plan, on the page they opened to use it.
+ *
+ * Failures are contained rather than propagated. Letting one throw would 500 this
+ * GET, and `editar.astro` redirects the owner away from a failed fetch — so a
+ * billing hiccup would lock a host out of editing their accommodation at all (the
+ * HOS-190 lock-out class). A failure resolves to "no entitlement proven": the
+ * premium pair is withheld, every other field is still served.
+ *
+ * Note what that means when billing is degraded rather than down: every layer
+ * beneath already catches its own failure and returns an EMPTY entitlement set
+ * (`resolveOwnerRole`, `loadOwnerCustomerId`, `loadCustomerEntitlements`), so the
+ * common outcome is not this `catch` — it is an entitled host whose rich
+ * description silently reads as "your plan does not include this". The `catch`
+ * only covers a throw those layers do not model.
  *
  * @param ownerId - The accommodation's owner.
  * @returns The owner's entitlements, or an empty set when they cannot be read.

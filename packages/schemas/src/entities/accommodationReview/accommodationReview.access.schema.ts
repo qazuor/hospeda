@@ -1,7 +1,7 @@
 import type { z } from 'zod';
 import {
     AccommodationAdminSchema,
-    AccommodationProtectedSchema,
+    AccommodationProtectedCardSchema,
     AccommodationPublicCardSchema
 } from '../accommodation/accommodation.access.schema.js';
 import {
@@ -79,7 +79,7 @@ export const AccommodationReviewProtectedSchema = AccommodationReviewSchema.pick
     /** Reviewer user data (protected tier). Populated when the relation is loaded. */
     user: UserProtectedSchema.optional(),
     /** Parent accommodation data (protected tier). Populated when the relation is loaded. */
-    accommodation: AccommodationProtectedSchema.optional()
+    accommodation: AccommodationProtectedCardSchema.optional()
 });
 
 export type AccommodationReviewProtected = z.infer<typeof AccommodationReviewProtectedSchema>;
