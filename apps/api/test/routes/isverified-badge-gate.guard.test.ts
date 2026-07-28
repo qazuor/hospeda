@@ -99,11 +99,33 @@ function allRouteFiles(dir: string = ROUTES_DIR): string[] {
 /**
  * Source with string literals and comments blanked out.
  *
- * Strings go FIRST, and both patterns are line-bounded. Blanking comments first
- * truncates `'https://…'` at the `//`, orphans the opening quote, and lets the
- * string pass swallow everything up to some later quote — which would drop a
+ * Three string passes, THEN comments. Strings go first because blanking comments
+ * first truncates `'https://…'` at the `//`, orphans the opening quote, and lets
+ * the quote pass swallow everything up to some later quote — which would drop a
  * route out of discovery entirely. See the sibling rich-description guard, where
  * that defect was found and measured.
+ *
+ * The two QUOTE passes are line-bounded (`\n` in each negated class), which is what
+ * bounds the damage of a quote that ends up unpaired. The BACKTICK pass is not, and
+ * cannot be: template literals legitimately span lines. It therefore has a real
+ * cost, which is deliberate and must not be "tidied away":
+ *
+ * A line carrying both backticks and an odd apostrophe — ordinary JSDoc prose like
+ * ``the mapper's `hasPool` shortcut`` — loses a backtick to the earlier quote pass,
+ * leaving the file's backticks unbalanced, and this pass then blanks a multi-line
+ * region. Measured on `apps/api/src/routes`: two files out of ~970 end up unbalanced,
+ * the worst being `ai/protected/search-chat.ts` at ~81% blanked.
+ *
+ * That is acceptable HERE because the failure direction is one-way. Blanking only
+ * REMOVES text, so it can never fabricate a gate call or a schema reference: the
+ * guard cannot go falsely green. Over-blanking a target route drops it out of
+ * discovery, which the route-count assertion below turns red, or drops its gate
+ * call, which the offender assertion turns red. Loud and attributable, not silent.
+ *
+ * None of the nine target files contains a multi-line backtick span today. If one
+ * gains a code fence in a JSDoc block and this guard goes red for no visible reason,
+ * this paragraph is the explanation — fix the parity or move the pass, do not delete
+ * the assertion that caught it.
  */
 function code(source: string): string {
     return source
@@ -172,18 +194,21 @@ describe('API routes — isVerified badge gate guard (HOS-341)', () => {
     it('requires every such route to also resolve owner entitlements', () => {
         // The second half of the contract, and the reason it is not redundant:
         // `filterAccommodationByEntitlements`'s third parameter `ownerEntitlements`
-        // is OPTIONAL, and called without it the function gates NOTHING — the
-        // tombstone at entitlement-filter.ts records a helper deleted for exactly
-        // that. A call-shape check alone therefore cannot tell a real detail-route
-        // gate from an inert one. Requiring the resolver too closes that: a route
-        // that resolves nothing has nothing to pass.
+        // is OPTIONAL, and called without it the function skips BOTH owner gates —
+        // the rich-description pair and `isVerified`. (It still applies the
+        // viewer-gated video/WhatsApp handling, so it is not a no-op; it is inert
+        // for exactly the field this guard is about.) The tombstone in
+        // entitlement-filter.ts records a helper deleted for that. A call-shape
+        // check alone therefore cannot tell a real detail-route gate from an inert
+        // one. Requiring the resolver too closes it: a route that resolves nothing
+        // has nothing to pass.
         const unresolved = routes
             .filter((route) => !/\bresolveOwnerEntitlementsForOwnerIds?\s*\(/.test(route.source))
             .map((route) => route.name);
 
         expect(
             unresolved,
-            `These routes call an entitlement gate without resolving the owner's entitlements to feed it: ${unresolved.join(', ')}. filterAccommodationByEntitlements gates nothing when its third argument is omitted.`
+            `These routes reference AccommodationPublicSchema without resolving the owner's entitlements: ${unresolved.join(', ')}. filterAccommodationByEntitlements skips both owner gates when its third argument is omitted, so a gate call with nothing to pass it leaves isVerified untouched.`
         ).toEqual([]);
     });
 
@@ -250,12 +275,18 @@ describe('API routes — isVerified badge gate guard (HOS-341)', () => {
         expect(stripped).not.toContain('accounts.google.com');
     });
 
-    it('does not lose a route to the blanking pass', () => {
-        // End-to-end version of the above against the real tree. Every file naming
-        // the schema anywhere must survive `code()` still naming it — today all nine
-        // reference it in real code, not only in prose, so the two counts match. A
-        // regression in `code()` shows up here as a shrinking route set, which the
-        // non-vacuity test above then attributes by name.
+    it('discovers exactly the files that name the schema anywhere, prose included', () => {
+        // End-to-end version of the above against the real tree, and the assertion
+        // that bounds `code()`'s over-blanking to a RED result rather than a silent
+        // one. Every file naming the schema anywhere must survive `code()` still
+        // naming it — today all nine reference it in real code, so the counts match.
+        //
+        // Two distinct things turn this red, and the message cannot tell them apart:
+        // (1) `code()` blanked a real reference out of a route, and (2) some file
+        // started naming the schema ONLY in prose, which is legitimate but means the
+        // set is no longer "every file that mentions it". Check which before
+        // touching anything: the non-vacuity test above names any route that fell
+        // out of discovery.
         const rawMatches = allRouteFiles().filter((full) =>
             /\bAccommodationPublicSchema\b/.test(readFileSync(full, 'utf8'))
         ).length;
