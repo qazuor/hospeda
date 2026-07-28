@@ -155,7 +155,7 @@ decision, and this spec has to treat them as such:
   `apps/web/src/lib/account-roles.ts` … Do NOT 'fix' this to match web without
   an explicit owner decision."* Changing it means re-opening SPEC-243.
 
-### 5.3 Role writes — eleven sites, not two
+### 5.3 Role writes — twelve sites, not two
 
 | # | Site | Guard | Destructive? |
 |---|---|---|---|
@@ -170,6 +170,7 @@ decision, and this spec has to treat them as such:
 | 9 | `apps/api/src/routes/user/admin/create.ts:49` | creation | no |
 | 10 | `packages/seed/src/test-users/testUsers.seed.ts:545-549` | drift heal | yes, intentional |
 | 11 | `packages/service-core/src/services/user/user.service.ts:382-408` (`UserService.assignRole`) | `canAssignRole(actor)` + same-role no-op | **YES.** Currently **dead code** — no production caller, only `assignRole.test.ts`. It must still be migrated — the compiler will surface it once `Actor.role` is gone. |
+| 12 | `packages/seed/src/example/gastronomies.seed.ts:445-453, 520-528` | none | no — direct `insert(users).values({ role })` creating the `gastro-owner-julieta` / `e2e-tourist` fixture accounts. Typed, so the compiler catches it; listed because **AC-11 depends on these two accounts** and the generic "seed writes `user_role` too" of §6.6 does not obviously cover an ad-hoc per-vertical insert. |
 
 The admin UI side is a single-select:
 `apps/admin/src/features/users/config/sections/role-permissions.consolidated.ts:18-36`
@@ -473,6 +474,7 @@ acceptance criterion, so it gets a lock. `.for('update')` is already used in
 | `user/admin/patch.ts:69` | stops accepting a scalar `role`; role changes move to the new grant/revoke endpoints. The endpoints and the admin multi-select ship together, so the admin never loses the ability. |
 | `user.service.ts:382-408` (`assignRole`) | delegates to `grantRole`. Dead code today, but it must not survive as a second write path. |
 | `testUsers.seed.ts:545-549` | seeds the role set, still idempotent. |
+| `gastronomies.seed.ts:445-453, 520-528` | its two `insert(users)` calls drop the `role` field and write `user_role` rows instead. **AC-11's two commerce specs sign in as exactly these fixture accounts**, so this is not optional cleanup. |
 
 The remaining four sites are all "brand-new user, assign its first role", and
 they do NOT all take the same change:
@@ -594,7 +596,7 @@ settle. See OQ-4.
 ### 7.2 Things the compiler will NOT find
 
 §12 leans on "rename the type and let the compiler enumerate the work". That is
-true for TypeScript call sites and false for two categories that must be swept
+true for TypeScript call sites and false for three categories that must be swept
 by hand:
 
 - **Raw SQL in the e2e fixtures.** `apps/e2e/fixtures/api-helpers.ts:252`
