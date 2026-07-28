@@ -54,6 +54,7 @@ import {
     PermissionEnum
 } from '@repo/schemas';
 import { adminAuthMiddleware } from '../../../middlewares/authorization.js';
+import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit.js';
 import { createConfiguredAiService } from '../../../services/ai-service.factory.js';
 import { mapAiEngineErrorToHttpStatus } from '../../../utils/ai-error-mapper.js';
 import { createRouter } from '../../../utils/create-app.js';
@@ -124,6 +125,24 @@ export const adminAiPostGenerateRoute = createRouter();
  * create-level operation in both cases).
  */
 adminAiPostGenerateRoute.use('*', adminAuthMiddleware([PermissionEnum.POST_CREATE]));
+
+// Per-user cost guard (HOS-325).
+//
+// This route drives a PAID LLM call and, unlike every `/api/v1/protected/ai/*`
+// route, carries no AI quota or per-feature rate-limit middleware — its only
+// throttle was the IP-keyed admin tier. HOS-325 relaxed that tier by design (it
+// was strangling operators), which would otherwise have multiplied the provider
+// spend a runaway client or a single compromised admin session can burn before
+// anything stops it. This keeps a tight, user-keyed ceiling on exactly the
+// endpoint where a request costs real money.
+adminAiPostGenerateRoute.use(
+    '*',
+    createSlidingWindowPerUserRateLimit({
+        windowMs: 60_000,
+        max: 20,
+        keyPrefix: 'admin:ai:post-generate'
+    })
+);
 
 // ---------------------------------------------------------------------------
 // POST / — generate a post draft (buffered JSON response)
