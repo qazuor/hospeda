@@ -419,10 +419,21 @@ Once Better Auth's `additionalFields` stops carrying a scalar `role`, that value
 is `undefined`, `resolveAuthGroup` (`:79-85`) falls through, and **every user
 lands in `(tourist)`** — including hosts.
 
-The minimum is three lines: read the roles array and ask
-`roles.includes(HOST)`. That preserves today's exact behaviour (1-of-3 groups,
-picking host when present) and is less work than reasoning about how to keep the
-old shape alive. It ships with everything else.
+**How much work that is depends entirely on OQ-4**, and this section used to
+assume the cheap answer:
+
+- **If OQ-4 resolves to `customSession`** (§7.1 option 2), the native session
+  keeps carrying the field and mobile really is three lines: read the array and
+  ask `roles.includes(HOST)`.
+- **If OQ-4 resolves to actor-only** (§7.1's *preferred* option), mobile has no
+  `/auth/me` plumbing at all — it uses the Better Auth client exclusively. Then
+  this is new fetching, caching and error handling written from scratch in an
+  app nobody is actively working on. Materially more than three lines, and it
+  is in scope regardless, because the alternative is shipping a build where
+  every host lands in `(tourist)`.
+
+Either way it ships with the rest — but size the mobile work *after* OQ-4 is
+answered, not before.
 
 Whether mobile eventually gets real dual-hat navigation is a separate product
 question (OQ-2) and it does **not** block this. Note that changing the
@@ -536,10 +547,32 @@ the field:
 
 | Consumer | Reads today | Consequence |
 |---|---|---|
-| `apps/web/src/lib/auth-cache.ts:207` | `/api/v1/public/auth/me` (actor) | none — gets `roles` for free |
+| `apps/web/src/lib/auth-cache.ts:207` | `/api/v1/public/auth/me` (actor) | **right endpoint, wrong assumption — see below** |
 | `apps/web/src/lib/middleware-helpers.ts:408,452` | `/api/auth/get-session` | needs repointing; it avoids `/auth/me` deliberately today |
 | `apps/admin/src/lib/auth-session.ts:132` | `/api/auth/get-session` | cheapest fix — it **already** calls `/auth/me` too, for `permissions` |
 | `apps/mobile` (`app/_layout.tsx:99-100` → `useSession()`) | `/api/auth/get-session` via the Better Auth client | has no `/auth/me` plumbing at all (§6.7) |
+
+**`auth-cache.ts` hitting the right endpoint does NOT make it free.** It does
+not import the shared `Actor` type — its only import is `getApiUrl` — and
+hand-casts the response to a local `AuthMeResponseBody` declaring
+`role?: string` (`:85-93`), exposing `AuthMeSnapshot.role: string | null`
+(`:47-48`, set at `:207`). When the payload's `role` becomes `roles`, that field
+is `undefined`, nothing fails to compile, and `role` is silently `null` for
+every authenticated user forever.
+
+That is not cosmetic. Three consumers hang off it:
+
+- `apps/web/src/components/shared/navigation/MobileMenu.client.tsx:214` —
+  `const isHostMode = role === 'HOST' && ...` drives the **host CTA in the
+  mobile web menu**. Always `false` → every host loses it.
+- `apps/web/src/components/shared/navigation/UserMenu.client.tsx:190` — feeds
+  PostHog's `identifyUser` `role` person-property. Role segmentation dies quietly.
+- `apps/web/src/hooks/use-account-permissions.ts:132,150`.
+
+This whole path — `auth-cache.ts` → `use-account-permissions.ts` →
+`UserMenu`/`MobileMenu` — is **separate from** the `account-roles.ts` /
+`nav-gating.ts` SSR chokepoint that §5.5 and §6.5 describe. It needs its own
+migration and its own line in the plan.
 
 **Pick the mechanism before writing code.** Two viable shapes:
 
@@ -573,15 +606,28 @@ by hand:
   this class of bug. These fail at e2e runtime with `column "role" does not
   exist`, never at typecheck. Sweep `apps/e2e` for `SET role` and `.role` as an
   explicit checklist step.
+- **Hand-maintained local mirrors of API responses.** `apps/web` and
+  `apps/admin` frequently declare their own interface for a JSON payload instead
+  of importing the shared type, then `as`-cast into it. `auth-cache.ts`'s
+  `AuthMeResponseBody` (§7.1) is the load-bearing example, and it is the worst
+  kind of failure: no compile error, no runtime error, just a field that is
+  quietly `undefined` and a host CTA that stops appearing. Grep for `auth/me`
+  and for local `interface .*Response` declarations in `apps/web/src/lib` and
+  `apps/admin/src/lib`, and check each against the real payload.
 - **Prose.** Three of the 27 `actor.role` hits are the comment *"NEVER check
   `actor.role` directly"* (`commerce.permissions.ts:8`,
   `gastronomy.permissions.ts:13`, `experience.permissions.ts:13`). Reword them;
   the compiler will not.
 
+The common thread: "the type system does the inventory" holds only for code that
+actually imports the type. Raw SQL, hand-cast local interfaces and comments are
+all outside it.
+
 ### 7.3 Corrected read-site inventory
 
-The raw `users.role` reads are **7**, not 5, and two are product surfaces with
-no design decision attached yet:
+The raw `users.role` reads are **7**, not 5 — counting `apps/api`,
+`packages/service-core` **and** `packages/db`. Two of them are product surfaces
+with no design decision attached yet:
 
 - `apps/api/src/middlewares/owner-entitlement.ts:223, 318, 778` — three separate
   inline queries; §6.4 named only the `resolveOwnerRole` one.
@@ -594,8 +640,8 @@ no design decision attached yet:
   multi-role a user contributes to N buckets, so `Σ byRole > totalUsers`
   becomes correct rather than a bug. **Say so in the UI** or the number reads
   as broken.
-- `packages/seed/src/required/aiPrompts.seed.ts:45` is one more, outside the
-  `apps/api` + `service-core` counting scope.
+- `packages/seed/src/required/aiPrompts.seed.ts:45` is an eighth, in
+  `packages/seed` — outside the count above but equally in scope.
 
 There is also a **third** staff-like role set nobody has reconciled:
 `AccommodationService.BILLING_EXEMPT_ROLES` (`accommodation.service.ts:224-228`
@@ -640,10 +686,14 @@ which §7's contracts did not mention.
   i.e. dropping the scalar did not silently route everyone to `(tourist)`.
 - **AC-10** — An admin can grant and revoke roles from the admin panel in the
   same release that removes the scalar `role` field from the user form.
-- **AC-11** — The `apps/e2e` suite is green. Specifically the role-isolation
-  specs (`security/sec-01-host-isolation`, `commerce/commerce-02-access-control`,
-  `commerce/commerce-04-permission-gate`, `admin/adm-03-user-suspend`), because
-  their fixtures set roles through raw SQL that no typecheck can catch (§7.2).
+- **AC-11** — The `apps/e2e` suite is green. Two distinct causes, do not
+  conflate them: `security/sec-01-host-isolation` and `admin/adm-03-user-suspend`
+  go through `createUser({ role })` → raw SQL (§7.2), so they break if the
+  manual sweep is missed. `commerce/commerce-02-access-control` and
+  `commerce/commerce-04-permission-gate` sign in as pre-seeded fixture accounts
+  from `packages/seed/src/example/gastronomies.seed.ts`, so they break if the
+  seed dual-write of §6.6 is wrong. Sweeping `apps/e2e` will not protect the
+  latter two.
 - **AC-12** — `revokeRole` cannot strand a user with zero roles under two
   concurrent calls, not just sequential ones (§6.8).
 
@@ -677,8 +727,11 @@ which §7's contracts did not mention.
 
 ## 11. Open questions
 
-**OQ-4 blocks the work.** OQ-1, OQ-2, OQ-3 and OQ-5 do not — each has a safe
-default that preserves today's behaviour.
+**OQ-4 blocks the work.** OQ-1, OQ-2 and OQ-3 do not — each can keep running
+today's logic unchanged against a role set. **OQ-5 is different**: it has no
+"preserve today's behaviour" option, because today's behaviour is rendering one
+scalar and after this change there is no scalar to render. It still does not
+block — pick anything and ship — but somebody has to pick.
 
 - **OQ-1 — Avatar shortcut with several business hats.** HOS-131 OQ-4 resolved
   this to "one shortcut, priority `[hostDashboard, commerce]`"
