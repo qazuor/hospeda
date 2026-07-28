@@ -2,7 +2,7 @@ import type { z } from 'zod';
 import {
     AccommodationAdminSchema,
     AccommodationProtectedSchema,
-    AccommodationPublicSchema
+    AccommodationPublicCardSchema
 } from '../accommodation/accommodation.access.schema.js';
 import {
     UserAdminSchema,
@@ -38,8 +38,17 @@ export const AccommodationReviewPublicSchema = AccommodationReviewSchema.pick({
 }).extend({
     /** Reviewer user data (public tier). Populated when the relation is loaded. */
     user: UserPublicSchema.optional(),
-    /** Parent accommodation data (public tier). Populated when the relation is loaded. */
-    accommodation: AccommodationPublicSchema.optional()
+    /**
+     * Parent accommodation data — public CARD tier. Populated when the relation is loaded.
+     *
+     * Card tier, not `AccommodationPublicSchema`: the service's default relations include
+     * `accommodation: true` with no column allowlist, and the premium rich-description
+     * gate never runs on a nested accommodation. The two current public routes happen to
+     * narrow the projection by hand before responding, so no leak was observed today —
+     * but that is route-level hygiene, not a guarantee. Any future route serving this
+     * schema would have reproduced the leak; the card tier makes it impossible.
+     */
+    accommodation: AccommodationPublicCardSchema.optional()
 });
 
 export type AccommodationReviewPublic = z.infer<typeof AccommodationReviewPublicSchema>;

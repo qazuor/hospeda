@@ -9,6 +9,7 @@
  */
 
 import { EntitlementKey } from '@repo/billing';
+import type { Accommodation, I18nText } from '@repo/schemas';
 import type { Context } from 'hono';
 import { hasEntitlement } from '../middlewares/entitlement';
 import type { AppBindings } from '../types';
@@ -23,6 +24,12 @@ export interface AccommodationData {
     createdAt?: string | Date;
     description?: string;
     richDescription?: string | null;
+    /**
+     * SPEC-212 i18n sibling of {@link AccommodationData.richDescription}. Carries the
+     * same premium content per locale and is therefore gated by the SAME owner
+     * entitlement (`CAN_USE_RICH_DESCRIPTION`) — never gate one without the other.
+     */
+    richDescriptionI18n?: I18nText | null;
     videoUrl?: string;
     /**
      * Contact info blob (JSONB `contact_info`). The WhatsApp number lives at
@@ -43,10 +50,96 @@ export interface AccommodationData {
 }
 
 /**
+ * Drops BOTH rich-description fields from an accommodation object before it
+ * reaches a public CARD listing payload.
+ *
+ * `richDescription` and its SPEC-212 i18n sibling `richDescriptionI18n` are
+ * PREMIUM fields gated per-owner by the entitlement system. Card listings never
+ * render rich text, so both must be absent regardless of the owner's plan. The
+ * omission is applied at the DATA level so it is fail-closed and independent of
+ * any Zod schema change.
+ *
+ * Prefer this helper over a hand-rolled destructure: the two fields MUST be
+ * dropped together. Dropping only the plain one is equivalent to dropping
+ * neither, because the web transform resolves the visitor's locale from
+ * `richDescriptionI18n` in preference to `richDescription`.
+ *
+ * The constraint is `T extends object` — deliberately NOT
+ * `{ richDescription?: unknown; richDescriptionI18n?: unknown }` — with an
+ * internal cast. Some call sites pass `AccommodationListItem`, whose static type
+ * declares neither field even though the underlying `findAll` runs `SELECT *` and
+ * both are present at runtime. An all-optional constraint would reject that
+ * argument outright under TypeScript's weak-type detection ("has no properties in
+ * common"), which is exactly the shape that needs stripping the most.
+ *
+ * The cost of that looser constraint is that `object` also admits arrays. Since
+ * nearly every call site is `xs.map(stripRichDescriptionFields)`, forgetting the
+ * `.map` is a one-character mistake that would otherwise object-spread the array
+ * into `{0: …, 1: …}` and fail far away as an opaque schema error. The runtime
+ * guard below turns that into an immediate, named failure.
+ *
+ * @param item - Raw accommodation object from the service layer.
+ * @returns The same object without either rich-description field.
+ * @throws {TypeError} If handed an array (almost certainly a missing `.map`).
+ */
+export function stripRichDescriptionFields<T extends object>(
+    item: T
+): Omit<T, 'richDescription' | 'richDescriptionI18n'> {
+    if (Array.isArray(item)) {
+        throw new TypeError(
+            'stripRichDescriptionFields expects a single accommodation object, got an array — did you mean items.map(stripRichDescriptionFields)?'
+        );
+    }
+    const {
+        richDescription: _dropped,
+        richDescriptionI18n: _droppedI18n,
+        ...rest
+    } = item as T & { richDescription?: unknown; richDescriptionI18n?: unknown };
+    return rest as Omit<T, 'richDescription' | 'richDescriptionI18n'>;
+}
+
+/**
+ * Compile-time pin for the two premium field names this module strips by string
+ * literal. The strip is a destructure over a cast, so the names carry no type link
+ * to the entity — renaming the column would leave every call site compiling while
+ * silently stripping nothing, which is precisely how the i18n sibling went ungated
+ * in the first place. This makes such a rename a BUILD failure.
+ *
+ * Pinned against `Accommodation` (the `@repo/schemas` SSOT entity) and NOT against
+ * the local `AccommodationData`: the latter carries an `[key: string]: unknown`
+ * index signature, so `keyof` collapses to `string` and any assertion against it
+ * would pass vacuously.
+ */
+type _RichFieldNamePin = 'richDescription' | 'richDescriptionI18n' extends keyof Accommodation
+    ? true
+    : never;
+const _richFieldNamesExist: _RichFieldNamePin = true;
+void _richFieldNamesExist;
+
+/**
+ * Total string read for values coming out of unvalidated JSONB blobs.
+ *
+ * Returns the trimmed string for an actual string, and `''` for anything else —
+ * number, object, array, null, undefined. Never throws. Exists because
+ * `blob?.field?.trim()` throws a TypeError on a legacy non-string value, and the
+ * entitlement filter's error handling is fail-open: a throw there ships premium
+ * fields rather than withholding them.
+ *
+ * @param value - Arbitrary value read out of a JSONB column.
+ * @returns The trimmed string, or `''` when the value is not a string.
+ */
+function readTrimmedString(value: unknown): string {
+    return typeof value === 'string' ? value.trim() : '';
+}
+
+/**
  * Filter accommodation data based on viewer's entitlements
  *
  * Removes or modifies premium content that the caller should not expose:
- * - Omits `richDescription` when the OWNING HOST lacks CAN_USE_RICH_DESCRIPTION
+ * - Omits BOTH `richDescription` AND `richDescriptionI18n` when the OWNING HOST
+ *   lacks CAN_USE_RICH_DESCRIPTION. The two are one gate, never two: the web
+ *   transform resolves the visitor's locale from the i18n object in PREFERENCE to
+ *   the plain field, so omitting only the plain one omits nothing in practice.
  * - Removes video content if viewer lacks CAN_EMBED_VIDEO
  * - Sets `hasWhatsapp` (owner-derived boolean) from `contactInfo.whatsapp`
  *   (HOS-19). The WhatsApp NUMBER is deliberately NOT emitted here — this
@@ -58,8 +151,8 @@ export interface AccommodationData {
  * @param accommodation - Accommodation data to filter
  * @param ownerEntitlements - Optional entitlement set for the accommodation owner.
  *   When omitted, the function behaves like an admin/internal call site and leaves
- *   `richDescription` untouched. When provided, presence of
- *   `CAN_USE_RICH_DESCRIPTION` is the ONLY signal that `richDescription` may be
+ *   both rich-description fields untouched. When provided, presence of
+ *   `CAN_USE_RICH_DESCRIPTION` is the ONLY signal that either of them may be
  *   surfaced downstream (FR-3b / FR-4).
  * @returns Filtered accommodation data
  *
@@ -85,34 +178,61 @@ export function filterAccommodationByEntitlements(
     // Create a copy to avoid mutating the original
     const filtered = { ...accommodation };
 
+    // The `catch` at the end of this function is fail-OPEN: it logs and returns
+    // `filtered` as-is, premium fields intact. Statement order must therefore not be
+    // what keeps a gate safe — ordering the gates ahead of a hazard only changes WHICH
+    // field leaks when it throws.
+    //
+    // The known hazard is `contactInfo.whatsapp`, an unvalidated JSONB value that
+    // `.trim()` throws on when it is not a string; it is read through the total
+    // `readTrimmedString` instead. The two owner gates additionally run first, as
+    // defence in depth.
+    //
+    // NOT yet total, and deliberately named rather than glossed over: the video block
+    // below calls `.replace` on `description` and dereferences `.type` on `media`
+    // elements, both typed but neither validated. A throw there is bounded to leaking
+    // VIDEO content (the owner gates have already run), not the rich description. Do
+    // not add a blanket "nothing here can throw" claim to this comment without making
+    // it true — an earlier revision of this file asserted exactly that while both
+    // statements were still reachable.
     try {
-        // Check viewer entitlements
-        const canEmbedVideo = hasEntitlement(c, EntitlementKey.CAN_EMBED_VIDEO);
-
-        // HOS-19: WhatsApp display is VIEWER-gated, but `/public/accommodations`
-        // is shared-cached (cache key has no auth), so the number MUST NOT ride
-        // this payload — a per-viewer field would leak the first viewer's plan
-        // result to everyone. Instead we emit only a cache-safe, owner-derived
-        // boolean here; the actual number is gated by the viewer's plan on the
-        // per-user protected endpoint GET /protected/accommodations/:id/whatsapp.
-        // Trim to stay consistent with that endpoint's own non-empty check —
-        // a whitespace-only legacy value must NOT flip hasWhatsapp true (it would
-        // otherwise surface a misleading upsell for a listing with no real number).
-        filtered.hasWhatsapp = Boolean(filtered.contactInfo?.whatsapp?.trim());
-
         // OWNER-gated richDescription omission (FR-3b): when ownerEntitlements
         // are provided, presence of CAN_USE_RICH_DESCRIPTION is the ONLY signal
         // that the public payload may include richDescription. The viewer's
         // entitlements are deliberately ignored here.
+        //
+        // Both the plain field and its SPEC-212 i18n sibling are gated together.
+        // Gating only the plain one is equivalent to not gating at all: the web
+        // transform (apps/web/src/lib/api/transforms.ts) resolves the visitor's
+        // locale from `richDescriptionI18n` in PREFERENCE to `richDescription`,
+        // so a surviving i18n value is rendered as HTML on the public detail page
+        // even when the plain field was correctly omitted.
+        //
+        // `delete`, not `= undefined`: assigning undefined leaves the KEY present.
+        // That happens to serialize correctly today (JSON.stringify drops
+        // undefined-valued keys) but it is a property of the serializer, not of
+        // this gate — anything that inspects the object instead of its wire form
+        // (`'richDescriptionI18n' in obj`, `Object.keys()`, `structuredClone`, an
+        // in-process response cache) would still see it. Deleting makes the
+        // omission true at the object level and matches `stripRichDescriptionFields`.
         if (
             ownerEntitlements &&
-            !ownerEntitlements.includes(EntitlementKey.CAN_USE_RICH_DESCRIPTION) &&
-            filtered.richDescription
+            !ownerEntitlements.includes(EntitlementKey.CAN_USE_RICH_DESCRIPTION)
         ) {
-            filtered.richDescription = undefined;
-            apiLogger.debug(
-                `Omitted richDescription from accommodation ${filtered.id} - owner lacks ${EntitlementKey.CAN_USE_RICH_DESCRIPTION}`
-            );
+            const omitted: string[] = [];
+            if (filtered.richDescription) {
+                delete filtered.richDescription;
+                omitted.push('richDescription');
+            }
+            if (filtered.richDescriptionI18n) {
+                delete filtered.richDescriptionI18n;
+                omitted.push('richDescriptionI18n');
+            }
+            if (omitted.length > 0) {
+                apiLogger.debug(
+                    `Omitted ${omitted.join(' + ')} from accommodation ${filtered.id} - owner lacks ${EntitlementKey.CAN_USE_RICH_DESCRIPTION}`
+                );
+            }
         }
 
         // OWNER-gated isVerified badge: when ownerEntitlements are provided,
@@ -130,11 +250,34 @@ export function filterAccommodationByEntitlements(
             );
         }
 
+        // ── Derivations below this line. Both owner gates have already run. ──
+
+        // Check viewer entitlements
+        const canEmbedVideo = hasEntitlement(c, EntitlementKey.CAN_EMBED_VIDEO);
+
+        // HOS-19: WhatsApp display is VIEWER-gated, but `/public/accommodations`
+        // is shared-cached (cache key has no auth), so the number MUST NOT ride
+        // this payload — a per-viewer field would leak the first viewer's plan
+        // result to everyone. Instead we emit only a cache-safe, owner-derived
+        // boolean here; the actual number is gated by the viewer's plan on the
+        // per-user protected endpoint GET /protected/accommodations/:id/whatsapp.
+        // Trim to stay consistent with that endpoint's own non-empty check —
+        // a whitespace-only legacy value must NOT flip hasWhatsapp true (it would
+        // otherwise surface a misleading upsell for a listing with no real number).
+        //
+        // `readTrimmedString`, not `?.trim()`: `contactInfo` is an unvalidated JSONB
+        // blob, so a legacy non-string `whatsapp` (a number, an object) leaves `.trim`
+        // undefined and throws — which the fail-open catch below would turn into an
+        // ungated payload.
+        filtered.hasWhatsapp = readTrimmedString(filtered.contactInfo?.whatsapp).length > 0;
+
         // Remove video content if not entitled
         if (!canEmbedVideo) {
-            // Remove video URL
+            // Remove video URL. `delete`, not `= undefined`, for the same reason as
+            // the rich-description strip above: assigning undefined leaves the key
+            // present and only looks correct because JSON.stringify drops it.
             if (filtered.videoUrl) {
-                filtered.videoUrl = undefined;
+                delete filtered.videoUrl;
             }
 
             // Remove video embeds from description
@@ -358,9 +501,19 @@ export function checkPremiumFeatures(accommodation: AccommodationData): {
     hasWhatsApp: boolean;
     isVerified: boolean;
 } {
-    // Check for markdown in description
+    // Rich-description usage. The markdown heuristic on the plain `description`
+    // is a legacy signal for rows that predate the dedicated column; an explicit
+    // value in `richDescription` — or in its i18n sibling, which may carry the
+    // only premium content when the plain field was never filled — is a direct
+    // one. Omitting the sibling here under-reports exactly the field this module
+    // gates, which would skew upgrade prompts and analytics against it.
     const hasRichDescription = Boolean(
-        accommodation.description && /[*#`[\]>~]/.test(accommodation.description)
+        accommodation.richDescription ||
+            (accommodation.richDescriptionI18n &&
+                Object.values(accommodation.richDescriptionI18n).some(
+                    (value) => typeof value === 'string' && value.length > 0
+                )) ||
+            (accommodation.description && /[*#`[\]>~]/.test(accommodation.description))
     );
 
     // Check for video content

@@ -6,6 +6,7 @@ import { AccommodationPublicSchema, BaseHttpSearchSchema, FeatureIdSchema } from
 import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
+import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -31,10 +32,18 @@ export const publicGetAccommodationsByFeatureRoute = createPublicListRoute({
             featureId: params.featureId as string
         });
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
+
+        // SPEC-187 / SPEC-212 data-level omission. The service returns FULL accommodation
+        // entities (`findAllWithRelations({ accommodation: true })` has no column
+        // allowlist), and `AccommodationPublicSchema` deliberately re-exposes both
+        // rich-description fields, so `stripWithSchema` does NOT hide them. Without this
+        // the premium markdown rode a card listing.
+        const accommodations = (result.data.accommodations ?? []).map(stripRichDescriptionFields);
+
         const { page, pageSize } = extractPaginationParams(query || {});
         return {
-            items: result.data.accommodations,
-            pagination: getPaginationResponse(result.data.accommodations.length, { page, pageSize })
+            items: accommodations,
+            pagination: getPaginationResponse(accommodations.length, { page, pageSize })
         };
     },
     options: {

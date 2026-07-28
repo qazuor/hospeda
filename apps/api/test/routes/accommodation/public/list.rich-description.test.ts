@@ -31,6 +31,12 @@ const ACCOMMODATION_WITH_RICH = {
     summary: 'A very nice lodge',
     description: 'Plain description text',
     richDescription: '## Premium\n\nThis must NOT appear in the public list response.',
+    // SPEC-212 i18n sibling — must be stripped TOGETHER with the plain field.
+    richDescriptionI18n: {
+        es: '## Premium ES\n\nEsto NO debe aparecer en el listado publico.',
+        en: '## Premium EN\n\nThis must NOT appear in the public list response.',
+        pt: '## Premium PT\n\nIsto NAO deve aparecer na listagem publica.'
+    },
     type: 'CABIN',
     isFeatured: false,
     averageRating: 4.5,
@@ -171,6 +177,7 @@ describe('publicListAccommodationsRoute — SPEC-187 richDescription must be abs
 
         for (const item of items) {
             expect(item).not.toHaveProperty('richDescription');
+            expect(item).not.toHaveProperty('richDescriptionI18n');
         }
     });
 
@@ -194,6 +201,7 @@ describe('publicListAccommodationsRoute — SPEC-187 richDescription must be abs
         expect(item).toHaveProperty('name');
         expect(item).toHaveProperty('description');
         expect(item).not.toHaveProperty('richDescription');
+        expect(item).not.toHaveProperty('richDescriptionI18n');
     });
 
     it('returns an empty items array when the service returns no items', async () => {

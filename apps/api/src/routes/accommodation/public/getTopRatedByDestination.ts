@@ -10,7 +10,10 @@ import { z } from 'zod';
 import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
 import { createGuestActor } from '../../../utils/actor';
 import type { AccommodationData } from '../../../utils/entitlement-filter';
-import { filterAccommodationListByOwnerEntitlements } from '../../../utils/entitlement-filter';
+import {
+    filterAccommodationListByOwnerEntitlements,
+    stripRichDescriptionFields
+} from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -83,7 +86,13 @@ const getTopRatedByDestinationHandler = async (c: Context) => {
     // totalPages: 0 when empty (no pages to show), 1 when non-empty (all results
     //   fit in one page since the service caps at TOP_RATED_PAGE_SIZE items).
     //   z.number().int().min(0) accepts 0, so the empty case is valid.
-    const rawAccommodations = result.data?.accommodations ?? [];
+
+    // Data-level omission of BOTH premium rich-description fields. This endpoint
+    // serves a card listing that never renders rich text, and — unlike the sibling
+    // listing routes — it previously carried no rich-description stripping at all,
+    // so the full entity's `richDescription` / `richDescriptionI18n` flowed straight
+    // through AccommodationPublicSchema into the public payload.
+    const rawAccommodations = (result.data?.accommodations ?? []).map(stripRichDescriptionFields);
     const total = rawAccommodations.length;
     const totalPages = total === 0 ? 0 : 1;
 
