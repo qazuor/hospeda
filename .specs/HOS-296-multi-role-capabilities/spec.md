@@ -419,8 +419,14 @@ The remaining four sites from §5.3 are all "brand-new user, assign its first
 role" and stay non-destructive. They are listed there so the AC-7 static guard
 covers all eleven — but they do NOT all take the same change:
 
-- `signup-as-host.ts:117` and `user/admin/create.ts:49` — swap the `.update()`
-  for `grantRole(newUserId, initialRole, 'signup' | 'admin_create')`.
+- `signup-as-host.ts:117` — a literal `db.update(users).set({ role, ... })`.
+  Swap it for `grantRole(newUserId, HOST, 'signup_as_host')`.
+- `user/admin/create.ts:49` — **not an update.** `role` is a field on the
+  payload handed to `userService.create()`, which reaches the DB as an INSERT
+  through `BaseCrudService.create` (`packages/service-core/src/base/base.crud.write.ts:77-115`);
+  there is no `.update()` call in that file at all. Same shape as `auth.ts`:
+  let the insert take the column default, then `grantRole(newUser.id,
+  userData.role, 'admin_create')` once the row exists and has an id.
 - `commerce-owner-provisioning.service.ts:269-275` — **no change of its own.**
   It never writes `users.role`; it passes `role: RoleEnum.COMMERCE_OWNER` down
   to the port at `commerce-ports.ts:86-89`, which is site #3 and already has
@@ -595,9 +601,11 @@ three must accept the new shape before the API starts sending it.
 - **AC-6** — Every grant AND every revoke leaves a `user_role_audit` row
   carrying `action`, `by` and `reason`. Revoking then re-granting a hat leaves
   three rows, in order.
-- **AC-7** — `grantRole`/`revokeRole` are the ONLY code paths that write
-  `users.role`. Enforceable as a static guard test, in the style of
-  `apps/web/test/static-guards/`, allow-listing exactly that one module.
+- **AC-7** — `grantRole`/`revokeRole` are the only code paths that write
+  `users.role` *as a business decision*. Enforceable as a static guard test, in
+  the style of `apps/web/test/static-guards/`, allow-listing exactly that one
+  module. The column's `NOT NULL DEFAULT 'USER'` still populates it on insert;
+  that default is not a write path and the guard must not flag it.
 - **AC-8** — Commerce billing charges reach the MercadoPago account of the same email the user signs in with (the original driver of this issue).
 - **AC-9** — The mobile app does not strand a dual-hat user in one navigator group (shape depends on OQ-2).
 - **AC-10** — After the backfill, a user who owns a gastronomy or experience
