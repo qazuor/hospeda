@@ -68,6 +68,14 @@ const BANNED_PHRASES: readonly string[] = [
     'no pedimos método de pago',
     'no credit card',
     'sem cartão',
+    // availability: /contacto publishes office hours (Sundays closed) and the
+    // owners FAQ says "en horario de oficina", so round-the-clock wording is
+    // contradicted by the site itself, no entitlement reasoning required
+    '24/7',
+    '24 horas',
+    'siempre disponible',
+    'always available',
+    'sempre disponível',
     // publishing starts nothing — `first_publish` is rejected
     'trial empieza cuando publicás',
     'arranca tu trial gratis',
@@ -107,20 +115,27 @@ function walk(dir: string): string[] {
  *   - `t('some.key', 'fallback text')` — the direct call
  *   - `{ titleKey: 'k', titleFb: 'f' }` — the table-driven pages
  *
- * Only single-quoted literals are matched, which is the house style enforced by
- * Biome. Template literals and concatenations are skipped: they cannot be
- * statically resolved, and none of them carry marketing prose today.
+ * BOTH quote styles are matched. Biome does NOT normalise quotes inside
+ * `.astro` markup expressions, and 47 double-quoted calls live in exactly the
+ * marketing surfaces this guard targets — `Footer.astro`, `Header.astro`, the
+ * home page and the owner CTA. Assuming single quotes made the guard blind to
+ * the pages where the next bad claim is most likely to land.
+ *
+ * Template literals and concatenations are still skipped: they cannot be
+ * statically resolved, and none carry marketing prose today.
  */
 function extractFallbacks(source: string, file: string): InlineFallback[] {
     const out: InlineFallback[] = [];
-    const call = /\bt\(\s*'([^']+)'\s*,\s*'((?:[^'\\]|\\.)*)'/g;
+    const call = /\bt\(\s*(['"])([^'"]+)\1\s*,\s*(['"])((?:[^'"\\]|\\.)*)\3/g;
     for (let m = call.exec(source); m !== null; m = call.exec(source)) {
-        const [, key, text] = m;
+        const key = m[2];
+        const text = m[4];
         if (key && text) out.push({ file, key, text });
     }
-    const pair = /(\w*)Key:\s*'([^']+)'\s*,\s*\1Fb:\s*'((?:[^'\\]|\\.)*)'/g;
+    const pair = /(\w*)Key:\s*(['"])([^'"]+)\2\s*,\s*\1Fb:\s*(['"])((?:[^'"\\]|\\.)*)\4/g;
     for (let m = pair.exec(source); m !== null; m = pair.exec(source)) {
-        const [, , key, text] = m;
+        const key = m[3];
+        const text = m[5];
         if (key && text) out.push({ file, key, text });
     }
     return out;
@@ -138,12 +153,27 @@ function flatten(prefix: string, value: unknown, sink: Map<string, string>): voi
     }
 }
 
+/**
+ * Namespaces whose registered name differs from their file name.
+ *
+ * `config.shared.ts` binds `destination.json` to `destinations` and
+ * `event.json` to `events`. Deriving the namespace from the file name — the
+ * obvious thing — silently gets both wrong: it hides 21 fallbacks that DO
+ * render (every `t('destination.…')` call resolves to nothing at runtime) and
+ * admits 88 that do not.
+ */
+const NAMESPACE_BY_FILE: Readonly<Record<string, string>> = {
+    destination: 'destinations',
+    event: 'events'
+};
+
 function buildCatalog(locale: string): Map<string, string> {
     const dir = join(LOCALES_DIR, locale);
     const sink = new Map<string, string>();
     for (const file of readdirSync(dir)) {
         if (!file.endsWith('.json')) continue;
-        const namespace = file.replace(/\.json$/, '');
+        const base = file.replace(/\.json$/, '');
+        const namespace = NAMESPACE_BY_FILE[base] ?? base;
         flatten(namespace, JSON.parse(readFileSync(join(dir, file), 'utf8')), sink);
     }
     return sink;
@@ -155,19 +185,29 @@ const ALL_FALLBACKS = walk(WEB_SRC).flatMap((file) =>
 );
 
 /**
- * The fallbacks that are actually rendered: their key resolves in NO locale, so
- * `resolve()` can only return the fallback. A key present in even one locale is
- * excluded — `plan-copy-veracity.test.ts` owns the catalog side.
+ * The fallbacks that are actually rendered somewhere.
+ *
+ * `resolve()` reads ONE locale's dictionary (`getLocaleDict(locale)`) with no
+ * cross-locale merge, so a key present only in `es` still renders the Spanish
+ * fallback on `/en` and `/pt`. The condition is therefore "missing from AT
+ * LEAST ONE locale", not "missing from all" — the stricter reading would let a
+ * partially-translated key smuggle a bad claim into two of three languages.
  */
 const LIVE_FALLBACKS = ALL_FALLBACKS.filter((fb) =>
-    CATALOGS.every((catalog) => !catalog.get(fb.key)?.trim())
+    CATALOGS.some((catalog) => !catalog.get(fb.key)?.trim())
 );
 
 describe('inline fallback veracity (HOS-331)', () => {
-    it('finds fallbacks in the page sources at all', () => {
-        // Guards the guard: a regex that stopped matching would make every
-        // assertion below silently vacuous.
-        expect(ALL_FALLBACKS.length).toBeGreaterThan(50);
+    it('finds fallbacks of BOTH extraction shapes, and the known live one', () => {
+        // Guards the guard. A global `> 50` cannot detect losing an entire
+        // shape: the `*Key`/`*Fb` pairs are ~110 of ~3000 rows, so dropping
+        // every one of them — which is the whole of /beneficios plus the owner
+        // FAQ — still leaves thousands. Assert per shape, and pin the one row
+        // the guard was written for.
+        const pairShape = ALL_FALLBACKS.filter((fb) => fb.key.startsWith('benefits.owner.'));
+        expect(pairShape.length).toBeGreaterThan(0);
+        expect(ALL_FALLBACKS.length).toBeGreaterThan(500);
+        expect(LIVE_FALLBACKS.some((fb) => fb.key === 'benefits.owner.5.title')).toBe(true);
     });
 
     it('finds fallbacks whose key is missing from every locale', () => {

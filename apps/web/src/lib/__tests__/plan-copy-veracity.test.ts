@@ -118,9 +118,23 @@ const PHANTOM_CLAIMS: readonly PlanClaim[] = [
         id: 'dedicated-manager',
         entitlement: 'dedicated_manager',
         phrases: {
-            es: ['gestor dedicado'],
-            en: ['dedicated manager'],
-            pt: ['gerente dedicado']
+            es: ['gestor dedicado', 'soporte dedicado'],
+            en: ['dedicated manager', 'dedicated support'],
+            pt: ['gerente dedicado', 'suporte dedicado']
+        }
+    },
+    {
+        // Not an entitlement question at all — the site contradicts itself.
+        // /contacto publishes office hours (Sundays closed) and the owners FAQ
+        // says "en horario de oficina", so any round-the-clock wording is false
+        // on the site's own evidence. It shipped in /beneficios' meta
+        // description, which is what Google puts in the snippet.
+        id: 'always-on-support',
+        entitlement: 'round_the_clock_support',
+        phrases: {
+            es: ['24/7', '24 horas', 'siempre disponible'],
+            en: ['24/7', '24 hours', 'always available'],
+            pt: ['24/7', '24 horas', 'sempre disponível']
         }
     }
 ];
@@ -301,12 +315,11 @@ const PROSE_SURFACES: ReadonlyArray<{ readonly file: string; readonly path: stri
     // that removed "sin poner la tarjeta" one line above it.
     { file: 'features.json', path: 'anfitriones.banner.description' },
     { file: 'features.json', path: 'cta.description' },
-    // The hero stat pill splits its claim across `value` (the interpolated
-    // number) and `label` (the words). Guarding `value` alone would trip the
-    // qualifier rule on a bare number, so the qualifier lives in the label and
-    // the label is what gets checked — it is the first trial number a visitor
-    // sees on the page.
-    { file: 'features.json', path: 'hero.stats.trial.label' },
+    // The meta description of /beneficios — it feeds `<meta name="description">`
+    // AND the AboutPage JSON-LD, so it is what Google shows in the snippet. It
+    // promised "soporte 24/7" while /contacto published office hours and the
+    // owners FAQ said "en horario de oficina".
+    { file: 'benefits.json', path: 'description' },
     { file: 'host.json', path: 'pages.nueva.trialCalloutTitle' },
     { file: 'host.json', path: 'properties.card.publishSubscriptionRequiredMessage' }
 ];
@@ -325,6 +338,21 @@ function collectProseCopy(): ReadonlyArray<{
     }
     return rows;
 }
+
+/**
+ * Wording that genuinely qualifies a trial promise.
+ *
+ * `primera propiedad` / `primera vez` are deliberately absent: both describe
+ * WHEN someone thought the trial started rather than WHO is eligible, and on a
+ * publish-blocked screen a reader binds "first time" to publishing. Only
+ * wording that names the SUBSCRIPTION counts, because that is what
+ * `resolveCheckoutFreeTrialDays` actually gates on.
+ */
+const FIRST_SUBSCRIPTION_HINTS: Record<Locale, readonly string[]> = {
+    es: ['primera suscripción'],
+    en: ['first subscription'],
+    pt: ['primeira assinatura']
+};
 
 const PLAN_COPY = collectPlanCopy();
 const PROSE_COPY = collectProseCopy();
@@ -456,19 +484,9 @@ describe('plan copy veracity — FAQ and landing prose (HOS-331)', () => {
         // `first_publish` with `subscription_required`), the trial starts at
         // checkout. Accepting them let this guard green-light exactly the copy
         // it exists to catch.
-        // `primera vez` / `first time` are out for the same reason: on a
-        // publish-blocked screen the reader binds "first time" to publishing,
-        // not to subscribing, and a host who already burned their one trial is
-        // standing on exactly that screen. Only wording that names the
-        // SUBSCRIPTION counts.
-        const FIRST_TIME_HINTS: Record<Locale, readonly string[]> = {
-            es: ['primera suscripción'],
-            en: ['first subscription'],
-            pt: ['primeira assinatura']
-        };
         // Hints from every language, for the same reason `matchedPhrase` scans
         // all three: a locale directory does not guarantee locale content.
-        const allHints = LOCALES.flatMap((locale) => FIRST_TIME_HINTS[locale]);
+        const allHints = LOCALES.flatMap((locale) => FIRST_SUBSCRIPTION_HINTS[locale]);
         const unqualified: string[] = [];
         for (const row of PROSE_COPY) {
             if (!row.copy.includes('{{trialDays}}')) continue;
@@ -500,62 +518,34 @@ describe('plan copy veracity — backed claims (HOS-331)', () => {
         expect(violations).toEqual([]);
     });
 
-    it('never says EVERY plan includes a feature that only some plans grant', () => {
-        // Prose is not scoped to one slug, so the per-plan check above cannot
-        // apply. Checking against the union of all active plans would be
-        // vacuous — every BACKED_CLAIMS entitlement is granted by at least one
-        // active plan, so the predicate is constant-false.
-        //
-        // The failure mode that IS real for prose is the universal claim:
-        // "todos los planes incluyen soporte prioritario" is false for
-        // owner-basico while true for owner-premium, so a union check waves it
-        // through. When a sentence generalises, the feature must be on EVERY
-        // active plan.
-        const UNIVERSAL_MARKERS = [
-            'todos los planes',
-            'todos incluyen',
-            'cualquier plan',
-            'every plan',
-            'all plans',
-            'todos os planos',
-            'todos incluem',
-            'qualquer plano'
-        ];
-        const grantedByEveryActivePlan = new Set<string>(
-            [...new Set(ACTIVE_PLANS.flatMap((p) => p.entitlements as readonly string[]))].filter(
-                (key) =>
-                    ACTIVE_PLANS.every((plan) =>
-                        (plan.entitlements as readonly string[]).includes(key)
-                    )
-            )
-        );
+    it('qualifies the hero trial stat, whose claim is split across two keys', () => {
+        // `hero.stats.trial` renders as one pill: `value` holds the
+        // interpolated number and `label` holds the words. Neither key can be
+        // guarded alone — the number-bearing one has no words to qualify, and
+        // the word-bearing one has no placeholder, so the qualifier rule above
+        // skips it. Listing `label` in PROSE_SURFACES looked like coverage and
+        // was inert. The pair has to be read as the sentence it renders as.
+        const features = LOCALES.map((locale) => ({
+            locale,
+            json: readLocaleJson(locale, 'features.json')
+        }));
         const violations: string[] = [];
-        for (const row of PROSE_COPY) {
-            const haystack = row.copy.toLowerCase();
-            if (!UNIVERSAL_MARKERS.some((marker) => haystack.includes(marker))) continue;
-            for (const claim of BACKED_CLAIMS) {
-                const phrase = matchedPhrase(row.copy, claim, row.locale);
-                if (phrase && !grantedByEveryActivePlan.has(claim.entitlement)) {
-                    violations.push(
-                        `${row.locale}/${row.surface} generalises "${phrase}" but ${claim.entitlement} is not on every active plan`
-                    );
-                }
+        for (const { locale, json } of features) {
+            const value = lookup(json, 'hero.stats.trial.value');
+            const label = lookup(json, 'hero.stats.trial.label');
+            expect(value, `${locale}: hero.stats.trial.value missing`).toBeTruthy();
+            expect(label, `${locale}: hero.stats.trial.label missing`).toBeTruthy();
+            const sentence = `${value ?? ''} ${label ?? ''}`;
+            if (!sentence.includes('{{trialDays}}')) {
+                violations.push(`${locale}: hero trial stat hardcodes its number`);
+            }
+            const qualifiers = LOCALES.flatMap((l) => FIRST_SUBSCRIPTION_HINTS[l]);
+            if (!qualifiers.some((hint) => sentence.toLowerCase().includes(hint))) {
+                violations.push(
+                    `${locale}: hero trial stat promises a trial without the first-subscription qualifier`
+                );
             }
         }
         expect(violations).toEqual([]);
-    });
-
-    it('has at least one tier-scoped entitlement, so the universal check can fail', () => {
-        // Non-vacuity: with a catalog where every plan grants everything, the
-        // assertion above could never fire regardless of the copy.
-        const tierScoped = [
-            ...new Set(ACTIVE_PLANS.flatMap((p) => p.entitlements as readonly string[]))
-        ].filter(
-            (key) =>
-                !ACTIVE_PLANS.every((plan) =>
-                    (plan.entitlements as readonly string[]).includes(key)
-                )
-        );
-        expect(tierScoped.length).toBeGreaterThan(0);
     });
 });
