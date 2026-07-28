@@ -14,6 +14,7 @@
             "destination": "Cidade / Destino (opcional)",
             "message": "Conte-nos sobre seu negócio (opcional)"
         },
+        "prefillNotice": "Preenchemos seu nome e seu e-mail com os dados da sua conta. Você pode editá-los se o contato do negócio for outro: é para esse e-mail que vamos responder.",
         "submit": "Enviar solicitação",
         "submitting": "Enviando...",
         "success": "Obrigado! Recebemos sua solicitação e entraremos em contato em breve.",

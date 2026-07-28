@@ -18,7 +18,7 @@ import MapPlaceholder from '@/components/MapPlaceholder.astro';
 import { AccommodationsListingMap } from '@/components/maps/AccommodationsListingMap.client';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
-import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi } from '@/lib/api/endpoints';
+import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
 import { webLogger } from '@/lib/logger';
@@ -117,15 +117,15 @@ const minGuests = guestCount > 0 ? guestCount : undefined;
 
 // Fetch destinations for filter dropdown (CITY only — accommodations are
 // browsed by city, not by parent administrative regions).
-const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 });
+const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100, cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS });
 const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 
 // Fetch amenities for filter chips
-const amenitiesResult = await amenitiesApi.list({ pageSize: 100, isActive: true, sortBy: 'name', sortOrder: 'asc' });
+const amenitiesResult = await amenitiesApi.list({ pageSize: 100, isActive: true, sortBy: 'name', sortOrder: 'asc', cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS });
 const amenities = amenitiesResult.ok ? amenitiesResult.data.items : [];
 
 // Fetch features for filter chips
-const featuresResult = await featuresApi.list({ pageSize: 100, sortBy: 'displayWeight', sortOrder: 'desc' });
+const featuresResult = await featuresApi.list({ pageSize: 100, sortBy: 'displayWeight', sortOrder: 'desc', cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS });
 const features = featuresResult.ok ? featuresResult.data.items : [];
 
 // Fetch up to MAP_FETCH_CAP accommodations for the initial map view.

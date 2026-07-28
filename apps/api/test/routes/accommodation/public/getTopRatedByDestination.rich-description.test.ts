@@ -1,12 +1,15 @@
 /**
- * SPEC-187 regression — destination accommodations endpoint must NOT expose richDescription.
+ * SPEC-187 / SPEC-212 regression — top-rated-by-destination must NOT expose
+ * either rich-description field.
  *
- * GET /api/v1/public/destinations/:id/accommodations returns an array of
- * AccommodationPublicSchema cards. Since SPEC-187 added richDescription to that
- * schema, the blanket schema-strip no longer hides the premium field — this
- * card listing must strip it explicitly. This test mocks the service to return
- * an accommodation that includes richDescription and asserts it is absent from
- * the response.
+ * This route is the worst prior offender in the family: unlike its sibling card
+ * listings it carried NO rich-description stripping at all, so the service's full
+ * accommodation entity flowed straight through `AccommodationPublicSchema` — a
+ * schema that deliberately re-exposes BOTH `richDescription` and its SPEC-212 i18n
+ * sibling `richDescriptionI18n`. `stripWithSchema` therefore hid neither.
+ *
+ * The suite mocks the service to return an accommodation carrying both fields and
+ * asserts both are absent from the response.
  */
 
 import { Hono } from 'hono';
@@ -15,23 +18,23 @@ import type { AppBindings } from '../../../../src/types';
 
 // ── Service mock ──────────────────────────────────────────────────────────────
 
-const mockGetAccommodations = vi.fn();
+const mockGetTopRatedByDestination = vi.fn();
+const mockResolveOwnerEntitlementsForOwnerIds = vi.fn();
+
+const DEST_ID = 'dddddddd-0000-4000-8000-000000000006';
+const OWNER_ID = 'eeeeeeee-0000-4000-8000-000000000006';
 
 /**
- * Shared accommodation stub that includes a richDescription value.
- * The fix must strip this field before it reaches the HTTP response.
+ * Accommodation stub carrying BOTH premium rich-description fields.
+ * The fix must strip both before they reach the HTTP response.
  */
 const ACCOMMODATION_WITH_RICH = {
-    id: 'b1b2b3b4-0000-4000-8000-000000000003',
-    slug: 'premium-lodge',
-    name: 'Premium Lodge',
+    id: 'b1b2b3b4-0000-4000-8000-000000000006',
+    slug: 'premium-lodge-top-rated',
+    name: 'Premium Lodge (top-rated)',
     summary: 'A very nice lodge',
     description: 'Plain description text',
     richDescription: '## Premium\n\nThis must NOT appear in the public response.',
-    // SPEC-212 i18n sibling. It must be stripped TOGETHER with the plain field:
-    // the web transform resolves the visitor's locale from this object in
-    // PREFERENCE to `richDescription`, so leaving it here re-exposes the premium
-    // markdown even when the plain field was correctly removed.
     richDescriptionI18n: {
         es: '## Premium ES\n\nEsto NO debe aparecer en la respuesta publica.',
         en: '## Premium EN\n\nThis must NOT appear in the public response.',
@@ -39,15 +42,16 @@ const ACCOMMODATION_WITH_RICH = {
     },
     type: 'CABIN',
     isFeatured: false,
-    averageRating: 4.5,
-    reviewsCount: 10,
+    isVerified: false,
+    averageRating: 4.9,
+    reviewsCount: 42,
     media: null,
     price: null,
     location: null,
     seo: null,
     extraInfo: null,
-    destinationId: 'dddddddd-0000-4000-8000-000000000003',
-    ownerId: 'eeeeeeee-0000-4000-8000-000000000003',
+    destinationId: DEST_ID,
+    ownerId: OWNER_ID,
     visibility: 'PUBLIC',
     lifecycleState: 'ACTIVE',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -60,9 +64,9 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
-        DestinationService: vi.fn().mockImplementation(function () {
+        AccommodationService: vi.fn().mockImplementation(function () {
             return {
-                getAccommodations: mockGetAccommodations
+                getTopRatedByDestination: mockGetTopRatedByDestination
             };
         }),
         ServiceError: class ServiceError extends Error {
@@ -75,11 +79,16 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     };
 });
 
+vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
+    resolveOwnerEntitlementsForOwnerIds: (...args: readonly string[][]) =>
+        mockResolveOwnerEntitlementsForOwnerIds(...args)
+}));
+
 vi.mock('../../../../src/utils/actor', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../../../src/utils/actor')>();
     return {
         ...actual,
-        getActorFromContext: vi.fn(() => ({
+        createGuestActor: vi.fn(() => ({
             id: '00000000-0000-4000-8000-000000000000',
             role: 'GUEST',
             permissions: []
@@ -100,15 +109,12 @@ vi.mock('../../../../src/utils/route-factory', () => ({
     createPublicRoute: (options: {
         method: 'get' | 'post' | 'put' | 'delete' | 'patch';
         path: string;
-        handler: (
-            c: { req: { param: () => Record<string, string> } },
-            params: Record<string, unknown>
-        ) => Promise<unknown>;
+        handler: (c: { req: { param: () => Record<string, string> } }) => Promise<unknown>;
     }) => {
         const app = new Hono<AppBindings>();
         const honoPath = options.path.replace(/\{([^}]+)\}/g, ':$1');
         app[options.method](honoPath, async (c) => {
-            const result = await options.handler(c, c.req.param());
+            const result = await options.handler(c);
             return c.json({ success: true, data: result });
         });
         return app;
@@ -117,37 +123,36 @@ vi.mock('../../../../src/utils/route-factory', () => ({
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-const DEST_ID = 'dddddddd-0000-4000-8000-000000000003';
-
 async function buildApp() {
     vi.resetModules();
-    const { publicGetDestinationAccommodationsRoute } = await import(
-        '../../../../src/routes/destination/public/getAccommodations'
+    const { getTopRatedByDestinationRoute } = await import(
+        '../../../../src/routes/accommodation/public/getTopRatedByDestination'
     );
     const app = new Hono<AppBindings>();
-    app.route('/', publicGetDestinationAccommodationsRoute);
+    app.route('/', getTopRatedByDestinationRoute);
     return app;
 }
 
 // ── tests ─────────────────────────────────────────────────────────────────────
 
-describe('publicGetDestinationAccommodationsRoute — SPEC-187 richDescription must be absent', () => {
+describe('getTopRatedByDestinationRoute — both rich-description fields must be absent', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockResolveOwnerEntitlementsForOwnerIds.mockResolvedValue(new Map());
     });
 
-    it('excludes richDescription from every item when the service returns it', async () => {
-        mockGetAccommodations.mockResolvedValue({
+    it('excludes richDescription AND richDescriptionI18n from every item', async () => {
+        mockGetTopRatedByDestination.mockResolvedValue({
             data: { accommodations: [ACCOMMODATION_WITH_RICH] },
             error: null
         });
 
         const app = await buildApp();
-        const res = await app.request(`/${DEST_ID}/accommodations`);
+        const res = await app.request(`/destination/${DEST_ID}/top-rated`);
         expect(res.status).toBe(200);
 
         const body = await res.json();
-        const items = body.data as unknown[];
+        const items = (body.data as { data: unknown[] }).data;
         expect(Array.isArray(items)).toBe(true);
         expect(items.length).toBeGreaterThan(0);
 
@@ -157,37 +162,37 @@ describe('publicGetDestinationAccommodationsRoute — SPEC-187 richDescription m
         }
     });
 
-    it('still returns public card fields when richDescription is stripped', async () => {
-        mockGetAccommodations.mockResolvedValue({
+    it('still returns the public card fields after stripping', async () => {
+        mockGetTopRatedByDestination.mockResolvedValue({
             data: { accommodations: [ACCOMMODATION_WITH_RICH] },
             error: null
         });
 
         const app = await buildApp();
-        const res = await app.request(`/${DEST_ID}/accommodations`);
+        const res = await app.request(`/destination/${DEST_ID}/top-rated`);
         const body = await res.json();
-        const item = (body.data as unknown[])[0] as Record<string, unknown>;
+        const item = (body.data as { data: unknown[] }).data[0] as Record<string, unknown>;
 
         expect(item).toHaveProperty('id');
         expect(item).toHaveProperty('slug');
         expect(item).toHaveProperty('name');
-        expect(item).toHaveProperty('description');
+        expect(item).toHaveProperty('description', 'Plain description text');
         expect(item).not.toHaveProperty('richDescription');
         expect(item).not.toHaveProperty('richDescriptionI18n');
     });
 
-    it('returns an empty array when the service returns no accommodations', async () => {
-        mockGetAccommodations.mockResolvedValue({
+    it('returns an empty page when the destination has no rated accommodations', async () => {
+        mockGetTopRatedByDestination.mockResolvedValue({
             data: { accommodations: [] },
             error: null
         });
 
         const app = await buildApp();
-        const res = await app.request(`/${DEST_ID}/accommodations`);
+        const res = await app.request(`/destination/${DEST_ID}/top-rated`);
         const body = await res.json();
-        const items = body.data as unknown[];
+        const envelope = body.data as { data: unknown[]; pagination: { total: number } };
 
-        expect(Array.isArray(items)).toBe(true);
-        expect(items.length).toBe(0);
+        expect(envelope.data).toHaveLength(0);
+        expect(envelope.pagination.total).toBe(0);
     });
 });

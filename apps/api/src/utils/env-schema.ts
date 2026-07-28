@@ -265,8 +265,13 @@ export const ApiEnvBaseSchema = z.object({
         .string()
         .default('Too many API requests, please try again later.'),
     API_RATE_LIMIT_ADMIN_ENABLED: boolEnv(true),
-    API_RATE_LIMIT_ADMIN_WINDOW_MS: z.coerce.number().default(600000),
-    API_RATE_LIMIT_ADMIN_MAX_REQUESTS: z.coerce.number().default(200),
+    // HOS-325: window narrowed 600000 -> 60000 and max raised 200 -> 3000 together.
+    // This is the IP-keyed anti-abuse ceiling (3000/min); the real governor is the
+    // per-user `admin:user` limiter (300/min) in routes/index.ts. Both must match
+    // the defaults in env-config-helpers.ts — see the calibration note there for
+    // why the window change is load-bearing and not cosmetic.
+    API_RATE_LIMIT_ADMIN_WINDOW_MS: z.coerce.number().default(60000),
+    API_RATE_LIMIT_ADMIN_MAX_REQUESTS: z.coerce.number().default(3000),
     API_RATE_LIMIT_ADMIN_MESSAGE: z
         .string()
         .default('Too many admin requests, please try again later.'),

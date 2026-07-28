@@ -124,8 +124,19 @@ const {
     nextPoiGetBySlugResult,
     nextPoiDestinationIdsResult,
     poiGetBySlugCalls,
-    poiDestinationIdsCalls
+    poiDestinationIdsCalls,
+    mockRecordAiUsage
 } = vi.hoisted(() => ({
+    /**
+     * `recordAiUsage` spy (HOS-328).
+     *
+     * The route must write one `ai_usage` row per successful request — that row
+     * is the ONLY thing `getMonthlyCallCount` counts, so without it the monthly
+     * counter can never advance and `MAX_AI_SEARCH_PER_MONTH` is unenforceable.
+     * The engine deliberately does not write these rows (see the engine module
+     * JSDoc), so the route is the only writer.
+     */
+    mockRecordAiUsage: vi.fn(async (_input: Record<string, unknown>) => undefined),
     generateObjectCalls: [] as Array<{ feature: string; prompt: string; locale: string }>,
     nextGenerateObjectResult: {
         current: {
@@ -278,7 +289,7 @@ vi.mock('@repo/ai-core', () => {
         OpenAiAdapter,
         AnthropicAdapter,
         getMonthlyCallCount: vi.fn(async () => nextSearchCallCount.current),
-        recordAiUsage: vi.fn(async () => undefined),
+        recordAiUsage: mockRecordAiUsage,
         checkCostCeiling: vi.fn(async () => ({ allowed: true })),
         createAiService: vi.fn(() => ({
             generateObject: vi.fn()
@@ -3315,6 +3326,94 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
                 expect.arrayContaining([AUTODROMO_POI_SLUG, NON_EMBEDDED_POI_SLUG])
             );
             expect(poiDestinationIdsCalls[0]?.slugs).toHaveLength(2);
+        });
+    });
+
+    // =========================================================================
+    // HOS-328 — usage metering.
+    //
+    // Regression guard: before HOS-328 this route never called `recordAiUsage`
+    // (its module JSDoc claimed the engine did it — the engine explicitly does
+    // NOT). Because `getMonthlyCallCount` derives the monthly counter by
+    // counting `ai_usage` rows, the counter stayed at 0 forever and
+    // `MAX_AI_SEARCH_PER_MONTH` — asserted by Gate 7 above — could never be
+    // reached in production no matter how much the user searched.
+    // =========================================================================
+
+    describe('HOS-328 — records AI usage', () => {
+        it('writes one ai_usage row per request, summing both provider calls', async () => {
+            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_SEARCH_PER_MONTH, 50]]);
+            nextSearchCallCount.current = 0;
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody()
+            });
+
+            expect(res.status).toBe(200);
+            // Metering is chained onto `meta`, which only resolves after the
+            // stream drains — so drain it before asserting.
+            await readSseFrames(res);
+
+            // One request made TWO provider calls: intent extraction, then reply.
+            expect(generateObjectCalls).toHaveLength(1);
+            expect(streamTextCalls).toHaveLength(1);
+
+            // ...and cost the caller exactly ONE quota unit.
+            expect(mockRecordAiUsage).toHaveBeenCalledTimes(1);
+
+            const recorded = mockRecordAiUsage.mock.calls[0]?.[0];
+            expect(recorded).toMatchObject({
+                userId: UNIQUE_USER_ID,
+                feature: 'search',
+                provider: 'stub',
+                model: 'stub-model',
+                status: 'success'
+            });
+
+            // Tokens are the SUM of both calls (generateObject 10/5 + streamText
+            // 8/4), not just the reply stage's — otherwise the intent-extraction
+            // half of every search would be unpriced.
+            expect(recorded?.promptTokens).toBe(18);
+            expect(recorded?.completionTokens).toBe(9);
+        });
+
+        it('does not record success usage when the request is rejected at quota', async () => {
+            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_SEARCH_PER_MONTH, 50]]);
+            nextSearchCallCount.current = 50;
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody()
+            });
+
+            expect(res.status).toBe(403);
+            const successRows = mockRecordAiUsage.mock.calls.filter(
+                (call) => call[0]?.status === 'success'
+            );
+            expect(successRows).toHaveLength(0);
+        });
+
+        it('still emits the done frame when metering fails (metering is never fatal)', async () => {
+            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_SEARCH_PER_MONTH, 50]]);
+            nextSearchCallCount.current = 0;
+            mockRecordAiUsage.mockRejectedValueOnce(new Error('ai_usage insert failed'));
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody()
+            });
+
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            // Non-vacuous: without the fix the queued rejection is never
+            // consumed and this test would pass with the change reverted.
+            expect(mockRecordAiUsage).toHaveBeenCalledTimes(1);
+            expect(frames.filter((f) => f.event === 'done')).toHaveLength(1);
+            expect(frames.filter((f) => f.event === 'error')).toHaveLength(0);
         });
     });
 });

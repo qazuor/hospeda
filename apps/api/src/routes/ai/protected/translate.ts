@@ -24,6 +24,7 @@ import {
     translateEntity
 } from '../../../services/ai-translate.service';
 import { getActorFromContext } from '../../../utils/actor';
+import { meterAiUsage } from '../../../utils/ai-usage-metering';
 import { createRouter } from '../../../utils/create-app';
 import { apiLogger } from '../../../utils/logger';
 
@@ -66,6 +67,8 @@ for (const mw of rateLimitMws) {
 protectedAiTranslateRoute.use('/', createAiQuotaMiddleware(FEATURE));
 
 protectedAiTranslateRoute.post('/', async (c) => {
+    const handlerStartMs = Date.now();
+
     // Parse and validate body
     const rawBody = await c.req.json();
     const parseResult = TranslateRequestSchema.safeParse(rawBody);
@@ -91,6 +94,20 @@ protectedAiTranslateRoute.post('/', async (c) => {
         { userId: actor.id, entityType, entityId, sourceLocale, targetLocales },
         'ai-translate: starting translation'
     );
+
+    /**
+     * Provider spend that has been incurred but not yet written to `ai_usage`,
+     * because the request has not been confirmed as delivered. Set once the
+     * provider calls succeed and cleared once the row is written — the catch
+     * below records whatever is still pending as `status: 'error'` so a failed
+     * request keeps its cost visible without consuming the caller's quota.
+     */
+    let unbilledSpend: {
+        provider: string;
+        model: string;
+        promptTokens: number;
+        completionTokens: number;
+    } | null = null;
 
     try {
         const fields = await loadTranslatableFields(entityType, entityId, sourceLocale);
@@ -131,6 +148,66 @@ protectedAiTranslateRoute.post('/', async (c) => {
             onlyMissing: true
         });
 
+        // -------------------------------------------------------------------
+        // Usage metering (HOS-328). See `utils/ai-usage-metering` for why the
+        // row exists at all and why the billing unit is the request.
+        //
+        // This is the widest fan-out of the metered features: `translateEntity`
+        // makes one provider call per (field × target locale), so a single
+        // request can be a dozen real calls, all summed into ONE row.
+        //
+        // A row is written only when a provider call actually delivered:
+        //
+        //   - Nothing was called. With `onlyMissing: true` an entity whose target
+        //     locales are all already populated skips every pair and returns no
+        //     translations. That is a successful no-op — the host simply clicked
+        //     Translate twice. A row here would emit a permanent stream of bogus
+        //     failures into the error-rate signal and a synthetic provider bucket
+        //     in the usage report.
+        //   - Calls were made and ALL of them failed. Also no row, but for a
+        //     weaker reason: `translateFieldWithRetry` hard-codes 0 tokens on any
+        //     caught error and `translateEntity` only accumulates inside its
+        //     success branch, so the row we COULD write would always carry zero
+        //     cost — no spend signal to gain. Known gap: that zero is what the
+        //     code recorded, not necessarily what the provider billed. The engine
+        //     runs output moderation AFTER generating, so a moderation-blocked
+        //     translation was paid for and still reports 0. Propagating real usage
+        //     out of failed calls needs a service-layer change and is tracked
+        //     separately; the per-field failures are logged by the service today.
+        //   - Calls were made and at least one delivered → metered as 'success',
+        //     but only AFTER persistence, so the caller is never charged a quota
+        //     unit for a request that visibly 500s. HOS-190's Zod gate rejects
+        //     malformed provider output deterministically, so charging before
+        //     persisting would burn the whole monthly quota on retries of the
+        //     same entity. The catch below still records the spend as 'error'.
+        //
+        // (The sibling `search-chat` route meters CONCURRENTLY with its
+        // persistence step, without gating on it. That is not an inconsistency:
+        // the ordering follows "did the caller already receive value?" — there the
+        // reply has already been streamed, so persistence cannot change the
+        // verdict; here a persistence failure means the caller gets a 500 and
+        // nothing else, so the verdict depends on it.)
+        //
+        // Note the aggregate is priced at the LAST successful call's
+        // provider/model (`translateEntity` keeps that one), so a mid-request
+        // fallback prices earlier calls at the final provider's rate.
+        // -------------------------------------------------------------------
+        const anyProviderCallSucceeded = result.translations.some(
+            (translation) => translation.success
+        );
+
+        if (anyProviderCallSucceeded) {
+            // Hold the row until persistence confirms the request actually
+            // delivered. The catch below downgrades it to 'error' if persistence
+            // throws, so the spend stays visible either way.
+            unbilledSpend = {
+                provider: result.provider || 'unknown',
+                model: result.model || 'unknown',
+                promptTokens: result.promptTokens,
+                completionTokens: result.completionTokens
+            };
+        }
+
         // Persist results
         await persistTranslations(
             entityType,
@@ -141,6 +218,23 @@ protectedAiTranslateRoute.post('/', async (c) => {
             result.model,
             sourceLocale
         );
+
+        if (unbilledSpend) {
+            // Cleared BEFORE the await: if metering ever threw despite its
+            // non-throwing contract, a still-populated `unbilledSpend` would make
+            // the catch below write a second row for the same request.
+            const spend = unbilledSpend;
+            unbilledSpend = null;
+
+            await meterAiUsage({
+                userId: actor.id,
+                feature: FEATURE,
+                ...spend,
+                latencyMs: Date.now() - handlerStartMs,
+                status: 'success',
+                logContext: { entityType, entityId, sourceLocale }
+            });
+        }
 
         return c.json({
             success: true,
@@ -158,6 +252,25 @@ protectedAiTranslateRoute.post('/', async (c) => {
             { userId: actor.id, entityType, entityId, error: errorMessage },
             'ai-translate: translation failed'
         );
+
+        // HOS-328: the provider calls were already paid for even though the
+        // request is about to 500. Record the spend as 'error' so it stays
+        // visible to the cost ceiling, while `getMonthlyCallCount` (which counts
+        // only 'success'/'fallback') leaves the caller's quota untouched — a
+        // deterministic persistence failure must not burn a quota unit per retry.
+        if (unbilledSpend) {
+            const spend = unbilledSpend;
+            unbilledSpend = null;
+
+            await meterAiUsage({
+                userId: actor.id,
+                feature: FEATURE,
+                ...spend,
+                latencyMs: Date.now() - handlerStartMs,
+                status: 'error',
+                logContext: { entityType, entityId, sourceLocale }
+            });
+        }
 
         return c.json(
             {
