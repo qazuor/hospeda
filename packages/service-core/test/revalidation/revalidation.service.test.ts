@@ -1349,12 +1349,11 @@ describe('RevalidationService.revalidateEntityTypesBatch -- one purge per run', 
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
+        // No microtask pumping needed: purgeGroupsOnce awaits its own log writes.
         await service.revalidateEntityTypesBatch({
             entityTypes: ['accommodation', 'destination'],
             trigger: 'cron'
         });
-        await Promise.resolve();
-        await Promise.resolve();
 
         const loggedTypes = new Set(
             mockCreate.mock.calls.map(
@@ -1526,6 +1525,117 @@ describe('RevalidationService -- coalesced purge window', () => {
         expect(mockCreate).toHaveBeenCalled();
         for (const call of mockCreate.mock.calls) {
             expect((call[0] as Record<string, unknown>).status).toBe('failed');
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Coalescing — the branches the first attempt missed
+// ---------------------------------------------------------------------------
+
+describe('RevalidationService -- coalescing covers BOTH debounce branches', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.clearAllMocks();
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: vi.fn().mockResolvedValue(makeEnabledConfig('accommodation', 1))
+            };
+        });
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return { create: vi.fn().mockResolvedValue(undefined) };
+        });
+        (createLogger as ReturnType<typeof vi.fn>).mockReturnValue({
+            error: vi.fn(),
+            warn: vi.fn(),
+            info: vi.fn(),
+            debug: vi.fn()
+        });
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    /**
+     * `debounceEntity` arms its timer in TWO places: creating a bucket, and
+     * resetting an existing bucket's timer when a second event lands inside the
+     * window. The first attempt at the coalescing fix converted only the creation
+     * branch, so any entity scheduled twice reverted to firing its own purge —
+     * with a fully green suite, because every other test schedules distinct slugs
+     * exactly once.
+     *
+     * This is the ordinary plan-change shape, not an edge case:
+     * `immediate-plan-swap` runs upgrade restoration and then
+     * `syncFeaturedByEntitlementForOwner` over overlapping accommodations, so the
+     * same debounce keys are hit twice in one request.
+     */
+    it('fires ONE purge even when every entity is rescheduled inside its window', async () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+        const events = [
+            { entityType: 'accommodation' as const, slug: 'cabana-uno' },
+            { entityType: 'accommodation' as const, slug: 'cabana-dos' },
+            { entityType: 'accommodation' as const, slug: 'cabana-tres' },
+            { entityType: 'accommodation' as const, slug: 'cabana-cuatro' },
+            { entityType: 'accommodation' as const, slug: 'cabana-cinco' }
+        ];
+
+        service.scheduleRevalidationBatch({ events });
+        await vi.advanceTimersByTimeAsync(10);
+        // Second pass over the SAME entities, still inside the 1 s debounce window.
+        service.scheduleRevalidationBatch({ events });
+
+        await vi.runAllTimersAsync();
+
+        expect(adapter.revalidateMany).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not lose groups that arrive while a purge is in flight', async () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        service.scheduleRevalidationBatch({
+            events: [{ entityType: 'accommodation', slug: 'cabana-uno' }]
+        });
+        await vi.runAllTimersAsync();
+
+        service.scheduleRevalidationBatch({
+            events: [{ entityType: 'accommodation', slug: 'cabana-dos' }]
+        });
+        await vi.runAllTimersAsync();
+
+        const allPaths = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls.flatMap(
+            (call) => (call[0] as { paths: string[] }).paths
+        );
+        expect(allPaths.some((p) => p.includes('cabana-uno'))).toBe(true);
+        expect(allPaths.some((p) => p.includes('cabana-dos'))).toBe(true);
+    });
+
+    /**
+     * Guards the FALLBACK DIRECTION of result matching. Matching purge results
+     * back by path is right, but recording an unmatched path as failed would turn
+     * any adapter that normalises paths into a 100%-failure report for a purge
+     * that actually succeeded — a worse bug than the shared-verdict one it
+     * replaced. When the counts line up, position wins.
+     */
+    it('falls back to positional matching when the adapter renames paths', async () => {
+        const adapter: RevalidationAdapter = {
+            name: 'RenamingAdapter',
+            revalidate: vi.fn(),
+            revalidateMany: vi.fn(async (params: { readonly paths: ReadonlyArray<string> }) =>
+                params.paths.map(() => makeSuccessResult('?'))
+            )
+        };
+        const service = createTestService(adapter);
+
+        const batches = await service.revalidateEntityTypesBatch({
+            entityTypes: ['accommodation']
+        });
+
+        expect(batches.length).toBeGreaterThan(0);
+        for (const batch of batches) {
+            expect(batch.results.every((result) => result.success)).toBe(true);
         }
     });
 });

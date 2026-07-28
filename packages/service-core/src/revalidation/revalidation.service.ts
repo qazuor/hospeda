@@ -167,6 +167,13 @@ export class RevalidationService {
     private readonly pendingPurgeGroups: PendingPurgeGroup[] = [];
     /** Armed while a shared purge is pending; `undefined` means none is armed. */
     private purgeFlushTimer: ReturnType<typeof setTimeout> | undefined;
+    /**
+     * Resolves when the purge currently in flight finishes. A flush that lands
+     * while one is running chains behind it instead of starting a concurrent
+     * purge — the timer handle alone only bounds "one purge per window", not
+     * "one purge at a time", and concurrency is the whole thing being fixed.
+     */
+    private purgeInFlight: Promise<unknown> = Promise.resolve();
     private readonly configCache = new Map<string, ConfigCacheEntry>();
     private readonly logModel: RevalidationLogModel;
     private readonly configModel: RevalidationConfigModel;
@@ -377,6 +384,7 @@ export class RevalidationService {
         // Resolve every type's paths BEFORE purging, so the single purge below
         // covers the whole run.
         const perType: Array<{ entityType: string; paths: string[] }> = [];
+        const zeroPathTypes: string[] = [];
         const seenTypes = new Set<string>();
 
         for (const entityType of entityTypes) {
@@ -386,12 +394,23 @@ export class RevalidationService {
             const paths = await this.resolvePathsForEntityType({ entityType });
             if (paths.length > 0) {
                 perType.push({ entityType, paths });
+            } else {
+                // Reported with empty results rather than dropped: a caller that
+                // derives counters from this (the cron does) would otherwise see
+                // the type vanish from the run's accounting entirely, and a dry
+                // run would report a different total than the real one.
+                zeroPathTypes.push(entityType);
             }
         }
 
-        if (perType.length === 0) return [];
+        const skipped = zeroPathTypes.map((entityType) => ({
+            entityType,
+            results: [] as ReadonlyArray<RevalidatePathResult>
+        }));
 
-        return this.purgeGroupsOnce({
+        if (perType.length === 0) return skipped;
+
+        const purged = await this.purgeGroupsOnce({
             groups: perType.map(({ entityType, paths }) => ({
                 entityType,
                 entityId: undefined,
@@ -400,6 +419,8 @@ export class RevalidationService {
             trigger,
             triggeredBy: 'system'
         });
+
+        return [...purged, ...skipped];
     }
 
     /**
@@ -415,18 +436,29 @@ export class RevalidationService {
 
         this.purgeFlushTimer = setTimeout(() => {
             this.purgeFlushTimer = undefined;
-            const groups = this.pendingPurgeGroups.splice(0);
-            if (groups.length === 0) return;
 
-            void this.purgeGroupsOnce({ groups, trigger: 'hook' }).catch((error: unknown) => {
-                this.logger.error(
-                    `[RevalidationService] Unhandled error in coalesced revalidation purge: ${error instanceof Error ? error.message : String(error)}`
-                );
-            });
+            // Chain behind any purge still running, and splice INSIDE the chained
+            // callback so groups queued while it was in flight are picked up by
+            // this same flush rather than needing another window.
+            this.purgeInFlight = this.purgeInFlight
+                .then(() => {
+                    const groups = this.pendingPurgeGroups.splice(0);
+                    if (groups.length === 0) return undefined;
+                    return this.purgeGroupsOnce({ groups, trigger: 'hook' });
+                })
+                .catch((error: unknown) => {
+                    this.logger.error(
+                        `[RevalidationService] Unhandled error in coalesced revalidation purge: ${error instanceof Error ? error.message : String(error)}`
+                    );
+                    return undefined;
+                });
         }, PURGE_COALESCE_MS);
 
-        // Never hold the process open for a cache purge.
-        this.purgeFlushTimer.unref?.();
+        // NOT unref'd, deliberately. The debounce timer that precedes this one is
+        // ref'd, so the process already paid up to `debounceSeconds` of liveness
+        // waiting for this exact work; making only the final 50 ms hop droppable
+        // would discard it at the finish line. One liveness policy for the whole
+        // chain, not two.
     }
 
     /**
@@ -466,17 +498,40 @@ export class RevalidationService {
         const purgeResults = await this.adapter.revalidateMany({ paths: unionedPaths });
         const byPath = new Map(purgeResults.map((result) => [result.path, result]));
 
-        const missingResult = (path: string): RevalidatePathResult => ({
-            path,
-            success: false,
-            durationMs: 0,
-            error: `${this.adapter.name} returned no result for this path (${purgeResults.length} result(s) for ${unionedPaths.length} path(s))`
-        });
+        // The adapter contract is one result per path, in input order. Prefer
+        // matching by path (so a per-path adapter is reported per path), but fall
+        // back to POSITION when the counts line up and the path simply did not
+        // match — an adapter that normalises paths (trailing slash, encoding)
+        // would otherwise flip a fully successful purge to 100% failed, which is
+        // a worse failure than the shared-verdict bug this replaced.
+        const canMatchByIndex = purgeResults.length === unionedPaths.length;
+        if (canMatchByIndex && byPath.size === 0 && unionedPaths.length > 0) {
+            this.logger.warn(
+                `[RevalidationService] ${this.adapter.name} returned no recognisable paths; falling back to positional matching`
+            );
+        }
+
+        const resultForPath = (path: string, index: number): RevalidatePathResult => {
+            const matched = byPath.get(path);
+            if (matched !== undefined) return { ...matched, path };
+
+            const positional = canMatchByIndex ? purgeResults[index] : undefined;
+            if (positional !== undefined) return { ...positional, path };
+
+            return {
+                path,
+                success: false,
+                durationMs: 0,
+                error: `${this.adapter.name} returned no result for this path (${purgeResults.length} result(s) for ${unionedPaths.length} path(s))`
+            };
+        };
+
+        const unionIndexByPath = new Map(unionedPaths.map((path, index) => [path, index]));
 
         const pendingWrites: Array<() => Promise<void>> = [];
         const grouped = groups.map((group) => {
-            const results: RevalidatePathResult[] = [...group.paths].map(
-                (path) => byPath.get(path) ?? missingResult(path)
+            const results: RevalidatePathResult[] = [...group.paths].map((path) =>
+                resultForPath(path, unionIndexByPath.get(path) ?? -1)
             );
 
             for (const result of results) {
@@ -709,28 +764,34 @@ export class RevalidationService {
         const { paths, entityType, debounceKeyId, entityId, debounceMs, reason } = params;
         const key = debounceKeyId ? `${entityType}:${debounceKeyId}` : entityType;
 
+        // HOS-297: ONE fire callback, shared by both arming sites below.
+        //
+        // These two sites are the reason the first attempt at this fix did not
+        // work: only the creation branch was converted, so any entity that got a
+        // second change event inside its window had its timer replaced by the
+        // old un-coalesced closure and went back to firing its own purge. That is
+        // not an edge case — `plan-downgrade-remediation` emits slug-less events
+        // that all collapse onto one key, so every event after the first took the
+        // reset branch. Keep this as a single function; do not inline it back.
+        const fireIntoSharedPurgeWindow = (entry: PendingEntityDebounce): void => {
+            this.pendingTimers.delete(key);
+            this.enqueuePurgeGroup({
+                entityType,
+                entityId: entry.entityId,
+                paths: Array.from(entry.paths),
+                ...(reason === undefined ? {} : { reason })
+            });
+        };
+
         const existing = this.pendingTimers.get(key);
         if (existing === undefined) {
             // Create a new debounce entry. entityId is pinned here; later calls
             // in the same window only set it when still undefined (see above).
-            const pathSet = new Set(paths);
             const entry: PendingEntityDebounce = {
-                paths: pathSet,
+                paths: new Set(paths),
                 entityType,
                 entityId,
-                timer: setTimeout(() => {
-                    this.pendingTimers.delete(key);
-                    // HOS-297: hand the paths to the shared purge window instead
-                    // of firing this bucket's own purge. Every sibling bucket
-                    // expires in this same tick, so purging here is exactly the
-                    // concurrent burst the edge WAF blocks.
-                    this.enqueuePurgeGroup({
-                        entityType,
-                        entityId: entry.entityId,
-                        paths: Array.from(pathSet),
-                        ...(reason === undefined ? {} : { reason })
-                    });
-                }, debounceMs)
+                timer: setTimeout(() => fireIntoSharedPurgeWindow(entry), debounceMs)
             };
 
             this.pendingTimers.set(key, entry);
@@ -747,22 +808,9 @@ export class RevalidationService {
             }
             clearTimeout(existing.timer);
 
-            // Reset the timer with accumulated paths
-            existing.timer = setTimeout(() => {
-                this.pendingTimers.delete(key);
-                const allPaths = Array.from(existing.paths);
-                void this.revalidatePaths({
-                    paths: allPaths,
-                    reason,
-                    trigger: 'hook',
-                    entityType,
-                    entityId: existing.entityId
-                }).catch((error: unknown) => {
-                    this.logger.error(
-                        `[RevalidationService] Unhandled error in debounced revalidation for key "${key}": ${error instanceof Error ? error.message : String(error)}`
-                    );
-                });
-            }, debounceMs);
+            // Reset the timer with accumulated paths — through the SAME shared
+            // callback as the creation branch above.
+            existing.timer = setTimeout(() => fireIntoSharedPurgeWindow(existing), debounceMs);
         }
     }
 
