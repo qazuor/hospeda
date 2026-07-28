@@ -29,6 +29,15 @@ const ACCOMMODATION_WITH_RICH = {
     summary: 'A very nice lodge',
     description: 'Plain description text',
     richDescription: '## Premium\n\nThis must NOT appear in the public response.',
+    // SPEC-212 i18n sibling. The real query layer never selects this column (the
+    // Drizzle `columns` allowlist excludes it), but this mock deliberately returns
+    // it to exercise the handler's SECOND layer of defense — the whole point of
+    // that destructure is to hold when the query layer changes or is mocked.
+    richDescriptionI18n: {
+        es: '## Premium ES\n\nEsto NO debe aparecer en la respuesta publica.',
+        en: '## Premium EN\n\nThis must NOT appear in the public response.',
+        pt: '## Premium PT\n\nIsto NAO deve aparecer na resposta publica.'
+    },
     type: 'CABIN',
     isFeatured: false,
     averageRating: 4.5,
@@ -183,6 +192,7 @@ describe('publicGetSimilarRoute — SPEC-187 richDescription must be absent', ()
 
         for (const item of items) {
             expect(item).not.toHaveProperty('richDescription');
+            expect(item).not.toHaveProperty('richDescriptionI18n');
         }
     });
 
@@ -208,5 +218,6 @@ describe('publicGetSimilarRoute — SPEC-187 richDescription must be absent', ()
         expect(item).toHaveProperty('name');
         expect(item).toHaveProperty('summary');
         expect(item).not.toHaveProperty('richDescription');
+        expect(item).not.toHaveProperty('richDescriptionI18n');
     });
 });

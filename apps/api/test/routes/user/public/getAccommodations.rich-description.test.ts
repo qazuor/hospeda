@@ -34,6 +34,15 @@ const ACCOMMODATION_WITH_RICH = {
     summary: 'A very nice lodge',
     description: 'Plain description text',
     richDescription: '## Premium\n\nThis must NOT appear in the user accommodations response.',
+    // SPEC-212 i18n sibling. It must be stripped TOGETHER with the plain field:
+    // the web transform resolves the visitor's locale from this object in
+    // PREFERENCE to `richDescription`, so leaving it here re-exposes the premium
+    // markdown even when the plain field was correctly removed.
+    richDescriptionI18n: {
+        es: '## Premium ES\n\nEsto NO debe aparecer en la respuesta publica.',
+        en: '## Premium EN\n\nThis must NOT appear in the public response.',
+        pt: '## Premium PT\n\nIsto NAO deve aparecer na resposta publica.'
+    },
     type: 'CABIN',
     isFeatured: false,
     averageRating: 4.5,
@@ -165,6 +174,7 @@ describe('publicGetUserAccommodationsRoute — SPEC-187 richDescription must be 
 
         for (const item of items) {
             expect(item).not.toHaveProperty('richDescription');
+            expect(item).not.toHaveProperty('richDescriptionI18n');
         }
     });
 
@@ -188,6 +198,7 @@ describe('publicGetUserAccommodationsRoute — SPEC-187 richDescription must be 
         expect(item).toHaveProperty('name');
         expect(item).toHaveProperty('description');
         expect(item).not.toHaveProperty('richDescription');
+        expect(item).not.toHaveProperty('richDescriptionI18n');
     });
 
     it('returns an empty items array when the service returns no items', async () => {

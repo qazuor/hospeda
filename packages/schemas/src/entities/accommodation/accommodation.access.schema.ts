@@ -272,8 +272,9 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
      * and plain rendering (FR-3b / FR-4 in SPEC-187). The entitlement-by-omission
      * gate (strips the field server-side for non-entitled owners) runs BEFORE
      * stripWithSchema, so schema presence is safe — omission is the protection.
-     * Accepts null (DB default for un-filled rows) and undefined (entitlement gate
-     * strips to undefined), matching the base schema's .nullish() declaration.
+     * Accepts null (DB default for un-filled rows) and undefined (the entitlement
+     * gate DELETES the key, so the field is absent rather than undefined-valued),
+     * matching the base schema's .nullish() declaration.
      */
     richDescription: z
         .string()
@@ -286,6 +287,19 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
      * server-side for non-entitled owners BEFORE stripWithSchema runs, so schema
      * presence is safe; omission is the protection. Re-added via .extend() (not
      * .pick()) so it mirrors richDescription's deliberate public exposure.
+     *
+     * ⚠️ This field and the plain `richDescription` above MUST be gated TOGETHER,
+     * in every code path. Gating only the plain one is equivalent to gating
+     * NEITHER: the web transform resolves the visitor's locale from
+     * `richDescriptionI18n` in PREFERENCE to `richDescription`
+     * (apps/web/src/lib/api/transforms.ts), so a surviving i18n value is rendered
+     * as HTML on the public detail page even when the plain field was correctly
+     * omitted. This comment previously asserted a strip that did not actually
+     * exist for the i18n sibling — the omission was real for `richDescription`
+     * only. The server-side enforcement now lives in ONE place per surface:
+     * `filterAccommodationByEntitlements` (detail routes) and
+     * `stripRichDescriptionFields` (card listings), both in
+     * apps/api/src/utils/entitlement-filter.ts.
      */
     richDescriptionI18n: I18nTextSchema.nullish(),
     /**
@@ -388,6 +402,32 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
 });
 
 export type AccommodationPublic = z.infer<typeof AccommodationPublicSchema>;
+
+/**
+ * PUBLIC ACCOMMODATION — CARD TIER, for NESTED embeds.
+ *
+ * Use this — never the full `AccommodationPublicSchema` — when another entity's public
+ * schema embeds an accommodation as a relation (`post.relatedAccommodation`,
+ * `ownerPromotion.accommodation`, `accommodationReview.accommodation`).
+ *
+ * Why it exists: the premium rich-description gate is enforced by data-level helpers
+ * (`filterAccommodationByEntitlements`, `stripRichDescriptionFields`) that operate on a
+ * FLAT, top-level accommodation object. They are never applied to an accommodation that
+ * arrives nested inside another entity's payload. So every schema that embedded the full
+ * public schema silently reopened the exact hole those helpers exist to close — the
+ * owning service eager-loads the relation with no column allowlist, and
+ * `stripWithSchema` keeps both fields because the schema declares them.
+ *
+ * Omitting them at the schema level makes the nested case fail-closed by construction:
+ * there is no per-route strip to forget. Consumers of these embeds render a card
+ * (id/name/slug/summary/image) and have no use for rich text.
+ */
+export const AccommodationPublicCardSchema = AccommodationPublicSchema.omit({
+    richDescription: true,
+    richDescriptionI18n: true
+});
+
+export type AccommodationPublicCard = z.infer<typeof AccommodationPublicCardSchema>;
 
 /**
  * PROTECTED ACCESS SCHEMA

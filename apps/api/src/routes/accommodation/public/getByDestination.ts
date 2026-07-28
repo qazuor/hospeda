@@ -10,29 +10,12 @@ import { z } from 'zod';
 import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
 import { createGuestActor } from '../../../utils/actor';
 import type { AccommodationData } from '../../../utils/entitlement-filter';
-import { filterAccommodationListByOwnerEntitlements } from '../../../utils/entitlement-filter';
+import {
+    filterAccommodationListByOwnerEntitlements,
+    stripRichDescriptionFields
+} from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
-
-/**
- * Strips richDescription from an accommodation object before it reaches the
- * public response payload.
- *
- * richDescription is a PREMIUM field gated per-owner by the entitlement system.
- * The destination-list endpoint is a card listing that never renders it, so the
- * field must be absent from the payload regardless of the owner's current plan.
- * This omission is applied at the DATA level so it is fail-closed and independent
- * of any Zod schema change. (SPEC-187 data-exposure fix.)
- *
- * @param item - Raw accommodation object from the service layer.
- * @returns The accommodation object with richDescription removed.
- */
-function stripRichDescription<T extends { richDescription?: unknown }>(
-    item: T
-): Omit<T, 'richDescription'> {
-    const { richDescription: _dropped, ...rest } = item;
-    return rest;
-}
 
 // Initialize service once
 const accommodationService = new AccommodationService({ logger: apiLogger });
@@ -66,13 +49,14 @@ const getByDestinationHandler = async (c: Context) => {
         throw new ServiceError(result.error.code, result.error.message);
     }
 
-    // SPEC-187 data-level omission: richDescription is a PREMIUM field gated
-    // per-owner by the entitlement system. This card-listing endpoint never
-    // renders it, so the field is stripped here before reaching the response
-    // payload — fail-closed and independent of any schema change.
+    // SPEC-187 / SPEC-212 data-level omission: richDescription and its i18n
+    // sibling are PREMIUM fields gated per-owner by the entitlement system. This
+    // card-listing endpoint never renders them, so BOTH are stripped here before
+    // reaching the response payload — fail-closed and independent of any schema
+    // change.
     const data = result.data ?? { accommodations: [] };
     const strippedAccommodations = Array.isArray(data.accommodations)
-        ? data.accommodations.map(stripRichDescription)
+        ? data.accommodations.map(stripRichDescriptionFields)
         : [];
 
     // SPEC-291 Phase 3b: gate isVerified by the owner's billing entitlement.
