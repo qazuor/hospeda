@@ -576,7 +576,8 @@
             "aiSearch": "For registered users",
             "aiChatTourist": "Available in accommodations that enabled it",
             "aiChatOwner": "You enable it for your guests",
-            "aiSupportAddon": "Available as an add-on"
+            "aiSupportAddon": "Available as an add-on",
+            "featuredAddon": "Also available as an add-on on any plan"
         },
         "limitLabel": {
             "max_accommodations": "Published accommodations",

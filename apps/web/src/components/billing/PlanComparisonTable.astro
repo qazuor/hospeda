@@ -49,7 +49,8 @@ const upcomingLabel = t('billing.comparison.upcoming', 'Próximamente');
 // as columns in this table. Re-filter through the shared helper so the columns
 // are always active-only and sortOrder-sorted regardless of what the caller
 // passed; we render a teaser for the complex plans below instead.
-const activePlans = filterPlansByCategory(plans, audience === 'owner' ? 'owner' : 'tourist');
+// `audience` is already 'owner' | 'tourist', which are both PlanCategory values.
+const activePlans = filterPlansByCategory(plans, audience);
 
 const groups = audience === 'owner' ? OWNER_GROUPS : TOURIST_GROUPS;
 

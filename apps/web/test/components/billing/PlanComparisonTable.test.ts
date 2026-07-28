@@ -45,12 +45,12 @@ describe('PlanComparisonTable.astro — single source of truth (HOS-329)', () =>
     it('does not re-declare the row model types locally', () => {
         expect(src).not.toContain('interface RowConfig');
         expect(src).not.toContain('interface GroupConfig');
-        expect(src).not.toContain('interface LiteralsCell');
+        expect(src).not.toContain('interface EntitlementCell');
         expect(src).not.toContain('type RowCellDef');
     });
 
-    it('resolves cells through the shared slug-based resolver, not by index', () => {
-        expect(src).toContain('resolveCell({ cell: row.cell, plan })');
+    it('resolves cells through the shared plan-driven resolver, not by index', () => {
+        expect(src).toMatch(/resolveCell\(\s*\{[^}]*cell:\s*row\.cell/);
         // The old positional renderer and its column index must be gone.
         expect(src).not.toContain('getCellRendered');
         expect(src).not.toContain('planIndex');
@@ -60,6 +60,15 @@ describe('PlanComparisonTable.astro — single source of truth (HOS-329)', () =>
     it('builds its columns with the shared active+sorted plan filter', () => {
         expect(src).toContain('filterPlansByCategory');
         expect(src).not.toContain("plans.filter((p) => p.category === 'owner')");
+    });
+
+    it('filters by the audience it was given, not a hardcoded category', () => {
+        // `filterPlansByCategory(plans, 'owner')` written unconditionally would
+        // render the tourist comparison page with zero columns, on a live
+        // public URL, with the rest of this suite still green.
+        expect(src).toContain('filterPlansByCategory(plans, audience)');
+        expect(src).not.toContain("filterPlansByCategory(plans, 'owner')");
+        expect(src).not.toContain("filterPlansByCategory(plans, 'tourist')");
     });
 });
 

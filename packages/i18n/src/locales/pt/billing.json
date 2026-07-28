@@ -576,7 +576,8 @@
             "aiSearch": "Para usuários registrados",
             "aiChatTourist": "Disponível em acomodações que o habilitaram",
             "aiChatOwner": "Você o habilita para seus hóspedes",
-            "aiSupportAddon": "Disponível como complemento"
+            "aiSupportAddon": "Disponível como complemento",
+            "featuredAddon": "Também disponível como complemento em qualquer plano"
         },
         "limitLabel": {
             "max_accommodations": "Hospedagens publicadas",

@@ -9,38 +9,36 @@
  * Every row references an i18n `labelKey` and carries a typed cell definition,
  * a `status` (`available` | `upcoming`), and an optional `noteKey`.
  *
- * Literal cells are keyed by PLAN SLUG, never by column position (HOS-329).
- * Positional values silently reassigned themselves whenever the rendered
- * column set changed — deactivating `owner-basico` shifted every plan one slot
- * left, so `owner-premium` inherited `owner-pro`'s values and lost all of its
- * exclusive features. Slug keys make the value follow the plan.
+ * Yes/no cells are DERIVED from the plan's own `entitlements` array, never from
+ * the column's position (HOS-329). Positional values silently reassigned
+ * themselves whenever the rendered column set changed — deactivating
+ * `owner-basico` shifted every plan one slot left, so `owner-premium`
+ * inherited `owner-pro`'s values and lost all of its exclusive features.
+ *
+ * Deriving from `plan.entitlements` also removes the whole class of drift this
+ * table kept suffering: a tier added or re-priced in `plans.config.ts`, or an
+ * entitlement granted to a new tier, is reflected here with no edit at all. A
+ * hand-maintained per-slug table would instead render every uncurated tier as
+ * a wall of "not included".
  */
 
-import { LimitKey } from '@repo/billing';
+import { EntitlementKey, LimitKey } from '@repo/billing';
 
 export type YesNo = 'yes' | 'no';
-
-/** Curated owner tiers rendered as columns of the owner comparison table. */
-export type OwnerPlanSlug = 'owner-basico' | 'owner-pro' | 'owner-premium';
-
-/** Curated tourist tiers rendered as columns of the tourist comparison table. */
-export type TouristPlanSlug = 'tourist-free' | 'tourist-plus' | 'tourist-vip';
-
-/** Any plan slug this table has curated literal values for. */
-export type ComparablePlanSlug = OwnerPlanSlug | TouristPlanSlug;
 
 export interface LimitCell {
     readonly kind: 'limit';
     /** Strongly-typed limit key — reads the real value from plan.limits. */
     readonly key: LimitKey;
 }
-export interface LiteralsCell {
-    readonly kind: 'literals';
+export interface EntitlementCell {
+    readonly kind: 'entitlement';
     /**
-     * Explicit value per plan slug. A plan whose slug is absent renders as
-     * `'no'` — it never borrows another column's value.
+     * The entitlement that makes this row a "yes". Resolved against the plan's
+     * own `entitlements` array, so the cell is correct for any tier — including
+     * tiers that did not exist when this row was written.
      */
-    readonly bySlug: Readonly<Partial<Record<ComparablePlanSlug, YesNo>>>;
+    readonly key: EntitlementKey;
 }
 export interface AllYesCell {
     readonly kind: 'all-yes';
@@ -52,7 +50,7 @@ export interface AllUnlimitedCell {
     readonly kind: 'all-unlimited';
 }
 
-export type RowCellDef = LimitCell | LiteralsCell | AllYesCell | AllNoCell | AllUnlimitedCell;
+export type RowCellDef = LimitCell | EntitlementCell | AllYesCell | AllNoCell | AllUnlimitedCell;
 export type CellRendered = YesNo | 'unlimited' | number;
 
 export interface RowConfig {
@@ -66,59 +64,6 @@ export interface RowConfig {
 export interface GroupConfig {
     readonly id: string;
     readonly rows: readonly RowConfig[];
-}
-
-// ---------------------------------------------------------------------------
-// Literal-cell constructors
-//
-// Both require EVERY tier of their audience, so a row can never silently omit
-// a plan and have it fall through to 'no'.
-// ---------------------------------------------------------------------------
-
-/**
- * Build a literal cell for the three owner tiers.
- *
- * @param basico - Value for `owner-basico`.
- * @param pro - Value for `owner-pro`.
- * @param premium - Value for `owner-premium`.
- * @returns A slug-keyed literal cell.
- */
-export function ownerLiterals({
-    basico,
-    pro,
-    premium
-}: {
-    readonly basico: YesNo;
-    readonly pro: YesNo;
-    readonly premium: YesNo;
-}): LiteralsCell {
-    return {
-        kind: 'literals',
-        bySlug: { 'owner-basico': basico, 'owner-pro': pro, 'owner-premium': premium }
-    };
-}
-
-/**
- * Build a literal cell for the three tourist tiers.
- *
- * @param free - Value for `tourist-free`.
- * @param plus - Value for `tourist-plus`.
- * @param vip - Value for `tourist-vip`.
- * @returns A slug-keyed literal cell.
- */
-export function touristLiterals({
-    free,
-    plus,
-    vip
-}: {
-    readonly free: YesNo;
-    readonly plus: YesNo;
-    readonly vip: YesNo;
-}): LiteralsCell {
-    return {
-        kind: 'literals',
-        bySlug: { 'tourist-free': free, 'tourist-plus': plus, 'tourist-vip': vip }
-    };
 }
 
 // ---------------------------------------------------------------------------
@@ -153,7 +98,7 @@ export const TOURIST_EXPERIENCE_ROWS: readonly RowConfig[] = [
     {
         id: 'compare',
         labelKey: 'billing.comparison.row.compare',
-        cell: touristLiterals({ free: 'no', plus: 'yes', vip: 'yes' }),
+        cell: { kind: 'entitlement', key: EntitlementKey.CAN_COMPARE_ACCOMMODATIONS },
         status: 'available'
     },
     {
@@ -165,19 +110,19 @@ export const TOURIST_EXPERIENCE_ROWS: readonly RowConfig[] = [
     {
         id: 'alertsOffers',
         labelKey: 'billing.comparison.row.alertsOffers',
-        cell: touristLiterals({ free: 'no', plus: 'yes', vip: 'yes' }),
+        cell: { kind: 'entitlement', key: EntitlementKey.PRICE_ALERTS },
         status: 'upcoming'
     },
     {
         id: 'whatsappDisplay',
         labelKey: 'billing.comparison.row.whatsappDisplay',
-        cell: touristLiterals({ free: 'no', plus: 'yes', vip: 'yes' }),
+        cell: { kind: 'entitlement', key: EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY },
         status: 'available'
     },
     {
         id: 'whatsappDirect',
         labelKey: 'billing.comparison.row.whatsappDirect',
-        cell: touristLiterals({ free: 'no', plus: 'no', vip: 'yes' }),
+        cell: { kind: 'entitlement', key: EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT },
         status: 'available'
     }
 ];
@@ -199,22 +144,24 @@ export const TOURIST_AI_ROWS: readonly RowConfig[] = [
     }
 ];
 
-/** Convert a tourist cell to its tourist-VIP value for the owner asTourist group. */
-export function asVipForAll(cell: RowCellDef): RowCellDef {
-    // `limit` cells are passed through unchanged: the owner plan's actual
-    // plan.limits value is used (e.g. MAX_FAVORITES=-1 → "Ilimitado",
-    // MAX_AI_SEARCH_PER_MONTH=200 → 200). Conversion to 'all-unlimited' was
-    // removed in SPEC-283 so graduated AI quotas surface correctly for owners.
-    if (cell.kind === 'literals') {
-        return cell.bySlug['tourist-vip'] === 'yes' ? { kind: 'all-yes' } : { kind: 'all-no' };
-    }
-    return cell;
-}
-
+/**
+ * The tourist-facing rows as they appear in the owner table's "as tourist"
+ * group. They are reused VERBATIM: every owner plan already carries the full
+ * tourist-vip entitlement set, so each cell resolves correctly against the
+ * owner plan's own entitlements.
+ *
+ * This used to run each cell through an `asVipForAll` transform that rewrote
+ * the tourist literals into a flat all-yes/all-no. That transform existed only
+ * because the cells could not be resolved per-plan; deriving from
+ * `plan.entitlements` makes it redundant, and it produced identical output for
+ * all four rows it touched (verified against the live plans payload).
+ * `limit` cells were always passed through unchanged so that graduated AI
+ * quotas surface for owners (SPEC-283).
+ */
 export const OWNER_AS_TOURIST_ROWS: readonly RowConfig[] = [
     ...TOURIST_EXPERIENCE_ROWS,
     ...TOURIST_AI_ROWS
-].map((row) => ({ ...row, cell: asVipForAll(row.cell) }));
+];
 
 // ---------------------------------------------------------------------------
 // Owner-specific rows
@@ -254,7 +201,7 @@ export const OWNER_ROWS: readonly RowConfig[] = [
     {
         id: 'advancedStats',
         labelKey: 'billing.comparison.row.advancedStats',
-        cell: ownerLiterals({ basico: 'no', pro: 'yes', premium: 'yes' }),
+        cell: { kind: 'entitlement', key: EntitlementKey.VIEW_ADVANCED_STATS },
         status: 'available'
     },
     {
@@ -266,19 +213,19 @@ export const OWNER_ROWS: readonly RowConfig[] = [
     {
         id: 'calendarSync',
         labelKey: 'billing.comparison.row.calendarSync',
-        cell: ownerLiterals({ basico: 'no', pro: 'yes', premium: 'yes' }),
+        cell: { kind: 'entitlement', key: EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR },
         status: 'available'
     },
     {
         id: 'richDescription',
         labelKey: 'billing.comparison.row.richDescription',
-        cell: ownerLiterals({ basico: 'no', pro: 'yes', premium: 'yes' }),
+        cell: { kind: 'entitlement', key: EntitlementKey.CAN_USE_RICH_DESCRIPTION },
         status: 'available'
     },
     {
         id: 'video',
         labelKey: 'billing.comparison.row.video',
-        cell: ownerLiterals({ basico: 'no', pro: 'yes', premium: 'yes' }),
+        cell: { kind: 'entitlement', key: EntitlementKey.CAN_EMBED_VIDEO },
         status: 'available'
     },
     {
@@ -290,25 +237,30 @@ export const OWNER_ROWS: readonly RowConfig[] = [
     {
         id: 'prioritySupport',
         labelKey: 'billing.comparison.row.prioritySupport',
-        cell: ownerLiterals({ basico: 'no', pro: 'yes', premium: 'yes' }),
+        cell: { kind: 'entitlement', key: EntitlementKey.PRIORITY_SUPPORT },
         status: 'upcoming'
     },
     {
         id: 'featured',
         labelKey: 'billing.comparison.row.featured',
-        cell: ownerLiterals({ basico: 'no', pro: 'yes', premium: 'yes' }),
-        status: 'available'
+        cell: { kind: 'entitlement', key: EntitlementKey.FEATURED_LISTING },
+        status: 'available',
+        // FEATURED_LISTING is granted two ways (SPEC-309 OQ-3): plan-wide, and
+        // per-accommodation via the visibility-boost addon, which ANY tier can
+        // buy. Without this note a básico host reads a flat "not included" here
+        // while /funcionalidades offers them the same feature as an addon.
+        noteKey: 'billing.comparison.note.featuredAddon'
     },
     {
         id: 'branding',
         labelKey: 'billing.comparison.row.branding',
-        cell: ownerLiterals({ basico: 'no', pro: 'no', premium: 'yes' }),
+        cell: { kind: 'entitlement', key: EntitlementKey.CUSTOM_BRANDING },
         status: 'upcoming'
     },
     {
         id: 'verificationBadge',
         labelKey: 'billing.comparison.row.verificationBadge',
-        cell: ownerLiterals({ basico: 'no', pro: 'no', premium: 'yes' }),
+        cell: { kind: 'entitlement', key: EntitlementKey.HAS_VERIFICATION_BADGE },
         status: 'available'
     }
 ];
@@ -355,14 +307,17 @@ export const OWNER_AI_ROWS: readonly RowConfig[] = [
 export interface PlanCellSource {
     readonly slug: string;
     readonly limits: Readonly<Record<string, number>>;
+    /** Entitlement keys the plan grants, as plain strings. */
+    readonly entitlements: readonly string[];
 }
 
 /**
  * Resolve one row cell for one plan column.
  *
- * Literal cells are looked up by `plan.slug`, so the rendered column set
- * (which tiers are active, and in what order) cannot change which value a
- * plan gets. An uncurated slug resolves to `'no'` (HOS-329).
+ * Every cell is resolved from the plan's OWN data — its entitlements or its
+ * limits — never from the column's position, so the rendered column set (which
+ * tiers are active, and in what order) cannot change which value a plan gets
+ * (HOS-329).
  *
  * @param cell - The row's typed cell definition.
  * @param plan - The plan rendered in this column.
@@ -381,8 +336,8 @@ export function resolveCell({
             const val = plan.limits[cell.key];
             return val === -1 ? 'unlimited' : (val as CellRendered);
         }
-        case 'literals':
-            return cell.bySlug[plan.slug as ComparablePlanSlug] ?? 'no';
+        case 'entitlement':
+            return plan.entitlements.includes(cell.key) ? 'yes' : 'no';
         case 'all-yes':
             return 'yes';
         case 'all-no':
