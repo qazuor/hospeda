@@ -46,7 +46,7 @@ all observed in the 2026-07-24 production smoke:
    (declared at `:213-218`) when their accommodation goes `ACTIVE`. That set
    omits `COMMERCE_OWNER` — **and also `SPONSOR` and `EDITOR`**, so the same
    write destroys those roles too. It is wrapped in a `try/catch` that logs and
-   swallows (1979-1984), so it fails silently in both directions. This is a
+   swallows (1980-1985), so it fails silently in both directions. This is a
    live data-loss bug today, independent of this migration (see G-6 and R-4).
 3. **Payments break.** The commerce charge must reach the user's MercadoPago
    account, which is keyed by email. Forcing a second email for the commerce
@@ -106,29 +106,46 @@ The blocker is entirely `users.role` and its downstream gates.
 | `role_permission` | `packages/db/src/schemas/user/r_role_permission.dbschema.ts:7-16` | PK `(role, permission)` — **already supports N roles without any change** |
 | `r_user_permission` | `packages/db/src/schemas/user/r_user_permission.dbschema.ts:15-29` | PK `(userId, permission)` + `effect` grant/deny |
 
-### 5.2 Permission resolution — and its two shadow copies
+### 5.2 Permission resolution — and its two alternate implementations
 
-The canonical resolver is `actorMiddleware`
-(`apps/api/src/middlewares/actor.ts:125-214`): `userRole = user.role || USER`
-(line 131), SUPER_ADMIN short-circuits to all permissions (154-163), otherwise
-`getPermissionsForRole(userRole)`
+The canonical resolver lives in `actorMiddleware`
+(`apps/api/src/middlewares/actor.ts`, function starts at :62; the
+authenticated-user branch described here is :125-214): `userRole =
+user.role || USER` (line 131), SUPER_ADMIN short-circuits to all permissions
+(154-163), otherwise `getPermissionsForRole(userRole)`
 (`apps/api/src/utils/role-permissions-cache.ts:38`, 10-min TTL cache) unioned
 with grants and minus denies (174-181).
 
-**There are two other, divergent resolvers** — this is the single biggest
-under-estimate in the original issue write-up:
+**There are two other resolvers** — the single biggest under-estimate in the
+original issue write-up. Neither is accidental drift; each is a recorded
+decision, and this spec has to treat them as such:
 
 - `apps/web/src/lib/nav-gating.ts:128-137` (`isVisibleByRole`) approximates
-  permissions from a **hand-maintained** `PERMISSION_ROLE_MAP` (lines 62-84)
-  because Astro SSR only has `Astro.locals.user.role`. It ignores per-user
-  grants and denies entirely.
+  permissions from a **hand-maintained** `PERMISSION_ROLE_MAP` (62-84),
+  ignoring per-user grants and denies. **This is HOS-131 decision D-4, and it
+  was deliberate**: `.specs/HOS-131-account-menu-ia/spec.md:194-213` states
+  that resolving effective permissions server-side needs an uncached
+  `/auth/me` round-trip per `/mi-cuenta` render and marks it *"Descartado por
+  costo"*, naming a future server-side auth cache (SPEC-111 §4.3) as the
+  precondition for exact SSR evaluation. The file's own header repeats it
+  (`nav-gating.ts:1-24`). It is finished work under a closed decision, not an
+  unfinished migration.
+  <br>Separately — and this IS a real bug, worth its own issue: the map has
+  already drifted from the seeded truth. `nav-gating.ts:63-69` grants
+  `ACCOMMODATION_CREATE` to `[HOST, ADMIN, SUPER_ADMIN, CLIENT_MANAGER,
+  EDITOR]`, while `packages/seed/src/required/rolePermissions.seed.ts` seeds it
+  only for `SUPER_ADMIN`/`ADMIN`/`HOST`; `COMMERCE_EDIT_OWN` is mapped to three
+  roles but seeded for `COMMERCE_OWNER` alone.
 - `apps/mobile/src/lib/auth/roles.ts:31-85` routes the whole mobile app into
-  exactly **one** of `'(auth)' | '(host)' | '(tourist)'` via
-  `resolveAuthGroup` (79-85), driven by a `HOST_ROLES` set (31-35). A
-  mutually-exclusive navigator group is structurally incompatible with
-  "host and commerce owner at once".
+  exactly **one** of `'(auth)' | '(host)' | '(tourist)'` via `resolveAuthGroup`
+  (79-85), driven by a `HOST_ROLES` set (31-35). A mutually-exclusive navigator
+  group is structurally incompatible with "host and commerce owner at once".
+  **This too is a locked owner decision**: the file header (`:9-18`) reads
+  *"Owner decision (SPEC-243, locked) … DIVERGENCE from
+  `apps/web/src/lib/account-roles.ts` … Do NOT 'fix' this to match web without
+  an explicit owner decision."* Changing it means re-opening SPEC-243.
 
-### 5.3 Role writes — ten sites, not two
+### 5.3 Role writes — eleven sites, not two
 
 | # | Site | Guard | Destructive? |
 |---|---|---|---|
@@ -142,6 +159,7 @@ under-estimate in the original issue write-up:
 | 8 | `apps/api/src/routes/user/admin/patch.ts:69` (+ `update.ts`) | `MANAGE_USERS` only, **no transition rule** | **YES, unconditional** |
 | 9 | `apps/api/src/routes/user/admin/create.ts:49` | creation | no |
 | 10 | `packages/seed/src/test-users/testUsers.seed.ts:545-549` | drift heal | yes, intentional |
+| 11 | `packages/service-core/src/services/user/user.service.ts:382-408` (`UserService.assignRole`) | `canAssignRole(actor)` + same-role no-op | **YES.** Currently **dead code** — no production caller, only `assignRole.test.ts`. It must still be migrated, or AC-7's static guard will miss it the day someone wires a route to it. |
 
 The admin UI side is a single-select:
 `apps/admin/src/features/users/config/sections/role-permissions.consolidated.ts:18-36`
@@ -181,9 +199,11 @@ admin can only reject the lead.
 - `isCommerceOwnerRole` — 4 hard walls:
   `mi-cuenta/comercio/index.astro:36-38`, `.../comercio/nuevo/[vertical].astro:44`,
   `.../comercio/nuevo/index.astro:27`, `.../comercio/[vertical]/[id]/editar.astro:41`.
-- `resolveSubscriptionPlansPath` — 5 more call sites
-  (`middleware-helpers.ts:382`, `suscriptores/checkout/{index,failure}.astro`,
-  `mi-cuenta/addons/index.astro:136`, `SubscriptionDashboard.client.tsx:189,871`).
+- `resolveSubscriptionPlansPath` — 5 call sites:
+  `suscriptores/checkout/index.astro:31`, `suscriptores/checkout/failure.astro:61`,
+  `mi-cuenta/addons/index.astro:136`, `SubscriptionDashboard.client.tsx:189` and
+  `:871`. (`middleware-helpers.ts:382` mentions it in a comment only — not a
+  call site.)
 
 The project rule "never check roles directly, always `PermissionEnum`"
 (`CLAUDE.md:413`, `CLAUDE.md:518`) is **violated in two live spots**:
@@ -234,29 +254,67 @@ The three axes stay separate:
 | **Exception** | what did an admin grant/revoke by hand | `r_user_permission` (exists, untouched) |
 | **Entitlement** | what may they use for what they pay | billing (exists, `product_domain`-aware) |
 
-### 6.2 Model — a `user_role` table, not an array column
+### 6.2 Model — a `user_role` table plus an append-only audit
 
 ```
-user_role
+user_role                                  -- the LIVE set of hats
   user_id      uuid    FK users.id ON DELETE CASCADE
   role         role_enum
   granted_at   timestamptz  NOT NULL DEFAULT now()
   granted_by   uuid    FK users.id  NULL   -- null = system/automatic
-  grant_reason text    NULL               -- e.g. 'accommodation_activated', 'commerce_lead_HOS-nnn'
+  grant_reason text     NULL               -- 'accommodation_activated', 'commerce_lead_HOS-nnn', ...
   PRIMARY KEY (user_id, role)
+
+user_role_audit                            -- append-only history
+  id           uuid    PK
+  user_id      uuid    FK users.id ON DELETE CASCADE
+  role         role_enum
+  action       text    NOT NULL            -- 'grant' | 'revoke'
+  at           timestamptz NOT NULL DEFAULT now()
+  by           uuid    FK users.id NULL
+  reason       text    NULL
 ```
 
 An array column on `users` would carry the set but not the story. The reason a
 hat was granted is exactly what is missing today when a role gets silently
-overwritten, and it is what makes a revoke reviewable. The PK also gives
-idempotent "grant if absent" for free, which is what every write site in §5.3
-actually wants.
+overwritten. The PK on `user_role` also gives idempotent "grant if absent" for
+free, which is what every write site in §5.3 actually wants.
 
-Migration is trivial: one row per existing user, `role` copied from
-`users.role`, `grant_reason = 'migrated_from_users_role'`.
+**The audit table is not optional.** `revokeRole` removes the `user_role` row,
+so with only that table the who/why of a revoke would vanish with the row it
+describes — G-7 and AC-6 would be unsatisfiable for exactly the direction that
+matters most. Both primitives write to `user_role_audit` on every call.
 
-**`users.role` is kept, as a derived "primary role"**, for the duration of the
-migration — see §6.6. It is not the source of truth once this ships.
+The alternative — soft-revoke with `revoked_at IS NULL` meaning "held" — was
+considered and rejected: it forces a partial unique index instead of a plain
+PK, and it makes every read of the live set carry a predicate that is easy to
+forget. A small live table plus an append-only log is the cheaper shape.
+
+#### Backfill is NOT a straight copy
+
+One row per existing user copied from `users.role`
+(`grant_reason = 'migrated_from_users_role'`) is the starting point, but it is
+not sufficient: §2 documents that `_assignHostRoleIfNeeded` **has already been
+destroying `COMMERCE_OWNER`/`SPONSOR`/`EDITOR` roles in production**. Copying
+the current scalar copies that damage forward into the new model and makes it
+permanent.
+
+The backfill therefore needs a second, reconciliation pass that re-derives hats
+from ownership rows that cannot lie: a user id appearing in
+`gastronomies.owner_id` or `experiences.owner_id` gets `COMMERCE_OWNER`; one
+appearing in `accommodations.owner_id` gets `HOST`
+(`grant_reason = 'reconciled_from_ownership'`). Users whose reconciled set
+differs from their stored `users.role` are the population the G-6 bug already
+hit — that count belongs in the migration's output so the damage is measured,
+not assumed.
+
+Roles with no ownership signal (`SPONSOR`, `EDITOR`) cannot be reconstructed
+this way. If any user lost one, it is unrecoverable from data alone and needs a
+manual admin pass; the migration should list the candidates rather than
+pretending they are fine.
+
+**`users.role` is kept and kept CURRENT** — see §6.6. It stops being the source
+of truth, but it does not stop being accurate.
 
 ### 6.3 Permission resolution
 
@@ -275,39 +333,59 @@ SUPER_ADMIN keeps its short-circuit, now on "holds SUPER_ADMIN".
 the derived primary (§6.6) so the ~27 test files in §5.9 and the two staff
 bypass lists do not all have to change in the same PR.
 
-**The two shadow resolvers must be dealt with explicitly**, not left to drift:
+**The two other resolvers must be dealt with explicitly.** Both sit on closed
+decisions (§5.2), so the move here is the smallest one that makes them
+multi-role-correct — not a re-architecture:
 
-- `nav-gating.ts` — `PERMISSION_ROLE_MAP` is a hand-maintained approximation
-  that already diverges from the real mapping. The right move is to stop
-  approximating: have the session carry the resolved `permissions` array, and
-  gate SSR nav on permissions directly. This is what HOS-131 asked for and the
-  code never finished (see §6.5).
-- `apps/mobile/src/lib/auth/roles.ts` — `resolveAuthGroup` must stop being a
-  1-of-3 choice. Concretely: a user holding both hats needs either a group that
-  contains both sections or an in-app switch. **This is a mobile-navigation
-  redesign and is the largest single unknown in this spec** (see OQ-2).
+- `nav-gating.ts` — `isVisibleByRole(permission, role)` becomes
+  `isVisibleByRoles(permission, roles)`: visible if **any** held role appears in
+  `PERMISSION_ROLE_MAP[permission]`. Mechanical, one function.
+  **Do NOT propose carrying a resolved `permissions` array in the session as
+  part of this spec.** HOS-131 D-4 rejected exactly that on cost grounds
+  (`.specs/HOS-131-account-menu-ia/spec.md:194-213`), and its own stated
+  precondition — a server-side auth cache in web, SPEC-111 §4.3 — still does
+  not exist. Reversing D-4 is a separate owner decision with its own cost
+  argument, not a side effect of multi-role. The drift bug in the map (§5.2) is
+  likewise its own issue and should be filed separately; it is wrong today,
+  independent of how many roles a user has.
+- `apps/mobile/src/lib/auth/roles.ts` — `resolveAuthGroup` returns one of three
+  navigator groups, which cannot express two hats. There is no small change
+  here: a dual-hat user needs either a group containing both sections or an
+  in-app switch. **This is a mobile-navigation redesign, it reverses the locked
+  SPEC-243 decision, and it is the largest single unknown in this spec**
+  (see OQ-2 and R-3).
 
 ### 6.4 Role writes become grants
 
 | Site | Becomes |
 |---|---|
-| `commerce-ports.ts:86-89` | look up the user by email; if found, `grantRole(userId, COMMERCE_OWNER, reason)`; if not, create then grant. Never `.set({ role })`. |
+| `commerce-ports.ts:86-89` | `grantRole(userId, COMMERCE_OWNER, reason)` instead of `.set({ role })` — Phase 1. The **existing-user lookup by email** is a separate change that ships in Phase 3 with its admin confirmation UI (§6.6); Phase 1 only stops the write from being destructive. |
 | `accommodation.service.ts:1377-1382` | `grantRole(ownerId, HOST, 'accommodation_created')`, unconditional and idempotent. The `role === USER` guard disappears — that guard is precisely why a COMMERCE_OWNER never gets the host hat. |
 | `accommodation.service.ts:1961-1985` | same grant. `PRIVILEGED_ROLES` stops being a write guard; it becomes irrelevant because granting is additive. **This is the G-6 bug fix.** |
-| `archive-abandoned-drafts.job.ts:237-240` | `revokeRole(ownerId, HOST, 'last_accommodation_archived')`, only if held, and only when the user has no other reason to hold it. |
-| `user/admin/patch.ts:69` | stops accepting a scalar `role`. Role changes move to dedicated `grant`/`revoke` endpoints so every change is audited. |
+| `archive-abandoned-drafts.job.ts:238-241` | `revokeRole(ownerId, HOST, 'last_accommodation_archived')`, only if held, and only when the user has no other reason to hold it. |
+| `user/admin/patch.ts:69` | stops accepting a scalar `role`. Role changes move to dedicated `grant`/`revoke` endpoints so every change is audited. The new endpoints must ship **before** the field is removed, or admins lose the ability entirely for a release. |
+| `user.service.ts:382-408` (`assignRole`) | delegates to `grantRole`. Dead code today, but it must not survive as a second write path. |
 | `testUsers.seed.ts:545-549` | seeds the role set, still idempotent. |
 
-Two primitives, in `service-core`, both idempotent, both writing the audit
-columns:
+Two primitives, in `service-core`, both idempotent:
 
 ```ts
 grantRole({ userId, role, grantedBy, reason }): Promise<Result<void>>
 revokeRole({ userId, role, revokedBy, reason }): Promise<Result<void>>
 ```
 
+Each call, in one transaction, does three things:
+
+1. upsert / delete the `user_role` row,
+2. append a `user_role_audit` row,
+3. **recompute and write `users.role`** to the derived primary (§6.6).
+
+Step 3 is what keeps the scalar column honest while anything still reads it,
+and it is the ONLY code path allowed to write `users.role` — see AC-7.
+
 `revokeRole` must refuse to remove a user's last role (there is always at least
-`USER`).
+`USER`). This invariant lives in the service layer; a DB-level backstop would
+belong in the extras carril, and is deliberately deferred (see R-7).
 
 ### 6.5 Read gates
 
@@ -316,49 +394,84 @@ becomes `hasRole({ roles, role: HOST })`; the four `isCommerceOwnerRole` walls
 become the same shape. Mechanically small, concentrated in one file plus its
 callers.
 
-**Decision the implementer must make and record**: HOS-131 asked to unify these
-gates on `PermissionEnum` and the code never finished it — §5.5 shows gates
-still keyed on role in `apps/web`, and two live `CLAUDE.md` violations in the
-API middlewares. This spec's position: **finish the unification for the `apps/web`
-nav/page gates** (they are about "can you see this section", which is exactly
-what a permission expresses), and **leave the two staff billing-bypass
-allow-lists on roles**, but move them behind a named predicate with a comment
-explaining why they are a deliberate exception. Doing the nav gates on
-permissions also removes the `PERMISSION_ROLE_MAP` shadow resolver (§6.3), so
-these two are one job, not two.
+**On the `PermissionEnum` unification HOS-131 started**: `nav-gating.ts` already
+declares every nav item's `requiredPermission` and is the finished D-4 design;
+what remains is that `account-roles.ts`'s predicates and the four
+`isCommerceOwnerRole` page walls never migrated onto it (the file header calls
+them "kept for now; existing consumers migrate in a later HOS-131 task").
 
-### 6.6 Migration strategy — `users.role` as a derived primary
+This spec's position: **migrate those page gates onto the nav-gating predicates**,
+so `apps/web` has one gating mechanism instead of two, and **leave the two staff
+billing-bypass allow-lists on roles** (`entitlement.ts:354-368`,
+`owner-entitlement.ts:208-229`) — but behind a named predicate with a comment
+saying why they are a deliberate exception to `CLAUDE.md`'s rule. Those two are
+"is this person staff", which is a role question, not a capability question.
 
-Ripping out `users.role` in one PR would touch all ten write sites, both shadow
-resolvers, ~27 test files, the admin UI and the mobile app at once. Instead:
+This does NOT mean SSR starts evaluating exact permissions — see §6.3 on why
+D-4 stands.
 
-1. **Phase 1** — add `user_role`, backfill, add the grant/revoke primitives,
-   dual-write (`users.role` keeps receiving the *primary* role). Nothing reads
-   the new table yet. Ships alone, no behaviour change.
-2. **Phase 2** — resolution reads `user_role`; `Actor.roles` is populated;
-   `Actor.role` becomes derived (highest-privilege held role, by a documented
-   precedence order). Write sites become grants. The G-6 bug dies here.
-3. **Phase 3** — read gates migrate (web nav to permissions, mobile navigation,
-   admin multi-select editor). Commerce provisioning gets its existing-user
-   lookup.
-4. **Phase 4** — drop the `users.role` column once nothing reads it. Separate
-   PR, behind its own verification.
+### 6.6 Migration strategy — writes move first, reads follow
 
-The precedence order used to derive the primary role must be written down in
-Phase 2 and is itself a decision (OQ-3).
+Ripping out `users.role` in one PR would touch all eleven write sites, both
+alternate resolvers, ~27 test files, the admin UI and the mobile app at once.
+The phases below are ordered by one rule: **`user_role` must never be able to
+fall behind `users.role`, not even for one release window.** That means the
+write sites migrate in Phase 1, not Phase 2.
+
+1. **Phase 1 — writes.** Add `user_role` + `user_role_audit`, run the backfill
+   and reconciliation (§6.2), add `grantRole`/`revokeRole`, and **point all
+   eleven write sites at them**. The primitives write both tables *and*
+   recompute `users.role`, so the two representations are consistent from the
+   first grant onward. Nothing reads `user_role` yet. No behaviour change
+   except the G-6 fix, which lands here because it is a write-site change
+   (`_assignHostRoleIfNeeded` becomes an additive grant).
+2. **Phase 2 — resolution.** `getPermissionsForRoles` and `Actor.roles`.
+   `Actor.role` becomes derived from the set, by the precedence order of OQ-3.
+   `users.role` stays current (Phase 1 guarantees it), which is what keeps the
+   still-unmigrated raw readers correct — notably `resolveOwnerRole`
+   (`apps/api/src/middlewares/owner-entitlement.ts:219-229`), which selects the
+   column directly from the DB rather than going through `Actor`.
+3. **Phase 3 — read gates.** `apps/web` nav gates, the admin multi-select
+   editor, and the commerce provisioning existing-user lookup (G-4 ships here,
+   because it needs `grantRole` from Phase 1 *and* the admin confirmation UI).
+   Mobile navigation is here only if OQ-2 is answered in scope.
+4. **Phase 4 — retire the column.** Migrate the last raw readers of
+   `users.role` (the two staff bypass lists, `resolveOwnerRole`) onto
+   `Actor.roles`, then drop the column. Separate PR, its own verification.
+
+An earlier draft of this spec put the write sites in Phase 2 and called Phase 1
+"dual-write". That was wrong: with the writes still going only to `users.role`,
+every role change between the two releases would have been invisible to
+`user_role` and silently lost at cutover — reproducing the exact class of
+silent role loss (G-6) this spec exists to end. The ordering above is the fix.
+
+The precedence order used to derive the primary role must be written down
+before anything depends on it, and is itself a decision (OQ-3).
 
 ## 7. Data model / contracts
 
 **Migration (structural carril, `packages/db/src/migrations/`)**: create
-`user_role` per §6.2 plus an index on `(role)` for the "who holds this role"
-admin query — note this replaces the `users_role_idx` usage pattern and is
-what HOS-120's AC-5 impact preview ("N users hold this role") will need once
-`GROUP BY users.role` stops being correct.
+`user_role` and `user_role_audit` per §6.2, plus an index on `user_role(role)`
+for the "who holds this role" admin query. That query replaces the
+`users_role_idx` usage pattern and is what HOS-120's AC-5 impact preview
+("N users hold this role",
+`.specs/HOS-120-admin-editable-role-permissions/spec.md:201-202`) will need
+once `GROUP BY users.role` stops being correct. Note the existing composite
+`users_role_deletedAt_idx` is soft-delete-aware; the `user_role` equivalent
+needs a join to `users` to exclude soft-deleted accounts — cheap, but it has to
+be stated or the admin count will silently include deleted users.
+
+`GUEST` and `SYSTEM` are part of `RoleEnum` but are not capabilities a person
+accumulates. The backfill copies them like any other value; nothing grants or
+revokes them at runtime.
 
 **Backfill**: a data-migration in `packages/seed/src/data-migrations/`
-(`pnpm db:seed:make`) inserting one `user_role` row per existing user. Per the
-seed dual-write rule this also needs the baseline updated so a fresh DB is
-built correct.
+(`pnpm db:seed:make`) doing the copy + reconciliation of §6.2. Per the seed
+dual-write rule the baseline must also be updated so a fresh DB is built
+correct — concretely that means the normal user-seeding code writes `user_role`
+rows too, not that a JSON fixture changes (this is a computed backfill over
+live data, not a curated catalog row, which is the case that rule usually
+addresses).
 
 **Schemas** (`@repo/schemas`): `UserRoleSchema` for the new relation;
 `Actor` gains `roles`. `UserPatchInputSchema` drops `role`.
@@ -399,10 +512,19 @@ three must accept the new shape before the API starts sending it.
   succeeds and links the lead to that user, instead of failing with a
   duplicate-email `INTERNAL_ERROR`.
 - **AC-5** — `revokeRole` cannot remove a user's last role.
-- **AC-6** — Every grant and revoke records `granted_by` and `grant_reason`.
-- **AC-7** — No code path writes `users.role` as a scalar replacement.
-  Enforceable as a static guard test, in the style of
-  `apps/web/test/static-guards/`.
+- **AC-6** — Every grant AND every revoke leaves a `user_role_audit` row
+  carrying `action`, `by` and `reason`. Revoking then re-granting a hat leaves
+  three rows, in order.
+- **AC-7** — `grantRole`/`revokeRole` are the ONLY code paths that write
+  `users.role`. Enforceable as a static guard test, in the style of
+  `apps/web/test/static-guards/`, allow-listing exactly that one module.
+- **AC-10** — After the backfill, a user who owns a gastronomy or experience
+  holds `COMMERCE_OWNER` even if their stored `users.role` said `HOST` — i.e.
+  the reconciliation pass repaired the damage the G-6 bug already did, and the
+  migration reports how many users it touched.
+- **AC-11** — Between Phase 1 and Phase 2, `users.role` and the `user_role` set
+  never disagree about the primary role. Testable by exercising each of the
+  eleven write sites and asserting both representations afterwards.
 - **AC-8** — Commerce billing charges reach the MercadoPago account of the same
   email the user signs in with (the original driver of this issue).
 - **AC-9** — The mobile app does not strand a dual-hat user in one navigator
@@ -414,13 +536,24 @@ three must accept the new shape before the API starts sending it.
   accumulates permissions. `revokeRole` and the audit trail are the mitigation;
   the admin needs to *see* the set to manage it, which is why the multi-select
   editor is in scope rather than deferred.
-- **R-2 — The two shadow resolvers drift further.** `nav-gating.ts` and
-  `apps/mobile/src/lib/auth/roles.ts` do not use the canonical formula today.
+- **R-2 — The two alternate resolvers drift further.** `nav-gating.ts` and
+  `apps/mobile/src/lib/auth/roles.ts` do not use the canonical formula.
   Migrating only the API resolver would ship a system where the API and the UI
-  disagree about who can do what. Both are in scope (§6.3).
-- **R-3 — Mobile is a redesign, not a refactor.** `resolveAuthGroup` picks one
-  of three navigator groups. This is the item most likely to expand the spec;
-  it may deserve its own child issue (OQ-2).
+  disagree about who can do what. Both are in scope (§6.3). Note the web one is
+  *already* wrong today, independent of this spec (§5.2) — file that separately
+  so it does not ride on a multi-phase migration.
+- **R-3 — Mobile is a redesign that reverses a locked decision.**
+  `resolveAuthGroup` picks one of three navigator groups, and that mapping is
+  SPEC-243, explicitly marked locked in the source. This is the item most
+  likely to expand the spec; it probably deserves its own child issue (OQ-2).
+- **R-7 — The "last role" invariant is app-layer only.** §6.4 enforces it in
+  the service. A DB-level backstop (extras carril CHECK/trigger) is deferred:
+  the primitives are the single write path per AC-7, so the invariant has one
+  place to fail. If AC-7's static guard is ever relaxed, this needs revisiting.
+- **R-8 — Deleting the `role` field from the admin PATCH before the
+  grant/revoke endpoints ship** would leave admins with no way to change roles
+  at all. Ordering, not design — but it is the kind of thing that gets
+  discovered in production.
 - **R-4 — The G-6 bug is live now.** `_assignHostRoleIfNeeded` is destroying
   `COMMERCE_OWNER` roles in production today, and this spec's Phase 2 is where
   it dies. If the migration slips, that bug must be fixed on its own regardless
@@ -440,10 +573,14 @@ three must accept the new shape before the API starts sending it.
   but a commerce owner who is also a host can never reach commerce from the
   avatar), show one per held capability, or show a neutral "Mis negocios" entry
   that opens a chooser. **Owner decision.**
-- **OQ-2 — Mobile navigation.** Does `apps/mobile` get a combined group, an
-  in-app switch, or is it explicitly deferred to a child issue with the current
-  1-of-3 behaviour preserved (a dual-hat user lands in `(host)`)? **Owner
-  decision**, and it materially changes the size of this spec.
+- **OQ-2 — Mobile navigation, which means re-opening SPEC-243.** Does
+  `apps/mobile` get a combined group, an in-app switch, or is it explicitly
+  deferred to a child issue with the current 1-of-3 behaviour preserved (a
+  dual-hat user lands in `(host)`)? Note this is not a fresh question: the
+  current mapping is a **locked** owner decision (SPEC-243), stated as such in
+  `apps/mobile/src/lib/auth/roles.ts:9-18` with an explicit "do not fix this
+  without an owner decision". **Owner decision**, and it materially changes the
+  size of this spec.
 - **OQ-3 — Primary-role precedence.** During Phase 2/3, `Actor.role` is derived
   from the set. What is the order? A documented list
   (`SUPER_ADMIN > ADMIN > CLIENT_MANAGER > EDITOR > HOST > COMMERCE_OWNER >
@@ -465,12 +602,23 @@ three must accept the new shape before the API starts sending it.
 - `getPermissionsForRole`'s cache (`role-permissions-cache.ts:38`, 10-min TTL)
   keys on a single role. Keying on a sorted role list keeps the cache useful;
   keying on `userId` would not.
-- The ~27 test files asserting single-role behaviour are listed in the
-  exploration attached to this spec's Linear issue. `roleAssignment.test.ts`,
-  `createForOnboarding.test.ts`, `ownerPromotion.service.test.ts` and
-  `commerce-owner-provisioning.service.test.ts` are the ones that encode the
-  destructive semantics directly and will need rewriting, not just adapting.
+- Roughly 27 test files assert single-role behaviour. The ones that encode the
+  destructive semantics directly, and so need rewriting rather than adapting:
+  `packages/service-core/test/services/accommodation/roleAssignment.test.ts`,
+  `.../accommodation/createForOnboarding.test.ts`,
+  `.../commerce/commerce-owner-provisioning.service.test.ts`,
+  `packages/service-core/test/services/user/assignRole.test.ts` and
+  `packages/seed/test/test-users/hostPromotion.test.ts`.
+  <br>**Not** `ownerPromotion.service.test.ts` — despite the name,
+  `packages/service-core/src/services/owner-promotion/` is the promotional-deals
+  feature (marketing offers on accommodations) and contains no role logic at
+  all. `owner-promotion` ≠ "promote a user to HOST"; an earlier draft of this
+  spec got that wrong.
 - Do **not** change `role_enum` or add role values in this work.
+- Rollback: Phases 1-3 are additive at the schema level, so rolling back means
+  reverting code — the `user_role` tables can stay. Only Phase 4 (dropping
+  `users.role`) is one-way, which is why it is a separate PR with its own
+  verification.
 
 ## 13. Linear
 
