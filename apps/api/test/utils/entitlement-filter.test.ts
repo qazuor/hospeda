@@ -340,6 +340,55 @@ describe('filterAccommodationByEntitlements', () => {
         });
     });
 
+    it('DELETES the gated keys even when their stored value is null (the column default)', async () => {
+        // The deletes must not be guarded on truthiness. `rich_description` defaults to
+        // NULL, so a guarded delete would leave the KEY present on a gated
+        // accommodation — and `'richDescription' in payload` being false is the whole
+        // reason this gate uses `delete` instead of `= undefined`. An earlier revision
+        // guarded them and this case is what exposes it; the fixture elsewhere in this
+        // file is truthy and cannot.
+        const app = createViewerContext();
+        let captured: Record<string, unknown> | null = null;
+
+        app.get('/', (c) => {
+            captured = filterAccommodationByEntitlements(
+                c,
+                { id: 'acc-null', richDescription: null, richDescriptionI18n: null },
+                []
+            ) as Record<string, unknown>;
+            return c.json({ ok: true });
+        });
+
+        await app.request('/');
+
+        expect('richDescription' in (captured ?? {})).toBe(false);
+        expect('richDescriptionI18n' in (captured ?? {})).toBe(false);
+    });
+
+    it('contains a throw from a malformed media blob without leaking the premium fields', async () => {
+        // `media` is unvalidated JSONB. A null element makes the video-strip callback
+        // dereference `.type` on null and throw, landing in the catch — which used to
+        // return the payload as-is. The gate must survive that, and the request must
+        // still answer 200 rather than 500.
+        const app = createViewerContext();
+
+        app.get('/', (c) => {
+            const filtered = filterAccommodationByEntitlements(
+                c,
+                { ...BASE_ACCOMMODATION, media: [null] as unknown as unknown[] },
+                []
+            );
+            return c.json(filtered);
+        });
+
+        const res = await app.request('/');
+        const body = await res.json();
+
+        expect(res.status).toBe(200);
+        expect(body.richDescription).toBeUndefined();
+        expect(body.richDescriptionI18n).toBeUndefined();
+    });
+
     it('DELETES the gated keys rather than setting them to undefined', async () => {
         // Asserting on the pre-serialization object, on purpose. Every other test here
         // goes through `c.json()` → `res.json()`, and JSON.stringify drops

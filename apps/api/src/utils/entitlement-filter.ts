@@ -178,23 +178,22 @@ export function filterAccommodationByEntitlements(
     // Create a copy to avoid mutating the original
     const filtered = { ...accommodation };
 
-    // The `catch` at the end of this function is fail-OPEN: it logs and returns
-    // `filtered` as-is, premium fields intact. Statement order must therefore not be
-    // what keeps a gate safe — ordering the gates ahead of a hazard only changes WHICH
-    // field leaks when it throws.
+    // Defence in depth, in three layers — none of which is "statement order":
     //
-    // The known hazard is `contactInfo.whatsapp`, an unvalidated JSONB value that
-    // `.trim()` throws on when it is not a string; it is read through the total
-    // `readTrimmedString` instead. The two owner gates additionally run first, as
-    // defence in depth.
+    // 1. The `catch` re-applies the OWNER gates (see the end of this function), so a
+    //    throw anywhere in this body cannot emit a non-entitled owner's premium
+    //    content. That is the structural guarantee; everything else is belt.
+    // 2. The known hazard is totalized: `contactInfo.whatsapp` is an unvalidated JSONB
+    //    value that `.trim()` throws on when it is not a string, so it is read through
+    //    `readTrimmedString`.
+    // 3. The owner gates still run first.
     //
-    // NOT yet total, and deliberately named rather than glossed over: the video block
-    // below calls `.replace` on `description` and dereferences `.type` on `media`
-    // elements, both typed but neither validated. A throw there is bounded to leaking
-    // VIDEO content (the owner gates have already run), not the rich description. Do
-    // not add a blanket "nothing here can throw" claim to this comment without making
-    // it true — an earlier revision of this file asserted exactly that while both
-    // statements were still reachable.
+    // Statements that remain non-total, named rather than glossed over: the video block
+    // calls `.replace` on `description` and dereferences `.type` on `media` elements,
+    // both typed but neither validated; `hasEntitlement` dereferences `.has` on a
+    // context value. A throw in any of them is now bounded to VIDEO content. Do not
+    // add a blanket "nothing here can throw" claim without making it true — an earlier
+    // revision asserted exactly that while these statements were reachable.
     try {
         // OWNER-gated richDescription omission (FR-3b): when ownerEntitlements
         // are provided, presence of CAN_USE_RICH_DESCRIPTION is the ONLY signal
@@ -219,15 +218,17 @@ export function filterAccommodationByEntitlements(
             ownerEntitlements &&
             !ownerEntitlements.includes(EntitlementKey.CAN_USE_RICH_DESCRIPTION)
         ) {
+            // UNCONDITIONAL deletes. Guarding them on truthiness would leave the key
+            // present whenever the DB value is `null` (the column default) or `''` —
+            // so `'richDescription' in payload` would still be true for a gated
+            // accommodation, which is exactly the object-level check the comment above
+            // invokes as the reason for using `delete` at all. The log stays gated on
+            // whether anything was actually carrying content.
             const omitted: string[] = [];
-            if (filtered.richDescription) {
-                delete filtered.richDescription;
-                omitted.push('richDescription');
-            }
-            if (filtered.richDescriptionI18n) {
-                delete filtered.richDescriptionI18n;
-                omitted.push('richDescriptionI18n');
-            }
+            if (filtered.richDescription) omitted.push('richDescription');
+            if (filtered.richDescriptionI18n) omitted.push('richDescriptionI18n');
+            delete filtered.richDescription;
+            delete filtered.richDescriptionI18n;
             if (omitted.length > 0) {
                 apiLogger.debug(
                     `Omitted ${omitted.join(' + ')} from accommodation ${filtered.id} - owner lacks ${EntitlementKey.CAN_USE_RICH_DESCRIPTION}`
@@ -300,44 +301,46 @@ export function filterAccommodationByEntitlements(
         apiLogger.error(
             `Error filtering accommodation ${accommodation.id} by entitlements: ${error instanceof Error ? error.message : String(error)}`
         );
-        // Return filtered data as-is on error
+        // FAIL CLOSED. This catch used to return `filtered` untouched, which meant any
+        // throw above shipped the premium fields — and made the gate's safety depend on
+        // statement ORDER (gates first, hazards after). Order is not a guarantee: the
+        // next edit that inserts a non-total read above the gates silently reopens it,
+        // and no test can see that coming.
+        //
+        // Re-applying the owner gates here makes the property structural instead:
+        // whatever throws, and wherever, a non-entitled owner's premium content cannot
+        // leave this function. Only the OWNER gates are re-applied — the viewer-gated
+        // video strip needs `c`, whose failure is what may have thrown in the first place.
+        if (
+            ownerEntitlements &&
+            !ownerEntitlements.includes(EntitlementKey.CAN_USE_RICH_DESCRIPTION)
+        ) {
+            delete filtered.richDescription;
+            delete filtered.richDescriptionI18n;
+        }
+        if (
+            ownerEntitlements &&
+            !ownerEntitlements.includes(EntitlementKey.HAS_VERIFICATION_BADGE)
+        ) {
+            filtered.isVerified = false;
+        }
     }
 
     return filtered;
 }
 
-/**
- * Filter a list of accommodations based on viewer's entitlements
- *
- * Applies filterAccommodationByEntitlements to each accommodation in the list.
- * More efficient than calling the filter function individually.
- *
- * @param c - Hono context (contains viewer entitlements)
- * @param accommodations - Array of accommodation data to filter
- * @returns Array of filtered accommodation data
- *
- * @example
- * ```typescript
- * import { filterAccommodationListByEntitlements } from '../utils/entitlement-filter';
- *
- * app.get('/accommodations', async (c) => {
- *   const accommodations = await accommodationService.findAll();
- *
- *   // Filter entire list based on viewer's entitlements
- *   const filtered = filterAccommodationListByEntitlements(c, accommodations);
- *
- *   return c.json({ data: filtered });
- * });
- * ```
- */
-export function filterAccommodationListByEntitlements(
-    c: Context<AppBindings>,
-    accommodations: AccommodationData[]
-): AccommodationData[] {
-    return accommodations.map((accommodation) =>
-        filterAccommodationByEntitlements(c, accommodation)
-    );
-}
+// `filterAccommodationListByEntitlements` was REMOVED on purpose — do not restore it.
+//
+// It mapped `filterAccommodationByEntitlements(c, accommodation)` over a list WITHOUT
+// passing `ownerEntitlements`, which means it gated nothing: neither rich-description
+// field, nor `isVerified`. Its JSDoc advertised it as "filter list by entitlements" and
+// gave no hint of that. It had zero call sites, so it was pure latent risk — wiring it
+// into a future listing route would have silently reproduced the exact bug this module
+// was hardened to close.
+//
+// For listings, use `stripRichDescriptionFields` (both premium fields) plus
+// `filterAccommodationListByOwnerEntitlements` (the `isVerified` gate), which is what
+// every card route already does.
 
 /**
  * Filter a list of accommodations based on the OWNER's billing entitlements.
@@ -356,7 +359,10 @@ export function filterAccommodationListByEntitlements(
  * - Owner present and has `HAS_VERIFICATION_BADGE` → `isVerified` unchanged.
  * - Item already has `isVerified = false` → returned as-is (no allocation).
  *
- * Does NOT apply viewer-gated fields (video, WhatsApp, richDescription).
+ * Does NOT apply the viewer-gated fields (video, WhatsApp). `richDescription` is
+ * OWNER-gated, not viewer-gated — an earlier version of this line listed it here,
+ * which is the wrong mental model to hand a reader standing next to the gate.
+ * Card listings drop both rich fields via `stripRichDescriptionFields` instead.
  * Those are handled by {@link filterAccommodationByEntitlements} on the detail
  * view and are stripped at the data level in listing handlers.
  *
@@ -525,7 +531,9 @@ export function checkPremiumFeatures(accommodation: AccommodationData): {
 
     // Check for WhatsApp (HOS-19: the number lives at contactInfo.whatsapp;
     // there is no stored "direct link" flag — DIRECT is a VIEWER capability).
-    const hasWhatsApp = Boolean(accommodation.contactInfo?.whatsapp?.trim());
+    // Same total read as the gate above — `contactInfo` is an unvalidated JSONB blob
+    // and `?.trim()` throws on a legacy non-string value.
+    const hasWhatsApp = readTrimmedString(accommodation.contactInfo?.whatsapp).length > 0;
 
     // Check for verification badge (owner-gated, derived from isVerified column)
     const isVerified = Boolean(accommodation.isVerified);

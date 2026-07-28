@@ -20,7 +20,6 @@ import type { AppBindings } from '../../../../src/types';
 // ── Service mock ──────────────────────────────────────────────────────────────
 
 const mockGetAccommodationsByFeature = vi.fn();
-const mockResolveOwnerEntitlementsForOwnerIds = vi.fn();
 
 const FEATURE_ID = 'ffffffff-0000-4000-8000-000000000001';
 const OWNER_ID = 'eeeeeeee-0000-4000-8000-000000000007';
@@ -78,11 +77,6 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         }
     };
 });
-
-vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
-    resolveOwnerEntitlementsForOwnerIds: (...args: readonly string[][]) =>
-        mockResolveOwnerEntitlementsForOwnerIds(...args)
-}));
 
 vi.mock('../../../../src/utils/actor', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../../../src/utils/actor')>();
@@ -143,7 +137,6 @@ async function buildApp() {
 describe('publicGetAccommodationsByFeatureRoute — both rich-description fields must be absent', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockResolveOwnerEntitlementsForOwnerIds.mockResolvedValue(new Map());
     });
 
     it('excludes richDescription AND richDescriptionI18n from every item', async () => {
