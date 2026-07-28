@@ -359,6 +359,41 @@ describe('ActiveFilterChips', () => {
             const chip = screen.getByRole('listitem');
             expect(chip.textContent).toContain('Destino filtrado');
         });
+
+        // ── HOS-298 regression ────────────────────────────────────────────────
+        //
+        // The nil UUID is what the model emits when it has no destination to
+        // give. It is syntactically a valid UUID, so it passed schema
+        // validation, reached the query, matched nothing, and surfaced here as
+        // an unnamed "Destino filtrado" chip — the visible symptom of a filter
+        // the user never asked for. The server now strips it; this is the
+        // second line of defence, for a session that already stored the bad
+        // value client-side before the fix shipped.
+
+        const NIL_UUID = '00000000-0000-0000-0000-000000000000';
+
+        it('renders no destination chip at all for the nil UUID', () => {
+            renderChips({
+                filters: { destinationId: NIL_UUID },
+                destinations: DESTINATION_CATALOG
+            });
+            expect(screen.queryByRole('listitem')).toBeNull();
+        });
+
+        it('renders no destination chip for the nil UUID even without a catalog', () => {
+            // Without a catalog every id falls back to the generic label, so
+            // this is the exact path that produced the reported chip.
+            renderChips({ filters: { destinationId: NIL_UUID } });
+            expect(screen.queryByRole('listitem')).toBeNull();
+        });
+
+        it('still shows the city chip when the destination is the nil UUID', () => {
+            // Dropping the placeholder must not drop a location the user really
+            // did give: the city has to survive as the fallback signal.
+            renderChips({ filters: { destinationId: NIL_UUID, city: 'Colón' } });
+            const chip = screen.getByRole('listitem');
+            expect(chip.textContent).toContain('Colón');
+        });
     });
 
     // ── Applied-params filtering (HOS-111 T-006 / AC-6) ────────────────────────

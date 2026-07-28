@@ -13,7 +13,10 @@ import {
     SearchIntentEntitiesSchema
 } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { mapIntentToSearchParams } from '../../../../src/routes/ai/protected/search-intent.mapper.js';
+import {
+    mapIntentToSearchParams,
+    sanitizeSearchIntentEntities
+} from '../../../../src/routes/ai/protected/search-intent.mapper.js';
 
 // ─── Location priority ────────────────────────────────────────────────────────
 
@@ -179,6 +182,125 @@ describe('mapIntentToSearchParams — resolvedDestinationId (city → destinatio
         const entities = { destinationId: 'a0000000-0000-4000-8000-000000000005' };
         const result = mapIntentToSearchParams(entities, [], []);
         expect(result.destinationId).toBe('a0000000-0000-4000-8000-000000000005');
+    });
+});
+
+// ─── Nil-UUID destination (HOS-298) ──────────────────────────────────────────
+
+describe('mapIntentToSearchParams — nil-UUID destination (HOS-298 regression)', () => {
+    const NIL = '00000000-0000-0000-0000-000000000000';
+
+    it('drops a nil-UUID destinationId instead of filtering by a destination that cannot exist', () => {
+        // On a refinement turn over a search that named NO destination, the
+        // model sometimes emits the nil UUID as a "there is a destination, I
+        // just do not know which" placeholder. `z.string().uuid()` accepts it —
+        // it is syntactically a valid UUID — so it reached the query, matched
+        // no destination at all, and returned zero results the user never asked
+        // for, plus an unnamed "Destino filtrado" chip.
+        const result = mapIntentToSearchParams({ destinationId: NIL });
+
+        // Dropped entirely: the right outcome is NO destination filter, i.e.
+        // the whole catalogue. Emitting an empty value instead would be a
+        // different bug — see the empty-array gotcha documented in
+        // search-chat.ts, where an empty destinationIds means "full catalogue".
+        expect(result.destinationId).toBeUndefined();
+        expect(result.q).toBeUndefined();
+    });
+
+    it('falls through to the next location signal when the destination is the nil UUID', () => {
+        // The placeholder must not shadow a location the user really did give.
+        const result = mapIntentToSearchParams({
+            destinationId: NIL,
+            latitude: -32.22,
+            longitude: -58.14,
+            radius: 25
+        });
+
+        expect(result.destinationId).toBeUndefined();
+        expect(result.latitude).toBe('-32.22');
+        expect(result.longitude).toBe('-58.14');
+        expect(result.radius).toBe('25');
+    });
+
+    it('falls back to the city keyword when the destination is the nil UUID', () => {
+        const result = mapIntentToSearchParams({ destinationId: NIL, city: 'Colón' });
+
+        expect(result.destinationId).toBeUndefined();
+        expect(result.q).toBe('Colón');
+    });
+
+    it('still prefers a server-resolved destination over a nil-UUID one', () => {
+        const result = mapIntentToSearchParams(
+            { destinationId: NIL, city: 'Colón' },
+            [],
+            [],
+            'b0000000-0000-4000-8000-000000000042'
+        );
+
+        expect(result.destinationId).toBe('b0000000-0000-4000-8000-000000000042');
+    });
+
+    it('leaves every other filter of the turn untouched', () => {
+        // The refinement the user actually asked for must survive: dropping a
+        // bogus destination is not a reason to lose the rest of the query.
+        const result = mapIntentToSearchParams({
+            destinationId: NIL,
+            accommodationType: AccommodationTypeEnum.COUNTRY_HOUSE,
+            minGuests: 6,
+            allowsPets: true
+        });
+
+        expect(result.destinationId).toBeUndefined();
+        expect(result.type).toBe(AccommodationTypeEnum.COUNTRY_HOUSE);
+        expect(result.minGuests).toBe('6');
+        expect(result.allowsPets).toBe('true');
+    });
+});
+
+// ─── Entity sanitisation (HOS-298) ───────────────────────────────────────────
+
+describe('sanitizeSearchIntentEntities (HOS-298 regression)', () => {
+    const NIL = '00000000-0000-0000-0000-000000000000';
+
+    it('strips a nil-UUID destinationId from the entities themselves', () => {
+        // This is the half that breaks the self-reinforcing loop. The entities
+        // object outlives the query built from it: it is echoed to the client
+        // as `filters.intent`, stored there, and re-sent as `currentFilters`
+        // next turn — where it enters the prompt's CURRENT FILTER SET and the
+        // "carry filters over unchanged" rule makes the model keep emitting it.
+        // Cleaning only the query would leave the chip and the empty results
+        // exactly as reported, for the rest of the conversation.
+        const result = sanitizeSearchIntentEntities({ destinationId: NIL, minGuests: 6 });
+
+        expect(result.destinationId).toBeUndefined();
+        // Everything the user actually asked for survives.
+        expect(result.minGuests).toBe(6);
+    });
+
+    it('strips a blank destinationId', () => {
+        expect(
+            sanitizeSearchIntentEntities({ destinationId: '   ' }).destinationId
+        ).toBeUndefined();
+    });
+
+    it('keeps a real destinationId untouched', () => {
+        const real = 'a0000000-0000-4000-8000-000000000001';
+        expect(sanitizeSearchIntentEntities({ destinationId: real }).destinationId).toBe(real);
+    });
+
+    it('returns the very same object when there is nothing to strip', () => {
+        // The route decides whether to log by identity, so "unchanged" has to
+        // mean the same reference, not a structurally equal copy.
+        const entities = { city: 'Colón', minGuests: 4 };
+        expect(sanitizeSearchIntentEntities(entities)).toBe(entities);
+
+        const withReal = { destinationId: 'a0000000-0000-4000-8000-000000000002' };
+        expect(sanitizeSearchIntentEntities(withReal)).toBe(withReal);
+    });
+
+    it('does not invent a destinationId key when the turn had none', () => {
+        const result = sanitizeSearchIntentEntities({ city: 'Colón' });
+        expect('destinationId' in result).toBe(false);
     });
 });
 

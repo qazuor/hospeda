@@ -113,7 +113,7 @@ import {
     buildSearchReplySystemPrompt,
     type PoiLocationConflict
 } from './search-chat.prompt.js';
-import { mapIntentToSearchParams } from './search-intent.mapper.js';
+import { mapIntentToSearchParams, sanitizeSearchIntentEntities } from './search-intent.mapper.js';
 
 /** Search-radius clamp shared with `search-intent.mapper.ts` (§5.3 clamp rule). */
 const MAX_POI_RADIUS_KM = 500;
@@ -413,8 +413,17 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         const history = messages.slice(0, -1);
 
         // Step 3: Build the per-request conversational prompt.
+        //
+        // HOS-298: the client echoes back the previous turn's entities, so a
+        // session that already picked up a placeholder destination before this
+        // fix shipped would keep feeding it into the CURRENT FILTER SET, where
+        // the "carry filters over unchanged" rule tells the model to keep it.
+        // Sanitising the INBOUND filters too means such a session heals on its
+        // next turn instead of staying poisoned until the user starts over.
+        const sanitizedCurrentFilters =
+            currentFilters === undefined ? undefined : sanitizeSearchIntentEntities(currentFilters);
         const prompt = buildConversationalSearchPrompt({
-            currentFilters,
+            currentFilters: sanitizedCurrentFilters,
             history,
             message,
             locale
@@ -461,6 +470,45 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
                 'search-chat: entities safeParse failed — falling back to empty entities'
             );
             validatedEntities = {};
+        }
+
+        // HOS-298: drop a placeholder destination id before anything downstream
+        // can see it.
+        //
+        // The model sometimes answers a refinement turn that has no destination
+        // with the nil UUID, as a "there is a destination, I just do not know
+        // which" stand-in. It survives `SearchIntentEntitiesSchema` because it
+        // is a syntactically valid UUID, and it then filters by a destination
+        // that cannot exist: zero results the user never asked for.
+        //
+        // Scrubbing HERE rather than at each consumer is deliberate — this one
+        // value feeds five separate paths, and the schema itself cannot clean it
+        // (the same object is the `generateObject` output schema, and transforms
+        // cannot be expressed in JSON Schema — the `radius: 0` sentinel hit the
+        // identical wall and was likewise fixed in its consumers):
+        //
+        //   1. the search params via `mapIntentToSearchParams` (the 0 results),
+        //   2. `hasStrongerLocationSignal`, which would skip the city → destination
+        //      lookup because a "destination" is already present,
+        //   3. the nearby-expansion anchor, which would query with a junk id,
+        //   4. the attraction/POI destination intersection, where a nil id
+        //      intersects nothing and forces a bogus "no destination combines
+        //      those" conflict on a LATER turn,
+        //   5. the `filters.intent` SSE payload — the load-bearing one. The
+        //      client stores that verbatim and echoes it back as
+        //      `currentFilters` next turn, where it lands in the prompt's
+        //      CURRENT FILTER SET and the "carry filters over unchanged" rule
+        //      makes the model keep re-emitting it. Left in, the bad value
+        //      re-infects every remaining turn of the conversation; a fix that
+        //      only cleaned the query would leave the chip and the empty results
+        //      exactly as reported.
+        const sanitizedEntities = sanitizeSearchIntentEntities(validatedEntities);
+        if (sanitizedEntities !== validatedEntities) {
+            apiLogger.warn(
+                { locale, destinationId: validatedEntities.destinationId },
+                'search-chat: dropped an unusable model-emitted destinationId'
+            );
+            validatedEntities = sanitizedEntities;
         }
 
         // Step 6: Resolve amenity slugs, feature slugs, and city → destinationId

@@ -38,6 +38,12 @@
  */
 
 import type { SearchIntentEntities } from '@repo/schemas';
+// Imported from the `validation` subpath, NOT the `@repo/utils` barrel: the
+// barrel reaches modules that touch `process` at import time, which throws
+// `ReferenceError: process is not defined` while hydrating a browser island and
+// takes the whole AI-search entry down. jsdom has `process`, so the unit tests
+// stay green either way — this only shows up in a real browser.
+import { isUsableEntityId } from '@repo/utils/validation';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './ActiveFilterChips.module.css';
@@ -351,10 +357,20 @@ function resolveCityDestinationChip(
     t: ReturnType<typeof createTranslations>['t'],
     destinations?: Readonly<Record<string, string>>
 ): { readonly key: keyof SearchIntentEntities; readonly label: string } | null {
-    if (filters.destinationId === undefined && filters.city === undefined) return null;
+    // HOS-298: a destination id that cannot identify a row is treated as absent
+    // everywhere below. The model emits the nil UUID as a placeholder when it
+    // has no destination, and since it is a syntactically valid UUID it used to
+    // reach here and render as an unnamed "Destino filtrado" chip — advertising
+    // a filter the user never asked for. The server strips it now; this keeps a
+    // session that stored it before the fix from rendering the chip anyway.
+    const intentDestinationId = isUsableEntityId(filters.destinationId)
+        ? filters.destinationId
+        : undefined;
+
+    if (intentDestinationId === undefined && filters.city === undefined) return null;
 
     if (appliedParams) {
-        if (typeof appliedParams.destinationId === 'string') {
+        if (isUsableEntityId(appliedParams.destinationId)) {
             const descriptor = resolveChipLabel(
                 'destinationId',
                 appliedParams.destinationId,
@@ -373,13 +389,8 @@ function resolveCityDestinationChip(
     }
 
     // Legacy mode (no applied-params snapshot) — best-effort from raw intent.
-    if (filters.destinationId !== undefined) {
-        const descriptor = resolveChipLabel(
-            'destinationId',
-            filters.destinationId,
-            t,
-            destinations
-        );
+    if (intentDestinationId !== undefined) {
+        const descriptor = resolveChipLabel('destinationId', intentDestinationId, t, destinations);
         return descriptor.visible ? { key: 'destinationId', label: descriptor.label } : null;
     }
     const descriptor = resolveChipLabel('city', filters.city, t, destinations);

@@ -25,6 +25,7 @@
  */
 
 import type { SearchIntentEntities } from '@repo/schemas';
+import { isUsableEntityId } from '@repo/utils';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -46,6 +47,41 @@ const MAX_RATING = 5;
  * Values are strings or string arrays (no native booleans or numbers).
  */
 type MappedParams = Record<string, string | string[]>;
+
+// ─── Entity sanitisation ─────────────────────────────────────────────────────
+
+/**
+ * Strip model-emitted values that pass schema validation but cannot identify a
+ * real row, so nothing downstream ever sees them.
+ *
+ * Today that means one thing: a `destinationId` that is the nil UUID. The model
+ * answers a refinement turn that has no destination with it as a "there is a
+ * destination, I just do not know which" stand-in, and `z.string().uuid()`
+ * accepts it because it is syntactically valid.
+ *
+ * Kept separate from {@link mapIntentToSearchParams} because the entities
+ * object outlives the query built from it: it is also echoed back to the client
+ * as `filters.intent`, stored there, and re-sent as `currentFilters` on the next
+ * turn, where it lands in the prompt's CURRENT FILTER SET and the "carry
+ * filters over unchanged" rule makes the model keep re-emitting it. Cleaning
+ * only the query would leave that loop running for the rest of the conversation
+ * (HOS-298).
+ *
+ * The cleanup cannot live in the schema: the same object is the
+ * `generateObject` output schema, and transforms cannot be represented in JSON
+ * Schema — the `radius: 0` sentinel hit the same wall and was likewise handled
+ * by its consumers.
+ *
+ * @param entities - Validated entities straight from the model.
+ * @returns The entities with unusable ids removed, or the input unchanged (the
+ *   same reference) when there was nothing to strip.
+ */
+export function sanitizeSearchIntentEntities(entities: SearchIntentEntities): SearchIntentEntities {
+    if (entities.destinationId === undefined || isUsableEntityId(entities.destinationId)) {
+        return entities;
+    }
+    return { ...entities, destinationId: undefined };
+}
 
 // ─── Pure mapper ─────────────────────────────────────────────────────────────
 
@@ -109,8 +145,17 @@ export function mapIntentToSearchParams(
         // model-hallucinated entities.destinationId, because it is verified
         // against the destinations table.
         params.destinationId = resolvedDestinationId;
-    } else if (entities.destinationId !== undefined) {
+    } else if (isUsableEntityId(entities.destinationId)) {
         // Priority 1: known destination UUID — wins over geo and city.
+        //
+        // HOS-298: gated on `isUsableEntityId`, not on `!== undefined`. The
+        // model can answer with the nil UUID as a "there is a destination, I
+        // just do not know which" placeholder, and `z.string().uuid()` accepts
+        // it because it is syntactically valid. Forwarded, it filters by a
+        // destination that cannot exist — zero results for a constraint the
+        // user never expressed. Falling through instead lets a real location
+        // signal (geo, city) win, or leaves the search unfiltered by location,
+        // which is what "no destination" actually means.
         params.destinationId = entities.destinationId;
     } else if (entities.latitude !== undefined && entities.longitude !== undefined) {
         // Priority 2: geo coords. Both lat + lng must be present together.
