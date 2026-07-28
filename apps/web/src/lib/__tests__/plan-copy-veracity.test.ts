@@ -131,10 +131,20 @@ const PHANTOM_CLAIMS: readonly PlanClaim[] = [
         // description, which is what Google puts in the snippet.
         id: 'always-on-support',
         entitlement: 'round_the_clock_support',
+        // Tied to SUPPORT, not to the duration. A bare "24 horas" is true in 14
+        // catalog strings — the `24h_reception` amenity, an exchange-rate
+        // interval, a response-time SLA — and banning it would turn the guard
+        // red on facts while blocking any widening of PROSE_SURFACES.
         phrases: {
-            es: ['24/7', '24 horas', 'siempre disponible'],
-            en: ['24/7', '24 hours', 'always available'],
-            pt: ['24/7', '24 horas', 'sempre disponível']
+            es: [
+                'soporte 24/7',
+                'soporte 24 horas',
+                'soporte las 24',
+                'las 24 horas del día',
+                'siempre disponible'
+            ],
+            en: ['24/7 support', 'support 24/7', 'round-the-clock support', 'always available'],
+            pt: ['suporte 24/7', 'suporte 24 horas', 'sempre disponível']
         }
     }
 ];
@@ -296,13 +306,34 @@ function collectPlanCopy(): ReadonlyArray<{
  * Keyed by locale-relative file and dotted path so a failure names the exact
  * string to fix.
  */
+/**
+ * Every answer rendered by `/preguntas-frecuentes`, derived rather than listed.
+ *
+ * That page walks a 7-category table and renders EVERY item under
+ * `faq.categories.<cat>.items.<item>.answer` (see its `categories` const). An
+ * enumerated subset therefore covered 6 of 51 answers while the doc comment
+ * claimed "the public FAQ" — the same list-vs-reach gap that made a
+ * PROSE_SURFACES entry inert one round earlier. Deriving from the catalog means
+ * a new FAQ entry is guarded the day it is written, without anyone remembering
+ * to add it here.
+ */
+function faqAnswerPaths(): ReadonlyArray<{ readonly file: string; readonly path: string }> {
+    const faq = readLocaleJson('es', 'faq.json');
+    const categories = (faq.categories ?? {}) as Record<
+        string,
+        { items?: Record<string, unknown> }
+    >;
+    const out: Array<{ file: string; path: string }> = [];
+    for (const [category, body] of Object.entries(categories)) {
+        for (const item of Object.keys(body.items ?? {})) {
+            out.push({ file: 'faq.json', path: `categories.${category}.items.${item}.answer` });
+        }
+    }
+    return out;
+}
+
 const PROSE_SURFACES: ReadonlyArray<{ readonly file: string; readonly path: string }> = [
-    { file: 'faq.json', path: 'categories.owners.items.cost.answer' },
-    { file: 'faq.json', path: 'categories.owners.items.commission.answer' },
-    { file: 'faq.json', path: 'categories.owners.items.featured.answer' },
-    { file: 'faq.json', path: 'categories.owners.items.support.answer' },
-    { file: 'faq.json', path: 'categories.tourists.items.favorites.answer' },
-    { file: 'faq.json', path: 'categories.tourists.items.reviews.answer' },
+    ...faqAnswerPaths(),
     { file: 'owners.json', path: 'page.description' },
     { file: 'owners.json', path: 'faq.1.a' },
     { file: 'owners.json', path: 'faq.2.a' },
@@ -410,6 +441,12 @@ describe('plan copy veracity — phantom claims (HOS-331)', () => {
     it('reads every prose surface it claims to cover', () => {
         // Same reasoning for the FAQ/landing paths: a renamed key would quietly
         // drop that string from the sweep instead of failing.
+        //
+        // The count guard matters as much as the resolution one: PROSE_SURFACES
+        // is the single input to all four prose rules, and `collectProseCopy`
+        // drops unresolved rows silently, so a shrunken list weakens every rule
+        // at once with no other signal.
+        expect(PROSE_SURFACES.length).toBeGreaterThan(50);
         const missing: string[] = [];
         for (const locale of LOCALES) {
             for (const { file, path } of PROSE_SURFACES) {
@@ -463,8 +500,14 @@ describe('plan copy veracity — FAQ and landing prose (HOS-331)', () => {
         // el día 14"), so matching only the prefix would have missed them.
         const PREFIX = /\b\d+[\s-]*(d[ií]as?|dias?|days?)\b/i;
         const POSTFIX = /\b(d[ií]as?|dias?|days?)[\s-]*\d+\b/i;
+        // Scoped to trial prose. Unscoped, the rule fires on any day count in
+        // any guarded string — "eliminamos tus datos en un plazo máximo de 30
+        // días" is a true, unrelated sentence that would be reported as a
+        // hardcoded trial length, and the noise would get the rule deleted.
+        const TRIAL_CONTEXT = /prueba|trial|gratis|gr[áa]tis|free|teste/i;
         const literals: string[] = [];
         for (const row of PROSE_COPY) {
+            if (!TRIAL_CONTEXT.test(row.copy)) continue;
             if (PREFIX.test(row.copy) || POSTFIX.test(row.copy)) {
                 literals.push(`${row.locale}/${row.surface}: "${row.copy.slice(0, 80)}…"`);
             }

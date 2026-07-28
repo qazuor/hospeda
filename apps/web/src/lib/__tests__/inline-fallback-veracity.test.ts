@@ -71,10 +71,15 @@ const BANNED_PHRASES: readonly string[] = [
     // availability: /contacto publishes office hours (Sundays closed) and the
     // owners FAQ says "en horario de oficina", so round-the-clock wording is
     // contradicted by the site itself, no entitlement reasoning required
-    '24/7',
-    '24 horas',
+    'soporte 24/7',
+    'soporte 24 horas',
+    'soporte las 24',
+    'las 24 horas del día',
     'siempre disponible',
+    '24/7 support',
+    'round-the-clock support',
     'always available',
+    'suporte 24/7',
     'sempre disponível',
     // publishing starts nothing — `first_publish` is rejected
     'trial empieza cuando publicás',
@@ -92,6 +97,8 @@ interface InlineFallback {
     readonly file: string;
     readonly key: string;
     readonly text: string;
+    /** Which extraction shape produced this row — asserted on, see below. */
+    readonly shape: 'call' | 'pair';
 }
 
 function walk(dir: string): string[] {
@@ -126,17 +133,23 @@ function walk(dir: string): string[] {
  */
 function extractFallbacks(source: string, file: string): InlineFallback[] {
     const out: InlineFallback[] = [];
-    const call = /\bt\(\s*(['"])([^'"]+)\1\s*,\s*(['"])((?:[^'"\\]|\\.)*)\3/g;
+    // The body class excludes only the delimiter itself, via a backreference —
+    // not both quote characters. Excluding both drops the whole match (the
+    // engine restarts past it) on any fallback containing the other quote, and
+    // three real call sites do: a Spanish fallback quoting «"Consulta sobre un
+    // alojamiento"», an English `Don't have an account?`, and a hint quoting
+    // 'Todas mis propiedades'.
+    const call = /\bt\(\s*(['"])([^'"]+)\1\s*,\s*(['"])((?:(?!\3)[^\\]|\\.)*)\3/g;
     for (let m = call.exec(source); m !== null; m = call.exec(source)) {
         const key = m[2];
         const text = m[4];
-        if (key && text) out.push({ file, key, text });
+        if (key && text) out.push({ file, key, text, shape: 'call' });
     }
     const pair = /(\w*)Key:\s*(['"])([^'"]+)\2\s*,\s*\1Fb:\s*(['"])((?:[^'"\\]|\\.)*)\4/g;
     for (let m = pair.exec(source); m !== null; m = pair.exec(source)) {
         const key = m[3];
         const text = m[5];
-        if (key && text) out.push({ file, key, text });
+        if (key && text) out.push({ file, key, text, shape: 'pair' });
     }
     return out;
 }
@@ -198,15 +211,23 @@ const LIVE_FALLBACKS = ALL_FALLBACKS.filter((fb) =>
 );
 
 describe('inline fallback veracity (HOS-331)', () => {
-    it('finds fallbacks of BOTH extraction shapes, and the known live one', () => {
-        // Guards the guard. A global `> 50` cannot detect losing an entire
-        // shape: the `*Key`/`*Fb` pairs are ~110 of ~3000 rows, so dropping
-        // every one of them — which is the whole of /beneficios plus the owner
-        // FAQ — still leaves thousands. Assert per shape, and pin the one row
-        // the guard was written for.
-        const pairShape = ALL_FALLBACKS.filter((fb) => fb.key.startsWith('benefits.owner.'));
-        expect(pairShape.length).toBeGreaterThan(0);
-        expect(ALL_FALLBACKS.length).toBeGreaterThan(500);
+    it('finds fallbacks of BOTH extraction shapes and BOTH file types', () => {
+        // Guards the guard, on every axis that can silently collapse.
+        //
+        // A single global threshold cannot: the `pair` shape is ~110 of ~3100
+        // rows and `.astro` is ~1300, so losing either entirely still leaves
+        // thousands. Filtering by KEY PREFIX does not work either — the
+        // `benefits.owner.*` keys come from BOTH shapes, so such a filter
+        // survives total loss of the pair regex. Count the shapes themselves.
+        const byShape = (shape: 'call' | 'pair') =>
+            ALL_FALLBACKS.filter((fb) => fb.shape === shape).length;
+        expect(byShape('call')).toBeGreaterThan(1000);
+        expect(byShape('pair')).toBeGreaterThan(50);
+        const astroRows = ALL_FALLBACKS.filter((fb) => fb.file.endsWith('.astro')).length;
+        const tsxRows = ALL_FALLBACKS.filter((fb) => fb.file.endsWith('.tsx')).length;
+        expect(astroRows).toBeGreaterThan(500);
+        expect(tsxRows).toBeGreaterThan(500);
+        // And pin the row this file was written for, which only `pair` produces.
         expect(LIVE_FALLBACKS.some((fb) => fb.key === 'benefits.owner.5.title')).toBe(true);
     });
 
