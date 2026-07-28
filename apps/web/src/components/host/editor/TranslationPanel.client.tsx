@@ -41,6 +41,7 @@ import styles from './TranslationPanel.module.css';
 import type { FieldOutcome, GenerationOutcomes, TranslationResultItem } from './translation-status';
 import {
     anyFieldFailed,
+    anyFieldUntouched,
     anyTranslationPersisted,
     applyRunToTranslations,
     fieldsWithMissingTranslations,
@@ -304,14 +305,24 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
      */
     const [runFilled, setRunFilled] = useState<AccommodationTranslationData | null>(null);
     /**
-     * The DB is known to hold something this panel is not showing.
+     * There is reason to believe the DB holds something this panel is not showing.
      *
-     * Set when a run comes back having skipped every field it asked about: the
-     * backend only skips what is already filled, so someone populated it after
-     * this page was rendered. The fold cannot help — there are no successes to
-     * fold — and a reload is the only way to reconcile.
+     * Two ways to learn that, and both have to set it or the host is left with a
+     * contradiction and no way out:
+     *
+     *  - A requested field came back `untouched`. The backend skips only what is
+     *    already filled (`translateEntity`'s skip check trims, same as this panel),
+     *    so someone populated it after the page was rendered.
+     *  - The request failed in transport. A 90-second budget on ~8 sequential LLM
+     *    calls times out on runs the server goes on to finish, so the outcome there
+     *    is UNKNOWN, not "nothing happened" — and the fold cannot help, because the
+     *    client never saw the results.
+     *
+     * Derived from the outcome map rather than from `!persisted`: a run that mixes
+     * a failure with a skip returns through the error branch, which is why keying
+     * it off the no-writes case missed exactly that combination.
      */
-    const [staleUnderPanel, setStaleUnderPanel] = useState(false);
+    const [mayBeStale, setMayBeStale] = useState(false);
     const effectiveTranslations = runFilled ?? translations;
 
     const pendingFields = fieldsWithMissingTranslations({
@@ -353,6 +364,10 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
 
             if (!result.ok) {
                 setOutcomes(null);
+                // The outcome is unknown, not empty: this budget times out on runs
+                // the server finishes. Withholding the refresh here strands the
+                // host on stale rows with a live button and a 90-second retry.
+                setMayBeStale(true);
                 setErrorMessage(
                     result.error.message ||
                         t(
@@ -370,6 +385,10 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
 
             const persisted = anyTranslationPersisted({ results, requested });
             if (persisted) setHasPersistedAnything(true);
+
+            // Before the failed branch returns: a run can both fail one field and
+            // skip another, and the skip is what says the DB moved on without us.
+            if (anyFieldUntouched(runOutcomes)) setMayBeStale(true);
 
             const failed = anyFieldFailed(runOutcomes);
 
@@ -398,7 +417,6 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
                 // of the frozen prop. That is the one case where reloading is the
                 // only remedy, and gating the refresh on `hasPersistedAnything`
                 // alone withheld it precisely there.
-                setStaleUnderPanel(true);
                 setSuccessMessage(
                     t(
                         'host.properties.editor.translation.nothingGenerated',
@@ -413,6 +431,7 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
             );
         } catch {
             setOutcomes(null);
+            setMayBeStale(true);
             setErrorMessage(
                 t(
                     'host.properties.editor.translation.errorNetwork',
@@ -448,7 +467,7 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
      * panel has no unsaved-changes guard, so a draft dies with it. The label does
      * not say so — tracked in BETA-203.
      */
-    const canRefresh = (hasPersistedAnything || staleUnderPanel) && !isGenerating;
+    const canRefresh = (hasPersistedAnything || mayBeStale) && !isGenerating;
 
     return (
         <fieldset className={styles.section}>

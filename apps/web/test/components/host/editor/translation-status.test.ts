@@ -354,6 +354,12 @@ describe('applyRunToTranslations', () => {
             results: [{ fieldType: 'name', locale: 'en', success: true }]
         });
 
+        // Asserted through the READER, not by self-equality. `f(f(x)) === f(x)`
+        // holds for any implementation of the form `P(v) ? v : CONST` — including
+        // the `??` this fold replaced, and including a blank marker — so comparing
+        // the two folds proves idempotence-by-construction and nothing about the
+        // property this test is named for.
+        expect(missingLocalesFor({ status: twice.name, sourceLocale: 'es' })).not.toContain('en');
         expect(twice.name.locales.en).toBe(once.name.locales.en);
     });
 

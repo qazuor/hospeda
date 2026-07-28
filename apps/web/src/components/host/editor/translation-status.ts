@@ -86,6 +86,17 @@ export function anyFieldFailed(outcomes: GenerationOutcomes): boolean {
 }
 
 /**
+ * Whether the backend skipped a field the panel asked about.
+ *
+ * It skips only what is already filled — its check trims, the same way this
+ * module does — so a skip means someone populated that field after the page was
+ * rendered, and the panel is showing a state the DB has moved past.
+ */
+export function anyFieldUntouched(outcomes: GenerationOutcomes): boolean {
+    return Object.values(outcomes).some((outcome) => outcome.status === 'untouched');
+}
+
+/**
  * Folds a finished run back into the field status the panel renders.
  *
  * `translations` is frozen at SSR and never refetched, so without this the panel

@@ -307,7 +307,7 @@ describe('TranslationPanel — per-field run reporting (HOS-317)', () => {
         ).not.toBeInTheDocument();
     });
 
-    it('does not claim success when the backend attempted nothing', async () => {
+    it('routes an empty run through the status channel, not the error one', async () => {
         mockPostProtected.mockResolvedValue({ ok: true, data: { translations: [] } });
 
         renderPanel(PARTIALLY_TRANSLATED);
@@ -323,6 +323,52 @@ describe('TranslationPanel — per-field run reporting (HOS-317)', () => {
         expect(screen.queryByRole('alert')).not.toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Actualizar la página/i })).toBeInTheDocument();
         expect(reloadSpy).not.toHaveBeenCalled();
+    });
+
+    it('offers the refresh when a run fails on one field and skips another', async () => {
+        // Mixed run: `summary` was filled by someone else after this page rendered
+        // (so the backend skips it), and `name` fails at the provider. The failure
+        // branch returns early, so deriving "the DB is ahead" from "nothing
+        // persisted" missed this shape entirely — leaving the host looking at
+        // dashes for content that exists, with no way to reach it.
+        mockPostProtected.mockResolvedValue({
+            ok: true,
+            data: {
+                translations: [
+                    { fieldType: 'name', locale: 'en', success: false, error: 'provider' },
+                    { fieldType: 'name', locale: 'pt', success: false, error: 'provider' }
+                ]
+            }
+        });
+
+        renderPanel(PARTIALLY_TRANSLATED);
+        fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
+
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent(
+                /No se pudo generar ninguna traducción/i
+            );
+        });
+        expect(screen.getByText(/Sin cambios/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Actualizar la página/i })).toBeInTheDocument();
+    });
+
+    it('offers the refresh when the request never came back', async () => {
+        // A 90-second budget on ~8 sequential LLM calls times out on runs the
+        // server goes on to finish. The outcome is UNKNOWN, not empty — treating
+        // it as "nothing happened" strands the host on stale rows.
+        mockPostProtected.mockResolvedValue({
+            ok: false,
+            error: { status: 408, message: 'Request timeout after 90000ms' }
+        });
+
+        renderPanel(PARTIALLY_TRANSLATED);
+        fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
+
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toBeInTheDocument();
+        });
+        expect(screen.getByRole('button', { name: /Actualizar la página/i })).toBeInTheDocument();
     });
 
     it('reports the transport error when the request itself fails', async () => {
