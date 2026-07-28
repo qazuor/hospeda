@@ -82,6 +82,7 @@
         "QUOTA_EXCEEDED": "You have reached the allowed limit for this action.",
         "ENTITLEMENT_REQUIRED": "Your plan does not include this feature. Upgrade to continue.",
         "TRIAL_EXPIRED": "Your free trial has ended. Choose a plan to keep publishing.",
+        "GRACE_PERIOD_EXPIRED": "Your payment is overdue. Update your payment method to keep using your account.",
         "NO_ACTIVE_SUBSCRIPTION": "You need an active plan to use this feature.",
         "NO_BILLING_ACCOUNT": "You do not have a billing account yet. Set one up to continue.",
         "PROVIDER_ERROR": "The payment service returned an unexpected error. Please try again in a few minutes.",

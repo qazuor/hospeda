@@ -86,7 +86,14 @@ const formatSuccessResponse = <T>(
  * client-safe vocabulary may reach the browser.
  */
 const ENTITLEMENT_CAUSE_REASONS: ReadonlySet<string> = new Set([
+    // trialMiddleware — mounted globally (create-app.ts), the live case.
     'TRIAL_EXPIRED',
+    // pastDueGraceMiddleware — mounted on /api/v1/protected/*. Distinct remedy:
+    // the customer updates their payment method, they do not buy a plan.
+    'GRACE_PERIOD_EXPIRED',
+    // requireActiveSubscription() — NOT mounted anywhere today (it exists only
+    // in its own JSDoc example). Whitelisted so the day it is mounted the copy
+    // already resolves, but treat these two as dormant, not live.
     'NO_ACTIVE_SUBSCRIPTION',
     'NO_BILLING_ACCOUNT'
 ]);
@@ -99,7 +106,10 @@ const ENTITLEMENT_CAUSE_REASONS: ReadonlySet<string> = new Set([
  */
 const readEntitlementCause = (
     error: Error
-): { reason?: string; details?: { upgradeAudience: string } } => {
+): {
+    reason?: string;
+    details?: { upgradeAudience?: 'host' | 'tourist'; daysOverdue?: number };
+} => {
     const cause: unknown = (error as { cause?: unknown }).cause;
     if (cause === null || typeof cause !== 'object') {
         return {};
@@ -107,15 +117,26 @@ const readEntitlementCause = (
 
     const record = cause as Record<string, unknown>;
     const code = record.code;
-    const audience = record.upgradeAudience;
+    const rawAudience = record.upgradeAudience;
+    const rawDaysOverdue = record.daysOverdue;
+
+    const audience: 'host' | 'tourist' | undefined =
+        rawAudience === 'host' || rawAudience === 'tourist' ? rawAudience : undefined;
+    const daysOverdue =
+        typeof rawDaysOverdue === 'number' && Number.isFinite(rawDaysOverdue)
+            ? rawDaysOverdue
+            : undefined;
+
+    const details: { upgradeAudience?: 'host' | 'tourist'; daysOverdue?: number } = {
+        ...(audience === undefined ? {} : { upgradeAudience: audience }),
+        ...(daysOverdue === undefined ? {} : { daysOverdue })
+    };
 
     return {
         ...(typeof code === 'string' && ENTITLEMENT_CAUSE_REASONS.has(code)
             ? { reason: code }
             : {}),
-        ...(audience === 'host' || audience === 'tourist'
-            ? { details: { upgradeAudience: audience } }
-            : {})
+        ...(Object.keys(details).length > 0 ? { details } : {})
     };
 };
 
@@ -351,6 +372,11 @@ const resolveHttpStatusLogLevel = (status: number): ErrorLogLevel => {
         case 401:
         case 404:
             return 'info';
+        case 402:
+        // An entitlement gate is a business outcome, not a fault: logging it at
+        // `error` with a stack trace floods the ERROR stream with every blocked
+        // write of every lapsed host, and the middleware already emits its own
+        // `warn` for the same event (HOS-283).
         case 403:
             return 'warn';
         default:
@@ -411,9 +437,12 @@ export const createErrorHandler = () => {
             statusCode = getHttpStatusFromErrorCode(error.code);
             errorDetails = error.details;
             // `ServiceError`'s 4th constructor arg is documented as "emitted
-            // unconditionally in API error responses" but was never actually
-            // forwarded. No call site passes it today, so this is a no-op that
-            // makes the documented contract true for the next one (HOS-283).
+            // unconditionally in API error responses", and ~113 call sites pass
+            // it — but only `handleRouteError` (utils/response-helpers.ts, the
+            // formatter every route-factory route lands in) actually emitted it.
+            // Errors that reach THIS handler instead — thrown from middleware or
+            // a hand-rolled route — silently dropped it. Forwarding it here makes
+            // the contract hold on both paths (HOS-283).
             errorReason = error.reason;
         }
         // Priority 2: Hono HTTPException
@@ -499,6 +528,10 @@ export const createErrorHandler = () => {
         const hideDetails = isProduction && !debugErrors && statusCode >= 500;
         const safeDetails = hideDetails ? undefined : errorDetails;
         const safeMessage = hideDetails ? responseConfig.errorMessage : errorMessage;
+        // `reason` is masked on the same terms as `message`/`details`: it names
+        // an internal failure mode (`BULLMQ_NOT_CONFIGURED`, ...), so leaving it
+        // on a masked 5xx would hand back exactly what the masking hides.
+        const safeReason = hideDetails ? undefined : errorReason;
 
         const requestId = c.get('requestId');
         const formattedError = formatErrorResponse(
@@ -507,7 +540,7 @@ export const createErrorHandler = () => {
             statusCode,
             safeDetails,
             requestId,
-            errorReason
+            safeReason
         );
 
         // Add response headers (includes preserved CORS headers)

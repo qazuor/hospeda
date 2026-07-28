@@ -102,10 +102,12 @@ export function resolveSubscriptionPlansPath({ role }: { role: string | null }):
  * `upgradeAudience` the API attaches to an entitlement error instead of by the
  * caller's own role.
  *
- * Entitlement responses (`ENTITLEMENT_REQUIRED` 402, `LIMIT_REACHED` 403) carry
- * `details.upgradeAudience`, which is the server's verdict on which pricing page
- * resolves the block — more reliable than re-deriving it client-side, since the
- * gate that fired knows what it was gating (HOS-283).
+ * **How much to trust the field depends on which gate sent it.** On a
+ * `LIMIT_REACHED` 403 it is computed per limit, so it really is the server's
+ * verdict. On an `ENTITLEMENT_REQUIRED` 402 it is not: `trialMiddleware`
+ * hardcodes `'host'` on its trial-expired throws and omits the field entirely on
+ * `NO_BILLING_ACCOUNT` / `NO_ACTIVE_SUBSCRIPTION`. Callers on the 402 path should
+ * treat it as a hint and keep a default that suits their own surface (HOS-283).
  *
  * @param params.audience - `'host'` or `'tourist'`, from `details.upgradeAudience`.
  * @returns The locale-agnostic path segment for the matching pricing page.

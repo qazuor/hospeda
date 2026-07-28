@@ -18,7 +18,8 @@ import {
     isCommerceOwnerRole,
     ROLES_WITH_ACCOMMODATIONS_NAV,
     ROLES_WITH_COMMERCE_NAV,
-    resolveSubscriptionPlansPath
+    resolveSubscriptionPlansPath,
+    resolveSubscriptionPlansPathForAudience
 } from '../account-roles';
 
 describe('isCommerceOwnerRole', () => {
@@ -85,5 +86,34 @@ describe('resolveSubscriptionPlansPath (BETA-201)', () => {
 
     it('routes an unknown role to the tourist page (safe default)', () => {
         expect(resolveSubscriptionPlansPath({ role: 'NOT_A_ROLE' })).toBe('suscriptores/turistas');
+    });
+});
+
+describe('resolveSubscriptionPlansPathForAudience (HOS-283)', () => {
+    // The audience-driven twin of `resolveSubscriptionPlansPath`, used when the
+    // caller has an entitlement error's `details.upgradeAudience` instead of a
+    // role. Both must land on the same two pages.
+    it('routes a host audience to the owner plans page', () => {
+        expect(resolveSubscriptionPlansPathForAudience({ audience: 'host' })).toBe(
+            'suscriptores/planes'
+        );
+    });
+
+    it('routes a tourist audience to the tourist plans page', () => {
+        expect(resolveSubscriptionPlansPathForAudience({ audience: 'tourist' })).toBe(
+            'suscriptores/turistas'
+        );
+    });
+
+    it('agrees with the role-driven helper on both pages', () => {
+        // Guards against the two helpers drifting apart: an upsell reached via a
+        // role and the same upsell reached via an API error must not send the
+        // user to different pricing pages.
+        expect(resolveSubscriptionPlansPathForAudience({ audience: 'host' })).toBe(
+            resolveSubscriptionPlansPath({ role: RoleEnum.HOST })
+        );
+        expect(resolveSubscriptionPlansPathForAudience({ audience: 'tourist' })).toBe(
+            resolveSubscriptionPlansPath({ role: RoleEnum.USER })
+        );
     });
 });

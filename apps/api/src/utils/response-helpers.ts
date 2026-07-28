@@ -463,10 +463,22 @@ export const handleRouteError = (error: unknown, c: Context) => {
         const statusCode = error.status;
         const message = error.message;
 
-        // Map HTTP status to error code
+        // Map HTTP status to error code.
+        //
+        // Keep this in sync with the same mapping in `createErrorHandler`
+        // (middlewares/response.ts): these are TWIN formatters — route-factory
+        // routes land here, everything else lands in `app.onError` — and a status
+        // missing from one of them silently becomes INTERNAL_ERROR, which the UI
+        // renders as "something broke on our side". That is exactly how a 402
+        // entitlement gate ended up blaming the platform (HOS-283).
+        //
+        // All four 402 throws live in middleware today, so none reach this
+        // formatter; the entry is here so a future route-level 402 does not
+        // reintroduce the bug.
         const httpStatusToCode: Record<number, string> = {
             400: ServiceErrorCode.VALIDATION_ERROR,
             401: ServiceErrorCode.UNAUTHORIZED,
+            402: ServiceErrorCode.ENTITLEMENT_REQUIRED,
             403: ServiceErrorCode.FORBIDDEN,
             404: ServiceErrorCode.NOT_FOUND,
             409: ServiceErrorCode.ALREADY_EXISTS

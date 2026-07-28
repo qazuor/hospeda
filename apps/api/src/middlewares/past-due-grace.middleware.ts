@@ -17,6 +17,7 @@
 
 import type { QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
 import { PAYMENT_GRACE_PERIOD_DAYS } from '@repo/billing';
+import { HTTPException } from 'hono/http-exception';
 import type { AppMiddleware } from '../types';
 import { apiLogger } from '../utils/logger';
 import { getQZPayBilling } from './billing';
@@ -234,16 +235,28 @@ export function pastDueGraceMiddleware(): AppMiddleware {
                 'Blocked request: grace period expired'
             );
 
-            return c.json(
-                {
-                    error: 'GRACE_PERIOD_EXPIRED',
-                    message:
-                        'Your grace period has expired. Please update your payment method to continue.',
+            // Thrown, not `c.json`-ed, so the body goes through the one error
+            // formatter every client already parses. The previous hand-rolled
+            // shape put a STRING in `error` instead of the `{code, message}`
+            // envelope, so `parseError` in the web client read `code`/`message`
+            // as undefined and the UI fell back to generic copy — the same class
+            // of bug HOS-283 fixes for the trial gate.
+            throw new HTTPException(402, {
+                message:
+                    'Your grace period has expired. Please update your payment method to continue.',
+                cause: {
+                    code: 'GRACE_PERIOD_EXPIRED',
                     daysOverdue
-                },
-                402
-            );
+                }
+            });
         } catch (error) {
+            // An entitlement gate is a decision, not a failure: it must escape
+            // the fail-open below or a past-due customer would be let through
+            // by the very handler meant to block them.
+            if (error instanceof HTTPException) {
+                throw error;
+            }
+
             // Log unexpected errors but do not block the request (fail open)
             const errorMessage = error instanceof Error ? error.message : String(error);
 

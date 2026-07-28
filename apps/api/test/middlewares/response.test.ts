@@ -916,6 +916,90 @@ describe('Response Middleware', () => {
             expect(JSON.stringify(data)).not.toContain('internalNote');
         });
 
+        it('maps the past-due gate to its own reason and forwards daysOverdue', async () => {
+            // Arrange — the SECOND 402 producer mounted on /protected/*. Its
+            // remedy differs from an expired trial (update the card, do not buy
+            // a plan), so the UI needs to tell them apart.
+            const { HTTPException } = await import('hono/http-exception');
+            app.get('/past-due', () => {
+                throw new HTTPException(402, {
+                    message: 'Your grace period has expired.',
+                    cause: { code: 'GRACE_PERIOD_EXPIRED', daysOverdue: 3 }
+                });
+            });
+
+            // Act
+            const res = await app.request('/past-due');
+
+            // Assert
+            expect(res.status).toBe(402);
+            const data = await res.json();
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
+            expect(data.error.reason).toBe('GRACE_PERIOD_EXPIRED');
+            expect(data.error.details).toEqual({ daysOverdue: 3 });
+        });
+
+        it('drops a non-numeric daysOverdue', async () => {
+            // Arrange
+            const { HTTPException } = await import('hono/http-exception');
+            app.get('/bad-days', () => {
+                throw new HTTPException(402, {
+                    message: 'Your grace period has expired.',
+                    cause: { code: 'GRACE_PERIOD_EXPIRED', daysOverdue: 'three' }
+                });
+            });
+
+            // Act
+            const res = await app.request('/bad-days');
+
+            // Assert
+            const data = await res.json();
+            expect(data.error.reason).toBe('GRACE_PERIOD_EXPIRED');
+            expect(data.error.details).toBeUndefined();
+        });
+
+        it('drops a cause code that is NOT in the whitelist', async () => {
+            // Arrange — the whitelist is the security control: without a
+            // rejected-input case, dropping it entirely keeps every other test
+            // green. Only the three vocabularies the middlewares emit may reach
+            // the browser.
+            const { HTTPException } = await import('hono/http-exception');
+            app.get('/unknown-cause', () => {
+                throw new HTTPException(402, {
+                    message: 'Payment required.',
+                    cause: { code: 'SOME_INTERNAL_STATE', upgradeAudience: 'host' }
+                });
+            });
+
+            // Act
+            const res = await app.request('/unknown-cause');
+
+            // Assert
+            const data = await res.json();
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
+            expect(data.error.reason).toBeUndefined();
+            expect(JSON.stringify(data)).not.toContain('SOME_INTERNAL_STATE');
+        });
+
+        it('drops an upgradeAudience outside the known vocabulary', async () => {
+            // Arrange
+            const { HTTPException } = await import('hono/http-exception');
+            app.get('/odd-audience', () => {
+                throw new HTTPException(402, {
+                    message: 'Payment required.',
+                    cause: { code: 'TRIAL_EXPIRED', upgradeAudience: 'admin' }
+                });
+            });
+
+            // Act
+            const res = await app.request('/odd-audience');
+
+            // Assert — the reason survives, the unknown audience does not
+            const data = await res.json();
+            expect(data.error.reason).toBe('TRIAL_EXPIRED');
+            expect(data.error.details).toBeUndefined();
+        });
+
         it('still answers a 402 with no cause at all', async () => {
             // Arrange
             const { HTTPException } = await import('hono/http-exception');

@@ -151,7 +151,6 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
         try {
             const result = await accommodationsImportApi.importFromUrl(parsed.data);
             if (!result.ok) {
-                onError?.('unknown');
                 // Surface the specific failure instead of one generic message
                 // (BETA-154). 403 (no permission / plan doesn't include import)
                 // and 429 (too many imports) get dedicated import-context copy;
@@ -159,10 +158,17 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                 // maps code-less statuses via BETA-146), falling back to the
                 // generic import message.
                 const status = result.error?.status;
-                // 402 = entitlement gate (expired trial, no active plan, no
-                // billing account). Not a failure of ours: show the cause and a
-                // link to the pricing page the server points at (HOS-283).
+                // A7: an entitlement gate reports its own cause rather than
+                // 'unknown', so upsell moments stop inflating the generic
+                // import-failure rate in the funnel (HOS-283).
+                onError?.(status === 402 ? 'entitlement_required' : 'unknown');
+                // 402 = entitlement gate, not a failure of ours. Two gates are
+                // mounted on /protected/*, and they have DIFFERENT remedies:
+                // an expired trial is resolved by choosing a plan, an overdue
+                // payment by updating the card. Sending the second one to the
+                // pricing page would be a dead end (HOS-283).
                 if (status === 402) {
+                    const isPaymentOverdue = result.error?.reason === 'GRACE_PERIOD_EXPIRED';
                     setError(
                         translateApiError({
                             error: result.error,
@@ -173,15 +179,28 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                             )
                         })
                     );
-                    setErrorAction({
-                        label: t('host.importFromUrl.errors.entitlementCta', 'Ver planes'),
-                        href: buildUrl({
-                            locale,
-                            path: resolveSubscriptionPlansPathForAudience({
-                                audience: readUpgradeAudience(result.error?.details)
-                            })
-                        })
-                    });
+                    setErrorAction(
+                        isPaymentOverdue
+                            ? {
+                                  label: t(
+                                      'host.importFromUrl.errors.paymentMethodCta',
+                                      'Actualizar medio de pago'
+                                  ),
+                                  href: buildUrl({ locale, path: 'mi-cuenta/suscripcion' })
+                              }
+                            : {
+                                  label: t(
+                                      'host.importFromUrl.errors.entitlementCta',
+                                      'Ver planes'
+                                  ),
+                                  href: buildUrl({
+                                      locale,
+                                      path: resolveSubscriptionPlansPathForAudience({
+                                          audience: readUpgradeAudience(result.error?.details)
+                                      })
+                                  })
+                              }
+                    );
                     setIsSubmitting(false);
                     return;
                 }

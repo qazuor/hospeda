@@ -611,6 +611,35 @@ describe('ImportFromUrl i18n keys', () => {
                 expect(entry?.steps).toBeTruthy();
                 expect(entry?.example).toBeTruthy();
             }
+            // HOS-283: upgrade CTA shown next to an entitlement error.
+            expect((block?.errors as Record<string, unknown>)?.entitlementCta).toBeTruthy();
+            expect((block?.errors as Record<string, unknown>)?.paymentMethodCta).toBeTruthy();
+        });
+
+        // HOS-283: the component test mocks `t`, so it can never prove the real
+        // strings exist. Without this, the first `reason` the API emits without a
+        // matching key would render a raw dotted key to the user.
+        it(`defines every entitlement 402 reason key in ${locale}/common.json`, () => {
+            // Arrange
+            const common = JSON.parse(
+                readFileSync(resolve(localesDir, locale, 'common.json'), 'utf8')
+            ) as { apiError?: Record<string, string> };
+
+            // Act
+            const apiError = common.apiError;
+
+            // Assert — one per cause whitelisted in the API's 402 branch
+            // (`readEntitlementCause` in apps/api/src/middlewares/response.ts),
+            // plus the code-level copy they fall back to.
+            expect(apiError?.ENTITLEMENT_REQUIRED).toBeTruthy();
+            for (const reason of [
+                'TRIAL_EXPIRED',
+                'GRACE_PERIOD_EXPIRED',
+                'NO_ACTIVE_SUBSCRIPTION',
+                'NO_BILLING_ACCOUNT'
+            ]) {
+                expect(apiError?.[reason]).toBeTruthy();
+            }
         });
     }
 });
@@ -694,7 +723,14 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
         return screen.findByRole('alert');
     }
 
-    it('does NOT blame the platform on a 402', async () => {
+    // NOTE on what these assert: the `@/lib/i18n` mock resolves a key with no
+    // fallback to the key ITSELF, so the banner renders the dotted key the
+    // component picked. That is the useful observation here — WHICH key won the
+    // reason → code → status chain. Asserting on Spanish prose instead would be
+    // vacuous: the mock can never produce it, so a negative match against the
+    // old copy would hold no matter how broken the component was. The real
+    // strings are covered by the catalog test below.
+    it('resolves the message through the `reason` rail, not INTERNAL_ERROR', async () => {
         // Arrange / Act
         const alert = await submitWithError({
             status: 402,
@@ -703,9 +739,20 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
             details: { upgradeAudience: 'host' }
         });
 
-        // Assert — the old copy was "Algo salió mal del lado nuestro"
-        expect(alert).not.toHaveTextContent(/algo salió mal/i);
-        expect(alert).toHaveTextContent(/plan/i);
+        // Assert — the cause-specific key, not the code-level one and not the
+        // INTERNAL_ERROR that produced "Algo salió mal del lado nuestro".
+        expect(alert).toHaveTextContent('common.apiError.TRIAL_EXPIRED');
+        expect(alert).not.toHaveTextContent('common.apiError.INTERNAL_ERROR');
+        expect(alert).not.toHaveTextContent('common.apiError.GENERIC');
+    });
+
+    it('falls back to the entitlement copy when the API sends no reason', async () => {
+        // Arrange / Act
+        const alert = await submitWithError({ status: 402, code: 'ENTITLEMENT_REQUIRED' });
+
+        // Assert — `code` resolves via `t(key, fallback)`, so the mock returns
+        // the component's own fallback string rather than the key.
+        expect(alert).toHaveTextContent(/tu plan no incluye esta función/i);
     });
 
     it('renders an upgrade CTA pointing at the owner plans page', async () => {
@@ -743,6 +790,37 @@ describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
         // Assert
         const cta = await screen.findByRole('link', { name: /ver planes/i });
         expect(cta.getAttribute('href')).toContain('suscriptores/planes');
+    });
+
+    it('sends an overdue payment to the subscription page, not to plans', async () => {
+        // Arrange / Act — the second 402 gate. Its remedy is updating the card,
+        // so routing it to the pricing page would be a dead end (HOS-283).
+        await submitWithError({
+            status: 402,
+            code: 'ENTITLEMENT_REQUIRED',
+            reason: 'GRACE_PERIOD_EXPIRED',
+            details: { daysOverdue: 3 }
+        });
+
+        // Assert
+        const cta = await screen.findByRole('link', { name: /actualizar medio de pago/i });
+        expect(cta.getAttribute('href')).toContain('mi-cuenta/suscripcion');
+        expect(screen.queryByRole('link', { name: /ver planes/i })).toBeNull();
+    });
+
+    it('shows the overdue-payment copy, not the plan copy', async () => {
+        // Arrange / Act
+        const alert = await submitWithError({
+            status: 402,
+            code: 'ENTITLEMENT_REQUIRED',
+            reason: 'GRACE_PERIOD_EXPIRED',
+            details: { daysOverdue: 3 }
+        });
+
+        // Assert — the reason rail picks the overdue key (see the note above on
+        // why this asserts the key rather than the prose).
+        expect(alert).toHaveTextContent('common.apiError.GRACE_PERIOD_EXPIRED');
+        expect(alert).not.toHaveTextContent('common.apiError.TRIAL_EXPIRED');
     });
 
     it('does NOT render the CTA on a 403', async () => {
