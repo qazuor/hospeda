@@ -51,12 +51,21 @@ export interface AccommodationData {
 
 /**
  * Drops BOTH rich-description fields from an accommodation object before it
- * reaches a public CARD listing payload.
+ * reaches a payload that must never carry them.
  *
  * `richDescription` and its SPEC-212 i18n sibling `richDescriptionI18n` are
- * PREMIUM fields gated per-owner by the entitlement system. Card listings never
- * render rich text, so both must be absent regardless of the owner's plan. The
- * omission is applied at the DATA level so it is fail-closed and independent of
+ * PREMIUM fields gated per-owner by the entitlement system. Two families of call
+ * site use this — do not narrow the helper to either one:
+ *
+ *   - PUBLIC card listings, which never render rich text, so both fields must be
+ *     absent regardless of the owner's plan.
+ *   - The PROTECTED accommodation routes other than `getById` (BETA-199). That
+ *     schema declares the pair so the owner's editor can show its translation
+ *     status, and `getById` is the only route allowed to emit it — after resolving
+ *     the owner's entitlements. The other seven drop it here instead, which keeps
+ *     their payloads exactly as they were before the pair was declared.
+ *
+ * The omission is applied at the DATA level so it is fail-closed and independent of
  * any Zod schema change.
  *
  * Prefer this helper over a hand-rolled destructure: the two fields MUST be

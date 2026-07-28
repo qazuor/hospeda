@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import {
     AccommodationAdminSchema,
-    AccommodationProtectedSchema,
+    AccommodationProtectedCardSchema,
     AccommodationPublicCardSchema
 } from '../accommodation/accommodation.access.schema.js';
 import {
@@ -228,7 +228,7 @@ export const PostProtectedSchema = PostSchema.pick({
     /** Full author data when JOIN is performed — protected-tier fields only. */
     author: UserProtectedSchema.nullish(),
     /** Full related accommodation when JOIN is performed — protected-tier fields only. */
-    relatedAccommodation: AccommodationProtectedSchema.nullish(),
+    relatedAccommodation: AccommodationProtectedCardSchema.nullish(),
     /** Full related destination when JOIN is performed — protected-tier fields only. */
     relatedDestination: DestinationProtectedSchema.nullish(),
     /** Full related event when JOIN is performed — protected-tier fields only. */

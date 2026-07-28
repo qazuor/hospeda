@@ -127,6 +127,14 @@ vi.mock('@repo/db', async (importActual) => {
     };
 });
 
+// BETA-199 added an owner-entitlement lookup to this route (the rich-description
+// gate). Stubbed here so it neither reaches billing nor issues a THIRD `select()`
+// through the shared `getDb` mock — which would land in `capturedQueries` and
+// shift the junction assertions below off by one.
+vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
+    resolveOwnerEntitlementsForOwnerId: vi.fn().mockResolvedValue([])
+}));
+
 vi.mock('../../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));

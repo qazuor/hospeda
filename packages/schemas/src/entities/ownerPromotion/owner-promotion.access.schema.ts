@@ -1,7 +1,7 @@
 import type { z } from 'zod';
 import {
     AccommodationAdminSchema,
-    AccommodationProtectedSchema,
+    AccommodationProtectedCardSchema,
     AccommodationPublicCardSchema
 } from '../accommodation/accommodation.access.schema.js';
 import {
@@ -104,7 +104,7 @@ export const OwnerPromotionProtectedSchema = OwnerPromotionSchema.pick({
      * loader returns `null` — `.optional()` alone rejects null and 500s the list
      * (the same fix the admin tier already carries).
      */
-    accommodation: AccommodationProtectedSchema.nullable().optional()
+    accommodation: AccommodationProtectedCardSchema.nullable().optional()
 });
 
 export type OwnerPromotionProtected = z.infer<typeof OwnerPromotionProtectedSchema>;
