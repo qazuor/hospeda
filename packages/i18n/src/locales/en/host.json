@@ -378,7 +378,17 @@
                 "generating": "Generating translations...",
                 "successMessage": "Translations generated. Reloading...",
                 "errorGeneric": "Could not generate translations. Please try again.",
-                "errorNetwork": "Connection error while trying to generate translations."
+                "errorNetwork": "Connection error while trying to generate translations.",
+                "fieldPending": "Generating...",
+                "fieldTranslated": "Translated",
+                "fieldFailed": "Could not translate into {{locales}}",
+                "fieldFailedUnknown": "This field could not be translated",
+                "fieldUntouched": "No changes",
+                "fieldNoSource": "No content to translate",
+                "nothingGenerated": "There were no pending translations to generate.",
+                "allFailed": "No translation could be generated. Check the per-field detail and try again.",
+                "partialFailure": "Some translations were not generated. Check the per-field detail.",
+                "refresh": "Refresh the page"
             },
             "featuredToggle": {
                 "label": "[EN] Destacar mi alojamiento",
