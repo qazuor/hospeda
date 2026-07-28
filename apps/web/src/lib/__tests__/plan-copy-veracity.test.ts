@@ -530,9 +530,15 @@ describe('plan copy veracity — FAQ and landing prose (HOS-331)', () => {
         // Hints from every language, for the same reason `matchedPhrase` scans
         // all three: a locale directory does not guarantee locale content.
         const allHints = LOCALES.flatMap((locale) => FIRST_SUBSCRIPTION_HINTS[locale]);
+        // A trial can be promised in words as well as in a number: the banner
+        // description says "no se cobra nada hasta que termina la prueba" with
+        // no placeholder at all, and gating only on `{{trialDays}}` skipped
+        // exactly the row whose comment explains why it is guarded.
+        const PROMISES_A_TRIAL =
+            /\{\{trialDays\}\}|prueba gratis|prueba gratuita|free trial|teste gr[áa]tis|d[ií]as gratis|days free|dias gr[áa]tis|termina la prueba|trial ends|teste terminar/i;
         const unqualified: string[] = [];
         for (const row of PROSE_COPY) {
-            if (!row.copy.includes('{{trialDays}}')) continue;
+            if (!PROMISES_A_TRIAL.test(row.copy)) continue;
             const haystack = row.copy.toLowerCase();
             if (!allHints.some((hint) => haystack.includes(hint))) {
                 unqualified.push(`${row.locale}/${row.surface}`);

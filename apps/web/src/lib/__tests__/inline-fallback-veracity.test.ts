@@ -211,6 +211,34 @@ const LIVE_FALLBACKS = ALL_FALLBACKS.filter((fb) =>
 );
 
 describe('inline fallback veracity (HOS-331)', () => {
+    it('maps every locale file to the namespace config.shared.ts registers it under', () => {
+        // The map above was justified by a comment with hard numbers and by
+        // nothing else: setting it to `{}` re-introduced the round-4 bug with
+        // every test still green. Derive the truth from the registry instead.
+        //
+        // `rawWebTranslations` binds `<namespace>: <import>` and the imports are
+        // named after their file (`destinationEs` <- destination.json), so the
+        // binding lines are enough to recover the file->namespace pairs without
+        // executing the module.
+        const registry = readFileSync(resolve(LOCALES_DIR, '../config.shared.ts'), 'utf8');
+        const esBlock = registry.slice(registry.indexOf('export const rawWebTranslations'));
+        const bindings = [...esBlock.matchAll(/^\s{8}'?([\w-]+)'?:\s*(\w+?)Es,?$/gm)];
+        expect(bindings.length).toBeGreaterThan(40);
+
+        const mismatches: string[] = [];
+        for (const [, namespace, importName] of bindings) {
+            if (!namespace || !importName) continue;
+            // `aiSearchEs` <- aiSearch.json, `authUiEs` <- auth-ui.json: compare
+            // case- and dash-insensitively, the file name is the source of truth.
+            const normalise = (value: string) => value.replace(/-/g, '').toLowerCase();
+            const expected = NAMESPACE_BY_FILE[importName] ?? importName;
+            if (normalise(expected) !== normalise(namespace)) {
+                mismatches.push(`${importName}.json is registered as '${namespace}'`);
+            }
+        }
+        expect(mismatches).toEqual([]);
+    });
+
     it('finds fallbacks of BOTH extraction shapes and BOTH file types', () => {
         // Guards the guard, on every axis that can silently collapse.
         //
@@ -231,7 +259,7 @@ describe('inline fallback veracity (HOS-331)', () => {
         expect(LIVE_FALLBACKS.some((fb) => fb.key === 'benefits.owner.5.title')).toBe(true);
     });
 
-    it('finds fallbacks whose key is missing from every locale', () => {
+    it('finds fallbacks whose key is missing from at least one locale', () => {
         // If this ever hits zero, either the catalog got complete (good — then
         // delete this file) or the key comparison broke (bad).
         expect(LIVE_FALLBACKS.length).toBeGreaterThan(0);
@@ -259,6 +287,24 @@ describe('inline fallback veracity (HOS-331)', () => {
             }
         }
         expect(violations).toEqual([]);
+    });
+
+    it('never promises a trial in a fallback without the first-subscription qualifier', () => {
+        // The catalog guard enforces this on 24 strings; it cannot reach a
+        // fallback, because a fallback exists precisely where the catalog does
+        // not. `pricing.owner.cta.description` — the CTA on
+        // /suscriptores/planes/comparar — is the one live fallback carrying
+        // `{{trialDays}}`, so dropping its qualifier was undetectable by either
+        // guard: a rule-shaped seam, not a surface-shaped one.
+        const HINTS = ['primera suscripción', 'first subscription', 'primeira assinatura'] as const;
+        const withPlaceholder = LIVE_FALLBACKS.filter((fb) => fb.text.includes('{{trialDays}}'));
+        // Non-vacuity: if no live fallback interpolates the trial any more, this
+        // rule is scanning nothing and should be revisited rather than trusted.
+        expect(withPlaceholder.length).toBeGreaterThan(0);
+        const unqualified = withPlaceholder
+            .filter((fb) => !HINTS.some((hint) => fb.text.toLowerCase().includes(hint)))
+            .map((fb) => `${fb.file} → ${fb.key}`);
+        expect(unqualified).toEqual([]);
     });
 
     it('has no support entitlement that would make "dedicated support" true', () => {
