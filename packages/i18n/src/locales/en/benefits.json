@@ -1,6 +1,6 @@
 {
     "title": "Benefits",
-    "description": "Discover all the benefits of using Hospeda for your travels. Exclusive deals, 24/7 support, and more.",
+    "description": "Discover all the benefits of using Hospeda for your travels. Exclusive deals, price alerts, and support by WhatsApp, email and phone during office hours.",
     "heading": "Exclusive Benefits",
     "subheading": "Enjoy unique perks when you choose Hospeda for your travels",
     "benefits": {
@@ -9,7 +9,7 @@
             "description": "We guarantee the best prices on the market. If you find a lower rate, we'll match it and give you an extra 5% discount."
         },
         "support247": {
-            "title": "24/7 Support",
+            "title": "Support when you need it",
             "description": "Our support team is available 24 hours a day, 7 days a week to help you with any question or emergency during your trip."
         },
         "freeCancellation": {
@@ -55,7 +55,7 @@
             "subtitle": "15+ bookings",
             "features": {
                 "allSilver": "Everything in Silver",
-                "vipSupport": "VIP 24/7 support",
+                "vipSupport": "Priority VIP support",
                 "points": "2 points per $1 spent",
                 "discount": "10% extra discount",
                 "exclusiveAccess": "Access to exclusive offers"

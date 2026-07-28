@@ -1,6 +1,6 @@
 {
     "title": "Beneficios",
-    "description": "Descubre todos los beneficios de usar Hospeda para tus viajes. Ofertas exclusivas, soporte 24/7 y más.",
+    "description": "Descubre todos los beneficios de usar Hospeda para tus viajes. Ofertas exclusivas, alertas de precio y soporte por WhatsApp, mail y teléfono en horario de oficina.",
     "heading": "Beneficios Exclusivos",
     "subheading": "Disfruta de ventajas únicas al elegir Hospeda para tus viajes",
     "benefits": {
@@ -9,7 +9,7 @@
             "description": "Garantizamos los mejores precios del mercado. Si encuentras una tarifa más baja, igualamos el precio y te damos un 5% adicional de descuento."
         },
         "support247": {
-            "title": "Soporte 24/7",
+            "title": "Soporte cuando lo necesitás",
             "description": "Nuestro equipo de soporte está disponible las 24 horas del día, los 7 días de la semana para ayudarte con cualquier consulta o emergencia durante tu viaje."
         },
         "freeCancellation": {
@@ -55,7 +55,7 @@
             "subtitle": "15+ reservas",
             "features": {
                 "allSilver": "Todo lo de Plata",
-                "vipSupport": "Soporte VIP 24/7",
+                "vipSupport": "Soporte VIP prioritario",
                 "points": "2 puntos por $1 gastado",
                 "discount": "10% descuento adicional",
                 "exclusiveAccess": "Acceso a ofertas exclusivas"
