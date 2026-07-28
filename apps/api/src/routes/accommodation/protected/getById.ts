@@ -152,12 +152,16 @@ async function fetchProtectedFeatures(accommodationId: string): Promise<FeatureP
  * HOS-190 lock-out class). A failure resolves to "no entitlement proven": the
  * premium pair is withheld, every other field is still served.
  *
- * Note what that means when billing is degraded rather than down: every layer
- * beneath already catches its own failure and returns an EMPTY entitlement set
- * (`resolveOwnerRole`, `loadOwnerCustomerId`, `loadCustomerEntitlements`), so the
- * common outcome is not this `catch` — it is an entitled host whose rich
- * description silently reads as "your plan does not include this". The `catch`
- * only covers a throw those layers do not model.
+ * Note what that means when billing is degraded rather than down. The layers
+ * beneath catch their own failures and degrade instead of throwing, each in its
+ * own way: `resolveOwnerRole` returns a null role (losing only the staff bypass),
+ * `loadOwnerCustomerId` / `loadCustomerEntitlements` return an empty set, and an
+ * unconfigured billing stack resolves to `getDefaultEntitlements()` — the
+ * tourist-free plan, which is NOT empty but does not carry
+ * CAN_USE_RICH_DESCRIPTION either. Every one of those paths is fail-closed for
+ * this gate, and none of them reaches the `catch` below; what they produce is an
+ * entitled host whose rich description silently reads as "your plan does not
+ * include this". The `catch` covers only a throw those layers do not model.
  *
  * @param ownerId - The accommodation's owner.
  * @returns The owner's entitlements, or an empty set when they cannot be read.

@@ -497,9 +497,12 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     //   - `accommodation-protected-card.test.ts` parses each embedding parent with
     //     a premium-carrying fixture, so it holds whichever schema the parent
     //     names — including a swap to the admin tier, which carries the pair too.
-    //   - `nested-embed.guard.test.ts` fails when a schema outside those starts
-    //     referencing an accommodation, so a fourth embedder cannot arrive
-    //     untested. It covers `packages/schemas/src/entities` only.
+    //     It iterates the relation fields that exist TODAY, by name.
+    //   - `nested-embed.guard.test.ts` covers the two shapes that test cannot
+    //     iterate: a FOURTH embedder file, and a SECOND relation added to an
+    //     existing one. It reasons about identifiers over
+    //     `packages/schemas/src/entities` only, so a relation built from a
+    //     locally-composed schema is not seen.
     richDescription: true,
     richDescriptionI18n: true,
     isFeatured: true,
