@@ -65,6 +65,40 @@ describe('stripAirbnbMetaDescriptionNoise (HOS-287)', () => {
             // Assert
             expect(result).toBe('Cheroga offers you tranquility.');
         });
+
+        it('should strip a date without the "de" connectors', () => {
+            // Arrange — CLDR's modern es short form
+            const metaDescription = '24 jul 2026 · Cheroga te ofrece tranquilidad.';
+
+            // Act
+            const result = stripAirbnbMetaDescriptionNoise({ metaDescription });
+
+            // Assert
+            expect(result).toBe('Cheroga te ofrece tranquilidad.');
+        });
+
+        it('should strip a date built with non-breaking spaces', () => {
+            // Arrange — Intl formatters emit U+202F/U+00A0 between date tokens
+            const metaDescription = '24\u00A0de\u202Fjul de 2026 \u00B7 Cheroga te ofrece paz.';
+
+            // Act
+            const result = stripAirbnbMetaDescriptionNoise({ metaDescription });
+
+            // Assert
+            expect(result).toBe('Cheroga te ofrece paz.');
+        });
+
+        it('should strip a date preceded by leading whitespace', () => {
+            // Arrange — scraped values routinely inherit padding from the HTML;
+            // a bare `^` anchor would silently disable the whole fix.
+            const metaDescription = '\n  24 de jul de 2026 · Cheroga te ofrece paz.';
+
+            // Act
+            const result = stripAirbnbMetaDescriptionNoise({ metaDescription });
+
+            // Assert
+            expect(result).toBe('Cheroga te ofrece paz.');
+        });
     });
 
     describe('text preservation', () => {
@@ -147,6 +181,35 @@ describe('stripAirbnbMetaDescriptionNoise (HOS-287)', () => {
             // Assert
             expect(result).toBe('Casa rural entero · Cheroga te ofrece tranquilidad.');
         });
+
+        it('should NOT treat an Argentine street address + postcode as a date', () => {
+            // Arrange — `<word> <1-2 digits>, <4 digits> ·` has the exact shape of
+            // an English date, but "Colón" is not a month name.
+            const metaDescription = 'Colón 45, 3280 · Casa céntrica con parque y pileta.';
+
+            // Act
+            const result = stripAirbnbMetaDescriptionNoise({
+                metaDescription,
+                propertyType: 'Casa'
+            });
+
+            // Assert — the address survives
+            expect(result).toBe('Colón 45, 3280 · Casa céntrica con parque y pileta.');
+        });
+
+        it('should NOT treat a capacity line as a date', () => {
+            // Arrange
+            const metaDescription = 'Depto 2 2024 · totalmente reciclado, muy luminoso.';
+
+            // Act
+            const result = stripAirbnbMetaDescriptionNoise({
+                metaDescription,
+                propertyType: 'Depto'
+            });
+
+            // Assert
+            expect(result).toBe('Depto 2 2024 · totalmente reciclado, muy luminoso.');
+        });
     });
 
     describe('type segment matching', () => {
@@ -203,9 +266,53 @@ describe('stripAirbnbMetaDescriptionNoise (HOS-287)', () => {
             // Assert
             expect(result).toBe('· Texto real.');
         });
+
+        it('should not match an empty segment against a non-alphanumeric type', () => {
+            // Arrange — the type normalizes to '' too, so an equality check
+            // without an emptiness guard would strip a segment it never matched.
+            const metaDescription = 'Jun 23, 2026 ·  · Texto real.';
+
+            // Act
+            const result = stripAirbnbMetaDescriptionNoise({
+                metaDescription,
+                propertyType: '—'
+            });
+
+            // Assert
+            expect(result).toBe('· Texto real.');
+        });
     });
 
     describe('degenerate input', () => {
+        it('should return null when the type is the last segment (listing with no blurb)', () => {
+            // Arrange — a meta line with no third segment: what is left is the
+            // type itself, which is not a short description.
+            const metaDescription = '24 de jul de 2026 · Casa rural entero';
+
+            // Act
+            const result = stripAirbnbMetaDescriptionNoise({
+                metaDescription,
+                propertyType: 'Casa rural entero'
+            });
+
+            // Assert
+            expect(result).toBeNull();
+        });
+
+        it('should keep a trailing segment that is NOT the type', () => {
+            // Arrange
+            const metaDescription = '24 de jul de 2026 · Cheroga te ofrece paz';
+
+            // Act
+            const result = stripAirbnbMetaDescriptionNoise({
+                metaDescription,
+                propertyType: 'Casa rural entero'
+            });
+
+            // Assert
+            expect(result).toBe('Cheroga te ofrece paz');
+        });
+
         it('should return null when only noise remains', () => {
             // Arrange
             const metaDescription = 'Jun 23, 2026 · Entire cottage · ';

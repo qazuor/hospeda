@@ -655,14 +655,18 @@ export function mapItemToRawExtraction(raw: AirbnbItem): RawExtraction {
     // (`<scrape date> · <property type> · <real text>`); other actors may use
     // `summary`/`publicDescription`. The meta line's noise segments are stripped
     // before the value reaches the host-facing short description (HOS-287).
-    const summaryRaw = raw.summary ?? raw.publicDescription ?? raw.metaDescription;
-    const summaryValue = summaryRaw
-        ? stripAirbnbMetaDescriptionNoise({
-              metaDescription: summaryRaw,
-              propertyType: raw.propertyType,
-              roomType: raw.roomType
-          })
-        : null;
+    // The cleanup applies ONLY to `metaDescription` — `summary` and
+    // `publicDescription` are prose, not meta lines, and must not be rewritten.
+    const authoredSummary = raw.summary ?? raw.publicDescription;
+    const summaryValue =
+        (typeof authoredSummary === 'string' ? authoredSummary : null) ??
+        (typeof raw.metaDescription === 'string'
+            ? stripAirbnbMetaDescriptionNoise({
+                  metaDescription: raw.metaDescription,
+                  propertyType: raw.propertyType,
+                  roomType: raw.roomType
+              })
+            : null);
     if (summaryValue) {
         result.summary = { value: summaryValue, source: 'official_api' };
     }

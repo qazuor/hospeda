@@ -628,6 +628,29 @@ describe('AirbnbAdapter', () => {
             );
         });
 
+        it('should NOT rewrite an authored summary that looks like a meta line (HOS-287)', async () => {
+            // Arrange — `summary` is prose written by the host, not a meta line,
+            // so the cleanup must not touch it even when the shape collides.
+            const item: Record<string, unknown> = {
+                title: 'Casa',
+                propertyType: 'Casa rural entero',
+                summary: '24 de jul de 2026 · Casa rural entero · el día que abrimos.',
+                metaDescription: '24 de jul de 2026 · Casa rural entero · Otro texto.'
+            };
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.airbnb.com/rooms/1'),
+                makeCtx()
+            );
+
+            // Assert — verbatim
+            expect(result.summary?.value).toBe(
+                '24 de jul de 2026 · Casa rural entero · el día que abrimos.'
+            );
+        });
+
         it('should map scrapedLocality from the location string (tri_angle actor)', async () => {
             // Arrange
             const item: Record<string, unknown> = {
