@@ -1105,7 +1105,8 @@
             "prorationCreditToAccount": "will be credited to the account",
             "prorationNone": "No additional charge",
             "nextCharge": "The next full charge will be on",
-            "confirmButton": "Change plan"
+            "confirmButton": "Change plan",
+            "noDestinationPlans": "There are no other active plans in this category, so this subscription cannot be moved."
         },
         "extendTrialDialog": {
             "title": "Extend trial period",

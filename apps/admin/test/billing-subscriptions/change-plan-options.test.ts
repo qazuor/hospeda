@@ -63,17 +63,16 @@ describe('getChangePlanOptions — retired plans (HOS-331)', () => {
 
 describe('getChangePlanOptions — category and self filtering', () => {
     it('offers every active sibling of the same category', () => {
+        // Spelled out rather than derived: rebuilding `expected` with the same
+        // predicate the function uses makes the assertion incapable of failing
+        // on a predicate bug, which is the only bug worth testing for here.
         const current = getPlanBySlug('owner-basico');
         expect(current).toBeDefined();
-        const expected = ALL_PLANS.filter(
-            (plan) => plan.category === 'owner' && plan.slug !== 'owner-basico' && plan.isActive
-        ).map((plan) => plan.slug);
         const options = getChangePlanOptions({
             currentPlan: current,
             currentSlug: 'owner-basico'
         });
-        expect(options.map((option) => option.slug)).toEqual(expected);
-        expect(expected.length).toBeGreaterThan(0);
+        expect(options.map((option) => option.slug)).toEqual(['owner-pro', 'owner-premium']);
     });
 
     it('never offers the current plan back to itself', () => {

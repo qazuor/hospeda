@@ -89,6 +89,17 @@ export function ChangePlanDialog({
                         <Label htmlFor="new-plan">
                             {t('admin-billing.subscriptions.changePlanDialog.newPlanLabel')}
                         </Label>
+                        {availablePlans.length === 0 && (
+                            // Every sibling in this category is switched off — the
+                            // complex-* tiers, today. Without this the operator sees an
+                            // empty select and a dead Confirm button, which reads as a
+                            // broken dialog rather than an intentional block (HOS-331).
+                            <p className="text-muted-foreground text-sm">
+                                {t(
+                                    'admin-billing.subscriptions.changePlanDialog.noDestinationPlans'
+                                )}
+                            </p>
+                        )}
                         <select
                             id="new-plan"
                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"

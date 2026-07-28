@@ -1105,7 +1105,8 @@
             "prorationCreditToAccount": "a la cuenta",
             "prorationNone": "Sin cargo adicional",
             "nextCharge": "El siguiente cobro completo será el",
-            "confirmButton": "Cambiar plan"
+            "confirmButton": "Cambiar plan",
+            "noDestinationPlans": "No hay otros planes activos en esta categoría, así que no se puede cambiar de plan."
         },
         "extendTrialDialog": {
             "title": "Extender periodo de prueba",
