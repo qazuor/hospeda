@@ -21,10 +21,8 @@
  */
 
 import { CheckCircleIcon } from '@repo/icons';
+import type { TranslationFn } from '@/lib/i18n';
 import styles from './CommerceLead.module.css';
-
-/** The subset of the i18n API these components need. */
-type TranslateFn = (key: string, fallback?: string, params?: Record<string, unknown>) => string;
 
 /** The four journey steps, in order, as `[i18n key, Spanish fallback]`. */
 const PROCESS_STEPS: ReadonlyArray<readonly [string, string]> = [
@@ -46,7 +44,7 @@ const PROCESS_STEPS: ReadonlyArray<readonly [string, string]> = [
  * @param params.t - Bound translation function
  * @returns The `<ol>` of steps
  */
-function ProcessSteps({ t }: { readonly t: TranslateFn }) {
+function ProcessSteps({ t }: { readonly t: TranslationFn }) {
     return (
         <ol className={styles.processSteps}>
             {PROCESS_STEPS.map(([key, fallback]) => (
@@ -68,7 +66,7 @@ function ProcessSteps({ t }: { readonly t: TranslateFn }) {
  * @param params.t - Bound translation function
  * @returns The explainer block rendered above the form fields
  */
-export function CommerceLeadProcess({ t }: { readonly t: TranslateFn }) {
+export function CommerceLeadProcess({ t }: { readonly t: TranslationFn }) {
     return (
         <section
             className={styles.process}
@@ -98,15 +96,11 @@ export function CommerceLeadSuccess({
     t,
     email
 }: {
-    readonly t: TranslateFn;
+    readonly t: TranslationFn;
     readonly email: string;
 }) {
     return (
-        <div
-            className={styles.success}
-            role="alert"
-            aria-live="assertive"
-        >
+        <div className={styles.success}>
             <span
                 className={styles.successIcon}
                 aria-hidden="true"
@@ -116,17 +110,31 @@ export function CommerceLeadSuccess({
                     weight="duotone"
                 />
             </span>
-            <h2 className={styles.successTitle}>
-                {t('commerce.lead.successDetail.title', '¡Listo! Recibimos tu solicitud.')}
-            </h2>
 
-            {email && (
-                <p className={styles.successSentTo}>
-                    {t('commerce.lead.successDetail.sentTo', 'Te vamos a escribir a {{email}}.', {
-                        email
-                    })}
-                </p>
-            )}
+            {/* Only the acknowledgement is an assertive alert. The steps and the
+                closing note below are ordinary content: `role="alert"` announces
+                its whole subtree in one uninterruptible burst, and forcing a
+                screen reader through a heading, a four-item list and two
+                paragraphs — repeating steps it already read before the visitor
+                submitted — is worse than the one-line alert this replaced. */}
+            <div
+                role="alert"
+                aria-live="assertive"
+            >
+                <h2 className={styles.successTitle}>
+                    {t('commerce.lead.successDetail.title', '¡Listo! Recibimos tu solicitud.')}
+                </h2>
+
+                {email && (
+                    <p className={styles.successSentTo}>
+                        {t(
+                            'commerce.lead.successDetail.sentTo',
+                            'Te vamos a escribir a {{email}}.',
+                            { email }
+                        )}
+                    </p>
+                )}
+            </div>
 
             <h3 className={styles.successProcessTitle}>
                 {t('commerce.lead.successDetail.processTitle', 'Qué pasa ahora')}
@@ -136,7 +144,7 @@ export function CommerceLeadSuccess({
             <p className={styles.successClosing}>
                 {t(
                     'commerce.lead.successDetail.closing',
-                    'No hace falta que hagas nada más por ahora. Si en unos días no tenés novedades, escribinos y lo revisamos.'
+                    'Si tenés dudas o pasan unos días sin novedades, escribinos y lo revisamos.'
                 )}
             </p>
         </div>

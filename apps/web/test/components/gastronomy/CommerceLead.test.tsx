@@ -654,12 +654,30 @@ describe('CommerceLead', () => {
 
         // The submitted email does NOT link an approved lead to an existing
         // account today — commerce-ports.ts calls signUpEmail with no lookup.
-        // That is HOS-296. The copy must not promise it in the meantime.
+        // That is HOS-296. The copy must not promise it in the meantime, in
+        // ANY phrasing, so this pins the exact wording of the step rather than
+        // blacklisting a couple of words a reworded promise would slip past.
+        it('pins step 3 to the account-neutral wording', () => {
+            renderForm();
+            const step3 = screen.getByRole('list').querySelectorAll('li')[2];
+            expect(step3?.textContent).toBe(
+                'Te avisamos por correo cuando esté listo, con los pasos para entrar.'
+            );
+        });
+
         it('never claims the lead links to an existing account', () => {
             renderForm();
             const body = document.body.textContent ?? '';
-            expect(body).not.toMatch(/vincul/i);
-            expect(body).not.toMatch(/tu cuenta existente/i);
+            for (const claim of [
+                /vincul/i,
+                /cuenta existente/i,
+                /cuenta ya registrada/i,
+                /te conectamos/i,
+                /iniciá sesión con/i,
+                /con tu cuenta de hospeda/i
+            ]) {
+                expect(body).not.toMatch(claim);
+            }
         });
 
         it('replaces the form with a confirmation, not just a toast', async () => {
@@ -697,23 +715,31 @@ describe('CommerceLead', () => {
             });
         });
 
-        it('tells the visitor nothing further is expected of them', async () => {
+        it('invites the visitor to get in touch rather than only wait', async () => {
             renderForm();
             await submitSuccessfully();
 
             await waitFor(() => {
-                expect(screen.getByText(/no hace falta que hagas nada más/i)).toBeInTheDocument();
+                expect(screen.getByText(/escribinos y lo revisamos/i)).toBeInTheDocument();
             });
         });
 
-        it('announces the confirmation to assistive technology', async () => {
+        // `role="alert"` announces its whole subtree in one uninterruptible
+        // burst, so it must stay scoped to the acknowledgement. The steps and
+        // the closing note are ordinary content read at the user's own pace.
+        it('scopes the assertive alert to the acknowledgement only', async () => {
             renderForm();
-            await submitSuccessfully();
+            await submitSuccessfully('contacto@laparrilla.com');
 
             await waitFor(() => {
                 const alert = screen.getByRole('alert');
                 expect(alert).toHaveAttribute('aria-live', 'assertive');
                 expect(alert.textContent).toMatch(/recibimos tu solicitud/i);
+                expect(alert.textContent).toContain('contacto@laparrilla.com');
+                // The repeated journey must NOT be inside the live region.
+                expect(alert.querySelector('ol')).toBeNull();
+                expect(alert.textContent).not.toMatch(/qué pasa ahora/i);
+                expect(alert.textContent).not.toMatch(/escribinos y lo revisamos/i);
             });
         });
     });

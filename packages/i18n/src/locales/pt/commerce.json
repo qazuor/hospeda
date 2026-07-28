@@ -24,12 +24,11 @@
         },
         "submit": "Enviar solicitação",
         "submitting": "Enviando...",
-        "success": "Obrigado! Recebemos sua solicitação e entraremos em contato em breve.",
         "successDetail": {
             "title": "Pronto! Recebemos sua solicitação.",
             "sentTo": "Vamos escrever para você em {{email}}.",
             "processTitle": "O que acontece agora",
-            "closing": "Não é preciso fazer mais nada por enquanto. Se em alguns dias você não tiver novidades, entre em contato que vamos verificar."
+            "closing": "Se tiver dúvidas ou passarem alguns dias sem novidades, entre em contato que vamos verificar."
         },
         "error": "Ocorreu um erro ao enviar a solicitação. Por favor, tente novamente.",
         "rateLimited": "Muitas tentativas. Por favor, aguarde alguns minutos antes de tentar novamente.",
