@@ -24,6 +24,7 @@
  * Cloudinary once multiple rows exist in the relational table.
  */
 
+import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { ENTITY_GALLERY_CAPS } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type AccommodationMediaRow, accommodationMediaApi } from '@/lib/api/endpoints-protected';
@@ -201,11 +202,11 @@ export function PhotoSection({
                     'Solo se permiten archivos JPG, PNG o WebP'
                 );
             }
-            const maxSize = 5 * 1024 * 1024; // 5 MB
-            if (file.size > maxSize) {
+            if (file.size > mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB)) {
                 return t(
                     'host.properties.editor.photo.tooLarge',
-                    'El archivo no puede superar 5MB'
+                    'El archivo no puede superar {{maxSize}}MB',
+                    { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
                 );
             }
             return null;
@@ -525,7 +526,8 @@ export function PhotoSection({
                         <span className={styles.uploadHint}>
                             {t(
                                 'host.properties.editor.photo.formats',
-                                'JPG, PNG o WebP — máx. 5MB'
+                                'JPG, PNG o WebP — máx. {{maxSize}}MB',
+                                { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
                             )}
                         </span>
                     </button>

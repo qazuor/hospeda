@@ -1,17 +1,17 @@
 import type { User, UserAdminStats } from '@repo/schemas';
 import { and, count, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
-import { events } from '../../schemas/event/event.dbschema.ts';
-import { posts } from '../../schemas/post/post.dbschema.ts';
 import { users } from '../../schemas/user/user.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
-import { buildWhereClause, safeIlike } from '../../utils/drizzle-helpers.ts';
+import { buildOrderByClause, buildWhereClause, safeIlike } from '../../utils/drizzle-helpers.ts';
 
 export type UserWithCounts = User & {
     accommodationsCount: number;
+    gastronomiesCount: number;
+    experiencesCount: number;
     eventsCount: number;
     postsCount: number;
+    currentPlanSlug: string | null;
 };
 
 export class UserModel extends BaseModelImpl<User> {
@@ -160,7 +160,7 @@ export class UserModel extends BaseModelImpl<User> {
      */
     async findAllWithCounts(
         where: Record<string, unknown>,
-        options?: { page?: number; pageSize?: number },
+        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
         additionalConditions?: SQL[],
         tx?: DrizzleClient
     ): Promise<{ items: UserWithCounts[]; total: number }> {
@@ -197,38 +197,91 @@ export class UserModel extends BaseModelImpl<User> {
                   ? allConditions[0]
                   : and(...allConditions);
 
+        const outerUserId = sql.raw('"users"."id"');
+        const outerUserIdText = sql.raw('"users"."id"::text');
+
         // Use correlated subqueries to get counts in a single query instead of N+1
         const accommodationsCountSq = sql<number>`(
-            SELECT count(*)::int FROM ${accommodations}
-            WHERE ${accommodations.createdById} = ${users.id}
+            SELECT count(*)::int
+            FROM "accommodations" AS a
+            WHERE a."owner_id" = ${outerUserId}
+              AND a."deleted_at" IS NULL
         )`.as('accommodations_count');
 
+        const gastronomiesCountSq = sql<number>`(
+            SELECT count(*)::int
+            FROM "gastronomies" AS g
+            WHERE g."owner_id" = ${outerUserId}
+              AND g."deleted_at" IS NULL
+        )`.as('gastronomies_count');
+
+        const experiencesCountSq = sql<number>`(
+            SELECT count(*)::int
+            FROM "experiences" AS e
+            WHERE e."owner_id" = ${outerUserId}
+              AND e."deleted_at" IS NULL
+        )`.as('experiences_count');
+
         const eventsCountSq = sql<number>`(
-            SELECT count(*)::int FROM ${events}
-            WHERE ${events.authorId} = ${users.id}
+            SELECT count(*)::int
+            FROM "events" AS e
+            WHERE e."author_id" = ${outerUserId}
+              AND e."deleted_at" IS NULL
         )`.as('events_count');
 
         const postsCountSq = sql<number>`(
-            SELECT count(*)::int FROM ${posts}
-            WHERE ${posts.authorId} = ${users.id}
+            SELECT count(*)::int
+            FROM "posts" AS p
+            WHERE p."author_id" = ${outerUserId}
+              AND p."deleted_at" IS NULL
         )`.as('posts_count');
 
-        const baseQuery = db
+        const currentPlanSlugSq = sql<string | null>`(
+            SELECT bp."name"
+            FROM "billing_subscriptions" AS bs
+            INNER JOIN "billing_customers" AS bc
+                ON bc."id" = bs."customer_id"
+            INNER JOIN "billing_plans" AS bp
+                ON (bp."id"::text = bs."plan_id" OR bp."name" = bs."plan_id")
+            WHERE bc."external_id" = ${outerUserIdText}
+              AND bc."deleted_at" IS NULL
+              AND bs."deleted_at" IS NULL
+              AND bp."deleted_at" IS NULL
+              AND bs."status" IN ('active', 'trialing', 'comp')
+              AND (bs."product_domain" IS NULL OR bs."product_domain" = 'accommodation')
+            LIMIT 1
+        )`.as('current_plan_slug');
+
+        const orderByClause = options?.sortBy
+            ? buildOrderByClause(options.sortBy, this.table, options.sortOrder ?? 'asc')
+            : undefined;
+
+        let baseQuery = db
             .select({
                 user: users,
                 accommodationsCount: accommodationsCountSq,
+                gastronomiesCount: gastronomiesCountSq,
+                experiencesCount: experiencesCountSq,
                 eventsCount: eventsCountSq,
-                postsCount: postsCountSq
+                postsCount: postsCountSq,
+                currentPlanSlug: currentPlanSlugSq
             })
             .from(users)
             .where(finalWhereClause)
             .$dynamic();
 
+        if (orderByClause) {
+            baseQuery = baseQuery.orderBy(orderByClause);
+        }
+
         let rows: Array<{
             user: typeof users.$inferSelect;
             accommodationsCount: number;
+            gastronomiesCount: number;
+            experiencesCount: number;
             eventsCount: number;
             postsCount: number;
+            currentPlanSlug: string | null;
         }>;
 
         // Safety cap for non-paginated path to prevent unbounded queries
@@ -245,8 +298,11 @@ export class UserModel extends BaseModelImpl<User> {
             // DRIZZLE-LIMITATION: select with leftJoin projects row.user as Drizzle's full users-table row type with branded enums; User domain entity uses unbranded enum unions.
             ...(row.user as unknown as User),
             accommodationsCount: row.accommodationsCount ?? 0,
+            gastronomiesCount: row.gastronomiesCount ?? 0,
+            experiencesCount: row.experiencesCount ?? 0,
             eventsCount: row.eventsCount ?? 0,
-            postsCount: row.postsCount ?? 0
+            postsCount: row.postsCount ?? 0,
+            currentPlanSlug: row.currentPlanSlug ?? null
         }));
 
         // Get total count for pagination

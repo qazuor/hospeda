@@ -23,7 +23,7 @@
  */
 import { LimitKey } from '@repo/billing';
 import { accommodationMediaModel } from '@repo/db';
-import { generateGalleryId } from '@repo/media';
+import { generateGalleryId, MULTIPART_ENVELOPE_SLACK_BYTES } from '@repo/media';
 import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
 import {
     AdminUploadRequestSchema,
@@ -36,8 +36,12 @@ import {
 import {
     AccommodationService,
     DestinationService,
+    EventOrganizerService,
     EventService,
+    ExperienceService,
+    GastronomyService,
     PostService,
+    PostSponsorService,
     ServiceError
 } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -47,8 +51,8 @@ import { buildLimitReachedDetails } from '../../../middlewares/limit-enforcement
 import { incrementDomainCounter } from '../../../middlewares/metrics';
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getMediaProvider } from '../../../services/media';
+import { getEntityMaxFileSizeMb } from '../../../services/media/upload-helpers';
 import { getActorFromContext } from '../../../utils/actor';
-import { env } from '../../../utils/env.js';
 import { calculateThreshold, calculateUsagePercent, checkLimit } from '../../../utils/limit-check';
 import { apiLogger } from '../../../utils/logger';
 import { createErrorResponse } from '../../../utils/response-helpers';
@@ -93,7 +97,16 @@ const ActorIdSchema = z.string().uuid();
  */
 const resolveEntityService = (
     entityType: string
-): AccommodationService | DestinationService | EventService | PostService | null => {
+):
+    | AccommodationService
+    | DestinationService
+    | EventService
+    | PostService
+    | GastronomyService
+    | ExperienceService
+    | PostSponsorService
+    | EventOrganizerService
+    | null => {
     switch (entityType) {
         case 'accommodation':
             return new AccommodationService({ logger: apiLogger });
@@ -103,6 +116,14 @@ const resolveEntityService = (
             return new EventService({ logger: apiLogger });
         case 'post':
             return new PostService({ logger: apiLogger });
+        case 'gastronomy':
+            return new GastronomyService({ logger: apiLogger });
+        case 'experience':
+            return new ExperienceService({ logger: apiLogger });
+        case 'postSponsor':
+            return new PostSponsorService({ logger: apiLogger });
+        case 'eventOrganizer':
+            return new EventOrganizerService({ logger: apiLogger });
         default:
             return null;
     }
@@ -156,14 +177,16 @@ export const adminUploadMediaRoute = createAdminRoute({
         }
 
         // ── 1. Content-Length pre-check (anti-DoS) ────────────────────────────
-        // SPEC-078-GAPS T-033 / GAP-078-021: allow a 1KB margin above the
-        // declared limit so multipart envelope overhead (boundaries, field
-        // headers) on a file that is exactly at the byte limit does not
-        // trigger a false-positive 413. The downstream `validateMediaFile`
-        // call enforces the strict file-size limit on the parsed file body.
-        const maxMb = env.HOSPEDA_MEDIA_MAX_FILE_SIZE_MB;
+        // SPEC-078-GAPS T-033 / GAP-078-021: allow a margin above the declared
+        // limit so multipart envelope overhead (boundaries, field headers, the
+        // user-supplied filename) on a file that is exactly at the byte limit
+        // does not trigger a false-positive 413. The margin is the shared one —
+        // when each guard picks its own, the smallest silently decides. The
+        // downstream `validateMediaFile` call enforces the strict file-size
+        // limit on the parsed file body.
+        const maxMb = getEntityMaxFileSizeMb();
         const maxBytes = maxMb * 1024 * 1024;
-        const contentLengthMaxBytes = maxBytes + 1024;
+        const contentLengthMaxBytes = maxBytes + MULTIPART_ENVELOPE_SLACK_BYTES;
         const contentLength = Number(ctx.req.header('content-length') ?? 0);
 
         if (contentLength > contentLengthMaxBytes) {
@@ -296,13 +319,15 @@ export const adminUploadMediaRoute = createAdminRoute({
             );
         }
 
-        // This route currently only wires up the four CRUD content entities
-        // (accommodation, destination, event, post) with the `featured` and
-        // `gallery` role variants. The discriminated union accepts avatar /
-        // sponsorLogo / organizerLogo variants too (single source of truth for
-        // the upload contract), but those flow through dedicated routes. Guard
-        // the handler so unsupported variants fail cleanly.
-        if (parseResult.data.role !== 'featured' && parseResult.data.role !== 'gallery') {
+        // This route accepts the entityId-addressed admin upload variants only.
+        // Avatar uploads remain on their dedicated path because they use `userId`
+        // rather than the generic `entityId` contract.
+        if (
+            parseResult.data.role !== 'featured' &&
+            parseResult.data.role !== 'gallery' &&
+            parseResult.data.role !== 'sponsorLogo' &&
+            parseResult.data.role !== 'organizerLogo'
+        ) {
             return createErrorResponse(
                 {
                     code: 'VALIDATION_ERROR',
@@ -553,7 +578,12 @@ export const adminUploadMediaRoute = createAdminRoute({
         // (`featured` or `gallery/{nanoid}`) is appended by the provider.
         const environment = resolveEnvironment();
         const folder = ENTITY_FOLDER_MAP[entityType]({ environment, entityId });
-        const publicId = role === 'featured' ? 'featured' : `gallery/${generateGalleryId()}`;
+        const publicId =
+            role === 'featured'
+                ? 'featured'
+                : role === 'gallery'
+                  ? `gallery/${generateGalleryId()}`
+                  : 'logo';
 
         // ── 6b. Re-verify session right before provider call (GAP-078-114).
         // Defense-in-depth: even though we performed the same check at step

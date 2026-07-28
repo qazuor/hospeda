@@ -19,6 +19,7 @@
  * Not a `.client.tsx` — mounts inside the already-hydrated parent island.
  */
 
+import { DEFAULT_AVATAR_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { useRef, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
 import styles from './ProfileCompletion.module.css';
@@ -26,7 +27,7 @@ import styles from './ProfileCompletion.module.css';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
-const MAX_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_FILE_BYTES = mbToBytes(DEFAULT_AVATAR_MAX_FILE_SIZE_MB);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -48,7 +49,7 @@ export interface ProfileCompletionAvatarPickerProps {
     /** Whether the parent form is currently submitting (disables the picker). */
     readonly disabled: boolean;
     /** Translation function from the parent island. */
-    readonly t: (key: string, fallback: string) => string;
+    readonly t: (key: string, fallback: string, params?: Record<string, string | number>) => string;
     /** Called with the uploaded URL after a successful upload. */
     readonly onUploaded: (url: string) => void;
     /** Called when the picker encounters an error (validation or upload). */
@@ -104,7 +105,8 @@ export function ProfileCompletionAvatarPicker({
             reportError(
                 t(
                     'account.profileCompletion.avatar.errors.fileTooLarge',
-                    'La imagen no puede superar los 5 MB.'
+                    'La imagen no puede superar los {{maxSize}} MB.',
+                    { maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB }
                 )
             );
             return;

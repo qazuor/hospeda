@@ -37,6 +37,7 @@ import {
     RichTextFeatureEnum
 } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/consolidated-config.types';
+import { DEFAULT_MEDIA_MAX_SIZE_BYTES } from '@/lib/constants';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -475,7 +476,7 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 id: 'media.featuredImage',
                 type: FieldTypeEnum.IMAGE,
                 required: false,
-                modes: ['view', 'edit', 'create'],
+                modes: ['view', 'edit'],
                 label: 'Imagen Principal',
                 description: 'Imagen principal del comercio (recomendado 16:9)',
                 placeholder: 'Seleccioná la imagen principal…',
@@ -485,7 +486,7 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 },
                 typeConfig: {
                     type: 'IMAGE',
-                    maxSize: 10_000_000,
+                    maxSize: DEFAULT_MEDIA_MAX_SIZE_BYTES,
                     allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
                     maxWidth: 1920,
                     maxHeight: 1080,
@@ -497,7 +498,7 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 id: 'media.gallery',
                 type: FieldTypeEnum.GALLERY,
                 required: false,
-                modes: ['view', 'edit', 'create'],
+                modes: ['view', 'edit'],
                 label: 'Galería de Imágenes',
                 description: 'Colección de imágenes del comercio',
                 placeholder: 'Arrastrá imágenes aquí o hacé clic para seleccionar…',
@@ -508,7 +509,7 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 typeConfig: {
                     type: 'GALLERY',
                     maxImages: 20,
-                    maxSize: 10_000_000,
+                    maxSize: DEFAULT_MEDIA_MAX_SIZE_BYTES,
                     allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
                     maxWidth: 1920,
                     maxHeight: 1080,

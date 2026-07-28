@@ -5,7 +5,7 @@
  */
 
 import { ImageIcon, UploadIcon } from '@repo/icons';
-import { getMediaUrl } from '@repo/media';
+import { DEFAULT_AVATAR_MAX_FILE_SIZE_MB, getMediaUrl, mbToBytes } from '@repo/media';
 import { useRef, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
 import { getInitials } from '@/lib/avatar-utils';
@@ -16,8 +16,8 @@ import styles from './AvatarUpload.module.css';
 /** Accepted image MIME types */
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 
-/** Maximum file size in bytes (5 MB) */
-const MAX_FILE_BYTES = 5 * 1024 * 1024;
+/** Maximum avatar size in bytes, from the canonical cap in `@repo/media`. */
+const MAX_FILE_BYTES = mbToBytes(DEFAULT_AVATAR_MAX_FILE_SIZE_MB);
 
 /** Upload result from the media endpoint */
 interface UploadResult {
@@ -109,7 +109,15 @@ export function AvatarUpload({
         }
 
         if (file.size > MAX_FILE_BYTES) {
-            setError(t('account.avatar.errors.fileTooLarge'));
+            setError(
+                t(
+                    'account.avatar.errors.fileTooLarge',
+                    'Archivo muy grande (máx. {{maxSize}} MB)',
+                    {
+                        maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB
+                    }
+                )
+            );
             return;
         }
 
@@ -252,7 +260,11 @@ export function AvatarUpload({
                     : t('account.avatar.actions.change')}
             </button>
 
-            <p className={styles.hint}>{t('account.avatar.hint')}</p>
+            <p className={styles.hint}>
+                {t('account.avatar.hint', 'Solo JPEG, PNG y WebP · Máx. {{maxSize}} MB', {
+                    maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB
+                })}
+            </p>
 
             {/* Hidden file input */}
             <input

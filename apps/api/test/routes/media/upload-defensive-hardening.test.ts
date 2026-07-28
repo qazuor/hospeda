@@ -7,10 +7,11 @@
  * - GAP-078-068: interim per-route rate limit (10 req / 60s) returns 429
  *   on the 11th request inside the window. Replaces nothing; placeholder
  *   for the billing-tier-aware limits planned in SPEC-079.
- * - GAP-078-021: Content-Length pre-check uses a +1KB margin so that a
- *   multipart upload whose declared length sits exactly at the byte limit
- *   does not trip the fast-fail 413; a payload meaningfully larger than
- *   the limit (limit + 2KB) still IS rejected.
+ * - GAP-078-021: the Content-Length pre-check allows an envelope margin so a
+ *   multipart upload whose declared length sits exactly at the byte limit does
+ *   not trip the fast-fail 413; a payload past that margin still IS rejected.
+ *   HOS-322 widened the margin and unified it with the global body guard, so
+ *   no guard can be tighter than another and silently become the real limit.
  * - GAP-078-071: server-side hard cap of 50 gallery items per entity. A
  *   `role: 'gallery'` upload against an entity already at 50 items must
  *   return 422 `GALLERY_LIMIT_EXCEEDED` BEFORE the provider is called.
@@ -50,6 +51,10 @@ import {
 
 import { initApp } from '../../../src/app';
 import { clearRateLimitStore } from '../../../src/middlewares/rate-limit';
+import {
+    CONTENT_LENGTH_MARGIN_BYTES,
+    getEntityMaxFileSizeMb
+} from '../../../src/services/media/upload-helpers';
 import type { AppOpenAPI } from '../../../src/types';
 
 const ADMIN_ENTITY_ID = '00000000-0000-4000-8000-0000000000aa';
@@ -150,10 +155,11 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
 
     // ── GAP-078-021 — Content-Length margin ─────────────────────────────────
 
-    describe('GAP-078-021: Content-Length pre-check uses +1KB margin', () => {
+    describe('GAP-078-021: Content-Length pre-check honours the envelope margin', () => {
         it('admin upload accepts a Content-Length declared exactly at the byte limit', async () => {
-            // Arrange: 10 MB default cap → 10 * 1024 * 1024 bytes
-            const limitBytes = 10 * 1024 * 1024;
+            // Arrange: derived from the configured entity cap, which is
+            // env-driven since HOS-322.
+            const limitBytes = getEntityMaxFileSizeMb() * 1024 * 1024;
             const actor = createUploadReadyAdminActor();
             const req = new Request(ADMIN_URL, {
                 method: 'POST',
@@ -178,16 +184,19 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
             expect(res.status).not.toBe(413);
         });
 
-        it('admin upload rejects a Content-Length 2KB above the limit with 413', async () => {
-            // Arrange
-            const limitBytes = 10 * 1024 * 1024;
+        it('admin upload rejects a Content-Length past the envelope margin with 413', async () => {
+            // Arrange — one byte past the margin. Derived from the shared
+            // constant: the margin was widened in HOS-322 so that a file AT the
+            // cap is never refused for envelope bytes it does not control (a
+            // user-supplied filename is part of that envelope), and a literal
+            // here would keep asserting the old boundary.
+            const limitBytes = getEntityMaxFileSizeMb() * 1024 * 1024;
             const actor = createUploadReadyAdminActor();
             const req = new Request(ADMIN_URL, {
                 method: 'POST',
                 headers: {
                     ...buildAuthHeaders(actor),
-                    // 2KB over the strict limit and ALSO above the 1KB margin.
-                    'content-length': String(limitBytes + 2048)
+                    'content-length': String(limitBytes + CONTENT_LENGTH_MARGIN_BYTES + 1)
                 },
                 body: buildAdminMultipartBody(buildPngFile())
             });
@@ -196,15 +205,36 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
             const res = await app.request(req);
             const body = (await res.json()) as { success: boolean; error?: { code: string } };
 
-            // Assert: 413 with either the global bodyLimit code
-            // (`REQUEST_TOO_LARGE`, fired by the platform-level middleware
-            // configured at exactly 10MB) or the route-level
-            // `PAYLOAD_TOO_LARGE`. Both are valid rejections that prove the
-            // 1KB margin does not let oversized payloads through.
+            // Assert: 413 naming the real limit. WHICH guard produced it is
+            // deliberately indistinguishable — they share the threshold and the
+            // wording, so the owner sees one message either way. What this pins
+            // is that the rejection says "10MB" instead of the generic
+            // REQUEST_TOO_LARGE the global cap used to emit for a legal photo.
             expect(res.status).toBe(413);
             expect(body.success).toBe(false);
-            expect(['PAYLOAD_TOO_LARGE', 'REQUEST_TOO_LARGE']).toContain(body.error?.code);
+            expect(body.error?.code).toBe('PAYLOAD_TOO_LARGE');
             expect(mockUpload).not.toHaveBeenCalled();
+        });
+
+        it('admin upload accepts a file at the cap plus a realistic envelope', async () => {
+            // The false-413 case the margin exists to prevent: the FILE is
+            // legal, the BODY is larger because of boundaries and field parts.
+            const limitBytes = getEntityMaxFileSizeMb() * 1024 * 1024;
+            const actor = createUploadReadyAdminActor();
+            const req = new Request(ADMIN_URL, {
+                method: 'POST',
+                headers: {
+                    ...buildAuthHeaders(actor),
+                    'content-length': String(limitBytes + 2048)
+                },
+                body: buildAdminMultipartBody(buildPngFile())
+            });
+
+            const res = await app.request(req);
+            const body = (await res.json()) as { success: boolean; error?: { code: string } };
+
+            expect(res.status).not.toBe(413);
+            expect(body.error?.code).not.toBe('PAYLOAD_TOO_LARGE');
         });
 
         it('protected upload accepts a Content-Length declared exactly at the avatar 5MB limit', async () => {
@@ -231,8 +261,9 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
             expect(res.status).not.toBe(413);
         });
 
-        it('protected upload rejects a Content-Length 2KB above the avatar limit with 413', async () => {
-            // Arrange
+        it('protected upload rejects a Content-Length past the avatar envelope margin', async () => {
+            // Arrange — one byte past the shared margin, so this keeps testing
+            // the boundary rather than a number that used to be past it.
             const limitBytes = 5 * 1024 * 1024;
             const actor = createMockUserActor({
                 id: '00000000-0000-4000-8000-0000000000bd'
@@ -241,7 +272,7 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
                 method: 'POST',
                 headers: {
                     ...buildAuthHeaders(actor),
-                    'content-length': String(limitBytes + 2048)
+                    'content-length': String(limitBytes + CONTENT_LENGTH_MARGIN_BYTES + 1)
                 },
                 body: buildProtectedMultipartBody(buildPngFile('avatar.png'))
             });
@@ -250,10 +281,11 @@ describe('Media upload — defensive hardening (SPEC-078-GAPS T-033)', () => {
             const res = await app.request(req);
             const body = (await res.json()) as { success: boolean; error?: { code: string } };
 
-            // Assert: 413 from either route-level or global bodyLimit.
+            // Assert: 413 naming the avatar cap — that path keeps a ceiling
+            // of its own, lower than the entity one.
             expect(res.status).toBe(413);
             expect(body.success).toBe(false);
-            expect(['PAYLOAD_TOO_LARGE', 'REQUEST_TOO_LARGE']).toContain(body.error?.code);
+            expect(body.error?.code).toBe('PAYLOAD_TOO_LARGE');
             expect(mockUpload).not.toHaveBeenCalled();
         });
     });

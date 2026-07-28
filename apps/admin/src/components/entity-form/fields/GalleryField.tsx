@@ -67,8 +67,10 @@ export interface GalleryFieldProps {
      */
     onDelete?: (publicId: string) => Promise<void>;
     /**
-     * Maximum file size in bytes. Defaults to 10 MB (10 * 1024 * 1024).
-     * This value is only used when typeConfig does not specify maxSize.
+     * Maximum file size in bytes. Defaults to
+     * {@link DEFAULT_GALLERY_FALLBACK_MAX_SIZE_BYTES}, which derives from the
+     * canonical entity cap in `@repo/media` so it cannot drift from what the
+     * API enforces. Only used when typeConfig does not specify maxSize.
      */
     defaultMaxSize?: number;
     /** Enable stock image search - requires entityType and entityId */

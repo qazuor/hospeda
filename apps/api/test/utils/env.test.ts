@@ -2,6 +2,11 @@
  * Environment Configuration Tests
  * Tests the environment variable loading and validation
  */
+import {
+    DEFAULT_AVATAR_MAX_FILE_SIZE_MB,
+    DEFAULT_ENTITY_MAX_FILE_SIZE_MB,
+    PROVIDER_MAX_IMAGE_FILE_SIZE_MB
+} from '@repo/media';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dotenv
@@ -344,7 +349,7 @@ describe('Environment Configuration', () => {
     });
 
     describe('HOSPEDA_MEDIA_MAX_FILE_SIZE_MB (SPEC-078-GAPS T-032 / GAP-078-106)', () => {
-        it('defaults to 10 when not provided', async () => {
+        it('defaults to the canonical entity cap when not provided', async () => {
             // Arrange — minimal env without HOSPEDA_MEDIA_MAX_FILE_SIZE_MB
             process.env = createValidTestEnv();
 
@@ -352,20 +357,59 @@ describe('Environment Configuration', () => {
             const envModule = await import('../../src/utils/env');
             envModule.validateApiEnv();
 
-            // Assert
-            expect(envModule.env.HOSPEDA_MEDIA_MAX_FILE_SIZE_MB).toBe(10);
+            // Assert — derived from the shared constant (HOS-322) so this goes
+            // on asserting the real default if the cap is ever retuned.
+            expect(envModule.env.HOSPEDA_MEDIA_MAX_FILE_SIZE_MB).toBe(
+                DEFAULT_ENTITY_MAX_FILE_SIZE_MB
+            );
         });
 
-        it('coerces a numeric string to a number', async () => {
-            // Arrange
-            process.env = createValidTestEnv({ HOSPEDA_MEDIA_MAX_FILE_SIZE_MB: '25' });
+        it('defaults the avatar cap to the canonical avatar constant', async () => {
+            // Arrange — minimal env without HOSPEDA_AVATAR_MAX_FILE_SIZE_MB
+            process.env = createValidTestEnv();
 
             // Act
             const envModule = await import('../../src/utils/env');
             envModule.validateApiEnv();
 
             // Assert
-            expect(envModule.env.HOSPEDA_MEDIA_MAX_FILE_SIZE_MB).toBe(25);
+            expect(envModule.env.HOSPEDA_AVATAR_MAX_FILE_SIZE_MB).toBe(
+                DEFAULT_AVATAR_MAX_FILE_SIZE_MB
+            );
+        });
+
+        it('coerces a numeric string to a number', async () => {
+            // Arrange — must sit at or below the provider ceiling; HOS-322 added
+            // a `.max()` so anything above it now fails startup by design (see
+            // the next case).
+            process.env = createValidTestEnv({ HOSPEDA_MEDIA_MAX_FILE_SIZE_MB: '8' });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_MEDIA_MAX_FILE_SIZE_MB).toBe(8);
+        });
+
+        it('fails startup when configured above the provider ceiling', async () => {
+            // An operator typo must not be able to widen a body ceiling that
+            // runs before authentication, and must not let an upload burn the
+            // full transfer time only to be refused by the provider (HOS-322).
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+                throw new Error('Process exit');
+            });
+            process.env = createValidTestEnv({
+                HOSPEDA_MEDIA_MAX_FILE_SIZE_MB: String(PROVIDER_MAX_IMAGE_FILE_SIZE_MB + 1)
+            });
+
+            const { validateApiEnv } = await import('../../src/utils/env');
+            expect(() => validateApiEnv()).toThrow('Process exit');
+            expect(exitSpy).toHaveBeenCalledWith(1);
+
+            consoleSpy.mockRestore();
+            exitSpy.mockRestore();
         });
 
         it('fails startup on a non-numeric value', async () => {

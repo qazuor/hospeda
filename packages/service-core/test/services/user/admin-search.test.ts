@@ -6,8 +6,8 @@
  * condition (`ilike(userTable.email, '%<value>%')`) for case-insensitive partial
  * matching. All other filters and conditions are forwarded to super._executeAdminSearch().
  *
- * UserService does NOT define default relations, so the base class calls
- * model.findAll(where, options, extraConditions | null).
+ * UserService uses `UserModel.findAllWithCounts()` for admin list results so the
+ * users table can expose relationship counters without N+1 queries.
  *
  * IMPORTANT: The override always calls super._executeAdminSearch() — it no longer
  * performs the full query itself (that was the pre-SPEC-052 bypass pattern).
@@ -92,7 +92,7 @@ describe('UserService: _executeAdminSearch override', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         mockModel = new MockUserModel();
-        mockModel.findAll.mockResolvedValue(defaultPaginatedResult);
+        mockModel.findAllWithCounts.mockResolvedValue(defaultPaginatedResult);
         mockModel.findAllWithRelations.mockResolvedValue(defaultPaginatedResult);
         service = new UserService({} as ServiceConfig, mockModel as never);
     });
@@ -107,10 +107,8 @@ describe('UserService: _executeAdminSearch override', () => {
             // Act
             await callExecuteAdminSearch(service, params);
 
-            // Assert: UserService has no relations → findAll is called
-            // findAll(where, options, conditions): conditions is the 3rd arg
-            expect(asMock(mockModel.findAll)).toHaveBeenCalledOnce();
-            const callArgs = asMock(mockModel.findAll).mock.calls[0] as unknown[];
+            expect(asMock(mockModel.findAllWithCounts)).toHaveBeenCalledOnce();
+            const callArgs = asMock(mockModel.findAllWithCounts).mock.calls[0] as unknown[];
             const conditions = callArgs[2] as unknown[] | null;
             expect(conditions).not.toBeNull();
             expect(Array.isArray(conditions)).toBe(true);
@@ -125,7 +123,7 @@ describe('UserService: _executeAdminSearch override', () => {
             await callExecuteAdminSearch(service, params);
 
             // Assert
-            const callArgs = asMock(mockModel.findAll).mock.calls[0] as unknown[];
+            const callArgs = asMock(mockModel.findAllWithCounts).mock.calls[0] as unknown[];
             const whereArg = callArgs[0] as Record<string, unknown>;
             expect(whereArg).not.toHaveProperty('email');
         });
@@ -138,7 +136,7 @@ describe('UserService: _executeAdminSearch override', () => {
             await callExecuteAdminSearch(service, params);
 
             // Assert: empty string is falsy, no ILIKE condition added
-            const callArgs = asMock(mockModel.findAll).mock.calls[0] as unknown[];
+            const callArgs = asMock(mockModel.findAllWithCounts).mock.calls[0] as unknown[];
             const conditions = callArgs[2];
             // null or undefined means no conditions
             expect(
@@ -154,7 +152,7 @@ describe('UserService: _executeAdminSearch override', () => {
             await callExecuteAdminSearch(service, params);
 
             // Assert: no extra conditions
-            const callArgs = asMock(mockModel.findAll).mock.calls[0] as unknown[];
+            const callArgs = asMock(mockModel.findAllWithCounts).mock.calls[0] as unknown[];
             const conditions = callArgs[2];
             expect(
                 conditions == null || (Array.isArray(conditions) && conditions.length === 0)
@@ -162,48 +160,31 @@ describe('UserService: _executeAdminSearch override', () => {
         });
     });
 
-    // --- super._executeAdminSearch is called ---
+    // --- model delegation ---
 
-    describe('delegation to super._executeAdminSearch', () => {
-        it('should always call super._executeAdminSearch (no bypass)', async () => {
+    describe('delegation to findAllWithCounts', () => {
+        it('should always call the counts-aware model method', async () => {
             // Arrange
-            const baseCrudReadProto = Object.getPrototypeOf(Object.getPrototypeOf(service)) as {
-                _executeAdminSearch: (p: AdminSearchExecuteParams) => unknown;
-            };
-            const superSpy = vi.spyOn(baseCrudReadProto, '_executeAdminSearch');
-            superSpy.mockResolvedValue(defaultPaginatedResult);
             const params = buildDefaultParams({ entityFilters: { email: 'test@' } });
 
             // Act
             await callExecuteAdminSearch(service, params);
 
-            // Assert: the override always delegates to super (SPEC-052 refactor)
-            expect(superSpy).toHaveBeenCalledOnce();
+            expect(asMock(mockModel.findAllWithCounts)).toHaveBeenCalledOnce();
         });
 
-        it('should call super._executeAdminSearch even when email is absent', async () => {
+        it('should call the counts-aware model method even when email is absent', async () => {
             // Arrange
-            const baseCrudReadProto = Object.getPrototypeOf(Object.getPrototypeOf(service)) as {
-                _executeAdminSearch: (p: AdminSearchExecuteParams) => unknown;
-            };
-            const superSpy = vi.spyOn(baseCrudReadProto, '_executeAdminSearch');
-            superSpy.mockResolvedValue(defaultPaginatedResult);
             const params = buildDefaultParams({ entityFilters: {} });
 
             // Act
             await callExecuteAdminSearch(service, params);
 
-            // Assert
-            expect(superSpy).toHaveBeenCalledOnce();
+            expect(asMock(mockModel.findAllWithCounts)).toHaveBeenCalledOnce();
         });
 
-        it('should pass email-stripped entityFilters and email as extraConditions to super', async () => {
+        it('should pass email-stripped filters and email as extraConditions to the model', async () => {
             // Arrange
-            const baseCrudReadProto = Object.getPrototypeOf(Object.getPrototypeOf(service)) as {
-                _executeAdminSearch: (p: AdminSearchExecuteParams) => unknown;
-            };
-            const superSpy = vi.spyOn(baseCrudReadProto, '_executeAdminSearch');
-            superSpy.mockResolvedValue(defaultPaginatedResult);
             const params = buildDefaultParams({
                 entityFilters: { email: 'john@', role: 'USER' }
             });
@@ -212,14 +193,13 @@ describe('UserService: _executeAdminSearch override', () => {
             await callExecuteAdminSearch(service, params);
 
             // Assert
-            const calledWith = superSpy.mock.calls[0]?.[0] as AdminSearchExecuteParams;
-            // email is removed from entityFilters
-            expect(calledWith.entityFilters).not.toHaveProperty('email');
-            // other filters remain in entityFilters
-            expect(calledWith.entityFilters).toHaveProperty('role', 'USER');
-            // email ILIKE condition is in extraConditions
-            expect(calledWith.extraConditions).toBeDefined();
-            expect((calledWith.extraConditions as unknown[]).length).toBe(1);
+            const callArgs = asMock(mockModel.findAllWithCounts).mock.calls[0] as unknown[];
+            const whereArg = callArgs[0] as Record<string, unknown>;
+            const conditions = callArgs[2] as unknown[];
+            expect(whereArg).not.toHaveProperty('email');
+            expect(whereArg).toHaveProperty('role', 'USER');
+            expect(conditions).toBeDefined();
+            expect(conditions.length).toBe(1);
         });
     });
 
@@ -228,11 +208,6 @@ describe('UserService: _executeAdminSearch override', () => {
     describe('pre-existing extraConditions', () => {
         it('should merge pre-existing extraConditions with the email ILIKE condition', async () => {
             // Arrange
-            const baseCrudReadProto = Object.getPrototypeOf(Object.getPrototypeOf(service)) as {
-                _executeAdminSearch: (p: AdminSearchExecuteParams) => unknown;
-            };
-            const superSpy = vi.spyOn(baseCrudReadProto, '_executeAdminSearch');
-            superSpy.mockResolvedValue(defaultPaginatedResult);
             const preExisting = { sql: 'pre-existing condition' } as never;
             const params = buildDefaultParams({
                 entityFilters: { email: 'user@domain' },
@@ -243,10 +218,11 @@ describe('UserService: _executeAdminSearch override', () => {
             await callExecuteAdminSearch(service, params);
 
             // Assert: 1 pre-existing + 1 email = 2 total in super call
-            const calledWith = superSpy.mock.calls[0]?.[0] as AdminSearchExecuteParams;
-            expect(calledWith.extraConditions).toBeDefined();
-            expect((calledWith.extraConditions as unknown[]).length).toBe(2);
-            expect(calledWith.extraConditions).toContain(preExisting);
+            const callArgs = asMock(mockModel.findAllWithCounts).mock.calls[0] as unknown[];
+            const conditions = callArgs[2] as unknown[];
+            expect(conditions).toBeDefined();
+            expect(conditions.length).toBe(2);
+            expect(conditions).toContain(preExisting);
         });
     });
 
@@ -263,7 +239,7 @@ describe('UserService: _executeAdminSearch override', () => {
             await callExecuteAdminSearch(service, params);
 
             // Assert: role and displayName end up in the merged where
-            const callArgs = asMock(mockModel.findAll).mock.calls[0] as unknown[];
+            const callArgs = asMock(mockModel.findAllWithCounts).mock.calls[0] as unknown[];
             const whereArg = callArgs[0] as Record<string, unknown>;
             expect(whereArg).toHaveProperty('role', 'ADMIN');
             expect(whereArg).toHaveProperty('displayName', 'Alice');
@@ -276,7 +252,7 @@ describe('UserService: _executeAdminSearch override', () => {
         it('should return the paginated result from the model', async () => {
             // Arrange
             const expected = { items: [{ id: 'user-1' }], total: 1 };
-            mockModel.findAll.mockResolvedValue(expected);
+            mockModel.findAllWithCounts.mockResolvedValue(expected);
             const localService = new UserService({} as ServiceConfig, mockModel as never);
 
             // Act

@@ -34,6 +34,11 @@ import { createErrorResponse } from '../../../utils/response-helpers';
 import { createProtectedRoute } from '../../../utils/route-factory';
 import type { MediaEntityType } from '../admin/permissions';
 
+type ProtectedMediaEntityType = Extract<
+    MediaEntityType,
+    'accommodation' | 'destination' | 'event' | 'post' | 'gastronomy' | 'experience'
+>;
+
 /** Reusable Zod validator for actor.id UUID format. */
 const ActorIdSchema = z.string().uuid();
 
@@ -100,7 +105,7 @@ const protectedDeletePreValidation: MiddlewareHandler = async (ctx, next) => {
 const SUPPORTED_ENTITY_TYPES = new Set<string>(['accommodation', 'destination', 'event', 'post']);
 
 /** Maps plural Cloudinary path segments to singular entity-type strings. */
-const PLURAL_TO_SINGULAR: Readonly<Record<string, MediaEntityType>> = {
+const PLURAL_TO_SINGULAR: Readonly<Record<string, ProtectedMediaEntityType>> = {
     accommodations: 'accommodation',
     destinations: 'destination',
     events: 'event',
@@ -118,7 +123,7 @@ const PLURAL_TO_SINGULAR: Readonly<Record<string, MediaEntityType>> = {
  */
 const parseEntityFromPublicId = (
     publicId: string
-): { entityType: MediaEntityType; entityId: string } | null => {
+): { entityType: ProtectedMediaEntityType; entityId: string } | null => {
     const match = publicId.match(
         /^hospeda\/[^/]+\/(accommodations|destinations|events|posts|gastronomies|experiences)\/([^/]+)(\/|$)/
     );
@@ -137,7 +142,7 @@ const parseEntityFromPublicId = (
  * Resolve an entity service for the given type.
  */
 const resolveEntityService = (
-    entityType: MediaEntityType
+    entityType: ProtectedMediaEntityType
 ):
     | AccommodationService
     | DestinationService
@@ -158,6 +163,8 @@ const resolveEntityService = (
             return new GastronomyService({ logger: apiLogger });
         case 'experience':
             return new ExperienceService({ logger: apiLogger });
+        default:
+            throw new Error(`Unsupported media entity type: ${entityType satisfies never}`);
     }
 };
 

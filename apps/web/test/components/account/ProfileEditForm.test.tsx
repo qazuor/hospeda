@@ -29,7 +29,21 @@ vi.mock('../../../src/components/account/ProfileEditForm.module.css', () => ({
 }));
 
 vi.mock('../../../src/lib/i18n', () => {
-    const t = (key: string, fallback?: string): string => fallback ?? key;
+    // Interpolates `{{param}}` like the real `t` — a stub that dropped params
+    // would let a size message ship with a raw `{{maxSize}}` in it (HOS-322).
+    const t = (
+        key: string,
+        fallback?: string,
+        params?: Record<string, string | number>
+    ): string => {
+        const raw = fallback ?? key;
+        return params
+            ? Object.entries(params).reduce(
+                  (acc, [name, value]) => acc.replaceAll(`{{${name}}}`, String(value)),
+                  raw
+              )
+            : raw;
+    };
     const translations = { t } as const;
     return { createTranslations: () => translations };
 });
