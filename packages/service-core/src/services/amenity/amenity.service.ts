@@ -23,8 +23,9 @@ import {
     type AmenitySearchInput,
     AmenitySearchInputSchema,
     AmenityUpdateInputSchema,
+    LifecycleStatusEnum,
     ServiceErrorCode,
-    type VisibilityEnum
+    VisibilityEnum
 } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import type { z } from 'zod';
@@ -46,6 +47,9 @@ import {
     checkCanUpdateAmenity,
     checkCanViewAmenity
 } from './amenity.permissions';
+
+/** Junction-page cap for {@link AmenityService.getAccommodationsByAmenity} (unchanged by HOS-288). */
+const ACCOMMODATIONS_BY_AMENITY_PAGE_SIZE = 100;
 
 /**
  * Service for managing amenities and their relation to accommodations.
@@ -257,6 +261,24 @@ export class AmenityService extends BaseCrudRelatedService<
     // Custom methods:
     /**
      * Retrieves all accommodations that have a specific amenity.
+     *
+     * HOS-288 — the PREDICATE-level twin of {@link FeatureService.getAccommodationsByFeature}
+     * (the return contracts differ: this one projects a summary shape, the feature method
+     * returns full `Accommodation` rows).
+     * This method backs NO route today (`apps/api/src/routes/amenity/public/`
+     * exposes only `getById` and `list`); it is hardened to match its twin so the
+     * obvious future consumer (`GET /api/v1/public/amenities/:id/accommodations`)
+     * cannot silently ship a leak. The `PUBLIC`/`ACTIVE` predicates are
+     * load-bearing there: that prefix is in `PUBLIC_CACHE_ENDPOINTS`, the public
+     * cache key carries NO Authorization component, and `cacheMiddleware` runs
+     * BEFORE `authMiddleware` storing only 200/404 — so the first privileged 200
+     * is replayed to every anonymous caller for the TTL, the permission gate is
+     * DECORATIVE, and it is the RESPONSE that has to be anonymous-safe. That also
+     * rules out owner-scoping, and "the audience is staff" does not hold:
+     * `ACCOMMODATION_AMENITIES_EDIT` is held by the multi-tenant `RoleEnum.HOST`.
+     * Long form + the open follow-up in
+     * `getAccommodationsByAmenity.soft-delete.test.ts`.
+     *
      * @param actor - The actor performing the action
      * @param params - The params containing the amenity ID
      * @param ctx - Optional service context carrying transaction and hookState.
@@ -280,39 +302,46 @@ export class AmenityService extends BaseCrudRelatedService<
                 if (!amenity) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Amenity not found');
                 }
-                // Single query with JOIN instead of 3 sequential queries
-                const { items: relationsWithAccommodation } =
-                    await this.relatedModel.findAllWithRelations(
-                        { accommodation: true },
-                        { amenityId },
-                        { page: 1, pageSize: 100 }
-                    );
+                // Step 1 — the amenity's accommodation ids, straight off the junction.
+                const { items: relations } = await this.relatedModel.findAll(
+                    { amenityId },
+                    { page: 1, pageSize: ACCOMMODATIONS_BY_AMENITY_PAGE_SIZE }
+                );
+
+                const accommodationIds = [
+                    ...new Set(
+                        relations
+                            .map(
+                                (r) => (r as AccommodationAmenityRelation).accommodationId as string
+                            )
+                            .filter((id): id is string => typeof id === 'string' && id.length > 0)
+                    )
+                ];
+                // Guard: `inArray(col, [])` is invalid SQL, and there is nothing to load.
+                if (accommodationIds.length === 0) {
+                    return { accommodations: [] };
+                }
+
+                // Step 2 — through AccommodationModel so its soft-delete default applies.
+                // `deletedAt` deliberately absent: it would trip that default's escape hatch.
+                const { items: accommodations } = await this.accommodationModel.findAll(
+                    {
+                        id: accommodationIds,
+                        visibility: VisibilityEnum.PUBLIC,
+                        lifecycleState: LifecycleStatusEnum.ACTIVE
+                    },
+                    { page: 1, pageSize: accommodationIds.length }
+                );
 
                 // Map to AccommodationSummary format with required fields
-                const mappedAccommodations = relationsWithAccommodation
-                    .filter((r) => 'accommodation' in r && r.accommodation != null)
-                    .map((r) => {
-                        const acc = (
-                            r as AccommodationAmenityRelation & {
-                                accommodation: {
-                                    id: string;
-                                    slug?: string;
-                                    name: string;
-                                    summary?: string;
-                                    isFeatured: boolean;
-                                    averageRating?: number;
-                                };
-                            }
-                        ).accommodation;
-                        return {
-                            id: acc.id,
-                            slug: acc.slug ?? '',
-                            name: acc.name,
-                            summary: acc.summary ?? '',
-                            isFeatured: acc.isFeatured,
-                            averageRating: acc.averageRating ?? 0
-                        };
-                    });
+                const mappedAccommodations = accommodations.map((acc) => ({
+                    id: acc.id,
+                    slug: acc.slug ?? '',
+                    name: acc.name,
+                    summary: acc.summary ?? '',
+                    isFeatured: acc.isFeatured,
+                    averageRating: acc.averageRating ?? 0
+                }));
 
                 return { accommodations: mappedAccommodations };
             }
