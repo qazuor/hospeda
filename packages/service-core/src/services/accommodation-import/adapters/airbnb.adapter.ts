@@ -47,6 +47,7 @@ import type {
     ImportSourceAdapter,
     RawExtraction
 } from '../adapter.types.js';
+import { stripAirbnbMetaDescriptionNoise } from './airbnb-meta-description.js';
 import { runApifyActor, startApifyRun } from './apify-client.js';
 import { isPlausiblePerNightUsd } from './price-plausibility.js';
 import { startApifyRunWithRetry } from './start-apify-run-with-retry.js';
@@ -226,8 +227,11 @@ export interface AirbnbItem {
     // Description
     readonly description?: string | null | undefined;
 
-    // Short summary candidates. The tri_angle actor exposes `metaDescription`
-    // (a one-paragraph blurb); other actors may use `summary`/`publicDescription`.
+    // Short summary candidates. The tri_angle actor exposes `metaDescription`,
+    // which is NOT a plain blurb but the listing card's meta line, shaped as
+    // `<scrape date> · <property type> · <real text>` — see
+    // {@link stripAirbnbMetaDescriptionNoise} (HOS-287). Other actors may use
+    // `summary`/`publicDescription`.
     readonly summary?: string | null | undefined;
     readonly publicDescription?: string | null | undefined;
     readonly metaDescription?: string | null | undefined;
@@ -647,11 +651,20 @@ export function mapItemToRawExtraction(raw: AirbnbItem): RawExtraction {
     }
 
     // -- summary ---------------------------------------------------------------
-    // tri_angle exposes a one-paragraph `metaDescription`; other actors may use
-    // `summary`/`publicDescription`.
+    // tri_angle exposes `metaDescription`, the listing card's meta line
+    // (`<scrape date> · <property type> · <real text>`); other actors may use
+    // `summary`/`publicDescription`. The meta line's noise segments are stripped
+    // before the value reaches the host-facing short description (HOS-287).
     const summaryRaw = raw.summary ?? raw.publicDescription ?? raw.metaDescription;
-    if (summaryRaw) {
-        result.summary = { value: summaryRaw, source: 'official_api' };
+    const summaryValue = summaryRaw
+        ? stripAirbnbMetaDescriptionNoise({
+              metaDescription: summaryRaw,
+              propertyType: raw.propertyType,
+              roomType: raw.roomType
+          })
+        : null;
+    if (summaryValue) {
+        result.summary = { value: summaryValue, source: 'official_api' };
     }
 
     // -- type ------------------------------------------------------------------
