@@ -13,12 +13,26 @@ export const FOCUSABLE_SELECTORS =
     'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
+ * True when nothing owns keyboard focus any more — the browser parked it on
+ * `<body>`/`<html>` because the focused node was removed or disabled.
+ *
+ * This is deliberately NOT "focus is outside my container". Those two are very
+ * different situations and conflating them is what turns a trap into a bug:
+ * when focus sits on some other real element, that element OWNS it (a modal
+ * opened on top, a global shortcut popped a panel), and stealing it back is
+ * hostile. Only genuinely lost focus is up for grabs.
+ */
+function isFocusLost(): boolean {
+    const active = document.activeElement;
+    return active === null || active === document.body || active === document.documentElement;
+}
+
+/**
  * Traps keyboard focus within a container element while a modal-like surface
  * is open. Cycles focus between the first and last focusable descendants on
- * Tab/Shift+Tab, and pulls focus back in whenever it has escaped the container
- * entirely.
+ * Tab/Shift+Tab, and recovers focus that was LOST while the surface was open.
  *
- * The "escaped" branch is not a nicety — it is what makes this an actual trap.
+ * Recovering lost focus is not a nicety — it is what makes this an actual trap.
  * Cycling only on `first`/`last` leaves Tab unprevented from every other
  * position, and focus reaches those other positions routinely:
  *
@@ -31,8 +45,19 @@ export const FOCUSABLE_SELECTORS =
  *
  * From `<body>` an unprevented Tab advances to the first focusable element in
  * the DOCUMENT, i.e. page content sitting behind an opaque backdrop (WCAG
- * 2.4.3). Pulling focus back to the container's first focusable closes that
- * hole.
+ * 2.4.3). Pulling focus back into the container closes that hole.
+ *
+ * CRITICAL — why recovery is gated on {@link isFocusLost} and not on
+ * `!container.contains(activeElement)`: consumers register this on `document`
+ * (see `Dialog.client.tsx` and `SearchBar.client.tsx`), so several traps can be
+ * live at once. A global shortcut can stack a second overlay over any surface
+ * at any time — `Ctrl+Shift+F` opens the feedback modal from `BaseLayout` on
+ * every page, with no "a modal is already open" guard. With a containment
+ * check, EVERY live trap would cancel EVERY Tab in the document and yank focus
+ * back to its own first element, so the newly opened overlay becomes
+ * unreachable by keyboard: a WCAG 2.1.2 keyboard trap, strictly worse than the
+ * escape it was written to prevent. Reacting only to lost focus keeps each
+ * trap out of the others' way, because at most one of them is missing focus.
  *
  * When the container holds no focusable descendants nothing is prevented:
  * trapping Tab with nowhere to send it would be a real keyboard trap.
@@ -49,12 +74,14 @@ export function trapFocus(container: HTMLElement, event: KeyboardEvent): void {
     const first = focusable[0] as HTMLElement;
     const last = focusable[focusable.length - 1] as HTMLElement;
 
-    // Focus is no longer inside the trapped subtree (disabled control, tap on
-    // a non-focusable background, …). Anywhere but `first`/`last`, so the
-    // cycling branches below would let the Tab through to the page behind.
     if (!container.contains(document.activeElement)) {
+        // Someone else legitimately holds focus — leave them alone.
+        if (!isFocusLost()) return;
         event.preventDefault();
-        first.focus();
+        // Honour the direction of travel: Shift+Tab means "backwards", so
+        // re-entering at `first` would send the user the way they did not ask
+        // to go.
+        (event.shiftKey ? last : first).focus();
         return;
     }
 

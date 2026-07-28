@@ -89,20 +89,89 @@ describe('FOCUSABLE_SELECTORS', () => {
 });
 
 describe('trapFocus', () => {
-    it('pulls focus back in when it has escaped the container entirely (the trap that traps)', () => {
+    it('recovers focus that was LOST while the surface was open (the trap that traps)', () => {
         // The regression this file exists for. A focused control that becomes
         // `disabled`, or a tap on a non-focusable panel background, leaves
         // `document.activeElement` on <body> — inside neither `first` nor
         // `last`. Left unprevented, the browser's next Tab walks into page
         // content hidden behind an opaque backdrop (WCAG 2.4.3).
-        const { container, buttons, outside } = mountContainer(3);
-        outside.focus();
-        expect(document.activeElement).toBe(outside);
+        const { container, buttons } = mountContainer(3);
+        const stepper = buttons[2] as HTMLButtonElement;
+        stepper.focus();
+        stepper.disabled = true;
+        // jsdom does NOT run the HTML unfocusing steps when the focused element
+        // becomes disabled — it leaves the disabled node parked as
+        // `activeElement`, and `blur()` short-circuits on a non-focusable area.
+        // Real browsers DO unfocus it (verified in Chrome for HOS-323), so
+        // reproduce their end state: clear the flag, blur, restore it.
+        stepper.disabled = false;
+        stepper.blur();
+        stepper.disabled = true;
+        expect(document.activeElement).toBe(document.body);
 
         const event = tabThroughTrap(container);
 
         expect(event.defaultPrevented).toBe(true);
         expect(document.activeElement).toBe(buttons[0]);
+    });
+
+    it('does NOT steal focus from another element that legitimately holds it', () => {
+        // The round-3 CRITICAL. Consumers register this on `document`, so
+        // several traps can be live at once, and a global shortcut
+        // (Ctrl+Shift+F opens the feedback modal from BaseLayout on every page)
+        // can stack an overlay over any surface at any time. Treating "focus is
+        // outside me" as "focus is up for grabs" made every live trap cancel
+        // every Tab in the document and yank focus to its own first element —
+        // the stacked overlay became unreachable by keyboard (WCAG 2.1.2),
+        // strictly worse than the escape being prevented.
+        const { container, outside } = mountContainer(3);
+        outside.focus();
+        expect(document.activeElement).toBe(outside);
+
+        const event = tabThroughTrap(container);
+
+        expect(event.defaultPrevented).toBe(false);
+        expect(document.activeElement).toBe(outside);
+    });
+
+    it('leaves the other overlay alone when two traps are live at once', () => {
+        // The concrete shape of the bug: two surfaces open, both listening on
+        // `document`, so BOTH traps run on the same keydown. Only the one that
+        // actually lost focus may act, otherwise they fight and pin focus.
+        const { container: overlayA } = mountContainer(3);
+        const overlayB = document.createElement('div');
+        const inputB = document.createElement('input');
+        inputB.type = 'text';
+        overlayB.appendChild(inputB);
+        document.body.appendChild(overlayB);
+
+        inputB.focus();
+        expect(document.activeElement).toBe(inputB);
+
+        // Overlay A's trap sees a keydown for focus it does not own.
+        const seenByA = tabThroughTrap(overlayA);
+        expect(seenByA.defaultPrevented).toBe(false);
+        expect(document.activeElement).toBe(inputB);
+
+        // Overlay B's own trap still governs its single-element ring.
+        const seenByB = tabThroughTrap(overlayB);
+        expect(seenByB.defaultPrevented).toBe(true);
+        expect(document.activeElement).toBe(inputB);
+    });
+
+    it('re-enters at the LAST focusable when lost focus is recovered by Shift+Tab', () => {
+        // Direction of travel matters: Shift+Tab means "backwards", so dropping
+        // the user on `first` sends them the way they did not ask to go.
+        const { container, buttons } = mountContainer(3);
+        const stepper = buttons[1] as HTMLButtonElement;
+        stepper.focus();
+        stepper.blur();
+        expect(document.activeElement).toBe(document.body);
+
+        const event = tabThroughTrap(container, { shiftKey: true });
+
+        expect(event.defaultPrevented).toBe(true);
+        expect(document.activeElement).toBe(buttons[buttons.length - 1]);
     });
 
     it('pulls focus back in from <body> specifically', () => {
@@ -168,9 +237,10 @@ describe('trapFocus', () => {
         expect(document.activeElement).toBe(only);
     });
 
-    it('pulls focus onto the single focusable when focus was outside', () => {
+    it('pulls focus onto the single focusable when focus was lost', () => {
         const { container, buttons, outside } = mountContainer(1);
         outside.focus();
+        outside.blur();
 
         const event = tabThroughTrap(container);
 
@@ -206,6 +276,7 @@ describe('trapFocus', () => {
         const { container, buttons, outside } = mountContainer(3);
         (buttons[0] as HTMLButtonElement).disabled = true;
         outside.focus();
+        outside.blur();
 
         const event = tabThroughTrap(container);
 
