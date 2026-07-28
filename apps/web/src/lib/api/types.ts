@@ -337,10 +337,41 @@ export interface I18nFieldValues {
  * @see transformAccommodationTranslations
  */
 export interface AccommodationTranslationData {
-    readonly name: I18nFieldValues;
-    readonly summary: I18nFieldValues;
-    readonly description: I18nFieldValues;
-    readonly richDescription: I18nFieldValues;
+    readonly name: TranslatableFieldStatus;
+    readonly summary: TranslatableFieldStatus;
+    readonly description: TranslatableFieldStatus;
+    /**
+     * `null` when the owning host's plan does not include rich description.
+     *
+     * The API omits the whole premium pair in that case, so the panel hides the
+     * row entirely instead of showing one that can never fill in. This is why the
+     * field is nullable rather than just carrying empty values: "the plan does not
+     * include it" and "the plan includes it but nothing is written yet" need
+     * different UI, and only the presence of the KEY tells them apart.
+     */
+    readonly richDescription: TranslatableFieldStatus | null;
+}
+
+/**
+ * One translatable field's state, as the TranslationPanel needs to reason about
+ * it (BETA-199).
+ *
+ * The i18n values alone are not enough to decide whether a field is missing a
+ * translation. An accommodation that was never translated has NO `*I18n` content
+ * at all — its source text lives in the plain column until `persistTranslations`
+ * runs for the first time. Deriving "nothing to translate here" from an empty
+ * `locales.es` would therefore write off every field of every never-translated
+ * accommodation, which is precisely the heuristic BETA-199 rules out.
+ *
+ * So the plain column travels alongside: it is the canonical Spanish source, and
+ * the API's `loadTranslatableFields` reads exactly this pair to decide what it
+ * can translate.
+ */
+export interface TranslatableFieldStatus {
+    /** Per-locale i18n content. `null` for a locale with nothing stored. */
+    readonly locales: I18nFieldValues;
+    /** The plain column — the canonical Spanish source. */
+    readonly plain: string | null;
 }
 
 // ---------------------------------------------------------------------------
