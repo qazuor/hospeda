@@ -1,3 +1,17 @@
+/**
+ * @file PlanComparisonTable.test.ts
+ * @description Template-level assertions for the comparison table: markup,
+ * accessibility and styling. The ROW MODEL is no longer asserted here by
+ * grepping the component source — it lives in `plan-comparison-rows.ts` and is
+ * covered behaviourally by `plan-comparison-rows.test.ts` (HOS-329).
+ *
+ * Grepping the `.astro` for row constants is what allowed the component to keep
+ * a private inline copy of the row model that drifted from the module the
+ * catalog-veracity guard validates. The assertions below therefore pin the
+ * OPPOSITE: that this component imports the shared model and declares none of
+ * its own.
+ */
+
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -7,284 +21,135 @@ const src = readFileSync(
     'utf8'
 );
 
-describe('PlanComparisonTable.astro', () => {
-    // -----------------------------------------------------------------------
-    // Curated row-config model
-    // -----------------------------------------------------------------------
-
-    it('should define curated row configs for tourist experience group', () => {
-        expect(src).toContain('TOURIST_EXPERIENCE_ROWS');
-    });
-
-    it('should define curated row configs for tourist AI group', () => {
-        expect(src).toContain('TOURIST_AI_ROWS');
-    });
-
-    it('should define curated row configs for owner rows', () => {
-        expect(src).toContain('OWNER_ROWS');
-    });
-
-    it('should define curated row configs for owner AI business group', () => {
-        expect(src).toContain('OWNER_AI_ROWS');
-    });
-
-    it('should define asTourist rows derived from tourist VIP values', () => {
-        expect(src).toContain('OWNER_AS_TOURIST_ROWS');
-        expect(src).toContain('asVipForAll');
-    });
-
-    it('should define tourist group configs', () => {
+describe('PlanComparisonTable.astro — single source of truth (HOS-329)', () => {
+    it('imports the row model instead of declaring it inline', () => {
+        expect(src).toContain("from '@/components/billing/plan-comparison-rows'");
+        expect(src).toContain('OWNER_GROUPS');
         expect(src).toContain('TOURIST_GROUPS');
     });
 
-    it('should define owner group configs', () => {
-        expect(src).toContain('OWNER_GROUPS');
+    it('does not re-declare any row constant locally', () => {
+        for (const constant of [
+            'TOURIST_EXPERIENCE_ROWS',
+            'TOURIST_AI_ROWS',
+            'OWNER_ROWS',
+            'OWNER_AI_ROWS',
+            'OWNER_AS_TOURIST_ROWS'
+        ]) {
+            expect(src).not.toContain(`const ${constant}`);
+        }
+        expect(src).not.toContain('const OWNER_GROUPS');
+        expect(src).not.toContain('const TOURIST_GROUPS');
     });
 
-    it('should use RowCellDef discriminated union kinds', () => {
-        expect(src).toContain("kind: 'limit'");
-        expect(src).toContain("kind: 'literals'");
-        expect(src).toContain("kind: 'all-yes'");
-        expect(src).toContain("kind: 'all-no'");
-        expect(src).toContain("kind: 'all-unlimited'");
+    it('does not re-declare the row model types locally', () => {
+        expect(src).not.toContain('interface RowConfig');
+        expect(src).not.toContain('interface GroupConfig');
+        expect(src).not.toContain('interface LiteralsCell');
+        expect(src).not.toContain('type RowCellDef');
     });
 
-    it('should import LimitKey from @repo/billing for strong typing', () => {
-        expect(src).toContain("from '@repo/billing'");
-        expect(src).toContain('LimitKey');
+    it('resolves cells through the shared slug-based resolver, not by index', () => {
+        expect(src).toContain('resolveCell({ cell: row.cell, plan })');
+        // The old positional renderer and its column index must be gone.
+        expect(src).not.toContain('getCellRendered');
+        expect(src).not.toContain('planIndex');
+        expect(src).not.toContain('activePlans.map((plan, idx)');
     });
 
-    it('should use LimitKey enum values for numeric limit cells', () => {
-        expect(src).toContain('LimitKey.MAX_FAVORITES');
-        expect(src).toContain('LimitKey.MAX_ACCOMMODATIONS');
-        expect(src).toContain('LimitKey.MAX_PHOTOS_PER_ACCOMMODATION');
+    it('builds its columns with the shared active+sorted plan filter', () => {
+        expect(src).toContain('filterPlansByCategory');
+        expect(src).not.toContain("plans.filter((p) => p.category === 'owner')");
     });
+});
 
-    it('should use graduated limit keys for consumer AI rows in TOURIST_AI_ROWS (SPEC-283)', () => {
-        // aiSearch and aiChat must now read per-plan quotas, not binary all-yes.
-        expect(src).toContain('LimitKey.MAX_AI_SEARCH_PER_MONTH');
-        expect(src).toContain('LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH');
-        // The tourist AI rows must use kind:'limit', not kind:'all-yes'.
-        expect(src).toContain("{ id: 'aiSearch'");
-        expect(src).toContain("{ id: 'aiChat'");
-        expect(src).toContain('key: LimitKey.MAX_AI_SEARCH_PER_MONTH');
-        expect(src).toContain('key: LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH');
-    });
-
-    it('should NOT use all-yes for consumer AI rows (SPEC-283 graduated quotas)', () => {
-        // Verify the tourist AI rows no longer contain 'all-yes' by checking
-        // neither aiSearch nor aiChat is paired with kind:'all-yes' in the source.
-        // We do this by asserting the graduated keys ARE present (positive form),
-        // and that the two AI row IDs appear with 'limit' kind nearby.
-        expect(src).not.toContain(
-            "id: 'aiSearch', labelKey: 'billing.comparison.row.aiSearch', cell: { kind: 'all-yes'"
-        );
-        expect(src).not.toContain(
-            "id: 'aiChat',   labelKey: 'billing.comparison.row.aiChat',   cell: { kind: 'all-yes'"
-        );
-    });
-
-    it('should handle missing limit key with no (Minus icon) fallback', () => {
-        expect(src).toContain('in plan.limits');
-    });
-
-    // -----------------------------------------------------------------------
-    // Upcoming badge
-    // -----------------------------------------------------------------------
-
-    it('should render an upcoming badge for rows with status upcoming', () => {
+describe('PlanComparisonTable.astro — rendering', () => {
+    it('renders an upcoming badge for rows with status upcoming', () => {
         expect(src).toContain('comparison-table__badge--upcoming');
         expect(src).toContain("status === 'upcoming'");
         expect(src).toContain('upcomingLabel');
     });
 
-    // -----------------------------------------------------------------------
-    // Compare row activation (SPEC-288 T-013)
-    // -----------------------------------------------------------------------
-
-    it('should mark the compare row as available (no upcoming badge)', () => {
-        // The compare row config line must carry status 'available' now that
-        // SPEC-288 ships the feature — so the "Próximamente" badge is gone.
-        const compareRowLine = src.split('\n').find((line) => line.includes("id: 'compare'"));
-        expect(compareRowLine).toBeDefined();
-        expect(compareRowLine).toContain("status: 'available'");
-        expect(compareRowLine).not.toContain("status: 'upcoming'");
-    });
-
-    it('should keep per-tier compare cells reflecting Plus/VIP availability', () => {
-        // free=no, plus=yes, vip=yes — Plus and VIP can compare, free cannot.
-        const compareRowLine = src.split('\n').find((line) => line.includes("id: 'compare'"));
-        expect(compareRowLine).toContain("values: ['no', 'yes', 'yes']");
-    });
-
-    // -----------------------------------------------------------------------
-    // Collections row activation (SPEC-287 T-011)
-    // -----------------------------------------------------------------------
-
-    it('should mark the collections row as available (no upcoming badge)', () => {
-        // The collections row config line must carry status 'available' now
-        // that SPEC-287 enforces the gating — so the "Próximamente" badge is gone.
-        const collectionsRowLine = src
-            .split('\n')
-            .find((line) => line.includes("id: 'collections'"));
-        expect(collectionsRowLine).toBeDefined();
-        expect(collectionsRowLine).toContain("status: 'available'");
-        expect(collectionsRowLine).not.toContain("status: 'upcoming'");
-    });
-
-    it('should use a limit-kind cell with LimitKey.MAX_COLLECTIONS for the collections row', () => {
-        const collectionsRowLine = src
-            .split('\n')
-            .find((line) => line.includes("id: 'collections'"));
-        expect(collectionsRowLine).toContain("kind: 'limit'");
-        expect(collectionsRowLine).toContain('LimitKey.MAX_COLLECTIONS');
-    });
-
-    // -----------------------------------------------------------------------
-    // Promotions row activation (HOS-16 T-012)
-    // -----------------------------------------------------------------------
-
-    it('should mark the promotions row as available (no upcoming badge)', () => {
-        // owner-promotions is a real, working feature (OwnerPromotionService +
-        // tourist-facing display, PR #1900 merged 2026-06-30) — it was
-        // mislabeled 'upcoming'. HOS-16 also extends it to owner-basico.
-        const promotionsRowLine = src.split('\n').find((line) => line.includes("id: 'promotions'"));
-        expect(promotionsRowLine).toBeDefined();
-        expect(promotionsRowLine).toContain("status: 'available'");
-        expect(promotionsRowLine).not.toContain("status: 'upcoming'");
-    });
-
-    it('should keep a limit-kind cell with LimitKey.MAX_ACTIVE_PROMOTIONS for the promotions row', () => {
-        const promotionsRowLine = src.split('\n').find((line) => line.includes("id: 'promotions'"));
-        expect(promotionsRowLine).toContain("kind: 'limit'");
-        expect(promotionsRowLine).toContain('LimitKey.MAX_ACTIVE_PROMOTIONS');
-    });
-
-    // -----------------------------------------------------------------------
-    // Row notes
-    // -----------------------------------------------------------------------
-
-    it('should render optional note under row label when noteKey is set', () => {
+    it('renders the optional note under the row label when noteKey is set', () => {
         expect(src).toContain('comparison-table__row-note');
         expect(src).toContain('row.noteKey');
     });
 
-    // -----------------------------------------------------------------------
-    // Complex plan filtering and teaser
-    // -----------------------------------------------------------------------
-
-    it('should filter complex plans from the active columns', () => {
-        expect(src).toContain("p.category === 'owner'");
-        expect(src).toContain('activePlans');
+    it('renders the per-row description when one exists', () => {
+        expect(src).toContain('billing.comparison.rowDesc.');
+        expect(src).toContain('comparison-table__row-desc');
     });
 
-    it('should render complex teaser note for owner audience only', () => {
+    it('renders the complex teaser for the owner audience only', () => {
         expect(src).toContain('comparison-table__complex-teaser');
         expect(src).toContain("audience === 'owner'");
         expect(src).toContain('billing.comparison.complexTeaser');
     });
 
-    // -----------------------------------------------------------------------
-    // Icons and accessibility
-    // -----------------------------------------------------------------------
-
-    it('should use CheckIcon for included (yes) cells', () => {
-        expect(src).toContain('CheckIcon');
+    it('renders unlimited cells with the unlimited label', () => {
+        expect(src).toContain('unlimitedLabel');
+        expect(src).toContain("result === 'unlimited'");
     });
 
-    it('should use MinusIcon for not-included (no) cells', () => {
+    it('renders a per-column purchase CTA in each plan header', () => {
+        expect(src).toContain('PlanPurchaseButton');
+        expect(src).toContain('comparison-table__plan-cta');
+    });
+});
+
+describe('PlanComparisonTable.astro — accessibility', () => {
+    it('uses CheckIcon for included cells and MinusIcon for excluded ones', () => {
+        expect(src).toContain('CheckIcon');
         expect(src).toContain('MinusIcon');
     });
 
-    it('should use aria-label on icon cells for screen readers', () => {
+    it('labels icon cells for screen readers', () => {
         expect(src).toContain('aria-label');
         expect(src).toContain('role="img"');
+        expect(src).toContain('includedLabel');
+        expect(src).toContain('notIncludedLabel');
     });
 
-    it('should use scope="col" for plan column headers', () => {
+    it('scopes every header cell', () => {
         expect(src).toContain('scope="col"');
-    });
-
-    it('should use scope="row" for feature row headers', () => {
         expect(src).toContain('scope="row"');
-    });
-
-    it('should use scope="rowgroup" for group header rows', () => {
         expect(src).toContain('scope="rowgroup"');
     });
 
-    it('should have tabindex on scrollable wrapper for keyboard access', () => {
+    it('keeps the scrollable wrapper keyboard reachable', () => {
         expect(src).toContain('tabindex="0"');
     });
 
-    // -----------------------------------------------------------------------
-    // Group headers
-    // -----------------------------------------------------------------------
-
-    it('should use getComparisonGroupLabel for group headers', () => {
+    it('uses getComparisonGroupLabel for group headers', () => {
         expect(src).toContain('getComparisonGroupLabel');
     });
+});
 
-    // -----------------------------------------------------------------------
-    // Unlimited rendering
-    // -----------------------------------------------------------------------
-
-    it('should handle unlimited limit values (-1)', () => {
-        expect(src).toContain('-1');
-        expect(src).toContain('unlimited');
-    });
-
-    it('should render unlimitedLabel text for unlimited cells', () => {
-        expect(src).toContain('unlimitedLabel');
-    });
-
-    // -----------------------------------------------------------------------
-    // Audience prop
-    // -----------------------------------------------------------------------
-
-    it('should accept audience prop for group selection', () => {
-        expect(src).toContain('audience');
-        expect(src).toContain("'owner'");
-        expect(src).toContain("'tourist'");
-    });
-
-    // -----------------------------------------------------------------------
-    // CSS and styling
-    // -----------------------------------------------------------------------
-
-    it('should use CSS custom properties (no hardcoded colors)', () => {
+describe('PlanComparisonTable.astro — styling', () => {
+    it('uses CSS custom properties instead of hardcoded colors', () => {
         expect(src).toContain('var(--');
         expect(src).not.toContain('#000');
         expect(src).not.toContain('#fff');
     });
 
-    it('should have sticky first column class', () => {
+    it('keeps the first column sticky and the table horizontally scrollable', () => {
         expect(src).toContain('sticky');
         expect(src).toContain('comparison-table__label-col');
-    });
-
-    it('should have overflow-x for horizontal scroll on mobile', () => {
         expect(src).toContain('overflow-x');
     });
 
-    it('should use font-heading for plan names', () => {
+    it('uses the project font tokens', () => {
         expect(src).toContain('font-heading');
-    });
-
-    it('should use font-sans for body text', () => {
         expect(src).toContain('font-sans');
     });
 
-    it('should not contain the dead hover rule on group-header', () => {
+    it('does not contain the dead hover rule on group-header', () => {
         expect(src).not.toContain('.comparison-table__group-header:hover th');
     });
 
-    it('should style the upcoming badge with CSS vars', () => {
+    it('styles the upcoming badge and complex teaser with CSS vars', () => {
         expect(src).toContain('.comparison-table__badge--upcoming');
         expect(src).toContain('var(--brand-accent');
-    });
-
-    it('should style the complex teaser with CSS vars', () => {
         expect(src).toContain('.comparison-table__complex-teaser');
         expect(src).toContain('var(--core-muted-foreground)');
     });

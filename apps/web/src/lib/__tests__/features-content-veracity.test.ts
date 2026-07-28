@@ -10,7 +10,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { OWNER_ROWS } from '../../components/billing/plan-comparison-rows';
+import { OWNER_ROWS, ownerLiterals } from '../../components/billing/plan-comparison-rows';
 import { ANFITRIONES_TABLE_ROWS } from '../features-content';
 
 function anfitrionesRow(labelKey: string) {
@@ -59,13 +59,13 @@ describe('plan-comparison-rows catalog veracity — comparison table (HOS-213)',
     it('calendar sync (CAN_SYNC_EXTERNAL_CALENDAR) is available, pro+ only', () => {
         const row = ownerRow('calendarSync');
         expect(row.status).toBe('available');
-        expect(row.cell).toEqual({ kind: 'literals', values: ['no', 'yes', 'yes'] });
+        expect(row.cell).toEqual(ownerLiterals({ basico: 'no', pro: 'yes', premium: 'yes' }));
     });
 
     it('featured (FEATURED_LISTING, shipped SPEC-309) is available, pro+ only', () => {
         const row = ownerRow('featured');
         expect(row.status).toBe('available');
-        expect(row.cell).toEqual({ kind: 'literals', values: ['no', 'yes', 'yes'] });
+        expect(row.cell).toEqual(ownerLiterals({ basico: 'no', pro: 'yes', premium: 'yes' }));
     });
 
     it('priority support (phantom, no gate) is marked upcoming', () => {
