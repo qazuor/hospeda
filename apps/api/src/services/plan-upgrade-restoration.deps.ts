@@ -241,8 +241,15 @@ export const defaultDeps: UpgradeRestorationDeps = {
     async fetchAccommodationSlugs(ids: readonly string[]): Promise<Record<string, string>> {
         if (ids.length === 0) return {};
         const { accommodationModel } = await import('@repo/db');
+        // A plain ARRAY, not `{ in: [...] }`: `buildWhereClause` maps a scalar
+        // column + array value to `inArray`, and THROWS DbError on a plain object.
+        // The object form silently disabled ISR revalidation after every upgrade,
+        // because the caller's try/catch wraps this lookup together with
+        // `scheduleRevalidationBatch`. See the destination-recount block in
+        // `plan-upgrade-restoration.service.ts` for the same lesson learned once
+        // already, and `plan-change-revalidation-slugs.test.ts` for the regression.
         const rows = await accommodationModel.findAll(
-            { id: { in: ids as string[] } },
+            { id: ids as string[] },
             { pageSize: ids.length + 10 }
         );
         const map: Record<string, string> = {};

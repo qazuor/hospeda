@@ -183,7 +183,17 @@ export interface DowngradeRemediationSummary {
 // Default production dependencies
 // ---------------------------------------------------------------------------
 
-const defaultDeps: DowngradeRemediationDeps = {
+/**
+ * Production wiring for {@link applyDowngradeRestrictions}.
+ *
+ * Exported for ONE reason: every test around this service injects its own
+ * `deps`, so this object never executed in CI — which is exactly how a
+ * `DbError` in `fetchAccommodationSlugs` silently disabled ISR revalidation
+ * after every downgrade. `plan-change-revalidation-slugs.test.ts` drives it
+ * directly to keep that contract pinned. Production callers should keep
+ * omitting `input.deps` rather than importing this.
+ */
+export const defaultDeps: DowngradeRemediationDeps = {
     async computeExcess({ userId, targetPlanSlug }) {
         const { defaultExcessDeps } = await import('./subscription-downgrade-excess.service');
         return computeDowngradeExcess({ userId, targetPlanSlug }, defaultExcessDeps);
@@ -192,8 +202,15 @@ const defaultDeps: DowngradeRemediationDeps = {
     async fetchAccommodationSlugs(ids) {
         if (ids.length === 0) return {};
         const { accommodationModel } = await import('@repo/db');
+        // A plain ARRAY, not `{ in: [...] }`: `buildWhereClause` maps a scalar
+        // column + array value to `inArray`, and THROWS DbError on a plain object.
+        // The object form silently disabled ISR revalidation after every downgrade,
+        // because the caller's try/catch wraps this lookup together with
+        // `scheduleRevalidationBatch`. See `triggerDestinationRecounts` below for
+        // the same lesson learned once already, and
+        // `plan-change-revalidation-slugs.test.ts` for the regression.
         const rows = await accommodationModel.findAll(
-            { id: { in: ids as string[] } },
+            { id: ids as string[] },
             { pageSize: ids.length + 10 }
         );
         const map: Record<string, string> = {};
