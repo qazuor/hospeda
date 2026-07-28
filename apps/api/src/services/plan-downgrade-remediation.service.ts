@@ -92,9 +92,14 @@ export interface DowngradeRemediationDeps {
     }): Promise<DowngradePreview>;
 
     /**
-     * Fetches accommodation slugs for a list of accommodation IDs.
-     * Used to build complete {@link EntityChangeData} events for revalidation.
-     * Returns a map `accommodationId → slug`. Missing/deleted ids are omitted.
+     * Fetches accommodation slugs for a list of accommodation IDs, so the
+     * revalidation events can carry a detail path.
+     *
+     * Returns a map `accommodationId → slug` covering only the ids that resolved:
+     * an id whose row is gone, whose `slug` is null, or which falls outside the
+     * page the implementation requests, is simply absent from the map. The caller
+     * must treat an absent id as "no detail path" and emit the slug-less
+     * {@link EntityChangeData} variant — never substitute the id for the slug.
      */
     fetchAccommodationSlugs(ids: readonly string[]): Promise<Record<string, string>>;
 }
@@ -209,10 +214,7 @@ export const defaultDeps: DowngradeRemediationDeps = {
         // `scheduleRevalidationBatch`. See `triggerDestinationRecounts` below for
         // the same lesson learned once already, and
         // `plan-change-revalidation-slugs.test.ts` for the regression.
-        const rows = await accommodationModel.findAll(
-            { id: ids as string[] },
-            { pageSize: ids.length + 10 }
-        );
+        const rows = await accommodationModel.findAll({ id: ids }, { pageSize: ids.length + 10 });
         const map: Record<string, string> = {};
         for (const row of rows.items ?? []) {
             if (row.id && row.slug) map[row.id] = row.slug;
@@ -560,12 +562,41 @@ export async function applyDowngradeRestrictions(
     if (allTouchedIds.length > 0) {
         const revalidationService = getRevalidationService();
         if (revalidationService) {
+            // The slug lookup is caught SEPARATELY from the scheduling below. When
+            // the two shared one `try`, a throw inside the lookup took the whole
+            // revalidation with it and left only a warn behind — which is exactly
+            // how a malformed `where` disabled every plan-change revalidation
+            // unnoticed. A failed lookup must degrade the events, not delete them.
+            let slugMap: Record<string, string> = {};
             try {
-                const slugMap = await deps.fetchAccommodationSlugs(allTouchedIds);
-                const events: EntityChangeData[] = allTouchedIds.map((id) => ({
-                    entityType: 'accommodation' as const,
-                    slug: slugMap[id] ?? id
-                }));
+                slugMap = await deps.fetchAccommodationSlugs(allTouchedIds);
+            } catch (err) {
+                apiLogger.warn(
+                    { err, userId, customerId, accommodationCount: allTouchedIds.length },
+                    'plan-downgrade-remediation: accommodation slug lookup failed, scheduling revalidation without detail paths'
+                );
+            }
+
+            const missingSlugIds = allTouchedIds.filter((id) => !slugMap[id]);
+            if (missingSlugIds.length > 0) {
+                apiLogger.warn(
+                    { userId, customerId, missingSlugIds },
+                    'plan-downgrade-remediation: no slug resolved for some accommodations, their detail pages will not be revalidated'
+                );
+            }
+
+            try {
+                // `EntityChangeData` has a deliberate slug-less accommodation variant.
+                // Use it when the slug is unknown instead of substituting the UUID:
+                // `slug: id` would purge three bogus `/alojamientos/<uuid>/` paths AND
+                // skip the real detail page, while `revalidation_log` recorded success.
+                // `id` is passed either way — it lands in `revalidation_log.entity_id`.
+                const events: EntityChangeData[] = allTouchedIds.map((id) => {
+                    const slug = slugMap[id];
+                    return slug
+                        ? { entityType: 'accommodation' as const, id, slug }
+                        : { entityType: 'accommodation' as const, id };
+                });
                 revalidationService.scheduleRevalidationBatch({
                     events,
                     reason: `plan-downgrade-remediation: ${targetPlanSlug}`

@@ -6,9 +6,14 @@
  * ONLY the concrete `defaultDeps` object that wires real DB/billing calls.
  * The interface and type definitions remain in the service module.
  *
- * **Do not import this file from tests.** Tests always inject their own
- * `deps` via {@link ApplyUpgradeRestorationsInput.deps}. This module is
- * production-only wiring.
+ * **Do not import this file from behavioral tests.** Those inject their own
+ * `deps` via {@link ApplyUpgradeRestorationsInput.deps}; this module is
+ * production-only wiring. ONE deliberate exception:
+ * `plan-change-revalidation-slugs.test.ts` drives `defaultDeps` directly,
+ * because that blanket rule is precisely why a `DbError` here silently disabled
+ * ISR revalidation after every upgrade — the production object had zero CI
+ * coverage. The same carve-out is documented on the downgrade service's
+ * `defaultDeps`.
  *
  * @module services/plan-upgrade-restoration.deps
  */
@@ -248,10 +253,7 @@ export const defaultDeps: UpgradeRestorationDeps = {
         // `scheduleRevalidationBatch`. See the destination-recount block in
         // `plan-upgrade-restoration.service.ts` for the same lesson learned once
         // already, and `plan-change-revalidation-slugs.test.ts` for the regression.
-        const rows = await accommodationModel.findAll(
-            { id: ids as string[] },
-            { pageSize: ids.length + 10 }
-        );
+        const rows = await accommodationModel.findAll({ id: ids }, { pageSize: ids.length + 10 });
         const map: Record<string, string> = {};
         for (const row of rows.items ?? []) {
             if (row.id && row.slug) map[row.id] = row.slug;

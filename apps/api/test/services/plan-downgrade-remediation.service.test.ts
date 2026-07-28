@@ -914,6 +914,95 @@ describe('applyDowngradeRestrictions', () => {
             expect(accEvent).toBeDefined();
         });
 
+        it('still schedules the batch when the slug lookup throws', async () => {
+            // Regression: the lookup and scheduleRevalidationBatch used to share one
+            // try/catch, so a throw in the lookup deleted the whole revalidation and
+            // left only a warn behind. That is how a malformed `where` disabled every
+            // plan-change revalidation unnoticed. A lookup failure must DEGRADE the
+            // events, not remove them.
+            const svc = makeRevalidationService();
+            vi.mocked(getRevalidationService).mockReturnValue(svc);
+
+            const items = [
+                {
+                    id: 'acc-1',
+                    name: 'A',
+                    updatedAt: '2026-05-01T00:00:00.000Z',
+                    viewCount: null,
+                    keepByDefault: true
+                },
+                {
+                    id: 'acc-2',
+                    name: 'B',
+                    updatedAt: '2026-04-01T00:00:00.000Z',
+                    viewCount: null,
+                    keepByDefault: false
+                }
+            ];
+            vi.mocked(restrictAccommodations).mockResolvedValue({ affectedIds: ['acc-2'] });
+
+            const deps = makeDeps(makePreview({ accExcess: 1, accItems: items }));
+            deps.fetchAccommodationSlugs = vi.fn().mockRejectedValue(new Error('db exploded'));
+
+            await applyDowngradeRestrictions({
+                userId: USER_ID,
+                customerId: CUSTOMER_ID,
+                targetPlanSlug: TARGET_PLAN_SLUG,
+                deps
+            });
+
+            expect(svc.scheduleRevalidationBatch).toHaveBeenCalledTimes(1);
+            const { events } = vi.mocked(svc.scheduleRevalidationBatch).mock.calls[0]![0]! as {
+                events: Array<{ entityType: string; id?: string; slug?: string }>;
+            };
+            expect(events).toHaveLength(1);
+            expect(events[0]).toEqual({ entityType: 'accommodation', id: 'acc-2' });
+        });
+
+        it('emits the slug-less variant instead of substituting the id when a slug is missing', async () => {
+            // Regression: the caller used `slug: slugMap[id] ?? id`, fabricating a slug
+            // from a UUID — purging three bogus /alojamientos/<uuid>/ paths AND skipping
+            // the real detail page, while revalidation_log recorded success.
+            // EntityChangeData has a deliberate slug-less accommodation variant.
+            const svc = makeRevalidationService();
+            vi.mocked(getRevalidationService).mockReturnValue(svc);
+
+            const items = [
+                {
+                    id: 'acc-1',
+                    name: 'A',
+                    updatedAt: '2026-05-01T00:00:00.000Z',
+                    viewCount: null,
+                    keepByDefault: true
+                },
+                {
+                    id: 'acc-2',
+                    name: 'B',
+                    updatedAt: '2026-04-01T00:00:00.000Z',
+                    viewCount: null,
+                    keepByDefault: false
+                }
+            ];
+            vi.mocked(restrictAccommodations).mockResolvedValue({ affectedIds: ['acc-2'] });
+
+            // Lookup succeeds but resolves no slug for acc-2.
+            const deps = makeDeps(makePreview({ accExcess: 1, accItems: items }), {});
+
+            await applyDowngradeRestrictions({
+                userId: USER_ID,
+                customerId: CUSTOMER_ID,
+                targetPlanSlug: TARGET_PLAN_SLUG,
+                deps
+            });
+
+            const { events } = vi.mocked(svc.scheduleRevalidationBatch).mock.calls[0]![0]! as {
+                events: Array<{ entityType: string; id?: string; slug?: string }>;
+            };
+            expect(events).toHaveLength(1);
+            expect(events[0]).toEqual({ entityType: 'accommodation', id: 'acc-2' });
+            expect(events[0]).not.toHaveProperty('slug');
+        });
+
         it('skips revalidation when getRevalidationService returns undefined', async () => {
             vi.mocked(getRevalidationService).mockReturnValue(undefined);
 
