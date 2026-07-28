@@ -1,14 +1,20 @@
 /**
  * Default production dependencies for the Plan Upgrade Restoration Service.
  *
- * Extracted from `plan-upgrade-restoration.service.ts` to keep that module
- * within the 500-line guideline (reviewed SPEC-167 T-023). This file contains
- * ONLY the concrete `defaultDeps` object that wires real DB/billing calls.
- * The interface and type definitions remain in the service module.
+ * Extracted from `plan-upgrade-restoration.service.ts` to reduce that module's
+ * size (reviewed SPEC-167 T-023). It no longer brings it under the 500-line
+ * guideline — the service sits above it and a further split is still owed. This
+ * file contains ONLY the concrete `defaultDeps` object that wires real
+ * DB/billing calls; the interface and type definitions remain in the service.
  *
- * **Do not import this file from tests.** Tests always inject their own
- * `deps` via {@link ApplyUpgradeRestorationsInput.deps}. This module is
- * production-only wiring.
+ * **Do not import this file from behavioral tests.** Those inject their own
+ * `deps` via {@link ApplyUpgradeRestorationsInput.deps}; this module is
+ * production-only wiring. ONE deliberate exception:
+ * `plan-change-revalidation-slugs.test.ts` drives `defaultDeps` directly,
+ * because that blanket rule is precisely why a `DbError` here disabled ISR
+ * revalidation after every upgrade, unnoticed — the production object had zero
+ * CI coverage. The same carve-out is documented on the downgrade service's
+ * `defaultDeps`.
  *
  * @module services/plan-upgrade-restoration.deps
  */
@@ -241,10 +247,17 @@ export const defaultDeps: UpgradeRestorationDeps = {
     async fetchAccommodationSlugs(ids: readonly string[]): Promise<Record<string, string>> {
         if (ids.length === 0) return {};
         const { accommodationModel } = await import('@repo/db');
-        const rows = await accommodationModel.findAll(
-            { id: { in: ids as string[] } },
-            { pageSize: ids.length + 10 }
-        );
+        // A plain ARRAY, not `{ in: [...] }`: `buildWhereClause` maps a scalar
+        // column + array value to `inArray`, and THROWS DbError on a plain object.
+        // The object form disabled ISR revalidation after every upgrade — unnoticed
+        // rather than silent: the caller WRAPPED this lookup together with
+        // `scheduleRevalidationBatch` in one `apiLogger.warn`-only try, so prod logs
+        // carried the DbError all along. That try has since been split, so a throw
+        // here now degrades the events instead of deleting them. See the
+        // destination-recount block in `plan-upgrade-restoration.service.ts` for the
+        // same lesson learned once already, and
+        // `plan-change-revalidation-slugs.test.ts` for the regression.
+        const rows = await accommodationModel.findAll({ id: ids }, { pageSize: ids.length + 10 });
         const map: Record<string, string> = {};
         for (const row of rows.items ?? []) {
             if (row.id && row.slug) map[row.id] = row.slug;
