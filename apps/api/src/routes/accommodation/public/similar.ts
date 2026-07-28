@@ -10,7 +10,10 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
 import type { AccommodationData } from '../../../utils/entitlement-filter';
-import { filterAccommodationListByOwnerEntitlements } from '../../../utils/entitlement-filter';
+import {
+    filterAccommodationListByOwnerEntitlements,
+    stripRichDescriptionFields
+} from '../../../utils/entitlement-filter';
 import { createPublicRoute } from '../../../utils/route-factory';
 
 /**
@@ -167,8 +170,13 @@ export const publicGetSimilarRoute = createPublicRoute({
                 planRestricted: true,
                 contactInfo: true,
                 socialNetworks: true,
-                // richDescription intentionally excluded — PREMIUM field, not used in cards
+                // richDescription and its SPEC-212 i18n sibling intentionally excluded —
+                // PREMIUM fields, not used in cards. Both listed explicitly even though
+                // this is an inclusion-mode allowlist (so unlisted columns are never
+                // selected anyway): an explicit opt-out for one and silence for the other
+                // is the exact asymmetry that let the sibling go ungated everywhere else.
                 richDescription: false,
+                richDescriptionI18n: false,
                 // Internal admin/audit columns excluded from public card payload
                 adminInfo: false,
                 deletedAt: false,
@@ -203,20 +211,18 @@ export const publicGetSimilarRoute = createPublicRoute({
         // The Web transform's `deriveCityFields()` reads `cityDestination`
         // (preferred) before falling back to legacy `destination`.
         //
-        // SPEC-187 data-level omission: richDescription is a PREMIUM field gated
-        // per-owner by the entitlement system. Similar-card listings never render
-        // it. We strip it explicitly here as a second layer of defense (the DB
-        // projection above is the first layer — this ensures the field is absent
-        // even if the query layer changes or is mocked in tests).
+        // SPEC-187 / SPEC-212 data-level omission: richDescription and its i18n sibling
+        // are PREMIUM fields gated per-owner by the entitlement system. Similar-card
+        // listings never render them. We strip BOTH explicitly here as a second layer of
+        // defense (the DB projection above is the first layer — this ensures the fields
+        // are absent even if the query layer changes or is mocked in tests). Using the
+        // shared helper keeps this layer complete: the previous hand-rolled destructure
+        // dropped only the plain field, so the "survives a query-layer change" guarantee
+        // this block advertises did not actually hold for richDescriptionI18n.
         const mappedRows = rows.map((row) => {
-            const {
-                destination,
-                richDescription: _droppedRich,
-                ...rest
-            } = row as Record<string, unknown> & {
-                destination?: unknown;
-                richDescription?: unknown;
-            };
+            const { destination, ...rest } = stripRichDescriptionFields(
+                row as Record<string, unknown> & { destination?: unknown }
+            );
             return destination ? { ...rest, cityDestination: destination } : rest;
         });
 

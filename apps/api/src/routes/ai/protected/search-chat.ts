@@ -97,6 +97,7 @@ import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit
 import { entitlementMiddleware } from '../../../middlewares/entitlement.js';
 import { createConfiguredAiService } from '../../../services/ai-service.factory.js';
 import { getActorFromContext } from '../../../utils/actor.js';
+import { meterAiUsage } from '../../../utils/ai-usage-metering.js';
 import { apiLogger } from '../../../utils/logger.js';
 import {
     createProtectedStreamingRoute,
@@ -309,7 +310,12 @@ async function resolveDestinationIdFromCity(city: string): Promise<string | unde
  *   (SPEC-283, reverting SPEC-211 G-4).
  * - Cost-backstopped by the `ai_settings` per-feature USD ceiling enforced
  *   inside `createConfiguredAiService()` — NOT as a middleware.
- * - Metered via `recordAiUsage` (for cost visibility), also inside the engine.
+ * - Metered by this route via `meterAiUsage` after the reply stream drains
+ *   (HOS-328). The engine itself does NOT write to `ai_usage` — see the
+ *   engine module JSDoc, which states that decision explicitly — so this route
+ *   is the only writer, and the monthly `search` counter depends entirely on
+ *   it. One row is written per request, aggregating BOTH provider calls the
+ *   handler makes (intent extraction + reply).
  *
  * ## SSE event sequence (SPEC-212 §5)
  *
@@ -383,6 +389,7 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         ]
     },
     streamHandler: async ({ c }) => {
+        const handlerStartMs = Date.now();
         const rawBody = (await c.req.json()) as AiSearchChatRequest;
 
         // Step 1: Parse validated body fields.
@@ -428,6 +435,13 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
             { feature: 'search', prompt, locale },
             outputSchema
         );
+
+        // HOS-328: remember this call's token usage. A single search-chat
+        // request makes TWO provider calls (this intent extraction, then the
+        // reply stream in step 9); both are aggregated into the one `ai_usage`
+        // row written after the stream drains, so the recorded cost reflects
+        // the full request and not just its second half.
+        const intentUsage = result.usage;
 
         // Step 5: Safe-parse entities; fall back to empty on model output failure.
         //
@@ -760,12 +774,54 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         // -----------------------------------------------------------------------
         let accumulatedReplyText = '';
 
+        // HOS-328: the engine forwards the same `meta` promise through its
+        // output-moderation wrapper, which throws AFTER the last token — so
+        // `meta` also resolves on requests where the client received an SSE
+        // `error` frame and no usable reply. Recording those as 'success' would
+        // charge a quota unit for nothing, so track whether the stream actually
+        // completed. A promise rather than a boolean: reading a flag would
+        // depend on microtask ordering between this generator and `meta`, which
+        // is not guaranteed. The factory always drains the stream before
+        // awaiting `meta`, so awaiting this cannot deadlock, and the `finally`
+        // settles it on throw and early-return alike.
+        let markStreamSettled: (drainedCleanly: boolean) => void = () => {};
+        const streamDrainedCleanly = new Promise<boolean>((resolve) => {
+            markStreamSettled = resolve;
+        });
+
         const stream: AsyncIterable<StreamTextChunk> = (async function* () {
-            for await (const chunk of rawStream) {
-                accumulatedReplyText += chunk.delta;
-                yield chunk;
+            let drainedCleanly = false;
+            try {
+                for await (const chunk of rawStream) {
+                    accumulatedReplyText += chunk.delta;
+                    yield chunk;
+                }
+                drainedCleanly = true;
+            } finally {
+                markStreamSettled(drainedCleanly);
             }
         })();
+
+        // HOS-328 side-channel for the case where `rawMeta` REJECTS (mid-stream
+        // provider failure). Deliberately a SEPARATE branch off `rawMeta` rather
+        // than a rejection arm on the `meta` chain below: `meta` must keep
+        // rejecting exactly as it did before, or the factory would emit a `done`
+        // frame for a stream that failed. The intent-extraction call already
+        // completed and was billed by then, so its tokens are known and recorded
+        // — this is the one failure path that carries real, quantified spend.
+        rawMeta.catch(() =>
+            meterAiUsage({
+                userId: actor.id,
+                feature: 'search',
+                provider: 'none',
+                model: 'none',
+                promptTokens: intentUsage.promptTokens ?? 0,
+                completionTokens: intentUsage.completionTokens ?? 0,
+                latencyMs: Date.now() - handlerStartMs,
+                status: 'error',
+                logContext: { locale, conversationId: conversationId ?? null }
+            })
+        );
 
         // -----------------------------------------------------------------------
         // Step 10 (T-007): Persist the turn after the stream drains and resolve
@@ -782,6 +838,65 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         const meta: Promise<{ readonly conversationId: string | null }> = rawMeta.then(
             async (resolvedMeta) => {
                 let resolvedConversationId: string | null = null;
+
+                // ---------------------------------------------------------------
+                // Usage metering (HOS-328). See `utils/ai-usage-metering` for why
+                // the row exists at all and why the billing unit is the request.
+                //
+                // The two provider calls this handler makes (intent extraction +
+                // reply) are summed into a SINGLE row, so a request costs the
+                // caller exactly one quota unit. Provider/model are taken from the
+                // reply call: both calls resolve the same `search` feature config,
+                // so they agree except in the rare case where a fallback swapped
+                // providers mid-request — then the intent call's tokens are priced
+                // at the reply call's rate, an accepted approximation.
+                //
+                // Metering runs CONCURRENTLY with persistence below, not before
+                // it. Both are writes on the same connection pool and both are
+                // individually time-bounded (1500 ms each), so chaining them
+                // would double the worst-case latency of the `done` frame — the
+                // exact budget `PERSISTENCE_TIMEOUT_MS` exists to protect.
+                // Running them in parallel keeps that budget at 1500 ms, and
+                // keeps persistence off the metering path's dependency on the
+                // stream having settled.
+                //
+                // NOTE: this callback runs as soon as `rawMeta` resolves — a
+                // `.then` fires eagerly whether or not anyone awaits the derived
+                // promise. So on a post-drain output-moderation throw, where the
+                // factory emits `error` and never awaits `meta`, the row IS still
+                // written (with status 'error', via `streamDrainedCleanly`).
+                //
+                // `rawMeta` can also REJECT: the adapter builds it as
+                // `Promise.all([usage, finishReason])`, so a mid-stream provider
+                // failure rejects rather than hangs. That path is covered by the
+                // side-channel registered next to the stream above, which still
+                // records the already-billed intent call. The remaining unmetered
+                // case is a client disconnecting mid-stream, so `rawMeta` never
+                // settles at all.
+                //
+                // The stated 1500 ms budget assumes `streamDrainedCleanly` has
+                // already settled by the time `rawMeta` resolves, which holds
+                // unless an output-moderation provider is configured — that runs
+                // its own round-trip after the adapter resolves `meta`, and adds
+                // its latency on top.
+                // ---------------------------------------------------------------
+                const meteringTask = streamDrainedCleanly.then((drainedCleanly) =>
+                    meterAiUsage({
+                        userId: actor.id,
+                        feature: 'search',
+                        provider: resolvedMeta.provider,
+                        model: resolvedMeta.model,
+                        promptTokens:
+                            (intentUsage.promptTokens ?? 0) +
+                            (resolvedMeta.usage?.promptTokens ?? 0),
+                        completionTokens:
+                            (intentUsage.completionTokens ?? 0) +
+                            (resolvedMeta.usage?.completionTokens ?? 0),
+                        latencyMs: Date.now() - handlerStartMs,
+                        status: drainedCleanly ? 'success' : 'error',
+                        logContext: { locale, conversationId: conversationId ?? null }
+                    })
+                );
 
                 try {
                     const persistPromise = persistSearchChatTurn({
@@ -813,6 +928,28 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
                         'search-chat: persistence failed (non-fatal)'
                     );
                 }
+
+                // Started before the persistence race above; awaited here so the
+                // two overlap instead of chaining.
+                //
+                // `.catch` is not redundant with `meterAiUsage`'s own guard: the
+                // argument object is built INSIDE the `.then` callback, i.e.
+                // outside the helper, so a malformed `usage` would reject
+                // `meteringTask` and — since this await sits outside the
+                // persistence try/catch — turn an already-delivered reply into an
+                // SSE `error` frame with no `done` and no conversationId.
+                await meteringTask.catch((meteringError: unknown) => {
+                    apiLogger.warn(
+                        {
+                            locale,
+                            error:
+                                meteringError instanceof Error
+                                    ? meteringError.message
+                                    : String(meteringError)
+                        },
+                        'search-chat: usage metering threw (non-fatal — the reply was already delivered)'
+                    );
+                });
 
                 return { conversationId: resolvedConversationId };
             }

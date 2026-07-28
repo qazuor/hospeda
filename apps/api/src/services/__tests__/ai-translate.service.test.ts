@@ -103,6 +103,90 @@ describe('translateEntity', () => {
             }
         });
 
+        // HOS-328: the route writes ONE ai_usage row per request whose tokens
+        // are the sum across every provider call. `totalTokens` alone is not
+        // enough — ai_usage prices input and output tokens at different rates,
+        // so the split has to survive the aggregation.
+        it('should sum promptTokens and completionTokens across every provider call', async () => {
+            // Arrange: 4 fields × 2 locales = 8 calls, each 50 in / 30 out.
+            setupAiServiceMock('Translated');
+
+            // Act
+            const result = await translateEntity({
+                entityType: 'accommodation',
+                entityId: 'test-uuid',
+                fields: VALID_ACCOMMODATION_FIELDS
+            });
+
+            // Assert
+            expect(result.translations).toHaveLength(8);
+            expect(result.promptTokens).toBe(50 * 8);
+            expect(result.completionTokens).toBe(30 * 8);
+            expect(result.totalTokens).toBe(80 * 8);
+        });
+
+        it('should not count tokens for calls that failed', async () => {
+            // Arrange: 1 field × 2 locales; the second call throws, so only the
+            // first contributes tokens (a failed call keeps the source text and
+            // must not be billed).
+            setupAiServiceMock('Translated');
+            // `vi.clearAllMocks()` in beforeEach clears calls but NOT queued
+            // once-values or implementations, so scope both explicitly here.
+            mockGenerateText.mockReset();
+            mockGenerateText
+                .mockResolvedValueOnce({
+                    text: 'Translated',
+                    usage: { promptTokens: 50, completionTokens: 30, totalTokens: 80 },
+                    provider: 'stub',
+                    model: 'stub-model',
+                    finishReason: 'stop'
+                })
+                .mockRejectedValueOnce(new Error('provider exhausted'));
+
+            // Act
+            const result = await translateEntity({
+                entityType: 'accommodation',
+                entityId: 'test-uuid',
+                fields: { name: 'Cabaña del Río' }
+            });
+
+            // Assert
+            expect(result.translations).toHaveLength(2);
+            expect(result.translations.filter((t) => t.success)).toHaveLength(1);
+            expect(result.promptTokens).toBe(50);
+            expect(result.completionTokens).toBe(30);
+        });
+
+        it('should report zero tokens and no provider when every call fails', async () => {
+            // Arrange: this is what makes the route record status 'error'
+            // instead of consuming a quota unit.
+            (createConfiguredAiService as Mock).mockResolvedValue({
+                generateText: mockGenerateText,
+                streamText: vi.fn()
+            });
+            // `mockReset` first so this persistent rejection cannot be masked by
+            // a previously installed implementation, and `Once` twice (1 field ×
+            // 2 locales) so it cannot leak into a later test.
+            mockGenerateText.mockReset();
+            mockGenerateText
+                .mockRejectedValueOnce(new Error('provider exhausted'))
+                .mockRejectedValueOnce(new Error('provider exhausted'));
+
+            // Act
+            const result = await translateEntity({
+                entityType: 'accommodation',
+                entityId: 'test-uuid',
+                fields: { name: 'Cabaña del Río' }
+            });
+
+            // Assert
+            expect(result.translations).toHaveLength(2);
+            expect(result.translations.some((t) => t.success)).toBe(false);
+            expect(result.promptTokens).toBe(0);
+            expect(result.completionTokens).toBe(0);
+            expect(result.provider).toBe('');
+        });
+
         it('should call aiService.generateText with feature=translate and correct locale', async () => {
             // Arrange
             setupAiServiceMock('River Cabin');

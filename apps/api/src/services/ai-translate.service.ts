@@ -189,6 +189,15 @@ export interface TranslateEntityResult {
     entityId: string;
     translations: TranslateResult[];
     totalTokens: number;
+    /**
+     * Input tokens summed across every provider call this translation made
+     * (one per field × target locale). Split out from {@link totalTokens}
+     * because `ai_usage` prices input and output tokens at different rates —
+     * see HOS-328.
+     */
+    promptTokens: number;
+    /** Output tokens summed across every provider call. See {@link promptTokens}. */
+    completionTokens: number;
     provider: string;
     model: string;
 }
@@ -260,6 +269,10 @@ async function translateField(
 interface FieldTranslationOutcome {
     result: TranslateResult;
     totalTokens: number;
+    /** Input tokens for this single provider call (HOS-328). */
+    promptTokens: number;
+    /** Output tokens for this single provider call (HOS-328). */
+    completionTokens: number;
     provider: string | null;
     model: string | null;
 }
@@ -286,6 +299,8 @@ async function translateFieldWithRetry(
                 success: true
             },
             totalTokens: result.usage.totalTokens,
+            promptTokens: result.usage.promptTokens,
+            completionTokens: result.usage.completionTokens,
             provider: result.provider,
             model: result.model
         };
@@ -304,6 +319,8 @@ async function translateFieldWithRetry(
                 error: errorMessage
             },
             totalTokens: 0,
+            promptTokens: 0,
+            completionTokens: 0,
             provider: null,
             model: null
         };
@@ -332,6 +349,8 @@ export async function translateEntity(input: TranslateEntityInput): Promise<Tran
     const aiService = await createConfiguredAiService();
     const translations: TranslateResult[] = [];
     let totalTokens = 0;
+    let promptTokens = 0;
+    let completionTokens = 0;
     let provider = '';
     let model = '';
 
@@ -366,6 +385,8 @@ export async function translateEntity(input: TranslateEntityInput): Promise<Tran
                 // Accumulate per-call usage and remember the provider/model that
                 // actually served the request (used for persisted metadata).
                 totalTokens += outcome.totalTokens;
+                promptTokens += outcome.promptTokens;
+                completionTokens += outcome.completionTokens;
                 if (outcome.provider) {
                     provider = outcome.provider;
                 }
@@ -380,6 +401,8 @@ export async function translateEntity(input: TranslateEntityInput): Promise<Tran
         entityId,
         translations,
         totalTokens,
+        promptTokens,
+        completionTokens,
         provider,
         model
     };
