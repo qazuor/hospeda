@@ -9,6 +9,7 @@
  * honesty of the catalog.
  */
 
+import { EntitlementKey } from '@repo/billing';
 import { describe, expect, it } from 'vitest';
 import { OWNER_ROWS } from '../../components/billing/plan-comparison-rows';
 import { ANFITRIONES_TABLE_ROWS } from '../features-content';
@@ -50,22 +51,35 @@ describe('features-content catalog veracity — /funcionalidades (HOS-213)', () 
 });
 
 describe('plan-comparison-rows catalog veracity — comparison table (HOS-213)', () => {
-    it('base calendar (CAN_USE_CALENDAR) is available for every owner plan', () => {
+    it('base calendar is driven by CAN_USE_CALENDAR and is available', () => {
+        // Was `expect(row.cell.kind).toBe('all-yes')`, which asserted a literal
+        // while the test name claimed a catalog fact: dropping the entitlement
+        // from a tier left this green with the table still showing a check.
         const row = ownerRow('calendar');
-        expect(row.cell.kind).toBe('all-yes');
+        expect(row.cell).toEqual({ kind: 'entitlement', key: EntitlementKey.CAN_USE_CALENDAR });
         expect(row.status).toBe('available');
     });
 
-    it('calendar sync (CAN_SYNC_EXTERNAL_CALENDAR) is available, pro+ only', () => {
+    it('calendar sync is driven by CAN_SYNC_EXTERNAL_CALENDAR and is available', () => {
         const row = ownerRow('calendarSync');
         expect(row.status).toBe('available');
-        expect(row.cell).toEqual({ kind: 'literals', values: ['no', 'yes', 'yes'] });
+        expect(row.cell).toEqual({
+            kind: 'entitlement',
+            key: EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR
+        });
     });
 
-    it('featured (FEATURED_LISTING, shipped SPEC-309) is available, pro+ only', () => {
+    it('featured (FEATURED_LISTING, shipped SPEC-309) is available', () => {
         const row = ownerRow('featured');
         expect(row.status).toBe('available');
-        expect(row.cell).toEqual({ kind: 'literals', values: ['no', 'yes', 'yes'] });
+        expect(row.cell).toEqual({ kind: 'entitlement', key: EntitlementKey.FEATURED_LISTING });
+    });
+
+    it('flags the featured row as also purchasable as an addon', () => {
+        // /funcionalidades offers FEATURED_LISTING to owner-basico via the
+        // visibility-boost addon. Without this note the comparison table's flat
+        // "not included" contradicts the brochure page.
+        expect(ownerRow('featured').noteKey).toBe('billing.comparison.note.featuredAddon');
     });
 
     it('priority support (phantom, no gate) is marked upcoming', () => {

@@ -525,6 +525,7 @@
             "basicStats": "Estadísticas básicas",
             "advancedStats": "Estadísticas avanzadas",
             "calendar": "Calendario de disponibilidad",
+            "calendarSync": "Sincronizar calendarios externos",
             "richDescription": "Descripción enriquecida",
             "video": "Video en tu publicación",
             "promotions": "Promociones activas",
@@ -557,6 +558,7 @@
             "basicStats": "Consultá visitas y métricas esenciales de tu publicación.",
             "advancedStats": "Reportes detallados de rendimiento, conversión y tendencias de tu alojamiento.",
             "calendar": "Indicá los días en que tu alojamiento está disponible para recibir huéspedes.",
+            "calendarSync": "Conectá Google Calendar, Airbnb o Booking.com y las fechas ocupadas se bloquean solas.",
             "richDescription": "Redactá una descripción con formato enriquecido para presentar mejor tu espacio.",
             "video": "Agregá un video a tu publicación para mostrar el espacio en detalle.",
             "promotions": "Cantidad de promociones activas que podés tener disponibles al mismo tiempo.",
@@ -574,7 +576,8 @@
             "aiSearch": "Para usuarios registrados",
             "aiChatTourist": "Disponible en alojamientos que lo habilitaron",
             "aiChatOwner": "Vos lo habilitás para tus huéspedes",
-            "aiSupportAddon": "Disponible como complemento"
+            "aiSupportAddon": "Disponible como complemento",
+            "featuredAddon": "También disponible como complemento en cualquier plan"
         },
         "limitLabel": {
             "max_accommodations": "Alojamientos publicados",

@@ -5,7 +5,7 @@
 import { accommodations, getDb } from '@repo/db';
 import { AccommodationPublicSchema, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
-import { and, desc, eq, ne, or, type SQL } from 'drizzle-orm';
+import { and, desc, eq, isNull, ne, or, type SQL } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
@@ -49,14 +49,47 @@ export const publicGetSimilarRoute = createPublicRoute({
          */
         const db = getDb();
 
-        // Fetch current accommodation to get type and destinationId
+        // Fetch current accommodation to get type and destinationId.
+        // HOS-288: a bare `eq(id)` answered 200 with a full recommendation list for a
+        // soft-deleted / DRAFT / PRIVATE id. With these predicates the row is simply not
+        // found and the NOT_FOUND throw right below fires.
+        //
+        // For DRAFT/PRIVATE that closes an enumeration oracle. For soft-deleted it does
+        // NOT — `checkCanViewAccommodation` deliberately answers 410 GONE on
+        // `/accommodations/:slug` for a formerly-PUBLIC deleted listing so crawlers
+        // deindex it (HOS-117 T-022), i.e. existence is disclosed there by design. The
+        // same id therefore yields 410 from `getById` and 404 here. That divergence is
+        // deliberate — a recommendation sub-resource is not an indexed canonical URL, so
+        // it has nothing to deindex — but it IS a divergence, not an anti-enumeration win.
+        //
+        // The predicates are not merely "the same ones the similarity query uses" — they
+        // are forced. This route sits under the `/api/v1/public/accommodations` prefix in
+        // `PUBLIC_CACHE_ENDPOINTS`, and `generateCacheKey` builds public keys as
+        // `public:${path}${query}` with NO Authorization component, while `cacheMiddleware`
+        // is mounted BEFORE `authMiddleware` so a cache HIT never reaches the handler at
+        // all. The response is therefore shared across actors and the handler MUST be
+        // actor-blind: it may only ever return what an anonymous caller may see. That also
+        // rules out making this lookup actor-aware to serve owner previews — doing so
+        // would turn the leak into cache poisoning.
+        //
+        // Accepted cost: a token-bearing owner or VIP asking `/similar` for their own
+        // DRAFT/PRIVATE listing now gets 404 instead of recommendations. No first-party
+        // regression — `apps/web` issues this SSR call with no cookie header, so it is
+        // already anonymous, and the section degrades to empty via `Promise.allSettled`.
         const current = await db
             .select({
                 type: accommodations.type,
                 destinationId: accommodations.destinationId
             })
             .from(accommodations)
-            .where(eq(accommodations.id, id))
+            .where(
+                and(
+                    eq(accommodations.id, id),
+                    isNull(accommodations.deletedAt),
+                    eq(accommodations.lifecycleState, 'ACTIVE'),
+                    eq(accommodations.visibility, 'PUBLIC')
+                )
+            )
             .limit(1);
 
         const source = current[0];
@@ -87,7 +120,14 @@ export const publicGetSimilarRoute = createPublicRoute({
             orCondition,
             ne(accommodations.id, id),
             eq(accommodations.lifecycleState, 'ACTIVE'),
-            eq(accommodations.visibility, 'PUBLIC')
+            eq(accommodations.visibility, 'PUBLIC'),
+            // HOS-288: soft-deleted rows must never reach a public response.
+            // `AccommodationModel` defaults to excluding them on findAll/count/
+            // findAllWithRelations, but this handler is a RAW relational query on
+            // `getDb()` (see the @remarks above on why no model method fits the
+            // two-step OR-similarity pattern), so the model default cannot reach
+            // it and the predicate has to be written out here.
+            isNull(accommodations.deletedAt)
         ) as SQL<unknown>;
 
         const rows = await db.query.accommodations.findMany({
