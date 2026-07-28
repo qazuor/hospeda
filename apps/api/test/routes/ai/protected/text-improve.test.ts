@@ -42,30 +42,61 @@ const { streamTextCalls } = vi.hoisted(() => ({
     }>
 }));
 
+/** Actor id seeded by the stubbed auth middleware; `ai_usage` rows key on it. */
+const TEST_ACTOR_ID = 'test-actor-text-improve-unit';
+
 /** Configurable stream contents for the next stubbed streamText call. */
-const { nextStreamDeltas, nextMeta, nextPreStreamThrow, nextPostDrainThrow } = vi.hoisted(() => ({
-    nextStreamDeltas: { current: [] as string[] },
-    nextMeta: { current: undefined as unknown },
-    // When set, the stub `streamText` throws this BEFORE returning a stream
-    // (pre-stream block path → mapped to HTTP 422 JSON by the factory).
-    nextPreStreamThrow: { current: undefined as unknown },
-    // When set, the stub's async generator yields the configured deltas and
-    // THEN throws this (post-drain / mid-stream block path → SSE error frame).
-    nextPostDrainThrow: { current: undefined as unknown }
-}));
+const { nextStreamDeltas, nextMeta, nextPreStreamThrow, nextPostDrainThrow, mockRecordAiUsage } =
+    vi.hoisted(() => ({
+        nextStreamDeltas: { current: [] as string[] },
+        /**
+         * Resolved engine metadata for the next stubbed `streamText` call.
+         *
+         * Defaults to a real promise rather than `undefined`: the engine's
+         * `streamText` contract always returns one, and since HOS-328 the route
+         * chains its usage metering onto it.
+         */
+        nextMeta: {
+            current: Promise.resolve({
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            }) as unknown
+        },
+        /** `recordAiUsage` spy — see the HOS-328 metering suite at the bottom. */
+        mockRecordAiUsage: vi.fn(async (_input: Record<string, unknown>) => undefined),
+        // When set, the stub `streamText` throws this BEFORE returning a stream
+        // (pre-stream block path → mapped to HTTP 422 JSON by the factory).
+        nextPreStreamThrow: { current: undefined as unknown },
+        // When set, the stub's async generator yields the configured deltas and
+        // THEN throws this (post-drain / mid-stream block path → SSE error frame).
+        nextPostDrainThrow: { current: undefined as unknown }
+    }));
 
 // ---------------------------------------------------------------------------
 // Module mocks
 // ---------------------------------------------------------------------------
 
 /**
- * Auth middleware: no-op pass-through so the protected route does not 401.
- * The factory prepends this middleware to the options.middlewares chain.
+ * Auth middleware: pass-through that seeds the authenticated actor.
+ *
+ * It does NOT simply call `next()`. The real `protectedAuthMiddleware` always
+ * leaves an authenticated (non-guest) actor in the Hono context, and the
+ * handler now reads it via `getActorFromContext` to key the `ai_usage` row
+ * (HOS-328). A bare pass-through would leave `c.get('actor')` undefined and
+ * make every 200-path test 500 — an artefact of the stub, not of the route.
  */
 vi.mock('../../../../src/middlewares/authorization', () => ({
-    protectedAuthMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    }
+    protectedAuthMiddleware:
+        () =>
+        async (
+            c: { set: (key: string, value: unknown) => void },
+            next: () => Promise<void>
+        ): Promise<void> => {
+            c.set('actor', { id: TEST_ACTOR_ID, role: 'USER', permissions: [] });
+            await next();
+        }
 }));
 
 /**
@@ -204,7 +235,8 @@ const { AiEngineError, AiModerationBlockedError, AiFeatureNotConfiguredError } =
 vi.mock('@repo/ai-core', () => ({
     AiEngineError,
     AiModerationBlockedError,
-    AiFeatureNotConfiguredError
+    AiFeatureNotConfiguredError,
+    recordAiUsage: mockRecordAiUsage
 }));
 
 /**
@@ -328,7 +360,12 @@ describe('protected AI text-improve route (SPEC-198 T-005)', () => {
         vi.clearAllMocks();
         streamTextCalls.length = 0;
         nextStreamDeltas.current = ['Hola', ' mundo'];
-        nextMeta.current = undefined;
+        nextMeta.current = Promise.resolve({
+            usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+            provider: 'stub',
+            model: 'stub-model',
+            finishReason: 'stop'
+        });
         nextPreStreamThrow.current = undefined;
         nextPostDrainThrow.current = undefined;
     });
@@ -562,6 +599,65 @@ describe('protected AI text-improve route (SPEC-198 T-005)', () => {
             expect(body.success).toBe(false);
             expect(body.error.code).toBe('VALIDATION_ERROR');
             expect(streamTextCalls).toHaveLength(0);
+        });
+    });
+
+    // =========================================================================
+    // HOS-328 — usage metering status
+    //
+    // The quota counter is derived by counting `ai_usage` rows whose status is
+    // 'success' or 'fallback'. So the status this route picks IS the billing
+    // decision, not a log level — these tests pin it on both outcomes.
+    // =========================================================================
+
+    describe('HOS-328 — usage metering', () => {
+        it('records a success row when the stream drains cleanly', async () => {
+            const app = buildTestApp();
+            const res = await POST(app, VALID_DESCRIPTION_BODY);
+
+            expect(res.status).toBe(200);
+            await res.text();
+
+            expect(mockRecordAiUsage).toHaveBeenCalledTimes(1);
+            expect(mockRecordAiUsage.mock.calls[0]?.[0]).toMatchObject({
+                userId: TEST_ACTOR_ID,
+                feature: 'text_improve',
+                status: 'success'
+            });
+        });
+
+        it('records an error row — not success — when the stream throws after yielding tokens', async () => {
+            // The engine forwards the same `meta` promise through its output
+            // moderation wrapper, which throws AFTER the last token. So `meta`
+            // resolves even though the client got an SSE `error` frame and no
+            // usable reply. Charging a quota unit for that would be wrong.
+            nextPostDrainThrow.current = new AiModerationBlockedError({
+                feature: 'text_improve',
+                direction: 'output'
+            });
+
+            const app = buildTestApp();
+            const res = await POST(app, VALID_DESCRIPTION_BODY);
+
+            expect(res.status).toBe(200);
+            const raw = await res.text();
+            expect(raw).toContain('event: error');
+            expect(raw).not.toContain('event: done');
+
+            expect(mockRecordAiUsage).toHaveBeenCalledTimes(1);
+            expect(mockRecordAiUsage.mock.calls[0]?.[0]).toMatchObject({
+                feature: 'text_improve',
+                status: 'error'
+            });
+        });
+
+        it('does not record usage when the request never reaches the engine', async () => {
+            const app = buildTestApp();
+            const res = await POST(app, { fieldType: 'title', fieldValue: 'Some text' });
+
+            expect(res.status).toBe(400);
+            expect(streamTextCalls).toHaveLength(0);
+            expect(mockRecordAiUsage).not.toHaveBeenCalled();
         });
     });
 });
