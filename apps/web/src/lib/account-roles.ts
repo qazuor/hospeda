@@ -28,6 +28,12 @@ export const ROLES_WITH_ACCOMMODATIONS_NAV = new Set<string>([
     'EDITOR'
 ]);
 
+/** Owner (host) pricing page, locale-agnostic. */
+const OWNER_PLANS_PATH = 'suscriptores/planes';
+
+/** Tourist pricing page, locale-agnostic. Also the anonymous default. */
+const TOURIST_PLANS_PATH = 'suscriptores/turistas';
+
 /**
  * Returns true when the given role grants access to host-level features
  * (property management, host dashboard, owner inbox, etc.).
@@ -88,5 +94,28 @@ export function isCommerceOwnerRole(role: string | null): boolean {
  *          `'suscriptores/turistas'` (tourist / anonymous).
  */
 export function resolveSubscriptionPlansPath({ role }: { role: string | null }): string {
-    return isHostRole(role) ? 'suscriptores/planes' : 'suscriptores/turistas';
+    return isHostRole(role) ? OWNER_PLANS_PATH : TOURIST_PLANS_PATH;
+}
+
+/**
+ * Same decision as {@link resolveSubscriptionPlansPath}, but driven by the
+ * `upgradeAudience` the API attaches to an entitlement error instead of by the
+ * caller's own role.
+ *
+ * **How much to trust the field depends on which gate sent it.** On a
+ * `LIMIT_REACHED` 403 it is computed per limit, so it really is the server's
+ * verdict. On an `ENTITLEMENT_REQUIRED` 402 it is not: `trialMiddleware`
+ * hardcodes `'host'` on its trial-expired throws and omits the field entirely on
+ * `NO_BILLING_ACCOUNT` / `NO_ACTIVE_SUBSCRIPTION`. Callers on the 402 path should
+ * treat it as a hint and keep a default that suits their own surface (HOS-283).
+ *
+ * @param params.audience - `'host'` or `'tourist'`, from `details.upgradeAudience`.
+ * @returns The locale-agnostic path segment for the matching pricing page.
+ */
+export function resolveSubscriptionPlansPathForAudience({
+    audience
+}: {
+    audience: 'host' | 'tourist';
+}): string {
+    return audience === 'host' ? OWNER_PLANS_PATH : TOURIST_PLANS_PATH;
 }
