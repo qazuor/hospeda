@@ -74,6 +74,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import { resetBillingInstance } from '../../../../src/middlewares/billing.js';
 import { pastDueGraceMiddleware } from '../../../../src/middlewares/past-due-grace.middleware.js';
+import { createErrorHandler } from '../../../../src/middlewares/response.js';
 import {
     createTestBillingCustomer,
     createTestSubscription
@@ -91,9 +92,13 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
  * Shape of the 402 error body emitted by `pastDueGraceMiddleware`.
  */
 interface GraceExpiredBody {
-    readonly error: 'GRACE_PERIOD_EXPIRED';
-    readonly message: string;
-    readonly daysOverdue: number;
+    readonly success: false;
+    readonly error: {
+        readonly code: 'ENTITLEMENT_REQUIRED';
+        readonly message: string;
+        readonly reason: 'GRACE_PERIOD_EXPIRED';
+        readonly details: { readonly daysOverdue: number };
+    };
 }
 
 /**
@@ -115,6 +120,13 @@ interface GraceExpiredBody {
  */
 function buildProbeApp(customerId: string): Hono {
     const app = new Hono();
+    // The gate signals a block by THROWING an HTTPException (HOS-283), so the
+    // probe must mount the same error handler the real app does — a bare
+    // `new Hono()` answers an HTTPException with Hono's default handler, which
+    // returns `err.getResponse()`: text/plain carrying the message, not the
+    // project's JSON envelope. Without this the body assertions below cannot
+    // pass no matter how correct the middleware is.
+    app.onError(createErrorHandler());
     app.use((c, next) => {
         c.set('billingEnabled', true);
         c.set('billingCustomerId', customerId);
@@ -266,9 +278,15 @@ describe('SPEC-143 T-143-63 (reframed) — past-due grace middleware (e2e)', () 
         const res = await buildProbeApp(customerId).request('/probe');
         expect(res.status).toBe(402);
 
+        // HOS-283: the gate now throws an HTTPException so the body goes through
+        // the shared error formatter. It used to hand-roll `{error: '<string>'}`,
+        // which the web client's `parseError` could not read at all (it expects
+        // `error` to be the `{code, message}` object), so an overdue customer got
+        // generic copy instead of "update your payment method".
         const body = (await res.json()) as GraceExpiredBody;
-        expect(body.error).toBe('GRACE_PERIOD_EXPIRED');
-        expect(body.message).toContain('grace period has expired');
+        expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
+        expect(body.error.reason).toBe('GRACE_PERIOD_EXPIRED');
+        expect(body.error.message).toContain('grace period has expired');
         // The middleware now computes `daysOverdue` directly from
         // `current_period_end` (previously collapsed to 0 via
         // `Math.abs(daysRemainingInGrace() ?? 0)`).
@@ -281,8 +299,8 @@ describe('SPEC-143 T-143-63 (reframed) — past-due grace middleware (e2e)', () 
         // Allow a 1-day tolerance to absorb sub-second drift between
         // the test's `now` snapshot inside `patchGraceWindow` and the
         // middleware's `Date.now()` call when the request flows through.
-        expect(body.daysOverdue).toBeGreaterThanOrEqual(3);
-        expect(body.daysOverdue).toBeLessThanOrEqual(4);
+        expect(body.error.details.daysOverdue).toBeGreaterThanOrEqual(3);
+        expect(body.error.details.daysOverdue).toBeLessThanOrEqual(4);
     });
 
     it('bypasses grace enforcement on exempt path suffixes even when grace is expired', async () => {

@@ -18,6 +18,7 @@
             "network": "We couldn't reach the server.",
             "forbidden": "You don't have permission to import from a URL. Check that your plan includes it.",
             "rateLimit": "You've made too many imports in a row. Please wait a moment and try again.",
+            "entitlementCta": "View plans",
             "failure": {
                 "invalidUrl": "Check that the URL is valid and points to an accommodation.",
                 "sourceBlocked": "The source is temporarily unavailable. Wait a few minutes and try again, or enter the details manually.",

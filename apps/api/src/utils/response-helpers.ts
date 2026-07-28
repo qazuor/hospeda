@@ -9,6 +9,7 @@ import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ZodIssue, ZodTypeAny } from 'zod';
+import { readEntitlementCause } from './entitlement-cause';
 import { env } from './env';
 import { apiLogger } from './logger';
 
@@ -463,21 +464,39 @@ export const handleRouteError = (error: unknown, c: Context) => {
         const statusCode = error.status;
         const message = error.message;
 
-        // Map HTTP status to error code
+        // Map HTTP status to error code.
+        //
+        // Keep this in sync with the same mapping in `createErrorHandler`
+        // (middlewares/response.ts): these are TWIN formatters — route-factory
+        // routes land here, everything else lands in `app.onError` — and a status
+        // missing from one of them silently becomes INTERNAL_ERROR, which the UI
+        // renders as "something broke on our side". That is exactly how a 402
+        // entitlement gate ended up blaming the platform (HOS-283).
+        //
+        // All five 402 throws live in middleware today (four in trial.ts, one in
+        // past-due-grace.middleware.ts), so none reach this formatter; the entry
+        // is here so a future route-level 402 does not reintroduce the bug.
         const httpStatusToCode: Record<number, string> = {
             400: ServiceErrorCode.VALIDATION_ERROR,
             401: ServiceErrorCode.UNAUTHORIZED,
+            402: ServiceErrorCode.ENTITLEMENT_REQUIRED,
             403: ServiceErrorCode.FORBIDDEN,
             404: ServiceErrorCode.NOT_FOUND,
             409: ServiceErrorCode.ALREADY_EXISTS
         };
         const code = httpStatusToCode[statusCode] ?? ServiceErrorCode.INTERNAL_ERROR;
+        // Same whitelisted projection the global handler applies, so a 402 gets
+        // its cause-specific `reason` on BOTH paths. Emitting only the code here
+        // would send the client to the generic plan copy — which for a past-due
+        // customer is the wrong remedy, i.e. the very bug being fixed.
+        const entitlementCause = readEntitlementCause(error);
 
         return createErrorResponse(
             {
                 code,
                 message,
-                details: undefined
+                details: entitlementCause.details,
+                ...(entitlementCause.reason ? { reason: entitlementCause.reason } : {})
             },
             c,
             statusCode
