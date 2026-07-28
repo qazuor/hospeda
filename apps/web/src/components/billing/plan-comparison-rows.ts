@@ -86,13 +86,13 @@ export const TOURIST_EXPERIENCE_ROWS: readonly RowConfig[] = [
     {
         id: 'reviews',
         labelKey: 'billing.comparison.row.reviews',
-        cell: { kind: 'all-yes' },
+        cell: { kind: 'entitlement', key: EntitlementKey.READ_REVIEWS },
         status: 'available'
     },
     {
         id: 'recommendations',
         labelKey: 'billing.comparison.row.recommendations',
-        cell: { kind: 'all-yes' },
+        cell: { kind: 'entitlement', key: EntitlementKey.CAN_VIEW_RECOMMENDATIONS },
         status: 'available'
     },
     {
@@ -153,8 +153,10 @@ export const TOURIST_AI_ROWS: readonly RowConfig[] = [
  * This used to run each cell through an `asVipForAll` transform that rewrote
  * the tourist literals into a flat all-yes/all-no. That transform existed only
  * because the cells could not be resolved per-plan; deriving from
- * `plan.entitlements` makes it redundant, and it produced identical output for
- * all four rows it touched (verified against the live plans payload).
+ * `plan.entitlements` makes it redundant. The four rows it touched still
+ * resolve to "yes" for every owner tier, because each owner plan spreads
+ * `TOURIST_VIP_ENTITLEMENTS` (`plans.config.ts`).
+ *
  * `limit` cells were always passed through unchanged so that graduated AI
  * quotas surface for owners (SPEC-283).
  */
@@ -183,19 +185,19 @@ export const OWNER_ROWS: readonly RowConfig[] = [
     {
         id: 'editInfo',
         labelKey: 'billing.comparison.row.editInfo',
-        cell: { kind: 'all-yes' },
+        cell: { kind: 'entitlement', key: EntitlementKey.EDIT_ACCOMMODATION_INFO },
         status: 'available'
     },
     {
         id: 'respondReviews',
         labelKey: 'billing.comparison.row.respondReviews',
-        cell: { kind: 'all-yes' },
+        cell: { kind: 'entitlement', key: EntitlementKey.RESPOND_REVIEWS },
         status: 'upcoming'
     },
     {
         id: 'basicStats',
         labelKey: 'billing.comparison.row.basicStats',
-        cell: { kind: 'all-yes' },
+        cell: { kind: 'entitlement', key: EntitlementKey.VIEW_BASIC_STATS },
         status: 'available'
     },
     {
@@ -207,7 +209,7 @@ export const OWNER_ROWS: readonly RowConfig[] = [
     {
         id: 'calendar',
         labelKey: 'billing.comparison.row.calendar',
-        cell: { kind: 'all-yes' },
+        cell: { kind: 'entitlement', key: EntitlementKey.CAN_USE_CALENDAR },
         status: 'available'
     },
     {
@@ -332,9 +334,9 @@ export function resolveCell({
 }): CellRendered {
     switch (cell.kind) {
         case 'limit': {
-            if (!(cell.key in plan.limits)) return 'no';
             const val = plan.limits[cell.key];
-            return val === -1 ? 'unlimited' : (val as CellRendered);
+            if (typeof val !== 'number') return 'no';
+            return val === -1 ? 'unlimited' : val;
         }
         case 'entitlement':
             return plan.entitlements.includes(cell.key) ? 'yes' : 'no';

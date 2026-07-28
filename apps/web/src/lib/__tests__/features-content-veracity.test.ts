@@ -51,9 +51,12 @@ describe('features-content catalog veracity — /funcionalidades (HOS-213)', () 
 });
 
 describe('plan-comparison-rows catalog veracity — comparison table (HOS-213)', () => {
-    it('base calendar (CAN_USE_CALENDAR) is available for every owner plan', () => {
+    it('base calendar is driven by CAN_USE_CALENDAR and is available', () => {
+        // Was `expect(row.cell.kind).toBe('all-yes')`, which asserted a literal
+        // while the test name claimed a catalog fact: dropping the entitlement
+        // from a tier left this green with the table still showing a check.
         const row = ownerRow('calendar');
-        expect(row.cell.kind).toBe('all-yes');
+        expect(row.cell).toEqual({ kind: 'entitlement', key: EntitlementKey.CAN_USE_CALENDAR });
         expect(row.status).toBe('available');
     });
 

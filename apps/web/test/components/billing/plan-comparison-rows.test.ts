@@ -13,7 +13,7 @@
  * copy of the row model.
  */
 
-import { EntitlementKey, LimitKey } from '@repo/billing';
+import { ALL_PLANS, EntitlementKey, LimitKey } from '@repo/billing';
 import billingEn from '@repo/i18n/locales/en/billing.json';
 import billingEs from '@repo/i18n/locales/es/billing.json';
 import billingPt from '@repo/i18n/locales/pt/billing.json';
@@ -64,12 +64,19 @@ const OWNER_PREMIUM = plan('owner-premium', [
     EntitlementKey.HAS_VERIFICATION_BADGE
 ]);
 
-const TOURIST_FREE = plan('tourist-free', []);
+// tourist-free deliberately lacks CAN_VIEW_RECOMMENDATIONS: it was moved to
+// tourist-plus by HOS-16 and is enforced by the API. Verified against the prod
+// payload (api.hospeda.com.ar/api/v1/public/plans).
+const TOURIST_FREE = plan('tourist-free', [EntitlementKey.READ_REVIEWS]);
 const TOURIST_PLUS = plan('tourist-plus', [
+    EntitlementKey.READ_REVIEWS,
+    EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
     EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
     EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY
 ]);
 const TOURIST_VIP = plan('tourist-vip', [
+    EntitlementKey.READ_REVIEWS,
+    EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
     EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
     EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
     EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT
@@ -262,6 +269,66 @@ describe('catalog row guards', () => {
         // No gate exists for either of these anywhere in the codebase.
         expect(row('prioritySupport').status).toBe('upcoming');
         expect(row('branding').status).toBe('upcoming');
+    });
+
+    it('references only entitlements some plan actually grants', () => {
+        // A row pointing at a key no plan carries renders a full column of
+        // "not included" while compiling cleanly and leaving every other
+        // assertion green — the same silent-drift class this file exists to
+        // close, relocated from column position to key choice.
+        //
+        // NOTE what this does NOT catch: both sides read the same enum, so
+        // renaming an EntitlementKey's *string value* moves them together
+        // while the DB keeps the old string. Only a check against a live
+        // payload covers that.
+        const granted = new Set(ALL_PLANS.flatMap((p) => p.entitlements as readonly string[]));
+        expect(granted.size).toBeGreaterThan(0);
+
+        const orphans = ALL_ROWS.filter(
+            (r) => r.cell.kind === 'entitlement' && !granted.has(r.cell.key)
+        ).map((r) => r.id);
+
+        expect(orphans).toEqual([]);
+    });
+
+    it('resolves the compare row per tourist tier (SPEC-288 T-013)', () => {
+        // The old source-grep guard pinned the per-tier VALUES, not just the
+        // key. Keep that: free cannot compare, plus and VIP can.
+        expect(cellsBySlug('compare', ALL_TOURIST_PLANS)).toEqual({
+            'tourist-free': 'no',
+            'tourist-plus': 'yes',
+            'tourist-vip': 'yes'
+        });
+    });
+
+    it('does not promise tourist-free a feature the API gates (HOS-329 round 2)', () => {
+        // CAN_VIEW_RECOMMENDATIONS moved off tourist-free (HOS-16) and is
+        // enforced by gateRecommendations in the API, but the table rendered a
+        // plain check for Gratis until this row became entitlement-driven.
+        expect(cellsBySlug('recommendations', ALL_TOURIST_PLANS)).toEqual({
+            'tourist-free': 'no',
+            'tourist-plus': 'yes',
+            'tourist-vip': 'yes'
+        });
+    });
+
+    it('never renders a yes/no row as included for a plan with no entitlements', () => {
+        // Widened deliberately: the previously-hardcoded all-yes rows are the
+        // ones that would over-promise, which is the worse half of the
+        // veracity contract.
+        const empty = plan('owner-nothing', []);
+        for (const rowId of [
+            'reviews',
+            'recommendations',
+            'editInfo',
+            'respondReviews',
+            'basicStats',
+            'calendar',
+            'branding',
+            'advancedStats'
+        ]) {
+            expect(cellsBySlug(rowId, [empty])).toEqual({ 'owner-nothing': 'no' });
+        }
     });
 });
 
