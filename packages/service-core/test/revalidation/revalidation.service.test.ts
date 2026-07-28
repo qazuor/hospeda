@@ -1277,3 +1277,255 @@ describe('SPEC-246: entity_id is threaded through to logModel.create', () => {
         expect(logArg.entityId).toBe(knownUuid);
     });
 });
+
+// ---------------------------------------------------------------------------
+// revalidateEntityTypesBatch (HOS-297)
+// ---------------------------------------------------------------------------
+
+describe('RevalidationService.revalidateEntityTypesBatch -- one purge per run', () => {
+    let mockCreate: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+        vi.useRealTimers();
+        vi.clearAllMocks();
+        mockCreate = vi.fn().mockResolvedValue(undefined);
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return { findByEntityType: vi.fn().mockResolvedValue(makeEnabledConfig('tag', 1)) };
+        });
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return { create: mockCreate };
+        });
+        (createLogger as ReturnType<typeof vi.fn>).mockReturnValue({
+            error: vi.fn(),
+            warn: vi.fn(),
+            info: vi.fn(),
+            debug: vi.fn()
+        });
+    });
+
+    /**
+     * THE REGRESSION GUARD for HOS-297. Every purge invalidates the whole zone,
+     * so revalidating N entity types with N separate calls fired N identical
+     * zone purges per cron run — and that burst from one egress IP is what the
+     * edge WAF answers with 403.
+     */
+    it('performs exactly ONE adapter purge for several entity types', async () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        await service.revalidateEntityTypesBatch({
+            entityTypes: ['accommodation', 'destination', 'event']
+        });
+
+        // One batch call = one purge. (Asserting on `adapter.revalidate` would
+        // test this harness's own fan-out, not the service: the mock's
+        // revalidateMany delegates per path, whereas the real Cloudflare adapter
+        // collapses the batch into a single purgeOnce.)
+        expect(adapter.revalidateMany).toHaveBeenCalledTimes(1);
+    });
+
+    it('hands the adapter the deduplicated union of every type’s paths', async () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        await service.revalidateEntityTypesBatch({
+            entityTypes: ['accommodation', 'destination']
+        });
+
+        const call = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as {
+            paths: string[];
+        };
+        expect(call.paths.length).toBeGreaterThan(0);
+        expect(new Set(call.paths).size).toBe(call.paths.length);
+    });
+
+    /**
+     * Load-bearing, not cosmetic: the cron reads the last `cron` log entry PER
+     * ENTITY TYPE to decide whether that type's interval has elapsed. Collapsing
+     * the log along with the purge would make every run believe every interval
+     * had elapsed, and the job would revalidate everything, every hour, forever.
+     */
+    it('still writes log entries attributed per entity type', async () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        await service.revalidateEntityTypesBatch({
+            entityTypes: ['accommodation', 'destination'],
+            trigger: 'cron'
+        });
+        await Promise.resolve();
+        await Promise.resolve();
+
+        const loggedTypes = new Set(
+            mockCreate.mock.calls.map(
+                (call) => (call[0] as Record<string, unknown>).entityType as string
+            )
+        );
+        expect(loggedTypes).toContain('accommodation');
+        expect(loggedTypes).toContain('destination');
+
+        for (const call of mockCreate.mock.calls) {
+            expect((call[0] as Record<string, unknown>).trigger).toBe('cron');
+        }
+    });
+
+    it('reports the shared purge failure on every entity type instead of throwing', async () => {
+        const adapter = makeMockAdapter(() => Promise.reject(new Error('HTTP 403: Forbidden')));
+        const service = createTestService(adapter);
+
+        const batches = await service.revalidateEntityTypesBatch({
+            entityTypes: ['accommodation', 'destination']
+        });
+
+        expect(batches.length).toBeGreaterThan(0);
+        for (const batch of batches) {
+            expect(batch.results.every((result) => !result.success)).toBe(true);
+        }
+    });
+
+    it('ignores duplicate entity types', async () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        const batches = await service.revalidateEntityTypesBatch({
+            entityTypes: ['accommodation', 'accommodation']
+        });
+
+        expect(batches).toHaveLength(1);
+        expect(adapter.revalidateMany).toHaveBeenCalledTimes(1);
+    });
+
+    it('purges nothing when no entity type resolves to a path', async () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        const batches = await service.revalidateEntityTypesBatch({ entityTypes: [] });
+
+        expect(batches).toEqual([]);
+        expect(adapter.revalidateMany).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Coalesced purge window (HOS-297) — the actual burst fix
+// ---------------------------------------------------------------------------
+
+describe('RevalidationService -- coalesced purge window', () => {
+    let mockCreate: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.clearAllMocks();
+        mockCreate = vi.fn().mockResolvedValue(undefined);
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                findByEntityType: vi.fn().mockResolvedValue(makeEnabledConfig('accommodation', 1))
+            };
+        });
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return { create: mockCreate };
+        });
+        (createLogger as ReturnType<typeof vi.fn>).mockReturnValue({
+            error: vi.fn(),
+            warn: vi.fn(),
+            info: vi.fn(),
+            debug: vi.fn()
+        });
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    /**
+     * THE REGRESSION GUARD for HOS-297's real cause.
+     *
+     * `scheduleRevalidationBatch` arms ONE debounce bucket per entity, all in the
+     * same tick with the same debounce window, so they all expire together. Each
+     * bucket used to fire its own unawaited purge — N simultaneous POSTs from one
+     * egress IP, which is the measured signature the edge WAF answers with 403
+     * (1 POST → 401, 20 concurrent → 403 ×20). Callers that fan out this way
+     * include `accommodation.sync-featured-by-entitlement`, which maps over every
+     * accommodation an owner has.
+     */
+    it('fires ONE purge for a batch of many entities, not one per entity', async () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        service.scheduleRevalidationBatch({
+            events: [
+                { entityType: 'accommodation', slug: 'cabana-uno' },
+                { entityType: 'accommodation', slug: 'cabana-dos' },
+                { entityType: 'accommodation', slug: 'cabana-tres' },
+                { entityType: 'accommodation', slug: 'cabana-cuatro' },
+                { entityType: 'accommodation', slug: 'cabana-cinco' }
+            ],
+            reason: 'featured-by-entitlement-owner'
+        });
+
+        await vi.runAllTimersAsync();
+
+        expect(adapter.revalidateMany).toHaveBeenCalledTimes(1);
+    });
+
+    it('still covers every entity’s paths in that single purge', async () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        service.scheduleRevalidationBatch({
+            events: [
+                { entityType: 'accommodation', slug: 'cabana-uno' },
+                { entityType: 'accommodation', slug: 'cabana-dos' }
+            ]
+        });
+
+        await vi.runAllTimersAsync();
+
+        const call = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as {
+            paths: string[];
+        };
+        expect(call.paths.some((p) => p.includes('cabana-uno'))).toBe(true);
+        expect(call.paths.some((p) => p.includes('cabana-dos'))).toBe(true);
+        // Deduplicated: the shared listing/home paths appear once, not per entity.
+        expect(new Set(call.paths).size).toBe(call.paths.length);
+    });
+
+    it('keeps a per-entity audit row so the log stays attributable', async () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        service.scheduleRevalidationBatch({
+            events: [
+                { entityType: 'accommodation', slug: 'cabana-uno' },
+                { entityType: 'accommodation', slug: 'cabana-dos' }
+            ]
+        });
+
+        await vi.runAllTimersAsync();
+
+        const loggedPaths = mockCreate.mock.calls.map(
+            (call) => (call[0] as Record<string, unknown>).path as string
+        );
+        expect(loggedPaths.some((p) => p.includes('cabana-uno'))).toBe(true);
+        expect(loggedPaths.some((p) => p.includes('cabana-dos'))).toBe(true);
+    });
+
+    it('records a failed purge on every entity in the window', async () => {
+        const adapter = makeMockAdapter(() => Promise.reject(new Error('HTTP 403: Forbidden')));
+        const service = createTestService(adapter);
+
+        service.scheduleRevalidationBatch({
+            events: [
+                { entityType: 'accommodation', slug: 'cabana-uno' },
+                { entityType: 'accommodation', slug: 'cabana-dos' }
+            ]
+        });
+
+        await vi.runAllTimersAsync();
+
+        expect(mockCreate).toHaveBeenCalled();
+        for (const call of mockCreate.mock.calls) {
+            expect((call[0] as Record<string, unknown>).status).toBe('failed');
+        }
+    });
+});

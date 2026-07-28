@@ -74,9 +74,26 @@ export const pageRevalidationJob: CronJobDefinition = {
 
             logger.info('Found enabled revalidation configs', { count: configs.length });
 
-            // Track which entity types were already revalidated in this run
-            // to avoid double-revalidation when both interval and stale checks match.
+            // Track which entity types were already queued in this run so the
+            // stale pass does not queue a type the interval pass already covered.
             const alreadyRevalidated = new Set<string>();
+
+            // HOS-297: entity types are COLLECTED here and revalidated in one
+            // batched call after both passes, instead of one call each. Every call
+            // ends in a whole-zone purge, so the old shape fired one zone purge per
+            // entity type per run.
+            //
+            // Those purges were `await`-sequential, so this is a waste and
+            // rate-budget reduction — NOT the fix for the 403 seen in production.
+            // That came from the per-entity debounce fan-out on the edit path,
+            // fixed separately in RevalidationService. Worth doing anyway: a
+            // whole-zone purge per entity type per hour is real cache churn and
+            // real budget against the same endpoint.
+            //
+            // The two triggers stay separate so `revalidation_log` still
+            // distinguishes 'cron' from 'stale'.
+            const intervalDue: RevalidationEntityType[] = [];
+            const staleDue: RevalidationEntityType[] = [];
 
             // --- Interval-based revalidation ---
             for (const config of configs) {
@@ -87,21 +104,19 @@ export const pageRevalidationJob: CronJobDefinition = {
                     const lastRunTime = lastEntry?.createdAt.getTime() ?? 0;
 
                     if (now - lastRunTime >= intervalMs) {
-                        logger.info('Interval elapsed, revalidating entity type', {
+                        logger.info('Interval elapsed, queueing entity type for revalidation', {
                             entityType: config.entityType,
                             intervalMinutes: config.cronIntervalMinutes,
                             lastRunAt: lastEntry?.createdAt.toISOString() ?? 'never'
                         });
 
-                        if (!dryRun) {
-                            await service.revalidateByEntityType({
-                                entityType: config.entityType as RevalidationEntityType,
-                                trigger: 'cron'
-                            });
-                        }
-
+                        // Queued, not revalidated yet — see the batch call below
+                        // for why this run must end in a single purge (HOS-297).
+                        // The counters are incremented from the dispatch outcome,
+                        // NOT here: counting at queue time made `processed` report
+                        // a full success on a run whose purge returned 403.
+                        intervalDue.push(config.entityType as RevalidationEntityType);
                         alreadyRevalidated.add(config.entityType);
-                        revalidated++;
                     } else {
                         logger.debug('Interval not yet elapsed, skipping entity type', {
                             entityType: config.entityType,
@@ -139,19 +154,12 @@ export const pageRevalidationJob: CronJobDefinition = {
                         !lastLog || Date.now() - lastLog.createdAt.getTime() > STALE_WINDOW_MS;
 
                     if (isStale) {
-                        logger.info('Stale entity type detected, triggering revalidation', {
+                        logger.info('Stale entity type detected, queueing for revalidation', {
                             entityType: config.entityType,
                             lastLogAt: lastLog?.createdAt.toISOString() ?? 'never'
                         });
 
-                        if (!dryRun) {
-                            await service.revalidateByEntityType({
-                                entityType: config.entityType as RevalidationEntityType,
-                                trigger: 'stale'
-                            });
-                        }
-
-                        staleRevalidated++;
+                        staleDue.push(config.entityType as RevalidationEntityType);
                     }
                 } catch (error) {
                     errors++;
@@ -160,6 +168,80 @@ export const pageRevalidationJob: CronJobDefinition = {
                         error: error instanceof Error ? error.message : String(error)
                     });
                 }
+            }
+
+            // --- Batched revalidation: at most TWO purges per run, not one per type ---
+            //
+            // Not merged into a single call because `trigger` is per-batch and the
+            // 'cron' vs 'stale' distinction is what the log — and therefore the
+            // next run's interval maths — is read on. Two purges for a run that
+            // used to fire one per configured entity type.
+            if (dryRun) {
+                // Nothing is dispatched, so report what WOULD have been done.
+                revalidated = intervalDue.length;
+                staleRevalidated = staleDue.length;
+            } else {
+                // Each batch is wrapped separately so a failing 'cron' batch cannot
+                // stop the 'stale' one, and so neither aborts the log cleanup below.
+                // The per-config try/catch above no longer covers the purge, since
+                // the purge no longer happens per config.
+                for (const batch of [
+                    { entityTypes: intervalDue, trigger: 'cron' as const },
+                    { entityTypes: staleDue, trigger: 'stale' as const }
+                ]) {
+                    if (batch.entityTypes.length === 0) continue;
+
+                    try {
+                        const batchResults = await service.revalidateEntityTypesBatch({
+                            entityTypes: batch.entityTypes,
+                            trigger: batch.trigger
+                        });
+
+                        // The batch reports purge failures in its results rather than
+                        // throwing (same contract as revalidatePaths), so they have to
+                        // be counted here or a failed purge would look like success.
+                        const failed = batchResults.filter(({ results }) =>
+                            results.some((result) => !result.success)
+                        );
+                        const succeeded = batchResults.length - failed.length;
+
+                        if (batch.trigger === 'cron') {
+                            revalidated += succeeded;
+                        } else {
+                            staleRevalidated += succeeded;
+                        }
+
+                        if (failed.length > 0) {
+                            // One error per failed BATCH, not per entity type: a
+                            // single 403 affects every type in the window and
+                            // `errors` means "operations that failed".
+                            errors++;
+                            logger.error('Batched revalidation failed', {
+                                trigger: batch.trigger,
+                                entityTypes: failed.map(({ entityType }) => entityType),
+                                error: failed[0]?.results.find((result) => !result.success)?.error
+                            });
+                        }
+                    } catch (error) {
+                        errors++;
+                        logger.error('Batched revalidation threw', {
+                            trigger: batch.trigger,
+                            entityTypes: batch.entityTypes,
+                            error: error instanceof Error ? error.message : String(error)
+                        });
+                    }
+                }
+            }
+
+            if (intervalDue.length > 0 || staleDue.length > 0) {
+                logger.info('Batched revalidation dispatched', {
+                    intervalEntityTypes: intervalDue.length,
+                    staleEntityTypes: staleDue.length,
+                    revalidated,
+                    staleRevalidated,
+                    errors,
+                    dryRun
+                });
             }
 
             // --- Cleanup old log entries ---

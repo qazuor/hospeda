@@ -117,6 +117,35 @@ interface PendingEntityDebounce {
 const CONFIG_CACHE_TTL_MS = 60_000; // 60 seconds
 
 /**
+ * How long a fired debounce bucket waits for its siblings before the shared
+ * purge goes out (HOS-297).
+ *
+ * `scheduleRevalidationBatch` arms one debounce bucket per entity, all in the
+ * same tick with the same `debounceSeconds`, so they all expire in the same
+ * tick too — and each used to fire its OWN unawaited purge. That is the
+ * measured burst the edge WAF answers with 403 (1 POST → 401, 20 concurrent →
+ * 403 ×20). Callers that fan out this way include
+ * `accommodation.sync-featured-by-entitlement` (every accommodation of an
+ * owner), plan upgrade/downgrade remediation and subscription pause.
+ *
+ * A short window is enough because the siblings are already simultaneous; it
+ * exists only to absorb scheduler skew, and it is charged AFTER the debounce
+ * has already elapsed, so it does not delay a lone entity meaningfully.
+ */
+const PURGE_COALESCE_MS = 50;
+
+/** One entity's worth of paths awaiting the next shared purge. */
+interface PendingPurgeGroup {
+    readonly entityType: string;
+    readonly entityId: string | undefined;
+    readonly paths: readonly string[];
+    readonly reason?: string;
+}
+
+/** How many `revalidation_log` inserts may be in flight at once. */
+const LOG_WRITE_CONCURRENCY = 20;
+
+/**
  * Central service for on-demand ISR page revalidation.
  *
  * Responsibilities:
@@ -134,6 +163,10 @@ export class RevalidationService {
     private readonly logRetentionDaysConfig: number;
     private readonly entityResolverInstance: EntityResolver | undefined;
     private readonly pendingTimers = new Map<string, PendingEntityDebounce>();
+    /** Groups waiting for the next shared purge (HOS-297). */
+    private readonly pendingPurgeGroups: PendingPurgeGroup[] = [];
+    /** Armed while a shared purge is pending; `undefined` means none is armed. */
+    private purgeFlushTimer: ReturnType<typeof setTimeout> | undefined;
     private readonly configCache = new Map<string, ConfigCacheEntry>();
     private readonly logModel: RevalidationLogModel;
     private readonly configModel: RevalidationConfigModel;
@@ -253,6 +286,29 @@ export class RevalidationService {
     }): Promise<ReadonlyArray<RevalidatePathResult>> {
         const { entityType, trigger = 'cron' } = params;
 
+        const paths = await this.resolvePathsForEntityType({ entityType });
+        return this.revalidatePaths({ paths, triggeredBy: 'system', trigger, entityType });
+    }
+
+    /**
+     * Resolves every page path affected by an entity type, without purging.
+     *
+     * Split out of {@link revalidateByEntityType} so {@link revalidateEntityTypesBatch}
+     * can gather paths across several types and then purge ONCE (HOS-297).
+     *
+     * Uses the entity resolver for precise per-entity paths when one is configured,
+     * capped at `maxCronRevalidations`; falls back to the type's generic listing
+     * paths when there is no resolver, when the resolver throws, or when it resolves
+     * to nothing.
+     *
+     * @param params.entityType - Entity type to resolve paths for.
+     * @returns Deduplicated paths. Never throws.
+     */
+    private async resolvePathsForEntityType(params: {
+        readonly entityType: EntityChangeData['entityType'];
+    }): Promise<string[]> {
+        const { entityType } = params;
+
         if (this.entityResolverInstance) {
             try {
                 const entities = await this.entityResolverInstance.resolveByType({ entityType });
@@ -269,12 +325,7 @@ export class RevalidationService {
                 }
 
                 if (allPaths.size > 0) {
-                    return this.revalidatePaths({
-                        paths: [...allPaths],
-                        triggeredBy: 'system',
-                        trigger,
-                        entityType
-                    });
+                    return [...allPaths];
                 }
             } catch (error) {
                 this.logger.error(
@@ -283,9 +334,187 @@ export class RevalidationService {
             }
         }
 
-        // Fallback: no resolver or resolver failed -- use generic listing paths
-        const paths = getAffectedPaths({ entityType } as EntityChangeData, this.localesConfig);
-        return this.revalidatePaths({ paths, triggeredBy: 'system', trigger, entityType });
+        // Fallback: no resolver, resolver failed, or resolver returned nothing.
+        return [
+            ...new Set(getAffectedPaths({ entityType } as EntityChangeData, this.localesConfig))
+        ];
+    }
+
+    /**
+     * Revalidates SEVERAL entity types in a single cache purge (HOS-297).
+     *
+     * The adapter's purge invalidates the whole zone in one call, so calling
+     * {@link revalidateByEntityType} once per entity type — as the page-revalidation
+     * cron used to — fires N identical zone purges per run where one would do.
+     *
+     * To be precise about what this does and does not fix: those N cron purges were
+     * `await`-sequential, so they were waste and rate-budget consumption, NOT the
+     * concurrent burst that the edge WAF answers with 403. That burst came from the
+     * per-entity debounce buckets (see `enqueuePurgeGroup`), which is fixed
+     * separately. Both now funnel through {@link purgeGroupsOnce}.
+     *
+     * Per-entity-type audit logging is preserved deliberately. `revalidation_log`
+     * rows are not just an audit trail: the cron reads the last `cron` entry PER
+     * ENTITY TYPE to decide whether that type's interval has elapsed. Collapsing the
+     * log along with the purge would make every run believe every interval had
+     * elapsed. So the purge is shared and the log rows are still written per type,
+     * each carrying the shared outcome.
+     *
+     * @param params.entityTypes - Entity types to revalidate together. Duplicates are
+     *   ignored; a type that resolves to no paths is skipped (no purge, no log).
+     * @param params.trigger - Trigger source recorded on every log entry (default `'cron'`).
+     * @returns Results grouped per entity type, in input order (types that resolved to
+     *   no paths are omitted).
+     */
+    async revalidateEntityTypesBatch(params: {
+        readonly entityTypes: ReadonlyArray<EntityChangeData['entityType']>;
+        readonly trigger?: RevalidationTrigger;
+    }): Promise<
+        ReadonlyArray<{ entityType: string; results: ReadonlyArray<RevalidatePathResult> }>
+    > {
+        const { entityTypes, trigger = 'cron' } = params;
+
+        // Resolve every type's paths BEFORE purging, so the single purge below
+        // covers the whole run.
+        const perType: Array<{ entityType: string; paths: string[] }> = [];
+        const seenTypes = new Set<string>();
+
+        for (const entityType of entityTypes) {
+            if (seenTypes.has(entityType)) continue;
+            seenTypes.add(entityType);
+
+            const paths = await this.resolvePathsForEntityType({ entityType });
+            if (paths.length > 0) {
+                perType.push({ entityType, paths });
+            }
+        }
+
+        if (perType.length === 0) return [];
+
+        return this.purgeGroupsOnce({
+            groups: perType.map(({ entityType, paths }) => ({
+                entityType,
+                entityId: undefined,
+                paths
+            })),
+            trigger,
+            triggeredBy: 'system'
+        });
+    }
+
+    /**
+     * Queues a group for the next shared purge, arming the window if needed.
+     *
+     * Deliberately arms ONE timer for the whole window rather than one per
+     * group: the callers this exists for enqueue N groups in a single tick.
+     */
+    private enqueuePurgeGroup(group: PendingPurgeGroup): void {
+        this.pendingPurgeGroups.push(group);
+
+        if (this.purgeFlushTimer !== undefined) return;
+
+        this.purgeFlushTimer = setTimeout(() => {
+            this.purgeFlushTimer = undefined;
+            const groups = this.pendingPurgeGroups.splice(0);
+            if (groups.length === 0) return;
+
+            void this.purgeGroupsOnce({ groups, trigger: 'hook' }).catch((error: unknown) => {
+                this.logger.error(
+                    `[RevalidationService] Unhandled error in coalesced revalidation purge: ${error instanceof Error ? error.message : String(error)}`
+                );
+            });
+        }, PURGE_COALESCE_MS);
+
+        // Never hold the process open for a cache purge.
+        this.purgeFlushTimer.unref?.();
+    }
+
+    /**
+     * Performs ONE adapter purge covering every group, then writes the audit
+     * rows each group is entitled to.
+     *
+     * This is the single choke point for "many things changed, purge once"
+     * (HOS-297). Two details are load-bearing:
+     *
+     *  - Outcomes are matched back to their own path rather than assuming the
+     *    whole batch shares one verdict. `RevalidationAdapter.revalidateMany` is
+     *    contractually per-path (`Promise.allSettled`, one result per path); only
+     *    the Cloudflare zone-purge adapter happens to return a uniform result
+     *    today. A path with no matching result is recorded as failed with an
+     *    explicit message rather than silently inheriting someone else's verdict.
+     *  - Log writes are awaited with bounded concurrency. A run can carry
+     *    thousands of paths, and firing every insert unawaited in one tick just
+     *    relocates the burst this method exists to remove onto Postgres.
+     *
+     * @param params.groups - Per-entity/per-type path groups sharing this purge.
+     * @param params.trigger - Trigger recorded on every audit row.
+     * @param params.triggeredBy - Log attribution (defaults to `'system'`).
+     * @returns Per-group results, in input order.
+     */
+    private async purgeGroupsOnce(params: {
+        readonly groups: ReadonlyArray<PendingPurgeGroup>;
+        readonly trigger: RevalidationTrigger;
+        readonly triggeredBy?: string;
+    }): Promise<
+        ReadonlyArray<{ entityType: string; results: ReadonlyArray<RevalidatePathResult> }>
+    > {
+        const { groups, trigger, triggeredBy = 'system' } = params;
+
+        const unionedPaths = [...new Set(groups.flatMap((group) => [...group.paths]))];
+        if (unionedPaths.length === 0) return [];
+
+        const purgeResults = await this.adapter.revalidateMany({ paths: unionedPaths });
+        const byPath = new Map(purgeResults.map((result) => [result.path, result]));
+
+        const missingResult = (path: string): RevalidatePathResult => ({
+            path,
+            success: false,
+            durationMs: 0,
+            error: `${this.adapter.name} returned no result for this path (${purgeResults.length} result(s) for ${unionedPaths.length} path(s))`
+        });
+
+        const pendingWrites: Array<() => Promise<void>> = [];
+        const grouped = groups.map((group) => {
+            const results: RevalidatePathResult[] = [...group.paths].map(
+                (path) => byPath.get(path) ?? missingResult(path)
+            );
+
+            for (const result of results) {
+                pendingWrites.push(() =>
+                    this.writeLog({
+                        path: result.path,
+                        entityType: group.entityType,
+                        entityId: group.entityId,
+                        trigger,
+                        triggeredBy,
+                        status: result.success ? 'success' : 'failed',
+                        durationMs: result.durationMs,
+                        errorMessage: result.error,
+                        metadata: group.reason ? { reason: group.reason } : undefined
+                    })
+                );
+            }
+
+            return { entityType: group.entityType, results };
+        });
+
+        const failedGroups = grouped.filter(({ results }) =>
+            results.some((result) => !result.success)
+        );
+        if (failedGroups.length > 0) {
+            this.logger.error(
+                `[RevalidationService] Purge failed via ${this.adapter.name} for ${failedGroups.length}/${grouped.length} group(s): ${failedGroups[0]?.results.find((r) => !r.success)?.error}`
+            );
+        }
+
+        // Bounded concurrency: `writeLog` already swallows its own errors.
+        for (let i = 0; i < pendingWrites.length; i += LOG_WRITE_CONCURRENCY) {
+            await Promise.all(
+                pendingWrites.slice(i, i + LOG_WRITE_CONCURRENCY).map((write) => write())
+            );
+        }
+
+        return grouped;
     }
 
     /**
@@ -491,17 +720,15 @@ export class RevalidationService {
                 entityId,
                 timer: setTimeout(() => {
                     this.pendingTimers.delete(key);
-                    const allPaths = Array.from(pathSet);
-                    void this.revalidatePaths({
-                        paths: allPaths,
-                        reason,
-                        trigger: 'hook',
+                    // HOS-297: hand the paths to the shared purge window instead
+                    // of firing this bucket's own purge. Every sibling bucket
+                    // expires in this same tick, so purging here is exactly the
+                    // concurrent burst the edge WAF blocks.
+                    this.enqueuePurgeGroup({
                         entityType,
-                        entityId: entry.entityId
-                    }).catch((error: unknown) => {
-                        this.logger.error(
-                            `[RevalidationService] Unhandled error in debounced revalidation for key "${key}": ${error instanceof Error ? error.message : String(error)}`
-                        );
+                        entityId: entry.entityId,
+                        paths: Array.from(pathSet),
+                        ...(reason === undefined ? {} : { reason })
                     });
                 }, debounceMs)
             };
