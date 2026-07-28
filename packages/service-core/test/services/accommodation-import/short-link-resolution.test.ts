@@ -143,7 +143,7 @@ beforeEach(() => {
 
     // Default resolver stubs — return empty/safe values.
     mockResolveAmenities.mockResolvedValue({ amenityIds: [], unresolved: [] });
-    mockBuildDestinationHint.mockResolvedValue({ candidates: [] });
+    mockBuildDestinationHint.mockResolvedValue({ candidates: [], confident: false });
 
     // Default: safeExternalFetch returns blocked (should not be called for
     // canonical URLs; tests that need it override this).

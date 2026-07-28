@@ -240,7 +240,11 @@ export async function finalizeImportDraft(
         if (hint.scrapedLocality !== undefined || hint.candidates.length > 0) {
             destinationHint = {
                 scrapedLocality: hint.scrapedLocality,
-                candidates: [...hint.candidates]
+                candidates: [...hint.candidates],
+                // Carried through so the review UI can tell a deterministic
+                // match from a heuristic guess (HOS-286). Dropping it here
+                // would make every match look pre-fillable again.
+                confident: hint.confident
             };
         }
     } catch {
