@@ -1106,7 +1106,8 @@
             "prorationNone": "No additional charge",
             "nextCharge": "The next full charge will be on",
             "confirmButton": "Change plan",
-            "noDestinationPlans": "There are no other active plans in this category, so this subscription cannot be moved."
+            "noDestinationPlans": "There are no other active plans in this category, so this subscription cannot be moved.",
+            "planNotInCatalog": "This plan is not in the application catalog, so a plan change cannot be computed."
         },
         "extendTrialDialog": {
             "title": "Extend trial period",

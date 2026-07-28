@@ -90,14 +90,23 @@ export function ChangePlanDialog({
                             {t('admin-billing.subscriptions.changePlanDialog.newPlanLabel')}
                         </Label>
                         {availablePlans.length === 0 && (
-                            // Every sibling in this category is switched off — the
-                            // complex-* tiers, today. Without this the operator sees an
-                            // empty select and a dead Confirm button, which reads as a
-                            // broken dialog rather than an intentional block (HOS-331).
+                            // Without this the operator sees an empty select and a dead
+                            // Confirm button, which reads as a broken dialog rather than
+                            // an intentional block (HOS-331). The two causes need
+                            // different words: `getChangePlanOptions` also returns []
+                            // when the subscription's own plan is absent from
+                            // `ALL_PLANS` — commerce-listing, partner-listing and
+                            // owner-test-daily are deliberately excluded from it — and
+                            // telling that operator "no other plans in this category"
+                            // would send them looking for a category problem.
                             <p className="text-muted-foreground text-sm">
-                                {t(
-                                    'admin-billing.subscriptions.changePlanDialog.noDestinationPlans'
-                                )}
+                                {currentPlan
+                                    ? t(
+                                          'admin-billing.subscriptions.changePlanDialog.noDestinationPlans'
+                                      )
+                                    : t(
+                                          'admin-billing.subscriptions.changePlanDialog.planNotInCatalog'
+                                      )}
                             </p>
                         )}
                         <select

@@ -1106,7 +1106,8 @@
             "prorationNone": "Sem cobrança adicional",
             "nextCharge": "A próxima cobrança completa será em",
             "confirmButton": "Mudar plano",
-            "noDestinationPlans": "Não há outros planos ativos nesta categoria, então não é possível mudar de plano."
+            "noDestinationPlans": "Não há outros planos ativos nesta categoria, então não é possível mudar de plano.",
+            "planNotInCatalog": "Este plano não está no catálogo da aplicação, então não é possível calcular uma mudança de plano."
         },
         "extendTrialDialog": {
             "title": "Estender período de teste",

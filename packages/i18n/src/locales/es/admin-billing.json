@@ -1106,7 +1106,8 @@
             "prorationNone": "Sin cargo adicional",
             "nextCharge": "El siguiente cobro completo será el",
             "confirmButton": "Cambiar plan",
-            "noDestinationPlans": "No hay otros planes activos en esta categoría, así que no se puede cambiar de plan."
+            "noDestinationPlans": "No hay otros planes activos en esta categoría, así que no se puede cambiar de plan.",
+            "planNotInCatalog": "Este plan no está en el catálogo de la aplicación, así que no se puede calcular un cambio de plan."
         },
         "extendTrialDialog": {
             "title": "Extender periodo de prueba",
