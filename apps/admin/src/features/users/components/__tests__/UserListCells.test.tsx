@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { RoleEnum } from '@repo/schemas';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { User } from '@/features/users/schemas/users.schemas';
@@ -28,7 +29,7 @@ describe('CustomerTypeBadge', () => {
     });
 
     it('renders staff when the user has an internal role and no current plan', () => {
-        render(<CustomerTypeBadge row={createUser({ role: 'ADMIN' })} />);
+        render(<CustomerTypeBadge row={createUser({ role: RoleEnum.ADMIN })} />);
 
         const badge = screen.getByText('admin-pages.access.users.customerType.staff');
         expect(badge).toBeInTheDocument();
@@ -36,7 +37,7 @@ describe('CustomerTypeBadge', () => {
     });
 
     it('renders no plan for host-like roles without an active plan', () => {
-        render(<CustomerTypeBadge row={createUser({ role: 'HOST' })} />);
+        render(<CustomerTypeBadge row={createUser({ role: RoleEnum.HOST })} />);
 
         const badge = screen.getByText('admin-pages.access.users.customerType.noPlan');
         expect(badge).toBeInTheDocument();

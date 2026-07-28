@@ -46,27 +46,27 @@ function resolveBadgeClass(slug: string | null, role: string | undefined): strin
     return '';
 }
 
-function resolveCustomerTypeLabel(row: User, t: (key: TranslationKey | string) => string): string {
+function resolveCustomerTypeLabel(row: User, translate: (key: string) => string): string {
     if (row.currentPlanSlug) {
-        return t(`billing.plan.${row.currentPlanSlug}.name`);
+        return translate(`billing.plan.${row.currentPlanSlug}.name`);
     }
 
     const role = typeof row.role === 'string' ? row.role.toUpperCase() : '';
     if (INTERNAL_ROLES.has(role)) {
-        return t('admin-pages.access.users.customerType.staff');
+        return translate('admin-pages.access.users.customerType.staff');
     }
 
     if (NO_PLAN_ROLES.has(role)) {
-        return t('admin-pages.access.users.customerType.noPlan');
+        return translate('admin-pages.access.users.customerType.noPlan');
     }
 
-    return t('billing.plan.tourist-free.name');
+    return translate('billing.plan.tourist-free.name');
 }
 
 export function CustomerTypeBadge({ row }: { readonly row: User }) {
     const { t } = useTranslations();
     const role = typeof row.role === 'string' ? row.role : undefined;
-    const label = resolveCustomerTypeLabel(row, t);
+    const label = resolveCustomerTypeLabel(row, (key) => t(key as TranslationKey));
     const variant = resolveBadgeVariant(row.currentPlanSlug ?? null, role);
     const className = resolveBadgeClass(row.currentPlanSlug ?? null, role);
 
