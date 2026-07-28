@@ -173,9 +173,31 @@ export const getRateLimitConfig = () => ({
         'API_RATE_LIMIT_PUBLIC_MESSAGE',
         'Too many API requests, please try again later.'
     ),
+    // HOS-325: `/api/v1/admin/*` was the only broad authenticated path tier with
+    // NO per-user governor — 200 req / 10 min keyed by IP was the whole control.
+    // One operator working normally exhausted it and got 429s, and two operators
+    // behind one office egress IP shared that single budget.
+    //
+    // The fix mirrors HOS-186 on `/protected/*`: a per-user limiter (`admin:user`,
+    // 300 req/60 s, mounted in routes/index.ts) is now the real governor, and this
+    // IP tier survives only to catch gross abuse — many accounts scripted from one
+    // host.
+    //
+    // CALIBRATION — this is the part that is easy to get wrong. The IP tier is a
+    // FIXED window, so its effective rate is `max / (windowMs / 60_000)` req/min.
+    // For it to be a ceiling rather than the binding constraint, that rate must
+    // exceed `perUserMax × operators-sharing-one-IP`. The window is 60 s here (not
+    // 10 min) precisely so the comparison is a direct one: 3000/min IP vs 300/min
+    // per user leaves room for 10 concurrent operators on one egress IP before the
+    // IP tier — not the per-user limiter — starts governing. Raising `max` while
+    // leaving a 10-minute window would NOT have achieved this: 2000/10 min is
+    // 200/min, still below the 300/min per-user budget.
+    //
+    // Keep both values in sync with the Zod defaults in `env-schema.ts`, or the
+    // effective ceiling silently depends on whether the env vars happen to be set.
     adminEnabled: _safe.getBoolean('API_RATE_LIMIT_ADMIN_ENABLED', true),
-    adminWindowMs: _safe.getNumber('API_RATE_LIMIT_ADMIN_WINDOW_MS', 600000),
-    adminMaxRequests: _safe.getNumber('API_RATE_LIMIT_ADMIN_MAX_REQUESTS', 200),
+    adminWindowMs: _safe.getNumber('API_RATE_LIMIT_ADMIN_WINDOW_MS', 60000),
+    adminMaxRequests: _safe.getNumber('API_RATE_LIMIT_ADMIN_MAX_REQUESTS', 3000),
     adminMessage: _safe.get(
         'API_RATE_LIMIT_ADMIN_MESSAGE',
         'Too many admin requests, please try again later.'
