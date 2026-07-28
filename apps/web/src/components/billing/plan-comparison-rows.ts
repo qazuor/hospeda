@@ -40,17 +40,21 @@ export interface EntitlementCell {
      */
     readonly key: EntitlementKey;
 }
-export interface AllYesCell {
-    readonly kind: 'all-yes';
-}
+/**
+ * A row included in NO plan — an announced feature with no grant anywhere yet.
+ *
+ * There is deliberately no `all-yes` counterpart. Every row that IS included
+ * somewhere must name the entitlement that includes it, so the cell stays
+ * truthful for tiers nobody curated. A hardcoded "included everywhere" is the
+ * exact shape that let this table promise `tourist-free` a feature the API
+ * gates (HOS-329) — an all-no mistake under-sells, an all-yes mistake
+ * over-promises.
+ */
 export interface AllNoCell {
     readonly kind: 'all-no';
 }
-export interface AllUnlimitedCell {
-    readonly kind: 'all-unlimited';
-}
 
-export type RowCellDef = LimitCell | EntitlementCell | AllYesCell | AllNoCell | AllUnlimitedCell;
+export type RowCellDef = LimitCell | EntitlementCell | AllNoCell;
 export type CellRendered = YesNo | 'unlimited' | number;
 
 export interface RowConfig {
@@ -340,12 +344,8 @@ export function resolveCell({
         }
         case 'entitlement':
             return plan.entitlements.includes(cell.key) ? 'yes' : 'no';
-        case 'all-yes':
-            return 'yes';
         case 'all-no':
             return 'no';
-        case 'all-unlimited':
-            return 'unlimited';
     }
 }
 

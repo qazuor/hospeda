@@ -13,7 +13,7 @@
  * copy of the row model.
  */
 
-import { ALL_PLANS, EntitlementKey, LimitKey } from '@repo/billing';
+import { EntitlementKey, LimitKey, PLANS_BY_CATEGORY } from '@repo/billing';
 import billingEn from '@repo/i18n/locales/en/billing.json';
 import billingEs from '@repo/i18n/locales/es/billing.json';
 import billingPt from '@repo/i18n/locales/pt/billing.json';
@@ -84,6 +84,33 @@ const TOURIST_VIP = plan('tourist-vip', [
 
 const ALL_OWNER_PLANS = [OWNER_BASICO, OWNER_PRO, OWNER_PREMIUM];
 const ALL_TOURIST_PLANS = [TOURIST_FREE, TOURIST_PLUS, TOURIST_VIP];
+
+// ---------------------------------------------------------------------------
+// The REAL catalog, derived from the plan definitions rather than hand-written.
+//
+// The fixtures above are deliberate subsets built to exercise specific column
+// sets; these are the actual tiers the two pages render, so a change to any
+// plan's entitlements surfaces here instead of silently diverging from a
+// fixture nobody remembered to update.
+// ---------------------------------------------------------------------------
+
+function fromCatalog(
+    plans: readonly { slug: string; isActive: boolean; entitlements: readonly string[] }[]
+) {
+    return plans
+        .filter((p) => p.isActive)
+        .map(
+            (p) =>
+                ({
+                    slug: p.slug,
+                    limits: {},
+                    entitlements: p.entitlements
+                }) satisfies PlanCellSource
+        );
+}
+
+const REAL_OWNER_PLANS = fromCatalog(PLANS_BY_CATEGORY.owner);
+const REAL_TOURIST_PLANS = fromCatalog(PLANS_BY_CATEGORY.tourist);
 
 const ALL_ROWS = [
     ...TOURIST_EXPERIENCE_ROWS,
@@ -271,24 +298,76 @@ describe('catalog row guards', () => {
         expect(row('branding').status).toBe('upcoming');
     });
 
-    it('references only entitlements some plan actually grants', () => {
-        // A row pointing at a key no plan carries renders a full column of
-        // "not included" while compiling cleanly and leaving every other
-        // assertion green — the same silent-drift class this file exists to
-        // close, relocated from column position to key choice.
+    it('shows every entitlement row as included for at least one plan of its own audience', () => {
+        // A row keyed to an entitlement none of ITS OWN rendered tiers grants
+        // renders a full column of "not included" while compiling cleanly and
+        // leaving every other assertion green — the same silent-drift class
+        // this file exists to close, relocated from column position to key
+        // choice.
         //
-        // NOTE what this does NOT catch: both sides read the same enum, so
-        // renaming an EntitlementKey's *string value* moves them together
-        // while the DB keeps the old string. Only a check against a live
-        // payload covers that.
-        const granted = new Set(ALL_PLANS.flatMap((p) => p.entitlements as readonly string[]));
-        expect(granted.size).toBeGreaterThan(0);
+        // Scoped per audience and to ACTIVE plans on purpose. Checking against
+        // the whole catalog would pass a row keyed to a complex-plan-only
+        // entitlement (MULTI_PROPERTY_MANAGEMENT and friends) that the table
+        // never renders, and would pass an owner entitlement placed on a
+        // tourist row.
+        //
+        // NOTE what this cannot catch: (a) a *wrong but granted* key — nothing
+        // here knows `basicStats` means VIEW_BASIC_STATS rather than
+        // VIEW_ADVANCED_STATS; (b) config-vs-DB drift, since the table renders
+        // `billing_plans.entitlements` from the API and the seed deliberately
+        // never syncs that column (HOS-39). Only a live-payload check covers
+        // either.
+        const audiences = [
+            { rows: [...OWNER_ROWS, ...OWNER_AI_ROWS], plans: REAL_OWNER_PLANS, name: 'owner' },
+            {
+                rows: [...TOURIST_EXPERIENCE_ROWS, ...TOURIST_AI_ROWS],
+                plans: REAL_TOURIST_PLANS,
+                name: 'tourist'
+            }
+        ];
 
-        const orphans = ALL_ROWS.filter(
-            (r) => r.cell.kind === 'entitlement' && !granted.has(r.cell.key)
-        ).map((r) => r.id);
+        for (const { rows, plans, name } of audiences) {
+            expect(plans.length, `${name} has no active plans`).toBeGreaterThan(0);
 
-        expect(orphans).toEqual([]);
+            const neverIncluded = rows
+                .filter((r) => r.cell.kind === 'entitlement')
+                .filter((r) => !resolveRowCells({ cell: r.cell, plans }).includes('yes'))
+                .map((r) => r.id);
+
+            expect(neverIncluded, `${name} rows included in no ${name} plan`).toEqual([]);
+        }
+    });
+
+    it('matches the real catalog for every row that used to be hardcoded all-yes', () => {
+        // These six were unconditional checks until HOS-329 round 3. Pin them
+        // against the actual plan definitions so the conversion cannot rot —
+        // and so a wrong-but-granted key (basicStats → VIEW_ADVANCED_STATS)
+        // fails here even though the audience sweep above would pass.
+        expect(cellsBySlug('reviews', REAL_TOURIST_PLANS)).toEqual({
+            'tourist-free': 'yes',
+            'tourist-plus': 'yes',
+            'tourist-vip': 'yes'
+        });
+        expect(cellsBySlug('recommendations', REAL_TOURIST_PLANS)).toEqual({
+            'tourist-free': 'no',
+            'tourist-plus': 'yes',
+            'tourist-vip': 'yes'
+        });
+
+        for (const rowId of [
+            'reviews',
+            'recommendations',
+            'editInfo',
+            'respondReviews',
+            'basicStats',
+            'calendar'
+        ]) {
+            expect(cellsBySlug(rowId, REAL_OWNER_PLANS), `${rowId} for owners`).toEqual({
+                'owner-basico': 'yes',
+                'owner-pro': 'yes',
+                'owner-premium': 'yes'
+            });
+        }
     });
 
     it('resolves the compare row per tourist tier (SPEC-288 T-013)', () => {
