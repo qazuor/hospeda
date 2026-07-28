@@ -250,6 +250,11 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
     const triggerRef = useRef<HTMLElement | null>(null);
     /** Whether a panel was open on the previous render of the restore effect. */
     const wasPanelOpenRef = useRef(false);
+    /**
+     * Whether keyboard focus was living inside the open panel the last time it
+     * moved. Drives the restore-on-close decision (see the restore effect).
+     */
+    const focusWasInsidePanelRef = useRef(false);
 
     // Click outside / ESC to close
     const handleClickOutside = useCallback((event: MouseEvent) => {
@@ -326,6 +331,37 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
     /** Close the active panel (used by the mobile X button). */
     const closePanel = useCallback(() => setActivePanel(null), []);
 
+    /**
+     * Track whether focus currently lives inside the open panel.
+     *
+     * The restore-on-close effect below cannot ask this question itself: by the
+     * time it runs the panel is already unmounted, `panelRef.current` is null
+     * and `document.activeElement` has fallen back to `<body>`. So the answer
+     * is recorded live, while the panel is still mounted.
+     *
+     * Declared BEFORE the two focus-moving effects on purpose — React runs
+     * effects in declaration order, so the listener is already attached when
+     * they call `.focus()`.
+     *
+     * Focus landing on `<body>` is ignored rather than recorded as "outside":
+     * that is what the browser does as a side effect of removing the focused
+     * node, not a deliberate move by the user, and treating it as a move would
+     * suppress the very restore this exists to perform.
+     */
+    useEffect(() => {
+        if (activePanel === null) return;
+        focusWasInsidePanelRef.current = Boolean(
+            panelRef.current?.contains(document.activeElement)
+        );
+        const handleFocusIn = (event: FocusEvent) => {
+            const target = event.target as Node | null;
+            if (!target || target === document.body) return;
+            focusWasInsidePanelRef.current = Boolean(panelRef.current?.contains(target));
+        };
+        document.addEventListener('focusin', handleFocusIn);
+        return () => document.removeEventListener('focusin', handleFocusIn);
+    }, [activePanel]);
+
     // Reset the per-panel search query whenever the user closes or switches
     // panels, and autofocus the input on the freshly opened panel so power
     // users can start typing right away. On mobile the panels render as
@@ -367,10 +403,23 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
     }, [activePanel, isMobileSheet]);
 
     /**
-     * Restore focus to the trigger column that opened the sheet once it
+     * Restore focus to the trigger column that opened the panel once it
      * closes, whatever closed it (ESC, backdrop, X button, click outside, or
-     * picking an option). Sheet mode only — the desktop popover never stole
-     * focus in the first place, so there is nothing to give back.
+     * picking an option).
+     *
+     * The gate is "did the closing panel hold focus", NOT the viewport mode.
+     * Gating on `isMobileSheet` was wrong in both directions:
+     *
+     *   - It skipped desktop, where the panel very much does take focus: the
+     *     BETA-24 autofocus effect above puts the caret in the destination/type
+     *     search input on popover sizes. Tab to Destino → Enter → Escape left
+     *     `activeElement` on `<body>` and the next Tab restarted from the top
+     *     of the document (WCAG 2.4.3).
+     *   - It restored unconditionally on mobile, so a user who had already
+     *     moved focus somewhere else on the page got it yanked back to the
+     *     trigger when the sheet happened to close.
+     *
+     * `Dialog.client.tsx` restores mode-agnostically for the same reason.
      */
     useEffect(() => {
         if (activePanel !== null) {
@@ -381,9 +430,11 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
         wasPanelOpenRef.current = false;
         const trigger = triggerRef.current;
         triggerRef.current = null;
-        if (!isMobileSheet) return;
+        const panelHeldFocus = focusWasInsidePanelRef.current;
+        focusWasInsidePanelRef.current = false;
+        if (!panelHeldFocus) return;
         trigger?.focus();
-    }, [activePanel, isMobileSheet]);
+    }, [activePanel]);
 
     /** Substring-filtered destinations driven by the panel search input. */
     const filteredDestinations = useMemo(() => {
@@ -490,7 +541,11 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                     role="button"
                     tabIndex={0}
                     aria-expanded={activePanel === 'destination'}
-                    aria-haspopup="listbox"
+                    // Mode-aware because the panel itself is: a modal dialog
+                    // wrapping the option list in sheet mode, a bare listbox
+                    // popover on desktop. Promising a listbox and opening a
+                    // dialog would misannounce the control.
+                    aria-haspopup={isMobileSheet ? 'dialog' : 'listbox'}
                     aria-controls={
                         activePanel === 'destination' ? PANEL_IDS.destination : undefined
                     }
@@ -536,7 +591,8 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                     role="button"
                     tabIndex={0}
                     aria-expanded={activePanel === 'type'}
-                    aria-haspopup="listbox"
+                    // See the destination column: mirrors the panel's own role.
+                    aria-haspopup={isMobileSheet ? 'dialog' : 'listbox'}
                     aria-controls={activePanel === 'type' ? PANEL_IDS.type : undefined}
                 >
                     <div className={styles.icon}>
@@ -707,7 +763,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
 
                 {/* Destination panel */}
                 {activePanel === 'destination' && (
-                    // biome-ignore lint/a11y/useFocusableInteractive: listbox children (buttons) handle focus
+                    // biome-ignore lint/a11y/useAriaPropsSupportedByRole: `role` and `aria-modal` are driven by the SAME `isMobileSheet` condition, so aria-modal is only ever emitted alongside role="dialog" — an invariant static analysis cannot see through the ternary. The desktop/sheet ARIA tests are what actually guard it.
                     <div
                         ref={panelRef}
                         id={PANEL_IDS.destination}
@@ -716,13 +772,29 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                             styles.destinationPanel,
                             openDirection === 'up' && styles.panelUp
                         )}
-                        // biome-ignore lint/a11y/useSemanticElements: custom styled dropdown cannot use native <select>
-                        role="listbox"
-                        // No `aria-modal` here: it is only defined for dialog,
-                        // alertdialog and window roles, so on a listbox it is
-                        // invalid ARIA that an audit would flag. The sheet still
-                        // BEHAVES modally (backdrop, scroll lock, focus trap) —
-                        // that part is behaviour, not a property to assert.
+                        // In sheet mode the panel root becomes the modal
+                        // container and the listbox role moves down to the
+                        // element wrapping the options (see below).
+                        //
+                        // `aria-modal` cannot be put on a listbox — it is
+                        // defined only for dialog/alertdialog/window roles.
+                        // Leaving the sheet with no modality substitute is not
+                        // a neutral choice though: the focus trap only governs
+                        // Tab, so a screen-reader virtual cursor could swipe
+                        // straight out of the listbox into content the opaque
+                        // backdrop hides. `aria-controls` is not a substitute
+                        // either (NVDA/VoiceOver largely ignore it for
+                        // navigation). A real dialog role is.
+                        //
+                        // Desktop keeps the plain listbox: the popover is not
+                        // modal, has no backdrop, and the page stays usable.
+                        role={isMobileSheet ? 'dialog' : 'listbox'}
+                        aria-modal={isMobileSheet ? true : undefined}
+                        aria-label={
+                            isMobileSheet
+                                ? t('home.searchBar.destinationLabel', 'Destino')
+                                : undefined
+                        }
                         data-search-panel=""
                     >
                         <PanelCloseHeader
@@ -747,14 +819,20 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                 )}
                             />
                         </div>
-                        <div className={cn(styles.panelBody, styles.panelOptionList)}>
+                        <div
+                            className={cn(styles.panelBody, styles.panelOptionList)}
+                            // Carries the listbox role only in sheet mode,
+                            // where the panel root is the dialog. On desktop
+                            // the root is still the listbox and adding a second
+                            // one here would nest two listboxes.
+                            role={isMobileSheet ? 'listbox' : undefined}
+                        >
                             {/* Clear option */}
                             {selectedDestination && (
                                 <button
                                     type="button"
                                     className={cn('combobox__option', styles.optionClear)}
                                     onClick={() => handleSelectDestination(null)}
-                                    // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
                                     role="option"
                                     aria-selected={false}
                                 >
@@ -774,7 +852,6 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                             isSelected && 'combobox__option--selected'
                                         )}
                                         onClick={() => handleSelectDestination(dest)}
-                                        // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
                                         role="option"
                                         aria-selected={isSelected}
                                     >
@@ -827,7 +904,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
 
                 {/* Type panel */}
                 {activePanel === 'type' && (
-                    // biome-ignore lint/a11y/useFocusableInteractive: listbox children (buttons) handle focus
+                    // biome-ignore lint/a11y/useAriaPropsSupportedByRole: same invariant as the destination panel — one condition drives both `role` and `aria-modal`.
                     <div
                         ref={panelRef}
                         id={PANEL_IDS.type}
@@ -836,10 +913,14 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                             styles.typePanel,
                             openDirection === 'up' && styles.panelUp
                         )}
-                        // biome-ignore lint/a11y/useSemanticElements: custom single-select dropdown cannot use native <select>
-                        role="listbox"
-                        // See the destination panel: `aria-modal` is not valid
-                        // on a listbox role.
+                        // Same shape as the destination panel: dialog root +
+                        // inner listbox in sheet mode, plain listbox on
+                        // desktop. See that panel for the full rationale.
+                        role={isMobileSheet ? 'dialog' : 'listbox'}
+                        aria-modal={isMobileSheet ? true : undefined}
+                        aria-label={
+                            isMobileSheet ? t('home.searchBar.typeLabel', 'Tipo') : undefined
+                        }
                         data-search-panel=""
                     >
                         <PanelCloseHeader
@@ -864,14 +945,18 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                 )}
                             />
                         </div>
-                        <div className={cn(styles.typeList, styles.panelOptionList)}>
+                        <div
+                            className={cn(styles.typeList, styles.panelOptionList)}
+                            // See the destination panel: listbox role only in
+                            // sheet mode, where the root became the dialog.
+                            role={isMobileSheet ? 'listbox' : undefined}
+                        >
                             {/* Clear option */}
                             {selectedTypes.size > 0 && (
                                 <button
                                     type="button"
                                     className={cn('combobox__option', styles.optionClear)}
                                     onClick={() => handleSelectType(null)}
-                                    // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
                                     role="option"
                                     aria-selected={false}
                                 >
@@ -892,7 +977,6 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                             isSelected && 'combobox__option--selected'
                                         )}
                                         onClick={() => handleSelectType(type)}
-                                        // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
                                         role="option"
                                         aria-selected={isSelected}
                                     >
@@ -934,7 +1018,6 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                             styles.calendarPanel,
                             openDirection === 'up' && styles.panelUp
                         )}
-                        // biome-ignore lint/a11y/useSemanticElements: popover panel, not a modal — <dialog> API requires open/close management incompatible with conditional render
                         role="dialog"
                         aria-modal={isMobileSheet ? true : undefined}
                         aria-label={t('home.searchBar.datesLabel', 'Fechas')}
@@ -967,7 +1050,6 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                             styles.guestsPanel,
                             openDirection === 'up' && styles.panelUp
                         )}
-                        // biome-ignore lint/a11y/useSemanticElements: popover panel, not a modal — <dialog> API requires open/close management incompatible with conditional render
                         role="dialog"
                         aria-modal={isMobileSheet ? true : undefined}
                         aria-label={t('home.searchBar.guestsLabel', 'Huéspedes')}
@@ -1066,13 +1148,26 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
  * The enabler is `@media (max-width: 640px)`, which sets
  * `.hero__container { position: static }` (needed so the rotating hero photo
  * can anchor to `.hero` itself). A static element establishes no stacking
- * context, so the protective z-15 layer dissolves and the only positioned
- * ancestor left is the same media query's `.hero__bottom
- * { position: relative; z-index: 2 }`. The sheet's z-index: 100 then competes
- * only *within* that level-2 context, and the level-10 sections bury it. Taps
- * meant for the stepper hit the section behind it instead, which fires the
- * click-outside handler and closes the sheet. Reparenting the node to `<body>`
- * is the only way out of an ancestor context.
+ * context, so the protective z-15 layer dissolves. What is left below it is a
+ * chain of nested contexts, not a single ancestor:
+ *
+ *   `.hero__bottom`         position: relative; z-index: 2   (set by the same
+ *                                                             640px media query)
+ *   └ `.hero__search-wrapper` position: relative; z-index: 20 (base rule, never
+ *                                                             reset at any
+ *                                                             breakpoint — this
+ *                                                             is the INNERMOST
+ *                                                             positioned ancestor)
+ *     └ `.searchBar`
+ *       └ `.panel`          position: fixed;    z-index: 100
+ *
+ * Each z-index only ranks its siblings inside its own parent context, so the
+ * panel's 100 is resolved inside `.hero__search-wrapper`, whose 20 is resolved
+ * inside `.hero__bottom`, and it is `.hero__bottom`'s 2 that finally competes
+ * with the `.section__container { z-index: 10 }` of the sections below — and
+ * loses. Taps meant for the stepper hit the section painted on top instead,
+ * which fires the click-outside handler and closes the sheet. Reparenting the
+ * node to `<body>` is the only way out of an ancestor context.
  *
  * The portal deliberately covers the whole 0–900px band even though the
  * burial itself only happens below 640px. The rule is "portal whenever the CSS

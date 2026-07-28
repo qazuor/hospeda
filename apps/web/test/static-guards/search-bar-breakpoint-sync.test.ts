@@ -50,6 +50,15 @@ function readTsBreakpoint(): number {
  * preceding media query. Matching the *specific* block matters: the stylesheet
  * has other `@media (max-width: …)` blocks, so a naive "does the file contain
  * this number" check would pass even after the sheet block alone was retuned.
+ *
+ * FAIL-CLOSED on an unrecognised media query. "Nearest preceding match of MY
+ * regex" is not the same as "the block that encloses the rule": rewrite the
+ * sheet block as `@media screen and (max-width: 950px)` and the regex skips
+ * right over it, silently harvesting the 900 from the unrelated
+ * `.calendarMonths` block further up — the guard then passes while asserting
+ * a number from a block it has nothing to do with. So the match is verified to
+ * be the last `@media` token of ANY form before the rule; anything else throws
+ * instead of guessing.
  */
 function readCssSheetBreakpoint(): number {
     const css = fs.readFileSync(SEARCH_BAR_CSS, 'utf-8');
@@ -66,6 +75,16 @@ function readCssSheetBreakpoint(): number {
     if (!nearest?.[1]) {
         throw new Error(
             `'.panel { position: fixed }' in ${SEARCH_BAR_CSS} is not inside a (max-width: Npx) media query.`
+        );
+    }
+    const lastMediaTokenIndex = preceding.lastIndexOf('@media');
+    if (nearest.index !== lastMediaTokenIndex) {
+        throw new Error(
+            `The '@media' block immediately preceding '.panel { position: fixed }' in ${SEARCH_BAR_CSS} ` +
+                `is not of the form '@media (max-width: Npx)' — it starts with ` +
+                `"${preceding.slice(lastMediaTokenIndex, preceding.indexOf('{', lastMediaTokenIndex) + 1).trim()}". ` +
+                'This guard refuses to read the breakpoint from an earlier, unrelated block. ' +
+                'Either restore the simple form or teach this parser the new one — do not delete the guard.'
         );
     }
     return Number(nearest[1]);

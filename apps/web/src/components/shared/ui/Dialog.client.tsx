@@ -15,7 +15,8 @@
  *     (HOS-310, see `@/lib/dialog-history`).
  *   - Focus management: focuses the panel on open, restores focus to the
  *     element that had it before opening on close.
- *   - Lightweight focus-trap so Tab cannot escape the panel.
+ *   - Focus-trap so Tab cannot escape the panel (shared implementation in
+ *     `@/lib/focus-trap`, not a local copy).
  *   - SSR-safe (only renders after mount).
  *   - Sized via `size`: sm | md | lg | full.
  *   - Visual variant via `variant`: solid (default) | transparent (the panel
@@ -32,30 +33,12 @@ import { createPortal } from 'react-dom';
 // module-level singleton stack shared across every island, and a second
 // specifier for the same module risks bundling a second copy of it.
 import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
+// Shared with every other modal-like surface (the hero search bottom-sheets,
+// the collection pickers). This file used to keep a byte-equivalent private
+// copy, which meant a fix to one trap silently left the other one leaking.
+import { trapFocus } from '@/lib/focus-trap';
 import { cn } from '../../../lib/cn';
 import styles from './Dialog.module.css';
-
-// ---------------------------------------------------------------------------
-// Focus trap
-// ---------------------------------------------------------------------------
-
-const FOCUSABLE_SELECTORS =
-    'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-function trapFocus(container: HTMLElement, event: KeyboardEvent): void {
-    const focusable = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS));
-    if (focusable.length === 0) return;
-    const first = focusable[0] as HTMLElement;
-    const last = focusable[focusable.length - 1] as HTMLElement;
-    if (event.key !== 'Tab') return;
-    if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-    }
-}
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -176,7 +159,6 @@ export function Dialog({
     if (!mounted || !isOpen) return null;
 
     return createPortal(
-        // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard handled via the document listener for Esc + focus trap.
         // biome-ignore lint/a11y/noStaticElementInteractions: overlay click-to-close is a mouse-only convenience; Escape + focus trap (handled above via the document listener) cover keyboard users, and role="presentation" intentionally keeps this decorative backdrop out of the AT tree.
         <div
             className={cn(styles.overlay, overlayClassName)}
@@ -188,7 +170,6 @@ export function Dialog({
                 className={cn(styles.panel, className)}
                 data-size={size}
                 data-variant={variant}
-                // biome-ignore lint/a11y/useSemanticElements: <dialog> would inherit user-agent width/margin/border that fight the panel layout, and jsdom does not implement showModal() reliably for tests.
                 role="dialog"
                 aria-modal="true"
                 aria-label={ariaLabel}

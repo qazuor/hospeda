@@ -1,7 +1,7 @@
 /**
  * @file collection-picker-config.ts
- * @description Static config + focus-trap helper for CreateEditCollectionModal.
- * Extracted to keep the modal file under 500 lines.
+ * @description Static color palette + icon registry for the collection
+ * pickers. Extracted to keep the modal file under 500 lines.
  */
 
 import {
@@ -93,13 +93,3 @@ export const ICON_OPTIONS: readonly IconEntry[] = [
     { key: 'dollar', label: 'Economía', Component: DollarSignIcon },
     { key: 'event', label: 'Evento', Component: EventIcon }
 ] as const;
-
-// ─── Focus-trap helper ────────────────────────────────────────────────────────
-
-/**
- * Re-exported for backwards compatibility with existing consumers of this
- * module. The implementation lives in `@/lib/focus-trap` so other modal-like
- * surfaces (e.g. the hero search bottom-sheets) can share it without importing
- * from an `account/` config file.
- */
-export { FOCUSABLE_SELECTORS, trapFocus } from '@/lib/focus-trap';
