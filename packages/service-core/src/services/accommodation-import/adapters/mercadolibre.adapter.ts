@@ -4,7 +4,9 @@
  * Implements the {@link ImportSourceAdapter} contract for MercadoLibre and
  * MercadoLivre listing URLs (any country TLD). Calls the official ML Items API
  * (`https://api.mercadolibre.com/items/{id}`) with a Bearer token from the
- * import context credentials.
+ * import context credentials, plus a second best-effort call to
+ * `/items/{id}/description` — ML keeps the listing description behind that
+ * separate endpoint (HOS-286).
  *
  * **Credential degradation (US-11, rewired for HOS-45):** when
  * `ctx.mercadoLibreTokenProvider` is absent, or is present but its promise
@@ -18,6 +20,8 @@
  */
 
 import type { ImportContext, ImportSourceAdapter, RawExtraction } from '../adapter.types.js';
+import { toDescriptionText, toSummaryText } from './imported-text.js';
+import { fetchItemDescription } from './mercadolibre-description.js';
 
 // ---------------------------------------------------------------------------
 // MercadoLibre API response types (only the fields we read)
@@ -136,9 +140,16 @@ function parseItemId(url: URL): string | null {
 
 /**
  * Attribute IDs recognised as bedroom-count indicators.
- * SPEC-222: only BEDROOMS/ROOMS are mapped.
+ *
+ * **Only `BEDROOMS` (HOS-286).** MercadoLibre's `ROOMS` attribute is
+ * "Ambientes" — a real-estate room count (living room, kitchen, ...), not a
+ * bedroom count. It used to be accepted here too, and because the mapping loop
+ * keeps the LAST matching attribute, a listing with 3 dormitorios and 5
+ * ambientes was imported as 5 bedrooms. "Ambientes" has no equivalent field on
+ * the accommodation model and is not a tourist-accommodation concept, so it is
+ * deliberately discarded rather than remapped.
  */
-const BEDROOM_ATTR_IDS = new Set(['BEDROOMS', 'ROOMS']);
+const BEDROOM_ATTR_IDS = new Set(['BEDROOMS']);
 
 /**
  * Attribute IDs recognised as bathroom-count indicators.
@@ -174,13 +185,20 @@ function parseAttrInt(value: string | null | undefined): number | null {
  * and are never accessed.
  *
  * @param item - Parsed ML item JSON (already typed to `MlItem`).
+ * @param plainTextDescription - `plain_text` from the separate description
+ *   endpoint, or `null` when that best-effort call yielded nothing.
  * @returns A {@link RawExtraction} with all mapped fields tagged
  *   `source: 'official_api'`.
  */
-function mapMlItemToRawExtraction(item: MlItem): RawExtraction {
+function mapMlItemToRawExtraction(
+    item: MlItem,
+    plainTextDescription: string | null
+): RawExtraction {
     const result: {
         sourcePlatform: 'mercadolibre';
         name?: RawExtraction['name'];
+        description?: RawExtraction['description'];
+        summary?: RawExtraction['summary'];
         price?: RawExtraction['price'];
         imageUrls?: readonly string[];
         scrapedLocality?: string;
@@ -194,6 +212,20 @@ function mapMlItemToRawExtraction(item: MlItem): RawExtraction {
     // -- name -----------------------------------------------------------------
     if (item.title) {
         result.name = { value: item.title, source: 'official_api' };
+    }
+
+    // -- description / summary (HOS-286) --------------------------------------
+    // Both derive from the same `plain_text`: ML exposes no short-description
+    // field, so the summary is the description flattened and capped at 300.
+    if (plainTextDescription) {
+        const description = toDescriptionText({ plainText: plainTextDescription });
+        if (description) {
+            result.description = { value: description, source: 'official_api' };
+        }
+        const summary = toSummaryText({ plainText: plainTextDescription });
+        if (summary) {
+            result.summary = { value: summary, source: 'official_api' };
+        }
     }
 
     // -- price ----------------------------------------------------------------
@@ -327,6 +359,11 @@ export class MercadoLibreAdapter implements ImportSourceAdapter {
      * 3. The ML API returns a non-2xx status.
      * 4. `fetch` throws (network error, `AbortController` timeout, etc.).
      *
+     * After a successful item call, a SECOND best-effort call fetches the
+     * listing description from `/items/{id}/description` (HOS-286). That call
+     * failing is NOT a degradation case — the extraction is returned without a
+     * description rather than downgraded to a failure.
+     *
      * **Hard rule**: rating, review, and seller-reputation fields are NEVER
      * present in the returned extraction (SPEC-222).
      *
@@ -336,6 +373,12 @@ export class MercadoLibreAdapter implements ImportSourceAdapter {
      *   `source: 'official_api'`, or an empty extraction on degradation.
      */
     async extract(url: URL, ctx: ImportContext): Promise<RawExtraction> {
+        // The wall-clock deadline for everything below. Taken BEFORE the token
+        // provider is awaited, because on a cache miss that performs its own
+        // OAuth round-trip to MercadoLibre — time that counts against the
+        // adapter's `ctx.timeoutMs` contract just like the fetches do.
+        const deadlineAt = Date.now() + ctx.timeoutMs;
+
         // 1. Credential degradation (US-11) — via the OAuth token-provider port
         if (!ctx.mercadoLibreTokenProvider) {
             return { sourcePlatform: 'mercadolibre', failureCode: 'credentials_missing' };
@@ -361,7 +404,9 @@ export class MercadoLibreAdapter implements ImportSourceAdapter {
             return { sourcePlatform: 'mercadolibre', failureCode: 'nothing_found' };
         }
 
-        // 3. Call official ML Items API
+        // 3. Call official ML Items API. The deadline taken at entry covers this
+        // call and the description call together, so the sequential fetches
+        // cannot overrun `ctx.timeoutMs` between them.
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), ctx.timeoutMs);
 
@@ -401,9 +446,18 @@ export class MercadoLibreAdapter implements ImportSourceAdapter {
             clearTimeout(timer);
         }
 
-        // 4. Map ML item fields to RawExtraction.
+        // 4. Fetch the description from its own endpoint (HOS-286). Best-effort:
+        // resolves to null on any failure — including "no time left" — so it can
+        // neither downgrade a good extraction nor overrun the adapter's budget.
+        const plainTextDescription = await fetchItemDescription({
+            itemId,
+            token,
+            deadlineAt
+        });
+
+        // 5. Map ML item fields to RawExtraction.
         // If the mapped item has no useful data (e.g. item exists but is not an accommodation)
         // the orchestrator will apply the nothing_found fallback downstream.
-        return mapMlItemToRawExtraction(item);
+        return mapMlItemToRawExtraction(item, plainTextDescription);
     }
 }
