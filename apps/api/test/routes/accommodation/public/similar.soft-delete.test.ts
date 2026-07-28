@@ -111,16 +111,39 @@ function operatorOf(clause: unknown): string | undefined {
     return typeof middle === 'string' ? middle : undefined;
 }
 
-/** Flattens an `and(...)`-composed clause into its top-level conditions. */
+/**
+ * True when `sql.join` interleaved these chunks with ` and ` separators.
+ *
+ * `and(...)` and `or(...)` compile to the SAME `['(', <joined>, ')']` shape, and only
+ * the separator at the odd indices tells them apart. Flattening without this check
+ * reads a disjunction as a conjunction, so a clause where `deleted_at IS NULL` is
+ * merely one branch of an `or(...)` — a query that DOES return soft-deleted rows —
+ * would satisfy the assertions below. This route is the one place in HOS-288 that
+ * actually builds an `or(...)`, which is why the guard is carried here too. Mirrors
+ * `packages/db/test/utils/soft-delete-clause.ts`; it cannot be imported from there
+ * because this monorepo has no cross-package test-helper mechanism.
+ */
+function isAndJoined(innerChunks: QueryChunk[]): boolean {
+    for (let i = 1; i < innerChunks.length; i += 2) {
+        if (innerChunks[i]?.value?.[0] !== ' and ') return false;
+    }
+    return true;
+}
+
+/**
+ * Flattens an `and(...)`-composed clause into its top-level conditions. An `or(...)`
+ * group is returned as one opaque leaf rather than descended into.
+ */
 function flattenAndConditions(clause: unknown): unknown[] {
     if (clause === undefined) return [];
     const chunks = chunksOf(clause);
-    const isAndWrapper =
+    const isGroupWrapper =
         chunks?.length === 3 && chunks[0]?.value?.[0] === '(' && chunks[2]?.value?.[0] === ')';
-    if (!isAndWrapper) return [clause];
+    if (!isGroupWrapper) return [clause];
 
     const innerChunks = chunksOf(chunks?.[1]);
     if (!innerChunks) return [clause];
+    if (!isAndJoined(innerChunks)) return [clause];
     return innerChunks.filter((_, i) => i % 2 === 0);
 }
 

@@ -9,16 +9,25 @@
  * a real database connection. The point is to give tests a real assertion where
  * they would otherwise fall back to a vacuous `expect.anything()`.
  *
- * Scope of the sharing, stated honestly: the three `accommodation.*` test files in
- * `packages/db/test/models/` import from here. Older local copies still live in
- * `event.model.soft-delete.test.ts`, `post.model.soft-delete.test.ts`,
- * `event.model.categories.test.ts` and `post.model.categories.test.ts` (the first
- * two are also WEAKER — they match on the ` is null` operator without checking the
- * column name, so any unrelated `IS NULL` satisfies them), and in
- * `packages/service-core` / `apps/api` test files, which cannot import across
- * package boundaries because this monorepo has no mechanism for sharing test-only
- * helpers. All of those are still single-level walkers and none of them has the
- * OR guard below. If Drizzle changes its chunk layout, every copy needs the edit.
+ * Scope of the sharing — enumerated, because an approximate list defeats the whole
+ * point of writing it down. Four files import from here:
+ *   - `test/models/accommodation.model.test.ts`
+ *   - `test/models/accommodation.model.soft-delete.test.ts`
+ *   - `test/models/find-all-with-relations-tx.test.ts`
+ *   - `test/utils/soft-delete-clause.test.ts`
+ *
+ * Independent copies survive, because this monorepo has no mechanism for sharing
+ * test-only helpers across package boundaries:
+ *   - The five HOS-288 copies (`packages/service-core/test/services/{accommodation,
+ *     amenity,destination,feature}/…` and `apps/api/test/routes/accommodation/public/
+ *     similar.soft-delete.test.ts`) carry the OR guard below but stay single-level,
+ *     which is sufficient for the flat clauses they assert on.
+ *   - `test/models/event.model.soft-delete.test.ts` and `post.model.soft-delete.test.ts`
+ *     predate HOS-288, lack the OR guard, and are also WEAKER: they match the
+ *     ` is null` operator WITHOUT checking the column name, so any unrelated
+ *     `IS NULL` satisfies them. Same for the two `*.categories.test.ts` walkers.
+ *
+ * If Drizzle changes its chunk layout, every one of them needs the same edit.
  */
 
 type QueryChunk = { value?: unknown[] };

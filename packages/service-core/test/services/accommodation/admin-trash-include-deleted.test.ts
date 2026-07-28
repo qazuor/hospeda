@@ -46,8 +46,9 @@ vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// SQL-clause introspection helpers (same approach as
-// packages/db/test/models/accommodation.model.soft-delete.test.ts)
+// SQL-clause introspection helpers. Local copy of
+// packages/db/test/utils/soft-delete-clause.ts, which cannot be imported across
+// the package boundary; kept in sync by hand, OR guard included.
 // ---------------------------------------------------------------------------
 
 type QueryChunk = { value?: unknown[] };
@@ -62,14 +63,33 @@ function operatorOf(clause: unknown): string | undefined {
     return typeof middle === 'string' ? middle : undefined;
 }
 
+/**
+ * True when `sql.join` interleaved these chunks with ` and ` separators.
+ *
+ * `and(...)` and `or(...)` compile to the SAME `['(', <joined>, ')']` shape; only the
+ * separator at the odd indices tells them apart. Flattening without this check reads a
+ * disjunction as a conjunction, so a clause where `deleted_at IS NULL` is merely one
+ * branch of an `or(...)` — a query that DOES return soft-deleted rows — would satisfy
+ * `hasSoftDeleteCondition`. Mirrors `packages/db/test/utils/soft-delete-clause.ts`,
+ * which cannot be imported across the package boundary.
+ */
+function isAndJoined(innerChunks: QueryChunk[]): boolean {
+    for (let i = 1; i < innerChunks.length; i += 2) {
+        if (innerChunks[i]?.value?.[0] !== ' and ') return false;
+    }
+    return true;
+}
+
 function flattenAndConditions(clause: unknown): unknown[] {
     if (clause === undefined) return [];
     const chunks = chunksOf(clause);
-    const isAndWrapper =
+    const isGroupWrapper =
         chunks?.length === 3 && chunks[0]?.value?.[0] === '(' && chunks[2]?.value?.[0] === ')';
-    if (!isAndWrapper) return [clause];
+    if (!isGroupWrapper) return [clause];
     const innerChunks = chunksOf(chunks?.[1]);
     if (!innerChunks) return [clause];
+    // An OR group is opaque: its branches are alternatives, not conjuncts.
+    if (!isAndJoined(innerChunks)) return [clause];
     return innerChunks.filter((_, i) => i % 2 === 0);
 }
 

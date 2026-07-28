@@ -262,7 +262,9 @@ export class AmenityService extends BaseCrudRelatedService<
     /**
      * Retrieves all accommodations that have a specific amenity.
      *
-     * HOS-288 — the exact twin of {@link FeatureService.getAccommodationsByFeature}.
+     * HOS-288 — the PREDICATE-level twin of {@link FeatureService.getAccommodationsByFeature}
+     * (the return contracts differ: this one projects a summary shape, the feature method
+     * returns full `Accommodation` rows).
      * This method backs NO route today (`apps/api/src/routes/amenity/public/`
      * exposes only `getById` and `list`); it is hardened to match its twin so the
      * obvious future consumer (`GET /api/v1/public/amenities/:id/accommodations`)

@@ -51,9 +51,16 @@ export const publicGetSimilarRoute = createPublicRoute({
 
         // Fetch current accommodation to get type and destinationId.
         // HOS-288: a bare `eq(id)` answered 200 with a full recommendation list for a
-        // soft-deleted / DRAFT / PRIVATE id, confirming to an anonymous caller that the
-        // listing exists. With these predicates the row is simply not found and the
-        // NOT_FOUND throw right below fires (no 410 path by design).
+        // soft-deleted / DRAFT / PRIVATE id. With these predicates the row is simply not
+        // found and the NOT_FOUND throw right below fires.
+        //
+        // For DRAFT/PRIVATE that closes an enumeration oracle. For soft-deleted it does
+        // NOT — `checkCanViewAccommodation` deliberately answers 410 GONE on
+        // `/accommodations/:slug` for a formerly-PUBLIC deleted listing so crawlers
+        // deindex it (HOS-117 T-022), i.e. existence is disclosed there by design. The
+        // same id therefore yields 410 from `getById` and 404 here. That divergence is
+        // deliberate — a recommendation sub-resource is not an indexed canonical URL, so
+        // it has nothing to deindex — but it IS a divergence, not an anti-enumeration win.
         //
         // The predicates are not merely "the same ones the similarity query uses" — they
         // are forced. This route sits under the `/api/v1/public/accommodations` prefix in
