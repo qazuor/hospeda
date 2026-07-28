@@ -317,6 +317,60 @@ describe('applyRunToTranslations', () => {
         expect(next.name.locales.pt).toBeNull();
     });
 
+    it('marks a whitespace-only locale as present', () => {
+        // The one input the fold used to get wrong. `'   '` is non-null, so a
+        // `??` kept it — but every reader trims, so the badge stayed on a dash and
+        // the field stayed "missing" under a note reading "Traducido". The button
+        // never retired and the next run came back empty, which is the exact loop
+        // this function exists to break.
+        const next = applyRunToTranslations({
+            translations: {
+                name: { locales: { es: 'Nombre', en: '   ', pt: null }, plain: 'Nombre' },
+                summary: NEVER,
+                description: NEVER,
+                richDescription: null
+            },
+            results: [{ fieldType: 'name', locale: 'en', success: true }]
+        });
+
+        expect(next.name.locales.en?.trim()).toBeTruthy();
+        expect(missingLocalesFor({ status: next.name, sourceLocale: 'es' })).not.toContain('en');
+    });
+
+    it('is idempotent over an already-folded state', () => {
+        // A second run folds over the first run's output. The marker must read as
+        // present on the way back in, or the fold would undo itself.
+        const once = applyRunToTranslations({
+            translations: {
+                name: NEVER,
+                summary: NEVER,
+                description: NEVER,
+                richDescription: null
+            },
+            results: [{ fieldType: 'name', locale: 'en', success: true }]
+        });
+        const twice = applyRunToTranslations({
+            translations: once,
+            results: [{ fieldType: 'name', locale: 'en', success: true }]
+        });
+
+        expect(twice.name.locales.en).toBe(once.name.locales.en);
+    });
+
+    it('ignores a locale the client cannot name', () => {
+        const next = applyRunToTranslations({
+            translations: {
+                name: NEVER,
+                summary: NEVER,
+                description: NEVER,
+                richDescription: null
+            },
+            results: [{ fieldType: 'name', locale: 'fr', success: true }]
+        });
+
+        expect(next.name.locales).toEqual({ es: null, en: null, pt: null });
+    });
+
     it('never overwrites content that was already there', () => {
         const existing = {
             locales: { es: 'ES', en: 'Real EN text', pt: null },

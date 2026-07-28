@@ -103,11 +103,23 @@ export function anyFieldFailed(outcomes: GenerationOutcomes): boolean {
  * The value written is a marker, not the translation — the endpoint returns the
  * text but nothing here renders it, and inventing a value that does not match
  * what the DB holds would be worse than the dash. Presence is the entire contract
- * of this data (`Boolean(...)` in the badge, `isFilled` in the gap check).
+ * of this data, and it is decided by {@link isFilled} everywhere it is read; an
+ * earlier revision of this comment named a `Boolean(...)` badge that had already
+ * been replaced by a trimming one, and writing to match that stale citation is
+ * precisely how the whitespace case below got missed.
+ *
+ * A reported success is the PROVIDER's, not the database's: `persistTranslations`
+ * skips a locale flagged `autoTranslated: false` while the route still returns it
+ * as successful, so a manual override holding a blank value can produce a check
+ * here for a row that was never written. A refresh corrects it, and the refresh is
+ * offered — the alternative (trusting nothing) is the stale-dash bug, which fired
+ * on every clean run instead of on a degenerate admin action.
  *
  * @param translations - The per-field status the panel was rendered with.
  * @param results - The endpoint's per-pair results.
- * @returns A new status map with every succeeded (field, locale) marked present.
+ * @returns A new status map with every succeeded (field, locale) whose stored
+ *   value is blank marked present. A locale that already holds real content keeps
+ *   it; a field the plan withheld (`null`) stays withheld.
  */
 export function applyRunToTranslations({
     translations,
@@ -133,7 +145,17 @@ export function applyRunToTranslations({
 
         const merged = { ...status.locales };
         for (const locale of locales) {
-            merged[locale] = status.locales[locale] ?? TRANSLATED_MARKER;
+            // `isFilled`, NOT `??`. Every reader of this data decides presence by
+            // trimming (the badge, `missingLocalesFor`, `hasSourceContent`), and
+            // `extractI18nField` does not trim — it only maps `''` to null. A
+            // stored `'   '` is therefore non-null AND absent, so a null-check
+            // here would keep it, leaving the badge on a dash under a note reading
+            // "Traducido", with the button never retiring and the next run coming
+            // back empty. That is the bug this whole function exists to close,
+            // surviving for one data shape.
+            merged[locale] = isFilled(status.locales[locale])
+                ? (status.locales[locale] as string)
+                : TRANSLATED_MARKER;
         }
         next[field] = { ...status, locales: merged };
     }

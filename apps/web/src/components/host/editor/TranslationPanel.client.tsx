@@ -303,6 +303,15 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
      * symptom BETA-199 is about, arriving on the success path.
      */
     const [runFilled, setRunFilled] = useState<AccommodationTranslationData | null>(null);
+    /**
+     * The DB is known to hold something this panel is not showing.
+     *
+     * Set when a run comes back having skipped every field it asked about: the
+     * backend only skips what is already filled, so someone populated it after
+     * this page was rendered. The fold cannot help — there are no successes to
+     * fold — and a reload is the only way to reconcile.
+     */
+    const [staleUnderPanel, setStaleUnderPanel] = useState(false);
     const effectiveTranslations = runFilled ?? translations;
 
     const pendingFields = fieldsWithMissingTranslations({
@@ -383,10 +392,14 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
                 // Nothing failed and nothing was written for a field we asked
                 // about: the backend skipped every requested pair because it found
                 // them already filled — someone else filled them between the page
-                // render and this click. Saying "nothing could be generated" here
-                // would report a failure that did not happen and invite another
-                // 90-second paid run; the per-field rows already read "Sin cambios".
-                setErrorMessage(
+                // render and this click. That is not a failure, so it does not go
+                // through the error channel; it goes where the success message
+                // goes, and it sets `staleUnderPanel` because the DB is now AHEAD
+                // of the frozen prop. That is the one case where reloading is the
+                // only remedy, and gating the refresh on `hasPersistedAnything`
+                // alone withheld it precisely there.
+                setStaleUnderPanel(true);
+                setSuccessMessage(
                     t(
                         'host.properties.editor.translation.nothingGenerated',
                         'No había traducciones pendientes para generar.'
@@ -418,18 +431,24 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
     }, []);
 
     /**
-     * Whether reloading would show the host anything they cannot see yet.
+     * Whether a reload could show the host something the panel cannot.
      *
-     * Reads the sticky flag, not the current run's outcomes: a retry that fails
-     * outright does not undo what an earlier run wrote, and taking the offer away
-     * there strands the host with no route to it.
+     * Two independent reasons, and the second is why this is not just the sticky
+     * write flag. `hasPersistedAnything` covers a run that wrote: the fold already
+     * renders the presence a reload would reveal, but only presence — the actual
+     * translated text lives only in the DB. `staleUnderPanel` covers the opposite
+     * case, a run that wrote NOTHING because everything was already filled by
+     * someone else; there the DB is ahead of the frozen prop and a reload is the
+     * only remedy. Gating on the write flag alone withheld the button in exactly
+     * that case, leaving the host with dashes, a message saying there was nothing
+     * to do, and no way to reconcile the two.
      *
      * Hidden during a run, because a refresh mid-flight would abandon it. Note
      * what this button costs: it reloads the page, and the editor form around this
      * panel has no unsaved-changes guard, so a draft dies with it. The label does
-     * not say so — tracked with the rest of the panel's a11y/UX follow-ups.
+     * not say so — tracked in BETA-203.
      */
-    const canRefresh = hasPersistedAnything && !isGenerating;
+    const canRefresh = (hasPersistedAnything || staleUnderPanel) && !isGenerating;
 
     return (
         <fieldset className={styles.section}>

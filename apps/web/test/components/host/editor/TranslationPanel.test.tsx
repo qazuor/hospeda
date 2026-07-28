@@ -314,10 +314,14 @@ describe('TranslationPanel — per-field run reporting (HOS-317)', () => {
         fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
 
         await waitFor(() => {
-            expect(screen.getByRole('alert')).toHaveTextContent(
-                /No había traducciones pendientes/i
-            );
+            expect(screen.getByText(/No había traducciones pendientes/i)).toBeInTheDocument();
         });
+        // Not an error: the backend skipped everything because it was already
+        // filled. It must not go through `role="alert"`, and the refresh has to be
+        // offered — the DB is ahead of this frozen prop, and reloading is the only
+        // way to reconcile.
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Actualizar la página/i })).toBeInTheDocument();
         expect(reloadSpy).not.toHaveBeenCalled();
     });
 
@@ -597,7 +601,7 @@ describe('TranslationPanel — run state (HOS-317)', () => {
         }
     };
 
-    it('ignores a second click while a run is open, without losing focus', async () => {
+    it('ignores a second click while a run is open', async () => {
         // The button is `aria-disabled`, not `disabled`: disabling the control the
         // host just activated makes the browser drop focus to <body>, leaving a
         // keyboard user nowhere for up to 90 seconds. Staying focusable means the
@@ -673,13 +677,12 @@ describe('TranslationPanel — run state (HOS-317)', () => {
         fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
 
         await waitFor(() => {
-            expect(screen.getByRole('alert')).toHaveTextContent(
-                /No había traducciones pendientes/i
-            );
+            expect(screen.getByText(/No había traducciones pendientes/i)).toBeInTheDocument();
         });
         expect(
             screen.queryByText(/No se pudo generar ninguna traducción/i)
         ).not.toBeInTheDocument();
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
 
     it('keeps offering the refresh after a later run fails outright', async () => {
