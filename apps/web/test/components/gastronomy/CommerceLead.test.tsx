@@ -715,6 +715,12 @@ describe('CommerceLead', () => {
             });
         });
 
+        // A signed-in applicant's lead commonly carries their own already-
+        // registered email (HOS-295 prefills it), which cannot be provisioned
+        // until HOS-296. So the confirmation must not assert that everything is
+        // handled and they need only wait — the negative half is the point, and
+        // "escribinos y lo revisamos" alone does not pin it: that clause was in
+        // the previous copy too.
         it('invites the visitor to get in touch rather than only wait', async () => {
             renderForm();
             await submitSuccessfully();
@@ -722,6 +728,10 @@ describe('CommerceLead', () => {
             await waitFor(() => {
                 expect(screen.getByText(/escribinos y lo revisamos/i)).toBeInTheDocument();
             });
+
+            const body = document.body.textContent ?? '';
+            expect(body).not.toMatch(/no hace falta que hagas nada/i);
+            expect(body).not.toMatch(/nada más por ahora/i);
         });
 
         // `role="alert"` announces its whole subtree in one uninterruptible
