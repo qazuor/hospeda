@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useTranslations } from '@/hooks/use-translations';
+import { formatCentsToArs } from '@/lib/format-helpers';
 import type { Subscription } from './types';
 import { formatArs, formatDate, getChangePlanOptions, getPlanBySlug } from './utils';
 
@@ -81,7 +82,10 @@ export function ChangePlanDialog({
                                 <>
                                     <p className="font-medium">{currentPlan.name}</p>
                                     <p className="text-muted-foreground text-sm">
-                                        {formatArs(currentPlan.monthlyPriceArs, locale)}
+                                        {formatCentsToArs({
+                                            cents: currentPlan.monthlyPriceArs,
+                                            locale
+                                        })}
                                         {t('admin-billing.subscriptions.changePlanDialog.perMonth')}
                                     </p>
                                 </>
@@ -132,7 +136,8 @@ export function ChangePlanDialog({
                                     key={plan.slug}
                                     value={plan.slug}
                                 >
-                                    {plan.name} - {formatArs(plan.monthlyPriceArs, locale)}
+                                    {plan.name} -{' '}
+                                    {formatCentsToArs({ cents: plan.monthlyPriceArs, locale })}
                                     {t('admin-billing.subscriptions.changePlanDialog.perMonth')}
                                 </option>
                             ))}

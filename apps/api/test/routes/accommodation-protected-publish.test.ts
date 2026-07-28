@@ -154,7 +154,7 @@ describe('POST /api/v1/protected/accommodations/:id/publish — publish (HOS-110
             // This is the decisive regression guard for HOS-110: the route
             // must call `publish()` directly (not `update()` with a
             // silently-stripped `lifecycleState`), which is what actually
-            // triggers the no-card trial for a first-time publisher.
+            // reaches the publish path at all.
             await app.request(BASE_URL, {
                 method: 'POST',
                 headers: { Authorization: 'Bearer test-protected-token', 'User-Agent': 'vitest' }
