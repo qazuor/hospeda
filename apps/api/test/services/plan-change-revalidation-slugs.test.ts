@@ -137,7 +137,10 @@ describe('plan-change ISR revalidation — accommodation slug lookup', () => {
 
             const clause = buildWhereClause(where as Record<string, unknown>, accommodations);
             expect(clause).toBeDefined();
-            // `inArray(col, [...])` compiles to chunks `['', col, ' in ', params]`.
+            // `inArray(col, [...])` compiles to FIVE chunks:
+            // `['', col, ' in ', params, '']`. These indices are drizzle-internal;
+            // if a drizzle bump reshapes them these assertions go red, which is the
+            // intended signal — the contract they stand for is the rendered SQL.
             const chunks = (clause as unknown as { queryChunks?: { value?: unknown[] }[] })
                 .queryChunks;
             const column = chunks?.[1] as unknown as { name?: string } | undefined;

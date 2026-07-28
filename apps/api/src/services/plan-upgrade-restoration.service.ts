@@ -149,9 +149,10 @@ export interface UpgradeRestorationDeps {
     /**
      * Fetches accommodation slugs for revalidation events.
      *
-     * Returns a map `accommodationId → slug` covering only the ids that resolved:
-     * an id whose row is gone, whose `slug` is null, or which falls outside the
-     * page the implementation requests, is simply absent from the map. The caller
+     * Returns a map `accommodationId → slug` covering only the ids that resolved.
+     * `accommodations.slug` is `notNull`, so a returned row always carries one: an
+     * id is absent only when its row is gone or it fell outside the page the
+     * implementation requested — both anomalous, not routine. The caller
      * must treat an absent id as "no detail path" and emit the slug-less
      * {@link EntityChangeData} variant — never substitute the id for the slug.
      */
@@ -424,33 +425,59 @@ export async function applyUpgradeRestorations(
         if (revalidationService) {
             // The slug lookup is caught SEPARATELY from the scheduling below. When
             // the two shared one `try`, a throw inside the lookup took the whole
-            // revalidation with it and left only a warn behind — which is exactly
-            // how a malformed `where` disabled every plan-change revalidation
-            // unnoticed. A failed lookup must degrade the events, not delete them.
+            // revalidation with it, leaving only a warn — which is exactly how a
+            // malformed `where` disabled every plan-change revalidation unnoticed.
+            // A failed lookup must degrade the events, not delete them.
             let slugMap: Record<string, string> = {};
+            let lookupFailed = false;
             try {
-                slugMap = await deps.fetchAccommodationSlugs(allTouchedIds);
+                // `?? {}` guards a dep whose contract TypeScript enforces but whose
+                // injection point is public: a non-object would otherwise throw a
+                // TypeError below, OUTSIDE both catches, after the tx already
+                // committed — which the cron treats as manual-recovery-only.
+                slugMap = (await deps.fetchAccommodationSlugs(allTouchedIds)) ?? {};
             } catch (err) {
+                lookupFailed = true;
                 apiLogger.warn(
                     { err, userId, customerId, accommodationCount: allTouchedIds.length },
                     'plan-upgrade-restoration: accommodation slug lookup failed, scheduling revalidation without detail paths'
                 );
             }
 
-            const missingSlugIds = allTouchedIds.filter((id) => !slugMap[id]);
-            if (missingSlugIds.length > 0) {
-                apiLogger.warn(
-                    { userId, customerId, missingSlugIds },
-                    'plan-upgrade-restoration: no slug resolved for some accommodations, their detail pages will not be revalidated'
-                );
-            }
-
             try {
+                // Only meaningful when the lookup SUCCEEDED: on a throw the first warn
+                // already reported it and every id would be listed here redundantly.
+                // `accommodations.slug` is `notNull`, so a resolved row always has one —
+                // a gap here means the row is gone or fell outside the requested page,
+                // which is genuinely anomalous rather than routine.
+                if (!lookupFailed) {
+                    const missingSlugIds = allTouchedIds.filter((id) => !slugMap[id]);
+                    if (missingSlugIds.length > 0) {
+                        apiLogger.warn(
+                            {
+                                userId,
+                                customerId,
+                                missingSlugCount: missingSlugIds.length,
+                                missingSlugIds: missingSlugIds.slice(0, 20)
+                            },
+                            'plan-upgrade-restoration: no slug resolved for some accommodations, their detail pages will not be revalidated'
+                        );
+                    }
+                }
+
                 // `EntityChangeData` has a deliberate slug-less accommodation variant.
                 // Use it when the slug is unknown instead of substituting the UUID:
                 // `slug: id` would purge three bogus `/alojamientos/<uuid>/` paths AND
                 // skip the real detail page, while `revalidation_log` recorded success.
-                // `id` is passed either way — it lands in `revalidation_log.entity_id`.
+                // The slug-less variant still purges home, the listing and every type
+                // page — only the detail path is lost.
+                //
+                // `id` is passed in both branches, but it only reaches
+                // `revalidation_log.entity_id` PER ENTITY when a slug is present:
+                // `extractDebounceKeyId` keys accommodation buckets on the slug, so
+                // slug-less events all collapse into one global `accommodation` bucket
+                // whose `entityId` is first-write-wins. A fully degraded batch therefore
+                // yields one log row carrying one id. Paths are unaffected.
                 const events: EntityChangeData[] = allTouchedIds.map((id) => {
                     const slug = slugMap[id];
                     return slug

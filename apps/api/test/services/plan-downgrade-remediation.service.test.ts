@@ -957,6 +957,9 @@ describe('applyDowngradeRestrictions', () => {
             };
             expect(events).toHaveLength(1);
             expect(events[0]).toEqual({ entityType: 'accommodation', id: 'acc-2' });
+            // `toEqual` ignores undefined-valued keys, so this is what actually
+            // pins the ABSENCE of `slug` against a regression to `slug: undefined`.
+            expect(events[0]).not.toHaveProperty('slug');
         });
 
         it('emits the slug-less variant instead of substituting the id when a slug is missing', async () => {
