@@ -11,13 +11,21 @@
 
 import type { AccommodationTranslationData, TranslatableFieldStatus } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
+import { SUPPORTED_LOCALES } from '@/lib/i18n';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-/** The three supported locales. */
-export const SUPPORTED_LOCALES = ['es', 'en', 'pt'] as const;
+/**
+ * Re-exported from `@/lib/i18n` rather than redeclared.
+ *
+ * A second literal would not fail typecheck when the two diverge — the derived
+ * types stay assignable — so adding a fourth locale to the app would leave this
+ * panel silently checking three, never detecting the new one as missing and never
+ * rendering a badge for it.
+ */
+export { SUPPORTED_LOCALES };
 
 /** The four translatable fields, in display order. */
 export const TRANSLATABLE_FIELDS = ['name', 'summary', 'description', 'richDescription'] as const;
@@ -64,6 +72,11 @@ export interface FieldOutcome {
 /** Outcome map covering every field a run touched. */
 export type GenerationOutcomes = Partial<Record<TranslatableField, FieldOutcome>>;
 
+/** Whether any requested field came back with a failed locale. */
+export function anyFieldFailed(outcomes: GenerationOutcomes): boolean {
+    return Object.values(outcomes).some((outcome) => outcome.status === 'failed');
+}
+
 // ---------------------------------------------------------------------------
 // Source content
 // ---------------------------------------------------------------------------
@@ -76,22 +89,33 @@ function isFilled(value: string | null | undefined): boolean {
 /**
  * Whether a field has source content the backend could actually translate FROM.
  *
- * This mirrors `loadTranslatableFields` in `apps/api/src/services/ai-translate.service.ts`,
+ * Mirrors `loadTranslatableFields` in `apps/api/src/services/ai-translate.service.ts`,
  * which is what decides whether a field participates in a run at all:
  *
- * - source `es` → the plain column is the canonical source, falling back to the
- *   `es` key of the i18n column;
+ * - source `es` → ONLY the plain column. The service reads `data[field]` and falls
+ *   back to the `es` key of the i18n column solely when that read is `undefined` —
+ *   which, as its own comment says, happens only for `pointOfInterest.name`, the
+ *   one entity with no plain column. For an accommodation an empty plain column is
+ *   `null`, so the field is dropped from the run outright.
  * - any other source locale → only that locale's i18n value can be the source.
  *
- * The plain-column half is load-bearing, and it is why the panel cannot simply
- * look at `locales[sourceLocale]`. A never-translated accommodation has empty
- * i18n columns across the board while its Spanish text sits in the plain column,
- * so the i18n-only check would declare every field of it unsourced — the exact
- * heuristic BETA-199 rules out, because it would hide the panel precisely for the
- * accommodations that most need translating.
+ * An earlier revision accepted `plain || locales.es` here, reading the service's
+ * fallback as general. That over-promise is not harmless: clear a `richDescription`
+ * (an admin PATCH, an import overwrite) and its `richDescriptionI18n.es` survives,
+ * because nothing clears it. The panel would then offer to translate a field the
+ * backend silently skips — and if it were the only gap, the run returns nothing,
+ * the host reads "there were no pending translations", and the button never goes
+ * away. That is BETA-199's exact symptom, walked back in through a side door.
+ *
+ * The plain-column half is load-bearing in the other direction, and it is why the
+ * panel cannot simply look at `locales[sourceLocale]`. A never-translated
+ * accommodation has empty i18n columns across the board while its Spanish text sits
+ * in the plain column, so the i18n-only check would declare every field of it
+ * unsourced — the heuristic BETA-199 rules out, because it would hide the panel
+ * precisely for the accommodations that most need translating.
  *
  * @param status - The field's i18n values plus its plain column.
- * @param sourceLocale - Locale the host is editing in.
+ * @param sourceLocale - Locale the content is authored in.
  * @returns Whether a generation run could translate this field.
  */
 export function hasSourceContent({
@@ -102,7 +126,7 @@ export function hasSourceContent({
     readonly sourceLocale: SupportedLocale;
 }): boolean {
     if (sourceLocale === 'es') {
-        return isFilled(status.plain) || isFilled(status.locales.es);
+        return isFilled(status.plain);
     }
     return isFilled(status.locales[sourceLocale]);
 }

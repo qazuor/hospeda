@@ -42,13 +42,24 @@ describe('hasSourceContent', () => {
         expect(hasSourceContent({ status: SPANISH_ONLY, sourceLocale: 'es' })).toBe(true);
     });
 
-    it('accepts the es i18n value as the Spanish source', () => {
+    it('does NOT accept the es i18n value when the plain column is empty', () => {
+        // The backend falls back to `i18n.es` only when the plain read is
+        // `undefined`, which for an accommodation never happens — that fallback
+        // exists for `pointOfInterest.name`, the one entity with no plain column.
+        // An empty `richDescription` is `null`, so the service drops the field.
+        //
+        // Accepting it here was an over-promise with teeth: clear a
+        // `richDescription` (admin PATCH, import overwrite) and its
+        // `richDescriptionI18n.es` survives, so the panel would offer to translate
+        // a field the backend silently skips — and if it were the only gap, the run
+        // comes back empty and the button never goes away. BETA-199's symptom,
+        // through a different door.
         expect(
             hasSourceContent({
                 status: { locales: { es: 'Desde i18n', en: null, pt: null }, plain: null },
                 sourceLocale: 'es'
             })
-        ).toBe(true);
+        ).toBe(false);
     });
 
     it('ignores the plain column for a non-Spanish source locale', () => {

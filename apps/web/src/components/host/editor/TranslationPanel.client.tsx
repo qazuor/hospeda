@@ -18,19 +18,23 @@
  *
  * HOS-317 — the endpoint answers with one result per (field × locale), so the
  * run is reported per FIELD instead of behind one global spinner: each row shows
- * whether it is in flight, translated, or failed and in which locales. The page
- * only auto-reloads on a fully clean run; a run with any failure keeps its
- * detail on screen behind an explicit refresh, because reloading is what used to
- * wipe the evidence.
+ * whether it is in flight, translated, or failed and in which locales.
+ *
+ * The page NEVER reloads on its own. This panel is a `<fieldset>` inside the
+ * editor's `<form>`, and `apps/web` has no `beforeunload` guard anywhere, so an
+ * automatic reload silently discarded whatever the host had typed and not yet
+ * saved. A run that wrote something offers an explicit refresh instead, which
+ * also keeps the per-field detail on screen long enough to read.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { AccommodationTranslationData, TranslatableFieldStatus } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './TranslationPanel.module.css';
 import type { FieldOutcome, GenerationOutcomes, TranslationResultItem } from './translation-status';
 import {
+    anyFieldFailed,
     anyTranslationPersisted,
     fieldsWithMissingTranslations,
     hasSourceContent,
@@ -104,7 +108,10 @@ function FieldRow({ status, sourceLocale, fieldLabel, outcome, t }: FieldRowProp
             <div className={styles.locales}>
                 {SUPPORTED_LOCALES.map((locale) => {
                     const isSource = locale === sourceLocale;
-                    const hasContent = Boolean(status.locales[locale]);
+                    // Trimmed, to agree with `missingLocalesFor`. Reading it
+                    // raw made a whitespace-only value render a green check on
+                    // the same card whose run counts that locale as missing.
+                    const hasContent = (status.locales[locale] ?? '').trim().length > 0;
 
                     let badgeClass = styles.localeBadgeMissing;
                     if (isSource) {
@@ -270,13 +277,6 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     /**
-     * A clean run schedules a reload. Until it fires, the panel is still showing
-     * stale content, so the generate button must stay out of action — otherwise
-     * the host can start a second 90-second run that the reload aborts mid-flight,
-     * after the provider calls were already paid for.
-     */
-    const [isReloading, setIsReloading] = useState(false);
-    /**
      * Whether ANY run in this page's lifetime wrote something.
      *
      * Sticky on purpose. Offering the refresh is about whether reloading would
@@ -286,19 +286,6 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
      */
     const [hasPersistedAnything, setHasPersistedAnything] = useState(false);
 
-    /** Live handle on the pending reload, so unmount can cancel it. */
-    const reloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    useEffect(
-        () => () => {
-            // `apps/web` runs Astro's ClientRouter, so this island can unmount on
-            // a soft navigation inside the 1.5s window. Without this the timer
-            // fires on whatever page the host navigated to and hard-reloads it.
-            if (reloadTimer.current !== null) clearTimeout(reloadTimer.current);
-        },
-        []
-    );
-
     const pendingFields = fieldsWithMissingTranslations({
         translations,
         sourceLocale: CONTENT_SOURCE_LOCALE
@@ -306,6 +293,10 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
     const canGenerate = pendingFields.length > 0;
 
     const handleGenerate = useCallback(async () => {
+        // The button is `aria-disabled` rather than `disabled` (see the render),
+        // so it still receives clicks — this is what makes the guard real.
+        if (isGenerating) return;
+
         const requested = fieldsWithMissingTranslations({
             translations,
             sourceLocale: CONTENT_SOURCE_LOCALE
@@ -364,50 +355,42 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
             const persisted = anyTranslationPersisted({ results, requested });
             if (persisted) setHasPersistedAnything(true);
 
-            if (!persisted) {
-                // Nothing was written. A reload would replay the same screen and
-                // take the per-field failure detail down with it.
+            const failed = anyFieldFailed(runOutcomes);
+
+            if (failed) {
                 setErrorMessage(
-                    t(
-                        'host.properties.editor.translation.allFailed',
-                        'No se pudo generar ninguna traducción. Revisá el detalle por campo e intentá de nuevo.'
-                    )
+                    persisted
+                        ? t(
+                              'host.properties.editor.translation.partialFailure',
+                              'Algunas traducciones no se generaron. Revisá el detalle por campo.'
+                          )
+                        : t(
+                              'host.properties.editor.translation.allFailed',
+                              'No se pudo generar ninguna traducción. Revisá el detalle por campo e intentá de nuevo.'
+                          )
                 );
                 return;
             }
 
-            const anyFailed = Object.values(runOutcomes).some(
-                (outcome) => outcome.status === 'failed'
-            );
-
-            if (anyFailed) {
-                // Partial success: some content WAS written, so a refresh is
-                // worth offering — but not automatically, or the host never gets
-                // to read which fields did not make it.
+            if (!persisted) {
+                // Nothing failed and nothing was written for a field we asked
+                // about: the backend skipped every requested pair because it found
+                // them already filled — someone else filled them between the page
+                // render and this click. Saying "nothing could be generated" here
+                // would report a failure that did not happen and invite another
+                // 90-second paid run; the per-field rows already read "Sin cambios".
                 setErrorMessage(
                     t(
-                        'host.properties.editor.translation.partialFailure',
-                        'Algunas traducciones no se generaron. Revisá el detalle por campo.'
+                        'host.properties.editor.translation.nothingGenerated',
+                        'No había traducciones pendientes para generar.'
                     )
                 );
                 return;
             }
 
             setSuccessMessage(
-                t(
-                    'host.properties.editor.translation.successMessage',
-                    'Traducciones generadas. Recargando...'
-                )
+                t('host.properties.editor.translation.successMessage', 'Traducciones generadas.')
             );
-            // Keep the panel out of action until the reload lands: `isGenerating`
-            // is cleared in the `finally` below, which runs BEFORE this fires.
-            setIsReloading(true);
-            // Short delay so the host can read the success message before reload
-            reloadTimer.current = setTimeout(() => {
-                if (typeof window !== 'undefined') {
-                    window.location.reload();
-                }
-            }, 1500);
         } catch {
             setOutcomes(null);
             setErrorMessage(
@@ -419,7 +402,7 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
         } finally {
             setIsGenerating(false);
         }
-    }, [accommodationId, t, translations]);
+    }, [accommodationId, isGenerating, t, translations]);
 
     const handleRefresh = useCallback(() => {
         if (typeof window !== 'undefined') {
@@ -435,7 +418,7 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
      * there strands the host with no route to it. Hidden while a reload is already
      * on its way, so "Recargando..." and a manual refresh button never coexist.
      */
-    const canRefresh = hasPersistedAnything && !isGenerating && !isReloading;
+    const canRefresh = hasPersistedAnything && !isGenerating;
 
     return (
         <fieldset className={styles.section}>
@@ -446,11 +429,22 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
             <p className={styles.sectionDescription}>
                 {t(
                     'host.properties.editor.translation.sectionDescription',
-                    'Estado de traducción de los campos principales de tu propiedad. Las traducciones faltantes se generan automáticamente con IA a partir del idioma que estás usando.'
+                    'Estado de traducción de los campos principales de tu propiedad. Las traducciones faltantes se generan automáticamente con IA a partir del contenido en español.'
                 )}
             </p>
 
-            <div className={styles.grid}>
+            {/* The per-field notes below are the whole point of the run report, and
+                they change while the host waits. Without a live region a screen
+                reader announces nothing for the ~40s the run takes, and then the
+                error alert tells them to "check the per-field detail" they were
+                never given. `aria-busy` belongs here, on the region that is
+                actually updating — not on the button, which is `disabled` during
+                the run and therefore dropped from the accessibility tree. */}
+            <div
+                className={styles.grid}
+                aria-live="polite"
+                aria-busy={isGenerating}
+            >
                 <FieldRow
                     status={translations.name}
                     sourceLocale={CONTENT_SOURCE_LOCALE}
@@ -495,8 +489,12 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
                     type="button"
                     className={styles.generateButton}
                     onClick={handleGenerate}
-                    disabled={isGenerating || isReloading}
-                    aria-busy={isGenerating}
+                    // `aria-disabled`, not `disabled`. Disabling the control the
+                    // host just activated makes the browser drop focus to
+                    // <body> — leaving a keyboard or screen-reader user nowhere
+                    // for the length of the run. This stays focusable and
+                    // announces its state; `handleGenerate` returns early instead.
+                    aria-disabled={isGenerating}
                 >
                     {isGenerating
                         ? t(

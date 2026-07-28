@@ -133,11 +133,14 @@
         background-color 150ms ease-out;
 }
 
-.generateButton:hover:not(:disabled) {
+.generateButton:hover:not([aria-disabled="true"]) {
     opacity: 0.88;
 }
 
-.generateButton:disabled {
+/* `aria-disabled`, not `:disabled` — the button stays focusable during a run so
+   the host does not lose focus the moment they activate it. The styling has to
+   follow the attribute the component actually sets. */
+.generateButton[aria-disabled="true"] {
     opacity: 0.5;
     cursor: not-allowed;
 }

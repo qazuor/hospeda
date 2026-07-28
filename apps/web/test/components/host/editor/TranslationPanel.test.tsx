@@ -37,7 +37,11 @@ vi.mock('../../../../src/components/host/editor/TranslationPanel.module.css', ()
 // The `t` stub INTERPOLATES. A stub that ignored the third argument would let a
 // raw `{{locales}}` reach production with every test still green — the whole
 // point of assertion 4 is the rendered string, not the key.
-vi.mock('../../../../src/lib/i18n', () => ({
+vi.mock('../../../../src/lib/i18n', async (importActual) => ({
+    // Spread the real module: `translation-status.ts` reads SUPPORTED_LOCALES from
+    // here, and a mock that only declares `createTranslations` would make it
+    // undefined at import time.
+    ...(await importActual<typeof import('../../../../src/lib/i18n')>()),
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
             const raw = fallback ?? key;
@@ -127,7 +131,11 @@ afterEach(() => {
         writable: true,
         value: realLocation
     });
-    vi.clearAllMocks();
+    // `reset`, not `clear`: clearing wipes recorded calls but LEAVES the
+    // implementation, so a `mockResolvedValue` leaks into the next test. Benign
+    // only while every test that clicks sets its own response — exactly the kind
+    // of precondition that stops holding without anyone noticing.
+    vi.resetAllMocks();
     vi.useRealTimers();
 });
 
@@ -167,6 +175,40 @@ describe('TranslationPanel — rich description row (BETA-199)', () => {
         // Nothing to translate FROM — the backend would skip the field entirely,
         // so offering to generate it is a promise that can never be kept.
         expect(screen.queryByRole('button', { name: GENERATE_BUTTON })).not.toBeInTheDocument();
+    });
+
+    it('does not paint a whitespace-only locale as present', () => {
+        // The badge read the value raw while `missingLocalesFor` trims, so a
+        // whitespace-only i18n value rendered a green check on the same card whose
+        // run counts that locale as missing — the row contradicting itself.
+        const { container } = render(
+            <TranslationPanel
+                locale="es"
+                accommodationId={ACCOMMODATION_ID}
+                translations={{
+                    ...NOT_ENTITLED,
+                    name: {
+                        locales: { es: 'Nombre', en: 'Name', pt: '   ' },
+                        plain: 'Nombre'
+                    }
+                }}
+            />
+        );
+
+        // Scope to the row under test — the other three fields are fully
+        // translated and would supply PT badges of their own. The CSS-module mock
+        // returns class names verbatim, so the badge variant is readable off the DOM.
+        const nameCard = [...container.querySelectorAll('.fieldCard')].find((card) =>
+            card.querySelector('.fieldName')?.textContent?.includes('Nombre')
+        );
+        expect(nameCard).toBeDefined();
+
+        const present = [...(nameCard as Element).querySelectorAll('.localeBadgePresent')].map(
+            (el) => el.textContent?.trim()
+        );
+        expect(present).not.toContain('PT');
+        // Not vacuous: EN carries real content on this same row and IS present.
+        expect(present).toContain('EN');
     });
 
     it('still offers the button for a NEVER-translated accommodation', () => {
@@ -293,7 +335,11 @@ describe('TranslationPanel — per-field run reporting (HOS-317)', () => {
         expect(reloadSpy).not.toHaveBeenCalled();
     });
 
-    it('reloads only after a fully clean run', async () => {
+    it('never reloads on its own, even after a fully clean run', async () => {
+        // This panel is a fieldset inside the editor's form, and apps/web has no
+        // beforeunload guard, so an automatic reload silently threw away whatever
+        // the host had typed and not saved. A clean run reports itself and offers
+        // the refresh; the host decides when to lose their draft.
         vi.useFakeTimers({ shouldAdvanceTime: true });
         mockPostProtected.mockResolvedValue({
             ok: true,
@@ -313,11 +359,104 @@ describe('TranslationPanel — per-field run reporting (HOS-317)', () => {
         await waitFor(() => {
             expect(screen.getByText(/Traducciones generadas/i)).toBeInTheDocument();
         });
-        // The delay exists so the host can read the message first.
-        expect(reloadSpy).not.toHaveBeenCalled();
+        expect(screen.getByRole('button', { name: /Actualizar la página/i })).toBeInTheDocument();
 
-        await vi.advanceTimersByTimeAsync(1600);
+        await vi.advanceTimersByTimeAsync(5000);
+        expect(reloadSpy).not.toHaveBeenCalled();
+    });
+
+    it('reloads only when the host asks for it', async () => {
+        mockPostProtected.mockResolvedValue({
+            ok: true,
+            data: {
+                translations: [
+                    { fieldType: 'name', locale: 'en', success: true, translatedText: 'Name EN' },
+                    { fieldType: 'name', locale: 'pt', success: true, translatedText: 'Nome PT' },
+                    { fieldType: 'summary', locale: 'en', success: true, translatedText: 'S EN' },
+                    { fieldType: 'summary', locale: 'pt', success: true, translatedText: 'S PT' }
+                ]
+            }
+        });
+
+        renderPanel(PARTIALLY_TRANSLATED);
+        fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
+
+        const refresh = await screen.findByRole('button', { name: /Actualizar la página/i });
+        fireEvent.click(refresh);
+
         expect(reloadSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports every requested field as in flight while the run is open', async () => {
+        // The in-flight per-field report is one of the three headline behaviours
+        // and had no positive coverage — only a negative assertion on the
+        // transport-error path, which passes harder when the render is deleted.
+        let resolveRun: ((value: unknown) => void) | undefined;
+        mockPostProtected.mockImplementation(
+            () =>
+                new Promise((resolve) => {
+                    resolveRun = resolve;
+                })
+        );
+
+        renderPanel(PARTIALLY_TRANSLATED);
+        fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
+
+        // Two requested fields (name, summary) — description is fully translated.
+        await waitFor(() => {
+            expect(screen.getAllByText(/Generando\.\.\./i)).toHaveLength(2);
+        });
+
+        resolveRun?.({ ok: true, data: { translations: [] } });
+        await waitFor(() => {
+            expect(screen.queryByText(/Generando\.\.\./i)).not.toBeInTheDocument();
+        });
+    });
+
+    it('marks a field the backend skipped as unchanged, not as failed', async () => {
+        // `untouched` renders its own note, and the run-level message must not
+        // call a skipped field a failure.
+        mockPostProtected.mockResolvedValue({
+            ok: true,
+            data: {
+                translations: [
+                    { fieldType: 'name', locale: 'en', success: true, translatedText: 'Name EN' },
+                    { fieldType: 'name', locale: 'pt', success: true, translatedText: 'Nome PT' }
+                ]
+            }
+        });
+
+        renderPanel(PARTIALLY_TRANSLATED);
+        fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
+
+        await waitFor(() => {
+            expect(screen.getByText(/Sin cambios/i)).toBeInTheDocument();
+        });
+        expect(screen.getByText(/Traducido/i)).toBeInTheDocument();
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('names the field without a locale when the backend reports one it cannot name', async () => {
+        // `failedLocales` is empty when the failing locale is not one of the three
+        // — the failure still stands, and the note must not read "... a " with
+        // nothing after it.
+        mockPostProtected.mockResolvedValue({
+            ok: true,
+            data: {
+                translations: [
+                    { fieldType: 'name', locale: 'fr', success: false, error: 'unsupported' },
+                    { fieldType: 'summary', locale: 'en', success: true, translatedText: 'S EN' },
+                    { fieldType: 'summary', locale: 'pt', success: true, translatedText: 'S PT' }
+                ]
+            }
+        });
+
+        renderPanel(PARTIALLY_TRANSLATED);
+        fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
+
+        await waitFor(() => {
+            expect(screen.getByText('No se pudo traducir este campo')).toBeInTheDocument();
+        });
     });
 });
 
@@ -382,48 +521,85 @@ describe('TranslationPanel — run state (HOS-317)', () => {
         }
     };
 
-    it('keeps the generate button out of action while the reload is pending', async () => {
-        // `isGenerating` is cleared in the `finally`, which runs BEFORE the 1500ms
-        // reload fires. Without a separate reloading state the host gets a live
-        // button for 1.5s and can start a second 90-second run — paid for at the
-        // provider — that the reload then aborts mid-flight.
-        vi.useFakeTimers({ shouldAdvanceTime: true });
+    it('ignores a second click while a run is open, without losing focus', async () => {
+        // The button is `aria-disabled`, not `disabled`: disabling the control the
+        // host just activated makes the browser drop focus to <body>, leaving a
+        // keyboard user nowhere for up to 90 seconds. Staying focusable means the
+        // guard has to live in the handler.
+        let resolveRun: ((value: unknown) => void) | undefined;
+        mockPostProtected.mockImplementation(
+            () =>
+                new Promise((resolve) => {
+                    resolveRun = resolve;
+                })
+        );
+
+        renderPanel(PARTIALLY_TRANSLATED);
+        const button = screen.getByRole('button', { name: GENERATE_BUTTON });
+        button.focus();
+        fireEvent.click(button);
+
+        await waitFor(() => expect(mockPostProtected).toHaveBeenCalledTimes(1));
+
+        expect(button).toHaveAttribute('aria-disabled', 'true');
+        expect(document.activeElement).toBe(button);
+
+        fireEvent.click(button);
+        expect(mockPostProtected).toHaveBeenCalledTimes(1);
+
+        resolveRun?.({ ok: true, data: { translations: [] } });
+    });
+
+    it('announces the per-field region while it changes', async () => {
+        // The per-field notes ARE the feature. Without a live region a screen
+        // reader gets nothing for the whole run, and then an alert telling it to
+        // "check the per-field detail" it was never given.
         mockPostProtected.mockResolvedValue(CLEAN_RUN);
+
+        const { container } = renderPanel(PARTIALLY_TRANSLATED);
+        const region = container.querySelector('[aria-live="polite"]');
+
+        expect(region).not.toBeNull();
+        // The button is `disabled`-free and therefore in the a11y tree, but the
+        // region that mutates is this one, so that is where `aria-busy` belongs.
+        fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
+        await waitFor(() => expect(region).toHaveAttribute('aria-busy', 'true'));
+
+        await waitFor(() => expect(region).toHaveAttribute('aria-busy', 'false'));
+    });
+
+    it('does not report a failure when the backend simply had nothing left to do', async () => {
+        // Filtering `anyTranslationPersisted` to the requested fields made
+        // "nothing persisted" mean two different things: every requested pair
+        // FAILED, or every requested pair was SKIPPED because someone filled it
+        // between the page render and this click. Reporting the second as
+        // "no translation could be generated" invents a failure and invites
+        // another 90-second paid run.
+        mockPostProtected.mockResolvedValue({
+            ok: true,
+            data: {
+                translations: [
+                    {
+                        fieldType: 'richDescription',
+                        locale: 'en',
+                        success: true,
+                        translatedText: 'Rich EN'
+                    }
+                ]
+            }
+        });
 
         renderPanel(PARTIALLY_TRANSLATED);
         fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
 
         await waitFor(() => {
-            expect(screen.getByText(/Traducciones generadas/i)).toBeInTheDocument();
+            expect(screen.getByRole('alert')).toHaveTextContent(
+                /No había traducciones pendientes/i
+            );
         });
-
-        expect(screen.getByRole('button', { name: GENERATE_BUTTON })).toBeDisabled();
-        expect(mockPostProtected).toHaveBeenCalledTimes(1);
-        // And no manual refresh offered next to "Recargando..." — the two would
-        // contradict each other.
         expect(
-            screen.queryByRole('button', { name: /Actualizar la página/i })
+            screen.queryByText(/No se pudo generar ninguna traducción/i)
         ).not.toBeInTheDocument();
-    });
-
-    it('does not reload after the island unmounts', async () => {
-        // apps/web runs Astro's ClientRouter, so a soft navigation inside the
-        // 1.5s window unmounts this island. An uncancelled timer then hard-reloads
-        // whatever page the host navigated to.
-        vi.useFakeTimers({ shouldAdvanceTime: true });
-        mockPostProtected.mockResolvedValue(CLEAN_RUN);
-
-        const { unmount } = renderPanel(PARTIALLY_TRANSLATED);
-        fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
-
-        await waitFor(() => {
-            expect(screen.getByText(/Traducciones generadas/i)).toBeInTheDocument();
-        });
-
-        unmount();
-        await vi.advanceTimersByTimeAsync(3000);
-
-        expect(reloadSpy).not.toHaveBeenCalled();
     });
 
     it('keeps offering the refresh after a later run fails outright', async () => {
