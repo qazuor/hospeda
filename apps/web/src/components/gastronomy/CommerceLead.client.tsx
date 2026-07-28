@@ -34,6 +34,10 @@ import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './CommerceLead.module.css';
+import type { CommerceLeadCurrentUser, FieldErrors, LeadFields } from './commerce-lead-fields';
+import { buildDescribedBy, buildInitialFields, hasSessionPrefill } from './commerce-lead-fields';
+
+export type { CommerceLeadCurrentUser } from './commerce-lead-fields';
 
 // API base URL — must be absolute because the web app (host A) and the API
 // (host B) live on different origins both in dev (4321 vs 3001) and prod.
@@ -45,19 +49,6 @@ const API_BASE = (import.meta.env.PUBLIC_API_URL ?? '').replace(/\/$/, '');
 export interface DestinationOption {
     readonly id: string;
     readonly name: string;
-}
-
-/**
- * The signed-in visitor, forwarded from `Astro.locals.user` by the page
- * frontmatter. `null` for anonymous visitors, which is the form's primary case.
- *
- * Only the two fields the form actually seeds are carried: island props are
- * serialized into the rendered HTML, so shipping the user id here would leak an
- * internal identifier into page source for no benefit.
- */
-export interface CommerceLeadCurrentUser {
-    readonly name: string | null;
-    readonly email: string | null;
 }
 
 /** Props for the CommerceLead island. */
@@ -73,66 +64,6 @@ export interface CommerceLeadProps {
      * so a registered user does not retype what we already know (HOS-295).
      */
     readonly currentUser?: CommerceLeadCurrentUser | null;
-}
-
-type LeadFields = Omit<CommerceLeadCreateInput, 'domain'> & {
-    readonly _hp: string;
-};
-
-type FieldErrors = Partial<Record<keyof LeadFields, string>>;
-
-// ─── Initial state ────────────────────────────────────────────────────────────
-
-const INITIAL_FIELDS: LeadFields = {
-    businessName: '',
-    contactName: '',
-    email: '',
-    phone: '',
-    destinationId: undefined,
-    message: '',
-    _hp: ''
-};
-
-/**
- * Builds the form's initial field values, seeding the contact fields from the
- * session when the visitor is signed in.
- *
- * The business-specific fields (name, phone, city, description) are never
- * seeded — we know nothing about the business yet.
- *
- * @param params.currentUser - Signed-in visitor, or null/undefined for guests
- * @returns The initial {@link LeadFields} for `useState`
- */
-function buildInitialFields({
-    currentUser
-}: {
-    readonly currentUser?: CommerceLeadCurrentUser | null;
-}): LeadFields {
-    if (!currentUser) {
-        return INITIAL_FIELDS;
-    }
-
-    return {
-        ...INITIAL_FIELDS,
-        contactName: currentUser.name ?? '',
-        email: currentUser.email ?? ''
-    };
-}
-
-/**
- * Joins the element ids that describe a field into one `aria-describedby`
- * value, dropping the ones that are not currently rendered.
- *
- * @param params.ids - Candidate ids; `null`/`false` entries are dropped
- * @returns The space-separated id list, or undefined when nothing describes it
- */
-function buildDescribedBy({
-    ids
-}: {
-    readonly ids: ReadonlyArray<string | null | false>;
-}): string | undefined {
-    const present = ids.filter((id): id is string => Boolean(id));
-    return present.length > 0 ? present.join(' ') : undefined;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -165,6 +96,10 @@ export function CommerceLead({
     const [formError, setFormError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+
+    // A session can carry an empty name, so "signed in" is not the same as
+    // "something was pre-filled" — the notice must only claim what happened.
+    const showsPrefillNotice = hasSessionPrefill({ currentUser });
 
     function handleChange(
         e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -301,7 +236,7 @@ export function CommerceLead({
             {/* Signed-in prefill notice — the contact fields carry account data
                 but stay editable, so say so explicitly (HOS-295). Described-by
                 the two seeded inputs, which is where the explanation applies. */}
-            {currentUser && (
+            {showsPrefillNotice && (
                 <p
                     id="cl-prefill-notice"
                     className={styles.prefillNotice}
@@ -374,7 +309,7 @@ export function CommerceLead({
                     autoComplete="name"
                     aria-describedby={buildDescribedBy({
                         ids: [
-                            currentUser ? 'cl-prefill-notice' : null,
+                            showsPrefillNotice ? 'cl-prefill-notice' : null,
                             errors.contactName ? 'cl-contactName-error' : null
                         ]
                     })}
@@ -416,7 +351,7 @@ export function CommerceLead({
                     autoComplete="email"
                     aria-describedby={buildDescribedBy({
                         ids: [
-                            currentUser ? 'cl-prefill-notice' : null,
+                            showsPrefillNotice ? 'cl-prefill-notice' : null,
                             errors.email ? 'cl-email-error' : null
                         ]
                     })}

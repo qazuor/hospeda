@@ -469,10 +469,11 @@ describe('CommerceLead', () => {
             expect(screen.getByLabelText(/contanos sobre tu negocio/i)).toHaveValue('');
         });
 
-        // Deliberately editable, not read-only: the submitted email decides
-        // whether the approved lead is linked to an existing account or
-        // provisions a new one, and a merchant's business contact may legitimately
-        // differ from the email they signed in with.
+        // Deliberately editable, not read-only: a merchant's business contact
+        // may legitimately differ from the address they signed in with, and the
+        // lead is a reply-to, not an identity claim. (The submitted email does
+        // NOT link the lead to an existing account — see the note in
+        // CommerceLead.client.tsx; that is HOS-296.)
         it('keeps the pre-filled fields editable', () => {
             renderSignedIn();
             const email = screen.getByLabelText(/correo electrónico/i);
@@ -543,6 +544,23 @@ describe('CommerceLead', () => {
             renderForm();
             expect(screen.getByLabelText(/tu nombre/i)).toHaveValue('');
             expect(screen.getByLabelText(/correo electrónico/i)).toHaveValue('');
+        });
+
+        // Better Auth stores '' rather than null for an account that never set
+        // a name, so "signed in" is not the same as "something was pre-filled".
+        it('omits the notice when the session filled nothing in', () => {
+            renderSignedIn({ name: '', email: '' });
+            expect(document.getElementById('cl-prefill-notice')).toBeNull();
+            expect(screen.getByLabelText(/correo electrónico/i)).not.toHaveAttribute(
+                'aria-describedby'
+            );
+        });
+
+        it('still shows the notice when only the email came from the session', () => {
+            renderSignedIn({ name: '' });
+            expect(document.getElementById('cl-prefill-notice')).not.toBeNull();
+            expect(screen.getByLabelText(/tu nombre/i)).toHaveValue('');
+            expect(screen.getByLabelText(/correo electrónico/i)).toHaveValue('juan@example.com');
         });
 
         it('explains the prefill and does so only for signed-in visitors', () => {
