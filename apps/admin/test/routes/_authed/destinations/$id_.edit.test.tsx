@@ -2,9 +2,8 @@
  * @file Destination Edit Route — media upload wiring test
  *
  * SPEC-078-GAPS T-038 / GAP-078-005: verifies the destination edit page
- * wires the shared media upload hook and forwards a `fieldHandlers` prop
- * to EntityEditContent with an `images.onUpload` that calls
- * `uploadEntityImage.mutateAsync` with `entityType: 'destination'`.
+ * wires the shared media upload hook and forwards `media.featuredImage` and
+ * `media.gallery` handlers to EntityEditContent.
  *
  * This replicates the accommodations pattern 1:1 so any regression in the
  * shared factory (`createUploadHandler`) surfaces per-entity.
@@ -111,21 +110,30 @@ describe('Route /_authed/destinations/$id_/edit', () => {
 
         const handlers = capturedFieldHandlers as CapturedFieldHandlers | undefined;
         if (!handlers) throw new Error('fieldHandlers was not forwarded to EntityEditContent');
-        expect(handlers.images).toBeDefined();
+        expect(handlers['media.featuredImage']).toBeDefined();
+        expect(handlers['media.gallery']).toBeDefined();
 
         const file = new File(['x'], 'x.jpg', { type: 'image/jpeg' });
-        const url = await handlers.images.onUpload(file);
+        const featuredUrl = await handlers['media.featuredImage'].onUpload(file);
+        const galleryUrl = await handlers['media.gallery'].onUpload(file);
 
-        expect(url).toBe('https://cdn.example.com/destination.jpg');
-        expect(uploadEntityImageMutateAsync).toHaveBeenCalledTimes(1);
-        expect(uploadEntityImageMutateAsync).toHaveBeenCalledWith({
+        expect(featuredUrl).toBe('https://cdn.example.com/destination.jpg');
+        expect(galleryUrl).toBe('https://cdn.example.com/destination.jpg');
+        expect(uploadEntityImageMutateAsync).toHaveBeenCalledTimes(2);
+        expect(uploadEntityImageMutateAsync).toHaveBeenNthCalledWith(1, {
+            file,
+            entityType: 'destination',
+            entityId: '550e8400-e29b-41d4-a716-446655440000',
+            role: 'featured'
+        });
+        expect(uploadEntityImageMutateAsync).toHaveBeenNthCalledWith(2, {
             file,
             entityType: 'destination',
             entityId: '550e8400-e29b-41d4-a716-446655440000',
             role: 'gallery'
         });
 
-        await handlers.images.onDelete('destination/public-id');
+        await handlers['media.gallery'].onDelete('destination/public-id');
         expect(deleteImageMutateAsync).toHaveBeenCalledWith({
             publicId: 'destination/public-id'
         });

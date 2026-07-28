@@ -1,26 +1,16 @@
-/**
- * @file Event Edit Route — media upload wiring test
- *
- * SPEC-078-GAPS T-038 / GAP-078-018: verifies the event edit page wires
- * the shared media upload hook and forwards `media.featuredImage` and
- * `media.gallery` handlers to EntityEditContent.
- */
-
 import { render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import * as mod from '../../../../src/routes/_authed/events/$id_.edit';
-
-// -- Mocks ------------------------------------------------------------------
+import * as mod from '../../../../src/routes/_authed/experiences/$id_.edit';
 
 const uploadEntityImageMutateAsync = vi.fn().mockResolvedValue({
-    url: 'https://cdn.example.com/event.jpg',
-    publicId: 'event/public-id',
+    url: 'https://cdn.example.com/experience.jpg',
+    publicId: 'experience/public-id',
     width: 1024,
     height: 768
 });
 const deleteImageMutateAsync = vi.fn().mockResolvedValue({
     deleted: true,
-    publicId: 'event/public-id'
+    publicId: 'experience/public-id'
 });
 
 vi.mock('@/hooks/use-media-upload', async () => {
@@ -41,10 +31,7 @@ vi.mock('@/hooks/use-media-upload', async () => {
 
 type CapturedFieldHandlers = Record<
     string,
-    {
-        onUpload: (file: File) => Promise<string>;
-        onDelete: (publicId: string) => Promise<void>;
-    }
+    { onUpload: (file: File) => Promise<string>; onDelete: (publicId: string) => Promise<void> }
 >;
 
 let capturedFieldHandlers: CapturedFieldHandlers | undefined;
@@ -64,59 +51,34 @@ vi.mock('@/components/auth/RoutePermissionGuard', () => ({
     RoutePermissionGuard: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
 
-vi.mock('@/components/RevalidateEntityButton', () => ({
-    RevalidateEntityButton: () => null
+vi.mock('@/components/faqs/FaqManager', () => ({ FaqManager: () => null }));
+vi.mock('@/components/ui-wrapped', () => ({
+    Tabs: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    TabsList: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    TabsTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    TabsContent: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
-
-vi.mock('@/features/events/hooks/useEventPage', () => ({
-    useEventPage: () => ({
-        entity: null,
-        isLoading: false,
-        error: null,
-        permissions: {}
-    })
+vi.mock('@/features/experience', () => ({
+    useExperiencePage: () => ({ entity: null, isLoading: false, error: null, permissions: {} })
 }));
-
+vi.mock('@/hooks/use-translations', () => ({
+    useTranslations: () => ({ t: (key: string) => key })
+}));
 vi.mock('@/lib/factories', () => ({
     createErrorComponent: () => () => null,
     createPendingComponent: () => () => null
 }));
-
 vi.mock('@tanstack/react-router', () => ({
     createFileRoute:
         (_path: string) =>
         <T extends Record<string, unknown>>(options: T) => ({
             options,
             useParams: () => ({ id: '550e8400-e29b-41d4-a716-446655440000' })
-        }),
-    useLocation: () => ({ pathname: '/events/550e8400-e29b-41d4-a716-446655440000/edit' }),
-    Link: ({
-        to,
-        children,
-        className,
-        role,
-        ...props
-    }: {
-        to: string;
-        children: React.ReactNode;
-        className?: string;
-        role?: string;
-    }) => (
-        <a
-            href={to}
-            className={className}
-            role={role}
-            {...props}
-        >
-            {children}
-        </a>
-    )
+        })
 }));
 
-// -- Test -------------------------------------------------------------------
-
-describe('Route /_authed/events/$id_/edit', () => {
-    it("wires EntityEditContent with fieldHandlers that upload as entityType='event'", async () => {
+describe('Route /_authed/experiences/$id_/edit', () => {
+    it('wires featured and gallery fields to experience media uploads', async () => {
         const Page = (mod.Route as unknown as { options: { component: React.ComponentType } })
             .options.component;
 
@@ -124,32 +86,25 @@ describe('Route /_authed/events/$id_/edit', () => {
 
         const handlers = capturedFieldHandlers as CapturedFieldHandlers | undefined;
         if (!handlers) throw new Error('fieldHandlers was not forwarded to EntityEditContent');
-        expect(handlers['media.featuredImage']).toBeDefined();
-        expect(handlers['media.gallery']).toBeDefined();
 
         const file = new File(['x'], 'x.jpg', { type: 'image/jpeg' });
-        const featuredUrl = await handlers['media.featuredImage'].onUpload(file);
-        const galleryUrl = await handlers['media.gallery'].onUpload(file);
+        await handlers['media.featuredImage'].onUpload(file);
+        await handlers['media.gallery'].onUpload(file);
 
-        expect(featuredUrl).toBe('https://cdn.example.com/event.jpg');
-        expect(galleryUrl).toBe('https://cdn.example.com/event.jpg');
-        expect(uploadEntityImageMutateAsync).toHaveBeenCalledTimes(2);
         expect(uploadEntityImageMutateAsync).toHaveBeenNthCalledWith(1, {
             file,
-            entityType: 'event',
+            entityType: 'experience',
             entityId: '550e8400-e29b-41d4-a716-446655440000',
             role: 'featured'
         });
         expect(uploadEntityImageMutateAsync).toHaveBeenNthCalledWith(2, {
             file,
-            entityType: 'event',
+            entityType: 'experience',
             entityId: '550e8400-e29b-41d4-a716-446655440000',
             role: 'gallery'
         });
 
-        await handlers['media.gallery'].onDelete('event/public-id');
-        expect(deleteImageMutateAsync).toHaveBeenCalledWith({
-            publicId: 'event/public-id'
-        });
+        await handlers['media.gallery'].onDelete('experience/public-id');
+        expect(deleteImageMutateAsync).toHaveBeenCalledWith({ publicId: 'experience/public-id' });
     });
 });

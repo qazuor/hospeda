@@ -24,26 +24,34 @@ export const Route = createFileRoute('/_authed/destinations/$id_/edit')({
 /**
  * Destination Edit Page Component
  *
- * Wires GalleryField (field id: "images") to the media upload/delete API
- * via useMediaUpload and createUploadHandler.
+ * Wires featured-image and gallery fields to the admin media upload API.
  */
 function DestinationEditPage() {
     const { id } = Route.useParams();
     // Use the hook at the top level
     const entityData = useDestinationPage(id);
 
-    // Media upload/delete hooks for the gallery field
+    // Media upload/delete hooks for the destination media fields.
     const { uploadEntityImage, deleteImage } = useMediaUpload();
 
     /**
-     * Field handlers for the destination gallery.
-     * - onUpload: calls POST /api/v1/admin/media/upload with role=gallery
+     * Field handlers for the destination media fields.
+     * - featured image: POST /api/v1/admin/media/upload with role=featured
+     * - gallery: POST /api/v1/admin/media/upload with role=gallery
      * - onDelete: calls DELETE /api/v1/admin/media?publicId=... for Cloudinary assets.
      *   Non-Cloudinary URLs are handled by GalleryField without calling this.
      */
-    const galleryFieldHandlers = useMemo(
+    const mediaFieldHandlers = useMemo(
         () => ({
-            images: {
+            'media.featuredImage': {
+                onUpload: createUploadHandler({
+                    entityType: 'destination',
+                    entityId: id,
+                    role: 'featured',
+                    onUpload: (input) => uploadEntityImage.mutateAsync(input)
+                })
+            },
+            'media.gallery': {
                 onUpload: createUploadHandler({
                     entityType: 'destination',
                     entityId: id,
@@ -82,7 +90,7 @@ function DestinationEditPage() {
                 >
                     <EntityEditContent
                         entityType="destination"
-                        fieldHandlers={galleryFieldHandlers}
+                        fieldHandlers={mediaFieldHandlers}
                         flat
                     />
                     {entityData.entity && (

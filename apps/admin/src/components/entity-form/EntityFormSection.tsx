@@ -381,7 +381,8 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                             </React.Suspense>
                         );
 
-                    case FieldTypeEnum.IMAGE:
+                    case FieldTypeEnum.IMAGE: {
+                        const imageHandlers = fieldHandlers?.[field.id];
                         return (
                             <React.Suspense
                                 fallback={<div className="h-40 animate-pulse rounded bg-muted" />}
@@ -389,9 +390,11 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                                 <LazyImageField
                                     {...fieldProps}
                                     value={fieldValue as ImageValue}
+                                    onUpload={imageHandlers?.onUpload}
                                 />
                             </React.Suspense>
                         );
+                    }
 
                     case FieldTypeEnum.GALLERY: {
                         const galleryHandlers = fieldHandlers?.[field.id];
