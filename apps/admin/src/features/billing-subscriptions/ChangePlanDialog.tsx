@@ -1,4 +1,3 @@
-import { ALL_PLANS } from '@repo/billing';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,7 +11,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { useTranslations } from '@/hooks/use-translations';
 import type { Subscription } from './types';
-import { formatArs, formatDate, getPlanBySlug } from './utils';
+import { formatArs, formatDate, getChangePlanOptions, getPlanBySlug } from './utils';
 
 /**
  * Props for ChangePlanDialog
@@ -38,9 +37,10 @@ export function ChangePlanDialog({
     const currentPlan = getPlanBySlug(subscription.planSlug);
     const [selectedPlan, setSelectedPlan] = useState<string>('');
 
-    const availablePlans = ALL_PLANS.filter(
-        (plan) => plan.category === currentPlan?.category && plan.slug !== subscription.planSlug
-    );
+    const availablePlans = getChangePlanOptions({
+        currentPlan,
+        currentSlug: subscription.planSlug
+    });
 
     const handleConfirm = () => {
         if (selectedPlan) {
