@@ -106,9 +106,10 @@ vi.mock('../../../../src/utils/logger', () => ({
 
 // HOS-341 wired the isVerified owner gate into this route. Without this mock the
 // suite would run the REAL batch resolver against the globally mocked `@repo/db`
-// and an uninitialized billing singleton — passing only because the default free
-// plan happens to lack HAS_VERIFICATION_BADGE. Keep the suite hermetic: it is
-// about rich-description stripping, and the gate has its own badge-gate suite.
+// and an uninitialized billing singleton. It buys hermeticity and cost, NOT a
+// different verdict: nothing here asserts on `isVerified` and the fixture does not
+// set it, so the gate short-circuits before it ever reads an entitlement. This
+// suite is about rich-description stripping; the gate has its own badge-gate suite.
 vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
     resolveOwnerEntitlementsForOwnerIds: vi.fn().mockResolvedValue(new Map())
 }));

@@ -92,8 +92,9 @@ export const publicGetUserAccommodationsRoute = createPublicListRoute({
         const strippedItems = rawItems.map(stripRichDescriptionFields);
 
         // SPEC-291 Phase 3b / HOS-341: gate `isVerified` by the OWNER's billing
-        // entitlement. ONE batched role query for the unique ownerIds of this page,
-        // then parallel billing lookups for the cache-cold ones, then a synchronous
+        // entitlement. At most ONE batched role query — for the cache-cold ownerIds
+        // only, none at all when every owner is warm in the resolver's cache — then
+        // parallel billing lookups for those same cold owners, then a synchronous
         // gate pass. Every row here belongs to the path-param owner, so that batch
         // resolves a single id; the ids are still collected from the items rather
         // than taken from the path so the call matches the four sibling listings

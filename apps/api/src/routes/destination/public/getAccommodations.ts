@@ -51,10 +51,10 @@ export const publicGetDestinationAccommodationsRoute = createPublicRoute({
         );
 
         // SPEC-291 Phase 3b / HOS-341: gate `isVerified` by the OWNER's billing
-        // entitlement. ONE batched role query for the unique ownerIds of this
-        // response, then parallel billing lookups for the cache-cold ones, then a
-        // synchronous gate pass. Fail-closed: an owner absent from the map keeps no
-        // badge.
+        // entitlement. At most ONE batched role query — for the cache-cold ownerIds
+        // only, none at all when every owner is warm in the resolver's cache — then
+        // parallel billing lookups for those same cold owners, then a synchronous
+        // gate pass. Fail-closed: an owner absent from the map keeps no badge.
         //
         // The gate depends on the owner of the row, never on the reader — which is
         // what makes it safe here. `/api/v1/public/destinations` is a shared-cached

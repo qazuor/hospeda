@@ -48,10 +48,10 @@ export const publicGetAccommodationsByFeatureRoute = createPublicListRoute({
         );
 
         // SPEC-291 Phase 3b / HOS-341: gate `isVerified` by the OWNER's billing
-        // entitlement. ONE batched role query for the unique ownerIds of this
-        // response, then parallel billing lookups for the cache-cold ones, then a
-        // synchronous gate pass. Fail-closed: an owner absent from the map keeps no
-        // badge.
+        // entitlement. At most ONE batched role query — for the cache-cold ownerIds
+        // only, none at all when every owner is warm in the resolver's cache — then
+        // parallel billing lookups for those same cold owners, then a synchronous
+        // gate pass. Fail-closed: an owner absent from the map keeps no badge.
         //
         // "of this response", not "of this page": the service has no server-side
         // pagination here, it returns its whole result set and the envelope below is

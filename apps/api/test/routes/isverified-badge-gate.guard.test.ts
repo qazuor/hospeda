@@ -4,12 +4,26 @@
  * `AccommodationPublicSchema` picks `isVerified`, so `stripWithSchema` does NOT
  * hide it: every route responding with that schema emits whatever the DB row
  * carries unless the route itself runs the OWNER-entitlement gate. The contract
- * is
+ * checked here is
  *
- *   every route responding with `AccommodationPublicSchema` gates `isVerified`
- *   against the OWNING host's `HAS_VERIFICATION_BADGE` entitlement — list routes
- *   via `filterAccommodationListByOwnerEntitlements`, detail routes via
- *   `filterAccommodationByEntitlements`.
+ *   every route that names `AccommodationPublicSchema` in its own source gates
+ *   `isVerified` against the OWNING host's `HAS_VERIFICATION_BADGE` entitlement —
+ *   list routes via `filterAccommodationListByOwnerEntitlements`, detail routes
+ *   via `filterAccommodationByEntitlements` — and resolves owner entitlements to
+ *   feed it.
+ *
+ * ⚠️ That is NOT "the badge is gated everywhere", and this header must not be read
+ * as claiming it. `AccommodationPublicCardSchema` is
+ * `AccommodationPublicSchema.omit({ richDescription, richDescriptionI18n })` — it
+ * drops the premium pair and KEEPS `isVerified`. It is embedded in
+ * `PostPublicSchema.relatedAccommodation`, `OwnerPromotionPublicSchema.accommodation`
+ * and `AccommodationReviewPublicSchema.accommodation`, whose owning services
+ * eager-load the relation with no column allowlist. Those routes never name
+ * `AccommodationPublicSchema`, so this guard cannot see them and a green run says
+ * nothing about them. The sibling rich-description guard discloses the same axis
+ * and hands it to `packages/schemas/test/entities/accommodation/nested-embed.guard.test.ts`
+ * — which today covers the rich pair only, NOT `isVerified`. That gap is real,
+ * pre-dates HOS-341, and is tracked separately; do not infer coverage from here.
  *
  * HOS-341 IS the failure mode this guard exists for: four listings had the gate,
  * three did not, and nothing was red. Per-route regression suites cannot give the
@@ -25,9 +39,18 @@
  * pattern silently misses it — the exact class of blind spot the sibling
  * rich-description guard documents in its own header.
  *
+ * The cost of that loose pattern is a false positive: a future route importing the
+ * schema for a NARROWED projection (`AccommodationPublicSchema.pick({ id, name })`,
+ * which carries no `isVerified`) would be reported as an offender. No such route
+ * exists today. If one appears, add it to an explicit exemption const here with the
+ * reason — do not loosen `usesBadgeGate`, which is the load-bearing half.
+ *
  * Modeled on `rich-description-strip.guard.test.ts`, including its `code()`
  * blanking helper and the ordering bug that helper's header records (strings
- * before comments, both line-bounded).
+ * before comments, both line-bounded). This copy additionally blanks template
+ * literals, because it matches a bare `identifier(` rather than the sibling's
+ * anchored `return `/`.map(` shapes — a backtick log message naming a gate would
+ * otherwise satisfy it.
  *
  * This reads the real route files off disk rather than importing them: the point
  * is to catch a file nobody wired into a test, so discovery has to come from the
@@ -86,6 +109,7 @@ function code(source: string): string {
     return source
         .replace(/'(?:[^'\\\n]|\\.)*'/g, "''")
         .replace(/"(?:[^"\\\n]|\\.)*"/g, '""')
+        .replace(/`(?:[^`\\]|\\.)*`/g, '``')
         .replace(/\/\*[\s\S]*?\*\//g, ' ')
         .replace(/\/\/[^\n]*/g, ' ');
 }
@@ -145,6 +169,24 @@ describe('API routes — isVerified badge gate guard (HOS-341)', () => {
         ).toEqual([]);
     });
 
+    it('requires every such route to also resolve owner entitlements', () => {
+        // The second half of the contract, and the reason it is not redundant:
+        // `filterAccommodationByEntitlements`'s third parameter `ownerEntitlements`
+        // is OPTIONAL, and called without it the function gates NOTHING — the
+        // tombstone at entitlement-filter.ts records a helper deleted for exactly
+        // that. A call-shape check alone therefore cannot tell a real detail-route
+        // gate from an inert one. Requiring the resolver too closes that: a route
+        // that resolves nothing has nothing to pass.
+        const unresolved = routes
+            .filter((route) => !/\bresolveOwnerEntitlementsForOwnerIds?\s*\(/.test(route.source))
+            .map((route) => route.name);
+
+        expect(
+            unresolved,
+            `These routes call an entitlement gate without resolving the owner's entitlements to feed it: ${unresolved.join(', ')}. filterAccommodationByEntitlements gates nothing when its third argument is omitted.`
+        ).toEqual([]);
+    });
+
     it('does not accept a mention of the gate in a comment or an import', () => {
         // `usesBadgeGate` is the load-bearing half. Pin what it rejects, or the
         // guard quietly degrades to "the identifier appears somewhere".
@@ -155,6 +197,12 @@ describe('API routes — isVerified badge gate guard (HOS-341)', () => {
             false
         );
         expect(usesBadgeGate(code("const msg = 'filterAccommodationByEntitlements';"))).toBe(false);
+        // Template literals too: this matcher accepts a bare `identifier(`, so a
+        // backtick log message naming a gate would satisfy it if `code()` left
+        // template literals alone. That is why this copy blanks them.
+        expect(
+            usesBadgeGate(code('const log = `ran filterAccommodationByEntitlements(ctx, a, e)`;'))
+        ).toBe(false);
         expect(
             usesBadgeGate(
                 code(
@@ -200,5 +248,18 @@ describe('API routes — isVerified badge gate guard (HOS-341)', () => {
 
         expect(/\bAccommodationPublicSchema\b/.test(stripped)).toBe(true);
         expect(stripped).not.toContain('accounts.google.com');
+    });
+
+    it('does not lose a route to the blanking pass', () => {
+        // End-to-end version of the above against the real tree. Every file naming
+        // the schema anywhere must survive `code()` still naming it — today all nine
+        // reference it in real code, not only in prose, so the two counts match. A
+        // regression in `code()` shows up here as a shrinking route set, which the
+        // non-vacuity test above then attributes by name.
+        const rawMatches = allRouteFiles().filter((full) =>
+            /\bAccommodationPublicSchema\b/.test(readFileSync(full, 'utf8'))
+        ).length;
+
+        expect(routes.length).toBe(rawMatches);
     });
 });

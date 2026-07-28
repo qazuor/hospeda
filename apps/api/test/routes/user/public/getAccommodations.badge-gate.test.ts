@@ -15,10 +15,19 @@
  * so every anonymous and cookie-authenticated caller collides on the single
  * `anonymous` slot. The un-gated badge was replayed there for the whole TTL too.
  *
- * The replay itself is harmless — the payload is owner-derived and identical for
- * every reader — which is exactly the property that keeps this gate safe to
- * compute inside a cached response. The entitlement bypass was the real defect,
- * and it was identical on all three routes.
+ * Replaying the BADGE is harmless, because `isVerified` is derived from the row's
+ * owner and is therefore the same value for every reader — that is the property
+ * that makes this gate safe to compute inside a cached response.
+ *
+ * Do NOT read that as a claim about the rest of the payload. It is not
+ * reader-independent: `AccommodationService._executeSearch` computes
+ * `activeOnly` / `excludeOwnerSuspended` / `excludePlanRestricted` as
+ * `!hasVipAccess && !isOwnScope`, so an owner or a VIP actor receives rows an
+ * anonymous visitor must not see. That is a separate, pre-existing defect of this
+ * route, out of scope for HOS-341 and filed on its own.
+ *
+ * The entitlement bypass was the defect HOS-341 fixed, and it was identical on
+ * all three routes.
  *
  * The gate is keyed on the OWNER of the row, never on the reader.
  *
