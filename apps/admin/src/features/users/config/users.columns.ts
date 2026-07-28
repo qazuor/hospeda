@@ -11,7 +11,9 @@ import { MailLinkCell } from '@/components/entity-list/MailLinkCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, CompoundLayout, EntityType } from '@/components/table/DataTable';
 import { AuthProviderBadge } from '../components/AuthProviderBadge';
+import { CustomerTypeBadge } from '../components/CustomerTypeBadge';
 import { ImpersonateButton } from '../components/ImpersonateButton';
+import { UserRelationsSummaryCell } from '../components/UserRelationsSummaryCell';
 import { useDeleteUserMutation, useUpdateUserMutation } from '../hooks/useUserQuery';
 import type { User } from '../schemas/users.schemas';
 
@@ -187,6 +189,14 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         widgetRenderer: (row) => createElement(AuthProviderBadge, { row })
     },
     {
+        id: 'customerType',
+        header: t('admin-entities.columns.customerType'),
+        accessorKey: 'currentPlanSlug',
+        enableSorting: false,
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => createElement(CustomerTypeBadge, { row })
+    },
+    {
         id: 'email',
         header: t('admin-entities.columns.email'),
         accessorKey: 'email',
@@ -202,13 +212,39 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         columnType: ColumnType.STRING
     },
     {
+        id: 'relatedCounts',
+        header: t('admin-entities.columns.relatedCounts'),
+        accessorKey: 'accommodationsCount',
+        enableSorting: false,
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => createElement(UserRelationsSummaryCell, { row })
+    },
+    {
         id: 'accommodationCount',
         header: t('admin-entities.columns.accommodationsCount'),
         accessorKey: 'accommodationsCount',
         enableSorting: false,
         columnType: ColumnType.NUMBER,
         startVisibleOnTable: false,
-        startVisibleOnGrid: true
+        startVisibleOnGrid: false
+    },
+    {
+        id: 'gastronomiesCount',
+        header: t('admin-entities.columns.gastronomiesCount'),
+        accessorKey: 'gastronomiesCount',
+        enableSorting: false,
+        columnType: ColumnType.NUMBER,
+        startVisibleOnTable: false,
+        startVisibleOnGrid: false
+    },
+    {
+        id: 'experiencesCount',
+        header: t('admin-entities.columns.experiencesCount'),
+        accessorKey: 'experiencesCount',
+        enableSorting: false,
+        columnType: ColumnType.NUMBER,
+        startVisibleOnTable: false,
+        startVisibleOnGrid: false
     },
     {
         id: 'eventsCount',
@@ -217,7 +253,7 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         enableSorting: false,
         columnType: ColumnType.NUMBER,
         startVisibleOnTable: false,
-        startVisibleOnGrid: true
+        startVisibleOnGrid: false
     },
     {
         id: 'postsCount',
@@ -226,7 +262,7 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         enableSorting: false,
         columnType: ColumnType.NUMBER,
         startVisibleOnTable: false,
-        startVisibleOnGrid: true
+        startVisibleOnGrid: false
     },
     {
         id: 'visibility',

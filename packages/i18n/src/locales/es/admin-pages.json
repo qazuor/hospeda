@@ -754,6 +754,36 @@
             "loadingData": "Cargando datos del usuario...",
             "errorLoading": "Error al cargar el usuario",
             "userNotFound": "Usuario no encontrado",
+            "customerType": {
+                "staff": "Staff",
+                "noPlan": "Sin plan"
+            },
+            "relatedCounts": {
+                "accommodationsShort": "Aloj.",
+                "gastronomiesShort": "Gastro.",
+                "experiencesShort": "Exp.",
+                "eventsShort": "Ev.",
+                "postsShort": "Posts"
+            },
+            "accommodations": {
+                "title": "Alojamientos del usuario",
+                "count_one": "{{count}} alojamiento",
+                "count_other": "{{count}} alojamientos",
+                "empty": "Este usuario no tiene alojamientos asociados.",
+                "error": "No pudimos cargar los alojamientos de este usuario."
+            },
+            "publications": {
+                "title": "Publicaciones del usuario",
+                "totalCount_one": "{{count}} publicación",
+                "totalCount_other": "{{count}} publicaciones",
+                "eventsCount_one": "{{count}} evento",
+                "eventsCount_other": "{{count}} eventos",
+                "postsCount_one": "{{count}} post",
+                "postsCount_other": "{{count}} posts",
+                "empty": "Este usuario no tiene publicaciones asociadas.",
+                "eventsError": "No pudimos cargar los eventos de este usuario.",
+                "postsError": "No pudimos cargar los posts de este usuario."
+            },
             "activity": {
                 "accountCreated": "Cuenta Creada",
                 "accountCreatedDesc": "Cuando el usuario se registró",

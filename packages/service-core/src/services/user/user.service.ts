@@ -606,10 +606,14 @@ export class UserService extends BaseCrudService<
     protected override async _executeAdminSearch(
         params: AdminSearchExecuteParams<UserEntityFilters>
     ): Promise<PaginatedListOutput<User>> {
-        const { entityFilters, extraConditions, ...rest } = params;
+        const { where, entityFilters, pagination, sort, search, extraConditions, ctx } = params;
         const { email, roles, ...simpleFilters } = entityFilters;
 
         const additionalConditions: SQL[] = [...(extraConditions ?? [])];
+
+        if (search) {
+            additionalConditions.push(search);
+        }
 
         // email partial match (ilike, not eq)
         if (email) {
@@ -622,11 +626,17 @@ export class UserService extends BaseCrudService<
             additionalConditions.push(inArray(userTable.role, roles));
         }
 
-        return super._executeAdminSearch({
-            ...rest,
-            entityFilters: simpleFilters,
-            extraConditions: additionalConditions.length > 0 ? additionalConditions : undefined
-        });
+        return this.model.findAllWithCounts(
+            { ...where, ...simpleFilters },
+            {
+                page: pagination.page,
+                pageSize: pagination.pageSize,
+                sortBy: sort.sortBy,
+                sortOrder: sort.sortOrder
+            },
+            additionalConditions.length > 0 ? additionalConditions : undefined,
+            ctx?.tx
+        );
     }
 
     /**
