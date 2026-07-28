@@ -80,14 +80,61 @@ const formatSuccessResponse = <T>(
 };
 
 /**
- * Formats an error response with consistent structure
+ * Cause codes the entitlement middlewares attach to their `HTTPException(402)`.
+ * Anything outside this set is dropped rather than forwarded — the cause is an
+ * internal object (it also carries the full `trialStatus`) and only a known,
+ * client-safe vocabulary may reach the browser.
+ */
+const ENTITLEMENT_CAUSE_REASONS: ReadonlySet<string> = new Set([
+    'TRIAL_EXPIRED',
+    'NO_ACTIVE_SUBSCRIPTION',
+    'NO_BILLING_ACCOUNT'
+]);
+
+/**
+ * Extracts the client-safe part of a 402's `cause`.
+ *
+ * @param error - The thrown `HTTPException`.
+ * @returns The whitelisted `reason` and `details`, both possibly `undefined`.
+ */
+const readEntitlementCause = (
+    error: Error
+): { reason?: string; details?: { upgradeAudience: string } } => {
+    const cause: unknown = (error as { cause?: unknown }).cause;
+    if (cause === null || typeof cause !== 'object') {
+        return {};
+    }
+
+    const record = cause as Record<string, unknown>;
+    const code = record.code;
+    const audience = record.upgradeAudience;
+
+    return {
+        ...(typeof code === 'string' && ENTITLEMENT_CAUSE_REASONS.has(code)
+            ? { reason: code }
+            : {}),
+        ...(audience === 'host' || audience === 'tourist'
+            ? { details: { upgradeAudience: audience } }
+            : {})
+    };
+};
+
+/**
+ * Formats an error response with consistent structure.
+ *
+ * `reason` is the finer-grained, machine-readable discriminator that sits
+ * alongside `code` — e.g. `code: 'ENTITLEMENT_REQUIRED'` + `reason:
+ * 'TRIAL_EXPIRED'`. The web client prefers it over `code` when resolving the
+ * localized copy (`translateApiError`'s reason → code → status chain), so a
+ * single code can render cause-specific messages. Emitted only when present.
  */
 const formatErrorResponse = (
     code: string,
     message: string,
     _status = 500,
     details?: unknown,
-    requestId?: string
+    requestId?: string,
+    reason?: string
 ): ApiResponse => {
     const responseConfig = getResponseConfig();
     const response: ApiResponse = {
@@ -95,6 +142,7 @@ const formatErrorResponse = (
         error: {
             code,
             message,
+            ...(reason ? { reason } : {}),
             ...(details ? { details: details } : {})
         }
     };
@@ -353,6 +401,7 @@ export const createErrorHandler = () => {
         let errorMessage: string;
         let statusCode: number;
         let errorDetails: unknown;
+        let errorReason: string | undefined;
 
         // Priority 1: ServiceError from service layer (preferred)
         // Use instanceof for type-safe error detection
@@ -361,6 +410,11 @@ export const createErrorHandler = () => {
             errorMessage = error.message;
             statusCode = getHttpStatusFromErrorCode(error.code);
             errorDetails = error.details;
+            // `ServiceError`'s 4th constructor arg is documented as "emitted
+            // unconditionally in API error responses" but was never actually
+            // forwarded. No call site passes it today, so this is a no-op that
+            // makes the documented contract true for the next one (HOS-283).
+            errorReason = error.reason;
         }
         // Priority 2: Hono HTTPException
         else if (error instanceof HTTPException) {
@@ -378,6 +432,16 @@ export const createErrorHandler = () => {
                 errorCode = ServiceErrorCode.NOT_FOUND;
             } else if (statusCode === 409) {
                 errorCode = ServiceErrorCode.ALREADY_EXISTS;
+            } else if (statusCode === 402) {
+                // A 402 is a business gate (expired trial, no active plan, no
+                // billing account), NOT a server fault. Falling through to
+                // INTERNAL_ERROR made every gated write read as "something broke
+                // on our side", which sends the user to retry instead of to the
+                // plans page (HOS-283).
+                errorCode = ServiceErrorCode.ENTITLEMENT_REQUIRED;
+                const cause = readEntitlementCause(error);
+                errorReason = cause.reason;
+                errorDetails = cause.details;
             } else {
                 errorCode = ServiceErrorCode.INTERNAL_ERROR;
             }
@@ -442,7 +506,8 @@ export const createErrorHandler = () => {
             safeMessage,
             statusCode,
             safeDetails,
-            requestId
+            requestId,
+            errorReason
         );
 
         // Add response headers (includes preserved CORS headers)

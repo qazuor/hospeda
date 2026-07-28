@@ -28,6 +28,12 @@ export const ROLES_WITH_ACCOMMODATIONS_NAV = new Set<string>([
     'EDITOR'
 ]);
 
+/** Owner (host) pricing page, locale-agnostic. */
+const OWNER_PLANS_PATH = 'suscriptores/planes';
+
+/** Tourist pricing page, locale-agnostic. Also the anonymous default. */
+const TOURIST_PLANS_PATH = 'suscriptores/turistas';
+
 /**
  * Returns true when the given role grants access to host-level features
  * (property management, host dashboard, owner inbox, etc.).
@@ -88,5 +94,26 @@ export function isCommerceOwnerRole(role: string | null): boolean {
  *          `'suscriptores/turistas'` (tourist / anonymous).
  */
 export function resolveSubscriptionPlansPath({ role }: { role: string | null }): string {
-    return isHostRole(role) ? 'suscriptores/planes' : 'suscriptores/turistas';
+    return isHostRole(role) ? OWNER_PLANS_PATH : TOURIST_PLANS_PATH;
+}
+
+/**
+ * Same decision as {@link resolveSubscriptionPlansPath}, but driven by the
+ * `upgradeAudience` the API attaches to an entitlement error instead of by the
+ * caller's own role.
+ *
+ * Entitlement responses (`ENTITLEMENT_REQUIRED` 402, `LIMIT_REACHED` 403) carry
+ * `details.upgradeAudience`, which is the server's verdict on which pricing page
+ * resolves the block — more reliable than re-deriving it client-side, since the
+ * gate that fired knows what it was gating (HOS-283).
+ *
+ * @param params.audience - `'host'` or `'tourist'`, from `details.upgradeAudience`.
+ * @returns The locale-agnostic path segment for the matching pricing page.
+ */
+export function resolveSubscriptionPlansPathForAudience({
+    audience
+}: {
+    audience: 'host' | 'tourist';
+}): string {
+    return audience === 'host' ? OWNER_PLANS_PATH : TOURIST_PLANS_PATH;
 }

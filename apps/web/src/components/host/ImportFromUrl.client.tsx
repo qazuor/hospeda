@@ -20,13 +20,31 @@ import type { AccommodationImportResponse } from '@repo/schemas';
 import { AccommodationImportRequestSchema } from '@repo/schemas';
 import { useEffect, useId, useRef, useState } from 'react';
 import { type ImportRunHandle, useImportStatus } from '@/hooks/use-import-status';
+import { resolveSubscriptionPlansPathForAudience } from '@/lib/account-roles';
 import { accommodationsImportApi, isAsyncImportStart } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
+import { buildUrl } from '@/lib/urls';
 import styles from './ImportFromUrl.module.css';
+
+/**
+ * Reads `upgradeAudience` off an entitlement error's `details`, defaulting to
+ * `'host'` — this island only ever renders inside the host publish flow, so a
+ * missing or malformed audience should still land on the owner pricing page.
+ *
+ * @param details - The `details` field of an `ApiError` (typed `unknown`).
+ * @returns `'host'` or `'tourist'`.
+ */
+function readUpgradeAudience(details: unknown): 'host' | 'tourist' {
+    if (details !== null && typeof details === 'object' && 'upgradeAudience' in details) {
+        const audience = (details as Record<string, unknown>).upgradeAudience;
+        if (audience === 'tourist') return 'tourist';
+    }
+    return 'host';
+}
 
 /** Platforms shown in the URL-acquisition help panel (US-7), in display order. */
 const HELP_PLATFORMS = ['airbnb', 'booking', 'mercadolibre', 'google'] as const;
@@ -81,6 +99,9 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
     const [legalConfirmed, setLegalConfirmed] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // HOS-283: an entitlement block (402) is a business gate, not a failure —
+    // it gets an upgrade link next to the message instead of a bare error.
+    const [errorAction, setErrorAction] = useState<{ label: string; href: string } | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
     const [showHelp, setShowHelp] = useState(false);
     // HOS-50 T-013: non-null while an async Apify run is being polled.
@@ -95,6 +116,7 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
 
     async function handleSubmit(): Promise<void> {
         setError(null);
+        setErrorAction(null);
         setNotice(null);
 
         const trimmedUrl = url.trim();
@@ -137,6 +159,32 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                 // maps code-less statuses via BETA-146), falling back to the
                 // generic import message.
                 const status = result.error?.status;
+                // 402 = entitlement gate (expired trial, no active plan, no
+                // billing account). Not a failure of ours: show the cause and a
+                // link to the pricing page the server points at (HOS-283).
+                if (status === 402) {
+                    setError(
+                        translateApiError({
+                            error: result.error,
+                            t,
+                            fallback: t(
+                                'common.apiError.ENTITLEMENT_REQUIRED',
+                                'Tu plan no incluye esta función. Actualizalo para continuar.'
+                            )
+                        })
+                    );
+                    setErrorAction({
+                        label: t('host.importFromUrl.errors.entitlementCta', 'Ver planes'),
+                        href: buildUrl({
+                            locale,
+                            path: resolveSubscriptionPlansPathForAudience({
+                                audience: readUpgradeAudience(result.error?.details)
+                            })
+                        })
+                    });
+                    setIsSubmitting(false);
+                    return;
+                }
                 const message =
                     status === 403
                         ? t(
@@ -339,6 +387,17 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                         role="alert"
                     >
                         {error}
+                        {errorAction ? (
+                            <>
+                                {' '}
+                                <a
+                                    className={styles.errorAction}
+                                    href={errorAction.href}
+                                >
+                                    {errorAction.label}
+                                </a>
+                            </>
+                        ) : null}
                     </div>
                 ) : null}
 

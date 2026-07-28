@@ -85,3 +85,14 @@
     color: var(--core-foreground);
     word-break: break-all;
 }
+
+/*
+ * Upgrade CTA rendered inline inside the error banner when the import is
+ * blocked by an entitlement gate (402) rather than by a real failure (HOS-283).
+ */
+.errorAction {
+    font-weight: var(--font-weight-semibold, 600);
+    text-decoration: underline;
+    white-space: nowrap;
+    color: inherit;
+}

@@ -670,3 +670,87 @@ describe('ImportFromUrl — non-ok error mapping (BETA-154)', () => {
         await waitFor(() => expect(onError).toHaveBeenCalledWith('unknown'));
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-283: a 402 entitlement gate must NOT read as a server fault
+// ---------------------------------------------------------------------------
+
+describe('ImportFromUrl — entitlement gate (HOS-283)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockUseImportStatus.mockReturnValue(IDLE_POLL_RESULT);
+    });
+
+    /** Fill URL, tick legal, submit against a mocked non-ok result, return the alert. */
+    async function submitWithError(error: unknown) {
+        mockImportFromUrl.mockResolvedValueOnce({ ok: false, error });
+        render(<ImportFromUrl locale="es" />);
+        fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
+        fireEvent.change(screen.getByRole('textbox', { name: /URL/i }), {
+            target: { value: 'https://www.airbnb.com.ar/rooms/789' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: /Importar/i }));
+        await waitFor(() => expect(mockImportFromUrl).toHaveBeenCalledTimes(1));
+        return screen.findByRole('alert');
+    }
+
+    it('does NOT blame the platform on a 402', async () => {
+        // Arrange / Act
+        const alert = await submitWithError({
+            status: 402,
+            code: 'ENTITLEMENT_REQUIRED',
+            reason: 'TRIAL_EXPIRED',
+            details: { upgradeAudience: 'host' }
+        });
+
+        // Assert — the old copy was "Algo salió mal del lado nuestro"
+        expect(alert).not.toHaveTextContent(/algo salió mal/i);
+        expect(alert).toHaveTextContent(/plan/i);
+    });
+
+    it('renders an upgrade CTA pointing at the owner plans page', async () => {
+        // Arrange / Act
+        await submitWithError({
+            status: 402,
+            code: 'ENTITLEMENT_REQUIRED',
+            reason: 'TRIAL_EXPIRED',
+            details: { upgradeAudience: 'host' }
+        });
+
+        // Assert
+        const cta = await screen.findByRole('link', { name: /ver planes/i });
+        expect(cta.getAttribute('href')).toContain('suscriptores/planes');
+    });
+
+    it('targets the tourist plans page when the server says so', async () => {
+        // Arrange / Act
+        await submitWithError({
+            status: 402,
+            code: 'ENTITLEMENT_REQUIRED',
+            reason: 'NO_ACTIVE_SUBSCRIPTION',
+            details: { upgradeAudience: 'tourist' }
+        });
+
+        // Assert
+        const cta = await screen.findByRole('link', { name: /ver planes/i });
+        expect(cta.getAttribute('href')).toContain('suscriptores/turistas');
+    });
+
+    it('falls back to the owner plans page when the audience is missing', async () => {
+        // Arrange / Act — this island only renders inside the host publish flow
+        await submitWithError({ status: 402, code: 'ENTITLEMENT_REQUIRED' });
+
+        // Assert
+        const cta = await screen.findByRole('link', { name: /ver planes/i });
+        expect(cta.getAttribute('href')).toContain('suscriptores/planes');
+    });
+
+    it('does NOT render the CTA on a 403', async () => {
+        // Arrange / Act — a permission error is not an upsell moment
+        const alert = await submitWithError({ status: 403, code: 'FORBIDDEN' });
+
+        // Assert
+        expect(alert).toHaveTextContent(/no tenés permiso para importar/i);
+        expect(screen.queryByRole('link', { name: /ver planes/i })).toBeNull();
+    });
+});
