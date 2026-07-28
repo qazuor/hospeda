@@ -4,6 +4,24 @@
         "description": "Publica tu alojamiento en Hospeda y llega a miles de viajeros en el Litoral argentino. Gestion profesional, estadisticas y soporte dedicado para propietarios.",
         "breadcrumb": "Para Propietarios"
     },
+    "faq": {
+        "1": {
+            "q": "¿Cuánto cuesta publicar mi alojamiento?",
+            "a": "Publicar requiere un plan de anfitrión, y todos incluyen {{trialDays}} días de prueba gratis. No cobramos comisión por reserva: la suscripción es el único costo."
+        },
+        "2": {
+            "q": "¿Cómo recibo las reservas?",
+            "a": "Los viajeros te contactan directamente por WhatsApp, email o teléfono. Vos manejás todo."
+        },
+        "3": {
+            "q": "¿Puedo publicar más de una propiedad?",
+            "a": "Sí. Cada plan define cuántas propiedades podés tener publicadas a la vez, así que elegí el que mejor se ajuste a tu caso."
+        },
+        "4": {
+            "q": "¿Qué tipo de alojamientos puedo publicar?",
+            "a": "Casas quintas, cabañas, departamentos, hoteles, apart hotels, campings y más."
+        }
+    },
     "host": {
         "landing": {
             "trialCallout": "Probá Hospeda gratis por 14 días. Tu trial empieza cuando publicás tu primera propiedad. No pagás nada hasta el día 14, sin compromiso."

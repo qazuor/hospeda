@@ -105,7 +105,7 @@
                 },
                 "cost": {
                     "question": "Quanto custa publicar?",
-                    "answer": "Temos um plano gratuito com funcionalidades básicas e planos pagos com mais visibilidade, fotos, destaques e ferramentas de gestão. Veja os detalhes na página de Planos para anfitriões."
+                    "answer": "Publicar sua hospedagem exige um plano de anfitrião, e todos incluem {{trialDays}} dias de teste grátis: você cadastra seu cartão no início e nada é cobrado até o teste terminar. Não cobramos comissão por reserva, então a assinatura é o único custo. Veja o preço de cada plano na página de Planos para anfitriões."
                 },
                 "commission": {
                     "question": "Vocês cobram comissão por reserva?",

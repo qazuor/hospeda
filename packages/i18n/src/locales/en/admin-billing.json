@@ -191,12 +191,12 @@
         "descriptions": {
             "owner-basico": "Basic plan for individual property owners. Ideal for getting started.",
             "owner-pro": "Professional plan with advanced analytics and priority support.",
-            "owner-premium": "Premium plan with all features, dedicated manager, and API access.",
+            "owner-premium": "Premium plan with all features, custom branding, and unlimited promotions.",
             "complex-basico": "Basic plan for complexes and hotels. Multi-property management.",
             "complex-pro": "Professional plan for complexes with consolidated analytics.",
             "complex-premium": "Premium plan for large complexes with all features.",
             "tourist-free": "Free plan for tourists. Basic features included.",
-            "tourist-plus": "Plus plan for frequent tourists. Ad-free experience and price alerts.",
+            "tourist-plus": "Plus plan for frequent tourists. Comparison, search history, and price alerts.",
             "tourist-vip": "VIP plan for discerning tourists. All premium features included."
         },
         "statusActive": "Active",
@@ -263,7 +263,8 @@
                 "owner": "Owner",
                 "accommodation": "Accommodation",
                 "complex": "Complex",
-                "tourist": "Tourist"
+                "tourist": "Tourist",
+                "ai": "Artificial intelligence"
             },
             "cancelButton": "Cancel",
             "saveButton": "Save changes",

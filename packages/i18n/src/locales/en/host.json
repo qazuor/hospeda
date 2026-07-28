@@ -125,17 +125,6 @@
                 "loading": "[TODO]",
                 "empty": "[TODO]"
             },
-            "fotos": {
-                "title": "[TODO]",
-                "description": "[TODO]",
-                "uploadPrompt": "[TODO]",
-                "uploadButton": "[TODO]",
-                "uploading": "[TODO]",
-                "maxReached": "[TODO]",
-                "removeAria": "[TODO]",
-                "errorPerFile": "[TODO]",
-                "requiresSaveFirst": "[TODO]"
-            },
             "precio": {
                 "title": "[TODO]",
                 "description": "[TODO]",

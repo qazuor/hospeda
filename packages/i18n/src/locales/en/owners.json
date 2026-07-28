@@ -4,6 +4,24 @@
         "description": "List your property on Hospeda and reach thousands of travelers in the Argentine Litoral. Professional management, statistics and dedicated support for owners.",
         "breadcrumb": "For Property Owners"
     },
+    "faq": {
+        "1": {
+            "q": "How much does it cost to list my property?",
+            "a": "Listing requires a host plan, and every plan includes a {{trialDays}}-day free trial. We charge no booking commission: the subscription is the only cost."
+        },
+        "2": {
+            "q": "How do I receive bookings?",
+            "a": "Travelers contact you directly by WhatsApp, email, or phone. You handle everything."
+        },
+        "3": {
+            "q": "Can I list more than one property?",
+            "a": "Yes. Each plan sets how many properties you can keep published at once, so pick the one that fits your case."
+        },
+        "4": {
+            "q": "What kinds of accommodation can I list?",
+            "a": "Country houses, cabins, apartments, hotels, apart hotels, campsites, and more."
+        }
+    },
     "host": {
         "landing": {
             "trialCallout": "Try Hospeda free for 14 days. Your trial starts when you publish your first property. You won't be charged until day 14, no commitment."

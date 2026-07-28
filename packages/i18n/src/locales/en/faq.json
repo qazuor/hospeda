@@ -105,7 +105,7 @@
                 },
                 "cost": {
                     "question": "How much does it cost to publish?",
-                    "answer": "We have a free plan with basic features and paid plans with more visibility, photos, highlights and management tools. Check the details on the Host plans page."
+                    "answer": "Publishing your accommodation requires a host plan, and every plan includes a {{trialDays}}-day free trial: you add your card up front and nothing is charged until the trial ends. We charge no booking commission, so the subscription is the only cost. Check each plan's price on the Host plans page."
                 },
                 "commission": {
                     "question": "Do you charge commission on bookings?",
