@@ -14,8 +14,10 @@ import {
     StarIcon,
     UsersIcon
 } from '@repo/icons';
+import type { ReactNode } from 'react';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
+import { createPortal } from 'react-dom';
 import { ErrorBoundary } from '@/components/shared/ui/ErrorBoundary';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { WebEvents } from '@/lib/analytics/events';
@@ -75,6 +77,42 @@ const ACCOMMODATION_TYPES = [
 ] as const;
 
 type AccommodationType = (typeof ACCOMMODATION_TYPES)[number];
+
+/**
+ * Viewport width below which panels stop being desktop popovers and become
+ * fixed bottom-sheets. Must stay in sync with the `@media (max-width: 900px)`
+ * block in `SearchBar.module.css` — the portal below reparents the sheet only
+ * at sizes where the CSS has already switched it to `position: fixed`.
+ */
+const MOBILE_SHEET_MEDIA_QUERY = '(max-width: 900px)';
+
+/**
+ * Marks every dropdown panel so the click-outside handler can recognise it
+ * once it has been portaled away from the bar's DOM subtree.
+ */
+const PANEL_MARKER_ATTRIBUTE = 'data-search-panel';
+
+/**
+ * Tracks whether the viewport is at bottom-sheet size, staying in sync with
+ * live viewport changes (rotation, desktop window resize).
+ *
+ * Starts at `false` so the server render and the first client render agree
+ * (SSR has no viewport to measure); the effect corrects it on mount, before
+ * any panel can be open.
+ */
+function useIsMobileSheet(): boolean {
+    const [isMobileSheet, setIsMobileSheet] = useState(false);
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia(MOBILE_SHEET_MEDIA_QUERY);
+        const sync = () => setIsMobileSheet(mediaQuery.matches);
+        sync();
+        mediaQuery.addEventListener('change', sync);
+        return () => mediaQuery.removeEventListener('change', sync);
+    }, []);
+
+    return isMobileSheet;
+}
 
 // Component
 
@@ -159,6 +197,7 @@ export function buildSearchUrl(args: {
 function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps) {
     const { t } = createTranslations(locale);
     const barRef = useRef<HTMLDivElement>(null);
+    const isMobileSheet = useIsMobileSheet();
 
     // State
     const [activePanel, setActivePanel] = useState<ActivePanel>(null);
@@ -188,9 +227,14 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
 
     // Click outside / ESC to close
     const handleClickOutside = useCallback((event: MouseEvent) => {
-        if (barRef.current && !barRef.current.contains(event.target as Node)) {
-            setActivePanel(null);
-        }
+        const target = event.target as Node | null;
+        if (!target || !barRef.current) return;
+        if (barRef.current.contains(target)) return;
+        // On mobile the open panel is portaled to <body> (HOS-323), so it is
+        // no longer a descendant of the bar. Without this check the first tap
+        // on a stepper button would read as "outside" and dismiss the sheet.
+        if (target instanceof Element && target.closest(`[${PANEL_MARKER_ATTRIBUTE}]`)) return;
+        setActivePanel(null);
     }, []);
 
     const handleKeyDown = useCallback((event: KeyboardEvent) => {
@@ -221,7 +265,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
             document.documentElement.setAttribute('data-search-panel-open', '');
             // Only lock scroll on mobile sheet sizes — desktop dropdowns are
             // popovers and shouldn't block page scroll.
-            if (window.matchMedia('(max-width: 900px)').matches) {
+            if (window.matchMedia(MOBILE_SHEET_MEDIA_QUERY).matches) {
                 document.documentElement.style.overflow = 'hidden';
             }
         } else {
@@ -244,15 +288,15 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
     // keyboard, which overlaps the option list and blocks selection, so we
     // only autofocus on desktop popover sizes (>900px).
     useEffect(() => {
-        const isMobileSheet = window.matchMedia('(max-width: 900px)').matches;
+        const isSheetSize = window.matchMedia(MOBILE_SHEET_MEDIA_QUERY).matches;
         if (activePanel !== 'destination') {
             setDestinationQuery('');
-        } else if (!isMobileSheet) {
+        } else if (!isSheetSize) {
             destinationSearchInputRef.current?.focus();
         }
         if (activePanel !== 'type') {
             setTypeQuery('');
-        } else if (!isMobileSheet) {
+        } else if (!isSheetSize) {
             typeSearchInputRef.current?.focus();
         }
     }, [activePanel]);
@@ -552,338 +596,376 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                 </button>
             </div>
 
-            {/* Mobile backdrop — dims the page behind the bottom-sheet panel.
+            <PanelLayer portaled={isMobileSheet}>
+                {/* Mobile backdrop — dims the page behind the bottom-sheet panel.
                 Clicking it closes the active panel (mirrors the click-outside
                 handler). Hidden on viewports >900px where panels are popovers. */}
-            {activePanel !== null && (
-                <button
-                    type="button"
-                    className={styles.backdrop}
-                    onClick={closePanel}
-                    aria-label={t('home.searchBar.closePanel', 'Cerrar panel')}
-                    tabIndex={-1}
-                />
-            )}
-
-            {/* Panels (rendered below the bar) */}
-
-            {/* Destination panel */}
-            {activePanel === 'destination' && (
-                // biome-ignore lint/a11y/useFocusableInteractive: listbox children (buttons) handle focus
-                <div
-                    className={cn(
-                        styles.panel,
-                        styles.destinationPanel,
-                        openDirection === 'up' && styles.panelUp
-                    )}
-                    // biome-ignore lint/a11y/useSemanticElements: custom styled dropdown cannot use native <select>
-                    role="listbox"
-                >
-                    <PanelCloseHeader
-                        ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
-                        onClose={closePanel}
+                {activePanel !== null && (
+                    <button
+                        type="button"
+                        className={styles.backdrop}
+                        onClick={closePanel}
+                        aria-label={t('home.searchBar.closePanel', 'Cerrar panel')}
+                        tabIndex={-1}
                     />
-                    <div className={styles.panelSearch}>
-                        <input
-                            ref={destinationSearchInputRef}
-                            type="text"
-                            className="form-input"
-                            value={destinationQuery}
-                            onChange={(event) => setDestinationQuery(event.target.value)}
-                            placeholder={t(
-                                'home.searchBar.destinationSearchPlaceholder',
-                                'Buscá un destino'
-                            )}
-                            aria-label={t(
-                                'home.searchBar.destinationSearchLabel',
-                                'Buscar entre los destinos'
-                            )}
-                        />
-                    </div>
-                    <div className={cn(styles.panelBody, styles.panelOptionList)}>
-                        {/* Clear option */}
-                        {selectedDestination && (
-                            <button
-                                type="button"
-                                className={cn('combobox__option', styles.optionClear)}
-                                onClick={() => handleSelectDestination(null)}
-                                // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
-                                role="option"
-                                aria-selected={false}
-                            >
-                                <span className="combobox__option-label">
-                                    {t('home.searchBar.clearTypes', 'Limpiar')}
-                                </span>
-                            </button>
+                )}
+
+                {/* Panels (rendered below the bar) */}
+
+                {/* Destination panel */}
+                {activePanel === 'destination' && (
+                    // biome-ignore lint/a11y/useFocusableInteractive: listbox children (buttons) handle focus
+                    <div
+                        className={cn(
+                            styles.panel,
+                            styles.destinationPanel,
+                            openDirection === 'up' && styles.panelUp
                         )}
-                        {filteredDestinations.map((dest) => {
-                            const isSelected = selectedDestination?.id === dest.id;
-                            return (
+                        // biome-ignore lint/a11y/useSemanticElements: custom styled dropdown cannot use native <select>
+                        role="listbox"
+                        data-search-panel=""
+                    >
+                        <PanelCloseHeader
+                            ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
+                            onClose={closePanel}
+                        />
+                        <div className={styles.panelSearch}>
+                            <input
+                                ref={destinationSearchInputRef}
+                                type="text"
+                                className="form-input"
+                                value={destinationQuery}
+                                onChange={(event) => setDestinationQuery(event.target.value)}
+                                placeholder={t(
+                                    'home.searchBar.destinationSearchPlaceholder',
+                                    'Buscá un destino'
+                                )}
+                                aria-label={t(
+                                    'home.searchBar.destinationSearchLabel',
+                                    'Buscar entre los destinos'
+                                )}
+                            />
+                        </div>
+                        <div className={cn(styles.panelBody, styles.panelOptionList)}>
+                            {/* Clear option */}
+                            {selectedDestination && (
                                 <button
-                                    key={dest.id}
                                     type="button"
-                                    className={cn(
-                                        'combobox__option',
-                                        isSelected && 'combobox__option--selected'
-                                    )}
-                                    onClick={() => handleSelectDestination(dest)}
+                                    className={cn('combobox__option', styles.optionClear)}
+                                    onClick={() => handleSelectDestination(null)}
                                     // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
                                     role="option"
-                                    aria-selected={isSelected}
+                                    aria-selected={false}
                                 >
-                                    <span
-                                        className="combobox__option-icon"
-                                        aria-hidden="true"
-                                    >
-                                        <LocationIcon
-                                            size={14}
-                                            weight="regular"
-                                            aria-hidden="true"
-                                        />
+                                    <span className="combobox__option-label">
+                                        {t('home.searchBar.clearTypes', 'Limpiar')}
                                     </span>
-                                    <span className="combobox__option-label">{dest.name}</span>
-                                    {dest.isFeatured && (
+                                </button>
+                            )}
+                            {filteredDestinations.map((dest) => {
+                                const isSelected = selectedDestination?.id === dest.id;
+                                return (
+                                    <button
+                                        key={dest.id}
+                                        type="button"
+                                        className={cn(
+                                            'combobox__option',
+                                            isSelected && 'combobox__option--selected'
+                                        )}
+                                        onClick={() => handleSelectDestination(dest)}
+                                        // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
+                                        role="option"
+                                        aria-selected={isSelected}
+                                    >
                                         <span
-                                            className="featured-indicator"
-                                            role="img"
-                                            aria-label={t(
-                                                'home.searchBar.featuredDestinationLabel',
-                                                'Destino destacado'
-                                            )}
+                                            className="combobox__option-icon"
+                                            aria-hidden="true"
                                         >
-                                            <StarIcon
-                                                size={13}
-                                                weight="fill"
+                                            <LocationIcon
+                                                size={14}
+                                                weight="regular"
                                                 aria-hidden="true"
                                             />
                                         </span>
-                                    )}
-                                </button>
-                            );
-                        })}
-                        {filteredDestinations.length === 0 && (
-                            <div className="combobox__status">
-                                {destinations.length === 0
-                                    ? t(
-                                          'home.searchBar.noDestinationsText',
-                                          'No hay destinos disponibles'
-                                      )
-                                    : t(
-                                          'home.searchBar.noDestinationsMatch',
-                                          'No hay destinos que coincidan con tu búsqueda'
-                                      )}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* Type panel */}
-            {activePanel === 'type' && (
-                // biome-ignore lint/a11y/useFocusableInteractive: listbox children (buttons) handle focus
-                <div
-                    className={cn(
-                        styles.panel,
-                        styles.typePanel,
-                        openDirection === 'up' && styles.panelUp
-                    )}
-                    // biome-ignore lint/a11y/useSemanticElements: custom single-select dropdown cannot use native <select>
-                    role="listbox"
-                >
-                    <PanelCloseHeader
-                        ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
-                        onClose={closePanel}
-                    />
-                    <div className={styles.panelSearch}>
-                        <input
-                            ref={typeSearchInputRef}
-                            type="text"
-                            className="form-input"
-                            value={typeQuery}
-                            onChange={(event) => setTypeQuery(event.target.value)}
-                            placeholder={t('home.searchBar.typeSearchPlaceholder', 'Buscá un tipo')}
-                            aria-label={t(
-                                'home.searchBar.typeSearchLabel',
-                                'Buscar entre los tipos de alojamiento'
+                                        <span className="combobox__option-label">{dest.name}</span>
+                                        {dest.isFeatured && (
+                                            <span
+                                                className="featured-indicator"
+                                                role="img"
+                                                aria-label={t(
+                                                    'home.searchBar.featuredDestinationLabel',
+                                                    'Destino destacado'
+                                                )}
+                                            >
+                                                <StarIcon
+                                                    size={13}
+                                                    weight="fill"
+                                                    aria-hidden="true"
+                                                />
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                            {filteredDestinations.length === 0 && (
+                                <div className="combobox__status">
+                                    {destinations.length === 0
+                                        ? t(
+                                              'home.searchBar.noDestinationsText',
+                                              'No hay destinos disponibles'
+                                          )
+                                        : t(
+                                              'home.searchBar.noDestinationsMatch',
+                                              'No hay destinos que coincidan con tu búsqueda'
+                                          )}
+                                </div>
                             )}
-                        />
+                        </div>
                     </div>
-                    <div className={cn(styles.typeList, styles.panelOptionList)}>
-                        {/* Clear option */}
-                        {selectedTypes.size > 0 && (
-                            <button
-                                type="button"
-                                className={cn('combobox__option', styles.optionClear)}
-                                onClick={() => handleSelectType(null)}
-                                // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
-                                role="option"
-                                aria-selected={false}
-                            >
-                                <span className="combobox__option-label">
-                                    {t('home.searchBar.clearTypes', 'Limpiar')}
-                                </span>
-                            </button>
+                )}
+
+                {/* Type panel */}
+                {activePanel === 'type' && (
+                    // biome-ignore lint/a11y/useFocusableInteractive: listbox children (buttons) handle focus
+                    <div
+                        className={cn(
+                            styles.panel,
+                            styles.typePanel,
+                            openDirection === 'up' && styles.panelUp
                         )}
-                        {filteredTypes.map((type) => {
-                            const IconComponent = getAccommodationTypeIcon({ type });
-                            const isSelected = selectedTypes.has(type);
-                            return (
+                        // biome-ignore lint/a11y/useSemanticElements: custom single-select dropdown cannot use native <select>
+                        role="listbox"
+                        data-search-panel=""
+                    >
+                        <PanelCloseHeader
+                            ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
+                            onClose={closePanel}
+                        />
+                        <div className={styles.panelSearch}>
+                            <input
+                                ref={typeSearchInputRef}
+                                type="text"
+                                className="form-input"
+                                value={typeQuery}
+                                onChange={(event) => setTypeQuery(event.target.value)}
+                                placeholder={t(
+                                    'home.searchBar.typeSearchPlaceholder',
+                                    'Buscá un tipo'
+                                )}
+                                aria-label={t(
+                                    'home.searchBar.typeSearchLabel',
+                                    'Buscar entre los tipos de alojamiento'
+                                )}
+                            />
+                        </div>
+                        <div className={cn(styles.typeList, styles.panelOptionList)}>
+                            {/* Clear option */}
+                            {selectedTypes.size > 0 && (
                                 <button
-                                    key={type}
                                     type="button"
-                                    className={cn(
-                                        'combobox__option',
-                                        isSelected && 'combobox__option--selected'
-                                    )}
-                                    onClick={() => handleSelectType(type)}
+                                    className={cn('combobox__option', styles.optionClear)}
+                                    onClick={() => handleSelectType(null)}
                                     // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
                                     role="option"
-                                    aria-selected={isSelected}
+                                    aria-selected={false}
                                 >
-                                    <span
-                                        className="combobox__option-icon"
-                                        aria-hidden="true"
-                                    >
-                                        <IconComponent
-                                            size={14}
-                                            weight="regular"
-                                            aria-hidden="true"
-                                        />
-                                    </span>
                                     <span className="combobox__option-label">
-                                        {t(`home.searchBar.types.${type}`, type)}
+                                        {t('home.searchBar.clearTypes', 'Limpiar')}
                                     </span>
                                 </button>
-                            );
-                        })}
-                        {filteredTypes.length === 0 && (
-                            <div className="combobox__status">
-                                {t(
-                                    'home.searchBar.noTypesMatch',
-                                    'No hay tipos que coincidan con tu búsqueda'
-                                )}
-                            </div>
+                            )}
+                            {filteredTypes.map((type) => {
+                                const IconComponent = getAccommodationTypeIcon({ type });
+                                const isSelected = selectedTypes.has(type);
+                                return (
+                                    <button
+                                        key={type}
+                                        type="button"
+                                        className={cn(
+                                            'combobox__option',
+                                            isSelected && 'combobox__option--selected'
+                                        )}
+                                        onClick={() => handleSelectType(type)}
+                                        // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
+                                        role="option"
+                                        aria-selected={isSelected}
+                                    >
+                                        <span
+                                            className="combobox__option-icon"
+                                            aria-hidden="true"
+                                        >
+                                            <IconComponent
+                                                size={14}
+                                                weight="regular"
+                                                aria-hidden="true"
+                                            />
+                                        </span>
+                                        <span className="combobox__option-label">
+                                            {t(`home.searchBar.types.${type}`, type)}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                            {filteredTypes.length === 0 && (
+                                <div className="combobox__status">
+                                    {t(
+                                        'home.searchBar.noTypesMatch',
+                                        'No hay tipos que coincidan con tu búsqueda'
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Calendar panel */}
+                {activePanel === 'dates' && (
+                    <div
+                        className={cn(
+                            styles.panel,
+                            styles.calendarPanel,
+                            openDirection === 'up' && styles.panelUp
                         )}
-                    </div>
-                </div>
-            )}
-
-            {/* Calendar panel */}
-            {activePanel === 'dates' && (
-                <div
-                    className={cn(
-                        styles.panel,
-                        styles.calendarPanel,
-                        openDirection === 'up' && styles.panelUp
-                    )}
-                    // biome-ignore lint/a11y/useSemanticElements: popover panel, not a modal — <dialog> API requires open/close management incompatible with conditional render
-                    role="dialog"
-                    aria-label={t('home.searchBar.datesLabel', 'Fechas')}
-                >
-                    <PanelCloseHeader
-                        ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
-                        onClose={closePanel}
-                    />
-                    <div className={styles.panelBody}>
-                        <Suspense fallback={null}>
-                            <SearchBarCalendar
-                                locale={locale}
-                                selected={dateRange}
-                                onSelect={setDateRange}
-                            />
-                        </Suspense>
-                    </div>
-                </div>
-            )}
-
-            {/* Guests panel */}
-            {activePanel === 'guests' && (
-                <div
-                    className={cn(
-                        styles.panel,
-                        styles.guestsPanel,
-                        openDirection === 'up' && styles.panelUp
-                    )}
-                    // biome-ignore lint/a11y/useSemanticElements: popover panel, not a modal — <dialog> API requires open/close management incompatible with conditional render
-                    role="dialog"
-                    aria-label={t('home.searchBar.guestsLabel', 'Huéspedes')}
-                >
-                    <PanelCloseHeader
-                        ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
-                        onClose={closePanel}
-                    />
-                    <div className={styles.panelBody}>
-                        {/* Adults row */}
-                        <div className={styles.guestRow}>
-                            <span className={styles.guestLabel}>
-                                {t('home.searchBar.adultsLabel', 'Adultos')}
-                            </span>
-                            <div className={styles.stepper}>
-                                <button
-                                    type="button"
-                                    className={styles.stepperButton}
-                                    onClick={() => {
-                                        setAdultsTouched(true);
-                                        setAdults((prev) => Math.max(1, prev - 1));
-                                    }}
-                                    disabled={adults <= 1}
-                                    aria-label={t('search.fewerAdults', 'Fewer adults')}
-                                >
-                                    -
-                                </button>
-                                <span className={styles.stepperValue}>{adults}</span>
-                                <button
-                                    type="button"
-                                    className={styles.stepperButton}
-                                    onClick={() => {
-                                        setAdultsTouched(true);
-                                        setAdults((prev) => Math.min(10, prev + 1));
-                                    }}
-                                    disabled={adults >= 10}
-                                    aria-label={t('search.moreAdults', 'More adults')}
-                                >
-                                    +
-                                </button>
-                            </div>
+                        // biome-ignore lint/a11y/useSemanticElements: popover panel, not a modal — <dialog> API requires open/close management incompatible with conditional render
+                        role="dialog"
+                        aria-label={t('home.searchBar.datesLabel', 'Fechas')}
+                        data-search-panel=""
+                    >
+                        <PanelCloseHeader
+                            ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
+                            onClose={closePanel}
+                        />
+                        <div className={styles.panelBody}>
+                            <Suspense fallback={null}>
+                                <SearchBarCalendar
+                                    locale={locale}
+                                    selected={dateRange}
+                                    onSelect={setDateRange}
+                                />
+                            </Suspense>
                         </div>
-                        {/* Children row */}
-                        <div className={styles.guestRow}>
-                            <span className={styles.guestLabel}>
-                                {t('home.searchBar.childrenLabel', 'Niños')}
-                            </span>
-                            <div className={styles.stepper}>
-                                <button
-                                    type="button"
-                                    className={styles.stepperButton}
-                                    onClick={() => {
-                                        setChildrenTouched(true);
-                                        setChildren((prev) => Math.max(0, prev - 1));
-                                    }}
-                                    disabled={children <= 0}
-                                    aria-label={t('search.fewerChildren', 'Fewer children')}
-                                >
-                                    -
-                                </button>
-                                <span className={styles.stepperValue}>{children}</span>
-                                <button
-                                    type="button"
-                                    className={styles.stepperButton}
-                                    onClick={() => {
-                                        setChildrenTouched(true);
-                                        setChildren((prev) => Math.min(6, prev + 1));
-                                    }}
-                                    disabled={children >= 6}
-                                    aria-label={t('search.moreChildren', 'More children')}
-                                >
-                                    +
-                                </button>
+                    </div>
+                )}
+
+                {/* Guests panel */}
+                {activePanel === 'guests' && (
+                    <div
+                        className={cn(
+                            styles.panel,
+                            styles.guestsPanel,
+                            openDirection === 'up' && styles.panelUp
+                        )}
+                        // biome-ignore lint/a11y/useSemanticElements: popover panel, not a modal — <dialog> API requires open/close management incompatible with conditional render
+                        role="dialog"
+                        aria-label={t('home.searchBar.guestsLabel', 'Huéspedes')}
+                        data-search-panel=""
+                    >
+                        <PanelCloseHeader
+                            ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
+                            onClose={closePanel}
+                        />
+                        <div className={styles.panelBody}>
+                            {/* Adults row */}
+                            <div className={styles.guestRow}>
+                                <span className={styles.guestLabel}>
+                                    {t('home.searchBar.adultsLabel', 'Adultos')}
+                                </span>
+                                <div className={styles.stepper}>
+                                    <button
+                                        type="button"
+                                        className={styles.stepperButton}
+                                        onClick={() => {
+                                            setAdultsTouched(true);
+                                            setAdults((prev) => Math.max(1, prev - 1));
+                                        }}
+                                        disabled={adults <= 1}
+                                        aria-label={t('search.fewerAdults', 'Fewer adults')}
+                                    >
+                                        -
+                                    </button>
+                                    <span className={styles.stepperValue}>{adults}</span>
+                                    <button
+                                        type="button"
+                                        className={styles.stepperButton}
+                                        onClick={() => {
+                                            setAdultsTouched(true);
+                                            setAdults((prev) => Math.min(10, prev + 1));
+                                        }}
+                                        disabled={adults >= 10}
+                                        aria-label={t('search.moreAdults', 'More adults')}
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                            </div>
+                            {/* Children row */}
+                            <div className={styles.guestRow}>
+                                <span className={styles.guestLabel}>
+                                    {t('home.searchBar.childrenLabel', 'Niños')}
+                                </span>
+                                <div className={styles.stepper}>
+                                    <button
+                                        type="button"
+                                        className={styles.stepperButton}
+                                        onClick={() => {
+                                            setChildrenTouched(true);
+                                            setChildren((prev) => Math.max(0, prev - 1));
+                                        }}
+                                        disabled={children <= 0}
+                                        aria-label={t('search.fewerChildren', 'Fewer children')}
+                                    >
+                                        -
+                                    </button>
+                                    <span className={styles.stepperValue}>{children}</span>
+                                    <button
+                                        type="button"
+                                        className={styles.stepperButton}
+                                        onClick={() => {
+                                            setChildrenTouched(true);
+                                            setChildren((prev) => Math.min(6, prev + 1));
+                                        }}
+                                        disabled={children >= 6}
+                                        aria-label={t('search.moreChildren', 'More children')}
+                                    >
+                                        +
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </PanelLayer>
         </div>
     );
+}
+
+/**
+ * Escape hatch out of the hero's stacking context (HOS-323).
+ *
+ * On mobile the panels are `position: fixed` bottom-sheets at `z-index: 100`,
+ * but they render inside `.hero__bottom { position: relative; z-index: 2 }`
+ * (HeroSection.astro), which establishes a stacking context. A z-index only
+ * competes within its own context, so the whole hero subtree — sheet included —
+ * paints at level 2 and the sections below it (`.section__container
+ * { z-index: 10 }`) cover the sheet. Taps meant for the stepper hit the section
+ * behind it instead, which fires the click-outside handler and closes the sheet.
+ * Reparenting the node to `<body>` is the only way out of an ancestor context.
+ *
+ * Desktop is deliberately left in place: there the panel is `position: absolute`
+ * against `.searchBar`, so moving it would detach it from its containing block
+ * and drop it at the top of the document.
+ */
+function PanelLayer({
+    portaled,
+    children
+}: {
+    readonly portaled: boolean;
+    readonly children: ReactNode;
+}) {
+    // `portaled` can only be true after the mount effect has measured the
+    // viewport, so `document` is guaranteed to exist by the time this runs.
+    if (!portaled) return <>{children}</>;
+    return createPortal(children, document.body);
 }
 
 /**

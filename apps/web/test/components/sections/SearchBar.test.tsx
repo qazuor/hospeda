@@ -464,3 +464,200 @@ describe('<SearchBar /> type panel autofocus (BETA-24 regression)', () => {
         expect(input).not.toHaveFocus();
     });
 });
+
+// ---------------------------------------------------------------------------
+// Regression: HOS-323 — the guests stepper is unusable on mobile because the
+// bottom-sheet panel is trapped inside the hero's stacking context.
+//
+// `.panel` is `position: fixed; z-index: 100` on mobile, but it renders inside
+// `.hero__bottom { position: relative; z-index: 2 }` (HeroSection.astro), which
+// establishes a stacking context. The 100 is therefore resolved *within* that
+// context, so the whole hero subtree paints at level 2 and later sections
+// (`.section__container { z-index: 10 }`) paint on top of the sheet. Tapping
+// `+` hits the section behind it, which fires the click-outside handler and
+// closes the panel without applying the change.
+//
+// The only fix that escapes an ancestor stacking context is moving the node out
+// of it, so the sheet (and its backdrop) are portaled to `document.body` — but
+// only at bottom-sheet sizes, since the desktop popover is positioned
+// `absolute` relative to the bar and would fly off if reparented.
+// ---------------------------------------------------------------------------
+
+/** Force `matchMedia('(max-width: 900px)')` to report a bottom-sheet viewport. */
+function mockMobileViewport() {
+    vi.spyOn(window, 'matchMedia').mockImplementation(
+        (query: string) =>
+            ({
+                matches: query.includes('900px'),
+                media: query,
+                onchange: null,
+                addListener: () => {},
+                removeListener: () => {},
+                addEventListener: () => {},
+                removeEventListener: () => {},
+                dispatchEvent: () => false
+            }) as MediaQueryList
+    );
+}
+
+describe('<SearchBar /> mobile panel portal (HOS-323 regression)', () => {
+    beforeEach(() => {
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: { assign: vi.fn(), href: 'http://localhost/', pathname: '/', search: '' }
+        });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('renders the guests sheet outside the search bar subtree on mobile', async () => {
+        mockMobileViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /huéspedes/i }));
+
+        const panel = screen.getByRole('dialog', { name: 'Huéspedes' });
+        const bar = screen.getByRole('search');
+        // Anything still inside the bar inherits every ancestor stacking
+        // context the hero establishes, which is exactly what buries the sheet.
+        expect(bar.contains(panel)).toBe(false);
+        expect(document.body.contains(panel)).toBe(true);
+    });
+
+    it('renders the mobile backdrop outside the search bar subtree too', async () => {
+        mockMobileViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /huéspedes/i }));
+
+        // Two controls carry the "close panel" label: the sheet's own X button
+        // and the backdrop. The backdrop is the one outside the dialog.
+        const panel = screen.getByRole('dialog', { name: 'Huéspedes' });
+        const backdrop = screen
+            .getAllByRole('button', { name: /cerrar panel/i })
+            .find((el) => !panel.contains(el));
+        const bar = screen.getByRole('search');
+        expect(backdrop).toBeDefined();
+        // The backdrop is a sibling dim layer at z-index 95. Left behind in the
+        // hero context it would paint *under* the sections it is meant to dim,
+        // so it has to travel with the sheet.
+        expect(bar.contains(backdrop as HTMLElement)).toBe(false);
+    });
+
+    it('keeps the sheet open when the stepper inside the portal is used', async () => {
+        // Guard for the defect this fix could introduce: `handleClickOutside`
+        // tests containment against the bar's ref, and a portaled panel is no
+        // longer a descendant of it. Without an explicit panel check, the very
+        // first tap on `+` would read as "outside" and close the sheet — the
+        // exact symptom HOS-323 reports, reproduced by the fix itself.
+        mockMobileViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        const trigger = screen.getByRole('button', { name: /huéspedes/i });
+        await user.click(trigger);
+        await user.click(screen.getByRole('button', { name: /more adults/i }));
+
+        expect(trigger).toHaveAttribute('aria-expanded', 'true');
+        expect(screen.getByRole('dialog', { name: 'Huéspedes' })).toBeInTheDocument();
+        expect(trigger).toHaveTextContent('3 adultos, 0 niños');
+    });
+
+    it.each([
+        { panel: 'destination', trigger: /destino/i },
+        { panel: 'type', trigger: /tipo/i },
+        { panel: 'dates', trigger: /fechas/i },
+        { panel: 'guests', trigger: /huéspedes/i }
+    ])('portals the $panel sheet and keeps it open on a tap inside', async ({ trigger }) => {
+        // All four panels become bottom-sheets on mobile, so all four are
+        // buried by the hero stacking context and all four must carry the
+        // marker the click-outside handler looks for. Asserting only on guests
+        // would leave three panels relying on an attribute nothing checks.
+        mockMobileViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        const triggerEl = screen.getByRole('button', { name: trigger });
+        await user.click(triggerEl);
+
+        const panel = document.querySelector('[data-search-panel]');
+        expect(panel).not.toBeNull();
+        expect(screen.getByRole('search').contains(panel)).toBe(false);
+
+        fireEvent.mouseDown(panel as Element);
+        expect(triggerEl).toHaveAttribute('aria-expanded', 'true');
+    });
+
+    it('still closes the sheet when the click lands outside it', async () => {
+        mockMobileViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        const trigger = screen.getByRole('button', { name: /huéspedes/i });
+        await user.click(trigger);
+        expect(screen.getByRole('dialog', { name: 'Huéspedes' })).toBeInTheDocument();
+
+        // A tap on unrelated page content must still dismiss the sheet — the
+        // panel check must not degrade into "never close".
+        const outside = document.createElement('div');
+        document.body.appendChild(outside);
+        await user.click(outside);
+
+        expect(screen.queryByRole('dialog', { name: 'Huéspedes' })).toBeNull();
+        outside.remove();
+    });
+
+    it('keeps the desktop popover anchored inside the bar', async () => {
+        // Default matchMedia mock reports matches:false -> desktop popover,
+        // which is `position: absolute` against `.searchBar`. Reparenting it
+        // would detach it from its containing block and drop it at the top of
+        // the document.
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /huéspedes/i }));
+
+        const panel = screen.getByRole('dialog', { name: 'Huéspedes' });
+        expect(screen.getByRole('search').contains(panel)).toBe(true);
+    });
+});
