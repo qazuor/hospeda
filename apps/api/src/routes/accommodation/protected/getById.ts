@@ -232,11 +232,15 @@ export const protectedGetOwnAccommodationByIdRoute = createProtectedRoute({
         }
 
         // HOS-321: load the junction relations the service does not eager-load.
-        // Runs only AFTER the ownership check so a foreign/missing id never
-        // triggers the extra queries.
-        const [amenitiesData, featuresData] = await Promise.all([
+        // BETA-199 adds the owner's entitlement lookup for the rich-description
+        // gate below. All three run only AFTER the ownership check, so a
+        // foreign/missing id never triggers them — and together, because this GET
+        // blocks the editor page's SSR and the lookup depends on nothing the
+        // junction queries produce.
+        const [amenitiesData, featuresData, ownerEntitlements] = await Promise.all([
             fetchProtectedAmenities(accommodation.id),
-            fetchProtectedFeatures(accommodation.id)
+            fetchProtectedFeatures(accommodation.id),
+            resolveOwnerRichDescriptionEntitlements(accommodation.ownerId)
         ]);
 
         // BETA-199: the premium rich-description pair. This is the ONLY route
@@ -251,9 +255,6 @@ export const protectedGetOwnAccommodationByIdRoute = createProtectedRoute({
         // Both fields go together. Dropping only the plain one drops nothing in
         // practice — the web transform resolves the visitor's locale from the
         // i18n sibling in PREFERENCE to it (HOS-339).
-        const ownerEntitlements = await resolveOwnerRichDescriptionEntitlements(
-            accommodation.ownerId
-        );
         const gated = ownerEntitlements.includes(EntitlementKey.CAN_USE_RICH_DESCRIPTION)
             ? accommodation
             : stripRichDescriptionFields(accommodation);

@@ -485,12 +485,21 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     //      an ungated leak by construction. Read that schema's comment before
     //      embedding an accommodation anywhere.
     //
-    // A consumer added later would leak silently, on either axis. Two guards, not
-    // this comment, are the protection:
-    // `apps/api/test/routes/rich-description-strip.guard.test.ts` (every route
-    // under `apps/api/src/routes`) and
-    // `packages/schemas/test/entities/accommodation/nested-embed.guard.test.ts`
-    // (every schema that embeds an accommodation).
+    // A consumer added later would leak silently, on either axis. Tests, not this
+    // comment, are what catch that — and it is worth knowing exactly what they do
+    // and do not cover, because an overstated guard gets read as coverage:
+    //
+    //   - `apps/api/test/routes/rich-description-strip.guard.test.ts` walks every
+    //     file under `apps/api/src/routes` and flags any whose `responseSchema` is
+    //     this schema WRITTEN AS THE BARE IDENTIFIER. A composed value
+    //     (`z.array(...)`, `z.object({ accommodation: ... })`, a local alias) is
+    //     NOT discovered.
+    //   - `accommodation-protected-card.test.ts` parses each embedding parent with
+    //     a premium-carrying fixture, so it holds whichever schema the parent
+    //     names — including a swap to the admin tier, which carries the pair too.
+    //   - `nested-embed.guard.test.ts` fails when a schema outside those starts
+    //     referencing an accommodation, so a fourth embedder cannot arrive
+    //     untested. It covers `packages/schemas/src/entities` only.
     richDescription: true,
     richDescriptionI18n: true,
     isFeatured: true,

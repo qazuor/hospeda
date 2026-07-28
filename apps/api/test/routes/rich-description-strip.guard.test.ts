@@ -72,13 +72,27 @@ function allRouteFiles(dir: string = ROUTES_DIR): string[] {
     return out;
 }
 
-/** Source with comments and string literals blanked out. */
+/**
+ * Source with string literals and comments blanked out.
+ *
+ * Strings go FIRST, and both patterns are line-bounded. Blanking comments first —
+ * which this did until round 2 of review caught it — truncates `'https://…'` at the
+ * `//`, orphans the opening quote, and lets the string pass swallow everything up to
+ * some later quote. Measured on this very directory: `calendarConnectGoogle.ts` lost
+ * ~60% of its content and one of its two `handler` declarations. A route whose
+ * `responseSchema:` line fell inside such a region would drop out of discovery
+ * entirely — the exact blind spot this guard exists to remove.
+ *
+ * The `\n` in each negated class bounds the damage of a quote that still ends up
+ * unpaired (an apostrophe inside a comment is already gone by the time comments are
+ * blanked, since comments come second).
+ */
 function code(source: string): string {
     return source
+        .replace(/'(?:[^'\\\n]|\\.)*'/g, "''")
+        .replace(/"(?:[^"\\\n]|\\.)*"/g, '""')
         .replace(/\/\*[\s\S]*?\*\//g, ' ')
-        .replace(/\/\/[^\n]*/g, ' ')
-        .replace(/'(?:[^'\\]|\\.)*'/g, "''")
-        .replace(/"(?:[^"\\]|\\.)*"/g, '""');
+        .replace(/\/\/[^\n]*/g, ' ');
 }
 
 /** Every route whose declared `responseSchema` is `AccommodationProtectedSchema`. */
@@ -153,5 +167,33 @@ describe('API routes — rich-description strip guard (BETA-199)', () => {
         // And what it accepts — both real call shapes in the tree.
         expect(usesStripHelper('return stripRichDescriptionFields(result.data);')).toBe(true);
         expect(usesStripHelper('items: rows.map(stripRichDescriptionFields),')).toBe(true);
+    });
+
+    it('blanks strings without swallowing the code after them', () => {
+        // The defect round 2 found. A URL literal used to truncate at its `//`,
+        // orphan the quote, and blank an arbitrary region after it — which would
+        // silently drop a route out of discovery.
+        const sample = [
+            "const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth';",
+            '    responseSchema: AccommodationProtectedSchema,',
+            "const scope = 'calendar';"
+        ].join('\n');
+
+        const stripped = code(sample);
+
+        expect(/responseSchema:\s*AccommodationProtectedSchema\b/.test(stripped)).toBe(true);
+        expect(stripped).not.toContain('accounts.google.com');
+    });
+
+    it('discovers a route whose file also contains a URL literal', () => {
+        // End-to-end version of the above, against the real tree: every discovered
+        // route must survive `code()` with its `responseSchema` intact. A regression
+        // in the stripper shows up here as a shrinking route set, which the
+        // non-vacuity test above then catches by name.
+        const rawMatches = allRouteFiles().filter((full) =>
+            /responseSchema:\s*AccommodationProtectedSchema\b/.test(readFileSync(full, 'utf8'))
+        ).length;
+
+        expect(routes.length).toBe(rawMatches);
     });
 });
