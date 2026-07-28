@@ -71,6 +71,30 @@ const { mockRecordAiUsage } = vi.hoisted(() => ({
 }));
 
 /**
+ * When set, `persistTranslations` throws it. Drives the HOS-328 catch path:
+ * the provider calls were already paid for, so the spend must still be recorded
+ * — as `status: 'error'`, which keeps it visible to the cost ceiling without
+ * charging the caller a quota unit for a request that visibly 500s.
+ */
+const { nextPersistThrow } = vi.hoisted(() => ({
+    nextPersistThrow: { current: undefined as unknown }
+}));
+
+vi.mock('../../../src/services/ai-translate.service', async (importOriginal) => {
+    const actual =
+        await importOriginal<typeof import('../../../src/services/ai-translate.service')>();
+    return {
+        ...actual,
+        persistTranslations: async (...args: Parameters<typeof actual.persistTranslations>) => {
+            if (nextPersistThrow.current !== undefined) {
+                throw nextPersistThrow.current;
+            }
+            return actual.persistTranslations(...args);
+        }
+    };
+});
+
+/**
  * Stub @repo/ai-core for route handler resolution.
  */
 vi.mock('@repo/ai-core', () => {
@@ -324,6 +348,7 @@ function resetMockState() {
     // Happy-path default: the entity exists. The 404 test overrides to null.
     entityRowHolder.current = makeEntityRow();
     nextGenerateTextThrow.current = undefined;
+    nextPersistThrow.current = undefined;
     mockRecordAiUsage.mockClear();
 }
 
@@ -725,6 +750,39 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
             expect(res.status).toBe(200);
             expect(generateTextCalls).toHaveLength(0);
             expect(mockRecordAiUsage).not.toHaveBeenCalled();
+        });
+
+        it('records the spend as error — exactly once — when persistence fails', async () => {
+            // The provider calls are already paid for at this point, so the cost
+            // must stay visible. But status must be 'error', not 'success':
+            // HOS-190's Zod gate fails deterministically for a given entity, so
+            // charging a quota unit here would burn the caller's whole monthly
+            // quota on retries of the same poisoned entity.
+            nextPersistThrow.current = new Error('translationMeta failed validation');
+
+            const res = await testApp.request(`${TEST_PATH}`, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    entityType: 'accommodation',
+                    entityId: '00000000-0000-4000-8000-000000000001'
+                })
+            });
+
+            expect(res.status).toBe(500);
+
+            // Exactly one row: the success-path write is skipped and the catch
+            // must not double-write what the success path already cleared.
+            expect(mockRecordAiUsage).toHaveBeenCalledTimes(1);
+            const recorded = mockRecordAiUsage.mock.calls[0]?.[0];
+            expect(recorded).toMatchObject({
+                feature: 'translate',
+                status: 'error',
+                provider: 'stub',
+                model: 'stub-model'
+            });
+            // Real, non-zero spend — this is the whole reason the row exists.
+            expect(recorded?.promptTokens).toBe(50 * generateTextCalls.length);
         });
     });
 });

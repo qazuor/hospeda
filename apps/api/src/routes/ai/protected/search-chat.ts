@@ -802,6 +802,27 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
             }
         })();
 
+        // HOS-328 side-channel for the case where `rawMeta` REJECTS (mid-stream
+        // provider failure). Deliberately a SEPARATE branch off `rawMeta` rather
+        // than a rejection arm on the `meta` chain below: `meta` must keep
+        // rejecting exactly as it did before, or the factory would emit a `done`
+        // frame for a stream that failed. The intent-extraction call already
+        // completed and was billed by then, so its tokens are known and recorded
+        // — this is the one failure path that carries real, quantified spend.
+        rawMeta.catch(() =>
+            meterAiUsage({
+                userId: actor.id,
+                feature: 'search',
+                provider: 'none',
+                model: 'none',
+                promptTokens: intentUsage.promptTokens ?? 0,
+                completionTokens: intentUsage.completionTokens ?? 0,
+                latencyMs: Date.now() - handlerStartMs,
+                status: 'error',
+                logContext: { locale, conversationId: conversationId ?? null }
+            })
+        );
+
         // -----------------------------------------------------------------------
         // Step 10 (T-007): Persist the turn after the stream drains and resolve
         // `meta` for the `done` frame.
@@ -843,9 +864,21 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
                 // `.then` fires eagerly whether or not anyone awaits the derived
                 // promise. So on a post-drain output-moderation throw, where the
                 // factory emits `error` and never awaits `meta`, the row IS still
-                // written (with status 'error', via `streamDrainedCleanly`). The
-                // genuinely unmetered case is narrower: `rawMeta` never settling,
-                // e.g. the reply stream failing before the adapter resolves it.
+                // written (with status 'error', via `streamDrainedCleanly`).
+                //
+                // `rawMeta` can also REJECT: the adapter builds it as
+                // `Promise.all([usage, finishReason])`, so a mid-stream provider
+                // failure rejects rather than hangs. That path is covered by the
+                // side-channel registered next to the stream above, which still
+                // records the already-billed intent call. The remaining unmetered
+                // case is a client disconnecting mid-stream, so `rawMeta` never
+                // settles at all.
+                //
+                // The stated 1500 ms budget assumes `streamDrainedCleanly` has
+                // already settled by the time `rawMeta` resolves, which holds
+                // unless an output-moderation provider is configured — that runs
+                // its own round-trip after the adapter resolves `meta`, and adds
+                // its latency on top.
                 // ---------------------------------------------------------------
                 const meteringTask = streamDrainedCleanly.then((drainedCleanly) =>
                     meterAiUsage({
@@ -855,10 +888,10 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
                         model: resolvedMeta.model,
                         promptTokens:
                             (intentUsage.promptTokens ?? 0) +
-                            (resolvedMeta.usage.promptTokens ?? 0),
+                            (resolvedMeta.usage?.promptTokens ?? 0),
                         completionTokens:
                             (intentUsage.completionTokens ?? 0) +
-                            (resolvedMeta.usage.completionTokens ?? 0),
+                            (resolvedMeta.usage?.completionTokens ?? 0),
                         latencyMs: Date.now() - handlerStartMs,
                         status: drainedCleanly ? 'success' : 'error',
                         logContext: { locale, conversationId: conversationId ?? null }
@@ -897,8 +930,26 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
                 }
 
                 // Started before the persistence race above; awaited here so the
-                // two overlap instead of chaining. `meterAiUsage` never rejects.
-                await meteringTask;
+                // two overlap instead of chaining.
+                //
+                // `.catch` is not redundant with `meterAiUsage`'s own guard: the
+                // argument object is built INSIDE the `.then` callback, i.e.
+                // outside the helper, so a malformed `usage` would reject
+                // `meteringTask` and — since this await sits outside the
+                // persistence try/catch — turn an already-delivered reply into an
+                // SSE `error` frame with no `done` and no conversationId.
+                await meteringTask.catch((meteringError: unknown) => {
+                    apiLogger.warn(
+                        {
+                            locale,
+                            error:
+                                meteringError instanceof Error
+                                    ? meteringError.message
+                                    : String(meteringError)
+                        },
+                        'search-chat: usage metering threw (non-fatal — the reply was already delivered)'
+                    );
+                });
 
                 return { conversationId: resolvedConversationId };
             }

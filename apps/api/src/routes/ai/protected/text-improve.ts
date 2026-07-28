@@ -43,6 +43,7 @@ import { entitlementMiddleware } from '../../../middlewares/entitlement';
 import { createConfiguredAiService } from '../../../services/ai-service.factory';
 import { getActorFromContext } from '../../../utils/actor';
 import { meterAiUsage } from '../../../utils/ai-usage-metering';
+import { apiLogger } from '../../../utils/logger';
 import {
     createProtectedStreamingRoute,
     type StreamTextChunk
@@ -194,10 +195,15 @@ export const protectedAiTextImproveRoute = createProtectedStreamingRoute({
         // `meta` — the row IS still written, with status 'error'. That is what
         // `streamDrainedCleanly` is for.
         //
-        // KNOWN LIMITATION: the genuinely unmetered case is `meta` never
-        // settling — a client that disconnects mid-stream, or a failure before
-        // the adapter resolves it. That matches the pre-existing contract of the
-        // sibling `chat` route and is tracked separately, not widened here.
+        // `meta` can also REJECT rather than resolve: the adapter builds it as
+        // `Promise.all([usage, finishReason])`, so a mid-stream provider failure
+        // rejects it. That is the ordinary provider-5xx path, and tokens have
+        // usually already been generated and billed by then, so it gets its own
+        // side-channel below rather than being left unmetered.
+        //
+        // KNOWN LIMITATION: a client that disconnects mid-stream never settles
+        // `meta` at all and stays unmetered. That matches the pre-existing
+        // contract of the sibling `chat` route and is tracked separately.
         // -------------------------------------------------------------------
         let markStreamSettled: (drainedCleanly: boolean) => void = () => {};
         const streamDrainedCleanly = new Promise<boolean>((resolve) => {
@@ -216,18 +222,60 @@ export const protectedAiTextImproveRoute = createProtectedStreamingRoute({
             }
         })();
 
-        const meta = rawMeta.then(async (resolvedMeta) => {
-            await meterAiUsage({
+        // Side-channel for the rejection case. Deliberately a SEPARATE branch off
+        // `rawMeta` rather than a rejection arm on the chain below: `meta` must
+        // keep rejecting exactly as it did before, or the factory would emit a
+        // `done` frame for a stream that failed.
+        rawMeta.catch(() =>
+            meterAiUsage({
                 userId: actor.id,
                 feature: FEATURE,
-                provider: resolvedMeta.provider,
-                model: resolvedMeta.model,
-                promptTokens: resolvedMeta.usage.promptTokens ?? 0,
-                completionTokens: resolvedMeta.usage.completionTokens ?? 0,
+                provider: 'none',
+                model: 'none',
+                // The adapter rejects `meta` without ever reporting usage, so the
+                // real token count of a failed stream is unknowable here. The row
+                // still carries the error signal.
+                promptTokens: 0,
+                completionTokens: 0,
                 latencyMs: Date.now() - handlerStartMs,
-                status: (await streamDrainedCleanly) ? 'success' : 'error',
+                status: 'error',
                 logContext: { fieldType: body.fieldType }
-            });
+            })
+        );
+
+        const meta = rawMeta.then(async (resolvedMeta) => {
+            // Read the drain flag in its own statement: object-literal properties
+            // evaluate in source order, so awaiting inline would compute
+            // `latencyMs` at a different instant than the sibling routes do.
+            const drainedCleanly = await streamDrainedCleanly;
+
+            // Guarded here as well as inside `meterAiUsage`: the argument object
+            // is built OUTSIDE the helper, so a malformed `usage` would reject
+            // `meta` and turn an already-delivered reply into an SSE `error`.
+            try {
+                await meterAiUsage({
+                    userId: actor.id,
+                    feature: FEATURE,
+                    provider: resolvedMeta.provider,
+                    model: resolvedMeta.model,
+                    promptTokens: resolvedMeta.usage?.promptTokens ?? 0,
+                    completionTokens: resolvedMeta.usage?.completionTokens ?? 0,
+                    latencyMs: Date.now() - handlerStartMs,
+                    status: drainedCleanly ? 'success' : 'error',
+                    logContext: { fieldType: body.fieldType }
+                });
+            } catch (meteringError) {
+                apiLogger.warn(
+                    {
+                        fieldType: body.fieldType,
+                        error:
+                            meteringError instanceof Error
+                                ? meteringError.message
+                                : String(meteringError)
+                    },
+                    'text-improve: usage metering threw (non-fatal — the reply was already delivered)'
+                );
+            }
 
             return resolvedMeta;
         });

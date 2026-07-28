@@ -651,6 +651,28 @@ describe('protected AI text-improve route (SPEC-198 T-005)', () => {
             });
         });
 
+        it('records an error row when meta rejects (mid-stream provider failure)', async () => {
+            // The adapter builds meta as Promise.all([usage, finishReason]), so a
+            // provider failure mid-stream REJECTS it rather than leaving it
+            // pending. Without a rejection arm that spend would be invisible: no
+            // row at all, not even 'error'.
+            nextMeta.current = Promise.reject(new Error('provider connection reset'));
+
+            const app = buildTestApp();
+            const res = await POST(app, VALID_DESCRIPTION_BODY);
+
+            expect(res.status).toBe(200);
+            await res.text();
+
+            expect(mockRecordAiUsage).toHaveBeenCalledTimes(1);
+            expect(mockRecordAiUsage.mock.calls[0]?.[0]).toMatchObject({
+                feature: 'text_improve',
+                status: 'error',
+                provider: 'none',
+                model: 'none'
+            });
+        });
+
         it('does not record usage when the request never reaches the engine', async () => {
             const app = buildTestApp();
             const res = await POST(app, { fieldType: 'title', fieldValue: 'Some text' });

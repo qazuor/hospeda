@@ -164,12 +164,16 @@ protectedAiTranslateRoute.post('/', async (c) => {
         //     Translate twice. A row here would emit a permanent stream of bogus
         //     failures into the error-rate signal and a synthetic provider bucket
         //     in the usage report.
-        //   - Calls were made and ALL of them failed. Also no row: a failed call
-        //     contributes zero tokens (`translateFieldWithRetry` returns 0 and
-        //     `translateEntity` only accumulates inside its success branch), so
-        //     such a row would carry zero spend at a fabricated `provider: 'none'`
-        //     — the same synthetic bucket, for no cost visibility. The per-field
-        //     failures are already logged by the service.
+        //   - Calls were made and ALL of them failed. Also no row, but for a
+        //     weaker reason: `translateFieldWithRetry` hard-codes 0 tokens on any
+        //     caught error and `translateEntity` only accumulates inside its
+        //     success branch, so the row we COULD write would always carry zero
+        //     cost — no spend signal to gain. Known gap: that zero is what the
+        //     code recorded, not necessarily what the provider billed. The engine
+        //     runs output moderation AFTER generating, so a moderation-blocked
+        //     translation was paid for and still reports 0. Propagating real usage
+        //     out of failed calls needs a service-layer change and is tracked
+        //     separately; the per-field failures are logged by the service today.
         //   - Calls were made and at least one delivered → metered as 'success',
         //     but only AFTER persistence, so the caller is never charged a quota
         //     unit for a request that visibly 500s. HOS-190's Zod gate rejects
@@ -177,10 +181,12 @@ protectedAiTranslateRoute.post('/', async (c) => {
         //     persisting would burn the whole monthly quota on retries of the
         //     same entity. The catch below still records the spend as 'error'.
         //
-        // (The sibling `search-chat` route meters BEFORE its persistence step.
-        // That is not an inconsistency: the ordering follows "did the caller
-        // already receive value?" — there the reply has already been streamed,
-        // here a persistence failure means the caller gets a 500 and nothing else.)
+        // (The sibling `search-chat` route meters CONCURRENTLY with its
+        // persistence step, without gating on it. That is not an inconsistency:
+        // the ordering follows "did the caller already receive value?" — there the
+        // reply has already been streamed, so persistence cannot change the
+        // verdict; here a persistence failure means the caller gets a 500 and
+        // nothing else, so the verdict depends on it.)
         //
         // Note the aggregate is priced at the LAST successful call's
         // provider/model (`translateEntity` keeps that one), so a mid-request
