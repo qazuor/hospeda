@@ -2,6 +2,8 @@
  * Protected get own accommodation by ID endpoint
  * Returns a single accommodation only if it is owned by the authenticated user.
  */
+
+import { EntitlementKey } from '@repo/billing';
 import {
     amenities,
     eq,
@@ -19,7 +21,9 @@ import {
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { resolveOwnerEntitlementsForOwnerId } from '../../../middlewares/owner-entitlement';
 import { getActorFromContext } from '../../../utils/actor';
+import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -130,6 +134,34 @@ async function fetchProtectedFeatures(accommodationId: string): Promise<FeatureP
 }
 
 /**
+ * Resolves the owning host's entitlement set for the rich-description gate,
+ * containing any failure.
+ *
+ * The lookup reaches billing. Letting it throw would 500 this GET, and
+ * `editar.astro` redirects the owner away from a failed fetch — so a billing
+ * hiccup would lock a host out of editing their own accommodation entirely (the
+ * HOS-190 lock-out class). A failure therefore resolves to "no entitlement
+ * proven": the premium pair is withheld, every other field is still served.
+ *
+ * @param ownerId - The accommodation's owner.
+ * @returns The owner's entitlements, or an empty set when they cannot be read.
+ */
+async function resolveOwnerRichDescriptionEntitlements(
+    ownerId: string
+): Promise<readonly EntitlementKey[]> {
+    try {
+        return await resolveOwnerEntitlementsForOwnerId(ownerId);
+    } catch (error) {
+        apiLogger.warn(
+            `Owner-entitlement lookup failed for owner ${ownerId}; withholding rich description: ${
+                error instanceof Error ? error.message : String(error)
+            }`
+        );
+        return [];
+    }
+}
+
+/**
  * GET /api/v1/protected/accommodations/:id
  * Get own accommodation by ID - Protected endpoint
  *
@@ -191,8 +223,27 @@ export const protectedGetOwnAccommodationByIdRoute = createProtectedRoute({
             fetchProtectedFeatures(accommodation.id)
         ]);
 
+        // BETA-199: the premium rich-description pair. This is the ONLY route
+        // responding with `AccommodationProtectedSchema` that may emit it — the
+        // other seven strip it unconditionally (see the schema's comment).
+        //
+        // Gated on the entitlements of the ROW'S OWNER, never the reader's: an
+        // admin holding ACCOMMODATION_UPDATE_ANY reads other hosts' rows through
+        // here, and keying the gate on whoever is looking would hand out (or
+        // withhold) premium content by reader instead of by plan.
+        //
+        // Both fields go together. Dropping only the plain one drops nothing in
+        // practice — the web transform resolves the visitor's locale from the
+        // i18n sibling in PREFERENCE to it (HOS-339).
+        const ownerEntitlements = await resolveOwnerRichDescriptionEntitlements(
+            accommodation.ownerId
+        );
+        const gated = ownerEntitlements.includes(EntitlementKey.CAN_USE_RICH_DESCRIPTION)
+            ? accommodation
+            : stripRichDescriptionFields(accommodation);
+
         return {
-            ...accommodation,
+            ...gated,
             // `undefined` (not `[]`) when empty, mirroring the admin/public
             // routes: the field is `.optional()` on the response schema.
             amenities: amenitiesData.length > 0 ? amenitiesData : undefined,

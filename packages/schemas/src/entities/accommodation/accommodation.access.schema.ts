@@ -451,13 +451,38 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     // response, so the panel always showed "—" for en/pt even when the DB had them.
     // These three are the SAME content translations the public schema exposes
     // UNGATED to anonymous visitors, so surfacing them to the authenticated OWNER
-    // adds no exposure. richDescriptionI18n is intentionally NOT added: it is
-    // premium/entitlement-gated and the protected getById route does not run the
-    // richDescription entitlement strip (unlike the public route), so exposing it
-    // here would need that gate first — tracked as a follow-up.
+    // adds no exposure.
     nameI18n: true,
     summaryI18n: true,
     descriptionI18n: true,
+    // ── BETA-199 / HOS-317: the premium pair. READ THIS BEFORE ADDING A ROUTE. ──
+    //
+    // `richDescription` + `richDescriptionI18n` are PREMIUM, gated per-owner by
+    // `CAN_USE_RICH_DESCRIPTION`. They are declared here so the owner's editor can
+    // show the TranslationPanel status for that field: the panel derives the row
+    // entirely from `richDescriptionI18n`, so with the pair absent it showed "—"
+    // forever and the "generate missing translations" button never disappeared.
+    //
+    // This schema is the `responseSchema` of EIGHT protected routes, so declaring
+    // the pair here declares it for all eight. The contract is therefore NOT "the
+    // schema decides" — it is:
+    //
+    //   ONLY `protected/getById` may emit these two, and only AFTER resolving the
+    //   OWNING host's entitlements. EVERY other route responding with this schema
+    //   drops them UNCONDITIONALLY via `stripRichDescriptionFields`.
+    //
+    // None of the other seven needs rich text (they echo a mutated entity, or list
+    // cards), so an unconditional drop keeps their payloads byte-identical to what
+    // they were before the pair was declared — no entitlement lookup added, and no
+    // gate to get wrong.
+    //
+    // A route added later would leak silently: a schema declaration is passive and
+    // enforces nothing. `apps/api/test/routes/accommodation/protected/
+    // rich-description-strip.guard.test.ts` enumerates the real route files and
+    // fails CI when one responds with this schema without applying the strip. That
+    // guard, not this comment, is the protection.
+    richDescription: true,
+    richDescriptionI18n: true,
     isFeatured: true,
     destinationId: true,
     media: true,
@@ -516,6 +541,12 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     nameI18n: AccommodationI18nTextReadSchema,
     summaryI18n: AccommodationI18nTextReadSchema,
     descriptionI18n: AccommodationI18nTextReadSchema,
+    // BETA-199: same read⊇write relaxation as the free-form fields above. The
+    // write schema bounds `richDescription` at 5000 chars, but the column is
+    // also written by the URL-import AI path, so a stored value over that bound
+    // must not fail-close the owner's editor GET (the HOS-190 lock-out).
+    richDescription: z.string().nullish(),
+    richDescriptionI18n: AccommodationI18nTextReadSchema,
     seo: AccommodationSeoReadSchema.nullish(),
     price: AccommodationPriceReadSchema.nullish(),
     contactInfo: AccommodationContactInfoReadSchema.nullish(),
