@@ -77,11 +77,20 @@ export function ChangePlanDialog({
                             {t('admin-billing.subscriptions.changePlanDialog.currentPlan')}
                         </p>
                         <div className="rounded-md border bg-card p-3">
-                            <p className="font-medium">{currentPlan?.name}</p>
-                            <p className="text-muted-foreground text-sm">
-                                {formatArs(currentPlan?.monthlyPriceArs ?? 0, locale)}
-                                {t('admin-billing.subscriptions.changePlanDialog.perMonth')}
-                            </p>
+                            {currentPlan ? (
+                                <>
+                                    <p className="font-medium">{currentPlan.name}</p>
+                                    <p className="text-muted-foreground text-sm">
+                                        {formatArs(currentPlan.monthlyPriceArs, locale)}
+                                        {t('admin-billing.subscriptions.changePlanDialog.perMonth')}
+                                    </p>
+                                </>
+                            ) : (
+                                // Off-catalog plan: `?? 0` used to render a blank name over
+                                // "$ 0,00 /mes" for a paying subscription, which reads as data
+                                // corruption. Show the slug we do know instead (HOS-331).
+                                <p className="font-medium">{subscription.planSlug}</p>
+                            )}
                         </div>
                     </div>
 

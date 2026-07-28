@@ -6,14 +6,15 @@
  * to PATCH `{ lifecycleState: 'ACTIVE' }` via the generic update endpoint,
  * which the update schema silently strips (no `lifecycleState` field on the
  * create-derived schema), making the request a 200 no-op that never reached
- * `AccommodationService.publish()` / started the trial. This dedicated
- * `/publish` endpoint calls `AccommodationService.publish()` directly.
+ * `AccommodationService.publish()`. This dedicated `/publish` endpoint calls
+ * `AccommodationService.publish()` directly.
  *
  * Coverage:
  * - Authentication: unauthenticated requests return 401/403
  * - Happy path: calls `AccommodationService.publish(actor, id)` with the
- *   correct actor and accommodation id (the decisive regression guard — this
- *   is the call that starts the no-card trial for a first-time publisher)
+ *   correct actor and accommodation id (the decisive regression guard). Note
+ *   that publishing does NOT start a trial: since card-first (HOS-171) the
+ *   trial is created at checkout, and `first_publish` is rejected here
  * - Error: `subscription_required` (403 FORBIDDEN) is passed through
  *   unmodified — the one-per-life-trial-consumed case (W3)
  * - Error: accommodation not found returns 4xx

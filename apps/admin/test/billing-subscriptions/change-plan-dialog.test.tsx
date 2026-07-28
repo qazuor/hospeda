@@ -69,6 +69,14 @@ describe('ChangePlanDialog — empty states (HOS-331)', () => {
         expect(screen.queryByText(KEY_NO_DESTINATIONS)).not.toBeInTheDocument();
     });
 
+    it('shows the slug instead of a blank name over a fake $0 for an off-catalog plan', () => {
+        // `formatArs(undefined ?? 0)` rendered "$ 0,00 /mes" next to an empty
+        // name for a subscription the customer is actually paying for.
+        renderDialog('commerce-listing');
+        expect(screen.getByText('commerce-listing')).toBeInTheDocument();
+        expect(screen.queryByText(/0,00/)).not.toBeInTheDocument();
+    });
+
     it('shows neither message when destinations exist', () => {
         renderDialog('owner-basico');
         expect(screen.queryByText(KEY_NO_DESTINATIONS)).not.toBeInTheDocument();
