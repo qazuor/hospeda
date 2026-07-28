@@ -293,10 +293,16 @@ const PROSE_SURFACES: ReadonlyArray<{ readonly file: string; readonly path: stri
     { file: 'owners.json', path: 'faq.1.a' },
     { file: 'owners.json', path: 'faq.2.a' },
     { file: 'owners.json', path: 'faq.3.a' },
-    { file: 'owners.json', path: 'host.landing.trialCallout' },
-    { file: 'owners.json', path: 'host.pages.nueva.trialNote' },
+    { file: 'host.json', path: 'landing.trialCallout' },
+    { file: 'host.json', path: 'pages.nueva.trialNote' },
     { file: 'features.json', path: 'anfitriones.banner.title' },
-    { file: 'features.json', path: 'cta.description' }
+    // The paragraph directly under the banner title. Correcting the title and
+    // not this sentence is how "no pedimos método de pago" outlived the sweep
+    // that removed "sin poner la tarjeta" one line above it.
+    { file: 'features.json', path: 'anfitriones.banner.description' },
+    { file: 'features.json', path: 'cta.description' },
+    { file: 'host.json', path: 'pages.nueva.trialCalloutTitle' },
+    { file: 'host.json', path: 'properties.card.publishSubscriptionRequiredMessage' }
 ];
 
 function collectProseCopy(): ReadonlyArray<{
@@ -318,9 +324,23 @@ const PLAN_COPY = collectPlanCopy();
 const PROSE_COPY = collectProseCopy();
 const PLAN_BY_SLUG = new Map(ALL_PLANS.map((plan) => [plan.slug, plan]));
 
-function matchedPhrase(copy: string, claim: PlanClaim, locale: Locale): string | undefined {
+/**
+ * Match a claim's phrases against a string, in EVERY language rather than only
+ * the one the file is filed under.
+ *
+ * Locale directories here do not guarantee locale content: `features.json` is
+ * Spanish end to end in `en/` and `pt/` (190 of its 200 strings are untranslated).
+ * Searching only the directory's language would let "sin publicidad" sit in
+ * `en/` unseen — and would raise a false failure on a qualifier that IS present,
+ * just in Spanish. Scanning all three is strictly stronger and immune to that.
+ */
+function matchedPhrase(copy: string, claim: PlanClaim, _locale: Locale): string | undefined {
     const haystack = copy.toLowerCase();
-    return claim.phrases[locale].find((phrase) => haystack.includes(phrase));
+    for (const locale of LOCALES) {
+        const hit = claim.phrases[locale].find((phrase) => haystack.includes(phrase));
+        if (hit) return hit;
+    }
+    return undefined;
 }
 
 describe('plan copy veracity — phantom claims (HOS-331)', () => {
@@ -403,9 +423,15 @@ describe('plan copy veracity — FAQ and landing prose (HOS-331)', () => {
         // The trial moves (D1 takes it from 14 to 30). Prose that types the
         // number cannot be kept in step with `OWNER_TRIAL_DAYS`, and the halves
         // that drift apart contradict each other on adjacent screens.
+        //
+        // Both orders are checked: "14 días" AND "día 14" / "day 14". The
+        // postfix form is the one these very strings used ("no pagás nada hasta
+        // el día 14"), so matching only the prefix would have missed them.
+        const PREFIX = /\b\d+[\s-]*(d[ií]as?|dias?|days?)\b/i;
+        const POSTFIX = /\b(d[ií]as?|dias?|days?)[\s-]*\d+\b/i;
         const literals: string[] = [];
         for (const row of PROSE_COPY) {
-            if (/\b\d+[\s-](d[ií]as?|dias?|day)/i.test(row.copy)) {
+            if (PREFIX.test(row.copy) || POSTFIX.test(row.copy)) {
                 literals.push(`${row.locale}/${row.surface}: "${row.copy.slice(0, 80)}…"`);
             }
         }
@@ -417,17 +443,26 @@ describe('plan copy veracity — FAQ and landing prose (HOS-331)', () => {
         // ANY prior subscription — "one trial per customer, for life". Copy that
         // says "every plan includes N free days" full stop is false for a
         // returning host, who is then charged on day 1.
+        // "primera propiedad" / "first property" are deliberately NOT accepted.
+        // They describe WHEN someone thought the trial started, not WHO is
+        // eligible for it — and they are false twice over: publishing an
+        // accommodation starts nothing (`accommodation.service.ts` rejects
+        // `first_publish` with `subscription_required`), the trial starts at
+        // checkout. Accepting them let this guard green-light exactly the copy
+        // it exists to catch.
         const FIRST_TIME_HINTS: Record<Locale, readonly string[]> = {
-            es: ['primera suscripción', 'primera vez', 'primera propiedad'],
-            en: ['first subscription', 'first time', 'first property'],
-            pt: ['primeira assinatura', 'primeira vez', 'primeira propriedade']
+            es: ['primera suscripción', 'primera vez'],
+            en: ['first subscription', 'first time'],
+            pt: ['primeira assinatura', 'primeira vez']
         };
+        // Hints from every language, for the same reason `matchedPhrase` scans
+        // all three: a locale directory does not guarantee locale content.
+        const allHints = LOCALES.flatMap((locale) => FIRST_TIME_HINTS[locale]);
         const unqualified: string[] = [];
         for (const row of PROSE_COPY) {
             if (!row.copy.includes('{{trialDays}}')) continue;
-            const hints = FIRST_TIME_HINTS[row.locale];
             const haystack = row.copy.toLowerCase();
-            if (!hints.some((hint) => haystack.includes(hint))) {
+            if (!allHints.some((hint) => haystack.includes(hint))) {
                 unqualified.push(`${row.locale}/${row.surface}`);
             }
         }
@@ -447,6 +482,29 @@ describe('plan copy veracity — backed claims (HOS-331)', () => {
                 if (phrase && !granted.has(claim.entitlement)) {
                     violations.push(
                         `${row.locale}/${row.surface}.${row.slug} sells "${phrase}" but the plan does not grant ${claim.entitlement}`
+                    );
+                }
+            }
+        }
+        expect(violations).toEqual([]);
+    });
+
+    it('never claims a real feature in prose that no active plan grants at all', () => {
+        // Prose is not scoped to one plan, so it cannot be checked per-slug like
+        // the descriptions above. What it CAN be checked against is the union:
+        // a sentence naming a feature no active plan grants is false for every
+        // reader. This catches a claim that survives a repackaging which removed
+        // the entitlement outright — the AD_FREE case, one level up.
+        const grantedByAnyActivePlan = new Set<string>(
+            ACTIVE_PLANS.flatMap((plan) => plan.entitlements as readonly string[])
+        );
+        const violations: string[] = [];
+        for (const row of PROSE_COPY) {
+            for (const claim of BACKED_CLAIMS) {
+                const phrase = matchedPhrase(row.copy, claim, row.locale);
+                if (phrase && !grantedByAnyActivePlan.has(claim.entitlement)) {
+                    violations.push(
+                        `${row.locale}/${row.surface} sells "${phrase}" but no active plan grants ${claim.entitlement}`
                     );
                 }
             }
