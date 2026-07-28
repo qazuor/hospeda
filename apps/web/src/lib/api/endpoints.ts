@@ -407,8 +407,17 @@ export const amenitiesApi = {
         isFeatured?: boolean;
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
+        /**
+         * HOS-103: opt in to the short-TTL SSR cache. Pass
+         * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites. HOS-299 added
+         * the accommodations listing surfaces, whose catalog reads are fixed and
+         * identical on every render — NOT the listing query itself, which is
+         * high-cardinality (see the note on `accommodationsApi.list`).
+         */
+        cacheTtlMs?: number;
     }): Promise<ApiResult<PaginatedResponse<AmenityPublic>>> {
-        return apiClient.getList({ path: `${BASE}/amenities`, params });
+        const { cacheTtlMs, ...query } = params ?? {};
+        return apiClient.getList({ path: `${BASE}/amenities`, params: query, cacheTtlMs });
     }
 };
 
@@ -423,8 +432,17 @@ export const featuresApi = {
         isFeatured?: boolean;
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
+        /**
+         * HOS-103: opt in to the short-TTL SSR cache. Pass
+         * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites. HOS-299 added
+         * the accommodations listing surfaces, whose catalog reads are fixed and
+         * identical on every render — NOT the listing query itself, which is
+         * high-cardinality (see the note on `accommodationsApi.list`).
+         */
+        cacheTtlMs?: number;
     }): Promise<ApiResult<PaginatedResponse<FeaturePublic>>> {
-        return apiClient.getList({ path: `${BASE}/features`, params });
+        const { cacheTtlMs, ...query } = params ?? {};
+        return apiClient.getList({ path: `${BASE}/features`, params: query, cacheTtlMs });
     }
 };
 
