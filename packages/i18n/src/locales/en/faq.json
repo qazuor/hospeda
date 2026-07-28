@@ -73,7 +73,7 @@
                 },
                 "favorites": {
                     "question": "Can I save accommodations as favorites?",
-                    "answer": "Yes. With a free account you can save accommodations, organize them in collections (for example \"March weekend\" or \"Trip with kids\") and access them from any device."
+                    "answer": "Yes. With a free account you can save accommodations and access them from any device. Organizing them into collections (for example \"March weekend\" or \"Trip with kids\") comes with the Plus and VIP plans."
                 },
                 "issue": {
                     "question": "What do I do if I have a problem with an accommodation?",
@@ -105,7 +105,7 @@
                 },
                 "cost": {
                     "question": "How much does it cost to publish?",
-                    "answer": "Publishing your accommodation requires a host plan, and every plan includes a {{trialDays}}-day free trial: you add your card up front and nothing is charged until the trial ends. We charge no booking commission, so the subscription is the only cost. Check each plan's price on the Host plans page."
+                    "answer": "Publishing your accommodation requires a host plan. If it is your first subscription, every plan includes a {{trialDays}}-day free trial: you add your card up front and nothing is charged until the trial ends. We charge no booking commission, so the subscription is the only cost. Check each plan's price on the Host plans page."
                 },
                 "commission": {
                     "question": "Do you charge commission on bookings?",
@@ -133,7 +133,7 @@
                 },
                 "support": {
                     "question": "Do you offer host support?",
-                    "answer": "Yes. We're available via WhatsApp, email and phone during office hours. Paid plans get priority response and premium plans include dedicated support."
+                    "answer": "Yes. We're available via WhatsApp, email and phone during office hours. The Professional and Premium plans get priority response."
                 }
             }
         },

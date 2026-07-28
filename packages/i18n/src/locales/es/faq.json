@@ -73,7 +73,7 @@
                 },
                 "favorites": {
                     "question": "¿Puedo guardar alojamientos como favoritos?",
-                    "answer": "Sí. Creando una cuenta gratuita podés guardar alojamientos, organizarlos en colecciones (por ejemplo \"Finde de marzo\" o \"Para llevar a los chicos\") y volver a verlos desde cualquier dispositivo."
+                    "answer": "Sí. Con una cuenta gratuita podés guardar alojamientos y volver a verlos desde cualquier dispositivo. Organizarlos en colecciones (por ejemplo \"Finde de marzo\" o \"Para llevar a los chicos\") viene con los planes Plus y VIP."
                 },
                 "issue": {
                     "question": "¿Qué hago si tengo un problema con un alojamiento?",
@@ -105,7 +105,7 @@
                 },
                 "cost": {
                     "question": "¿Cuánto cuesta publicar?",
-                    "answer": "Publicar tu alojamiento requiere un plan de anfitrión, y todos incluyen {{trialDays}} días de prueba gratis: cargás tu tarjeta al empezar y no se cobra nada hasta que la prueba termina. No cobramos comisión por reserva, así que la suscripción es el único costo. Mirá los precios de cada plan en la página de Planes para propietarios."
+                    "answer": "Publicar tu alojamiento requiere un plan de anfitrión. Si es tu primera suscripción, todos incluyen {{trialDays}} días de prueba gratis: cargás tu tarjeta al empezar y no se cobra nada hasta que la prueba termina. No cobramos comisión por reserva, así que la suscripción es el único costo. Mirá los precios de cada plan en la página de Planes para propietarios."
                 },
                 "commission": {
                     "question": "¿Cobran comisión por reserva?",
@@ -133,7 +133,7 @@
                 },
                 "support": {
                     "question": "¿Tienen soporte para propietarios?",
-                    "answer": "Sí. Atendemos por WhatsApp, mail y teléfono en horario de oficina. Los planes pagos tienen prioridad de respuesta y los planes premium incluyen soporte dedicado."
+                    "answer": "Sí. Atendemos por WhatsApp, mail y teléfono en horario de oficina. Los planes Profesional y Premium tienen prioridad de respuesta."
                 }
             }
         },

@@ -1,13 +1,13 @@
 {
     "page": {
         "title": "For Property Owners - List Your Property",
-        "description": "List your property on Hospeda and reach thousands of travelers in the Argentine Litoral. Professional management, statistics and dedicated support for owners.",
+        "description": "List your property on Hospeda and reach thousands of travelers in the Argentine Litoral. Professional management, statistics and tools for owners.",
         "breadcrumb": "For Property Owners"
     },
     "faq": {
         "1": {
             "q": "How much does it cost to list my property?",
-            "a": "Listing requires a host plan, and every plan includes a {{trialDays}}-day free trial. We charge no booking commission: the subscription is the only cost."
+            "a": "Listing requires a host plan. If it is your first subscription, every plan includes a {{trialDays}}-day free trial. We charge no booking commission: the subscription is the only cost."
         },
         "2": {
             "q": "How do I receive bookings?",
@@ -24,13 +24,13 @@
     },
     "host": {
         "landing": {
-            "trialCallout": "Try Hospeda free for 14 days. Your trial starts when you publish your first property. You won't be charged until day 14, no commitment."
+            "trialCallout": "Try Hospeda free for {{trialDays}} days. Your trial starts when you publish your first property. You won't be charged until day {{trialDays}}, no commitment."
         },
         "pages": {
             "nueva": {
-                "trialCalloutTitle": "14 free days when you publish",
+                "trialCalloutTitle": "{{trialDays}} free days when you publish",
                 "trialCalloutTitleIneligible": "Set up your property",
-                "trialNote": "Your free 14-day trial starts when you publish your first property. You won't be charged until day 14, no commitment. You can explore the full panel while you draft your listing.",
+                "trialNote": "Your free {{trialDays}}-day trial starts when you publish your first property. You won't be charged until day {{trialDays}}, no commitment. You can explore the full panel while you draft your listing.",
                 "trialNoteIneligible": "You can create and edit your draft now. To publish it and go live you'll need an active host plan."
             }
         }

@@ -222,7 +222,7 @@
             "unpublishError": "Could not unpublish. Please try again.",
             "deleteError": "Could not delete. Please try again.",
             "publishError": "Could not publish. Please try again.",
-            "publishSubscriptionRequiredMessage": "You need an active plan to publish. If this is your first time, you start with 14 free days.",
+            "publishSubscriptionRequiredMessage": "You need an active plan to publish. If this is your first time, you start with {{trialDays}} free days.",
             "publishSubscriptionRequiredCta": "View plans",
             "publishIncompleteCapacityMessage": "Capacity details (guests, bedrooms, or bathrooms) are missing. Complete them in the editor before publishing.",
             "publishIncompleteCapacityCta": "Complete in editor",

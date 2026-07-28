@@ -18,10 +18,22 @@
         "titleEnd": "hace por vos.",
         "lede": "La plataforma para descubrir y gestionar turismo en Concepción del Uruguay y el Litoral argentino. Para el que viaja, para el que recibe huéspedes, y para los negocios y marcas que quieren estar donde se planean las escapadas. Esto es, en criollo, todo lo que vas a encontrar adentro.",
         "stats": {
-            "features": { "value": "+120", "label": "funcionalidades" },
-            "languages": { "value": "3", "label": "idiomas · es · en · pt" },
-            "trial": { "value": "14", "label": "días gratis para anfitriones" },
-            "worlds": { "value": "3", "label": "mundos: alojamientos · gastronomía · experiencias" }
+            "features": {
+                "value": "+120",
+                "label": "funcionalidades"
+            },
+            "languages": {
+                "value": "3",
+                "label": "idiomas · es · en · pt"
+            },
+            "trial": {
+                "value": "{{trialDays}}",
+                "label": "días gratis para anfitriones"
+            },
+            "worlds": {
+                "value": "3",
+                "label": "mundos: alojamientos · gastronomía · experiencias"
+            }
         }
     },
     "subnav": {
@@ -101,26 +113,52 @@
         },
         "table": {
             "header": "Con tu cuenta",
-            "plans": { "free": "Gratis", "plus": "Plus", "vip": "VIP" },
+            "plans": {
+                "free": "Gratis",
+                "plus": "Plus",
+                "vip": "VIP"
+            },
             "rows": {
-                "favorites": { "label": "Guardar favoritos" },
+                "favorites": {
+                    "label": "Guardar favoritos"
+                },
                 "collections": {
                     "label": "Colecciones",
                     "note": "agrupá favoritos en listas temáticas"
                 },
-                "compare": { "label": "Comparar alojamientos", "note": "lado a lado" },
-                "priceAlerts": { "label": "Alertas de precio", "note": "te avisamos cuando baja" },
-                "recommendations": { "label": "Recomendaciones para vos" },
-                "reviews": { "label": "Escribir y leer reseñas" },
-                "exclusiveOffers": { "label": "Ofertas exclusivas" },
+                "compare": {
+                    "label": "Comparar alojamientos",
+                    "note": "lado a lado"
+                },
+                "priceAlerts": {
+                    "label": "Alertas de precio",
+                    "note": "te avisamos cuando baja"
+                },
+                "recommendations": {
+                    "label": "Recomendaciones para vos"
+                },
+                "reviews": {
+                    "label": "Escribir y leer reseñas"
+                },
+                "exclusiveOffers": {
+                    "label": "Ofertas exclusivas"
+                },
                 "hostWhatsapp": {
                     "label": "WhatsApp del anfitrión",
                     "plusValue": "ver",
                     "vipValue": "directo"
                 },
-                "aiSearch": { "label": "Buscador con IA", "note": "consultas por mes" },
-                "aiChat": { "label": "Chat con el alojamiento", "note": "consultas por mes" },
-                "prioritySupport": { "label": "Soporte prioritario VIP" }
+                "aiSearch": {
+                    "label": "Buscador con IA",
+                    "note": "consultas por mes"
+                },
+                "aiChat": {
+                    "label": "Chat con el alojamiento",
+                    "note": "consultas por mes"
+                },
+                "prioritySupport": {
+                    "label": "Soporte prioritario VIP"
+                }
             },
             "note": "Los mensajes con anfitriones, tu perfil, las reseñas y las novedades son siempre gratis, en cualquier plan."
         }
@@ -131,7 +169,7 @@
         "title": "Publicá tu alojamiento y hacelo crecer.",
         "description": "Cargá tu propiedad, mostrala con buenas fotos, creá promociones y mirá cómo rinde con estadísticas claras. Y cuando no tenés ganas de escribir, la IA te importa la ficha desde Airbnb o Booking, te mejora los textos y los traduce a tres idiomas.",
         "banner": {
-            "title": "14 días gratis, sin poner la tarjeta.",
+            "title": "{{trialDays}} días gratis en tu primera suscripción. No se cobra nada hasta que termina la prueba.",
             "description": "Empezás a probar todo hoy mismo. No pedimos método de pago para arrancar, y tus datos quedan guardados aunque decidas esperar. Con el código FREEMONTH, 30 días más."
         },
         "list": {
@@ -178,21 +216,57 @@
         },
         "table": {
             "header": "Tu plan de anfitrión",
-            "plans": { "basic": "Básico", "pro": "Pro", "premium": "Premium" },
+            "plans": {
+                "basic": "Básico",
+                "pro": "Pro",
+                "premium": "Premium"
+            },
             "rows": {
-                "listings": { "label": "Alojamientos publicables", "note": "+5 con addon" },
-                "photos": { "label": "Fotos por alojamiento", "note": "+20 con addon" },
-                "activePromotions": { "label": "Promociones activas" },
-                "richDescription": { "label": "Descripción enriquecida y video" },
-                "advancedStats": { "label": "Estadísticas avanzadas" },
-                "featuredListing": { "label": "Listado destacado" },
-                "verificationBadge": { "label": "Insignia de verificación" },
-                "customBranding": { "label": "Branding personalizado" },
-                "prioritySupport": { "label": "Soporte prioritario" },
-                "aiImport": { "label": "Importar ficha con IA", "note": "por mes" },
-                "aiImprove": { "label": "IA para mejorar textos", "note": "por mes" },
-                "aiTranslate": { "label": "IA para traducir", "note": "por mes" },
-                "aiGuestChat": { "label": "IA: chat para tus huéspedes", "note": "por mes" }
+                "listings": {
+                    "label": "Alojamientos publicables",
+                    "note": "+5 con addon"
+                },
+                "photos": {
+                    "label": "Fotos por alojamiento",
+                    "note": "+20 con addon"
+                },
+                "activePromotions": {
+                    "label": "Promociones activas"
+                },
+                "richDescription": {
+                    "label": "Descripción enriquecida y video"
+                },
+                "advancedStats": {
+                    "label": "Estadísticas avanzadas"
+                },
+                "featuredListing": {
+                    "label": "Listado destacado"
+                },
+                "verificationBadge": {
+                    "label": "Insignia de verificación"
+                },
+                "customBranding": {
+                    "label": "Branding personalizado"
+                },
+                "prioritySupport": {
+                    "label": "Soporte prioritario"
+                },
+                "aiImport": {
+                    "label": "Importar ficha con IA",
+                    "note": "por mes"
+                },
+                "aiImprove": {
+                    "label": "IA para mejorar textos",
+                    "note": "por mes"
+                },
+                "aiTranslate": {
+                    "label": "IA para traducir",
+                    "note": "por mes"
+                },
+                "aiGuestChat": {
+                    "label": "IA: chat para tus huéspedes",
+                    "note": "por mes"
+                }
             },
             "note": "Editar tu propiedad, cargar amenities, FAQs, ubicación y SEO va incluido en todos los planes.",
             "addonCell": "con addon"
@@ -320,7 +394,7 @@
     "cta": {
         "tagline": "¿arrancamos?",
         "title": "Sumá tu alojamiento o tu negocio a Hospeda.",
-        "description": "Probá 14 días gratis si alquilás, o escribinos para poner tu restaurante, experiencia o marca en el mapa turístico del Litoral. Sin compromiso, sin tarjeta para empezar.",
+        "description": "Probá {{trialDays}} días gratis en tu primera suscripción si alquilás, o escribinos para poner tu restaurante, experiencia o marca en el mapa turístico del Litoral. Sin compromiso: no se cobra nada hasta que termina la prueba.",
         "button": "Conocer Hospeda"
     },
     "footer": {

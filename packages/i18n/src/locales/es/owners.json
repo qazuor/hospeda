@@ -1,13 +1,13 @@
 {
     "page": {
         "title": "Para Propietarios - Publica tu Alojamiento",
-        "description": "Publica tu alojamiento en Hospeda y llega a miles de viajeros en el Litoral argentino. Gestion profesional, estadisticas y soporte dedicado para propietarios.",
+        "description": "Publica tu alojamiento en Hospeda y llega a miles de viajeros en el Litoral argentino. Gestion profesional, estadisticas y herramientas para propietarios.",
         "breadcrumb": "Para Propietarios"
     },
     "faq": {
         "1": {
             "q": "¿Cuánto cuesta publicar mi alojamiento?",
-            "a": "Publicar requiere un plan de anfitrión, y todos incluyen {{trialDays}} días de prueba gratis. No cobramos comisión por reserva: la suscripción es el único costo."
+            "a": "Publicar requiere un plan de anfitrión. Si es tu primera suscripción, todos incluyen {{trialDays}} días de prueba gratis. No cobramos comisión por reserva: la suscripción es el único costo."
         },
         "2": {
             "q": "¿Cómo recibo las reservas?",
@@ -24,13 +24,13 @@
     },
     "host": {
         "landing": {
-            "trialCallout": "Probá Hospeda gratis por 14 días. Tu trial empieza cuando publicás tu primera propiedad. No pagás nada hasta el día 14, sin compromiso."
+            "trialCallout": "Probá Hospeda gratis por {{trialDays}} días. Tu trial empieza cuando publicás tu primera propiedad. No pagás nada hasta el día {{trialDays}}, sin compromiso."
         },
         "pages": {
             "nueva": {
-                "trialCalloutTitle": "14 días gratis al publicar",
+                "trialCalloutTitle": "{{trialDays}} días gratis al publicar",
                 "trialCalloutTitleIneligible": "Armá tu propiedad",
-                "trialNote": "Cuando publiques tu primera propiedad arranca tu trial gratis de 14 días. No pagás nada hasta el día 14, sin compromiso. Podés probar todo el panel mientras armás tu borrador.",
+                "trialNote": "Cuando publiques tu primera propiedad arranca tu trial gratis de {{trialDays}} días. No pagás nada hasta el día {{trialDays}}, sin compromiso. Podés probar todo el panel mientras armás tu borrador.",
                 "trialNoteIneligible": "Podés crear y editar tu borrador ahora. Para publicarlo y salir al aire vas a necesitar un plan de anfitrión activo."
             }
         }
