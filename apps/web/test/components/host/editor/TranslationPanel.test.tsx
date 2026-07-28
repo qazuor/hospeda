@@ -18,8 +18,11 @@
  *     the i18n columns would hide the panel for exactly the accommodations that
  *     need it most.
  *  4. Per-field run reporting: which field failed, and in which locales.
- *  5. A run that persisted nothing does not claim success and does not reload —
- *     reloading is what used to wipe the failure detail off the screen.
+ *  5. A run that persisted nothing does not claim success, and the panel never
+ *     reloads on its own — it is a fieldset inside the editor's form, and apps/web
+ *     has no unsaved-changes guard, so an automatic reload discarded drafts.
+ *  6. A finished run is folded back into the rows, because the prop is frozen at
+ *     SSR and the reload used to be what refreshed it.
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -365,6 +368,79 @@ describe('TranslationPanel — per-field run reporting (HOS-317)', () => {
         expect(reloadSpy).not.toHaveBeenCalled();
     });
 
+    it('folds a finished run into the rows and retires the generate button', async () => {
+        // The prop is frozen at SSR and the auto-reload used to be what refreshed
+        // it. Without folding the run back in, a clean run left every badge showing
+        // a dash under a note reading "Traducido", with the generate button still
+        // live — and clicking it returned an empty run the panel reports as an
+        // error. BETA-199's symptom on the success path.
+        mockPostProtected.mockResolvedValue({
+            ok: true,
+            data: {
+                translations: [
+                    { fieldType: 'name', locale: 'en', success: true, translatedText: 'Name EN' },
+                    { fieldType: 'name', locale: 'pt', success: true, translatedText: 'Nome PT' },
+                    { fieldType: 'summary', locale: 'en', success: true, translatedText: 'S EN' },
+                    { fieldType: 'summary', locale: 'pt', success: true, translatedText: 'S PT' }
+                ]
+            }
+        });
+
+        const { container } = renderPanel(PARTIALLY_TRANSLATED);
+        fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
+
+        await waitFor(() => {
+            expect(screen.getByText(/Traducciones generadas/i)).toBeInTheDocument();
+        });
+
+        // Nothing left to generate → the button is gone, so it cannot invite a
+        // second run that comes back empty.
+        expect(screen.queryByRole('button', { name: GENERATE_BUTTON })).not.toBeInTheDocument();
+
+        // And the rows agree with the note: EN/PT are present on the name card now.
+        const nameCard = [...container.querySelectorAll('.fieldCard')].find((card) =>
+            card.querySelector('.fieldName')?.textContent?.includes('Nombre')
+        );
+        const present = [...(nameCard as Element).querySelectorAll('.localeBadgePresent')].map(
+            (el) => el.textContent?.trim()
+        );
+        expect(present).toEqual(expect.arrayContaining(['EN', 'PT']));
+    });
+
+    it('leaves a failed locale showing its gap after a partial run', async () => {
+        // Only successes are folded in — a failed locale must keep reading as
+        // missing, or the panel would paper over the very failure it just reported.
+        mockPostProtected.mockResolvedValue({
+            ok: true,
+            data: {
+                translations: [
+                    { fieldType: 'name', locale: 'en', success: true, translatedText: 'Name EN' },
+                    { fieldType: 'name', locale: 'pt', success: false, error: 'provider' },
+                    { fieldType: 'summary', locale: 'en', success: true, translatedText: 'S EN' },
+                    { fieldType: 'summary', locale: 'pt', success: true, translatedText: 'S PT' }
+                ]
+            }
+        });
+
+        const { container } = renderPanel(PARTIALLY_TRANSLATED);
+        fireEvent.click(screen.getByRole('button', { name: GENERATE_BUTTON }));
+
+        await waitFor(() => {
+            expect(screen.getByText('No se pudo traducir a PT')).toBeInTheDocument();
+        });
+
+        const nameCard = [...container.querySelectorAll('.fieldCard')].find((card) =>
+            card.querySelector('.fieldName')?.textContent?.includes('Nombre')
+        );
+        const present = [...(nameCard as Element).querySelectorAll('.localeBadgePresent')].map(
+            (el) => el.textContent?.trim()
+        );
+        expect(present).toContain('EN');
+        expect(present).not.toContain('PT');
+        // PT is still a real gap, so the button stays available to retry it.
+        expect(screen.getByRole('button', { name: GENERATE_BUTTON })).toBeInTheDocument();
+    });
+
     it('reloads only when the host asks for it', async () => {
         mockPostProtected.mockResolvedValue({
             ok: true,
@@ -542,8 +618,12 @@ describe('TranslationPanel — run state (HOS-317)', () => {
         await waitFor(() => expect(mockPostProtected).toHaveBeenCalledTimes(1));
 
         expect(button).toHaveAttribute('aria-disabled', 'true');
-        expect(document.activeElement).toBe(button);
-
+        // NOT asserting `document.activeElement` here: jsdom does not run the
+        // unfocusing steps when an element becomes `disabled`, and `fireEvent.click`
+        // never moves focus — so that assertion passes with `disabled` restored and
+        // proves nothing. The focus behaviour this exists for needs a real browser.
+        // What IS pinned: the attribute, and the in-handler guard below, which is
+        // load-bearing precisely because an aria-disabled button still takes clicks.
         fireEvent.click(button);
         expect(mockPostProtected).toHaveBeenCalledTimes(1);
 

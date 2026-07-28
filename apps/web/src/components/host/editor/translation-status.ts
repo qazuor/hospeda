@@ -72,9 +72,73 @@ export interface FieldOutcome {
 /** Outcome map covering every field a run touched. */
 export type GenerationOutcomes = Partial<Record<TranslatableField, FieldOutcome>>;
 
+/**
+ * Stand-in written into a locale a run just filled.
+ *
+ * Never rendered — the panel only ever asks whether a locale HAS content. See
+ * {@link applyRunToTranslations} for why the real translated text is not used.
+ */
+const TRANSLATED_MARKER = '\u2713';
+
 /** Whether any requested field came back with a failed locale. */
 export function anyFieldFailed(outcomes: GenerationOutcomes): boolean {
     return Object.values(outcomes).some((outcome) => outcome.status === 'failed');
+}
+
+/**
+ * Folds a finished run back into the field status the panel renders.
+ *
+ * `translations` is frozen at SSR and never refetched, so without this the panel
+ * keeps rendering the state the page was built with. That used to be hidden by
+ * the automatic reload; once the reload was removed (it discarded unsaved editor
+ * edits) the staleness became visible in the worst possible way — a row whose
+ * note reads "Traducido" while its badges still show dashes, under a button that
+ * happily offers to generate what was just generated. Clicking it returns an
+ * empty run and an error-styled "there were no pending translations", which is
+ * BETA-199's symptom arriving on the success path.
+ *
+ * Only successes are folded in. A failed locale is left exactly as it was, so the
+ * badges keep showing the real gap the failure left behind.
+ *
+ * The value written is a marker, not the translation — the endpoint returns the
+ * text but nothing here renders it, and inventing a value that does not match
+ * what the DB holds would be worse than the dash. Presence is the entire contract
+ * of this data (`Boolean(...)` in the badge, `isFilled` in the gap check).
+ *
+ * @param translations - The per-field status the panel was rendered with.
+ * @param results - The endpoint's per-pair results.
+ * @returns A new status map with every succeeded (field, locale) marked present.
+ */
+export function applyRunToTranslations({
+    translations,
+    results
+}: {
+    readonly translations: AccommodationTranslationData;
+    readonly results: readonly TranslationResultItem[];
+}): AccommodationTranslationData {
+    const succeeded = results.filter((result) => result.success);
+    if (succeeded.length === 0) return translations;
+
+    const next = { ...translations };
+
+    for (const field of TRANSLATABLE_FIELDS) {
+        const status = next[field];
+        if (status === null || status === undefined) continue;
+
+        const locales = succeeded
+            .filter((result) => result.fieldType === field)
+            .map((result) => result.locale)
+            .filter(isSupportedLocale);
+        if (locales.length === 0) continue;
+
+        const merged = { ...status.locales };
+        for (const locale of locales) {
+            merged[locale] = status.locales[locale] ?? TRANSLATED_MARKER;
+        }
+        next[field] = { ...status, locales: merged };
+    }
+
+    return next;
 }
 
 // ---------------------------------------------------------------------------

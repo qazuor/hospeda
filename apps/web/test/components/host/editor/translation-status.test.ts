@@ -16,7 +16,9 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    anyFieldFailed,
     anyTranslationPersisted,
+    applyRunToTranslations,
     fieldsWithMissingTranslations,
     hasSourceContent,
     missingLocalesFor,
@@ -238,6 +240,131 @@ describe('pendingOutcomes', () => {
 
     it('is empty for an empty request', () => {
         expect(pendingOutcomes([])).toEqual({});
+    });
+});
+
+describe('anyFieldFailed', () => {
+    // The distinction this function exists for: "nothing was persisted" is not
+    // the same as "something failed". A run where every requested pair was
+    // SKIPPED (already filled between the render and the click) persists nothing
+    // and fails nothing, and reporting it as a failure invents one.
+    it('is true when a field reports a failed locale', () => {
+        expect(anyFieldFailed({ name: { status: 'failed', failedLocales: ['pt'] } })).toBe(true);
+    });
+
+    it('is false when every field was merely untouched', () => {
+        expect(
+            anyFieldFailed({
+                name: { status: 'untouched', failedLocales: [] },
+                summary: { status: 'untouched', failedLocales: [] }
+            })
+        ).toBe(false);
+    });
+
+    it('is false for a fully translated run', () => {
+        expect(anyFieldFailed({ name: { status: 'translated', failedLocales: [] } })).toBe(false);
+    });
+
+    it('is false for an empty map', () => {
+        expect(anyFieldFailed({})).toBe(false);
+    });
+
+    it('is true even when the failing locale could not be named', () => {
+        // `failedLocales` is empty when the backend reports a locale the client
+        // does not recognise. The failure still stands.
+        expect(anyFieldFailed({ name: { status: 'failed', failedLocales: [] } })).toBe(true);
+    });
+});
+
+describe('applyRunToTranslations', () => {
+    const NEVER = {
+        locales: { es: null, en: null, pt: null },
+        plain: 'Texto en español'
+    };
+
+    it('marks a succeeded locale as present', () => {
+        const next = applyRunToTranslations({
+            translations: {
+                name: NEVER,
+                summary: NEVER,
+                description: NEVER,
+                richDescription: null
+            },
+            results: [{ fieldType: 'name', locale: 'en', success: true }]
+        });
+
+        expect(next.name.locales.en).toBeTruthy();
+        // Untouched locales and fields are left alone.
+        expect(next.name.locales.pt).toBeNull();
+        expect(next.summary.locales.en).toBeNull();
+    });
+
+    it('leaves a failed locale as the gap it still is', () => {
+        const next = applyRunToTranslations({
+            translations: {
+                name: NEVER,
+                summary: NEVER,
+                description: NEVER,
+                richDescription: null
+            },
+            results: [
+                { fieldType: 'name', locale: 'en', success: true },
+                { fieldType: 'name', locale: 'pt', success: false, error: 'provider' }
+            ]
+        });
+
+        expect(next.name.locales.en).toBeTruthy();
+        expect(next.name.locales.pt).toBeNull();
+    });
+
+    it('never overwrites content that was already there', () => {
+        const existing = {
+            locales: { es: 'ES', en: 'Real EN text', pt: null },
+            plain: 'ES'
+        };
+        const next = applyRunToTranslations({
+            translations: {
+                name: existing,
+                summary: NEVER,
+                description: NEVER,
+                richDescription: null
+            },
+            results: [{ fieldType: 'name', locale: 'en', success: true }]
+        });
+
+        expect(next.name.locales.en).toBe('Real EN text');
+    });
+
+    it('returns the input untouched when nothing succeeded', () => {
+        const translations = {
+            name: NEVER,
+            summary: NEVER,
+            description: NEVER,
+            richDescription: null
+        };
+        const next = applyRunToTranslations({
+            translations,
+            results: [{ fieldType: 'name', locale: 'en', success: false }]
+        });
+
+        expect(next).toBe(translations);
+    });
+
+    it('skips a field the plan excludes rather than resurrecting it', () => {
+        // `richDescription: null` means the API withheld the premium pair. A
+        // success for it (the backend translates it regardless of entitlement)
+        // must not turn the row back on.
+        const next = applyRunToTranslations({
+            translations: {
+                name: NEVER,
+                summary: NEVER,
+                description: NEVER,
+                richDescription: null
+            },
+            results: [{ fieldType: 'richDescription', locale: 'en', success: true }]
+        });
+
+        expect(next.richDescription).toBeNull();
     });
 });
 

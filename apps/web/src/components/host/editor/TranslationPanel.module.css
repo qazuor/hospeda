@@ -150,9 +150,9 @@
     outline-offset: 2px;
 }
 
-/* Offered after a run that wrote SOME translations but not all: the reload is
-   worth doing, but it must not happen on its own or it takes the per-field
-   failure detail off the screen before the host can read it (HOS-317). */
+/* Offered after any run that wrote something — a fully clean one included, since
+   the auto-reload was removed (it discarded unsaved editor edits). The reload it
+   triggers is deliberate and host-initiated (HOS-317). */
 .refreshButton {
     display: inline-flex;
     align-items: center;

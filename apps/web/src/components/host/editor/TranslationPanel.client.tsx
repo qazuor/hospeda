@@ -23,8 +23,14 @@
  * The page NEVER reloads on its own. This panel is a `<fieldset>` inside the
  * editor's `<form>`, and `apps/web` has no `beforeunload` guard anywhere, so an
  * automatic reload silently discarded whatever the host had typed and not yet
- * saved. A run that wrote something offers an explicit refresh instead, which
- * also keeps the per-field detail on screen long enough to read.
+ * saved. A run that wrote something offers an explicit refresh instead, and folds
+ * its own results into what the rows show — the prop is frozen at SSR, so without
+ * that the panel would keep displaying the state the page was built with.
+ *
+ * The refresh button still reloads, and still costs an unsaved draft. Reducing
+ * that from automatic to one deliberate click is where this change stops; warning
+ * the host before it happens needs the editor's dirty state and is tracked
+ * separately.
  */
 
 import { useCallback, useState } from 'react';
@@ -36,6 +42,7 @@ import type { FieldOutcome, GenerationOutcomes, TranslationResultItem } from './
 import {
     anyFieldFailed,
     anyTranslationPersisted,
+    applyRunToTranslations,
     fieldsWithMissingTranslations,
     hasSourceContent,
     pendingOutcomes,
@@ -265,7 +272,8 @@ function FieldNote({ sourced, outcome, t }: FieldNoteProps) {
  * single button to generate missing translations via the protected AI endpoint.
  *
  * Props:
- * - `locale` — the page locale (source locale for AI generation)
+ * - `locale` — the page locale. Drives this panel's own copy ONLY; the AI
+ *   source locale is `CONTENT_SOURCE_LOCALE`.
  * - `accommodationId` — used in the POST body
  * - `translations` — per-field status (from `transformAccommodationTranslations`)
  */
@@ -285,9 +293,20 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
      * when the host most wants to reach what the earlier run did manage to save.
      */
     const [hasPersistedAnything, setHasPersistedAnything] = useState(false);
+    /**
+     * What a finished run wrote, folded over the SSR prop.
+     *
+     * `translations` is frozen at page render and never refetched. The auto-reload
+     * used to hide that; without it the panel would keep showing dashes for locales
+     * it had just filled, under a button offering to generate them again — and that
+     * second run comes back empty, which the panel reports as an error. The same
+     * symptom BETA-199 is about, arriving on the success path.
+     */
+    const [runFilled, setRunFilled] = useState<AccommodationTranslationData | null>(null);
+    const effectiveTranslations = runFilled ?? translations;
 
     const pendingFields = fieldsWithMissingTranslations({
-        translations,
+        translations: effectiveTranslations,
         sourceLocale: CONTENT_SOURCE_LOCALE
     });
     const canGenerate = pendingFields.length > 0;
@@ -298,7 +317,7 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
         if (isGenerating) return;
 
         const requested = fieldsWithMissingTranslations({
-            translations,
+            translations: effectiveTranslations,
             sourceLocale: CONTENT_SOURCE_LOCALE
         });
 
@@ -338,19 +357,7 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
             const results = result.data?.translations ?? [];
             const runOutcomes = summarizeOutcomes({ requested, results });
             setOutcomes(runOutcomes);
-
-            if (results.length === 0) {
-                // The backend skips (field, locale) pairs that already have
-                // content, so an empty result set means it attempted nothing —
-                // reporting success here would claim work that never happened.
-                setErrorMessage(
-                    t(
-                        'host.properties.editor.translation.nothingGenerated',
-                        'No había traducciones pendientes para generar.'
-                    )
-                );
-                return;
-            }
+            setRunFilled(applyRunToTranslations({ translations: effectiveTranslations, results }));
 
             const persisted = anyTranslationPersisted({ results, requested });
             if (persisted) setHasPersistedAnything(true);
@@ -402,7 +409,7 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
         } finally {
             setIsGenerating(false);
         }
-    }, [accommodationId, isGenerating, t, translations]);
+    }, [accommodationId, effectiveTranslations, isGenerating, t]);
 
     const handleRefresh = useCallback(() => {
         if (typeof window !== 'undefined') {
@@ -415,8 +422,12 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
      *
      * Reads the sticky flag, not the current run's outcomes: a retry that fails
      * outright does not undo what an earlier run wrote, and taking the offer away
-     * there strands the host with no route to it. Hidden while a reload is already
-     * on its way, so "Recargando..." and a manual refresh button never coexist.
+     * there strands the host with no route to it.
+     *
+     * Hidden during a run, because a refresh mid-flight would abandon it. Note
+     * what this button costs: it reloads the page, and the editor form around this
+     * panel has no unsaved-changes guard, so a draft dies with it. The label does
+     * not say so — tracked with the rest of the panel's a11y/UX follow-ups.
      */
     const canRefresh = hasPersistedAnything && !isGenerating;
 
@@ -433,34 +444,38 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
                 )}
             </p>
 
-            {/* The per-field notes below are the whole point of the run report, and
-                they change while the host waits. Without a live region a screen
-                reader announces nothing for the ~40s the run takes, and then the
-                error alert tells them to "check the per-field detail" they were
-                never given. `aria-busy` belongs here, on the region that is
-                actually updating — not on the button, which is `disabled` during
-                the run and therefore dropped from the accessibility tree. */}
+            {/* The per-field notes below change while the host waits, so the
+                region that holds them is the one that has to be live.
+                
+                Read this before trusting it: `aria-busy="true"` tells assistive
+                tech to DEFER exposing changes until it clears, so what this
+                actually delivers is a clean announcement of the FINAL state, not
+                progress during the run. It is an improvement over announcing
+                nothing, and it is not the whole feature — the notes also do not
+                carry their field's name, so "Traducido" arrives without saying
+                what was translated. Both are tracked as follow-ups; neither is
+                claimed to work here. */}
             <div
                 className={styles.grid}
                 aria-live="polite"
                 aria-busy={isGenerating}
             >
                 <FieldRow
-                    status={translations.name}
+                    status={effectiveTranslations.name}
                     sourceLocale={CONTENT_SOURCE_LOCALE}
                     fieldLabel={t('host.properties.editor.field.name', 'Nombre')}
                     outcome={outcomes?.name}
                     t={t}
                 />
                 <FieldRow
-                    status={translations.summary}
+                    status={effectiveTranslations.summary}
                     sourceLocale={CONTENT_SOURCE_LOCALE}
                     fieldLabel={t('host.properties.editor.field.summary', 'Resumen')}
                     outcome={outcomes?.summary}
                     t={t}
                 />
                 <FieldRow
-                    status={translations.description}
+                    status={effectiveTranslations.description}
                     sourceLocale={CONTENT_SOURCE_LOCALE}
                     fieldLabel={t('host.properties.editor.field.description', 'Descripción')}
                     outcome={outcomes?.description}
@@ -470,9 +485,9 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
                     The API omits the premium pair entirely in that case, and a row
                     that can never fill in is what kept the generate button alive
                     forever. */}
-                {translations.richDescription !== null && (
+                {effectiveTranslations.richDescription !== null && (
                     <FieldRow
-                        status={translations.richDescription}
+                        status={effectiveTranslations.richDescription}
                         sourceLocale={CONTENT_SOURCE_LOCALE}
                         fieldLabel={t(
                             'host.properties.editor.translation.fieldRichDescription',
