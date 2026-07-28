@@ -136,6 +136,12 @@ type ImportedExtras = {
 type DestinationHint = {
     readonly scrapedLocality?: string;
     readonly candidates: ReadonlyArray<{ readonly id: string; readonly name: string }>;
+    /**
+     * Whether the API resolved the locality deterministically (literal/exact
+     * name match or a curated abbreviation) rather than by a substring, token,
+     * or edit-distance guess. Only a confident hint pre-fills the City field.
+     */
+    readonly confident: boolean;
 };
 
 /**
@@ -520,25 +526,41 @@ export function CreatePropertyMiniForm({
                 fieldsPrefilled: filledCount + extraCount
             });
 
-            // Destination hint: surface when the response carries locality or candidates.
-            if (response.destinationHint) {
-                const hint = response.destinationHint;
-                const hasLocality = Boolean(hint.scrapedLocality);
-                const hasCandidates = hint.candidates.length > 0;
-                if (hasLocality || hasCandidates) {
-                    setDestinationHint({
-                        scrapedLocality: hint.scrapedLocality,
-                        candidates: hint.candidates
-                    });
-                }
-                // Auto-select the best-matching destination (the search ranks
-                // candidates, so [0] is the closest). The City picker stays fully
-                // editable — the host can change it if the guess is wrong.
-                const best = hint.candidates[0];
-                if (best) {
-                    setCity({ id: best.id, label: best.name });
-                }
-            }
+            // Destination hint. Both the banner and the auto-selected city are
+            // reset on EVERY import, not only when the new one carries a hint —
+            // otherwise importing a second URL leaves the previous city
+            // pre-filled while the banner below tells the host to pick one,
+            // and that stale destinationId is what gets submitted.
+            const hint = response.destinationHint;
+            const hasHint =
+                hint !== undefined && (Boolean(hint.scrapedLocality) || hint.candidates.length > 0);
+
+            setDestinationHint(
+                hasHint
+                    ? {
+                          scrapedLocality: hint.scrapedLocality,
+                          candidates: hint.candidates,
+                          confident: hint.confident === true
+                      }
+                    : null
+            );
+
+            // Auto-select ONLY when the match is BOTH unique AND confident
+            // (HOS-286). Two independent hazards, two conditions:
+            //   - not unique  → the search does not rank by relevance, so
+            //     picking [0] out of several is a coin flip.
+            //   - not confident → the destination search is `ILIKE '%term%'`,
+            //     a SUBSTRING match, so "Rosario" (Santa Fe) comes back as the
+            //     lone hit for "Rosario del Tala". Uniqueness alone would
+            //     happily pre-fill that under a "we picked it for you" message.
+            // Non-confident matches still render below as suggestions.
+            const onlyCandidate =
+                hint !== undefined && hint.candidates.length === 1 ? hint.candidates[0] : undefined;
+            setCity(
+                onlyCandidate && hint?.confident === true
+                    ? { id: onlyCandidate.id, label: onlyCandidate.name }
+                    : null
+            );
 
             webLogger.info('CreatePropertyMiniForm: prefilled from import', {
                 fieldsFilled: Object.keys(nextMeta),
@@ -1020,7 +1042,12 @@ export function CreatePropertyMiniForm({
                             </span>
                         ) : null}
                         <span className={styles.destinationHintCallout}>
-                            {destinationHint.candidates.length > 0
+                            {/* "Autoseleccionamos" must only be claimed when the
+                                City field was actually pre-filled — i.e. a single
+                                AND confident candidate (HOS-286). A heuristic
+                                match is shown above as a suggestion, and the
+                                host is asked to pick it themselves. */}
+                            {destinationHint.candidates.length === 1 && destinationHint.confident
                                 ? t(
                                       'host.importFromUrl.prefill.destinationHint.autoSelected',
                                       'Autoseleccionamos el destino detectado. Revisalo y cambialo si no es correcto.'

@@ -165,7 +165,7 @@ beforeEach(() => {
 
     // Default resolver stubs — return empty/safe values.
     mockResolveAmenities.mockResolvedValue({ amenityIds: [], unresolved: [] });
-    mockBuildDestinationHint.mockResolvedValue({ candidates: [] });
+    mockBuildDestinationHint.mockResolvedValue({ candidates: [], confident: false });
 
     // Build fresh fake adapter instances.
     fakeGeneric = makeFakeAdapter('generic', true);
@@ -219,7 +219,8 @@ describe('AccommodationImportService', () => {
             });
             mockBuildDestinationHint.mockResolvedValue({
                 scrapedLocality: 'Concepción del Uruguay',
-                candidates: [{ id: UUID_DEST_001, name: 'Concepción del Uruguay' }]
+                candidates: [{ id: UUID_DEST_001, name: 'Concepción del Uruguay' }],
+                confident: true
             });
 
             const service = new AccommodationImportService(fakeCtx);
@@ -260,7 +261,8 @@ describe('AccommodationImportService', () => {
             // destinationHint propagated
             expect(result.destinationHint).toMatchObject({
                 scrapedLocality: 'Concepción del Uruguay',
-                candidates: [{ id: UUID_DEST_001, name: 'Concepción del Uruguay' }]
+                candidates: [{ id: UUID_DEST_001, name: 'Concepción del Uruguay' }],
+                confident: true
             });
         });
 
@@ -608,7 +610,8 @@ describe('AccommodationImportService', () => {
             fakeGeneric.extract.mockResolvedValue(raw);
             mockBuildDestinationHint.mockResolvedValue({
                 scrapedLocality: 'Concepción del Uruguay',
-                candidates: [{ id: UUID_DEST_001, name: 'Concepción del Uruguay' }]
+                candidates: [{ id: UUID_DEST_001, name: 'Concepción del Uruguay' }],
+                confident: true
             });
 
             const service = new AccommodationImportService(fakeCtx);
@@ -705,7 +708,8 @@ describe('AccommodationImportService', () => {
             });
             mockBuildDestinationHint.mockResolvedValue({
                 scrapedLocality: 'Gualeguaychú',
-                candidates: [{ id: UUID_DEST_002, name: 'Gualeguaychú' }]
+                candidates: [{ id: UUID_DEST_002, name: 'Gualeguaychú' }],
+                confident: true
             });
 
             const service = new AccommodationImportService(fakeCtx);
@@ -730,7 +734,7 @@ describe('AccommodationImportService', () => {
                 name: { value: 'Hotel Y', source: 'jsonld' }
                 // no scrapedLocality
             });
-            mockBuildDestinationHint.mockResolvedValue({ candidates: [] });
+            mockBuildDestinationHint.mockResolvedValue({ candidates: [], confident: false });
 
             const service = new AccommodationImportService(fakeCtx);
 

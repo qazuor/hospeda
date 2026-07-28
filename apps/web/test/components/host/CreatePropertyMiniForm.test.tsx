@@ -44,7 +44,10 @@ const FIXTURE_IMPORT_RESPONSE: AccommodationImportResponse = {
     partial: false,
     destinationHint: {
         scrapedLocality: 'Concepción del Uruguay',
-        candidates: [{ id: '00000000-0000-4000-8000-000000000001', name: 'Concepción del Uruguay' }]
+        candidates: [
+            { id: '00000000-0000-4000-8000-000000000001', name: 'Concepción del Uruguay' }
+        ],
+        confident: true
     }
 };
 
@@ -101,7 +104,10 @@ const FIXTURE_IMPORT_RESPONSE_FULL: AccommodationImportResponse = {
     ],
     destinationHint: {
         scrapedLocality: 'Concepción del Uruguay',
-        candidates: [{ id: '00000000-0000-4000-8000-000000000001', name: 'Concepción del Uruguay' }]
+        candidates: [
+            { id: '00000000-0000-4000-8000-000000000001', name: 'Concepción del Uruguay' }
+        ],
+        confident: true
     }
 };
 
@@ -131,6 +137,85 @@ const FIXTURE_IMPORT_RESPONSE_PRICE_CONVERTED: AccommodationImportResponse = {
         currency: 'ARS',
         rate: 1500,
         rateType: 'oficial'
+    }
+};
+
+/**
+ * Fixture whose locality resolved to SEVERAL destinations (HOS-286).
+ *
+ * The destination search does not rank by relevance, so with more than one
+ * candidate there is no "best" one to pick — the form must leave the City field
+ * for the host instead of seeding a coin-flip guess.
+ */
+const FIXTURE_IMPORT_RESPONSE_AMBIGUOUS_DESTINATION: AccommodationImportResponse = {
+    draft: {
+        name: { value: 'Casa Importada', confidence: 90, source: 'jsonld' },
+        summary: { value: 'Descripción importada desde URL.', confidence: 75, source: 'opengraph' },
+        type: { value: 'CABIN', confidence: 80, source: 'text' }
+    },
+    source: 'generic',
+    methodsUsed: ['jsonld'],
+    partial: false,
+    destinationHint: {
+        scrapedLocality: 'Villa',
+        candidates: [
+            { id: '00000000-0000-4000-8000-000000000002', name: 'Villa Elisa' },
+            { id: '00000000-0000-4000-8000-000000000003', name: 'Villa Paranacito' }
+        ],
+        confident: false
+    }
+};
+
+/**
+ * Fixture whose locality resolved CONFIDENTLY but to SEVERAL destinations
+ * (HOS-286).
+ *
+ * Producible whenever two catalog rows share a normalized name: the `exact`
+ * tier returns every one of them. This pins the OTHER half of the
+ * `candidates.length === 1 && confident` conjunction — without it, a mutant
+ * that drops the uniqueness check passes the whole suite.
+ */
+const FIXTURE_IMPORT_RESPONSE_CONFIDENT_BUT_AMBIGUOUS: AccommodationImportResponse = {
+    draft: {
+        name: { value: 'Casa Importada', confidence: 90, source: 'jsonld' },
+        summary: { value: 'Descripción importada desde URL.', confidence: 75, source: 'opengraph' },
+        type: { value: 'CABIN', confidence: 80, source: 'text' }
+    },
+    source: 'generic',
+    methodsUsed: ['jsonld'],
+    partial: false,
+    destinationHint: {
+        scrapedLocality: 'Santa Ana',
+        candidates: [
+            { id: '00000000-0000-4000-8000-000000000005', name: 'Santa Ana' },
+            { id: '00000000-0000-4000-8000-000000000006', name: 'Santa Ana' }
+        ],
+        confident: true
+    }
+};
+
+/**
+ * Fixture whose locality resolved to exactly ONE destination, but only through
+ * a heuristic (HOS-286).
+ *
+ * This is the dangerous shape: `"San José de Feliciano"` is a real Entre Ríos
+ * city that merely CONTAINS the catalog entry `"San José"`, so the API returns
+ * a single candidate. Uniqueness alone would pre-fill the wrong city and
+ * announce it as auto-selected — `confident: false` is what must stop it.
+ */
+const FIXTURE_IMPORT_RESPONSE_UNCONFIDENT_DESTINATION: AccommodationImportResponse = {
+    draft: {
+        name: { value: 'Casa Importada', confidence: 90, source: 'jsonld' },
+        summary: { value: 'Descripción importada desde URL.', confidence: 75, source: 'opengraph' },
+        type: { value: 'CABIN', confidence: 80, source: 'text' }
+    },
+    source: 'generic',
+    methodsUsed: ['jsonld'],
+    partial: false,
+    destinationHint: {
+        scrapedLocality: 'San José de Feliciano',
+        candidates: [{ id: '00000000-0000-4000-8000-000000000004', name: 'San José' }],
+        confident: false
     }
 };
 
@@ -175,6 +260,27 @@ vi.mock('../../../src/components/host/ImportFromUrl.client', () => ({
             >
                 Simular importación con conversión de precio
             </button>
+            <button
+                type="button"
+                data-testid="stub-trigger-import-ambiguous-destination"
+                onClick={() => onImported?.(FIXTURE_IMPORT_RESPONSE_AMBIGUOUS_DESTINATION)}
+            >
+                Simular importación con destino ambiguo
+            </button>
+            <button
+                type="button"
+                data-testid="stub-trigger-import-unconfident-destination"
+                onClick={() => onImported?.(FIXTURE_IMPORT_RESPONSE_UNCONFIDENT_DESTINATION)}
+            >
+                Simular importación con destino heurístico
+            </button>
+            <button
+                type="button"
+                data-testid="stub-trigger-import-confident-ambiguous"
+                onClick={() => onImported?.(FIXTURE_IMPORT_RESPONSE_CONFIDENT_BUT_AMBIGUOUS)}
+            >
+                Simular importación confiable pero ambigua
+            </button>
         </div>
     )
 }));
@@ -196,11 +302,13 @@ vi.mock('../../../src/components/form/SearchableSelect.client', () => ({
     SearchableSelect: ({
         onChange,
         testId,
-        label
+        label,
+        value
     }: {
         onChange: (item: { id: string; label: string }) => void;
         testId?: string;
         label: string;
+        value?: { id: string; label: string } | null;
         [key: string]: unknown;
     }) => {
         const mockItem =
@@ -214,9 +322,15 @@ vi.mock('../../../src/components/form/SearchableSelect.client', () => ({
                 type="button"
                 data-testid={testId ? `${testId}-mock-select` : 'mock-select'}
                 aria-label={`select-${label}`}
+                // Expose the CURRENT selection, not just the field label. Without
+                // this the mock can never reflect a programmatic `setCity`, which
+                // is how the auto-select assertions below stayed green for months
+                // while the opposite behaviour shipped (HOS-286).
+                data-selected-id={value?.id ?? ''}
+                data-selected-label={value?.label ?? ''}
                 onClick={() => onChange(mockItem)}
             >
-                {label}
+                {value?.label ?? label}
             </button>
         );
     }
@@ -522,6 +636,28 @@ async function triggerPriceConversionImport(
     await user.click(screen.getByTestId('stub-trigger-import-price-conversion'));
 }
 
+/**
+ * Open the import section and fire an import whose locality resolved to
+ * several destinations (HOS-286), via the stub's ambiguous-destination fixture.
+ */
+async function triggerAmbiguousDestinationImport(
+    user: ReturnType<typeof userEvent.setup>
+): Promise<void> {
+    await user.click(screen.getByTestId('import-toggle'));
+    await user.click(screen.getByTestId('stub-trigger-import-ambiguous-destination'));
+}
+
+/**
+ * Open the import section and fire an import whose locality resolved to a
+ * SINGLE but heuristic destination (HOS-286).
+ */
+async function triggerUnconfidentDestinationImport(
+    user: ReturnType<typeof userEvent.setup>
+): Promise<void> {
+    await user.click(screen.getByTestId('import-toggle'));
+    await user.click(screen.getByTestId('stub-trigger-import-unconfident-destination'));
+}
+
 describe('CreatePropertyMiniForm — import prefill (T-025)', () => {
     it('pre-fills the name input from the import draft', async () => {
         // Arrange
@@ -627,18 +763,123 @@ describe('CreatePropertyMiniForm — import prefill (T-025)', () => {
         expect(hint).toHaveTextContent('Concepción del Uruguay');
     });
 
-    it('does NOT auto-set the city picker when destinationHint is present', async () => {
+    it('auto-selects the city when the locality resolved to exactly one destination', async () => {
+        // Arrange
+        const user = userEvent.setup();
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        // Assert: nothing selected before the import.
+        expect(screen.getByTestId('property-city-mock-select')).toHaveAttribute(
+            'data-selected-id',
+            ''
+        );
+
+        // Act
+        await triggerImport(user);
+
+        // Assert: the single candidate was pre-filled into the (still editable)
+        // City picker.
+        const citySelect = screen.getByTestId('property-city-mock-select');
+        expect(citySelect).toHaveAttribute(
+            'data-selected-id',
+            '00000000-0000-4000-8000-000000000001'
+        );
+        expect(citySelect).toHaveAttribute('data-selected-label', 'Concepción del Uruguay');
+    });
+
+    it('does NOT auto-select the city when the single match is only a heuristic guess', async () => {
         // Arrange
         const user = userEvent.setup();
         render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
 
         // Act
-        await triggerImport(user);
+        await triggerUnconfidentDestinationImport(user);
 
-        // Assert: the city mock-select button label doesn't change — city stays
-        // null (no onChange was called on the city SearchableSelect).
-        // The city picker renders with its original label from the mock ("Ciudad").
-        expect(screen.getByTestId('property-city-mock-select')).toHaveTextContent(/Ciudad/i);
+        // Assert — one candidate, so uniqueness alone would have pre-filled it.
+        // "San José de Feliciano" is NOT "San José": a confident-only gate is
+        // what keeps the wrong destinationId out of the payload (HOS-286).
+        expect(screen.getByTestId('property-city-mock-select')).toHaveAttribute(
+            'data-selected-id',
+            ''
+        );
+        const hint = screen.getByTestId('destination-hint');
+        expect(hint).toHaveTextContent('San José');
+        // ...and the UI must NOT claim it auto-selected anything.
+        expect(hint).not.toHaveTextContent(/Autoseleccionamos/i);
+        expect(hint).toHaveTextContent(/Elegí el destino manualmente/i);
+    });
+
+    it('clears a previously auto-selected city when a later import is not confident', async () => {
+        // Arrange — the host imports one URL, then a different one. Making the
+        // auto-select conditional introduced a stale-state path: the field kept
+        // the FIRST city while the banner below told the host to pick one, and
+        // that stale destinationId is what would be submitted (HOS-286).
+        const user = userEvent.setup();
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        await triggerImport(user);
+        expect(screen.getByTestId('property-city-mock-select')).toHaveAttribute(
+            'data-selected-id',
+            '00000000-0000-4000-8000-000000000001'
+        );
+
+        // Act — second import, heuristic match only.
+        await act(async () => {
+            await user.click(screen.getByTestId('stub-trigger-import-unconfident-destination'));
+        });
+
+        // Assert — the field agrees with the banner: nothing selected.
+        expect(screen.getByTestId('property-city-mock-select')).toHaveAttribute(
+            'data-selected-id',
+            ''
+        );
+        expect(screen.getByTestId('destination-hint')).toHaveTextContent(
+            /Elegí el destino manualmente/i
+        );
+    });
+
+    it('does NOT auto-select the city when a CONFIDENT match is still ambiguous', async () => {
+        // Arrange — the other half of the `length === 1 && confident` gate.
+        // Two catalog rows share a normalized name, so the exact tier returns
+        // both: confident, but there is still nothing to pick (HOS-286).
+        const user = userEvent.setup();
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        // Act
+        await user.click(screen.getByTestId('import-toggle'));
+        await act(async () => {
+            await user.click(screen.getByTestId('stub-trigger-import-confident-ambiguous'));
+        });
+
+        // Assert
+        expect(screen.getByTestId('property-city-mock-select')).toHaveAttribute(
+            'data-selected-id',
+            ''
+        );
+        expect(screen.getByTestId('destination-hint')).toHaveTextContent(
+            /Elegí el destino manualmente/i
+        );
+    });
+
+    it('does NOT auto-select the city when the locality resolved to several destinations', async () => {
+        // Arrange
+        const user = userEvent.setup();
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        // Act
+        await triggerAmbiguousDestinationImport(user);
+
+        // Assert: no guess was made — the search does not rank, so picking the
+        // first of two would seed the wrong city (HOS-286).
+        expect(screen.getByTestId('property-city-mock-select')).toHaveAttribute(
+            'data-selected-id',
+            ''
+        );
+        // Both candidates are still offered as suggestions.
+        const hint = screen.getByTestId('destination-hint');
+        expect(hint).toHaveTextContent('Villa Elisa');
+        expect(hint).toHaveTextContent('Villa Paranacito');
+        expect(hint).toHaveTextContent(/Elegí el destino manualmente/i);
     });
 
     it('surfaces the price-conversion advisory banner when response carries priceConversion (BETA-181)', async () => {
