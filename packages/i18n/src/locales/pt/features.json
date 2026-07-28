@@ -169,8 +169,8 @@
         "title": "Publicá tu alojamiento y hacelo crecer.",
         "description": "Cargá tu propiedad, mostrala con buenas fotos, creá promociones y mirá cómo rinde con estadísticas claras. Y cuando no tenés ganas de escribir, la IA te importa la ficha desde Airbnb o Booking, te mejora los textos y los traduce a tres idiomas.",
         "banner": {
-            "title": "{{trialDays}} dias grátis na sua primeira assinatura. Nada é cobrado até o teste terminar.",
-            "description": "Empezás a probar todo hoy mismo. No pedimos método de pago para arrancar, y tus datos quedan guardados aunque decidas esperar. Con el código FREEMONTH, 30 días más."
+            "title": "{{trialDays}} días gratis en tu primera suscripción. No se cobra nada hasta que termina la prueba.",
+            "description": "Empezás a probar todo hoy mismo: elegís tu plan, cargás tu tarjeta y no se cobra nada hasta que termina la prueba. Tus datos quedan guardados aunque decidas esperar."
         },
         "list": {
             "aiImport": {
@@ -394,7 +394,7 @@
     "cta": {
         "tagline": "¿arrancamos?",
         "title": "Sumá tu alojamiento o tu negocio a Hospeda.",
-        "description": "Experimente {{trialDays}} dias grátis na sua primeira assinatura se você aluga, ou escreva para a gente para colocar seu restaurante, experiência ou marca no mapa turístico do Litoral. Sem compromisso: nada é cobrado até o teste terminar.",
+        "description": "Probá {{trialDays}} días gratis en tu primera suscripción si alquilás, o escribinos para poner tu restaurante, experiencia o marca en el mapa turístico del Litoral. Sin compromiso: no se cobra nada hasta que termina la prueba.",
         "button": "Conocer Hospeda"
     },
     "footer": {

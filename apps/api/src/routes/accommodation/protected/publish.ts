@@ -26,23 +26,24 @@ const accommodationService = new AccommodationService(
  * HTTP path) because the general PATCH schema (`AccommodationUpdateHttpSchema`,
  * derived from the create schema) has no `lifecycleState` field, so Zod would
  * silently strip it and the request would be a no-op (HOS-110 bugfix). This
- * dedicated endpoint mirrors `/unpublish` and orchestrates the first-publish
- * no-card trial (`TrialService.startTrial()`) when the owner is eligible.
+ * dedicated endpoint mirrors `/unpublish`. It does NOT start a trial: since
+ * card-first (HOS-171) the trial is a MercadoPago preapproval created at
+ * checkout, so an ineligible owner is rejected and sent to the plans page.
  *
  * Protected endpoint with ownership check. No entitlement gate at the route
  * level — `publish()` itself resolves the owner's billing eligibility
  * (`first_publish` / `has_active_sub` / `subscription_required`) and rejects
- * with `FORBIDDEN: subscription_required` when the owner has already
- * consumed their one-per-life trial and has no active subscription. A
- * first-time publisher with no subscription at all is NOT blocked — that is
- * exactly the `first_publish` path that starts their trial.
+ * with `FORBIDDEN: subscription_required` when the owner has no active
+ * subscription — including the `first_publish` case, which card-first also
+ * rejects so the card can be collected at checkout before any free days
+ * exist.
  */
 export const protectedPublishAccommodationRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/publish',
     summary: 'Publish accommodation',
     description:
-        'Transitions an accommodation from DRAFT (or INACTIVE) to ACTIVE, starting the no-card trial for first-time publishers. Requires ownership or ACCOMMODATION_UPDATE_ANY permission.',
+        'Transitions an accommodation from DRAFT (or INACTIVE) to ACTIVE. Requires an active subscription (the trial is created at checkout, not here), plus ownership or ACCOMMODATION_UPDATE_ANY permission.',
     tags: ['Accommodations'],
     requestParams: {
         id: AccommodationIdSchema

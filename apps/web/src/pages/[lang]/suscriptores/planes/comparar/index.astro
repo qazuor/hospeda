@@ -19,6 +19,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getIntlLocale } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
+import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import {
 	fetchPublicPlans,
 	filterPlansByCategory,
@@ -108,7 +109,7 @@ const headingMain = headingWords.join(' ');
 					{t('pricing.owner.cta.title', '¿Listo para hacer crecer tu negocio?')}
 				</h2>
 				<p class="comparison-cta__desc">
-					{t('pricing.owner.cta.description', 'Comienza tu prueba gratuita de 14 días y descubre cómo Hospeda puede ayudarte a aumentar tus reservas.')}
+					{t('pricing.owner.cta.description', 'Si es tu primera suscripción, empezás con {{trialDays}} días de prueba gratis. Descubrí cómo Hospeda puede ayudarte a aumentar tus reservas.', { trialDays: OWNER_TRIAL_DAYS })}
 				</p>
 				<GradientButton
 					href={buildUrl({ locale, path: 'suscriptores/planes' })}
