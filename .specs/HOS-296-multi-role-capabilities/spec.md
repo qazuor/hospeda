@@ -258,28 +258,35 @@ The three axes stay separate:
 
 ```
 user_role                                  -- the LIVE set of hats
-  user_id      uuid    FK users.id ON DELETE CASCADE
-  role         role_enum
-  granted_at   timestamptz  NOT NULL DEFAULT now()
-  granted_by   uuid    FK users.id  NULL   -- null = system/automatic
-  grant_reason text     NULL               -- 'accommodation_activated', 'commerce_lead_HOS-nnn', ...
+  user_id      uuid       NOT NULL  FK users.id ON DELETE CASCADE
+  role         role_enum  NOT NULL
+  granted_at   timestamptz NOT NULL DEFAULT now()
+  granted_by   uuid       NULL      FK users.id ON DELETE SET NULL  -- null = system/automatic
+  grant_reason text       NULL      -- 'accommodation_activated', 'commerce_lead_HOS-nnn', ...
   PRIMARY KEY (user_id, role)
 
 user_role_audit                            -- append-only history
-  id           uuid    PK
-  user_id      uuid    FK users.id ON DELETE SET NULL   -- survives a hard delete
-  role         role_enum
-  action       role_grant_action_enum NOT NULL   -- 'grant' | 'revoke' (typed enum, like r_user_permission.effect)
+  id           uuid       PK
+  user_id      uuid       NULL      FK users.id ON DELETE SET NULL  -- survives a hard delete
+  role         role_enum  NOT NULL
+  action       role_grant_action_enum NOT NULL  -- 'grant' | 'revoke'; typed enum, like r_user_permission.effect
   at           timestamptz NOT NULL DEFAULT now()
-  by           uuid    FK users.id NULL     -- null = system/automatic
-  reason       text    NULL
+  by           uuid       NULL      FK users.id ON DELETE SET NULL  -- null = system/automatic
+  reason       text       NULL
 ```
 
 `user_role.user_id` cascades on delete because the live set is meaningless
-without its user. `user_role_audit.user_id` deliberately does NOT: the audit
-exists to outlive the rows it describes, and a hard delete (rare here — the
-project soft-deletes by default — but reachable via an erasure request) must
-not be able to either block on it or silently erase the history.
+without its user. **Every other FK to `users.id` on both tables — the audit's
+`user_id` and `by`, and `user_role.granted_by` — is `ON DELETE SET NULL`.**
+The audit exists to outlive the rows it describes, and the actor columns point
+at whoever performed the change: with Postgres's default `NO ACTION`, hard
+deleting a past admin would be *blocked by their own audit trail*, which is the
+same failure the subject column's rule was written to prevent. The codebase
+already does exactly this for actor columns on audit tables
+(`ai_credential_audit.actorId`, `social_credential_audit.actorId`). Hard
+deletes are rare here — the project soft-deletes by default — but they are
+reachable via an erasure request, and neither blocking nor erasing history is
+an acceptable outcome.
 
 An array column on `users` would carry the set but not the story. The reason a
 hat was granted is exactly what is missing today when a role gets silently
@@ -327,11 +334,22 @@ Two filters, both mandatory:
   legitimately demoted, reversing an intentional revoke. Mirror the cron's own
   predicate (`:228-232`).
 
-Staff accounts (`ADMIN`, `SUPER_ADMIN`, `CLIENT_MANAGER`) that own a listing —
-QA and demo accounts do — will be granted `HOST` by this pass. That is
-harmless (their existing permissions are a superset) but it adds noise to the
-"who holds this role" admin view, so the pass should exclude them explicitly
-rather than leave it to be discovered.
+Staff accounts that own a listing — QA and demo accounts do — will be granted
+`HOST` by this pass. That is harmless (their permissions are already a
+superset) but it adds noise to the "who holds this role" admin view, so the
+pass should exclude them explicitly.
+
+**Use `STAFF_BILLING_BYPASS_ROLES` for that exclusion** —
+`{SUPER_ADMIN, ADMIN, EDITOR, CLIENT_MANAGER}`, defined identically at
+`apps/api/src/middlewares/entitlement.ts:354-359` and
+`owner-entitlement.ts:208-217`, and cited as the canonical "is this staff" set
+elsewhere in this spec (§5.5). Do **not** reach for
+`AccommodationService.PRIVILEGED_ROLES` (`accommodation.service.ts:213-218`):
+it looks like the same idea but is `{HOST, ADMIN, CLIENT_MANAGER, SUPER_ADMIN}`
+— it swaps `EDITOR` for `HOST`, and its omission of `EDITOR` is literally half
+of the G-6 bug this spec exists to fix. The two sets already disagree in
+production; copying the wrong one here would reproduce the same defect in the
+migration.
 
 Users whose reconciled set differs from their stored `users.role` are the
 population the G-6 bug already hit — that count belongs in the migration's
@@ -397,12 +415,22 @@ multi-role-correct — not a re-architecture:
 | `user.service.ts:382-408` (`assignRole`) | delegates to `grantRole`. Dead code today, but it must not survive as a second write path. |
 | `testUsers.seed.ts:545-549` | seeds the role set, still idempotent. |
 
-The four sites not listed above (`auth.ts:616`, `signup-as-host.ts:117`,
-`commerce-owner-provisioning.service.ts:269-275`, `user/admin/create.ts:49`)
-are all "brand-new user, assign its first role" and become a plain
-`grantRole(newUserId, initialRole, 'signup' | 'admin_create')`. They are
-non-destructive today and stay non-destructive; they are listed in §5.3 so the
-AC-7 static guard covers all eleven, not so that each needs a design.
+The remaining four sites from §5.3 are all "brand-new user, assign its first
+role" and stay non-destructive. They are listed there so the AC-7 static guard
+covers all eleven — but they do NOT all take the same change:
+
+- `signup-as-host.ts:117` and `user/admin/create.ts:49` — swap the `.update()`
+  for `grantRole(newUserId, initialRole, 'signup' | 'admin_create')`.
+- `commerce-owner-provisioning.service.ts:269-275` — **no change of its own.**
+  It never writes `users.role`; it passes `role: RoleEnum.COMMERCE_OWNER` down
+  to the port at `commerce-ports.ts:86-89`, which is site #3 and already has
+  its own row above. Adding a `grantRole` call here would double-grant.
+- `auth.ts:616` — **not a swap.** That line lives in Better Auth's
+  `databaseHooks.user.create.**before**` hook, which mutates the pre-insert
+  payload; there is no `user.id` yet, so `grantRole(newUserId, ...)` cannot be
+  called from it. The `user_role` row has to be written from the existing
+  `after` hook (`auth.ts:623-650`), which already has the real id and already
+  does billing-customer sync there.
 
 Two primitives, in `service-core`, both idempotent:
 
@@ -570,6 +598,8 @@ three must accept the new shape before the API starts sending it.
 - **AC-7** — `grantRole`/`revokeRole` are the ONLY code paths that write
   `users.role`. Enforceable as a static guard test, in the style of
   `apps/web/test/static-guards/`, allow-listing exactly that one module.
+- **AC-8** — Commerce billing charges reach the MercadoPago account of the same email the user signs in with (the original driver of this issue).
+- **AC-9** — The mobile app does not strand a dual-hat user in one navigator group (shape depends on OQ-2).
 - **AC-10** — After the backfill, a user who owns a gastronomy or experience
   holds `COMMERCE_OWNER` even if their stored `users.role` said `HOST` — i.e.
   the reconciliation pass repaired the damage the G-6 bug already did, and the
@@ -577,10 +607,9 @@ three must accept the new shape before the API starts sending it.
 - **AC-11** — Between Phase 1 and Phase 2, `users.role` and the `user_role` set
   never disagree about the primary role. Testable by exercising each of the
   eleven write sites and asserting both representations afterwards.
-- **AC-8** — Commerce billing charges reach the MercadoPago account of the same
-  email the user signs in with (the original driver of this issue).
-- **AC-9** — The mobile app does not strand a dual-hat user in one navigator
-  group (shape depends on OQ-2).
+- **AC-12** — The reconciliation pass grants no hat to an account holding a
+  `STAFF_BILLING_BYPASS_ROLES` role, and none to an owner whose only listing is
+  archived or soft-deleted.
 
 ## 10. Risks
 
@@ -642,11 +671,19 @@ three must accept the new shape before the API starts sending it.
   recomputed from the role set on every `grantRole`/`revokeRole` call (§6.4
   step 3), so this order is needed from the first call of the first phase, not
   from Phase 2. Proposed, and needing only confirmation:
-  `SUPER_ADMIN > ADMIN > CLIENT_MANAGER > EDITOR > HOST > COMMERCE_OWNER >
-  SPONSOR > USER > GUEST`. `SYSTEM` is deliberately absent — it is not a
-  capability a person accumulates (§7) and no runtime path grants it. If the
-  owner wants a different order, say so before Phase 1 starts; changing it
-  afterwards rewrites every `users.role` in the table.
+  `SYSTEM > SUPER_ADMIN > ADMIN > CLIENT_MANAGER > EDITOR > HOST >
+  COMMERCE_OWNER > SPONSOR > USER > GUEST`.
+  <br>The order is **total over all ten `RoleEnum` values** on purpose, so the
+  recompute is never undefined. `SYSTEM` in particular is not hypothetical: the
+  required seed creates a permanent, non-demo account with `role = SYSTEM`
+  (`packages/seed/src/required/systemUser.seed.ts`) that exists in every
+  environment including production and is referenced as `assignedById` across
+  the DB. It ranks first so that account can never be demoted by a stray grant.
+  `SYSTEM` and `GUEST` are both in the order for totality only — §7 says
+  neither is a capability a person accumulates, and no runtime path grants or
+  revokes either.
+  <br>If the owner wants a different order, say so before Phase 1 starts:
+  changing it afterwards rewrites every `users.role` in the table.
 - **OQ-4 — Automatic revoke.** `archive-abandoned-drafts` demotes HOST→USER
   when the last accommodation is archived. With several hats, should any
   automatic revoke exist at all, or should hats only ever be removed by an
@@ -675,7 +712,18 @@ three must accept the new shape before the API starts sending it.
   feature (marketing offers on accommodations) and contains no role logic at
   all. `owner-promotion` ≠ "promote a user to HOST"; an earlier draft of this
   spec got that wrong.
-- Do **not** change `role_enum` or add role values in this work.
+- Do **not** change `role_enum` or add role values in this work. The migration
+  does create one new enum type, `role_grant_action_enum`, for the audit
+  table's `action` column.
+- `grantRole`/`revokeRole` must accept the caller's transaction
+  (`ctx?.tx`, the established `service-core` shape) rather than opening their
+  own. `archive-abandoned-drafts.job.ts:224-251` already wraps its archive +
+  demote in one transaction and would otherwise end up with the primitive's
+  `SELECT ... FOR UPDATE` on a second connection, inside its own outer write to
+  the same row.
+- `.for('update')` is not a new technique here — it is already used in
+  `packages/service-core/src/services/billing/promo-code/promo-code.redemption.ts`
+  and `apps/api/src/services/subscription-cancel.service.ts`, among others.
 - Rollback: Phases 1-3 are additive at the schema level, so rolling back means
   reverting code — the `user_role` tables can stay. Only Phase 4 (dropping
   `users.role`) is one-way, which is why it is a separate PR with its own
