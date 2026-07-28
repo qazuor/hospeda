@@ -8,7 +8,7 @@ Hospeda has three plan categories targeting different user types:
 |----------|-------------|-------|-------|
 | `owner` | Individual property owners | Basico, Pro, Premium | 14 days |
 | `complex` | Hotels and complexes | Basico, Pro, Premium | 14 days |
-| `tourist` | Travelers and guests | Free, Plus, VIP | No trial |
+| `tourist` | Travelers and guests | Free, Plus, VIP | 14 days on Plus and VIP; Free has no trial because it has no charge |
 
 Each category has exactly one **default plan** assigned automatically to new users:
 

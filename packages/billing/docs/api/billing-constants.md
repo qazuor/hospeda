@@ -172,7 +172,7 @@ A limit value of `-1` means unlimited.
 | `ALL_ADDONS` | `AddonDefinition[]` | All 6 add-ons |
 | `ENTITLEMENT_DEFINITIONS` | `EntitlementDefinition[]` | All entitlement metadata |
 | `LIMIT_METADATA` | `Record<LimitKey, {...}>` | Limit names and descriptions |
-| `DEFAULT_PROMO_CODES` | `PromoCodeDefinition[]` | All 3 default promo codes |
+| `DEFAULT_PROMO_CODES` | `PromoCodeDefinition[]` | All 4 default promo codes |
 
 ## Utility Functions
 

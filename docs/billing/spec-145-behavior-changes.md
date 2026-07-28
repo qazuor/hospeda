@@ -42,11 +42,11 @@ After SPEC-145, callers without the required entitlement receive:
 | `PATCH /api/v1/protected/accommodations/{id}` | `EDIT_ACCOMMODATION_INFO` | tourist-free, tourist-plus, tourist-vip | Tourists cannot patch accommodation |
 | `POST /api/v1/protected/accommodations/{id}/faqs` | `EDIT_ACCOMMODATION_INFO` | tourist-free, tourist-plus, tourist-vip | Tourists cannot add FAQs |
 | `PUT /api/v1/protected/accommodations/{id}/faqs/{faqId}` | `EDIT_ACCOMMODATION_INFO` | tourist-free, tourist-plus, tourist-vip | Tourists cannot update FAQs |
-| `POST /api/v1/protected/owner-promotions` | `CREATE_PROMOTIONS` | tourist-*, owner-basico | Only owner-pro+ can create promotions |
-| `PATCH /api/v1/protected/owner-promotions/{id}` | `CREATE_PROMOTIONS` | tourist-*, owner-basico | Only owner-pro+ can edit promotions |
-| `PUT /api/v1/protected/owner-promotions/{id}` | `CREATE_PROMOTIONS` | tourist-*, owner-basico | Only owner-pro+ can update promotions |
-| `POST /api/v1/protected/accommodations/{id}/reviews` | `WRITE_REVIEWS` | owner-basico, owner-pro, owner-premium | **ALL hosts blocked** — intentional, owner decision 2026-06-05 (conflict-of-interest) |
-| `POST /api/v1/protected/destinations/{id}/reviews` | `WRITE_REVIEWS` | owner-basico, owner-pro, owner-premium | **ALL hosts blocked** — intentional, owner decision 2026-06-05 (conflict-of-interest) |
+| `POST /api/v1/protected/owner-promotions` | `CREATE_PROMOTIONS` | tourist-*, owner-basico | Only owner-pro+ can create promotions — **REVERSED by HOS-16**: `owner-basico` now grants `CREATE_PROMOTIONS` (`MAX_ACTIVE_PROMOTIONS: 2`) |
+| `PATCH /api/v1/protected/owner-promotions/{id}` | `CREATE_PROMOTIONS` | tourist-*, owner-basico | Only owner-pro+ can edit promotions — **REVERSED by HOS-16** (see above) |
+| `PUT /api/v1/protected/owner-promotions/{id}` | `CREATE_PROMOTIONS` | tourist-*, owner-basico | Only owner-pro+ can update promotions — **REVERSED by HOS-16** (see above) |
+| `POST /api/v1/protected/accommodations/{id}/reviews` | `WRITE_REVIEWS` | owner-basico, owner-pro, owner-premium | **ALL hosts blocked** — intentional, owner decision 2026-06-05 (conflict-of-interest). **REVERSED by SPEC-216**: owner plans inherit `WRITE_REVIEWS` via the tourist-VIP spread |
+| `POST /api/v1/protected/destinations/{id}/reviews` | `WRITE_REVIEWS` | owner-basico, owner-pro, owner-premium | **ALL hosts blocked** — intentional, owner decision 2026-06-05 (conflict-of-interest). **REVERSED by SPEC-216** (see above) |
 | `GET /api/v1/protected/accommodations/my/favorites-breakdown` | `VIEW_ADVANCED_STATS` | tourist-*, owner-basico | Only owner-pro+ can see advanced stats |
 | `GET /api/v1/protected/accommodations/my/market-comparison` | `VIEW_ADVANCED_STATS` | tourist-*, owner-basico | Only owner-pro+ can see advanced stats |
 | `GET /api/v1/protected/conversations/me/response-rate` | `VIEW_BASIC_STATS` | tourist-free, tourist-plus, tourist-vip | Tourists cannot see stats |
@@ -55,6 +55,12 @@ After SPEC-145, callers without the required entitlement receive:
 ## Key Decisions
 
 ### WRITE_REVIEWS — host lockout is intentional
+
+> **No longer true.** SPEC-216 made every owner/complex plan spread the
+> tourist-VIP entitlement set, which includes `WRITE_REVIEWS`, so hosts can
+> write reviews today (see the comment in
+> `apps/api/src/routes/accommodation/reviews/protected/create.ts`). The
+> paragraph below records the SPEC-145 rule.
 
 Hosts on all owner/complex plans (owner-basico, owner-pro, owner-premium)
 intentionally **cannot** write reviews. This is a conflict-of-interest policy:
@@ -72,6 +78,9 @@ that modifies accommodation content requires `PUBLISH_ACCOMMODATIONS` or
 `EDIT_ACCOMMODATION_INFO`, which are host-only entitlements.
 
 ### CREATE_PROMOTIONS blocks basico
+
+> **No longer true.** HOS-16 granted `CREATE_PROMOTIONS` to `owner-basico` with a
+> cap of 2 active promotions. The paragraph below records the SPEC-145 rule.
 
 Owner-basico is an entry-level host plan without promotion capabilities.
 Only owner-pro and owner-premium (and staff bypass) can manage promotions.
