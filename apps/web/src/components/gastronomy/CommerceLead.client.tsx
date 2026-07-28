@@ -23,10 +23,14 @@
  * belongs to a user fails with a duplicate-email error. That is HOS-296's
  * subject; do not write copy here that promises linking until it exists.
  *
+ * Approval is manual (HOS-305): a human reviews every lead before anything is
+ * published. `CommerceLeadProcess` says so before the visitor submits, and
+ * `CommerceLeadSuccess` repeats the same journey afterwards — see that file for
+ * why step 3 is worded the way it is.
+ *
  * Hydration: caller MUST use `client:load`.
  */
 
-import { CheckCircleIcon } from '@repo/icons';
 import type { CommerceLeadCreateInput } from '@repo/schemas';
 import { CommerceLeadCreateInputSchema } from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, useState } from 'react';
@@ -34,6 +38,7 @@ import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './CommerceLead.module.css';
+import { CommerceLeadProcess, CommerceLeadSuccess } from './CommerceLeadProcess';
 import type { CommerceLeadCurrentUser, FieldErrors, LeadFields } from './commerce-lead-fields';
 import { buildDescribedBy, buildInitialFields, hasSessionPrefill } from './commerce-lead-fields';
 
@@ -94,6 +99,10 @@ export function CommerceLead({
     const [formError, setFormError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    // The address the lead was actually sent with, echoed on the confirmation.
+    // Captured at submit time rather than read from `fields` so it reflects
+    // what the API received, not whatever the inputs hold afterwards.
+    const [submittedEmail, setSubmittedEmail] = useState('');
 
     // A session can carry an empty name, so "signed in" is not the same as
     // "something was pre-filled" — the notice must only claim what happened.
@@ -166,6 +175,7 @@ export function CommerceLead({
                 );
             }
 
+            setSubmittedEmail(parsed.data.email);
             setIsSuccess(true);
         } catch (err: unknown) {
             const msg =
@@ -183,27 +193,10 @@ export function CommerceLead({
 
     if (isSuccess) {
         return (
-            <div
-                className={styles.success}
-                role="alert"
-                aria-live="assertive"
-            >
-                <span
-                    className={styles.successIcon}
-                    aria-hidden="true"
-                >
-                    <CheckCircleIcon
-                        size={64}
-                        weight="duotone"
-                    />
-                </span>
-                <h2 className={styles.successTitle}>
-                    {t(
-                        'commerce.lead.success',
-                        '¡Gracias! Recibimos tu solicitud y nos contactaremos a la brevedad.'
-                    )}
-                </h2>
-            </div>
+            <CommerceLeadSuccess
+                t={t}
+                email={submittedEmail}
+            />
         );
     }
 
@@ -230,6 +223,10 @@ export function CommerceLead({
                     autoComplete="off"
                 />
             </div>
+
+            {/* What happens after submitting (HOS-305) — first thing in the
+                form so the manual-approval step is known before, not after. */}
+            <CommerceLeadProcess t={t} />
 
             {/* Signed-in prefill notice — the contact fields carry account data
                 but stay editable, so say so explicitly (HOS-295). Described-by

@@ -494,7 +494,23 @@ export const AccommodationImportResponseSchema = z.object({
                     /** Human-readable destination name. */
                     name: z.string()
                 })
-            )
+            ),
+            /**
+             * Whether a candidate's name IS the scraped locality, rather than
+             * merely containing it.
+             *
+             * **Only a confident hint may pre-fill the host's City field**
+             * (HOS-286), and only when there is exactly ONE candidate. The
+             * destination search is `ILIKE '%term%'`, a substring match, so
+             * `"Rosario"` (Santa Fe) comes back as the lone hit for
+             * `"Rosario del Tala"` and `"Uruguay"` as the lone hit for
+             * `"Concepción del Uruguay"`. Those are worth showing as
+             * suggestions; pre-filling one silently writes a wrong
+             * `destinationId`.
+             *
+             * Absent is treated as NOT confident by consumers.
+             */
+            confident: z.boolean().optional()
         })
         .optional(),
     /**

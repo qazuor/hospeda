@@ -15,9 +15,21 @@
             "message": "Contanos sobre tu negocio (opcional)"
         },
         "prefillNotice": "Completamos tu nombre y tu correo con los datos de tu cuenta. Podés editarlos si el contacto del negocio es otro: a ese correo te vamos a responder.",
+        "process": {
+            "title": "Cómo sigue después de enviarlo",
+            "step1": "Enviás el formulario con los datos de tu negocio.",
+            "step2": "Nuestro equipo lo revisa y lo aprueba. Suele tardar entre 24 y 48 horas hábiles.",
+            "step3": "Te avisamos por correo cuando esté listo, con los pasos para entrar.",
+            "step4": "Completás la publicación y contratás el plan."
+        },
         "submit": "Enviar solicitud",
         "submitting": "Enviando...",
-        "success": "¡Gracias! Recibimos tu solicitud y nos contactaremos a la brevedad.",
+        "successDetail": {
+            "title": "¡Listo! Recibimos tu solicitud.",
+            "sentTo": "Te vamos a escribir a {{email}}.",
+            "processTitle": "Qué pasa ahora",
+            "closing": "Si tenés dudas o pasan unos días sin novedades, escribinos y lo revisamos."
+        },
         "error": "Ocurrió un error al enviar la solicitud. Por favor, intentá de nuevo.",
         "rateLimited": "Demasiados intentos. Por favor, esperá unos minutos antes de volver a intentarlo.",
         "validation": {

@@ -15,9 +15,19 @@ import { CommerceLead } from '../../../src/components/gastronomy/CommerceLead.cl
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
+// Mirrors the real `t(key, fallback?, params?)` signature, including `{{name}}`
+// interpolation — the HOS-305 confirmation echoes the submitted email through it.
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key
+        t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
+            const template = fallback ?? _key;
+            if (!params) {
+                return template;
+            }
+            return template.replace(/\{\{(\w+)\}\}/g, (match: string, name: string) =>
+                name in params ? String(params[name]) : match
+            );
+        }
     })
 }));
 
@@ -359,7 +369,9 @@ describe('CommerceLead', () => {
             fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
 
             await waitFor(() => {
-                expect(screen.getByText(/gracias.*recibimos tu solicitud/i)).toBeInTheDocument();
+                // HOS-305 replaced the bare thank-you with a confirmation that
+                // repeats the journey; the acknowledgement itself still leads.
+                expect(screen.getByText(/recibimos tu solicitud/i)).toBeInTheDocument();
             });
         });
 
@@ -603,6 +615,141 @@ describe('CommerceLead', () => {
                     'aria-describedby',
                     'cl-prefill-notice cl-email-error'
                 );
+            });
+        });
+    });
+
+    // ── Approval process (HOS-305) ────────────────────────────────────────────
+
+    describe('Approval process', () => {
+        async function submitSuccessfully(email = 'juan@example.com') {
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ success: true })
+            } as Response);
+
+            await fillRequiredFields({ email });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+        }
+
+        it('explains the manual approval BEFORE the visitor submits', () => {
+            renderForm();
+            // The whole point of the issue: the applicant should not discover
+            // the review step only after sending the form.
+            expect(screen.getByText(/nuestro equipo lo revisa y lo aprueba/i)).toBeInTheDocument();
+        });
+
+        it('gives a concrete expectation of how long the review takes', () => {
+            renderForm();
+            expect(screen.getByText(/24 y 48 horas hábiles/i)).toBeInTheDocument();
+        });
+
+        it('renders the four journey steps in order, as an ordered list', () => {
+            renderForm();
+            const steps = screen.getByRole('list').querySelectorAll('li');
+            expect(steps).toHaveLength(4);
+            expect(steps[0]?.textContent).toMatch(/enviás el formulario/i);
+            expect(steps[3]?.textContent).toMatch(/contratás el plan/i);
+        });
+
+        // The submitted email does NOT link an approved lead to an existing
+        // account today — commerce-ports.ts calls signUpEmail with no lookup.
+        // That is HOS-296. The copy must not promise it in the meantime, in
+        // ANY phrasing, so this pins the exact wording of the step rather than
+        // blacklisting a couple of words a reworded promise would slip past.
+        it('pins step 3 to the account-neutral wording', () => {
+            renderForm();
+            const step3 = screen.getByRole('list').querySelectorAll('li')[2];
+            expect(step3?.textContent).toBe(
+                'Te avisamos por correo cuando esté listo, con los pasos para entrar.'
+            );
+        });
+
+        it('never claims the lead links to an existing account', () => {
+            renderForm();
+            const body = document.body.textContent ?? '';
+            for (const claim of [
+                /vincul/i,
+                /cuenta existente/i,
+                /cuenta ya registrada/i,
+                /te conectamos/i,
+                /iniciá sesión con/i,
+                /con tu cuenta de hospeda/i
+            ]) {
+                expect(body).not.toMatch(claim);
+            }
+        });
+
+        it('replaces the form with a confirmation, not just a toast', async () => {
+            renderForm();
+            await submitSuccessfully();
+
+            await waitFor(() => {
+                expect(screen.getByText(/recibimos tu solicitud/i)).toBeInTheDocument();
+            });
+            // The form itself is gone — this is a page state, not an overlay.
+            expect(
+                screen.queryByRole('button', { name: /enviar solicitud/i })
+            ).not.toBeInTheDocument();
+        });
+
+        it('repeats the same four steps on the confirmation', async () => {
+            renderForm();
+            await submitSuccessfully();
+
+            await waitFor(() => {
+                expect(screen.getByText(/qué pasa ahora/i)).toBeInTheDocument();
+            });
+            expect(screen.getByRole('list').querySelectorAll('li')).toHaveLength(4);
+            expect(screen.getByText(/nuestro equipo lo revisa y lo aprueba/i)).toBeInTheDocument();
+        });
+
+        it('echoes the address the lead was actually sent with', async () => {
+            renderForm();
+            await submitSuccessfully('contacto@laparrilla.com');
+
+            await waitFor(() => {
+                expect(
+                    screen.getByText(/te vamos a escribir a contacto@laparrilla\.com/i)
+                ).toBeInTheDocument();
+            });
+        });
+
+        // A signed-in applicant's lead commonly carries their own already-
+        // registered email (HOS-295 prefills it), which cannot be provisioned
+        // until HOS-296. So the confirmation must not assert that everything is
+        // handled and they need only wait — the negative half is the point, and
+        // "escribinos y lo revisamos" alone does not pin it: that clause was in
+        // the previous copy too.
+        it('invites the visitor to get in touch rather than only wait', async () => {
+            renderForm();
+            await submitSuccessfully();
+
+            await waitFor(() => {
+                expect(screen.getByText(/escribinos y lo revisamos/i)).toBeInTheDocument();
+            });
+
+            const body = document.body.textContent ?? '';
+            expect(body).not.toMatch(/no hace falta que hagas nada/i);
+            expect(body).not.toMatch(/nada más por ahora/i);
+        });
+
+        // `role="alert"` announces its whole subtree in one uninterruptible
+        // burst, so it must stay scoped to the acknowledgement. The steps and
+        // the closing note are ordinary content read at the user's own pace.
+        it('scopes the assertive alert to the acknowledgement only', async () => {
+            renderForm();
+            await submitSuccessfully('contacto@laparrilla.com');
+
+            await waitFor(() => {
+                const alert = screen.getByRole('alert');
+                expect(alert).toHaveAttribute('aria-live', 'assertive');
+                expect(alert.textContent).toMatch(/recibimos tu solicitud/i);
+                expect(alert.textContent).toContain('contacto@laparrilla.com');
+                // The repeated journey must NOT be inside the live region.
+                expect(alert.querySelector('ol')).toBeNull();
+                expect(alert.textContent).not.toMatch(/qué pasa ahora/i);
+                expect(alert.textContent).not.toMatch(/escribinos y lo revisamos/i);
             });
         });
     });
