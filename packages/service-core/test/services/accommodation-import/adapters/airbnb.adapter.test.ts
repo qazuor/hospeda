@@ -605,6 +605,52 @@ describe('AirbnbAdapter', () => {
             );
         });
 
+        it('should strip the scrape date and type from the metaDescription meta line (HOS-287)', async () => {
+            // Arrange — the exact value reported in the SMOKE-23-07 re-smoke: the
+            // tri_angle meta line is `<scrape date> · <property type> · <text>`.
+            const item: Record<string, unknown> = {
+                title: 'Casa',
+                propertyType: 'Casa rural entero',
+                metaDescription:
+                    '24 de jul de 2026 · Casa rural entero · Cheroga te ofrece tranquilidad, privacidad y espacios naturales.'
+            };
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.airbnb.com/rooms/1'),
+                makeCtx()
+            );
+
+            // Assert — the short description carries only the real text
+            expect(result.summary?.value).toBe(
+                'Cheroga te ofrece tranquilidad, privacidad y espacios naturales.'
+            );
+        });
+
+        it('should NOT rewrite an authored summary that looks like a meta line (HOS-287)', async () => {
+            // Arrange — `summary` is prose written by the host, not a meta line,
+            // so the cleanup must not touch it even when the shape collides.
+            const item: Record<string, unknown> = {
+                title: 'Casa',
+                propertyType: 'Casa rural entero',
+                summary: '24 de jul de 2026 · Casa rural entero · el día que abrimos.',
+                metaDescription: '24 de jul de 2026 · Casa rural entero · Otro texto.'
+            };
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.airbnb.com/rooms/1'),
+                makeCtx()
+            );
+
+            // Assert — verbatim
+            expect(result.summary?.value).toBe(
+                '24 de jul de 2026 · Casa rural entero · el día que abrimos.'
+            );
+        });
+
         it('should map scrapedLocality from the location string (tri_angle actor)', async () => {
             // Arrange
             const item: Record<string, unknown> = {
@@ -890,8 +936,9 @@ describe('AirbnbAdapter', () => {
             expect(result.description?.value).toBe(
                 'Cheroga offers you tranquility, privacy and natural spaces.'
             );
-            // summary from metaDescription fallback
-            expect(result.summary?.value).toContain('Cheroga offers you tranquility');
+            // summary from metaDescription fallback, with the meta line's scrape
+            // date and property-type segments stripped (HOS-287)
+            expect(result.summary?.value).toBe('Cheroga offers you tranquility.');
             // type prefers propertyType
             expect(result.type?.value).toBe('Entire cottage');
             // coordinates from nested coordinates object
