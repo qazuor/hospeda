@@ -37,8 +37,6 @@ import styles from './CommerceLead.module.css';
 import type { CommerceLeadCurrentUser, FieldErrors, LeadFields } from './commerce-lead-fields';
 import { buildDescribedBy, buildInitialFields, hasSessionPrefill } from './commerce-lead-fields';
 
-export type { CommerceLeadCurrentUser } from './commerce-lead-fields';
-
 // API base URL — must be absolute because the web app (host A) and the API
 // (host B) live on different origins both in dev (4321 vs 3001) and prod.
 const API_BASE = (import.meta.env.PUBLIC_API_URL ?? '').replace(/\/$/, '');

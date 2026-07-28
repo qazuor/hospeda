@@ -30,7 +30,7 @@ export type LeadFields = Omit<CommerceLeadCreateInput, 'domain'> & {
 export type FieldErrors = Partial<Record<keyof LeadFields, string>>;
 
 /** Empty form state — the anonymous visitor's starting point. */
-export const INITIAL_FIELDS: LeadFields = {
+const INITIAL_FIELDS: LeadFields = {
     businessName: '',
     contactName: '',
     email: '',
@@ -88,13 +88,13 @@ export function hasSessionPrefill({
  * Joins the element ids that describe a field into one `aria-describedby`
  * value, dropping the ones that are not currently rendered.
  *
- * @param params.ids - Candidate ids; `null`/`false` entries are dropped
+ * @param params.ids - Candidate ids; `null` entries are dropped
  * @returns The space-separated id list, or undefined when nothing describes it
  */
 export function buildDescribedBy({
     ids
 }: {
-    readonly ids: ReadonlyArray<string | null | false>;
+    readonly ids: ReadonlyArray<string | null>;
 }): string | undefined {
     const present = ids.filter((id): id is string => Boolean(id));
     return present.length > 0 ? present.join(' ') : undefined;
