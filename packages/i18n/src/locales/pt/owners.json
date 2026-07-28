@@ -21,18 +21,5 @@
             "q": "Que tipos de hospedagem posso publicar?",
             "a": "Casas de campo, chalés, apartamentos, hotéis, apart hotéis, campings e mais."
         }
-    },
-    "host": {
-        "landing": {
-            "trialCallout": "Experimente o Hospeda gratis por {{trialDays}} dias. Seu periodo de avaliacao comeca quando voce publica sua primeira propriedade. Voce nao paga nada ate o dia {{trialDays}}, sem compromisso."
-        },
-        "pages": {
-            "nueva": {
-                "trialCalloutTitle": "{{trialDays}} dias gratis ao publicar",
-                "trialCalloutTitleIneligible": "Monte sua propriedade",
-                "trialNote": "Quando voce publicar sua primeira propriedade, seu periodo de avaliacao gratuito de {{trialDays}} dias vai comecar. Voce nao paga nada ate o dia {{trialDays}}, sem compromisso. Voce pode explorar o painel inteiro enquanto monta o seu rascunho.",
-                "trialNoteIneligible": "Voce pode criar e editar seu rascunho agora. Para publica-lo e ficar visivel vai precisar de um plano de anfitriao ativo."
-            }
-        }
     }
 }

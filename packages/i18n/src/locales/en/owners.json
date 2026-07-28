@@ -21,18 +21,5 @@
             "q": "What kinds of accommodation can I list?",
             "a": "Country houses, cabins, apartments, hotels, apart hotels, campsites, and more."
         }
-    },
-    "host": {
-        "landing": {
-            "trialCallout": "Try Hospeda free for {{trialDays}} days. Your trial starts when you publish your first property. You won't be charged until day {{trialDays}}, no commitment."
-        },
-        "pages": {
-            "nueva": {
-                "trialCalloutTitle": "{{trialDays}} free days when you publish",
-                "trialCalloutTitleIneligible": "Set up your property",
-                "trialNote": "Your free {{trialDays}}-day trial starts when you publish your first property. You won't be charged until day {{trialDays}}, no commitment. You can explore the full panel while you draft your listing.",
-                "trialNoteIneligible": "You can create and edit your draft now. To publish it and go live you'll need an active host plan."
-            }
-        }
     }
 }

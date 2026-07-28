@@ -489,7 +489,8 @@
         "heroHeadline": "[TODO]",
         "heroSubheadline": "[TODO]",
         "primaryCta": "[TODO]",
-        "secondaryCta": "[TODO]"
+        "secondaryCta": "[TODO]",
+        "trialCallout": "Experimente o Hospeda gratis por {{trialDays}} dias na sua primeira assinatura. Você escolhe seu plano, cadastra seu cartão e nada é cobrado até o teste terminar."
     },
     "fromAdminBanner": {
         "eyebrow": "Trouxemos você do painel — você precisa publicar uma propriedade primeiro para gerenciar suas acomodações."
@@ -692,6 +693,14 @@
             "promotions": "Promoções",
             "messages": "Mensagens",
             "subscription": "Assinatura"
+        }
+    },
+    "pages": {
+        "nueva": {
+            "trialCalloutTitle": "{{trialDays}} dias gratis na sua primeira assinatura",
+            "trialCalloutTitleIneligible": "Monte sua propriedade",
+            "trialNote": "Você pode montar sua propriedade agora. O teste gratuito de {{trialDays}} dias começa quando você escolhe seu plano: cadastra seu cartão e nada é cobrado até terminar. Vale só para a sua primeira assinatura.",
+            "trialNoteIneligible": "Voce pode criar e editar seu rascunho agora. Para publica-lo e ficar visivel vai precisar de um plano de anfitriao ativo."
         }
     }
 }

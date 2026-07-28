@@ -11,12 +11,21 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import enOwners from '../src/locales/en/owners.json';
-import esOwners from '../src/locales/es/owners.json';
-import ptOwners from '../src/locales/pt/owners.json';
+import enHost from '../src/locales/en/host.json';
+import esHost from '../src/locales/es/host.json';
+import ptHost from '../src/locales/pt/host.json';
 
-/** Trial-messaging keys inside owners.json (namespace prefix stripped). */
-const TRIAL_KEYS = ['host.landing.trialCallout', 'host.pages.nueva.trialNote'] as const;
+/**
+ * Trial-messaging keys inside host.json, as paths WITHIN the file — the `host.`
+ * the call sites use is the namespace (the file's basename), not part of the
+ * path.
+ *
+ * These used to live in `owners.json`, which flattens to `owners.host.*` — a
+ * key no `t('host.…')` call site could ever reach, so the strings this guard
+ * validated were never rendered and the `en`/`pt` translations were inert
+ * (HOS-331). Moved to the namespace the call sites actually request.
+ */
+const TRIAL_KEYS = ['landing.trialCallout', 'pages.nueva.trialNote'] as const;
 
 /**
  * Card-first-incompatible phrases: any of these appearing in a trial key means
@@ -25,9 +34,9 @@ const TRIAL_KEYS = ['host.landing.trialCallout', 'host.pages.nueva.trialNote'] a
 const FORBIDDEN_NO_CARD_PHRASES = ['sin tarjeta', 'no credit card', 'sem cartao', 'sem cartão'];
 
 const LOCALES: ReadonlyArray<readonly [string, Record<string, unknown>]> = [
-    ['es', esOwners as Record<string, unknown>],
-    ['en', enOwners as Record<string, unknown>],
-    ['pt', ptOwners as Record<string, unknown>]
+    ['es', esHost as Record<string, unknown>],
+    ['en', enHost as Record<string, unknown>],
+    ['pt', ptHost as Record<string, unknown>]
 ];
 
 /** Resolves a dot-notation key against a nested object. */
@@ -47,7 +56,7 @@ describe('owners trial copy is card-first compatible (BETA-185)', () => {
                 const value = resolveKey(dict, key);
                 expect(
                     typeof value === 'string' && value.length > 0,
-                    `${locale}/owners.json:${key}`
+                    `${locale}/host.json:${key}`
                 ).toBe(true);
             });
 
@@ -57,7 +66,7 @@ describe('owners trial copy is card-first compatible (BETA-185)', () => {
                 const hit = FORBIDDEN_NO_CARD_PHRASES.find((phrase) => text.includes(phrase));
                 expect(
                     hit,
-                    `${locale}/owners.json:${key} still promises "${hit}" — card-first (HOS-171) collects the card on day 1`
+                    `${locale}/host.json:${key} still promises "${hit}" — card-first (HOS-171) collects the card on day 1`
                 ).toBeUndefined();
             });
         }
