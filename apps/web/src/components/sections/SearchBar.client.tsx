@@ -14,7 +14,7 @@ import {
     StarIcon,
     UsersIcon
 } from '@repo/icons';
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { createPortal } from 'react-dom';
@@ -23,6 +23,7 @@ import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { cn } from '@/lib/cn';
+import { trapFocus } from '@/lib/focus-trap';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './SearchBar.module.css';
@@ -91,6 +92,19 @@ const MOBILE_SHEET_MEDIA_QUERY = '(max-width: 900px)';
  * once it has been portaled away from the bar's DOM subtree.
  */
 const PANEL_MARKER_ATTRIBUTE = 'data-search-panel';
+
+/**
+ * Stable DOM ids, one per panel, so each trigger column can point at the panel
+ * it owns via `aria-controls`. Paired per-panel (rather than a single shared
+ * id) because only one panel is rendered at a time and the id has to exist on
+ * whichever panel is actually mounted.
+ */
+const PANEL_IDS = {
+    destination: 'search-panel-destination',
+    type: 'search-panel-type',
+    dates: 'search-panel-dates',
+    guests: 'search-panel-guests'
+} as const;
 
 /**
  * Tracks whether the viewport is at bottom-sheet size, staying in sync with
@@ -224,6 +238,18 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
     const [typeQuery, setTypeQuery] = useState('');
     const destinationSearchInputRef = useRef<HTMLInputElement | null>(null);
     const typeSearchInputRef = useRef<HTMLInputElement | null>(null);
+    // Focus management for the mobile bottom-sheet (HOS-323 follow-up). The
+    // portal moves the panel to the end of <body>, so without these a keyboard
+    // user would tab through the entire page — visually covered by the
+    // backdrop — before reaching the sheet's own controls (WCAG 2.4.3).
+    /** The currently rendered panel element (only one is mounted at a time). */
+    const panelRef = useRef<HTMLDivElement | null>(null);
+    /** The panel's close (X) button — the entry point for focus on open. */
+    const panelCloseButtonRef = useRef<HTMLButtonElement | null>(null);
+    /** The trigger column that opened the active panel, to restore focus to. */
+    const triggerRef = useRef<HTMLElement | null>(null);
+    /** Whether a panel was open on the previous render of the restore effect. */
+    const wasPanelOpenRef = useRef(false);
 
     // Click outside / ESC to close
     const handleClickOutside = useCallback((event: MouseEvent) => {
@@ -237,11 +263,24 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
         setActivePanel(null);
     }, []);
 
-    const handleKeyDown = useCallback((event: KeyboardEvent) => {
-        if (event.key === 'Escape') {
-            setActivePanel(null);
-        }
-    }, []);
+    const handleKeyDown = useCallback(
+        (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setActivePanel(null);
+                return;
+            }
+            // Focus trap — bottom-sheet ONLY. In sheet mode the panel is a
+            // modal: it is portaled to <body> and a backdrop covers the page,
+            // so letting Tab escape into content the user cannot see is a
+            // WCAG 2.4.3 failure. On desktop the same panel is a popover with
+            // no backdrop and the rest of the page stays usable, so trapping
+            // focus there would be a new bug, not a fix.
+            if (event.key === 'Tab' && isMobileSheet && panelRef.current) {
+                trapFocus(panelRef.current, event);
+            }
+        },
+        [isMobileSheet]
+    );
 
     useEffect(() => {
         document.addEventListener('mousedown', handleClickOutside);
@@ -259,24 +298,30 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
      * background scroll doesn't bleed through the drawer.
      */
     useEffect(() => {
-        const isOpen = activePanel !== null;
-        const previousOverflow = document.documentElement.style.overflow;
-        if (isOpen) {
-            document.documentElement.setAttribute('data-search-panel-open', '');
-            // Only lock scroll on mobile sheet sizes — desktop dropdowns are
-            // popovers and shouldn't block page scroll.
-            if (window.matchMedia(MOBILE_SHEET_MEDIA_QUERY).matches) {
-                document.documentElement.style.overflow = 'hidden';
-            }
-        } else {
-            document.documentElement.removeAttribute('data-search-panel-open');
-            document.documentElement.style.overflow = previousOverflow;
+        if (activePanel === null) return;
+        document.documentElement.setAttribute('data-search-panel-open', '');
+        // Only lock scroll on mobile sheet sizes — desktop dropdowns are
+        // popovers and shouldn't block page scroll. Read from the reactive
+        // `isMobileSheet` (not an imperative matchMedia call) so that crossing
+        // the breakpoint while a panel is open re-runs this effect: otherwise
+        // rotating a tablet from portrait to landscape left <html> stuck at
+        // `overflow: hidden` behind a small dropdown, and the mirror case
+        // opened a full-screen sheet with no scroll lock at all.
+        if (!isMobileSheet) {
+            return () => {
+                document.documentElement.removeAttribute('data-search-panel-open');
+            };
         }
+        // Captured per-run, immediately before the write, so a re-run triggered
+        // by a mode change can never restore a stale 'hidden' set by this very
+        // effect on a previous run.
+        const previousOverflow = document.documentElement.style.overflow;
+        document.documentElement.style.overflow = 'hidden';
         return () => {
             document.documentElement.removeAttribute('data-search-panel-open');
             document.documentElement.style.overflow = previousOverflow;
         };
-    }, [activePanel]);
+    }, [activePanel, isMobileSheet]);
 
     /** Close the active panel (used by the mobile X button). */
     const closePanel = useCallback(() => setActivePanel(null), []);
@@ -287,19 +332,58 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
     // bottom-sheets; auto-focusing a text input there pops the virtual
     // keyboard, which overlaps the option list and blocks selection, so we
     // only autofocus on desktop popover sizes (>900px).
+    // Reads the reactive `isMobileSheet` rather than calling matchMedia
+    // imperatively, so the BETA-24 guard follows live breakpoint changes
+    // instead of freezing whatever the viewport was when the panel opened.
     useEffect(() => {
-        const isSheetSize = window.matchMedia(MOBILE_SHEET_MEDIA_QUERY).matches;
         if (activePanel !== 'destination') {
             setDestinationQuery('');
-        } else if (!isSheetSize) {
+        } else if (!isMobileSheet) {
             destinationSearchInputRef.current?.focus();
         }
         if (activePanel !== 'type') {
             setTypeQuery('');
-        } else if (!isSheetSize) {
+        } else if (!isMobileSheet) {
             typeSearchInputRef.current?.focus();
         }
-    }, [activePanel]);
+    }, [activePanel, isMobileSheet]);
+
+    /**
+     * Move focus into the sheet when it opens — bottom-sheet mode ONLY.
+     *
+     * The target is deliberately the panel's close (X) button and never the
+     * destination/type search `<input>`: focusing a text input inside a mobile
+     * sheet pops the virtual keyboard over the option list (BETA-24, guarded
+     * by the effect above).
+     *
+     * `isMobileSheet` is a dependency for two reasons: it gates the behaviour,
+     * and `PanelLayer` remounts the whole panel subtree when the breakpoint is
+     * crossed (see its JSDoc) — without re-running here, focus would silently
+     * land on `<body>` after such a remount.
+     */
+    useEffect(() => {
+        if (!isMobileSheet || activePanel === null) return;
+        panelCloseButtonRef.current?.focus();
+    }, [activePanel, isMobileSheet]);
+
+    /**
+     * Restore focus to the trigger column that opened the sheet once it
+     * closes, whatever closed it (ESC, backdrop, X button, click outside, or
+     * picking an option). Sheet mode only — the desktop popover never stole
+     * focus in the first place, so there is nothing to give back.
+     */
+    useEffect(() => {
+        if (activePanel !== null) {
+            wasPanelOpenRef.current = true;
+            return;
+        }
+        if (!wasPanelOpenRef.current) return;
+        wasPanelOpenRef.current = false;
+        const trigger = triggerRef.current;
+        triggerRef.current = null;
+        if (!isMobileSheet) return;
+        trigger?.focus();
+    }, [activePanel, isMobileSheet]);
 
     /** Substring-filtered destinations driven by the panel search input. */
     const filteredDestinations = useMemo(() => {
@@ -318,8 +402,11 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
         });
     }, [typeQuery, t]);
 
-    // Panel toggle (measures viewport space to decide direction)
-    const togglePanel = useCallback((panel: ActivePanel) => {
+    // Panel toggle (measures viewport space to decide direction). `triggerEl`
+    // is the column that initiated the toggle, remembered so focus can be
+    // restored to it when the sheet closes.
+    const togglePanel = useCallback((panel: ActivePanel, triggerEl: HTMLElement | null) => {
+        triggerRef.current = triggerEl;
         setActivePanel((prev) => {
             if (prev === panel) return null;
             /* Measure space below the bar to decide open direction */
@@ -393,17 +480,20 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         styles.colDivider,
                         activePanel === 'destination' && styles.colActive
                     )}
-                    onClick={() => togglePanel('destination')}
+                    onClick={(e) => togglePanel('destination', e.currentTarget)}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            togglePanel('destination');
+                            togglePanel('destination', e.currentTarget);
                         }
                     }}
                     role="button"
                     tabIndex={0}
                     aria-expanded={activePanel === 'destination'}
                     aria-haspopup="listbox"
+                    aria-controls={
+                        activePanel === 'destination' ? PANEL_IDS.destination : undefined
+                    }
                 >
                     <div className={styles.icon}>
                         <LocationIcon
@@ -436,17 +526,18 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         styles.colDivider,
                         activePanel === 'type' && styles.colActive
                     )}
-                    onClick={() => togglePanel('type')}
+                    onClick={(e) => togglePanel('type', e.currentTarget)}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            togglePanel('type');
+                            togglePanel('type', e.currentTarget);
                         }
                     }}
                     role="button"
                     tabIndex={0}
                     aria-expanded={activePanel === 'type'}
                     aria-haspopup="listbox"
+                    aria-controls={activePanel === 'type' ? PANEL_IDS.type : undefined}
                 >
                     <div className={styles.icon}>
                         <BuildingIcon
@@ -479,11 +570,11 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         styles.colDivider,
                         activePanel === 'dates' && styles.colActive
                     )}
-                    onClick={() => togglePanel('dates')}
+                    onClick={(e) => togglePanel('dates', e.currentTarget)}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            togglePanel('dates');
+                            togglePanel('dates', e.currentTarget);
                         }
                     }}
                     onPointerEnter={preloadCalendar}
@@ -492,6 +583,7 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                     tabIndex={0}
                     aria-expanded={activePanel === 'dates'}
                     aria-haspopup="dialog"
+                    aria-controls={activePanel === 'dates' ? PANEL_IDS.dates : undefined}
                 >
                     <div className={styles.icon}>
                         <CalendarDotsIcon
@@ -518,17 +610,18 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                 {/* biome-ignore lint/a11y/useSemanticElements: div contains nested divs which are invalid inside <button> */}
                 <div
                     className={cn(styles.col, activePanel === 'guests' && styles.colActive)}
-                    onClick={() => togglePanel('guests')}
+                    onClick={(e) => togglePanel('guests', e.currentTarget)}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            togglePanel('guests');
+                            togglePanel('guests', e.currentTarget);
                         }
                     }}
                     role="button"
                     tabIndex={0}
                     aria-expanded={activePanel === 'guests'}
                     aria-haspopup="dialog"
+                    aria-controls={activePanel === 'guests' ? PANEL_IDS.guests : undefined}
                 >
                     <div className={styles.icon}>
                         <UsersIcon
@@ -616,6 +709,8 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                 {activePanel === 'destination' && (
                     // biome-ignore lint/a11y/useFocusableInteractive: listbox children (buttons) handle focus
                     <div
+                        ref={panelRef}
+                        id={PANEL_IDS.destination}
                         className={cn(
                             styles.panel,
                             styles.destinationPanel,
@@ -623,11 +718,17 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         )}
                         // biome-ignore lint/a11y/useSemanticElements: custom styled dropdown cannot use native <select>
                         role="listbox"
+                        // No `aria-modal` here: it is only defined for dialog,
+                        // alertdialog and window roles, so on a listbox it is
+                        // invalid ARIA that an audit would flag. The sheet still
+                        // BEHAVES modally (backdrop, scroll lock, focus trap) —
+                        // that part is behaviour, not a property to assert.
                         data-search-panel=""
                     >
                         <PanelCloseHeader
                             ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
                             onClose={closePanel}
+                            closeButtonRef={panelCloseButtonRef}
                         />
                         <div className={styles.panelSearch}>
                             <input
@@ -728,6 +829,8 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                 {activePanel === 'type' && (
                     // biome-ignore lint/a11y/useFocusableInteractive: listbox children (buttons) handle focus
                     <div
+                        ref={panelRef}
+                        id={PANEL_IDS.type}
                         className={cn(
                             styles.panel,
                             styles.typePanel,
@@ -735,11 +838,14 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         )}
                         // biome-ignore lint/a11y/useSemanticElements: custom single-select dropdown cannot use native <select>
                         role="listbox"
+                        // See the destination panel: `aria-modal` is not valid
+                        // on a listbox role.
                         data-search-panel=""
                     >
                         <PanelCloseHeader
                             ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
                             onClose={closePanel}
+                            closeButtonRef={panelCloseButtonRef}
                         />
                         <div className={styles.panelSearch}>
                             <input
@@ -821,6 +927,8 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                 {/* Calendar panel */}
                 {activePanel === 'dates' && (
                     <div
+                        ref={panelRef}
+                        id={PANEL_IDS.dates}
                         className={cn(
                             styles.panel,
                             styles.calendarPanel,
@@ -828,12 +936,14 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         )}
                         // biome-ignore lint/a11y/useSemanticElements: popover panel, not a modal — <dialog> API requires open/close management incompatible with conditional render
                         role="dialog"
+                        aria-modal={isMobileSheet ? true : undefined}
                         aria-label={t('home.searchBar.datesLabel', 'Fechas')}
                         data-search-panel=""
                     >
                         <PanelCloseHeader
                             ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
                             onClose={closePanel}
+                            closeButtonRef={panelCloseButtonRef}
                         />
                         <div className={styles.panelBody}>
                             <Suspense fallback={null}>
@@ -850,6 +960,8 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                 {/* Guests panel */}
                 {activePanel === 'guests' && (
                     <div
+                        ref={panelRef}
+                        id={PANEL_IDS.guests}
                         className={cn(
                             styles.panel,
                             styles.guestsPanel,
@@ -857,12 +969,14 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         )}
                         // biome-ignore lint/a11y/useSemanticElements: popover panel, not a modal — <dialog> API requires open/close management incompatible with conditional render
                         role="dialog"
+                        aria-modal={isMobileSheet ? true : undefined}
                         aria-label={t('home.searchBar.guestsLabel', 'Huéspedes')}
                         data-search-panel=""
                     >
                         <PanelCloseHeader
                             ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
                             onClose={closePanel}
+                            closeButtonRef={panelCloseButtonRef}
                         />
                         <div className={styles.panelBody}>
                             {/* Adults row */}
@@ -943,17 +1057,45 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
  * Escape hatch out of the hero's stacking context (HOS-323).
  *
  * On mobile the panels are `position: fixed` bottom-sheets at `z-index: 100`,
- * but they render inside `.hero__bottom { position: relative; z-index: 2 }`
- * (HeroSection.astro), which establishes a stacking context. A z-index only
- * competes within its own context, so the whole hero subtree — sheet included —
- * paints at level 2 and the sections below it (`.section__container
- * { z-index: 10 }`) cover the sheet. Taps meant for the stepper hit the section
- * behind it instead, which fires the click-outside handler and closes the sheet.
- * Reparenting the node to `<body>` is the only way out of an ancestor context.
+ * yet the sections below the hero paint on top of them. The culprit is NOT the
+ * hero's base layering: at every width `.hero__container` is
+ * `position: relative; z-index: 15` (HeroSection.astro), which beats the
+ * `.section__container { z-index: 10 }` of the sections that follow, and
+ * `.hero__bottom` sits at `z-index: 10` inside it.
+ *
+ * The enabler is `@media (max-width: 640px)`, which sets
+ * `.hero__container { position: static }` (needed so the rotating hero photo
+ * can anchor to `.hero` itself). A static element establishes no stacking
+ * context, so the protective z-15 layer dissolves and the only positioned
+ * ancestor left is the same media query's `.hero__bottom
+ * { position: relative; z-index: 2 }`. The sheet's z-index: 100 then competes
+ * only *within* that level-2 context, and the level-10 sections bury it. Taps
+ * meant for the stepper hit the section behind it instead, which fires the
+ * click-outside handler and closes the sheet. Reparenting the node to `<body>`
+ * is the only way out of an ancestor context.
+ *
+ * The portal deliberately covers the whole 0–900px band even though the
+ * burial itself only happens below 640px. The rule is "portal whenever the CSS
+ * has made the panel a fixed sheet", which keeps the JS gate bound to the one
+ * media query it must mirror (`MOBILE_SHEET_MEDIA_QUERY`) instead of to a
+ * narrower burial window that would silently shift the next time the hero's
+ * responsive layout is retuned.
  *
  * Desktop is deliberately left in place: there the panel is `position: absolute`
  * against `.searchBar`, so moving it would detach it from its containing block
  * and drop it at the top of the document.
+ *
+ * REMOUNT WARNING — crossing the breakpoint with a panel open destroys and
+ * rebuilds the panel subtree. React never matches a `Fragment` fiber to a
+ * `HostPortal` fiber, so flipping `portaled` is a delete + insert, not a move.
+ * Consequences: DOM focus is lost (the focus effect in `SearchBarInner`
+ * depends on `isMobileSheet` precisely so it can re-establish it),
+ * `SearchBarCalendar`'s displayed month resets to `defaultMonth={today}`, and
+ * the sheet's entry animation replays. Parent-owned state (`dateRange`,
+ * `adults`, `children`, the panel queries) lives in `SearchBarInner` and
+ * therefore survives untouched. This is accepted: the transition requires a
+ * physical resize/rotation mid-interaction, and the alternative (always
+ * portaling and re-implementing desktop positioning) is a much larger change.
  */
 function PanelLayer({
     portaled,
@@ -976,14 +1118,23 @@ function PanelLayer({
  */
 function PanelCloseHeader({
     ariaLabel,
-    onClose
+    onClose,
+    closeButtonRef
 }: {
     readonly ariaLabel: string;
     readonly onClose: () => void;
+    /**
+     * Exposes the close button so the sheet can move focus onto it when it
+     * opens. It is deliberately the focus target instead of the panel's search
+     * input, which would pop the mobile virtual keyboard over the option list
+     * (BETA-24).
+     */
+    readonly closeButtonRef?: RefObject<HTMLButtonElement | null>;
 }) {
     return (
         <div className={styles.panelHeader}>
             <button
+                ref={closeButtonRef}
                 type="button"
                 className={styles.panelClose}
                 onClick={onClose}

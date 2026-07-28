@@ -10,7 +10,7 @@
  *    intentionally not exercised here (its Suspense fallback is null).
  */
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildSearchUrl, SearchBar } from '../../../src/components/sections/SearchBar.client';
@@ -197,6 +197,94 @@ const MOCK_DESTINATIONS = [
 ] as const;
 
 const SEARCH_BASE = '/es/alojamientos/';
+
+// ---------------------------------------------------------------------------
+// Controllable viewport mock
+// ---------------------------------------------------------------------------
+
+/**
+ * Handle returned by {@link installViewportMock} so a test can drive the
+ * breakpoint at runtime.
+ */
+interface ViewportController {
+    /**
+     * Flips `matches` on the bottom-sheet media query and fires every
+     * registered `change` listener, wrapped in `act()` so React state settles.
+     */
+    setMatches(next: boolean): void;
+    /** How many `change` listeners are currently registered (leak detection). */
+    readonly listenerCount: number;
+}
+
+/**
+ * Installs a `matchMedia` stub for `(max-width: 900px)` that can actually EMIT
+ * `change` events.
+ *
+ * The previous stub hard-coded `addEventListener`/`removeEventListener` as
+ * no-ops, which made the whole resize path structurally untestable: the
+ * listener registered by `useIsMobileSheet`, its cleanup, and every breakpoint
+ * transition were invisible to the suite — exactly where the scroll-lock
+ * split-brain and the Fragment↔Portal remount live.
+ */
+function installViewportMock(initialIsSheet: boolean): ViewportController {
+    let isSheet = initialIsSheet;
+    const listeners = new Set<(event: MediaQueryListEvent) => void>();
+
+    vi.spyOn(window, 'matchMedia').mockImplementation((query: string) => {
+        // Only the bottom-sheet query is driven by this controller; anything
+        // else (e.g. prefers-reduced-motion) keeps reporting "no match".
+        const tracksSheetQuery = query.includes('900px');
+        return {
+            get matches() {
+                return tracksSheetQuery ? isSheet : false;
+            },
+            media: query,
+            onchange: null,
+            addListener: () => {},
+            removeListener: () => {},
+            addEventListener: (
+                _type: string,
+                listener: (event: MediaQueryListEvent) => void
+            ): void => {
+                if (tracksSheetQuery) listeners.add(listener);
+            },
+            removeEventListener: (
+                _type: string,
+                listener: (event: MediaQueryListEvent) => void
+            ): void => {
+                listeners.delete(listener);
+            },
+            dispatchEvent: () => false
+        } as unknown as MediaQueryList;
+    });
+
+    return {
+        setMatches(next: boolean): void {
+            isSheet = next;
+            act(() => {
+                for (const listener of [...listeners]) {
+                    listener({
+                        matches: next,
+                        media: '(max-width: 900px)'
+                    } as MediaQueryListEvent);
+                }
+            });
+        },
+        get listenerCount(): number {
+            return listeners.size;
+        }
+    };
+}
+
+/** Force `matchMedia('(max-width: 900px)')` to report a bottom-sheet viewport. */
+function mockMobileViewport(): ViewportController {
+    return installViewportMock(true);
+}
+
+/** Force `matchMedia('(max-width: 900px)')` to report a desktop viewport. */
+function mockDesktopViewport(): ViewportController {
+    return installViewportMock(false);
+}
 
 describe('<SearchBar /> destinations panel keyboard interaction', () => {
     let assignSpy: ReturnType<typeof vi.fn>;
@@ -434,20 +522,10 @@ describe('<SearchBar /> type panel autofocus (BETA-24 regression)', () => {
     });
 
     it('does NOT autofocus the type search input on mobile bottom-sheet sizes', async () => {
-        // Force mobile: the (max-width: 900px) media query matches.
-        vi.spyOn(window, 'matchMedia').mockImplementation(
-            (query: string) =>
-                ({
-                    matches: query.includes('900px'),
-                    media: query,
-                    onchange: null,
-                    addListener: () => {},
-                    removeListener: () => {},
-                    addEventListener: () => {},
-                    removeEventListener: () => {},
-                    dispatchEvent: () => false
-                }) as MediaQueryList
-        );
+        // Force mobile: the (max-width: 900px) media query matches. Shares the
+        // single controllable helper — the old byte-identical inline copy was
+        // pure duplication.
+        mockMobileViewport();
 
         const user = userEvent.setup();
         render(
@@ -469,36 +547,27 @@ describe('<SearchBar /> type panel autofocus (BETA-24 regression)', () => {
 // Regression: HOS-323 — the guests stepper is unusable on mobile because the
 // bottom-sheet panel is trapped inside the hero's stacking context.
 //
-// `.panel` is `position: fixed; z-index: 100` on mobile, but it renders inside
-// `.hero__bottom { position: relative; z-index: 2 }` (HeroSection.astro), which
-// establishes a stacking context. The 100 is therefore resolved *within* that
-// context, so the whole hero subtree paints at level 2 and later sections
-// (`.section__container { z-index: 10 }`) paint on top of the sheet. Tapping
-// `+` hits the section behind it, which fires the click-outside handler and
-// closes the panel without applying the change.
+// `.panel` is `position: fixed; z-index: 100` on mobile, yet later sections
+// paint on top of it. The base hero layering is NOT the culprit:
+// `.hero__container` is `position: relative; z-index: 15` at every width, which
+// beats the `.section__container { z-index: 10 }` of the sections below.
+//
+// The enabler is `@media (max-width: 640px)`, which sets
+// `.hero__container { position: static }` (so the rotating hero photo can
+// anchor to `.hero`). That dissolves the protective z-15 stacking context and
+// leaves the same media query's `.hero__bottom { position: relative;
+// z-index: 2 }` as the nearest positioned ancestor, so the sheet's z-index: 100
+// competes only inside a level-2 context and the level-10 sections bury it.
+// Tapping `+` hits the section behind it, which fires the click-outside handler
+// and closes the panel without applying the change.
 //
 // The only fix that escapes an ancestor stacking context is moving the node out
-// of it, so the sheet (and its backdrop) are portaled to `document.body` — but
-// only at bottom-sheet sizes, since the desktop popover is positioned
-// `absolute` relative to the bar and would fly off if reparented.
+// of it, so the sheet (and its backdrop) are portaled to `document.body` — at
+// every bottom-sheet size (0–900px), not just the 640px burial window, so the
+// JS gate stays bound to the CSS media query it mirrors. The desktop popover is
+// positioned `absolute` relative to the bar and would fly off if reparented,
+// so it is deliberately left in place.
 // ---------------------------------------------------------------------------
-
-/** Force `matchMedia('(max-width: 900px)')` to report a bottom-sheet viewport. */
-function mockMobileViewport() {
-    vi.spyOn(window, 'matchMedia').mockImplementation(
-        (query: string) =>
-            ({
-                matches: query.includes('900px'),
-                media: query,
-                onchange: null,
-                addListener: () => {},
-                removeListener: () => {},
-                addEventListener: () => {},
-                removeEventListener: () => {},
-                dispatchEvent: () => false
-            }) as MediaQueryList
-    );
-}
 
 describe('<SearchBar /> mobile panel portal (HOS-323 regression)', () => {
     beforeEach(() => {
@@ -530,7 +599,11 @@ describe('<SearchBar /> mobile panel portal (HOS-323 regression)', () => {
         // Anything still inside the bar inherits every ancestor stacking
         // context the hero establishes, which is exactly what buries the sheet.
         expect(bar.contains(panel)).toBe(false);
-        expect(document.body.contains(panel)).toBe(true);
+        // `document.body.contains(panel)` would be vacuous here: RTL appends
+        // its own container to <body>, so it holds for ANY rendered element
+        // even with the portal deleted. The real contract is that the panel is
+        // a DIRECT child of <body>, which only createPortal can produce.
+        expect(panel.parentElement).toBe(document.body);
     });
 
     it('renders the mobile backdrop outside the search bar subtree too', async () => {
@@ -659,5 +732,426 @@ describe('<SearchBar /> mobile panel portal (HOS-323 regression)', () => {
 
         const panel = screen.getByRole('dialog', { name: 'Huéspedes' });
         expect(screen.getByRole('search').contains(panel)).toBe(true);
+        expect(panel.parentElement).not.toBe(document.body);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Breakpoint transitions — the resize path the no-op matchMedia stub hid.
+//
+// The scroll lock and the autofocus guard used to call `window.matchMedia`
+// imperatively inside effects keyed only on `[activePanel]`, while the portal
+// gate read a reactive hook. Split brain: rotating a tablet from portrait to
+// landscape while a panel was open turned the sheet into a popover but never
+// re-ran the lock effect, leaving <html> stuck at `overflow: hidden` behind a
+// small dropdown (and the mirror case opened a sheet with no lock at all).
+// ---------------------------------------------------------------------------
+
+describe('<SearchBar /> breakpoint transitions', () => {
+    beforeEach(() => {
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: { assign: vi.fn(), href: 'http://localhost/', pathname: '/', search: '' }
+        });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('releases the <html> scroll lock when the viewport grows past the sheet breakpoint', async () => {
+        const viewport = mockMobileViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /huéspedes/i }));
+        expect(document.documentElement.style.overflow).toBe('hidden');
+
+        // Rotate to landscape / resize past 900px with the panel still open.
+        viewport.setMatches(false);
+
+        expect(document.documentElement.style.overflow).not.toBe('hidden');
+    });
+
+    it('applies the <html> scroll lock when the viewport shrinks into sheet mode', async () => {
+        const viewport = mockDesktopViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /huéspedes/i }));
+        expect(document.documentElement.style.overflow).not.toBe('hidden');
+
+        viewport.setMatches(true);
+
+        expect(document.documentElement.style.overflow).toBe('hidden');
+    });
+
+    it('starts autofocusing the panel search input once the viewport leaves sheet mode', async () => {
+        // The BETA-24 guard (no autofocus on a sheet, or the virtual keyboard
+        // covers the option list) must follow the LIVE breakpoint too. Read
+        // imperatively inside an effect keyed on [activePanel], it froze
+        // whatever the viewport was when the panel opened.
+        const viewport = mockMobileViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /destino/i }));
+        expect(
+            screen.getByRole('textbox', { name: /buscar entre los destinos/i })
+        ).not.toHaveFocus();
+
+        viewport.setMatches(false);
+
+        // The panel is now a desktop popover, so the input takes focus.
+        await waitFor(() =>
+            expect(
+                screen.getByRole('textbox', { name: /buscar entre los destinos/i })
+            ).toHaveFocus()
+        );
+    });
+
+    it('removes the media-query change listener on unmount (no leak)', () => {
+        const viewport = mockDesktopViewport();
+        const { unmount } = render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        expect(viewport.listenerCount).toBeGreaterThan(0);
+
+        unmount();
+
+        expect(viewport.listenerCount).toBe(0);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Sheet dismissal + the <html> flag, while the panel lives in the portal.
+// ---------------------------------------------------------------------------
+
+describe('<SearchBar /> portaled sheet dismissal', () => {
+    beforeEach(() => {
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: { assign: vi.fn(), href: 'http://localhost/', pathname: '/', search: '' }
+        });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('closes the portaled sheet on Escape', async () => {
+        mockMobileViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /huéspedes/i }));
+        expect(screen.getByRole('dialog', { name: 'Huéspedes' })).toBeInTheDocument();
+
+        fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
+
+        expect(screen.queryByRole('dialog', { name: 'Huéspedes' })).toBeNull();
+    });
+
+    it('closes the portaled sheet when the backdrop is clicked', async () => {
+        mockMobileViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /huéspedes/i }));
+        const panel = screen.getByRole('dialog', { name: 'Huéspedes' });
+        // Two controls carry the "close panel" label: the sheet's X button and
+        // the backdrop. The backdrop is the one outside the dialog.
+        const backdrop = screen
+            .getAllByRole('button', { name: /cerrar panel/i })
+            .find((el) => !panel.contains(el)) as HTMLElement;
+        expect(backdrop).toBeDefined();
+
+        // `fireEvent.click` (not `user.click`) on purpose: a full user click
+        // also dispatches mousedown, which the document-level click-outside
+        // handler would catch — so the sheet would close even with the
+        // backdrop's own onClick deleted. Firing only `click` isolates the
+        // backdrop handler as the sole thing under test.
+        fireEvent.click(backdrop);
+
+        expect(screen.queryByRole('dialog', { name: 'Huéspedes' })).toBeNull();
+    });
+
+    it('flags <html data-search-panel-open> while a sheet is open and clears it on close', async () => {
+        // Real contract, not decoration: `feedback-overrides.css` hides the
+        // feedback FAB off this attribute so it cannot overlap the sheet.
+        mockMobileViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        expect(document.documentElement.hasAttribute('data-search-panel-open')).toBe(false);
+
+        await user.click(screen.getByRole('button', { name: /huéspedes/i }));
+        expect(document.documentElement.hasAttribute('data-search-panel-open')).toBe(true);
+
+        fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
+        expect(document.documentElement.hasAttribute('data-search-panel-open')).toBe(false);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Focus management — bottom-sheet ONLY.
+//
+// The portal moves the panel to the end of <body>, so without focus management
+// a keyboard user tabs through the whole page (visually covered by the
+// backdrop) before reaching the sheet's controls, and a screen reader gets an
+// orphan role="dialog" outside the role="search" landmark (WCAG 2.4.3 / 1.3.2).
+// Desktop must NOT get any of this: there the panel is a popover with no
+// backdrop and the rest of the page stays usable, so trapping focus would be a
+// new bug.
+// ---------------------------------------------------------------------------
+
+/** Collects the panel's focus ring in DOM order. */
+function focusablesOf(panel: HTMLElement): readonly HTMLElement[] {
+    return Array.from(panel.querySelectorAll<HTMLElement>('button:not([disabled])'));
+}
+
+describe('<SearchBar /> sheet focus management', () => {
+    beforeEach(() => {
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: { assign: vi.fn(), href: 'http://localhost/', pathname: '/', search: '' }
+        });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('moves focus onto the sheet close button when a sheet opens', async () => {
+        mockMobileViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /huéspedes/i }));
+
+        const panel = screen.getByRole('dialog', { name: 'Huéspedes' });
+        const [closeButton] = focusablesOf(panel);
+        await waitFor(() => expect(closeButton).toHaveFocus());
+    });
+
+    it('does NOT steal focus into the destination panel search input on a sheet (BETA-24)', async () => {
+        // The focus target must stay the close button: focusing a text input
+        // inside a bottom-sheet pops the virtual keyboard over the option list.
+        mockMobileViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /destino/i }));
+
+        const input = screen.getByRole('textbox', { name: /buscar entre los destinos/i });
+        expect(input).not.toHaveFocus();
+    });
+
+    it('traps Tab and Shift+Tab inside the open sheet', async () => {
+        mockMobileViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /huéspedes/i }));
+
+        const panel = screen.getByRole('dialog', { name: 'Huéspedes' });
+        const focusables = focusablesOf(panel);
+        expect(focusables.length).toBeGreaterThan(1);
+        const first = focusables[0] as HTMLElement;
+        const last = focusables[focusables.length - 1] as HTMLElement;
+
+        // Tab off the last focusable wraps back to the first.
+        last.focus();
+        fireEvent.keyDown(last, { key: 'Tab', code: 'Tab' });
+        expect(document.activeElement).toBe(first);
+
+        // Shift+Tab off the first wraps to the last.
+        first.focus();
+        fireEvent.keyDown(first, { key: 'Tab', code: 'Tab', shiftKey: true });
+        expect(document.activeElement).toBe(last);
+    });
+
+    it('restores focus to the trigger column that opened the sheet', async () => {
+        mockMobileViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        const trigger = screen.getByRole('button', { name: /huéspedes/i });
+        await user.click(trigger);
+        expect(trigger).not.toHaveFocus();
+
+        fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
+
+        await waitFor(() => expect(trigger).toHaveFocus());
+    });
+
+    it('marks the sheet aria-modal and wires aria-controls to the rendered panel id', async () => {
+        mockMobileViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        const trigger = screen.getByRole('button', { name: /huéspedes/i });
+        await user.click(trigger);
+
+        const panel = screen.getByRole('dialog', { name: 'Huéspedes' });
+        expect(panel).toHaveAttribute('aria-modal', 'true');
+        const controls = trigger.getAttribute('aria-controls');
+        expect(controls).toBeTruthy();
+        expect(panel.id).toBe(controls);
+    });
+
+    it('omits aria-controls while the panel is closed, so it never dangles', async () => {
+        // `aria-controls` must reference an element that is actually in the
+        // document. Panels are conditionally rendered, so pointing at their id
+        // while collapsed leaves a dangling reference. `aria-haspopup` already
+        // announces that the column opens something.
+        mockMobileViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        const trigger = screen.getByRole('button', { name: /huéspedes/i });
+        expect(trigger).not.toHaveAttribute('aria-controls');
+
+        await user.click(trigger);
+        const controls = trigger.getAttribute('aria-controls');
+        expect(controls).toBeTruthy();
+        expect(document.getElementById(controls as string)).not.toBeNull();
+
+        await user.keyboard('{Escape}');
+        expect(trigger).not.toHaveAttribute('aria-controls');
+    });
+
+    it.each([
+        { panel: 'destination', trigger: /destino/i },
+        { panel: 'type', trigger: /tipo/i }
+    ])('does not put aria-modal on the $panel listbox sheet', async ({ trigger }) => {
+        // `aria-modal` is defined only for dialog/alertdialog/window roles.
+        // These two sheets are `role="listbox"`, so the property would be
+        // invalid ARIA — they still behave modally (backdrop, scroll lock,
+        // focus trap), which is behaviour rather than a property to assert.
+        mockMobileViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: trigger }));
+
+        const sheet = document.querySelector('[data-search-panel]');
+        expect(sheet).not.toBeNull();
+        expect(sheet).toHaveAttribute('role', 'listbox');
+        expect(sheet).not.toHaveAttribute('aria-modal');
+        // The modal BEHAVIOUR must still be there.
+        expect(document.documentElement.style.overflow).toBe('hidden');
+    });
+
+    it('does NOT move or trap focus in desktop popover mode', async () => {
+        mockDesktopViewport();
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /huéspedes/i }));
+
+        const panel = screen.getByRole('dialog', { name: 'Huéspedes' });
+        const focusables = focusablesOf(panel);
+        const first = focusables[0] as HTMLElement;
+        const last = focusables[focusables.length - 1] as HTMLElement;
+
+        // No focus stealing: the popover leaves the page usable.
+        expect(first).not.toHaveFocus();
+        expect(panel).not.toHaveAttribute('aria-modal');
+
+        // No trap: Tab off the last focusable must fall through to the rest of
+        // the page instead of cycling back into the popover.
+        last.focus();
+        fireEvent.keyDown(last, { key: 'Tab', code: 'Tab' });
+        expect(document.activeElement).toBe(last);
     });
 });
