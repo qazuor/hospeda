@@ -404,11 +404,14 @@ export class MercadoLibreAdapter implements ImportSourceAdapter {
             return { sourcePlatform: 'mercadolibre', failureCode: 'nothing_found' };
         }
 
-        // 3. Call official ML Items API. The deadline taken at entry covers this
-        // call and the description call together, so the sequential fetches
-        // cannot overrun `ctx.timeoutMs` between them.
+        // 3. Call official ML Items API, on what is LEFT of the deadline taken
+        // at entry. Acquiring the OAuth token above can itself hit the network
+        // (a refresh round-trip), so a fresh `ctx.timeoutMs` timer here would
+        // let the adapter overrun its contract by exactly that duration — and
+        // would charge the whole cost to the description call, which is the
+        // only thing that then gets dropped.
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), ctx.timeoutMs);
+        const timer = setTimeout(() => controller.abort(), Math.max(0, deadlineAt - Date.now()));
 
         let item: MlItem;
         try {

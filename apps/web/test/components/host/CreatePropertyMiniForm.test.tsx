@@ -838,6 +838,34 @@ describe('CreatePropertyMiniForm — import prefill (T-025)', () => {
         );
     });
 
+    it('does NOT clear the city when a later import carries no destination hint', async () => {
+        // Arrange — a blocked site / `source: 'none'` response has no hint at
+        // all. Clearing on it would wipe a city the host had just picked by
+        // hand, with the banner disappearing at the same moment so there is no
+        // visible explanation (HOS-286 judgment-day).
+        const user = userEvent.setup();
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        await user.click(screen.getByTestId('import-toggle'));
+        // Host picks a city manually.
+        await user.click(screen.getByTestId('property-city-mock-select'));
+        expect(screen.getByTestId('property-city-mock-select')).toHaveAttribute(
+            'data-selected-id',
+            '11111111-1111-4111-8111-111111111111'
+        );
+
+        // Act — an import whose response carries no destinationHint.
+        await act(async () => {
+            await user.click(screen.getByTestId('stub-trigger-import-price-conversion'));
+        });
+
+        // Assert — the manual choice survives.
+        expect(screen.getByTestId('property-city-mock-select')).toHaveAttribute(
+            'data-selected-id',
+            '11111111-1111-4111-8111-111111111111'
+        );
+    });
+
     it('does NOT auto-select the city when a CONFIDENT match is still ambiguous', async () => {
         // Arrange — the other half of the `length === 1 && confident` gate.
         // Two catalog rows share a normalized name, so the exact tier returns

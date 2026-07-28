@@ -202,11 +202,15 @@ export async function buildDestinationHint(
             (candidate) => normalizeName(candidate.name) === normalizeName(trimmedLocality)
         );
 
-        if (exactMatches.length > 0 && countryAllowsConfidence(country)) {
+        if (exactMatches.length > 0) {
             return {
                 scrapedLocality: trimmedLocality,
                 candidates: exactMatches,
-                confident: true
+                // Enforced HERE, not left to each consumer: two catalog rows
+                // sharing a normalized name would otherwise ship
+                // `confident: true` alongside an ambiguous pair, and the field
+                // is documented as "safe to pre-fill".
+                confident: exactMatches.length === 1 && countryAllowsConfidence(country)
             };
         }
 

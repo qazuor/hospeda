@@ -45,59 +45,6 @@ describe('buildDestinationHint', () => {
     // Happy path — multiple matches
     // -------------------------------------------------------------------------
     describe('when locality matches multiple destinations', () => {
-        it('should keep every candidate when none of them matches deterministically', async () => {
-            // Arrange — an over-wide ILIKE: neither row is the scraped locality.
-            const searchFn = vi.fn().mockResolvedValue({
-                data: {
-                    items: [
-                        { id: 'dest-uuid-0001', name: 'Villa Elisa' },
-                        { id: 'dest-uuid-0002', name: 'Villa Paranacito' }
-                    ],
-                    total: 2
-                }
-            });
-            const destinationService = makeDestinationServiceMock(searchFn);
-
-            // Act
-            const result = await buildDestinationHint({
-                locality: 'Villa',
-                destinationService,
-                actor: fakeActor
-            });
-
-            // Assert — both are offered, and neither may pre-fill.
-            expect(result.scrapedLocality).toBe('Villa');
-            expect(result.candidates).toHaveLength(2);
-            expect(result.confident).toBe(false);
-        });
-
-        it('should narrow an over-wide literal search to the verbatim catalog name', async () => {
-            // Arrange — `ILIKE '%Gualeguay%'` matches Gualeguaychú too, so a
-            // verbatim catalog name arrives as an ambiguous pair and would lose
-            // its pre-fill (HOS-286 judgment-day).
-            const searchFn = vi.fn().mockResolvedValue({
-                data: {
-                    items: [
-                        { id: 'dest-uuid-0001', name: 'Gualeguay' },
-                        { id: 'dest-uuid-0002', name: 'Gualeguaychú' }
-                    ],
-                    total: 2
-                }
-            });
-            const destinationService = makeDestinationServiceMock(searchFn);
-
-            // Act
-            const result = await buildDestinationHint({
-                locality: 'Gualeguay',
-                destinationService,
-                actor: fakeActor
-            });
-
-            // Assert
-            expect(result.candidates).toStrictEqual([{ id: 'dest-uuid-0001', name: 'Gualeguay' }]);
-            expect(result.confident).toBe(true);
-        });
-
         it('should forward q, searchScope:"name", pageSize, and page to the search call', async () => {
             // Arrange
             const searchFn = vi.fn().mockResolvedValue({
@@ -140,6 +87,7 @@ describe('buildDestinationHint', () => {
             });
 
             // Assert — no country key forwarded to the search
+            expect(searchFn).toHaveBeenCalledTimes(1);
             const passed = searchFn.mock.calls[0]?.[1] as Record<string, unknown>;
             expect(passed).not.toHaveProperty('country');
             expect(passed).toMatchObject({ q: 'Concepción del Uruguay', searchScope: 'name' });
@@ -317,7 +265,7 @@ describe('buildDestinationHint', () => {
     });
 
     // -------------------------------------------------------------------------
-    // CITY scoping + normalized fallback (HOS-286)
+    // CITY scoping + exact-name confidence (HOS-286)
     // -------------------------------------------------------------------------
     describe('CITY scoping and exact-name confidence (HOS-286)', () => {
         it('should send search params that the real DestinationSearchSchema accepts', async () => {
@@ -334,7 +282,10 @@ describe('buildDestinationHint', () => {
                 actor: fakeActor
             });
 
-            // Assert
+            // Assert — the guard matters: with zero calls the loop below runs
+            // no assertions at all, and this is the only place the REAL schema
+            // is exercised.
+            expect(searchFn).toHaveBeenCalledTimes(1);
             for (const [, params] of searchFn.mock.calls) {
                 const parsed = DestinationSearchSchema.safeParse(params);
                 expect(

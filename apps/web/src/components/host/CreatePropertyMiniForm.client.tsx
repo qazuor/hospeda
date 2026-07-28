@@ -137,9 +137,9 @@ type DestinationHint = {
     readonly scrapedLocality?: string;
     readonly candidates: ReadonlyArray<{ readonly id: string; readonly name: string }>;
     /**
-     * Whether the API resolved the locality deterministically (literal/exact
-     * name match or a curated abbreviation) rather than by a substring, token,
-     * or edit-distance guess. Only a confident hint pre-fills the City field.
+     * Whether a candidate's name IS the scraped locality rather than merely
+     * containing it — the destination search is `ILIKE '%term%'`. Only a
+     * confident hint, with exactly one candidate, pre-fills the City field.
      */
     readonly confident: boolean;
 };
@@ -526,41 +526,43 @@ export function CreatePropertyMiniForm({
                 fieldsPrefilled: filledCount + extraCount
             });
 
-            // Destination hint. Both the banner and the auto-selected city are
-            // reset on EVERY import, not only when the new one carries a hint —
-            // otherwise importing a second URL leaves the previous city
-            // pre-filled while the banner below tells the host to pick one,
-            // and that stale destinationId is what gets submitted.
+            // Destination hint. Only touched when the response actually says
+            // something about the location: a hint that resolved nothing still
+            // supersedes the previous one, but a response with NO hint at all
+            // (a blocked site, `source: 'none'`) leaves the field alone —
+            // otherwise a failed second import would silently wipe a city the
+            // host had just picked by hand.
             const hint = response.destinationHint;
-            const hasHint =
-                hint !== undefined && (Boolean(hint.scrapedLocality) || hint.candidates.length > 0);
+            if (hint !== undefined) {
+                const hasHint = Boolean(hint.scrapedLocality) || hint.candidates.length > 0;
+                setDestinationHint(
+                    hasHint
+                        ? {
+                              scrapedLocality: hint.scrapedLocality,
+                              candidates: hint.candidates,
+                              confident: hint.confident === true
+                          }
+                        : null
+                );
 
-            setDestinationHint(
-                hasHint
-                    ? {
-                          scrapedLocality: hint.scrapedLocality,
-                          candidates: hint.candidates,
-                          confident: hint.confident === true
-                      }
-                    : null
-            );
-
-            // Auto-select ONLY when the match is BOTH unique AND confident
-            // (HOS-286). Two independent hazards, two conditions:
-            //   - not unique  → the search does not rank by relevance, so
-            //     picking [0] out of several is a coin flip.
-            //   - not confident → the destination search is `ILIKE '%term%'`,
-            //     a SUBSTRING match, so "Rosario" (Santa Fe) comes back as the
-            //     lone hit for "Rosario del Tala". Uniqueness alone would
-            //     happily pre-fill that under a "we picked it for you" message.
-            // Non-confident matches still render below as suggestions.
-            const onlyCandidate =
-                hint !== undefined && hint.candidates.length === 1 ? hint.candidates[0] : undefined;
-            setCity(
-                onlyCandidate && hint?.confident === true
-                    ? { id: onlyCandidate.id, label: onlyCandidate.name }
-                    : null
-            );
+                // Auto-select ONLY when the match is BOTH unique AND confident
+                // (HOS-286). Two independent hazards, two conditions:
+                //   - not unique  → the search does not rank by relevance, so
+                //     picking [0] out of several is a coin flip.
+                //   - not confident → the destination search is `ILIKE '%term%'`,
+                //     a SUBSTRING match, so "Rosario" (Santa Fe) comes back as
+                //     the lone hit for "Rosario del Tala". Uniqueness alone would
+                //     happily pre-fill that under a "we picked it for you"
+                //     message.
+                // Non-confident matches still render below as suggestions, and
+                // the `null` branch clears a city a PREVIOUS import auto-filled.
+                const onlyCandidate = hint.candidates.length === 1 ? hint.candidates[0] : undefined;
+                setCity(
+                    onlyCandidate && hint.confident === true
+                        ? { id: onlyCandidate.id, label: onlyCandidate.name }
+                        : null
+                );
+            }
 
             webLogger.info('CreatePropertyMiniForm: prefilled from import', {
                 fieldsFilled: Object.keys(nextMeta),
