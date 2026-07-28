@@ -54,8 +54,19 @@
  *
  * Point 2 also rules out the obvious alternative remedy: making the handler
  * owner-aware on an actor-blind cache key converts a permission leak into cache
- * poisoning. On a `public:`-cached route the handler MUST be actor-blind, and the
- * only thing it may return is what an anonymous caller is allowed to see.
+ * poisoning. On a `public:`-cached route the RESPONSE must be anonymous-safe, and
+ * the only thing it may return is what an anonymous caller is allowed to see.
+ *
+ * ## Residual, deliberately NOT fixed here (open follow-up)
+ *
+ * The predicates make the DATA anonymous-safe; they do not make the HANDLER
+ * actor-blind. `checkCanGetAccommodationsByAmenity` still runs and still 403s
+ * guests — but `CACHEABLE_STATUS_CODES` is `{200, 404}` (`cache.ts`), so the 403
+ * is never stored while a privileged 200 would be. The moment this method gets a
+ * route, the first staff/host request makes the payload anonymously reachable for
+ * the TTL and the gate becomes DECORATIVE. Contained precisely because the payload
+ * is public-safe, but the gate/cache mismatch is real and wants its own decision.
+ * Same follow-up as the feature twin; see that file's header.
  *
  * The first suite pins the predicates so nobody removes them again, and also
  * pins that `additionalConditions` (argument 3) stays `undefined` — a pin that
@@ -203,8 +214,8 @@ describe('AmenityService.getAccommodationsByAmenity — HOS-288 read predicates'
             // DECISION (HOS-288 round 2): `/api/v1/public/amenities` is already an
             // actor-blind `public:` cache prefix and cacheMiddleware runs before
             // authMiddleware, and ACCOMMODATION_AMENITIES_EDIT is held by the
-            // multi-tenant RoleEnum.HOST. The handler must be actor-blind and may
-            // only return what an anonymous caller may see. Rationale in the header.
+            // multi-tenant RoleEnum.HOST. The response must be anonymous-safe: it
+            // may only carry what an anonymous caller may see. Rationale in the header.
             expect(accommodationWhere).toMatchObject({
                 id: [accommodationId],
                 visibility: VisibilityEnum.PUBLIC,

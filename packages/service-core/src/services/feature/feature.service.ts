@@ -434,13 +434,13 @@ export class FeatureService extends BaseCrudRelatedService<
     /**
      * Retrieves all accommodations that have a specific feature.
      *
-     * HOS-288 — the `PUBLIC`/`ACTIVE` predicates below are load-bearing. This route's prefix
-     * is in `PUBLIC_CACHE_ENDPOINTS`, the public cache key carries NO Authorization
-     * component, and `cacheMiddleware` runs BEFORE `authMiddleware`, so a HIT bypasses the
-     * permission check entirely: the handler must be actor-blind and may only ever return
-     * what an anonymous caller may see. Owner-scoping is NOT available for that same reason,
-     * and "the audience is staff" does not hold — `ACCOMMODATION_FEATURES_EDIT` is held by
-     * the multi-tenant `RoleEnum.HOST`. Long form: `getAccommodationsByFeature.soft-delete.test.ts`.
+     * HOS-288 — the `PUBLIC`/`ACTIVE` predicates below are load-bearing. This route's prefix is
+     * in `PUBLIC_CACHE_ENDPOINTS`, the public cache key carries NO Authorization, and
+     * `cacheMiddleware` runs BEFORE `authMiddleware` (only 200/404 are stored), so the first
+     * privileged 200 is replayed to every anonymous caller for the TTL: the gate below is
+     * DECORATIVE and the RESPONSE is what must be anonymous-safe. That also rules out
+     * owner-scoping, and `ACCOMMODATION_FEATURES_EDIT` is held by multi-tenant `RoleEnum.HOST`.
+     * Long form + the open follow-up: `getAccommodationsByFeature.soft-delete.test.ts`.
      *
      * @param actor - The actor performing the action
      * @param params - The params containing the feature ID

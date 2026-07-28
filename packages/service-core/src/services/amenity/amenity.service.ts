@@ -269,11 +269,12 @@ export class AmenityService extends BaseCrudRelatedService<
      * cannot silently ship a leak. The `PUBLIC`/`ACTIVE` predicates are
      * load-bearing there: that prefix is in `PUBLIC_CACHE_ENDPOINTS`, the public
      * cache key carries NO Authorization component, and `cacheMiddleware` runs
-     * BEFORE `authMiddleware`, so a HIT bypasses the permission check entirely —
-     * the handler must be actor-blind and may only ever return what an anonymous
-     * caller may see. Owner-scoping is NOT available for that same reason, and
-     * "the audience is staff" does not hold: `ACCOMMODATION_AMENITIES_EDIT` is
-     * held by the multi-tenant `RoleEnum.HOST`. Long form in
+     * BEFORE `authMiddleware` storing only 200/404 — so the first privileged 200
+     * is replayed to every anonymous caller for the TTL, the permission gate is
+     * DECORATIVE, and it is the RESPONSE that has to be anonymous-safe. That also
+     * rules out owner-scoping, and "the audience is staff" does not hold:
+     * `ACCOMMODATION_AMENITIES_EDIT` is held by the multi-tenant `RoleEnum.HOST`.
+     * Long form + the open follow-up in
      * `getAccommodationsByAmenity.soft-delete.test.ts`.
      *
      * @param actor - The actor performing the action

@@ -46,8 +46,22 @@
  *
  * Point 2 also rules out the obvious alternative remedy: making the handler
  * owner-aware on an actor-blind cache key converts a permission leak into cache
- * poisoning. On a `public:`-cached route the handler MUST be actor-blind, and the
- * only thing it may return is what an anonymous caller is allowed to see.
+ * poisoning. On a `public:`-cached route the RESPONSE must be anonymous-safe, and
+ * the only thing it may return is what an anonymous caller is allowed to see.
+ *
+ * ## Residual, deliberately NOT fixed here (open follow-up)
+ *
+ * The predicates make the DATA anonymous-safe; they do not make the HANDLER
+ * actor-blind. `checkCanGetAccommodationsByFeature` still runs and still 403s
+ * guests — but `CACHEABLE_STATUS_CODES` is `{200, 404}` (`cache.ts`), so the 403
+ * is never stored while the privileged 200 is. The first staff/host request
+ * therefore makes the payload anonymously reachable for the TTL, and the gate is
+ * effectively DECORATIVE on this route. It is contained precisely because the
+ * payload is now public-safe — which is the whole point of restoring the
+ * predicates — but the gate/cache mismatch is real and wants its own decision:
+ * either drop the permission check (the route is genuinely public) or drop
+ * `/api/v1/public/features` from `PUBLIC_CACHE_ENDPOINTS`. Out of scope for a
+ * soft-delete bugfix; recorded here rather than left silently implied.
  *
  * The first suite pins the predicates so nobody removes them again, and also
  * pins that `additionalConditions` (argument 3) stays `undefined` — a pin that

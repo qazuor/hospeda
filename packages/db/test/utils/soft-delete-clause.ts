@@ -9,11 +9,16 @@
  * a real database connection. The point is to give tests a real assertion where
  * they would otherwise fall back to a vacuous `expect.anything()`.
  *
- * Scope of the sharing: every consumer inside `packages/db` imports from here.
- * Near-identical copies still live in `packages/service-core` and `apps/api`
- * test files — this monorepo has no mechanism for sharing test-only helpers
- * across packages, so those are deliberate duplicates, not an unfinished
- * extraction. If Drizzle changes its chunk layout, they all need the same edit.
+ * Scope of the sharing, stated honestly: the three `accommodation.*` test files in
+ * `packages/db/test/models/` import from here. Older local copies still live in
+ * `event.model.soft-delete.test.ts`, `post.model.soft-delete.test.ts`,
+ * `event.model.categories.test.ts` and `post.model.categories.test.ts` (the first
+ * two are also WEAKER — they match on the ` is null` operator without checking the
+ * column name, so any unrelated `IS NULL` satisfies them), and in
+ * `packages/service-core` / `apps/api` test files, which cannot import across
+ * package boundaries because this monorepo has no mechanism for sharing test-only
+ * helpers. All of those are still single-level walkers and none of them has the
+ * OR guard below. If Drizzle changes its chunk layout, every copy needs the edit.
  */
 
 type QueryChunk = { value?: unknown[] };
@@ -29,16 +34,36 @@ function operatorOf(clause: unknown): string | undefined {
 }
 
 /**
- * Flattens an `and(...)`-composed clause into its leaf conditions, descending
- * through nested AND groups.
+ * True when `sql.join` interleaved these chunks with ` and ` separators.
  *
- * The recursion is load-bearing, not tidiness. `and(and(a, b), c)` is the normal
- * shape on the admin path — `BaseModelImpl.findAllWithRelations` composes
- * `and(buildWhereClause(where), ...additionalConditions)`, and `buildWhereClause`
- * itself returns an `and(...)` as soon as `where` carries two or more keys. A
- * single-level walk therefore cannot see a predicate one level down, which makes
- * NEGATIVE assertions (`expect(hasSoftDeleteCondition(x)).toBe(false)`) unsound —
- * and that is exactly the direction the admin-trash guard test uses this in.
+ * `and(...)` and `or(...)` compile to the SAME chunk shape — `['(', <joined>, ')']`.
+ * The ONLY thing telling them apart is the separator sitting at the odd indices of
+ * the joined inner SQL. Flattening without this check treats a disjunction as a
+ * conjunction, so a clause where `deleted_at IS NULL` is merely one branch of an
+ * `or(...)` — a query that DOES return soft-deleted rows — would satisfy
+ * {@link hasSoftDeleteCondition}. That is a false green on the exact property
+ * these helpers exist to assert, so the check is a correctness guard, not polish.
+ */
+function isAndJoined(innerChunks: QueryChunk[]): boolean {
+    for (let i = 1; i < innerChunks.length; i += 2) {
+        if (innerChunks[i]?.value?.[0] !== ' and ') return false;
+    }
+    return true;
+}
+
+/**
+ * Flattens an `and(...)`-composed clause into its leaf conditions, descending
+ * through nested AND groups. Any group joined by something other than ` and `
+ * (an `or(...)`) is returned as one opaque leaf rather than descended into.
+ *
+ * The recursion matters because a single-level walk cannot see a predicate one
+ * level down, which makes NEGATIVE assertions
+ * (`expect(hasSoftDeleteCondition(x)).toBe(false)`) unsound on any nested clause.
+ * `buildWhereClause` returns its own `and(...)` as soon as `where` carries two or
+ * more keys, and `BaseModelImpl` then composes
+ * `and(buildWhereClause(where), ...additionalConditions)` — so a caller-supplied
+ * `where.deletedAt` alongside another `where` key and an additional condition
+ * nests exactly that way.
  *
  * @param clause - The compiled Drizzle clause (or `undefined`).
  * @returns The leaf conditions; `[]` when the clause is `undefined`.
@@ -46,12 +71,14 @@ function operatorOf(clause: unknown): string | undefined {
 export function flattenAndConditions(clause: unknown): unknown[] {
     if (clause === undefined) return [];
     const chunks = chunksOf(clause);
-    const isAndWrapper =
+    const isGroupWrapper =
         chunks?.length === 3 && chunks[0]?.value?.[0] === '(' && chunks[2]?.value?.[0] === ')';
-    if (!isAndWrapper) return [clause];
+    if (!isGroupWrapper) return [clause];
 
     const innerChunks = chunksOf(chunks?.[1]);
     if (!innerChunks) return [clause];
+    // An OR group is opaque: its branches are alternatives, not conjuncts.
+    if (!isAndJoined(innerChunks)) return [clause];
     return innerChunks
         .filter((_, i) => i % 2 === 0)
         .flatMap((child) => flattenAndConditions(child));
