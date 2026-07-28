@@ -19,6 +19,7 @@ import { buildUrl } from '@/lib/urls';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { Accommodation } from '@repo/schemas';
 import { LifecycleStatusEnum } from '@repo/schemas';
+import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import accountSectionStyles from '@/components/account/AccountSection.module.css';
 import btn from '@/components/account/AccountButton.module.css';
 import { DeleteButton } from './DeleteButton.client';
@@ -112,8 +113,9 @@ const priceOnRequestLabel = t('host.properties.card.priceOnRequest', 'Precio a c
  * View-on-site and unpublish are web-native actions.
  * Publish is a guided web-native action too (HOS-110): it calls the
  * dedicated POST `/accommodations/:id/publish` endpoint instead of bouncing
- * through the admin panel's dead `?action=publish` param, and its
- * confirmation step states that publishing starts the no-card 14-day trial.
+ * through the admin panel's dead `?action=publish` param. Publishing does not
+ * start a trial — since card-first (HOS-171) the trial begins at checkout, and
+ * an owner without an active subscription is sent to the plans page.
  */
 const editUrl = buildUrl({ locale, path: `mi-cuenta/propiedades/${property.id}/editar` });
 const viewOnSiteUrl = buildUrl({ locale, path: `alojamientos/${property.slug}` });
@@ -219,7 +221,7 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
                     confirmYes={t('host.properties.card.actions.publishYes', 'Sí, publicar')}
                     confirmNo={t('host.properties.card.actions.confirmNo', 'Cancelar')}
                     errorText={t('host.properties.card.publishError', 'No se pudo publicar. Intentá de nuevo.')}
-                    subscriptionRequiredMessage={t('host.properties.card.publishSubscriptionRequiredMessage', 'Necesitás un plan activo para publicar. Si es tu primera vez, empezás con 14 días gratis.')}
+                    subscriptionRequiredMessage={t('host.properties.card.publishSubscriptionRequiredMessage', 'Necesitás un plan activo para publicar. Si es tu primera suscripción, empezás con {{trialDays}} días gratis.', { trialDays: OWNER_TRIAL_DAYS })}
                     subscriptionRequiredCta={t('host.properties.card.publishSubscriptionRequiredCta', 'Ver planes')}
                     incompleteCapacityMessage={t('host.properties.card.publishIncompleteCapacityMessage', 'Faltan datos de capacidad (huéspedes, habitaciones o baños). Completalos en el editor antes de publicar.')}
                     incompleteCapacityCta={t('host.properties.card.publishIncompleteCapacityCta', 'Completar en el editor')}

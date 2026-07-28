@@ -339,10 +339,26 @@ vi.mock('../../../src/components/form/SearchableSelect.client', () => ({
 /**
  * Mock i18n to return the fallback string directly without loading locale
  * files. All `t()` calls in the component pass a fallback string second arg.
+ *
+ * Interpolation is reproduced here on purpose (HOS-331): the real `resolve()`
+ * substitutes `{{name}}` / `{name}` into the FALLBACK as well as into a catalog
+ * hit, so a mock that drops `params` renders a literal `{{trialDays}}` and makes
+ * the placeholder untestable — which is exactly how this file went red when the
+ * trial copy stopped hardcoding its number.
  */
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key
+        t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
+            const raw = fallback ?? _key;
+            if (!params) return raw;
+            return Object.keys(params).reduce(
+                (acc, k) =>
+                    acc
+                        .replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(params[k]))
+                        .replace(new RegExp(`\\{${k}\\}`, 'g'), String(params[k])),
+                raw
+            );
+        }
     })
 }));
 
@@ -415,7 +431,11 @@ const DEFAULT_PROPS = {
     apiUrl: 'http://localhost:3001',
     adminUrl: 'http://localhost:3000',
     accountPropertiesUrl: '/es/mi-cuenta/propiedades/',
-    canAccessAdminPanel: false
+    canAccessAdminPanel: false,
+    // Deliberately NOT `OWNER_TRIAL_DAYS`: asserting against the same constant
+    // the component renders would pass whatever the value is. A fixed number
+    // different from the real one proves the prop reaches the copy.
+    trialDays: 21
 } as const;
 
 /** Build a mock Response-like object that `fetch` can resolve to. */
@@ -1311,17 +1331,21 @@ describe('CreatePropertyMiniForm — trial callout eligibility (NOSPEC)', () => 
 
         // useEffect resolves eligible:false → the callout swaps to the no-trial copy.
         expect(await screen.findByText('Armá tu propiedad')).toBeInTheDocument();
-        expect(screen.queryByText('14 días gratis al publicar')).not.toBeInTheDocument();
+        expect(
+            screen.queryByText('21 días gratis en tu primera suscripción')
+        ).not.toBeInTheDocument();
     });
 
-    it('shows the default "14 días gratis" callout when the user is trial-eligible', async () => {
+    it('shows the trial callout with the interpolated trial length when the user is trial-eligible', async () => {
         mockGetTrialEligibility.mockResolvedValue({
             ok: true,
             data: { eligible: true, planSlug: null }
         });
         render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
 
-        expect(await screen.findByText('14 días gratis al publicar')).toBeInTheDocument();
+        expect(
+            await screen.findByText('21 días gratis en tu primera suscripción')
+        ).toBeInTheDocument();
         expect(screen.queryByText('Armá tu propiedad')).not.toBeInTheDocument();
     });
 
@@ -1332,6 +1356,8 @@ describe('CreatePropertyMiniForm — trial callout eligibility (NOSPEC)', () => 
         });
         render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
 
-        expect(await screen.findByText('14 días gratis al publicar')).toBeInTheDocument();
+        expect(
+            await screen.findByText('21 días gratis en tu primera suscripción')
+        ).toBeInTheDocument();
     });
 });

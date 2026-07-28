@@ -8,7 +8,7 @@ Hospeda has three plan categories targeting different user types:
 |----------|-------------|-------|-------|
 | `owner` | Individual property owners | Basico, Pro, Premium | 14 days |
 | `complex` | Hotels and complexes | Basico, Pro, Premium | 14 days |
-| `tourist` | Travelers and guests | Free, Plus, VIP | No trial |
+| `tourist` | Travelers and guests | Free, Plus, VIP | 14 days on Plus and VIP; Free has no trial because it has no charge |
 
 Each category has exactly one **default plan** assigned automatically to new users:
 
@@ -25,21 +25,26 @@ Each category has exactly one **default plan** assigned automatically to new use
 | **Annual (ARS)** | $150,000 | $350,000 | $750,000 |
 | **USD Ref** | $15 | $35 | $75 |
 | Max accommodations | 1 | 3 | 10 |
-| Max photos/accommodation | 5 | 15 | 30 |
-| Max active promotions | 0 | 3 | Unlimited |
+| Max photos/accommodation | 15 | 30 | 50 |
+| Max active promotions | 2 | 5 | Unlimited |
 | Basic stats | Yes | Yes | Yes |
 | Advanced stats | - | Yes | Yes |
 | Featured listing | - | Yes | Yes |
 | Custom branding | - | - | Yes |
-| API access | - | - | Yes |
-| Dedicated manager | - | - | Yes |
 | Verification badge | - | - | Yes |
 | Rich description | - | Yes | Yes |
 | Video embed | - | Yes | Yes |
 | Calendar | Yes | Yes | Yes |
 | External calendar sync | - | Yes | Yes |
 | WhatsApp display | Yes | Yes | Yes |
-| WhatsApp direct | - | Yes | Yes |
+| WhatsApp direct | Yes | Yes | Yes |
+
+> WhatsApp display/direct are tourist-tier entitlements (`CAN_CONTACT_WHATSAPP_DISPLAY`
+> / `CAN_CONTACT_WHATSAPP_DIRECT`) that every owner plan also carries because every
+> owner plan spreads the full tourist-VIP entitlement set (see
+> [Owner = superset of tourist](#owner--superset-of-tourist-spec-216) below) — Basico
+> gets both the same as Pro/Premium, it just does not list them a second time
+> explicitly in its own entitlement array.
 
 ## Complex Plans
 
@@ -57,8 +62,6 @@ Each category has exactly one **default plan** assigned automatically to new use
 | Consolidated analytics | - | Yes | Yes |
 | Centralized booking | - | Yes | Yes |
 | Staff management | - | Yes | Yes |
-| White label | - | - | Yes |
-| Multi-channel integration | - | - | Yes |
 
 Complex plans include all applicable owner entitlements plus complex-specific features.
 
@@ -70,14 +73,12 @@ Complex plans include all applicable owner entitlements plus complex-specific fe
 | **Monthly (ARS)** | $0 | $5,000 | $15,000 |
 | **Annual (ARS)** | - | $50,000 | $150,000 |
 | **USD Ref** | $0 | $5 | $15 |
-| Max favorites | 3 | 20 | Unlimited |
+| Max favorites | 5 | 25 | Unlimited |
 | Save favorites | Yes | Yes | Yes |
 | Write reviews | Yes | Yes | Yes |
 | Read reviews | Yes | Yes | Yes |
-| Recommendations | Yes | Yes | Yes |
-| Ad-free | - | Yes | Yes |
+| Recommendations | - | Yes | Yes |
 | Price alerts | - | Yes | Yes |
-| Early event access | - | Yes | Yes |
 | Exclusive deals | - | Yes | Yes |
 | Compare accommodations | - | Yes | Yes |
 | Attach review photos | - | Yes | Yes |
@@ -85,8 +86,6 @@ Complex plans include all applicable owner entitlements plus complex-specific fe
 | WhatsApp display | - | Yes | Yes |
 | WhatsApp direct | - | - | Yes |
 | VIP support | - | - | Yes |
-| Concierge service | - | - | Yes |
-| Airport transfers | - | - | Yes |
 | VIP promotions | - | - | Yes |
 
 ## Entitlement System
@@ -145,8 +144,8 @@ are **insert-only / idempotent** — they never delete rows removed from config.
 **Complex entitlements** (4 keys):
 `MULTI_PROPERTY_MANAGEMENT`, `CONSOLIDATED_ANALYTICS`, `CENTRALIZED_BOOKING`, `STAFF_MANAGEMENT`
 
-**Tourist entitlements** (12 keys):
-`SAVE_FAVORITES`, `WRITE_REVIEWS`, `READ_REVIEWS`, `AD_FREE`, `PRICE_ALERTS`, `EXCLUSIVE_DEALS`, `VIP_SUPPORT`, `VIP_PROMOTIONS_ACCESS`, `CAN_COMPARE_ACCOMMODATIONS`, `CAN_ATTACH_REVIEW_PHOTOS`, `CAN_VIEW_SEARCH_HISTORY`, `CAN_VIEW_RECOMMENDATIONS`
+**Tourist entitlements** (13 keys):
+`SAVE_FAVORITES`, `WRITE_REVIEWS`, `READ_REVIEWS`, `PRICE_ALERTS`, `EXCLUSIVE_DEALS`, `VIP_SUPPORT`, `VIP_VISIBILITY_ACCESS`, `VIP_PROMOTIONS_ACCESS`, `CAN_COMPARE_ACCOMMODATIONS`, `CAN_ATTACH_REVIEW_PHOTOS`, `CAN_VIEW_SEARCH_HISTORY`, `CAN_VIEW_RECOMMENDATIONS`, `CAN_USE_COLLECTIONS`
 
 ### Usage example
 

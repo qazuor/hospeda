@@ -125,17 +125,6 @@
                 "loading": "[TODO]",
                 "empty": "[TODO]"
             },
-            "fotos": {
-                "title": "[TODO]",
-                "description": "[TODO]",
-                "uploadPrompt": "[TODO]",
-                "uploadButton": "[TODO]",
-                "uploading": "[TODO]",
-                "maxReached": "[TODO]",
-                "removeAria": "[TODO]",
-                "errorPerFile": "[TODO]",
-                "requiresSaveFirst": "[TODO]"
-            },
             "precio": {
                 "title": "[TODO]",
                 "description": "[TODO]",
@@ -233,7 +222,7 @@
             "unpublishError": "Não foi possível despublicar. Tente novamente.",
             "deleteError": "Não foi possível excluir. Tente novamente.",
             "publishError": "Não foi possível publicar. Tente novamente.",
-            "publishSubscriptionRequiredMessage": "Você precisa de um plano ativo para publicar. Se for sua primeira vez, começa com 14 dias grátis.",
+            "publishSubscriptionRequiredMessage": "Você precisa de um plano ativo para publicar. Se for sua primeira assinatura, começa com {{trialDays}} dias grátis.",
             "publishSubscriptionRequiredCta": "Ver planos",
             "publishIncompleteCapacityMessage": "Faltam dados de capacidade (hóspedes, quartos ou banheiros). Complete-os no editor antes de publicar.",
             "publishIncompleteCapacityCta": "Completar no editor",
@@ -500,7 +489,8 @@
         "heroHeadline": "[TODO]",
         "heroSubheadline": "[TODO]",
         "primaryCta": "[TODO]",
-        "secondaryCta": "[TODO]"
+        "secondaryCta": "[TODO]",
+        "trialCallout": "Experimente o Hospeda gratis por {{trialDays}} dias na sua primeira assinatura. Você escolhe seu plano, cadastra seu cartão e nada é cobrado até o teste terminar."
     },
     "fromAdminBanner": {
         "eyebrow": "Trouxemos você do painel — você precisa publicar uma propriedade primeiro para gerenciar suas acomodações."
@@ -703,6 +693,14 @@
             "promotions": "Promoções",
             "messages": "Mensagens",
             "subscription": "Assinatura"
+        }
+    },
+    "pages": {
+        "nueva": {
+            "trialCalloutTitle": "{{trialDays}} dias gratis na sua primeira assinatura",
+            "trialCalloutTitleIneligible": "Monte sua propriedade",
+            "trialNote": "Você pode montar sua propriedade agora. O teste gratuito de {{trialDays}} dias começa quando você escolhe seu plano: cadastra seu cartão e nada é cobrado até terminar. Vale só para a sua primeira assinatura.",
+            "trialNoteIneligible": "Voce pode criar e editar seu rascunho agora. Para publica-lo e ficar visivel vai precisar de um plano de anfitriao ativo."
         }
     }
 }

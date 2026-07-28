@@ -2422,8 +2422,12 @@ export const accommodationEditApi = {
     },
 
     /**
-     * Publish an accommodation (DRAFT → ACTIVE), starting the no-card 14-day
-     * trial for first-time publishers.
+     * Publish an accommodation (DRAFT → ACTIVE).
+     *
+     * Publishing does NOT start a trial. Since card-first (HOS-171) the trial
+     * is a MercadoPago preapproval created at checkout, so an owner without an
+     * active subscription is rejected with `subscription_required` and sent to
+     * the plans page — where the card is collected and the trial begins.
      *
      * Calls the dedicated `/publish` endpoint (HOS-110) instead of the
      * generic `update()` PATCH — the general update schema strips

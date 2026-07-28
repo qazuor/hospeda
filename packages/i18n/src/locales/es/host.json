@@ -125,17 +125,6 @@
                 "loading": "Cargando comodidades...",
                 "empty": "No hay comodidades disponibles"
             },
-            "fotos": {
-                "title": "Fotos",
-                "description": "Subí hasta 20 fotos de tu propiedad",
-                "uploadPrompt": "Arrastrá fotos acá o hacé click para seleccionar",
-                "uploadButton": "Seleccionar archivos",
-                "uploading": "Subiendo...",
-                "maxReached": "Llegaste al máximo de 20 fotos",
-                "removeAria": "Quitar foto",
-                "errorPerFile": "No se pudo subir esta imagen",
-                "requiresSaveFirst": "Guardá primero los datos básicos antes de subir fotos"
-            },
             "precio": {
                 "title": "Precio",
                 "description": "Cuánto cobrás por noche",
@@ -233,7 +222,7 @@
             "unpublishError": "No se pudo despublicar. Intentá de nuevo.",
             "deleteError": "No se pudo eliminar. Intentá de nuevo.",
             "publishError": "No se pudo publicar. Intentá de nuevo.",
-            "publishSubscriptionRequiredMessage": "Necesitás un plan activo para publicar. Si es tu primera vez, empezás con 14 días gratis.",
+            "publishSubscriptionRequiredMessage": "Necesitás un plan activo para publicar. Si es tu primera suscripción, empezás con {{trialDays}} días gratis.",
             "publishSubscriptionRequiredCta": "Ver planes",
             "publishIncompleteCapacityMessage": "Faltan datos de capacidad (huéspedes, habitaciones o baños). Completalos en el editor antes de publicar.",
             "publishIncompleteCapacityCta": "Completar en el editor",
@@ -500,7 +489,8 @@
         "heroHeadline": "Convertí tu propiedad en un ingreso",
         "heroSubheadline": "Publicá en minutos y empezá a recibir huéspedes",
         "primaryCta": "Publicar tu propiedad",
-        "secondaryCta": "Ver mis propiedades"
+        "secondaryCta": "Ver mis propiedades",
+        "trialCallout": "Probá Hospeda gratis por {{trialDays}} días en tu primera suscripción. Elegís tu plan, cargás tu tarjeta y no se cobra nada hasta que termina la prueba."
     },
     "fromAdminBanner": {
         "eyebrow": "Te trajimos desde el panel — necesitás publicar una propiedad para gestionar tus alojamientos."
@@ -703,6 +693,14 @@
             "promotions": "Promociones",
             "messages": "Mensajes",
             "subscription": "Suscripción"
+        }
+    },
+    "pages": {
+        "nueva": {
+            "trialCalloutTitle": "{{trialDays}} días gratis en tu primera suscripción",
+            "trialCalloutTitleIneligible": "Armá tu propiedad",
+            "trialNote": "Podés armar tu propiedad ahora. La prueba gratis de {{trialDays}} días arranca cuando elegís tu plan: cargás tu tarjeta y no se cobra nada hasta que termina. Solo aplica a tu primera suscripción.",
+            "trialNoteIneligible": "Podés crear y editar tu borrador ahora. Para publicarlo y salir al aire vas a necesitar un plan de anfitrión activo."
         }
     }
 }

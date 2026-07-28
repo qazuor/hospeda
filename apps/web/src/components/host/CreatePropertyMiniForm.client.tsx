@@ -77,6 +77,14 @@ export type CreatePropertyMiniFormProps = {
      * to `/auth/forbidden`. When false we keep the redirect on the web.
      */
     readonly canAccessAdminPanel: boolean;
+    /**
+     * Free-trial length in days, for the publish callout copy. Passed in from
+     * the page rather than read from `@repo/billing` here: client components in
+     * this app deliberately do not import the billing package (see
+     * `TestDailyPlanButton.client.tsx`). Interpolated so the number cannot
+     * drift from `OWNER_TRIAL_DAYS` (HOS-331).
+     */
+    readonly trialDays: number;
 };
 
 /**
@@ -243,7 +251,8 @@ export function CreatePropertyMiniForm({
     apiUrl,
     adminUrl,
     accountPropertiesUrl,
-    canAccessAdminPanel
+    canAccessAdminPanel,
+    trialDays
 }: CreatePropertyMiniFormProps) {
     const { t } = createTranslations(locale);
 
@@ -1730,7 +1739,11 @@ export function CreatePropertyMiniForm({
                     <p className="form-trial-callout__title">
                         {trialEligible === false
                             ? t('host.pages.nueva.trialCalloutTitleIneligible', 'Armá tu propiedad')
-                            : t('host.pages.nueva.trialCalloutTitle', '14 días gratis al publicar')}
+                            : t(
+                                  'host.pages.nueva.trialCalloutTitle',
+                                  '{{trialDays}} días gratis en tu primera suscripción',
+                                  { trialDays }
+                              )}
                     </p>
                     <p className="form-trial-callout__text">
                         {trialEligible === false
@@ -1740,7 +1753,8 @@ export function CreatePropertyMiniForm({
                               )
                             : t(
                                   'host.pages.nueva.trialNote',
-                                  'Cuando publiques tu primera propiedad arranca tu trial gratis de 14 días. No pagás nada hasta el día 14, sin compromiso. Podés probar todo el panel mientras armás tu borrador.'
+                                  'Podés armar tu propiedad ahora. La prueba gratis de {{trialDays}} días arranca cuando elegís tu plan: cargás tu tarjeta y no se cobra nada hasta que termina. Solo aplica a tu primera suscripción.',
+                                  { trialDays }
                               )}
                     </p>
                 </div>

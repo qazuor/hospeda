@@ -125,17 +125,6 @@
                 "loading": "[TODO]",
                 "empty": "[TODO]"
             },
-            "fotos": {
-                "title": "[TODO]",
-                "description": "[TODO]",
-                "uploadPrompt": "[TODO]",
-                "uploadButton": "[TODO]",
-                "uploading": "[TODO]",
-                "maxReached": "[TODO]",
-                "removeAria": "[TODO]",
-                "errorPerFile": "[TODO]",
-                "requiresSaveFirst": "[TODO]"
-            },
             "precio": {
                 "title": "[TODO]",
                 "description": "[TODO]",
@@ -233,7 +222,7 @@
             "unpublishError": "Could not unpublish. Please try again.",
             "deleteError": "Could not delete. Please try again.",
             "publishError": "Could not publish. Please try again.",
-            "publishSubscriptionRequiredMessage": "You need an active plan to publish. If this is your first time, you start with 14 free days.",
+            "publishSubscriptionRequiredMessage": "You need an active plan to publish. If this is your first subscription, you start with {{trialDays}} free days.",
             "publishSubscriptionRequiredCta": "View plans",
             "publishIncompleteCapacityMessage": "Capacity details (guests, bedrooms, or bathrooms) are missing. Complete them in the editor before publishing.",
             "publishIncompleteCapacityCta": "Complete in editor",
@@ -500,7 +489,8 @@
         "heroHeadline": "[TODO]",
         "heroSubheadline": "[TODO]",
         "primaryCta": "[TODO]",
-        "secondaryCta": "[TODO]"
+        "secondaryCta": "[TODO]",
+        "trialCallout": "Try Hospeda free for {{trialDays}} days on your first subscription. You pick your plan, add your card, and nothing is charged until the trial ends."
     },
     "fromAdminBanner": {
         "eyebrow": "We brought you here from the admin panel — you need to publish a property first to manage your listings."
@@ -703,6 +693,14 @@
             "promotions": "Promotions",
             "messages": "Messages",
             "subscription": "Subscription"
+        }
+    },
+    "pages": {
+        "nueva": {
+            "trialCalloutTitle": "{{trialDays}} free days on your first subscription",
+            "trialCalloutTitleIneligible": "Set up your property",
+            "trialNote": "You can build your property now. The {{trialDays}}-day free trial starts when you pick your plan: you add your card and nothing is charged until it ends. It applies to your first subscription only.",
+            "trialNoteIneligible": "You can create and edit your draft now. To publish it and go live you'll need an active host plan."
         }
     }
 }
