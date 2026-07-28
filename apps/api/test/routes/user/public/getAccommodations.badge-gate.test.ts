@@ -24,7 +24,7 @@
  * `activeOnly` / `excludeOwnerSuspended` / `excludePlanRestricted` as
  * `!hasVipAccess && !isOwnScope`, so an owner or a VIP actor receives rows an
  * anonymous visitor must not see. That is a separate, pre-existing defect of this
- * route, out of scope for HOS-341 and filed on its own.
+ * route, out of scope for HOS-341 and tracked as HOS-352.
  *
  * The entitlement bypass was the defect HOS-341 fixed, and it was identical on
  * all three routes.

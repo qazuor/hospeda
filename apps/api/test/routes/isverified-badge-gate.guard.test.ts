@@ -22,8 +22,8 @@
  * `AccommodationPublicSchema`, so this guard cannot see them and a green run says
  * nothing about them. The sibling rich-description guard discloses the same axis
  * and hands it to `packages/schemas/test/entities/accommodation/nested-embed.guard.test.ts`
- * — which today covers the rich pair only, NOT `isVerified`. That gap is real,
- * pre-dates HOS-341, and is tracked separately; do not infer coverage from here.
+ * — which today covers the rich pair only, NOT `isVerified`. That gap is real and
+ * pre-dates HOS-341; it is tracked as HOS-351. Do not infer coverage from here.
  *
  * HOS-341 IS the failure mode this guard exists for: four listings had the gate,
  * three did not, and nothing was red. Per-route regression suites cannot give the
