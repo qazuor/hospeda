@@ -12,10 +12,16 @@
  *
  * Signed-in visitors (HOS-295): the page frontmatter passes `currentUser` (read
  * from `Astro.locals.user`) and the contact fields are seeded from it. They stay
- * EDITABLE on purpose — the submitted email is what decides whether an approved
- * lead links to an existing account or provisions a new one, and a merchant's
- * business contact may legitimately differ from their sign-in address. The form
- * must keep working unchanged for anonymous visitors, which is its primary case.
+ * EDITABLE on purpose — a merchant's business contact may legitimately differ
+ * from the address they signed in with, and the lead is a reply-to, not an
+ * identity claim. The form must keep working unchanged for anonymous visitors,
+ * which is its primary case.
+ *
+ * NOTE: the submitted email does NOT link the lead to an existing account today.
+ * `createCommerceOwnerCreateUserPort` (`apps/api/src/lib/commerce-ports.ts`)
+ * calls `signUpEmail` unconditionally, so approving a lead whose email already
+ * belongs to a user fails with a duplicate-email error. That is HOS-296's
+ * subject; do not write copy here that promises linking until it exists.
  *
  * Hydration: caller MUST use `client:load`.
  */
@@ -44,9 +50,12 @@ export interface DestinationOption {
 /**
  * The signed-in visitor, forwarded from `Astro.locals.user` by the page
  * frontmatter. `null` for anonymous visitors, which is the form's primary case.
+ *
+ * Only the two fields the form actually seeds are carried: island props are
+ * serialized into the rendered HTML, so shipping the user id here would leak an
+ * internal identifier into page source for no benefit.
  */
 export interface CommerceLeadCurrentUser {
-    readonly id: string;
     readonly name: string | null;
     readonly email: string | null;
 }
@@ -108,6 +117,22 @@ function buildInitialFields({
         contactName: currentUser.name ?? '',
         email: currentUser.email ?? ''
     };
+}
+
+/**
+ * Joins the element ids that describe a field into one `aria-describedby`
+ * value, dropping the ones that are not currently rendered.
+ *
+ * @param params.ids - Candidate ids; `null`/`false` entries are dropped
+ * @returns The space-separated id list, or undefined when nothing describes it
+ */
+function buildDescribedBy({
+    ids
+}: {
+    readonly ids: ReadonlyArray<string | null | false>;
+}): string | undefined {
+    const present = ids.filter((id): id is string => Boolean(id));
+    return present.length > 0 ? present.join(' ') : undefined;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -273,14 +298,17 @@ export function CommerceLead({
                 />
             </div>
 
-            {/* Signed-in prefill notice — the contact fields carry account data,
-                but they stay editable and the email drives how an approved lead
-                is linked, so say so explicitly (HOS-295). */}
+            {/* Signed-in prefill notice — the contact fields carry account data
+                but stay editable, so say so explicitly (HOS-295). Described-by
+                the two seeded inputs, which is where the explanation applies. */}
             {currentUser && (
-                <p className={styles.prefillNotice}>
+                <p
+                    id="cl-prefill-notice"
+                    className={styles.prefillNotice}
+                >
                     {t(
                         'commerce.lead.prefillNotice',
-                        'Completamos tu nombre y tu correo con los datos de tu cuenta. Si el contacto del negocio es otro, editalos: usamos ese correo para vincular la solicitud.'
+                        'Completamos tu nombre y tu correo con los datos de tu cuenta. Podés editarlos si el contacto del negocio es otro: a ese correo te vamos a responder.'
                     )}
                 </p>
             )}
@@ -344,7 +372,12 @@ export function CommerceLead({
                     onChange={handleChange}
                     className={`${styles.input}${errors.contactName ? ` ${styles.inputError}` : ''}`}
                     autoComplete="name"
-                    aria-describedby={errors.contactName ? 'cl-contactName-error' : undefined}
+                    aria-describedby={buildDescribedBy({
+                        ids: [
+                            currentUser ? 'cl-prefill-notice' : null,
+                            errors.contactName ? 'cl-contactName-error' : null
+                        ]
+                    })}
                     aria-invalid={!!errors.contactName}
                     required
                 />
@@ -381,7 +414,12 @@ export function CommerceLead({
                     onChange={handleChange}
                     className={`${styles.input}${errors.email ? ` ${styles.inputError}` : ''}`}
                     autoComplete="email"
-                    aria-describedby={errors.email ? 'cl-email-error' : undefined}
+                    aria-describedby={buildDescribedBy({
+                        ids: [
+                            currentUser ? 'cl-prefill-notice' : null,
+                            errors.email ? 'cl-email-error' : null
+                        ]
+                    })}
                     aria-invalid={!!errors.email}
                     required
                 />

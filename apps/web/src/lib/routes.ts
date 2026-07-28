@@ -48,6 +48,13 @@ export const SESSION_OPTIONAL_SEGMENTS = [
     //
     // These stay OUT of `PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS`
     // on purpose — see the note on that constant.
+    //
+    // Consequence to keep in mind: both pages now render user-dependent HTML
+    // (the visitor's name and email are baked into the SSR response). Neither
+    // sets `Cache-Control`, so Cloudflare serves them DYNAMIC today and nothing
+    // is shared. If a path-based Cache Rule is ever added for `/publicar-*`
+    // (HOS-128), it MUST bypass on the auth cookie, or one visitor's prefilled
+    // form gets served to the next.
     'publicar-restaurante',
     'publicar-experiencia'
 ] as const;

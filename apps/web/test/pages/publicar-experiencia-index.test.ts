@@ -40,6 +40,13 @@ describe('publicar-experiencia/index.astro', () => {
         expect(src).toContain('Astro.locals.user');
         expect(src).toContain('currentUser={currentUser}');
     });
+    // Island props are serialized into the page source; only the two fields the
+    // form actually seeds belong there.
+    it('forwards only name and email, never the user id', () => {
+        expect(src).toContain('Astro.locals.user.name');
+        expect(src).toContain('Astro.locals.user.email');
+        expect(src).not.toContain('Astro.locals.user.id');
+    });
     it('does NOT redirect unauthenticated visitors (public page)', () => {
         expect(src).not.toContain('if (!user)');
     });

@@ -438,14 +438,12 @@ describe('CommerceLead', () => {
 
     describe('Signed-in prefill', () => {
         const currentUser = {
-            id: 'user-1',
             name: 'Juan Pérez',
             email: 'juan@example.com'
         };
 
         function renderSignedIn(
             overrides: Partial<{
-                id: string;
                 name: string | null;
                 email: string | null;
             }> = {}
@@ -545,6 +543,49 @@ describe('CommerceLead', () => {
             renderForm();
             expect(screen.getByLabelText(/tu nombre/i)).toHaveValue('');
             expect(screen.getByLabelText(/correo electrónico/i)).toHaveValue('');
+        });
+
+        it('explains the prefill and does so only for signed-in visitors', () => {
+            const { unmount } = renderSignedIn();
+            const notice = document.getElementById('cl-prefill-notice');
+            expect(notice).not.toBeNull();
+            expect(notice?.textContent?.length).toBeGreaterThan(0);
+            unmount();
+
+            renderForm();
+            expect(document.getElementById('cl-prefill-notice')).toBeNull();
+        });
+
+        // The notice explains why the two seeded fields already have a value,
+        // so screen readers must reach it from those fields.
+        it('associates the notice with the two pre-filled fields', () => {
+            renderSignedIn();
+            expect(screen.getByLabelText(/tu nombre/i)).toHaveAttribute(
+                'aria-describedby',
+                'cl-prefill-notice'
+            );
+            expect(screen.getByLabelText(/correo electrónico/i)).toHaveAttribute(
+                'aria-describedby',
+                'cl-prefill-notice'
+            );
+        });
+
+        it('keeps the field error in aria-describedby alongside the notice', async () => {
+            renderSignedIn();
+            fireEvent.change(screen.getByLabelText(/nombre del negocio/i), {
+                target: { value: 'La Parrilla de Juan' }
+            });
+            fireEvent.change(screen.getByLabelText(/correo electrónico/i), {
+                target: { value: 'not-valid-email' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                expect(screen.getByLabelText(/correo electrónico/i)).toHaveAttribute(
+                    'aria-describedby',
+                    'cl-prefill-notice cl-email-error'
+                );
+            });
         });
     });
 });

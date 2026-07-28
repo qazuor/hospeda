@@ -38,9 +38,10 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 // contact fields; islands cannot read `Astro.locals` themselves. This is only
 // populated because `publicar-experiencia` is listed in
 // `SESSION_OPTIONAL_SEGMENTS` (see `@/lib/routes`).
+// Only the two fields the form seeds — island props are serialized into the
+// rendered HTML, so the user id has no business being here.
 const currentUser = Astro.locals.user
     ? {
-          id: Astro.locals.user.id,
           name: Astro.locals.user.name ?? null,
           email: Astro.locals.user.email ?? null
       }
