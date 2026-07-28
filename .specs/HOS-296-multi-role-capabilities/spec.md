@@ -154,7 +154,7 @@ decision, and this spec has to treat them as such:
 | 3 | `apps/api/src/lib/commerce-ports.ts:86-89` | **none** | yes (see §5.4) |
 | 4 | `accommodation.service.ts:1377-1382` (`createForOnboarding`) | `role === USER` exact | no — but therefore **never grants HOST to a COMMERCE_OWNER** |
 | 5 | `accommodation.service.ts:1961-1985` (`_assignHostRoleIfNeeded`) | `PRIVILEGED_ROLES` (`:213-218`), which **excludes `COMMERCE_OWNER`, `SPONSOR` and `EDITOR`** | **YES — live data-loss bug, silently swallowed by a try/catch** |
-| 6 | `apps/api/src/cron/jobs/archive-abandoned-drafts.job.ts:237-240` | `role === HOST` exact | demote only |
+| 6 | `apps/api/src/cron/jobs/archive-abandoned-drafts.job.ts:238-242` | `role === HOST` exact | demote only |
 | 7 | `commerce-owner-provisioning.service.ts:269-275` | none | delegates to #3 |
 | 8 | `apps/api/src/routes/user/admin/patch.ts:69` (+ `update.ts`) | `MANAGE_USERS` only, **no transition rule** | **YES, unconditional** |
 | 9 | `apps/api/src/routes/user/admin/create.ts:49` | creation | no |
@@ -197,7 +197,7 @@ admin can only reject the lead.
   `mi-cuenta/propiedades/index.astro` (26, 59), `mi-cuenta/host-dashboard.astro`
   (20, 41), `mi-cuenta/suscripcion/index.astro` (12, 55, 58).
 - `isCommerceOwnerRole` — 4 hard walls:
-  `mi-cuenta/comercio/index.astro:36-38`, `.../comercio/nuevo/[vertical].astro:44`,
+  `mi-cuenta/comercio/index.astro:37`, `.../comercio/nuevo/[vertical].astro:44`,
   `.../comercio/nuevo/index.astro:27`, `.../comercio/[vertical]/[id]/editar.astro:41`.
 - `resolveSubscriptionPlansPath` — 5 call sites:
   `suscriptores/checkout/index.astro:31`, `suscriptores/checkout/failure.astro:61`,
@@ -267,13 +267,19 @@ user_role                                  -- the LIVE set of hats
 
 user_role_audit                            -- append-only history
   id           uuid    PK
-  user_id      uuid    FK users.id ON DELETE CASCADE
+  user_id      uuid    FK users.id ON DELETE SET NULL   -- survives a hard delete
   role         role_enum
-  action       text    NOT NULL            -- 'grant' | 'revoke'
+  action       role_grant_action_enum NOT NULL   -- 'grant' | 'revoke' (typed enum, like r_user_permission.effect)
   at           timestamptz NOT NULL DEFAULT now()
-  by           uuid    FK users.id NULL
+  by           uuid    FK users.id NULL     -- null = system/automatic
   reason       text    NULL
 ```
+
+`user_role.user_id` cascades on delete because the live set is meaningless
+without its user. `user_role_audit.user_id` deliberately does NOT: the audit
+exists to outlive the rows it describes, and a hard delete (rare here — the
+project soft-deletes by default — but reachable via an erasure request) must
+not be able to either block on it or silently erase the history.
 
 An array column on `users` would carry the set but not the story. The reason a
 hat was granted is exactly what is missing today when a role gets silently
@@ -300,13 +306,37 @@ the current scalar copies that damage forward into the new model and makes it
 permanent.
 
 The backfill therefore needs a second, reconciliation pass that re-derives hats
-from ownership rows that cannot lie: a user id appearing in
-`gastronomies.owner_id` or `experiences.owner_id` gets `COMMERCE_OWNER`; one
-appearing in `accommodations.owner_id` gets `HOST`
-(`grant_reason = 'reconciled_from_ownership'`). Users whose reconciled set
-differs from their stored `users.role` are the population the G-6 bug already
-hit — that count belongs in the migration's output so the damage is measured,
-not assumed.
+from ownership rows: a user id appearing in `gastronomies.owner_id` or
+`experiences.owner_id` gets `COMMERCE_OWNER`; one appearing in
+`accommodations.owner_id` gets `HOST`
+(`grant_reason = 'reconciled_from_ownership'`).
+
+**The ownership query must be filtered, or it does fresh damage of its own.**
+Two filters, both mandatory:
+
+- `deletedAt IS NULL`. All three tables soft-delete and all three carry an
+  `(ownerId, deletedAt)` composite index precisely for this
+  (`accommodation.dbschema.ts:127,179`, `gastronomy.dbschema.ts:97,116`,
+  `experiences.dbschema.ts:119,139`). Without it, a user whose only listing was
+  deleted years ago is handed a hat they should not have.
+- `lifecycleState != ARCHIVED` on accommodations. This one is the subtle one:
+  `archive-abandoned-drafts.job.ts:225-242` demotes an owner HOST→USER when
+  their last accommodation is archived, and **archiving does not soft-delete
+  the row** — `owner_id` and `deletedAt IS NULL` both survive. An unfiltered
+  reconciliation would therefore re-grant HOST to every host that cron has
+  legitimately demoted, reversing an intentional revoke. Mirror the cron's own
+  predicate (`:228-232`).
+
+Staff accounts (`ADMIN`, `SUPER_ADMIN`, `CLIENT_MANAGER`) that own a listing —
+QA and demo accounts do — will be granted `HOST` by this pass. That is
+harmless (their existing permissions are a superset) but it adds noise to the
+"who holds this role" admin view, so the pass should exclude them explicitly
+rather than leave it to be discovered.
+
+Users whose reconciled set differs from their stored `users.role` are the
+population the G-6 bug already hit — that count belongs in the migration's
+output (as a structured log field, so AC-10 is checkable mechanically rather
+than eyeballed) so the damage is measured, not assumed.
 
 Roles with no ownership signal (`SPONSOR`, `EDITOR`) cannot be reconstructed
 this way. If any user lost one, it is unrecoverable from data alone and needs a
@@ -330,7 +360,7 @@ SUPER_ADMIN keeps its short-circuit, now on "holds SUPER_ADMIN".
 
 `Actor` (`packages/service-core/src/types/index.ts:66-72`) gains
 `roles: readonly RoleEnum[]`. `role: RoleEnum` stays during the transition as
-the derived primary (§6.6) so the ~27 test files in §5.9 and the two staff
+the derived primary (§6.6) so the ~27 test files in §12 and the two staff
 bypass lists do not all have to change in the same PR.
 
 **The two other resolvers must be dealt with explicitly.** Both sit on closed
@@ -362,10 +392,17 @@ multi-role-correct — not a re-architecture:
 | `commerce-ports.ts:86-89` | `grantRole(userId, COMMERCE_OWNER, reason)` instead of `.set({ role })` — Phase 1. The **existing-user lookup by email** is a separate change that ships in Phase 3 with its admin confirmation UI (§6.6); Phase 1 only stops the write from being destructive. |
 | `accommodation.service.ts:1377-1382` | `grantRole(ownerId, HOST, 'accommodation_created')`, unconditional and idempotent. The `role === USER` guard disappears — that guard is precisely why a COMMERCE_OWNER never gets the host hat. |
 | `accommodation.service.ts:1961-1985` | same grant. `PRIVILEGED_ROLES` stops being a write guard; it becomes irrelevant because granting is additive. **This is the G-6 bug fix.** |
-| `archive-abandoned-drafts.job.ts:238-241` | `revokeRole(ownerId, HOST, 'last_accommodation_archived')`, only if held, and only when the user has no other reason to hold it. |
+| `archive-abandoned-drafts.job.ts:238-242` | `revokeRole(ownerId, HOST, 'last_accommodation_archived')`, only if held, and only when the user has no other reason to hold it. |
 | `user/admin/patch.ts:69` | stops accepting a scalar `role`. Role changes move to dedicated `grant`/`revoke` endpoints so every change is audited. The new endpoints must ship **before** the field is removed, or admins lose the ability entirely for a release. |
 | `user.service.ts:382-408` (`assignRole`) | delegates to `grantRole`. Dead code today, but it must not survive as a second write path. |
 | `testUsers.seed.ts:545-549` | seeds the role set, still idempotent. |
+
+The four sites not listed above (`auth.ts:616`, `signup-as-host.ts:117`,
+`commerce-owner-provisioning.service.ts:269-275`, `user/admin/create.ts:49`)
+are all "brand-new user, assign its first role" and become a plain
+`grantRole(newUserId, initialRole, 'signup' | 'admin_create')`. They are
+non-destructive today and stay non-destructive; they are listed in §5.3 so the
+AC-7 static guard covers all eleven, not so that each needs a design.
 
 Two primitives, in `service-core`, both idempotent:
 
@@ -374,14 +411,28 @@ grantRole({ userId, role, grantedBy, reason }): Promise<Result<void>>
 revokeRole({ userId, role, revokedBy, reason }): Promise<Result<void>>
 ```
 
-Each call, in one transaction, does three things:
+Each call, in one transaction, does four things:
 
+0. `SELECT ... FOR UPDATE` the `users` row,
 1. upsert / delete the `user_role` row,
 2. append a `user_role_audit` row,
 3. **recompute and write `users.role`** to the derived primary (§6.6).
 
+Step 0 is not optional. The `user_role` PK is `(user_id, role)`, so two
+concurrent grants of *different* roles to the *same* user — the accommodation
+activation hook granting `HOST` while a commerce-lead approval grants
+`COMMERCE_OWNER` to the same owner — touch different rows and are **not**
+serialized by Postgres. Each would read the role set before the other commits
+and recompute a `users.role` from a stale view, which is exactly the invariant
+AC-11 promises. Locking the `users` row serializes the read-recompute-write.
+
 Step 3 is what keeps the scalar column honest while anything still reads it,
 and it is the ONLY code path allowed to write `users.role` — see AC-7.
+
+**Step 3 needs the precedence order of OQ-3 from the very first call**, so
+OQ-3 is a **blocking precondition of Phase 1**, not a Phase-2 question. It is
+listed under Open questions because it needs an owner's confirmation, not
+because it can wait.
 
 `revokeRole` must refuse to remove a user's last role (there is always at least
 `USER`). This invariant lives in the service layer; a DB-level backstop would
@@ -455,7 +506,7 @@ before anything depends on it, and is itself a decision (OQ-3).
 for the "who holds this role" admin query. That query replaces the
 `users_role_idx` usage pattern and is what HOS-120's AC-5 impact preview
 ("N users hold this role",
-`.specs/HOS-120-admin-editable-role-permissions/spec.md:201-202`) will need
+`.specs/HOS-120-admin-editable-role-permissions/spec.md:224`) will need
 once `GROUP BY users.role` stops being correct. Note the existing composite
 `users_role_deletedAt_idx` is soft-delete-aware; the `user_role` equivalent
 needs a join to `users` to exclude soft-deleted accounts — cheap, but it has to
@@ -479,7 +530,8 @@ addresses).
 **Endpoints**: `POST /api/v1/admin/users/:id/roles` and
 `DELETE /api/v1/admin/users/:id/roles/:role`, both gated on
 `PermissionEnum.USER_UPDATE_ROLES` (the permission the current single-select is
-already gated on), both writing the audit columns.
+already gated on), both writing the audit row. **These ship in Phase 1**, in
+the same release that drops the scalar `role` from the admin PATCH — see R-8.
 
 **Session**: Better Auth `additionalFields` (`apps/api/src/lib/auth.ts:210-244`)
 gains the role set. Note the session payload is consumed in three places
@@ -550,14 +602,19 @@ three must accept the new shape before the API starts sending it.
   the service. A DB-level backstop (extras carril CHECK/trigger) is deferred:
   the primitives are the single write path per AC-7, so the invariant has one
   place to fail. If AC-7's static guard is ever relaxed, this needs revisiting.
-- **R-8 — Deleting the `role` field from the admin PATCH before the
-  grant/revoke endpoints ship** would leave admins with no way to change roles
-  at all. Ordering, not design — but it is the kind of thing that gets
-  discovered in production.
+- **R-8 — The admin loses the role editor between Phase 1 and Phase 3.**
+  Phase 1 drops the scalar `role` from `PATCH /admin/users/:id`, but the
+  multi-select editor that replaces it is Phase 3. So the grant/revoke
+  **endpoints must ship in Phase 1**, and the existing single-select UI must be
+  re-pointed at them in the same phase — otherwise changing a role means a raw
+  API call for two whole phases. Either accept that explicitly, or move the
+  minimal UI change into Phase 1. This is ordering, not design, and it is
+  exactly the kind of thing discovered in production.
 - **R-4 — The G-6 bug is live now.** `_assignHostRoleIfNeeded` is destroying
-  `COMMERCE_OWNER` roles in production today, and this spec's Phase 2 is where
-  it dies. If the migration slips, that bug must be fixed on its own regardless
-  — it should not wait behind a multi-phase migration.
+  `COMMERCE_OWNER`, `SPONSOR` and `EDITOR` roles in production today. It dies
+  in **Phase 1**, because turning that write into a grant is a write-site
+  change. If even Phase 1 slips, the bug must be fixed on its own regardless —
+  it should not wait behind a multi-phase migration.
 - **R-5 — Session shape change.** The role set has to reach three consumers
   that each parse the session independently. Rolling those out before the API
   sends the new field is the safe order.
@@ -581,11 +638,15 @@ three must accept the new shape before the API starts sending it.
   `apps/mobile/src/lib/auth/roles.ts:9-18` with an explicit "do not fix this
   without an owner decision". **Owner decision**, and it materially changes the
   size of this spec.
-- **OQ-3 — Primary-role precedence.** During Phase 2/3, `Actor.role` is derived
-  from the set. What is the order? A documented list
-  (`SUPER_ADMIN > ADMIN > CLIENT_MANAGER > EDITOR > HOST > COMMERCE_OWNER >
-  SPONSOR > USER > GUEST`) is the obvious candidate, but it needs to be
-  confirmed before anything depends on it.
+- **OQ-3 — Primary-role precedence. BLOCKS PHASE 1.** `users.role` is
+  recomputed from the role set on every `grantRole`/`revokeRole` call (§6.4
+  step 3), so this order is needed from the first call of the first phase, not
+  from Phase 2. Proposed, and needing only confirmation:
+  `SUPER_ADMIN > ADMIN > CLIENT_MANAGER > EDITOR > HOST > COMMERCE_OWNER >
+  SPONSOR > USER > GUEST`. `SYSTEM` is deliberately absent — it is not a
+  capability a person accumulates (§7) and no runtime path grants it. If the
+  owner wants a different order, say so before Phase 1 starts; changing it
+  afterwards rewrites every `users.role` in the table.
 - **OQ-4 — Automatic revoke.** `archive-abandoned-drafts` demotes HOST→USER
   when the last accommodation is archived. With several hats, should any
   automatic revoke exist at all, or should hats only ever be removed by an
