@@ -10,6 +10,7 @@ areas:
   - db
   - web
   - admin
+  # no `area-mobile` label exists in Linear, but apps/mobile IS in scope — see §6.7
 ---
 
 # Multi-role capabilities — one account, several hats
@@ -352,8 +353,10 @@ a role question, not a capability one — but become a set intersection:
 predicate with a comment saying why they are a deliberate exception to
 `CLAUDE.md`'s "always `PermissionEnum`" rule.
 
-`resolveOwnerRole` (`owner-entitlement.ts:219-229`) is one of the 5 raw
-`users.role` reads. It becomes a query over `user_role`.
+`resolveOwnerRole` (`owner-entitlement.ts:219-229`) is one of the 7 raw
+`users.role` reads — but `owner-entitlement.ts` has two more inline queries that
+do not go through it (`:318`, `:778`). All become queries over `user_role`. Full
+corrected list in §7.3.
 
 ### 6.5 Read gates
 
@@ -389,9 +392,17 @@ have corrupted are seeded demo data and internal staff logins. Demo data is
 rebuilt by re-seeding; staff accounts come through a straight copy correctly.
 Repairing nothing is the right amount of repair.
 
-If that assumption is wrong — if staging or prod turns out to hold an account
-someone actually cares about whose role G-6 ate — fix that one row by hand. It
-is one `UPDATE`, not a migration feature.
+There is a **third category** that binary misses: accounts created by hand
+during staging and prod smoke runs (host and commerce test signups, MercadoPago
+sandbox purchasers — see the SMOKE-DD-MM workflow). Those are neither seed rows
+nor staff, and one holding `COMMERCE_OWNER`, `SPONSOR` or `EDITOR` could have
+been eaten by G-6.
+
+So: before the backfill, run an audit query cross-checking `users.role` against
+`accommodations.owner_id` / `gastronomies.owner_id` / `experiences.owner_id`
+and print the mismatches. It is one `SELECT` and it turns "probably nobody"
+into a number. Fix whatever it finds by hand afterwards — one `UPDATE` each,
+not a migration feature.
 
 Per the seed dual-write rule the baseline must also be updated so a fresh DB is
 built correct: the normal user-seeding code writes `user_role` rows too.
@@ -429,8 +440,18 @@ revokeRole({ userId, role, revokedBy, reason }): Promise<Result<void>>
 ```
 
 `revokeRole` must refuse to remove a user's last role (there is always at least
-`USER`). App-layer invariant; the primitives are the only write path, so it has
-one place to fail.
+`USER`). That is a check-then-act, so it needs `SELECT ... FOR UPDATE` on the
+`users` row inside the primitive's transaction.
+
+Note this lock survives the single cut even though its original justification
+did not. The phased draft introduced it to serialize the *derived `users.role`
+recompute*, which no longer exists — but it was also, incidentally, the thing
+serializing concurrent grant/revoke calls on the same user. Without it, two
+concurrent `revokeRole` calls on a user holding `{USER, HOST}` can both read
+"count > 1, safe" before either commits and leave the user with zero roles.
+Low likelihood and recoverable with one `UPDATE`, but it is a numbered
+acceptance criterion, so it gets a lock. `.for('update')` is already used in
+`promo-code.redemption.ts` and `subscription-cancel.service.ts`.
 
 | Site | Becomes |
 |---|---|
@@ -487,13 +508,101 @@ so a fresh DB is built correct.
 `PermissionEnum.USER_UPDATE_ROLES` (what the current single-select already
 uses), both writing the audit row.
 
-**Session**: Better Auth `additionalFields` (`apps/api/src/lib/auth.ts:210-244`)
-carries the role **array** instead of the scalar. Four consumers parse it
-independently and all must land in the same change:
-`apps/web/src/lib/middleware-helpers.ts:452`,
-`apps/web/src/lib/auth-cache.ts:207`, `apps/admin/src/lib/auth-session.ts:132`,
-and `apps/mobile/src/lib/auth/roles.ts` (§6.7). This is the tightest
-coordination point in the whole change.
+### 7.1 Session — the hard part, and the one thing the phases used to hide
+
+**`additionalFields` cannot carry the role set.** It is a column mapping:
+`apps/api/src/lib/auth.ts:196-204` configures `drizzleAdapter(getDb(), { schema:
+{ user: users, ... } })`, and `additionalFields` (`:210-244`) sits alongside
+`fields: { name: 'displayName' }`, declaring extra **columns of `users`** to
+expose. Drop `users.role` and there is no source for the field. A related table
+cannot be flattened through this mechanism, and nothing in the repo does it —
+`customSession` appears zero times.
+
+This is the one genuine cost of the single cut, and it has to be designed rather
+than asserted. The phased plan never had to solve it, because the column
+survived until its final phase.
+
+**The codebase already has the pattern** for a per-request value the
+plain-column session cannot express. Billing entitlements are not in
+`additionalFields` at all: `entitlementMiddleware` queries the DB per request
+and does `c.set('userEntitlements', ...)`, which `actor.ts:194-200` merges into
+the `Actor`. Roles take the same route — `actorMiddleware` reads `user_role` and
+populates `Actor.roles`, so `GET /api/v1/public/auth/me` carries the set for
+free.
+
+**But three of the four consumers never read `/auth/me`.** They read Better
+Auth's native `/api/auth/get-session`, which is exactly the response that loses
+the field:
+
+| Consumer | Reads today | Consequence |
+|---|---|---|
+| `apps/web/src/lib/auth-cache.ts:207` | `/api/v1/public/auth/me` (actor) | none — gets `roles` for free |
+| `apps/web/src/lib/middleware-helpers.ts:408,452` | `/api/auth/get-session` | needs repointing; it avoids `/auth/me` deliberately today |
+| `apps/admin/src/lib/auth-session.ts:132` | `/api/auth/get-session` | cheapest fix — it **already** calls `/auth/me` too, for `permissions` |
+| `apps/mobile` (`app/_layout.tsx:99-100` → `useSession()`) | `/api/auth/get-session` via the Better Auth client | has no `/auth/me` plumbing at all (§6.7) |
+
+**Pick the mechanism before writing code.** Two viable shapes:
+
+1. **Actor-only** (preferred): `roles` lives on the actor and every consumer
+   that needs it reads `/auth/me`. One source, no Better Auth surgery. Cost: web
+   middleware and mobile each gain an `/auth/me` call, and web's is per-request
+   on protected routes — the same cost HOS-131 D-4 rejected for a different
+   surface, so **measure it, do not assume it is fine**.
+2. **Better Auth's `customSession` plugin**: enrich the native session response
+   from `user_role` so `get-session` keeps working for all three consumers
+   unchanged. Cost: an unproven mechanism here, and it interacts with the
+   already-enabled `session.cookieCache` (`auth.ts:245-248`) — a cached cookie
+   would serve stale roles after a grant until it expires, which needs an
+   explicit answer.
+
+This is the tightest coordination point in the change and the first thing to
+settle. See OQ-4.
+
+### 7.2 Things the compiler will NOT find
+
+§12 leans on "rename the type and let the compiler enumerate the work". That is
+true for TypeScript call sites and false for two categories that must be swept
+by hand:
+
+- **Raw SQL in the e2e fixtures.** `apps/e2e/fixtures/api-helpers.ts:252`
+  (`setUserRole`) and `apps/e2e/fixtures/db-helpers.ts:89`
+  (`demoteHostToUser`) run `UPDATE users SET role = ...` through a `pg` pool
+  wrapper, and `apps/e2e/tests/admin/spec172-amenity-chips-smoke.spec.ts:94`
+  does it inline. `createUser` calls `setUserRole` and is used by **40 test
+  files**, including the role-isolation suites that exist precisely to catch
+  this class of bug. These fail at e2e runtime with `column "role" does not
+  exist`, never at typecheck. Sweep `apps/e2e` for `SET role` and `.role` as an
+  explicit checklist step.
+- **Prose.** Three of the 27 `actor.role` hits are the comment *"NEVER check
+  `actor.role` directly"* (`commerce.permissions.ts:8`,
+  `gastronomy.permissions.ts:13`, `experience.permissions.ts:13`). Reword them;
+  the compiler will not.
+
+### 7.3 Corrected read-site inventory
+
+The raw `users.role` reads are **7**, not 5, and two are product surfaces with
+no design decision attached yet:
+
+- `apps/api/src/middlewares/owner-entitlement.ts:223, 318, 778` — three separate
+  inline queries; §6.4 named only the `resolveOwnerRole` one.
+- `apps/api/src/cron/jobs/archive-abandoned-drafts.job.ts:241`.
+- `apps/api/src/routes/tag/user-tag/admin/user-moderation.ts:99` — enriches a
+  moderation panel with a per-user `role` string. **What does it show for a
+  user with two hats?** Undecided.
+- `packages/db/src/models/user/user.model.ts:342,347` —
+  `getAdminStats().byRole`, a `GROUP BY users.role` dashboard aggregate. With
+  multi-role a user contributes to N buckets, so `Σ byRole > totalUsers`
+  becomes correct rather than a bug. **Say so in the UI** or the number reads
+  as broken.
+- `packages/seed/src/required/aiPrompts.seed.ts:45` is one more, outside the
+  `apps/api` + `service-core` counting scope.
+
+There is also a **third** staff-like role set nobody has reconciled:
+`AccommodationService.BILLING_EXEMPT_ROLES` (`accommodation.service.ts:224-228`
+= `{ADMIN, CLIENT_MANAGER, SUPER_ADMIN}`), distinct from both sets §12 names. Two
+of its three call sites (`:1544`, `:1763`) read `owner.role` off a
+`UserModel.findById()` result — so `UserModel` needs a multi-role read path,
+which §7's contracts did not mention.
 
 ## 8. UX / UI behavior
 
@@ -531,6 +640,12 @@ coordination point in the whole change.
   i.e. dropping the scalar did not silently route everyone to `(tourist)`.
 - **AC-10** — An admin can grant and revoke roles from the admin panel in the
   same release that removes the scalar `role` field from the user form.
+- **AC-11** — The `apps/e2e` suite is green. Specifically the role-isolation
+  specs (`security/sec-01-host-isolation`, `commerce/commerce-02-access-control`,
+  `commerce/commerce-04-permission-gate`, `admin/adm-03-user-suspend`), because
+  their fixtures set roles through raw SQL that no typecheck can catch (§7.2).
+- **AC-12** — `revokeRole` cannot strand a user with zero roles under two
+  concurrent calls, not just sequential ones (§6.8).
 
 ## 10. Risks
 
@@ -562,7 +677,8 @@ coordination point in the whole change.
 
 ## 11. Open questions
 
-None of these block implementation.
+**OQ-4 blocks the work.** OQ-1, OQ-2, OQ-3 and OQ-5 do not — each has a safe
+default that preserves today's behaviour.
 
 - **OQ-1 — Avatar shortcut with several business hats.** HOS-131 OQ-4 resolved
   this to "one shortcut, priority `[hostDashboard, commerce]`"
@@ -582,14 +698,32 @@ None of these block implementation.
   revoke exist at all, or should hats only ever be removed by an admin?
   Automatic revocation is what makes hats feel unstable. Defaulting to "keep
   today's behaviour, but as a grant-aware revoke" is safe.
+- **OQ-4 — How does the role set reach the session? BLOCKS THE WORK.** §7.1 lays
+  out the two shapes (actor-only via `/auth/me`, or Better Auth's
+  `customSession`) with their costs. This is the one part of the change with no
+  proven precedent in the codebase, so it is a technical decision to make with
+  eyes open rather than discover mid-implementation. Unlike OQ-1..OQ-3, nothing
+  can start until it is answered.
+- **OQ-5 — What does the admin see for a multi-hat user?** Two surfaces read
+  `users.role` purely to display it (§7.3): the moderation panel
+  (`user-moderation.ts:99`) and the stats dashboard's `byRole` aggregate
+  (`user.model.ts:342,347`). Show all hats, the "highest" one, or a count? For
+  the dashboard, note that `Σ byRole > totalUsers` becomes *correct* — the UI
+  should say so or the number reads as a bug.
 
 ## 12. Implementation notes
 
 - **Do the type change first and let the compiler drive.** Renaming
-  `Actor.role` → `Actor.roles` with no shim turns the 27 `actor.role` reads and
-  the 5 raw `users.role` reads into a compile-time worklist. Fighting the
-  compiler with a temporary alias would hide exactly the inventory you want.
-- Roughly 27 test files assert single-role behaviour. The ones that encode the
+  `Actor.role` → `Actor.roles` with no shim turns the `actor.role` reads and the
+  7 raw `users.role` reads into a compile-time worklist. Fighting the compiler
+  with a temporary alias would hide exactly the inventory you want.
+  <br>**Then do the manual sweep of §7.2.** Raw SQL in `apps/e2e` is invisible
+  to `tsc` and silently takes down 40 test files if missed.
+- **Settle §7.1 (how the role set reaches the session) before anything else.**
+  It is the only part of this change without a proven mechanism in the
+  codebase, and three of the four session consumers depend on the answer.
+- Roughly 27 test files assert single-role behaviour, **plus the `apps/e2e`
+  fixtures** (§7.2). The ones that encode the
   destructive semantics directly, and so need rewriting rather than adapting:
   `packages/service-core/test/services/accommodation/roleAssignment.test.ts`,
   `.../accommodation/createForOnboarding.test.ts`,
@@ -608,8 +742,16 @@ None of these block implementation.
   SUPER_ADMIN}` (`accommodation.service.ts:213-218`). They swap `EDITOR` for
   `HOST`, and that omission of `EDITOR` **is** half of the G-6 bug. Use the
   former for anything meaning "is this staff".
-- Rollback is `git revert` plus re-running the down migration. There is no data
-  to lose, which is the whole premise — see R-7.
+- **Rollback is not clean, and the spec should not pretend otherwise.** This
+  repo's migration tooling is forward-only — `drizzle-kit migrate`, no
+  `db:migrate:down` anywhere in `package.json` or `packages/db/package.json`.
+  And "there is no data to lose" stops being true minutes after deploy, when
+  ordinary traffic starts writing `user_role` rows for every host onboarding
+  and commerce approval. Reconstructing a scalar `users.role` for a user who has
+  since accumulated two hats needs exactly the precedence logic §6.2 says is
+  unnecessary. In practice, at pre-launch row counts, rollback means `git
+  revert` plus a hand-written recovery migration — fine, but plan for it as
+  work rather than as a switch.
 - Ordering within the change: schema + primitives → write sites → resolution →
   read gates (web, admin, mobile) + session. One PR if review can absorb it,
   otherwise split by **reviewability**, not by safety, and land them together.
