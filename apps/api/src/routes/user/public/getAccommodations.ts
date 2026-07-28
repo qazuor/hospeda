@@ -20,8 +20,13 @@ import { AccommodationPublicSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
 import { getActorFromContext } from '../../../utils/actor';
-import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
+import type { AccommodationData } from '../../../utils/entitlement-filter';
+import {
+    filterAccommodationListByOwnerEntitlements,
+    stripRichDescriptionFields
+} from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -84,7 +89,28 @@ export const publicGetUserAccommodationsRoute = createPublicListRoute({
         // before reaching the response payload — fail-closed and independent of
         // any schema change.
         const rawItems = result.data?.items ?? [];
-        const items = rawItems.map(stripRichDescriptionFields);
+        const strippedItems = rawItems.map(stripRichDescriptionFields);
+
+        // SPEC-291 Phase 3b / HOS-341: gate `isVerified` by the OWNER's billing
+        // entitlement. Every row on this page belongs to the path-param owner, so
+        // this batch resolves a single id; the ids are still collected from the items
+        // rather than taken from the path so the call matches the four sibling
+        // listings verbatim and an empty page resolves an empty id list.
+        //
+        // Fail-closed: an owner absent from the map keeps no badge. The gate depends
+        // on the owner of the row, never on the reader (HOS-288).
+        const uniqueOwnerIds = [
+            ...new Set(
+                strippedItems
+                    .map((item) => (item as { ownerId?: string }).ownerId)
+                    .filter((id): id is string => typeof id === 'string' && id.length > 0)
+            )
+        ];
+        const ownerEntitlementsMap = await resolveOwnerEntitlementsForOwnerIds(uniqueOwnerIds);
+        const items = filterAccommodationListByOwnerEntitlements(
+            strippedItems as AccommodationData[],
+            ownerEntitlementsMap
+        );
 
         return {
             items,
