@@ -48,9 +48,14 @@ export const publicGetAccommodationsByFeatureRoute = createPublicListRoute({
         );
 
         // SPEC-291 Phase 3b / HOS-341: gate `isVerified` by the OWNER's billing
-        // entitlement. ONE batch query for every unique ownerId on this page, then a
+        // entitlement. ONE batched role query for the unique ownerIds of this
+        // response, then parallel billing lookups for the cache-cold ones, then a
         // synchronous gate pass. Fail-closed: an owner absent from the map keeps no
         // badge.
+        //
+        // "of this response", not "of this page": the service has no server-side
+        // pagination here, it returns its whole result set and the envelope below is
+        // synthesized from its length.
         //
         // The gate depends on the owner of the row, never on the reader — which is
         // what makes it safe here. `/api/v1/public/features` is a shared-cached

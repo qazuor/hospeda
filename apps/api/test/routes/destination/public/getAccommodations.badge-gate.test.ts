@@ -242,8 +242,10 @@ describe('publicGetDestinationAccommodationsRoute — HOS-341 isVerified owner g
     });
 
     it('forces isVerified=false when the owner is absent from the map (fail-closed)', async () => {
-        // The real batch resolver never throws — it degrades to an empty map when
-        // the owner lookup itself fails. That degraded shape must NOT grant badges.
+        // The real batch resolver never throws: on a failed role query or a failed
+        // per-owner billing lookup it sets an EMPTY ENTITLEMENT ARRAY for that owner,
+        // and it returns an empty Map only for an empty id list. An empty Map is
+        // therefore the worst case — every owner unresolved — and must grant nothing.
         mockResolveBatch.mockResolvedValue(new Map());
         mockGetAccommodations.mockResolvedValue({
             data: {
@@ -284,5 +286,43 @@ describe('publicGetDestinationAccommodationsRoute — HOS-341 isVerified owner g
         expect(mockResolveBatch).toHaveBeenCalledTimes(1);
         const [calledWith] = mockResolveBatch.mock.calls[0] as [string[]];
         expect(calledWith).toEqual([OWNER_WITH_BADGE]);
+    });
+
+    it('forces isVerified=false for a row whose ownerId is missing', async () => {
+        // No ownerId means no owner to attribute the badge to. The handler must not
+        // pass it to the resolver, and the gate must not let it through unchanged.
+        mockResolveBatch.mockResolvedValue(
+            new Map([[OWNER_WITH_BADGE, [EntitlementKey.HAS_VERIFICATION_BADGE]]])
+        );
+        mockGetAccommodations.mockResolvedValue({
+            data: {
+                accommodations: [
+                    { ...makeAccommodation({ id: 'acc-ownerless' }), ownerId: undefined }
+                ]
+            },
+            error: null
+        });
+
+        const items = await requestItems();
+
+        expect(items).toHaveLength(1);
+        expect(items[0]?.isVerified).toBe(false);
+        const [calledWith] = mockResolveBatch.mock.calls[0] as [string[]];
+        expect(calledWith).toEqual([]);
+    });
+
+    it('resolves an empty id list when the response carries no accommodations', async () => {
+        mockResolveBatch.mockResolvedValue(new Map());
+        mockGetAccommodations.mockResolvedValue({
+            data: { accommodations: [] },
+            error: null
+        });
+
+        const items = await requestItems();
+
+        expect(items).toHaveLength(0);
+        expect(mockResolveBatch).toHaveBeenCalledTimes(1);
+        const [calledWith] = mockResolveBatch.mock.calls[0] as [string[]];
+        expect(calledWith).toEqual([]);
     });
 });

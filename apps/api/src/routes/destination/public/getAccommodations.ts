@@ -51,7 +51,8 @@ export const publicGetDestinationAccommodationsRoute = createPublicRoute({
         );
 
         // SPEC-291 Phase 3b / HOS-341: gate `isVerified` by the OWNER's billing
-        // entitlement. ONE batch query for every unique ownerId on this page, then a
+        // entitlement. ONE batched role query for the unique ownerIds of this
+        // response, then parallel billing lookups for the cache-cold ones, then a
         // synchronous gate pass. Fail-closed: an owner absent from the map keeps no
         // badge.
         //

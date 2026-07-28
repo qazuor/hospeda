@@ -7,9 +7,18 @@
  * force `isVerified=false` for owners that lack the badge; this route did not,
  * so the raw DB value rode the card straight to the client.
  *
- * Unlike the feature and destination listings, `/api/v1/public/users` is NOT a
- * shared-cached prefix, so the un-gated badge reached only the requester — the
- * entitlement bypass is identical, the blast radius is smaller.
+ * Unlike the feature and destination listings, `/api/v1/public/users` is in
+ * `PRIVATE_CACHE_ENDPOINTS`, not the public set. That does NOT mean one reader
+ * per cache slot: `generateCacheKey` builds the private-cache identifier as
+ * `private:<path><query>:<authorization ?? 'anonymous'>`, and browsers
+ * authenticate with a Better Auth cookie rather than an `Authorization` header,
+ * so every anonymous and cookie-authenticated caller collides on the single
+ * `anonymous` slot. The un-gated badge was replayed there for the whole TTL too.
+ *
+ * The replay itself is harmless — the payload is owner-derived and identical for
+ * every reader — which is exactly the property that keeps this gate safe to
+ * compute inside a cached response. The entitlement bypass was the real defect,
+ * and it was identical on all three routes.
  *
  * The gate is keyed on the OWNER of the row, never on the reader.
  *
@@ -239,8 +248,10 @@ describe('publicGetUserAccommodationsRoute — HOS-341 isVerified owner gate', (
     });
 
     it('forces isVerified=false when the owner is absent from the map (fail-closed)', async () => {
-        // The real batch resolver never throws — it degrades to an empty map when
-        // the owner lookup itself fails. That degraded shape must NOT grant badges.
+        // The real batch resolver never throws: on a failed role query or a failed
+        // per-owner billing lookup it sets an EMPTY ENTITLEMENT ARRAY for that owner,
+        // and it returns an empty Map only for an empty id list. An empty Map is
+        // therefore the worst case — every owner unresolved — and must grant nothing.
         mockResolveBatch.mockResolvedValue(new Map());
         mockSearch.mockResolvedValue({
             data: {
@@ -285,7 +296,48 @@ describe('publicGetUserAccommodationsRoute — HOS-341 isVerified owner gate', (
         expect(calledWith).toEqual([OWNER_WITH_BADGE]);
     });
 
-    it('does not resolve entitlements when the service errors and returns an empty page', async () => {
+    it('forces isVerified=false for a row whose ownerId is missing', async () => {
+        // No ownerId means no owner to attribute the badge to. The handler must not
+        // pass it to the resolver, and the gate must not let it through unchanged.
+        mockResolveBatch.mockResolvedValue(
+            new Map([[OWNER_WITH_BADGE, [EntitlementKey.HAS_VERIFICATION_BADGE]]])
+        );
+        mockSearch.mockResolvedValue({
+            data: {
+                items: [{ ...makeAccommodation({ id: 'acc-ownerless' }), ownerId: undefined }],
+                total: 1
+            },
+            error: null
+        });
+
+        const items = await requestItemsFor(OWNER_WITH_BADGE);
+
+        expect(items).toHaveLength(1);
+        expect(items[0]?.isVerified).toBe(false);
+        const [calledWith] = mockResolveBatch.mock.calls[0] as [string[]];
+        expect(calledWith).toEqual([]);
+    });
+
+    it('resolves an empty id list when the page carries no items', async () => {
+        mockResolveBatch.mockResolvedValue(new Map());
+        mockSearch.mockResolvedValue({
+            data: { items: [], total: 0 },
+            error: null
+        });
+
+        const items = await requestItemsFor(OWNER_WITH_BADGE);
+
+        expect(items).toHaveLength(0);
+        expect(mockResolveBatch).toHaveBeenCalledTimes(1);
+        const [calledWith] = mockResolveBatch.mock.calls[0] as [string[]];
+        expect(calledWith).toEqual([]);
+    });
+
+    // NOT coverage of the HOS-341 gate: with the gate reverted this passes too,
+    // because the reverted route never calls the resolver either. It pins the
+    // service-error EARLY RETURN, so a later refactor cannot hoist the gate above
+    // it and start resolving entitlements for a page that was never built.
+    it('returns the empty page from the service-error early return without reaching the gate', async () => {
         mockResolveBatch.mockResolvedValue(new Map());
         mockSearch.mockResolvedValue({
             data: null,

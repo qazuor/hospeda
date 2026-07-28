@@ -92,10 +92,12 @@ export const publicGetUserAccommodationsRoute = createPublicListRoute({
         const strippedItems = rawItems.map(stripRichDescriptionFields);
 
         // SPEC-291 Phase 3b / HOS-341: gate `isVerified` by the OWNER's billing
-        // entitlement. Every row on this page belongs to the path-param owner, so
-        // this batch resolves a single id; the ids are still collected from the items
-        // rather than taken from the path so the call matches the four sibling
-        // listings verbatim and an empty page resolves an empty id list.
+        // entitlement. ONE batched role query for the unique ownerIds of this page,
+        // then parallel billing lookups for the cache-cold ones, then a synchronous
+        // gate pass. Every row here belongs to the path-param owner, so that batch
+        // resolves a single id; the ids are still collected from the items rather
+        // than taken from the path so the call matches the four sibling listings
+        // verbatim and an empty page resolves an empty id list.
         //
         // Fail-closed: an owner absent from the map keeps no badge. The gate depends
         // on the owner of the row, never on the reader (HOS-288).
