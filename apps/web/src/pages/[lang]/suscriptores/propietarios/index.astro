@@ -14,7 +14,7 @@ import JsonLd from '@/components/seo/JsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { OWNER_TRIAL_DAYS } from '@repo/billing';
+import { OWNER_FAQ_ITEMS, buildOwnerFaqParams } from '@/lib/owner-faq';
 import { HomeIcon, LocationIcon, MapIcon, SettingsIcon, ShieldIcon, SparkleIcon, StarIcon } from '@repo/icons';
 
 interface BenefitDefinition {
@@ -59,21 +59,10 @@ const steps = [
 	{ num: '04', titleKey: 'owners.steps.4.title', titleFb: 'Crecé', descKey: 'owners.steps.4.desc', descFb: 'Accedé a estadísticas, destacá tu publicación y llegá a más viajeros.' },
 ] as const;
 
-// Answers 1 and 3 used to sell a free publishing tier and unlimited properties;
-// neither exists — every owner plan is paid and MAX_ACCOMMODATIONS is capped per
-// tier (HOS-331). The trial length is interpolated from the billing catalog so
-// the number cannot drift from the plans again, and the trial is stated as
-// first-subscription-only because `resolveCheckoutFreeTrialDays` zeroes it once
-// the customer has ANY prior subscription ("one trial per customer, for life").
-const faqs = [
-	{ qKey: 'owners.faq.1.q', qFb: '¿Cuánto cuesta publicar mi alojamiento?', aKey: 'owners.faq.1.a', aFb: 'Publicar requiere un plan de anfitrión. Si es tu primera suscripción, todos incluyen {{trialDays}} días de prueba gratis. No cobramos comisión por reserva: la suscripción es el único costo.' },
-	{ qKey: 'owners.faq.2.q', qFb: '¿Cómo recibo las reservas?', aKey: 'owners.faq.2.a', aFb: 'Los viajeros te contactan directamente por WhatsApp, email o teléfono. Vos manejás todo.' },
-	{ qKey: 'owners.faq.3.q', qFb: '¿Puedo publicar más de una propiedad?', aKey: 'owners.faq.3.a', aFb: 'Sí. Cada plan define cuántas propiedades podés tener publicadas a la vez, así que elegí el que mejor se ajuste a tu caso.' },
-	{ qKey: 'owners.faq.4.q', qFb: '¿Qué tipo de alojamientos puedo publicar?', aKey: 'owners.faq.4.a', aFb: 'Casas quintas, cabañas, departamentos, hoteles, apart hotels, campings y más.' },
-] as const;
-
-/** Shared interpolation params for the FAQ answers (see `faqs` above). */
-const faqParams = { trialDays: OWNER_TRIAL_DAYS } as const;
+// Shared with /publicar, which renders the same `owners.faq.*` keys. Declaring
+// the array per page is what let the two drift (HOS-331).
+const faqs = OWNER_FAQ_ITEMS;
+const faqParams = buildOwnerFaqParams();
 
 // Split heading to underline the last word with a handwritten accent.
 const heroHeadingFull = t('owners.hero.title', 'Publicá tu alojamiento y llegá a miles de viajeros');
@@ -107,7 +96,7 @@ const faqJsonLd = {
 		tagline={t('owners.hero.tagline', 'Para propietarios')}
 		titleMain={heroHeadingMain}
 		titleAccent={heroHeadingAccent}
-		subtitle={t('owners.hero.desc', 'Hospeda conecta tu propiedad con viajeros que buscan experiencias auténticas en el litoral entrerriano. Sin comisiones ocultas, con herramientas simples y soporte dedicado.')}
+		subtitle={t('owners.hero.desc', 'Hospeda conecta tu propiedad con viajeros que buscan experiencias auténticas en el litoral entrerriano. Sin comisiones ocultas y con herramientas simples para gestionarla.')}
 	>
 		<Fragment slot="icon-1"><HomeIcon size="md" weight="duotone" /></Fragment>
 		<Fragment slot="icon-2"><StarIcon size="md" weight="duotone" /></Fragment>
