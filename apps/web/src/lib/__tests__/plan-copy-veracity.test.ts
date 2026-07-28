@@ -301,6 +301,12 @@ const PROSE_SURFACES: ReadonlyArray<{ readonly file: string; readonly path: stri
     // that removed "sin poner la tarjeta" one line above it.
     { file: 'features.json', path: 'anfitriones.banner.description' },
     { file: 'features.json', path: 'cta.description' },
+    // The hero stat pill splits its claim across `value` (the interpolated
+    // number) and `label` (the words). Guarding `value` alone would trip the
+    // qualifier rule on a bare number, so the qualifier lives in the label and
+    // the label is what gets checked — it is the first trial number a visitor
+    // sees on the page.
+    { file: 'features.json', path: 'hero.stats.trial.label' },
     { file: 'host.json', path: 'pages.nueva.trialCalloutTitle' },
     { file: 'host.json', path: 'properties.card.publishSubscriptionRequiredMessage' }
 ];
@@ -450,10 +456,15 @@ describe('plan copy veracity — FAQ and landing prose (HOS-331)', () => {
         // `first_publish` with `subscription_required`), the trial starts at
         // checkout. Accepting them let this guard green-light exactly the copy
         // it exists to catch.
+        // `primera vez` / `first time` are out for the same reason: on a
+        // publish-blocked screen the reader binds "first time" to publishing,
+        // not to subscribing, and a host who already burned their one trial is
+        // standing on exactly that screen. Only wording that names the
+        // SUBSCRIPTION counts.
         const FIRST_TIME_HINTS: Record<Locale, readonly string[]> = {
-            es: ['primera suscripción', 'primera vez'],
-            en: ['first subscription', 'first time'],
-            pt: ['primeira assinatura', 'primeira vez']
+            es: ['primera suscripción'],
+            en: ['first subscription'],
+            pt: ['primeira assinatura']
         };
         // Hints from every language, for the same reason `matchedPhrase` scans
         // all three: a locale directory does not guarantee locale content.
@@ -489,26 +500,62 @@ describe('plan copy veracity — backed claims (HOS-331)', () => {
         expect(violations).toEqual([]);
     });
 
-    it('never claims a real feature in prose that no active plan grants at all', () => {
-        // Prose is not scoped to one plan, so it cannot be checked per-slug like
-        // the descriptions above. What it CAN be checked against is the union:
-        // a sentence naming a feature no active plan grants is false for every
-        // reader. This catches a claim that survives a repackaging which removed
-        // the entitlement outright — the AD_FREE case, one level up.
-        const grantedByAnyActivePlan = new Set<string>(
-            ACTIVE_PLANS.flatMap((plan) => plan.entitlements as readonly string[])
+    it('never says EVERY plan includes a feature that only some plans grant', () => {
+        // Prose is not scoped to one slug, so the per-plan check above cannot
+        // apply. Checking against the union of all active plans would be
+        // vacuous — every BACKED_CLAIMS entitlement is granted by at least one
+        // active plan, so the predicate is constant-false.
+        //
+        // The failure mode that IS real for prose is the universal claim:
+        // "todos los planes incluyen soporte prioritario" is false for
+        // owner-basico while true for owner-premium, so a union check waves it
+        // through. When a sentence generalises, the feature must be on EVERY
+        // active plan.
+        const UNIVERSAL_MARKERS = [
+            'todos los planes',
+            'todos incluyen',
+            'cualquier plan',
+            'every plan',
+            'all plans',
+            'todos os planos',
+            'todos incluem',
+            'qualquer plano'
+        ];
+        const grantedByEveryActivePlan = new Set<string>(
+            [...new Set(ACTIVE_PLANS.flatMap((p) => p.entitlements as readonly string[]))].filter(
+                (key) =>
+                    ACTIVE_PLANS.every((plan) =>
+                        (plan.entitlements as readonly string[]).includes(key)
+                    )
+            )
         );
         const violations: string[] = [];
         for (const row of PROSE_COPY) {
+            const haystack = row.copy.toLowerCase();
+            if (!UNIVERSAL_MARKERS.some((marker) => haystack.includes(marker))) continue;
             for (const claim of BACKED_CLAIMS) {
                 const phrase = matchedPhrase(row.copy, claim, row.locale);
-                if (phrase && !grantedByAnyActivePlan.has(claim.entitlement)) {
+                if (phrase && !grantedByEveryActivePlan.has(claim.entitlement)) {
                     violations.push(
-                        `${row.locale}/${row.surface} sells "${phrase}" but no active plan grants ${claim.entitlement}`
+                        `${row.locale}/${row.surface} generalises "${phrase}" but ${claim.entitlement} is not on every active plan`
                     );
                 }
             }
         }
         expect(violations).toEqual([]);
+    });
+
+    it('has at least one tier-scoped entitlement, so the universal check can fail', () => {
+        // Non-vacuity: with a catalog where every plan grants everything, the
+        // assertion above could never fire regardless of the copy.
+        const tierScoped = [
+            ...new Set(ACTIVE_PLANS.flatMap((p) => p.entitlements as readonly string[]))
+        ].filter(
+            (key) =>
+                !ACTIVE_PLANS.every((plan) =>
+                    (plan.entitlements as readonly string[]).includes(key)
+                )
+        );
+        expect(tierScoped.length).toBeGreaterThan(0);
     });
 });

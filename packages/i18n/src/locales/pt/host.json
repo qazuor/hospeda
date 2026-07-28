@@ -222,7 +222,7 @@
             "unpublishError": "Não foi possível despublicar. Tente novamente.",
             "deleteError": "Não foi possível excluir. Tente novamente.",
             "publishError": "Não foi possível publicar. Tente novamente.",
-            "publishSubscriptionRequiredMessage": "Você precisa de um plano ativo para publicar. Se for sua primeira vez, começa com {{trialDays}} dias grátis.",
+            "publishSubscriptionRequiredMessage": "Você precisa de um plano ativo para publicar. Se for sua primeira assinatura, começa com {{trialDays}} dias grátis.",
             "publishSubscriptionRequiredCta": "Ver planos",
             "publishIncompleteCapacityMessage": "Faltam dados de capacidade (hóspedes, quartos ou banheiros). Complete-os no editor antes de publicar.",
             "publishIncompleteCapacityCta": "Completar no editor",

@@ -28,7 +28,7 @@
             },
             "trial": {
                 "value": "{{trialDays}}",
-                "label": "días gratis para anfitriones"
+                "label": "días gratis en tu primera suscripción"
             },
             "worlds": {
                 "value": "3",
