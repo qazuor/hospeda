@@ -114,6 +114,7 @@ const {
     nextAmenityDbRows,
     nextFeatureDbRows,
     nextDestinationDbRows,
+    destinationQueryCount,
     nextPersistPromise,
     mockApiLogger,
     nextSearchCallCount,
@@ -177,6 +178,12 @@ const {
      * regardless of which of the two queries would have matched in production.
      */
     nextDestinationDbRows: { current: [] as Array<{ id: string }> },
+    /**
+     * HOS-298: how many queries this request issued against the destinations
+     * table. Both destination lookups (city → id, and id verification) are
+     * counted; a turn that names no location must issue none.
+     */
+    destinationQueryCount: { current: 0 },
     /**
      * T-007: controls what `persistSearchChatTurn` returns per-test.
      * Default: resolves with a fixed conversation id (happy path).
@@ -426,6 +433,10 @@ vi.mock('@repo/db', async (importOriginal) => {
                         if (table === actual.amenities) {
                             rows = nextAmenityDbRows.current;
                         } else if (table === actual.destinations) {
+                            // HOS-298: counted so a test can prove the new
+                            // destinationId verification does NOT add a query to
+                            // every request.
+                            destinationQueryCount.current += 1;
                             rows = nextDestinationDbRows.current;
                         } else {
                             rows = nextFeatureDbRows.current;
@@ -561,6 +572,22 @@ const AUTODROMO_LONG = -58.2591;
  * "termas de concordia" entry).
  */
 const CONCORDIA_UUID = '66666666-6666-4666-8666-666666666666';
+
+/**
+ * HOS-298: rows that make a model-emitted `entities.destinationId` verify.
+ *
+ * The route now checks that id against the destinations table before letting it
+ * filter anything — the slot has no allowlist and no other DB round-trip, so
+ * every value the model puts there is invented until proven otherwise. The
+ * `@repo/db` mock is id-blind (its destinations branch returns
+ * `nextDestinationDbRows` for ANY query), so a single arbitrary row is enough to
+ * say "the destination the model named exists". Only ONE destinations query can
+ * fire per request — the city lookup is skipped whenever a destinationId is
+ * present — so sharing this state between the two lookups is unambiguous.
+ *
+ * A test that wants the id REJECTED leaves the `beforeEach` default (`[]`).
+ */
+const DESTINATION_EXISTS_ROWS: Array<{ id: string }> = [{ id: COLON_DESTINATION_UUID }];
 
 // ---------------------------------------------------------------------------
 // Test app
@@ -716,6 +743,7 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
         nextAmenityDbRows.current = [];
         nextFeatureDbRows.current = [];
         nextDestinationDbRows.current = [];
+        destinationQueryCount.current = 0;
         // HOS-111 T-013: reset nearby-expansion stub state ("no expansion" default).
         nextNearbyResult.current = { data: { nearby: [] } };
         nearbyGetCalls.length = 0;
@@ -1877,6 +1905,8 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
                 model: 'stub-model',
                 finishReason: 'stop'
             };
+            // HOS-298: Colón is a real destination — declare it so the id survives verification.
+            nextDestinationDbRows.current = DESTINATION_EXISTS_ROWS;
             nextNearbyResult.current = {
                 data: {
                     nearby: [
@@ -1955,6 +1985,8 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
                 model: 'stub-model',
                 finishReason: 'stop'
             };
+            // HOS-298: Colón is a real destination — declare it so the id survives verification.
+            nextDestinationDbRows.current = DESTINATION_EXISTS_ROWS;
 
             // Act
             const res = await app.request(ENDPOINT, {
@@ -2030,6 +2062,8 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
                 model: 'stub-model',
                 finishReason: 'stop'
             };
+            // HOS-298: Colón is a real destination — declare it so the id survives verification.
+            nextDestinationDbRows.current = DESTINATION_EXISTS_ROWS;
             nextNearbyResult.current = {
                 error: { code: 'INTERNAL_ERROR', message: 'DB unavailable' }
             };
@@ -2077,6 +2111,8 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
                 model: 'stub-model',
                 finishReason: 'stop'
             };
+            // HOS-298: Colón is a real destination — declare it so the id survives verification.
+            nextDestinationDbRows.current = DESTINATION_EXISTS_ROWS;
             // Only one destination came back (simulating the N-nearest fallback
             // path when the fixed radius yielded nothing) — still surfaced.
             nextNearbyResult.current = {
@@ -2188,6 +2224,8 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
                 model: 'stub-model',
                 finishReason: 'stop'
             };
+            // HOS-298: Colón is a real destination — declare it so the id survives verification.
+            nextDestinationDbRows.current = DESTINATION_EXISTS_ROWS;
             nextAttractionResolveResult.current = {
                 data: { destinationIds: [COLON_DESTINATION_UUID, GUALEGUAYCHU_UUID] }
             };
@@ -2235,6 +2273,8 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
                 model: 'stub-model',
                 finishReason: 'stop'
             };
+            // HOS-298: Colón is a real destination — declare it so the id survives verification.
+            nextDestinationDbRows.current = DESTINATION_EXISTS_ROWS;
             nextAttractionResolveResult.current = {
                 data: { destinationIds: [GUALEGUAYCHU_UUID, GUALEGUAY_UUID] }
             };
@@ -2277,6 +2317,8 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
                 model: 'stub-model',
                 finishReason: 'stop'
             };
+            // HOS-298: Colón is a real destination — declare it so the id survives verification.
+            nextDestinationDbRows.current = DESTINATION_EXISTS_ROWS;
 
             // Act
             const res = await app.request(ENDPOINT, {
@@ -2458,6 +2500,8 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
                 model: 'stub-model',
                 finishReason: 'stop'
             };
+            // HOS-298: the destination is real — declare it so the id survives verification.
+            nextDestinationDbRows.current = DESTINATION_EXISTS_ROWS;
             nextPoiGetBySlugResult.current = {
                 data: {
                     id: 'poi-1',
@@ -2675,6 +2719,8 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
                 model: 'stub-model',
                 finishReason: 'stop'
             };
+            // HOS-298: the destination is real — declare it so the id survives verification.
+            nextDestinationDbRows.current = DESTINATION_EXISTS_ROWS;
             nextPoiGetBySlugResult.current = {
                 data: {
                     id: 'poi-1',
@@ -2784,6 +2830,8 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
                 model: 'stub-model',
                 finishReason: 'stop'
             };
+            // HOS-298: the destination is real — declare it so the id survives verification.
+            nextDestinationDbRows.current = DESTINATION_EXISTS_ROWS;
             nextPoiGetBySlugResult.current = {
                 data: {
                     id: 'poi-1',
@@ -3414,6 +3462,364 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             expect(mockRecordAiUsage).toHaveBeenCalledTimes(1);
             expect(frames.filter((f) => f.event === 'done')).toHaveLength(1);
             expect(frames.filter((f) => f.event === 'error')).toHaveLength(0);
+        });
+    });
+
+    // =========================================================================
+    // Gate 12 — HOS-298: an invented destination never filters the search
+    //
+    // The route-level half of the fix had NO coverage: both scrub call sites
+    // could be deleted and every unit test still passed, because they only
+    // exercise the extracted pure functions. These tests drive the real route,
+    // and each one fails when its corresponding call site is removed.
+    //
+    // `entities.destinationId` has no legitimate source — the extraction prompt
+    // gives the model no destination-UUID allowlist, and (unlike `city`) the
+    // slot never got a DB round-trip — so every value it carries is invented
+    // until the destinations table says otherwise.
+    // =========================================================================
+
+    describe('Gate 12 — HOS-298: an invented destination never filters the search', () => {
+        /** The nil UUID: what the model emits as "there is a destination, I do not know which". */
+        const NIL_UUID = '00000000-0000-0000-0000-000000000000';
+
+        /**
+         * The RFC 4122 example UUID. Syntactically impeccable, v1-shaped, and
+         * exactly what a model reaches for when told to produce "a valid UUID" —
+         * the cheap nil/blank guard waves it straight through, which is why the
+         * DB check is the part that actually closes the class.
+         */
+        const INVENTED_UUID = '123e4567-e89b-12d3-a456-426614174000';
+
+        it('never lets a nil-UUID destinationId reach params or filters.intent', async () => {
+            // Arrange: a refinement turn that names no destination.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { destinationId: NIL_UUID, minGuests: 6 }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'para 6 personas' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                intent: Record<string, unknown>;
+            };
+
+            expect(payload.params.destinationId).toBeUndefined();
+            // `filters.intent` is the load-bearing half: the client stores it and
+            // echoes it back as `currentFilters`, so a value left here re-infects
+            // every later turn of the conversation.
+            expect('destinationId' in payload.intent).toBe(false);
+            // The refinement the user actually asked for survives.
+            expect(payload.intent.minGuests).toBe(6);
+            // Not worth a DB round-trip: the cheap guard rejected it first.
+            expect(destinationQueryCount.current).toBe(0);
+        });
+
+        it('drops a syntactically valid destinationId that matches no destination row', async () => {
+            // Arrange: the id is not nil and not blank — only the DB can tell.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { destinationId: INVENTED_UUID, minGuests: 6 }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // No destination row carries that id.
+            nextDestinationDbRows.current = [];
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'para 6 personas' }],
+                    locale: 'es'
+                })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                intent: Record<string, unknown>;
+            };
+
+            expect(destinationQueryCount.current).toBe(1);
+            expect(payload.params.destinationId).toBeUndefined();
+            expect('destinationId' in payload.intent).toBe(false);
+            expect(payload.intent.minGuests).toBe(6);
+        });
+
+        it('keeps a destinationId that the destinations table confirms', async () => {
+            // The negative control for the test above: the DB check must not
+            // become a blanket "drop every model-emitted id".
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { destinationId: COLON_DESTINATION_UUID }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextDestinationDbRows.current = DESTINATION_EXISTS_ROWS;
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cabaña en Colón' }],
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                intent: Record<string, unknown>;
+            };
+
+            expect(payload.params.destinationId).toBe(COLON_DESTINATION_UUID);
+            expect(payload.intent.destinationId).toBe(COLON_DESTINATION_UUID);
+        });
+
+        it('issues no destinations query at all for a turn that names no location', async () => {
+            // The verification must not become a per-request round-trip.
+            nextGenerateObjectResult.current = {
+                object: { confidence: 0.9, entities: { minGuests: 6, hasPool: true } },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'para 6 personas con pileta' }],
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            expect(destinationQueryCount.current).toBe(0);
+        });
+
+        it('scrubs a poisoned inbound currentFilters before it reaches the extraction prompt', async () => {
+            // A session that picked up a bad id before this shipped keeps echoing
+            // it back as `currentFilters`, where it lands in the CURRENT FILTER
+            // SET and the "carry filters over unchanged" rule makes the model
+            // re-emit it. Sanitising the inbound set is what heals that session
+            // on its next turn instead of leaving it poisoned until the user
+            // starts over.
+            nextGenerateObjectResult.current = {
+                object: { confidence: 0.9, entities: { minGuests: 6 } },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'para 6 personas' }],
+                    currentFilters: {
+                        locationType: 'destinationId',
+                        destinationId: NIL_UUID,
+                        minGuests: 4
+                    },
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            const prompt = generateObjectCalls[0]?.prompt ?? '';
+            expect(prompt).toContain('CURRENT FILTER SET');
+            expect(prompt).not.toContain(NIL_UUID);
+            // The orphaned hint goes with the id: "the location is a destination
+            // id" with no id is the exact state that makes the model invent one,
+            // right next to the prompt rule that a message naming no destination
+            // KEEPS the current destination.
+            expect(prompt).not.toContain('destinationId');
+            // Everything else the conversation accumulated survives.
+            expect(prompt).toContain('"minGuests":4');
+        });
+
+        it('omits the CURRENT FILTER SET block entirely when the scrub empties the inbound filters', async () => {
+            // The scrub DELETES the key. Had it merely set the slot to
+            // `undefined`, `Object.keys(currentFilters).length > 0` would still
+            // be true and the prompt would carry a `CURRENT FILTER SET: {}` block
+            // plus the whole NEARBY EXPANSION instruction, for a conversation
+            // with no accumulated state at all.
+            nextGenerateObjectResult.current = {
+                object: { confidence: 0.9, entities: {} },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'para 6 personas' }],
+                    currentFilters: { destinationId: NIL_UUID },
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            const prompt = generateObjectCalls[0]?.prompt ?? '';
+            expect(prompt).not.toContain('CURRENT FILTER SET');
+            expect(prompt).not.toContain('NEARBY EXPANSION');
+        });
+
+        it('tells the reply that the location could not be carried over instead of widening silently', async () => {
+            // Turn 1 searched Colón. Turn 2 ("para 6 personas") carries the
+            // location over as an invented id and drops `city`. Scrubbing the id
+            // leaves NO location filter, so the results now come from every
+            // destination while the conversation is plainly about Colón — and
+            // nothing else says so: no chip, and the reply is built from the
+            // sanitised filters. Before the scrub this was an obviously-wrong
+            // empty page; after it, a plausible-looking WRONG one.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { destinationId: INVENTED_UUID, minGuests: 6 }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextDestinationDbRows.current = [];
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [
+                        { role: 'user', content: 'cabañas en Colón' },
+                        { role: 'assistant', content: 'Encontré cabañas en Colón.' },
+                        { role: 'user', content: 'para 6 personas' }
+                    ],
+                    currentFilters: { city: 'Colón' },
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+
+            // The search really did lose its location — that is the premise.
+            expect(payload.params.destinationId).toBeUndefined();
+            expect(payload.params.q).toBeUndefined();
+
+            // ...so the reply is told, via the same `system`-note channel the
+            // POI conflict uses. The owner asked for a signal, NOT zero results.
+            const system = streamTextCalls[0]?.system ?? '';
+            expect(system).toContain('LOCATION NOT CARRIED OVER');
+            expect(system).toContain('Colón');
+            expect(system.toUpperCase()).not.toContain('ZERO');
+            expect(frames.filter((f) => f.event === 'done')).toHaveLength(1);
+        });
+
+        it('stays silent when a location survived the turn', async () => {
+            // Negative control 1: the id was dropped but the model also gave a
+            // city, so the search is still located — nothing was lost.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { destinationId: INVENTED_UUID, city: 'Colón', minGuests: 6 }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextDestinationDbRows.current = [];
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'para 6 personas' }],
+                    currentFilters: { city: 'Colón' },
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const payload = JSON.parse(frames.find((f) => f.event === 'filters')?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+
+            expect(payload.params.q).toBe('Colón');
+            expect(streamTextCalls[0]?.system ?? '').not.toContain('LOCATION NOT CARRIED OVER');
+        });
+
+        it('stays silent when the previous turn had no location to lose', async () => {
+            // Negative control 2: a first turn where the model invented an id out
+            // of nothing. There is no location to apologise for.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { destinationId: INVENTED_UUID, minGuests: 6 }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextDestinationDbRows.current = [];
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'algo para 6 personas' }],
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            expect(streamTextCalls[0]?.system ?? '').not.toContain('LOCATION NOT CARRIED OVER');
         });
     });
 });

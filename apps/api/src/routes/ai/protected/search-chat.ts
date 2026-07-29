@@ -92,6 +92,7 @@ import {
     SearchIntentOutputSchema
 } from '@repo/schemas';
 import { DEFAULT_POI_PROXIMITY_RADIUS_KM, DestinationService } from '@repo/service-core';
+import { isUsableEntityId } from '@repo/utils';
 import { createAiQuotaMiddleware } from '../../../middlewares/ai-quota.js';
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit.js';
 import { entitlementMiddleware } from '../../../middlewares/entitlement.js';
@@ -111,9 +112,14 @@ import {
     buildConversationalSearchPrompt,
     buildSearchReplyMessages,
     buildSearchReplySystemPrompt,
+    type LocationCarryoverConflict,
     type PoiLocationConflict
 } from './search-chat.prompt.js';
-import { mapIntentToSearchParams, sanitizeSearchIntentEntities } from './search-intent.mapper.js';
+import {
+    dropDestinationId,
+    mapIntentToSearchParams,
+    sanitizeSearchIntentEntities
+} from './search-intent.mapper.js';
 
 /** Search-radius clamp shared with `search-intent.mapper.ts` (§5.3 clamp rule). */
 const MAX_POI_RADIUS_KM = 500;
@@ -228,6 +234,106 @@ async function resolveFeatureIds(slugs: readonly string[]): Promise<string[]> {
 }
 
 /**
+ * Visibility / lifecycle predicate shared by every destination lookup in this
+ * route, so a hidden, draft, or soft-deleted destination is never resolvable —
+ * whether it is reached by name (`resolveDestinationIdFromCity`) or by id
+ * (`destinationRowExists`).
+ *
+ * @returns The `and(...)` predicate for public + active, non-deleted destinations.
+ */
+function publicActiveDestinationFilter() {
+    return and(
+        isNull(destinations.deletedAt),
+        eq(destinations.visibility, 'PUBLIC'),
+        eq(destinations.lifecycleState, 'ACTIVE')
+    );
+}
+
+/**
+ * Verifies a model-emitted `entities.destinationId` against the destinations
+ * table (HOS-298).
+ *
+ * ## Why an id from the model needs verifying at all
+ *
+ * `entities.destinationId` has NO legitimate source. The extraction prompt
+ * gives the model no destination-UUID allowlist — unlike `amenitySlugs` /
+ * `featureSlugs`, which are constrained to a per-request list and then
+ * re-resolved server-side, and unlike `city`, which gets this same DB
+ * round-trip via {@link resolveDestinationIdFromCity}. The only DB-verified
+ * destination the handler produces is `resolvedDestinationId`, and that one
+ * goes to `params`, never back into `intent`. So every value the model puts in
+ * this slot is invented; the nil UUID it emits as a "there is a destination, I
+ * just do not know which" placeholder is merely the most reproducible one.
+ * `isUsableEntityId` catches blank and nil, but
+ * `123e4567-e89b-12d3-a456-426614174000` (the RFC 4122 example UUID) or a
+ * v4-shaped `00000000-0000-4000-8000-000000000000` would sail through it with
+ * the identical symptom: zero results for a constraint the user never
+ * expressed, and a self-reinforcing filter set that keeps re-emitting it.
+ *
+ * Uses {@link publicActiveDestinationFilter} — the same predicate the city
+ * lookup uses — so an id that names a hidden or deleted destination is treated
+ * exactly like one that names nothing.
+ *
+ * Only called when the model actually emitted an id that survived the cheap
+ * guard, so the common request pays nothing for it, and it runs inside the
+ * handler's existing `Promise.all` alongside the amenity/feature/city lookups
+ * rather than adding a serial round-trip.
+ *
+ * @param destinationId - Candidate destination UUID emitted by the model.
+ * @returns Whether a public, active destination row carries that id.
+ */
+async function destinationRowExists(destinationId: string): Promise<boolean> {
+    const db = getDb();
+    const rows = await db
+        .select({ id: destinations.id })
+        .from(destinations)
+        .where(and(publicActiveDestinationFilter(), eq(destinations.id, destinationId)));
+    return rows.length > 0;
+}
+
+/**
+ * Whether an entity set carries any location the user actually expressed.
+ *
+ * Used to decide whether dropping an unusable `destinationId` LOST a location
+ * (HOS-298 — see the `locationCarryoverConflict` block in the handler), so the
+ * three signals mirror the mapper's own location-priority chain: a usable
+ * destination id, a non-blank city, or a complete geo pair.
+ *
+ * @param entities - Entity set to inspect (typically the inbound `currentFilters`).
+ * @returns `true` when at least one location signal is present.
+ */
+function hasLocationSignal(entities: SearchIntentEntities | undefined): boolean {
+    if (entities === undefined) {
+        return false;
+    }
+    return (
+        isUsableEntityId(entities.destinationId) ||
+        (typeof entities.city === 'string' && entities.city.trim() !== '') ||
+        (entities.latitude !== undefined && entities.longitude !== undefined)
+    );
+}
+
+/**
+ * Whether the mapped search params still constrain results to a location.
+ *
+ * Reads `params` (not the entities) because that is what the accommodation
+ * search actually receives, and because the attraction / POI steps can add a
+ * `destinationIds` narrowing that no entity slot reflects.
+ *
+ * @param params - The URL-ready params assembled for this turn.
+ * @returns `true` when at least one location filter survived into the query.
+ */
+function paramsHaveLocationFilter(params: AiSearchChatFiltersEvent['params']): boolean {
+    const probe = params as unknown as Record<string, unknown>;
+    return (
+        probe.destinationId !== undefined ||
+        (Array.isArray(probe.destinationIds) && probe.destinationIds.length > 0) ||
+        probe.q !== undefined ||
+        (probe.latitude !== undefined && probe.longitude !== undefined)
+    );
+}
+
+/**
  * Resolves a free-text city name to a known destination UUID (fix for the
  * "city falls back to free-text `q` search" bug).
  *
@@ -261,11 +367,7 @@ async function resolveDestinationIdFromCity(city: string): Promise<string | unde
     }
 
     const db = getDb();
-    const publicActiveFilter = and(
-        isNull(destinations.deletedAt),
-        eq(destinations.visibility, 'PUBLIC'),
-        eq(destinations.lifecycleState, 'ACTIVE')
-    );
+    const publicActiveFilter = publicActiveDestinationFilter();
 
     // Priority 1: exact case-insensitive match on the destination name.
     const exactRows = await db
@@ -472,8 +574,12 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
             validatedEntities = {};
         }
 
-        // HOS-298: drop a placeholder destination id before anything downstream
+        // HOS-298: drop an unusable destination id before anything downstream
         // can see it.
+        //
+        // This is the cheap half (blank / nil UUID, no DB round-trip); the
+        // authoritative check against the destinations table runs in the
+        // parallel resolution block below, once we know the id is worth a query.
         //
         // The model sometimes answers a refinement turn that has no destination
         // with the nil UUID, as a "there is a destination, I just do not know
@@ -502,14 +608,23 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         //      re-infects every remaining turn of the conversation; a fix that
         //      only cleaned the query would leave the chip and the empty results
         //      exactly as reported.
+        //
+        // The "was anything dropped?" test is an explicit before/after
+        // comparison of the slot, NOT `sanitized !== validated`: reference
+        // identity happens to work today only because the helper returns the
+        // same object when it has nothing to do, which is an implementation
+        // detail of the helper, not part of its contract.
         const sanitizedEntities = sanitizeSearchIntentEntities(validatedEntities);
-        if (sanitizedEntities !== validatedEntities) {
+        let destinationIdDropped =
+            validatedEntities.destinationId !== undefined &&
+            sanitizedEntities.destinationId === undefined;
+        if (destinationIdDropped) {
             apiLogger.warn(
                 { locale, destinationId: validatedEntities.destinationId },
                 'search-chat: dropped an unusable model-emitted destinationId'
             );
-            validatedEntities = sanitizedEntities;
         }
+        validatedEntities = sanitizedEntities;
 
         // Step 6: Resolve amenity slugs, feature slugs, and city → destinationId
         // to DB-verified values in parallel.
@@ -538,11 +653,36 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
                 ? validatedEntities.city
                 : undefined;
 
-        const [resolvedAmenityIds, resolvedFeatureIds, resolvedDestinationId] = await Promise.all([
-            resolveAmenityIds(amenitySlugIds),
-            resolveFeatureIds(featureSlugIds),
-            cityToResolve === undefined ? undefined : resolveDestinationIdFromCity(cityToResolve)
-        ]);
+        // HOS-298: the model-emitted destinationId is verified against the
+        // destinations table in this same parallel block — it is the only
+        // location signal that never gets a DB round-trip otherwise, and it has
+        // no legitimate source at all (see `destinationRowExists`). The query is
+        // only issued when an id actually survived the cheap guard, so a turn
+        // without one costs nothing extra. `true` (not a query) is the "nothing
+        // to verify" value, so the drop below cannot fire on a turn that never
+        // had an id.
+        const destinationIdToVerify = validatedEntities.destinationId;
+
+        const [resolvedAmenityIds, resolvedFeatureIds, resolvedDestinationId, destinationIdIsReal] =
+            await Promise.all([
+                resolveAmenityIds(amenitySlugIds),
+                resolveFeatureIds(featureSlugIds),
+                cityToResolve === undefined
+                    ? undefined
+                    : resolveDestinationIdFromCity(cityToResolve),
+                destinationIdToVerify === undefined
+                    ? true
+                    : destinationRowExists(destinationIdToVerify)
+            ]);
+
+        if (destinationIdToVerify !== undefined && !destinationIdIsReal) {
+            apiLogger.warn(
+                { locale, destinationId: destinationIdToVerify },
+                'search-chat: dropped a model-emitted destinationId that matches no destination'
+            );
+            validatedEntities = dropDestinationId(validatedEntities);
+            destinationIdDropped = true;
+        }
 
         // Step 7: Map validated intent to URL-ready AccommodationSearchHttp params.
         //
@@ -783,6 +923,49 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         }
 
         // -----------------------------------------------------------------------
+        // Step 7.8 (HOS-298): a dropped destination must not silently WIDEN the
+        // search.
+        //
+        // Turn 1 "cabañas en Colón" resolves a city. Turn 2 "para 6 personas"
+        // carries the location over as a `destinationId` and drops `city` —
+        // the model believes the id captured the location. Scrubbing that id
+        // then leaves the turn with NO location filter at all, so the user sees
+        // accommodations from every destination while the conversation is
+        // plainly about Colón, and nothing says so: no chip (the intent no
+        // longer carries a location), and the reply is built from the sanitised
+        // filters, so it does not mention one either. Before the scrub this was
+        // an obviously-wrong zero-result page; after it, it is a
+        // plausible-looking WRONG page, which is worse.
+        //
+        // Step 7.6's attraction no-match documents the owner's rule for this
+        // shape of problem: explain the conflict, never substitute silently.
+        // Here the owner asked for the signal WITHOUT forcing zero results —
+        // the search itself is legitimate, it is just broader than the
+        // conversation implies — so this rides the same reply-side plumbing as
+        // `poiLocationConflict` (a note on the reply `system` string) rather
+        // than the `filters`-frame plumbing that makes the client skip the
+        // search entirely.
+        //
+        // Fires only when all three hold: a destination id was dropped this
+        // turn, nothing else constrains the query to a location (checked on
+        // `params`, AFTER the attraction/POI steps that can add one), and the
+        // previous turn genuinely had a location to lose.
+        // -----------------------------------------------------------------------
+        let locationCarryoverConflict: LocationCarryoverConflict | undefined;
+        if (
+            destinationIdDropped &&
+            !paramsHaveLocationFilter(params) &&
+            hasLocationSignal(sanitizedCurrentFilters)
+        ) {
+            const previousCity = sanitizedCurrentFilters?.city;
+            const locationLabel =
+                typeof previousCity === 'string' && previousCity.trim() !== ''
+                    ? previousCity
+                    : undefined;
+            locationCarryoverConflict = locationLabel === undefined ? {} : { locationLabel };
+        }
+
+        // -----------------------------------------------------------------------
         // Step 8 (T-006): Build the reply system prompt + messages, then call
         // streamText to stream the natural-language acknowledgment.
         //
@@ -804,7 +987,8 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
             message,
             extractedFilters: validatedEntities,
             attractionLocationConflict,
-            poiLocationConflict
+            poiLocationConflict,
+            locationCarryoverConflict
         });
 
         const { stream: rawStream, meta: rawMeta } = await aiService.streamText({

@@ -394,6 +394,102 @@ describe('ActiveFilterChips', () => {
             const chip = screen.getByRole('listitem');
             expect(chip.textContent).toContain('Colón');
         });
+
+        // ── HOS-298, through the path production actually takes ───────────────
+        //
+        // Every case above omits `appliedParams`, which is the LEGACY branch.
+        // Production always passes it (`SearchChatPanel.client.tsx` →
+        // `appliedParams={chat.lastSearchParams}`), so the guard that runs in
+        // the real app was untested. These drive that branch.
+
+        it('renders no destination chip for a nil UUID in the applied params', () => {
+            // The applied-params branch reads the id from what was actually
+            // SENT to the search, so it needs its OWN guard — the raw-intent
+            // guard cannot cover it. The `city` here is what carries execution
+            // past the "no location at all" early return and into that branch,
+            // which is exactly where production always runs.
+            renderChips({
+                filters: { city: 'Colón', destinationId: NIL_UUID },
+                appliedParams: { destinationId: NIL_UUID },
+                destinations: DESTINATION_CATALOG
+            });
+            expect(screen.queryByRole('listitem')).toBeNull();
+        });
+
+        it('prefers the applied q chip when the applied destinationId is the nil UUID', () => {
+            // A nil id in the applied params must not shadow the keyword search
+            // that actually ran.
+            renderChips({
+                filters: { destinationId: NIL_UUID, city: 'Colón' },
+                appliedParams: { destinationId: NIL_UUID, q: 'Colón' }
+            });
+            const chip = screen.getByRole('listitem');
+            expect(chip.textContent).toContain('Colón');
+        });
+
+        it('still renders a real destination chip through the applied-params path', () => {
+            // Negative control: the guard must not swallow legitimate ids.
+            renderChips({
+                filters: { destinationId: '11111111-1111-4111-8111-111111111111' },
+                appliedParams: { destinationId: '11111111-1111-4111-8111-111111111111' },
+                destinations: DESTINATION_CATALOG
+            });
+            const chip = screen.getByRole('listitem');
+            expect(chip.textContent).toContain('Concepción del Uruguay');
+        });
+
+        // ── The realistic poisoned shape ──────────────────────────────────────
+        //
+        // The model emits `locationType` alongside `destinationId`, so stored
+        // state from before the fix carries BOTH. `locationType` lives in
+        // LOCATION_KEYS, not in CITY_DESTINATION_KEYS, so the destination guard
+        // never sees it: it used to render a generic "Ubicación" chip — the same
+        // phantom filter wearing a different label.
+
+        it('renders nothing for the full poisoned intent shape (locationType + nil id)', () => {
+            renderChips({
+                filters: { locationType: 'destinationId', destinationId: NIL_UUID }
+            });
+            expect(screen.queryByRole('listitem')).toBeNull();
+        });
+
+        it('renders nothing for locationType: destinationId with the id already scrubbed away', () => {
+            // What the server now sends is the pair deleted together, but a
+            // half-healed client state (id gone, hint left) must not resurrect
+            // the phantom either.
+            renderChips({ filters: { locationType: 'destinationId' } });
+            expect(screen.queryByRole('listitem')).toBeNull();
+        });
+
+        it('still renders the location chip when real coordinates accompany the orphaned hint', () => {
+            // Negative control: skipping the orphaned `locationType` must skip
+            // only that key — a real geo pair still deserves its chip.
+            renderChips({
+                filters: {
+                    locationType: 'destinationId',
+                    destinationId: NIL_UUID,
+                    latitude: -32.22,
+                    longitude: -58.14
+                }
+            });
+            const chip = screen.getByRole('listitem');
+            expect(chip.textContent).toContain('Ubicación');
+        });
+
+        it('keeps the location chip when locationType describes a real destination', () => {
+            // Negative control: a `locationType: 'destinationId'` next to a
+            // usable id is not an orphan.
+            renderChips({
+                filters: {
+                    locationType: 'destinationId',
+                    destinationId: '11111111-1111-4111-8111-111111111111'
+                },
+                destinations: DESTINATION_CATALOG
+            });
+            const labels = screen.getAllByRole('listitem').map((li) => li.textContent);
+            expect(labels.some((label) => label?.includes('Concepción del Uruguay'))).toBe(true);
+            expect(labels.some((label) => label?.includes('Ubicación'))).toBe(true);
+        });
     });
 
     // ── Applied-params filtering (HOS-111 T-006 / AC-6) ────────────────────────

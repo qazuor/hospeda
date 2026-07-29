@@ -333,6 +333,33 @@ function isKeyApplied(
 }
 
 /**
+ * Whether a `locationType` slot is an orphan left behind by a dropped
+ * destination id (HOS-298).
+ *
+ * `locationType: 'destinationId'` says "the location of this search is a
+ * destination id" — meaningless once no usable `destinationId` is present. The
+ * server strips the pair together, but `filters` here is client-held state that
+ * may predate that fix, and `locationType` lives in {@link LOCATION_KEYS}, not
+ * in {@link CITY_DESTINATION_KEYS}: without this guard it renders a generic
+ * "Ubicación" chip for a location that no longer exists — the same phantom the
+ * destination chip guard removed, wearing a different label.
+ *
+ * @param key - The key being considered for a chip.
+ * @param filters - The full intent object (needed to check the sibling id).
+ * @returns `true` when this key must not produce a chip.
+ */
+function isOrphanedDestinationLocationType(
+    key: keyof SearchIntentEntities,
+    filters: SearchIntentEntities
+): boolean {
+    return (
+        key === 'locationType' &&
+        filters.locationType === 'destinationId' &&
+        !isUsableEntityId(filters.destinationId)
+    );
+}
+
+/**
  * Resolves the single "location" chip shared by `city` and `destinationId`
  * (HOS-111 follow-up fix — see {@link CITY_DESTINATION_KEYS}).
  *
@@ -454,6 +481,9 @@ export function ActiveFilterChips({
 
         if (LOCATION_KEYS.has(key)) {
             if (locationChipRendered) continue;
+            // HOS-298: skip ONLY this key, without marking the group rendered —
+            // a real geo pair later in the entries must still get its chip.
+            if (isOrphanedDestinationLocationType(key, filters)) continue;
             // Only render if at least one location key has a non-null value.
             const descriptor = resolveChipLabel(key, value, t, destinations);
             if (!descriptor.visible) continue;

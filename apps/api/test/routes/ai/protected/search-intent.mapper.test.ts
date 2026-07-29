@@ -14,6 +14,7 @@ import {
 } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
+    dropDestinationId,
     mapIntentToSearchParams,
     sanitizeSearchIntentEntities
 } from '../../../../src/routes/ai/protected/search-intent.mapper.js';
@@ -289,8 +290,9 @@ describe('sanitizeSearchIntentEntities (HOS-298 regression)', () => {
     });
 
     it('returns the very same object when there is nothing to strip', () => {
-        // The route decides whether to log by identity, so "unchanged" has to
-        // mean the same reference, not a structurally equal copy.
+        // Not a contract anyone depends on (the route compares the slot, not
+        // the reference), but copying an untouched entity set on every turn
+        // would be pure waste.
         const entities = { city: 'Colón', minGuests: 4 };
         expect(sanitizeSearchIntentEntities(entities)).toBe(entities);
 
@@ -301,6 +303,79 @@ describe('sanitizeSearchIntentEntities (HOS-298 regression)', () => {
     it('does not invent a destinationId key when the turn had none', () => {
         const result = sanitizeSearchIntentEntities({ city: 'Colón' });
         expect('destinationId' in result).toBe(false);
+    });
+
+    it('DELETES the destinationId key rather than setting it to undefined', () => {
+        // `toBeUndefined()` passes either way, which is why the original fix
+        // could ship with the key still present. Two consumers count keys —
+        // `buildConversationalSearchPrompt` and `buildSearchReplyMessages` both
+        // branch on `Object.keys(...).length > 0` — so a leftover own key with
+        // an undefined value is NOT equivalent to absence: it turns "no filters
+        // were extracted" into "here are your filters: {}".
+        const result = sanitizeSearchIntentEntities({ destinationId: NIL });
+
+        expect('destinationId' in result).toBe(false);
+        expect(Object.keys(result)).toHaveLength(0);
+    });
+
+    it('leaves no orphaned locationType behind when it only described the dropped id', () => {
+        // `locationType: 'destinationId'` with no id is the "there is a
+        // destination, I just do not know which" state in written form. Fed
+        // back as the next turn's CURRENT FILTER SET, next to the prompt rule
+        // that a message naming no destination KEEPS the current one, it is an
+        // invitation to invent another id.
+        const result = sanitizeSearchIntentEntities({
+            locationType: 'destinationId',
+            destinationId: NIL,
+            minGuests: 6
+        });
+
+        expect('locationType' in result).toBe(false);
+        expect('destinationId' in result).toBe(false);
+        expect(result.minGuests).toBe(6);
+    });
+
+    it('keeps a locationType that describes a slot which survived', () => {
+        const result = sanitizeSearchIntentEntities({
+            locationType: 'city',
+            city: 'Colón',
+            destinationId: NIL
+        });
+
+        expect(result.locationType).toBe('city');
+        expect(result.city).toBe('Colón');
+        expect('destinationId' in result).toBe(false);
+    });
+});
+
+// ─── dropDestinationId (HOS-298) ─────────────────────────────────────────────
+
+describe('dropDestinationId (HOS-298)', () => {
+    it('removes a syntactically fine id that the DB check rejected', () => {
+        // The route calls this directly when the destinations table has no such
+        // row. The value here is the RFC 4122 example UUID — the exact shape the
+        // cheap nil/blank guard waves through.
+        const result = dropDestinationId({
+            destinationId: '123e4567-e89b-12d3-a456-426614174000',
+            minGuests: 6
+        });
+
+        expect('destinationId' in result).toBe(false);
+        expect(result.minGuests).toBe(6);
+    });
+
+    it('does not add a locationType key when the entities never had one', () => {
+        const result = dropDestinationId({
+            destinationId: '123e4567-e89b-12d3-a456-426614174000'
+        });
+
+        expect('locationType' in result).toBe(false);
+        expect(Object.keys(result)).toHaveLength(0);
+    });
+
+    it('returns the input untouched when there is no destinationId key', () => {
+        const entities = { city: 'Colón' };
+        expect(dropDestinationId(entities)).toBe(entities);
     });
 });
 
