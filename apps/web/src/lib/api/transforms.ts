@@ -2294,8 +2294,15 @@ function normalizeExperienceSocialNetworks(raw: unknown): ExperienceSocialNetwor
 }
 
 /**
- * Normalize public contact info for experience listings.
- * Only `whatsapp` is surfaced publicly (for the CTA deep link).
+ * Normalize the contact info this app WOULD read from an experience listing.
+ *
+ * DORMANT (HOS-363): the public tier surfaces NO `contactInfo` at all —
+ * `ExperiencePublicSchema.pick()` omits it entirely
+ * (`packages/schemas/src/entities/experience/experience.access.schema.ts`,
+ * whose header records "Omits: ... contactInfo (direct)"), so `raw` is always
+ * absent here and this returns `null` every time. `whatsapp` is the only key
+ * mapped because it is the only one the CTA deep link would need the day the
+ * field is exposed.
  */
 function normalizeExperienceContactInfo(raw: unknown): ExperienceContactInfo | null {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;

@@ -3,18 +3,19 @@
  * @file ExperienceContactCTA.astro
  * @description Contact CTA block for an experience listing (SPEC-240 T-027).
  *
- * Renders a WhatsApp deep link CTA when the experience has a phone number
- * stored under `contactInfo.whatsapp`. The deep link format is:
+ * DORMANT AS OF HOS-289 — READ THIS FIRST: this block never renders in
+ * production. The JSDoc used to claim `ExperiencePublicSchema` exposes
+ * `contactInfo.whatsapp`; it does not — `contactInfo` is not in its `pick()` at
+ * all, verified against the live API (`GET /api/v1/public/experiences`, no
+ * `contactInfo` key on any listing), so the `contactInfo` prop is always `null`
+ * and the early return below always fires. See HOS-363.
+ *
+ * What it WOULD render the day that field is exposed (and why the link is kept
+ * correct in the meantime): a WhatsApp deep link CTA built from the phone
+ * stored under `contactInfo.whatsapp`, of the form
  *   https://wa.me/<phone>?text=<encoded-message>
  *
  * No booking widget — contact only (spec decision #4).
- *
- * DORMANT AS OF HOS-289: this block never renders in production. The JSDoc used
- * to claim `ExperiencePublicSchema` exposes `contactInfo.whatsapp`; it does not
- * — `contactInfo` is not in its `pick()` at all, verified against the live API
- * (`GET /api/v1/public/experiences`, no `contactInfo` key on any listing), so
- * the early return below always fires. The link is fixed here anyway: the day
- * the field is exposed, it must already be correct. See HOS-363.
  *
  * Hydration: none — fully static Astro component.
  */

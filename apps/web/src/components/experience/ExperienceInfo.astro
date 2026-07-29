@@ -64,7 +64,9 @@ const openingHours =
     />
 )}
 
-<!-- Social networks (when not surfaced via ContactCTA) -->
+<!-- Social networks. NOT a fallback for ExperienceContactCTA: that block is
+     dormant (the public tier exposes no `contactInfo` — HOS-363), so these
+     links are the only contact affordance the page actually renders. -->
 {experience.socialNetworks && Object.values(experience.socialNetworks).some(Boolean) && (
     <section class="exp-info__social">
         <h3 class="exp-info__social-title">{t('experience.detail.social', 'Redes sociales')}</h3>
