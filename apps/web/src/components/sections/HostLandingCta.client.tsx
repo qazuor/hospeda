@@ -9,9 +9,9 @@
  * Hydration: client:load — the CTA is above the fold and must be interactive immediately.
  */
 
-import { EntitlementKey } from '@repo/billing';
 import type { JSX } from 'react';
 import { useMyEntitlements } from '../../hooks/useMyEntitlements';
+import { resolveSubscriptionPlansPath } from '../../lib/account-roles';
 import { useSession } from '../../lib/auth-client';
 import type { SupportedLocale } from '../../lib/i18n';
 import { createTranslations } from '../../lib/i18n';
@@ -38,12 +38,10 @@ export interface HostLandingCtaProps {
  * HostLandingCta — conditional CTA buttons for the /publicar landing page.
  *
  * - Unauthenticated: primary CTA links to `/auth/signin?redirect=/publicar/nueva/`
- * - Authenticated non-HOST: primary CTA links to `/publicar/nueva/`, secondary
- *   link to `/mi-cuenta/propiedades/` is also shown.
- * - HOST with the publishing entitlement: primary CTA links to
- *   `/mi-cuenta/propiedades/` (the redundant secondary link is dropped).
- * - HOST whose entitlement resolved negative: primary CTA links to
- *   `/mi-cuenta/suscripcion/` so they can activate a plan.
+ * - Authenticated (tourist OR host with a plan): primary CTA links to
+ *   `/publicar/nueva/`, plus a secondary link to `/mi-cuenta/propiedades/`.
+ * - HOST whose entitlements resolved with NO owner subscription: primary CTA
+ *   links to the owner plans page so they can activate a plan.
  *
  * Renders with the unauthenticated href during SSR/hydration to avoid layout
  * shift — the swap happens synchronously once the Better Auth session resolves.
@@ -61,7 +59,6 @@ export function HostLandingCta({ locale }: HostLandingCtaProps): JSX.Element {
     const newPropertyPath = buildUrl({ locale, path: 'publicar/nueva' });
     const signinPath = `${buildUrl({ locale, path: 'auth/signin' })}?redirect=${encodeURIComponent(newPropertyPath)}`;
     const propertiesPath = buildUrl({ locale, path: 'mi-cuenta/propiedades' });
-    const subscriptionPath = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
 
     const isAuthenticated = !isPending && Boolean(session?.user);
 
@@ -77,37 +74,53 @@ export function HostLandingCta({ locale }: HostLandingCtaProps): JSX.Element {
     // HOS-152 made unreachable for that role (`ACCESS_PANEL_ADMIN` was removed
     // from HOST after a security incident, so `apps/admin`'s authed-guard
     // bounces them to `/auth/forbidden?reason=host-missing-permission`). Hosts
-    // self-manage in the web app, so the CTA now stays inside it — and, like
-    // `MobileMenu.client.tsx`, it distinguishes a HOST that can actually
-    // publish from one that still needs to activate a plan.
+    // self-manage in the web app, so the CTA stays inside it.
     //
-    // `hostHasEntitlement` is fail-OPEN while loading (identical contract to
-    // MobileMenu's, deliberately): a HOST keeps the "my properties" CTA until
-    // the entitlement genuinely resolves negative, instead of flashing the
-    // "activate your plan" state on every load.
-    const { has: hasEntitlement, isLoading: entitlementsLoading } = useMyEntitlements({
+    // The "needs a plan" nag keys on the SUBSCRIPTION (`plan == null`), NOT on
+    // entitlement keys. `loadEntitlements` hands ANY plan-less HOST the
+    // `owner-basico` DRAFT defaults, and that plan grants both
+    // PUBLISH_ACCOMMODATIONS and EDIT_ACCOMMODATION_INFO — so a host who
+    // genuinely needs a plan never lacks those keys, and the only things that
+    // could actually trigger the old condition were a fetch error, billing
+    // being disabled, or data corruption. `plan == null` is the same signal
+    // `mi-cuenta/propiedades/index.astro` already resolves server-side ("plan
+    // is null when the owner has no real owner/complex-category subscription").
+    //
+    // Three guards, all of them fail-OPEN (never nag a paying host):
+    //  - `hasResolved`: a fetch genuinely COMPLETED for this actor. `isLoading
+    //    === false` is not enough — the hook's `skip` branch resolves it
+    //    synchronously, so `skip: true -> false` (role settling to HOST)
+    //    commits one render with stale `isLoading=false` + `plan=null`, which
+    //    is exactly the flash a click could land on.
+    //  - `entitlementsError === null`: a 429/500 on the entitlements endpoint
+    //    must never be read as "no plan". `Header.astro` fails open on the same
+    //    resolution on the same page load — the two must not contradict.
+    //  - `isHost`: an authenticated actor whose role really is HOST.
+    const {
+        plan,
+        error: entitlementsError,
+        hasResolved: entitlementsResolved
+    } = useMyEntitlements({
         skip: role !== 'HOST'
     });
-    const hostHasEntitlement =
-        entitlementsLoading ||
-        hasEntitlement(EntitlementKey.PUBLISH_ACCOMMODATIONS) ||
-        hasEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO);
     const isHost = isAuthenticated && role === 'HOST';
-    const isHostMode = isHost && hostHasEntitlement;
-    const needsPlan = isHost && !hostHasEntitlement;
+    const needsPlan = isHost && entitlementsResolved && entitlementsError === null && plan === null;
 
-    const primaryHref = isHostMode
-        ? propertiesPath
-        : needsPlan
-          ? subscriptionPath
-          : isAuthenticated
-            ? newPropertyPath
-            : signinPath;
-    const primaryLabel = isHostMode
-        ? t('host.landing.hostModeCta', 'Ir a mis propiedades')
-        : needsPlan
-          ? t('host.landing.activatePlanCta', 'Activá tu plan')
-          : t('host.landing.primaryCta', 'Publicar tu propiedad');
+    // HOS-311: the host branch used to point at `mi-cuenta/propiedades`, but
+    // `publicar/index.astro` SSR-redirects any authenticated actor with >=1
+    // owned accommodation (drafts included) straight to that list — so the only
+    // host who can still see this CTA has ZERO properties, and an empty list is
+    // one pointless click away from the wizard they came for. Both the host and
+    // the tourist therefore get the same destination here; the properties list
+    // stays reachable through the secondary link.
+    const primaryHref = needsPlan
+        ? buildUrl({ locale, path: resolveSubscriptionPlansPath({ role: role ?? null }) })
+        : isAuthenticated
+          ? newPropertyPath
+          : signinPath;
+    const primaryLabel = needsPlan
+        ? t('host.landing.activatePlanCta', 'Activá tu plan')
+        : t('host.landing.primaryCta', 'Publicar tu propiedad');
     const secondaryLabel = t('host.landing.secondaryCta', 'Ver mis propiedades');
     // Never render the secondary link when the primary already points there.
     const showSecondary = isAuthenticated && primaryHref !== propertiesPath;
