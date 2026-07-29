@@ -28,7 +28,16 @@ export interface CreatedUser {
     readonly id: string;
     readonly email: string;
     readonly password: string;
-    readonly role: UserRole;
+    /**
+     * The hats the account holds after the fixture ran (HOS-296).
+     *
+     * Was a single `role: UserRole` mirroring the `users.role` scalar; that
+     * column no longer exists, so a scalar here would be a mirror of nothing.
+     * Signup always grants the baseline `USER`, so this is `['USER']` for a
+     * plain user and `['USER', <requested>]` when `createUser` was asked for a
+     * privileged hat.
+     */
+    readonly roles: readonly UserRole[];
     /** Better Auth session cookie value to attach to subsequent requests. */
     readonly sessionCookie: string;
 }
@@ -163,7 +172,10 @@ export async function signupUser(
         id: userId,
         email,
         password,
-        role: 'USER',
+        // Better Auth's after-create hook grants the baseline USER hat
+        // (apps/api/src/lib/auth.ts — HOS-296), and it is the ONE step there
+        // that is not swallowed, so a successful signup always holds it.
+        roles: ['USER'],
         sessionCookie
     };
 }
@@ -181,16 +193,22 @@ export async function forceVerifyEmail(userId: string): Promise<void> {
 /**
  * Refreshes a user's session by signing in again with their credentials.
  *
- * Better Auth uses a cookie-based session cache (`better-auth.session_data`,
- * Max-Age=300s). When the user's role is mutated in the DB after the initial
- * sign-in (e.g. USER → HOST via `startHostOnboarding`), the existing session
- * still reflects the old role until the cache expires or a new session is
- * minted. Call this after any role-promotion to get a session cookie that
- * reflects the new role immediately.
+ * Better Auth still uses a cookie-based session cache (`better-auth.session_data`,
+ * Max-Age=300s), but since HOS-296 **roles no longer travel in it**: `users.role`
+ * was dropped, so Better Auth's `additionalFields` (a plain column mapping) has
+ * no role source at all, and `actorMiddleware` reads the hats from `user_role`
+ * on every request. A role granted a millisecond ago is therefore visible to
+ * the very next API call on the SAME cookie — re-signing in is no longer what
+ * makes a promotion take effect.
+ *
+ * The helper is kept because callers may still want a session minted after some
+ * other mutation of the `users` row that the cookie cache DOES carry (e.g.
+ * `service_suspended`, `banned`, display name). Do not add it to a test purely
+ * to "pick up a new role" — that reason expired with the scalar.
  *
  * @param user - The user whose session should be refreshed (needs email + password)
  * @param config - Optional API config override
- * @returns A fresh session cookie with the current role from DB
+ * @returns A freshly minted session cookie
  */
 export async function refreshSession(
     user: Pick<CreatedUser, 'email' | 'password'>,
@@ -215,13 +233,21 @@ export async function refreshSession(
 }
 
 /**
- * Creates a USER, force-verifies email, and (optionally) promotes role.
+ * Creates a USER, force-verifies email, and (optionally) grants one extra hat.
  * The most common one-call test setup helper.
  *
- * When a role other than USER is requested, the role is set via SQL and
- * a fresh sign-in is performed so the returned `sessionCookie` reflects
- * the new role immediately (Better Auth caches session data for 300s;
- * without a fresh sign-in the session would still see `role=USER`).
+ * When a role other than USER is requested, {@link setUserRole} writes the hat
+ * to `user_role` and the returned user holds `['USER', <requested>]` — the
+ * baseline hat from signup plus the requested one. Callers that need the
+ * account to hold ONLY the requested privileged hat cannot get that: an account
+ * with zero roles is a data bug the API logs loudly (see `actorMiddleware`), and
+ * every real account holds `USER`.
+ *
+ * The session is re-minted after the grant. That is NOT what makes the role
+ * visible any more (see {@link refreshSession} — roles are resolved per request
+ * from `user_role`, not carried in the session cookie); it is kept only because
+ * removing it changes the cookie every one of the ~40 calling test files runs
+ * with, and that trade cannot be validated without a live e2e run.
  */
 export async function createUser(
     options: {
@@ -236,24 +262,54 @@ export async function createUser(
     }
     if (options.role && options.role !== 'USER') {
         await setUserRole(user.id, options.role);
-        // Refresh session so the cookie reflects the promoted role.
         const freshCookie = await refreshSession(user, config);
-        return { ...user, role: options.role, sessionCookie: freshCookie };
+        return { ...user, roles: ['USER', options.role], sessionCookie: freshCookie };
     }
     return user;
 }
 
 /**
- * Updates the user's `role` column directly. Bypasses any business rules
- * (e.g. host promotion via accommodation publish) — use only when the test
- * doesn't care about the path that produced the role.
+ * Forces the user's set of hats to be exactly `{USER, role}` in `user_role`.
+ *
+ * Bypasses any business rule that would normally produce the hat (host
+ * promotion on publish, commerce-lead approval, admin grant) — use only when
+ * the test doesn't care about the path that produced it.
+ *
+ * **Semantics (HOS-296).** Before multi-role this wrote a scalar, so it was a
+ * REPLACE: the caller was guaranteed the user held that role AND nothing else.
+ * `security/sec-01-host-isolation` leans on both halves of that guarantee — its
+ * two hosts must be hosts and nothing more — so a plain additive grant would
+ * have been the wrong translation: it would silently leave behind any hat a
+ * previous call had granted. This keeps the replace semantics and only carves
+ * out the baseline `USER` hat, which every account holds and which `revokeRole`
+ * refuses to remove in production (AC-5).
+ *
+ * Idempotent: the `(user_id, role)` primary key makes the insert a no-op when
+ * the hat is already held, and the delete a no-op when there is nothing extra.
+ * Insert runs BEFORE delete so the account never momentarily holds zero roles.
+ *
+ * @param userId - UUID of the user
+ * @param role - The single privileged hat the user should end up holding
  */
 export async function setUserRole(userId: string, role: UserRole): Promise<void> {
-    await execSQL('UPDATE users SET role = $1 WHERE id = $2', [role, userId]);
+    // SELECT DISTINCT so that `setUserRole(id, 'USER')` does not try to insert
+    // the same (user_id, role) pair twice within one statement.
+    await execSQL(
+        `INSERT INTO user_role (user_id, role, grant_reason)
+         SELECT DISTINCT $1::uuid, wanted, 'e2e_fixture'
+         FROM unnest(ARRAY[$2::role_enum, 'USER'::role_enum]) AS wanted
+         ON CONFLICT (user_id, role) DO NOTHING`,
+        [userId, role]
+    );
+    await execSQL(
+        `DELETE FROM user_role
+         WHERE user_id = $1 AND role <> $2::role_enum AND role <> 'USER'::role_enum`,
+        [userId, role]
+    );
 }
 
 /**
- * Direct shortcut for HOST role.
+ * Direct shortcut for the HOST hat. Leaves the user holding `{USER, HOST}`.
  */
 export async function promoteToHost(userId: string): Promise<void> {
     await setUserRole(userId, 'HOST');
@@ -261,19 +317,29 @@ export async function promoteToHost(userId: string): Promise<void> {
 
 interface MeResponse {
     // The route factory wraps the handler return inside { data: ... }.
-    // The /me handler returns { actor: { id, role, ... }, isAuthenticated, ... }
-    // so the full envelope is: { success, data: { actor: { id, role }, isAuthenticated }, metadata }
-    data?: { actor?: { id: string; role?: string }; isAuthenticated?: boolean };
+    // The /me handler returns { actor: { id, roles, ... }, isAuthenticated, ... }
+    // so the full envelope is: { success, data: { actor: { id, roles } }, metadata }.
+    //
+    // HOS-296: `actor.roles` is an ARRAY. This local type used to declare
+    // `role?: string` — a hand-written mirror of a field the API no longer
+    // emits, which the compiler cannot catch: the cast succeeds, the field is
+    // `undefined`, and `getMe` would have returned `null` for every caller
+    // (the `if (!actor.role) return null` guard below), turning every role
+    // assertion into an assertion about nothing.
+    data?: { actor?: { id: string; roles?: readonly string[] }; isAuthenticated?: boolean };
 }
 
 /**
  * Retrieves the actor that the API associates with the given session cookie.
  * Used by tests to assert role transitions after onboarding.
+ *
+ * @returns The actor id plus the hats it holds, or `null` when the session is
+ *   not recognized / the response is not shaped as expected.
  */
 export async function getMe(
     sessionCookie: string,
     config?: ApiHelperConfig
-): Promise<{ readonly id: string; readonly role: string } | null> {
+): Promise<{ readonly id: string; readonly roles: readonly string[] } | null> {
     const { apiBaseUrl, webBaseUrl } = resolveBaseUrls(config);
     const response = await fetch(`${apiBaseUrl}/api/v1/public/auth/me`, {
         headers: {
@@ -286,8 +352,8 @@ export async function getMe(
     if (!response.ok) return null;
     const data = (await response.json()) as MeResponse;
     const actor = data.data?.actor;
-    if (!actor?.id || !actor.role) return null;
-    return { id: actor.id, role: actor.role };
+    if (!actor?.id || !Array.isArray(actor.roles)) return null;
+    return { id: actor.id, roles: actor.roles.filter((role) => typeof role === 'string') };
 }
 
 interface OnboardingStartResponse {

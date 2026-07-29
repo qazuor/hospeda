@@ -19,7 +19,7 @@
 import { expect, test } from '@playwright/test';
 import { forceVerifyEmail, signupUser } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
-import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { execSQL, getDbPool, getUserRoles } from '../../fixtures/db-helpers.ts';
 import { extractFirstLink, waitForEmail } from '../../fixtures/mailpit-client.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -64,11 +64,9 @@ test.describe('GUEST-03: guest registration + favorites @p0 @guest @auth', () =>
         }
         await forceVerifyEmail(guest.id);
 
-        // DB invariant: user row created with verified email.
-        const userRows = await execSQL<{ role: string }>('SELECT role FROM users WHERE id = $1', [
-            guest.id
-        ]);
-        expect(userRows[0]?.role).toBe('USER');
+        // DB invariant: signup left the account holding exactly the baseline
+        // hat (HOS-296 — `users.role` is gone; hats live in `user_role`).
+        expect(await getUserRoles(guest.id)).toEqual(['USER']);
 
         // ── 2. Pick 3 published accommodations from seed ───────────────────
         const accs = await execSQL<{ id: string; slug: string }>(
