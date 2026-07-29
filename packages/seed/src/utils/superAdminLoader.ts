@@ -1,13 +1,76 @@
 import { randomUUID } from 'node:crypto';
-import { accounts, getDb, UserModel } from '@repo/db';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { accounts, getDb, UserModel, userRole, users } from '@repo/db';
+import { PermissionEnum, RoleEnum, RoleGrantReason } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
+import { grantRole } from '@repo/service-core';
 import { hash } from 'bcryptjs';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import superAdminInput from '../data/user/required/super-admin-user.json';
 import { STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
 import { summaryTracker } from './summaryTracker.js';
+
+/**
+ * Grants the baseline `USER` hat plus `SUPER_ADMIN` to the seeded super admin
+ * (HOS-296).
+ *
+ * Both hats, not just `SUPER_ADMIN`: every account holds `USER` as its
+ * baseline (that is what `revokeRole`'s last-role guard protects), and the
+ * super admin is not an exception. `grantRole` is idempotent, so this is safe
+ * to call on every seed run.
+ *
+ * @param userId - The super admin's real `users.id`.
+ * @throws {Error} When a grant fails — a super admin with no hats is an
+ *   unusable environment, so this must be loud rather than logged and skipped.
+ */
+async function grantSuperAdminRole(userId: string): Promise<void> {
+    for (const role of [RoleEnum.USER, RoleEnum.SUPER_ADMIN]) {
+        const granted = await grantRole({
+            userId,
+            role,
+            grantedBy: null,
+            reason: RoleGrantReason.SEED
+        });
+        if (granted.error) {
+            throw new Error(`Failed to grant ${role} to the super admin: ${granted.error.message}`);
+        }
+    }
+}
+
+/**
+ * Finds the existing super admin, if any (HOS-296).
+ *
+ * This used to be `userModel.findOne({ role: RoleEnum.SUPER_ADMIN })`. With
+ * `users.role` dropped, that filter key matches no column, and
+ * `buildWhereClause` THROWS a `DbError` when every key in a where-object is
+ * unknown — so the old call did not degrade, it aborted `loadSuperAdminAndGetActor`
+ * outright, taking down both the seed pipeline and the data-migration runner
+ * (`data-migrations/runner.ts` bootstraps its actor through this function).
+ *
+ * "Who is a super admin" is now a join to `user_role`, kept as an INNER JOIN on
+ * `users` with an `IS NULL` deleted filter so a soft-deleted account can never
+ * be adopted as the seeding actor — same shape as `required/aiPrompts.seed.ts`.
+ *
+ * @returns The super admin's id/displayName/email, or `null` when none exists.
+ */
+async function findExistingSuperAdmin(): Promise<{
+    id: string;
+    displayName: string | null;
+    email: string;
+} | null> {
+    const rows = await getDb()
+        .select({
+            id: users.id,
+            displayName: users.displayName,
+            email: users.email
+        })
+        .from(userRole)
+        .innerJoin(users, eq(users.id, userRole.userId))
+        .where(and(eq(userRole.role, RoleEnum.SUPER_ADMIN), isNull(users.deletedAt)))
+        .limit(1);
+
+    return rows[0] ?? null;
+}
 
 /**
  * Generates a cryptographically random password for the super admin seed.
@@ -132,10 +195,9 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
             );
         }
 
-        // Check if super admin already exists
-        const existingSuperAdmin = await userModel.findOne({
-            role: RoleEnum.SUPER_ADMIN
-        });
+        // Check if super admin already exists (HOS-296: a `user_role` join, not
+        // a `users.role` column filter — see `findExistingSuperAdmin`).
+        const existingSuperAdmin = await findExistingSuperAdmin();
 
         if (existingSuperAdmin) {
             logger.success({
@@ -146,14 +208,19 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
             summaryTracker.trackProcessStep('Super Admin', 'success', 'Existing super admin found');
 
             // Ensure credential account exists for Better Auth login
-            const email =
-                ((existingSuperAdmin as Record<string, unknown>).email as string) ||
-                superAdminEmail;
+            const email = existingSuperAdmin.email || superAdminEmail;
             await ensureCredentialAccount(existingSuperAdmin.id, email);
+
+            // HOS-296: the SUPER_ADMIN hat lives in `user_role`, not on the
+            // user row. Granting is idempotent, so re-running the seed against
+            // an existing super admin is a no-op — but it also SELF-HEALS an
+            // account seeded before the multi-role cut, which would otherwise
+            // resolve to zero roles and be unable to do anything.
+            await grantSuperAdminRole(existingSuperAdmin.id);
 
             return {
                 id: existingSuperAdmin.id,
-                role: existingSuperAdmin.role as RoleEnum,
+                roles: [RoleEnum.SUPER_ADMIN],
                 permissions: Object.values(PermissionEnum)
             };
         }
@@ -183,6 +250,12 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
         // Create credential account for Better Auth email/password login
         await ensureCredentialAccount(realSuperAdminId, superAdminEmail);
 
+        // HOS-296: grant the hats in `user_role`. The `role` key still present
+        // in `super-admin-user.json` is inert — `users.role` no longer exists,
+        // so the insert silently drops it. Without this grant the super admin
+        // resolves to ZERO roles and the whole seeded environment is unusable.
+        await grantSuperAdminRole(realSuperAdminId);
+
         logger.info(`${subSeparator}`);
 
         summaryTracker.trackProcessStep(
@@ -193,7 +266,7 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
 
         return {
             id: realSuperAdminId,
-            role: superAdminInput.role as RoleEnum,
+            roles: [RoleEnum.SUPER_ADMIN],
             permissions: Object.values(PermissionEnum)
         };
     } catch (error) {

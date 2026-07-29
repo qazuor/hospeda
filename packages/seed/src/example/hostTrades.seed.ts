@@ -91,11 +91,12 @@ export async function seedHostTrades(context: SeedContext): Promise<void> {
 
     // Set actor to SUPER_ADMIN with HOST_TRADE_CREATE permission for the duration of this seed.
     // The caller (runExampleSeeds) is responsible for saving/restoring context.actor if needed.
-    context.actor = {
+    const seedActor = {
         id: context.actor.id,
-        role: RoleEnum.SUPER_ADMIN,
+        roles: [RoleEnum.SUPER_ADMIN],
         permissions: [PermissionEnum.HOST_TRADE_CREATE] as PermissionEnum[]
     };
+    context.actor = seedActor;
 
     for (const [index, item] of items.entries()) {
         context.currentFile = files[index];
@@ -108,7 +109,7 @@ export async function seedHostTrades(context: SeedContext): Promise<void> {
             }
 
             // Resolve createdById seed ID → real UUID (fall back to context actor)
-            let realCreatedById: string | null = context.actor.id;
+            let realCreatedById: string | null = seedActor.id;
             if (item.createdById) {
                 const mapped = context.idMapper.getMappedUserId(item.createdById);
                 if (mapped) {
