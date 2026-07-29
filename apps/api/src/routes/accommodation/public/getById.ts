@@ -13,7 +13,7 @@ import { AccommodationIdSchema, AccommodationPublicSchema } from '@repo/schemas'
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { resolveOwnerEntitlementsForOwnerId } from '../../../middlewares/owner-entitlement';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { filterAccommodationByEntitlements } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
@@ -41,8 +41,21 @@ export const publicGetAccommodationByIdRoute = createPublicRoute({
     },
     responseSchema: AccommodationPublicSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
-        const actor = getActorFromContext(ctx);
-        const result = await accommodationService.getById(actor, params.id as string);
+        // HOS-353: resolve visibility against a GUEST actor, never the caller.
+        //
+        // `checkCanView` consults the reader through four mechanisms — `isOwner`,
+        // ACCOMMODATION_VIEW_ALL, ACCOMMODATION_VIEW_PRIVATE and the VIP entitlement —
+        // across the lifecycle, owner-suspended, plan-restricted and visibility
+        // branches. So the same `:id` answers 200 for an owner/staff/VIP and 404/403
+        // for everyone else. This route sits under a PUBLIC_CACHE_ENDPOINTS
+        // prefix whose key carries no actor, and 200s are cacheable — so an owner
+        // opening their own DRAFT listing parks that 200 in the slot every anonymous
+        // visitor reads. `checkCanView` itself is correct and unchanged; it is the
+        // shared-cached CALLER that must not hand it a privileged reader.
+        //
+        // A privileged reader who needs the hidden rows uses the protected or admin
+        // tier, which is not shared-cached.
+        const result = await accommodationService.getById(createGuestActor(), params.id as string);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
