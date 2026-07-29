@@ -1070,9 +1070,19 @@ export interface ExperienceSocialNetworks {
 }
 
 /**
- * Contact info subset exposed on the public experience schema (SPEC-240).
- * Only `whatsapp` is surfaced publicly (for the CTA deep link).
- * Email / phone are intentionally withheld from the public tier.
+ * Contact info subset this app WOULD read from an experience listing, if the
+ * public tier exposed one (SPEC-240).
+ *
+ * NOT CURRENTLY POPULATED (HOS-363). The original JSDoc claimed
+ * `ExperiencePublicSchema` surfaces `contactInfo.whatsapp`; it does not —
+ * `contactInfo` is absent from that schema's `pick()` entirely
+ * (`packages/schemas/src/entities/experience/experience.access.schema.ts`,
+ * whose own header documents "Omits: ... contactInfo (direct)"), so every value
+ * typed as `ExperienceContactInfo` in this app is `null` at runtime —
+ * `normalizeExperienceContactInfo` in `lib/api/transforms.ts` returns `null`
+ * for an absent payload, never `undefined` — and `ExperienceContactCTA.astro`
+ * never renders. The type is kept so the CTA is already correct the day the
+ * field is exposed.
  */
 export interface ExperienceContactInfo {
     readonly whatsapp?: string | null;
@@ -1181,7 +1191,10 @@ export interface ExperienceDetailData extends ExperienceCardData {
     readonly description: string;
     /** Optional rich-text (markdown) description (entitlement-gated). */
     readonly richDescription?: string | null;
-    /** Public WhatsApp and optional social contact info. */
+    /**
+     * Contact info the public tier does NOT expose — always `null` in
+     * practice. See {@link ExperienceContactInfo} and HOS-363.
+     */
     readonly contactInfo: ExperienceContactInfo | null;
     /** Social network links provided by the owner. */
     readonly socialNetworks: ExperienceSocialNetworks | null;

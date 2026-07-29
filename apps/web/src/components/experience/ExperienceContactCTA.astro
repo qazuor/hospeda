@@ -3,12 +3,18 @@
  * @file ExperienceContactCTA.astro
  * @description Contact CTA block for an experience listing (SPEC-240 T-027).
  *
- * Renders a WhatsApp deep link CTA when the experience has a phone number
- * stored under `contactInfo.whatsapp`. The deep link format is:
+ * DORMANT AS OF HOS-289 — READ THIS FIRST: this block never renders in
+ * production. The JSDoc used to claim `ExperiencePublicSchema` exposes
+ * `contactInfo.whatsapp`; it does not — `contactInfo` is not in its `pick()` at
+ * all, verified against the live API (`GET /api/v1/public/experiences`, no
+ * `contactInfo` key on any listing), so the `contactInfo` prop is always `null`
+ * and the early return below always fires. See HOS-363.
+ *
+ * What it WOULD render the day that field is exposed (and why the link is kept
+ * correct in the meantime): a WhatsApp deep link CTA built from the phone
+ * stored under `contactInfo.whatsapp`, of the form
  *   https://wa.me/<phone>?text=<encoded-message>
  *
- * IMPORTANT: The public ExperiencePublicSchema only exposes `contactInfo.whatsapp`
- * (phone / email are withheld from the public tier per the SPEC-240 privacy model).
  * No booking widget — contact only (spec decision #4).
  *
  * Hydration: none — fully static Astro component.
@@ -16,6 +22,7 @@
 
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 import type { ExperienceContactInfo } from '@/data/types';
 
 interface Props {
@@ -32,20 +39,20 @@ if (!contactInfo?.whatsapp) {
     return;
 }
 
-/**
- * Sanitize the phone number: strip non-digit characters except leading '+'.
- * WhatsApp wa.me links expect E.164-like format without spaces or dashes.
- */
-const phone = contactInfo.whatsapp.startsWith('+')
-    ? '+' + contactInfo.whatsapp.slice(1).replace(/\D/g, '')
-    : contactInfo.whatsapp.replace(/\D/g, '');
-
-const messageTemplate = t(
-    'experience.detail.whatsapp',
+// The prefilled chat message. Note the key is `whatsappMessage`, NOT
+// `whatsapp`: the latter is the BUTTON LABEL, and reusing it here shipped
+// "Consultar por WhatsApp" as the message the visitor sends (HOS-289).
+const message = t(
+    'experience.detail.whatsappMessage',
     'Hola, me interesa obtener más información sobre {{name}}'
 ).replace('{{name}}', experienceName);
 
-const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(messageTemplate)}`;
+// Built by the shared helper so the phone is sanitized the one way wa.me
+// accepts (bare digits, no leading '+') — see `@/lib/whatsapp`.
+const waUrl = buildWhatsAppLink({ phone: contactInfo.whatsapp, message }).url;
+
+// Nothing to link to when the stored number carries no digits.
+if (!waUrl) return;
 
 const ctaLabel = t('experience.detail.whatsapp', 'Consultar por WhatsApp');
 ---

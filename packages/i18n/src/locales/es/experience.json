@@ -29,6 +29,7 @@
     "detail": {
         "contact": "Contacto",
         "whatsapp": "Consultar por WhatsApp",
+        "whatsappMessage": "Hola, me interesa obtener más información sobre {{name}}",
         "hours": "Horarios de atención",
         "openingHours": {
             "title": "Horarios de atención",

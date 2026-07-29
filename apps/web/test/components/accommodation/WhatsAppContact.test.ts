@@ -25,13 +25,17 @@ describe('WhatsAppContact.astro', () => {
     describe('direct (wa.me) branch', () => {
         it('only builds the wa.me URL when the viewer has the direct entitlement', () => {
             expect(src).toContain('if (number && direct)');
-            expect(src).toContain('wa.me/');
-            expect(src).toContain('encodeURIComponent');
+            expect(src).toContain('buildWhatsAppLink');
         });
 
-        it('sanitizes the phone number and preserves a leading +', () => {
-            expect(src).toContain('replace(/\\D/g,');
-            expect(src).toContain("startsWith('+')");
+        it('delegates phone sanitizing to the shared builder (HOS-289)', () => {
+            // This replaces a test that asserted `startsWith('+')`, i.e. it pinned
+            // the defect: with the `+`, wa.me does not resolve the recipient. The
+            // URL shape itself is asserted in test/lib/whatsapp.test.ts; here we
+            // only require that the component does not hand-roll it again.
+            expect(src).toContain("import { buildWhatsAppLink } from '@/lib/whatsapp'");
+            expect(src).not.toContain('replace(/\\D/g,');
+            expect(src).not.toContain('wa.me/${');
         });
 
         it('opens the deep link in a new tab with noopener', () => {
