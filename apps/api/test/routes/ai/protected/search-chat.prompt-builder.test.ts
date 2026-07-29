@@ -501,3 +501,98 @@ describe('buildSearchReplyMessages — poiLocationConflict (HOS-113 review H-1/M
         expect(userIdx).toBe(result.messages.length - 1);
     });
 });
+
+// ─── buildSearchReplyMessages — locationCarryoverConflict (HOS-298) ──────────
+
+describe('buildSearchReplyMessages — locationCarryoverConflict (HOS-298)', () => {
+    const SYSTEM = 'Reply system prompt.';
+    const USER_MSG = 'para 6 personas';
+
+    it('appends an IMPORTANT — LOCATION NOT CARRIED OVER note naming the lost location', () => {
+        // Turn 2 of "cabañas en Colón": the model carried the location over as
+        // a bogus destination id and dropped `city`, the id was scrubbed, and
+        // nothing else constrains the search. Without this note the reply talks
+        // about 6 guests and the user reads it as still being about Colón,
+        // while the results now come from every destination.
+        const result = buildSearchReplyMessages({
+            systemPrompt: SYSTEM,
+            history: [],
+            message: USER_MSG,
+            extractedFilters: { minGuests: 6 },
+            locationCarryoverConflict: { locationLabel: 'Colón' }
+        });
+
+        expect(result.system).toContain('LOCATION NOT CARRIED OVER');
+        expect(result.system).toContain('Colón');
+        // The owner asked for a signal, NOT an empty page — this must never
+        // announce zero results the way the attraction conflict does.
+        expect(result.system.toUpperCase()).not.toContain('ZERO');
+        // Conflict notes live in `system`, never as a role: 'system' message.
+        expect(result.messages.some((m) => m.role === 'system')).toBe(false);
+    });
+
+    it('falls back to a generic phrase when the lost location had no name', () => {
+        // The previous turn carried only an id or coordinates — there is no
+        // label to hand here, and inventing one would be worse than generic.
+        const result = buildSearchReplyMessages({
+            systemPrompt: SYSTEM,
+            history: [],
+            message: USER_MSG,
+            extractedFilters: { minGuests: 6 },
+            locationCarryoverConflict: {}
+        });
+
+        expect(result.system).toContain('LOCATION NOT CARRIED OVER');
+        expect(result.system).toContain('the location from the previous message');
+    });
+
+    it('does not append the note when locationCarryoverConflict is absent', () => {
+        const result = buildSearchReplyMessages({
+            systemPrompt: SYSTEM,
+            history: [],
+            message: USER_MSG,
+            extractedFilters: { minGuests: 6 }
+        });
+
+        expect(result.system).not.toContain('LOCATION NOT CARRIED OVER');
+    });
+});
+
+// ─── Key-count branches vs a deleted key (HOS-298) ──────────────────────────
+
+describe('key-count branches are sensitive to a DELETED key, not an undefined one', () => {
+    const SYSTEM = 'Reply system prompt.';
+
+    it('buildSearchReplyMessages takes the "no filters" branch for a fully-scrubbed turn', () => {
+        // The scrub must DELETE `destinationId`. Had it merely set the slot to
+        // `undefined`, the own key would survive, `Object.keys(...).length > 0`
+        // would still be true, and the model would be told
+        // `Extracted search filters: {}` — filters that do not exist.
+        const result = buildSearchReplyMessages({
+            systemPrompt: SYSTEM,
+            history: [],
+            message: 'para 6 personas',
+            extractedFilters: {}
+        });
+
+        const assistantNote = result.messages.find((m) => m.role === 'assistant');
+        expect(assistantNote?.content?.toLowerCase()).toContain('no specific search filters');
+        expect(assistantNote?.content).not.toContain('{}');
+    });
+
+    it('buildConversationalSearchPrompt omits the CURRENT FILTER SET block for a fully-scrubbed turn', () => {
+        // Same failure mode on the extraction side: an empty-but-present filter
+        // set would print `CURRENT FILTER SET ...: {}` plus the whole NEARBY
+        // EXPANSION instruction block, for a conversation that has no
+        // accumulated state at all.
+        const prompt = buildConversationalSearchPrompt({
+            currentFilters: {},
+            history: [],
+            message: 'para 6 personas',
+            locale: 'es'
+        });
+
+        expect(prompt).not.toContain('CURRENT FILTER SET');
+        expect(prompt).not.toContain('NEARBY EXPANSION');
+    });
+});

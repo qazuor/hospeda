@@ -29,12 +29,12 @@
  * `MobileMenuIsland.astro`'s file doc for why), so it can never assume a
  * freshly-parsed session — the host-mode CTA (`isHostMode`/`ctaLabel`/
  * `ctaHref`, formerly computed server-side in `MobileMenuIsland.astro`) is
- * now derived here from the resolved `roles` set (HOS-296).
+ * now derived here from the resolved `user` plus the resolved `roles` set
+ * (HOS-296 — an account holds a SET of hats, never a single `role`).
  *
- * Tasks: T-074
+ * Tasks: T-074, HOS-311
  */
 
-import { EntitlementKey } from '@repo/billing';
 import { CloseIcon } from '@repo/icons';
 import type { MouseEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -43,7 +43,6 @@ import { ThemeControl } from '@/components/shared/preferences/ThemeControl.clien
 import { IconButton } from '@/components/ui/IconButtonReact';
 import type { NavItem as AccountNavItem } from '@/config/navigation';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
-import { useMyEntitlements } from '@/hooks/useMyEntitlements';
 import { buildAdminPanelItem } from '@/lib/admin-panel-link';
 import type { AuthMeUser } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
@@ -116,8 +115,9 @@ interface MobileMenuProps {
     readonly initialRoles: readonly string[];
     /**
      * Admin panel base URL for the session-zone admin-panel link (HOS-131
-     * §6.5, staff/host only, gated by `access.panelAdmin`) and the
-     * host-mode CTA. `undefined` (env var not configured) hides both.
+     * §6.5, staff only in practice, gated by `access.panelAdmin`).
+     * `undefined` (env var not configured) hides it. Deliberately NOT used
+     * by the owner CTA any more — see HOS-311 in the body.
      */
     readonly adminPanelUrl?: string;
 }
@@ -183,46 +183,36 @@ export function MobileMenu({
     // MobileMenuIsland.astro). A HOST may still be mid-onboarding with only
     // a DRAFT, but HOLDING the HOST hat is still enough to point the CTA at
     // the host surfaces. Unauthenticated visitors and tourists keep the
-    // /publicar funnel. `roles` starts at `initialRoles` and is refined by the
-    // same hook resolution as `user`/`permissions` above.
+    // /publicar funnel. `roles`/`user` start at `initialRoles`/`initialUser`
+    // and are refined by the same hook resolution as `permissions` above.
     //
-    // HOS-296: this asks "does the user HOLD the HOST hat", not "is the
-    // user's role HOST" — a commerce owner who is also a host keeps the
+    // HOS-296: this asks "does the actor HOLD the HOST hat", not "is the
+    // actor's role HOST" — a commerce owner who is also a host keeps the
     // host-mode CTA, which the old scalar equality silently dropped.
     //
-    // HOS-217: holding HOST alone is not entitlement-aware — a TOURIST
-    // who completes host-onboarding is granted the HOST hat immediately, even
-    // before ever subscribing to an owner plan. `useMyEntitlements` (same
-    // hook already used elsewhere, e.g. `useCompareGuard`) resolves the
-    // actor's real entitlement set; `PUBLISH_ACCOMMODATIONS` /
-    // `EDIT_ACCOMMODATION_INFO` is granted either by a real owner plan or by
-    // the `owner-basico` draft-defaults fallback for a HOST with no plan yet
-    // (see `loadEntitlements` HOS-217), so it's absent only in the bug case
-    // (a data-integrity edge case aside). `hasEntitlement` starts `false`
-    // while `isLoading` (fail-closed by the hook's own contract) — ORing in
-    // `entitlementsLoading` here keeps first paint identical to the SSR hint
-    // (holds HOST, matching `Header.astro`'s `isAlreadyHost` on the
-    // same page) and only downgrades to the /publicar funnel once the real
-    // entitlement resolves negative, instead of flashing the wrong CTA for
-    // every HOST on every load while the fetch is in flight.
+    // HOS-311: the host CTA must NEVER point at the admin panel. HOS-152
+    // deliberately removed `ACCESS_PANEL_ADMIN` from the HOST role after a
+    // security incident (see
+    // `packages/seed/src/data-migrations/0010-remove-panel-admin-from-host-commerce-owner.ts`)
+    // — a HOST self-manages entirely in the web app, so `apps/admin`'s
+    // `authed-guard` bounces them to
+    // `/auth/forbidden?reason=host-missing-permission`. The admin panel stays
+    // reachable ONLY through the session-zone link below, which is gated on
+    // the real `access.panelAdmin` permission by `buildAdminPanelItem`.
+    //
+    // Two CTA states:
+    //  1. A resolved HOST → their properties list ("host mode").
+    //  2. Everyone else (guests, tourists, staff) → the /publicar funnel.
+    //
+    // `user` is part of the gate on state 1 because the props allow a role
+    // hint WITHOUT a resolved user (a stale `initialRoles: ['HOST']` on an
+    // expired session); in that state the menu falls back to the funnel
+    // rather than offer a host surface to someone it cannot identify.
     // ------------------------------------------------------------------
-    // `skip` when the HOST hat isn't (yet, or ever) held — avoids firing the
-    // entitlements fetch for every authenticated visitor on every page just
-    // to refine a CTA that only HOST actors see anyway. `roles` starts at
-    // `initialRoles` (the SSR hint), so this is already correct on first
-    // render — no extra hydration-mismatch risk.
-    const isHost = roles.includes('HOST');
-    const { has: hasEntitlement, isLoading: entitlementsLoading } = useMyEntitlements({
-        skip: !isHost
-    });
-    const hostHasEntitlement =
-        entitlementsLoading ||
-        hasEntitlement(EntitlementKey.PUBLISH_ACCOMMODATIONS) ||
-        hasEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO);
-    const isHostMode = isHost && Boolean(adminPanelUrl) && hostHasEntitlement;
+    const isHostMode = Boolean(user) && roles.includes('HOST');
     const ctaLabel = isHostMode ? t('nav.hostModeCta', 'Modo anfitrión') : t('nav.ownerCta');
     const ctaHref = isHostMode
-        ? (adminPanelUrl as string)
+        ? buildUrl({ locale, path: '/mi-cuenta/propiedades/' })
         : buildUrl({ locale, path: '/publicar/' });
 
     // ------------------------------------------------------------------

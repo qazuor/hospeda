@@ -6,8 +6,9 @@
  *
  * The primary CTA is auth-aware: authenticated users are linked directly to the
  * new-property form (/publicar/nueva/), unauthenticated users go to sign-in first.
- * This is implemented via a small React island (HostLandingCta) with client:load
- * so the swap happens on first paint without any server-side session check.
+ * This is implemented via a small React island (HostLandingCta) with
+ * client:only="react", so the swap happens client-side once Better Auth's
+ * session resolves, without any server-side session check.
  *
  * Marketing prose (benefits, steps, FAQ) is deliberately kept in sync with
  * /suscriptores/propietarios/ via shared i18n keys (owners.*) — no copy duplication.
@@ -27,7 +28,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import { OWNER_FAQ_ITEMS, buildOwnerFaqParams } from '@/lib/owner-faq';
-import { getAdminUrl, getApiUrl } from '@/lib/env';
+import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import {
 	InfoIcon,
@@ -240,15 +241,13 @@ const faqJsonLd = {
 
 				<!-- Auth-aware CTA island: authenticated → /publicar/nueva/, else → sign in -->
 				<!--
-					client:only is required (not client:load) because Better Auth's
-					useSession() reaches into request context internally and triggers
-					Astro 6's "Astro.request.headers was used on prerendered page"
-					false-positive warning during SSR. client:only skips SSR entirely
-					and hydrates on the browser, which is the right model for an
-					auth-aware CTA anyway (the unauth fallback href is the safe SSG
-					default, and useSession only needs to resolve client-side).
+					client:only (not client:load): the island has no meaningful SSR
+					output — its destination depends on the client-resolved /auth/me
+					snapshot (`useAccountPermissions`), which only settles in the
+					browser. Skipping SSR is the right model for an auth-aware CTA:
+					the unauthenticated href is the safe first-paint default.
 				-->
-				<HostLandingCta client:only="react" locale={locale} adminUrl={getAdminUrl()} />
+				<HostLandingCta client:only="react" locale={locale} />
 			</div>
 			<aside class="publicar-hero__visual" aria-hidden="true" data-reveal="right">
 				<div class="publicar-hero__blob"></div>

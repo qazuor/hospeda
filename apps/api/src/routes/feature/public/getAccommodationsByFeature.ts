@@ -5,8 +5,13 @@
 import { AccommodationPublicSchema, BaseHttpSearchSchema, FeatureIdSchema } from '@repo/schemas';
 import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
 import { getActorFromContext } from '../../../utils/actor';
-import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
+import type { AccommodationData } from '../../../utils/entitlement-filter';
+import {
+    filterAccommodationListByOwnerEntitlements,
+    stripRichDescriptionFields
+} from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -38,7 +43,36 @@ export const publicGetAccommodationsByFeatureRoute = createPublicListRoute({
         // allowlist), and `AccommodationPublicSchema` deliberately re-exposes both
         // rich-description fields, so `stripWithSchema` does NOT hide them. Without this
         // the premium markdown rode a card listing.
-        const accommodations = (result.data.accommodations ?? []).map(stripRichDescriptionFields);
+        const strippedAccommodations = (result.data.accommodations ?? []).map(
+            stripRichDescriptionFields
+        );
+
+        // SPEC-291 Phase 3b / HOS-341: gate `isVerified` by the OWNER's billing
+        // entitlement. At most ONE batched role query — for the cache-cold ownerIds
+        // only, none at all when every owner is warm in the resolver's cache — then
+        // parallel billing lookups for those same cold owners, then a synchronous
+        // gate pass. Fail-closed: an owner absent from the map keeps no badge.
+        //
+        // "of this response", not "of this page": the service has no server-side
+        // pagination here, it returns its whole result set and the envelope below is
+        // synthesized from its length.
+        //
+        // The gate depends on the owner of the row, never on the reader — which is
+        // what makes it safe here. `/api/v1/public/features` is a shared-cached
+        // prefix whose cache key carries no `Authorization`, so any per-viewer check
+        // computed in this handler would be served to every later visitor (HOS-288).
+        const uniqueOwnerIds = [
+            ...new Set(
+                strippedAccommodations
+                    .map((a) => (a as { ownerId?: string }).ownerId)
+                    .filter((id): id is string => typeof id === 'string' && id.length > 0)
+            )
+        ];
+        const ownerEntitlementsMap = await resolveOwnerEntitlementsForOwnerIds(uniqueOwnerIds);
+        const accommodations = filterAccommodationListByOwnerEntitlements(
+            strippedAccommodations as AccommodationData[],
+            ownerEntitlementsMap
+        );
 
         const { page, pageSize } = extractPaginationParams(query || {});
         return {

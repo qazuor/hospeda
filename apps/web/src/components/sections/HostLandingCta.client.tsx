@@ -4,24 +4,27 @@
  *
  * On mount, resolves the visitor through `useAccountPermissions` — the SAME
  * shared `/auth/me` cache (`@/lib/auth-cache`) that `UserMenu` and
- * `MobileMenu` already use. While loading, renders the unauthenticated href as
- * the default (safe fallback for SSG). Once resolved it swaps to the
- * authenticated destination if a session exists.
+ * `MobileMenu` already use. While the snapshot is still resolving, `user` is
+ * `null` and the island renders the unauthenticated href as the default (safe
+ * fallback), swapping to the authenticated destination once a session
+ * resolves.
  *
  * HOS-296 — why NOT Better Auth's `useSession()` any more. This island used to
- * read `session.user` and hand-cast it to `{ readonly role?: string }` to reach
- * the host flag. `users.role` is gone, so `role` left Better Auth's
- * `additionalFields` entirely and that cast would have silently yielded
- * `undefined` forever: no compile error, no runtime error, just a permanently
- * dead "Ir al panel de anfitrión" CTA for every host (spec §7.2 /
- * sweep-inventory site #7). Routing through `auth-cache.ts` — already the
- * client-side `/auth/me` plumbing — keeps ONE session mechanism on the client
- * instead of two, and costs no extra request: `UserMenu` mounts on every page
- * and either the shared in-flight promise or the sessionStorage snapshot
- * already answers this island's read.
+ * read `session.user` and hand-cast it to `{ readonly role?: string }`.
+ * `users.role` is gone, so `role` left Better Auth's `additionalFields`
+ * entirely and that cast would have silently yielded `undefined` forever: no
+ * compile error, no runtime error. Routing through `auth-cache.ts` — already
+ * the client-side `/auth/me` plumbing — keeps ONE session mechanism on the
+ * client instead of two, and costs no extra request: `UserMenu` mounts on
+ * every page and either the shared in-flight promise or the sessionStorage
+ * snapshot already answers this island's read.
  *
- * Hydration: client:only="react" (see the mount site in
- * `pages/[lang]/publicar/index.astro`).
+ * HOS-311 — the CTA no longer branches on WHICH hats the visitor holds (see
+ * the body), only on whether a session exists, so no role is read here at all.
+ *
+ * Hydration: client:only="react" — there is no server-rendered markup for this
+ * island, so the visitor always starts unresolved on first client render (see
+ * the mount site in `pages/[lang]/publicar/index.astro`).
  */
 
 import type { JSX } from 'react';
@@ -41,12 +44,6 @@ import styles from './HostLandingCta.module.css';
 export interface HostLandingCtaProps {
     /** Current locale for building internal URLs and translating labels. */
     readonly locale: SupportedLocale;
-    /**
-     * Admin panel base URL for the host-mode CTA (SPEC-182). When the visitor
-     * is a HOST, the primary CTA points here instead of the create wizard.
-     * Undefined (env not configured) falls back to the wizard for everyone.
-     */
-    readonly adminUrl?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -57,22 +54,24 @@ export interface HostLandingCtaProps {
  * HostLandingCta — conditional CTA buttons for the /publicar landing page.
  *
  * - Unauthenticated: primary CTA links to `/auth/signin?redirect=/publicar/nueva/`
- * - Authenticated: primary CTA links to `/publicar/nueva/`, secondary link
- *   to `/mi-cuenta/propiedades/` is also shown.
+ * - Authenticated (tourist OR host): primary CTA links to `/publicar/nueva/`,
+ *   plus a secondary link to `/mi-cuenta/propiedades/`.
  *
- * Renders with the unauthenticated href during SSR/hydration to avoid layout
- * shift — the swap happens synchronously once the Better Auth session resolves.
+ * Renders the unauthenticated href while the visitor is still unresolved to
+ * avoid layout shift — the swap happens once the `/auth/me` snapshot resolves.
  *
  * @example
  * ```astro
- * <HostLandingCta client:load locale={locale} />
+ * <HostLandingCta client:only="react" locale={locale} />
  * ```
  */
-export function HostLandingCta({ locale, adminUrl }: HostLandingCtaProps): JSX.Element {
+export function HostLandingCta({ locale }: HostLandingCtaProps): JSX.Element {
     // Simple mode (no `initialUser`): this island has no SSR snapshot to
     // reconcile against, so any fresh authenticated cache entry is trusted
     // directly and a cold load falls through to the shared `/auth/me` fetch.
-    const { user, roles } = useAccountPermissions();
+    // Only `user` is consumed — the destination does not depend on the role
+    // set (HOS-311).
+    const { user } = useAccountPermissions();
 
     const { t } = createTranslations(locale);
 
@@ -85,22 +84,29 @@ export function HostLandingCta({ locale, adminUrl }: HostLandingCtaProps): JSX.E
     // safe fallback, unchanged from the `isPending` behavior it replaces.
     const isAuthenticated = user !== null;
 
-    // SPEC-182 (D3): holding the HOST hat is enough to route the CTA to host
-    // surfaces. The user may still be mid-onboarding with only a DRAFT, but
-    // they should no longer be sent back through the tourist funnel.
-    // HOS-296: `roles.includes('HOST')`, not `role === 'HOST'` — a merchant
-    // who is also a host keeps the host CTA.
-    const isHostMode = isAuthenticated && roles.includes('HOST') && Boolean(adminUrl);
-
-    const primaryHref = isHostMode
-        ? (adminUrl as string)
-        : isAuthenticated
-          ? newPropertyPath
-          : signinPath;
-    const primaryLabel = isHostMode
-        ? t('host.landing.hostModeCta', 'Ir al panel de anfitrión')
-        : t('host.landing.primaryCta', 'Publicar tu propiedad');
+    // HOS-311: this CTA used to send a HOST straight to the admin panel, which
+    // HOS-152 made unreachable for that role (`ACCESS_PANEL_ADMIN` was removed
+    // from HOST after a security incident, so `apps/admin`'s authed-guard
+    // bounces them to `/auth/forbidden?reason=host-missing-permission`). Hosts
+    // self-manage in the web app, so the CTA stays inside it.
+    //
+    // The host branch also used to point at `mi-cuenta/propiedades`, but
+    // `publicar/index.astro` SSR-redirects any authenticated actor with >=1
+    // owned accommodation (drafts included) straight to that list — so the only
+    // host who can still see this CTA has ZERO properties, and an empty list is
+    // one pointless click away from the wizard they came for. Both the host and
+    // the tourist therefore get the same destination here; the properties list
+    // stays reachable through the secondary link.
+    //
+    // HOS-296: because no branch here reads a role any more, the multi-hat
+    // account model cannot regress this CTA — an actor who is both a host and
+    // a commerce owner gets the same destination as any other signed-in actor.
+    const primaryHref = isAuthenticated ? newPropertyPath : signinPath;
+    const primaryLabel = t('host.landing.primaryCta', 'Publicar tu propiedad');
     const secondaryLabel = t('host.landing.secondaryCta', 'Ver mis propiedades');
+    // The secondary link is the only route to the properties list from here —
+    // the primary always points at the wizard (or signin), never at the list.
+    const showSecondary = isAuthenticated;
 
     return (
         <div className={styles.ctaWrapper}>
@@ -117,7 +123,7 @@ export function HostLandingCta({ locale, adminUrl }: HostLandingCtaProps): JSX.E
                     &rarr;
                 </span>
             </a>
-            {isAuthenticated && (
+            {showSecondary && (
                 <a
                     href={propertiesPath}
                     className={styles.secondaryLink}

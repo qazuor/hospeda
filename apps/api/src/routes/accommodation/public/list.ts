@@ -41,7 +41,7 @@ import {
     resolveOwnerEntitlementsForOwnerIds
 } from '../../../middlewares/owner-entitlement';
 import type { AppBindings } from '../../../types';
-import { getActorFromContext, isGuestActor } from '../../../utils/actor';
+import { createGuestActor, getActorFromContext, isGuestActor } from '../../../utils/actor';
 import type { AccommodationData } from '../../../utils/entitlement-filter';
 import {
     filterAccommodationListByOwnerEntitlements,
@@ -208,7 +208,22 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         // on internal or sensitive columns.
         const safeSortBy = sanitizeSortBy(domainParams.sortBy);
 
-        const result = await accommodationService.search(actor, {
+        // HOS-353: resolve visibility against a GUEST actor, never the caller.
+        //
+        // `_executeSearch` derives `excludeRestricted` / `excludeOwnerSuspended` /
+        // `excludePlanRestricted` / `activeOnly` from the actor, so a VIP or a
+        // holder of ACCOMMODATION_VIEW_ALL gets RESTRICTED, DRAFT, owner-suspended
+        // and plan-restricted rows. This route is the first entry of
+        // PUBLIC_CACHE_ENDPOINTS and its cache key carries no actor, so that widened
+        // response is then replayed to every anonymous visitor for the TTL. The
+        // service behavior is correct and stays as it is — it is load-bearing for
+        // the protected and admin tiers; what must not vary is what a SHARED-cached
+        // handler asks for. Same shape as `getByDestination` and
+        // `getTopRatedByDestination`, which already resolve against a guest actor.
+        //
+        // The real `actor` is still used below for the search-history side effect:
+        // that is a per-caller WRITE, not part of the cached payload.
+        const result = await accommodationService.search(createGuestActor(), {
             ...domainParams,
             ...(quickAmenityGroups.length > 0 ? { anyAmenityGroups: quickAmenityGroups } : {}),
             page,
