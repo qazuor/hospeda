@@ -3,6 +3,8 @@
 // Additional schemas
 export * from './permission.schema.js';
 export * from './role.schema.js';
+// Multi-role capability set (HOS-296): one row per hat held by a user
+export * from './user-role.schema.js';
 // Access level schemas (public, protected, admin)
 export * from './user.access.schema.js';
 // Admin search

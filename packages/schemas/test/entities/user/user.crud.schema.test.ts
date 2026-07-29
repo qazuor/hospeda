@@ -38,7 +38,6 @@ describe('User CRUD Schemas', () => {
                 settings: user.settings,
                 visibility: user.visibility,
                 slug: user.slug,
-                role: user.role,
                 permissions: user.permissions
             };
 
@@ -137,12 +136,17 @@ describe('User CRUD Schemas', () => {
             expect(Object.hasOwn(parsed, 'serviceSuspended')).toBe(false);
         });
 
-        it('still allows role updates (no default, admin-editable)', () => {
+        it('no longer carries a scalar `role` (HOS-296)', () => {
+            // Role changes moved to the dedicated grant/revoke endpoints, so an
+            // update payload can neither set nor imply one. A schema that still
+            // accepted it would silently discard an admin's intent.
+            expect(Object.keys(UserUpdateInputSchema.shape)).not.toContain('role');
+
             const parsed = UserUpdateInputSchema.parse({ role: 'ADMIN' }) as Record<
                 string,
                 unknown
             >;
-            expect(parsed.role).toBe('ADMIN');
+            expect(parsed.role).toBeUndefined();
         });
     });
 

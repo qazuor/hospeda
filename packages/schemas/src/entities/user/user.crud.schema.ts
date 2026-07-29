@@ -67,9 +67,14 @@ export const UserCreateOutputSchema = UserReadSchema;
  * `banExpires`), `UserService.completeProfile` (`profileCompleted`),
  * `UserService.skip/markSetPassword` (`setPasswordPrompted`),
  * `setOwnerServiceSuspension` (`serviceSuspended`), and `PermissionService`
- * (`permissions`, which has no column on `users` anyway). `role` is kept: it
- * has no default (so it is never re-injected) and the admin PUT/PATCH routes
- * legitimately change it through this schema.
+ * (`permissions`, which has no column on `users` anyway).
+ *
+ * `role` is not in this list because it is no longer on `UserSchema` at all
+ * (HOS-296 G-8). It used to be explicitly KEPT here so the admin PUT/PATCH
+ * routes could change it; role changes now go through the dedicated
+ * grant/revoke endpoints, which are additive and audited. A scalar `role` on a
+ * generic update is exactly the "replace the hat" write the multi-role model
+ * exists to remove.
  */
 export const UserUpdateInputSchema = z
     .object(

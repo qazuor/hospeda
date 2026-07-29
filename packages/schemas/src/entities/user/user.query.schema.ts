@@ -246,7 +246,9 @@ export const UserListItemSchema = UserReadSchema.pick({
     firstName: true,
     lastName: true,
     authProvider: true,
-    role: true,
+    // HOS-296: `role` is gone from `UserSchema`. A list row that needs to show
+    // the user's hats must join `user_role` and carry a `roles` array; it is
+    // NOT projectable off the user entity any more.
     lifecycleState: true,
     visibility: true,
     contactInfo: true,
@@ -268,7 +270,7 @@ export const UserSummarySchema = UserReadSchema.pick({
     firstName: true,
     lastName: true,
     profile: true,
-    role: true,
+    // HOS-296: see `UserListItemSchema` above — no scalar role to project.
     lifecycleState: true,
     createdAt: true
 });
