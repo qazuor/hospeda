@@ -71,13 +71,24 @@ type MappedParams = Record<string, string | string[]>;
  *    message naming no destination keeps the current one. Any other
  *    `locationType` (`city`, `geo`) still describes a slot that survived, so it
  *    is preserved.
+ * 3. **An ALREADY-orphaned `locationType` is cleared on its own terms.** The
+ *    function used to bail out on `!('destinationId' in entities)`, which made
+ *    it a no-op for the shape `{ locationType: 'destinationId' }` with no id at
+ *    all — and that shape is produced by production client code, not just in
+ *    theory: `removeFilter` (`apps/web/src/components/ai-search/useSearchChat.ts`)
+ *    deletes ONLY the requested key, so removing the destination chip leaves the
+ *    hint behind. It is then echoed back as `currentFilters`, survives inbound
+ *    sanitisation untouched, and lands in the prompt's CURRENT FILTER SET as
+ *    precisely the state described above (HOS-298 round 2).
  *
  * @param entities - Entity set to strip.
  * @returns A copy without `destinationId` (and without an orphaned
- *   `locationType`), or the input unchanged when it had no `destinationId` key.
+ *   `locationType`), or the input unchanged when there was neither a
+ *   `destinationId` key nor an orphaned `locationType: 'destinationId'`.
  */
 export function dropDestinationId(entities: SearchIntentEntities): SearchIntentEntities {
-    if (!('destinationId' in entities)) {
+    const hasOrphanedLocationTypeHint = entities.locationType === 'destinationId';
+    if (!('destinationId' in entities) && !hasOrphanedLocationTypeHint) {
         return entities;
     }
     const { destinationId: _droppedDestinationId, ...rest } = entities;
@@ -123,12 +134,22 @@ export function dropDestinationId(entities: SearchIntentEntities): SearchIntentE
  * Schema — the `radius: 0` sentinel hit the same wall and was likewise handled
  * by its consumers.
  *
+ * It also clears an ORPHANED `locationType: 'destinationId'` — the hint with no
+ * id beside it. That shape does not come from the model: the web client's
+ * `removeFilter` deletes only the key the user removed, so unchecking the
+ * destination chip produces it and the next turn echoes it straight back as
+ * `currentFilters`. See {@link dropDestinationId} note 3 for why leaving it is
+ * the same failure as leaving the id.
+ *
  * @param entities - Validated entities straight from the model.
  * @returns The entities with unusable ids removed, or the input unchanged (the
  *   same reference) when there was nothing to strip.
  */
 export function sanitizeSearchIntentEntities(entities: SearchIntentEntities): SearchIntentEntities {
-    if (!('destinationId' in entities) || isUsableEntityId(entities.destinationId)) {
+    if (isUsableEntityId(entities.destinationId)) {
+        return entities;
+    }
+    if (!('destinationId' in entities) && entities.locationType !== 'destinationId') {
         return entities;
     }
     return dropDestinationId(entities);

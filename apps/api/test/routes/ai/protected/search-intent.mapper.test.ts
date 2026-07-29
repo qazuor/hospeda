@@ -346,6 +346,33 @@ describe('sanitizeSearchIntentEntities (HOS-298 regression)', () => {
         expect(result.city).toBe('Colón');
         expect('destinationId' in result).toBe(false);
     });
+
+    it('clears an ALREADY-orphaned locationType that arrives with no destinationId key at all', () => {
+        // HOS-298 round 2. This was a no-op: the orphan guard only ran as a
+        // side effect of removing an id, so it never fired on the shape that
+        // actually creates orphans in production. The web client's
+        // `removeFilter` deletes ONLY the requested key, so removing the
+        // destination chip leaves exactly this, and it is echoed straight back
+        // as the next turn's `currentFilters`.
+        const result = sanitizeSearchIntentEntities({
+            locationType: 'destinationId',
+            minGuests: 6
+        });
+
+        expect('locationType' in result).toBe(false);
+        expect('destinationId' in result).toBe(false);
+        expect(result.minGuests).toBe(6);
+    });
+
+    it('does not touch an entity set whose locationType describes a surviving slot and has no id', () => {
+        // Negative control for the sweep above: no id key, but the hint is
+        // honest, so the same reference comes back.
+        const entities = { locationType: 'city' as const, city: 'Colón' };
+        expect(sanitizeSearchIntentEntities(entities)).toBe(entities);
+
+        const geo = { locationType: 'geo' as const, latitude: -32.4, longitude: -58.2 };
+        expect(sanitizeSearchIntentEntities(geo)).toBe(geo);
+    });
 });
 
 // ─── dropDestinationId (HOS-298) ─────────────────────────────────────────────
@@ -376,6 +403,19 @@ describe('dropDestinationId (HOS-298)', () => {
     it('returns the input untouched when there is no destinationId key', () => {
         const entities = { city: 'Colón' };
         expect(dropDestinationId(entities)).toBe(entities);
+    });
+
+    it('strips an orphaned locationType even when there is no destinationId key to remove', () => {
+        // HOS-298 round 2: the early `if (!('destinationId' in entities)) return`
+        // made the orphan guard unreachable on the exact shape production
+        // produces (the web client's chip removal deletes only the id key).
+        const result = dropDestinationId({
+            locationType: 'destinationId',
+            minGuests: 6
+        });
+
+        expect('locationType' in result).toBe(false);
+        expect(result.minGuests).toBe(6);
     });
 });
 

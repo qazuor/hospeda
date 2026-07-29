@@ -279,16 +279,42 @@ function publicActiveDestinationFilter() {
  * handler's existing `Promise.all` alongside the amenity/feature/city lookups
  * rather than adding a serial round-trip.
  *
+ * ## Fails CLOSED, never fatal (HOS-298 round 2)
+ *
+ * A rejection here used to propagate out of that `Promise.all` and out of the
+ * handler, turning a transient destinations-table blip into a JSON 500 with no
+ * SSE frames at all — on a turn that previously issued zero queries, and AFTER
+ * the intent-extraction provider call had already been paid for. Every other
+ * resolution step in this handler (nearby expansion, attraction, POI) is
+ * explicitly non-fatal, so this one is too: the error is logged and the id is
+ * treated as UNVERIFIED (dropped). Fail-closed rather than fail-open, because
+ * the whole point of the check is that the slot has no legitimate source —
+ * "the DB did not confirm it" and "the DB said no" must lead to the same
+ * place, and the dropped-location path already has its own user-visible
+ * signal (`locationCarryoverConflict`).
+ *
  * @param destinationId - Candidate destination UUID emitted by the model.
- * @returns Whether a public, active destination row carries that id.
+ * @returns Whether a public, active destination row carries that id. `false`
+ *   when the lookup itself failed.
  */
 async function destinationRowExists(destinationId: string): Promise<boolean> {
-    const db = getDb();
-    const rows = await db
-        .select({ id: destinations.id })
-        .from(destinations)
-        .where(and(publicActiveDestinationFilter(), eq(destinations.id, destinationId)));
-    return rows.length > 0;
+    try {
+        const db = getDb();
+        const rows = await db
+            .select({ id: destinations.id })
+            .from(destinations)
+            .where(and(publicActiveDestinationFilter(), eq(destinations.id, destinationId)));
+        return rows.length > 0;
+    } catch (error) {
+        apiLogger.warn(
+            {
+                destinationId,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'search-chat: destinationId verification failed (non-fatal, id treated as unverified)'
+        );
+        return false;
+    }
 }
 
 /**
@@ -320,6 +346,15 @@ function hasLocationSignal(entities: SearchIntentEntities | undefined): boolean 
  * search actually receives, and because the attraction / POI steps can add a
  * `destinationIds` narrowing that no entity slot reflects.
  *
+ * `q` is deliberately NOT counted (HOS-298 round 2). It is an ILIKE against
+ * `accommodations.name` / `accommodations.description` — never a location
+ * filter — so counting it here SUPPRESSED the carry-over signal in exactly the
+ * case that needs it: a dropped id plus a city that fell through to
+ * `params.q`, which is the degraded keyword search this whole block exists to
+ * announce. Dropping it also removes a blank-vs-absent mismatch with the
+ * sibling {@link hasLocationSignal}, which trims `city` while a `city: ''`
+ * would have emitted `q: ''` and read as "a location survived".
+ *
  * @param params - The URL-ready params assembled for this turn.
  * @returns `true` when at least one location filter survived into the query.
  */
@@ -328,7 +363,6 @@ function paramsHaveLocationFilter(params: AiSearchChatFiltersEvent['params']): b
     return (
         probe.destinationId !== undefined ||
         (Array.isArray(probe.destinationIds) && probe.destinationIds.length > 0) ||
-        probe.q !== undefined ||
         (probe.latitude !== undefined && probe.longitude !== undefined)
     );
 }
@@ -357,8 +391,15 @@ function paramsHaveLocationFilter(params: AiSearchChatFiltersEvent['params']): b
  * keeps the existing fallback to `q` (mapper priority: `destinationId` > geo
  * > `city`).
  *
+ * Like its sibling {@link destinationRowExists}, a DB failure here is
+ * NON-FATAL (HOS-298 round 2): both run unwrapped inside the handler's
+ * `Promise.all`, so an unhandled rejection would take the whole turn down with
+ * a JSON 500 and no SSE at all. Degrading to `undefined` lands on the already
+ * documented "city could not be resolved" path instead.
+ *
  * @param city - Raw city name extracted by the model (`entities.city`).
- * @returns The matching destination UUID, or `undefined` when no match is found.
+ * @returns The matching destination UUID, or `undefined` when no match is found
+ *   (or when the lookup itself failed).
  */
 async function resolveDestinationIdFromCity(city: string): Promise<string | undefined> {
     const trimmedCity = city.trim();
@@ -366,26 +407,39 @@ async function resolveDestinationIdFromCity(city: string): Promise<string | unde
         return undefined;
     }
 
-    const db = getDb();
-    const publicActiveFilter = publicActiveDestinationFilter();
+    try {
+        const db = getDb();
+        const publicActiveFilter = publicActiveDestinationFilter();
 
-    // Priority 1: exact case-insensitive match on the destination name.
-    const exactRows = await db
-        .select({ id: destinations.id })
-        .from(destinations)
-        .where(and(publicActiveFilter, sql`LOWER(${destinations.name}) = LOWER(${trimmedCity})`));
-    if (exactRows[0]) {
-        return exactRows[0].id;
+        // Priority 1: exact case-insensitive match on the destination name.
+        const exactRows = await db
+            .select({ id: destinations.id })
+            .from(destinations)
+            .where(
+                and(publicActiveFilter, sql`LOWER(${destinations.name}) = LOWER(${trimmedCity})`)
+            );
+        if (exactRows[0]) {
+            return exactRows[0].id;
+        }
+
+        // Priority 2: fuzzy substring match (handles partial or slightly varied
+        // city mentions). safeIlike escapes '%', '_', and '\' metacharacters, so
+        // it must always be used here instead of the raw drizzle helper.
+        const fuzzyRows = await db
+            .select({ id: destinations.id })
+            .from(destinations)
+            .where(and(publicActiveFilter, safeIlike(destinations.name, trimmedCity)));
+        return fuzzyRows[0]?.id;
+    } catch (error) {
+        apiLogger.warn(
+            {
+                city: trimmedCity,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'search-chat: city → destination resolution failed (non-fatal, falling back to keyword search)'
+        );
+        return undefined;
     }
-
-    // Priority 2: fuzzy substring match (handles partial or slightly varied
-    // city mentions). safeIlike escapes '%', '_', and '\' metacharacters, so
-    // it must always be used here instead of the raw drizzle helper.
-    const fuzzyRows = await db
-        .select({ id: destinations.id })
-        .from(destinations)
-        .where(and(publicActiveFilter, safeIlike(destinations.name, trimmedCity)));
-    return fuzzyRows[0]?.id;
 }
 
 // ─── Route ────────────────────────────────────────────────────────────────────
@@ -442,9 +496,12 @@ async function resolveDestinationIdFromCity(city: string): Promise<string | unde
  * 5. Safe-parse returned entities; fall back to `{}` on failure.
  * 6. Resolve amenity slugs (deduped against boolean shortcuts — see
  *    `dedupeAmenitySlugsAgainstBooleanShortcuts`), feature slugs, and — when a
- *    city was extracted and no stronger location signal is present — the city
- *    name to a destination UUID (see `resolveDestinationIdFromCity`), all in
- *    parallel (single DB queries each).
+ *    city was extracted and no explicit geo pair is present — the city name to
+ *    a destination UUID (see `resolveDestinationIdFromCity`), all in parallel
+ *    (single DB queries each). A model-emitted `entities.destinationId` does
+ *    NOT suppress the city lookup (HOS-298 round 2): the id is unverified at
+ *    that point, so skipping on it degraded a real destination filter into a
+ *    free-text `q` search whenever the id turned out to be invented.
  * 7. Map entities to URL-ready params via `mapIntentToSearchParams`, passing the
  *    resolved amenity/feature UUIDs and (if resolved) the destination UUID.
  * 8. Build the reply system prompt via `buildSearchReplySystemPrompt` (caller-wins
@@ -594,8 +651,10 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         // identical wall and was likewise fixed in its consumers):
         //
         //   1. the search params via `mapIntentToSearchParams` (the 0 results),
-        //   2. `hasStrongerLocationSignal`, which would skip the city → destination
-        //      lookup because a "destination" is already present,
+        //   2. the reply/prompt narrative, which treats the slot as "a
+        //      destination is already pinned" (the city → destination lookup
+        //      used to be skipped for the same reason; round 2 removed that
+        //      coupling — see `cityToResolve` below),
         //   3. the nearby-expansion anchor, which would query with a junk id,
         //   4. the attraction/POI destination intersection, where a nil id
         //      intersects nothing and forces a bogus "no destination combines
@@ -642,14 +701,29 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         const featureSlugIds = validatedEntities.featureSlugs ?? [];
 
         // Only attempt city → destination resolution when a city was extracted
-        // AND no stronger location signal (destinationId or full geo coords) is
-        // already present — mirrors the mapper's own location priority so we
-        // never pay for a DB lookup whose result would be discarded anyway.
-        const hasStrongerLocationSignal =
-            validatedEntities.destinationId !== undefined ||
-            (validatedEntities.latitude !== undefined && validatedEntities.longitude !== undefined);
+        // AND no explicit geo pair is present. Geo keeps its precedence (mapper
+        // priority 2 beats city, and a resolved city would otherwise jump to
+        // priority 0 and override coordinates the user actually gave), so a
+        // lookup whose result would be discarded is still never paid for.
+        //
+        // HOS-298 (round 2): `entities.destinationId` deliberately does NOT
+        // suppress this lookup any more. It used to, and the read happened
+        // BEFORE `destinationRowExists` had verified the id — so
+        // `{ city: 'Colón', destinationId: <invented> }` skipped the city
+        // lookup, then dropped the id, then fell through to mapper priority 3
+        // and emitted `params.q = 'Colón'`. `q` is an ILIKE on the
+        // accommodation NAME/DESCRIPTION, never a location filter (see
+        // `resolveDestinationIdFromCity`'s "Why this exists"), so turn 2 of
+        // "cabañas en Colón" silently degraded from a real destination filter
+        // to a name-substring search. Resolving unconditionally costs one extra
+        // query ONLY when both slots are populated — the exact path that already
+        // pays for the verification query — and the mapper still gives
+        // `resolvedDestinationId` priority 0 over `entities.destinationId`, so
+        // nothing downstream has to change.
+        const hasGeoLocationSignal =
+            validatedEntities.latitude !== undefined && validatedEntities.longitude !== undefined;
         const cityToResolve =
-            validatedEntities.city !== undefined && !hasStrongerLocationSignal
+            validatedEntities.city !== undefined && !hasGeoLocationSignal
                 ? validatedEntities.city
                 : undefined;
 
@@ -946,14 +1020,32 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         // than the `filters`-frame plumbing that makes the client skip the
         // search entirely.
         //
-        // Fires only when all three hold: a destination id was dropped this
-        // turn, nothing else constrains the query to a location (checked on
-        // `params`, AFTER the attraction/POI steps that can add one), and the
-        // previous turn genuinely had a location to lose.
+        // Fires only when all four hold: a destination id was dropped this
+        // turn, no attraction conflict already owns the reply, nothing else
+        // constrains the query to a location (checked on `params`, AFTER the
+        // attraction/POI steps that can add one), and the previous turn
+        // genuinely had a location to lose.
+        //
+        // HOS-298 round 2 — why `attractionLocationConflict` suppresses this:
+        // an attraction `no-match` leaves `params` untouched, so a turn that
+        // ALSO dropped an id satisfies every condition below and emits both
+        // notes at once. They contradict each other. The attraction note says
+        // "the search returned ZERO accommodations" (true — the web client
+        // skips `fetchAccommodations` entirely and renders the empty state,
+        // see `useSearchChat.ts`), while this one would say "the results may
+        // come from any destination", which is flatly false when there are no
+        // results. The attraction note wins because it describes what the user
+        // actually sees.
+        //
+        // `poiLocationConflict` deliberately does NOT suppress it: a POI
+        // no-match is explicitly NOT a zero-results signal (the accommodation
+        // search still runs — see Step 7.7 and `poi-resolver.ts`), so the two
+        // notes describe different, simultaneously-true facts.
         // -----------------------------------------------------------------------
         let locationCarryoverConflict: LocationCarryoverConflict | undefined;
         if (
             destinationIdDropped &&
+            attractionLocationConflict === undefined &&
             !paramsHaveLocationFilter(params) &&
             hasLocationSignal(sanitizedCurrentFilters)
         ) {
