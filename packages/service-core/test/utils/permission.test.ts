@@ -45,11 +45,11 @@ const baseEntity: EntityPermissionInput = {
     deletedAt: null
 };
 
-const superAdmin: Actor = { id: otherId, role: RoleEnum.SUPER_ADMIN, permissions: [] };
-const admin: Actor = { id: otherId, role: RoleEnum.ADMIN, permissions: [] };
-const owner: Actor = { id: ownerId, role: RoleEnum.HOST, permissions: [] };
-const user: Actor = { id: otherId, role: RoleEnum.USER, permissions: [] };
-const guest: Actor = { id: otherId, role: RoleEnum.GUEST, permissions: [] };
+const superAdmin: Actor = { id: otherId, roles: [RoleEnum.SUPER_ADMIN], permissions: [] };
+const admin: Actor = { id: otherId, roles: [RoleEnum.ADMIN], permissions: [] };
+const owner: Actor = { id: ownerId, roles: [RoleEnum.HOST], permissions: [] };
+const user: Actor = { id: otherId, roles: [RoleEnum.USER], permissions: [] };
+const guest: Actor = { id: otherId, roles: [RoleEnum.GUEST], permissions: [] };
 
 // Helper to clone entity with overrides
 const entity = (overrides: Partial<EntityPermissionInput> = {}): EntityPermissionInput => ({
@@ -385,7 +385,7 @@ describe('getEntityPermission', () => {
     it('should return true for an admin who is not the owner (with hasAny)', () => {
         const nonOwnerAdmin: Actor = {
             id: 'admin-not-owner',
-            role: RoleEnum.ADMIN,
+            roles: [RoleEnum.ADMIN],
             permissions: []
         };
         // Public entity is viewable by anyone

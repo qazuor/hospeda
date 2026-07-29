@@ -69,7 +69,7 @@ const dbAvailable = isServiceTestDbAvailable();
 function buildFullActor(): Actor {
     return {
         id: crypto.randomUUID(),
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [
             PermissionEnum.SOCIAL_POST_APPROVE,
             PermissionEnum.SOCIAL_POST_SCHEDULE,

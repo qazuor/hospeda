@@ -156,7 +156,7 @@ const ACTOR_ID = 'f0f0f0f0-f0f0-4f0f-af0f-f0f0f0f0f0f0';
 function makeAdminActor(extra: Partial<Actor> = {}): Actor {
     return {
         id: ACTOR_ID,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [
             PermissionEnum.NEWSLETTER_CAMPAIGN_WRITE,
             PermissionEnum.NEWSLETTER_CAMPAIGN_SEND,
@@ -170,7 +170,7 @@ function makeAdminActor(extra: Partial<Actor> = {}): Actor {
 function makeUnpermissionedActor(): Actor {
     return {
         id: ACTOR_ID,
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: []
     };
 }

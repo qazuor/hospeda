@@ -41,15 +41,25 @@ import { hasPermission } from '../../utils/permission';
 // ---------------------------------------------------------------------------
 
 /**
- * Result returned by the `CreateUserPort` after successfully creating a user.
+ * Result returned by the `CreateUserPort` after resolving the owner account.
  */
 export interface CreateUserPortResult {
-    /** UUID of the newly created user row. */
+    /** UUID of the user row (freshly created, or the pre-existing match). */
     readonly id: string;
-    /** Email address of the created user. */
+    /** Email address of the user. */
     readonly email: string;
-    /** Display name of the created user. */
+    /** Display name of the user. */
     readonly name: string;
+    /**
+     * `true` when the email already belonged to an account and the port only
+     * granted it the commerce hat (HOS-296 G-4 / AC-4).
+     *
+     * This is not cosmetic: an existing account keeps its own password, so the
+     * `temporaryPassword` this service generated was never applied to it.
+     * Mailing that password would tell the owner to sign in with credentials
+     * that do not work.
+     */
+    readonly alreadyExisted: boolean;
 }
 
 /**
@@ -72,13 +82,13 @@ export interface CreateUserPortResult {
  * ```
  */
 export type CreateUserPort = (input: {
-    /** Email address for the new account. */
+    /** Email address for the account; resolved to an existing user when it matches one. */
     readonly email: string;
     /** Temporary server-generated password (min 12 chars). */
     readonly password: string;
     /** Display name derived from the lead's `contactName`. */
     readonly name: string;
-    /** Role to assign to the new user. */
+    /** Role to GRANT to the user — additively, never replacing an existing hat. */
     readonly role: RoleEnum;
     /** Whether the user must change their password on first login. */
     readonly mustChangePassword: boolean;
@@ -93,6 +103,9 @@ export type CreateUserPort = (input: {
 export interface ProvisioningNotificationPort {
     /**
      * Sends the account credentials email to the provisioned owner.
+     *
+     * Only called for accounts this flow actually created — an existing
+     * account already has working credentials (HOS-296 AC-4).
      *
      * @param input - Recipient details and temporary password.
      */
@@ -124,20 +137,28 @@ export interface ProvisionCommerceOwnerInput {
  * Result of a successful `provisionCommerceOwner` call.
  */
 export interface ProvisionCommerceOwnerResult {
-    /** UUID of the newly created user. */
+    /** UUID of the provisioned user. */
     readonly userId: string;
     /** Email address of the provisioned user. */
     readonly email: string;
     /** Display name of the provisioned user. */
     readonly name: string;
     /**
-     * The server-generated temporary password.
+     * `true` when the lead's email already belonged to an account, which was
+     * granted the commerce hat instead of a second account being created
+     * (HOS-296 G-4). The caller can surface "linked to existing account"
+     * instead of "account created".
+     */
+    readonly alreadyExisted: boolean;
+    /**
+     * The server-generated temporary password, or `null` when the account
+     * already existed and kept its own password.
      *
      * **SECURITY NOTE**: this field exists only so the caller can optionally
      * log it to a secure audit trail.  It must never be stored in plain text
      * and must not be returned in API responses.
      */
-    readonly temporaryPassword: string;
+    readonly temporaryPassword: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -214,14 +235,21 @@ export class CommerceOwnerProvisioningService extends BaseService {
     // -----------------------------------------------------------------------
 
     /**
-     * Creates a new `COMMERCE_OWNER` user account for an approved lead.
+     * Provisions the `COMMERCE_OWNER` hat for an approved lead.
+     *
+     * HOS-296 G-4 changed this from "always create an account" to "resolve the
+     * email, then grant". A host who already has an account can now be approved
+     * as a commerce owner on the SAME email — which is the whole point, since
+     * MercadoPago keys the payout account by email.
      *
      * Steps:
      * 1. Permission check (`COMMERCE_EDIT_ALL`).
      * 2. Generate a temporary 24-char password via `crypto.randomBytes`.
-     * 3. Invoke the injected `CreateUserPort` to create the user in Better Auth.
+     * 3. Invoke the injected `CreateUserPort`, which resolves the email to an
+     *    existing account (granting it the commerce hat) or creates a new one.
      * 4. Best-effort credential notification via the injected
      *    `ProvisioningNotificationPort` (failures are logged and suppressed).
+     *    SKIPPED when the account already existed — see `alreadyExisted`.
      * 5. Return the provisioning result.
      *
      * @param actor - The admin performing the provisioning.
@@ -263,7 +291,10 @@ export class CommerceOwnerProvisioningService extends BaseService {
                 const { lead } = validated;
                 const temporaryPassword = generateTemporaryPassword();
 
-                // Create user via the injected Better Auth port
+                // Resolve the owner account via the injected port. HOS-296 G-4:
+                // the port looks the email up FIRST and grants the commerce hat
+                // to an existing account instead of colliding on signup, which
+                // used to leave the lead permanently stuck (see AC-4).
                 let created: CreateUserPortResult;
                 try {
                     created = await this._createUser({
@@ -281,8 +312,18 @@ export class CommerceOwnerProvisioningService extends BaseService {
                     );
                 }
 
-                // Best-effort credential notification — never blocks provisioning
-                if (this._notifier) {
+                // Best-effort credential notification — never blocks provisioning.
+                //
+                // Skipped entirely when the account already existed: this flow
+                // did not set its password, so the generated `temporaryPassword`
+                // is not a credential for it. Mailing it would hand the owner a
+                // password that cannot sign them in (HOS-296 AC-4).
+                if (created.alreadyExisted) {
+                    this.logger.info(
+                        { userId: created.id, leadId: lead.id },
+                        '[commerce-owner-provisioning] Email already belonged to an account; granted the commerce hat and skipped the credential email'
+                    );
+                } else if (this._notifier) {
                     try {
                         await this._notifier.notifyOwnerCredentials({
                             email: created.email,
@@ -309,7 +350,8 @@ export class CommerceOwnerProvisioningService extends BaseService {
                     userId: created.id,
                     email: created.email,
                     name: created.name,
-                    temporaryPassword
+                    alreadyExisted: created.alreadyExisted,
+                    temporaryPassword: created.alreadyExisted ? null : temporaryPassword
                 };
             }
         });

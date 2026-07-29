@@ -1,5 +1,5 @@
-import type { PermissionEnum, RoleEnum, User } from '@repo/schemas';
-import { LifecycleStatusEnum, RoleEnum as RoleEnumImpl, VisibilityEnum } from '@repo/schemas';
+import type { PermissionEnum, User } from '@repo/schemas';
+import { LifecycleStatusEnum, VisibilityEnum } from '@repo/schemas';
 import { BaseFactoryBuilder } from './baseEntityFactory';
 import { getMockId } from './utilsFactory';
 
@@ -18,7 +18,6 @@ const baseUser: User = {
     contactInfo: undefined,
     location: undefined,
     socialNetworks: undefined,
-    role: RoleEnumImpl.USER,
     permissions: [],
     profile: undefined,
     settings: undefined,
@@ -36,29 +35,23 @@ const baseUser: User = {
 
 /**
  * Builder for UserType test data.
- * Supports fluent .with() and role/permission helpers.
+ *
+ * HOS-296 removed `withRole` / `admin()` / `superAdmin()` / `guest()`: a user's
+ * hats are rows in `user_role`, not a field on the entity, so these could only
+ * ever have set something the type no longer has. Tests that need a specific
+ * capability set the ACTOR's roles (see `actorFactory`) or seed `user_role`
+ * directly; nothing here consumed them (`createMockUser` below is this class's
+ * only caller).
  */
 export class UserFactoryBuilder extends BaseFactoryBuilder<User> {
     constructor() {
         super(baseUser);
-    }
-    public withRole(role: RoleEnum) {
-        return this.with({ role });
     }
     public withPermissions(permissions: PermissionEnum[]) {
         return this.with({ permissions });
     }
     public withDisplayName(displayName: string) {
         return this.with({ displayName });
-    }
-    public admin() {
-        return this.withRole(RoleEnumImpl.ADMIN);
-    }
-    public superAdmin() {
-        return this.withRole(RoleEnumImpl.SUPER_ADMIN);
-    }
-    public guest() {
-        return this.withRole(RoleEnumImpl.GUEST);
     }
 }
 

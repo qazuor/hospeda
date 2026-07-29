@@ -15,6 +15,7 @@ import { EventCategoryEnum, PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import { createUser } from '../../factories/userFactory';
+import { createActor } from '../../factories/actorFactory';
 import { expectSuccess } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
@@ -23,7 +24,7 @@ describe('EventService — categories filter forwarding (HOS-96 T-006)', () => {
     let service: EventService;
     let modelMock: EventModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
-    const actor = createUser({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
+    const actor = createActor({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
     const page = 1;
     const pageSize = 10;
     const emptyResult = { items: [], page, pageSize, total: 0 };

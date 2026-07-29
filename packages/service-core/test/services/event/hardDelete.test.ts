@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import { createMockEvent } from '../../factories/eventFactory';
 import { createUser } from '../../factories/userFactory';
+import { createActor } from '../../factories/actorFactory';
 import {
     expectForbiddenError,
     expectInternalError,
@@ -19,8 +20,8 @@ describe('EventService.hardDelete', () => {
     let service: EventService;
     let modelMock: EventModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
-    const actorWithPerm = createUser({ permissions: [PermissionEnum.EVENT_HARD_DELETE] });
-    const actorNoPerm = createUser();
+    const actorWithPerm = createActor({ permissions: [PermissionEnum.EVENT_HARD_DELETE] });
+    const actorNoPerm = createActor();
     const existingEvent = createMockEvent({ visibility: VisibilityEnum.PUBLIC });
     const eventId = existingEvent.id;
 

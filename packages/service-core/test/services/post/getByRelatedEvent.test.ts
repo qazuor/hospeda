@@ -20,7 +20,7 @@ describe('PostService.getByRelatedEvent', () => {
     let loggerMock: ServiceLogger;
     const actor = {
         id: 'ee11cbb1-7080-4727-9ed2-fa4cd82060da',
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: []
     };
     const eventId = getMockId('event') as EventIdType;

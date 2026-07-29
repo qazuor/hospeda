@@ -403,7 +403,9 @@ export class ConversationService extends BaseService {
     private _buildSystemActor(): Actor {
         return {
             id: SYSTEM_ACTOR_ID,
-            role: RoleEnum.ADMIN,
+            // HOS-296: an actor carries a SET of hats; this synthetic one wears
+            // exactly ADMIN, which is all the cascaded services check.
+            roles: [RoleEnum.ADMIN],
             permissions: [
                 PermissionEnum.CONVERSATION_VIEW_OWN,
                 PermissionEnum.CONVERSATION_VIEW_ANY,

@@ -14,6 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createUser } from '../../factories/userFactory';
+import { createActor } from '../../factories/actorFactory';
 import { expectSuccess } from '../../helpers/assertions';
 
 type QueryChunk = { value?: unknown[] };
@@ -76,7 +77,7 @@ function makeFindAllDbMock(opts: {
 describe('PostService.getByCategory — soft-delete default (HOS-274, real PostModel)', () => {
     let service: PostService;
     let loggerMock: ServiceLogger;
-    const actor = createUser();
+    const actor = createActor();
     const category = PostCategoryEnum.GENERAL;
 
     beforeEach(() => {

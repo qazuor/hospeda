@@ -28,7 +28,8 @@ export const mockUser: InferredUser = {
     contactInfo: null,
     location: null,
     socialNetworks: null,
-    role: 'USER',
+    // HOS-296: a `User` entity has no role field any more — hats live in
+    // `user_role` and are read via `getUserRoles()`.
     profile: null,
     settings: {
         notifications: { enabled: true, allowEmails: true, allowSms: false, allowPush: false }

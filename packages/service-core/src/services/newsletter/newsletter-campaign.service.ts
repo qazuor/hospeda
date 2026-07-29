@@ -1214,7 +1214,7 @@ export class NewsletterCampaignService extends BaseService {
         // Use a synthetic system actor for the logging pipeline
         const systemActor: Actor = {
             id: '00000000-0000-0000-0000-000000000002',
-            role: 'SUPER_ADMIN' as never,
+            roles: ['SUPER_ADMIN'] as never,
             permissions: Object.values(PermissionEnum) as never,
             _isSystemActor: true
         };

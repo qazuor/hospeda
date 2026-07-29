@@ -5,6 +5,7 @@ import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createMockEvent } from '../../factories/eventFactory';
 import { createUser } from '../../factories/userFactory';
+import { createActor } from '../../factories/actorFactory';
 import {
     expectInternalError,
     expectSuccess,
@@ -22,8 +23,8 @@ describe('EventService.getByAuthor', () => {
     let modelMock: EventModel;
     let loggerMock: ServiceLogger;
     const authorId = createUser().id;
-    const actorWithPerm = createUser({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
-    const actorNoPerm = createUser();
+    const actorWithPerm = createActor({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
+    const actorNoPerm = createActor();
 
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findAll']);

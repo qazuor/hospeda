@@ -32,7 +32,7 @@ describe('PostService.update', () => {
             ...createAdminActor(),
             id: post.authorId,
             permissions: [PermissionEnum.POST_UPDATE],
-            role: RoleEnum.ADMIN
+            roles: [RoleEnum.ADMIN]
         };
         updateInput = { title: 'Updated Title' };
     });
@@ -54,7 +54,7 @@ describe('PostService.update', () => {
         const forbiddenActor = createActor({
             id: 'not-the-author-id',
             permissions: [],
-            role: RoleEnum.USER
+            roles: [RoleEnum.USER]
         });
         const result = await service.update(forbiddenActor, post.id, updateInput);
         assertions.expectForbiddenError(result);

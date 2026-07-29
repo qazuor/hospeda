@@ -121,7 +121,7 @@ function makeFindAllDbMock(opts: {
 
 // ---------------------------------------------------------------------------
 
-const ADMIN_ACTOR = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+const ADMIN_ACTOR = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
 
 describe('DestinationService.getAccommodations — HOS-288 public read predicates', () => {
     describe('visibility / lifecycleState (explicit at this call site)', () => {

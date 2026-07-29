@@ -49,7 +49,7 @@ describe('DestinationService.getNearby', () => {
             })
             .build();
         asMock(modelMock.findNearby).mockResolvedValue([neighbor]);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationNearbyInput = { destinationId: anchorId };
 
         // Act
@@ -69,7 +69,7 @@ describe('DestinationService.getNearby', () => {
         // Arrange
         const anchorId = getMockId('destination', 'colon-2');
         asMock(modelMock.findNearby).mockResolvedValue([]);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationNearbyInput = {
             destinationId: anchorId,
             radiusKm: 25,
@@ -90,7 +90,7 @@ describe('DestinationService.getNearby', () => {
         // Arrange
         const anchorId = getMockId('destination', 'isolated');
         asMock(modelMock.findNearby).mockResolvedValue([]);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationNearbyInput = { destinationId: anchorId };
 
         // Act
@@ -103,7 +103,7 @@ describe('DestinationService.getNearby', () => {
 
     it('should return VALIDATION_ERROR for an invalid destinationId', async () => {
         // Arrange
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params = { destinationId: 'not-a-uuid' } as unknown as GetDestinationNearbyInput;
 
         // Act
@@ -117,7 +117,7 @@ describe('DestinationService.getNearby', () => {
         // Arrange
         const anchorId = getMockId('destination', 'err');
         asMock(modelMock.findNearby).mockRejectedValue(new Error('DB error'));
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationNearbyInput = { destinationId: anchorId };
 
         // Act

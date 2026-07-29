@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import { createMockEvent, getMockEventId } from '../../factories/eventFactory';
 import { createUser } from '../../factories/userFactory';
+import { createActor } from '../../factories/actorFactory';
 import {
     expectForbiddenError,
     expectInternalError,
@@ -20,8 +21,8 @@ describe('EventService.restore', () => {
     let service: EventService;
     let modelMock: EventModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
-    const actorWithPerm = createUser({ permissions: [PermissionEnum.EVENT_RESTORE] });
-    const actorNoPerm = createUser();
+    const actorWithPerm = createActor({ permissions: [PermissionEnum.EVENT_RESTORE] });
+    const actorNoPerm = createActor();
     const eventId = getMockEventId('event-1');
 
     beforeEach(() => {

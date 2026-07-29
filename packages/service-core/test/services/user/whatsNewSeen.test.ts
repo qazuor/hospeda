@@ -12,10 +12,11 @@
  * - NOT_FOUND and INTERNAL_ERROR edge cases.
  */
 import { UserModel } from '@repo/db';
-import type { UserSettings } from '@repo/schemas';
-import { RoleEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, type UserSettings } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock } from 'vitest';
+import type { Actor } from '../../../src/types';
 import { UserService } from '../../../src/services/user/user.service';
+import { createActor } from '../../factories/actorFactory';
 import { createMockUser } from '../../factories/userFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import {
@@ -29,9 +30,14 @@ import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFac
 
 const asMock = <T>(fn: T) => fn as unknown as Mock;
 
-/** Creates a HOST actor with the given id. */
-const makeActor = (id: string = getMockId('user') as string) =>
-    createMockUser({ id, role: RoleEnum.HOST });
+/**
+ * Creates a HOST actor with the given id.
+ *
+ * HOS-296: builds an `Actor`, not a `User` fixture — the two stopped being
+ * interchangeable when `Actor.roles` replaced the `users.role` scalar.
+ */
+const makeActor = (id: string = getMockId('user') as string): Actor =>
+    createActor({ id, roles: [RoleEnum.HOST], permissions: [] });
 
 describe('UserService.markWhatsNewSeen', () => {
     let service: UserService;

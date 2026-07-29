@@ -9,10 +9,10 @@ import type { Actor } from '../../../src/types';
 
 const actorWithPerm: Actor = {
     id: '1',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.EVENT_LOCATION_UPDATE]
 };
-const actorWithoutPerm: Actor = { id: '2', role: RoleEnum.ADMIN, permissions: [] };
+const actorWithoutPerm: Actor = { id: '2', roles: [RoleEnum.ADMIN], permissions: [] };
 
 describe('eventLocation permissions', () => {
     it('allows create if actor has permission', () => {
@@ -34,13 +34,13 @@ describe('eventLocation permissions', () => {
         expect(() => checkCanDeleteEventLocation(actorWithoutPerm)).toThrow();
     });
     it('throws if actor is USER without permission', () => {
-        const user: Actor = { id: '3', role: RoleEnum.USER, permissions: [] };
+        const user: Actor = { id: '3', roles: [RoleEnum.USER], permissions: [] };
         expect(() => checkCanCreateEventLocation(user)).toThrow();
         expect(() => checkCanUpdateEventLocation(user)).toThrow();
         expect(() => checkCanDeleteEventLocation(user)).toThrow();
     });
     it('throws if actor is GUEST', () => {
-        const guest: Actor = { id: '4', role: RoleEnum.GUEST, permissions: [] };
+        const guest: Actor = { id: '4', roles: [RoleEnum.GUEST], permissions: [] };
         expect(() => checkCanCreateEventLocation(guest)).toThrow();
         expect(() => checkCanUpdateEventLocation(guest)).toThrow();
         expect(() => checkCanDeleteEventLocation(guest)).toThrow();
@@ -48,7 +48,7 @@ describe('eventLocation permissions', () => {
     it('allows SUPER_ADMIN with permission', () => {
         const superAdmin: Actor = {
             id: '5',
-            role: RoleEnum.SUPER_ADMIN,
+            roles: [RoleEnum.SUPER_ADMIN],
             permissions: [PermissionEnum.EVENT_LOCATION_UPDATE]
         };
         expect(() => checkCanCreateEventLocation(superAdmin)).not.toThrow();
@@ -58,7 +58,7 @@ describe('eventLocation permissions', () => {
     it('throws if actor has irrelevant permissions', () => {
         const actor: Actor = {
             id: '6',
-            role: RoleEnum.ADMIN,
+            roles: [RoleEnum.ADMIN],
             permissions: [PermissionEnum.TAG_SYSTEM_VIEW]
         };
         expect(() => checkCanCreateEventLocation(actor)).toThrow();
@@ -68,7 +68,7 @@ describe('eventLocation permissions', () => {
     it('allows if actor has multiple permissions including required', () => {
         const actor: Actor = {
             id: '7',
-            role: RoleEnum.ADMIN,
+            roles: [RoleEnum.ADMIN],
             permissions: [PermissionEnum.TAG_SYSTEM_VIEW, PermissionEnum.EVENT_LOCATION_UPDATE]
         };
         expect(() => checkCanCreateEventLocation(actor)).not.toThrow();

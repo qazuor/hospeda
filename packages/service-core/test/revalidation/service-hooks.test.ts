@@ -38,6 +38,15 @@ import { createMockBaseModel } from '../factories/baseServiceFactory';
 import { createMockDestination } from '../factories/destinationFactory';
 import { createEventUpdateInput, createMockEvent } from '../factories/eventFactory';
 import { TagFactoryBuilder } from '../factories/tagFactory';
+
+// HOS-296: `_assignHostRoleIfNeeded` fires on every accommodation update and
+// calls the role-write primitive, which opens a real transaction. These hook
+// tests run with no database, so the whole primitive module is stubbed —
+// nothing here is about roles.
+vi.mock('../../src/services/user-role/user-role.service.js', () => ({
+    grantRole: vi.fn().mockResolvedValue({ data: undefined }),
+    getUserRoles: vi.fn().mockResolvedValue([])
+}));
 import { createLoggerMock, createTypedModelMock } from '../utils/modelMockFactory';
 import { asMock } from '../utils/test-utils';
 

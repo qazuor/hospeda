@@ -17,6 +17,14 @@ import { createActor } from '../../factories/actorFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
+// HOS-296: the SUPER_ADMIN guard and the `fromRole` computation read the target
+// user's hats from `user_role` through this primitive — the `users` row the
+// model mock returns no longer carries a role at all.
+const getUserRolesMock = vi.hoisted(() => vi.fn(async () => [] as unknown[]));
+vi.mock('../../../src/services/user-role/user-role.service.js', () => ({
+    getUserRoles: getUserRolesMock
+}));
+
 const validInput = {
     userId: getMockId('user', 'user-1') as UserIdType,
     permission: PermissionEnum.USER_CREATE
@@ -34,11 +42,12 @@ describe('PermissionService.assignPermissionToUser', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        getUserRolesMock.mockResolvedValue([RoleEnum.USER]);
         rolePermissionModelMock = createModelMock([]);
         userPermissionModelMock = createModelMock(['findOne', 'create', 'update']);
         userModelMock = createModelMock(['findById']);
         // Non-super target user by default; the SUPER_ADMIN guard is exercised explicitly.
-        userModelMock.findById.mockResolvedValue({ id: validInput.userId, role: RoleEnum.USER });
+        userModelMock.findById.mockResolvedValue({ id: validInput.userId });
         loggerMock = createLoggerMock();
         service = new PermissionService(
             { logger: loggerMock },
@@ -134,11 +143,11 @@ describe('PermissionService.assignPermissionToUser', () => {
         );
     });
 
-    it('should return a 400 (VALIDATION_ERROR) when the target user is a SUPER_ADMIN', async () => {
-        userModelMock.findById.mockResolvedValue({
-            id: validInput.userId,
-            role: RoleEnum.SUPER_ADMIN
-        });
+    it('should return a 400 (VALIDATION_ERROR) when the target user HOLDS SUPER_ADMIN', async () => {
+        // HOS-296: "holds SUPER_ADMIN", not "is SUPER_ADMIN" — the guard must
+        // fire even when the hat is worn alongside others, otherwise an
+        // override gets persisted that the resolver then ignores.
+        getUserRolesMock.mockResolvedValue([RoleEnum.USER, RoleEnum.SUPER_ADMIN]);
 
         const result = await service.assignPermissionToUser(actor, validInput);
 

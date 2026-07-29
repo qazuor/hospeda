@@ -89,7 +89,7 @@ describe('BaseService: softDelete', () => {
     it('should return forbidden error if actor lacks permission', async () => {
         const nonOwnerActor: Actor = {
             id: 'non-owner',
-            role: RoleEnum.USER,
+            roles: [RoleEnum.USER],
             permissions: []
         };
         const result = await service.softDelete(nonOwnerActor, MOCK_ENTITY_ID);

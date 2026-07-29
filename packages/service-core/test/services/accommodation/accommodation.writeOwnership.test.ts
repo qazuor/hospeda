@@ -16,7 +16,7 @@ const OTHER_ID = getMockId('user', 'other-owner');
 /** HOST after SPEC-169: only `_OWN` write permissions, no `_ANY`, no HARD_DELETE. */
 const hostActor = {
     id: OWNER_ID,
-    role: RoleEnum.HOST,
+    roles: [RoleEnum.HOST],
     permissions: [
         PermissionEnum.ACCOMMODATION_UPDATE_OWN,
         PermissionEnum.ACCOMMODATION_DELETE_OWN,
@@ -72,7 +72,7 @@ describe('SPEC-169 AC-10/AC-11 — accommodation write ownership enforcement', (
         // is permission-only and staff-only. A staff actor with _ANY may act on any record.
         const staffActor = {
             id: getMockId('user', 'staff'),
-            role: RoleEnum.ADMIN,
+            roles: [RoleEnum.ADMIN],
             permissions: [
                 PermissionEnum.ACCOMMODATION_UPDATE_ANY,
                 PermissionEnum.ACCOMMODATION_DELETE_ANY,

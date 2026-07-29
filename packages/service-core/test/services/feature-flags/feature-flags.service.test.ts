@@ -46,13 +46,13 @@ describe('FeatureFlagService', () => {
 
     const actor: Actor = {
         id: '00000000-0000-4000-8000-000000000100',
-        role: RoleEnum.SUPER_ADMIN,
+        roles: [RoleEnum.SUPER_ADMIN],
         permissions: [PermissionEnum.FEATURE_FLAG_MANAGE]
     };
 
     const actorNoPerms: Actor = {
         id: '00000000-0000-4000-8000-000000000200',
-        role: RoleEnum.HOST,
+        roles: [RoleEnum.HOST],
         permissions: []
     };
 
@@ -157,7 +157,7 @@ describe('FeatureFlagService', () => {
                 forceOffUserIds: []
             });
 
-            const result = await service.evaluateFlag('admin-only', { role: RoleEnum.SUPER_ADMIN });
+            const result = await service.evaluateFlag('admin-only', { roles: [RoleEnum.SUPER_ADMIN]});
 
             expect(result).toBe(true);
         });

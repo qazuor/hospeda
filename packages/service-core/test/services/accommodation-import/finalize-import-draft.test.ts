@@ -37,7 +37,7 @@ const mockBuildDestinationHint = vi.mocked(buildDestinationHint);
 
 const fakeActor: Actor = {
     id: '00000000-0000-0000-0000-000000000001',
-    role: 'HOST',
+    roles: ['HOST'],
     permissions: []
 } as unknown as Actor;
 

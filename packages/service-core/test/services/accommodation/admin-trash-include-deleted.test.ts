@@ -122,7 +122,7 @@ function makeRelationalDbMock(opts: { captureFindManyArgs?: (args: unknown) => v
 
 const mockAdminActor = {
     id: 'admin-1',
-    role: RoleEnum.SUPER_ADMIN,
+    roles: [RoleEnum.SUPER_ADMIN],
     permissions: Object.values(PermissionEnum)
 };
 

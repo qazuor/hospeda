@@ -10,7 +10,9 @@
  * duplication.
  *
  * Design decisions:
- * - NEVER check `actor.role` directly.  Only `PermissionEnum` values.
+ * - NEVER check the actor's roles directly (`actor.roles`).  Only `PermissionEnum`
+ *   values.  Since HOS-296 an account holds a SET of hats, so "is the actor
+ *   role X" is not even a well-formed question here.
  * - Experience reuses COMMERCE_* permissions exactly as gastronomy does (SPEC-240 T-015).
  *   No EXPERIENCE_* enum values are introduced — the shared COMMERCE_* scheme
  *   is sufficient and avoids fragmentation.

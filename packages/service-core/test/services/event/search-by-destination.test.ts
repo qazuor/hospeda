@@ -24,6 +24,7 @@ import * as dbModule from '@repo/db';
 import { EventService } from '../../../src/services/event/event.service';
 import { createMockEvent } from '../../factories/eventFactory';
 import { createUser } from '../../factories/userFactory';
+import { createActor } from '../../factories/actorFactory';
 import { expectSuccess } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 
@@ -43,7 +44,7 @@ describe('EventService — destinationId filter (SPEC-089 Track B)', () => {
     let service: EventService;
     let modelMock: EventModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
-    const actor = createUser({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
+    const actor = createActor({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
 
     beforeEach(() => {
         vi.clearAllMocks();

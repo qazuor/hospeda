@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import { createMockEvent } from '../../factories/eventFactory';
 import { createUser } from '../../factories/userFactory';
+import { createActor } from '../../factories/actorFactory';
 import {
     expectForbiddenError,
     expectInternalError,
@@ -19,8 +20,8 @@ describe('EventService.getBySlug', () => {
     let service: EventService;
     let modelMock: EventModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
-    const actor = createUser();
-    const actorWithPrivate = createUser({ permissions: [PermissionEnum.EVENT_VIEW_PRIVATE] });
+    const actor = createActor();
+    const actorWithPrivate = createActor({ permissions: [PermissionEnum.EVENT_VIEW_PRIVATE] });
     const slug = 'fiesta-nacional';
 
     beforeEach(() => {

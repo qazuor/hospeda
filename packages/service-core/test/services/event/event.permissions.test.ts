@@ -11,17 +11,18 @@ import {
 import { ServiceError } from '../../../src/types';
 import { createMockEvent } from '../../factories/eventFactory';
 import { createUser } from '../../factories/userFactory';
+import { createActor } from '../../factories/actorFactory';
 
 /**
  * Tests for EventService permission helpers.
  * Covers: permission checks, error throwing, edge cases.
  */
 describe('EventService permissions', () => {
-    const baseActor = createUser();
+    const baseActor = createActor();
     const mockEvent = createMockEvent();
 
     it('should allow create if actor has EVENT_CREATE', () => {
-        const actor = createUser({ permissions: [PermissionEnum.EVENT_CREATE] });
+        const actor = createActor({ permissions: [PermissionEnum.EVENT_CREATE] });
         expect(() => checkCanCreateEvent(actor)).not.toThrow();
     });
     it('should forbid create if actor lacks EVENT_CREATE', () => {
@@ -29,7 +30,7 @@ describe('EventService permissions', () => {
     });
 
     it('should allow update if actor has EVENT_UPDATE', () => {
-        const actor = createUser({ permissions: [PermissionEnum.EVENT_UPDATE] });
+        const actor = createActor({ permissions: [PermissionEnum.EVENT_UPDATE] });
         expect(() => checkCanUpdateEvent(actor)).not.toThrow();
     });
     it('should forbid update if actor lacks EVENT_UPDATE', () => {
@@ -37,7 +38,7 @@ describe('EventService permissions', () => {
     });
 
     it('should allow delete if actor has EVENT_DELETE', () => {
-        const actor = createUser({ permissions: [PermissionEnum.EVENT_DELETE] });
+        const actor = createActor({ permissions: [PermissionEnum.EVENT_DELETE] });
         expect(() => checkCanDeleteEvent(actor)).not.toThrow();
     });
     it('should forbid delete if actor lacks EVENT_DELETE', () => {
@@ -45,7 +46,7 @@ describe('EventService permissions', () => {
     });
 
     it('should allow view if actor has EVENT_VIEW', () => {
-        const actor = createUser({ permissions: [PermissionEnum.EVENT_VIEW_PRIVATE] });
+        const actor = createActor({ permissions: [PermissionEnum.EVENT_VIEW_PRIVATE] });
         expect(() => checkCanViewEvent(actor, mockEvent)).not.toThrow();
     });
     it('should forbid view if actor lacks EVENT_VIEW', () => {
@@ -96,7 +97,7 @@ describe('EventService permissions', () => {
             visibility: VisibilityEnum.PUBLIC,
             deletedAt: new Date()
         });
-        const staffActor = createUser({ permissions: [PermissionEnum.EVENT_VIEW_ALL] });
+        const staffActor = createActor({ permissions: [PermissionEnum.EVENT_VIEW_ALL] });
         expect(() => checkCanViewEvent(staffActor, deletedEvent)).not.toThrow();
     });
 
@@ -126,7 +127,7 @@ describe('EventService permissions', () => {
             visibility: VisibilityEnum.PRIVATE,
             deletedAt: new Date()
         });
-        const staffActor = createUser({ permissions: [PermissionEnum.EVENT_VIEW_ALL] });
+        const staffActor = createActor({ permissions: [PermissionEnum.EVENT_VIEW_ALL] });
         expect(() => checkCanViewEvent(staffActor, deletedPrivateEvent)).not.toThrow();
     });
 
@@ -135,7 +136,7 @@ describe('EventService permissions', () => {
             visibility: VisibilityEnum.RESTRICTED,
             deletedAt: new Date()
         });
-        const staffActor = createUser({ permissions: [PermissionEnum.EVENT_VIEW_ALL] });
+        const staffActor = createActor({ permissions: [PermissionEnum.EVENT_VIEW_ALL] });
         expect(() => checkCanViewEvent(staffActor, deletedRestrictedEvent)).not.toThrow();
     });
 
@@ -148,7 +149,7 @@ describe('EventService permissions', () => {
     });
 
     it('should allow list for any authenticated actor', () => {
-        const actor = createUser({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
+        const actor = createActor({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
         expect(() => checkCanListEvents(actor)).not.toThrow();
     });
     it('should allow list even if actor has no specific permissions', () => {
@@ -156,7 +157,7 @@ describe('EventService permissions', () => {
     });
 
     it('should allow restore if actor has EVENT_RESTORE', () => {
-        const actor = createUser({ permissions: [PermissionEnum.EVENT_RESTORE] });
+        const actor = createActor({ permissions: [PermissionEnum.EVENT_RESTORE] });
         expect(() => checkCanRestoreEvent(actor)).not.toThrow();
     });
     it('should forbid restore if actor lacks EVENT_RESTORE', () => {

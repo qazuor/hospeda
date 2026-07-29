@@ -8,10 +8,10 @@ import type { Actor } from '../../src/types';
  */
 export const getSafeActor = ({
     id = 'user-1',
-    role = RoleEnum.USER,
+    roles = [RoleEnum.USER],
     permissions = []
 }: Partial<Actor> = {}): Actor => ({
     id,
-    role,
+    roles,
     permissions: permissions as PermissionEnum[]
 });

@@ -54,7 +54,7 @@ describe('DestinationService.getByPath', () => {
             })
             .build();
         asMock(modelMock.findByPath).mockResolvedValue(destination);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationByPathInput = {
             path: '/argentina/litoral/entre-rios/departamento-uruguay/concepcion-del-uruguay'
         };
@@ -82,7 +82,7 @@ describe('DestinationService.getByPath', () => {
             })
             .build();
         asMock(modelMock.findByPath).mockResolvedValue(destination);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationByPathInput = { path: '/argentina' };
 
         // Act
@@ -96,7 +96,7 @@ describe('DestinationService.getByPath', () => {
     it('should return NOT_FOUND if path does not match any destination', async () => {
         // Arrange
         asMock(modelMock.findByPath).mockResolvedValue(null);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationByPathInput = { path: '/nonexistent/path' };
 
         // Act
@@ -123,7 +123,7 @@ describe('DestinationService.getByPath', () => {
             })
             .build();
         asMock(modelMock.findByPath).mockResolvedValue(destination);
-        const actor = { id: 'user-1', role: RoleEnum.USER, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.USER], permissions: [] };
         const params: GetDestinationByPathInput = { path };
 
         // Act
@@ -148,7 +148,7 @@ describe('DestinationService.getByPath', () => {
             })
             .build();
         asMock(modelMock.findByPath).mockResolvedValue(destination);
-        const actor = { id: 'user-1', role: RoleEnum.USER, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.USER], permissions: [] };
         const params: GetDestinationByPathInput = { path };
 
         // Act
@@ -171,7 +171,7 @@ describe('DestinationService.getByPath', () => {
             })
             .build();
         asMock(modelMock.findByPath).mockResolvedValue(destination);
-        const actor = { id: 'user-1', role: RoleEnum.USER, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.USER], permissions: [] };
         const params: GetDestinationByPathInput = { path };
 
         // Act
@@ -197,7 +197,7 @@ describe('DestinationService.getByPath', () => {
         asMock(modelMock.findByPath).mockResolvedValue(destination);
         const actor = {
             id: 'staff-1',
-            role: RoleEnum.ADMIN,
+            roles: [RoleEnum.ADMIN],
             permissions: [PermissionEnum.DESTINATION_VIEW_ALL]
         };
         const params: GetDestinationByPathInput = { path };
@@ -212,7 +212,7 @@ describe('DestinationService.getByPath', () => {
 
     it('should return VALIDATION_ERROR for empty path', async () => {
         // Arrange
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params = { path: '' } as unknown as GetDestinationByPathInput;
 
         // Act
@@ -224,7 +224,7 @@ describe('DestinationService.getByPath', () => {
 
     it('should return VALIDATION_ERROR for path without leading slash', async () => {
         // Arrange
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params = { path: 'argentina/litoral' } as unknown as GetDestinationByPathInput;
 
         // Act
@@ -236,7 +236,7 @@ describe('DestinationService.getByPath', () => {
 
     it('should return VALIDATION_ERROR for path with uppercase characters', async () => {
         // Arrange
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params = { path: '/Argentina/Litoral' } as unknown as GetDestinationByPathInput;
 
         // Act
@@ -249,7 +249,7 @@ describe('DestinationService.getByPath', () => {
     it('should return INTERNAL_ERROR if model throws', async () => {
         // Arrange
         asMock(modelMock.findByPath).mockRejectedValue(new Error('DB error'));
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationByPathInput = { path: '/argentina' };
 
         // Act

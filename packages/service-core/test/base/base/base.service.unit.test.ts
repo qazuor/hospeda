@@ -30,7 +30,7 @@ describe('BaseService: runWithLoggingAndValidation', () => {
         const execute = vi.fn().mockResolvedValue('ok');
         const result = await service.runWithValidation({
             methodName: 'test',
-            input: { actor: { id: '1', role: RoleEnum.USER, permissions: [] }, foo: 'bar' },
+            input: { actor: { id: '1', roles: [RoleEnum.USER], permissions: [] }, foo: 'bar' },
             schema,
             execute
         });
@@ -43,7 +43,7 @@ describe('BaseService: runWithLoggingAndValidation', () => {
         const execute = vi.fn();
         const result = await service.runWithValidation({
             methodName: 'test',
-            input: { actor: { id: '1', role: RoleEnum.USER, permissions: [] }, foo: 123 },
+            input: { actor: { id: '1', roles: [RoleEnum.USER], permissions: [] }, foo: 123 },
             schema,
             execute
         });
@@ -56,7 +56,7 @@ describe('BaseService: runWithLoggingAndValidation', () => {
         const execute = vi.fn().mockRejectedValue(new Error('fail'));
         const result = await service.runWithValidation({
             methodName: 'test',
-            input: { actor: { id: '1', role: RoleEnum.USER, permissions: [] }, foo: 'bar' },
+            input: { actor: { id: '1', roles: [RoleEnum.USER], permissions: [] }, foo: 'bar' },
             schema,
             execute
         });
@@ -76,7 +76,7 @@ describe('BaseService: _getAndValidateEntity', () => {
         const entity = await service.getAndValidateEntity(
             model,
             '1',
-            { id: 'a', role: RoleEnum.USER, permissions: [] },
+            { id: 'a', roles: [RoleEnum.USER], permissions: [] },
             'TestEntity',
             permission
         );
@@ -89,7 +89,7 @@ describe('BaseService: _getAndValidateEntity', () => {
             service.getAndValidateEntity(
                 model,
                 '1',
-                { id: 'a', role: RoleEnum.USER, permissions: [] },
+                { id: 'a', roles: [RoleEnum.USER], permissions: [] },
                 'TestEntity'
             )
         ).rejects.toThrow(ServiceError);
@@ -103,7 +103,7 @@ describe('BaseService: _getAndValidateEntity', () => {
             service.getAndValidateEntity(
                 model,
                 '1',
-                { id: 'a', role: RoleEnum.USER, permissions: [] },
+                { id: 'a', roles: [RoleEnum.USER], permissions: [] },
                 'TestEntity',
                 permission
             )

@@ -9,7 +9,7 @@ import {
     normalizeViewInput
 } from '../../../src/services/accommodation/accommodation.normalizers';
 
-const testActor = { id: 'test', role: RoleEnum.ADMIN, permissions: [] };
+const testActor = { id: 'test', roles: [RoleEnum.ADMIN], permissions: [] };
 
 describe('Accommodation Normalizers', () => {
     it('normalizeCreateInput sets default visibility to PRIVATE if missing', () => {

@@ -57,7 +57,7 @@ const defaultPaginatedResult = { items: [], total: 0 };
 
 const mockAdminActor = {
     id: 'admin-1',
-    role: RoleEnum.SUPER_ADMIN,
+    roles: [RoleEnum.SUPER_ADMIN],
     permissions: Object.values(PermissionEnum)
 };
 
@@ -318,12 +318,12 @@ describe('AccommodationService: _executeAdminSearch override', () => {
     describe('forced owner-scoping (SPEC-169 §5.2)', () => {
         const viewOwnActor = {
             id: 'host-1',
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: [PermissionEnum.ACCOMMODATION_VIEW_OWN]
         };
         const viewAllActor = {
             id: 'admin-9',
-            role: RoleEnum.ADMIN,
+            roles: [RoleEnum.ADMIN],
             permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL]
         };
 

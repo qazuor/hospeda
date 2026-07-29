@@ -32,8 +32,8 @@ describe('UserService.hardDelete', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     const userId = getMockId('user', 'user-1') as string;
     const superAdmin = createSuperAdminActor();
-    const admin = createActor({ role: RoleEnum.ADMIN, permissions: [] });
-    const user = createActor({ role: RoleEnum.USER, permissions: [] });
+    const admin = createActor({ roles: [RoleEnum.ADMIN], permissions: [] });
+    const user = createActor({ roles: [RoleEnum.USER], permissions: [] });
     const inputId = userId;
 
     beforeEach(() => {
