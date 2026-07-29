@@ -359,6 +359,10 @@ function hasLocationSignal(entities: SearchIntentEntities | undefined): boolean 
  * @returns `true` when at least one location filter survived into the query.
  */
 function paramsHaveLocationFilter(params: AiSearchChatFiltersEvent['params']): boolean {
+    // TYPE-WORKAROUND: the params are typed as AccommodationSearchHttp, whose
+    // location fields are optional in a way TypeScript cannot narrow through a
+    // plain property probe here; this reads three known keys for presence only
+    // and never uses the values, so a loose record is the honest shape.
     const probe = params as unknown as Record<string, unknown>;
     return (
         probe.destinationId !== undefined ||
