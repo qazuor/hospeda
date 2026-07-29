@@ -179,6 +179,24 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('UserRolesCard (HOS-296)', () => {
+    it('REGRESSION: reads through /role-grants, not the write path /roles', async () => {
+        // Route middlewares are registered per PATH and are method-agnostic, so
+        // sharing `/roles` with the POST made the read demand
+        // `USER_UPDATE_ROLES` too — which `CLIENT_MANAGER` does not hold.
+        stubRoles(TWO_HATS);
+        renderCard();
+
+        await waitFor(() => {
+            expect(screen.getByText('admin-pages.access.roles.catalog.USER.name')).toBeTruthy();
+        });
+
+        const get = mockedFetchApi.mock.calls
+            .map(([args]) => args as { method?: string; path: string })
+            .find((args) => !args.method || args.method === 'GET');
+
+        expect(get?.path).toBe(`/api/v1/admin/users/${USER_ID}/role-grants`);
+    });
+
     it('renders EVERY held role, not a single value', async () => {
         stubRoles(TWO_HATS);
         renderCard();

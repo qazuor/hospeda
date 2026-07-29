@@ -297,19 +297,20 @@ describe('Actor permission resolution — multi-role union (HOS-296 AC-3)', () =
         expect(mockGetUserPermissionsWithEffect).not.toHaveBeenCalled();
     });
 
-    it('falls back to [USER] when the account holds no role at all', async () => {
+    it('returns 503 when the account holds no role at all, instead of degrading to [USER]', async () => {
         // A data-integrity failure, not a legitimate state: signup grants the
-        // baseline hat and `revokeRole` refuses to remove the last one.
-        // Resolving to an EMPTY set here would silently strip every permission,
-        // so the middleware substitutes the baseline instead.
+        // baseline hat and `revokeRole` refuses to remove the last one. On a
+        // database with the table but no rows, degrading to [USER] would turn
+        // EVERY account — super admins included — into a plain USER with no
+        // in-app route to self-repair, which is exactly the outcome the
+        // fail-loud policy exists to prevent.
         mockGetUserRoles.mockResolvedValue([]);
         mockGetPermissionsForRoles.mockResolvedValue([P3]);
 
-        const { roles, permissions } = await resolveActor(createAuthUser());
+        const res = await createTestApp(createAuthUser()).request('/test');
 
-        expect(roles).toEqual([RoleEnum.USER]);
-        expect(mockGetPermissionsForRoles).toHaveBeenCalledWith({ roles: [RoleEnum.USER] });
-        expect(permissions).toEqual([P3]);
+        expect(res.status).toBe(503);
+        expect(mockGetPermissionsForRoles).not.toHaveBeenCalled();
     });
 
     it('returns 503 when the user_role read fails, instead of an actor with no hats', async () => {

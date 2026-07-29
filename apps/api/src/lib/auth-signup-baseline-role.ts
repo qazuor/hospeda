@@ -26,10 +26,15 @@ import { apiLogger } from '../utils/logger';
  * `users` row is committed, so throwing does not roll it back — the caller
  * gets a 500 while the email stays taken and cannot be re-registered. Removing
  * the row first turns that into a clean, retryable failure, mirroring
- * `routes/auth/signup-as-host.ts`. Log-and-continue was rejected: it would lean
- * on `actorMiddleware`'s `[USER]` fallback, which exists as a data-integrity
- * siren (it warns on every single request) and not as a supported steady state,
- * and would leave an account with no `user_role` rows for an operator to see.
+ * `routes/auth/signup-as-host.ts`. Log-and-continue was rejected: `actorMiddleware`
+ * treats a zero-role account as an outage and answers 503 on every authenticated
+ * request, so the account would be able to sign in and then hit a wall on every
+ * page with nothing an operator could self-serve.
+ *
+ * `routes/user/admin/create.ts` faces the same insert-then-grant problem and
+ * solves it with a real transaction instead. It can, because that route owns the
+ * whole unit of work; this hook cannot, because Better Auth commits the `users`
+ * row before `user.create.after` is ever called.
  *
  * A failed cleanup is logged and swallowed so the original error — the one that
  * explains what actually went wrong — is what propagates.

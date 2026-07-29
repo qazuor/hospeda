@@ -12,7 +12,8 @@ import { useMemo } from 'react';
 import type { EntityPageHeaderMedia } from '@/components/entity-header/EntityPageHeader';
 import { Badge } from '@/components/ui/badge';
 import { useUserRoles } from '@/features/users/hooks/useUserRoles';
-import { getRoleLabel } from '../config/sections/role-permissions.consolidated';
+import { buildRoleLabelKey } from '@/features/users/utils/role-label';
+import { useTranslations } from '@/hooks/use-translations';
 
 export interface UseUserHeaderPropsArgs {
     /** The user entity returned by `useUserPage`; `undefined` while loading. */
@@ -23,7 +24,7 @@ export interface UseUserHeaderPropsArgs {
      * HOS-296: the roles do NOT travel on the user entity. `UserPublicSchema`
      * declares `roles` with a `.default([])`, but no read path resolves it, so
      * reading `entity.roles` produced a permanently blank subtitle. They live
-     * in `user_role` and come from `GET /admin/users/:id/roles`, the same
+     * in `user_role` and come from `GET /admin/users/:id/role-grants`, the same
      * endpoint `UserRolesCard` uses — so this is a cache hit, not a second
      * request, whenever the roles tab has already loaded.
      */
@@ -36,9 +37,19 @@ export interface UserHeaderProps {
     /**
      * Comma-joined labels for every role the user holds (e.g. "Anfitrión,
      * Editor") — HOS-296: an account can hold multiple hats, so this is never
-     * a single "primary" role. `undefined` when no roles are known.
+     * a single "primary" role. `undefined` while the roles are still loading;
+     * an explicit error label when the read FAILED (see {@link rolesFailed}).
      */
     readonly subtitle: string | undefined;
+    /**
+     * `true` when the role read failed (permissions, network, server).
+     *
+     * Surfaced instead of collapsing into the same `undefined` subtitle as
+     * "still loading": a 403 rendered as a blank header is indistinguishable
+     * from a slow request, has no error, no log and no compile failure — the
+     * exact silent-blank symptom this header was fixed to remove.
+     */
+    readonly rolesFailed: boolean;
     /** Stack of status badges (lifecycle state, etc.). */
     readonly badges: ReactNode;
 }
@@ -47,11 +58,14 @@ export const useUserHeaderProps = ({
     entity,
     userId
 }: UseUserHeaderPropsArgs): UserHeaderProps => {
-    const { data: roleGrants } = useUserRoles(userId ?? '', { enabled: Boolean(userId) });
+    const { t } = useTranslations();
+    const { data: roleGrants, isError: rolesFailed } = useUserRoles(userId ?? '', {
+        enabled: Boolean(userId)
+    });
 
     return useMemo<UserHeaderProps>(() => {
         if (!entity) {
-            return { media: undefined, subtitle: undefined, badges: null };
+            return { media: undefined, subtitle: undefined, rolesFailed, badges: null };
         }
 
         const displayName =
@@ -74,10 +88,16 @@ export const useUserHeaderProps = ({
         // ---- Subtitle (role labels) -----------------------------------------
         // HOS-296: `entity.role` (single scalar) is gone and the entity carries
         // no resolved role set either, so the labels come from the dedicated
-        // roles endpoint. Render the FULL held set, not one "primary" role.
+        // role-grants endpoint. Render the FULL held set, not one "primary"
+        // role. Labels resolve through `@repo/i18n` via the shared
+        // `buildRoleLabelKey`, the same catalogue `UserRolesCard` reads.
         const roles = roleGrants?.roles ?? [];
-        const subtitle =
-            roles.length > 0 ? roles.map((entry) => getRoleLabel(entry.role)).join(', ') : undefined;
+        let subtitle: string | undefined;
+        if (rolesFailed) {
+            subtitle = t('admin-pages.access.users.roles.error');
+        } else if (roles.length > 0) {
+            subtitle = roles.map((entry) => t(buildRoleLabelKey({ role: entry.role }))).join(', ');
+        }
 
         // ---- Badges (lifecycle state) -------------------------------------
         const lifecycleState = entity.lifecycleState as string | undefined;
@@ -87,8 +107,8 @@ export const useUserHeaderProps = ({
             </Badge>
         ) : null;
 
-        return { media, subtitle, badges };
-    }, [entity, roleGrants]);
+        return { media, subtitle, rolesFailed, badges };
+    }, [entity, roleGrants, rolesFailed, t]);
 };
 
 // ---------------------------------------------------------------------------

@@ -23,7 +23,6 @@
  * @module features/users/components/roles/UserRolesCard
  */
 
-import type { TranslationKey } from '@repo/i18n';
 import { AddIcon, DeleteIcon, UserSwitchIcon } from '@repo/icons';
 import { LAST_ROLE_REVOKE_REASON, NON_ASSIGNABLE_ROLES, RoleEnum } from '@repo/schemas';
 import { useMemo, useState } from 'react';
@@ -55,6 +54,7 @@ import {
     useRevokeUserRole,
     useUserRoles
 } from '@/features/users/hooks/useUserRoles';
+import { buildRoleLabelKey } from '@/features/users/utils/role-label';
 import { useTranslations } from '@/hooks/use-translations';
 import { isApiError } from '@/lib/errors';
 import { formatDateWithTime } from '@/lib/format-helpers';
@@ -97,9 +97,14 @@ export function UserRolesCard({ userId }: UserRolesCardProps) {
         );
     }, [heldRoles]);
 
-    /** Human label for a role, reusing the existing role-catalog i18n keys. */
-    const roleLabel = (role: RoleEnum): string =>
-        t(`admin-pages.access.roles.catalog.${role}.name` as TranslationKey);
+    /**
+     * Human label for a role.
+     *
+     * The key comes from the shared `buildRoleLabelKey` helper so this card and
+     * the page header cannot drift apart — they used to read two different
+     * catalogues for the same roles on the same screen.
+     */
+    const roleLabel = (role: RoleEnum): string => t(buildRoleLabelKey({ role }));
 
     /**
      * Turns a failed mutation into a message an operator can read.

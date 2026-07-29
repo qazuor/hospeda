@@ -722,6 +722,17 @@
                         "cap5": "Contatar anfitriões"
                     }
                 },
+                "COMMERCE_OWNER": {
+                    "name": "Dono de Comércio",
+                    "description": "Titular de um comércio que gerencia seu próprio perfil comercial",
+                    "capabilities": {
+                        "cap1": "Gerenciar seu perfil comercial",
+                        "cap2": "Atualizar horários e contato",
+                        "cap3": "Enviar fotos",
+                        "cap4": "Responder avaliações",
+                        "cap5": "Ver análises do seu comércio"
+                    }
+                },
                 "SPONSOR": {
                     "name": "Patrocinador",
                     "description": "Empresa externa com acesso a gerenciamento e análises de patrocínios",

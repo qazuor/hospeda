@@ -9,18 +9,25 @@
  * ## What the structural migration leaves behind
  *
  * `packages/db/src/migrations/0069_mushy_captain_america.sql` backfills
- * `user_role` from `users.role` — a **straight copy**, one row per user, per
- * spec §6.6. That is right for real accounts, but the dev/test fixtures were
- * never single-hatted; the seed code now grants them SETS:
+ * `user_role` from `users.role` in TWO statements, per spec §6.6: the declared
+ * scalar copied verbatim, plus the baseline `USER` hat for every account except
+ * the reserved `SYSTEM` one. So `{USER, <declared>}` is already what 0069
+ * produces, and this migration does NOT exist to add the missing baseline.
  *
- * | Fixture | Set the baseline seeds grant | What the 0069 copy alone produces |
+ * What 0069 cannot fix is a scalar that had already DRIFTED. It copies whatever
+ * `users.role` says, and the G-6 bug (`_assignHostRoleIfNeeded` overwriting the
+ * scalar on accommodation activation) may have replaced a fixture's declared
+ * hat with `HOST` long before the migration ran:
+ *
+ * | Fixture | Set the baseline seeds grant | What 0069 produces on a drifted row |
  * |---|---|---|
- * | 3 gastronomy commerce owners | `{USER, COMMERCE_OWNER}` | `{COMMERCE_OWNER}` — missing `USER` |
- * | `e2e-tourist@local.test` | `{USER}` | `{USER}` — already correct |
- * | 13 `*@local.test` test users | `{USER, <declared>}` | `{whatever the scalar last said}` |
+ * | 3 gastronomy commerce owners | `{USER, COMMERCE_OWNER}` | `{USER, HOST}` — `COMMERCE_OWNER` lost |
+ * | `e2e-tourist@local.test` | `{USER}` | `{USER, HOST}` — an extra hat AC-11 depends on being absent |
+ * | 13 `*@local.test` test users | `{USER, <declared>}` | `{USER, whatever the scalar last said}` |
  *
  * This migration converges each fixture onto the same set its seed produces
- * today.
+ * today: it re-grants the declared hat where drift destroyed it, and (in
+ * `exact-set` mode) revokes the hat drift added.
  *
  * ## AC-11 is why this is not cosmetic
  *
@@ -46,8 +53,8 @@
  * For the 13 test users the old scalar drift-heal (`update(users, { role })`)
  * became a SET sync: grant `{USER, declared}`, then revoke anything else. A
  * `tourist-*` fixture whose scalar had drifted to `HOST` (the host-onboarding
- * funnel used to overwrite it) is copied by 0069 as `{HOST}`, and only the
- * revoke restores the predictable baseline the smoke matrix depends on.
+ * funnel used to overwrite it) is copied by 0069 as `{USER, HOST}`, and only
+ * the revoke restores the predictable baseline the smoke matrix depends on.
  * Ordering matters: `USER` is granted first, so a revoke can never trip
  * `revokeRole`'s last-role guard (AC-5).
  *

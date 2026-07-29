@@ -41,8 +41,8 @@ CREATE INDEX "userRoleAudit_by_idx" ON "user_role_audit" USING btree ("by");--> 
 --
 -- 1. The declared scalar, copied verbatim (`grant_reason =
 --    'migrated_from_users_role'`).
--- 2. The baseline `USER` hat for EVERY account (`grant_reason =
---    'migrated_baseline_user'`).
+-- 2. The baseline `USER` hat for every account EXCEPT the reserved `SYSTEM`
+--    one (`grant_reason = 'migrated_baseline_user'`).
 --
 -- Statement 2 is not a widening for its own sake — without it the migrated
 -- shape does not match what the platform now PRODUCES, and two live behaviours
@@ -61,11 +61,18 @@ CREATE INDEX "userRoleAudit_by_idx" ON "user_role_audit" USING btree ("by");--> 
 -- produce today, so a migrated database and a freshly-seeded one converge.
 -- `USER`-scalar accounts collapse to a single row via the primary key.
 --
--- `SYSTEM` and `GUEST` are NOT special-cased: `GUEST` is synthesised in-memory
--- for anonymous requests and never stored, and the one `SYSTEM` account is
--- non-loginable (banned, no `accounts` row), so granting it `USER` changes
--- nothing it can do. Special-casing them would add a branch whose only effect
--- is on rows that cannot authenticate.
+-- `GUEST` is not special-cased: it is synthesised in-memory for anonymous
+-- requests and never stored, so no row can carry it.
+--
+-- `SYSTEM` IS special-cased, and the exclusion is declarative (`WHERE "role" <>
+-- 'SYSTEM'`) so it needs no hard-coded id. `systemUser.seed.ts` grants the
+-- reserved account exactly `{SYSTEM}`; without this filter a MIGRATED database
+-- would hold `{SYSTEM, USER}` and a FRESH one `{SYSTEM}` — the convergence this
+-- whole backfill exists to guarantee. The divergence is not inert: `revokeRole`
+-- only refuses an account's LAST hat, so on a migrated environment
+-- `DELETE /admin/users/{SYSTEM_USER_ID}/roles/SYSTEM` would succeed and strip
+-- the reserved account's hat, while the identical call is correctly refused on
+-- a fresh one.
 --
 -- Soft-deleted accounts (`deleted_at IS NOT NULL`) are copied too: restoring an
 -- account has to give it its capabilities back, and the `deletedAt` /
@@ -93,5 +100,6 @@ ON CONFLICT ("user_id", "role") DO NOTHING;--> statement-breakpoint
 INSERT INTO "user_role" ("user_id", "role", "granted_by", "grant_reason")
 SELECT "id", 'USER'::"role_enum", NULL::uuid, 'migrated_baseline_user'
 FROM "users"
+WHERE "role" <> 'SYSTEM'::"role_enum"
 ON CONFLICT ("user_id", "role") DO NOTHING;--> statement-breakpoint
 ALTER TABLE "users" DROP COLUMN "role";

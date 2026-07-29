@@ -47,11 +47,6 @@ import {
 } from '@repo/schemas';
 import type { ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
-import {
-    invalidateUserRolesCache,
-    readCachedUserRoles,
-    writeCachedUserRoles
-} from './user-role.cache.js';
 
 /** Input for {@link grantRole} — the schema shape plus the optional context. */
 export type GrantRoleParams = GrantRoleInput & {
@@ -208,13 +203,6 @@ export const grantRole = async (params: GrantRoleParams): Promise<ServiceOutput<
         return { data: undefined };
     } catch (error) {
         return toErrorOutput({ error, ctx, fallbackMessage: 'Failed to grant role' });
-    } finally {
-        // Invalidate here, not at the call sites: every writer goes through
-        // this primitive, so a per-route invalidation would silently miss the
-        // crons, the seeds and the data-migrations. Runs on the failure path
-        // too — an unnecessary re-query is strictly cheaper than serving a
-        // stale role set.
-        invalidateUserRolesCache({ userId });
     }
 };
 
@@ -314,9 +302,6 @@ export const revokeRole = async (params: RevokeRoleParams): Promise<ServiceOutpu
         return { data: undefined };
     } catch (error) {
         return toErrorOutput({ error, ctx, fallbackMessage: 'Failed to revoke role' });
-    } finally {
-        // Same rationale as `grantRole` — see the note there.
-        invalidateUserRolesCache({ userId });
     }
 };
 
@@ -328,17 +313,31 @@ export const revokeRole = async (params: RevokeRoleParams): Promise<ServiceOutpu
  * two-line query across services is exactly how the three divergent permission
  * resolvers in §5.2 came to exist.
  *
- * Non-transactional reads go through a short-lived process-local cache
- * (`user-role.cache.ts`, 60s) because `actorMiddleware` calls this on EVERY
- * authenticated request. Reads that carry a `ctx.tx` bypass the cache in both
- * directions: a value read inside a transaction may be rolled back and must
- * never outlive it. Both write primitives invalidate the entry, so the TTL
- * only ever covers writes performed by a DIFFERENT process — see the cache
- * module for the multi-instance caveat.
+ * This read is UNCACHED, deliberately. `actorMiddleware` calls it on every
+ * authenticated request, so a process-local cache was tried (60s TTL,
+ * invalidated by `grantRole`/`revokeRole`) and REMOVED again, because it was
+ * not correct:
+ *
+ * - `withTransaction` short-circuits on an existing transaction, so when a
+ *   caller passes `ctx.tx` the write primitives return with that transaction
+ *   still OPEN. Invalidating there fires BEFORE the commit, and a concurrent
+ *   non-transactional read (this middleware, on every request) immediately
+ *   re-populates the entry with the pre-commit set. Nothing invalidates after
+ *   the commit, so the stale set is served for the whole TTL. Four callers
+ *   pass `ctx.tx` today, including the `archive-abandoned-drafts` cron — where
+ *   the symptom is a privilege RETAINED past a revoke.
+ * - Stale roles after a grant is the exact failure mode for which Better
+ *   Auth's `customSession` was rejected in HOS-296 OQ-4. Trading it back in to
+ *   save one indexed `SELECT` inverts that decision.
+ *
+ * Do NOT reintroduce a cache without first solving POST-COMMIT invalidation
+ * (a transaction-completion hook, or invalidation owned by the outermost
+ * caller). The per-request cost of this query is an explicit, measurable
+ * decision — not an accident.
  *
  * @param params.userId - User whose hats to read.
  * @param params.ctx - Optional caller context; `ctx.tx` reads through their
- *   transaction and skips the cache entirely.
+ *   transaction.
  * @returns Every role held by the user, in no guaranteed order. Empty when the
  *   user does not exist.
  */
@@ -347,13 +346,6 @@ export const getUserRoles = async (params: {
     ctx?: ServiceContext;
 }): Promise<readonly RoleEnum[]> => {
     const { userId, ctx } = params;
-
-    if (!ctx?.tx) {
-        const cached = readCachedUserRoles({ userId });
-        if (cached) {
-            return cached;
-        }
-    }
 
     const db = ctx?.tx ?? getDb();
 
@@ -365,13 +357,7 @@ export const getUserRoles = async (params: {
     // `role_enum` is generated from `RoleEnum` (see enums.dbschema.ts), but
     // Drizzle widens the pgEnum tuple to `string`, so the narrowing is ours to
     // assert rather than something the column type carries.
-    const roles = rows.map((row) => row.role as RoleEnum);
-
-    if (!ctx?.tx) {
-        writeCachedUserRoles({ userId, roles });
-    }
-
-    return roles;
+    return rows.map((row) => row.role as RoleEnum);
 };
 
 /**

@@ -16,9 +16,31 @@
  * @module test/cron/archive-abandoned-drafts.host-revoke.test
  */
 
-import { RoleEnum } from '@repo/schemas';
+import { LAST_ROLE_REVOKE_REASON, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { shouldRevokeHostHat } from '../../src/cron/jobs/archive-abandoned-drafts.job';
+import {
+    isLastRoleRevokeRefusal,
+    shouldRevokeHostHat
+} from '../../src/cron/jobs/archive-abandoned-drafts.job';
+
+/**
+ * Builds an error shaped exactly like the real `ServiceError`.
+ *
+ * Constructed here rather than imported: the API test harness substitutes its
+ * own `ServiceError` class for `@repo/service-core`'s, which drops the fourth
+ * `reason` constructor argument — the very field under test. That substitution
+ * is also why the predicate duck-types instead of using `instanceof`.
+ */
+const buildServiceError = (params: {
+    code: string;
+    message: string;
+    reason?: string;
+}): Error & { code: string; reason?: string } =>
+    Object.assign(new Error(params.message), {
+        name: 'ServiceError',
+        code: params.code,
+        reason: params.reason
+    });
 
 describe('shouldRevokeHostHat', () => {
     it('revokes when the owner holds HOST alongside another hat', () => {
@@ -56,5 +78,44 @@ describe('shouldRevokeHostHat', () => {
         expect(shouldRevokeHostHat({ heldRoles: [RoleEnum.USER, RoleEnum.HOST, otherHat] })).toBe(
             true
         );
+    });
+});
+
+describe('isLastRoleRevokeRefusal', () => {
+    it('recognises the last-role refusal by its machine-readable reason', () => {
+        // `shouldRevokeHostHat` reads without a lock; `revokeRole` then takes
+        // `SELECT ... FOR UPDATE`. A concurrent writer removing the owner's
+        // OTHER hat in that window turns "safe to revoke" into a refusal, and
+        // because the job passes `ctx.tx` the refusal is THROWN. Uncaught, it
+        // escapes the job's transaction and rolls back every draft archived in
+        // the run — not just this owner's.
+        const error = buildServiceError({
+            code: ServiceErrorCode.VALIDATION_ERROR,
+            message: "Cannot revoke role 'HOST': it is the last role held by user '<uuid>'.",
+            reason: LAST_ROLE_REVOKE_REASON
+        });
+
+        expect(isLastRoleRevokeRefusal({ error })).toBe(true);
+    });
+
+    it('does NOT swallow an unrelated ServiceError that merely shares the code', () => {
+        // Catching too widely would turn a real outage into a silent
+        // `owner_demotion_skipped` log line.
+        const error = buildServiceError({
+            code: ServiceErrorCode.VALIDATION_ERROR,
+            message: 'Invalid revokeRole input.'
+        });
+
+        expect(isLastRoleRevokeRefusal({ error })).toBe(false);
+    });
+
+    it.each([
+        ['a plain Error carrying the same words', new Error('it is the last role held by user')],
+        ['a non-Error value', 'boom'],
+        ['undefined', undefined]
+    ])('does NOT match %s', (_label, error) => {
+        // Pinned deliberately: matching on message text would both break on
+        // rewording and leak the subject's UUID to whatever consumed it.
+        expect(isLastRoleRevokeRefusal({ error })).toBe(false);
     });
 });

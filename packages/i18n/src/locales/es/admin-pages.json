@@ -722,6 +722,17 @@
                         "cap5": "Contactar anfitriones"
                     }
                 },
+                "COMMERCE_OWNER": {
+                    "name": "Dueño de Comercio",
+                    "description": "Titular de un comercio que gestiona su propia ficha comercial",
+                    "capabilities": {
+                        "cap1": "Gestionar su ficha comercial",
+                        "cap2": "Actualizar horarios y contacto",
+                        "cap3": "Subir fotos",
+                        "cap4": "Responder reseñas",
+                        "cap5": "Ver analíticas de su comercio"
+                    }
+                },
                 "SPONSOR": {
                     "name": "Patrocinador",
                     "description": "Empresa externa con acceso a gestión y analíticas de patrocinios",

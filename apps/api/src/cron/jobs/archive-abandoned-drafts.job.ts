@@ -26,7 +26,12 @@
  */
 
 import { accommodations, and, eq, isNull, lt, lte, sql, withTransaction } from '@repo/db';
-import { LifecycleStatusEnum, RoleEnum, RoleGrantReason } from '@repo/schemas';
+import {
+    LAST_ROLE_REVOKE_REASON,
+    LifecycleStatusEnum,
+    RoleEnum,
+    RoleGrantReason
+} from '@repo/schemas';
 import { getUserRoles, revokeRole } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { inArray, ne } from 'drizzle-orm';
@@ -67,6 +72,37 @@ export const shouldRevokeHostHat = (params: { heldRoles: readonly RoleEnum[] }):
     const { heldRoles } = params;
     return heldRoles.includes(RoleEnum.HOST) && heldRoles.length > 1;
 };
+
+/**
+ * Recognises `revokeRole`'s last-role refusal (AC-5) among arbitrary errors.
+ *
+ * {@link shouldRevokeHostHat} reads WITHOUT a lock while `revokeRole` takes
+ * `SELECT ... FOR UPDATE`, so a concurrent writer removing the owner's OTHER
+ * hat in between turns a "safe to revoke" verdict into a refusal. Because the
+ * job passes `ctx.tx`, `revokeRole` RE-THROWS rather than returning
+ * `{ error }`; left uncaught that escapes the job's own `withTransaction` and
+ * rolls back EVERY draft archived in the run, not just this owner's.
+ *
+ * Extracted as a pure predicate because the loop around it needs a live
+ * database, and because the discrimination itself is what must not regress:
+ * matching on the message would both break on rewording AND leak the subject's
+ * UUID into whatever consumed it.
+ *
+ * Duck-typed on `reason` rather than `instanceof ServiceError` on purpose.
+ * `LAST_ROLE_REVOKE_REASON` is a unique constant, so the property alone is a
+ * sufficient discriminator, and `instanceof` would additionally require the
+ * thrower and this module to have resolved the SAME `@repo/service-core`
+ * instance — which is not guaranteed (src-aliased vs `dist/`, and the API test
+ * harness substitutes its own `ServiceError` class). Getting that wrong here
+ * fails OPEN: the refusal escapes and rolls back the whole run.
+ *
+ * @param params.error - The caught error.
+ * @returns `true` when it is the last-role refusal, not an unrelated failure.
+ */
+export const isLastRoleRevokeRefusal = (params: { error: unknown }): boolean =>
+    typeof params.error === 'object' &&
+    params.error !== null &&
+    (params.error as { reason?: unknown }).reason === LAST_ROLE_REVOKE_REASON;
 
 const safeReportToSentry = (
     error: unknown,
@@ -298,15 +334,42 @@ export const archiveAbandonedDraftsJob: CronJobDefinition = {
                             continue;
                         }
 
-                        const revoked = await revokeRole({
-                            userId: ownerId,
-                            role: RoleEnum.HOST,
-                            revokedBy: null,
-                            reason: RoleGrantReason.LAST_ACCOMMODATION_ARCHIVED,
-                            ctx: { tx }
-                        });
-                        if (revoked.error) {
-                            throw revoked.error;
+                        // The `shouldRevokeHostHat` pre-check above reads WITHOUT
+                        // a lock; `revokeRole` then takes `SELECT ... FOR UPDATE`.
+                        // A concurrent writer removing the owner's OTHER hat in
+                        // that window makes HOST the last one and trips the
+                        // last-role guard. Because `ctx.tx` is set, `revokeRole`
+                        // RE-THROWS instead of returning `{ error }`, so an
+                        // uncaught guard trip would escape this job's
+                        // `withTransaction` and roll back EVERY draft archived in
+                        // the run — not just this owner. Catching it here keeps
+                        // the outcome identical to the pre-check's own verdict:
+                        // skipped, not failed (see the note above).
+                        try {
+                            const revoked = await revokeRole({
+                                userId: ownerId,
+                                role: RoleEnum.HOST,
+                                revokedBy: null,
+                                reason: RoleGrantReason.LAST_ACCOMMODATION_ARCHIVED,
+                                ctx: { tx }
+                            });
+                            if (revoked.error) {
+                                throw revoked.error;
+                            }
+                        } catch (error) {
+                            // Matched on the machine-readable `reason`, never on
+                            // the message — the message embeds the owner's UUID.
+                            if (isLastRoleRevokeRefusal({ error })) {
+                                logger.info('Skipped owner HOST revoke', {
+                                    source: LOG_SOURCE,
+                                    event: 'owner_demotion_skipped',
+                                    ownerId,
+                                    heldRoles: [...heldRoles],
+                                    reason: 'host_became_only_role'
+                                });
+                                continue;
+                            }
+                            throw error;
                         }
 
                         demoted += 1;

@@ -64,17 +64,34 @@ const isMockActorAllowed = (): boolean => {
  *   the exact shape of a cache-poisoning bug.
  *
  * So a failed role read is an outage, surfaced as a retryable 503 rather than
- * as a quietly downgraded session. `getUserRoles` is cached (60s), so a blip
- * does not translate into one 503 per request for the same user once a value
- * has been resolved.
+ * as a quietly downgraded session.
+ *
+ * An EMPTY result is treated identically to a failed one. Zero rows is a data
+ * bug, never a legitimate state — signup grants the baseline `USER` hat and
+ * `revokeRole` refuses to remove the last one — and falling back to `[USER]`
+ * would produce exactly the outcome this policy exists to prevent: on a
+ * database that has the `user_role` table but no rows (a documented state in
+ * the backfill runbook, and one Drizzle will not re-migrate), EVERY signed-in
+ * account, super admins included, would silently become a plain `USER` and
+ * lock itself out of the admin panel with no in-app route to self-repair.
+ *
+ * KNOWN TRADE-OFF (deliberately not fixed here): `actorMiddleware` is global,
+ * so this policy also reaches `/api/v1/public/*`. A transient failure therefore
+ * serves 503 to signed-in visitors on public pages while anonymous ones are
+ * unaffected. Narrowing the middleware's scope so public routes resolve a guest
+ * actor instead is an architectural change out of scope for HOS-296; the
+ * fail-loud identity guarantee was judged the more important of the two.
  *
  * @param params.userId - Authenticated user id.
- * @returns Every role the user holds.
- * @throws {HTTPException} 503 when the role set cannot be resolved.
+ * @returns Every role the user holds; never empty.
+ * @throws {HTTPException} 503 when the role set cannot be resolved, or resolves
+ *   to an empty set.
  */
 const resolveHeldRoles = async (params: { userId: string }): Promise<readonly RoleEnum[]> => {
+    let roles: readonly RoleEnum[];
+
     try {
-        return await getUserRoles({ userId: params.userId });
+        roles = await getUserRoles({ userId: params.userId });
     } catch (error) {
         apiLogger.error(
             `Failed to resolve the role set for user ${params.userId}: ${
@@ -83,6 +100,15 @@ const resolveHeldRoles = async (params: { userId: string }): Promise<readonly Ro
         );
         throw new HTTPException(503, { message: 'Service temporarily unavailable' });
     }
+
+    if (roles.length === 0) {
+        apiLogger.error(
+            `User ${params.userId} holds no roles in user_role. This is a data integrity problem — every account must hold at least the baseline ${RoleEnum.USER} hat. Refusing to degrade to a partial identity.`
+        );
+        throw new HTTPException(503, { message: 'Service temporarily unavailable' });
+    }
+
+    return roles;
 };
 
 /**
@@ -188,31 +214,21 @@ export const actorMiddleware = (): MiddlewareHandler => {
                 // `GET /api/v1/public/auth/me`, which is the one contract every
                 // downstream consumer reads (HOS-296 OQ-4, actor-only).
                 //
+                // The read is UNCACHED and runs once per authenticated
+                // request. A 60s process-local cache was tried and removed —
+                // see `getUserRoles`' JSDoc for why (pre-commit invalidation).
+                //
                 // An account with zero rows is a data bug, not a legitimate
-                // state — signup grants the baseline USER hat and `revokeRole`
-                // refuses to remove the last one — but resolving to an EMPTY
-                // set here would silently strip every permission instead of
-                // failing, so we fall back to USER and log it loudly.
+                // state, and is treated as an outage rather than degraded to
+                // `[USER]`. Failure policy, including the empty-set case and
+                // its public-route trade-off: see `resolveHeldRoles`.
                 //
                 // TEST-ONLY short-circuit: when the mock-auth middleware
                 // fabricated the session user it also fabricated its hats,
                 // because that user has no `user_role` rows to read.
-                //
-                // The read is cached per user for 60s (see
-                // `user-role.cache.ts`) and invalidated by `grantRole` /
-                // `revokeRole` themselves, so this global middleware does not
-                // add a DB round-trip to every authenticated request while a
-                // grant still takes effect immediately on this instance.
-                // Failure policy: see `resolveHeldRoles`.
                 const mockRoles = c.get('mockUserRoles');
-                const heldRoles = mockRoles ?? (await resolveHeldRoles({ userId: user.id }));
-                let userRoles: readonly RoleEnum[] = heldRoles;
-                if (userRoles.length === 0) {
-                    apiLogger.warn(
-                        `User ${user.id} holds no roles in user_role; falling back to ${RoleEnum.USER}. This is a data integrity problem — every account must hold at least the baseline hat.`
-                    );
-                    userRoles = [RoleEnum.USER];
-                }
+                const userRoles: readonly RoleEnum[] =
+                    mockRoles ?? (await resolveHeldRoles({ userId: user.id }));
 
                 // Better Auth maps its virtual `name` field to `display_name`
                 // (see apps/api/src/lib/auth.ts: user.fields.name = 'displayName')

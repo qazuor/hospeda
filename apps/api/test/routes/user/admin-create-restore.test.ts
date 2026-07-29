@@ -30,13 +30,32 @@ const { capturedHandlers } = vi.hoisted(() => ({
     >()
 }));
 
-const { auditLogSpy, mockCreate, mockRestore, mockGetById, mockGrantRole } = vi.hoisted(() => ({
-    auditLogSpy: vi.fn(),
-    mockCreate: vi.fn(),
-    mockRestore: vi.fn(),
-    mockGetById: vi.fn(),
-    mockGrantRole: vi.fn()
-}));
+const {
+    auditLogSpy,
+    mockCreate,
+    mockRestore,
+    mockGetById,
+    mockGrantRole,
+    mockWithServiceTransaction,
+    TX_CTX
+} = vi.hoisted(() => {
+    /** Stand-in for the ctx `withServiceTransaction` hands its callback. */
+    const txCtx = { tx: { __tx: true }, hookState: {} };
+    return {
+        auditLogSpy: vi.fn(),
+        mockCreate: vi.fn(),
+        mockRestore: vi.fn(),
+        mockGetById: vi.fn(),
+        mockGrantRole: vi.fn(),
+        // Runs the callback inline with a fixed ctx. A throw from the callback
+        // propagates, which is exactly what makes the REAL implementation roll
+        // the transaction back.
+        mockWithServiceTransaction: vi.fn(
+            async (fn: (ctx: typeof txCtx) => Promise<unknown>) => await fn(txCtx)
+        ),
+        TX_CTX: txCtx
+    };
+});
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -86,6 +105,7 @@ vi.mock('@repo/service-core', () => ({
         };
     }),
     grantRole: mockGrantRole,
+    withServiceTransaction: mockWithServiceTransaction,
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,
@@ -172,6 +192,9 @@ describe('Admin user create and restore routes - audit log [SPEC-026 GAP-009]', 
         vi.clearAllMocks();
         mockGetActorFromContext.mockReturnValue(ADMIN_ACTOR);
         mockGrantRole.mockResolvedValue({ data: undefined });
+        mockWithServiceTransaction.mockImplementation(
+            async (fn: (ctx: typeof TX_CTX) => Promise<unknown>) => await fn(TX_CTX)
+        );
     });
 
     afterEach(() => {
@@ -299,6 +322,70 @@ describe('Admin user create and restore routes - audit log [SPEC-026 GAP-009]', 
             await expect(handler(ctx, {}, { email: 'user@example.com' })).rejects.toThrow(
                 /grant exploded/
             );
+        });
+
+        it('runs the insert AND the grant in ONE transaction, so a failed grant rolls the account back', async () => {
+            // Without a shared boundary, `userService.create` has already
+            // committed by the time `grantRole` runs: a failed grant leaves an
+            // account with zero roles and the email address permanently taken
+            // — the same class of bug the signup hook has to compensate for
+            // with a DELETE.
+            mockCreate.mockResolvedValue({ data: CREATED_USER, error: undefined });
+            const handler = getHandler('/');
+            const ctx = buildMockContext() as unknown as Context;
+
+            await handler(ctx, {}, { email: 'user@example.com' });
+
+            expect(mockWithServiceTransaction).toHaveBeenCalledTimes(1);
+            // Both writes carry the SAME ctx — a grant enlisted in a different
+            // boundary could not be rolled back by the insert's.
+            expect(mockCreate.mock.calls[0]?.[2]).toBe(TX_CTX);
+            expect(mockGrantRole).toHaveBeenCalledWith(
+                expect.objectContaining({ ctx: TX_CTX })
+            );
+        });
+
+        it('propagates the grant failure OUT of the transaction callback (what triggers the rollback)', async () => {
+            mockCreate.mockResolvedValue({ data: CREATED_USER, error: undefined });
+            mockGrantRole.mockResolvedValue({
+                error: { code: 'INTERNAL_ERROR', message: 'grant exploded' }
+            });
+            const handler = getHandler('/');
+            const ctx = buildMockContext() as unknown as Context;
+
+            let callbackThrew = false;
+            mockWithServiceTransaction.mockImplementation(
+                async (fn: (txCtx: typeof TX_CTX) => Promise<unknown>) => {
+                    try {
+                        return await fn(TX_CTX);
+                    } catch (error) {
+                        callbackThrew = true;
+                        throw error;
+                    }
+                }
+            );
+
+            await expect(handler(ctx, {}, { email: 'user@example.com' })).rejects.toThrow();
+
+            expect(callbackThrew).toBe(true);
+            expect(auditLogSpy).not.toHaveBeenCalled();
+        });
+
+        it('fails instead of returning 200 when the created user has no id', async () => {
+            // The old `if (createdUserId)` guard silently SKIPPED the grant and
+            // returned success for an account that would never hold a hat.
+            mockCreate.mockResolvedValue({
+                data: { ...CREATED_USER, id: undefined },
+                error: undefined
+            });
+            const handler = getHandler('/');
+            const ctx = buildMockContext() as unknown as Context;
+
+            await expect(handler(ctx, {}, { email: 'user@example.com' })).rejects.toThrow(
+                /without an id/
+            );
+            expect(mockGrantRole).not.toHaveBeenCalled();
+            expect(auditLogSpy).not.toHaveBeenCalled();
         });
 
         it('should use create (not soft_delete or hard_delete) as the operation field', async () => {

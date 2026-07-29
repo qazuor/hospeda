@@ -47,8 +47,13 @@ export interface RevokeUserRoleInput {
  * @returns TanStack Query result over {@link UserRoleGrantsResponse}.
  */
 async function fetchUserRoles(userId: string): Promise<UserRoleGrantsResponse> {
+    // `/role-grants`, NOT `/roles`: the API keeps the read on its own path so
+    // it is gated on `USER_READ_ALL` alone. Route middlewares are registered
+    // per path and are method-agnostic, so sharing `/roles` with the POST would
+    // additionally demand `USER_UPDATE_ROLES` — which `CLIENT_MANAGER` does not
+    // hold.
     const result = await fetchApi<{ success: boolean; data: UserRoleGrantsResponse }>({
-        path: `${API_PATH}/${userId}/roles`
+        path: `${API_PATH}/${userId}/role-grants`
     });
     return result.data.data;
 }

@@ -194,7 +194,12 @@ describe('Actor Middleware', () => {
             expect(res.status).toBe(503);
         });
 
-        it('should default to the USER hat when the account holds none', async () => {
+        it('should return 503 when the account holds NO roles, not default to the USER hat', async () => {
+            // Zero rows is a data bug, not a legitimate state. Degrading to
+            // [USER] would silently turn every account on a table-but-no-rows
+            // database — super admins included — into a plain USER, locking
+            // everyone out of the admin panel with no in-app self-repair. Same
+            // fail-loud policy as a failed read.
             const authUser = createAuthUser();
             mockGetUserRoles.mockResolvedValue([]);
 
@@ -206,9 +211,7 @@ describe('Actor Middleware', () => {
 
             const res = await app.request('/test');
 
-            expect(res.status).toBe(200);
-            const data = await res.json();
-            expect(data.actor.roles).toEqual([RoleEnum.USER]);
+            expect(res.status).toBe(503);
         });
     });
 

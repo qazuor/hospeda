@@ -4,7 +4,7 @@
  * Replace the scalar `role` field that used to be part of the generic user
  * update body. `users.role` no longer exists, so a user's hats can ONLY be
  * mutated here:
- * - GET    /{id}/roles         → held roles + when each was granted and by whom
+ * - GET    /{id}/role-grants   → held roles + when each was granted and by whom
  * - POST   /{id}/roles         → grant a hat (additive, idempotent)
  * - DELETE /{id}/roles/{role}  → revoke a hat (idempotent, never the last one)
  *
@@ -14,15 +14,21 @@
  * `USER_READ_ALL`, matching the `view` permission of the admin panel's
  * Role & Permissions section.
  *
- * **Known route-factory behaviour**: GET and POST share the `/{id}/roles`
- * path, and route-level middlewares are applied per PATH, not per method, so
- * a caller effectively needs BOTH permissions to reach either handler on that
- * path. This is the same stacking the sibling `/{id}/permissions` routes
- * already exhibit (see `permissions.ts`), and it is moot in practice: both
- * seeded roles that hold `USER_UPDATE_ROLES` (SUPER_ADMIN, ADMIN — see
- * `packages/seed/src/required/rolePermissions.seed.ts`) also hold
- * `USER_READ_ALL`. The declarations are kept per-method anyway so the
- * intended gate is documented and survives a factory fix.
+ * **The read lives on its OWN path, and that is load-bearing.** Route-level
+ * middlewares are registered with `app.use(path, mw)` (see
+ * `applyRouteMiddlewares` in `utils/route-factory.ts`), which is
+ * method-AGNOSTIC. Had the read stayed on `GET /{id}/roles` it would have
+ * inherited the POST's `USER_UPDATE_ROLES` gate on the shared path, so reading
+ * a user's roles would have demanded BOTH permissions. That is not moot:
+ * `CLIENT_MANAGER` is seeded with `USER_READ_ALL` but NOT `USER_UPDATE_ROLES`
+ * (`packages/seed/src/required/rolePermissions.seed.ts`), so it would have
+ * received 403 on the user view / edit / permissions / activity pages, whose
+ * header reads this endpoint. Do NOT move the read back onto `/{id}/roles`
+ * without first making the factory gate per method.
+ *
+ * `DELETE /{id}/roles/{role}` shares no path with either — `/:id/roles/:role`
+ * does not match `/:id/roles` — and both writes require the same permission
+ * anyway, so nothing stacks between them.
  *
  * Audit: the `grantRole` / `revokeRole` primitives write the `user_role_audit`
  * row themselves, inside the same transaction as the mutation. These routes
@@ -57,16 +63,19 @@ import { getActorFromContext } from '../../../utils/actor';
 import { createAdminRoute } from '../../../utils/route-factory';
 
 /**
- * GET /api/v1/admin/users/{id}/roles
+ * GET /api/v1/admin/users/{id}/role-grants
  *
  * Returns every hat the user wears, oldest grant first, each carrying its
  * `grantedAt` / `grantedBy` / `grantedByName` / `grantReason`. That provenance
  * is what makes an accumulated role set administrable rather than mysterious
  * (spec §6.5, R-1 mitigation).
+ *
+ * The path is deliberately NOT `/{id}/roles` — see the module note on
+ * method-agnostic route middlewares.
  */
 export const adminGetUserRolesRoute = createAdminRoute({
     method: 'get',
-    path: '/{id}/roles',
+    path: '/{id}/role-grants',
     summary: 'Get the roles a user holds (admin)',
     description:
         'Returns every role held by the user, each with when it was granted, by whom, and why. Ordered oldest grant first.',
@@ -132,11 +141,11 @@ export const adminGrantUserRoleRoute = createAdminRoute({
             );
         }
 
-        // No cache invalidation here on purpose: `grantRole` invalidates the
-        // per-user role cache itself, so the crons, seeds and data-migrations
-        // that call it directly are covered too. The old `userCache.invalidate`
-        // was dead code — `userCache` holds `User` entities, which no longer
-        // carry roles.
+        // No cache invalidation here: `getUserRoles` is an uncached read (a
+        // per-user role cache was tried and removed — see its JSDoc), so the
+        // post-mutation set is always current. The old `userCache.invalidate`
+        // was dead code anyway — `userCache` holds `User` entities, which no
+        // longer carry roles.
         const roles = await getUserRoles({ userId });
         return { userId, role, roles: [...roles] };
     },
@@ -200,8 +209,8 @@ export const adminRevokeUserRoleRoute = createAdminRoute({
             );
         }
 
-        // `revokeRole` invalidates the per-user role cache itself — see the
-        // grant handler for why the invalidation does not live here.
+        // Uncached read — see the grant handler for why no invalidation lives
+        // here.
         const roles = await getUserRoles({ userId });
         return { userId, role, roles: [...roles] };
     },

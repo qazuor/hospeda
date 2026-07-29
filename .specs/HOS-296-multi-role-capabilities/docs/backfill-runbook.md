@@ -48,9 +48,12 @@ Prefer a low-traffic window. `apps/web` and `apps/admin` do not need to be
 redeployed in lockstep — they read roles through `/auth/me`, whose response
 shape is unchanged in this cut.
 
-Step 2's backfill is a plain `INSERT ... SELECT` inside
-`packages/db/src/migrations/0069_mushy_captain_america.sql`. It is **not** a
-seed data-migration: `db:seed:migrate` runs third in the standard
+Step 2's backfill is TWO `INSERT ... SELECT` statements inside
+`packages/db/src/migrations/0069_mushy_captain_america.sql`: (1) the declared
+`users.role` scalar copied verbatim, and (2) the baseline `USER` hat granted to
+every account EXCEPT the reserved `SYSTEM` one, so a migrated database ends up
+with the same `{USER, declared}` shape a freshly-seeded one produces. It is
+**not** a seed data-migration: `db:seed:migrate` runs third in the standard
 `db:migrate` → `db:apply-extras` → `db:seed:migrate` order, i.e. after
 `users.role` is already gone, so a backfill living there would find no source
 column and leave every account with zero roles — and an account with zero roles
@@ -62,8 +65,10 @@ has zero permissions.
 
 ### What it is looking for
 
-The backfill is a straight copy, so it faithfully reproduces whatever
-`users.role` says today. The problem is that the G-6 bug
+The backfill's first statement copies the declared scalar verbatim, so it
+faithfully reproduces whatever `users.role` says today (the second only adds the
+baseline `USER` hat on top; it never changes which declared role an account
+had). The problem is that the G-6 bug
 (`_assignHostRoleIfNeeded` overwriting the scalar on accommodation activation)
 may have already destroyed the truth for some accounts: a `COMMERCE_OWNER`,
 `SPONSOR` or `EDITOR` who then activated an accommodation had their hat replaced

@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { UserIdSchema } from '../../common/id.schema.js';
 import { StrongPasswordSchema } from '../../common/password.schema.js';
-import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
+import { PermissionEnumSchema } from '../../enums/index.js';
 import { ModerationStatusEnumSchema } from '../../enums/moderation-status.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
+import { AssignableRoleEnumSchema } from './user-role.schema.js';
 import { UserReadSchema, UserSchema } from './user.schema.js';
 
 /**
@@ -322,10 +323,17 @@ export type UserUpdateAvatarOutput = z.infer<typeof UserUpdateAvatarOutputSchema
 /**
  * Schema for assigning role to user input
  * Requires user ID and new role
+ *
+ * HOS-296: `role` is an {@link AssignableRoleEnumSchema}, so `SYSTEM` and
+ * `GUEST` are rejected — this is an HTTP-shaped input feeding
+ * `UserService.assignRole`, which delegates straight to `grantRole`. The
+ * primitive itself stays unrestricted because the seed needs to grant `SYSTEM`
+ * to the reserved account, but it calls `grantRole` directly and never comes
+ * through here.
  */
 export const UserAssignRoleInputSchema = z.object({
     userId: UserIdSchema,
-    role: RoleEnumSchema
+    role: AssignableRoleEnumSchema
 });
 
 /**

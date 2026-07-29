@@ -140,6 +140,23 @@ describe('seedSystemUser (SPEC-086 R-1)', () => {
             );
         });
 
+        it('should grant the reserved account exactly {SYSTEM} — never the baseline USER hat', async () => {
+            findOneReturnValue = null;
+
+            await seedSystemUser(model, grantRoleMock);
+
+            // Convergence with migration 0069, whose baseline statement excludes
+            // `role = SYSTEM` for the same reason. A migrated database at
+            // `{SYSTEM, USER}` and a fresh one at `{SYSTEM}` behave DIFFERENTLY:
+            // `revokeRole` only refuses an account's LAST hat, so the extra hat
+            // would make `DELETE /admin/users/{SYSTEM_USER_ID}/roles/SYSTEM`
+            // succeed on one environment and be refused on the other.
+            expect(grantRoleMock).toHaveBeenCalledTimes(1);
+            expect(grantRoleMock).not.toHaveBeenCalledWith(
+                expect.objectContaining({ role: RoleEnum.USER })
+            );
+        });
+
         it('should set emailVerified to false (non-loginable account)', async () => {
             findOneReturnValue = null;
 

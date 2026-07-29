@@ -61,12 +61,14 @@ describe('Admin user role routes (HOS-296)', () => {
     const ACTOR_ID = '11111111-1111-4111-8111-111111111111';
     const TARGET_ID = '22222222-2222-4222-8222-222222222222';
     const base = `/api/v1/admin/users/${TARGET_ID}/roles`;
-
     /**
-     * The permission pair a real role-managing operator holds. Both are needed
-     * on the shared `/{id}/roles` path — see the stacking note on the route
-     * module and the dedicated test below.
+     * The READ lives on its own path. Sharing `/{id}/roles` with the POST made
+     * it inherit the POST's gate, because route middlewares are registered per
+     * path and are method-agnostic.
      */
+    const readBase = `/api/v1/admin/users/${TARGET_ID}/role-grants`;
+
+    /** The permission pair a real role-managing operator holds. */
     const ROLE_ADMIN_PERMS = ['user.read.all', 'user.update.roles'] as const;
 
     /** Headers for an admin-panel actor carrying the given granular permissions. */
@@ -117,7 +119,7 @@ describe('Admin user role routes (HOS-296)', () => {
             const guestHeaders = { 'user-agent': 'vitest', 'content-type': 'application/json' };
 
             expect([400, 401, 403]).toContain(
-                (await request('GET', base, { headers: guestHeaders })).status
+                (await request('GET', readBase, { headers: guestHeaders })).status
             );
             expect([400, 401, 403]).toContain(
                 (await request('POST', base, { headers: guestHeaders, body: { role: 'HOST' } }))
@@ -147,37 +149,45 @@ describe('Admin user role routes (HOS-296)', () => {
             expect(mockRevokeRole).not.toHaveBeenCalled();
         });
 
-        it('requires BOTH permissions on the shared /roles path (route-factory stacking)', async () => {
-            // GET and POST share `/{id}/roles` and the factory applies route
-            // middlewares per PATH, not per method, so each route's gate also
-            // guards the other's verb. Documented rather than worked around:
-            // the same stacking exists on `/{id}/permissions`, and every
-            // seeded holder of `user.update.roles` also holds `user.read.all`.
-            const readOnly = await request('GET', base, {
+        it('REGRESSION: the read is reachable with user.read.all ALONE (CLIENT_MANAGER)', async () => {
+            // The read used to sit on `GET /{id}/roles`, sharing that path with
+            // the POST. Route middlewares are registered per PATH and are
+            // method-agnostic, so the read effectively demanded BOTH
+            // permissions. `CLIENT_MANAGER` is seeded with `user.read.all` and
+            // NOT `user.update.roles`, so it got 403 on the user view / edit /
+            // permissions / activity pages, whose header reads this endpoint —
+            // and the header hook collapsed that 403 into a blank subtitle with
+            // no error and no log.
+            const res = await request('GET', readBase, {
+                headers: headers(['user.read.all'])
+            });
+
+            expect(res.status).toBe(200);
+            expect(mockGetUserRoleGrants).toHaveBeenCalledWith({ userId: TARGET_ID });
+        });
+
+        it('does NOT let user.update.roles alone read the grants', async () => {
+            const res = await request('GET', readBase, {
                 headers: headers(['user.update.roles'])
             });
-            expect(readOnly.status).toBe(403);
+
+            expect(res.status).toBe(403);
             expect(mockGetUserRoleGrants).not.toHaveBeenCalled();
+        });
 
-            const writeOnly = await request('POST', base, {
-                headers: jsonHeaders(['user.update.roles']),
-                body: { role: 'HOST' }
-            });
-            expect(writeOnly.status).toBe(403);
-            expect(mockGrantRole).not.toHaveBeenCalled();
-
-            // …and the pair a real operator holds gets through.
-            const both = await request('POST', base, {
+        it('lets the mutation through for an operator holding user.update.roles', async () => {
+            const res = await request('POST', base, {
                 headers: jsonHeaders(ROLE_ADMIN_PERMS),
                 body: { role: 'HOST' }
             });
-            expect(both.status).not.toBe(403);
+
+            expect(res.status).not.toBe(403);
         });
     });
 
     // ---- GET -------------------------------------------------------------
 
-    describe('GET /:id/roles', () => {
+    describe('GET /:id/role-grants', () => {
         it('returns each held role with when it was granted and by whom', async () => {
             mockGetUserRoleGrants.mockResolvedValue([
                 {
@@ -196,7 +206,7 @@ describe('Admin user role routes (HOS-296)', () => {
                 }
             ]);
 
-            const res = await request('GET', base, { headers: headers(['user.read.all']) });
+            const res = await request('GET', readBase, { headers: headers(['user.read.all']) });
             expect(res.status).toBe(200);
 
             const body = (await res.json()) as {

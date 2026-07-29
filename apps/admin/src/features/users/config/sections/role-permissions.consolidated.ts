@@ -1,4 +1,4 @@
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
 
@@ -56,21 +56,9 @@ export const createRolePermissionsConsolidatedSection = (): ConsolidatedSectionC
     ]
 });
 
-/**
- * Get human-readable label for role
- */
-export function getRoleLabel(role: RoleEnum): string {
-    const labels: Record<RoleEnum, string> = {
-        [RoleEnum.SUPER_ADMIN]: 'Super Administrador',
-        [RoleEnum.ADMIN]: 'Administrador',
-        [RoleEnum.CLIENT_MANAGER]: 'Gestor de Clientes',
-        [RoleEnum.EDITOR]: 'Editor',
-        [RoleEnum.HOST]: 'Anfitrión',
-        [RoleEnum.COMMERCE_OWNER]: 'Dueño de Comercio',
-        [RoleEnum.USER]: 'Usuario',
-        [RoleEnum.SPONSOR]: 'Patrocinador',
-        [RoleEnum.GUEST]: 'Invitado',
-        [RoleEnum.SYSTEM]: 'Sistema'
-    };
-    return labels[role] || role;
-}
+// `getRoleLabel` used to live here: a hardcoded Spanish
+// `Record<RoleEnum, string>` outside `@repo/i18n`, read by the user page
+// header while `UserRolesCard` rendered the same roles through
+// `admin-pages.access.roles.catalog.<ROLE>.name`. Two catalogues for one set of
+// labels on one screen. Both now go through
+// `features/users/utils/role-label.ts` → `buildRoleLabelKey`.
