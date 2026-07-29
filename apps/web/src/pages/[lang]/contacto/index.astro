@@ -35,6 +35,10 @@ const { t } = createTranslations(locale);
 const phoneRaw = t('contact.phone.value', '+54 3442 453797');
 const phoneHref = phoneRaw.replace(/[^+\d]/g, '');
 const whatsappRaw = t('contact.whatsapp.value', '+54 9 3442 453797');
+// `null` when the configured value is not a dialable number. Every consumer
+// below must degrade instead of emitting `href={null}`: Astro drops the
+// attribute, leaving a fully-styled <a> that is neither a link nor
+// keyboard-focusable — see `@/lib/whatsapp`.
 const whatsappHref = buildWhatsAppLink({ phone: whatsappRaw }).url;
 const emailValue = t('contact.email.value', 'info@hospeda.com');
 const addressValue = t('contact.address.value', 'Concepción del Uruguay, Entre Ríos, Argentina');
@@ -103,10 +107,14 @@ const hours = [
 	}
 ];
 
+// The WhatsApp icon is dropped entirely when there is no link to give it: an
+// icon-only social entry has no text to degrade to.
 const socialLinks = [
 	{ key: 'instagram', label: 'Instagram', href: 'https://instagram.com/hospeda', Icon: InstagramIcon },
 	{ key: 'facebook', label: 'Facebook', href: 'https://facebook.com/hospeda', Icon: FacebookIcon },
-	{ key: 'whatsapp', label: 'WhatsApp', href: whatsappHref, Icon: WhatsappIcon }
+	...(whatsappHref
+		? [{ key: 'whatsapp', label: 'WhatsApp', href: whatsappHref, Icon: WhatsappIcon }]
+		: [])
 ];
 
 // ─── JSON-LD: ContactPage + ContactPoint ──────────────────────────────────────
@@ -220,6 +228,25 @@ const contactPageJsonLd = {
 						: channel.key === 'phone'
 							? PhoneIcon
 							: WhatsappIcon;
+					// No href → render a static card showing the value as text,
+					// the same degradation WhatsAppContact.astro applies. A dead
+					// <a> would look identical to a working one and take no focus.
+					if (!channel.href) {
+						return (
+							<div
+								class={`contact-channel contact-channel--${channel.key} contact-channel--static`}
+								data-reveal="up"
+								data-stagger-index={Math.min(i, 6)} data-stagger-step="100"
+							>
+								<span class="contact-channel__icon" aria-hidden="true">
+									<Icon size="lg" weight="duotone" />
+								</span>
+								<h3 class="contact-channel__title">{channel.title}</h3>
+								<p class="contact-channel__description">{channel.description}</p>
+								<p class="contact-channel__value">{channel.value}</p>
+							</div>
+						);
+					}
 					return (
 						<a
 							href={channel.href}
@@ -585,6 +612,20 @@ const contactPageJsonLd = {
 		box-shadow: var(--shadow-card-hover);
 		border-color: var(--brand-primary-a20);
 		outline: none;
+	}
+
+	/* Degraded card: no link, so it must not advertise interactivity. */
+	.contact-channel--static,
+	.contact-channel--static:hover {
+		transform: none;
+		box-shadow: var(--shadow-card);
+		border-color: transparent;
+		cursor: default;
+	}
+
+	.contact-channel--static .contact-channel__value {
+		margin-top: auto;
+		user-select: text;
 	}
 
 	.contact-channel__icon {
