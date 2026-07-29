@@ -55,7 +55,6 @@ import {
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { createAdminRoute } from '../../../utils/route-factory';
-import { userCache } from '../../../utils/user-cache';
 
 /**
  * GET /api/v1/admin/users/{id}/roles
@@ -122,13 +121,22 @@ export const adminGrantUserRoleRoute = createAdminRoute({
         });
 
         if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message);
+            // `reason` is forwarded, not dropped: it is the machine-readable
+            // discriminator the admin panel uses to translate a refusal instead
+            // of echoing the raw English message.
+            throw new ServiceError(
+                result.error.code,
+                result.error.message,
+                undefined,
+                result.error.reason
+            );
         }
 
-        // The actor's permission set is derived from the union of their roles,
-        // so a grant invalidates any cached resolution for that user.
-        userCache.invalidate(userId);
-
+        // No cache invalidation here on purpose: `grantRole` invalidates the
+        // per-user role cache itself, so the crons, seeds and data-migrations
+        // that call it directly are covered too. The old `userCache.invalidate`
+        // was dead code — `userCache` holds `User` entities, which no longer
+        // carry roles.
         const roles = await getUserRoles({ userId });
         return { userId, role, roles: [...roles] };
     },
@@ -182,11 +190,18 @@ export const adminRevokeUserRoleRoute = createAdminRoute({
         });
 
         if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message);
+            // See the grant handler: the `reason` (e.g. the last-role refusal)
+            // has to survive so the panel can translate it.
+            throw new ServiceError(
+                result.error.code,
+                result.error.message,
+                undefined,
+                result.error.reason
+            );
         }
 
-        userCache.invalidate(userId);
-
+        // `revokeRole` invalidates the per-user role cache itself — see the
+        // grant handler for why the invalidation does not live here.
         const roles = await getUserRoles({ userId });
         return { userId, role, roles: [...roles] };
     },

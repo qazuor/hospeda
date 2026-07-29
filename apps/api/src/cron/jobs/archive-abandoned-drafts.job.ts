@@ -279,7 +279,22 @@ export const archiveAbandonedDraftsJob: CronJobDefinition = {
 
                         const heldRoles = await getUserRoles({ userId: ownerId, ctx: { tx } });
                         if (!shouldRevokeHostHat({ heldRoles })) {
-                            // Not held, or held as the account's only hat.
+                            // Not held, or held as the account's only hat. Logged
+                            // rather than skipped silently: "HOST is the only hat"
+                            // is indistinguishable from "not a host" in the
+                            // counters, and it is exactly the state a bad backfill
+                            // produces at scale — without this line the job would
+                            // report `demoted: 0` forever with nothing to explain
+                            // it.
+                            logger.info('Skipped owner HOST revoke', {
+                                source: LOG_SOURCE,
+                                event: 'owner_demotion_skipped',
+                                ownerId,
+                                heldRoles: [...heldRoles],
+                                reason: heldRoles.includes(RoleEnum.HOST)
+                                    ? 'host_is_only_role'
+                                    : 'host_not_held'
+                            });
                             continue;
                         }
 

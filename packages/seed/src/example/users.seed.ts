@@ -60,10 +60,12 @@ const getUserInfo = (item: unknown) => {
 /**
  * Users seed using Seed Factory.
  *
- * HOS-296: the `postProcess` hook grants each fixture the hat its JSON
- * declares. 33 of the 38 example users are `HOST` and own the example
- * accommodations, so without this hook the entire demo dataset would be owned
- * by accounts holding no roles and therefore no permissions.
+ * HOS-296: the `postProcess` hook grants each fixture `{USER, declaredRole}` —
+ * the baseline hat plus whatever its JSON declares, which is the same set
+ * migration `0069` backfills onto existing rows. 33 of the 38 example users are
+ * `HOST` and own the example accommodations, so without this hook the entire
+ * demo dataset would be owned by accounts holding no roles and therefore no
+ * permissions.
  */
 export const seedUsers = createSeedFactory({
     entityName: 'Users',

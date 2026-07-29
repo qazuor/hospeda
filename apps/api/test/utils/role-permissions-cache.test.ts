@@ -120,4 +120,42 @@ describe('role-permissions-cache — getPermissionsForRoles (HOS-296)', () => {
 
         expect(permissions).toEqual([]);
     });
+
+    it('does NOT cache the degraded union — the next call recovers', async () => {
+        // Arrange — first HOST lookup fails, every later one succeeds.
+        findAllMock.mockRejectedValueOnce(new Error('db down'));
+
+        // Act
+        const degraded = await getPermissionsForRoles({ roles: [RoleEnum.HOST] });
+        const recovered = await getPermissionsForRoles({ roles: [RoleEnum.HOST] });
+
+        // Assert — caching the degraded result would keep answering [] for the
+        // full 10-minute TTL, i.e. a 403 storm with no error and no log.
+        expect(degraded).toEqual([]);
+        expect([...recovered].sort()).toEqual(
+            [...(PERMISSIONS_BY_ROLE[RoleEnum.HOST] as PermissionEnum[])].sort()
+        );
+    });
+
+    it('does not cache a union whose OTHER role resolved fine', async () => {
+        // Arrange — USER resolves, HOST fails. The partial union must not stick.
+        findAllMock.mockImplementationOnce(async (filter: { role: string }) => ({
+            items: (PERMISSIONS_BY_ROLE[filter.role] ?? []).map((permission) => ({ permission }))
+        }));
+        findAllMock.mockRejectedValueOnce(new Error('db down'));
+
+        // Act
+        const degraded = await getPermissionsForRoles({ roles: [RoleEnum.USER, RoleEnum.HOST] });
+        const recovered = await getPermissionsForRoles({ roles: [RoleEnum.USER, RoleEnum.HOST] });
+
+        // Assert
+        expect(degraded).not.toContain(PermissionEnum.ACCOMMODATION_CREATE);
+        expect([...recovered].sort()).toEqual(
+            [
+                PermissionEnum.ACCESS_API_PUBLIC,
+                PermissionEnum.USER_UPDATE_PROFILE,
+                PermissionEnum.ACCOMMODATION_CREATE
+            ].sort()
+        );
+    });
 });

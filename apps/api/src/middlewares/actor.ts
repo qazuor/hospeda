@@ -48,6 +48,44 @@ const isMockActorAllowed = (): boolean => {
 };
 
 /**
+ * Resolves the roles an authenticated user holds, with an EXPLICIT failure
+ * policy (HOS-296).
+ *
+ * The two sibling reads in this middleware — `getPermissionsForRoles` and
+ * `getUserPermissionsWithEffect` — swallow their errors and degrade to an
+ * empty set. This one deliberately does NOT, and the asymmetry is the point:
+ *
+ * - Degrading a PERMISSION read removes capabilities from an identity that is
+ *   still correct. It fails closed and the worst outcome is a spurious 403.
+ * - Degrading a ROLE read changes WHO the actor is. A `SUPER_ADMIN` would
+ *   silently become a plain `USER`, every admin surface would answer 403 with
+ *   nothing explaining it, and any code that reads "not staff" as "scope this
+ *   to the owner" would produce a different response body for the same URL —
+ *   the exact shape of a cache-poisoning bug.
+ *
+ * So a failed role read is an outage, surfaced as a retryable 503 rather than
+ * as a quietly downgraded session. `getUserRoles` is cached (60s), so a blip
+ * does not translate into one 503 per request for the same user once a value
+ * has been resolved.
+ *
+ * @param params.userId - Authenticated user id.
+ * @returns Every role the user holds.
+ * @throws {HTTPException} 503 when the role set cannot be resolved.
+ */
+const resolveHeldRoles = async (params: { userId: string }): Promise<readonly RoleEnum[]> => {
+    try {
+        return await getUserRoles({ userId: params.userId });
+    } catch (error) {
+        apiLogger.error(
+            `Failed to resolve the role set for user ${params.userId}: ${
+                error instanceof Error ? error.message : String(error)
+            }. Refusing to degrade to a partial identity.`
+        );
+        throw new HTTPException(503, { message: 'Service temporarily unavailable' });
+    }
+};
+
+/**
  * Universal actor middleware that runs on all routes.
  * Reads the authenticated user from context (set by auth middleware)
  * and builds the appropriate Actor with permissions.
@@ -159,8 +197,15 @@ export const actorMiddleware = (): MiddlewareHandler => {
                 // TEST-ONLY short-circuit: when the mock-auth middleware
                 // fabricated the session user it also fabricated its hats,
                 // because that user has no `user_role` rows to read.
+                //
+                // The read is cached per user for 60s (see
+                // `user-role.cache.ts`) and invalidated by `grantRole` /
+                // `revokeRole` themselves, so this global middleware does not
+                // add a DB round-trip to every authenticated request while a
+                // grant still takes effect immediately on this instance.
+                // Failure policy: see `resolveHeldRoles`.
                 const mockRoles = c.get('mockUserRoles');
-                const heldRoles = mockRoles ?? (await getUserRoles({ userId: user.id }));
+                const heldRoles = mockRoles ?? (await resolveHeldRoles({ userId: user.id }));
                 let userRoles: readonly RoleEnum[] = heldRoles;
                 if (userRoles.length === 0) {
                     apiLogger.warn(

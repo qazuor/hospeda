@@ -25,7 +25,7 @@
 
 import type { TranslationKey } from '@repo/i18n';
 import { AddIcon, DeleteIcon, UserSwitchIcon } from '@repo/icons';
-import { RoleEnum } from '@repo/schemas';
+import { LAST_ROLE_REVOKE_REASON, NON_ASSIGNABLE_ROLES, RoleEnum } from '@repo/schemas';
 import { useMemo, useState } from 'react';
 import {
     AlertDialog,
@@ -56,17 +56,8 @@ import {
     useUserRoles
 } from '@/features/users/hooks/useUserRoles';
 import { useTranslations } from '@/hooks/use-translations';
+import { isApiError } from '@/lib/errors';
 import { formatDateWithTime } from '@/lib/format-helpers';
-
-/**
- * Roles an operator may never hand out or take away from the panel.
- *
- * `SYSTEM` belongs to the permanent seeded system account and `GUEST` is
- * synthesised for unauthenticated requests — neither is granted or revoked at
- * runtime by anything (spec §7). Offering them would let an operator create
- * states the rest of the platform assumes cannot exist.
- */
-const NON_ASSIGNABLE_ROLES: readonly RoleEnum[] = [RoleEnum.SYSTEM, RoleEnum.GUEST];
 
 export interface UserRolesCardProps {
     /** User whose hats are being administered. */
@@ -92,7 +83,13 @@ export function UserRolesCard({ userId }: UserRolesCardProps) {
 
     const heldRoles = useMemo(() => data?.roles ?? [], [data]);
 
-    /** Roles the user does not already wear, minus the never-assignable ones. */
+    /**
+     * Roles the user does not already wear, minus the never-assignable ones.
+     *
+     * `NON_ASSIGNABLE_ROLES` comes from `@repo/schemas`, where
+     * `GrantUserRoleBodySchema` enforces the same list server-side — this
+     * dropdown only hides what the API already rejects.
+     */
     const grantableRoles = useMemo(() => {
         const held = new Set(heldRoles.map((entry) => entry.role));
         return Object.values(RoleEnum).filter(
@@ -105,16 +102,32 @@ export function UserRolesCard({ userId }: UserRolesCardProps) {
         t(`admin-pages.access.roles.catalog.${role}.name` as TranslationKey);
 
     /**
-     * Surfaces the API's message verbatim when there is one.
+     * Turns a failed mutation into a message an operator can read.
      *
-     * The last-role refusal (AC-5) arrives as a 400 with an explanatory
-     * message; collapsing it into a generic "something went wrong" would hide
-     * a deliberate rule behind what reads like an outage.
+     * The last-role refusal (AC-5) is recognised by its machine-readable
+     * `reason` and rendered from the translation catalogue. Its raw message is
+     * deliberately NOT shown: it is English in a Spanish panel AND it embeds
+     * the subject's internal UUID (`... last role held by user '<uuid>'`).
+     * `useUserRoles` already logs the raw error, which is where that text
+     * belongs.
+     *
+     * Any other failure still surfaces the API's own message — collapsing a
+     * deliberate rule into a generic "something went wrong" would make a rule
+     * read like an outage.
      */
-    const errorMessage = (error: unknown): string =>
-        error instanceof Error && error.message
+    const errorMessage = (error: unknown): string => {
+        const reason = isApiError(error)
+            ? (error.body as { error?: { reason?: string } } | undefined)?.error?.reason
+            : undefined;
+
+        if (reason === LAST_ROLE_REVOKE_REASON) {
+            return t('admin-pages.access.users.roles.cannotRevokeLast');
+        }
+
+        return error instanceof Error && error.message
             ? error.message
             : t('admin-pages.access.users.roles.error');
+    };
 
     const handleGrant = async (): Promise<void> => {
         if (!roleToGrant) return;

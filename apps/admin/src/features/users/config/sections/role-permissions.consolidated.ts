@@ -23,7 +23,11 @@ export const createRolePermissionsConsolidatedSection = (): ConsolidatedSectionC
     title: 'Rol y Permisos',
     description: 'Configuración de acceso y permisos del usuario',
     layout: LayoutTypeEnum.GRID,
-    modes: ['view', 'edit', 'create'],
+    // View-only: the single remaining field (`authProvider`) is itself
+    // `modes: ['view']`, and `filterSectionsByMode` filters FIELDS but never
+    // drops a section that ends up empty — so advertising create/edit rendered
+    // a titled, described, empty card on `/access/users/new` and `.../edit`.
+    modes: ['view'],
     permissions: {
         view: [PermissionEnum.USER_READ_ALL],
         edit: [PermissionEnum.USER_UPDATE_ROLES]

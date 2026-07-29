@@ -11,7 +11,9 @@ import { createDateTransformer, createSeedFactory, STATUS_ICONS } from '../utils
  * which is loaded separately. Transforms date strings to Date objects.
  *
  * HOS-296: the only fixture this seeds is `admin-user.json` (`role: "ADMIN"`).
- * Its hat is granted into `user_role` by the `postProcess` hook — passing
+ * Its hats — `{USER, ADMIN}`, matching what migration `0069` backfills and what
+ * every account-creating path produces — are granted into `user_role` by the
+ * `postProcess` hook. Passing
  * `role` through to `UserService.create` stopped doing anything the moment
  * `users.role` was dropped, silently, because Zod strips the unknown key and
  * Drizzle's `.values()` iterates table columns rather than object keys.

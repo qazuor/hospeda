@@ -7,16 +7,27 @@
  * (`$id_.activity.tsx`) routes render the same chrome.
  */
 
-import type { RoleEnum } from '@repo/schemas';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import type { EntityPageHeaderMedia } from '@/components/entity-header/EntityPageHeader';
 import { Badge } from '@/components/ui/badge';
+import { useUserRoles } from '@/features/users/hooks/useUserRoles';
 import { getRoleLabel } from '../config/sections/role-permissions.consolidated';
 
 export interface UseUserHeaderPropsArgs {
     /** The user entity returned by `useUserPage`; `undefined` while loading. */
     readonly entity: Record<string, unknown> | undefined;
+    /**
+     * Id of the user being rendered — used to resolve the role set.
+     *
+     * HOS-296: the roles do NOT travel on the user entity. `UserPublicSchema`
+     * declares `roles` with a `.default([])`, but no read path resolves it, so
+     * reading `entity.roles` produced a permanently blank subtitle. They live
+     * in `user_role` and come from `GET /admin/users/:id/roles`, the same
+     * endpoint `UserRolesCard` uses — so this is a cache hit, not a second
+     * request, whenever the roles tab has already loaded.
+     */
+    readonly userId: string | undefined;
 }
 
 export interface UserHeaderProps {
@@ -32,7 +43,12 @@ export interface UserHeaderProps {
     readonly badges: ReactNode;
 }
 
-export const useUserHeaderProps = ({ entity }: UseUserHeaderPropsArgs): UserHeaderProps => {
+export const useUserHeaderProps = ({
+    entity,
+    userId
+}: UseUserHeaderPropsArgs): UserHeaderProps => {
+    const { data: roleGrants } = useUserRoles(userId ?? '', { enabled: Boolean(userId) });
+
     return useMemo<UserHeaderProps>(() => {
         if (!entity) {
             return { media: undefined, subtitle: undefined, badges: null };
@@ -56,15 +72,12 @@ export const useUserHeaderProps = ({ entity }: UseUserHeaderPropsArgs): UserHead
         };
 
         // ---- Subtitle (role labels) -----------------------------------------
-        // HOS-296: `entity.role` (single scalar) is gone — the user entity now
-        // carries `roles: RoleEnum[]` (see UserPublicSchema in @repo/schemas).
-        // Render the FULL held set, not one "primary" role.
-        const rawRoles = entity.roles;
-        const roles = Array.isArray(rawRoles)
-            ? rawRoles.filter((r): r is RoleEnum => typeof r === 'string')
-            : [];
+        // HOS-296: `entity.role` (single scalar) is gone and the entity carries
+        // no resolved role set either, so the labels come from the dedicated
+        // roles endpoint. Render the FULL held set, not one "primary" role.
+        const roles = roleGrants?.roles ?? [];
         const subtitle =
-            roles.length > 0 ? roles.map((r) => getRoleLabel(r)).join(', ') : undefined;
+            roles.length > 0 ? roles.map((entry) => getRoleLabel(entry.role)).join(', ') : undefined;
 
         // ---- Badges (lifecycle state) -------------------------------------
         const lifecycleState = entity.lifecycleState as string | undefined;
@@ -75,7 +88,7 @@ export const useUserHeaderProps = ({ entity }: UseUserHeaderPropsArgs): UserHead
         ) : null;
 
         return { media, subtitle, badges };
-    }, [entity]);
+    }, [entity, roleGrants]);
 };
 
 // ---------------------------------------------------------------------------

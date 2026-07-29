@@ -710,10 +710,13 @@ export class UserService extends BaseCrudService<
                 // `IN (subquery)` de-duplicates for us — a JOIN would emit one
                 // row per matching hat and inflate the paginated count for a
                 // user holding two of the filtered roles.
+                // `ctx?.tx` first: every other read in this method threads the
+                // caller's transaction, and a subquery built from `getDb()`
+                // would silently escape it (SPEC-059 forwarding contract).
                 additionalConditions.push(
                     inArray(
                         userTable.id,
-                        getDb()
+                        (ctx?.tx ?? getDb())
                             .select({ userId: userRole.userId })
                             .from(userRole)
                             .where(inArray(userRole.role, [...roleFilter]))

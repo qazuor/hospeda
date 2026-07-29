@@ -54,7 +54,7 @@ describe('resolveFixtureRole', () => {
 });
 
 describe('grantFixtureRole', () => {
-    it('grants exactly the declared role, as a system grant with reason "seed"', async () => {
+    it('grants the baseline USER hat AND the declared role, as system grants with reason "seed"', async () => {
         const { grant, calls } = buildGrant();
 
         const role = await grantFixtureRole({
@@ -65,8 +65,14 @@ describe('grantFixtureRole', () => {
         });
 
         expect(role).toBe(RoleEnum.HOST);
-        expect(calls).toHaveBeenCalledTimes(1);
-        expect(calls).toHaveBeenCalledWith({
+        expect(calls).toHaveBeenCalledTimes(2);
+        expect(calls).toHaveBeenNthCalledWith(1, {
+            userId: 'user-1',
+            role: RoleEnum.USER,
+            grantedBy: null,
+            reason: RoleGrantReason.SEED
+        });
+        expect(calls).toHaveBeenNthCalledWith(2, {
             userId: 'user-1',
             role: RoleEnum.HOST,
             grantedBy: null,
@@ -74,11 +80,11 @@ describe('grantFixtureRole', () => {
         });
     });
 
-    it('does NOT add an implicit USER hat on top of the declared role', async () => {
-        // Deliberate divergence from the login fixtures (test users, commerce
-        // owners), which DO grant {USER, declared}. These content-owner rows
-        // must converge on the same set the 0069 straight-copy backfill
-        // produces, so widening them here would desync fresh vs migrated DBs.
+    it('adds the implicit USER hat on top of the declared role', async () => {
+        // {USER, declared} is what every account-creating path produces and
+        // what migration 0069 backfills, so fresh and migrated databases must
+        // agree. A single-hatted fixture would also be un-revokable (AC-5) and
+        // un-demotable (`shouldRevokeHostHat`).
         const { grant, calls } = buildGrant();
 
         await grantFixtureRole({
@@ -88,8 +94,24 @@ describe('grantFixtureRole', () => {
             grant
         });
 
+        expect(calls.mock.calls.map((call) => (call[0] as { role: RoleEnum }).role)).toEqual([
+            RoleEnum.USER,
+            RoleEnum.EDITOR
+        ]);
+    });
+
+    it('collapses to a single grant when the fixture declares USER', async () => {
+        const { grant, calls } = buildGrant();
+
+        await grantFixtureRole({
+            result: { data: { id: 'user-4' } },
+            item: { role: 'USER' },
+            source: 'f.json',
+            grant
+        });
+
         expect(calls).toHaveBeenCalledTimes(1);
-        expect(calls.mock.calls[0]?.[0]).toMatchObject({ role: RoleEnum.EDITOR });
+        expect(calls.mock.calls[0]?.[0]).toMatchObject({ role: RoleEnum.USER });
     });
 
     it('is a no-op when the create result carries no id', async () => {

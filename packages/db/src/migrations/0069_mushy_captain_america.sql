@@ -37,11 +37,35 @@ CREATE INDEX "userRoleAudit_by_idx" ON "user_role_audit" USING btree ("by");--> 
 -- migration without this statement against any database that holds data leaves
 -- EVERY user with zero roles, hence zero permissions.
 --
--- Straight copy, exactly as §6.6 specifies: one row per existing user, `role`
--- copied verbatim, `granted_by = NULL` (system grant), `grant_reason =
--- 'migrated_from_users_role'`. No `USER` hat is added on top and no
--- reconciliation is performed — the copy must reproduce today's effective
--- permissions exactly, not widen them.
+-- TWO statements, both `granted_by = NULL` (system grant):
+--
+-- 1. The declared scalar, copied verbatim (`grant_reason =
+--    'migrated_from_users_role'`).
+-- 2. The baseline `USER` hat for EVERY account (`grant_reason =
+--    'migrated_baseline_user'`).
+--
+-- Statement 2 is not a widening for its own sake — without it the migrated
+-- shape does not match what the platform now PRODUCES, and two live behaviours
+-- break:
+--
+-- - `shouldRevokeHostHat` (`archive-abandoned-drafts.job.ts`) is
+--   `includes(HOST) && length > 1`, so a host holding only `{HOST}` can never
+--   be demoted. Copying the scalar alone turns that cron into a permanent
+--   no-op for the ENTIRE pre-existing host population — a capability the job
+--   had before this change.
+-- - `revokeRole` refuses to remove an account's last hat (AC-5), so every
+--   admin revoke on an untouched account answers 400.
+--
+-- `{USER, <scalar>}` is exactly what signup (`auth.ts` `create.after`),
+-- `user/admin/create.ts`, `signup-as-host.ts` and the fixture seeds all
+-- produce today, so a migrated database and a freshly-seeded one converge.
+-- `USER`-scalar accounts collapse to a single row via the primary key.
+--
+-- `SYSTEM` and `GUEST` are NOT special-cased: `GUEST` is synthesised in-memory
+-- for anonymous requests and never stored, and the one `SYSTEM` account is
+-- non-loginable (banned, no `accounts` row), so granting it `USER` changes
+-- nothing it can do. Special-casing them would add a branch whose only effect
+-- is on rows that cannot authenticate.
 --
 -- Soft-deleted accounts (`deleted_at IS NOT NULL`) are copied too: restoring an
 -- account has to give it its capabilities back, and the `deletedAt` /
@@ -64,6 +88,10 @@ CREATE INDEX "userRoleAudit_by_idx" ON "user_role_audit" USING btree ("by");--> 
 -- run BEFORE `db:migrate`, because afterwards `users.role` is gone.
 INSERT INTO "user_role" ("user_id", "role", "granted_by", "grant_reason")
 SELECT "id", "role", NULL::uuid, 'migrated_from_users_role'
+FROM "users"
+ON CONFLICT ("user_id", "role") DO NOTHING;--> statement-breakpoint
+INSERT INTO "user_role" ("user_id", "role", "granted_by", "grant_reason")
+SELECT "id", 'USER'::"role_enum", NULL::uuid, 'migrated_baseline_user'
 FROM "users"
 ON CONFLICT ("user_id", "role") DO NOTHING;--> statement-breakpoint
 ALTER TABLE "users" DROP COLUMN "role";

@@ -1,6 +1,49 @@
 import { z } from 'zod';
 import { UserIdSchema } from '../../common/id.schema.js';
+import { RoleEnum } from '../../enums/role.enum.js';
 import { RoleEnumSchema } from '../../enums/role.schema.js';
+
+/**
+ * Roles that may never be handed out to an account (HOS-296 §7).
+ *
+ * - `SYSTEM` belongs to the single reserved, non-loginable seeded account.
+ * - `GUEST` is synthesised in memory for unauthenticated requests and is never
+ *   stored. Granting it to a real account makes `isGuestActor()` true for a
+ *   fully valid session, so `/auth/me` answers `isAuthenticated: false` and the
+ *   holder is treated as anonymous everywhere — silently locked out of every
+ *   `/mi-cuenta/*` page with no error anywhere.
+ *
+ * Declared here, next to the schema that enforces it, so the API and the admin
+ * panel share ONE definition: an invariant that only lives in a React component
+ * is not enforced at all.
+ */
+export const NON_ASSIGNABLE_ROLES: readonly RoleEnum[] = [
+    RoleEnum.SYSTEM,
+    RoleEnum.GUEST
+] as const;
+
+/**
+ * A role an operator is allowed to grant.
+ *
+ * Deliberately NOT used by {@link GrantRoleInputSchema}: the service primitive
+ * still has to be able to grant `SYSTEM`, because that is how the seed creates
+ * the reserved system account. The restriction belongs on the HTTP boundary,
+ * where the caller is a human operator.
+ */
+export const AssignableRoleEnumSchema = RoleEnumSchema.refine(
+    (role) => !NON_ASSIGNABLE_ROLES.includes(role),
+    { message: 'zodError.enums.role.notAssignable' }
+);
+
+/**
+ * Machine-readable `reason` carried by the `VALIDATION_ERROR` that
+ * `revokeRole` raises when asked to remove an account's LAST role (AC-5).
+ *
+ * Exists so consumers can recognise that specific refusal without matching on
+ * the English message — which additionally embeds the subject's UUID and must
+ * therefore never be rendered to an operator.
+ */
+export const LAST_ROLE_REVOKE_REASON = 'LAST_ROLE_REVOKE';
 
 /**
  * Zod schema for a single row of `user_role` — one hat held by one user
@@ -121,9 +164,14 @@ export type UserRoleGrantsResponse = z.infer<typeof UserRoleGrantsResponseSchema
  *
  * `userId` is NOT part of the body — it is the path parameter, and accepting
  * it in both places would let the two disagree.
+ *
+ * `role` is an {@link AssignableRoleEnumSchema}, so `SYSTEM` and `GUEST` are
+ * rejected with a 400 at the boundary rather than only being hidden from the
+ * admin panel's dropdown — see {@link NON_ASSIGNABLE_ROLES} for why granting
+ * `GUEST` silently un-authenticates the account.
  */
 export const GrantUserRoleBodySchema = z.object({
-    role: RoleEnumSchema,
+    role: AssignableRoleEnumSchema,
     reason: z
         .string()
         .max(500)

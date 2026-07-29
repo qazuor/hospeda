@@ -31,8 +31,7 @@ import {
     VerifyEmailTemplate
 } from '@repo/email';
 import { createLogger } from '@repo/logger';
-import { RoleEnum, RoleGrantReason } from '@repo/schemas';
-import { grantRole } from '@repo/service-core';
+import { RoleEnum } from '@repo/schemas';
 import { compare, hash } from 'bcryptjs';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
@@ -42,6 +41,7 @@ import { BillingCustomerSyncService } from '../services/billing-customer-sync';
 import { env } from '../utils/env';
 import { resolveCookieDomain } from './auth-cookie-domain';
 import { captureSignupCompleted } from './auth-signup-analytics';
+import { grantBaselineUserRole } from './auth-signup-baseline-role';
 import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
 
 const logger = createLogger('auth');
@@ -715,27 +715,19 @@ function buildAuth() {
                         // established. A failed signup the user can see beats a
                         // successful signup that produced an unusable account.
                         //
+                        // The grant COMPENSATES on failure by deleting the
+                        // just-committed `users` row — this hook runs after the
+                        // insert, so throwing alone would leave the email taken
+                        // on an unusable account. See
+                        // `lib/auth-signup-baseline-role.ts`, which owns that
+                        // logic (and its tests) because hooks declared inside
+                        // this `betterAuth()` call cannot be imported.
+                        //
                         // Self-serve users are granted HOST later, when they
                         // create or resume the host-onboarding draft; the owner
                         // trial still starts on first publish. Granting HOST
                         // here would skip the onboarding funnel state transition.
-                        const grantedBaseline = await grantRole({
-                            userId: user.id,
-                            role: RoleEnum.USER,
-                            grantedBy: null,
-                            reason: RoleGrantReason.SIGNUP
-                        });
-                        if (grantedBaseline.error) {
-                            logger.error(
-                                {
-                                    userId: user.id,
-                                    email: user.email,
-                                    error: grantedBaseline.error.message
-                                },
-                                'Failed to grant the baseline USER role on signup'
-                            );
-                            throw grantedBaseline.error;
-                        }
+                        await grantBaselineUserRole({ userId: user.id, email: user.email });
 
                         // Product analytics: signup_completed (PostHog). Fired
                         // server-side so it covers BOTH email and OAuth signups

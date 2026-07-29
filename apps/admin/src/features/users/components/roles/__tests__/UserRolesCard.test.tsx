@@ -20,12 +20,13 @@
  * this test only needs the chosen value to reach the POST body.
  */
 
-import type { UserRoleGrantsResponse } from '@repo/schemas';
+import { LAST_ROLE_REVOKE_REASON, type UserRoleGrantsResponse } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type * as React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fetchApi } from '@/lib/api/client';
+import { ApiError } from '@/lib/errors';
 import { UserRolesCard } from '../UserRolesCard';
 
 // ---------------------------------------------------------------------------
@@ -288,6 +289,48 @@ describe('UserRolesCard (HOS-296)', () => {
                 .find((args) => args.method === 'DELETE');
             expect(del?.path).toBe(`/api/v1/admin/users/${USER_ID}/roles/HOST`);
         });
+    });
+
+    it('translates the last-role refusal instead of echoing the raw message with its UUID', async () => {
+        // Arrange — the API answers 400 with the machine-readable reason. The
+        // message is the server's own English text and embeds the subject id;
+        // it must reach the logger, never the toast.
+        const rawMessage = `Cannot revoke role 'HOST': it is the last role held by user '${USER_ID}'.`;
+        mockedFetchApi.mockImplementation(async (args: unknown) => {
+            const { method } = (args ?? {}) as { method?: string };
+            if (!method || method === 'GET') {
+                return { data: { success: true, data: TWO_HATS } } as never;
+            }
+            throw new ApiError(rawMessage, {
+                status: 400,
+                code: 'VALIDATION_ERROR',
+                body: {
+                    error: {
+                        code: 'VALIDATION_ERROR',
+                        message: rawMessage,
+                        reason: LAST_ROLE_REVOKE_REASON
+                    }
+                },
+                url: '/api/v1/admin/users/x/roles/HOST',
+                method: 'DELETE'
+            });
+        });
+        renderCard();
+
+        await waitFor(() => {
+            expect(screen.getAllByTestId('confirm-revoke').length).toBe(2);
+        });
+
+        // Act
+        fireEvent.click(screen.getAllByTestId('confirm-revoke')[1] as HTMLElement);
+
+        // Assert
+        await waitFor(() => {
+            expect(mockAddToast).toHaveBeenCalled();
+        });
+        const toast = mockAddToast.mock.calls.at(-1)?.[0] as { message?: string };
+        expect(toast?.message).toBe('admin-pages.access.users.roles.cannotRevokeLast');
+        expect(toast?.message).not.toContain(USER_ID);
     });
 
     it('disables revoke when only one hat is left (AC-5)', async () => {

@@ -40,12 +40,18 @@ import { and, asc, eq, getDb, userRole, userRoleAudit, users, withTransaction } 
 import type { GrantRoleInput, RevokeRoleInput, RoleEnum, UserRoleGrant } from '@repo/schemas';
 import {
     GrantRoleInputSchema,
+    LAST_ROLE_REVOKE_REASON,
     RevokeRoleInputSchema,
     RoleGrantActionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import type { ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
+import {
+    invalidateUserRolesCache,
+    readCachedUserRoles,
+    writeCachedUserRoles
+} from './user-role.cache.js';
 
 /** Input for {@link grantRole} — the schema shape plus the optional context. */
 export type GrantRoleParams = GrantRoleInput & {
@@ -202,6 +208,13 @@ export const grantRole = async (params: GrantRoleParams): Promise<ServiceOutput<
         return { data: undefined };
     } catch (error) {
         return toErrorOutput({ error, ctx, fallbackMessage: 'Failed to grant role' });
+    } finally {
+        // Invalidate here, not at the call sites: every writer goes through
+        // this primitive, so a per-route invalidation would silently miss the
+        // crons, the seeds and the data-migrations. Runs on the failure path
+        // too — an unnecessary re-query is strictly cheaper than serving a
+        // stale role set.
+        invalidateUserRolesCache({ userId });
     }
 };
 
@@ -273,9 +286,14 @@ export const revokeRole = async (params: RevokeRoleParams): Promise<ServiceOutpu
             }
 
             if (heldRoles.length <= 1) {
+                // The `reason` is what lets a UI recognise THIS refusal without
+                // matching on the message — which embeds the subject's UUID and
+                // must therefore never be rendered to an operator.
                 throw new ServiceError(
                     ServiceErrorCode.VALIDATION_ERROR,
-                    `Cannot revoke role '${role}': it is the last role held by user '${userId}'.`
+                    `Cannot revoke role '${role}': it is the last role held by user '${userId}'.`,
+                    undefined,
+                    LAST_ROLE_REVOKE_REASON
                 );
             }
 
@@ -296,6 +314,9 @@ export const revokeRole = async (params: RevokeRoleParams): Promise<ServiceOutpu
         return { data: undefined };
     } catch (error) {
         return toErrorOutput({ error, ctx, fallbackMessage: 'Failed to revoke role' });
+    } finally {
+        // Same rationale as `grantRole` — see the note there.
+        invalidateUserRolesCache({ userId });
     }
 };
 
@@ -307,8 +328,17 @@ export const revokeRole = async (params: RevokeRoleParams): Promise<ServiceOutpu
  * two-line query across services is exactly how the three divergent permission
  * resolvers in §5.2 came to exist.
  *
+ * Non-transactional reads go through a short-lived process-local cache
+ * (`user-role.cache.ts`, 60s) because `actorMiddleware` calls this on EVERY
+ * authenticated request. Reads that carry a `ctx.tx` bypass the cache in both
+ * directions: a value read inside a transaction may be rolled back and must
+ * never outlive it. Both write primitives invalidate the entry, so the TTL
+ * only ever covers writes performed by a DIFFERENT process — see the cache
+ * module for the multi-instance caveat.
+ *
  * @param params.userId - User whose hats to read.
- * @param params.ctx - Optional caller context; `ctx.tx` reads through their transaction.
+ * @param params.ctx - Optional caller context; `ctx.tx` reads through their
+ *   transaction and skips the cache entirely.
  * @returns Every role held by the user, in no guaranteed order. Empty when the
  *   user does not exist.
  */
@@ -317,6 +347,14 @@ export const getUserRoles = async (params: {
     ctx?: ServiceContext;
 }): Promise<readonly RoleEnum[]> => {
     const { userId, ctx } = params;
+
+    if (!ctx?.tx) {
+        const cached = readCachedUserRoles({ userId });
+        if (cached) {
+            return cached;
+        }
+    }
+
     const db = ctx?.tx ?? getDb();
 
     const rows = await db
@@ -327,7 +365,13 @@ export const getUserRoles = async (params: {
     // `role_enum` is generated from `RoleEnum` (see enums.dbschema.ts), but
     // Drizzle widens the pgEnum tuple to `string`, so the narrowing is ours to
     // assert rather than something the column type carries.
-    return rows.map((row) => row.role as RoleEnum);
+    const roles = rows.map((row) => row.role as RoleEnum);
+
+    if (!ctx?.tx) {
+        writeCachedUserRoles({ userId, roles });
+    }
+
+    return roles;
 };
 
 /**

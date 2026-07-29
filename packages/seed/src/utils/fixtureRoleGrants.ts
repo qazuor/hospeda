@@ -95,25 +95,25 @@ function extractCreatedId(result: unknown): string | null {
  * `"(HOST)"`, and produce accounts holding **zero** roles and therefore zero
  * permissions.
  *
- * The declared role is granted verbatim, with **no implicit `USER` hat added on
- * top**. That mirrors the live-database backfill in migration `0069`, which is
- * a straight copy of the old scalar: a fresh database and a migrated database
- * must converge on the same set. Login fixtures that simulate a real signup
- * (`test-users/testUsers.seed.ts`, the commerce owners in
- * `example/gastronomies.seed.ts`) deliberately grant `{USER, declaredRole}`
- * instead, because a real Better Auth signup grants `USER` first and everything
- * else is layered on top — these demo content-owner rows are not created that
- * way and adding `USER` would silently widen their permissions beyond what they
- * had before the cut.
+ * The fixture receives `{USER, declaredRole}` — the baseline hat plus whatever
+ * the JSON declares. That is the set EVERY account-creating path now produces
+ * (Better Auth's signup hook, `user/admin/create.ts`, `signup-as-host.ts`, the
+ * login fixtures in `test-users/testUsers.seed.ts` and
+ * `example/gastronomies.seed.ts`) and the set migration `0069` backfills onto
+ * existing rows, so a fresh database and a migrated one converge. Granting the
+ * declared role alone would leave every fixture holding a single hat, which is
+ * the shape that makes `revokeRole`'s last-role guard reject any revoke and
+ * `shouldRevokeHostHat` refuse to demote anybody.
  *
- * Idempotent, because `grantRole` is.
+ * A fixture declaring `USER` collapses to one grant — `grantRole` is idempotent
+ * and the `(user_id, role)` primary key de-duplicates anyway.
  *
  * @param params.result - The `createSeedFactory` post-create result (`{ data: { id } }`).
  * @param params.item - The raw fixture object, carrying the declared `role`.
  * @param params.source - Fixture identifier for error messages.
  * @param params.grant - Optional `grantRole` override for tests.
- * @returns The granted role, or `null` when the result carried no id.
- * @throws {Error} When the fixture's role is invalid, or the grant fails.
+ * @returns The declared role, or `null` when the result carried no id.
+ * @throws {Error} When the fixture's role is invalid, or a grant fails.
  *
  * @example
  * ```ts
@@ -137,15 +137,22 @@ export async function grantFixtureRole(params: {
     const role = resolveFixtureRole({ item, source });
     const grantFn: GrantRolePort = grant ?? (grantRole as unknown as GrantRolePort);
 
-    const granted = await grantFn({
-        userId,
-        role,
-        grantedBy: null,
-        reason: RoleGrantReason.SEED
-    });
+    // Baseline first, so the set is never momentarily single-hatted.
+    const rolesToGrant = Array.from(new Set<RoleEnum>([RoleEnum.USER, role]));
 
-    if (granted.error) {
-        throw new Error(`Failed to grant ${role} to fixture "${source}": ${granted.error.message}`);
+    for (const roleToGrant of rolesToGrant) {
+        const granted = await grantFn({
+            userId,
+            role: roleToGrant,
+            grantedBy: null,
+            reason: RoleGrantReason.SEED
+        });
+
+        if (granted.error) {
+            throw new Error(
+                `Failed to grant ${roleToGrant} to fixture "${source}": ${granted.error.message}`
+            );
+        }
     }
 
     return role;

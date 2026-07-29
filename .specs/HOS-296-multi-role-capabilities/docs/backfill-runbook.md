@@ -4,14 +4,49 @@ Operator-facing companion to `spec.md` §6.6 and §7. Read this **before** runni
 `pnpm db:migrate` (or `hops db-migrate --target=staging|prod`) on any environment
 that already holds data.
 
-There are three steps and their order is not negotiable, because step 1 reads a
-column that step 2 destroys.
+There are four steps and their order is not negotiable: step 1 reads a column
+step 2 destroys, and step 2 is incompatible with the currently-running API.
 
 | # | When | What | Reversible? |
 |---|---|---|---|
 | 1 | **BEFORE** `db:migrate` | Run the audit query below and SAVE its output | read-only |
 | 2 | `db:migrate` | Migration `0069_mushy_captain_america` creates `user_role`, **backfills it from `users.role`**, then drops the column | no |
-| 3 | AFTER `db:migrate` | Grant, by hand, any hat the audit said was missing | yes (delete the row) |
+| 3 | **IMMEDIATELY AFTER** step 2 | Deploy the new API build | yes (redeploy) |
+| 4 | After the deploy | Grant, by hand, any hat the audit said was missing | yes (delete the row) |
+
+## Step 0 — read this before scheduling: there is NO compatibility shim
+
+This cut ships no dual-read and no `users.role` shadow column, so **neither
+ordering of "migrate" and "deploy" is safe for authenticated traffic**. There is
+a window; the job is to make it short and to schedule it, not to avoid it:
+
+- **New API against the OLD schema** (deploy first) — `getUserRoles` queries
+  `user_role`, which does not exist yet: **every authenticated request answers
+  503** (`actorMiddleware` refuses to degrade a role read, deliberately — see
+  `resolveHeldRoles`). Public unauthenticated pages keep working.
+- **Old API against the NEW schema** (migrate first, deploy late) — Better
+  Auth's `additionalFields` still maps `users.role`, a column the migration just
+  dropped, so **session reads fail** and every signed-in request breaks. Signup
+  breaks too (`user.create.before` writes the column).
+
+Both windows break the same population, so pick the one with the shorter and
+more predictable recovery: **migrate, then deploy immediately**, with the deploy
+artefact already built and waiting. Do not run `db:migrate` and then leave the
+deploy for later in the day.
+
+Operational checklist for the window:
+
+1. Build/push the API image FIRST and confirm it is ready to release, but do not
+   release it.
+2. Run `db:migrate` (step 2).
+3. Release the API immediately (step 3). On the VPS:
+   `hops db-migrate --target=staging && hops redeploy api --target=staging`.
+4. Verify with a signed-in request (`GET /api/v1/public/auth/me` with a real
+   session cookie) that `roles` comes back non-empty before moving on.
+
+Prefer a low-traffic window. `apps/web` and `apps/admin` do not need to be
+redeployed in lockstep — they read roles through `/auth/me`, whose response
+shape is unchanged in this cut.
 
 Step 2's backfill is a plain `INSERT ... SELECT` inside
 `packages/db/src/migrations/0069_mushy_captain_america.sql`. It is **not** a
@@ -97,9 +132,17 @@ them, so their hats matter the moment anyone restores the account.
 
 ## Step 2 — run the migration
 
-Nothing special. The backfill statement is inside `0069` and runs in the same
+Nothing special. The backfill statements are inside `0069` and run in the same
 transaction as the rest of the migration; there is no separate command and no
 flag to pass.
+
+There are TWO of them: the declared scalar copied verbatim
+(`grant_reason = 'migrated_from_users_role'`) and the baseline `USER` hat for
+every account (`grant_reason = 'migrated_baseline_user'`). The second is what
+makes a migrated account match the `{USER, <role>}` shape every account-creating
+path now produces — without it every pre-existing account holds exactly ONE hat,
+which makes `revokeRole`'s last-role guard reject every admin revoke and turns
+the `archive-abandoned-drafts` host demotion into a permanent no-op.
 
 ```bash
 pnpm db:migrate          # local
@@ -122,9 +165,37 @@ GROUP BY role ORDER BY 2 DESC;
 -- expected: the same per-role distribution the old `GROUP BY users.role` had
 ```
 
+```sql
+-- Every account must ALSO hold the baseline USER hat.
+SELECT count(*) AS users_without_baseline_hat
+FROM users u
+WHERE NOT EXISTS (
+    SELECT 1 FROM user_role r WHERE r.user_id = u.id AND r.role = 'USER'
+);
+-- expected: 0
+```
+
 ---
 
-## Step 3 — repair what the audit found
+## Step 3 — deploy the new API
+
+Release the already-built artefact now, not later. See Step 0 for why the gap
+between step 2 and this one is a hard outage window for authenticated traffic.
+
+```bash
+hops redeploy api --target=staging   # or --target=prod
+```
+
+Verify before moving on:
+
+```bash
+# With a real session cookie — `roles` must be a non-empty array.
+curl -s -H "Cookie: <session cookie>" https://staging-api.hospeda.com.ar/api/v1/public/auth/me
+```
+
+---
+
+## Step 4 — repair what the audit found
 
 **One `INSERT` per missing hat, by hand. Not a feature of the migration.**
 

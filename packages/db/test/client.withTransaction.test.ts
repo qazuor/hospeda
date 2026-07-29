@@ -197,6 +197,65 @@ describe('withTransaction', () => {
         });
     });
 
+    describe('when callback throws a ServiceError (HOS-296)', () => {
+        /**
+         * Stand-in for `@repo/service-core`'s `ServiceError`, reproduced here
+         * because `@repo/db` must not depend on `@repo/service-core`. The only
+         * property the passthrough matches on is `name`, which the real class
+         * sets in its constructor.
+         */
+        class FakeServiceError extends Error {
+            constructor(
+                public code: string,
+                message: string
+            ) {
+                super(message);
+                this.name = 'ServiceError';
+            }
+        }
+
+        it('should rethrow it directly, preserving its code', async () => {
+            // Arrange — the exact shape `revokeRole`'s last-role guard throws.
+            const serviceError = new FakeServiceError(
+                'VALIDATION_ERROR',
+                "Cannot revoke role 'HOST': it is the last role held by user 'u1'."
+            );
+            const { mockDb } = buildMockDb(mockTx);
+            setDb(mockDb);
+
+            // Act
+            let caughtError: unknown;
+            try {
+                await withTransaction(async (_tx) => {
+                    throw serviceError;
+                });
+            } catch (err) {
+                caughtError = err;
+            }
+
+            // Assert — wrapping it in DbError erases the code and the API
+            // answers 500 instead of the documented 400.
+            expect(caughtError).toBe(serviceError);
+            expect(caughtError).not.toBeInstanceOf(DbError);
+            expect((caughtError as FakeServiceError).code).toBe('VALIDATION_ERROR');
+        });
+
+        it('should still wrap a plain Error that merely carries a `code`', async () => {
+            // Arrange — a pg driver error (`code: '23505'`) is NOT a
+            // ServiceError and must keep being wrapped.
+            const pgLikeError = Object.assign(new Error('duplicate key'), { code: '23505' });
+            const { mockDb } = buildMockDb(mockTx);
+            setDb(mockDb);
+
+            // Act & Assert
+            await expect(
+                withTransaction(async (_tx) => {
+                    throw pgLikeError;
+                })
+            ).rejects.toBeInstanceOf(DbError);
+        });
+    });
+
     describe('when callback throws an unknown non-Error value', () => {
         it('should wrap a thrown string in DbError', async () => {
             // Arrange

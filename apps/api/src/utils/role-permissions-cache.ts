@@ -66,23 +66,46 @@ const buildRoleSetKey = (roles: readonly RoleEnum[]): string =>
 const unionCache = new Map<string, CachedRolePermissions>();
 
 /**
+ * Outcome of a single-role lookup.
+ *
+ * Degradation has to be VISIBLE to the caller: the lookup already declines to
+ * cache a failed read so the next request retries, and the union cache layered
+ * on top must make the same choice. A bare `PermissionEnum[]` cannot express
+ * "this empty set is a failure, not an answer", which is precisely how a
+ * degraded union came to be cached for the full TTL.
+ */
+type SingleRolePermissionsResult =
+    | { readonly ok: true; readonly permissions: PermissionEnum[] }
+    | { readonly ok: false };
+
+/**
  * Get all permissions assigned to a single role.
  * Uses an in-memory cache with TTL to avoid repeated DB queries.
  *
+ * A failed query is NOT cached, so the next call retries.
+ *
  * @param role - The role to look up permissions for
- * @returns Array of PermissionEnum values assigned to the role
+ * @returns `{ ok: true, permissions }`, or `{ ok: false }` when the lookup failed
  */
-async function getPermissionsForSingleRole(role: RoleEnum): Promise<PermissionEnum[]> {
+async function getPermissionsForSingleRole(
+    role: RoleEnum
+): Promise<SingleRolePermissionsResult> {
     // Check cache first
     const cached = cache.get(role);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-        return cached.permissions;
+        return { ok: true, permissions: cached.permissions };
     }
 
     // Deduplicate concurrent queries for the same role
     const pending = pendingQueries.get(role);
     if (pending) {
-        return pending;
+        try {
+            return { ok: true, permissions: await pending };
+        } catch {
+            // The owner of the in-flight query logs the failure; here we only
+            // need to report that this role could not be resolved.
+            return { ok: false };
+        }
     }
 
     const queryPromise = queryRolePermissions(role);
@@ -98,12 +121,12 @@ async function getPermissionsForSingleRole(role: RoleEnum): Promise<PermissionEn
 
         apiLogger.debug(`Role permissions loaded for ${role}: ${permissions.length} permissions`);
 
-        return permissions;
+        return { ok: true, permissions };
     } catch (error) {
         apiLogger.error(
             `Failed to load permissions for role ${role}: ${error instanceof Error ? error.message : String(error)}`
         );
-        return [];
+        return { ok: false };
     } finally {
         pendingQueries.delete(role);
     }
@@ -147,13 +170,31 @@ export async function getPermissionsForRoles(params: {
     );
 
     const union = new Set<PermissionEnum>();
-    for (const permissions of perRole) {
-        for (const permission of permissions) {
+    let degraded = false;
+    for (const result of perRole) {
+        if (!result.ok) {
+            degraded = true;
+            continue;
+        }
+        for (const permission of result.permissions) {
             union.add(permission);
         }
     }
 
     const permissions = Array.from(union);
+
+    // NEVER cache a degraded union. The per-role lookup deliberately skips its
+    // own `cache.set` on failure so the next request retries; caching the union
+    // anyway would defeat that and pin the incomplete permission set for the
+    // full TTL — a self-inflicted 403 storm for this role set, with no error
+    // and nothing in the logs after the first failure.
+    if (degraded) {
+        apiLogger.warn(
+            `Role permission union for [${key}] is incomplete (a role lookup failed); not caching so the next request retries.`
+        );
+        return permissions;
+    }
+
     unionCache.set(key, { permissions, timestamp: Date.now() });
 
     return permissions;
