@@ -6,12 +6,19 @@
  * source) as part of moving this logic into `MobileMenu.client.tsx` — the
  * CTA now depends on the client-resolved `role`, since `MobileMenuIsland`
  * no longer runs as a `server:defer` island with a guaranteed-fresh session.
+ *
+ * HOS-311: the host CTA no longer points at the admin panel (HOS-152 removed
+ * `access.panelAdmin` from the HOST role, so that destination 403s), and a
+ * third state was added for a HOST whose entitlement resolves negative.
  */
 
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MobileMenu } from '../../../../src/components/shared/navigation/MobileMenu.client';
 import { AUTH_ME_CACHE_KEY } from '../../../../src/lib/auth-cache';
+import { useSession } from '../../../../src/lib/auth-client';
+import { getEntitlementsCached } from '../../../../src/lib/entitlements-cache';
+import type { SupportedLocale } from '../../../../src/lib/i18n';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
@@ -78,10 +85,22 @@ vi.mock('../../../../src/lib/env', () => ({
     getApiUrl: () => 'https://api.test'
 }));
 
+// HOS-311: the entitlement-resolved CTA states need deterministic control over
+// what `useMyEntitlements` resolves to. Mocking the shared cache module (not
+// the hook) keeps the real hook — including its `skip` short-circuit and its
+// "fail-open while loading" contract — under test.
+vi.mock('../../../../src/lib/entitlements-cache', () => ({
+    getEntitlementsCached: vi.fn(() => new Promise(() => {})),
+    clearEntitlementsCache: vi.fn(),
+    ENTITLEMENTS_CACHE_TTL_MS: 60_000
+}));
+
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const DEFAULT_PROPS = {
-    locale: 'es' as const,
+    // Typed as the full union (not `as const`) so a test can render another
+    // locale and assert the CTA labels are really translated (HOS-311).
+    locale: 'es' as SupportedLocale,
     navItems: [{ label: 'Inicio', href: '/es/' }],
     currentPath: '/es/',
     logoSrc: '/logo.svg',
@@ -103,6 +122,25 @@ function renderMenu(overrides: Partial<typeof DEFAULT_PROPS> = {}) {
 function openMenu() {
     act(() => {
         window.dispatchEvent(new CustomEvent('mobile-menu:toggle'));
+    });
+}
+
+/** Locale-prefixed destinations the CTA can legitimately point at (HOS-311). */
+const PROPERTIES_HREF = '/es/mi-cuenta/propiedades/';
+const SUBSCRIPTION_HREF = '/es/mi-cuenta/suscripcion/';
+const PUBLICAR_HREF = '/es/publicar/';
+
+/** Makes `useMyEntitlements` resolve to the given entitlement keys. */
+function resolveEntitlements(entitlements: readonly string[]) {
+    vi.mocked(useSession).mockReturnValue({
+        data: { user: { id: 'u1' } },
+        isPending: false
+    } as unknown as ReturnType<typeof useSession>);
+    vi.mocked(getEntitlementsCached).mockResolvedValue({
+        entitlements,
+        limits: {},
+        plan: null,
+        asOf: new Date().toISOString()
     });
 }
 
@@ -138,7 +176,11 @@ describe('MobileMenu — owner/host-mode CTA (SPEC-182 D3)', () => {
         expect(cta).toHaveAttribute('href', '/es/publicar/');
     });
 
-    it('switches to the host-mode CTA (admin panel link) when initialRole is HOST and adminPanelUrl is configured', () => {
+    it('switches to the host-mode CTA (own properties, NOT the admin panel) when initialRole is HOST', () => {
+        // HOS-311: this used to assert `href === 'https://admin.test'`. A HOST
+        // has no `access.panelAdmin` (HOS-152), so the admin panel answers with
+        // /auth/forbidden?reason=host-missing-permission — the CTA now stays in
+        // the web app.
         renderMenu({
             initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
             initialRole: 'HOST'
@@ -146,13 +188,16 @@ describe('MobileMenu — owner/host-mode CTA (SPEC-182 D3)', () => {
         openMenu();
 
         const cta = screen.getByRole('link', { name: /modo anfitrión/i });
-        expect(cta).toHaveAttribute('href', 'https://admin.test');
+        expect(cta).toHaveAttribute('href', PROPERTIES_HREF);
         expect(
             screen.queryByRole('link', { name: /publica tu alojamiento/i })
         ).not.toBeInTheDocument();
     });
 
-    it('falls back to the /publicar CTA when role is HOST but adminPanelUrl is not configured', () => {
+    it('keeps the host-mode CTA when adminPanelUrl is not configured (the CTA no longer depends on it)', () => {
+        // HOS-311: this used to assert the /publicar fallback, because the old
+        // host CTA needed an admin URL to point at. The destination is now an
+        // internal route, so the env var is irrelevant to it.
         renderMenu({
             initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
             initialRole: 'HOST',
@@ -160,8 +205,8 @@ describe('MobileMenu — owner/host-mode CTA (SPEC-182 D3)', () => {
         });
         openMenu();
 
-        const cta = screen.getByRole('link', { name: /publica tu alojamiento/i });
-        expect(cta).toHaveAttribute('href', '/es/publicar/');
+        const cta = screen.getByRole('link', { name: /modo anfitrión/i });
+        expect(cta).toHaveAttribute('href', PROPERTIES_HREF);
     });
 
     it('renders on first paint from initialRole, before the client cache/fetch resolves (fetch never resolves in this test)', () => {
@@ -262,5 +307,168 @@ describe('MobileMenu — owner/host-mode CTA (SPEC-182 D3)', () => {
         // fireEvent not needed — just confirm the icon markup renders (icon
         // component itself is not mocked here, so this asserts an <svg> exists).
         expect(cta.querySelector('svg')).not.toBeNull();
+    });
+});
+
+describe('MobileMenu — host CTA never reaches the admin panel (HOS-311)', () => {
+    beforeEach(() => {
+        sessionStorage.clear();
+        global.fetch = vi.fn(() => new Promise(() => {})) as unknown as typeof fetch;
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        sessionStorage.clear();
+    });
+
+    it('sends an entitled HOST to their properties list', async () => {
+        resolveEntitlements(['publish_accommodations']);
+
+        renderMenu({
+            initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
+            initialRole: 'HOST'
+        });
+        openMenu();
+
+        await waitFor(() => {
+            expect(screen.getByRole('link', { name: /modo anfitrión/i })).toHaveAttribute(
+                'href',
+                PROPERTIES_HREF
+            );
+        });
+    });
+
+    it('sends a HOST whose entitlement resolved NEGATIVE to the subscription page ("activate your plan")', async () => {
+        resolveEntitlements(['view_own_dashboard']);
+
+        renderMenu({
+            initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
+            initialRole: 'HOST'
+        });
+        openMenu();
+
+        await waitFor(() => {
+            expect(screen.getByRole('link', { name: /activá tu plan/i })).toHaveAttribute(
+                'href',
+                SUBSCRIPTION_HREF
+            );
+        });
+        expect(screen.queryByRole('link', { name: /modo anfitrión/i })).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('link', { name: /publica tu alojamiento/i })
+        ).not.toBeInTheDocument();
+    });
+
+    it('does NOT flash the "activate your plan" state while entitlements are still loading', () => {
+        // `getEntitlementsCached` stays pending (module-mock default), so
+        // `hostHasEntitlement` must read TRUE (fail-open, deliberate) and the
+        // third state must not appear.
+        vi.mocked(useSession).mockReturnValue({
+            data: { user: { id: 'u1' } },
+            isPending: false
+        } as unknown as ReturnType<typeof useSession>);
+
+        renderMenu({
+            initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
+            initialRole: 'HOST'
+        });
+        openMenu();
+
+        expect(screen.getByRole('link', { name: /modo anfitrión/i })).toHaveAttribute(
+            'href',
+            PROPERTIES_HREF
+        );
+        expect(screen.queryByRole('link', { name: /activá tu plan/i })).not.toBeInTheDocument();
+    });
+
+    it('keeps the /publicar funnel for everyone who is not a HOST', () => {
+        renderMenu({
+            initialUser: { id: 'u1', name: 'Tourist', email: 'tourist@example.com' },
+            initialRole: 'USER'
+        });
+        openMenu();
+
+        expect(screen.getByRole('link', { name: /publica tu alojamiento/i })).toHaveAttribute(
+            'href',
+            PUBLICAR_HREF
+        );
+    });
+
+    it.each([
+        ['entitled', ['publish_accommodations'], /modo anfitrión/i],
+        ['not entitled', ['view_own_dashboard'], /activá tu plan/i]
+    ] as const)('renders NO link pointing at the admin panel for a HOST (%s)', async (_label, entitlements, ctaName) => {
+        // The actual defect: clicking the host CTA landed on
+        // /auth/forbidden?reason=host-missing-permission. Pin the
+        // destination directly — no anchor anywhere in the menu may target
+        // the admin URL (the session-zone admin link is permission-gated
+        // and a HOST has no `access.panelAdmin`, so it must stay absent).
+        resolveEntitlements(entitlements);
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                data: {
+                    actor: {
+                        id: 'u1',
+                        name: 'Host User',
+                        email: 'host@example.com',
+                        role: 'HOST',
+                        permissions: ['accommodation.create', 'accommodation.update.own']
+                    },
+                    isAuthenticated: true
+                }
+            })
+        }) as unknown as typeof fetch;
+
+        const { container } = renderMenu({
+            initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
+            initialRole: 'HOST'
+        });
+        openMenu();
+
+        await waitFor(() => {
+            expect(screen.getByRole('link', { name: ctaName })).toBeInTheDocument();
+        });
+
+        const adminLinks = Array.from(container.querySelectorAll('a')).filter((anchor) =>
+            (anchor.getAttribute('href') ?? '').startsWith('https://admin.test')
+        );
+        expect(adminLinks).toEqual([]);
+    });
+
+    it('translates the host CTA instead of falling back to Spanish in en (nav.hostModeCta must exist)', () => {
+        // `t('nav.hostModeCta', 'Modo anfitrión')` silently rendered the
+        // Spanish fallback in EVERY locale because the key was never added to
+        // the catalogue. Assert the real EN string.
+        renderMenu({
+            locale: 'en',
+            initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
+            initialRole: 'HOST'
+        });
+        openMenu();
+
+        expect(screen.getByRole('link', { name: /^host mode$/i })).toHaveAttribute(
+            'href',
+            '/en/mi-cuenta/propiedades/'
+        );
+        expect(screen.queryByRole('link', { name: /modo anfitrión/i })).not.toBeInTheDocument();
+    });
+
+    it('translates the "activate your plan" CTA in en (nav.activatePlanCta must exist)', async () => {
+        resolveEntitlements(['view_own_dashboard']);
+
+        renderMenu({
+            locale: 'en',
+            initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
+            initialRole: 'HOST'
+        });
+        openMenu();
+
+        await waitFor(() => {
+            expect(screen.getByRole('link', { name: /^activate your plan$/i })).toHaveAttribute(
+                'href',
+                '/en/mi-cuenta/suscripcion/'
+            );
+        });
     });
 });

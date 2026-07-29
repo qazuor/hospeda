@@ -31,7 +31,7 @@
  * `ctaHref`, formerly computed server-side in `MobileMenuIsland.astro`) is
  * now derived here from the resolved `role`.
  *
- * Tasks: T-074
+ * Tasks: T-074, HOS-311
  */
 
 import { EntitlementKey } from '@repo/billing';
@@ -113,8 +113,9 @@ interface MobileMenuProps {
     readonly initialRole: string | null;
     /**
      * Admin panel base URL for the session-zone admin-panel link (HOS-131
-     * §6.5, staff/host only, gated by `access.panelAdmin`) and the
-     * host-mode CTA. `undefined` (env var not configured) hides both.
+     * §6.5, staff only in practice, gated by `access.panelAdmin`).
+     * `undefined` (env var not configured) hides it. Deliberately NOT used
+     * by the owner CTA any more — see HOS-311 in the body.
      */
     readonly adminPanelUrl?: string;
 }
@@ -195,9 +196,9 @@ export function MobileMenu({
     // while `isLoading` (fail-closed by the hook's own contract) — ORing in
     // `entitlementsLoading` here keeps first paint identical to the SSR hint
     // (`role === 'HOST'`, matching `Header.astro`'s `isAlreadyHost` on the
-    // same page) and only downgrades to the /publicar funnel once the real
-    // entitlement resolves negative, instead of flashing the wrong CTA for
-    // every HOST on every load while the fetch is in flight.
+    // same page) and only downgrades once the real entitlement resolves
+    // negative, instead of flashing the wrong CTA for every HOST on every
+    // load while the fetch is in flight.
     // ------------------------------------------------------------------
     // `skip` when role isn't (yet, or ever) HOST — avoids firing the
     // entitlements fetch for every authenticated visitor on every page just
@@ -211,11 +212,36 @@ export function MobileMenu({
         entitlementsLoading ||
         hasEntitlement(EntitlementKey.PUBLISH_ACCOMMODATIONS) ||
         hasEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO);
-    const isHostMode = role === 'HOST' && Boolean(adminPanelUrl) && hostHasEntitlement;
-    const ctaLabel = isHostMode ? t('nav.hostModeCta', 'Modo anfitrión') : t('nav.ownerCta');
+    // ------------------------------------------------------------------
+    // HOS-311: the host CTA must NEVER point at the admin panel. HOS-152
+    // deliberately removed `ACCESS_PANEL_ADMIN` from the HOST role after a
+    // security incident (see
+    // `packages/seed/src/data-migrations/0010-remove-panel-admin-from-host-commerce-owner.ts`)
+    // — a HOST self-manages entirely in the web app, so `apps/admin`'s
+    // `authed-guard` bounces them to
+    // `/auth/forbidden?reason=host-missing-permission`. The admin panel stays
+    // reachable ONLY through the session-zone link below, which is gated on
+    // the real `access.panelAdmin` permission by `buildAdminPanelItem`.
+    //
+    // Three CTA states, in precedence order:
+    //  1. HOST with the publishing entitlement → their properties list.
+    //  2. HOST whose entitlement resolved NEGATIVE → the subscription page
+    //     ("activate your plan"). Only reachable once `entitlementsLoading`
+    //     is false, since `hostHasEntitlement` reads `true` while loading.
+    //  3. Everyone else (guests, tourists, staff) → the /publicar funnel.
+    // ------------------------------------------------------------------
+    const isHostMode = role === 'HOST' && hostHasEntitlement;
+    const needsPlan = role === 'HOST' && !hostHasEntitlement;
+    const ctaLabel = isHostMode
+        ? t('nav.hostModeCta', 'Modo anfitrión')
+        : needsPlan
+          ? t('nav.activatePlanCta', 'Activá tu plan')
+          : t('nav.ownerCta');
     const ctaHref = isHostMode
-        ? (adminPanelUrl as string)
-        : buildUrl({ locale, path: '/publicar/' });
+        ? buildUrl({ locale, path: '/mi-cuenta/propiedades/' })
+        : needsPlan
+          ? buildUrl({ locale, path: '/mi-cuenta/suscripcion/' })
+          : buildUrl({ locale, path: '/publicar/' });
 
     // ------------------------------------------------------------------
     // Map the resolved AuthMeUser (id/name/email/avatarUrl) to the shape

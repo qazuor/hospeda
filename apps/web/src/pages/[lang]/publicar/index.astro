@@ -27,7 +27,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import { OWNER_FAQ_ITEMS, buildOwnerFaqParams } from '@/lib/owner-faq';
-import { getAdminUrl, getApiUrl } from '@/lib/env';
+import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import {
 	InfoIcon,
@@ -248,7 +248,7 @@ const faqJsonLd = {
 					auth-aware CTA anyway (the unauth fallback href is the safe SSG
 					default, and useSession only needs to resolve client-side).
 				-->
-				<HostLandingCta client:only="react" locale={locale} adminUrl={getAdminUrl()} />
+				<HostLandingCta client:only="react" locale={locale} />
 			</div>
 			<aside class="publicar-hero__visual" aria-hidden="true" data-reveal="right">
 				<div class="publicar-hero__blob"></div>

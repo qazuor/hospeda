@@ -497,10 +497,12 @@
         }
     },
     "landing": {
-        "heroHeadline": "[TODO]",
-        "heroSubheadline": "[TODO]",
-        "primaryCta": "[TODO]",
-        "secondaryCta": "[TODO]",
+        "heroHeadline": "Turn your property into income",
+        "heroSubheadline": "List it in minutes and start welcoming guests",
+        "primaryCta": "List your property",
+        "secondaryCta": "View my properties",
+        "hostModeCta": "Go to my properties",
+        "activatePlanCta": "Activate your plan",
         "trialCallout": "Try Hospeda free for {{trialDays}} days on your first subscription. You pick your plan, add your card, and nothing is charged until the trial ends."
     },
     "fromAdminBanner": {

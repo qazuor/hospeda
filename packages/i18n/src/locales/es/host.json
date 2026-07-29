@@ -501,6 +501,8 @@
         "heroSubheadline": "Publicá en minutos y empezá a recibir huéspedes",
         "primaryCta": "Publicar tu propiedad",
         "secondaryCta": "Ver mis propiedades",
+        "hostModeCta": "Ir a mis propiedades",
+        "activatePlanCta": "Activá tu plan",
         "trialCallout": "Probá Hospeda gratis por {{trialDays}} días en tu primera suscripción. Elegís tu plan, cargás tu tarjeta y no se cobra nada hasta que termina la prueba."
     },
     "fromAdminBanner": {

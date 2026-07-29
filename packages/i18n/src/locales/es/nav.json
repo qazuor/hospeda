@@ -18,6 +18,8 @@
         "merchants": "Para comercios"
     },
     "ownerCta": "Publica tu alojamiento",
+    "hostModeCta": "Modo anfitrión",
+    "activatePlanCta": "Activá tu plan",
     "publishCta": "Publicar",
     "userMenu": {
         "signIn": "Iniciar sesión",

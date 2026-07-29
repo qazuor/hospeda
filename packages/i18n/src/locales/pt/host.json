@@ -497,10 +497,12 @@
         }
     },
     "landing": {
-        "heroHeadline": "[TODO]",
-        "heroSubheadline": "[TODO]",
-        "primaryCta": "[TODO]",
-        "secondaryCta": "[TODO]",
+        "heroHeadline": "Transforme sua propriedade em renda",
+        "heroSubheadline": "Publique em minutos e comece a receber hóspedes",
+        "primaryCta": "Publicar sua propriedade",
+        "secondaryCta": "Ver minhas propriedades",
+        "hostModeCta": "Ir para minhas propriedades",
+        "activatePlanCta": "Ative seu plano",
         "trialCallout": "Experimente o Hospeda gratis por {{trialDays}} dias na sua primeira assinatura. Você escolhe seu plano, cadastra seu cartão e nada é cobrado até o teste terminar."
     },
     "fromAdminBanner": {

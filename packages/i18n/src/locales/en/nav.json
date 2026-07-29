@@ -18,6 +18,8 @@
         "merchants": "For merchants"
     },
     "ownerCta": "List your property",
+    "hostModeCta": "Host mode",
+    "activatePlanCta": "Activate your plan",
     "publishCta": "Publish",
     "userMenu": {
         "signIn": "Sign in",
