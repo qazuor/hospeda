@@ -6,8 +6,9 @@
  *
  * The primary CTA is auth-aware: authenticated users are linked directly to the
  * new-property form (/publicar/nueva/), unauthenticated users go to sign-in first.
- * This is implemented via a small React island (HostLandingCta) with client:load
- * so the swap happens on first paint without any server-side session check.
+ * This is implemented via a small React island (HostLandingCta) with
+ * client:only="react", so the swap happens client-side once Better Auth's
+ * session resolves, without any server-side session check.
  *
  * Marketing prose (benefits, steps, FAQ) is deliberately kept in sync with
  * /suscriptores/propietarios/ via shared i18n keys (owners.*) — no copy duplication.

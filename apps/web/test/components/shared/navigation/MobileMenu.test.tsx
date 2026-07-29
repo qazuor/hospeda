@@ -92,9 +92,8 @@ vi.mock('@repo/icons', async (importOriginal) => {
 const mockSignOut = vi.fn();
 vi.mock('../../../../src/lib/auth-client', () => ({
     signOut: () => mockSignOut(),
-    // HOS-217: MobileMenu now also calls useMyEntitlements (host-mode CTA
-    // entitlement refinement), which reads Better Auth's useSession directly.
-    // Perpetually-pending — irrelevant to this file's sign-out assertions.
+    // Kept so the module mock stays shape-complete; perpetually-pending and
+    // irrelevant to this file's sign-out assertions.
     useSession: vi.fn(() => ({ data: null, isPending: true }))
 }));
 

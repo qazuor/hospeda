@@ -29,7 +29,7 @@
  * `MobileMenuIsland.astro`'s file doc for why), so it can never assume a
  * freshly-parsed session — the host-mode CTA (`isHostMode`/`ctaLabel`/
  * `ctaHref`, formerly computed server-side in `MobileMenuIsland.astro`) is
- * now derived here from the resolved `role`.
+ * now derived here from the resolved `user`/`role`.
  *
  * Tasks: T-074, HOS-311
  */
@@ -42,8 +42,6 @@ import { ThemeControl } from '@/components/shared/preferences/ThemeControl.clien
 import { IconButton } from '@/components/ui/IconButtonReact';
 import type { NavItem as AccountNavItem } from '@/config/navigation';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
-import { useMyEntitlements } from '@/hooks/useMyEntitlements';
-import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
 import { buildAdminPanelItem } from '@/lib/admin-panel-link';
 import type { AuthMeUser } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
@@ -181,35 +179,9 @@ export function MobileMenu({
     // MobileMenuIsland.astro). A HOST may still be mid-onboarding with only
     // a DRAFT, but role=HOST is still enough to point the CTA at the host
     // surfaces. Unauthenticated visitors and tourists keep the /publicar
-    // funnel. `role` starts at `initialRole` and is refined by the same
-    // hook resolution as `user`/`permissions` above.
+    // funnel. `role`/`user` start at `initialRole`/`initialUser` and are
+    // refined by the same hook resolution as `permissions` above.
     //
-    // HOS-217/HOS-311: `role === 'HOST'` alone cannot tell a paying owner from
-    // a TOURIST who just completed host-onboarding and never subscribed. The
-    // signal for that is the SUBSCRIPTION, not entitlement keys: an
-    // entitlement-key check cannot work, because `loadEntitlements` hands ANY
-    // plan-less HOST the `owner-basico` DRAFT defaults and that plan grants
-    // both PUBLISH_ACCOMMODATIONS and EDIT_ACCOMMODATION_INFO — so the host who
-    // genuinely needs a plan is never missing them, and the only real triggers
-    // for that old condition were a fetch error, billing disabled, or data
-    // corruption. `plan == null` is the same signal
-    // `mi-cuenta/propiedades/index.astro` already resolves server-side ("plan
-    // is null when the owner has no real owner/complex-category subscription").
-    //
-    // `skip` when role isn't (yet, or ever) HOST — avoids firing the
-    // entitlements fetch for every authenticated visitor on every page just
-    // to refine a CTA that only HOST actors see anyway. `role` starts at
-    // `initialRole` (the SSR hint), so this is already correct on first
-    // render — no extra hydration-mismatch risk.
-    // ------------------------------------------------------------------
-    const {
-        plan,
-        error: entitlementsError,
-        hasResolved: entitlementsResolved
-    } = useMyEntitlements({
-        skip: role !== 'HOST'
-    });
-    // ------------------------------------------------------------------
     // HOS-311: the host CTA must NEVER point at the admin panel. HOS-152
     // deliberately removed `ACCESS_PANEL_ADMIN` from the HOST role after a
     // security incident (see
@@ -220,43 +192,20 @@ export function MobileMenu({
     // reachable ONLY through the session-zone link below, which is gated on
     // the real `access.panelAdmin` permission by `buildAdminPanelItem`.
     //
-    // Three CTA states, in precedence order:
-    //  1. HOST whose entitlements RESOLVED with no owner subscription → the
-    //     owner plans page ("activate your plan").
-    //  2. Any other HOST → their properties list.
-    //  3. Everyone else (guests, tourists, staff) → the /publicar funnel.
+    // Two CTA states:
+    //  1. A resolved HOST → their properties list ("host mode").
+    //  2. Everyone else (guests, tourists, staff) → the /publicar funnel.
     //
-    // Every guard on state 1 fails OPEN, so a paying host can never be nagged:
-    //  - `user`: the nag needs a RESOLVED user, not just the SSR `initialRole`
-    //    hint. A stale `initialRole: 'HOST'` on an expired session would
-    //    otherwise nag a logged-OUT visitor. (`isHostMode` keeps working off
-    //    `role` alone — its destination is harmless and its first paint has to
-    //    match the SSR hint.)
-    //  - `entitlementsResolved`: a fetch genuinely COMPLETED for this actor.
-    //    `isLoading === false` is not enough — the hook's `skip` branch
-    //    resolves it synchronously, so `skip: true -> false` (role settling to
-    //    HOST) commits one render with stale `isLoading=false` + `plan=null`.
-    //  - `entitlementsError === null`: a 429/500 must never read as "no plan".
-    //    `Header.astro` fails open on the same resolution on the same page
-    //    load (`let hostHasEntitlement = true`) — the two must not contradict.
+    // `user` is part of the gate on state 1 because the props allow a role
+    // hint WITHOUT a resolved user (a stale `initialRole: 'HOST'` on an
+    // expired session); in that state the menu falls back to the funnel
+    // rather than offer a host surface to someone it cannot identify.
     // ------------------------------------------------------------------
-    const needsPlan =
-        Boolean(user) &&
-        role === 'HOST' &&
-        entitlementsResolved &&
-        entitlementsError === null &&
-        plan === null;
-    const isHostMode = role === 'HOST' && !needsPlan;
-    const ctaLabel = needsPlan
-        ? t('nav.activatePlanCta', 'Activá tu plan')
-        : isHostMode
-          ? t('nav.hostModeCta', 'Modo anfitrión')
-          : t('nav.ownerCta');
-    const ctaHref = needsPlan
-        ? buildUrl({ locale, path: resolveSubscriptionPlansPath({ role }) })
-        : isHostMode
-          ? buildUrl({ locale, path: '/mi-cuenta/propiedades/' })
-          : buildUrl({ locale, path: '/publicar/' });
+    const isHostMode = Boolean(user) && role === 'HOST';
+    const ctaLabel = isHostMode ? t('nav.hostModeCta', 'Modo anfitrión') : t('nav.ownerCta');
+    const ctaHref = isHostMode
+        ? buildUrl({ locale, path: '/mi-cuenta/propiedades/' })
+        : buildUrl({ locale, path: '/publicar/' });
 
     // ------------------------------------------------------------------
     // Map the resolved AuthMeUser (id/name/email/avatarUrl) to the shape

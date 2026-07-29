@@ -59,23 +59,6 @@ export interface UseMyEntitlementsReturn {
     readonly plan: EntitlementsData['plan'];
     readonly isLoading: boolean;
     readonly error: Error | null;
-    /**
-     * `true` only once a fetch has genuinely COMPLETED SUCCESSFULLY for the
-     * current actor. `false` while skipped, while the session is resolving,
-     * while the fetch is in flight, for a guest (no fetch is ever made), and
-     * on error.
-     *
-     * HOS-311: `isLoading === false` is NOT a safe "the answer is in" signal.
-     * The `skip` branch resolves `isLoading` to `false` synchronously without
-     * ever touching the network, so a caller that un-skips (`skip: true ->
-     * false`, e.g. `MobileMenu`/`HostLandingCta` once `role` resolves to
-     * HOST) commits one render with a stale `isLoading=false` AND `data=null`
-     * — long enough to flash a "you have no plan" state at a fully-paid host,
-     * and long enough for a click to land on it. Consumers that render a
-     * NEGATIVE conclusion (a nag, a paywall, an upsell) must gate on
-     * `hasResolved`, not on `!isLoading`.
-     */
-    readonly hasResolved: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -124,10 +107,6 @@ export function useMyEntitlements(params: UseMyEntitlementsParams = {}): UseMyEn
     const [data, setData] = useState<EntitlementsData | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<Error | null>(null);
-    // HOS-311: starts `false` on BOTH server and first client render, exactly
-    // like `data`/`isLoading` above — see the hydration note there. It only
-    // ever flips to `true` inside the fetch's success callback.
-    const [hasResolved, setHasResolved] = useState<boolean>(false);
     const mountedRef = useRef(true);
 
     // The entitlements endpoint lives under /protected and 401s for guests.
@@ -153,7 +132,6 @@ export function useMyEntitlements(params: UseMyEntitlementsParams = {}): UseMyEn
             setData(null);
             setError(null);
             setIsLoading(false);
-            setHasResolved(false);
             return;
         }
 
@@ -166,9 +144,6 @@ export function useMyEntitlements(params: UseMyEntitlementsParams = {}): UseMyEn
         // "loading" while the (now-relevant) session/entitlements resolve.
         // A no-op re-render when already `true` (the common, non-un-skip case).
         setIsLoading(true);
-        // Same reasoning for `hasResolved` (HOS-311): whatever a previous
-        // actor/skip cycle resolved is not an answer about THIS one.
-        setHasResolved(false);
 
         // Session not resolved yet: stay in the loading state (has() fails
         // closed) and let the effect re-run once it settles. This also keeps
@@ -184,10 +159,6 @@ export function useMyEntitlements(params: UseMyEntitlementsParams = {}): UseMyEn
             setData(null);
             setError(null);
             setIsLoading(false);
-            // No fetch was made, so nothing is "resolved" — a guest must never
-            // satisfy a gate that means "the server told us this actor has no
-            // plan" (HOS-311).
-            setHasResolved(false);
             return;
         }
 
@@ -203,13 +174,11 @@ export function useMyEntitlements(params: UseMyEntitlementsParams = {}): UseMyEn
                 setData(result);
                 setError(null);
                 setIsLoading(false);
-                setHasResolved(true);
             })
             .catch((err: unknown) => {
                 if (cancelled || !mountedRef.current) return;
                 setError(err instanceof Error ? err : new Error(String(err)));
                 setIsLoading(false);
-                setHasResolved(false);
             });
 
         return () => {
@@ -241,7 +210,6 @@ export function useMyEntitlements(params: UseMyEntitlementsParams = {}): UseMyEn
         limit,
         plan: data?.plan ?? null,
         isLoading,
-        error,
-        hasResolved
+        error
     };
 }

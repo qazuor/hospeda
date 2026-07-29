@@ -115,11 +115,11 @@ describe('publicar/index.astro — from-admin eyebrow', () => {
             expect(redirectBlock).not.toContain('role ===');
         });
 
-        // HOS-311 FIX 6: this redirect is exactly why `HostLandingCta`'s host
-        // branch must NOT point at the properties list. Every authenticated
-        // actor with >=1 owned accommodation is bounced there server-side, so
-        // the only host who reaches the island's CTA has ZERO properties —
-        // an empty list would be a dead click before the wizard.
+        // HOS-311: this redirect is exactly why `HostLandingCta`'s host branch
+        // must NOT point at the properties list. Every authenticated actor with
+        // >=1 owned accommodation is bounced there server-side, so the only
+        // host who reaches the island's CTA has ZERO properties — an empty list
+        // would be a dead click before the wizard.
         it('makes the properties list the SSR destination for a host who already has listings', () => {
             const redirectBlock = src.slice(
                 src.indexOf('Redirect existing hosts'),
@@ -129,10 +129,10 @@ describe('publicar/index.astro — from-admin eyebrow', () => {
             expect(redirectBlock).toContain("path: 'mi-cuenta/propiedades' })");
         });
 
-        // The island is `client:only="react"`, so there is NO SSR role hint and
-        // Better Auth's session always starts pending on this page. That makes
-        // the `skip: true -> false` transition the ALWAYS-path for an entitled
-        // host — the window the HOS-311 flash lived in.
+        // The island is `client:only="react"`, so there is NO server-rendered
+        // markup and Better Auth's session always starts pending on this page —
+        // which is what the component's own JSDoc documents. Pinned so the
+        // directive and the doc cannot silently diverge again.
         it('hydrates the CTA island with client:only="react" (no SSR role hint)', () => {
             expect(src).toMatch(/<HostLandingCta\s+client:only="react"/);
         });
