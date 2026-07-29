@@ -20,7 +20,7 @@
  * primitives' own behaviour (idempotence, the `FOR UPDATE` lock, the audit
  * insert) is covered by `packages/service-core`'s `user-role.service.test.ts`.
  */
-import { ServiceErrorCode } from '@repo/schemas';
+import { LAST_ROLE_REVOKE_REASON, ServiceErrorCode } from '@repo/schemas';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // `vi.hoisted` because the `vi.mock` factory below is lifted above every
@@ -106,8 +106,11 @@ describe('Admin user role routes (HOS-296)', () => {
         mockGetUserRoles.mockReset();
         mockGetUserRoleGrants.mockReset();
 
-        mockGrantRole.mockResolvedValue({ data: undefined });
-        mockRevokeRole.mockResolvedValue({ data: undefined });
+        // `{ changed }` is what `ServiceOutput<RoleMutationOutcome>` always
+        // carries on success. The route ignores `.data`, but a stub that omits
+        // it describes a shape the primitive can no longer return.
+        mockGrantRole.mockResolvedValue({ data: { changed: true } });
+        mockRevokeRole.mockResolvedValue({ data: { changed: true } });
         mockGetUserRoles.mockResolvedValue(['USER', 'HOST']);
         mockGetUserRoleGrants.mockResolvedValue([]);
     });
@@ -324,11 +327,13 @@ describe('Admin user role routes (HOS-296)', () => {
             );
         });
 
-        it('maps the last-role refusal to 400, NOT 500 (AC-5)', async () => {
+        it('maps the last-role refusal to 400, NOT 500, and keeps its machine-readable reason (AC-5)', async () => {
+            const rawMessage = `Cannot revoke role 'USER': it is the last role held by user '${TARGET_ID}'.`;
             mockRevokeRole.mockResolvedValue({
                 error: {
                     code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: `Cannot revoke role 'USER': it is the last role held by user '${TARGET_ID}'.`
+                    message: rawMessage,
+                    reason: LAST_ROLE_REVOKE_REASON
                 }
             });
 
@@ -339,9 +344,18 @@ describe('Admin user role routes (HOS-296)', () => {
             expect(res.status).toBe(400);
             expect(res.status).not.toBe(500);
 
-            const body = (await res.json()) as { error?: { code?: string; message?: string } };
+            const body = (await res.json()) as {
+                error?: { code?: string; message?: string; reason?: string };
+            };
             expect(body.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
             expect(body.error?.message).toContain('last role');
+            // The route re-throws with `reason`, and the response formatter
+            // must carry it through: `UserRolesCard.errorMessage` keys off
+            // exactly this field to translate the refusal instead of showing
+            // the operator the raw English message, which embeds the subject's
+            // UUID. Dropping it anywhere along that chain is silent — the
+            // status code and message are unchanged.
+            expect(body.error?.reason).toBe(LAST_ROLE_REVOKE_REASON);
         });
 
         it('maps an unknown user to 404, not 500', async () => {

@@ -147,7 +147,11 @@ export const UserRoleGrantSchema = z.object({
 export type UserRoleGrant = z.infer<typeof UserRoleGrantSchema>;
 
 /**
- * Response body of `GET /api/v1/admin/users/{id}/roles`.
+ * Response body of `GET /api/v1/admin/users/{id}/role-grants`.
+ *
+ * The read lives on its own path (NOT `/{id}/roles`) because route middlewares
+ * are registered per path and are method-agnostic — sharing the write path
+ * would make this read demand `USER_UPDATE_ROLES` as well.
  *
  * Ordered oldest-grant-first so the list reads as the account's role history.
  */

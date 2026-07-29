@@ -64,6 +64,92 @@ export interface UserRolesCardProps {
     readonly userId: string;
 }
 
+interface RevokeRoleDialogProps {
+    /** Hat this dialog revokes. */
+    readonly role: RoleEnum;
+    /** Disables the trigger (a pending mutation, or the last remaining hat). */
+    readonly disabled: boolean;
+    /** `true` when the hat is the account's last one (AC-5) — changes the tooltip. */
+    readonly isLastRole: boolean;
+    /** Called with the role and the justification the operator typed HERE. */
+    readonly onConfirm: (params: { role: RoleEnum; reason: string }) => void;
+}
+
+/**
+ * Revoke trigger plus its confirmation dialog, owning the justification the
+ * revoke writes to `user_role_audit`.
+ *
+ * The reason input lives INSIDE the dialog, and the state is local to this
+ * component, for two reasons that are the same reason:
+ *
+ * 1. The operator must SEE the text they are about to record at the moment
+ *    they confirm. The grant row's input is elsewhere on the card, so a reason
+ *    typed there is invisible from the confirmation dialog — a grant
+ *    justification silently became the REVOKE's audit reason. Wrong
+ *    attribution in an append-only table is worse than none: AC-6 exists so an
+ *    admin-initiated change is explicable, not merely non-null.
+ * 2. Local state gives per-row isolation and a free reset — Radix closes the
+ *    dialog after the action, and `onOpenChange` clears the field, so a reason
+ *    can never leak from one role's dialog into another's.
+ *
+ * @param props - See {@link RevokeRoleDialogProps}.
+ */
+function RevokeRoleDialog({ role, disabled, isLastRole, onConfirm }: RevokeRoleDialogProps) {
+    const { t } = useTranslations();
+    const [reason, setReason] = useState('');
+
+    return (
+        <AlertDialog
+            onOpenChange={(open) => {
+                if (!open) setReason('');
+            }}
+        >
+            <AlertDialogTrigger asChild>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={disabled}
+                    title={
+                        isLastRole
+                            ? t('admin-pages.access.users.roles.cannotRevokeLast')
+                            : t('admin-pages.access.users.roles.revokeRole')
+                    }
+                    aria-label={t('admin-pages.access.users.roles.revokeRole')}
+                >
+                    <DeleteIcon className="h-4 w-4" />
+                </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>
+                        {t('admin-pages.access.users.roles.confirmRevoke')}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {t('admin-pages.access.users.roles.confirmRevokeDesc')}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                <Input
+                    value={reason}
+                    onChange={(event) => setReason(event.target.value)}
+                    maxLength={500}
+                    placeholder={t('admin-pages.access.users.roles.revokeReasonPlaceholder')}
+                    aria-label={t('admin-pages.access.users.roles.revokeReasonPlaceholder')}
+                />
+
+                <AlertDialogFooter>
+                    <AlertDialogCancel>
+                        {t('admin-pages.access.users.roles.cancel')}
+                    </AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onConfirm({ role, reason })}>
+                        {t('admin-pages.access.users.roles.revokeRole')}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
+}
+
 /**
  * Multi-role management card: shows every hat with its provenance and lets an
  * operator grant or revoke one.
@@ -79,7 +165,18 @@ export function UserRolesCard({ userId }: UserRolesCardProps) {
     const revoke = useRevokeUserRole(userId);
 
     const [roleToGrant, setRoleToGrant] = useState<RoleEnum | ''>('');
-    const [reason, setReason] = useState('');
+    /**
+     * Justification for the GRANT only.
+     *
+     * Grant and revoke hold SEPARATE reason state on purpose. A single shared
+     * input sat in the grant row, so an operator who typed a grant
+     * justification and then revoked a hat instead wrote that grant-intent text
+     * into the REVOKE's append-only audit row — confidently wrong attribution,
+     * which is worse than the `null` it replaced. The revoke's own reason is
+     * typed inside its confirmation dialog (see {@link RevokeRoleDialog}), where
+     * the operator can SEE what they are about to record.
+     */
+    const [grantReason, setGrantReason] = useState('');
 
     const heldRoles = useMemo(() => data?.roles ?? [], [data]);
 
@@ -136,13 +233,14 @@ export function UserRolesCard({ userId }: UserRolesCardProps) {
 
     const handleGrant = async (): Promise<void> => {
         if (!roleToGrant) return;
+        const trimmed = grantReason.trim();
         try {
             await grant.mutateAsync({
                 role: roleToGrant,
-                ...(reason.trim() ? { reason: reason.trim() } : {})
+                ...(trimmed ? { reason: trimmed } : {})
             });
             setRoleToGrant('');
-            setReason('');
+            setGrantReason('');
             addToast({
                 title: t('admin-pages.access.users.roles.granted'),
                 message: t('admin-pages.access.users.roles.changesTakeEffectNextRequest'),
@@ -157,9 +255,21 @@ export function UserRolesCard({ userId }: UserRolesCardProps) {
         }
     };
 
-    const handleRevoke = async (role: RoleEnum): Promise<void> => {
+    const handleRevoke = async (params: {
+        role: RoleEnum;
+        reason: string;
+    }): Promise<void> => {
+        const { role } = params;
+        const trimmed = params.reason.trim();
         try {
-            await revoke.mutateAsync({ role });
+            // AC-6 requires `action`, `by` AND `reason`. The reason comes from
+            // the revoke dialog's own input — never from the grant row's —
+            // so what lands in the audit row is exactly what the operator saw
+            // while confirming THIS revoke.
+            await revoke.mutateAsync({
+                role,
+                ...(trimmed ? { reason: trimmed } : {})
+            });
             addToast({
                 title: t('admin-pages.access.users.roles.revoked'),
                 message: t('admin-pages.access.users.roles.changesTakeEffectNextRequest'),
@@ -239,53 +349,12 @@ export function UserRolesCard({ userId }: UserRolesCardProps) {
                                         )}
                                     </div>
 
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                disabled={revoke.isPending || isLastRole}
-                                                title={
-                                                    isLastRole
-                                                        ? t(
-                                                              'admin-pages.access.users.roles.cannotRevokeLast'
-                                                          )
-                                                        : t(
-                                                              'admin-pages.access.users.roles.revokeRole'
-                                                          )
-                                                }
-                                                aria-label={t(
-                                                    'admin-pages.access.users.roles.revokeRole'
-                                                )}
-                                            >
-                                                <DeleteIcon className="h-4 w-4" />
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>
-                                                    {t(
-                                                        'admin-pages.access.users.roles.confirmRevoke'
-                                                    )}
-                                                </AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    {t(
-                                                        'admin-pages.access.users.roles.confirmRevokeDesc'
-                                                    )}
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>
-                                                    {t('admin-pages.access.users.roles.cancel')}
-                                                </AlertDialogCancel>
-                                                <AlertDialogAction
-                                                    onClick={() => void handleRevoke(entry.role)}
-                                                >
-                                                    {t('admin-pages.access.users.roles.revokeRole')}
-                                                </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
+                                    <RevokeRoleDialog
+                                        role={entry.role}
+                                        disabled={revoke.isPending || isLastRole}
+                                        isLastRole={isLastRole}
+                                        onConfirm={(confirmed) => void handleRevoke(confirmed)}
+                                    />
                                 </div>
                             ))}
                         </div>
@@ -322,8 +391,8 @@ export function UserRolesCard({ userId }: UserRolesCardProps) {
                             </Select>
 
                             <Input
-                                value={reason}
-                                onChange={(event) => setReason(event.target.value)}
+                                value={grantReason}
+                                onChange={(event) => setGrantReason(event.target.value)}
                                 maxLength={500}
                                 placeholder={t('admin-pages.access.users.roles.reasonPlaceholder')}
                                 aria-label={t('admin-pages.access.users.roles.reasonPlaceholder')}

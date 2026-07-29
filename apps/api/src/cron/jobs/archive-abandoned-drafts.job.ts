@@ -104,6 +104,33 @@ export const isLastRoleRevokeRefusal = (params: { error: unknown }): boolean =>
     params.error !== null &&
     (params.error as { reason?: unknown }).reason === LAST_ROLE_REVOKE_REASON;
 
+/**
+ * What the job should do with the result of a `revokeRole` call, and how much
+ * the `demoted` counter may advance because of it.
+ *
+ * `revokeRole` is idempotent: if the HOST hat disappeared between this job's
+ * UNLOCKED pre-check and the primitive's own `SELECT ... FOR UPDATE`, it returns
+ * a SUCCESSFUL no-op — no error, no delete, no `user_role_audit` row. Counting
+ * or logging that as a demotion asserts a state change nothing corroborates.
+ *
+ * Extracted as a pure function for the same reason as
+ * {@link shouldRevokeHostHat}: the loop around it needs an advisory lock and a
+ * live database, so the decision itself — INCLUDING the fact that the counter
+ * does not advance on a no-op — is only testable once it is separated from the
+ * handler.
+ *
+ * @param params.changed - `revokeRole`'s observed `changed` flag.
+ * @returns The outcome kind plus the amount to add to the `demoted` counter.
+ */
+export const resolveDemotionOutcome = (params: {
+    changed: boolean;
+}):
+    | { readonly kind: 'demoted'; readonly demotedDelta: 1 }
+    | { readonly kind: 'skipped_already_revoked'; readonly demotedDelta: 0 } =>
+    params.changed
+        ? { kind: 'demoted', demotedDelta: 1 }
+        : { kind: 'skipped_already_revoked', demotedDelta: 0 };
+
 const safeReportToSentry = (
     error: unknown,
     context: Parameters<typeof Sentry.captureException>[1]
@@ -326,7 +353,14 @@ export const archiveAbandonedDraftsJob: CronJobDefinition = {
                                 source: LOG_SOURCE,
                                 event: 'owner_demotion_skipped',
                                 ownerId,
-                                heldRoles: [...heldRoles],
+                                // Named for its SOURCE: the read at the top of
+                                // this iteration is unlocked, so by the time a
+                                // skip is recorded the set may already have
+                                // moved. The `host_already_revoked` branch below
+                                // is reachable ONLY with a snapshot that
+                                // contained HOST, which reads as a
+                                // contradiction under a bare `heldRoles` name.
+                                heldRolesAtPreCheck: [...heldRoles],
                                 reason: heldRoles.includes(RoleEnum.HOST)
                                     ? 'host_is_only_role'
                                     : 'host_not_held'
@@ -345,6 +379,7 @@ export const archiveAbandonedDraftsJob: CronJobDefinition = {
                         // the run — not just this owner. Catching it here keeps
                         // the outcome identical to the pre-check's own verdict:
                         // skipped, not failed (see the note above).
+                        let hatWasRevoked = false;
                         try {
                             const revoked = await revokeRole({
                                 userId: ownerId,
@@ -356,6 +391,7 @@ export const archiveAbandonedDraftsJob: CronJobDefinition = {
                             if (revoked.error) {
                                 throw revoked.error;
                             }
+                            hatWasRevoked = revoked.data.changed;
                         } catch (error) {
                             // Matched on the machine-readable `reason`, never on
                             // the message — the message embeds the owner's UUID.
@@ -364,7 +400,7 @@ export const archiveAbandonedDraftsJob: CronJobDefinition = {
                                     source: LOG_SOURCE,
                                     event: 'owner_demotion_skipped',
                                     ownerId,
-                                    heldRoles: [...heldRoles],
+                                    heldRolesAtPreCheck: [...heldRoles],
                                     reason: 'host_became_only_role'
                                 });
                                 continue;
@@ -372,7 +408,21 @@ export const archiveAbandonedDraftsJob: CronJobDefinition = {
                             throw error;
                         }
 
-                        demoted += 1;
+                        // The counter advances only for an OBSERVED revoke — see
+                        // `resolveDemotionOutcome`.
+                        const outcome = resolveDemotionOutcome({ changed: hatWasRevoked });
+                        if (outcome.kind === 'skipped_already_revoked') {
+                            logger.info('Skipped owner HOST revoke', {
+                                source: LOG_SOURCE,
+                                event: 'owner_demotion_skipped',
+                                ownerId,
+                                heldRolesAtPreCheck: [...heldRoles],
+                                reason: 'host_already_revoked'
+                            });
+                            continue;
+                        }
+
+                        demoted += outcome.demotedDelta;
                         logger.info('Revoked owner HOST hat after last draft archived', {
                             source: LOG_SOURCE,
                             event: 'owner_demoted',

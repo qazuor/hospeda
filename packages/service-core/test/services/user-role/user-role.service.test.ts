@@ -142,6 +142,9 @@ const createWhereResult = <T>(
     }
 });
 
+/** Set by a test to mutate the store right before a DELETE executes. */
+let beforeDelete: (() => void) | null = null;
+
 // biome-ignore lint/suspicious/noExplicitAny: the fake client mimics Drizzle's fluent builder, whose per-step types are not worth reconstructing in a test double
 const createFakeClient = (releases: Array<() => void>): any => ({
     select: (_columns: unknown) => ({
@@ -202,15 +205,32 @@ const createFakeClient = (releases: Array<() => void>): any => ({
     }),
     delete: (_table: unknown) => ({
         where: (predicate: Predicate) => {
-            const run = () => {
-                const kept = store.userRoles.filter(
-                    (row) => !matches(row as unknown as Record<string, unknown>, predicate)
-                );
+            let applied = false;
+            const run = (): Array<Record<string, unknown>> => {
+                if (applied) return [];
+                applied = true;
+
+                // Hook for the "row vanished through another path" case: the
+                // `FOR UPDATE` lock only serialises callers that go through
+                // `revokeRole`, so a manual repair or a cascade can delete the
+                // row between the locked read and this statement.
+                beforeDelete?.();
+
+                const removed: Array<Record<string, unknown>> = [];
+                const kept: UserRoleRow[] = [];
+                for (const row of store.userRoles) {
+                    if (matches(row as unknown as Record<string, unknown>, predicate)) {
+                        removed.push(row as unknown as Record<string, unknown>);
+                    } else {
+                        kept.push(row);
+                    }
+                }
                 store.userRoles.length = 0;
                 store.userRoles.push(...kept);
-                return [];
+                return removed;
             };
             return {
+                returning: (_columns: unknown) => Promise.resolve(run()),
                 then: (
                     onFulfilled?: (value: unknown) => unknown,
                     onRejected?: (reason: unknown) => unknown
@@ -244,6 +264,7 @@ beforeEach(() => {
     store.users.length = 0;
     store.userRoles.length = 0;
     store.audit.length = 0;
+    beforeDelete = null;
 });
 
 // ---------------------------------------------------------------------------
@@ -265,6 +286,7 @@ describe('grantRole', () => {
 
         // Assert
         expect(result.error).toBeUndefined();
+        expect(result.data?.changed).toBe(true);
         expect(await getUserRoles({ userId: USER_ID })).toEqual(
             expect.arrayContaining([RoleEnum.USER, RoleEnum.COMMERCE_OWNER, RoleEnum.HOST])
         );
@@ -284,6 +306,10 @@ describe('grantRole', () => {
 
         // Assert — no duplicate row, and no audit noise for a non-change.
         expect(result.error).toBeUndefined();
+        // `changed: false` is the ONLY thing that separates this successful
+        // no-op from a successful real grant. Without it a caller that counts
+        // or logs grants asserts a state change nothing corroborates.
+        expect(result.data?.changed).toBe(false);
         expect(store.userRoles.filter((row) => row.role === RoleEnum.HOST)).toHaveLength(1);
         expect(store.audit).toHaveLength(0);
     });
@@ -349,6 +375,7 @@ describe('revokeRole — AC-5 last-role guard', () => {
 
         // Assert
         expect(first.error).toBeUndefined();
+        expect(first.data?.changed).toBe(true);
         expect(second.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
         expect(await getUserRoles({ userId: USER_ID })).toEqual([RoleEnum.USER]);
     });
@@ -367,7 +394,38 @@ describe('revokeRole — AC-5 last-role guard', () => {
 
         // Assert
         expect(result.error).toBeUndefined();
+        // The case that made `archive-abandoned-drafts` log a demotion that
+        // never happened: a concurrent writer removes HOST between the job's
+        // unlocked pre-check and `revokeRole`'s own locked re-read, so the
+        // revoke succeeds as a no-op — no error, no delete, no audit row.
+        expect(result.data?.changed).toBe(false);
         expect(store.userRoles).toHaveLength(2);
+        expect(store.audit).toHaveLength(0);
+    });
+
+    it('derives `changed` from the DELETE, not from the pre-delete read', async () => {
+        // Arrange — the row disappears through a path that does NOT take this
+        // function's `FOR UPDATE` lock (a manual repair like the backfill
+        // runbook's Step 4, a cascade, a future admin tool). The locked read
+        // still reports the hat as held, so a `changed` inferred from that read
+        // would claim a revoke the DELETE never performed.
+        seedUser([RoleEnum.USER, RoleEnum.HOST]);
+        beforeDelete = () => {
+            const index = store.userRoles.findIndex((row) => row.role === RoleEnum.HOST);
+            if (index >= 0) store.userRoles.splice(index, 1);
+        };
+
+        // Act
+        const result = await revokeRole({
+            userId: USER_ID,
+            role: RoleEnum.HOST,
+            revokedBy: ADMIN_ID,
+            reason: 'last_accommodation_archived'
+        });
+
+        // Assert — `changed` mirrors exactly whether an audit row exists.
+        expect(result.error).toBeUndefined();
+        expect(result.data?.changed).toBe(false);
         expect(store.audit).toHaveLength(0);
     });
 

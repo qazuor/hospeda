@@ -37,20 +37,31 @@ export interface UserHeaderProps {
     /**
      * Comma-joined labels for every role the user holds (e.g. "Anfitrión,
      * Editor") — HOS-296: an account can hold multiple hats, so this is never
-     * a single "primary" role. `undefined` while the roles are still loading;
-     * an explicit error label when the read FAILED (see {@link rolesFailed}).
+     * a single "primary" role. `undefined` while the roles are still loading
+     * AND when the read failed — a failure is reported through {@link badges},
+     * not by smuggling an error string into a slot that otherwise renders
+     * ordinary content.
      */
     readonly subtitle: string | undefined;
     /**
-     * `true` when the role read failed (permissions, network, server).
+     * Stack of status badges (lifecycle state, and a destructive-variant badge
+     * when the role read FAILED).
      *
-     * Surfaced instead of collapsing into the same `undefined` subtitle as
-     * "still loading": a 403 rendered as a blank header is indistinguishable
-     * from a slow request, has no error, no log and no compile failure — the
-     * exact silent-blank symptom this header was fixed to remove.
+     * The failure has to be visually distinct, not merely non-empty: a 403
+     * rendered as a blank — or as an unstyled subtitle string — is
+     * indistinguishable from a slow request or from a legitimate subtitle, has
+     * no error, no log and no compile failure. That silent-blank symptom is the
+     * one this header exists to remove, so the indicator is emitted here (every
+     * consumer already renders `badges`) rather than exposed as a boolean each
+     * route would have to remember to read.
+     *
+     * Known limitation, stated rather than implied: `EntityPageHeader` hides
+     * the whole subtitle+badges block in its collapsed-on-scroll "reduced"
+     * mode, so this badge is visible only while the header is expanded. It is
+     * therefore "hard to miss on arrival", not "impossible to miss". The
+     * `UserRolesCard` on the Role & Permissions tab renders its own error box
+     * and is the non-transient signal.
      */
-    readonly rolesFailed: boolean;
-    /** Stack of status badges (lifecycle state, etc.). */
     readonly badges: ReactNode;
 }
 
@@ -64,8 +75,14 @@ export const useUserHeaderProps = ({
     });
 
     return useMemo<UserHeaderProps>(() => {
+        const rolesFailedBadge = rolesFailed ? (
+            <Badge variant="destructive">
+                {t('admin-pages.access.users.roles.loadFailedBadge')}
+            </Badge>
+        ) : null;
+
         if (!entity) {
-            return { media: undefined, subtitle: undefined, rolesFailed, badges: null };
+            return { media: undefined, subtitle: undefined, badges: rolesFailedBadge };
         }
 
         const displayName =
@@ -91,23 +108,33 @@ export const useUserHeaderProps = ({
         // role-grants endpoint. Render the FULL held set, not one "primary"
         // role. Labels resolve through `@repo/i18n` via the shared
         // `buildRoleLabelKey`, the same catalogue `UserRolesCard` reads.
-        const roles = roleGrants?.roles ?? [];
-        let subtitle: string | undefined;
-        if (rolesFailed) {
-            subtitle = t('admin-pages.access.users.roles.error');
-        } else if (roles.length > 0) {
-            subtitle = roles.map((entry) => t(buildRoleLabelKey({ role: entry.role }))).join(', ');
-        }
+        // A failed read leaves the subtitle EMPTY on purpose; the destructive
+        // badge below is what says so.
+        const roles = rolesFailed ? [] : (roleGrants?.roles ?? []);
+        const subtitle =
+            roles.length > 0
+                ? roles.map((entry) => t(buildRoleLabelKey({ role: entry.role }))).join(', ')
+                : undefined;
 
-        // ---- Badges (lifecycle state) -------------------------------------
+        // ---- Badges (lifecycle state + role-read failure) ------------------
+        // Stays `null` when there is nothing to show: `EntityPageHeader`
+        // renders its badge row on a plain truthiness check, and an empty
+        // fragment is truthy.
         const lifecycleState = entity.lifecycleState as string | undefined;
-        const badges = lifecycleState ? (
+        const lifecycleBadge = lifecycleState ? (
             <Badge variant={badgeVariantForLifecycle(lifecycleState)}>
                 {lifecycleLabel(lifecycleState)}
             </Badge>
         ) : null;
+        const badges =
+            lifecycleBadge || rolesFailedBadge ? (
+                <>
+                    {lifecycleBadge}
+                    {rolesFailedBadge}
+                </>
+            ) : null;
 
-        return { media, subtitle, rolesFailed, badges };
+        return { media, subtitle, badges };
     }, [entity, roleGrants, rolesFailed, t]);
 };
 

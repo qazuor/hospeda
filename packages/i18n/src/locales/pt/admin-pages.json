@@ -849,6 +849,7 @@
                 "description": "Todas as funções que esta conta possui. Conceder uma nunca remove outra.",
                 "loading": "Carregando funções…",
                 "error": "Algo deu errado",
+                "loadFailedBadge": "Funções indisponíveis",
                 "granted": "Função concedida",
                 "revoked": "Função revogada",
                 "grantedAt": "Concedida",
@@ -860,7 +861,8 @@
                 "cancel": "Cancelar",
                 "cannotRevokeLast": "Uma conta deve manter ao menos uma função, portanto a última não pode ser revogada.",
                 "selectRolePlaceholder": "Selecione uma função para conceder",
-                "reasonPlaceholder": "Motivo (opcional, registrado na auditoria)",
+                "reasonPlaceholder": "Motivo da concessão (opcional, registrado na auditoria)",
+                "revokeReasonPlaceholder": "Motivo desta revogação (opcional, registrado na auditoria)",
                 "changesTakeEffectNextRequest": "As alterações valem na próxima requisição do usuário"
             }
         }

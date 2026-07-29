@@ -849,6 +849,7 @@
                 "description": "Todos los roles que tiene esta cuenta. Otorgar uno nunca quita otro.",
                 "loading": "Cargando roles…",
                 "error": "Algo salió mal",
+                "loadFailedBadge": "Roles no disponibles",
                 "granted": "Rol otorgado",
                 "revoked": "Rol revocado",
                 "grantedAt": "Otorgado",
@@ -860,7 +861,8 @@
                 "cancel": "Cancelar",
                 "cannotRevokeLast": "Una cuenta debe conservar al menos un rol, así que el último no se puede revocar.",
                 "selectRolePlaceholder": "Elegí un rol para otorgar",
-                "reasonPlaceholder": "Motivo (opcional, queda en la auditoría)",
+                "reasonPlaceholder": "Motivo del otorgamiento (opcional, queda en la auditoría)",
+                "revokeReasonPlaceholder": "Motivo de la revocación (opcional, queda en la auditoría)",
                 "changesTakeEffectNextRequest": "Los cambios se aplican en la próxima request del usuario"
             }
         }

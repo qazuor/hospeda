@@ -22,6 +22,9 @@
  *    `reason` (AC-6). A no-op writes nothing — an audit trail records state
  *    changes, and `_assignHostRoleIfNeeded` fires on every accommodation
  *    activation, so logging no-ops would bury the real history under duplicates.
+ *    Because of that, both primitives report `{ changed }` in their success
+ *    payload: it is the ONLY way a caller can tell a real write apart from an
+ *    idempotent no-op, and it mirrors exactly whether an audit row exists.
  * 4. **Transaction-aware.** Both accept the caller's `ctx.tx` and enlist in it
  *    rather than opening a competing boundary (`archive-abandoned-drafts.job.ts`
  *    already wraps its own).
@@ -47,6 +50,28 @@ import {
 } from '@repo/schemas';
 import type { ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
+
+/**
+ * Success payload of {@link grantRole} / {@link revokeRole}.
+ *
+ * Both primitives are idempotent, so "succeeded" alone does not tell a caller
+ * whether anything actually happened: an already-worn hat and a freshly granted
+ * one both return successfully. `changed` is what separates them.
+ *
+ * It exists because callers ACT on that distinction. The
+ * `archive-abandoned-drafts` cron increments its `demoted` counter and logs an
+ * `owner_demoted` event; doing that on a no-op asserts a state change that no
+ * `user_role_audit` row corroborates (the audit table deliberately records only
+ * real changes — see the module note). `changed` mirrors exactly the condition
+ * under which an audit row was written.
+ */
+export interface RoleMutationOutcome {
+    /**
+     * `true` when a `user_role` row was inserted/deleted and an audit row was
+     * written; `false` for the idempotent no-op.
+     */
+    readonly changed: boolean;
+}
 
 /** Input for {@link grantRole} — the schema shape plus the optional context. */
 export type GrantRoleParams = GrantRoleInput & {
@@ -106,7 +131,7 @@ const toErrorOutput = (params: {
     error: unknown;
     ctx?: ServiceContext;
     fallbackMessage: string;
-}): ServiceOutput<void> => {
+}): ServiceOutput<RoleMutationOutcome> => {
     const { error, ctx, fallbackMessage } = params;
     const serviceError =
         error instanceof ServiceError
@@ -140,8 +165,9 @@ const toErrorOutput = (params: {
  * @param params.grantedBy - Actor performing the grant; omit for system grants.
  * @param params.reason - Why the hat is being granted (e.g. `accommodation_activated`).
  * @param params.ctx - Optional caller context; `ctx.tx` enlists in their transaction.
- * @returns `ServiceOutput<void>` — `{ data: undefined }` on success (including
- *   the idempotent no-op), `{ error }` otherwise.
+ * @returns `ServiceOutput<RoleMutationOutcome>` — `{ data: { changed } }` on
+ *   success, where `changed` is `false` for the idempotent no-op; `{ error }`
+ *   otherwise.
  * @throws {ServiceError} Only when `ctx.tx` is supplied — see the module note.
  *
  * @example
@@ -153,9 +179,12 @@ const toErrorOutput = (params: {
  *     reason: 'accommodation_activated'
  * });
  * if (result.error) { ... }
+ * if (result.data?.changed) { ... }
  * ```
  */
-export const grantRole = async (params: GrantRoleParams): Promise<ServiceOutput<void>> => {
+export const grantRole = async (
+    params: GrantRoleParams
+): Promise<ServiceOutput<RoleMutationOutcome>> => {
     const { ctx, ...input } = params;
 
     const parsed = GrantRoleInputSchema.safeParse(input);
@@ -176,7 +205,7 @@ export const grantRole = async (params: GrantRoleParams): Promise<ServiceOutput<
     const reason = toNullable(parsed.data.reason);
 
     try {
-        await withTransaction(async (tx) => {
+        const changed = await withTransaction(async (tx) => {
             // "Grant if absent" rides on the (user_id, role) primary key: no
             // read, no race. An existing row means the hat is already worn.
             const inserted = await tx
@@ -187,7 +216,7 @@ export const grantRole = async (params: GrantRoleParams): Promise<ServiceOutput<
 
             if (inserted.length === 0) {
                 // Idempotent no-op — nothing changed, so nothing to audit.
-                return;
+                return false;
             }
 
             await insertAuditRow({
@@ -198,9 +227,11 @@ export const grantRole = async (params: GrantRoleParams): Promise<ServiceOutput<
                 by: grantedBy,
                 reason
             });
+
+            return true;
         }, ctx?.tx);
 
-        return { data: undefined };
+        return { data: { changed } };
     } catch (error) {
         return toErrorOutput({ error, ctx, fallbackMessage: 'Failed to grant role' });
     }
@@ -222,12 +253,17 @@ export const grantRole = async (params: GrantRoleParams): Promise<ServiceOutput<
  * @param params.revokedBy - Actor performing the revoke; omit for system revokes.
  * @param params.reason - Why the hat is being revoked (e.g. `last_accommodation_archived`).
  * @param params.ctx - Optional caller context; `ctx.tx` enlists in their transaction.
- * @returns `ServiceOutput<void>` — `{ data: undefined }` on success (including
- *   the idempotent no-op), `{ error }` otherwise. `VALIDATION_ERROR` when the
- *   role is the user's last one; `NOT_FOUND` when the user does not exist.
+ * @returns `ServiceOutput<RoleMutationOutcome>` — `{ data: { changed } }` on
+ *   success, where `changed` is `false` for the idempotent no-op (the hat was
+ *   not worn by the time the row lock was taken, or the DELETE itself affected
+ *   no row); `{ error }` otherwise.
+ *   `VALIDATION_ERROR` when the role is the user's last one; `NOT_FOUND` when
+ *   the user does not exist.
  * @throws {ServiceError} Only when `ctx.tx` is supplied — see the module note.
  */
-export const revokeRole = async (params: RevokeRoleParams): Promise<ServiceOutput<void>> => {
+export const revokeRole = async (
+    params: RevokeRoleParams
+): Promise<ServiceOutput<RoleMutationOutcome>> => {
     const { ctx, ...input } = params;
 
     const parsed = RevokeRoleInputSchema.safeParse(input);
@@ -248,7 +284,7 @@ export const revokeRole = async (params: RevokeRoleParams): Promise<ServiceOutpu
     const reason = toNullable(parsed.data.reason);
 
     try {
-        await withTransaction(async (tx) => {
+        const changed = await withTransaction(async (tx) => {
             // AC-12: serialize concurrent revokes for this user BEFORE counting.
             // Locking the `users` row (rather than the `user_role` rows) gives a
             // single, always-present lock target — the rows being counted are
@@ -270,7 +306,11 @@ export const revokeRole = async (params: RevokeRoleParams): Promise<ServiceOutpu
 
             if (!heldRoles.some((held) => held.role === role)) {
                 // Idempotent no-op — the hat is not worn, nothing to audit.
-                return;
+                // Reported as `changed: false` so a caller that counts or logs
+                // demotions cannot claim one that never happened (a concurrent
+                // writer may have removed the hat since the caller's own
+                // unlocked pre-check).
+                return false;
             }
 
             if (heldRoles.length <= 1) {
@@ -285,9 +325,22 @@ export const revokeRole = async (params: RevokeRoleParams): Promise<ServiceOutpu
                 );
             }
 
-            await tx
+            const deleted = await tx
                 .delete(userRole)
-                .where(and(eq(userRole.userId, userId), eq(userRole.role, role)));
+                .where(and(eq(userRole.userId, userId), eq(userRole.role, role)))
+                .returning({ role: userRole.role });
+
+            if (deleted.length === 0) {
+                // `changed` is OBSERVED from the DELETE, never inferred from the
+                // read above. The `FOR UPDATE` lock only serialises callers that
+                // go through this function; any other path that removes the row
+                // (a manual repair like the backfill runbook's Step 4, a future
+                // admin tool, a cascade) makes this DELETE a no-op while the
+                // pre-delete read still said the hat was held. Auditing and
+                // reporting `changed: true` there would assert a revoke that
+                // never happened — the exact claim `changed` exists to prevent.
+                return false;
+            }
 
             await insertAuditRow({
                 tx,
@@ -297,9 +350,11 @@ export const revokeRole = async (params: RevokeRoleParams): Promise<ServiceOutpu
                 by: revokedBy,
                 reason
             });
+
+            return true;
         }, ctx?.tx);
 
-        return { data: undefined };
+        return { data: { changed } };
     } catch (error) {
         return toErrorOutput({ error, ctx, fallbackMessage: 'Failed to revoke role' });
     }

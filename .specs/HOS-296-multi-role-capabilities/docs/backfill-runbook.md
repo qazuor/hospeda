@@ -4,14 +4,16 @@ Operator-facing companion to `spec.md` §6.6 and §7. Read this **before** runni
 `pnpm db:migrate` (or `hops db-migrate --target=staging|prod`) on any environment
 that already holds data.
 
-There are four steps and their order is not negotiable: step 1 reads a column
-step 2 destroys, and step 2 is incompatible with the currently-running API.
+There are four steps (plus a routine seed-migration pass, 3b) and their order is
+not negotiable: step 1 reads a column that step 2 destroys, and step 2 is
+incompatible with the currently-running API.
 
 | # | When | What | Reversible? |
 |---|---|---|---|
 | 1 | **BEFORE** `db:migrate` | Run the audit query below and SAVE its output | read-only |
 | 2 | `db:migrate` | Migration `0069_mushy_captain_america` creates `user_role`, **backfills it from `users.role`**, then drops the column | no |
 | 3 | **IMMEDIATELY AFTER** step 2 | Deploy the new API build | yes (redeploy) |
+| 3b | After the deploy | `db:seed:migrate` — completes the standard migration order. Applies `0029`, a no-op on staging/prod (it targets `*@local.test` fixtures only) | yes |
 | 4 | After the deploy | Grant, by hand, any hat the audit said was missing | yes (delete the row) |
 
 ## Step 0 — read this before scheduling: there is NO compatibility shim
@@ -42,7 +44,19 @@ Operational checklist for the window:
 3. Release the API immediately (step 3). On the VPS:
    `hops db-migrate --target=staging && hops redeploy api --target=staging`.
 4. Verify with a signed-in request (`GET /api/v1/public/auth/me` with a real
-   session cookie) that `roles` comes back non-empty before moving on.
+   session cookie) that **`.data.actor.roles`** comes back non-empty before
+   moving on. There is no top-level `roles` key: the route returns
+   `{ actor, isAuthenticated, passwordChangeRequired }`, wrapped by
+   `ResponseFactory` under `data`.
+5. Run the seed data-migrations (step 3b — `pnpm db:seed:migrate` locally, or
+   `hops db-seed-migrate --target=staging|prod`), completing the repo's
+   standard `db:migrate` → `db:apply-extras` → `db:seed:migrate` order. This
+   spec adds `packages/seed/src/data-migrations/0029-hos-296-fixture-role-grants.ts`,
+   which is a **no-op on staging and production**: every account it targets is
+   a literal `*@local.test` fixture address that cannot exist there. Run it
+   anyway rather than skipping it — leaving a pending migration unapplied
+   makes the next operator's `db:seed:migrate` run a batch they did not
+   schedule.
 
 Prefer a low-traffic window. `apps/web` and `apps/admin` do not need to be
 redeployed in lockstep — they read roles through `/auth/me`, whose response
@@ -67,8 +81,9 @@ has zero permissions.
 
 The backfill's first statement copies the declared scalar verbatim, so it
 faithfully reproduces whatever `users.role` says today (the second only adds the
-baseline `USER` hat on top; it never changes which declared role an account
-had). The problem is that the G-6 bug
+baseline `USER` hat on top — and skips the reserved `SYSTEM` account; neither
+statement changes which declared role an account had). The problem is that the
+G-6 bug
 (`_assignHostRoleIfNeeded` overwriting the scalar on accommodation activation)
 may have already destroyed the truth for some accounts: a `COMMERCE_OWNER`,
 `SPONSOR` or `EDITOR` who then activated an accommodation had their hat replaced
@@ -143,11 +158,21 @@ flag to pass.
 
 There are TWO of them: the declared scalar copied verbatim
 (`grant_reason = 'migrated_from_users_role'`) and the baseline `USER` hat for
-every account (`grant_reason = 'migrated_baseline_user'`). The second is what
-makes a migrated account match the `{USER, <role>}` shape every account-creating
-path now produces — without it every pre-existing account holds exactly ONE hat,
-which makes `revokeRole`'s last-role guard reject every admin revoke and turns
-the `archive-abandoned-drafts` host demotion into a permanent no-op.
+every account EXCEPT the reserved `SYSTEM` one — `WHERE "role" <> 'SYSTEM'`
+(`grant_reason = 'migrated_baseline_user'`). The second is what makes a migrated
+account match the `{USER, <role>}` shape every account-creating path now
+produces — without it every pre-existing account holds exactly ONE hat, which
+makes `revokeRole`'s last-role guard reject every admin revoke and turns the
+`archive-abandoned-drafts` host demotion into a permanent no-op.
+
+The `SYSTEM` exclusion is deliberate and must NOT be "repaired" by hand:
+`systemUser.seed.ts` (a `required`-group seed, so the account exists on staging
+and production) grants the reserved account exactly `{SYSTEM}`. Giving it a
+`USER` hat on migrated environments only would recreate the very divergence the
+`WHERE` clause exists to prevent — and it is not inert, because `revokeRole`
+only refuses an account's LAST hat: with two hats,
+`DELETE /admin/users/{SYSTEM_USER_ID}/roles/SYSTEM` would succeed on a migrated
+environment while the identical call is correctly refused on a fresh one.
 
 ```bash
 pnpm db:migrate          # local
@@ -171,14 +196,23 @@ GROUP BY role ORDER BY 2 DESC;
 ```
 
 ```sql
--- Every account must ALSO hold the baseline USER hat.
+-- Every account must ALSO hold the baseline USER hat — EXCEPT the reserved
+-- SYSTEM account, which the migration deliberately skips (`WHERE "role" <>
+-- 'SYSTEM'`). It is excluded here too, so the gate stays a plain 0 and needs
+-- no interpretation: a non-zero result is always a real finding.
 SELECT count(*) AS users_without_baseline_hat
 FROM users u
 WHERE NOT EXISTS (
     SELECT 1 FROM user_role r WHERE r.user_id = u.id AND r.role = 'USER'
+)
+AND NOT EXISTS (
+    SELECT 1 FROM user_role r WHERE r.user_id = u.id AND r.role = 'SYSTEM'
 );
 -- expected: 0
 ```
+
+Do NOT "fix" a `SYSTEM`-only account by inserting a `USER` row for it — see the
+`SYSTEM` note above for why that re-opens a real privilege bug.
 
 ---
 
@@ -194,9 +228,37 @@ hops redeploy api --target=staging   # or --target=prod
 Verify before moving on:
 
 ```bash
-# With a real session cookie — `roles` must be a non-empty array.
-curl -s -H "Cookie: <session cookie>" https://staging-api.hospeda.com.ar/api/v1/public/auth/me
+# With a real session cookie — `.data.actor.roles` must be a non-empty array.
+# NOT `.roles` and NOT `.data.roles`: the route returns
+# `{ actor, isAuthenticated, passwordChangeRequired }` and `ResponseFactory`
+# wraps that under `data`, so the role set only ever appears on the actor.
+curl -s -H "Cookie: <session cookie>" \
+  https://staging-api.hospeda.com.ar/api/v1/public/auth/me | jq '.data.actor.roles'
 ```
+
+---
+
+## Step 3b — run the seed data-migrations
+
+The repo's documented run order is `db:migrate` → `db:apply-extras` →
+`db:seed:migrate`. `hops db-migrate` already runs `db:apply-extras` itself
+(unless `--no-apply-extras` is passed), so step 2 covered the middle one; this
+is the third, and this spec adds one seed data-migration to it
+(`packages/seed/src/data-migrations/0029-hos-296-fixture-role-grants.ts`).
+
+```bash
+pnpm db:seed:migrate                    # local
+hops db-seed-migrate --target=staging   # or --target=prod, from the VPS
+```
+
+`0029` is a **no-op on staging and production**: every account it touches is
+matched by a literal `*@local.test` fixture email, an address space that by
+construction does not exist there. It converges local/dev fixtures whose
+`users.role` scalar had drifted under G-6 — something `0069` cannot do, since
+it faithfully copies whatever the scalar said.
+
+Run it anyway rather than skipping it. Leaving a pending migration unapplied
+just hands the next operator a batch they did not schedule.
 
 ---
 

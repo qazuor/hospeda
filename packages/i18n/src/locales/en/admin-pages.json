@@ -849,6 +849,7 @@
                 "description": "Every role this account holds. Granting one never removes another.",
                 "loading": "Loading roles…",
                 "error": "Something went wrong",
+                "loadFailedBadge": "Roles unavailable",
                 "granted": "Role granted",
                 "revoked": "Role revoked",
                 "grantedAt": "Granted",
@@ -860,7 +861,8 @@
                 "cancel": "Cancel",
                 "cannotRevokeLast": "An account must keep at least one role, so the last one cannot be revoked.",
                 "selectRolePlaceholder": "Select a role to grant",
-                "reasonPlaceholder": "Reason (optional, recorded in the audit trail)",
+                "reasonPlaceholder": "Reason for this grant (optional, recorded in the audit trail)",
+                "revokeReasonPlaceholder": "Reason for this revoke (optional, recorded in the audit trail)",
                 "changesTakeEffectNextRequest": "Changes take effect on the user's next request"
             }
         }

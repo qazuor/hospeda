@@ -309,6 +309,96 @@ describe('UserRolesCard (HOS-296)', () => {
         });
     });
 
+    it('sends the operator reason on a REVOKE too, not only on a grant (AC-6)', async () => {
+        // Dropping it on the revoke path wrote `reason = null`, making an
+        // operator revoke indistinguishable from an automatic system revoke.
+        // The reason now comes from the confirmation dialog's own input, so the
+        // operator sees what they are about to record.
+        stubRoles(TWO_HATS);
+        renderCard();
+
+        await waitFor(() => {
+            expect(screen.getAllByTestId('confirm-revoke').length).toBe(2);
+        });
+
+        // Second row is HOST (roles come back oldest-grant-first).
+        fireEvent.change(
+            screen.getAllByLabelText(
+                'admin-pages.access.users.roles.revokeReasonPlaceholder'
+            )[1] as HTMLElement,
+            { target: { value: 'no longer hosts' } }
+        );
+        fireEvent.click(screen.getAllByTestId('confirm-revoke')[1] as HTMLElement);
+
+        await waitFor(() => {
+            const del = mockedFetchApi.mock.calls
+                .map(([args]) => args as { method?: string; path: string })
+                .find((args) => args.method === 'DELETE');
+            expect(del?.path).toBe(
+                `/api/v1/admin/users/${USER_ID}/roles/HOST?reason=${encodeURIComponent('no longer hosts')}`
+            );
+        });
+    });
+
+    it('REGRESSION: a grant justification never becomes the REVOKE audit reason', async () => {
+        // The single shared input lived in the GRANT row, so an operator who
+        // typed a grant justification and then revoked a hat instead silently
+        // wrote that grant-intent text into the REVOKE's append-only audit row.
+        // Confidently wrong attribution is worse than the `null` it replaced.
+        stubRoles(TWO_HATS);
+        renderCard();
+
+        await waitFor(() => {
+            expect(screen.getAllByTestId('confirm-revoke').length).toBe(2);
+        });
+
+        fireEvent.change(
+            screen.getByLabelText('admin-pages.access.users.roles.reasonPlaceholder'),
+            { target: { value: 'promoting to sponsor' } }
+        );
+        fireEvent.click(screen.getAllByTestId('confirm-revoke')[1] as HTMLElement);
+
+        await waitFor(() => {
+            const del = mockedFetchApi.mock.calls
+                .map(([args]) => args as { method?: string; path: string })
+                .find((args) => args.method === 'DELETE');
+            expect(del?.path).toBe(`/api/v1/admin/users/${USER_ID}/roles/HOST`);
+        });
+
+        const del = mockedFetchApi.mock.calls
+            .map(([args]) => args as { method?: string; path: string })
+            .find((args) => args.method === 'DELETE');
+        expect(del?.path).not.toContain('reason=');
+        expect(del?.path).not.toContain('promoting');
+    });
+
+    it('keeps each row\'s revoke reason to itself', async () => {
+        // The dialogs are per-row: a justification typed for one hat must not
+        // travel to another hat's audit row.
+        stubRoles(TWO_HATS);
+        renderCard();
+
+        await waitFor(() => {
+            expect(screen.getAllByTestId('confirm-revoke').length).toBe(2);
+        });
+
+        // Type into the USER row's dialog, then confirm the HOST row's.
+        fireEvent.change(
+            screen.getAllByLabelText(
+                'admin-pages.access.users.roles.revokeReasonPlaceholder'
+            )[0] as HTMLElement,
+            { target: { value: 'wrong row' } }
+        );
+        fireEvent.click(screen.getAllByTestId('confirm-revoke')[1] as HTMLElement);
+
+        await waitFor(() => {
+            const del = mockedFetchApi.mock.calls
+                .map(([args]) => args as { method?: string; path: string })
+                .find((args) => args.method === 'DELETE');
+            expect(del?.path).toBe(`/api/v1/admin/users/${USER_ID}/roles/HOST`);
+        });
+    });
+
     it('translates the last-role refusal instead of echoing the raw message with its UUID', async () => {
         // Arrange — the API answers 400 with the machine-readable reason. The
         // message is the server's own English text and embeds the subject id;

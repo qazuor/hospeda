@@ -106,10 +106,19 @@ vi.mock('@repo/service-core', () => ({
     }),
     grantRole: mockGrantRole,
     withServiceTransaction: mockWithServiceTransaction,
+    // Mirrors the REAL constructor's four-parameter signature so the double
+    // cannot silently swallow `details` / `reason` if a route in THIS file's
+    // module graph starts passing them. That graph is only `create.ts` and
+    // `restore.ts` today, and both construct `ServiceError` with two
+    // arguments — so this is signature parity, not coverage of anything.
+    // The last-role `reason` regression is pinned where the route that
+    // actually re-throws it is loaded: `test/routes/user/admin/roles.test.ts`.
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,
-            message: string
+            message: string,
+            public readonly details?: unknown,
+            public readonly reason?: string
         ) {
             super(message);
             this.name = 'ServiceError';

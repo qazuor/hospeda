@@ -20,6 +20,7 @@ import { LAST_ROLE_REVOKE_REASON, RoleEnum, ServiceErrorCode } from '@repo/schem
 import { describe, expect, it } from 'vitest';
 import {
     isLastRoleRevokeRefusal,
+    resolveDemotionOutcome,
     shouldRevokeHostHat
 } from '../../src/cron/jobs/archive-abandoned-drafts.job';
 
@@ -78,6 +79,39 @@ describe('shouldRevokeHostHat', () => {
         expect(shouldRevokeHostHat({ heldRoles: [RoleEnum.USER, RoleEnum.HOST, otherHat] })).toBe(
             true
         );
+    });
+});
+
+describe('resolveDemotionOutcome', () => {
+    it('counts a demotion only when `revokeRole` OBSERVED a change', () => {
+        expect(resolveDemotionOutcome({ changed: true })).toEqual({
+            kind: 'demoted',
+            demotedDelta: 1
+        });
+    });
+
+    it('does NOT advance the counter for a successful no-op revoke', () => {
+        // `revokeRole` is idempotent: a hat removed between the job's unlocked
+        // pre-check and the primitive's own `SELECT ... FOR UPDATE` yields a
+        // SUCCESSFUL call that deleted nothing and wrote no `user_role_audit`
+        // row. Incrementing `demoted` there reports a demotion the audit table
+        // cannot corroborate — the whole reason `changed` is threaded here.
+        expect(resolveDemotionOutcome({ changed: false })).toEqual({
+            kind: 'skipped_already_revoked',
+            demotedDelta: 0
+        });
+    });
+
+    it('keeps the counter honest when a run mixes real revokes with no-ops', () => {
+        // The counter is derived from the decision, never from "we reached this
+        // line": the job adds `outcome.demotedDelta`, so a run over four owners
+        // where only two hats actually came off reports 2, not 4.
+        const demoted = [true, false, true, false]
+            .map((changed) => resolveDemotionOutcome({ changed }))
+            .filter((outcome) => outcome.kind === 'demoted')
+            .reduce((total, outcome) => total + outcome.demotedDelta, 0);
+
+        expect(demoted).toBe(2);
     });
 });
 
