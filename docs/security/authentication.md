@@ -578,18 +578,25 @@ Better Auth uses database-backed sessions instead of JWTs:
     "id": "user_abc123",
     "email": "user@example.com",
     "name": "John Doe",
-    "emailVerified": true,
-    "role": "user"
+    "emailVerified": true
   }
 }
 ```
+
+> **No `role` field on `session.user` (HOS-296).** Better Auth's admin plugin
+> declares a `role` field on the `user` model, but `users.role` was dropped —
+> the plugin's own `role` injection is stripped back out by a
+> `databaseHooks.user.create.before` hook in `apps/api/src/lib/auth.ts`, or
+> every signup would fail. Roles live in the separate `user_role` table and
+> are resolved into `actor.roles` by the actor middleware, not read off the
+> session.
 
 **Key Properties:**
 
 - `session.id`: Unique session identifier
 - `session.userId`: Associated user
 - `session.expiresAt`: Session expiration time
-- `user.role`: User role for authorization
+- `actor.roles`: Every role the actor holds at once (HOS-296) — authorization is decided by `actor.permissions`, never by inspecting roles directly
 
 ### Session Validation
 
@@ -793,137 +800,67 @@ async function revokeAllUserSessions(userId: string) {
 
 ## Authorization (RBAC)
 
-Role-Based Access Control (RBAC) implementation.
+Role-based access control, but permission-first: roles are how permissions get
+GRANTED to an actor, never how access is CHECKED. Authorization code always
+tests `actor.permissions`, never `actor.roles`.
 
 ### Role Definitions
 
-#### User Roles
+#### Roles (`RoleEnum`, `@repo/schemas`)
 
 ```typescript
-// packages/schemas/src/auth/permissions.schema.ts
+// packages/schemas/src/enums/role.enum.ts
 
-export const userRoleSchema = z.enum([
-  'user',      // Regular user
-  'moderator', // Content moderator
-  'admin'      // Administrator
-]);
-
-export type UserRole = z.infer<typeof userRoleSchema>;
+export enum RoleEnum {
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  ADMIN = 'ADMIN',
+  CLIENT_MANAGER = 'CLIENT_MANAGER',
+  EDITOR = 'EDITOR',
+  HOST = 'HOST',
+  COMMERCE_OWNER = 'COMMERCE_OWNER',
+  SPONSOR = 'SPONSOR',
+  USER = 'USER',
+  GUEST = 'GUEST',
+  SYSTEM = 'SYSTEM'
+}
 ```
 
-**Role Hierarchy:**
-
-```text
-admin
-  └─ All permissions
-     ├─ User management
-     ├─ Content moderation
-     ├─ System configuration
-     └─ All moderator + user permissions
-
-moderator
-  └─ Content permissions
-     ├─ Review accommodations
-     ├─ Moderate reviews
-     ├─ Manage posts
-     └─ All user permissions
-
-user
-  └─ Basic permissions
-     ├─ Create accommodation
-     ├─ Book accommodations
-     ├─ Write reviews
-     └─ Manage own content
-```
+**No role hierarchy.** There is no "admin implies everything" bypass. Each
+role grants its own explicit set of permissions (rows in `r_role_permission`,
+admin-editable per HOS-120), and an actor's effective permissions are the
+union across every role it holds — since HOS-296, an actor holds a SET
+(`roles: readonly RoleEnum[]`, backed by the `user_role` table), not a single
+scalar. One account can be `HOST` and `COMMERCE_OWNER` at the same time.
 
 ### Permission System
 
-#### Available Permissions
+Permissions are `PermissionEnum` values (`packages/schemas/src/enums/permission.enum.ts`),
+e.g. `PermissionEnum.ACCOMMODATION_UPDATE_OWN`. The role → permission mapping
+lives in the DB (`r_role_permission`), not a hardcoded map, so it can be
+edited from the admin panel without a deploy.
 
 ```typescript
-// packages/schemas/src/auth/permissions.schema.ts
+// apps/api/src/utils/role-permissions-cache.ts
 
-export const permissionSchema = z.enum([
-  // Accommodation permissions
-  'accommodation:read',
-  'accommodation:write',
-  'accommodation:delete',
-  'accommodation:moderate',
-
-  // Review permissions
-  'review:read',
-  'review:write',
-  'review:delete',
-  'review:moderate',
-
-  // User permissions
-  'user:read',
-  'user:write',
-  'user:delete',
-
-  // Admin permissions
-  'admin:all'
-]);
-
-export type Permission = z.infer<typeof permissionSchema>;
+/** Union of permissions across every role in the set (HOS-296) — cached. */
+export async function getPermissionsForRoles(params: {
+  roles: readonly RoleEnum[];
+}): Promise<PermissionEnum[]>;
 ```
 
-#### Permission Schema
+Checking access is always a direct permission test — never a role comparison,
+never an "admin bypasses everything" shortcut:
 
 ```typescript
-// packages/schemas/src/auth/permissions.schema.ts
-
-import { z } from 'zod';
-
-/**
- * Role-based permissions mapping
- */
-export const rolePermissionsMap: Record<UserRole, Permission[]> = {
-  user: [
-    'accommodation:read',
-    'accommodation:write', // Own accommodations only
-    'review:read',
-    'review:write', // Own reviews only
-    'user:read' // Own profile only
-  ],
-  moderator: [
-    'accommodation:read',
-    'accommodation:write',
-    'accommodation:moderate',
-    'review:read',
-    'review:write',
-    'review:moderate',
-    'user:read'
-  ],
-  admin: [
-    'admin:all', // Grants all permissions
-    'accommodation:read',
-    'accommodation:write',
-    'accommodation:delete',
-    'accommodation:moderate',
-    'review:read',
-    'review:write',
-    'review:delete',
-    'review:moderate',
-    'user:read',
-    'user:write',
-    'user:delete'
-  ]
-};
-
-/**
- * Get permissions for a role
- */
-export function getPermissionsForRole(role: UserRole): Permission[] {
-  return rolePermissionsMap[role] || rolePermissionsMap.user;
+// CORRECT
+if (!actor.permissions.includes(PermissionEnum.ACCOMMODATION_UPDATE_ANY)) {
+  throw new ServiceError(ServiceErrorCode.FORBIDDEN, '...');
 }
 
-/**
- * Check if role has permission
- */
-export function hasPermission(role: UserRole, permission: Permission): boolean {
-  const permissions = getPermissionsForRole(role);
-  return permissions.includes(permission) || permissions.includes('admin:all');
+// WRONG — role comparison, and a role-based bypass
+if (!actor.roles.includes(RoleEnum.ADMIN) &&
+    !actor.permissions.includes(PermissionEnum.ACCOMMODATION_UPDATE_ANY)) {
+  throw new ServiceError(ServiceErrorCode.FORBIDDEN, '...');
 }
 ```
 
@@ -936,7 +873,8 @@ export function hasPermission(role: UserRole, permission: Permission): boolean {
 
 import { auth } from '../lib/auth';
 import type { Context, Next } from 'hono';
-import { getPermissionsForRole } from '@repo/schemas';
+import { getUserRoles } from '@repo/service-core';
+import { getPermissionsForRoles } from '../utils/role-permissions-cache';
 
 /**
  * Actor context type
@@ -945,7 +883,8 @@ export interface Actor {
   isAuthenticated: boolean;
   userId: string | null;
   email: string | null;
-  role: UserRole;
+  /** Every role the actor holds at once (HOS-296) — sourced from `user_role`, never from the session */
+  roles: readonly RoleEnum[];
   permissions: Permission[];
 }
 
@@ -963,7 +902,7 @@ export const actorMiddleware = async (c: Context, next: Next) => {
       isAuthenticated: false,
       userId: null,
       email: null,
-      role: 'user',
+      roles: [RoleEnum.GUEST],
       permissions: []
     } as Actor);
 
@@ -971,16 +910,16 @@ export const actorMiddleware = async (c: Context, next: Next) => {
     return;
   }
 
-  // Extract role from user data
-  const role = (session.user.role as UserRole) || 'user';
-  const permissions = getPermissionsForRole(role);
+  // Roles come from the `user_role` table (HOS-296), never from the session
+  const roles = await getUserRoles({ userId: session.user.id });
+  const permissions = await getPermissionsForRoles({ roles });
 
   // Authenticated actor
   c.set('actor', {
     isAuthenticated: true,
     userId: session.user.id,
     email: session.user.email || null,
-    role,
+    roles,
     permissions
   } as Actor);
 
@@ -1557,17 +1496,17 @@ export function createMockUserActor(): Actor {
     isAuthenticated: true,
     userId: 'user-123',
     email: 'user@example.com',
-    role: 'user',
+    roles: [RoleEnum.USER],
     permissions: ['accommodation:read', 'accommodation:write']
   };
 }
 
-export function createMockModeratorActor(): Actor {
+export function createMockEditorActor(): Actor {
   return {
     isAuthenticated: true,
-    userId: 'mod-123',
-    email: 'moderator@example.com',
-    role: 'moderator',
+    userId: 'editor-123',
+    email: 'editor@example.com',
+    roles: [RoleEnum.EDITOR],
     permissions: [
       'accommodation:read',
       'accommodation:write',
@@ -1581,8 +1520,8 @@ export function createMockAdminActor(): Actor {
     isAuthenticated: true,
     userId: 'admin-123',
     email: 'admin@example.com',
-    role: 'admin',
-    permissions: ['admin:all']
+    roles: [RoleEnum.ADMIN],
+    permissions: ['accommodation:read', 'accommodation:write', 'accommodation:delete']
   };
 }
 ```
@@ -1997,8 +1936,8 @@ import { PermissionEnum } from '@repo/schemas';
 requirePermission(PermissionEnum.ACCOMMODATION_CREATE);
 
 // WRONG - never do this
-if (user.role === 'ADMIN') { ... }
-if (user.role === 'HOST') { ... }
+if (actor.roles.includes(RoleEnum.ADMIN)) { ... }
+if (actor.roles.includes(RoleEnum.HOST)) { ... }
 ```
 
 ### Common Permissions

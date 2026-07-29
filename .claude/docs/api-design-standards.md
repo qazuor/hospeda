@@ -57,7 +57,7 @@ Never use raw `c.json()`.
 ## Permissions
 
 - ALWAYS: `requirePermission(PermissionEnum.X)`
-- NEVER: `if (user.role === 'ADMIN')`
+- NEVER: `if (actor.roles.includes(RoleEnum.ADMIN))`
 
 ## Route Handler Pattern
 

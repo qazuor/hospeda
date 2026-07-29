@@ -21,10 +21,10 @@ The permission system in Hospeda services provides fine-grained access control a
 
 **Key Concepts:**
 
-- **Actor**: Represents the user or system performing an action
+- **Actor**: Represents the user or system performing an action; holds a SET of roles (HOS-296), never a single one
 - **Permission Hooks**: Abstract methods that enforce access control
 - **Permission Strings**: Standardized format for permission identifiers
-- **Role-Based + Resource-Based**: Supports both role and resource-level permissions
+- **Permission-Based only**: Access control is decided EXCLUSIVELY by `actor.permissions` — roles feed into that set, but are never checked directly
 
 **Why It Matters:**
 
@@ -38,7 +38,7 @@ The permission system in Hospeda services provides fine-grained access control a
 ```
 Request
    ↓
-Actor (userId, role, permissions)
+Actor (userId, roles, permissions)
    ↓
 Service Method
    ↓
@@ -69,11 +69,11 @@ type Actor = {
   /** Unique user identifier (empty string for guests) */
   id: string;
 
-  /** User's role */
-  role: RoleEnum;
+  /** Every role the actor holds at once (HOS-296) — backed by the `user_role` table, no single "primary role" */
+  roles: readonly RoleEnum[];
 
-  /** Array of granted permissions */
-  permissions: PermissionEnum[];
+  /** Array of granted permissions — the union across every held role plus per-user overrides */
+  permissions: readonly PermissionEnum[];
 };
 ```
 
@@ -81,18 +81,23 @@ type Actor = {
 
 ```typescript
 enum RoleEnum {
-  GUEST = 'GUEST',           // Non-authenticated users
-  USER = 'USER',             // Authenticated regular users
-  ADMIN = 'ADMIN',           // Administrators
-  SUPER_ADMIN = 'SUPER_ADMIN' // Super administrators
+  GUEST = 'GUEST',                     // Non-authenticated users
+  USER = 'USER',                       // Authenticated regular users
+  HOST = 'HOST',                       // Accommodation owner
+  COMMERCE_OWNER = 'COMMERCE_OWNER',   // Commerce listing owner
+  EDITOR = 'EDITOR',                   // Events/posts content editor
+  SPONSOR = 'SPONSOR',                 // External sponsor
+  CLIENT_MANAGER = 'CLIENT_MANAGER',   // Client accounts, billing, analytics
+  ADMIN = 'ADMIN',                     // Administrators
+  SUPER_ADMIN = 'SUPER_ADMIN',         // Super administrators
+  SYSTEM = 'SYSTEM'                    // Non-loginable, used by automated writes
 }
 ```
 
-**Role Hierarchy:**
-
-```
-SUPER_ADMIN > ADMIN > USER > GUEST
-```
+**No role hierarchy.** There is no "higher role implies lower role's access"
+shortcut — each role grants its own explicit permission set, an actor's
+effective permissions are the union across every role it holds, and
+authorization code checks `actor.permissions` only, never `actor.roles`.
 
 ### Permission Enum
 
@@ -125,7 +130,7 @@ app.use('*', async (c, next) => {
   // Create actor
   const actor: Actor = {
     id: userId || '',
-    role: user?.role || RoleEnum.GUEST,
+    roles: user ? await getUserRoles({ userId: user.id }) : [RoleEnum.GUEST],
     permissions: user?.permissions || []
   };
 
@@ -140,7 +145,7 @@ app.use('*', async (c, next) => {
 // Admin actor for tests
 const adminActor: Actor = {
   id: 'admin-123',
-  role: RoleEnum.ADMIN,
+  roles: [RoleEnum.ADMIN],
   permissions: [
     PermissionEnum.ARTICLE_CREATE,
     PermissionEnum.ARTICLE_UPDATE_ANY,
@@ -151,15 +156,22 @@ const adminActor: Actor = {
 // Regular user actor
 const userActor: Actor = {
   id: 'user-456',
-  role: RoleEnum.USER,
+  roles: [RoleEnum.USER],
   permissions: [PermissionEnum.ARTICLE_CREATE]
 };
 
 // Guest actor (non-authenticated)
 const guestActor: Actor = {
   id: '',
-  role: RoleEnum.GUEST,
+  roles: [RoleEnum.GUEST],
   permissions: []
+};
+
+// Multi-role actor (HOS-296) — holds two hats at once
+const hostAndCommerceOwnerActor: Actor = {
+  id: 'user-789',
+  roles: [RoleEnum.HOST, RoleEnum.COMMERCE_OWNER],
+  permissions: [PermissionEnum.ARTICLE_CREATE]
 };
 ```
 
@@ -861,25 +873,25 @@ describe('ArticleService Permissions', () => {
 
   const adminActor: Actor = {
     id: 'admin-1',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.ARTICLE_UPDATE_ANY]
   };
 
   const ownerActor: Actor = {
     id: 'user-1',
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: [PermissionEnum.ARTICLE_CREATE]
   };
 
   const otherActor: Actor = {
     id: 'user-2',
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: []
   };
 
   const guestActor: Actor = {
     id: '',
-    role: RoleEnum.GUEST,
+    roles: [RoleEnum.GUEST],
     permissions: []
   };
 
