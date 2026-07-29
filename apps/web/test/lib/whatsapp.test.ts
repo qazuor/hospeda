@@ -12,7 +12,7 @@ import { buildWhatsAppLink } from '@/lib/whatsapp';
 
 describe('buildWhatsAppLink', () => {
     describe('phone normalisation', () => {
-        it('drops the leading + that wa.me rejects (HOS-289)', () => {
+        it('drops the leading + that stops wa.me resolving the recipient (HOS-289)', () => {
             const { url } = buildWhatsAppLink({ phone: '+543442453797' });
 
             expect(url).toBe('https://wa.me/543442453797');

@@ -5,9 +5,11 @@
  *
  * WHY A GUARD AND NOT N COMPONENT TESTS: before HOS-289 the web app had three
  * independent wa.me constructors with three different sanitizing rules, two of
- * which kept the leading `+` — a form wa.me rejects outright. Per-component
- * tests only cover the components that exist today; this guard fails on the
- * NEXT hand-rolled one.
+ * which kept the leading `+`. That form does not 404 — it resolves to WhatsApp
+ * but WITHOUT resolving the recipient, so the landing page shows the raw digits
+ * instead of the contact's name (verified against wa.me on 2026-07-29).
+ * Per-component tests only cover the components that exist today; this guard
+ * fails on the NEXT hand-rolled one.
  *
  * The rule is expressed on the SHAPE of the link, not on the buggy literal: a
  * wa.me URL whose phone segment is anything other than literal digits is a

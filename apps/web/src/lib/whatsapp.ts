@@ -5,9 +5,16 @@
  *
  * Before this module the app hand-rolled the link in three places with three
  * different rules; two of them preserved the leading `+` of an E.164 number,
- * producing `https://wa.me/+543442453797`. wa.me does NOT accept the `+` — it
- * lands on WhatsApp's "phone number shared via url is invalid" screen, so the
- * contact button silently went nowhere.
+ * producing `https://wa.me/+543442453797`.
+ *
+ * What that actually does, measured against wa.me on 2026-07-29 (it is NOT a
+ * 404, contrary to the original bug report): both forms redirect to
+ * `api.whatsapp.com/send`, but only the digits-only one resolves the
+ * RECIPIENT. With the `+`, the landing page reads "Chat on WhatsApp with
+ * +54 9 3442 45-3797"; without it, the same number renders the contact's
+ * actual name. So the `+` degrades the deep link rather than breaking it —
+ * and the behaviour of the native Android/iOS handler, where most of the
+ * traffic lands, was not verified either way.
  *
  * Deliberate non-goals:
  *   - No country-code heuristics. The digits stored on the entity are sent

@@ -30,9 +30,9 @@ describe('WhatsAppContact.astro', () => {
 
         it('delegates phone sanitizing to the shared builder (HOS-289)', () => {
             // This replaces a test that asserted `startsWith('+')`, i.e. it pinned
-            // the defect: wa.me rejects a leading `+`. The URL shape itself is
-            // asserted in test/lib/whatsapp.test.ts; here we only require that the
-            // component does not hand-roll it again.
+            // the defect: with the `+`, wa.me does not resolve the recipient. The
+            // URL shape itself is asserted in test/lib/whatsapp.test.ts; here we
+            // only require that the component does not hand-roll it again.
             expect(src).toContain("import { buildWhatsAppLink } from '@/lib/whatsapp'");
             expect(src).not.toContain('replace(/\\D/g,');
             expect(src).not.toContain('wa.me/${');
