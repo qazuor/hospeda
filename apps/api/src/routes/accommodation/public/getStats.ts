@@ -10,7 +10,8 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 
 /**
  * Handler for getting accommodation statistics
- * @param ctx - Hono context
+ * @param _ctx - Hono context. Unused: this handler must not read the request
+ *   actor (HOS-353) — the response is stored under an actorless public cache key.
  * @param params - Path parameters containing id
  * @returns Accommodation statistics data or null if not found
  */
@@ -24,7 +25,10 @@ const getStatsHandler = async (_ctx: Context, params: Record<string, unknown>) =
     // a privileged reader's 200 would be replayed to every anonymous visitor for the
     // TTL. Privileged reads live on the protected and admin tiers.
 
-    // Get basic accommodation info first to get the name
+    // Visibility pre-check, not a name lookup: nothing reads `data` beyond the
+    // null test. `getStats` gates through `_canView` too, so this call is what
+    // turns a hidden listing into `200 null` instead of the HTTPException(500)
+    // the `statsResult.error` branch below would raise.
     const accommodationResult = await accommodationService.getById(createGuestActor(), id);
 
     if (accommodationResult.error || !accommodationResult.data) {

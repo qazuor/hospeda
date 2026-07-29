@@ -1,12 +1,12 @@
 /**
- * HOS-353 regression — every handler on the shared-cached
- * `/api/v1/public/accommodations` prefix must be ACTOR-BLIND.
+ * HOS-353 regression — the six handlers this file names must be ACTOR-BLIND.
  *
- * That prefix is the first entry of `PUBLIC_CACHE_ENDPOINTS` and the match is
- * `startsWith`, so all six routes below are stored under `public:<path><query>` —
- * a key with NO actor component, unlike the private branch of `generateCacheKey`
- * right beneath it. `cacheMiddleware` is also registered BEFORE `authMiddleware`,
- * so a cache HIT returns without auth ever running.
+ * `/api/v1/public/accommodations` is the first entry of `PUBLIC_CACHE_ENDPOINTS`
+ * and the match is `startsWith`, so everything under it is stored under
+ * `public:<path><query>` — a key with NO actor component, unlike the private
+ * branch of `generateCacheKey` right beneath it. `cacheMiddleware` is also
+ * registered BEFORE `authMiddleware`, so a cache HIT returns without auth ever
+ * running.
  *
  * A payload that varies by READER therefore leaks: the first privileged request
  * parks its response in the slot every anonymous visitor reads for the whole TTL.
@@ -15,8 +15,17 @@
  * handler ASKS FOR, which is why every case here asserts on the actor handed to
  * the service rather than on the rows that come back.
  *
- * `getByDestination` and `getTopRatedByDestination` are the reference: they
- * already resolved against `createGuestActor()` and were never affected.
+ * ⚠️ Scope, stated precisely rather than as "the whole prefix": twelve handlers
+ * match that prefix. Six are covered here. Of the rest —
+ * `getByDestination` and `getTopRatedByDestination` already resolved against
+ * `createGuestActor()` and are the shape the six now match; `similar` hardcodes
+ * its predicates against raw SQL; `getOccupancy` and the external-reputation
+ * route take no actor at all; and `accommodation/reviews/public/list` DOES still
+ * take the request actor. That last one is benign today — its permission check is
+ * a documented no-op and its `where` is fixed to `lifecycleState=ACTIVE` +
+ * `moderationState=APPROVED` — but it is the one handler on this prefix that
+ * could become the HOS-288 shape if either of those changes, and nothing here
+ * would catch it. Do not read a green run as "the prefix is covered".
  *
  * @module test/routes/accommodation/public/actor-blind-cache
  */
@@ -244,7 +253,9 @@ describe('HOS-353 — the six cached public accommodation handlers resolve as a 
     });
 
     it('nearbyPois: hands a guest actor to the service, for a VIP/staff caller', async () => {
-        mockGetNearbyPois.mockResolvedValue({ data: { items: [] }, error: null });
+        // `getNearbyPois` resolves `ServiceOutput<NearbyPoi[]>` — `data` is the
+        // array itself; the handler wraps it as `{ items }`.
+        mockGetNearbyPois.mockResolvedValue({ data: [], error: null });
 
         const app = await buildApp(
             '../../../../src/routes/accommodation/public/nearbyPois',
@@ -273,6 +284,11 @@ describe('HOS-353 — the per-caller side effect keeps the REAL actor', () => {
         // swept up by the guest-actor substitution. Without this case a cleanup that
         // drops the now nearly-unused `getActorFromContext` would silently kill
         // SPEC-289 recording with a green suite.
+        //
+        // Pre-existing and NOT asserted here: the handler does not run at all on a
+        // cache HIT, so recording is already skipped whenever this exact path+query
+        // is warm. If a "missing search history" report ever lands, that is the first
+        // place to look — not the actor logic this case pins.
         mockSearch.mockResolvedValue({ data: { items: [], total: 0 }, error: null });
 
         vi.resetModules();

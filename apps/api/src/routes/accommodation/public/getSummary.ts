@@ -9,7 +9,8 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 
 /**
  * Handler for getting accommodation summary
- * @param ctx - Hono context
+ * @param _ctx - Hono context. Unused: this handler must not read the request
+ *   actor (HOS-353) — the response is stored under an actorless public cache key.
  * @param params - Path parameters containing id
  * @returns Accommodation summary data or null if not found
  */
