@@ -62,17 +62,23 @@ export function WhatsNewPanel({ open, onOpenChange }: WhatsNewPanelProps) {
     // Track which entry is open in the inner modal (null = modal closed).
     const [modalEntryId, setModalEntryId] = useState<string | null>(null);
 
+    // HOS-296: effect dependencies compare by REFERENCE, and `user.roles` is a
+    // fresh array on every render — unlike the scalar `role` it replaced, which
+    // compared by value. Depending on the array directly re-fired this event on
+    // every render while the panel stayed open. Derive a stable string key.
+    const rolesKey = (user?.roles ?? []).join('|');
+
     // Fire PostHog event when panel opens.
     useEffect(() => {
         if (open) {
             trackEvent('admin.whats_new.panel.opened', {
                 unseenCount,
-                // HOS-296: send the full role set the user holds, not a
-                // single "primary" role.
-                roles: user?.roles ?? []
+                // Send the full role set the user holds, not a single
+                // "primary" role.
+                roles: rolesKey === '' ? [] : rolesKey.split('|')
             });
         }
-    }, [open, unseenCount, user?.roles]);
+    }, [open, unseenCount, rolesKey]);
 
     const handleMarkAllRead = useCallback(() => {
         markAllSeen();

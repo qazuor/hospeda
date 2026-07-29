@@ -80,7 +80,11 @@ vi.mock('@/hooks/use-translations', () => ({
 
 vi.mock('@/hooks/use-auth-context', () => ({
     useAuthContext: () => ({
-        user: { id: 'user_1', role: 'HOST' },
+        // HOS-296: a user holds a SET of roles. Leaving the old scalar here
+        // made `user?.roles ?? []` resolve to an empty set, so the analytics
+        // assertions below were reading a fabricated value rather than the
+        // mocked one.
+        user: { id: 'user_1', roles: ['HOST'] },
         isLoading: false,
         isAuthenticated: true,
         error: null,
@@ -271,7 +275,7 @@ describe('TourProvider / useTour', () => {
             // Assert
             expect(mockedTrackEvent).toHaveBeenCalledWith('admin.tour.shown', {
                 tourId: 'host.misAlojamientos',
-                role: 'HOST',
+                roles: ['HOST'],
                 source: 'auto'
             });
         });
