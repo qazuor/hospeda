@@ -17,10 +17,7 @@ import { RoleEnumSchema } from '../../enums/role.schema.js';
  * panel share ONE definition: an invariant that only lives in a React component
  * is not enforced at all.
  */
-export const NON_ASSIGNABLE_ROLES: readonly RoleEnum[] = [
-    RoleEnum.SYSTEM,
-    RoleEnum.GUEST
-] as const;
+export const NON_ASSIGNABLE_ROLES: readonly RoleEnum[] = [RoleEnum.SYSTEM, RoleEnum.GUEST] as const;
 
 /**
  * A role an operator is allowed to grant.

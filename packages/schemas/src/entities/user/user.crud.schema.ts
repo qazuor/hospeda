@@ -4,8 +4,8 @@ import { StrongPasswordSchema } from '../../common/password.schema.js';
 import { PermissionEnumSchema } from '../../enums/index.js';
 import { ModerationStatusEnumSchema } from '../../enums/moderation-status.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
-import { AssignableRoleEnumSchema } from './user-role.schema.js';
 import { UserReadSchema, UserSchema } from './user.schema.js';
+import { AssignableRoleEnumSchema } from './user-role.schema.js';
 
 /**
  * User CRUD Schemas

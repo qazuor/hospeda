@@ -312,23 +312,23 @@ describe('User CRUD Schemas', () => {
                 expect(() => UserAssignRoleInputSchema.parse(invalidInput)).toThrow(ZodError);
             });
 
-            it.each(['SYSTEM', 'GUEST'])(
-                'should reject the non-assignable role %s (HOS-296)',
-                (role) => {
-                    // This is an HTTP-shaped input feeding `UserService.assignRole`,
-                    // which delegates straight to `grantRole`. `GUEST` is synthesised
-                    // in-memory for anonymous requests and never stored; `SYSTEM`
-                    // belongs to one reserved non-loginable account. The seed grants
-                    // `SYSTEM` by calling `grantRole` DIRECTLY, so restricting this
-                    // schema does not block it.
-                    const input = {
-                        userId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' as any,
-                        role: role as any
-                    };
+            it.each([
+                'SYSTEM',
+                'GUEST'
+            ])('should reject the non-assignable role %s (HOS-296)', (role) => {
+                // This is an HTTP-shaped input feeding `UserService.assignRole`,
+                // which delegates straight to `grantRole`. `GUEST` is synthesised
+                // in-memory for anonymous requests and never stored; `SYSTEM`
+                // belongs to one reserved non-loginable account. The seed grants
+                // `SYSTEM` by calling `grantRole` DIRECTLY, so restricting this
+                // schema does not block it.
+                const input = {
+                    userId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' as any,
+                    role: role as any
+                };
 
-                    expect(() => UserAssignRoleInputSchema.parse(input)).toThrow(ZodError);
-                }
-            );
+                expect(() => UserAssignRoleInputSchema.parse(input)).toThrow(ZodError);
+            });
         });
 
         describe('UserAddPermissionInputSchema', () => {

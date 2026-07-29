@@ -3,8 +3,6 @@
 // Additional schemas
 export * from './permission.schema.js';
 export * from './role.schema.js';
-// Multi-role capability set (HOS-296): one row per hat held by a user
-export * from './user-role.schema.js';
 // Access level schemas (public, protected, admin)
 export * from './user.access.schema.js';
 // Admin search
@@ -29,3 +27,5 @@ export * from './user.schema.js'; // Main entity schema
 export * from './user.settings.schema.js';
 // Tour progress body schema (SPEC-174)
 export * from './user.tour-progress.schema.js';
+// Multi-role capability set (HOS-296): one row per hat held by a user
+export * from './user-role.schema.js';
