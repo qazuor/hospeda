@@ -1,6 +1,7 @@
 import type { User, UserAdminStats } from '@repo/schemas';
-import { and, count, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
+import { userRole } from '../../schemas/user/r_user_role.dbschema.ts';
 import { users } from '../../schemas/user/user.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { buildOrderByClause, buildWhereClause, safeIlike } from '../../utils/drizzle-helpers.ts';
@@ -323,7 +324,12 @@ export class UserModel extends BaseModelImpl<User> {
      * Returns admin-level aggregated user statistics.
      *
      * Runs two independent queries in parallel:
-     *  1. COUNT(*) GROUP BY role — excludes soft-deleted rows.
+     *  1. COUNT(*) GROUP BY role over `user_role`, joined to `users` to exclude
+     *     soft-deleted accounts. HOS-296 dropped `users.role`, so this can no
+     *     longer be a single-table `GROUP BY`. **Note for the UI**: with
+     *     multi-role, a user contributes to one bucket PER held hat, so
+     *     `Σ byRole >= totalUsers` is now correct rather than a bug — the
+     *     dashboard has to say so or the number reads as broken (spec OQ-5).
      *  2. Monthly new-user trend for the last 12 complete months (current
      *     calendar month included), derived from `created_at`. Months with
      *     zero registrations are included as explicit zero buckets so the
@@ -336,15 +342,17 @@ export class UserModel extends BaseModelImpl<User> {
         const db = this.getClient(tx);
 
         // ---- byRole aggregation ------------------------------------------
-        // Only count non-deleted users (deletedAt IS NULL).
+        // Only count non-deleted users (deletedAt IS NULL). The join to `users`
+        // is what enforces that now that the roles live in their own table.
         const roleCountsQuery = db
             .select({
-                role: users.role,
-                total: count(users.id)
+                role: userRole.role,
+                total: count(userRole.userId)
             })
-            .from(users)
+            .from(userRole)
+            .innerJoin(users, eq(users.id, userRole.userId))
             .where(isNull(users.deletedAt))
-            .groupBy(users.role);
+            .groupBy(userRole.role);
 
         // ---- newUsersTrend aggregation ------------------------------------
         // Extract YYYY-MM from created_at using to_char for deterministic
