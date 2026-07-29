@@ -1,7 +1,7 @@
 import { AccommodationIdSchema, AccommodationSummarySchema } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
 
@@ -13,7 +13,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * @param params - Path parameters containing id
  * @returns Accommodation summary data or null if not found
  */
-const getSummaryHandler = async (ctx: Context, params: Record<string, unknown>) => {
+const getSummaryHandler = async (_ctx: Context, params: Record<string, unknown>) => {
     // Get the ID from the path params
     const id = params.id as string;
 
@@ -25,11 +25,15 @@ const getSummaryHandler = async (ctx: Context, params: Record<string, unknown>) 
         throw validationResult.error;
     }
 
-    // Get actor from context (can be guest for public endpoint)
-    const actor = getActorFromContext(ctx);
+    // HOS-353: resolve visibility against a GUEST actor, never the caller. This route
+    // lives under the `/api/v1/public/accommodations` prefix, whose cache key carries
+    // no actor and which is consulted before auth — and the payload it returns names
+    // `visibility`, `lifecycleState`, `ownerId` and `slug`, so a privileged reader's
+    // 200 for an unpublished listing would be replayed to every anonymous visitor for
+    // the TTL. Privileged reads live on the protected and admin tiers.
 
     // Call the real accommodation service using getById to get full entity with summary
-    const result = await accommodationService.getById(actor, id);
+    const result = await accommodationService.getById(createGuestActor(), id);
 
     if (result.error) {
         throw new ServiceError(result.error.code, result.error.message);

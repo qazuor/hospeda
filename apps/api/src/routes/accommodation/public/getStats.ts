@@ -2,7 +2,7 @@ import { AccommodationIdSchema, AccommodationStatsSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
 
@@ -14,15 +14,18 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * @param params - Path parameters containing id
  * @returns Accommodation statistics data or null if not found
  */
-const getStatsHandler = async (ctx: Context, params: Record<string, unknown>) => {
+const getStatsHandler = async (_ctx: Context, params: Record<string, unknown>) => {
     // Get the ID from the path params
     const id = params.id as string;
 
-    // Get actor from context (can be guest for public endpoint)
-    const actor = getActorFromContext(ctx);
+    // HOS-353: resolve visibility against a GUEST actor, never the caller — for BOTH
+    // service calls below. This route lives under the `/api/v1/public/accommodations`
+    // prefix, whose cache key carries no actor and which is consulted before auth, so
+    // a privileged reader's 200 would be replayed to every anonymous visitor for the
+    // TTL. Privileged reads live on the protected and admin tiers.
 
     // Get basic accommodation info first to get the name
-    const accommodationResult = await accommodationService.getById(actor, id);
+    const accommodationResult = await accommodationService.getById(createGuestActor(), id);
 
     if (accommodationResult.error || !accommodationResult.data) {
         // Return null if accommodation not found (schema is nullable)
@@ -30,7 +33,9 @@ const getStatsHandler = async (ctx: Context, params: Record<string, unknown>) =>
     }
 
     // Call the stats service
-    const statsResult = await accommodationService.getStats(actor, { idOrSlug: id });
+    const statsResult = await accommodationService.getStats(createGuestActor(), {
+        idOrSlug: id
+    });
 
     if (statsResult.error) {
         throw new HTTPException(500, {

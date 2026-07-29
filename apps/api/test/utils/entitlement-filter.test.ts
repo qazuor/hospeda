@@ -4,18 +4,11 @@
  * The public accommodation payload follows a strict contract:
  * - `richDescription` presence means the OWNING HOST is entitled to publish it (CAN_USE_RICH_DESCRIPTION).
  * - `isVerified` presence (truthy) means the OWNING HOST has the HAS_VERIFICATION_BADGE entitlement.
- * The viewer does NOT decide any of these. Since HOS-353 that is the whole rule:
- * `filterAccommodationByEntitlements` no longer receives the Hono context, and VIDEO
- * moved from viewer-gated to OWNER-gated along with the rest — `CAN_EMBED_VIDEO`
- * ships only in host plans, so asking the reader for it stripped the host's paid
- * video for every ordinary visitor. WhatsApp (HOS-19) is NOT stripped here: the
- * shared-cached public payload carries only the owner-derived `hasWhatsapp` boolean;
- * the number is gated per-viewer on a separate protected endpoint.
- *
- * The Hono app below therefore no longer feeds viewer entitlements to the function
- * under test — it survives only because these cases assert on the JSON response,
- * which needs a `c.json(...)`. See `entitlement-filter.viewer-blind.test.ts` for the
- * structural pin.
+ * The viewer does NOT decide these owner-gated fields. Video is still viewer-gated
+ * via `hasEntitlement(c, CAN_EMBED_VIDEO)`. WhatsApp (HOS-19) is NO LONGER stripped
+ * here: the shared-cached public payload only carries the owner-derived `hasWhatsapp`
+ * boolean (derived from `contactInfo.whatsapp`); the number is gated per-viewer on a
+ * separate protected endpoint.
  */
 
 import { EntitlementKey } from '@repo/billing';
@@ -67,7 +60,7 @@ describe('filterAccommodationByEntitlements', () => {
         ]);
 
         app.get('/', (c) => {
-            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, []);
+            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, []);
             return c.json(filtered);
         });
 
@@ -83,7 +76,7 @@ describe('filterAccommodationByEntitlements', () => {
         const app = createViewerContext();
 
         app.get('/', (c) => {
-            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, [
+            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
                 EntitlementKey.CAN_USE_RICH_DESCRIPTION,
                 EntitlementKey.HAS_VERIFICATION_BADGE
             ]);
@@ -100,7 +93,7 @@ describe('filterAccommodationByEntitlements', () => {
         const app = createViewerContext();
 
         app.get('/', (c) => {
-            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION);
+            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION);
             return c.json(filtered);
         });
 
@@ -111,11 +104,11 @@ describe('filterAccommodationByEntitlements', () => {
         expect(body.isVerified).toBe(true);
     });
 
-    it('strips video when the OWNER lacks CAN_EMBED_VIDEO, and never emits the WhatsApp number (HOS-19: only hasWhatsapp)', async () => {
+    it('keeps video viewer-gated but never emits the WhatsApp number (HOS-19: only hasWhatsapp)', async () => {
         const app = createViewerContext([]);
 
         app.get('/', (c) => {
-            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, [
+            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
                 EntitlementKey.CAN_USE_RICH_DESCRIPTION,
                 EntitlementKey.HAS_VERIFICATION_BADGE
             ]);
@@ -128,9 +121,9 @@ describe('filterAccommodationByEntitlements', () => {
         expect(body.richDescription).toBe('## Premium\n\n**luxury**');
         expect(body.videoUrl).toBeUndefined();
         expect(body.media).toEqual([]);
-        // HOS-19: the number is never stripped/emitted here. Only the owner-derived
-        // boolean is set, and it is TRUE regardless of who is reading — which is what
-        // makes it safe to compute into a shared-cached payload.
+        // HOS-19: the number is never stripped/emitted here — it is not the
+        // viewer-gated surface. Only the owner-derived boolean is set, and it is
+        // TRUE regardless of the viewer's plan (cache-safe).
         expect(body.hasWhatsapp).toBe(true);
         expect(body.whatsappNumber).toBeUndefined();
     });
@@ -140,6 +133,7 @@ describe('filterAccommodationByEntitlements', () => {
 
         app.get('/', (c) => {
             const filtered = filterAccommodationByEntitlements(
+                c,
                 { id: 'acc-002', contactInfo: { whatsapp: null } },
                 []
             );
@@ -168,6 +162,7 @@ describe('filterAccommodationByEntitlements', () => {
 
         app.get('/', (c) => {
             const filtered = filterAccommodationByEntitlements(
+                c,
                 {
                     ...BASE_ACCOMMODATION,
                     contactInfo: { whatsapp } as unknown as { whatsapp?: string | null }
@@ -193,6 +188,7 @@ describe('filterAccommodationByEntitlements', () => {
 
         app.get('/', (c) => {
             const filtered = filterAccommodationByEntitlements(
+                c,
                 { id: 'acc-003', contactInfo: { whatsapp: '   ' } },
                 []
             );
@@ -214,7 +210,7 @@ describe('filterAccommodationByEntitlements', () => {
 
         app.get('/', (c) => {
             // ownerEntitlements provided but WITHOUT HAS_VERIFICATION_BADGE
-            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, [
+            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
                 EntitlementKey.CAN_USE_RICH_DESCRIPTION
                 // HAS_VERIFICATION_BADGE intentionally omitted
             ]);
@@ -231,7 +227,7 @@ describe('filterAccommodationByEntitlements', () => {
         const app = createViewerContext();
 
         app.get('/', (c) => {
-            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, [
+            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
                 EntitlementKey.CAN_USE_RICH_DESCRIPTION,
                 EntitlementKey.HAS_VERIFICATION_BADGE
             ]);
@@ -249,7 +245,7 @@ describe('filterAccommodationByEntitlements', () => {
         const app = createViewerContext([EntitlementKey.HAS_VERIFICATION_BADGE]);
 
         app.get('/', (c) => {
-            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, [
+            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
                 // owner entitlements: does NOT include HAS_VERIFICATION_BADGE
                 EntitlementKey.CAN_USE_RICH_DESCRIPTION
             ]);
@@ -272,7 +268,7 @@ describe('filterAccommodationByEntitlements', () => {
 
         app.get('/', (c) => {
             // owner does NOT have CAN_USE_RICH_DESCRIPTION
-            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, []);
+            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, []);
             return c.json(filtered);
         });
 
@@ -290,7 +286,7 @@ describe('filterAccommodationByEntitlements', () => {
         const app = createViewerContext();
 
         app.get('/', (c) => {
-            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, [
+            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
                 EntitlementKey.HAS_VERIFICATION_BADGE
             ]);
             return c.json(filtered);
@@ -307,7 +303,7 @@ describe('filterAccommodationByEntitlements', () => {
         const app = createViewerContext();
 
         app.get('/', (c) => {
-            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, [
+            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
                 EntitlementKey.CAN_USE_RICH_DESCRIPTION,
                 EntitlementKey.HAS_VERIFICATION_BADGE
             ]);
@@ -330,7 +326,7 @@ describe('filterAccommodationByEntitlements', () => {
         const app = createViewerContext();
 
         app.get('/', (c) => {
-            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION);
+            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION);
             return c.json(filtered);
         });
 
@@ -356,6 +352,7 @@ describe('filterAccommodationByEntitlements', () => {
 
         app.get('/', (c) => {
             captured = filterAccommodationByEntitlements(
+                c,
                 { id: 'acc-null', richDescription: null, richDescriptionI18n: null },
                 []
             ) as Record<string, unknown>;
@@ -377,6 +374,7 @@ describe('filterAccommodationByEntitlements', () => {
 
         app.get('/', (c) => {
             const filtered = filterAccommodationByEntitlements(
+                c,
                 { ...BASE_ACCOMMODATION, media: [null] as unknown as unknown[] },
                 []
             );
@@ -402,7 +400,7 @@ describe('filterAccommodationByEntitlements', () => {
         let captured: Record<string, unknown> | null = null;
 
         app.get('/', (c) => {
-            captured = filterAccommodationByEntitlements(BASE_ACCOMMODATION, []) as Record<
+            captured = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, []) as Record<
                 string,
                 unknown
             >;
@@ -414,7 +412,7 @@ describe('filterAccommodationByEntitlements', () => {
         expect(captured).not.toBeNull();
         expect('richDescription' in (captured ?? {})).toBe(false);
         expect('richDescriptionI18n' in (captured ?? {})).toBe(false);
-        // videoUrl is owner-gated too (HOS-353) and follows the same delete rule.
+        // videoUrl is viewer-gated and follows the same rule.
         expect('videoUrl' in (captured ?? {})).toBe(false);
     });
 
@@ -430,7 +428,7 @@ describe('filterAccommodationByEntitlements', () => {
 
         app.get('/', (c) => {
             // owner does NOT have CAN_USE_RICH_DESCRIPTION
-            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, [
+            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
                 EntitlementKey.HAS_VERIFICATION_BADGE
             ]);
             return c.json(filtered);
