@@ -51,7 +51,7 @@ const mockFetchCampaignMetrics = vi.mocked(fetchCampaignMetrics);
 
 /** EDITOR context. */
 const ctx: ResolverContext = {
-    role: 'EDITOR',
+    roles: ['EDITOR'],
     userId: 'u-editor-test',
     permissions: ['NEWSLETTER_SUBSCRIBER_VIEW', 'NEWSLETTER_CAMPAIGN_VIEW'],
     scope: 'all'

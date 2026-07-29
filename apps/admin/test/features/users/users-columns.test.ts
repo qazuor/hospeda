@@ -2,7 +2,9 @@
  * Tests for the users DataTable column configuration. Verifies SPEC-135 F-030:
  * the `fullName` compound column and the `slug` column are hidden by default
  * on the table view so mobile (where columns silently drop on overflow)
- * surfaces email and role instead of two redundant name columns.
+ * surfaces email instead of two redundant name columns.
+ *
+ * HOS-296: the `role` column itself was removed — see the test below.
  */
 
 import type { TranslationKey } from '@repo/i18n';
@@ -41,10 +43,11 @@ describe('createUsersColumns', () => {
         expect(email?.startVisibleOnTable).not.toBe(false);
     });
 
-    it('keeps role visible on the table view (mobile priority)', () => {
-        const role = byId('role');
-        expect(role).toBeDefined();
-        expect(role?.startVisibleOnTable).not.toBe(false);
+    // HOS-296: the role column was removed entirely — `role` no longer exists
+    // on the admin user LIST payload (`UserListItemSchema` drops it; see
+    // users.columns.ts), so there is nothing to render a column for.
+    it('no longer defines a role column', () => {
+        expect(byId('role')).toBeUndefined();
     });
 
     it('keeps lifecycle status visible on the table view', () => {

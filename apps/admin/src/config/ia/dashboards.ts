@@ -1026,7 +1026,11 @@ const adminBaseDashboard: DashboardInput = {
                 source: 'admin.users.stats',
                 chartType: 'ranking',
                 accent: 'purple',
-                icon: 'users'
+                icon: 'users',
+                // HOS-296 §7.3 (OQ-5): with multi-role a user contributes to
+                // every bucket they hold, so Σ bars > total users is CORRECT.
+                // Say so in the UI or the number reads as broken.
+                noteKey: 'admin-dashboard.widgets.usersByRole.multiRoleNote'
             }
         },
 

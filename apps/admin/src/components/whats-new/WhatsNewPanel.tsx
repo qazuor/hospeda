@@ -7,7 +7,7 @@
  *   Unseen entries: bold title + accent dot. Seen entries: muted styling.
  * - Row click: opens WhatsNewModal for that specific entry (entryId mode).
  * - Empty state: i18n key `admin-whats-new.panel.empty`.
- * - PostHog: `admin.whats_new.panel.opened` on open ({ unseenCount, role }).
+ * - PostHog: `admin.whats_new.panel.opened` on open ({ unseenCount, roles }).
  *
  * Open state decision: WhatsNewPanel owns the modal state for the entry it opens.
  * The panel itself is controlled via `open` / `onOpenChange` props supplied by
@@ -67,10 +67,12 @@ export function WhatsNewPanel({ open, onOpenChange }: WhatsNewPanelProps) {
         if (open) {
             trackEvent('admin.whats_new.panel.opened', {
                 unseenCount,
-                role: user?.role
+                // HOS-296: send the full role set the user holds, not a
+                // single "primary" role.
+                roles: user?.roles ?? []
             });
         }
-    }, [open, unseenCount, user?.role]);
+    }, [open, unseenCount, user?.roles]);
 
     const handleMarkAllRead = useCallback(() => {
         markAllSeen();

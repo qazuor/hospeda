@@ -63,5 +63,10 @@
     "comingSoon": {
         "analytics": "Conecta un proveedor de analíticas para ver datos de tráfico",
         "auditLog": "El registro de actividad estará disponible cuando se implemente el sistema de auditoría"
+    },
+    "widgets": {
+        "usersByRole": {
+            "multiRoleNote": "Un usuario puede tener varios roles, así que las barras suman más que el total de usuarios."
+        }
     }
 }

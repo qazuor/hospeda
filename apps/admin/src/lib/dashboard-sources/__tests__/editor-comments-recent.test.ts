@@ -29,7 +29,7 @@ const mockFetchApi = vi.mocked(fetchApi);
 
 /** EDITOR context. */
 const ctx: ResolverContext = {
-    role: 'EDITOR',
+    roles: ['EDITOR'],
     userId: 'u-editor',
     permissions: ['POST_COMMENT_VIEW', 'EVENT_COMMENT_VIEW'],
     scope: 'all'

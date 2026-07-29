@@ -54,7 +54,7 @@ vi.mock('@/hooks/use-auth-context', () => ({
     useAuthContext: () => ({
         user: {
             id: 'user_1',
-            role: 'HOST',
+            roles: ['HOST'],
             displayName: 'Ana Host',
             email: 'ana@host.test',
             avatar: null
@@ -106,6 +106,7 @@ vi.mock('@/contexts/tour-context', () => ({
 }));
 
 vi.mock('@/hooks/use-tours', () => ({
+    resolvePrimaryTourRole: (roles: readonly string[] | null | undefined) => roles?.[0] ?? null,
     useWelcomeTourForRole: ({ role }: { role: string | null }) => {
         if (!role || !mockTourState.welcomeTourId) return undefined;
         return {

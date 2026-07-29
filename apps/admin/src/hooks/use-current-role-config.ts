@@ -1,15 +1,21 @@
 /**
  * useCurrentRoleConfig — resolves the IA RoleConfig for the currently
- * authenticated user's role.
+ * authenticated user.
  *
- * This hook is the **template selector** only. It reads the user's role string
- * from `useAuthContext()` and returns the matching `RoleConfig` from the
- * validated IA config. This is NOT a permission gate — it only picks which
- * layout template to use for the current role.
+ * This hook is the **template selector** only. It reads the user's role SET
+ * from `useAuthContext()` (HOS-296: an account can hold multiple hats) and
+ * returns the matching `RoleConfig` for the first held role that has one.
+ * This is NOT a permission gate — it only picks which layout template to use.
+ *
+ * **Multi-hat tie-break**: when the user holds more than one role with a
+ * `RoleConfig` entry, this resolves the FIRST one in `validatedConfig.roles`'
+ * own key declaration order (see {@link resolvePrimaryRole}) — deterministic,
+ * and documented here rather than left as an implicit "whichever happened to
+ * be picked" heuristic.
  *
  * Returns `undefined` when:
- * - No user is authenticated.
- * - The user's role string does not match any key in `validatedConfig.roles`.
+ * - No user is authenticated, or the user holds no roles.
+ * - None of the user's roles match a key in `validatedConfig.roles`.
  * - The matching role entry has `enabled: false` (deferred/disabled role).
  *
  * Consumers should treat `undefined` as "no layout config available" and
@@ -21,7 +27,7 @@
  *
  * @module use-current-role-config
  * @see apps/admin/src/config/ia/validate.ts   — validatedConfig
- * @see apps/admin/src/contexts/auth-context.tsx — user.role source
+ * @see apps/admin/src/contexts/auth-context.tsx — user.roles source
  * @see SPEC-154 T-023
  */
 
@@ -30,13 +36,33 @@ import { validatedConfig } from '@/config/ia/validate';
 import { useAuthContext } from '@/hooks/use-auth-context';
 
 /**
- * Returns the IA {@link RoleConfig} for the currently authenticated user's role.
+ * Resolves the single "primary" role key to use for template selection out of
+ * a user's full role set, per the multi-hat tie-break documented on
+ * {@link useCurrentRoleConfig}: the first role (in `validatedConfig.roles`'
+ * own key declaration order) that the user actually holds.
+ *
+ * Exported so other single-role consumers (e.g. tour role resolution) can
+ * reuse the exact same precedence instead of re-deriving their own.
+ *
+ * @param roles - The full set of roles the user holds.
+ * @returns The first matching role key, or `undefined` if none match.
+ */
+export function resolvePrimaryRole(roles: readonly string[] | undefined): string | undefined {
+    if (!roles || roles.length === 0) {
+        return undefined;
+    }
+    return Object.keys(validatedConfig.roles).find((roleKey) => roles.includes(roleKey));
+}
+
+/**
+ * Returns the IA {@link RoleConfig} for the currently authenticated user.
  *
  * This hook ONLY selects the layout template — it is NOT a permission check.
  * All item-level visibility must go through `useUserPermissions()`.
  *
- * @returns The {@link RoleConfig} for the user's role, or `undefined` if no
- *   user is authenticated, the role is unknown, or the role is disabled.
+ * @returns The {@link RoleConfig} for the user's (primary) role, or
+ *   `undefined` if no user is authenticated, no held role is known, or the
+ *   matching role is disabled.
  *
  * @example
  * ```ts
@@ -48,12 +74,13 @@ import { useAuthContext } from '@/hooks/use-auth-context';
 export function useCurrentRoleConfig(): RoleConfig | undefined {
     const { user } = useAuthContext();
 
-    if (!user?.role) {
+    const primaryRole = resolvePrimaryRole(user?.roles);
+    if (!primaryRole) {
         return undefined;
     }
 
-    const roleConfig = validatedConfig.roles[user.role];
-    if (!roleConfig || !roleConfig.enabled) {
+    const roleConfig = validatedConfig.roles[primaryRole];
+    if (!roleConfig?.enabled) {
         return undefined;
     }
 

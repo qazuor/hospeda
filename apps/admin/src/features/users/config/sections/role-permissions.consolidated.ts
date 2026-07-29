@@ -4,6 +4,19 @@ import type { ConsolidatedSectionConfig } from '@/features/destinations/types/co
 
 /**
  * Consolidated configuration for the Role & Permissions section of user
+ *
+ * HOS-296: the scalar `role` `SELECT` that used to open this section is GONE.
+ * `users.role` was dropped, `UserPatchInputSchema` no longer accepts a `role`
+ * field, and a user now holds a SET of hats whose membership is mutated only
+ * through the dedicated `POST`/`DELETE /admin/users/:id/roles` endpoints.
+ * Leaving the field here would have submitted a key the API rejects, and no
+ * entity-form field type can carry the per-hat provenance (`grantedAt`,
+ * `grantedBy`, `grantReason`) that §6.5/§8 require the panel to display.
+ *
+ * The replacement is `UserRolesCard`, on the user's Permissions tab
+ * (`/access/users/:id/permissions`) — a real multi-select over the role set
+ * with grant/revoke actions. See
+ * `features/users/components/roles/UserRolesCard.tsx`.
  */
 export const createRolePermissionsConsolidatedSection = (): ConsolidatedSectionConfig => ({
     id: 'role-permissions',
@@ -16,24 +29,6 @@ export const createRolePermissionsConsolidatedSection = (): ConsolidatedSectionC
         edit: [PermissionEnum.USER_UPDATE_ROLES]
     },
     fields: [
-        {
-            id: 'role',
-            type: FieldTypeEnum.SELECT,
-            required: true,
-            modes: ['view', 'edit', 'create'],
-            label: 'Rol',
-            description: 'Rol del usuario en el sistema',
-            permissions: {
-                view: [PermissionEnum.USER_READ_ALL],
-                edit: [PermissionEnum.USER_UPDATE_ROLES]
-            },
-            typeConfig: {
-                options: Object.values(RoleEnum).map((value) => ({
-                    value,
-                    label: getRoleLabel(value)
-                }))
-            }
-        },
         {
             id: 'authProvider',
             type: FieldTypeEnum.SELECT,

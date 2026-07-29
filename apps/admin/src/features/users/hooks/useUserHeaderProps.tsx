@@ -22,7 +22,11 @@ export interface UseUserHeaderPropsArgs {
 export interface UserHeaderProps {
     /** Header media slot (circular avatar with initials fallback). */
     readonly media: EntityPageHeaderMedia | undefined;
-    /** Role label (e.g. "Anfitrión") — undefined when the role isn't known. */
+    /**
+     * Comma-joined labels for every role the user holds (e.g. "Anfitrión,
+     * Editor") — HOS-296: an account can hold multiple hats, so this is never
+     * a single "primary" role. `undefined` when no roles are known.
+     */
     readonly subtitle: string | undefined;
     /** Stack of status badges (lifecycle state, etc.). */
     readonly badges: ReactNode;
@@ -51,9 +55,16 @@ export const useUserHeaderProps = ({ entity }: UseUserHeaderPropsArgs): UserHead
             fallback: <span className="font-semibold text-sm">{getInitials(displayName)}</span>
         };
 
-        // ---- Subtitle (role label) ----------------------------------------
-        const role = entity.role as RoleEnum | undefined;
-        const subtitle = role ? getRoleLabel(role) : undefined;
+        // ---- Subtitle (role labels) -----------------------------------------
+        // HOS-296: `entity.role` (single scalar) is gone — the user entity now
+        // carries `roles: RoleEnum[]` (see UserPublicSchema in @repo/schemas).
+        // Render the FULL held set, not one "primary" role.
+        const rawRoles = entity.roles;
+        const roles = Array.isArray(rawRoles)
+            ? rawRoles.filter((r): r is RoleEnum => typeof r === 'string')
+            : [];
+        const subtitle =
+            roles.length > 0 ? roles.map((r) => getRoleLabel(r)).join(', ') : undefined;
 
         // ---- Badges (lifecycle state) -------------------------------------
         const lifecycleState = entity.lifecycleState as string | undefined;

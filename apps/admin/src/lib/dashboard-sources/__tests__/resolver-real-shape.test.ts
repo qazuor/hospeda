@@ -43,7 +43,7 @@ const mockFetchApi = vi.mocked(fetchApi);
 
 /** SUPER_ADMIN context — sees the full admin base + super-only sources. */
 const ctx: ResolverContext = {
-    role: 'SUPER_ADMIN',
+    roles: ['SUPER_ADMIN'],
     userId: 'u-super',
     permissions: [],
     scope: 'all'

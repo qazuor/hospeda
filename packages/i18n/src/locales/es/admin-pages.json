@@ -162,6 +162,7 @@
             "verified": "Verificado",
             "notVerified": "No verificado",
             "role": "Rol",
+            "roles": "Roles",
             "permissions": "Permisos",
             "permissionsCount_one": "{{count}} permiso asignado",
             "permissionsCount_other": "{{count}} permisos asignados",
@@ -828,7 +829,28 @@
                 "grantPermission": "Otorgar",
                 "denyPermission": "Denegar",
                 "cancel": "Cancelar",
-                "error": "Ocurrió un error"
+                "error": "Ocurrió un error",
+                "inheritedFromRolesDesc": "Este usuario hereda la unión de los permisos de todos los roles que tiene. Los permisos por rol se gestionan en la página de Roles y aplican a todos los usuarios con ese rol.",
+                "viewRoleDetailsRolesDesc": "Para ver la lista completa de permisos de cada rol, visitá la"
+            },
+            "roles": {
+                "title": "Roles",
+                "description": "Todos los roles que tiene esta cuenta. Otorgar uno nunca quita otro.",
+                "loading": "Cargando roles…",
+                "error": "Algo salió mal",
+                "granted": "Rol otorgado",
+                "revoked": "Rol revocado",
+                "grantedAt": "Otorgado",
+                "grantedBySystem": "Automáticamente",
+                "grantRole": "Otorgar rol",
+                "revokeRole": "Revocar rol",
+                "confirmRevoke": "¿Revocar este rol?",
+                "confirmRevokeDesc": "El usuario pierde todos los permisos que solo aportaba este rol. Sus otros roles no se tocan.",
+                "cancel": "Cancelar",
+                "cannotRevokeLast": "Una cuenta debe conservar al menos un rol, así que el último no se puede revocar.",
+                "selectRolePlaceholder": "Elegí un rol para otorgar",
+                "reasonPlaceholder": "Motivo (opcional, queda en la auditoría)",
+                "changesTakeEffectNextRequest": "Los cambios se aplican en la próxima request del usuario"
             }
         }
     },

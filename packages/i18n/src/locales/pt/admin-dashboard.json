@@ -63,5 +63,10 @@
     "comingSoon": {
         "analytics": "Conecte um provedor de análises para visualizar dados de tráfego",
         "auditLog": "O feed de atividade estará disponível quando o sistema de auditoria for implementado"
+    },
+    "widgets": {
+        "usersByRole": {
+            "multiRoleNote": "Um usuário pode ter várias funções, então as barras somam mais do que o total de usuários."
+        }
     }
 }

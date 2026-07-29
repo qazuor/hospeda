@@ -47,7 +47,8 @@
         "stop": "Parar de personificar",
         "start": "Personificar usuário",
         "confirm": "Tem certeza de que deseja personificar este usuário?",
-        "error": "Erro ao personificar usuário. Tente novamente."
+        "error": "Erro ao personificar usuário. Tente novamente.",
+        "unavailable": "A personificação está temporariamente indisponível"
     },
     "createHost": {
         "trigger": "Criar host",

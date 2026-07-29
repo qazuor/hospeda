@@ -47,7 +47,7 @@ import { requireBillingAccess } from '../../src/lib/billing-access';
 const makeContext = (permissions: string[]): AuthState => ({
     userId: 'user-123',
     isAuthenticated: true,
-    role: 'ADMIN',
+    roles: ['ADMIN'],
     permissions,
     passwordChangeRequired: false,
     displayName: 'Test User',

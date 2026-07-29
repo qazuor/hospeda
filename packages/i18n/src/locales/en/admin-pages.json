@@ -162,6 +162,7 @@
             "verified": "Verified",
             "notVerified": "Not verified",
             "role": "Role",
+            "roles": "Roles",
             "permissions": "Permissions",
             "permissionsCount_one": "{{count}} permission assigned",
             "permissionsCount_other": "{{count}} permissions assigned",
@@ -828,7 +829,28 @@
                 "grantPermission": "Grant",
                 "denyPermission": "Deny",
                 "cancel": "Cancel",
-                "error": "Something went wrong"
+                "error": "Something went wrong",
+                "inheritedFromRolesDesc": "This user inherits the union of the permissions of every role they hold. Role-based permissions are managed on the Roles page and apply to every user with that role.",
+                "viewRoleDetailsRolesDesc": "To see the complete permission list of each role, visit the"
+            },
+            "roles": {
+                "title": "Roles",
+                "description": "Every role this account holds. Granting one never removes another.",
+                "loading": "Loading roles…",
+                "error": "Something went wrong",
+                "granted": "Role granted",
+                "revoked": "Role revoked",
+                "grantedAt": "Granted",
+                "grantedBySystem": "Automatically",
+                "grantRole": "Grant role",
+                "revokeRole": "Revoke role",
+                "confirmRevoke": "Revoke this role?",
+                "confirmRevokeDesc": "The user loses every permission that only this role provided. Their other roles are untouched.",
+                "cancel": "Cancel",
+                "cannotRevokeLast": "An account must keep at least one role, so the last one cannot be revoked.",
+                "selectRolePlaceholder": "Select a role to grant",
+                "reasonPlaceholder": "Reason (optional, recorded in the audit trail)",
+                "changesTakeEffectNextRequest": "Changes take effect on the user's next request"
             }
         }
     },
