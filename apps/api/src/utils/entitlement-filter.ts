@@ -10,9 +10,12 @@
 
 import { EntitlementKey } from '@repo/billing';
 import type { Accommodation, I18nText } from '@repo/schemas';
-import type { Context } from 'hono';
-import { hasEntitlement } from '../middlewares/entitlement';
-import type { AppBindings } from '../types';
+// HOS-353: this module deliberately imports NOTHING that can reach the request
+// actor — no Hono `Context`, no `hasEntitlement`. Every gate here runs on a
+// shared-cached payload, so a viewer-dependent result would be replayed to later
+// visitors. Keeping the viewer unreachable is the guarantee; a comment saying
+// "don't consult the viewer" would not be. `entitlement-filter.viewer-blind.test.ts`
+// pins it.
 import { apiLogger } from './logger';
 
 /**
@@ -142,27 +145,37 @@ function readTrimmedString(value: unknown): string {
 }
 
 /**
- * Filter accommodation data based on viewer's entitlements
+ * Filter accommodation data by the OWNING HOST's entitlements.
  *
- * Removes or modifies premium content that the caller should not expose:
- * - Omits BOTH `richDescription` AND `richDescriptionI18n` when the OWNING HOST
- *   lacks CAN_USE_RICH_DESCRIPTION. The two are one gate, never two: the web
- *   transform resolves the visitor's locale from the i18n object in PREFERENCE to
- *   the plain field, so omitting only the plain one omits nothing in practice.
- * - Removes video content if viewer lacks CAN_EMBED_VIDEO
+ * Every gate here is owner-derived. That is not a coincidence and must not be
+ * relaxed: both call sites are public detail routes under a
+ * `PUBLIC_CACHE_ENDPOINTS` prefix whose cache key carries no actor, so a
+ * viewer-dependent result computed here is served to every later visitor for the
+ * TTL (HOS-288 / HOS-353). **The function no longer receives the Hono context at
+ * all**, which is what makes that structural rather than a convention — there is
+ * nothing here to read a viewer from.
+ *
+ * What it does:
+ * - Omits BOTH `richDescription` AND `richDescriptionI18n` when the owner lacks
+ *   CAN_USE_RICH_DESCRIPTION. The two are one gate, never two: the web transform
+ *   resolves the visitor's locale from the i18n object in PREFERENCE to the plain
+ *   field, so omitting only the plain one omits nothing in practice.
+ * - Removes video content when the OWNER lacks CAN_EMBED_VIDEO. That entitlement
+ *   ships only in host plans (OWNER_PRO/PREMIUM, COMPLEX_PRO/PREMIUM) — reading it
+ *   off the viewer, as this did until HOS-353, asked a subject who can never hold
+ *   it and stripped the host's paid video for every ordinary visitor.
  * - Sets `hasWhatsapp` (owner-derived boolean) from `contactInfo.whatsapp`
  *   (HOS-19). The WhatsApp NUMBER is deliberately NOT emitted here — this
  *   endpoint is shared-cached, so the number is gated by the viewer's plan on
  *   the per-user protected endpoint instead.
- * - Forces `isVerified` to false when the OWNING HOST lacks HAS_VERIFICATION_BADGE
+ * - Forces `isVerified` to false when the owner lacks HAS_VERIFICATION_BADGE.
  *
- * @param c - Hono context (contains viewer entitlements)
  * @param accommodation - Accommodation data to filter
  * @param ownerEntitlements - Optional entitlement set for the accommodation owner.
  *   When omitted, the function behaves like an admin/internal call site and leaves
- *   both rich-description fields untouched. When provided, presence of
- *   `CAN_USE_RICH_DESCRIPTION` is the ONLY signal that either of them may be
- *   surfaced downstream (FR-3b / FR-4).
+ *   the gated fields untouched. When provided — including as an empty array, which
+ *   is what the public routes pass for a row with no ownerId — it is the ONLY
+ *   signal that any of them may be surfaced downstream (FR-3b / FR-4).
  * @returns Filtered accommodation data
  *
  * @example
@@ -170,17 +183,16 @@ function readTrimmedString(value: unknown): string {
  * import { filterAccommodationByEntitlements } from '../utils/entitlement-filter';
  *
  * app.get('/accommodations/:id', async (c) => {
- *   const accommodation = await accommodationService.getById(id);
+ *   const accommodation = await accommodationService.getById(guest, id);
+ *   const ownerEntitlements = accommodation.ownerId
+ *     ? await resolveOwnerEntitlementsForOwnerId(accommodation.ownerId)
+ *     : [];
  *
- *   // Filter based on viewer's entitlements
- *   const filtered = filterAccommodationByEntitlements(c, accommodation);
- *
- *   return c.json(filtered);
+ *   return c.json(filterAccommodationByEntitlements(accommodation, ownerEntitlements));
  * });
  * ```
  */
 export function filterAccommodationByEntitlements(
-    c: Context<AppBindings>,
     accommodation: AccommodationData,
     ownerEntitlements?: readonly EntitlementKey[]
 ): AccommodationData {
@@ -199,10 +211,12 @@ export function filterAccommodationByEntitlements(
     //
     // Statements that remain non-total, named rather than glossed over: the video block
     // calls `.replace` on `description` and dereferences `.type` on `media` elements,
-    // both typed but neither validated; `hasEntitlement` dereferences `.has` on a
-    // context value. A throw in any of them is now bounded to VIDEO content. Do not
-    // add a blanket "nothing here can throw" claim without making it true — an earlier
-    // revision asserted exactly that while these statements were reachable.
+    // both typed but neither validated. A throw in either is now bounded to VIDEO
+    // content. (The third hazard this paragraph used to name — `hasEntitlement`
+    // dereferencing `.has` on a context value — is gone with the context parameter
+    // itself, HOS-353.) Do not add a blanket "nothing here can throw" claim without
+    // making it true — an earlier revision asserted exactly that while these
+    // statements were reachable.
     try {
         // OWNER-gated richDescription omission (FR-3b): when ownerEntitlements
         // are provided, presence of CAN_USE_RICH_DESCRIPTION is the ONLY signal
@@ -262,8 +276,22 @@ export function filterAccommodationByEntitlements(
 
         // ── Derivations below this line. Both owner gates have already run. ──
 
-        // Check viewer entitlements
-        const canEmbedVideo = hasEntitlement(c, EntitlementKey.CAN_EMBED_VIDEO);
+        // HOS-353: video is OWNER-gated, not viewer-gated.
+        //
+        // `CAN_EMBED_VIDEO` exists only in OWNER_PRO / OWNER_PREMIUM / COMPLEX_PRO /
+        // COMPLEX_PREMIUM — host plans. No TOURIST plan carries it, and the
+        // entitlement's own description is "Allows embedding videos in accommodation
+        // listing". Reading it off the VIEWER therefore asked the wrong subject
+        // entirely: an ordinary visitor can never hold it, so the host's paid video
+        // was stripped for exactly the audience it exists for, and surfaced only by
+        // accident — when another host's request populated the shared cache slot
+        // first, since `/public/accommodations` has no actor in its cache key.
+        //
+        // Same shape as the two gates above: absent `ownerEntitlements` (admin and
+        // internal call sites) leaves the payload untouched; an empty array, which is
+        // what the public detail routes pass when the row has no ownerId, strips.
+        const ownerCanEmbedVideo =
+            !ownerEntitlements || ownerEntitlements.includes(EntitlementKey.CAN_EMBED_VIDEO);
 
         // HOS-19: WhatsApp display is VIEWER-gated, but `/public/accommodations`
         // is shared-cached (cache key has no auth), so the number MUST NOT ride
@@ -281,8 +309,8 @@ export function filterAccommodationByEntitlements(
         // ungated payload.
         filtered.hasWhatsapp = readTrimmedString(filtered.contactInfo?.whatsapp).length > 0;
 
-        // Remove video content if not entitled
-        if (!canEmbedVideo) {
+        // Remove video content if the OWNER is not entitled
+        if (!ownerCanEmbedVideo) {
             // Remove video URL. `delete`, not `= undefined`, for the same reason as
             // the rich-description strip above: assigning undefined leaves the key
             // present and only looks correct because JSON.stringify drops it.
@@ -303,7 +331,7 @@ export function filterAccommodationByEntitlements(
             }
 
             apiLogger.debug(
-                `Stripped video content from accommodation ${filtered.id} - viewer lacks ${EntitlementKey.CAN_EMBED_VIDEO}`
+                `Stripped video content from accommodation ${filtered.id} - owner lacks ${EntitlementKey.CAN_EMBED_VIDEO}`
             );
         }
     } catch (error) {
