@@ -10,10 +10,10 @@
  *
  * @see SPEC-086 D-012, D-017, AC-008-01, AC-008-02
  */
-import { getDb, users } from '@repo/db';
+import { getDb, userRole, users } from '@repo/db';
 import { PermissionEnum, TagAdminSearchSchema, TagSchema } from '@repo/schemas';
 import { ServiceError, TagService } from '@repo/service-core';
-import { inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -43,7 +43,17 @@ const DeleteResponseSchema = z.object({
 const UserTagWithOwnerResponseSchema = TagSchema.extend({
     ownerDisplayName: z.string().nullable().optional(),
     ownerEmail: z.string().nullable().optional(),
-    ownerRole: z.string().nullable().optional()
+    /**
+     * Every role the tag's owner holds (HOS-296 OQ-5).
+     *
+     * Replaces the single `ownerRole` string. The moderation panel exists to
+     * let a super-admin judge WHO created a tag, so it shows all of the
+     * account's hats rather than an arbitrarily-picked one: collapsing
+     * `{USER, HOST, EDITOR}` to any single value would hide exactly the
+     * context a moderator is looking for. Empty when the owner account was
+     * deleted (the tag row survives its owner).
+     */
+    ownerRoles: z.array(z.string()).default([])
 });
 
 /**
@@ -86,26 +96,36 @@ const adminListAllUserTagsRoute = createAdminListRoute({
         const ownerIds = [...new Set(items.map((t) => t.ownerId).filter(Boolean))] as string[];
         const ownerMap = new Map<
             string,
-            { displayName: string | null; email: string; role: string }
+            { displayName: string | null; email: string; roles: string[] }
         >();
 
         if (ownerIds.length > 0) {
             const db = getDb();
+            // HOS-296: `users.role` is gone, so the hats come from `user_role`.
+            // LEFT JOIN yields one row per (owner, hat) pair and still returns
+            // the owner when they somehow hold none, so a data bug shows up as
+            // an empty `ownerRoles` rather than a missing owner in the panel.
             const ownerRows = await db
                 .select({
                     id: users.id,
                     displayName: users.displayName,
                     email: users.email,
-                    role: users.role
+                    role: userRole.role
                 })
                 .from(users)
+                .leftJoin(userRole, eq(userRole.userId, users.id))
                 .where(inArray(users.id, ownerIds));
 
             for (const u of ownerRows) {
+                const existing = ownerMap.get(u.id);
+                const roles = existing?.roles ?? [];
+                if (u.role) {
+                    roles.push(u.role);
+                }
                 ownerMap.set(u.id, {
                     displayName: u.displayName ?? null,
                     email: u.email,
-                    role: u.role
+                    roles
                 });
             }
         }
@@ -116,7 +136,7 @@ const adminListAllUserTagsRoute = createAdminListRoute({
                 ...tag,
                 ownerDisplayName: owner?.displayName ?? null,
                 ownerEmail: owner?.email ?? null,
-                ownerRole: owner?.role ?? null
+                ownerRoles: owner?.roles ?? []
             };
         });
 

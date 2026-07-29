@@ -82,7 +82,7 @@ const mockActor = {
     id: ACTOR_ID,
     email: 'host-candidate@example.com',
     name: 'Host Candidate',
-    role: 'USER',
+    roles: ['USER'],
     permissions: []
 };
 vi.mock('../../src/utils/actor.js', async (importOriginal) => {

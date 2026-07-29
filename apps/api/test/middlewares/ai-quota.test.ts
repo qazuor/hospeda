@@ -129,7 +129,12 @@ function injectContext({
 // ---------------------------------------------------------------------------
 
 function makeActor(id: string, role: RoleEnum = RoleEnum.USER): InjectedActor {
-    return { id, role, permissions: [], email: `${id}@example.com` } as unknown as InjectedActor;
+    return {
+        id,
+        roles: [role],
+        permissions: [],
+        email: `${id}@example.com`
+    } as unknown as InjectedActor;
 }
 
 // ---------------------------------------------------------------------------

@@ -115,7 +115,7 @@ function buildApp(
     attachTestErrorHandler(app);
 
     app.use((c, next) => {
-        c.set('actor', { id: MOCK_USER_ID, role, permissions });
+        c.set('actor', { id: MOCK_USER_ID, roles: [role], permissions });
         return next();
     });
 
@@ -137,7 +137,7 @@ function buildUnauthenticatedApp(): Hono<AppBindings> {
     app.use((c, next) => {
         c.set('actor', {
             id: '00000000-0000-4000-8000-000000000000',
-            role: RoleEnum.GUEST,
+            roles: [RoleEnum.GUEST],
             permissions: []
         });
         return next();

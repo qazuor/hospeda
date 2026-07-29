@@ -24,7 +24,7 @@ const ACTOR_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 const buildActor = () => ({
     id: ACTOR_ID,
-    role: 'USER',
+    roles: ['USER'],
     permissions: [] as string[]
 });
 

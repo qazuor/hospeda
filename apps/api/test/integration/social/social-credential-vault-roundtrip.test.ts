@@ -70,7 +70,7 @@ const BASE_PATH = '/api/v1/admin/social/credentials';
  * Real `createTestUser()` rows are seeded fresh in `beforeEach` (below) instead,
  * since `testDb.clean()` in `afterEach` truncates `users` between tests.
  */
-type TestActor = { id: string; role: string; permissions: readonly string[] };
+type TestActor = { id: string; roles: readonly string[]; permissions: readonly string[]};
 
 function makeHeaders(actor: TestActor, extra: Record<string, string> = {}): Record<string, string> {
     return {
@@ -78,7 +78,7 @@ function makeHeaders(actor: TestActor, extra: Record<string, string> = {}): Reco
         'user-agent': 'vitest',
         accept: 'application/json',
         'x-mock-actor-id': actor.id,
-        'x-mock-actor-role': actor.role,
+        'x-mock-actor-role': actor.roles.join(','),
         'x-mock-actor-permissions': JSON.stringify(actor.permissions),
         ...extra
     };
@@ -113,7 +113,6 @@ describe('Social credential vault round-trip (HOS-64 G-4, T-035)', () => {
     // Re-seeded before every test since afterEach truncates `users`.
     beforeEach(async () => {
         const adminUser = await createTestUser({
-            role: RoleEnum.SUPER_ADMIN,
             permissions: [
                 PermissionEnum.ACCESS_PANEL_ADMIN,
                 PermissionEnum.ACCESS_API_ADMIN,
@@ -123,7 +122,7 @@ describe('Social credential vault round-trip (HOS-64 G-4, T-035)', () => {
         adminActorId = adminUser.id;
         adminActor = {
             id: adminUser.id,
-            role: RoleEnum.SUPER_ADMIN,
+            roles: [RoleEnum.ADMIN],
             permissions: [
                 PermissionEnum.ACCESS_PANEL_ADMIN,
                 PermissionEnum.ACCESS_API_ADMIN,
@@ -132,12 +131,11 @@ describe('Social credential vault round-trip (HOS-64 G-4, T-035)', () => {
         };
 
         const nonAdminUser = await createTestUser({
-            role: RoleEnum.USER,
             permissions: [PermissionEnum.ACCESS_PANEL_ADMIN]
         });
         nonAdminActor = {
             id: nonAdminUser.id,
-            role: RoleEnum.USER,
+            roles: [RoleEnum.USER],
             permissions: [PermissionEnum.ACCESS_PANEL_ADMIN] // intentionally no SOCIAL_SETTINGS_MANAGE
         };
     });

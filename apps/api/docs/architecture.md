@@ -237,10 +237,10 @@ options: {
 **Creates Actor with:**
 
 - `isAuthenticated: boolean`
-- `userId: string`
+- `id: string`
 - `email: string`
-- `role: string`
-- `permissions: string[]`
+- `roles: readonly RoleEnum[]` — every role the actor holds (HOS-296); a user can hold several at once
+- `permissions: readonly PermissionEnum[]`
 
 ### 8. Validation
 

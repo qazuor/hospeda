@@ -125,7 +125,7 @@ function buildTestApp(
 }
 
 function makeHeaders(
-    actor: { id: string; role: string; permissions: readonly string[] },
+    actor: { id: string; roles: readonly string[]; permissions: readonly string[]},
     extra: Record<string, string> = {}
 ): Record<string, string> {
     return {
@@ -133,7 +133,7 @@ function makeHeaders(
         'user-agent': 'vitest',
         accept: 'application/json',
         'x-mock-actor-id': actor.id,
-        'x-mock-actor-role': actor.role,
+        'x-mock-actor-role': actor.roles.join(','),
         'x-mock-actor-permissions': JSON.stringify(actor.permissions),
         ...extra
     };
@@ -222,7 +222,7 @@ describe('AI quota enforcement middleware (SPEC-173 T-037 AC-5 + AC-6)', () => {
             // Actor matching the userId seeded above
             const actor = {
                 id: userId,
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: [] as PermissionEnum[]
             };
 
@@ -292,7 +292,7 @@ describe('AI quota enforcement middleware (SPEC-173 T-037 AC-5 + AC-6)', () => {
 
             const actor = {
                 id: userId,
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: [] as PermissionEnum[]
             };
 
@@ -310,7 +310,7 @@ describe('AI quota enforcement middleware (SPEC-173 T-037 AC-5 + AC-6)', () => {
 
             const actor = {
                 id: freshUserId,
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: [] as PermissionEnum[]
             };
 
@@ -337,7 +337,7 @@ describe('AI quota enforcement middleware (SPEC-173 T-037 AC-5 + AC-6)', () => {
 
             const actor = {
                 id: userId,
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: [] as PermissionEnum[]
             };
 

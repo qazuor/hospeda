@@ -24,7 +24,7 @@ import {
 
 const buildActor = () => ({
     id: '00000000-0000-0000-0000-000000000010',
-    role: 'HOST',
+    roles: ['HOST'],
     permissions: ['user.settings.update'] as string[]
 });
 
@@ -125,7 +125,7 @@ describe('whatsNewSeenHandler (SPEC-175 T-007)', () => {
     describe('actor isolation', () => {
         it('uses the actor from context, not a hardcoded id', async () => {
             const svc = buildSuccessSvc();
-            const customActor = { id: 'custom-actor-id', role: 'EDITOR', permissions: [] };
+            const customActor = { id: 'custom-actor-id', roles: ['EDITOR'], permissions: [] };
             const ctx = buildCtx(customActor);
 
             await whatsNewSeenHandler(ctx, { ids: ['entry-a'] }, svc);

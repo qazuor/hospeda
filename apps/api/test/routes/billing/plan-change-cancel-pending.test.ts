@@ -122,7 +122,7 @@ function makeContext(body: unknown = { newPlanId: TARGET_PLAN_ID, billingInterva
     const store = new Map<string, unknown>([
         ['billingEnabled', true],
         ['billingCustomerId', CUSTOMER_ID],
-        ['actor', { id: ACTOR_ID, role: 'USER', permissions: [] }]
+        ['actor', { id: ACTOR_ID, roles: ['USER'], permissions: [] }]
     ]);
     return {
         get: vi.fn((k: string) => store.get(k)),

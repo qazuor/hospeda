@@ -98,7 +98,7 @@ describe('GET /me/entitlements — comp plan context (HOS-239)', () => {
     it('resolves plan (not null) for a comp subscriber — regression', async () => {
         // A non-HOST comp subscriber: before the fix the find dropped `comp`
         // and `plan` came back null.
-        mockGetActor.mockReturnValue({ id: 'user-1', role: RoleEnum.USER });
+        mockGetActor.mockReturnValue({ id: 'user-1', roles: [RoleEnum.USER] });
         setupBillingMock({ status: 'comp', planId: 'plan-tourist-plus' });
 
         const result = await entitlementsHandler(makeCtx());
@@ -112,7 +112,7 @@ describe('GET /me/entitlements — comp plan context (HOS-239)', () => {
         // HOST + tourist-category comp: the discard would normally fire
         // (isOwnerCategorySubscription=false) but the comp exemption keeps the
         // plan resolved — and short-circuits before the category check.
-        mockGetActor.mockReturnValue({ id: 'host-1', role: RoleEnum.HOST });
+        mockGetActor.mockReturnValue({ id: 'host-1', roles: [RoleEnum.HOST] });
         vi.mocked(isOwnerCategorySubscription).mockResolvedValue(false);
         setupBillingMock({ status: 'comp', planId: 'plan-tourist-plus' });
 
@@ -124,7 +124,7 @@ describe('GET /me/entitlements — comp plan context (HOS-239)', () => {
     });
 
     it('still discards a HOST active tourist sub (HOS-217 unchanged) → plan null', async () => {
-        mockGetActor.mockReturnValue({ id: 'host-2', role: RoleEnum.HOST });
+        mockGetActor.mockReturnValue({ id: 'host-2', roles: [RoleEnum.HOST] });
         vi.mocked(isOwnerCategorySubscription).mockResolvedValue(false);
         setupBillingMock({ status: 'active', planId: 'plan-tourist-vip' });
 

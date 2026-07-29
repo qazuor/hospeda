@@ -66,7 +66,7 @@ function attachTestErrorHandler(app: Hono<AppBindings>): void {
     });
 }
 
-type ActorOptions = { id: string; role: RoleEnum; permissions: PermissionEnum[] };
+type ActorOptions = { id: string; roles: readonly RoleEnum[]; permissions: PermissionEnum[]};
 
 function buildApp(
     actor: ActorOptions,
@@ -86,15 +86,15 @@ function buildApp(
 
 const viewerActor: ActorOptions = {
     id: 'admin-001',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.ACCOMMODATION_OCCUPANCY_VIEW]
 };
 const noViewPermissionAdminActor: ActorOptions = {
     id: 'admin-002',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.ACCESS_PANEL_ADMIN]
 };
-const guestActor: ActorOptions = { id: GUEST_ID, role: RoleEnum.GUEST, permissions: [] };
+const guestActor: ActorOptions = { id: GUEST_ID, roles: [RoleEnum.GUEST], permissions: [] };
 
 beforeEach(() => {
     mockGetAdminOccupancyForAccommodation.mockResolvedValue([

@@ -44,7 +44,7 @@ describe('Social credential vault data migration (HOS-64 T-025)', () => {
     });
 
     beforeEach(async () => {
-        const actor = await createTestUser({ role: RoleEnum.SUPER_ADMIN });
+        const actor = await createTestUser({});
         actorId = actor.id;
     });
 

@@ -104,7 +104,7 @@ const mockGetActorFromContext = vi.mocked(getActorFromContext);
 
 const ADMIN_ACTOR: Actor = {
     id: 'admin-actor-id',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.ACCOMMODATION_MODERATION_CHANGE]
 };
 
@@ -321,7 +321,7 @@ describe('adminModerationPendingCountRoute handler — SPEC-155 T-010', () => {
             // returning a FORBIDDEN error.
             const actorWithoutPermissions: Actor = {
                 id: 'restricted-user',
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: []
             };
             mockGetActorFromContext.mockReturnValue(actorWithoutPermissions);

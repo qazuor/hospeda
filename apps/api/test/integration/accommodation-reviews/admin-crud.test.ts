@@ -21,7 +21,7 @@ describe('Admin AccommodationReview CRUD Routes', () => {
 
     const adminActor = {
         id: crypto.randomUUID(),
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [
             PermissionEnum.ACCESS_API_PUBLIC,
             PermissionEnum.ACCESS_API_PRIVATE,
@@ -38,14 +38,14 @@ describe('Admin AccommodationReview CRUD Routes', () => {
      * Builds mock auth headers for a test actor.
      */
     function makeHeaders(
-        actor: { id: string; role: string; permissions: string[] },
+        actor: { id: string; roles: readonly string[]; permissions: string[]},
         extra: Record<string, string> = {}
     ): Record<string, string> {
         return {
             'content-type': 'application/json',
             'user-agent': 'vitest',
             'x-mock-actor-id': actor.id,
-            'x-mock-actor-role': actor.role,
+            'x-mock-actor-role': actor.roles.join(','),
             'x-mock-actor-permissions': JSON.stringify(actor.permissions),
             ...extra
         };

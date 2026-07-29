@@ -25,8 +25,9 @@
  * @module cron/jobs/archive-abandoned-drafts
  */
 
-import { accommodations, and, eq, isNull, lt, lte, sql, users, withTransaction } from '@repo/db';
-import { LifecycleStatusEnum, RoleEnum } from '@repo/schemas';
+import { accommodations, and, eq, isNull, lt, lte, sql, withTransaction } from '@repo/db';
+import { LifecycleStatusEnum, RoleEnum, RoleGrantReason } from '@repo/schemas';
+import { getUserRoles, revokeRole } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { inArray, ne } from 'drizzle-orm';
 import { apiLogger } from '../../utils/logger.js';
@@ -42,6 +43,30 @@ const WARNING_THRESHOLD_DAYS = 23;
 
 /** Hard cap on rows processed per phase per run, to keep the transaction short. */
 const BATCH_LIMIT = 100;
+
+/**
+ * Decides whether an owner whose last accommodation was just archived should
+ * lose their `HOST` hat (HOS-296).
+ *
+ * Extracted as a pure function because the two rules are easy to get wrong and
+ * the surrounding job is a transaction + advisory lock that cannot be unit
+ * tested without a live database:
+ *
+ * 1. **Only HOST is ever removed.** The pre-HOS-296 job ran
+ *    `update(users).set({ role: USER }).where(role = HOST)`, so an owner who
+ *    also held `COMMERCE_OWNER` or `EDITOR` would have lost that too if the
+ *    `where` had ever matched. Naming a single role removes the whole class.
+ * 2. **Never strand an account with zero hats.** `revokeRole` refuses the last
+ *    role (AC-5); checking here lets the job treat that as "not demoted"
+ *    instead of an error, and keeps the `demoted` counter honest.
+ *
+ * @param params.heldRoles - Every role the owner currently holds.
+ * @returns `true` when the HOST hat should be revoked.
+ */
+export const shouldRevokeHostHat = (params: { heldRoles: readonly RoleEnum[] }): boolean => {
+    const { heldRoles } = params;
+    return heldRoles.includes(RoleEnum.HOST) && heldRoles.length > 1;
+};
 
 const safeReportToSentry = (
     error: unknown,
@@ -210,13 +235,29 @@ export const archiveAbandonedDraftsJob: CronJobDefinition = {
                         ids: archiveIds
                     });
 
-                    // Demote owners back to USER when their last accommodation
-                    // gets archived. The role promotion happened at draft
-                    // creation (so the owner could access the admin panel) —
-                    // if they end up with zero non-archived listings, the HOST
-                    // role no longer makes sense and we revoke admin access.
-                    // Owners with admin-grade roles (ADMIN/SUPER_ADMIN/
-                    // CLIENT_MANAGER) are NEVER demoted by this job.
+                    // Revoke the HOST hat when the owner's last accommodation
+                    // gets archived. The grant happened at draft creation; with
+                    // zero non-archived listings the hat no longer applies.
+                    //
+                    // HOS-296: this used to be
+                    // `update(users).set({ role: USER }).where(role = HOST)` —
+                    // a demotion that ALSO wiped any other hat the owner wore.
+                    // It is now a scoped revoke of exactly one role:
+                    //
+                    // - Owners who do not hold HOST are an idempotent no-op
+                    //   inside `revokeRole`, which replaces the old
+                    //   `eq(users.role, HOST)` predicate. Staff hats
+                    //   (ADMIN / SUPER_ADMIN / CLIENT_MANAGER) survive because
+                    //   only HOST is named, not because of a filter.
+                    // - An owner whose ONLY hat is HOST is refused by
+                    //   `revokeRole`'s last-role guard (AC-5). That is treated
+                    //   as "not demoted" rather than an error: leaving the hat
+                    //   is strictly better than stranding an account with zero
+                    //   roles, and the account is still reachable.
+                    //
+                    // `ctx: { tx }` is load-bearing — this job owns the
+                    // surrounding transaction and the advisory lock, so the
+                    // revoke and its audit row must land inside them.
                     const affectedOwnerIds = Array.from(
                         new Set(archiveCandidates.map((row) => row.ownerId))
                     );
@@ -235,19 +276,30 @@ export const archiveAbandonedDraftsJob: CronJobDefinition = {
                         if (remaining.length > 0) {
                             continue;
                         }
-                        const updated = await tx
-                            .update(users)
-                            .set({ role: RoleEnum.USER })
-                            .where(and(eq(users.id, ownerId), eq(users.role, RoleEnum.HOST)))
-                            .returning({ id: users.id });
-                        if (updated.length > 0) {
-                            demoted += 1;
-                            logger.info('Demoted owner HOST -> USER after last draft archived', {
-                                source: LOG_SOURCE,
-                                event: 'owner_demoted',
-                                ownerId
-                            });
+
+                        const heldRoles = await getUserRoles({ userId: ownerId, ctx: { tx } });
+                        if (!shouldRevokeHostHat({ heldRoles })) {
+                            // Not held, or held as the account's only hat.
+                            continue;
                         }
+
+                        const revoked = await revokeRole({
+                            userId: ownerId,
+                            role: RoleEnum.HOST,
+                            revokedBy: null,
+                            reason: RoleGrantReason.LAST_ACCOMMODATION_ARCHIVED,
+                            ctx: { tx }
+                        });
+                        if (revoked.error) {
+                            throw revoked.error;
+                        }
+
+                        demoted += 1;
+                        logger.info('Revoked owner HOST hat after last draft archived', {
+                            source: LOG_SOURCE,
+                            event: 'owner_demoted',
+                            ownerId
+                        });
                     }
                 }
 

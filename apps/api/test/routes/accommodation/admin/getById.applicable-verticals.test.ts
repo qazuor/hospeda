@@ -118,11 +118,11 @@ vi.mock('@repo/db', async (importOriginal) => {
 vi.mock('../../../../src/utils/actor.js', () => ({
     getActorFromContext: () => ({
         id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
-        role: 'SUPER_ADMIN',
+        roles: ['SUPER_ADMIN'],
         permissions: ['access.panelAdmin']
     }),
     isGuestActor: (actor: { role: string }) => actor.role === 'GUEST',
-    createGuestActor: () => ({ id: 'guest', role: 'GUEST', permissions: [] })
+    createGuestActor: () => ({ id: 'guest', roles: ['GUEST'], permissions: [] })
 }));
 
 vi.mock('../../../../src/utils/logger.js', () => ({

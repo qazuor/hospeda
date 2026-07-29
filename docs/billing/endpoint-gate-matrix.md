@@ -530,6 +530,7 @@
 | `GET /api/v1/admin/users/options` | `user/admin/options.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `GET /api/v1/admin/users/stats` | `user/admin/stats.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `GET /api/v1/admin/users/{id}/permissions` | `user/admin/permissions.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
+| `GET /api/v1/admin/users/{id}/roles` | `user/admin/roles.ts` | none | - | n/a | Admin read/write of the multi-role set (HOS-296); PermissionEnum-gated (`USER_READ_ALL` read, `USER_UPDATE_ROLES` mutations). Staff-only surface — entitlements never apply |
 | **OWNER PROMOTION — ADMIN** | | | | | |
 | `GET /api/v1/admin/owner-promotions` | `owner-promotion/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `POST /api/v1/admin/owner-promotions` | `owner-promotion/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated |

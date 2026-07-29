@@ -72,19 +72,19 @@ const BASELINE_AT = '2026-03-01T00:00:00Z';
 
 const buildHostActor = () => ({
     id: '00000000-0000-0000-0000-000000000010',
-    role: RoleEnum.HOST,
+    roles: [RoleEnum.HOST],
     permissions: [PermissionEnum.USER_SETTINGS_UPDATE] as string[]
 });
 
 const buildGuestActor = () => ({
     id: '00000000-0000-4000-8000-000000000000',
-    role: RoleEnum.GUEST,
+    roles: [RoleEnum.GUEST],
     permissions: [PermissionEnum.ACCESS_API_PUBLIC] as string[]
 });
 
 const buildAdminActor = () => ({
     id: '00000000-0000-0000-0000-000000000020',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.USER_SETTINGS_UPDATE] as string[]
 });
 

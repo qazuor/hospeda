@@ -153,7 +153,7 @@ function attachTestErrorHandler(app: Hono<AppBindings>): void {
 /** Inject a minimal tourist actor. */
 function injectActor(
     app: Hono<AppBindings>,
-    actor: { id: string; role: RoleEnum; permissions: readonly PermissionEnum[] }
+    actor: { id: string; roles: readonly RoleEnum[]; permissions: readonly PermissionEnum[]}
 ): void {
     app.use((c, next) => {
         c.set('actor', actor);
@@ -181,7 +181,7 @@ function buildApp(entitlementKeys: EntitlementKey[]): Hono<AppBindings> {
     attachTestErrorHandler(app);
     injectActor(app, {
         id: ACTOR_ID,
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: [PermissionEnum.RECOMMENDATION_VIEW]
     });
     injectEntitlements(app, entitlementKeys);

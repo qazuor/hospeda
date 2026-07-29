@@ -136,13 +136,13 @@ const mockGetActorFromContext = vi.mocked(getActorFromContext);
 
 const HOST_ACTOR: Actor = {
     id: 'host-actor-uuid-1',
-    role: RoleEnum.HOST,
+    roles: [RoleEnum.HOST],
     permissions: [PermissionEnum.CONVERSATION_VIEW_OWN, PermissionEnum.CONVERSATION_REPLY_OWN]
 };
 
 const ANOTHER_HOST_ACTOR: Actor = {
     id: 'host-actor-uuid-2',
-    role: RoleEnum.HOST,
+    roles: [RoleEnum.HOST],
     permissions: [PermissionEnum.CONVERSATION_VIEW_OWN, PermissionEnum.CONVERSATION_REPLY_OWN]
 };
 
@@ -346,7 +346,7 @@ describe('hostConversationResponseRateRoute handler — SPEC-155 T-006', () => {
             // CONVERSATION_VIEW_OWN. We verify the error propagates correctly.
             const actorWithoutPermission: Actor = {
                 id: 'no-perm-user',
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: []
             };
             mockGetActorFromContext.mockReturnValue(actorWithoutPermission);

@@ -11,6 +11,7 @@
 
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
+import { getUserRoles } from '@repo/service-core';
 import type { MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
@@ -18,7 +19,7 @@ import { setRequestContextActor } from '../lib/request-context';
 import { createGuestActor } from '../utils/actor';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
-import { getPermissionsForRole } from '../utils/role-permissions-cache';
+import { getPermissionsForRoles } from '../utils/role-permissions-cache';
 import { getUserPermissionsWithEffect } from '../utils/user-permissions-cache';
 
 /**
@@ -38,7 +39,8 @@ const MockPermissionsSchema = z.array(z.nativeEnum(PermissionEnum));
  *
  * Headers:
  * - x-mock-actor-id: UUID of the mock actor
- * - x-mock-actor-role: Role enum value
+ * - x-mock-actor-role: Role enum value, or a comma-separated list of them
+ *   (HOS-296 — an actor now holds a SET of roles)
  * - x-mock-actor-permissions: JSON array of permissions
  */
 const isMockActorAllowed = (): boolean => {
@@ -75,8 +77,13 @@ export const actorMiddleware = (): MiddlewareHandler => {
             const mockActorPermissions = c.req.header('x-mock-actor-permissions');
 
             if (mockActorId && mockActorRole && mockActorPermissions) {
-                // Validate mock actor role
-                const roleValidation = z.nativeEnum(RoleEnum).safeParse(mockActorRole);
+                // Validate the mock actor's role SET. The header stays a single
+                // value in the common case; a comma-separated list lets a test
+                // exercise a multi-hat actor without a second header.
+                const roleValidation = z
+                    .array(z.nativeEnum(RoleEnum))
+                    .nonempty()
+                    .safeParse(mockActorRole.split(',').map((value) => value.trim()));
                 if (!roleValidation.success) {
                     throw new HTTPException(400, {
                         message: `Invalid mock actor role: ${mockActorRole}. Must be one of: ${Object.values(RoleEnum).join(', ')}`
@@ -108,12 +115,12 @@ export const actorMiddleware = (): MiddlewareHandler => {
 
                 const actor: Actor = {
                     id: mockActorId,
-                    role: roleValidation.data,
+                    roles: roleValidation.data,
                     permissions: parsedPermissions
                 };
 
                 apiLogger.debug(
-                    `Using mock actor for testing: actorId=${mockActorId}, role=${roleValidation.data}, permissionsCount=${parsedPermissions.length}`
+                    `Using mock actor for testing: actorId=${mockActorId}, roles=${roleValidation.data.join(',')}, permissionsCount=${parsedPermissions.length}`
                 );
 
                 c.set('actor', actor);
@@ -128,7 +135,39 @@ export const actorMiddleware = (): MiddlewareHandler => {
 
         if (user?.id) {
             try {
-                const userRole = (user.role as RoleEnum) || RoleEnum.USER;
+                // HOS-296: the role set is NOT on the session user any more.
+                //
+                // `users.role` was dropped, so Better Auth's `additionalFields`
+                // — a plain column mapping — has no source for it and the
+                // session object carries no role at all. The hats live in
+                // `user_role`, one row each, and are read here per request.
+                //
+                // This is the SAME route billing entitlements already take
+                // (`entitlementMiddleware` queries the DB and `c.set`s the
+                // result, which this middleware merges into the actor below):
+                // a per-request value the plain-column session cannot express.
+                // Resolving them here is what makes them travel for free on
+                // `GET /api/v1/public/auth/me`, which is the one contract every
+                // downstream consumer reads (HOS-296 OQ-4, actor-only).
+                //
+                // An account with zero rows is a data bug, not a legitimate
+                // state — signup grants the baseline USER hat and `revokeRole`
+                // refuses to remove the last one — but resolving to an EMPTY
+                // set here would silently strip every permission instead of
+                // failing, so we fall back to USER and log it loudly.
+                //
+                // TEST-ONLY short-circuit: when the mock-auth middleware
+                // fabricated the session user it also fabricated its hats,
+                // because that user has no `user_role` rows to read.
+                const mockRoles = c.get('mockUserRoles');
+                const heldRoles = mockRoles ?? (await getUserRoles({ userId: user.id }));
+                let userRoles: readonly RoleEnum[] = heldRoles;
+                if (userRoles.length === 0) {
+                    apiLogger.warn(
+                        `User ${user.id} holds no roles in user_role; falling back to ${RoleEnum.USER}. This is a data integrity problem — every account must hold at least the baseline hat.`
+                    );
+                    userRoles = [RoleEnum.USER];
+                }
 
                 // Better Auth maps its virtual `name` field to `display_name`
                 // (see apps/api/src/lib/auth.ts: user.fields.name = 'displayName')
@@ -149,26 +188,49 @@ export const actorMiddleware = (): MiddlewareHandler => {
                 // second DB read on every call.
                 const userEmailVerified =
                     typeof user.emailVerified === 'boolean' ? user.emailVerified : undefined;
+                // HOS-296: `users.must_change_password` rides on the actor.
+                //
+                // It is a Better Auth `additionalField`, so it only ever
+                // existed on the native `get-session` response. Once `apps/web`
+                // stopped reading that endpoint (it no longer carries the role
+                // set), the commerce-owner password gate would either have died
+                // silently or cost a second round-trip on every protected
+                // route. Forwarding it here makes `/auth/me` the single source
+                // for everything the middleware needs.
+                //
+                // Normalised to a strict boolean: the column is nullable, and
+                // the gate's semantics are "block only on an explicit true".
+                const userMustChangePassword = user.mustChangePassword === true;
 
-                // SUPER_ADMIN gets all permissions without a DB lookup
-                if (userRole === RoleEnum.SUPER_ADMIN) {
+                // SUPER_ADMIN keeps its short-circuit, now on "HOLDS
+                // SUPER_ADMIN" rather than "IS SUPER_ADMIN": the hat wins
+                // regardless of what else the account wears.
+                if (userRoles.includes(RoleEnum.SUPER_ADMIN)) {
                     actor = {
                         id: user.id,
-                        role: RoleEnum.SUPER_ADMIN,
+                        roles: userRoles,
                         permissions: Object.values(PermissionEnum),
                         name: userName,
                         email: userEmail,
                         emailVerified: userEmailVerified,
-                        image: userImage
+                        image: userImage,
+                        mustChangePassword: userMustChangePassword
                     };
                 } else {
-                    // Resolve permissions from role_permission table (cached)
-                    const rolePermissions = await getPermissionsForRole(userRole);
+                    // Resolve the UNION of the permissions of every held role
+                    // from role_permission (cached on a sorted role-set key).
+                    const rolePermissions = await getPermissionsForRoles({ roles: userRoles });
 
                     // Merge per-user overrides from user_permission (cached), split by
-                    // effect. Effective set = (role ∪ grants) \ denies, with deny winning
-                    // over grant (SPEC-170). SUPER_ADMIN never reaches this branch, so
-                    // denies can never strip a super (handled by the short-circuit above).
+                    // effect. Effective set = (⋃ perms(role) for role in roles ∪ grants)
+                    // \ denies (HOS-296 AC-3), with deny winning over grant (SPEC-170).
+                    //
+                    // The deny pass runs LAST and over the whole union, so a deny beats a
+                    // grant arriving from ANY held role — accumulating hats can never be
+                    // used to walk around an explicit per-user deny (R-1).
+                    //
+                    // An actor HOLDING SUPER_ADMIN never reaches this branch, so denies
+                    // can never strip a super (handled by the short-circuit above).
                     const userOverrides = await getUserPermissionsWithEffect({ userId: user.id });
 
                     const effectivePermissions = new Set<PermissionEnum>([
@@ -183,12 +245,13 @@ export const actorMiddleware = (): MiddlewareHandler => {
 
                     actor = {
                         id: user.id,
-                        role: userRole,
+                        roles: userRoles,
                         permissions: allPermissions,
                         name: userName,
                         email: userEmail,
                         emailVerified: userEmailVerified,
-                        image: userImage
+                        image: userImage,
+                        mustChangePassword: userMustChangePassword
                     };
                 }
 
@@ -220,7 +283,13 @@ export const actorMiddleware = (): MiddlewareHandler => {
         // so logs emitted by packages that don't have access to Hono's Context
         // can still be attributed to the actor. Guest actors have no meaningful
         // identity, so we only set when a real user id is present.
-        if (actor.id && actor.role && actor.role !== 'GUEST') {
+        // HOS-296: "is this a guest" is now "does the actor hold ONLY the GUEST
+        // hat". `createGuestActor()` produces exactly `[GUEST]`, and no real
+        // account is ever granted it, so an actor carrying any other role is a
+        // real identity worth attributing logs to.
+        const isGuestOnly =
+            actor.roles.length > 0 && actor.roles.every((r) => r === RoleEnum.GUEST);
+        if (actor.id && actor.roles.length > 0 && !isGuestOnly) {
             // Better Auth's session object exposes `id` directly (see
             // `c.set('session', sessionData.session)` in middlewares/auth.ts),
             // not nested under a `.session` key. Guest/unauthenticated requests
@@ -229,7 +298,7 @@ export const actorMiddleware = (): MiddlewareHandler => {
             const session = c.get('session');
             setRequestContextActor({
                 userId: actor.id,
-                role: actor.role,
+                roles: actor.roles,
                 ...(session?.id === undefined ? {} : { sessionId: session.id })
             });
         }

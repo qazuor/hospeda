@@ -12,7 +12,6 @@ import {
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
-import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { apiLogger } from '../../../utils/logger';
 import { transformApiInputToDomain } from '../../../utils/openapi-schema';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -62,33 +61,22 @@ export const adminPatchUserRoute = createAdminRoute({
         // is converted explicitly afterwards (BETA-34).
         const domainInput = withDomainBirthDate(transformApiInputToDomain(body));
 
-        // Fetch previous user state for permission change audit
-        const prevResult = await userService.getById(actor, id);
-        const previousUser = prevResult.data;
-
         const result = await userService.update(actor, id, domainInput as never);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        // Audit role changes. Permissions are NOT auditable here: they have no
-        // column on `users` and are not writable through the generic update
-        // schema — the canonical path is PermissionService / the dedicated
+        // HOS-296: no role audit here any more. `role` is not a field on
+        // `UserPatchInputSchema`, so this route can no longer change one — the
+        // grant/revoke endpoints own that transition and write their own
+        // `user_role_audit` row, which is a strictly better trail than this
+        // block was (it records the reason and survives a revoke).
+        //
+        // Permissions were never auditable here either: they have no column on
+        // `users` and are not writable through the generic update schema — the
+        // canonical path is PermissionService / the dedicated
         // `/admin/users/:id/permissions` endpoint.
-        if (result.data && previousUser) {
-            const patchRole = domainInput.role as string | undefined;
-            if (patchRole !== undefined && patchRole !== previousUser.role) {
-                auditLog({
-                    auditEvent: AuditEventType.PERMISSION_CHANGE,
-                    actorId: actor.id,
-                    targetUserId: id,
-                    changeType: 'role_assignment',
-                    oldValue: previousUser.role,
-                    newValue: patchRole
-                });
-            }
-        }
 
         // Invalidate cache for the updated user
         if (result.data?.id) {

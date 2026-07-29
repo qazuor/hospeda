@@ -60,7 +60,7 @@ vi.mock('@repo/db', async () => {
 const ACTOR_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const mockActor = {
     id: ACTOR_ID,
-    role: 'HOST',
+    roles: ['HOST'],
     permissions: ['accommodation.update.own', 'access.panelProtected']
 };
 vi.mock('../../src/utils/actor.js', () => ({

@@ -132,7 +132,7 @@ describe('entitlementMiddleware', () => {
         type InjectedActor = import('../../src/types').AppBindings['Variables']['actor'];
         const injectActor = (actor: {
             id: string;
-            role: RoleEnum;
+            roles: readonly RoleEnum[];
             permissions: string[];
             email: string;
         }) =>
@@ -164,7 +164,7 @@ describe('entitlementMiddleware', () => {
         it('should set empty entitlements for a GUEST actor', async () => {
             injectActor({
                 id: '00000000-0000-4000-8000-000000000000',
-                role: RoleEnum.GUEST,
+                roles: [RoleEnum.GUEST],
                 permissions: [],
                 email: ''
             });
@@ -185,7 +185,7 @@ describe('entitlementMiddleware', () => {
         it('should grant tourist-free defaults to an authenticated USER even when billing is disabled (BETA-42)', async () => {
             injectActor({
                 id: 'user-billing-off',
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: [],
                 email: 'user@example.com'
             });
@@ -213,7 +213,7 @@ describe('entitlementMiddleware', () => {
         it('should grant owner-basico defaults to a HOST actor when billing is disabled (BETA-42)', async () => {
             injectActor({
                 id: 'host-billing-off',
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [],
                 email: 'host@example.com'
             });
@@ -247,7 +247,7 @@ describe('entitlementMiddleware', () => {
         type InjectedActor = import('../../src/types').AppBindings['Variables']['actor'];
         const injectActor = (actor: {
             id: string;
-            role: RoleEnum;
+            roles: readonly RoleEnum[];
             permissions: string[];
             email: string;
         }) =>
@@ -281,7 +281,7 @@ describe('entitlementMiddleware', () => {
         it('should set empty entitlements for a GUEST actor with no customer', async () => {
             injectActor({
                 id: '00000000-0000-4000-8000-000000000000',
-                role: RoleEnum.GUEST,
+                roles: [RoleEnum.GUEST],
                 permissions: [],
                 email: ''
             });
@@ -302,7 +302,7 @@ describe('entitlementMiddleware', () => {
         it('should set tourist-free default entitlements for an authenticated non-HOST actor with no customer (SPEC-143 F-B1)', async () => {
             injectActor({
                 id: 'user-no-customer',
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: [],
                 email: 'user@example.com'
             });
@@ -330,7 +330,7 @@ describe('entitlementMiddleware', () => {
         it('should set owner-basico default entitlements for a HOST actor with no customer (SPEC-143 F-B1)', async () => {
             injectActor({
                 id: 'host-no-customer',
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [],
                 email: 'host@example.com'
             });
@@ -364,7 +364,7 @@ describe('entitlementMiddleware', () => {
                 c.set('billingCustomerId', opts.customerId ?? null);
                 c.set('actor', {
                     id: `staff-${role}`,
-                    role,
+                    roles: [role],
                     permissions: [],
                     email: `${role}@example.com`
                 } as unknown as InjectedActor);
@@ -420,7 +420,7 @@ describe('entitlementMiddleware', () => {
                 c.set('billingEnabled', false);
                 c.set('actor', {
                     id: 'staff-no-billing',
-                    role: RoleEnum.SUPER_ADMIN,
+                    roles: [RoleEnum.SUPER_ADMIN],
                     permissions: [],
                     email: 'super@example.com'
                 } as unknown as InjectedActor);
@@ -630,7 +630,7 @@ describe('entitlementMiddleware', () => {
             // so the entitlement middleware can read the role.
             const hostActor = {
                 id: 'host-user-id',
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [],
                 email: 'host@example.com'
             };
@@ -685,7 +685,7 @@ describe('entitlementMiddleware', () => {
             // degraded to tourist-free defaults (not a hard 500).
             const hostActor = {
                 id: 'host-db-throw',
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [],
                 email: 'host-db-throw@example.com'
             };
@@ -757,7 +757,7 @@ describe('entitlementMiddleware', () => {
             // as a host without ever picking an owner plan).
             const hostActor = {
                 id: 'host-tourist-sub-only',
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [],
                 email: 'host-tourist-sub-only@example.com'
             };
@@ -816,7 +816,7 @@ describe('entitlementMiddleware', () => {
             // owner-basico draft-defaults fallback.
             const hostActor = {
                 id: 'host-real-owner-sub',
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [],
                 email: 'host-real-owner-sub@example.com'
             };
@@ -891,7 +891,7 @@ describe('entitlementMiddleware', () => {
             // now exempt from the discard and its real plan resolves.
             const hostActor = {
                 id: 'host-comp-tourist-sub',
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [],
                 email: 'host-comp-tourist-sub@example.com'
             };

@@ -93,7 +93,7 @@ const ALL_OWN_PERMISSIONS: PermissionEnum[] = [
 function buildAdminActor(permissions: PermissionEnum[], id = ACTOR_ID): Actor {
     return {
         id,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [
             PermissionEnum.ACCESS_PANEL_ADMIN,
             PermissionEnum.ACCESS_API_ADMIN,
@@ -108,7 +108,7 @@ function actorHeaders(actor: Actor): Record<string, string> {
         'user-agent': 'vitest',
         accept: 'application/json',
         'x-mock-actor-id': actor.id,
-        'x-mock-actor-role': actor.role,
+        'x-mock-actor-role': actor.roles.join(','),
         'x-mock-actor-permissions': JSON.stringify(actor.permissions)
     };
 }

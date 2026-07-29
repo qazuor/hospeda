@@ -30,11 +30,12 @@ const { capturedHandlers } = vi.hoisted(() => ({
     >()
 }));
 
-const { auditLogSpy, mockCreate, mockRestore, mockGetById } = vi.hoisted(() => ({
+const { auditLogSpy, mockCreate, mockRestore, mockGetById, mockGrantRole } = vi.hoisted(() => ({
     auditLogSpy: vi.fn(),
     mockCreate: vi.fn(),
     mockRestore: vi.fn(),
-    mockGetById: vi.fn()
+    mockGetById: vi.fn(),
+    mockGrantRole: vi.fn()
 }));
 
 // ---------------------------------------------------------------------------
@@ -72,6 +73,10 @@ vi.mock('../../../src/utils/actor', () => ({
 }));
 
 // Mock UserService so no real DB calls happen.
+//
+// HOS-296: the create route also grants the new account its baseline USER hat,
+// so `grantRole` has to be stubbed here too — otherwise the handler reaches the
+// real primitive and fails on an uninitialised database.
 vi.mock('@repo/service-core', () => ({
     UserService: vi.fn(function () {
         return {
@@ -80,6 +85,7 @@ vi.mock('@repo/service-core', () => ({
             getById: mockGetById
         };
     }),
+    grantRole: mockGrantRole,
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,
@@ -123,7 +129,7 @@ const mockGetActorFromContext = vi.mocked(getActorFromContext);
 
 const ADMIN_ACTOR: Actor = {
     id: 'admin-actor-id',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.USER_CREATE, PermissionEnum.USER_RESTORE]
 };
 
@@ -165,6 +171,7 @@ describe('Admin user create and restore routes - audit log [SPEC-026 GAP-009]', 
     beforeEach(() => {
         vi.clearAllMocks();
         mockGetActorFromContext.mockReturnValue(ADMIN_ACTOR);
+        mockGrantRole.mockResolvedValue({ data: undefined });
     });
 
     afterEach(() => {
@@ -252,6 +259,46 @@ describe('Admin user create and restore routes - audit log [SPEC-026 GAP-009]', 
             // Assert
             const entry = auditLogSpy.mock.calls[0]?.[0] as Record<string, unknown>;
             expect(entry.targetUserId).toBe(specificId);
+        });
+
+        it('grants the new account its baseline USER hat and never a role from the payload', async () => {
+            // HOS-296: `role` left the create payload — `UserService.create`
+            // used to carry it into the INSERT as a column value, and there is
+            // no column any more. Every account still needs at least one hat,
+            // both to be usable and to keep `revokeRole`'s last-role guard
+            // meaningful for admin-created accounts.
+            mockCreate.mockResolvedValue({ data: CREATED_USER, error: undefined });
+            const handler = getHandler('/');
+            const ctx = buildMockContext() as unknown as Context;
+
+            await handler(ctx, {}, { email: 'user@example.com', role: RoleEnum.ADMIN });
+
+            // The payload's `role` is ignored, not honoured: hats are granted
+            // through the dedicated role endpoints.
+            expect(mockCreate.mock.calls[0]?.[1]).not.toHaveProperty('role');
+            expect(mockGrantRole).toHaveBeenCalledTimes(1);
+            expect(mockGrantRole).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: TARGET_USER_ID,
+                    role: RoleEnum.USER,
+                    grantedBy: ADMIN_ACTOR.id
+                })
+            );
+        });
+
+        it('fails the request when the baseline grant fails', async () => {
+            // A created account with zero hats can sign in and do nothing;
+            // reporting that as success is the silent failure HOS-296 removes.
+            mockCreate.mockResolvedValue({ data: CREATED_USER, error: undefined });
+            mockGrantRole.mockResolvedValue({
+                error: { code: 'INTERNAL_ERROR', message: 'grant exploded' }
+            });
+            const handler = getHandler('/');
+            const ctx = buildMockContext() as unknown as Context;
+
+            await expect(handler(ctx, {}, { email: 'user@example.com' })).rejects.toThrow(
+                /grant exploded/
+            );
         });
 
         it('should use create (not soft_delete or hard_delete) as the operation field', async () => {

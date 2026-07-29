@@ -87,7 +87,7 @@ const mockAuditLog = auditLogSpy;
 /** Builds a minimal authenticated Actor for test scenarios. */
 const createUserActor = (overrides: Partial<Actor> = {}): Actor => ({
     id: 'user-abc-123',
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: [],
     ...overrides
 });
@@ -95,7 +95,7 @@ const createUserActor = (overrides: Partial<Actor> = {}): Actor => ({
 /** Builds a minimal admin Actor for test scenarios. */
 const createAdminActor = (): Actor => ({
     id: 'admin-xyz-456',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: []
 });
 
@@ -465,7 +465,7 @@ describe('Audit Middleware', () => {
             // Arrange
             const guestActor: Actor = {
                 id: '00000000-0000-4000-8000-000000000000',
-                role: RoleEnum.GUEST,
+                roles: [RoleEnum.GUEST],
                 permissions: []
             };
             mockIsGuestActor.mockReturnValue(true);
@@ -485,7 +485,7 @@ describe('Audit Middleware', () => {
 
         it('should use the authenticated user actor identity when available', async () => {
             // Arrange
-            const actor = createUserActor({ id: 'real-user-id', role: RoleEnum.USER });
+            const actor = createUserActor({ id: 'real-user-id', roles: [RoleEnum.USER]});
             const app = createTestApp({ actor });
 
             // Act

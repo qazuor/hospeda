@@ -133,13 +133,13 @@ const mockGetActorFromContext = vi.mocked(getActorFromContext);
 
 const WEB_USER: Actor = {
     id: 'web-user-id-123',
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: []
 };
 
 const ADMIN_ACTOR: Actor = {
     id: 'admin-actor-id',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.MANAGE_USERS]
 };
 
@@ -175,7 +175,7 @@ const adminHandler = (path: string) => {
 describe('Field-level permissions on user settings (SPEC-096 / T-032)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockGetById.mockResolvedValue({ data: { id: 'x', role: RoleEnum.USER, permissions: [] } });
+        mockGetById.mockResolvedValue({ data: { id: 'x', roles: [RoleEnum.USER], permissions: [] } });
         mockUpdate.mockResolvedValue({
             data: { id: 'web-user-id-123', settings: {} },
             error: undefined

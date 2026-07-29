@@ -38,7 +38,7 @@ vi.mock('@repo/service-core', async () => {
 // Mock actor middleware
 const mockActor = {
     id: '11111111-1111-4111-8111-111111111111',
-    role: 'SUPER_ADMIN',
+    roles: ['SUPER_ADMIN'],
     permissions: ['settings.general.view', 'access.panelAdmin']
 };
 vi.mock('../../src/utils/actor.js', () => ({

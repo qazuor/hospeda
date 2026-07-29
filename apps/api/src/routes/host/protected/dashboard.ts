@@ -292,7 +292,10 @@ export const hostDashboardRoute = createProtectedRoute({
     handler: async (ctx: Context, _params: Record<string, unknown>) => {
         try {
             const actor = getActorFromContext(ctx);
-            apiLogger.debug({ actorId: actor.id, role: actor.role }, 'Host dashboard requested');
+            apiLogger.debug(
+                { actorId: actor.id, roles: actor.roles },
+                'Host dashboard requested'
+            );
 
             // Section 1: property counts (owns its degradation, also yields the
             // accommodation IDs the conversations count needs).

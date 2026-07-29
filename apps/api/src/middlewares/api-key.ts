@@ -145,7 +145,7 @@ function buildUnauthorizedResponse(message: string): {
 
 /**
  * Creates a synthetic Actor for a machine caller.
- * - role: RoleEnum.SYSTEM (reserved non-loginable machine identity)
+ * - roles: [RoleEnum.SYSTEM] (reserved non-loginable machine identity)
  * - permissions: empty — these routes must NOT go through permission middleware.
  *   Route handlers themselves enforce what is allowed per endpoint.
  * - _isSystemActor: intentionally FALSE. The authorization middleware rejects
@@ -156,7 +156,7 @@ function buildMachineActor(identity: ApiKeyActorIdentity): Actor {
     return {
         id: identity.id,
         name: identity.name,
-        role: RoleEnum.SYSTEM,
+        roles: [RoleEnum.SYSTEM],
         permissions: [],
         _isSystemActor: false
     };

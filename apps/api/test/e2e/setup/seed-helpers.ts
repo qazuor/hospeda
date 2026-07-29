@@ -57,7 +57,8 @@ export async function createTestUser(overrides?: Partial<User>): Promise<User> {
         slug: overrides?.slug || `test-user-${timestamp}`,
         firstName: overrides?.firstName || 'Test',
         lastName: overrides?.lastName || 'User',
-        role: overrides?.role || ('USER' as RoleEnum),
+        // HOS-296: `users.role` no longer exists — a test user's hats are rows
+        // in `user_role`, granted with `grantRole` when a test needs them.
         permissions: overrides?.permissions || [],
         settings: overrides?.settings || {
             notifications: {

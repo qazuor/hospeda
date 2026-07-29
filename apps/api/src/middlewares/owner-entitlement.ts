@@ -42,14 +42,15 @@ import {
     isLimitKey,
     type LimitKey
 } from '@repo/billing';
-import { accommodations, getDb, users } from '@repo/db';
-import { isAccommodationSubscription, RoleEnum } from '@repo/service-core';
+import { accommodations, getDb, userRole as userRoleTable } from '@repo/db';
+import { getUserRoles, isAccommodationSubscription, RoleEnum } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { eq, inArray, type SQL } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
 import { PlanService } from '../services/plan.service';
 import type { AppBindings } from '../types';
 import { apiLogger } from '../utils/logger';
+import { isStaffBypassRole } from '../utils/staff-roles';
 import { getQZPayBilling } from './billing';
 
 /**
@@ -205,46 +206,38 @@ function buildStaffUnlimitedEntitlements(): Set<EntitlementKey> {
     return new Set<EntitlementKey>(unlimited.entitlements);
 }
 
-const STAFF_BILLING_BYPASS_ROLES: ReadonlySet<RoleEnum> = new Set([
-    RoleEnum.SUPER_ADMIN,
-    RoleEnum.ADMIN,
-    RoleEnum.EDITOR,
-    RoleEnum.CLIENT_MANAGER
-]);
-
-function isStaffBypassRole(role: RoleEnum | null | undefined): boolean {
-    return role !== undefined && role !== null && STAFF_BILLING_BYPASS_ROLES.has(role);
-}
-
-async function resolveOwnerRole(ownerId: string): Promise<RoleEnum | null> {
+/**
+ * Resolve the hats of the accommodation's OWNER (HOS-296).
+ *
+ * Reads `user_role`, not the dropped `users.role` scalar. Returns an empty
+ * array on lookup failure, which the staff predicate treats as "not staff" —
+ * the same fail-open behaviour the previous `null` return had.
+ *
+ * @param ownerId - The `users.id` of the accommodation's owner.
+ * @returns Every role the owner holds; empty on error.
+ */
+async function resolveOwnerRoles(ownerId: string): Promise<readonly RoleEnum[]> {
     try {
-        const db = getDb();
-        const rows = await db
-            .select({ role: users.role })
-            .from(users)
-            .where(eq(users.id, ownerId))
-            .limit(1);
-        const row = rows[0] as { role: RoleEnum | null } | undefined;
-        return row?.role ?? null;
+        return await getUserRoles({ userId: ownerId });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         apiLogger.warn(
             { ownerId, error: message },
-            'ownerEntitlementMiddleware: failed to resolve owner role; proceeding without staff bypass'
+            'ownerEntitlementMiddleware: failed to resolve owner roles; proceeding without staff bypass'
         );
         Sentry.captureException(error, {
             tags: { subsystem: 'owner-entitlements', action: 'owner-role-lookup' },
             extra: { ownerId }
         });
-        return null;
+        return [];
     }
 }
 
 async function resolveOwnerEntitlementSet(
     ownerId: string,
-    ownerRole: RoleEnum | null
+    ownerRoles: readonly RoleEnum[]
 ): Promise<Set<EntitlementKey>> {
-    if (isStaffBypassRole(ownerRole)) {
+    if (isStaffBypassRole(ownerRoles)) {
         return buildStaffUnlimitedEntitlements();
     }
 
@@ -309,20 +302,29 @@ export const ownerEntitlementMiddleware = (
             );
         }
 
-        // 1. Resolve accommodation → ownerId.
+        // 1. Resolve accommodation → ownerId, and the owner's hats in the same
+        //    round trip. HOS-296: `users.role` is gone, so this is a LEFT JOIN
+        //    onto `user_role`, which yields one row per held hat — hence the
+        //    aggregation below rather than `.limit(1)`. LEFT (not INNER) so an
+        //    owner with no rows still resolves the accommodation instead of
+        //    turning a data bug into a spurious 404.
         let ownerId: string | null = null;
-        let ownerRole: RoleEnum | null = null;
+        let ownerRoles: readonly RoleEnum[] = [];
         try {
             const db = getDb();
             const rows = await db
-                .select({ ownerId: accommodations.ownerId, ownerRole: users.role })
+                .select({ ownerId: accommodations.ownerId, ownerRole: userRoleTable.role })
                 .from(accommodations)
-                .innerJoin(users, eq(users.id, accommodations.ownerId))
-                .where(eq(accommodations.id, accommodationId))
-                .limit(1);
-            const row = rows[0] as { ownerId: string; ownerRole: RoleEnum | null } | undefined;
-            ownerId = row?.ownerId ?? null;
-            ownerRole = row?.ownerRole ?? null;
+                .leftJoin(userRoleTable, eq(userRoleTable.userId, accommodations.ownerId))
+                .where(eq(accommodations.id, accommodationId));
+            const typedRows = rows as ReadonlyArray<{
+                ownerId: string;
+                ownerRole: RoleEnum | null;
+            }>;
+            ownerId = typedRows[0]?.ownerId ?? null;
+            ownerRoles = typedRows
+                .map((row) => row.ownerRole)
+                .filter((role): role is RoleEnum => role !== null);
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             apiLogger.error(
@@ -346,7 +348,7 @@ export const ownerEntitlementMiddleware = (
             );
         }
 
-        const ownerEntitlements = await resolveOwnerEntitlementSet(ownerId, ownerRole);
+        const ownerEntitlements = await resolveOwnerEntitlementSet(ownerId, ownerRoles);
 
         c.set('ownerEntitlements', ownerEntitlements);
         await next();
@@ -379,8 +381,8 @@ export function getOwnerEntitlements(c: {
 export async function resolveOwnerEntitlementsForOwnerId(
     ownerId: string
 ): Promise<readonly EntitlementKey[]> {
-    const ownerRole = await resolveOwnerRole(ownerId);
-    return Array.from(await resolveOwnerEntitlementSet(ownerId, ownerRole));
+    const ownerRoles = await resolveOwnerRoles(ownerId);
+    return Array.from(await resolveOwnerEntitlementSet(ownerId, ownerRoles));
 }
 
 // ---------------------------------------------------------------------------
@@ -616,8 +618,8 @@ export async function resolveOwnerLimitsForOwnerId(
     ownerId: string
 ): Promise<Map<LimitKey, number>> {
     // Staff bypass — unlimited limits for platform staff owners (INV-6).
-    const ownerRole = await resolveOwnerRole(ownerId);
-    if (isStaffBypassRole(ownerRole)) {
+    const ownerRoles = await resolveOwnerRoles(ownerId);
+    if (isStaffBypassRole(ownerRoles)) {
         const unlimited = getUnlimitedEntitlements();
         return new Map<LimitKey, number>(unlimited.limits.map((l) => [l.key, l.value]));
     }
@@ -770,16 +772,21 @@ export async function resolveOwnerEntitlementsForOwnerIds(
 
     if (missing.length === 0) return result;
 
-    // ── 2. ONE batched SELECT for roles of all cache-cold owners ───────────
-    const ownerRoleMap = new Map<string, RoleEnum | null>();
+    // ── 2. ONE batched SELECT for the hats of all cache-cold owners ────────
+    // HOS-296: reads `user_role` instead of the dropped `users.role`. One row
+    // per (owner, hat) pair now, so the result is grouped rather than mapped
+    // 1:1 — still a single round trip.
+    const ownerRoleMap = new Map<string, RoleEnum[]>();
     try {
         const db = getDb();
         const rows = await db
-            .select({ id: users.id, role: users.role })
-            .from(users)
-            .where(inArray(users.id, missing));
+            .select({ id: userRoleTable.userId, role: userRoleTable.role })
+            .from(userRoleTable)
+            .where(inArray(userRoleTable.userId, missing));
         for (const row of rows) {
-            ownerRoleMap.set(row.id, (row.role as RoleEnum | null) ?? null);
+            const held = ownerRoleMap.get(row.id) ?? [];
+            held.push(row.role as RoleEnum);
+            ownerRoleMap.set(row.id, held);
         }
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -802,8 +809,8 @@ export async function resolveOwnerEntitlementsForOwnerIds(
     await Promise.all(
         missing.map(async (ownerId) => {
             try {
-                const ownerRole = ownerRoleMap.get(ownerId) ?? null;
-                const entitlementSet = await resolveOwnerEntitlementSet(ownerId, ownerRole);
+                const ownerRoles = ownerRoleMap.get(ownerId) ?? [];
+                const entitlementSet = await resolveOwnerEntitlementSet(ownerId, ownerRoles);
                 const entitlements: readonly EntitlementKey[] = Array.from(entitlementSet);
                 setOwnerEntitlementBadgeCacheEntry(ownerId, entitlements);
                 result.set(ownerId, entitlements);
