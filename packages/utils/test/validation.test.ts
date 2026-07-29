@@ -5,10 +5,12 @@ import {
     isFunction,
     isNumber,
     isString,
+    isUsableEntityId,
     isValidEmail,
     isValidPassword,
     isValidPhone,
-    isValidUrl
+    isValidUrl,
+    NIL_UUID
 } from '../src/validation';
 
 describe('Validation Utilities', () => {
@@ -187,6 +189,34 @@ describe('Validation Utilities', () => {
         it('returns false for non-functions', () => {
             expect(isFunction({})).toBe(false);
             expect(isFunction('function')).toBe(false);
+        });
+    });
+
+    describe('isUsableEntityId', () => {
+        it('rejects the nil UUID even though it is a syntactically valid UUID', () => {
+            // The whole point of this helper: `z.string().uuid()` accepts the
+            // nil UUID, so schema validation is not enough to know an id can
+            // identify a row. An LLM asked for an id it does not have answers
+            // with exactly this value (HOS-298).
+            expect(NIL_UUID).toBe('00000000-0000-0000-0000-000000000000');
+            expect(isUsableEntityId(NIL_UUID)).toBe(false);
+        });
+
+        it('rejects absent and blank ids', () => {
+            expect(isUsableEntityId(undefined)).toBe(false);
+            expect(isUsableEntityId(null)).toBe(false);
+            expect(isUsableEntityId('')).toBe(false);
+            expect(isUsableEntityId('   ')).toBe(false);
+        });
+
+        it('accepts a real id', () => {
+            expect(isUsableEntityId('a0000000-0000-4000-8000-000000000001')).toBe(true);
+        });
+
+        it('does not reject ids that merely start with zeros', () => {
+            // Only the all-zero UUID is a placeholder; a real id may legitimately
+            // begin with zeros and must not be thrown away with it.
+            expect(isUsableEntityId('00000000-0000-4000-8000-000000000001')).toBe(true);
         });
     });
 });

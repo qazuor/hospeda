@@ -190,6 +190,30 @@ export type PoiLocationConflict = {
 };
 
 /**
+ * Lost-location signal (HOS-298).
+ *
+ * Present when this turn dropped an unusable `destinationId`, no other location
+ * filter survived into the query, and the PREVIOUS turn did have a location.
+ * The search that ran is therefore unconstrained by location while the
+ * conversation is plainly about a place — a silently WIDER result set, which
+ * reads as plausible and correct unless the reply says otherwise.
+ *
+ * Like {@link PoiLocationConflict} and unlike {@link AttractionLocationConflict}
+ * this is NOT part of the `filters` SSE contract and NOT a zero-results signal:
+ * the accommodation search still ran and its results are still shown. It exists
+ * purely so the reply admits the location could not be carried over instead of
+ * narrating a search that sounds narrower than it was.
+ *
+ * @property locationLabel - Best-effort human label for the location that was
+ *   lost (the previous turn's `city`), when one is available. Absent when the
+ *   previous turn carried only an id or coordinates, which have no name to hand
+ *   here — the note then speaks of "the location from the previous message".
+ */
+export type LocationCarryoverConflict = {
+    readonly locationLabel?: string;
+};
+
+/**
  * Locale-specific greeting lines used by {@link buildSearchReplySystemPrompt}.
  * Each value maps to the instruction language for the assistant's reply.
  */
@@ -289,6 +313,13 @@ export interface SearchReplyMessagesResult {
  *   `extractedFilters` context and (b) appends a corrective note to `system`
  *   so the reply never claims a proximity search happened around that
  *   landmark.
+ * @param params.locationCarryoverConflict - HOS-298: present only when this
+ *   turn lost its location entirely (an unusable `destinationId` was dropped,
+ *   nothing else constrained the query to a place, and the previous turn had
+ *   one). Appends a note so the reply says the location could not be carried
+ *   over — without it the model reads an unconstrained filter set and
+ *   cheerfully narrates a search the user will read as still being about their
+ *   city. Like the POI conflict, NOT a zero-results signal.
  * @returns {@link SearchReplyMessagesResult} ready for
  *   `aiService.streamText({ system, messages })`.
  */
@@ -298,7 +329,8 @@ export function buildSearchReplyMessages({
     message,
     extractedFilters,
     attractionLocationConflict,
-    poiLocationConflict
+    poiLocationConflict,
+    locationCarryoverConflict
 }: {
     readonly systemPrompt: string;
     readonly history: readonly AiChatMessage[];
@@ -306,6 +338,7 @@ export function buildSearchReplyMessages({
     readonly extractedFilters: SearchIntentEntities;
     readonly attractionLocationConflict?: AttractionLocationConflict;
     readonly poiLocationConflict?: PoiLocationConflict;
+    readonly locationCarryoverConflict?: LocationCarryoverConflict;
 }): SearchReplyMessagesResult {
     const recentHistory = history.slice(-CONVERSATION_HISTORY_LIMIT);
 
@@ -369,6 +402,27 @@ export function buildSearchReplyMessages({
                 'WITHOUT centering or narrowing on that landmark. Do NOT say the search is near, ' +
                 'centered on, or narrowed around that landmark, and do NOT invent a reason why. If ' +
                 'relevant, you may briefly note that the specific landmark could not be found.'
+        );
+    }
+
+    // HOS-298: on a lost location, say so. The filters context the model is
+    // reading no longer carries any location, so left to itself it writes a
+    // reply about guests and amenities that the user reads as still being about
+    // their city — while the results now come from everywhere. This is the same
+    // "never substitute silently" rule the attraction conflict follows, minus
+    // the zero-results half: the search that ran is legitimate, just broader
+    // than the conversation implies.
+    if (locationCarryoverConflict !== undefined) {
+        const locationPhrase =
+            locationCarryoverConflict.locationLabel === undefined
+                ? 'the location from the previous message'
+                : `the location from the previous message (${locationCarryoverConflict.locationLabel})`;
+        systemParts.push(
+            `IMPORTANT — LOCATION NOT CARRIED OVER: ${locationPhrase} could NOT be carried into ` +
+                'this search, so it ran with NO location filter and the results may come from any ' +
+                'destination. Briefly and warmly tell the user that you could not keep the previous ' +
+                'location and ask them to name it again. Do NOT claim the results are limited to ' +
+                'that location, and do NOT invent a different one.'
         );
     }
 
