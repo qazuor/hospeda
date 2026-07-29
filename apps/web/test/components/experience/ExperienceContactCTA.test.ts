@@ -21,17 +21,21 @@ describe('ExperienceContactCTA.astro', () => {
     });
 
     describe('WhatsApp deep link', () => {
-        it('builds the wa.me URL with phone and encoded message', () => {
-            expect(src).toContain('wa.me/');
-            expect(src).toContain('encodeURIComponent');
+        it('builds the wa.me URL through the shared builder', () => {
+            expect(src).toContain("import { buildWhatsAppLink } from '@/lib/whatsapp'");
+            expect(src).toContain('buildWhatsAppLink({ phone: contactInfo.whatsapp');
         });
 
-        it('sanitizes the phone number to strip non-digit characters', () => {
-            expect(src).toContain('replace(/\\D/g,');
+        it('does not hand-roll phone sanitizing (HOS-289)', () => {
+            // This replaces two tests that asserted `replace(/\D/g,` and
+            // `startsWith('+')` — the second pinned the defect, since wa.me
+            // rejects a leading `+`. URL shape lives in test/lib/whatsapp.test.ts.
+            expect(src).not.toContain('replace(/\\D/g,');
+            expect(src).not.toContain('wa.me/${');
         });
 
-        it('preserves a leading + in international format', () => {
-            expect(src).toContain("startsWith('+')");
+        it('renders nothing when the stored number has no digits to dial', () => {
+            expect(src).toContain('if (!waUrl) return;');
         });
 
         it('opens in a new tab with noopener', () => {
@@ -42,7 +46,14 @@ describe('ExperienceContactCTA.astro', () => {
 
     describe('i18n', () => {
         it('uses experience.detail.whatsapp key for the CTA label', () => {
-            expect(src).toContain('experience.detail.whatsapp');
+            expect(src).toContain("t('experience.detail.whatsapp',");
+        });
+
+        it('uses a message key distinct from the button label (HOS-289)', () => {
+            // Both used to read `experience.detail.whatsapp`, so the prefilled
+            // chat message the visitor sent was literally "Consultar por
+            // WhatsApp" and the {{name}} interpolation was a no-op.
+            expect(src).toContain("'experience.detail.whatsappMessage'");
         });
 
         it('injects the experience name into the WhatsApp message template', () => {

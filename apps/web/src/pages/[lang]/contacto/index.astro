@@ -15,6 +15,7 @@ import ContactMiniMap from '@/components/contact/ContactMiniMap.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 import {
 	EmailIcon,
 	PhoneIcon,
@@ -34,7 +35,7 @@ const { t } = createTranslations(locale);
 const phoneRaw = t('contact.phone.value', '+54 3442 453797');
 const phoneHref = phoneRaw.replace(/[^+\d]/g, '');
 const whatsappRaw = t('contact.whatsapp.value', '+54 9 3442 453797');
-const whatsappHref = whatsappRaw.replace(/[^\d]/g, '');
+const whatsappHref = buildWhatsAppLink({ phone: whatsappRaw }).url;
 const emailValue = t('contact.email.value', 'info@hospeda.com');
 const addressValue = t('contact.address.value', 'Concepción del Uruguay, Entre Ríos, Argentina');
 
@@ -82,7 +83,7 @@ const channels = [
 		),
 		value: whatsappRaw,
 		cta: t('contact.channels.whatsapp.cta', 'Chatear por WhatsApp'),
-		href: `https://wa.me/${whatsappHref}`,
+		href: whatsappHref,
 		external: true
 	}
 ];
@@ -105,7 +106,7 @@ const hours = [
 const socialLinks = [
 	{ key: 'instagram', label: 'Instagram', href: 'https://instagram.com/hospeda', Icon: InstagramIcon },
 	{ key: 'facebook', label: 'Facebook', href: 'https://facebook.com/hospeda', Icon: FacebookIcon },
-	{ key: 'whatsapp', label: 'WhatsApp', href: `https://wa.me/${whatsappHref}`, Icon: WhatsappIcon }
+	{ key: 'whatsapp', label: 'WhatsApp', href: whatsappHref, Icon: WhatsappIcon }
 ];
 
 // ─── JSON-LD: ContactPage + ContactPoint ──────────────────────────────────────

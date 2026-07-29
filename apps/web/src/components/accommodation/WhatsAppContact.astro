@@ -20,6 +20,7 @@
  */
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 
 interface Props {
     /** The WhatsApp number, or null when the viewer is not entitled to it. */
@@ -44,18 +45,15 @@ if (!showUpsell && !number) return;
 const title = t('accommodations.detail.whatsapp.title', 'Contacto por WhatsApp');
 
 // --- wa.me deep link (direct tier only) ---
-// Sanitize the phone: strip everything except a leading '+' and digits, as
-// wa.me expects an E.164-like number without spaces or separators.
+// Built by the shared helper so the phone is sanitized the one way wa.me
+// accepts (bare digits, no leading '+') — see `@/lib/whatsapp`.
 let waUrl: string | null = null;
 if (number && direct) {
-    const phone = number.startsWith('+')
-        ? `+${number.slice(1).replace(/\D/g, '')}`
-        : number.replace(/\D/g, '');
     const message = t(
         'accommodations.detail.whatsapp.messageTemplate',
         'Hola, me interesa obtener más información sobre {{name}}'
     ).replace('{{name}}', accommodationName);
-    waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    waUrl = buildWhatsAppLink({ phone: number, message }).url;
 }
 
 const ctaLabel = t('accommodations.detail.whatsapp.cta', 'Consultar por WhatsApp');
