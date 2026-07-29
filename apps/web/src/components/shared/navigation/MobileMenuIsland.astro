@@ -12,7 +12,7 @@
  * inline with the page (still SSR'd, just not deferred) — and resolving
  * auth state CLIENT-SIDE in `MobileMenu.client.tsx`, via the same shared
  * `authMeSnapshot` cache `UserMenu.client.tsx` already uses. `initialUser` /
- * `initialRole` are SSR HINTS (correct on pages whose middleware parsed the
+ * `initialRoles` are SSR HINTS (correct on pages whose middleware parsed the
  * session; `null` elsewhere) passed straight through from `Header.astro` —
  * the client cache/fetch refines them after hydration, exactly like
  * `UserMenu`.
@@ -39,8 +39,11 @@ interface Props {
      * `MobileMenu.client.tsx` reconciles it against the shared client cache.
      */
     readonly initialUser: AuthMeUser | null;
-    /** SSR role hint (`Astro.locals.user?.role`), for the host-mode CTA on first paint. */
-    readonly initialRole: string | null;
+    /**
+     * SSR role-set hint (`Astro.locals.user?.roles`), for the host-mode CTA on
+     * first paint. Empty on pages whose middleware did not parse the session.
+     */
+    readonly initialRoles: readonly string[];
     /**
      * Admin panel base URL for the session-zone admin-panel link and the
      * host-mode CTA. `undefined` (env var not configured) hides both.
@@ -48,8 +51,16 @@ interface Props {
     readonly adminPanelUrl: string | undefined;
 }
 
-const { locale, navItems, currentPath, logoSrc, homeHref, initialUser, initialRole, adminPanelUrl } =
-    Astro.props;
+const {
+    locale,
+    navItems,
+    currentPath,
+    logoSrc,
+    homeHref,
+    initialUser,
+    initialRoles,
+    adminPanelUrl
+} = Astro.props;
 ---
 
 <!--
@@ -68,6 +79,6 @@ const { locale, navItems, currentPath, logoSrc, homeHref, initialUser, initialRo
     logoSrc={logoSrc}
     homeHref={homeHref}
     initialUser={initialUser}
-    initialRole={initialRole}
+    initialRoles={initialRoles}
     adminPanelUrl={adminPanelUrl}
 />

@@ -119,7 +119,7 @@ const DEFAULT_PROPS = {
         name: 'Ana García',
         email: 'ana@example.com'
     },
-    initialRole: null as string | null
+    initialRoles: [] as readonly string[]
 };
 
 function renderMenu(overrides: Partial<typeof DEFAULT_PROPS> = {}) {
@@ -161,7 +161,7 @@ describe('MobileMenu — sign-out loading state (SPEC-228 T-022)', () => {
                 isAuthenticated: true,
                 user: DEFAULT_PROPS.initialUser,
                 permissions: [],
-                role: null,
+                roles: [],
                 cachedAt: Date.now()
             })
         );

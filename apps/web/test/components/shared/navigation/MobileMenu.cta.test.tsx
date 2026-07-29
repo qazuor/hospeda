@@ -87,7 +87,7 @@ const DEFAULT_PROPS = {
     logoSrc: '/logo.svg',
     homeHref: '/es/',
     initialUser: null as { id: string; name: string; email: string } | null,
-    initialRole: null as string | null,
+    initialRoles: [] as readonly string[],
     adminPanelUrl: 'https://admin.test'
 };
 
@@ -130,7 +130,7 @@ describe('MobileMenu — owner/host-mode CTA (SPEC-182 D3)', () => {
     it('shows the /publicar owner CTA for an authenticated non-host role', () => {
         renderMenu({
             initialUser: { id: 'u1', name: 'Tourist', email: 'tourist@example.com' },
-            initialRole: 'USER'
+            initialRoles: ['USER']
         });
         openMenu();
 
@@ -138,10 +138,10 @@ describe('MobileMenu — owner/host-mode CTA (SPEC-182 D3)', () => {
         expect(cta).toHaveAttribute('href', '/es/publicar/');
     });
 
-    it('switches to the host-mode CTA (admin panel link) when initialRole is HOST and adminPanelUrl is configured', () => {
+    it('switches to the host-mode CTA (admin panel link) when initialRoles is HOST and adminPanelUrl is configured', () => {
         renderMenu({
             initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
-            initialRole: 'HOST'
+            initialRoles: ['USER', 'HOST']
         });
         openMenu();
 
@@ -155,7 +155,7 @@ describe('MobileMenu — owner/host-mode CTA (SPEC-182 D3)', () => {
     it('falls back to the /publicar CTA when role is HOST but adminPanelUrl is not configured', () => {
         renderMenu({
             initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
-            initialRole: 'HOST',
+            initialRoles: ['USER', 'HOST'],
             adminPanelUrl: undefined
         });
         openMenu();
@@ -164,14 +164,14 @@ describe('MobileMenu — owner/host-mode CTA (SPEC-182 D3)', () => {
         expect(cta).toHaveAttribute('href', '/es/publicar/');
     });
 
-    it('renders on first paint from initialRole, before the client cache/fetch resolves (fetch never resolves in this test)', () => {
+    it('renders on first paint from initialRoles, before the client cache/fetch resolves (fetch never resolves in this test)', () => {
         // No cache seeded and fetch never resolves — this asserts the SSR
-        // hint alone (initialRole) is enough to render the correct CTA
+        // hint alone (initialRoles) is enough to render the correct CTA
         // synchronously, matching the old server:defer first-paint guarantee
         // on pages whose middleware DID parse the session.
         renderMenu({
             initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
-            initialRole: 'HOST'
+            initialRoles: ['USER', 'HOST']
         });
         openMenu();
 
@@ -192,7 +192,7 @@ describe('MobileMenu — owner/host-mode CTA (SPEC-182 D3)', () => {
                         id: 'u1',
                         name: 'Host User',
                         email: 'host@example.com',
-                        role: 'HOST',
+                        roles: ['USER', 'HOST'],
                         permissions: ['accommodation.create']
                     },
                     isAuthenticated: true
@@ -200,7 +200,7 @@ describe('MobileMenu — owner/host-mode CTA (SPEC-182 D3)', () => {
             })
         }) as unknown as typeof fetch;
 
-        renderMenu({ initialUser: null, initialRole: null });
+        renderMenu({ initialUser: null, initialRoles: [] });
         openMenu();
 
         expect(screen.getByRole('link', { name: /publica tu alojamiento/i })).toBeInTheDocument();
@@ -220,7 +220,7 @@ describe('MobileMenu — owner/host-mode CTA (SPEC-182 D3)', () => {
                 isAuthenticated: false,
                 user: null,
                 permissions: [],
-                role: null,
+                roles: [],
                 cachedAt: Date.now()
             })
         );
@@ -231,7 +231,7 @@ describe('MobileMenu — owner/host-mode CTA (SPEC-182 D3)', () => {
 
         renderMenu({
             initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
-            initialRole: 'HOST'
+            initialRoles: ['USER', 'HOST']
         });
         openMenu();
 
@@ -246,7 +246,7 @@ describe('MobileMenu — owner/host-mode CTA (SPEC-182 D3)', () => {
     it('does not treat ADMIN as host-mode (mobile CTA only checks HOST — visibility, not destination, is Header.astro’s concern)', () => {
         renderMenu({
             initialUser: { id: 'u1', name: 'Admin User', email: 'admin@example.com' },
-            initialRole: 'ADMIN'
+            initialRoles: ['USER', 'ADMIN']
         });
         openMenu();
 

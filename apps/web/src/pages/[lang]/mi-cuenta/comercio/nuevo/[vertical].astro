@@ -24,7 +24,7 @@ import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { CommerceCreateForm } from '@/components/commerce/CommerceCreateForm.client';
-import { isCommerceOwnerRole } from '@/lib/account-roles';
+import { hasCommerceNavAccess } from '@/lib/nav-gating';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { fetchMyCommerceLead } from '@/lib/commerce/owner-listings';
 import { destinationsApi } from '@/lib/api/endpoints';
@@ -41,7 +41,9 @@ const user = Astro.locals.user;
 if (!user) {
     return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
 }
-if (!isCommerceOwnerRole(user.role)) {
+// HOS-296: gate through the shared `nav-gating` predicate over the role SET,
+// so a COMMERCE_OWNER who is ALSO a HOST keeps commerce access (AC-1).
+if (!hasCommerceNavAccess({ roles: user.roles })) {
     return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
 }
 

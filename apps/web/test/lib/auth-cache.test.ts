@@ -23,7 +23,7 @@ const SNAPSHOT: AuthMeSnapshot = {
     isAuthenticated: true,
     user: { id: 'u1', name: 'Test User', email: 'test@example.com' },
     permissions: ['accommodation.create'],
-    role: 'HOST',
+    roles: ['USER', 'HOST'],
     cachedAt: Date.now()
 };
 
@@ -57,6 +57,32 @@ describe('readCachedAuthMe / writeCachedAuthMe', () => {
         sessionStorage.setItem(AUTH_ME_CACHE_KEY, 'not-json');
         expect(readCachedAuthMe()).toBeNull();
     });
+
+    // HOS-296: `sessionStorage` outlives a deploy. A tab that cached a
+    // snapshot from the pre-multi-role bundle holds `role: 'HOST'` and NO
+    // `roles` array; trusting it would hand every consumer
+    // `roles === undefined` and crash the first `roles.includes(...)` gate.
+    it('returns null for a pre-HOS-296 snapshot carrying the old `role` scalar', () => {
+        sessionStorage.setItem(
+            AUTH_ME_CACHE_KEY,
+            JSON.stringify({
+                isAuthenticated: true,
+                user: { id: 'u1', name: 'Test User', email: 'test@example.com' },
+                permissions: ['accommodation.create'],
+                role: 'HOST',
+                cachedAt: Date.now()
+            })
+        );
+        expect(readCachedAuthMe()).toBeNull();
+    });
+
+    it('returns null when `permissions` is missing or not an array', () => {
+        sessionStorage.setItem(
+            AUTH_ME_CACHE_KEY,
+            JSON.stringify({ ...SNAPSHOT, permissions: undefined })
+        );
+        expect(readCachedAuthMe()).toBeNull();
+    });
 });
 
 describe('fetchAuthMe', () => {
@@ -74,7 +100,7 @@ describe('fetchAuthMe', () => {
                         name: 'Test User',
                         email: 'test@example.com',
                         image: 'https://img.test/avatar.png',
-                        role: 'HOST',
+                        roles: ['USER', 'HOST'],
                         permissions: ['accommodation.create']
                     },
                     isAuthenticated: true
@@ -91,7 +117,7 @@ describe('fetchAuthMe', () => {
             avatarUrl: 'https://img.test/avatar.png'
         });
         expect(snapshot.permissions).toEqual(['accommodation.create']);
-        expect(snapshot.role).toBe('HOST');
+        expect(snapshot.roles).toEqual(['USER', 'HOST']);
     });
 
     it('resolves to a guest snapshot on a non-ok response', async () => {
@@ -102,7 +128,7 @@ describe('fetchAuthMe', () => {
             isAuthenticated: false,
             user: null,
             permissions: [],
-            role: null
+            roles: []
         });
     });
 
@@ -191,7 +217,7 @@ describe('fetchAuthMe in-flight dedup (HOS-160 lever D)', () => {
         const [s1, s2] = await Promise.all([fetchAuthMe(), fetchAuthMe()]);
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(s1).toMatchObject({ isAuthenticated: false, user: null, role: null });
+        expect(s1).toMatchObject({ isAuthenticated: false, user: null, roles: [] });
         expect(s2).toEqual(s1);
     });
 });

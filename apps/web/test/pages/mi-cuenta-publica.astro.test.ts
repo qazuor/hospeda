@@ -53,7 +53,7 @@ describe('mi-cuenta/publica/index.astro (HOS-131 "Publicá en Hospeda" hub)', ()
         );
         expect(source).toContain("import { getAdminUrl } from '@/lib/env';");
         expect(source).toContain(
-            '<DiscoveryDoorHub locale={locale} door={door} role={user.role} adminUrl={getAdminUrl()} />'
+            '<DiscoveryDoorHub locale={locale} door={door} roles={user.roles} adminUrl={getAdminUrl()} />'
         );
     });
 

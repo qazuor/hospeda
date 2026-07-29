@@ -17,7 +17,7 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { isHostRole } from '@/lib/account-roles';
+import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountStatsGrid from '@/components/account/AccountStatsGrid.astro';
 import AccountSectionCards from '@/components/account/AccountSectionCards.astro';
@@ -50,8 +50,9 @@ const description = t(
 const greeting = t('account.pages.dashboard.greeting', 'Hola');
 const dashboardLabel = t('account.pages.dashboard.dashboardLabel', 'Panel de control');
 
-// Determine host role for conditional sections.
-const isHost = isHostRole(user.role ?? null);
+// Determine host-tier access for conditional sections (HOS-296: over the
+// whole role SET, via the single shared gating predicate).
+const isHost = hasAccommodationsNavAccess({ roles: user.roles });
 
 // Generate user initials (up to 2 characters) for the avatar placeholder.
 const initials = user.name
@@ -183,7 +184,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
     <!-- What's New + Tour: auto-trigger controllers (D12 gate) -->
     <DashboardController
         locale={locale}
-        userRole={user.role}
+        userRoles={user.roles}
         client:idle
     />
 </AccountLayout>

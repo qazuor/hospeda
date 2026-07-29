@@ -85,7 +85,7 @@ const DEFAULT_PROPS = {
         name: 'Ana García',
         email: 'ana@example.com'
     },
-    initialRole: null as string | null
+    initialRoles: [] as readonly string[]
 };
 
 function renderMenu(overrides: Partial<typeof DEFAULT_PROPS> = {}) {
@@ -178,6 +178,7 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
                 isAuthenticated: true,
                 user: { id: 'u1', name: 'Ana García', email: 'ana@example.com' },
                 permissions: ['accommodation.create'],
+                roles: ['USER', 'HOST'],
                 cachedAt: Date.now()
             })
         );
@@ -202,6 +203,7 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
                 isAuthenticated: true,
                 user: { id: 'u1', name: 'Ana García', email: 'ana@example.com' },
                 permissions: ['commerce.editOwn'],
+                roles: ['USER', 'COMMERCE_OWNER'],
                 cachedAt: Date.now()
             })
         );
@@ -225,6 +227,7 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
                 isAuthenticated: true,
                 user: { id: 'u1', name: 'Ana García', email: 'ana@example.com' },
                 permissions: ['accommodation.create', 'commerce.editOwn'],
+                roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
                 cachedAt: Date.now()
             })
         );
@@ -289,7 +292,7 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
                 isAuthenticated: false,
                 user: null,
                 permissions: [],
-                role: null,
+                roles: [],
                 cachedAt: Date.now()
             })
         );

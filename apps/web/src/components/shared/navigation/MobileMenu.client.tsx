@@ -19,9 +19,9 @@
  * the admin-panel link built by the shared `buildAdminPanelItem`,
  * `@/lib/admin-panel-link`) mirrors UserMenu's session zone too.
  *
- * Auth state (user, permissions, role) resolves the SAME way UserMenu's
+ * Auth state (user, permissions, roles) resolves the SAME way UserMenu's
  * does: `useAccountPermissions` (`@/hooks/use-account-permissions`) in
- * SSR-reconciling mode, seeded from `initialUser`/`initialRole` (the SSR
+ * SSR-reconciling mode, seeded from `initialUser`/`initialRoles` (the SSR
  * hint from `Astro.locals.user`, forwarded through `MobileMenuIsland.astro`
  * — `null` on pages whose middleware didn't parse the session) and refined
  * client-side from the shared `authMeSnapshot` cache / `/auth/me` fetch.
@@ -29,7 +29,7 @@
  * `MobileMenuIsland.astro`'s file doc for why), so it can never assume a
  * freshly-parsed session — the host-mode CTA (`isHostMode`/`ctaLabel`/
  * `ctaHref`, formerly computed server-side in `MobileMenuIsland.astro`) is
- * now derived here from the resolved `role`.
+ * now derived here from the resolved `roles` set (HOS-296).
  *
  * Tasks: T-074
  */
@@ -109,8 +109,11 @@ interface MobileMenuProps {
      * — see the file JSDoc.
      */
     readonly initialUser: AuthMeUser | null;
-    /** SSR role hint (`Astro.locals.user?.role`), for the host-mode CTA on first paint. */
-    readonly initialRole: string | null;
+    /**
+     * SSR role-set hint (`Astro.locals.user?.roles`), for the host-mode CTA on
+     * first paint. Empty on pages whose middleware did not parse the session.
+     */
+    readonly initialRoles: readonly string[];
     /**
      * Admin panel base URL for the session-zone admin-panel link (HOS-131
      * §6.5, staff/host only, gated by `access.panelAdmin`) and the
@@ -148,7 +151,7 @@ export function MobileMenu({
     logoSrc,
     homeHref,
     initialUser,
-    initialRole,
+    initialRoles,
     adminPanelUrl
 }: MobileMenuProps) {
     const { t } = createTranslations(locale);
@@ -159,32 +162,36 @@ export function MobileMenu({
     const authTexts = AUTH_TEXTS[locale] ?? AUTH_TEXTS.es;
 
     // ------------------------------------------------------------------
-    // Resolve auth state (user, permissions, role) for the whole auth
+    // Resolve auth state (user, permissions, roles) for the whole auth
     // section — curated account block, admin-panel session link, AND the
     // host-mode CTA. SSR-reconciling mode (same as UserMenu.client.tsx):
-    // `initialUser`/`initialRole` seed first paint, the shared
+    // `initialUser`/`initialRoles` seed first paint, the shared
     // `authMeSnapshot` cache / `/auth/me` fetch refines it on hydration.
     // Never a second auth mechanism — see the file JSDoc.
     // ------------------------------------------------------------------
     // `syncAuthenticatedAttribute: false` — UserMenu (client:load, mounted
     // on every page) is the single owner of `<html data-user-authenticated>`;
     // this island must not become a second writer of the same attribute.
-    const { user, permissions, role } = useAccountPermissions({
+    const { user, permissions, roles } = useAccountPermissions({
         initialUser,
-        initialRole,
+        initialRoles,
         syncAuthenticatedAttribute: false
     });
 
     // ------------------------------------------------------------------
     // Owner CTA (SPEC-182 D3, moved from the old server:defer
     // MobileMenuIsland.astro). A HOST may still be mid-onboarding with only
-    // a DRAFT, but role=HOST is still enough to point the CTA at the host
-    // surfaces. Unauthenticated visitors and tourists keep the /publicar
-    // funnel. `role` starts at `initialRole` and is refined by the same
-    // hook resolution as `user`/`permissions` above.
+    // a DRAFT, but HOLDING the HOST hat is still enough to point the CTA at
+    // the host surfaces. Unauthenticated visitors and tourists keep the
+    // /publicar funnel. `roles` starts at `initialRoles` and is refined by the
+    // same hook resolution as `user`/`permissions` above.
     //
-    // HOS-217: `role === 'HOST'` alone is not entitlement-aware — a TOURIST
-    // who completes host-onboarding reaches role=HOST immediately, even
+    // HOS-296: this asks "does the user HOLD the HOST hat", not "is the
+    // user's role HOST" — a commerce owner who is also a host keeps the
+    // host-mode CTA, which the old scalar equality silently dropped.
+    //
+    // HOS-217: holding HOST alone is not entitlement-aware — a TOURIST
+    // who completes host-onboarding is granted the HOST hat immediately, even
     // before ever subscribing to an owner plan. `useMyEntitlements` (same
     // hook already used elsewhere, e.g. `useCompareGuard`) resolves the
     // actor's real entitlement set; `PUBLISH_ACCOMMODATIONS` /
@@ -194,24 +201,25 @@ export function MobileMenu({
     // (a data-integrity edge case aside). `hasEntitlement` starts `false`
     // while `isLoading` (fail-closed by the hook's own contract) — ORing in
     // `entitlementsLoading` here keeps first paint identical to the SSR hint
-    // (`role === 'HOST'`, matching `Header.astro`'s `isAlreadyHost` on the
+    // (holds HOST, matching `Header.astro`'s `isAlreadyHost` on the
     // same page) and only downgrades to the /publicar funnel once the real
     // entitlement resolves negative, instead of flashing the wrong CTA for
     // every HOST on every load while the fetch is in flight.
     // ------------------------------------------------------------------
-    // `skip` when role isn't (yet, or ever) HOST — avoids firing the
+    // `skip` when the HOST hat isn't (yet, or ever) held — avoids firing the
     // entitlements fetch for every authenticated visitor on every page just
-    // to refine a CTA that only HOST actors see anyway. `role` starts at
-    // `initialRole` (the SSR hint), so this is already correct on first
+    // to refine a CTA that only HOST actors see anyway. `roles` starts at
+    // `initialRoles` (the SSR hint), so this is already correct on first
     // render — no extra hydration-mismatch risk.
+    const isHost = roles.includes('HOST');
     const { has: hasEntitlement, isLoading: entitlementsLoading } = useMyEntitlements({
-        skip: role !== 'HOST'
+        skip: !isHost
     });
     const hostHasEntitlement =
         entitlementsLoading ||
         hasEntitlement(EntitlementKey.PUBLISH_ACCOMMODATIONS) ||
         hasEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO);
-    const isHostMode = role === 'HOST' && Boolean(adminPanelUrl) && hostHasEntitlement;
+    const isHostMode = isHost && Boolean(adminPanelUrl) && hostHasEntitlement;
     const ctaLabel = isHostMode ? t('nav.hostModeCta', 'Modo anfitrión') : t('nav.ownerCta');
     const ctaHref = isHostMode
         ? (adminPanelUrl as string)

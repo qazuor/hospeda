@@ -123,9 +123,29 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
     }
 ];
 
-export function getWelcomeTourForRole(role: string | null): TourConfig | undefined {
-    if (!role) return undefined;
+/**
+ * Resolves the auto-first-visit welcome tour for a user, given every role they
+ * hold.
+ *
+ * HOS-296: an account wears a SET of hats, so this returns the FIRST tour in
+ * `WEB_TOURS` whose audience intersects the user's roles. Order in `WEB_TOURS`
+ * is therefore the tie-break for a multi-hat user (host tour before commerce
+ * tour), which is deliberate: a user can only be walked through one tour on
+ * first visit, and `RestartTour` lets them replay it afterwards.
+ *
+ * @param params - `{ roles }` (RO-RO): every role the user holds. Empty or
+ *   `null` (guest / unresolved) yields no tour.
+ * @returns The matching tour config, or `undefined` when none applies.
+ */
+export function getWelcomeTourForRoles({
+    roles
+}: {
+    readonly roles: readonly string[] | null;
+}): TourConfig | undefined {
+    if (!roles || roles.length === 0) return undefined;
     return WEB_TOURS.find(
-        (tour) => tour.trigger === 'auto-first-visit' && tour.roles.includes(role)
+        (tour) =>
+            tour.trigger === 'auto-first-visit' &&
+            tour.roles.some((tourRole) => roles.includes(tourRole))
     );
 }

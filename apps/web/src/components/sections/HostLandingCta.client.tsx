@@ -2,15 +2,30 @@
  * @file HostLandingCta.client.tsx
  * @description Auth-aware CTA island for the host onboarding landing page.
  *
- * On mount, reads the Better Auth session via `useSession`. While loading,
- * renders the unauthenticated href as the default (safe fallback for SSG).
- * Once hydrated it swaps to the authenticated destination if a session exists.
+ * On mount, resolves the visitor through `useAccountPermissions` — the SAME
+ * shared `/auth/me` cache (`@/lib/auth-cache`) that `UserMenu` and
+ * `MobileMenu` already use. While loading, renders the unauthenticated href as
+ * the default (safe fallback for SSG). Once resolved it swaps to the
+ * authenticated destination if a session exists.
  *
- * Hydration: client:load — the CTA is above the fold and must be interactive immediately.
+ * HOS-296 — why NOT Better Auth's `useSession()` any more. This island used to
+ * read `session.user` and hand-cast it to `{ readonly role?: string }` to reach
+ * the host flag. `users.role` is gone, so `role` left Better Auth's
+ * `additionalFields` entirely and that cast would have silently yielded
+ * `undefined` forever: no compile error, no runtime error, just a permanently
+ * dead "Ir al panel de anfitrión" CTA for every host (spec §7.2 /
+ * sweep-inventory site #7). Routing through `auth-cache.ts` — already the
+ * client-side `/auth/me` plumbing — keeps ONE session mechanism on the client
+ * instead of two, and costs no extra request: `UserMenu` mounts on every page
+ * and either the shared in-flight promise or the sessionStorage snapshot
+ * already answers this island's read.
+ *
+ * Hydration: client:only="react" (see the mount site in
+ * `pages/[lang]/publicar/index.astro`).
  */
 
 import type { JSX } from 'react';
-import { useSession } from '../../lib/auth-client';
+import { useAccountPermissions } from '../../hooks/use-account-permissions';
 import type { SupportedLocale } from '../../lib/i18n';
 import { createTranslations } from '../../lib/i18n';
 import { buildUrl } from '../../lib/urls';
@@ -54,7 +69,10 @@ export interface HostLandingCtaProps {
  * ```
  */
 export function HostLandingCta({ locale, adminUrl }: HostLandingCtaProps): JSX.Element {
-    const { data: session, isPending } = useSession();
+    // Simple mode (no `initialUser`): this island has no SSR snapshot to
+    // reconcile against, so any fresh authenticated cache entry is trusted
+    // directly and a cold load falls through to the shared `/auth/me` fetch.
+    const { user, roles } = useAccountPermissions();
 
     const { t } = createTranslations(locale);
 
@@ -62,16 +80,17 @@ export function HostLandingCta({ locale, adminUrl }: HostLandingCtaProps): JSX.E
     const signinPath = `${buildUrl({ locale, path: 'auth/signin' })}?redirect=${encodeURIComponent(newPropertyPath)}`;
     const propertiesPath = buildUrl({ locale, path: 'mi-cuenta/propiedades' });
 
-    const isAuthenticated = !isPending && Boolean(session?.user);
+    // `user` is null while the snapshot is still resolving, so the
+    // unauthenticated href stays the first-paint default — the documented
+    // safe fallback, unchanged from the `isPending` behavior it replaces.
+    const isAuthenticated = user !== null;
 
-    // SPEC-182 (D3): role=HOST is enough to route the CTA to host surfaces.
-    // The user may still be mid-onboarding with only a DRAFT, but they should
-    // no longer be sent back through the tourist funnel. `role` is a Better
-    // Auth additional field returned in the session but absent from the
-    // client's inferred type.
-    // TYPE-WORKAROUND: cast narrows the runtime shape; falls back to undefined.
-    const role = (session?.user as { readonly role?: string } | undefined)?.role;
-    const isHostMode = isAuthenticated && role === 'HOST' && Boolean(adminUrl);
+    // SPEC-182 (D3): holding the HOST hat is enough to route the CTA to host
+    // surfaces. The user may still be mid-onboarding with only a DRAFT, but
+    // they should no longer be sent back through the tourist funnel.
+    // HOS-296: `roles.includes('HOST')`, not `role === 'HOST'` — a merchant
+    // who is also a host keeps the host CTA.
+    const isHostMode = isAuthenticated && roles.includes('HOST') && Boolean(adminUrl);
 
     const primaryHref = isHostMode
         ? (adminUrl as string)

@@ -5,27 +5,37 @@
  * States:
  *  - unauthenticated → primary CTA links to signin with redirect to the wizard
  *  - authenticated non-HOST (tourist) → primary CTA links to the create wizard
- *  - authenticated HOST → primary CTA links to the admin panel (host mode)
+ *  - authenticated holder of the HOST hat → primary CTA links to the admin panel
+ *
+ * HOS-296: the island no longer reads Better Auth's `useSession()` and no
+ * longer hand-casts `session.user` to `{ role?: string }`. It resolves through
+ * `useAccountPermissions` — the shared `/auth/me` plumbing — so these tests
+ * mock the hook instead. The regression this guards against is silent: with
+ * `users.role` gone, the old cast yielded `undefined` forever and the host CTA
+ * simply never appeared, with no compile or runtime error to notice.
  */
 
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HostLandingCta } from '@/components/sections/HostLandingCta.client';
-import { useSession } from '@/lib/auth-client';
+import { useAccountPermissions } from '@/hooks/use-account-permissions';
 
-vi.mock('@/lib/auth-client', () => ({
-    useSession: vi.fn()
+vi.mock('@/hooks/use-account-permissions', () => ({
+    useAccountPermissions: vi.fn()
 }));
 
-const mockUseSession = vi.mocked(useSession);
+const mockUseAccountPermissions = vi.mocked(useAccountPermissions);
 
 const ADMIN_URL = 'https://admin.hospeda.com.ar';
 
-const sessionFor = (user: { id: string; role?: string } | null, isPending = false) =>
-    ({
-        data: user ? { user } : null,
-        isPending
-    }) as unknown as ReturnType<typeof useSession>;
+const authStateFor = (
+    user: { id: string } | null,
+    roles: readonly string[] = []
+): ReturnType<typeof useAccountPermissions> => ({
+    user: user ? { id: user.id, name: 'Test User', email: 'test@example.com' } : null,
+    permissions: user ? [] : null,
+    roles
+});
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -33,7 +43,7 @@ beforeEach(() => {
 
 describe('HostLandingCta', () => {
     it('links the primary CTA to signin (with wizard redirect) when unauthenticated', () => {
-        mockUseSession.mockReturnValue(sessionFor(null));
+        mockUseAccountPermissions.mockReturnValue(authStateFor(null));
 
         render(
             <HostLandingCta
@@ -46,8 +56,23 @@ describe('HostLandingCta', () => {
         expect(cta).toHaveAttribute('href', expect.stringContaining('/es/auth/signin/?redirect='));
     });
 
-    it('links the primary CTA to the create wizard for an authenticated tourist (role=USER)', () => {
-        mockUseSession.mockReturnValue(sessionFor({ id: 'u1', role: 'USER' }));
+    it('links the primary CTA to signin while the session is still resolving', () => {
+        // The safe SSG/first-paint fallback: `user` is null until `/auth/me`
+        // (or the shared cache) answers.
+        mockUseAccountPermissions.mockReturnValue(authStateFor(null));
+
+        render(
+            <HostLandingCta
+                locale="es"
+                adminUrl={ADMIN_URL}
+            />
+        );
+
+        expect(screen.queryByRole('link', { name: /ver mis propiedades/i })).toBeNull();
+    });
+
+    it('links the primary CTA to the create wizard for an authenticated tourist (USER only)', () => {
+        mockUseAccountPermissions.mockReturnValue(authStateFor({ id: 'u1' }, ['USER']));
 
         render(
             <HostLandingCta
@@ -61,7 +86,25 @@ describe('HostLandingCta', () => {
     });
 
     it('links the primary CTA to the admin panel for a HOST (host mode, SPEC-182)', () => {
-        mockUseSession.mockReturnValue(sessionFor({ id: 'u1', role: 'HOST' }));
+        mockUseAccountPermissions.mockReturnValue(authStateFor({ id: 'u1' }, ['USER', 'HOST']));
+
+        render(
+            <HostLandingCta
+                locale="es"
+                adminUrl={ADMIN_URL}
+            />
+        );
+
+        const cta = screen.getByRole('link', { name: /panel/i });
+        expect(cta).toHaveAttribute('href', ADMIN_URL);
+    });
+
+    it('keeps host mode for a HOST who ALSO holds COMMERCE_OWNER (HOS-296 AC-1)', () => {
+        // Under the old scalar `role` this user's single value could only be
+        // one hat, so a merchant-and-host lost the host CTA entirely.
+        mockUseAccountPermissions.mockReturnValue(
+            authStateFor({ id: 'u1' }, ['USER', 'COMMERCE_OWNER', 'HOST'])
+        );
 
         render(
             <HostLandingCta
@@ -75,7 +118,7 @@ describe('HostLandingCta', () => {
     });
 
     it('falls back to the create wizard for a HOST when adminUrl is not configured', () => {
-        mockUseSession.mockReturnValue(sessionFor({ id: 'u1', role: 'HOST' }));
+        mockUseAccountPermissions.mockReturnValue(authStateFor({ id: 'u1' }, ['USER', 'HOST']));
 
         render(
             <HostLandingCta
@@ -89,7 +132,7 @@ describe('HostLandingCta', () => {
     });
 
     it('keeps the secondary "my properties" link for authenticated users', () => {
-        mockUseSession.mockReturnValue(sessionFor({ id: 'u1', role: 'HOST' }));
+        mockUseAccountPermissions.mockReturnValue(authStateFor({ id: 'u1' }, ['USER', 'HOST']));
 
         render(
             <HostLandingCta
