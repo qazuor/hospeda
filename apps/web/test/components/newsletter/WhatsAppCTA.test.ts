@@ -184,7 +184,10 @@ describe('WhatsAppCTA.module.css', () => {
         // the brand green — a change no colour guard can see, since the CSS would
         // be untouched. So the invariant is asserted on the markup: the badge
         // holds the icon component and nothing else.
-        const badge = /<div class=\{styles\.iconWrap\}[^>]*>([\s\S]*?)<\/div>/.exec(src);
+        // The div is matched by the class it carries, not by attribute ORDER:
+        // `<div aria-hidden="true" class={styles.iconWrap}>` is the same markup and
+        // used to fail with "no iconWrap div found".
+        const badge = /<div[^>]*class=\{styles\.iconWrap\}[^>]*>([\s\S]*?)<\/div>/.exec(src);
         expect(badge, 'no iconWrap div found').not.toBeNull();
         const contents = (badge?.[1] ?? '').trim();
         // The invariant is "one self-closing icon element and no text node", NOT
@@ -192,7 +195,10 @@ describe('WhatsAppCTA.module.css', () => {
         // `size={40}` or a Biome reflow fail a test named "text-free", with a diff
         // that says nothing about text.
         expect(contents).toMatch(/^<WhatsappIcon\b[^>]*\/>$/);
-        expect(src).toMatch(/class=\{styles\.iconWrap\}[^>]*aria-hidden="true"/);
+        // No colour prop on the icon either: `<WhatsappIcon color="#fff" />` would
+        // paint the mark white without touching any CSS.
+        expect(contents).not.toMatch(/\bcolor=/);
+        expect(src).toMatch(/<div[^>]*class=\{styles\.iconWrap\}[^>]*aria-hidden="true"/);
     });
 
     it('inks the logo-only badge with the logotype token (WCAG 1.4.3 exemption)', () => {

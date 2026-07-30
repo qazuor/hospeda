@@ -65,6 +65,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { findBareInkDeclarations } from './ink-literals';
+
 const WEB_SRC = path.resolve(__dirname, '../../src');
 
 /** File extensions that can carry a color declaration in this app. */
@@ -120,24 +122,33 @@ const EXPECTED_REFERENCES: Readonly<Record<string, Readonly<Record<string, numbe
     }
 };
 
-/** WhatsApp color literals that must never be spelled out. */
+/**
+ * WhatsApp color literals that must never be spelled out.
+ *
+ * Each hex uses `(?![0-9a-f])` rather than `\b` as its terminator: `\b` cannot
+ * match between `6` and `f`, so `#25d366ff` — valid CSS, fully opaque — walked
+ * straight past the previous version. Each entry also covers the `oklch()` form,
+ * because that is how this repo AUTHORS colors (`tokens/colors.ts` stores the
+ * brand green as `oklch(0.761 0.201 149.74)`), which makes it the likeliest
+ * copy-paste of all — likelier than the hex.
+ */
 const FORBIDDEN_LITERALS: ReadonlyArray<{ readonly label: string; readonly pattern: RegExp }> = [
     {
         label: 'brand green #25d366 / rendered #26d366 (use --channel-whatsapp)',
-        pattern: /#2[56]d366\b|rgba?\(\s*3[78][\s,]+211[\s,]+102/i
+        pattern: /#2[56]d366(?![0-9a-f])|rgba?\(\s*3[78][\s,]+211[\s,]+102|oklch\(\s*0?\.761[\s,]/i
     },
     {
         label: 'hover green #1ebe5d / rendered #1fbe5d (use --channel-whatsapp-hover)',
-        pattern: /#1[ef]be5d\b|rgba?\(\s*3[01][\s,]+190[\s,]+93/i
+        pattern: /#1[ef]be5d(?![0-9a-f])|rgba?\(\s*3[01][\s,]+190[\s,]+93|oklch\(\s*0?\.704[\s,]/i
     },
     {
         label: 'teal #128c7e and the rendered light/dark text tokens #146c61 / #4cc5b4',
         pattern:
-            /#12[89]c7e\b|#146c61\b|#4cc5b4\b|rgba?\(\s*(?:18[\s,]+140[\s,]+126|20[\s,]+108[\s,]+97|76[\s,]+197[\s,]+180)/i
+            /#12[89]c7e(?![0-9a-f])|#146c61(?![0-9a-f])|#4cc5b4(?![0-9a-f])|rgba?\(\s*(?:18[\s,]+140[\s,]+126|20[\s,]+108[\s,]+97|76[\s,]+197[\s,]+180)/i
     },
     {
         label: 'dark green #075e54 — replaces the brand green instead of the ink (rejected)',
-        pattern: /#0[79]5e54\b/i
+        pattern: /#0[79]5e54(?![0-9a-f])/i
     }
 ];
 
@@ -166,9 +177,9 @@ const DECLARATION_SPELLINGS: ReadonlyArray<{ readonly label: string; readonly pa
  * Only comments that OPEN A LINE are stripped. That is deliberate: the previous
  * revision tracked string state to decide whether a `/*` was real, and a single
  * unbalanced quote inside a JS regex literal (`.replace(/"/g, …)`) inverted the
- * parity for the rest of the file — three files in this tree already end in that
- * state. Line-leading is a property no quote can forge, so there is no state
- * machine and nothing to invert. It also leaves string contents alone by
+ * parity for the rest of the file — SEVEN files in this tree already end in that
+ * state, measured. Line-leading is a property no quote can forge, so there is no
+ * state machine and nothing to invert. It also leaves string contents alone by
  * construction, which is what `pages/robots.txt.ts` needed: it holds a glob
  * string for `verify-email-sent` that begins with slash-star-slash, and a
  * stripper reading that as a comment opener blanked 429 characters of real code.
@@ -176,14 +187,21 @@ const DECLARATION_SPELLINGS: ReadonlyArray<{ readonly label: string; readonly pa
  * (That string is not reproduced literally here — it closes a block comment.)
  *
  * Cost, stated: a comment trailing real code on the same line is NOT stripped, so
- * a WhatsApp hex written there would be reported. Every prose mention in this repo
- * is line-leading, and being reported is the safe direction anyway.
+ * a WhatsApp hex written there would be reported — by rule 1, and also by
+ * `DECLARATION_SPELLINGS`, whose first pattern would read a trailing block comment
+ * that names a channel token followed by a colon as a declaration. Every prose
+ * mention in this repo is line-leading, and being reported is the safe direction.
+ *
+ * `//` is skipped for `.css`, where it does not open a comment while `url(//cdn/x)`
+ * and base64 data URIs contain it. The previous revision had that distinction and
+ * the rewrite dropped it; no `.css` file in the tree starts a line with `//` today,
+ * but stripping there could only ever blank real code.
  */
-function stripLeadingComments(source: string): string {
-    return source
+function stripLeadingComments(source: string, extension = ''): string {
+    const withoutBlocks = source
         .replace(/^[ \t]*<!--[\s\S]*?-->/gm, '')
-        .replace(/^[ \t]*\/\*[\s\S]*?\*\//gm, '')
-        .replace(/^[ \t]*\/\/[^\n]*/gm, '');
+        .replace(/^[ \t]*\/\*[\s\S]*?\*\//gm, '');
+    return extension === '.css' ? withoutBlocks : withoutBlocks.replace(/^[ \t]*\/\/[^\n]*/gm, '');
 }
 
 /** Recursively collects scannable files under `dir`. */
@@ -227,7 +245,7 @@ describe('HOS-314 static guard — WhatsApp colors live only in the channel toke
     const code = new Map(
         files.map((file) => [
             path.relative(WEB_SRC, file),
-            stripLeadingComments(fs.readFileSync(file, 'utf-8'))
+            stripLeadingComments(fs.readFileSync(file, 'utf-8'), path.extname(file))
         ])
     );
 
@@ -285,6 +303,19 @@ describe('HOS-314 static guard — WhatsApp colors live only in the channel toke
             expect(countTokenReferences(code.get(file) ?? '')).toEqual(EXPECTED_REFERENCES[file]);
         });
 
+        it.each(OWNING_FILES)('%s inks every text colour from an approved token', (file) => {
+            // The ink invariant is enforced HERE, over the same list that admits a
+            // file, and not only in the per-component tests. Otherwise admitting a
+            // fourth WhatsApp surface is a two-line data edit that gets the token
+            // count check and no ink coverage at all — which is precisely how the
+            // experience surface went three rounds with no ink assertion while its
+            // own comment claimed it was kept in lockstep. The check is whole-file
+            // and therefore cascade-free, so it belongs in a static guard.
+            expect(
+                findBareInkDeclarations(fs.readFileSync(path.join(WEB_SRC, file), 'utf-8'))
+            ).toEqual([]);
+        });
+
         it('the reference map covers exactly the owning files', () => {
             expect(Object.keys(EXPECTED_REFERENCES).sort()).toEqual([...OWNING_FILES].sort());
         });
@@ -325,14 +356,18 @@ describe('HOS-314 static guard — WhatsApp colors live only in the channel toke
             }
         });
 
-        it('preserves the real file whose string literal broke the previous stripper', () => {
+        it('preserves the real file whose string literal broke the round-1 stripper', () => {
             const raw = fs.readFileSync(path.join(WEB_SRC, 'pages/robots.txt.ts'), 'utf-8');
             const stripped = stripLeadingComments(raw);
-            // Both pins sit AFTER the phantom-comment opener, so both fail under a
-            // quote-blind stripper. (An earlier version pinned an import above it,
-            // which passed even with the bug.)
+            // Both markers sit INSIDE the span a quote-blind stripper blanks, and
+            // occur nowhere else in the file — that is what makes them discriminate.
+            // Two earlier attempts at this pin did not: one used an `import` line
+            // ABOVE the phantom opener, the other used `Disallow`, which recurs in
+            // the JSDoc and in the emitted template literal below the span. A
+            // whole-file `toContain` only proves something if its marker is unique
+            // to the region under test.
             expect(stripped).toContain("'/*/verify-email-sent'");
-            expect(stripped).toContain('Disallow');
+            expect(stripped).toContain("'/_server-islands/'");
         });
     });
 

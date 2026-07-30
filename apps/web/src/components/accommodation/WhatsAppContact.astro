@@ -234,14 +234,16 @@ const upsellCta = t('accommodations.detail.whatsapp.upsellCta', 'Ver planes');
        fallback plus an `@supports` oklch override, and is what the repo's other
        primary hovers already use.
 
-       NOT identical math, and the difference is worth knowing: `--primary-hover`
-       is `calc(l - 0.05)` in light but `calc(l + 0.07)` in DARK, so it brightens
-       there, while `-lm05` darkens in both themes. The measured trade is
-       light 2.64 -> 4.26 (a fix) and dark 9.25 -> 5.78 (a loss that still clears
-       AA comfortably). Taking the loss is deliberate: a hover that is 5.78:1
-       everywhere beats one that is 9.25:1 on new browsers and invisible on old
-       ones. If dark wants its brightening back, it needs a `-lp07` variant token
-       with the same fallback pair, not `--primary-hover`. */
+       Identical math in LIGHT, not in dark. `--primary-hover` is `calc(l - 0.05)`
+       in light — byte-identical to `-lm05`, so the light ratio is unchanged at
+       4.26 on any browser that supports relative colors, and the light gain is
+       1.13 -> 4.26 only on the browsers that do not. In DARK it is
+       `calc(l + 0.07)`, i.e. it brightens, while `-lm05` darkens in both themes:
+       there the measured trade is 9.25 -> 5.78. Taking that loss is deliberate —
+       a hover that reads 5.78:1 everywhere beats one that reads 9.25:1 on new
+       browsers and paints nothing on old ones — and 5.78 clears AA comfortably.
+       If dark wants its brightening back it needs a `-lp07` variant token with
+       the same fallback pair, not `--primary-hover`. */
     .acc-whatsapp__upsell-cta:hover {
         background-color: var(--brand-primary-lm05);
     }
