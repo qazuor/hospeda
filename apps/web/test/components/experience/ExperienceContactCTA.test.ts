@@ -83,8 +83,14 @@ describe('ExperienceContactCTA.astro', () => {
     });
 
     describe('CSS tokens', () => {
-        it('uses #25d366 green for WhatsApp brand color', () => {
-            expect(src).toContain('#25d366');
+        // Was `toContain('#25d366')` before HOS-314. This block is dormant
+        // (HOS-363) but stays in lockstep with the accommodation button on
+        // purpose: the divergence this issue fixed started with one surface
+        // being left behind.
+        it('takes the WhatsApp brand colors from the channel tokens (HOS-314)', () => {
+            expect(src).toContain('background-color: var(--channel-whatsapp)');
+            expect(src).toContain('color: var(--channel-whatsapp-foreground)');
+            expect(src).toContain('background-color: var(--channel-whatsapp-hover)');
         });
 
         it('does not use Tailwind utility classes', () => {

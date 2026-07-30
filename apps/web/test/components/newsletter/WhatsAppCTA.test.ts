@@ -149,10 +149,15 @@ describe('WhatsAppCTA.module.css', () => {
         expect(cssSrc).toContain('--surface-warm');
     });
 
-    it('uses the WhatsApp brand green for the CTA / icon colour', () => {
-        // No system token exists for WhatsApp green — colour is intentionally
-        // hard-coded so the brand colour never drifts when palette changes.
-        expect(cssSrc.toLowerCase()).toContain('#25d366');
+    it('takes the WhatsApp brand colours from the channel tokens (HOS-314)', () => {
+        // This assertion used to read `toContain('#25d366')`, justified by "no
+        // system token exists for WhatsApp green". HOS-314 created one, so the
+        // hard-code is no longer the way to keep the brand colour from
+        // drifting — the token is, and it carries the AA-safe ink with it.
+        expect(cssSrc).toContain('background-color: var(--channel-whatsapp)');
+        expect(cssSrc).toContain('color: var(--channel-whatsapp-foreground)');
+        expect(cssSrc).toContain('background-color: var(--channel-whatsapp-hover)');
+        expect(cssSrc.toLowerCase()).not.toContain('color: #ffffff');
     });
 
     it('declares a focus-visible style with outline (a11y)', () => {

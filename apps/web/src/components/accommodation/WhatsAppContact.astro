@@ -135,18 +135,25 @@ const upsellCta = t('accommodations.detail.whatsapp.upsellCta', 'Ver planes');
         gap: 10px;
         padding: 12px 24px;
         border-radius: var(--radius-button, 8px);
-        background-color: #25d366;
-        color: white;
+        /* HOS-314: the WhatsApp brand green with DARK ink on top (9.12:1).
+           White on this green is 1.98:1 — below WCAG AA for both normal (4.5)
+           and large (3) text. The fill keeps the brand color; only the ink was
+           inverted. Both values are theme-invariant on purpose — see
+           packages/design-tokens/src/tokens/colors.ts. */
+        background-color: var(--channel-whatsapp);
+        color: var(--channel-whatsapp-foreground);
         font-family: var(--font-sans);
         font-weight: 600;
         font-size: 1rem;
         text-decoration: none;
-        transition: opacity 200ms ease-out;
+        transition: background-color 200ms ease-out;
         width: fit-content;
     }
 
+    /* An explicit darker green, not `opacity`: fading the button dims the ink
+       and the fill together, so it cannot preserve the contrast ratio. */
     .acc-whatsapp__btn:hover {
-        opacity: 0.85;
+        background-color: var(--channel-whatsapp-hover);
     }
 
     .acc-whatsapp__btn:focus-visible {
@@ -162,7 +169,10 @@ const upsellCta = t('accommodations.detail.whatsapp.upsellCta', 'Ver planes');
         font-family: var(--font-sans);
         font-weight: 600;
         font-size: 1rem;
-        color: #128c7e;
+        /* HOS-314: WhatsApp's own teal (#128c7e) reads 3.57:1 on
+           --surface-warm in light and 3.82:1 in dark — it fails AA in BOTH.
+           This token is the theme-aware step, since --surface-warm inverts. */
+        color: var(--channel-whatsapp-text);
         user-select: text;
     }
 

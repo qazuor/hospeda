@@ -88,8 +88,22 @@ describe('WhatsAppContact.astro', () => {
     });
 
     describe('CSS', () => {
-        it('uses #25d366 green for the WhatsApp brand color', () => {
-            expect(src).toContain('#25d366');
+        // Until HOS-314 this suite asserted `toContain('#25d366')`, which meant
+        // CI was certifying the hard-coded brand hex — and with it the 1.98:1
+        // white-on-green pairing — rather than catching it.
+        it('takes the WhatsApp brand colors from the channel tokens (HOS-314)', () => {
+            expect(src).toContain('background-color: var(--channel-whatsapp)');
+            expect(src).toContain('color: var(--channel-whatsapp-foreground)');
+            expect(src).toContain('background-color: var(--channel-whatsapp-hover)');
+            expect(src).toContain('color: var(--channel-whatsapp-text)');
+        });
+
+        it('does not fade the CTA on hover (opacity dims ink and fill alike)', () => {
+            const buttonRule = src.slice(
+                src.indexOf('.acc-whatsapp__btn:hover'),
+                src.indexOf('.acc-whatsapp__number')
+            );
+            expect(buttonRule).not.toContain('opacity');
         });
 
         it('does not use Tailwind utility classes (web is vanilla CSS)', () => {

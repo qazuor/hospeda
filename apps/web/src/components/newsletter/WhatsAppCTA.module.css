@@ -1,9 +1,11 @@
 /* WhatsAppCTA.module.css
  *
  * Warm-surface invite block for the WhatsApp broadcast channel.
- * All themed values come from CSS custom properties defined in
- * apps/web/src/styles/global.css. WhatsApp brand green is hard-coded
- * (no system token for it).
+ * All values come from CSS custom properties — the themed ones from
+ * apps/web/src/styles/global.css, and the WhatsApp brand colors from the
+ * `--channel-whatsapp*` tokens introduced in HOS-314 (previously a hard-coded
+ * `#25d366` duplicated across three components, with `#ffffff` on top of it at
+ * 1.98:1).
  */
 
 .wrapper {
@@ -26,8 +28,8 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background-color: #25d366;
-    color: #ffffff;
+    background-color: var(--channel-whatsapp);
+    color: var(--channel-whatsapp-foreground);
 }
 
 .body {
@@ -61,8 +63,8 @@
     justify-content: center;
     padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-md);
-    background-color: #25d366;
-    color: #ffffff;
+    background-color: var(--channel-whatsapp);
+    color: var(--channel-whatsapp-foreground);
     font-size: var(--text-body-sm);
     font-weight: 600;
     text-decoration: none;
@@ -72,7 +74,7 @@
 
 .cta:hover,
 .cta:focus-visible {
-    background-color: #1ebe5d;
+    background-color: var(--channel-whatsapp-hover);
 }
 
 .cta:focus-visible {
