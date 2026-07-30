@@ -32,19 +32,28 @@
  *      cannot see it, and `-webkit-text-fill-color` beats `color` outright.
  *
  * Policing that correctly means resolving the cascade, which is a CSS engine's
- * job and not a regex's. So the pairing invariant now lives where it can be
- * checked without cascade reasoning at all — in each component's own test, as a
- * whole-file rule: no `color` in those three files may be anything but a
- * `var()`. That is cascade-proof (position stops mattering) and covers every
- * spelling of white at once. See:
+ * job and not a regex's. So the ink invariant was restated as a WHOLE-FILE
+ * question, which needs no cascade reasoning: every ink in an owning file must
+ * resolve to a token on `APPROVED_INK_TOKENS`. Position stops mattering, so
+ * duplicates, `@media` and descendants fall out together — and because the rule
+ * is "nothing but approved tokens" rather than "no white", so does every spelling
+ * of white, plus the `var(--x, white)` fallback and the local-custom-property hop
+ * that defeated the "must be a `var()`" version of it.
+ *
+ * That predicate lives in `./ink-literals.ts` with its own 52-case unit test
+ * (`./ink-literals.test.ts`), because its consumers only ever assert an EMPTY
+ * result and a `return []` satisfied all of them. It is applied BOTH here, over
+ * `OWNING_FILES`, and in each component's own test:
  *   - `test/components/accommodation/WhatsAppContact.test.ts`
  *   - `test/components/experience/ExperienceContactCTA.test.ts`
  *   - `test/components/newsletter/WhatsAppCTA.test.ts`
- * and `packages/design-tokens/src/tokens/channel-contrast.test.ts` for the ratios.
+ * Applying it here is what stops a fourth surface from being admitted with a
+ * two-line data edit and zero ink coverage. Ratios live in
+ * `packages/design-tokens/src/tokens/channel-contrast.test.ts`.
  *
- * WHAT REMAINS HERE — the two rules that need no cascade reasoning:
- *   1. LITERALS — no WhatsApp color spelled out anywhere in `apps/web/src`, in
- *      any hex or `rgb()`/`rgba()` form, covering both the hexes the brand
+ * WHAT ELSE THIS FILE ENFORCES, both cascade-free:
+ *   1. LITERALS — no WhatsApp color spelled out anywhere in `apps/web/src`, as a
+ *      hex, `rgb()`/`rgba()` or `oklch()`, covering both the hexes the brand
  *      publishes and the ones the OKLCH tokens actually render to (they differ by
  *      one 8-bit step, and the rendered one is what a developer copies out of
  *      DevTools). This is the exact regression that motivated the issue.
@@ -52,11 +61,14 @@
  *      they may never DECLARE them (a declaration in app CSS outranks `:root` and
  *      can retheme the brand ink without touching `@repo/design-tokens`).
  *
- * STILL NOT SEEN, stated plainly: `hsl()`/`color()`/named-color spellings of the
- * brand green; a WhatsApp surface painted with a non-WhatsApp green
- * (`var(--success)`); anything outside `apps/web/src` (no admin surface renders a
- * WhatsApp CTA); and non-CSS-ish extensions (`.js`, `.md`, `public/`), none of
- * which carry a color declaration in this app today.
+ * STILL NOT SEEN, stated plainly: `hsl()`/`color()` spellings of the brand green
+ * as a FILL (the ink side covers them); a WhatsApp surface painted with a
+ * non-WhatsApp green (`var(--success)`); a cross-file `!important` ink override
+ * from outside the three components (Astro's scoping attribute out-specifies a
+ * bare class selector, so only `!important` reaches, and none exists today); ink
+ * set from JavaScript at runtime; anything outside `apps/web/src` (no admin
+ * surface renders a WhatsApp CTA); and non-CSS-ish extensions (`.js`, `.md`,
+ * `public/`), none of which carry a color declaration in this app today.
  *
  * @module test/static-guards/whatsapp-channel-tokens
  */
