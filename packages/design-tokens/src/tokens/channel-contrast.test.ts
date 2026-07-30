@@ -222,15 +222,52 @@ describe('HOS-314 — WhatsApp channel tokens clear WCAG AA', () => {
         // a guard; this was the last pairing it asserted only in prose.
         const NON_TEXT_MIN = 3;
 
+        // Two of the three surfaces ring with --brand-primary; the newsletter CTA
+        // rings with --ring. They hold identical values in both themes today, so
+        // measuring only one would be right by coincidence and would stop
+        // covering that surface the moment they diverge.
         it.each([
-            ['light', webLight],
-            ['dark', webDarkEffective]
-        ] as const)('the ring clears %s against --surface-warm', (_label, theme) => {
+            ['light', webLight, 'brand-primary'],
+            ['light', webLight, 'ring'],
+            ['dark', webDarkEffective, 'brand-primary'],
+            ['dark', webDarkEffective, 'ring']
+        ] as const)('%s: --%s clears 3:1 against --surface-warm', (_label, theme, token) => {
             const ratio = contrastRatio(
-                oklchToken(theme, 'brand-primary'),
+                oklchToken(theme, token),
                 oklchToken(theme, 'surface-warm')
             );
             expect(ratio).toBeGreaterThanOrEqual(NON_TEXT_MIN);
+        });
+    });
+
+    describe('the documented ratios are reproducible from here', () => {
+        // The reason `toSrgb` quantizes to 8 bits. Without these pins the
+        // quantization has no regression coverage at all: reverting it to raw
+        // floats keeps every threshold above satisfied (9.10 >= 7, 7.38 >= 4.5,
+        // 5.42 >= 4.5, 7.44 >= 4.5, 3.09 >= 3) while silently invalidating every
+        // number written next to the tokens. These are the numbers a reviewer
+        // reads in `colors.ts`, `web-dark.ts` and the component comments.
+        it.each([
+            [
+                'ink on the brand fill',
+                webLight,
+                'channel-whatsapp-foreground',
+                'channel-whatsapp',
+                9.12
+            ],
+            [
+                'ink on the hover fill',
+                webLight,
+                'channel-whatsapp-foreground',
+                'channel-whatsapp-hover',
+                7.39
+            ],
+            ['number text, light', webLight, 'channel-whatsapp-text', 'surface-warm', 5.42],
+            ['number text, dark', webDarkEffective, 'channel-whatsapp-text', 'surface-warm', 7.49],
+            ['focus ring, light', webLight, 'brand-primary', 'surface-warm', 3.08],
+            ['focus ring, dark', webDarkEffective, 'brand-primary', 'surface-warm', 5.4]
+        ] as const)('%s measures exactly as documented', (_label, theme, a, b, expected) => {
+            expect(contrastRatio(oklchToken(theme, a), oklchToken(theme, b))).toBe(expected);
         });
     });
 

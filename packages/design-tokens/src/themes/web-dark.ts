@@ -61,7 +61,7 @@ export const webDark: Theme = {
     // surface but only 2.52:1 once --surface-warm flips to navy, so it is
     // lifted here to 7.49:1.
     //
-    // The other three --channel-whatsapp* tokens are intentionally ABSENT from
+    // The other four --channel-whatsapp* tokens are intentionally ABSENT from
     // this file. They paint the brand green fill and the ink on top of it, both
     // theme-invariant; overriding the foreground with dark mode's near-white
     // --core-foreground would take the button DOWN to 1.56:1. This is the same

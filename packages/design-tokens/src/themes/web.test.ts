@@ -41,7 +41,7 @@ describe('webLight — coverage', () => {
         // z-popover, surface-overlay, overlay-ring, shadow-overlay, and
         // popover-scrim → 220, then z-popover-in-overlay (SortPopover-in-drawer
         // z fix) → 221, then HOS-182's 6 poi-category bucket tokens + their 6
-        // `-on` glyph companions → 233, then HOS-314's 4 --channel-whatsapp*
+        // `-on` glyph companions → 233, then HOS-314's 5 --channel-whatsapp*
         // tokens (fill, frozen foreground, logotype ink, hover, AA text) → 238.
         // Adding or removing entries should be intentional.
         expect(Object.keys(webLight)).toHaveLength(238);
@@ -170,7 +170,7 @@ describe('webDark — coverage', () => {
         // toast/popover contrast fix added surface-overlay, overlay-ring,
         // shadow-overlay, and popover-scrim (z-popover is NOT dark-overridden,
         // it inherits from light like the rest of the z-index ladder) → 69.
-        // HOS-314 added channel-whatsapp-text → 70; the other three
+        // HOS-314 added channel-whatsapp-text → 70; the other four
         // --channel-whatsapp* tokens are deliberately light-only, since the
         // brand fill and its ink must not change with the theme (see
         // tokens/channel-contrast.test.ts).
