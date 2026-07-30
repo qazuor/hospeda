@@ -22,8 +22,9 @@ const parseSessionUserMock = vi.fn().mockResolvedValue({
     id: 'u1',
     name: 'Test User',
     email: 'test@example.com',
-    role: 'USER',
-    image: null
+    roles: ['USER'],
+    image: null,
+    mustChangePassword: false
 });
 
 // Mock only `parseSessionUser` from middleware-helpers — every other export

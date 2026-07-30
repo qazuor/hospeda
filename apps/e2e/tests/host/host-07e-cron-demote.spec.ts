@@ -32,7 +32,12 @@
 
 import { expect, test } from '@playwright/test';
 import { createAccommodation, createUser, forceVerifyEmail } from '../../fixtures/api-helpers.ts';
-import { backdateAccommodation, execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import {
+    backdateAccommodation,
+    execSQL,
+    getDbPool,
+    getUserRoles
+} from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
@@ -98,10 +103,12 @@ test.describe('HOST-07e: cron demotes HOST → USER @p0 @host @onboarding @cron'
         );
         expect(accAfter[0]?.lifecycle_state).toBe('ARCHIVED');
 
-        const userAfter = await execSQL<{ role: string }>('SELECT role FROM users WHERE id = $1', [
-            host.id
-        ]);
-        expect(userAfter[0]?.role, 'role must be demoted to USER').toBe('USER');
+        // HOS-296: the cron revokes the HOST hat instead of overwriting a
+        // scalar, so "demoted" means HOST is gone and the baseline USER hat
+        // survives — an account is never left holding zero roles.
+        const rolesAfter = await getUserRoles(host.id);
+        expect(rolesAfter, 'HOST hat must be revoked on demotion').not.toContain('HOST');
+        expect(rolesAfter, 'baseline USER hat must survive the demotion').toContain('USER');
     });
 
     test('B: stale + fresh drafts → only stale archived, role stays HOST', async () => {
@@ -146,10 +153,8 @@ test.describe('HOST-07e: cron demotes HOST → USER @p0 @host @onboarding @cron'
         );
         expect(freshAfter[0]?.lifecycle_state).toBe('DRAFT');
 
-        const userAfter = await execSQL<{ role: string }>('SELECT role FROM users WHERE id = $1', [
-            host.id
-        ]);
-        expect(userAfter[0]?.role, 'role must remain HOST while a non-archived draft exists').toBe(
+        const rolesAfter = await getUserRoles(host.id);
+        expect(rolesAfter, 'HOST hat must remain while a non-archived draft exists').toContain(
             'HOST'
         );
     });

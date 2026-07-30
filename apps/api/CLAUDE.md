@@ -181,6 +181,7 @@ Key middlewares:
 
 ```ts
 import { getActorFromContext } from '../middlewares/actor';
+import { PermissionEnum } from '@repo/schemas';
 
 export const handler = async (c: Context) => {
   const actor = getActorFromContext(c);
@@ -190,28 +191,26 @@ export const handler = async (c: Context) => {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
-  // Check role
-  if (actor.role !== 'admin') {
-    return c.json({ error: 'Forbidden' }, 403);
-  }
-
-  // Check permissions
-  if (!actor.permissions.includes('accommodation:write')) {
+  // Check permissions — NEVER check roles directly, even for admin-only
+  // routes. `actor.roles` (HOS-296) holds every role the actor wears at
+  // once (a user can be HOST and COMMERCE_OWNER simultaneously); routing
+  // logic must always ask "does the actor hold permission X".
+  if (!actor.permissions.includes(PermissionEnum.ACCOMMODATION_UPDATE_ANY)) {
     return c.json({ error: 'Insufficient permissions' }, 403);
   }
 
   // Access user data
-  console.log(`User ${actor.userId} from ${actor.email}`);
+  console.log(`User ${actor.id} from ${actor.email}`);
 };
 ```
 
 ### Actor Properties
 
 - `isAuthenticated: boolean`
-- `userId: string`
+- `id: string`
 - `email: string`
-- `role: string`
-- `permissions: string[]`
+- `roles: readonly RoleEnum[]` — every role the actor holds (HOS-296); there is no single "primary role"
+- `permissions: readonly PermissionEnum[]`
 
 ## Response Standardization
 

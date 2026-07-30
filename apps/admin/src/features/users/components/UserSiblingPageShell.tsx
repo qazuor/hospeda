@@ -36,7 +36,8 @@ export function UserSiblingPageShell({ userId, children }: UserSiblingPageShellP
     const { data: user, isLoading, error } = useUserQuery(userId);
 
     const headerProps = useUserHeaderProps({
-        entity: user as Record<string, unknown> | undefined
+        entity: user as Record<string, unknown> | undefined,
+        userId
     });
 
     if (isLoading) {

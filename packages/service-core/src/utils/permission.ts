@@ -46,8 +46,13 @@ export interface EntityPermissionInput {
 export interface EntityPermissionActor {
     /** The unique identifier of the actor. */
     id: string;
-    /** The role of the actor. Kept for compatibility; permission checks use only `permissions`. */
-    role: string;
+    /**
+     * Every role the actor holds. Kept for shape-compatibility with `Actor`;
+     * permission checks use ONLY `permissions` (HOS-296 turned the former
+     * `role: string` scalar into this set — nothing in this module branches on
+     * its contents, and nothing should start to).
+     */
+    roles: readonly string[];
     /** A list of specific permissions assigned to the actor. */
     permissions: readonly PermissionEnum[];
 }
@@ -91,7 +96,7 @@ export const hasPermission = (actor: Actor, permission: PermissionEnum): boolean
 
 /**
  * Provides a generic permission evaluation logic for entities based on their state,
- * the actor's role, and the action being performed.
+ * the actor's permissions, and the action being performed.
  * This function implements a complex set of rules to determine access rights.
  * @param actor - The user performing the action.
  * @param entity - The entity being acted upon.
@@ -109,7 +114,7 @@ export function getEntityPermission(
     if (
         !actor ||
         typeof actor.id === 'undefined' ||
-        typeof actor.role === 'undefined' ||
+        !Array.isArray(actor.roles) ||
         !Array.isArray(actor.permissions)
     ) {
         return { allowed: false, reason: EntityPermissionReasonEnum.DENIED };

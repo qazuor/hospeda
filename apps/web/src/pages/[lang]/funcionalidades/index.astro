@@ -47,9 +47,18 @@ import {
 	VIAJEROS_LIST,
 	VIAJEROS_TABLE_ROWS
 } from '@/lib/features-content';
+import { OWNER_TRIAL_DAYS } from '@repo/billing';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+
+/**
+ * Trial length for the hero stat, the hosts banner and the closing CTA. Read
+ * from the billing catalog instead of typed into the copy, so the number cannot
+ * disagree with the plans (HOS-331). The banner used to also promise "sin poner
+ * la tarjeta", which HOS-171 made false — the trial is card-first.
+ */
+const trialParams = { trialDays: OWNER_TRIAL_DAYS } as const;
 
 const siteBase = getSiteUrl();
 const canonicalUrl = new URL(Astro.url.pathname, siteBase).href;
@@ -157,7 +166,7 @@ const subnavSectionIds = SUBNAV_LINKS.map((link) => link.id);
 				<div class="fx-hero__stats">
 					{HERO_STATS.map((stat) => (
 						<span class:list={['fx-pill', `fx-pill--${stat.variant}`]}>
-							<b>{t(stat.valueKey)}</b> {t(stat.labelKey)}
+							<b>{t(stat.valueKey, undefined, trialParams)}</b> {t(stat.labelKey)}
 						</span>
 					))}
 				</div>
@@ -248,7 +257,7 @@ const subnavSectionIds = SUBNAV_LINKS.map((link) => link.id);
 						<BannerIcon size={28} weight="regular" />
 					</span>
 					<div class="fx-banner__tx">
-						<h3>{t('features.anfitriones.banner.title')}</h3>
+						<h3>{t('features.anfitriones.banner.title', undefined, trialParams)}</h3>
 						<p>{t('features.anfitriones.banner.description')}</p>
 					</div>
 				</div>
@@ -409,7 +418,7 @@ const subnavSectionIds = SUBNAV_LINKS.map((link) => link.id);
 					<span class="fx-cta__sun" aria-hidden="true"></span>
 					<span class="fx-hand fx-cta__hand">{t('features.cta.tagline')}</span>
 					<h2 class="fx-cta__title">{t('features.cta.title')}</h2>
-					<p class="fx-cta__desc">{t('features.cta.description')}</p>
+					<p class="fx-cta__desc">{t('features.cta.description', undefined, trialParams)}</p>
 					<GradientButton
 						href={buildUrl({ locale, path: 'publicar' })}
 						label={t('features.cta.button')}

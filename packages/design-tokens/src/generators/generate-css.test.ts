@@ -99,10 +99,10 @@ describe('buildCSS — :root web-light declarations', () => {
         }
     });
 
-    it('total :root declarations = 150 palettes + 233 webLight = 383', () => {
+    it('total :root declarations = 150 palettes + 238 webLight = 388', () => {
         const total = countDeclarations(rootBlock);
         expect(total).toBe(150 + Object.keys(webLight).length);
-        expect(total).toBe(383); // 150 palettes + 233 webLight
+        expect(total).toBe(388); // 150 palettes + 238 webLight
     });
 
     it('emits --core-background byte-for-byte from the seed value', () => {
@@ -162,12 +162,12 @@ describe('buildCSS — viewport media overrides', () => {
 describe('buildCSS — web dark theme block', () => {
     const block = blockOf(CSS, '[data-theme="dark"]:not([data-app="admin"])');
 
-    it(`emits all ${Object.keys(webDark).length} (=69) web dark overrides`, () => {
+    it(`emits all ${Object.keys(webDark).length} (=70) web dark overrides`, () => {
         for (const key of Object.keys(webDark)) {
             expect(block).toContain(`--${key}:`);
         }
         expect(countDeclarations(block)).toBe(Object.keys(webDark).length);
-        expect(countDeclarations(block)).toBe(69);
+        expect(countDeclarations(block)).toBe(70);
     });
 
     it('flips primary-hover direction (calc(l + 0.07) in dark)', () => {

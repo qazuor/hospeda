@@ -268,7 +268,7 @@ import {
     <TableRow>
       <TableHead>Name</TableHead>
       <TableHead>Email</TableHead>
-      <TableHead>Role</TableHead>
+      <TableHead>Roles</TableHead>
     </TableRow>
   </TableHeader>
   <TableBody>
@@ -276,7 +276,8 @@ import {
       <TableRow key={user.id}>
         <TableCell>{user.name}</TableCell>
         <TableCell>{user.email}</TableCell>
-        <TableCell>{user.role}</TableCell>
+        {/* A user can hold several roles at once (HOS-296) — render the set, not a scalar */}
+        <TableCell>{user.roles.join(', ')}</TableCell>
       </TableRow>
     ))}
   </TableBody>

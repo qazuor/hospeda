@@ -12,6 +12,7 @@
  */
 
 import { expo } from '@better-auth/expo';
+import { AnalyticsEvents } from '@repo/analytics';
 import {
     accounts,
     and,
@@ -21,6 +22,7 @@ import {
     getDb,
     isNull,
     sessions,
+    userRole,
     users,
     verifications
 } from '@repo/db';
@@ -41,7 +43,9 @@ import { BillingCustomerSyncService } from '../services/billing-customer-sync';
 import { env } from '../utils/env';
 import { resolveCookieDomain } from './auth-cookie-domain';
 import { captureSignupCompleted } from './auth-signup-analytics';
+import { grantBaselineUserRole } from './auth-signup-baseline-role';
 import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
+import { captureServerAnalyticsEvent } from './posthog';
 
 const logger = createLogger('auth');
 
@@ -114,6 +118,23 @@ const COOKIE_CACHE_MAX_AGE = 5 * 60;
  * desktop, work computer) while bounding the attack surface.
  */
 const MAX_SESSIONS_PER_USER = 10;
+
+function resolveAnalyticsUserType(
+    roles: readonly (string | null | undefined)[]
+): 'staff' | 'owner' | 'tourist' {
+    if (
+        roles.includes(RoleEnum.ADMIN) ||
+        roles.includes(RoleEnum.CLIENT_MANAGER) ||
+        roles.includes(RoleEnum.SUPER_ADMIN) ||
+        roles.includes(RoleEnum.EDITOR)
+    ) {
+        return 'staff';
+    }
+    if (roles.includes(RoleEnum.HOST) || roles.includes(RoleEnum.COMMERCE_OWNER)) {
+        return 'owner';
+    }
+    return 'tourist';
+}
 
 /** Default user settings for new signups */
 const DEFAULT_USER_SETTINGS = {
@@ -207,12 +228,25 @@ function buildAuth() {
             fields: {
                 name: 'displayName'
             },
+            /**
+             * HOS-296 — there is deliberately NO `role` field here any more.
+             *
+             * `additionalFields` is a COLUMN MAPPING: it declares extra columns
+             * of `users` for Better Auth to expose on the session user object.
+             * `users.role` was dropped, so there is nothing left to map, and a
+             * related table (`user_role`) cannot be flattened through this
+             * mechanism at all.
+             *
+             * The role set reaches consumers the same way billing entitlements
+             * already do — resolved per request in `actorMiddleware` and served
+             * by `GET /api/v1/public/auth/me` (OQ-4, actor-only). Do NOT try to
+             * put it back here, and do NOT reach for Better Auth's
+             * `customSession` plugin: that was evaluated and rejected in §7.1
+             * (it interacts badly with the already-enabled `session.cookieCache`
+             * below, which would serve stale roles after a grant).
+             */
             additionalFields: {
                 slug: {
-                    type: 'string',
-                    required: false
-                },
-                role: {
                     type: 'string',
                     required: false
                 },
@@ -464,6 +498,52 @@ function buildAuth() {
         },
 
         plugins: [
+            /**
+             * Better Auth's admin plugin — kept, but NO LONGER the source of
+             * truth for roles (HOS-296).
+             *
+             * **What broke and why.** The plugin declares a `role` field on the
+             * `user` model (`better-auth/plugins/admin/schema`) and its `init()`
+             * registers a `databaseHooks.user.create.before` that injects
+             * `{ role: defaultRole }` into EVERY user insert. The Drizzle
+             * adapter's `create()` runs `checkMissingFields`, which throws
+             * `BetterAuthError: The field "role" does not exist in the "user"
+             * Drizzle schema` for any key with no matching column. With
+             * `users.role` dropped, that made **every signup fail** — verified
+             * against the installed better-auth 1.6.23 sources, not inferred.
+             *
+             * **The fix** is in `databaseHooks.user.create.before` below, which
+             * strips `role` back out. Plugin hooks are registered BEFORE the
+             * user's own (`runPluginInit` pushes `source: 'user'` last) and
+             * `createWithHooks` merges each result in order, so ours wins.
+             * `transformInput` then skips the now-`undefined` value because the
+             * field carries no `defaultValue`, and nothing reaches the adapter.
+             *
+             * **What this costs, deliberately.** `session.user.role` is now
+             * always `undefined`, so the plugin's own `hasPermission()` falls
+             * back to `defaultRole` → `noAdminRole` and every
+             * `/api/auth/admin/*` endpoint returns 403. In practice Hospeda only
+             * uses ONE of them — `impersonateUser`, from the admin panel's
+             * ImpersonateButton — so impersonation stops working until it is
+             * re-homed on a Hospeda-owned, `PermissionEnum`-gated route. That is
+             * a follow-up, and it FAILS CLOSED, which is the right direction for
+             * an unresolved gate.
+             *
+             * **Why not remove the plugin instead.** It also owns the ban gate:
+             * its `databaseHooks.session.create.before` rejects a session for a
+             * banned user (`users.banned`/`ban_expires`, both real columns that
+             * survive this change). Dropping the plugin would silently disable
+             * that security control — strictly worse than losing impersonation.
+             *
+             * **Why not keep a role column for it.** That is the scalar AC-7
+             * deletes, and it would immediately become a second source of truth
+             * for "is this user an admin", drifting from `user_role` — the exact
+             * class of bug HOS-296 exists to remove.
+             *
+             * The `roles` map below is retained because the plugin validates
+             * `adminRoles` against its keys at construction time and throws
+             * otherwise.
+             */
             admin({
                 // Default role for new sign-ups. Tourist (USER) is the safer
                 // assumption because the public web is where the vast majority
@@ -472,11 +552,14 @@ function buildAuth() {
                 // Hosts who sign up from the admin form do NOT auto-promote
                 // here — they go through the host-onboarding funnel on first
                 // publish, which atomically flips them to HOST + grants admin
-                // panel access. Investigating an Origin-based discriminator
-                // turned out to be more invasive than expected (Better Auth's
-                // databaseHooks do not fire under this setup; the input
-                // validator rejects `role` on the sign-up body), so we keep
-                // the default explicit and document the trade-off here.
+                // panel access.
+                //
+                // HOS-296: this value is now inert as far as persistence goes —
+                // the injected `role` is stripped before the insert, and the
+                // real baseline hat is granted by `grantRole(USER)` in the
+                // `user.create.after` hook. It still drives the plugin's own
+                // permission fallback, which is why it stays the least
+                // privileged value.
                 defaultRole: RoleEnum.USER,
                 adminRoles: [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN],
                 roles: {
@@ -590,6 +673,36 @@ function buildAuth() {
 
                         // Allow session creation to proceed
                         return true;
+                    },
+                    after: async (session) => {
+                        try {
+                            const db = getDb();
+                            const rows = await db
+                                .select({ role: userRole.role })
+                                .from(userRole)
+                                .where(eq(userRole.userId, session.userId));
+
+                            const roles = rows.map((row) => row.role);
+                            const effectiveRoles = roles.length > 0 ? roles : [RoleEnum.USER];
+
+                            captureServerAnalyticsEvent({
+                                distinctId: session.userId,
+                                name: AnalyticsEvents.signInCompleted,
+                                properties: {
+                                    role:
+                                        effectiveRoles.length === 1 ? effectiveRoles[0] : undefined,
+                                    user_type: resolveAnalyticsUserType(effectiveRoles)
+                                }
+                            });
+                        } catch (error) {
+                            logger.warn(
+                                {
+                                    userId: session.userId,
+                                    error: error instanceof Error ? error.message : String(error)
+                                },
+                                'Failed to capture sign_in_completed (non-blocking)'
+                            );
+                        }
                     }
                 }
             },
@@ -603,17 +716,30 @@ function buildAuth() {
                             .replace(/^-+|-+$/g, '');
                         const slug = `${baseName}-${crypto.randomUUID().slice(0, 8)}`;
 
+                        // HOS-296: no `role` here any more. This hook mutates
+                        // the PRE-insert payload, so it has no `user.id` yet and
+                        // cannot write a `user_role` row even if it wanted to —
+                        // and `users.role`, the column it used to set, is gone.
+                        // The baseline USER hat is granted from the `after` hook
+                        // below, which does have the real id.
+                        //
+                        // The explicit `role: undefined` is LOAD-BEARING, not
+                        // tidiness: Better Auth's admin plugin injects
+                        // `{ role: defaultRole }` into every user insert from its
+                        // own `create.before` hook, and the Drizzle adapter throws
+                        // `BetterAuthError: The field "role" does not exist in the
+                        // "user" Drizzle schema` on any key without a column —
+                        // i.e. EVERY signup 500s without this line. User hooks run
+                        // after plugin hooks and their result is spread on top, so
+                        // setting it to `undefined` here wins; `transformInput`
+                        // then drops it because the field declares no
+                        // `defaultValue`. See the `admin()` plugin block above for
+                        // the full rationale and the cost accepted.
                         return {
                             data: {
                                 ...user,
+                                role: undefined,
                                 slug,
-                                // Sign up as USER. Self-serve users are promoted
-                                // to HOST when they create or resume the host
-                                // onboarding draft, while the owner trial still
-                                // starts on first publish. Creating users as HOST
-                                // here would skip the intended onboarding funnel
-                                // state transition.
-                                role: RoleEnum.USER,
                                 settings: DEFAULT_USER_SETTINGS,
                                 visibility: 'PUBLIC',
                                 lifecycleState: 'ACTIVE'
@@ -625,6 +751,33 @@ function buildAuth() {
                             { userId: user.id, email: user.email },
                             'New user created via Better Auth'
                         );
+
+                        // HOS-296: grant the baseline USER hat. This is the
+                        // first thing the hook does and the ONE step here that
+                        // is deliberately NOT swallowed, unlike every
+                        // non-blocking side effect below it.
+                        //
+                        // An account with zero hats resolves to zero permissions
+                        // — it can sign in and then do nothing, with no error
+                        // anywhere but a log line. It also makes `revokeRole`'s
+                        // "never strand an account with zero roles" guard (AC-5)
+                        // vacuous, because the invariant it protects was never
+                        // established. A failed signup the user can see beats a
+                        // successful signup that produced an unusable account.
+                        //
+                        // The grant COMPENSATES on failure by deleting the
+                        // just-committed `users` row — this hook runs after the
+                        // insert, so throwing alone would leave the email taken
+                        // on an unusable account. See
+                        // `lib/auth-signup-baseline-role.ts`, which owns that
+                        // logic (and its tests) because hooks declared inside
+                        // this `betterAuth()` call cannot be imported.
+                        //
+                        // Self-serve users are granted HOST later, when they
+                        // create or resume the host-onboarding draft; the owner
+                        // trial still starts on first publish. Granting HOST
+                        // here would skip the onboarding funnel state transition.
+                        await grantBaselineUserRole({ userId: user.id, email: user.email });
 
                         // Product analytics: signup_completed (PostHog). Fired
                         // server-side so it covers BOTH email and OAuth signups

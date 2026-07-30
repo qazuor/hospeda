@@ -8,8 +8,8 @@ import {
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
+import { createActor } from '../../factories/actorFactory';
 import { createMockEvent } from '../../factories/eventFactory';
-import { createUser } from '../../factories/userFactory';
 import {
     expectInternalError,
     expectSuccess,
@@ -45,8 +45,8 @@ describe('EventService.getUpcoming', () => {
     let service: EventService;
     let modelMock: EventModel;
     let loggerMock: ServiceLogger;
-    const actorWithPerm = createUser({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
-    const actorNoPerm = createUser();
+    const actorWithPerm = createActor({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
+    const actorNoPerm = createActor();
     const fromDate = new Date('2024-06-01T00:00:00Z');
     const toDate = new Date('2024-06-30T23:59:59Z');
 

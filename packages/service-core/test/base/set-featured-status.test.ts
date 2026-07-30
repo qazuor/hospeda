@@ -102,7 +102,7 @@ class NoFeaturedService extends BaseCrudService<
 
 const makeActor = (): Actor => ({
     id: 'actor-id-001',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.ACCOMMODATION_CREATE, PermissionEnum.ACCOMMODATION_UPDATE_ANY]
 });
 

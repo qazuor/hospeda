@@ -28,6 +28,15 @@ const ACCOMMODATION_WITH_RICH = {
     summary: 'A very nice lodge',
     description: 'Plain description text',
     richDescription: '## Premium\n\nThis must NOT appear in the public response.',
+    // SPEC-212 i18n sibling. It must be stripped TOGETHER with the plain field:
+    // the web transform resolves the visitor's locale from this object in
+    // PREFERENCE to `richDescription`, so leaving it here re-exposes the premium
+    // markdown even when the plain field was correctly removed.
+    richDescriptionI18n: {
+        es: '## Premium ES\n\nEsto NO debe aparecer en la respuesta publica.',
+        en: '## Premium EN\n\nThis must NOT appear in the public response.',
+        pt: '## Premium PT\n\nIsto NAO deve aparecer na resposta publica.'
+    },
     type: 'CABIN',
     isFeatured: false,
     averageRating: 4.5,
@@ -72,7 +81,7 @@ vi.mock('../../../../src/utils/actor', async (importOriginal) => {
         ...actual,
         getActorFromContext: vi.fn(() => ({
             id: '00000000-0000-4000-8000-000000000000',
-            role: 'GUEST',
+            roles: ['GUEST'],
             permissions: []
         }))
     };
@@ -85,6 +94,16 @@ vi.mock('../../../../src/utils/logger', () => ({
         warn: vi.fn(),
         error: vi.fn()
     }
+}));
+
+// HOS-341 wired the isVerified owner gate into this route. Without this mock the
+// suite would run the REAL batch resolver against the globally mocked `@repo/db`
+// and an uninitialized billing singleton. It buys hermeticity and cost, NOT a
+// different verdict: nothing here asserts on `isVerified` and the fixture does not
+// set it, so the gate short-circuits before it ever reads an entitlement. This
+// suite is about rich-description stripping; the gate has its own badge-gate suite.
+vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
+    resolveOwnerEntitlementsForOwnerIds: vi.fn().mockResolvedValue(new Map())
 }));
 
 vi.mock('../../../../src/utils/route-factory', () => ({
@@ -144,6 +163,7 @@ describe('publicGetDestinationAccommodationsRoute — SPEC-187 richDescription m
 
         for (const item of items) {
             expect(item).not.toHaveProperty('richDescription');
+            expect(item).not.toHaveProperty('richDescriptionI18n');
         }
     });
 
@@ -163,6 +183,7 @@ describe('publicGetDestinationAccommodationsRoute — SPEC-187 richDescription m
         expect(item).toHaveProperty('name');
         expect(item).toHaveProperty('description');
         expect(item).not.toHaveProperty('richDescription');
+        expect(item).not.toHaveProperty('richDescriptionI18n');
     });
 
     it('returns an empty array when the service returns no accommodations', async () => {

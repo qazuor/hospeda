@@ -49,7 +49,7 @@ class MockAccommodationModel {
 
 const actorWith = (permissions: PermissionEnum[], id = OWNER_ID): Actor => ({
     id,
-    role: RoleEnum.HOST,
+    roles: [RoleEnum.HOST],
     permissions
 });
 

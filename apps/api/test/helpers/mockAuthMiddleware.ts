@@ -32,7 +32,7 @@ export const mockAuthMiddleware = async (c: Context, next: Next) => {
             // Create mock actor
             const mockActor: Actor = {
                 id: mockActorId,
-                role: mockActorRole as RoleEnum,
+                roles: mockActorRole.split(',').map((value) => value.trim() as RoleEnum),
                 permissions
             };
 
@@ -40,7 +40,7 @@ export const mockAuthMiddleware = async (c: Context, next: Next) => {
             c.set('actor', mockActor);
 
             apiLogger.debug(
-                `Mock actor injected into context: ${mockActor.id} (${mockActor.role}, ${mockActor.permissions.length} permissions)`
+                `Mock actor injected into context: ${mockActor.id} (${mockActor.roles.join(',')}, ${mockActor.permissions.length} permissions)`
             );
         } catch (error) {
             apiLogger.error(`Failed to parse mock actor from headers: ${error}`);

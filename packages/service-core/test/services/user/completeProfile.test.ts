@@ -72,7 +72,7 @@ describe('UserService.completeProfile', () => {
     let userModelMock: UserModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     const userId = getMockId('user', 'user-1') as string;
-    const actor = createActor({ id: userId, role: RoleEnum.USER, permissions: [] });
+    const actor = createActor({ id: userId, roles: [RoleEnum.USER], permissions: [] });
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -277,7 +277,7 @@ describe('UserService.skipSetPassword', () => {
     let userModelMock: UserModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     const userId = getMockId('user', 'user-2') as string;
-    const actor = createActor({ id: userId, role: RoleEnum.USER, permissions: [] });
+    const actor = createActor({ id: userId, roles: [RoleEnum.USER], permissions: [] });
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -338,7 +338,7 @@ describe('UserService.markSetPasswordDone', () => {
     let userModelMock: UserModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     const userId = getMockId('user', 'user-3') as string;
-    const actor = createActor({ id: userId, role: RoleEnum.USER, permissions: [] });
+    const actor = createActor({ id: userId, roles: [RoleEnum.USER], permissions: [] });
 
     beforeEach(() => {
         vi.clearAllMocks();

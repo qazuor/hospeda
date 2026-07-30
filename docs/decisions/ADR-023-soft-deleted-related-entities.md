@@ -91,9 +91,15 @@ Adopt **Option D**, the per-service decision framework, with these rules:
    in `packages/service-core/docs/soft-deleted-relations-manifest.md`
    with its filter decision and rationale. Adding a new service or a new
    relation requires updating the manifest.
-4. **No database-level filter**: `transformRelationsForDrizzle` does not
-   inject `deletedAt` predicates. Filtering, when applied, happens at the
-   service layer where the per-service decision is documented.
+4. **No database-level filter (with one documented carve-out)**:
+   `transformRelationsForDrizzle` does not inject `deletedAt` predicates.
+   Filtering, when applied, normally happens at the service layer where the
+   per-service decision is documented. **HOS-288 carve-out**: a service may
+   instead avoid loading the relation unfiltered at all — resolving junction
+   ids and re-reading the rows through a model whose own default excludes
+   soft-deleted rows. `FeatureService` and `AmenityService` do this, and the
+   manifest marks them `no (model-layer instead)` rather than `filter <keys>`,
+   because there is no post-hoc strip to look for.
 5. **Frontend guidance**: when a service is configured NOT to filter (the
    default), the frontend MUST handle the possible `deletedAt` on relation
    data — typically by rendering a "Former …" label or graying out the

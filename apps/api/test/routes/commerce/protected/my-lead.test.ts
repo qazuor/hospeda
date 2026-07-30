@@ -54,7 +54,7 @@ const mockGetActorFromContext = vi.mocked(getActorFromContext);
 
 const OWNER_ACTOR: Actor = {
     id: 'owner-1',
-    role: 'HOST' as Actor['role'],
+    roles: ['HOST'] as unknown as Actor['roles'],
     permissions: []
 };
 

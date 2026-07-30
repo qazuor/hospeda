@@ -61,13 +61,13 @@ class MockAccommodationModel {
 
 const panelOnlyActor = {
     id: 'editor-1',
-    role: RoleEnum.EDITOR,
+    roles: [RoleEnum.EDITOR],
     permissions: [PermissionEnum.ACCESS_PANEL_ADMIN]
 };
 
 const noAccessActor = {
     id: 'user-1',
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: [PermissionEnum.ACCOMMODATION_VIEW_OWN]
 };
 

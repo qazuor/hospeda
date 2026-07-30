@@ -8,6 +8,7 @@
  * - NEVER auto-selects a destinationId, even on a single exact match.
  */
 
+import { DestinationSearchSchema } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 
 import { buildDestinationHint } from '../../../../src/services/accommodation-import/resolvers/destination.js';
@@ -22,7 +23,7 @@ import type { Actor } from '../../../../src/types/index.js';
 const fakeActor: Actor = {
     id: 'actor-uuid-0001',
     permissions: [],
-    role: 'HOST'
+    roles: ['HOST']
 } as unknown as Actor;
 
 /**
@@ -44,39 +45,6 @@ describe('buildDestinationHint', () => {
     // Happy path — multiple matches
     // -------------------------------------------------------------------------
     describe('when locality matches multiple destinations', () => {
-        it('should return all candidates with id and name, and set scrapedLocality', async () => {
-            // Arrange
-            const searchFn = vi.fn().mockResolvedValue({
-                data: {
-                    items: [
-                        { id: 'dest-uuid-0001', name: 'Concepción del Uruguay' },
-                        { id: 'dest-uuid-0002', name: 'Concepción' }
-                    ],
-                    total: 2
-                }
-            });
-            const destinationService = makeDestinationServiceMock(searchFn);
-
-            // Act
-            const result = await buildDestinationHint({
-                locality: 'Concepción del Uruguay',
-                destinationService,
-                actor: fakeActor
-            });
-
-            // Assert
-            expect(result.scrapedLocality).toBe('Concepción del Uruguay');
-            expect(result.candidates).toHaveLength(2);
-            expect(result.candidates[0]).toStrictEqual({
-                id: 'dest-uuid-0001',
-                name: 'Concepción del Uruguay'
-            });
-            expect(result.candidates[1]).toStrictEqual({
-                id: 'dest-uuid-0002',
-                name: 'Concepción'
-            });
-        });
-
         it('should forward q, searchScope:"name", pageSize, and page to the search call', async () => {
             // Arrange
             const searchFn = vi.fn().mockResolvedValue({
@@ -119,6 +87,7 @@ describe('buildDestinationHint', () => {
             });
 
             // Assert — no country key forwarded to the search
+            expect(searchFn).toHaveBeenCalledTimes(1);
             const passed = searchFn.mock.calls[0]?.[1] as Record<string, unknown>;
             expect(passed).not.toHaveProperty('country');
             expect(passed).toMatchObject({ q: 'Concepción del Uruguay', searchScope: 'name' });
@@ -166,7 +135,7 @@ describe('buildDestinationHint', () => {
             });
 
             // Assert
-            expect(result).toStrictEqual({ candidates: [] });
+            expect(result).toStrictEqual({ candidates: [], confident: false });
             expect(searchFn).not.toHaveBeenCalled();
         });
 
@@ -183,7 +152,7 @@ describe('buildDestinationHint', () => {
             });
 
             // Assert
-            expect(result).toStrictEqual({ candidates: [] });
+            expect(result).toStrictEqual({ candidates: [], confident: false });
             expect(searchFn).not.toHaveBeenCalled();
         });
 
@@ -200,7 +169,7 @@ describe('buildDestinationHint', () => {
             });
 
             // Assert
-            expect(result).toStrictEqual({ candidates: [] });
+            expect(result).toStrictEqual({ candidates: [], confident: false });
             expect(searchFn).not.toHaveBeenCalled();
         });
     });
@@ -224,7 +193,8 @@ describe('buildDestinationHint', () => {
             // Assert
             expect(result).toStrictEqual({
                 scrapedLocality: 'Colón',
-                candidates: []
+                candidates: [],
+                confident: false
             });
         });
     });
@@ -247,7 +217,8 @@ describe('buildDestinationHint', () => {
             // Assert
             expect(result).toStrictEqual({
                 scrapedLocality: 'Gualeguaychú',
-                candidates: []
+                candidates: [],
+                confident: false
             });
         });
     });
@@ -285,7 +256,251 @@ describe('buildDestinationHint', () => {
 
             // Verify the result has only the expected shape (candidates + optional scrapedLocality).
             const keys = Object.keys(result);
-            expect(keys.every((k) => k === 'candidates' || k === 'scrapedLocality')).toBe(true);
+            expect(
+                keys.every(
+                    (k) => k === 'candidates' || k === 'scrapedLocality' || k === 'confident'
+                )
+            ).toBe(true);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // CITY scoping + exact-name confidence (HOS-286)
+    // -------------------------------------------------------------------------
+    describe('CITY scoping and exact-name confidence (HOS-286)', () => {
+        it('should send search params that the real DestinationSearchSchema accepts', async () => {
+            // Arrange — every other test here mocks `search`, so a param the real
+            // schema rejects (e.g. a pageSize over the .max(100) cap) would pass
+            // them all and then silently resolve nothing in production.
+            const searchFn = vi.fn().mockResolvedValue({ data: { items: [], total: 0 } });
+            const destinationService = makeDestinationServiceMock(searchFn);
+
+            // Act
+            await buildDestinationHint({
+                locality: 'C. del Uruguay',
+                destinationService,
+                actor: fakeActor
+            });
+
+            // Assert — the guard matters: with zero calls the loop below runs
+            // no assertions at all, and this is the only place the REAL schema
+            // is exercised.
+            expect(searchFn).toHaveBeenCalledTimes(1);
+            for (const [, params] of searchFn.mock.calls) {
+                const parsed = DestinationSearchSchema.safeParse(params);
+                expect(
+                    parsed.success,
+                    `search params rejected by schema: ${JSON.stringify(params)}`
+                ).toBe(true);
+            }
+        });
+
+        it('should scope the search to CITY destinations', async () => {
+            // Arrange
+            const searchFn = vi.fn().mockResolvedValue({ data: { items: [], total: 0 } });
+            const destinationService = makeDestinationServiceMock(searchFn);
+
+            // Act
+            await buildDestinationHint({
+                locality: 'Uruguay',
+                destinationService,
+                actor: fakeActor
+            });
+
+            // Assert — a DEPARTMENT/PROVINCE row must never be offered as the
+            // destination of an accommodation; the host's own City picker
+            // queries CITY only and could never produce one.
+            expect(searchFn).toHaveBeenCalledWith(
+                fakeActor,
+                expect.objectContaining({ q: 'Uruguay', destinationType: 'CITY' })
+            );
+        });
+
+        it('should mark a verbatim name match as confident', async () => {
+            // Arrange
+            const searchFn = vi.fn().mockResolvedValue({
+                data: { items: [{ id: 'city-colon', name: 'Colón' }], total: 1 }
+            });
+            const destinationService = makeDestinationServiceMock(searchFn);
+
+            // Act
+            const result = await buildDestinationHint({
+                locality: 'Colón',
+                destinationService,
+                actor: fakeActor
+            });
+
+            // Assert
+            expect(result.candidates).toStrictEqual([{ id: 'city-colon', name: 'Colón' }]);
+            expect(result.confident).toBe(true);
+        });
+
+        it('should ignore accents and casing when comparing the name', async () => {
+            // Arrange
+            const searchFn = vi.fn().mockResolvedValue({
+                data: { items: [{ id: 'city-gchu', name: 'Gualeguaychú' }], total: 1 }
+            });
+            const destinationService = makeDestinationServiceMock(searchFn);
+
+            // Act
+            const result = await buildDestinationHint({
+                locality: 'GUALEGUAYCHU',
+                destinationService,
+                actor: fakeActor
+            });
+
+            // Assert
+            expect(result.confident).toBe(true);
+        });
+
+        it.each([
+            // `safeIlike` is `%term%`, a raw SUBSTRING match run in Postgres.
+            // Each of these returns exactly ONE CITY row — the shape the review
+            // UI pre-fills — and each names a different, real place.
+            ['Rosario', 'city-tala', 'Rosario del Tala'],
+            ['Concepción', 'city-cdu', 'Concepción del Uruguay'],
+            ['Salvador', 'city-sansalvador', 'San Salvador'],
+            ['Uruguay', 'city-cdu', 'Concepción del Uruguay'],
+            ['Liebig', 'city-liebig', 'Pueblo Liebig']
+        ])('should NOT mark the substring hit %s -> %s as confident', async (locality, id, name) => {
+            // Arrange
+            const searchFn = vi
+                .fn()
+                .mockResolvedValue({ data: { items: [{ id, name }], total: 1 } });
+            const destinationService = makeDestinationServiceMock(searchFn);
+
+            // Act
+            const result = await buildDestinationHint({
+                locality,
+                destinationService,
+                actor: fakeActor
+            });
+
+            // Assert — still offered as a suggestion, never pre-filled.
+            expect(result.candidates).toStrictEqual([{ id, name }]);
+            expect(result.confident).toBe(false);
+        });
+
+        it('should narrow an over-wide search to the verbatim name', async () => {
+            // Arrange — `ILIKE '%Gualeguay%'` matches Gualeguaychú too, so a
+            // verbatim catalog name would otherwise arrive as an ambiguous pair
+            // and lose its pre-fill.
+            const searchFn = vi.fn().mockResolvedValue({
+                data: {
+                    items: [
+                        { id: 'city-gualeguay', name: 'Gualeguay' },
+                        { id: 'city-gchu', name: 'Gualeguaychú' }
+                    ],
+                    total: 2
+                }
+            });
+            const destinationService = makeDestinationServiceMock(searchFn);
+
+            // Act
+            const result = await buildDestinationHint({
+                locality: 'Gualeguay',
+                destinationService,
+                actor: fakeActor
+            });
+
+            // Assert
+            expect(result.candidates).toStrictEqual([{ id: 'city-gualeguay', name: 'Gualeguay' }]);
+            expect(result.confident).toBe(true);
+        });
+
+        it('should keep every candidate when none is a verbatim match', async () => {
+            // Arrange
+            const searchFn = vi.fn().mockResolvedValue({
+                data: {
+                    items: [
+                        { id: 'city-elisa', name: 'Villa Elisa' },
+                        { id: 'city-paranacito', name: 'Villa Paranacito' }
+                    ],
+                    total: 2
+                }
+            });
+            const destinationService = makeDestinationServiceMock(searchFn);
+
+            // Act
+            const result = await buildDestinationHint({
+                locality: 'Villa',
+                destinationService,
+                actor: fakeActor
+            });
+
+            // Assert — both offered, neither may pre-fill.
+            expect(result.candidates).toHaveLength(2);
+            expect(result.confident).toBe(false);
+        });
+
+        it('should NOT be confident when the listing is in another country', async () => {
+            // Arrange — "San José" names real cities in Uruguay, Costa Rica and
+            // Entre Ríos. An exact NAME match is not an exact PLACE match.
+            const searchFn = vi.fn().mockResolvedValue({
+                data: { items: [{ id: 'city-sanjose', name: 'San José' }], total: 1 }
+            });
+            const destinationService = makeDestinationServiceMock(searchFn);
+
+            // Act
+            const result = await buildDestinationHint({
+                locality: 'San José',
+                country: 'Uruguay',
+                destinationService,
+                actor: fakeActor
+            });
+
+            // Assert
+            expect(result.candidates).toStrictEqual([{ id: 'city-sanjose', name: 'San José' }]);
+            expect(result.confident).toBe(false);
+        });
+
+        it.each([
+            ['Argentina'],
+            ['AR'],
+            ['ar'],
+            [' Argentina '],
+            ['República Argentina']
+        ])('should stay confident when the scraped country is %s', async (country) => {
+            // Arrange
+            const searchFn = vi.fn().mockResolvedValue({
+                data: { items: [{ id: 'city-sanjose', name: 'San José' }], total: 1 }
+            });
+            const destinationService = makeDestinationServiceMock(searchFn);
+
+            // Act
+            const result = await buildDestinationHint({
+                locality: 'San José',
+                country,
+                destinationService,
+                actor: fakeActor
+            });
+
+            // Assert
+            expect(result.confident).toBe(true);
+        });
+
+        it('should never return a destinationId, confident or not', async () => {
+            // Arrange
+            const searchFn = vi.fn().mockResolvedValue({
+                data: { items: [{ id: 'city-colon', name: 'Colón' }], total: 1 }
+            });
+            const destinationService = makeDestinationServiceMock(searchFn);
+
+            // Act
+            const result = await buildDestinationHint({
+                locality: 'Colón',
+                destinationService,
+                actor: fakeActor
+            });
+
+            // Assert — SPEC-222 AC-8.2.
+            expect(result).not.toHaveProperty('destinationId');
+            const keys = Object.keys(result);
+            expect(
+                keys.every(
+                    (k) => k === 'candidates' || k === 'scrapedLocality' || k === 'confident'
+                )
+            ).toBe(true);
         });
     });
 });

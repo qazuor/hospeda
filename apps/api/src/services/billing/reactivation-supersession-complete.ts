@@ -61,12 +61,13 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
+import { AnalyticsEvents } from '@repo/analytics';
 import { billingSubscriptionEvents, billingSubscriptions, type getDb } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { normalizeStoredSubscriptionStatus, resolveIntendedInterval } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { and, eq, sql } from 'drizzle-orm';
-import { getPostHogClient } from '../../lib/posthog.js';
+import { captureServerAnalyticsEvent } from '../../lib/posthog.js';
 import { apiLogger } from '../../utils/logger.js';
 import { resolveOwnerUserId } from '../subscription-pause.service.js';
 
@@ -415,94 +416,87 @@ export async function completeSupersessionPairing(
         // committed and analytics failure is swallowed (mirrors the
         // `subscription_payment_succeeded` capture in payment-logic.ts).
         if (triggerSource === 'trial-reactivation') {
-            const posthog = getPostHogClient();
-            if (posthog) {
-                try {
-                    const intendedInterval = resolveIntendedInterval(
-                        (supersededRow.metadata as Record<string, unknown> | null | undefined)
-                            ?.intendedInterval
-                    );
+            try {
+                const intendedInterval = resolveIntendedInterval(
+                    (supersededRow.metadata as Record<string, unknown> | null | undefined)
+                        ?.intendedInterval
+                );
 
-                    // Converted interval from the NEW sub's `billing_interval`
-                    // column (source of truth: 'month'/'year'). A dedicated
-                    // typed SELECT sidesteps the qzpay object-vs-drizzle-row
-                    // `.interval` / `.billingInterval` ambiguity at the call
-                    // sites; it only runs on a real, confirmed conversion
-                    // (rare), so the extra PK read is negligible.
-                    const [newSubRow] = await db
-                        .select({ billingInterval: billingSubscriptions.billingInterval })
-                        .from(billingSubscriptions)
-                        .where(eq(billingSubscriptions.id, newSubscription.id))
-                        .limit(1);
-                    const convertedInterval: 'monthly' | 'annual' | null =
-                        newSubRow?.billingInterval === 'year'
-                            ? 'annual'
-                            : newSubRow?.billingInterval === 'month'
-                              ? 'monthly'
-                              : null;
+                // Converted interval from the NEW sub's `billing_interval`
+                // column (source of truth: 'month'/'year'). A dedicated
+                // typed SELECT sidesteps the qzpay object-vs-drizzle-row
+                // `.interval` / `.billingInterval` ambiguity at the call
+                // sites; it only runs on a real, confirmed conversion
+                // (rare), so the extra PK read is negligible.
+                const [newSubRow] = await db
+                    .select({ billingInterval: billingSubscriptions.billingInterval })
+                    .from(billingSubscriptions)
+                    .where(eq(billingSubscriptions.id, newSubscription.id))
+                    .limit(1);
+                const convertedInterval: 'monthly' | 'annual' | null =
+                    newSubRow?.billingInterval === 'year'
+                        ? 'annual'
+                        : newSubRow?.billingInterval === 'month'
+                          ? 'monthly'
+                          : null;
 
-                    // Plan slug + price (amount/currency) for the converted
-                    // interval. qzpay plans expose the label as `name` (there is
-                    // no `slug`); the matching price row carries `unitAmount`
-                    // (centavos) and `currency` (ISO). Amount is emitted in
-                    // MAJOR units to match HOS-122's checkout_* events. All
-                    // best-effort — a failed lookup degrades to nulls, never
-                    // throws.
-                    const plan = await billing.plans.get(newSubscription.planId).catch(() => null);
-                    // When the converted interval couldn't be resolved, leave
-                    // amount/currency null rather than falsely matching the
-                    // monthly price — "unknown" must never be conflated with
-                    // "monthly".
-                    const price =
-                        convertedInterval === null
-                            ? null
-                            : (plan?.prices?.find(
-                                  (candidate) =>
-                                      candidate.active &&
-                                      candidate.billingInterval ===
-                                          (convertedInterval === 'annual' ? 'year' : 'month') &&
-                                      candidate.intervalCount === 1
-                              ) ?? null);
+                // Plan slug + price (amount/currency) for the converted
+                // interval. qzpay plans expose the label as `name` (there is
+                // no `slug`); the matching price row carries `unitAmount`
+                // (centavos) and `currency` (ISO). Amount is emitted in
+                // MAJOR units to match HOS-122's checkout_* events. All
+                // best-effort — a failed lookup degrades to nulls, never
+                // throws.
+                const plan = await billing.plans.get(newSubscription.planId).catch(() => null);
+                // When the converted interval couldn't be resolved, leave
+                // amount/currency null rather than falsely matching the
+                // monthly price — "unknown" must never be conflated with
+                // "monthly".
+                const price =
+                    convertedInterval === null
+                        ? null
+                        : (plan?.prices?.find(
+                              (candidate) =>
+                                  candidate.active &&
+                                  candidate.billingInterval ===
+                                      (convertedInterval === 'annual' ? 'year' : 'month') &&
+                                  candidate.intervalCount === 1
+                          ) ?? null);
 
-                    // Distinct id = owner's Better Auth user id (stitches to the
-                    // web-side identity and to checkout_completed), falling back
-                    // to the billing customer id (mirrors
-                    // resolveAnalyticsDistinctId in payment-logic.ts).
-                    const distinctId =
-                        (await resolveOwnerUserId({
-                            customerId: newSubscription.customerId,
-                            db
-                        }).catch(() => null)) ?? newSubscription.customerId;
+                // Distinct id = owner's Better Auth user id (stitches to the
+                // web-side identity and to checkout_completed), falling back
+                // to the billing customer id (mirrors
+                // resolveAnalyticsDistinctId in payment-logic.ts).
+                const distinctId =
+                    (await resolveOwnerUserId({
+                        customerId: newSubscription.customerId,
+                        db
+                    }).catch(() => null)) ?? newSubscription.customerId;
 
-                    posthog.capture({
-                        distinctId,
-                        event: 'trial_converted_to_paid',
-                        properties: {
-                            intendedInterval, // original choice (attribution) | null
-                            convertedInterval, // actual converted interval | null
-                            planSlug: plan?.name ?? null,
-                            amount: price ? price.unitAmount / 100 : null, // major units
-                            currency: price?.currency ?? null,
-                            supersededSubscriptionId: supersededId, // join → checkout_completed
-                            newSubscriptionId: newSubscription.id, // forward correlation
-                            triggerSource,
-                            source,
-                            $set: {
-                                converted_from_trial: true,
-                                last_conversion_interval: convertedInterval
-                            }
-                        }
-                    });
-                } catch (phErr) {
-                    apiLogger.warn(
-                        {
-                            subscriptionId: newSubscription.id,
-                            supersededId,
-                            err: phErr instanceof Error ? phErr.message : String(phErr)
-                        },
-                        'HOS-130: PostHog capture failed for trial_converted_to_paid (non-blocking)'
-                    );
-                }
+                captureServerAnalyticsEvent({
+                    distinctId,
+                    name: AnalyticsEvents.trialConvertedToPaid,
+                    properties: {
+                        intended_billing_period: intendedInterval,
+                        converted_billing_period: convertedInterval,
+                        plan_slug: plan?.name ?? null,
+                        amount: price ? price.unitAmount / 100 : null,
+                        currency: price?.currency ?? null,
+                        superseded_subscription_id: supersededId,
+                        new_subscription_id: newSubscription.id,
+                        trigger_source: triggerSource,
+                        source
+                    }
+                });
+            } catch (phErr) {
+                apiLogger.warn(
+                    {
+                        subscriptionId: newSubscription.id,
+                        supersededId,
+                        err: phErr instanceof Error ? phErr.message : String(phErr)
+                    },
+                    'HOS-130: PostHog capture failed for trial_converted_to_paid (non-blocking)'
+                );
             }
         }
 

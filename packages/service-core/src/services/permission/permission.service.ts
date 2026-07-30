@@ -34,6 +34,7 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { serviceLogger } from '../../utils';
+import { getUserRoles } from '../user-role/user-role.service.js';
 import {
     emitPermissionChangeAudit,
     invalidateUserPermissionsOverrides
@@ -168,11 +169,18 @@ export class PermissionService extends BaseService {
                 }
                 const user = userId as UserIdType;
 
-                // SUPER_ADMIN guard: a super short-circuits to all permissions at
-                // auth resolution, so any override (grant or deny) would be silent
-                // orphan data. Fail loud with a 400 instead of persisting a no-op.
-                const targetUser = await this.userModel.findById(user);
-                if (targetUser?.role === RoleEnum.SUPER_ADMIN) {
+                // SUPER_ADMIN guard: an actor HOLDING the SUPER_ADMIN hat
+                // short-circuits to all permissions at auth resolution, so any
+                // override (grant or deny) would be silent orphan data. Fail loud
+                // with a 400 instead of persisting a no-op.
+                //
+                // HOS-296: the check moved from the dropped `users.role` scalar to
+                // the `user_role` set, and it MUST stay "holds SUPER_ADMIN" rather
+                // than "is exactly SUPER_ADMIN" — otherwise an account that wears
+                // SUPER_ADMIN alongside another hat would accept overrides that the
+                // resolver then ignores.
+                const targetUserRoles = await getUserRoles({ userId: user });
+                if (targetUserRoles.includes(RoleEnum.SUPER_ADMIN)) {
                     throw new ServiceError(
                         ServiceErrorCode.VALIDATION_ERROR,
                         'cannot assign overrides to a SUPER_ADMIN'
@@ -348,7 +356,7 @@ export class PermissionService extends BaseService {
                 }
                 const user = userId as UserIdType;
 
-                // The role is required to compute `fromRole`; a missing user is a 404.
+                // The roles are required to compute `fromRole`; a missing user is a 404.
                 const targetUser = await this.userModel.findById(user);
                 if (!targetUser) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found.');
@@ -362,10 +370,21 @@ export class PermissionService extends BaseService {
                     .filter((row) => row.effect === PermissionEffectEnum.DENY)
                     .map((row) => row.permission);
 
-                const { items: roleRows } = await this.rolePermissionModel.findAll({
-                    role: targetUser.role
-                });
-                const fromRole = roleRows.map((row: RolePermissionAssignment) => row.permission);
+                // HOS-296: `fromRole` is the UNION over every hat the user wears,
+                // matching what `actorMiddleware` actually resolves. Reporting one
+                // role's permissions would show the admin a set the user does not
+                // really have.
+                const targetUserRoles = await getUserRoles({ userId: user });
+                const perRoleRows = await Promise.all(
+                    targetUserRoles.map((role) => this.rolePermissionModel.findAll({ role }))
+                );
+                const fromRole = Array.from(
+                    new Set(
+                        perRoleRows.flatMap(({ items: roleRows }) =>
+                            roleRows.map((row: RolePermissionAssignment) => row.permission)
+                        )
+                    )
+                );
 
                 return { fromRole, grantOverrides, denyOverrides };
             }

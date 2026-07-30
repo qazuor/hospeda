@@ -25,6 +25,7 @@
  */
 
 import type { SearchIntentEntities } from '@repo/schemas';
+import { isUsableEntityId } from '@repo/utils';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -46,6 +47,113 @@ const MAX_RATING = 5;
  * Values are strings or string arrays (no native booleans or numbers).
  */
 type MappedParams = Record<string, string | string[]>;
+
+// ─── Entity sanitisation ─────────────────────────────────────────────────────
+
+/**
+ * Remove the `destinationId` slot — and the `locationType` hint that only
+ * describes it — from an entity set.
+ *
+ * Two details matter and are easy to get wrong:
+ *
+ * 1. **The key is DELETED, not set to `undefined`.** Two consumers branch on
+ *    `Object.keys(entities).length > 0` (`buildConversationalSearchPrompt` and
+ *    `buildSearchReplyMessages`), so an own key with an `undefined` value still
+ *    counts as "there are filters": a turn whose only slot was a bogus
+ *    destination would print `Extracted search filters: {}` to the reply model
+ *    instead of taking the "no filters were extracted" branch, and would emit a
+ *    `CURRENT FILTER SET: {}` block (plus the NEARBY EXPANSION instructions)
+ *    into the next extraction prompt.
+ * 2. **`locationType: 'destinationId'` goes with it.** Left behind it is an
+ *    orphan that says "the location is a destination id" while no id exists —
+ *    which is exactly the "there is a destination, I just do not know which"
+ *    state that makes the model re-invent one, since the prompt tells it that a
+ *    message naming no destination keeps the current one. Any other
+ *    `locationType` (`city`, `geo`) still describes a slot that survived, so it
+ *    is preserved.
+ * 3. **An ALREADY-orphaned `locationType` is cleared on its own terms.** The
+ *    function used to bail out on `!('destinationId' in entities)`, which made
+ *    it a no-op for the shape `{ locationType: 'destinationId' }` with no id at
+ *    all — and that shape is produced by production client code, not just in
+ *    theory: `removeFilter` (`apps/web/src/components/ai-search/useSearchChat.ts`)
+ *    deletes ONLY the requested key, so removing the destination chip leaves the
+ *    hint behind. It is then echoed back as `currentFilters`, survives inbound
+ *    sanitisation untouched, and lands in the prompt's CURRENT FILTER SET as
+ *    precisely the state described above (HOS-298 round 2).
+ *
+ * @param entities - Entity set to strip.
+ * @returns A copy without `destinationId` (and without an orphaned
+ *   `locationType`), or the input unchanged when there was neither a
+ *   `destinationId` key nor an orphaned `locationType: 'destinationId'`.
+ */
+export function dropDestinationId(entities: SearchIntentEntities): SearchIntentEntities {
+    const hasOrphanedLocationTypeHint = entities.locationType === 'destinationId';
+    if (!('destinationId' in entities) && !hasOrphanedLocationTypeHint) {
+        return entities;
+    }
+    const { destinationId: _droppedDestinationId, ...rest } = entities;
+    if (rest.locationType !== 'destinationId') {
+        return rest;
+    }
+    const { locationType: _orphanedLocationType, ...withoutOrphanedLocationType } = rest;
+    return withoutOrphanedLocationType;
+}
+
+/**
+ * Strip model-emitted values that pass schema validation but cannot identify a
+ * real row, so nothing downstream ever sees them.
+ *
+ * This is the CHEAP guard: it rejects a `destinationId` that is blank or the nil
+ * UUID without touching the database. The model answers a refinement turn that
+ * has no destination with the nil UUID as a "there is a destination, I just do
+ * not know which" stand-in, and `z.string().uuid()` accepts it because it is
+ * syntactically valid.
+ *
+ * It is deliberately NOT the whole defence. `entities.destinationId` has no
+ * legitimate source at all — the extraction prompt gives the model no
+ * destination-UUID allowlist (unlike `amenitySlugs`/`featureSlugs`, which are
+ * constrained to a per-request list and re-resolved server-side), so every value
+ * it carries is invented, and `123e4567-e89b-12d3-a456-426614174000` (the RFC
+ * 4122 example UUID) would sail straight through this check. The route pairs
+ * this with a `destinations`-table lookup (`destinationRowExists` in
+ * `search-chat.ts`) that closes the class; this function stays as the pre-filter
+ * that avoids paying for a query on a value already known to be junk, and as the
+ * only affordable check on the INBOUND `currentFilters`, which are sanitised
+ * before the LLM call and so cannot wait on a DB round-trip.
+ *
+ * Kept separate from {@link mapIntentToSearchParams} because the entities
+ * object outlives the query built from it: it is also echoed back to the client
+ * as `filters.intent`, stored there, and re-sent as `currentFilters` on the next
+ * turn, where it lands in the prompt's CURRENT FILTER SET and the "carry
+ * filters over unchanged" rule makes the model keep re-emitting it. Cleaning
+ * only the query would leave that loop running for the rest of the conversation
+ * (HOS-298).
+ *
+ * The cleanup cannot live in the schema: the same object is the
+ * `generateObject` output schema, and transforms cannot be represented in JSON
+ * Schema — the `radius: 0` sentinel hit the same wall and was likewise handled
+ * by its consumers.
+ *
+ * It also clears an ORPHANED `locationType: 'destinationId'` — the hint with no
+ * id beside it. That shape does not come from the model: the web client's
+ * `removeFilter` deletes only the key the user removed, so unchecking the
+ * destination chip produces it and the next turn echoes it straight back as
+ * `currentFilters`. See {@link dropDestinationId} note 3 for why leaving it is
+ * the same failure as leaving the id.
+ *
+ * @param entities - Validated entities straight from the model.
+ * @returns The entities with unusable ids removed, or the input unchanged (the
+ *   same reference) when there was nothing to strip.
+ */
+export function sanitizeSearchIntentEntities(entities: SearchIntentEntities): SearchIntentEntities {
+    if (isUsableEntityId(entities.destinationId)) {
+        return entities;
+    }
+    if (!('destinationId' in entities) && entities.locationType !== 'destinationId') {
+        return entities;
+    }
+    return dropDestinationId(entities);
+}
 
 // ─── Pure mapper ─────────────────────────────────────────────────────────────
 
@@ -109,8 +217,23 @@ export function mapIntentToSearchParams(
         // model-hallucinated entities.destinationId, because it is verified
         // against the destinations table.
         params.destinationId = resolvedDestinationId;
-    } else if (entities.destinationId !== undefined) {
+    } else if (isUsableEntityId(entities.destinationId)) {
         // Priority 1: known destination UUID — wins over geo and city.
+        //
+        // HOS-298: gated on `isUsableEntityId`, not on `!== undefined`. The
+        // model can answer with the nil UUID as a "there is a destination, I
+        // just do not know which" placeholder, and `z.string().uuid()` accepts
+        // it because it is syntactically valid. Forwarded, it filters by a
+        // destination that cannot exist — zero results for a constraint the
+        // user never expressed. Falling through instead lets a real location
+        // signal (geo, city) win, or leaves the search unfiltered by location,
+        // which is what "no destination" actually means.
+        //
+        // This is only the cheap half of the guard: an invented id that is
+        // neither blank nor nil still reaches here, so the route verifies the
+        // id against the `destinations` table before calling this mapper (see
+        // `destinationRowExists` in `search-chat.ts`). The mapper stays pure and
+        // DB-free, which is why the authoritative check cannot live here.
         params.destinationId = entities.destinationId;
     } else if (entities.latitude !== undefined && entities.longitude !== undefined) {
         // Priority 2: geo coords. Both lat + lng must be present together.

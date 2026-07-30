@@ -8,7 +8,7 @@
  *
  * Navigation is rendered from the single-source `ACCOUNT_NAV_GROUPS` config
  * (HOS-131 G-3) via `getNavForSurface({ surface: 'sidebar' })`, gated
- * server-side by `isVisibleByRole` (HOS-131 D-4 — see `src/lib/nav-gating.ts`
+ * server-side by `isVisibleByRoles` (HOS-131 D-4 — see `src/lib/nav-gating.ts`
  * for why the sidebar approximates by role instead of exact permissions).
  */
 
@@ -22,7 +22,7 @@ import SEOHead from '@/components/seo/SEOHead.astro';
 import { getNavForSurface } from '@/config/navigation';
 import type { NavItem } from '@/config/navigation';
 import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';
-import { isDoorVisible, isVisibleByRole, resolveDoorLabelKey } from '@/lib/nav-gating';
+import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -45,7 +45,10 @@ const canonicalUrl = new URL(Astro.url.pathname, siteBase).href;
 const resolvedTitle = title ?? t('account.title', 'Mi cuenta');
 const resolvedDescription = description ?? t('account.description', 'Gestioná tu cuenta en Hospeda');
 
-const userRole = Astro.locals.user?.role ?? null;
+// HOS-296: the whole role SET drives the sidebar. A node is visible when ANY
+// held role grants its permission, so a user who is both HOST and
+// COMMERCE_OWNER sees both nav groups (AC-1).
+const userRoles = Astro.locals.user?.roles ?? null;
 
 /**
  * `activeSection` (passed by every `/mi-cuenta/*` page) predates the nav
@@ -77,7 +80,7 @@ function getActiveSectionKey(href: string): string {
 
 const { groups: navGroups } = getNavForSurface({
 	surface: 'sidebar',
-	visibility: (node) => isVisibleByRole(node, userRole),
+	visibility: (node) => isVisibleByRoles(node, userRoles),
 });
 
 /**
@@ -85,10 +88,10 @@ const { groups: navGroups } = getNavForSurface({
  * discovery CTAs ("get something new"), deliberately kept out of the curated
  * avatar/mobile set (§6.4/§6.5). A door stays visible while ≥1 of its
  * options is not yet acquired, approximated server-side the same way the
- * nav groups above are (D-4 — see `isDoorVisible`/`isVisibleByRole`).
+ * nav groups above are (D-4 — see `isDoorVisible`/`isVisibleByRoles`).
  */
 const visibleDoors = ACCOUNT_DISCOVERY_DOORS.filter((door) =>
-	isDoorVisible({ door, visibility: (node) => isVisibleByRole(node, userRole) }),
+	isDoorVisible({ door, visibility: (node) => isVisibleByRoles(node, userRoles) }),
 );
 
 /**
@@ -110,7 +113,7 @@ function resolveActiveLabel(): string {
 			return t(
 				resolveDoorLabelKey({
 					door,
-					visibility: (node) => isVisibleByRole(node, userRole),
+					visibility: (node) => isVisibleByRoles(node, userRoles),
 				}),
 			);
 		}
@@ -223,7 +226,7 @@ const activeLabel = resolveActiveLabel();
 											{t(
 												resolveDoorLabelKey({
 													door,
-													visibility: (node) => isVisibleByRole(node, userRole),
+													visibility: (node) => isVisibleByRoles(node, userRoles),
 												}),
 											)}
 										</span>

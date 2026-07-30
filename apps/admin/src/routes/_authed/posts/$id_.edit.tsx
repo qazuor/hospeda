@@ -24,26 +24,34 @@ export const Route = createFileRoute('/_authed/posts/$id_/edit')({
 /**
  * Post Edit Page Component
  *
- * Wires GalleryField (field id: "images") to the media upload/delete API
- * via useMediaUpload and createUploadHandler.
+ * Wires featured-image and gallery fields to the admin media upload API.
  */
 function PostEditPage() {
     const { id } = Route.useParams();
     // Use the hook at the top level
     const entityData = usePostPage(id);
 
-    // Media upload/delete hooks for the gallery field
+    // Media upload/delete hooks for the post media fields.
     const { uploadEntityImage, deleteImage } = useMediaUpload();
 
     /**
-     * Field handlers for the post gallery.
-     * - onUpload: calls POST /api/v1/admin/media/upload with role=gallery
+     * Field handlers for the post media fields.
+     * - featured image: POST /api/v1/admin/media/upload with role=featured
+     * - gallery: POST /api/v1/admin/media/upload with role=gallery
      * - onDelete: calls DELETE /api/v1/admin/media?publicId=... for Cloudinary assets.
      *   Non-Cloudinary URLs are handled by GalleryField without calling this.
      */
-    const galleryFieldHandlers = useMemo(
+    const mediaFieldHandlers = useMemo(
         () => ({
-            images: {
+            'media.featuredImage': {
+                onUpload: createUploadHandler({
+                    entityType: 'post',
+                    entityId: id,
+                    role: 'featured',
+                    onUpload: (input) => uploadEntityImage.mutateAsync(input)
+                })
+            },
+            'media.gallery': {
                 onUpload: createUploadHandler({
                     entityType: 'post',
                     entityId: id,
@@ -77,7 +85,7 @@ function PostEditPage() {
                 >
                     <EntityEditContent
                         entityType="post"
-                        fieldHandlers={galleryFieldHandlers}
+                        fieldHandlers={mediaFieldHandlers}
                     />
                     {entityData.entity && (
                         <TranslationSection

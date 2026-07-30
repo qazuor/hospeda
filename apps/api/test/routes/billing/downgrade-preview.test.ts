@@ -88,7 +88,7 @@ const TARGET_PLAN_SLUG = 'owner-basico';
 
 const MOCK_ACTOR = {
     id: ACTOR_ID,
-    role: RoleEnum.HOST,
+    roles: [RoleEnum.HOST],
     permissions: [],
     email: 'host@test.com',
     name: 'Test Host'

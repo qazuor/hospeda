@@ -18,7 +18,7 @@ const DEFAULT_LOCALE = 'es';
 const baseAuthState = (overrides: Partial<AuthState>): AuthState => ({
     userId: 'user-123',
     isAuthenticated: true,
-    role: 'USER',
+    roles: ['USER'],
     permissions: [],
     passwordChangeRequired: false,
     displayName: 'Lola Test',
@@ -31,7 +31,7 @@ const baseAuthState = (overrides: Partial<AuthState>): AuthState => ({
 describe('decideAuthedGuard', () => {
     it('redirects unauthenticated users to the web signin with an absolute admin callbackUrl (SPEC-182)', () => {
         const decision = decideAuthedGuard({
-            authState: baseAuthState({ isAuthenticated: false, userId: null, role: null }),
+            authState: baseAuthState({ isAuthenticated: false, userId: null, roles: [] }),
             pathname: '/admin/accommodations',
             preferredLocale: DEFAULT_LOCALE,
             siteUrl: SITE_URL,
@@ -54,7 +54,7 @@ describe('decideAuthedGuard', () => {
 
     it('builds the web signin callbackUrl with the preferred locale', () => {
         const decision = decideAuthedGuard({
-            authState: baseAuthState({ isAuthenticated: false, userId: null, role: null }),
+            authState: baseAuthState({ isAuthenticated: false, userId: null, roles: [] }),
             pathname: '/dashboard',
             preferredLocale: 'en',
             siteUrl: SITE_URL,
@@ -68,7 +68,7 @@ describe('decideAuthedGuard', () => {
 
     it('redirects a tourist (role=USER, no panel access) to the public host funnel with from=admin', () => {
         const decision = decideAuthedGuard({
-            authState: baseAuthState({ role: 'USER', permissions: [] }),
+            authState: baseAuthState({ roles: ['USER'], permissions: [] }),
             pathname: DEFAULT_PATH,
             preferredLocale: 'pt',
             siteUrl: SITE_URL,
@@ -86,7 +86,7 @@ describe('decideAuthedGuard', () => {
 
     it('encodes the locale into the redirect path verbatim', () => {
         const decision = decideAuthedGuard({
-            authState: baseAuthState({ role: 'USER', permissions: [] }),
+            authState: baseAuthState({ roles: ['USER'], permissions: [] }),
             pathname: DEFAULT_PATH,
             preferredLocale: 'en',
             siteUrl: SITE_URL,
@@ -100,7 +100,7 @@ describe('decideAuthedGuard', () => {
 
     it('redirects a HOST without panel access to forbidden with reason=host-missing-permission', () => {
         const decision = decideAuthedGuard({
-            authState: baseAuthState({ role: 'HOST', permissions: [] }),
+            authState: baseAuthState({ roles: ['HOST'], permissions: [] }),
             pathname: '/admin/accommodations/abc',
             preferredLocale: DEFAULT_LOCALE,
             siteUrl: SITE_URL,
@@ -116,9 +116,45 @@ describe('decideAuthedGuard', () => {
         });
     });
 
+    it('HOS-296: treats a user holding BOTH USER and HOST as a host, not a tourist', () => {
+        const decision = decideAuthedGuard({
+            authState: baseAuthState({ roles: ['USER', 'HOST'], permissions: [] }),
+            pathname: '/admin/accommodations/abc',
+            preferredLocale: DEFAULT_LOCALE,
+            siteUrl: SITE_URL,
+            adminUrl: ADMIN_URL
+        });
+
+        expect(decision).toEqual({
+            kind: 'redirect-forbidden',
+            search: {
+                reason: 'host-missing-permission',
+                redirect: '/admin/accommodations/abc'
+            }
+        });
+    });
+
+    it('HOS-296: does NOT bounce a user holding USER plus a staff hat to the tourist funnel', () => {
+        const decision = decideAuthedGuard({
+            authState: baseAuthState({ roles: ['USER', 'EDITOR'], permissions: [] }),
+            pathname: '/admin/billing/plans',
+            preferredLocale: DEFAULT_LOCALE,
+            siteUrl: SITE_URL,
+            adminUrl: ADMIN_URL
+        });
+
+        expect(decision).toEqual({
+            kind: 'redirect-forbidden',
+            search: {
+                reason: 'generic',
+                redirect: '/admin/billing/plans'
+            }
+        });
+    });
+
     it('redirects any other authenticated role (e.g. ADMIN without ACCESS_PANEL_ADMIN, exotic roles) to forbidden with reason=generic', () => {
         const decision = decideAuthedGuard({
-            authState: baseAuthState({ role: 'ADMIN', permissions: [] }),
+            authState: baseAuthState({ roles: ['ADMIN'], permissions: [] }),
             pathname: '/admin/billing/plans',
             preferredLocale: DEFAULT_LOCALE,
             siteUrl: SITE_URL,
@@ -137,7 +173,7 @@ describe('decideAuthedGuard', () => {
     it('redirects to change-password when access is granted but password change is required', () => {
         const decision = decideAuthedGuard({
             authState: baseAuthState({
-                role: 'ADMIN',
+                roles: ['ADMIN'],
                 permissions: [PermissionEnum.ACCESS_PANEL_ADMIN],
                 passwordChangeRequired: true
             }),
@@ -152,7 +188,7 @@ describe('decideAuthedGuard', () => {
 
     it('allows the request through when authenticated with ACCESS_PANEL_ADMIN', () => {
         const authState = baseAuthState({
-            role: 'ADMIN',
+            roles: ['ADMIN'],
             permissions: [PermissionEnum.ACCESS_PANEL_ADMIN]
         });
         const decision = decideAuthedGuard({
@@ -166,9 +202,9 @@ describe('decideAuthedGuard', () => {
         expect(decision).toEqual({ kind: 'allow', authState });
     });
 
-    it('treats null role with empty permissions as generic forbidden', () => {
+    it('treats empty roles with empty permissions as generic forbidden', () => {
         const decision = decideAuthedGuard({
-            authState: baseAuthState({ role: null, permissions: [] }),
+            authState: baseAuthState({ roles: [], permissions: [] }),
             pathname: '/admin',
             preferredLocale: DEFAULT_LOCALE,
             siteUrl: SITE_URL,
@@ -191,7 +227,7 @@ describe('decideAuthedGuard', () => {
 describe('decideAuthedGuard — web-auth redirect shape (SPEC-182 T-009)', () => {
     const signinHref = (pathname: string, locale = DEFAULT_LOCALE): string => {
         const decision = decideAuthedGuard({
-            authState: baseAuthState({ isAuthenticated: false, userId: null, role: null }),
+            authState: baseAuthState({ isAuthenticated: false, userId: null, roles: [] }),
             pathname,
             preferredLocale: locale,
             siteUrl: SITE_URL,
@@ -236,7 +272,7 @@ describe('decideAuthedGuard — web-auth redirect shape (SPEC-182 T-009)', () =>
 
     it('does not double the slash when admin URL has a trailing slash', () => {
         const decision = decideAuthedGuard({
-            authState: baseAuthState({ isAuthenticated: false, userId: null, role: null }),
+            authState: baseAuthState({ isAuthenticated: false, userId: null, roles: [] }),
             pathname: '/dashboard',
             preferredLocale: DEFAULT_LOCALE,
             siteUrl: SITE_URL,
@@ -257,7 +293,7 @@ describe('decideAuthedGuard — web-auth redirect shape (SPEC-182 T-009)', () =>
 
     it('works against localhost dev origins', () => {
         const decision = decideAuthedGuard({
-            authState: baseAuthState({ isAuthenticated: false, userId: null, role: null }),
+            authState: baseAuthState({ isAuthenticated: false, userId: null, roles: [] }),
             pathname: '/dashboard',
             preferredLocale: DEFAULT_LOCALE,
             siteUrl: 'http://localhost:4321',

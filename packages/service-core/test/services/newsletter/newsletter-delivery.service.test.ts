@@ -109,7 +109,7 @@ const DELIVERY_ID_3 = 'f0f0f0f0-f0f0-4f0f-8f0f-f0f0f0f0f0f0';
 function makeAdminActor(extra: Partial<Actor> = {}): Actor {
     return {
         id: 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1',
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [
             PermissionEnum.NEWSLETTER_CAMPAIGN_SEND,
             PermissionEnum.NEWSLETTER_CAMPAIGN_WRITE,
@@ -123,7 +123,7 @@ function makeAdminActor(extra: Partial<Actor> = {}): Actor {
 function makeUnpermissionedActor(): Actor {
     return {
         id: 'a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1',
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: []
     };
 }

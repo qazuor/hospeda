@@ -77,6 +77,14 @@ export type CreatePropertyMiniFormProps = {
      * to `/auth/forbidden`. When false we keep the redirect on the web.
      */
     readonly canAccessAdminPanel: boolean;
+    /**
+     * Free-trial length in days, for the publish callout copy. Passed in from
+     * the page rather than read from `@repo/billing` here: client components in
+     * this app deliberately do not import the billing package (see
+     * `TestDailyPlanButton.client.tsx`). Interpolated so the number cannot
+     * drift from `OWNER_TRIAL_DAYS` (HOS-331).
+     */
+    readonly trialDays: number;
 };
 
 /**
@@ -136,6 +144,12 @@ type ImportedExtras = {
 type DestinationHint = {
     readonly scrapedLocality?: string;
     readonly candidates: ReadonlyArray<{ readonly id: string; readonly name: string }>;
+    /**
+     * Whether a candidate's name IS the scraped locality rather than merely
+     * containing it — the destination search is `ILIKE '%term%'`. Only a
+     * confident hint, with exactly one candidate, pre-fills the City field.
+     */
+    readonly confident: boolean;
 };
 
 /**
@@ -237,7 +251,8 @@ export function CreatePropertyMiniForm({
     apiUrl,
     adminUrl,
     accountPropertiesUrl,
-    canAccessAdminPanel
+    canAccessAdminPanel,
+    trialDays
 }: CreatePropertyMiniFormProps) {
     const { t } = createTranslations(locale);
 
@@ -516,28 +531,46 @@ export function CreatePropertyMiniForm({
 
             // A7: fire import success event
             trackEvent(WebEvents.PropertyImportSucceeded, {
-                source: response.source,
-                fieldsPrefilled: filledCount + extraCount
+                import_source: response.source,
+                prefilled_field_count: filledCount + extraCount
             });
 
-            // Destination hint: surface when the response carries locality or candidates.
-            if (response.destinationHint) {
-                const hint = response.destinationHint;
-                const hasLocality = Boolean(hint.scrapedLocality);
-                const hasCandidates = hint.candidates.length > 0;
-                if (hasLocality || hasCandidates) {
-                    setDestinationHint({
-                        scrapedLocality: hint.scrapedLocality,
-                        candidates: hint.candidates
-                    });
-                }
-                // Auto-select the best-matching destination (the search ranks
-                // candidates, so [0] is the closest). The City picker stays fully
-                // editable — the host can change it if the guess is wrong.
-                const best = hint.candidates[0];
-                if (best) {
-                    setCity({ id: best.id, label: best.name });
-                }
+            // Destination hint. Only touched when the response actually says
+            // something about the location: a hint that resolved nothing still
+            // supersedes the previous one, but a response with NO hint at all
+            // (a blocked site, `source: 'none'`) leaves the field alone —
+            // otherwise a failed second import would silently wipe a city the
+            // host had just picked by hand.
+            const hint = response.destinationHint;
+            if (hint !== undefined) {
+                const hasHint = Boolean(hint.scrapedLocality) || hint.candidates.length > 0;
+                setDestinationHint(
+                    hasHint
+                        ? {
+                              scrapedLocality: hint.scrapedLocality,
+                              candidates: hint.candidates,
+                              confident: hint.confident === true
+                          }
+                        : null
+                );
+
+                // Auto-select ONLY when the match is BOTH unique AND confident
+                // (HOS-286). Two independent hazards, two conditions:
+                //   - not unique  → the search does not rank by relevance, so
+                //     picking [0] out of several is a coin flip.
+                //   - not confident → the destination search is `ILIKE '%term%'`,
+                //     a SUBSTRING match, so "Rosario" (Santa Fe) comes back as
+                //     the lone hit for "Rosario del Tala". Uniqueness alone would
+                //     happily pre-fill that under a "we picked it for you"
+                //     message.
+                // Non-confident matches still render below as suggestions, and
+                // the `null` branch clears a city a PREVIOUS import auto-filled.
+                const onlyCandidate = hint.candidates.length === 1 ? hint.candidates[0] : undefined;
+                setCity(
+                    onlyCandidate && hint.confident === true
+                        ? { id: onlyCandidate.id, label: onlyCandidate.name }
+                        : null
+                );
             }
 
             webLogger.info('CreatePropertyMiniForm: prefilled from import', {
@@ -554,14 +587,20 @@ export function CreatePropertyMiniForm({
      * the API call resolves). A7: fire attempt event here, before success/failure.
      */
     const handleImportAttempt = useCallback((source: string): void => {
-        trackEvent(WebEvents.PropertyImportAttempted, { source });
+        trackEvent(WebEvents.PropertyImportAttempted, {
+            import_mode: 'manual_submit',
+            import_source: source
+        });
     }, []);
 
     /**
      * Called by ImportFromUrl on import failure. A7: fire failure event.
      */
     const handleImportError = useCallback((source: string): void => {
-        trackEvent(WebEvents.PropertyImportFailed, { source });
+        trackEvent(WebEvents.PropertyImportFailed, {
+            import_source: source,
+            failure_reason: 'client_error'
+        });
     }, []);
 
     // City picker uses async mode — hits the public destinations endpoint
@@ -1020,7 +1059,12 @@ export function CreatePropertyMiniForm({
                             </span>
                         ) : null}
                         <span className={styles.destinationHintCallout}>
-                            {destinationHint.candidates.length > 0
+                            {/* "Autoseleccionamos" must only be claimed when the
+                                City field was actually pre-filled — i.e. a single
+                                AND confident candidate (HOS-286). A heuristic
+                                match is shown above as a suggestion, and the
+                                host is asked to pick it themselves. */}
+                            {destinationHint.candidates.length === 1 && destinationHint.confident
                                 ? t(
                                       'host.importFromUrl.prefill.destinationHint.autoSelected',
                                       'Autoseleccionamos el destino detectado. Revisalo y cambialo si no es correcto.'
@@ -1701,7 +1745,11 @@ export function CreatePropertyMiniForm({
                     <p className="form-trial-callout__title">
                         {trialEligible === false
                             ? t('host.pages.nueva.trialCalloutTitleIneligible', 'Armá tu propiedad')
-                            : t('host.pages.nueva.trialCalloutTitle', '14 días gratis al publicar')}
+                            : t(
+                                  'host.pages.nueva.trialCalloutTitle',
+                                  '{{trialDays}} días gratis en tu primera suscripción',
+                                  { trialDays }
+                              )}
                     </p>
                     <p className="form-trial-callout__text">
                         {trialEligible === false
@@ -1711,7 +1759,8 @@ export function CreatePropertyMiniForm({
                               )
                             : t(
                                   'host.pages.nueva.trialNote',
-                                  'Cuando publiques tu primera propiedad arranca tu trial gratis de 14 días. No pagás nada hasta el día 14, sin compromiso. Podés probar todo el panel mientras armás tu borrador.'
+                                  'Podés armar tu propiedad ahora. La prueba gratis de {{trialDays}} días arranca cuando elegís tu plan: cargás tu tarjeta y no se cobra nada hasta que termina. Solo aplica a tu primera suscripción.',
+                                  { trialDays }
                               )}
                     </p>
                 </div>

@@ -12,10 +12,12 @@ import {
     FeatureAdminSearchSchema,
     GetAccommodationsByFeatureSchema,
     GetFeaturesForAccommodationSchema,
+    LifecycleStatusEnum,
     RemoveFeatureFromAccommodationInputSchema,
     HttpFeatureSearchSchema as SearchFeatureSchema,
     ServiceErrorCode,
-    FeatureUpdateInputSchema as UpdateFeatureSchema
+    FeatureUpdateInputSchema as UpdateFeatureSchema,
+    VisibilityEnum
 } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import type { z } from 'zod';
@@ -38,6 +40,9 @@ import {
     checkCanUpdateFeature,
     checkCanViewFeature
 } from './feature.permissions';
+
+/** Junction-page cap for {@link FeatureService.getAccommodationsByFeature} (unchanged by HOS-288). */
+const ACCOMMODATIONS_BY_FEATURE_PAGE_SIZE = 100;
 
 /**
  * Service for managing features. Implements business logic, permissions, and hooks for Feature entities.
@@ -428,6 +433,15 @@ export class FeatureService extends BaseCrudRelatedService<
 
     /**
      * Retrieves all accommodations that have a specific feature.
+     *
+     * HOS-288 — the `PUBLIC`/`ACTIVE` predicates below are load-bearing. This route's prefix is
+     * in `PUBLIC_CACHE_ENDPOINTS`, the public cache key carries NO Authorization, and
+     * `cacheMiddleware` runs BEFORE `authMiddleware` (only 200/404 are stored), so the first
+     * privileged 200 is replayed to every anonymous caller for the TTL: the gate below is
+     * DECORATIVE and the RESPONSE is what must be anonymous-safe. That also rules out
+     * owner-scoping, and `ACCOMMODATION_FEATURES_EDIT` is held by multi-tenant `RoleEnum.HOST`.
+     * Long form + the open follow-up: `getAccommodationsByFeature.soft-delete.test.ts`.
+     *
      * @param actor - The actor performing the action
      * @param params - The params containing the feature ID
      * @param ctx - Optional service context carrying transaction and hookState.
@@ -449,24 +463,34 @@ export class FeatureService extends BaseCrudRelatedService<
                 if (!feature) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Feature not found');
                 }
-                // Single query with JOIN instead of 3 sequential queries
-                const { items: relationsWithAccommodation } =
-                    await this.relatedModel.findAllWithRelations(
-                        { accommodation: true },
-                        { featureId },
-                        { page: 1, pageSize: 100 }
-                    );
+                // Step 1 — the feature's accommodation ids, straight off the junction.
+                const { items: relations } = await this.relatedModel.findAll(
+                    { featureId },
+                    { page: 1, pageSize: ACCOMMODATIONS_BY_FEATURE_PAGE_SIZE }
+                );
 
-                const accommodations = relationsWithAccommodation
-                    .filter((r) => 'accommodation' in r && r.accommodation != null)
-                    .map(
-                        (r) =>
-                            (
-                                r as AccommodationFeature & {
-                                    accommodation: Accommodation;
-                                }
-                            ).accommodation
-                    );
+                const accommodationIds = [
+                    ...new Set(
+                        relations
+                            .map((r) => (r as AccommodationFeature).accommodationId as string)
+                            .filter((id): id is string => typeof id === 'string' && id.length > 0)
+                    )
+                ];
+                // Guard: `inArray(col, [])` is invalid SQL, and there is nothing to load.
+                if (accommodationIds.length === 0) {
+                    return { accommodations: [] };
+                }
+
+                // Step 2 — through AccommodationModel so its soft-delete default applies.
+                // `deletedAt` deliberately absent: it would trip that default's escape hatch.
+                const { items: accommodations } = await this.accommodationModel.findAll(
+                    {
+                        id: accommodationIds,
+                        visibility: VisibilityEnum.PUBLIC,
+                        lifecycleState: LifecycleStatusEnum.ACTIVE
+                    },
+                    { page: 1, pageSize: accommodationIds.length }
+                );
 
                 return { accommodations };
             }

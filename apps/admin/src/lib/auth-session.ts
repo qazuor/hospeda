@@ -17,7 +17,15 @@ import { getRequest } from '@tanstack/react-start/server';
 export interface AuthState {
     readonly userId: string | null;
     readonly isAuthenticated: boolean;
-    readonly role: string | null;
+    /**
+     * Every role the authenticated user holds (HOS-296). Sourced from
+     * `/api/v1/public/auth/me`'s `data.actor.roles` — NOT from Better Auth's
+     * `get-session`, which no longer carries any role at all (the
+     * `additionalFields` column mapping is gone with the dropped `users.role`
+     * column). Empty on an unauthenticated session or a failed/unparseable
+     * `/auth/me` response — the lowest-privilege default.
+     */
+    readonly roles: readonly string[];
     readonly permissions: readonly string[];
     readonly passwordChangeRequired: boolean;
     readonly displayName: string | null;
@@ -40,7 +48,7 @@ export interface AuthState {
 const UNAUTHENTICATED_STATE: AuthState = {
     userId: null,
     isAuthenticated: false,
-    role: null,
+    roles: [],
     permissions: [],
     passwordChangeRequired: false,
     displayName: null,
@@ -60,7 +68,8 @@ const UNAUTHENTICATED_STATE: AuthState = {
  * not on each other, so they run in parallel (BETA-71 — removes one sequential
  * round-trip per protected navigation). The `/auth/me` result is consumed ONLY
  * after the session is confirmed valid, so an unauthenticated cookie never
- * yields permissions. A failing `/auth/me` is non-fatal (empty permissions).
+ * yields roles/permissions. A failing `/auth/me` is non-fatal (empty roles,
+ * empty permissions).
  *
  * @param params - RO: `{ apiUrl, cookieHeader }`.
  * @returns The resolved {@link AuthState}; `UNAUTHENTICATED_STATE` on any failure.
@@ -91,7 +100,6 @@ export async function resolveAuthSession({
         const sessionData = (await sessionResponse.json()) as {
             user?: {
                 id?: string;
-                role?: string;
                 name?: string;
                 email?: string;
                 image?: string;
@@ -103,8 +111,11 @@ export async function resolveAuthSession({
             return UNAUTHENTICATED_STATE;
         }
 
-        // Read permissions + password-change flag from the already in-flight
-        // /auth/me response. Consumed only here, after the session validated.
+        // Read roles + permissions + password-change flag from the already
+        // in-flight /auth/me response. Consumed only here, after the session
+        // validated. Non-fatal on parse failure — an authenticated user with
+        // no resolvable roles/permissions is still a valid (low-privilege) state.
+        let roles: string[] = [];
         let permissions: string[] = [];
         let passwordChangeRequired = false;
         if (meResponse?.ok) {
@@ -112,7 +123,7 @@ export async function resolveAuthSession({
                 const meData = (await meResponse.json()) as {
                     success?: boolean;
                     data?: {
-                        actor?: { permissions?: string[] };
+                        actor?: { roles?: unknown; permissions?: string[] };
                         passwordChangeRequired?: boolean;
                     };
                 };
@@ -120,16 +131,20 @@ export async function resolveAuthSession({
                 if (meData?.success && meData?.data?.actor?.permissions) {
                     permissions = meData.data.actor.permissions;
                 }
+                const rawRoles = meData?.data?.actor?.roles;
+                if (Array.isArray(rawRoles)) {
+                    roles = rawRoles.filter((r): r is string => typeof r === 'string');
+                }
                 passwordChangeRequired = meData?.data?.passwordChangeRequired ?? false;
             } catch {
-                // Permissions parse failure is non-fatal.. role check still applies
+                // Roles/permissions parse failure is non-fatal.. panel-access check still applies
             }
         }
 
         return {
             userId: sessionData.user.id,
             isAuthenticated: true,
-            role: sessionData.user.role || null,
+            roles,
             permissions,
             passwordChangeRequired,
             displayName: sessionData.user.name || null,

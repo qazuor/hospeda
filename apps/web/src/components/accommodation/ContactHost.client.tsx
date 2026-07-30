@@ -286,14 +286,12 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
         // destination and price so funnels can segment inquiries by them.
         const bookingProps = {
             accommodation_id: accommodation.id,
-            accommodation_type: accommodation.type,
             destination_id: accommodation.destinationId,
-            destination_name: accommodation.destinationName,
-            price: accommodation.price,
-            currency: accommodation.currency,
             owner_id: accommodation.ownerId,
+            contact_method: 'platform_message' as const,
             is_authenticated: isAuthenticated,
-            locale
+            locale,
+            source_page: 'accommodation_detail'
         };
         trackEvent(WebEvents.BookingInitiated, bookingProps);
 
@@ -314,7 +312,7 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                     const retryAfter = Number(res.headers.get('Retry-After') ?? '60');
                     trackEvent(WebEvents.ConversationRateLimited, {
                         ...bookingProps,
-                        retry_after: retryAfter
+                        failure_reason: `rate_limited:${retryAfter}`
                     });
                     setSubmitState({ phase: 'rateLimit', retryAfter });
                     return;
@@ -339,7 +337,10 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
 
                 const conversationId = body.data?.conversationId;
                 if (conversationId) {
-                    trackEvent(WebEvents.BookingRequestSent, bookingProps);
+                    trackEvent(WebEvents.BookingRequestSent, {
+                        ...bookingProps,
+                        conversation_flow: 'authenticated'
+                    });
                     window.location.href = buildUrl({
                         locale,
                         path: `mi-cuenta/consultas/${conversationId}`
@@ -359,7 +360,7 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                     const retryAfter = Number(res.headers.get('Retry-After') ?? '60');
                     trackEvent(WebEvents.ConversationRateLimited, {
                         ...bookingProps,
-                        retry_after: retryAfter
+                        failure_reason: `rate_limited:${retryAfter}`
                     });
                     setSubmitState({ phase: 'rateLimit', retryAfter });
                     return;
@@ -371,7 +372,10 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                 };
 
                 if (res.status === 409 && body.error?.reason === 'CONVERSATION_DUPLICATE') {
-                    trackEvent(WebEvents.ConversationDuplicate, bookingProps);
+                    trackEvent(WebEvents.ConversationDuplicate, {
+                        ...bookingProps,
+                        failure_reason: 'conversation_duplicate'
+                    });
                     setSubmitState({ phase: 'duplicate' });
                     return;
                 }
@@ -397,7 +401,10 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                     return;
                 }
 
-                trackEvent(WebEvents.BookingRequestSent, bookingProps);
+                trackEvent(WebEvents.BookingRequestSent, {
+                    ...bookingProps,
+                    conversation_flow: 'anonymous'
+                });
                 setSubmitState({
                     phase: 'success',
                     message: t('conversations.notifications.verificationSent')

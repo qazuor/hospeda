@@ -47,7 +47,7 @@ describe('EventService - Relations Support', () => {
         mockActor = {
             id: 'test-user',
             type: 'user',
-            role: RoleEnum.USER,
+            roles: [RoleEnum.USER],
             permissions: []
         } as Actor;
 

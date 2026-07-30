@@ -18,7 +18,7 @@
  */
 
 import { getDb, socialCredentialAudit } from '@repo/db';
-import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode } from '@repo/schemas';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { getDecryptedSocialCredential } from '../../../src/services/social-credential-vault.service';
@@ -44,7 +44,7 @@ describe('Social credential vault data migration (HOS-64 T-025)', () => {
     });
 
     beforeEach(async () => {
-        const actor = await createTestUser({ role: RoleEnum.SUPER_ADMIN });
+        const actor = await createTestUser({});
         actorId = actor.id;
     });
 

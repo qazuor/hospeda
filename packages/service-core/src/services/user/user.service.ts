@@ -6,6 +6,7 @@ import {
     safeIlike,
     UserModel,
     userPushTokenModel,
+    userRole,
     users as userTable
 } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
@@ -13,6 +14,7 @@ import { resolveEnvironment } from '@repo/media/server';
 import type {
     EntityFilters,
     EntityOptionsItem,
+    RoleEnum,
     User,
     UserAdminStats,
     UserOnboarding,
@@ -25,6 +27,7 @@ import {
     PermissionEnum,
     type PushTokenRegisterBody,
     PushTokenRegisterBodySchema,
+    RoleGrantReason,
     ServiceErrorCode,
     type SetPasswordResponse,
     type SkipSetPasswordResponse,
@@ -48,7 +51,7 @@ import {
     UserUpdateAvatarInputSchema,
     UserUpdateInputSchema
 } from '@repo/schemas';
-import { inArray, type SQL } from 'drizzle-orm';
+import { inArray, type SQL, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
@@ -65,6 +68,7 @@ import type {
 import { listOptionsSchema, ServiceError } from '../../types';
 import { serviceLogger } from '../../utils';
 import { checkCanFindOptions, hasPermission } from '../../utils/permission';
+import { grantRole } from '../user-role/user-role.service.js';
 import {
     normalizeCreateInput,
     normalizeListInput,
@@ -77,6 +81,51 @@ import type { UserHookState } from './user.types';
 
 /** Entity-specific filter fields for user admin search. */
 type UserEntityFilters = EntityFilters<typeof UserAdminSearchSchema>;
+
+/**
+ * Resolves the two role filters of `UserAdminSearchSchema` into a single set.
+ *
+ * `UserAdminSearchSchema` exposes both a legacy singular `role` and a
+ * multi-value `roles`, and documents them as coexisting: "if both are present,
+ * the resolver intersects them". Nothing implemented that intersection, so
+ * before HOS-296 `role` was silently handled as a plain column filter and after
+ * the column was dropped it became a runtime failure. This is that resolver.
+ *
+ * The three outcomes are deliberately distinct:
+ * - `undefined` — no role filter was supplied; do not constrain the query.
+ * - a non-empty array — match users holding ANY of these roles.
+ * - an EMPTY array — both filters were supplied and are disjoint, so no user
+ *   can satisfy them. Callers must render this as "match nothing", never as
+ *   "no filter", or the operator's query silently widens.
+ *
+ * An empty `roles` array parsed from `?roles=` or `?roles=,,` is treated as
+ * "not supplied", preserving the previous behaviour of never collapsing a
+ * blank query parameter into `WHERE FALSE`.
+ *
+ * @param params.role - Legacy single-value role filter, if supplied.
+ * @param params.roles - Multi-value role filter, if supplied.
+ * @returns The roles to match, or `undefined` when no filter applies.
+ */
+export const resolveRoleFilter = ({
+    role,
+    roles
+}: {
+    role?: RoleEnum;
+    roles?: readonly RoleEnum[];
+}): readonly RoleEnum[] | undefined => {
+    const hasRoles = roles !== undefined && roles.length > 0;
+
+    if (role !== undefined && hasRoles) {
+        return roles.filter((candidate) => candidate === role);
+    }
+    if (role !== undefined) {
+        return [role];
+    }
+    if (hasRoles) {
+        return roles;
+    }
+    return undefined;
+};
 
 /**
  * Service for managing users, roles, and permissions.
@@ -372,11 +421,25 @@ export class UserService extends BaseCrudService<
     // --- Custom Methods (stubs) ---
 
     /**
-     * Assigns a role to a user. Only super admin can assign roles.
-     * @param actor - The actor performing the action
-     * @param params - The input object containing userId and role
+     * Grants a role to a user. Gated by `canAssignRole` (super admin only).
+     *
+     * **This is a thin wrapper over `grantRole`, and it is ADDITIVE** — the
+     * name is historical. It adds a hat; it never replaces one. There is no
+     * "unassign" counterpart here: revoking goes through `revokeRole`, which
+     * refuses to remove a user's last role.
+     *
+     * The method had no production caller when HOS-296 landed (only
+     * `assignRole.test.ts`). It was migrated rather than deleted because
+     * leaving a dead second write path to `users.role` is exactly how the three
+     * divergent role writers in the spec's §5.3 came to exist — and the
+     * compiler would have surfaced it the moment anyone called it.
+     *
+     * @param actor - The actor performing the action; recorded as `granted_by`.
+     * @param params - The input object containing userId and role.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns The updated user object
+     * @returns The subject user, unchanged — the granted hat lives in
+     *   `user_role`, not on the user entity, so nothing about the row differs.
+     *   Read the resulting set with `getUserRoles({ userId })`.
      * @throws ServiceError (FORBIDDEN, NOT_FOUND, INTERNAL)
      */
     public async assignRole(
@@ -395,17 +458,25 @@ export class UserService extends BaseCrudService<
                 if (!user) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
                 }
-                if (user.role === role) {
-                    return { user };
+
+                // HOS-296: delegate. This method used to own a second write path
+                // to `users.role` (`model.update({ role })`) with its own
+                // same-role no-op short-circuit. Both are gone: `grantRole` is
+                // the single sanctioned writer, it is idempotent on the
+                // `(user_id, role)` primary key, and it writes the audit row —
+                // which the old direct update never did.
+                const granted = await grantRole({
+                    userId,
+                    role,
+                    grantedBy: actor.id,
+                    reason: RoleGrantReason.ADMIN_ASSIGN_ROLE,
+                    ctx: execCtx
+                });
+                if (granted.error) {
+                    throw granted.error;
                 }
-                const updated = await this.model.update({ id: userId }, { role }, execCtx?.tx);
-                if (!updated) {
-                    throw new ServiceError(
-                        ServiceErrorCode.INTERNAL_ERROR,
-                        'Failed to assign role'
-                    );
-                }
-                return { user: updated };
+
+                return { user };
             }
         });
     }
@@ -606,27 +677,65 @@ export class UserService extends BaseCrudService<
     protected override async _executeAdminSearch(
         params: AdminSearchExecuteParams<UserEntityFilters>
     ): Promise<PaginatedListOutput<User>> {
-        const { entityFilters, extraConditions, ...rest } = params;
-        const { email, roles, ...simpleFilters } = entityFilters;
+        const { where, entityFilters, pagination, sort, search, extraConditions, ctx } = params;
+        const { email, role, roles, ...simpleFilters } = entityFilters;
 
         const additionalConditions: SQL[] = [...(extraConditions ?? [])];
+
+        if (search) {
+            additionalConditions.push(search);
+        }
 
         // email partial match (ilike, not eq)
         if (email) {
             additionalConditions.push(safeIlike(userTable.email, email));
         }
 
-        // roles multi-value filter (IN). Skipped when the parsed array is empty
-        // (e.g., `?roles=` or `?roles=,,`) so it never collapses to `WHERE FALSE`.
-        if (roles && roles.length > 0) {
-            additionalConditions.push(inArray(userTable.role, roles));
+        // HOS-296: `users.role` is gone, so neither filter can be a column
+        // comparison any more. Left as-is, the legacy singular `role` fell
+        // through into `simpleFilters` and reached `findAllWithCounts` as a
+        // WHERE on a dropped column — a runtime failure on every
+        // `?role=ADMIN` request.
+        const roleFilter = resolveRoleFilter({ role, roles });
+
+        if (roleFilter) {
+            if (roleFilter.length === 0) {
+                // `role` and `roles` were both supplied and disjoint. An empty
+                // intersection means "no user can satisfy both", which is NOT
+                // the same as "no role filter given" — returning every user
+                // here would silently widen the operator's query.
+                additionalConditions.push(sql`false`);
+            } else {
+                // "holds any of these hats" is a semi-join against `user_role`.
+                // `IN (subquery)` de-duplicates for us — a JOIN would emit one
+                // row per matching hat and inflate the paginated count for a
+                // user holding two of the filtered roles.
+                // `ctx?.tx` first: every other read in this method threads the
+                // caller's transaction, and a subquery built from `getDb()`
+                // would silently escape it (SPEC-059 forwarding contract).
+                additionalConditions.push(
+                    inArray(
+                        userTable.id,
+                        (ctx?.tx ?? getDb())
+                            .select({ userId: userRole.userId })
+                            .from(userRole)
+                            .where(inArray(userRole.role, [...roleFilter]))
+                    )
+                );
+            }
         }
 
-        return super._executeAdminSearch({
-            ...rest,
-            entityFilters: simpleFilters,
-            extraConditions: additionalConditions.length > 0 ? additionalConditions : undefined
-        });
+        return this.model.findAllWithCounts(
+            { ...where, ...simpleFilters },
+            {
+                page: pagination.page,
+                pageSize: pagination.pageSize,
+                sortBy: sort.sortBy,
+                sortOrder: sort.sortOrder
+            },
+            additionalConditions.length > 0 ? additionalConditions : undefined,
+            ctx?.tx
+        );
     }
 
     /**

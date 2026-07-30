@@ -5,7 +5,7 @@ import {
     normalizeUpdateInput
 } from '../../../src/services/tag/tag.normalizers';
 
-const actor = { id: 'actor-id', role: RoleEnum.ADMIN, permissions: [] };
+const actor = { id: 'actor-id', roles: [RoleEnum.ADMIN], permissions: [] };
 
 /**
  * Tests for tag normalizers (SPEC-086 D-002, D-018).

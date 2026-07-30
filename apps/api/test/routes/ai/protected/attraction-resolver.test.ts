@@ -52,7 +52,7 @@ import {
 
 const actor = {
     id: 'user-1',
-    role: 'USER' as RoleEnum,
+    roles: ['USER' as RoleEnum],
     permissions: [] as readonly PermissionEnum[]
 };
 

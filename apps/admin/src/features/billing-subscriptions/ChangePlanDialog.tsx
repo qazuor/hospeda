@@ -1,4 +1,3 @@
-import { ALL_PLANS } from '@repo/billing';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,8 +10,9 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useTranslations } from '@/hooks/use-translations';
+import { formatCentsToArs } from '@/lib/format-helpers';
 import type { Subscription } from './types';
-import { formatArs, formatDate, getPlanBySlug } from './utils';
+import { formatArs, formatDate, getChangePlanOptions, getPlanBySlug } from './utils';
 
 /**
  * Props for ChangePlanDialog
@@ -38,9 +38,10 @@ export function ChangePlanDialog({
     const currentPlan = getPlanBySlug(subscription.planSlug);
     const [selectedPlan, setSelectedPlan] = useState<string>('');
 
-    const availablePlans = ALL_PLANS.filter(
-        (plan) => plan.category === currentPlan?.category && plan.slug !== subscription.planSlug
-    );
+    const availablePlans = getChangePlanOptions({
+        currentPlan,
+        currentSlug: subscription.planSlug
+    });
 
     const handleConfirm = () => {
         if (selectedPlan) {
@@ -77,11 +78,23 @@ export function ChangePlanDialog({
                             {t('admin-billing.subscriptions.changePlanDialog.currentPlan')}
                         </p>
                         <div className="rounded-md border bg-card p-3">
-                            <p className="font-medium">{currentPlan?.name}</p>
-                            <p className="text-muted-foreground text-sm">
-                                {formatArs(currentPlan?.monthlyPriceArs ?? 0, locale)}
-                                {t('admin-billing.subscriptions.changePlanDialog.perMonth')}
-                            </p>
+                            {currentPlan ? (
+                                <>
+                                    <p className="font-medium">{currentPlan.name}</p>
+                                    <p className="text-muted-foreground text-sm">
+                                        {formatCentsToArs({
+                                            cents: currentPlan.monthlyPriceArs,
+                                            locale
+                                        })}
+                                        {t('admin-billing.subscriptions.changePlanDialog.perMonth')}
+                                    </p>
+                                </>
+                            ) : (
+                                // Off-catalog plan: `?? 0` used to render a blank name over
+                                // "$ 0,00 /mes" for a paying subscription, which reads as data
+                                // corruption. Show the slug we do know instead (HOS-331).
+                                <p className="font-medium">{subscription.planSlug}</p>
+                            )}
                         </div>
                     </div>
 
@@ -89,6 +102,26 @@ export function ChangePlanDialog({
                         <Label htmlFor="new-plan">
                             {t('admin-billing.subscriptions.changePlanDialog.newPlanLabel')}
                         </Label>
+                        {availablePlans.length === 0 && (
+                            // Without this the operator sees an empty select and a dead
+                            // Confirm button, which reads as a broken dialog rather than
+                            // an intentional block (HOS-331). The two causes need
+                            // different words: `getChangePlanOptions` also returns []
+                            // when the subscription's own plan is absent from
+                            // `ALL_PLANS` — commerce-listing, partner-listing and
+                            // owner-test-daily are deliberately excluded from it — and
+                            // telling that operator "no other plans in this category"
+                            // would send them looking for a category problem.
+                            <p className="text-muted-foreground text-sm">
+                                {currentPlan
+                                    ? t(
+                                          'admin-billing.subscriptions.changePlanDialog.noDestinationPlans'
+                                      )
+                                    : t(
+                                          'admin-billing.subscriptions.changePlanDialog.planNotInCatalog'
+                                      )}
+                            </p>
+                        )}
                         <select
                             id="new-plan"
                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -103,7 +136,8 @@ export function ChangePlanDialog({
                                     key={plan.slug}
                                     value={plan.slug}
                                 >
-                                    {plan.name} - {formatArs(plan.monthlyPriceArs, locale)}
+                                    {plan.name} -{' '}
+                                    {formatCentsToArs({ cents: plan.monthlyPriceArs, locale })}
                                     {t('admin-billing.subscriptions.changePlanDialog.perMonth')}
                                 </option>
                             ))}

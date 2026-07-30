@@ -19,8 +19,8 @@ import { InMemoryImageProvider } from '@repo/media/test-utils';
 import { PermissionEnum, VisibilityEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
+import { createActor } from '../../factories/actorFactory';
 import { createMockEvent } from '../../factories/eventFactory';
-import { createUser } from '../../factories/userFactory';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 
 describe('EventService.hardDelete — media cleanup (T-065)', () => {
@@ -28,7 +28,7 @@ describe('EventService.hardDelete — media cleanup (T-065)', () => {
     let modelMock: EventModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let provider: InMemoryImageProvider;
-    const actor = createUser({ permissions: [PermissionEnum.EVENT_HARD_DELETE] });
+    const actor = createActor({ permissions: [PermissionEnum.EVENT_HARD_DELETE] });
     const existingEvent = createMockEvent({ visibility: VisibilityEnum.PUBLIC });
     const eventId = existingEvent.id;
 

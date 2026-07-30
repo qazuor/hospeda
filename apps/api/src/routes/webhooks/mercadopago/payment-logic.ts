@@ -10,6 +10,7 @@
  */
 
 import type { QZPayBilling, QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
+import { AnalyticsEvents } from '@repo/analytics';
 import { createMercadoPagoAdapter } from '@repo/billing';
 import {
     and,
@@ -33,7 +34,7 @@ import {
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner
 } from '@repo/service-core';
-import { getPostHogClient } from '../../../lib/posthog';
+import { captureServerAnalyticsEvent } from '../../../lib/posthog';
 import { qzpayLogger } from '../../../lib/qzpay-logger';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { AddonService } from '../../../services/addon.service';
@@ -978,21 +979,15 @@ export async function processPaymentUpdated({
                         ? 'addon'
                         : 'subscription_renewal';
 
-                getPostHogClient()?.capture({
+                captureServerAnalyticsEvent({
                     distinctId: analyticsDistinctId,
-                    event: 'subscription_payment_succeeded',
-                    // `$set` updates the person profile server-side: an approved
-                    // payment means the subscription is active, so mark the payer
-                    // as such immediately (feeds the "Paying users" cohort) without
-                    // waiting for their next web visit. The exact plan slug is set
-                    // client-side from the entitlements endpoint (plan-properties.ts)
-                    // — resolving it here would need extra billing lookups, out of
-                    // scope for analytics-only changes.
+                    name: AnalyticsEvents.subscriptionPaymentSucceeded,
                     properties: {
                         amount,
                         currency,
-                        paymentMethod,
-                        kind,
+                        payment_provider: 'mercadopago',
+                        payment_method: paymentMethod,
+                        payment_kind: kind,
                         source,
                         $set: { plan_status: 'active' }
                     }
@@ -1030,10 +1025,17 @@ export async function processPaymentUpdated({
             // misbehaving PostHog client can NEVER break webhook processing.
             try {
                 const analyticsDistinctId = await resolveAnalyticsDistinctId(customerId);
-                getPostHogClient()?.capture({
+                captureServerAnalyticsEvent({
                     distinctId: analyticsDistinctId,
-                    event: 'payment_failed',
-                    properties: { amount, currency, status, failureReason, source }
+                    name: AnalyticsEvents.subscriptionPaymentFailed,
+                    properties: {
+                        amount,
+                        currency,
+                        payment_provider: 'mercadopago',
+                        failure_reason: failureReason,
+                        failure_category: status,
+                        source
+                    }
                 });
             } catch (phErr) {
                 apiLogger.warn(

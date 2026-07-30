@@ -144,7 +144,7 @@ function makeContext(body: unknown = { newPlanId: TARGET_PLAN_ID, billingInterva
         // Include email + name so PLAN_DOWNGRADE_LIMIT_WARNING tests can assert on them.
         [
             'actor',
-            { id: ACTOR_ID, role: 'USER', permissions: [], email: ACTOR_EMAIL, name: ACTOR_NAME }
+            { id: ACTOR_ID, roles: ['USER'], permissions: [], email: ACTOR_EMAIL, name: ACTOR_NAME }
         ]
     ]);
     return {
@@ -690,7 +690,7 @@ describe('handlePlanChange — SPEC-167 T-017: PLAN_DOWNGRADE_LIMIT_WARNING at s
                 'actor',
                 {
                     id: ACTOR_ID,
-                    role: 'USER',
+                    roles: ['USER'],
                     permissions: [],
                     email: 'host@test.com',
                     name: 'Test Host'

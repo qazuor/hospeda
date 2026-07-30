@@ -669,8 +669,9 @@ function formatPriceArs(cents: number): string {
 		display: none;
 	}
 	/*
-	   HOS-115: the annual entry path now grants the SAME no-card trial the
-	   monthly path does (the trial object is interval-agnostic), so the
+	   HOS-115: the annual entry path grants the SAME trial the monthly path
+	   does (both resolve it through `resolveCheckoutFreeTrialDays` at
+	   checkout, so it is interval-agnostic), so the
 	   trial copy must be visible under BOTH toggles. `.pricing-card__trial`
 	   is intentionally absent from this hide rule — only the monthly-specific
 	   price amount/period are hidden under the annual toggle.

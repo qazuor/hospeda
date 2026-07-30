@@ -17,6 +17,7 @@ import {
     adminRevokeUserPermissionRoute
 } from './permissions';
 import { adminRestoreUserRoute } from './restore';
+import { adminGetUserRolesRoute, adminGrantUserRoleRoute, adminRevokeUserRoleRoute } from './roles';
 import { adminUserStatsRoute } from './stats';
 import { adminUpdateUserRoute } from './update';
 
@@ -42,6 +43,22 @@ app.route('/', adminUserOptionsRoute);
 app.route('/', adminGetUserPermissionsRoute);
 app.route('/', adminAssignUserPermissionRoute);
 app.route('/', adminRevokeUserPermissionRoute);
+
+// Multi-role management (HOS-296). Registered BEFORE the /:id routes for the
+// same reason as the permission overrides above: "roles" and "role-grants" must
+// never be matched as a bare /:id segment.
+// GET    /:id/role-grants
+// POST   /:id/roles
+// DELETE /:id/roles/:role
+//
+// The READ deliberately lives on its OWN path — do NOT move it back onto
+// /:id/roles. Route middlewares are registered per PATH and are
+// method-agnostic, so sharing the path with the POST would make the read
+// additionally demand USER_UPDATE_ROLES, which CLIENT_MANAGER does not hold;
+// the admin user header would then 403 for them.
+app.route('/', adminGetUserRolesRoute);
+app.route('/', adminGrantUserRoleRoute);
+app.route('/', adminRevokeUserRoleRoute);
 
 // POST / - Create user
 app.route('/', adminCreateUserRoute);

@@ -357,7 +357,7 @@ const DEST_RATING = {
 function makeModeratorActor() {
     return createActor({
         id: getMockId('user', 'moderator'),
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [
             PermissionEnum.ACCOMMODATION_REVIEW_MODERATE,
             PermissionEnum.DESTINATION_REVIEW_MODERATE
@@ -369,7 +369,7 @@ function makeModeratorActor() {
 function makePublicActor() {
     return createActor({
         id: getMockId('user', 'public-user'),
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: [
             PermissionEnum.ACCOMMODATION_REVIEW_CREATE,
             PermissionEnum.ACCOMMODATION_REVIEW_VIEW,
@@ -1070,7 +1070,7 @@ describe('Flow 7: getPendingCount reflects state transitions (SPEC-166 T-016/T-0
 
     it('getPendingCount returns FORBIDDEN when actor lacks moderation permission', async () => {
         // Arrange
-        const unprivileged = createActor({ role: RoleEnum.USER, permissions: [] });
+        const unprivileged = createActor({ roles: [RoleEnum.USER], permissions: [] });
         const service = makeAccService();
 
         // Act

@@ -74,7 +74,7 @@ function attachTestErrorHandler(app: Hono<AppBindings>): void {
     });
 }
 
-type ActorOptions = { id: string; role: RoleEnum; permissions: PermissionEnum[] };
+type ActorOptions = { id: string; roles: readonly RoleEnum[]; permissions: PermissionEnum[] };
 
 /**
  * Builds a minimal Hono app with `actor` and `userEntitlements` injected
@@ -105,10 +105,10 @@ function buildApp(
 
 const ownerActor: ActorOptions = {
     id: OWNER_ID,
-    role: RoleEnum.HOST,
+    roles: [RoleEnum.HOST],
     permissions: [PermissionEnum.ACCOMMODATION_OCCUPANCY_MANAGE]
 };
-const guestActor: ActorOptions = { id: GUEST_ID, role: RoleEnum.GUEST, permissions: [] };
+const guestActor: ActorOptions = { id: GUEST_ID, roles: [RoleEnum.GUEST], permissions: [] };
 
 function makeRow(overrides: Record<string, unknown> = {}) {
     return {

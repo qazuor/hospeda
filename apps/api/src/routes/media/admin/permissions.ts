@@ -19,7 +19,9 @@ export type MediaEntityType =
     | 'event'
     | 'post'
     | 'gastronomy'
-    | 'experience';
+    | 'experience'
+    | 'postSponsor'
+    | 'eventOrganizer';
 
 /**
  * Maps each entity type to the set of permissions that allow modifying its media.
@@ -34,7 +36,9 @@ const ENTITY_UPDATE_PERMISSIONS: Record<MediaEntityType, readonly PermissionEnum
     event: [PermissionEnum.EVENT_UPDATE],
     post: [PermissionEnum.POST_UPDATE],
     gastronomy: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL],
-    experience: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
+    experience: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL],
+    postSponsor: [PermissionEnum.POST_SPONSOR_UPDATE],
+    eventOrganizer: [PermissionEnum.EVENT_ORGANIZER_UPDATE]
 };
 
 /**

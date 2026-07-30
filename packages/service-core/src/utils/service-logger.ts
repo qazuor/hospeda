@@ -19,8 +19,13 @@ interface PermissionValidationParams {
     permission: string;
     /** The ID of the user whose permission is being checked. */
     userId: string;
-    /** The role of the user. */
-    role: string;
+    /**
+     * Every role the user holds (HOS-296) — an account can wear several hats,
+     * so the permission-check log records the whole set rather than a single
+     * value that would misattribute which hat granted (or failed to grant) the
+     * permission.
+     */
+    roles: readonly string[];
     /** Any additional data relevant to the permission check. */
     extraData: unknown;
 }

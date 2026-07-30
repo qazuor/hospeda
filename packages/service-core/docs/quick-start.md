@@ -39,9 +39,9 @@ An **actor** represents the user or system performing an action:
 
 ```typescript
 type Actor = {
-  id: string;                    // User ID
-  role: RoleEnum;                // GUEST, USER, ADMIN, SUPER_ADMIN
-  permissions: PermissionEnum[]; // Granted permissions
+  id: string;                             // User ID
+  roles: readonly RoleEnum[];             // Every role the actor holds at once (HOS-296) — GUEST, USER, HOST, COMMERCE_OWNER, EDITOR, SPONSOR, CLIENT_MANAGER, ADMIN, SUPER_ADMIN, SYSTEM
+  permissions: readonly PermissionEnum[]; // Union of permissions across all held roles + overrides
 };
 ```
 
@@ -353,7 +353,7 @@ const productService = new ProductService({ logger });
 // Define the actor (current user)
 const actor = {
   id: 'user-123',
-  role: RoleEnum.ADMIN,
+  roles: [RoleEnum.ADMIN],
   permissions: [PermissionEnum.PRODUCT_CREATE]
 };
 
@@ -452,7 +452,7 @@ if (deleteResult.data) {
 const restoreResult = await productService.restore(actor, 'product-id-123');
 
 // Hard delete (permanent, requires SUPER_ADMIN)
-const superAdmin = { id: 'admin-1', role: RoleEnum.SUPER_ADMIN, permissions: [] };
+const superAdmin = { id: 'admin-1', roles: [RoleEnum.SUPER_ADMIN], permissions: [] };
 const hardDeleteResult = await productService.hardDelete(superAdmin, 'product-id-123');
 ```
 
@@ -656,11 +656,11 @@ if (result.data) {
 
 ```typescript
 // ❌ BAD: Using guest actor for admin operation
-const guestActor = { id: '', role: RoleEnum.GUEST, permissions: [] };
+const guestActor = { id: '', roles: [RoleEnum.GUEST], permissions: [] };
 await service.create(guestActor, data); // Will fail permission check
 
 // ✅ GOOD: Use appropriate actor
-const adminActor = { id: 'admin-1', role: RoleEnum.ADMIN, permissions: [] };
+const adminActor = { id: 'admin-1', roles: [RoleEnum.ADMIN], permissions: [] };
 await service.create(adminActor, data); // Success
 ```
 
@@ -700,11 +700,11 @@ ProductCreateInputSchema          // Actual schema
 
 **Problem**: All operations fail with FORBIDDEN error
 
-**Solution**: Check that your actor has the correct role or permissions:
+**Solution**: Check that your actor has the correct permissions (never gate on roles):
 
 ```typescript
 // Debug actor
-console.log('Actor:', actor.id, actor.role, actor.permissions);
+console.log('Actor:', actor.id, actor.roles, actor.permissions);
 
 // Make sure actor has required permissions
 if (!actor.permissions.includes(PermissionEnum.PRODUCT_CREATE)) {

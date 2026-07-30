@@ -1920,7 +1920,11 @@ export function transformAccommodationMedia({
 
 // --- Accommodation Translation Transforms (SPEC-212) ---
 
-import type { AccommodationTranslationData, I18nFieldValues } from './types';
+import type {
+    AccommodationTranslationData,
+    I18nFieldValues,
+    TranslatableFieldStatus
+} from './types';
 
 /**
  * Extracts an I18nFieldValues object from a raw i18n jsonb field.
@@ -1941,6 +1945,26 @@ function extractI18nField(raw: unknown): I18nFieldValues {
 }
 
 /**
+ * Reads a plain content column, normalising blank values to `null`.
+ *
+ * Whitespace counts as absent: `loadTranslatableFields` on the API side skips any
+ * field whose source value trims to empty, so a whitespace-only column would make
+ * the panel promise a translation the backend will never attempt.
+ */
+function extractPlainField(raw: unknown): string | null {
+    if (typeof raw !== 'string') return null;
+    const trimmed = raw.trim();
+    return trimmed.length > 0 ? trimmed : null;
+}
+
+/**
+ * Builds one field's {@link TranslatableFieldStatus} from the raw API item.
+ */
+function extractFieldStatus(rawI18n: unknown, rawPlain: unknown): TranslatableFieldStatus {
+    return { locales: extractI18nField(rawI18n), plain: extractPlainField(rawPlain) };
+}
+
+/**
  * Extracts translation status data from a raw accommodation API response.
  *
  * Returns an {@link AccommodationTranslationData} object that the host-facing
@@ -1948,19 +1972,31 @@ function extractI18nField(raw: unknown): I18nFieldValues {
  * which ones are missing — WITHOUT touching or polluting
  * {@link AccommodationEditData}, which exclusively drives the PATCH diff.
  *
+ * BETA-199: `richDescription` is the premium pair, so the protected GET omits BOTH
+ * of its keys when the owner's plan does not include it. That absence is what
+ * `null` encodes here, and it is deliberately distinguished from "present but
+ * empty" (an entitled owner who has not written one yet) — the panel hides the row
+ * in the first case and shows it as having no source content in the second. Only
+ * the presence of the KEY separates them, so this checks membership rather than
+ * truthiness.
+ *
  * @param item - Raw accommodation object from the protected GET endpoint
- * @returns Per-field i18n values for the four translatable fields
+ * @returns Per-field translation status for the four translatable fields
  */
 export function transformAccommodationTranslations({
     item
 }: {
     readonly item: Record<string, unknown>;
 }): AccommodationTranslationData {
+    const richDescriptionExposed = 'richDescriptionI18n' in item || 'richDescription' in item;
+
     return {
-        name: extractI18nField(item.nameI18n),
-        summary: extractI18nField(item.summaryI18n),
-        description: extractI18nField(item.descriptionI18n),
-        richDescription: extractI18nField(item.richDescriptionI18n)
+        name: extractFieldStatus(item.nameI18n, item.name),
+        summary: extractFieldStatus(item.summaryI18n, item.summary),
+        description: extractFieldStatus(item.descriptionI18n, item.description),
+        richDescription: richDescriptionExposed
+            ? extractFieldStatus(item.richDescriptionI18n, item.richDescription)
+            : null
     };
 }
 
@@ -2258,8 +2294,15 @@ function normalizeExperienceSocialNetworks(raw: unknown): ExperienceSocialNetwor
 }
 
 /**
- * Normalize public contact info for experience listings.
- * Only `whatsapp` is surfaced publicly (for the CTA deep link).
+ * Normalize the contact info this app WOULD read from an experience listing.
+ *
+ * DORMANT (HOS-363): the public tier surfaces NO `contactInfo` at all —
+ * `ExperiencePublicSchema.pick()` omits it entirely
+ * (`packages/schemas/src/entities/experience/experience.access.schema.ts`,
+ * whose header records "Omits: ... contactInfo (direct)"), so `raw` is always
+ * absent here and this returns `null` every time. `whatsapp` is the only key
+ * mapped because it is the only one the CTA deep link would need the day the
+ * field is exposed.
  */
 function normalizeExperienceContactInfo(raw: unknown): ExperienceContactInfo | null {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;

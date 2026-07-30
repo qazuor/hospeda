@@ -892,6 +892,8 @@
         "zodError.enums.recurrenceType.invalid",
         "zodError.enums.refundStatus.invalid",
         "zodError.enums.role.invalid",
+        "zodError.enums.role.notAssignable",
+        "zodError.enums.roleGrantAction.invalid",
         "zodError.enums.serviceErrorCode.invalid",
         "zodError.enums.socialApprovalStatus.invalid",
         "zodError.enums.socialAssetSource.invalid",
@@ -1751,7 +1753,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1750,
+    "total": 1752,
     "byNamespace": {
         "accommodation": 68,
         "accommodationAmenity": 4,
@@ -1780,7 +1782,7 @@
         "entityTag": 1,
         "entityTags": 1,
         "entityView": 20,
-        "enums": 68,
+        "enums": 70,
         "event": 51,
         "eventLocation": 22,
         "eventOrganizer": 13,

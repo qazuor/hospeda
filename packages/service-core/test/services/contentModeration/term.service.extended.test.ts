@@ -112,13 +112,13 @@ function makeModel(overrides: Record<string, unknown> = {}) {
 
 /** Actor with full moderation permissions */
 const adminActor = createActor({
-    role: RoleEnum.SUPER_ADMIN,
+    roles: [RoleEnum.SUPER_ADMIN],
     permissions: Object.values(PermissionEnum)
 });
 
 /** Actor with NO permissions */
 const noPermActor = createActor({
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: []
 });
 

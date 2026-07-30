@@ -119,7 +119,10 @@ interface RouteMutationEntry extends BaseAuditEntry {
     readonly auditEvent: typeof AuditEventType.ROUTE_MUTATION;
     /** ID of the actor performing the mutation, or 'anonymous' for unauthenticated requests. */
     readonly actorId: string;
-    /** Role of the actor, or 'guest' for unauthenticated requests. */
+    /**
+     * Every role the actor held, comma-joined, or 'guest' for unauthenticated
+     * requests (HOS-296 — an account wears a SET of hats).
+     */
     readonly actorRole: string;
     /** HTTP method of the request (POST, PUT, PATCH, DELETE). */
     readonly method: string;

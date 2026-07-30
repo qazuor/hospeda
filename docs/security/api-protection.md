@@ -439,9 +439,13 @@ RATE_LIMIT_PUBLIC_MAX_REQUESTS=60
 RATE_LIMIT_PUBLIC_WINDOW_MS=60000
 RATE_LIMIT_PUBLIC_MESSAGE=Rate limit exceeded
 
-# Admin endpoints (moderate - 30 requests per minute)
+# Admin endpoints (anti-abuse ceiling only - 3000 requests per minute)
+# NOTE: admin traffic is governed by the per-user `admin:user` sliding window
+# (300/60s), not by this IP tier — see docs/security/rate-limiting.md, which is
+# the canonical reference. Tuning this below perUserMax x operators-per-egress-IP
+# makes it the binding constraint again (HOS-325).
 RATE_LIMIT_ADMIN_ENABLED=true
-RATE_LIMIT_ADMIN_MAX_REQUESTS=30
+RATE_LIMIT_ADMIN_MAX_REQUESTS=3000
 RATE_LIMIT_ADMIN_WINDOW_MS=60000
 RATE_LIMIT_ADMIN_MESSAGE=Admin rate limit exceeded
 
@@ -674,7 +678,7 @@ RATE_LIMIT_WINDOW_MS=60000
 
 RATE_LIMIT_AUTH_MAX_REQUESTS=50
 RATE_LIMIT_PUBLIC_MAX_REQUESTS=500
-RATE_LIMIT_ADMIN_MAX_REQUESTS=200
+RATE_LIMIT_ADMIN_MAX_REQUESTS=3000
 ```
 
 #### Production Environment
@@ -689,7 +693,8 @@ RATE_LIMIT_WINDOW_MS=60000
 
 RATE_LIMIT_AUTH_MAX_REQUESTS=5
 RATE_LIMIT_PUBLIC_MAX_REQUESTS=60
-RATE_LIMIT_ADMIN_MAX_REQUESTS=30
+# Do NOT tighten this below the per-user admin budget x operators per IP (HOS-325).
+RATE_LIMIT_ADMIN_MAX_REQUESTS=3000
 
 # Enable headers
 RATE_LIMIT_STANDARD_HEADERS=true
@@ -2470,7 +2475,7 @@ const permissions = ['admin:all'];
 
 // ✅ CORRECT - Minimal permissions
 
-const permissions = getUserPermissions(user.role);
+const permissions = await getPermissionsForRoles({ roles: user.roles }); // HOS-296: a user holds a SET of roles
 ```
 
 ### Fail Securely

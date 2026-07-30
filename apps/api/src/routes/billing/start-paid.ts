@@ -30,6 +30,7 @@
  * @module routes/billing/start-paid
  */
 
+import { AnalyticsEvents } from '@repo/analytics';
 import { isEntitlementGrantingStatus, TEST_DAILY_PLAN } from '@repo/billing';
 import type { StartPaidSubscriptionResponse } from '@repo/schemas';
 import {
@@ -44,7 +45,7 @@ import {
     isBillingProviderError,
     mapProviderErrorToServiceError
 } from '../../lib/billing-provider-error';
-import { getPostHogClient } from '../../lib/posthog';
+import { captureServerAnalyticsEvent } from '../../lib/posthog';
 import { captureBillingError } from '../../lib/sentry';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
@@ -281,13 +282,13 @@ export const handleStartPaidSubscription = async (
         // — this handler must proceed to initiate the subscription regardless of
         // analytics outcome. Mirrors the pattern in payment-logic.ts.
         try {
-            getPostHogClient()?.capture({
+            captureServerAnalyticsEvent({
                 distinctId: actor.id,
-                event: 'checkout_started',
+                name: AnalyticsEvents.subscriptionCheckoutStarted,
                 properties: {
-                    planSlug: body.planSlug,
-                    billingInterval: body.billingInterval,
-                    promoCode: body.promoCode ?? null,
+                    plan_slug: body.planSlug,
+                    billing_period: body.billingInterval === 'annual' ? 'annual' : 'monthly',
+                    promotion_code: body.promoCode ?? null,
                     amount: amountMajor,
                     currency: priceForInterval?.currency ?? null
                 }
@@ -363,13 +364,14 @@ export const handleStartPaidSubscription = async (
             // `comp`/`discount` still win — they describe what the money did, which is
             // the more specific fact when both are true.
             const outcome = result.appliedEffect ?? (result.trialGranted ? 'trial' : 'paid');
-            getPostHogClient()?.capture({
+            captureServerAnalyticsEvent({
                 distinctId: actor.id,
-                event: 'checkout_completed',
+                name: AnalyticsEvents.subscriptionCreated,
                 properties: {
-                    planSlug: body.planSlug,
-                    billingInterval: body.billingInterval,
-                    outcome,
+                    subscription_id: result.localSubscriptionId,
+                    plan_slug: body.planSlug,
+                    billing_period: body.billingInterval === 'annual' ? 'annual' : 'monthly',
+                    checkout_outcome: outcome,
                     /**
                      * Whether MercadoPago will defer the first charge, as its OWN
                      * dimension rather than folded into `outcome`.
@@ -381,15 +383,11 @@ export const handleStartPaidSubscription = async (
                      * tracking. Since HOS-171 a trial COEXISTS with a discount, so
                      * that combination is normal, not an edge case.
                      */
-                    trialGranted: result.trialGranted ?? false,
-                    promoCode: body.promoCode ?? null,
-                    promoCodeIgnored: result.promoCodeIgnored ?? false,
-                    localSubscriptionId: result.localSubscriptionId,
+                    trial_granted: result.trialGranted ?? false,
+                    promotion_code: body.promoCode ?? null,
+                    promotion_code_ignored: result.promoCodeIgnored ?? false,
                     amount: amountMajor,
                     currency: priceForInterval?.currency ?? null,
-                    // Persist the last checkout outcome on the person for
-                    // cohorting (HOS-122 D-10), mirroring how
-                    // subscription_payment_succeeded $sets plan_status.
                     $set: { last_checkout_outcome: outcome }
                 }
             });

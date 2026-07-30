@@ -21,10 +21,12 @@ import { DeleteMediaQuerySchema, DeleteMediaResponseSchema, PermissionEnum } fro
 import {
     AccommodationService,
     DestinationService,
+    EventOrganizerService,
     EventService,
     ExperienceService,
     GastronomyService,
-    PostService
+    PostService,
+    PostSponsorService
 } from '@repo/service-core';
 import type { Context, MiddlewareHandler } from 'hono';
 import { Sentry } from '../../../lib/sentry';
@@ -115,7 +117,9 @@ const resolveDeleteEntityService = (
     | EventService
     | PostService
     | GastronomyService
-    | ExperienceService => {
+    | ExperienceService
+    | PostSponsorService
+    | EventOrganizerService => {
     switch (entityType) {
         case 'accommodation':
             return new AccommodationService({ logger: apiLogger });
@@ -129,6 +133,12 @@ const resolveDeleteEntityService = (
             return new GastronomyService({ logger: apiLogger });
         case 'experience':
             return new ExperienceService({ logger: apiLogger });
+        case 'postSponsor':
+            return new PostSponsorService({ logger: apiLogger });
+        case 'eventOrganizer':
+            return new EventOrganizerService({ logger: apiLogger });
+        default:
+            throw new Error(`Unsupported media entity type: ${entityType satisfies never}`);
     }
 };
 
@@ -143,7 +153,7 @@ const parseEntityFromPublicId = (
     publicId: string
 ): { entityType: MediaEntityType; entityId: string } | null => {
     const match = publicId.match(
-        /^hospeda\/[^/]+\/(accommodations|destinations|events|posts)\/([^/]+)(\/|$)/
+        /^hospeda\/[^/]+\/(accommodations|destinations|events|posts|postSponsors|eventOrganizers)\/([^/]+)(\/|$)/
     );
     if (!match) return null;
 
@@ -151,7 +161,9 @@ const parseEntityFromPublicId = (
         accommodations: 'accommodation',
         destinations: 'destination',
         events: 'event',
-        posts: 'post'
+        posts: 'post',
+        postSponsors: 'postSponsor',
+        eventOrganizers: 'eventOrganizer'
     };
 
     const plural = match[1];

@@ -146,7 +146,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             mockGetActorFromContext.mockReturnValue({
                 id: 'user-1',
                 permissions: [PermissionEnum.ACCESS_API_PUBLIC],
-                role: RoleEnum.USER
+                roles: [RoleEnum.USER]
             });
 
             // Act
@@ -163,7 +163,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             mockGetActorFromContext.mockReturnValue({
                 id: '00000000-0000-4000-8000-000000000000',
                 permissions: [PermissionEnum.ACCESS_API_PUBLIC],
-                role: RoleEnum.GUEST
+                roles: [RoleEnum.GUEST]
             });
 
             // Act
@@ -183,7 +183,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
                     PermissionEnum.ACCESS_API_PRIVATE,
                     PermissionEnum.MANAGE_CLIENTS
                 ],
-                role: RoleEnum.CLIENT_MANAGER
+                roles: [RoleEnum.CLIENT_MANAGER]
             });
 
             // Act
@@ -200,7 +200,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             mockGetActorFromContext.mockReturnValue({
                 id: 'admin-1',
                 permissions: Object.values(PermissionEnum),
-                role: RoleEnum.ADMIN
+                roles: [RoleEnum.ADMIN]
             });
 
             // Act
@@ -221,7 +221,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             mockGetActorFromContext.mockReturnValue({
                 id: 'superadmin-1',
                 permissions: Object.values(PermissionEnum),
-                role: RoleEnum.SUPER_ADMIN
+                roles: [RoleEnum.SUPER_ADMIN]
             });
 
             mockTrialService.reconcileExpiredTrials.mockResolvedValue(3);
@@ -247,7 +247,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             mockGetActorFromContext.mockReturnValue({
                 id: 'admin-1',
                 permissions: Object.values(PermissionEnum),
-                role: RoleEnum.ADMIN
+                roles: [RoleEnum.ADMIN]
             });
 
             // Act & Assert
@@ -265,7 +265,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             mockGetActorFromContext.mockReturnValue({
                 id: 'admin-1',
                 permissions: Object.values(PermissionEnum),
-                role: RoleEnum.ADMIN
+                roles: [RoleEnum.ADMIN]
             });
 
             mockTrialService.reconcileExpiredTrials.mockRejectedValue(
@@ -287,7 +287,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             mockGetActorFromContext.mockReturnValue({
                 id: 'admin-1',
                 permissions: Object.values(PermissionEnum),
-                role: RoleEnum.ADMIN
+                roles: [RoleEnum.ADMIN]
             });
 
             mockTrialService.reconcileExpiredTrials.mockRejectedValue('Unknown error');
@@ -307,7 +307,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             mockGetActorFromContext.mockReturnValue({
                 id: 'admin-1',
                 permissions: Object.values(PermissionEnum),
-                role: RoleEnum.ADMIN
+                roles: [RoleEnum.ADMIN]
             });
 
             mockTrialService.reconcileExpiredTrials.mockResolvedValue(0);
@@ -328,7 +328,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             mockGetActorFromContext.mockReturnValue({
                 id: 'admin-1',
                 permissions: Object.values(PermissionEnum),
-                role: RoleEnum.ADMIN
+                roles: [RoleEnum.ADMIN]
             });
 
             mockTrialService.reconcileExpiredTrials.mockResolvedValue(42);
@@ -349,7 +349,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             mockGetActorFromContext.mockReturnValue({
                 id: 'admin-1',
                 permissions: Object.values(PermissionEnum),
-                role: RoleEnum.ADMIN
+                roles: [RoleEnum.ADMIN]
             });
 
             mockTrialService.reconcileExpiredTrials.mockResolvedValue(1);
@@ -375,7 +375,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             mockGetActorFromContext.mockReturnValue({
                 id: 'user-1',
                 permissions: [],
-                role: RoleEnum.USER
+                roles: [RoleEnum.USER]
             });
 
             // Act & Assert
@@ -393,7 +393,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             mockGetActorFromContext.mockReturnValue({
                 id: 'user-1',
                 permissions: [],
-                role: RoleEnum.USER
+                roles: [RoleEnum.USER]
             });
 
             const serviceSpy = vi.spyOn(mockTrialService, 'reconcileExpiredTrials');
@@ -428,7 +428,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
                         testCase.role === RoleEnum.SUPER_ADMIN || testCase.role === RoleEnum.ADMIN
                             ? Object.values(PermissionEnum)
                             : [PermissionEnum.ACCESS_API_PUBLIC],
-                    role: testCase.role
+                    roles: [testCase.role]
                 });
 
                 // Reset spy

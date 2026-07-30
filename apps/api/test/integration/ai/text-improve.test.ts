@@ -92,6 +92,19 @@ const { getMonthlyCallCountReturn } = vi.hoisted(() => ({
 }));
 
 /**
+ * Hoisted `recordAiUsage` spy (HOS-328).
+ *
+ * The route must write one `ai_usage` row per successful call — that row is the
+ * ONLY thing `getMonthlyCallCount` counts, so without it the monthly quota can
+ * never advance and `MAX_AI_TEXT_IMPROVE_PER_MONTH` is unenforceable. Hoisting
+ * the spy (instead of an anonymous `vi.fn` inside the module factory) is what
+ * lets the metering suite below assert on the recorded row.
+ */
+const { mockRecordAiUsage } = vi.hoisted(() => ({
+    mockRecordAiUsage: vi.fn(async (_input: Record<string, unknown>) => undefined)
+}));
+
+/**
  * Stub `@repo/ai-core` so the route's import chain resolves without needing a
  * real built dist. The middlewares read `getMonthlyCallCount` /
  * `recordAiUsage`; the handler reads `createAiService` and (transitively) the
@@ -135,7 +148,7 @@ vi.mock('@repo/ai-core', () => {
         AiEngineError,
         AiFeatureNotConfiguredError,
         getMonthlyCallCount: vi.fn(async () => getMonthlyCallCountReturn.current),
-        recordAiUsage: vi.fn(async () => undefined),
+        recordAiUsage: mockRecordAiUsage,
         checkCostCeiling: vi.fn(async () => ({ allowed: true })),
         createAiService: vi.fn(() => ({
             streamText: vi.fn(async (args: { feature: string; prompt: string; locale: string }) => {
@@ -349,6 +362,7 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
             finishReason: 'stop'
         });
         streamTextCalls.length = 0;
+        mockRecordAiUsage.mockClear();
     });
 
     afterEach(async () => {
@@ -666,6 +680,116 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
             expect(res.status).toBe(200);
             const contentType = res.headers.get('content-type') ?? '';
             expect(contentType).toContain('text/event-stream');
+        });
+    });
+
+    // =========================================================================
+    // HOS-328 — usage metering.
+    //
+    // Regression guard: before HOS-328 this route never called `recordAiUsage`,
+    // so no `ai_usage` row was ever written for `text_improve`. Because
+    // `getMonthlyCallCount` derives the monthly counter by counting exactly
+    // those rows, the counter stayed at 0 forever and
+    // `MAX_AI_TEXT_IMPROVE_PER_MONTH` could never be reached — the quota was
+    // decorative and the spend invisible.
+    // =========================================================================
+
+    describe('HOS-328 — records AI usage on the success path', () => {
+        it('writes exactly one ai_usage row keyed to the caller with real token counts', async () => {
+            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+            nextMeta.current = Promise.resolve({
+                usage: { promptTokens: 41, completionTokens: 17, totalTokens: 58 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            });
+
+            const res = await app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    fieldType: 'description',
+                    fieldValue: 'A cozy cabin in the woods near the river.'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            // Metering happens when `meta` resolves, which the factory awaits
+            // before emitting `done` — so the stream must be drained first.
+            await readSseFrames(res);
+
+            expect(mockRecordAiUsage).toHaveBeenCalledTimes(1);
+            const recorded = mockRecordAiUsage.mock.calls[0]?.[0];
+            expect(recorded).toMatchObject({
+                userId: UNIQUE_USER_ID,
+                feature: 'text_improve',
+                provider: 'stub',
+                model: 'stub-model',
+                promptTokens: 41,
+                completionTokens: 17,
+                status: 'success'
+            });
+            expect(typeof recorded?.latencyMs).toBe('number');
+        });
+
+        it('does not record usage when the request is rejected before the handler', async () => {
+            // At quota → the middleware rejects. The only row it may write is
+            // its own `quota_exceeded` bookkeeping row, never a success row.
+            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+            getMonthlyCallCountReturn.current = 20;
+
+            const res = await app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    fieldType: 'description',
+                    fieldValue: 'A cozy cabin in the woods near the river.'
+                })
+            });
+
+            expect(res.status).toBe(403);
+            const successRows = mockRecordAiUsage.mock.calls.filter(
+                (call) => call[0]?.status === 'success'
+            );
+            expect(successRows).toHaveLength(0);
+        });
+
+        it('still streams the reply when metering fails (metering is never fatal)', async () => {
+            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
+            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+            mockRecordAiUsage.mockRejectedValueOnce(new Error('ai_usage insert failed'));
+
+            const res = await app.request(STREAM_PATH, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    fieldType: 'description',
+                    fieldValue: 'A cozy cabin in the woods near the river.'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            expect(frames.filter((f) => f.event === 'token')).toHaveLength(3);
+
+            // Non-vacuous: without the fix nothing would call recordAiUsage, so
+            // the queued rejection would never be consumed and every assertion
+            // below would pass with the production change reverted.
+            expect(mockRecordAiUsage).toHaveBeenCalledTimes(1);
+
+            // The done frame must still carry the untouched engine metadata —
+            // the metering wrapper must not reshape what the client receives.
+            const doneFrames = frames.filter((f) => f.event === 'done');
+            expect(doneFrames).toHaveLength(1);
+            expect(JSON.parse(doneFrames[0]?.data ?? '{}')).toEqual({
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            });
+            expect(frames.filter((f) => f.event === 'error')).toHaveLength(0);
         });
     });
 });

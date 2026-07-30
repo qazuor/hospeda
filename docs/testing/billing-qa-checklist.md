@@ -94,15 +94,24 @@ Before starting manual QA, ensure:
 
 7. Make the same API call again
 8. **Verify**: Response is **402 Payment Required**
-9. **Verify**: Response body contains:
+9. **Verify**: Response body contains (HOS-283 — the gate now answers through the
+   shared error formatter, so `error` is the standard `{code, message}` envelope
+   and no longer a bare string):
 
    ```json
    {
-     "error": "GRACE_PERIOD_EXPIRED",
-     "message": "Tu periodo de gracia ha expirado...",
-     "daysOverdue": 4
+     "success": false,
+     "error": {
+       "code": "ENTITLEMENT_REQUIRED",
+       "message": "Your grace period has expired. Please update your payment method to continue.",
+       "reason": "GRACE_PERIOD_EXPIRED",
+       "details": { "daysOverdue": 4 }
+     }
    }
    ```
+
+   The web UI renders the `reason`-specific copy ("Tu pago está vencido…") with no
+   CTA — see HOS-348 for why there is no button yet.
 
 10. **Resolve payment**: Update subscription back to active:
 

@@ -8,7 +8,7 @@ import {
     normalizeViewInput
 } from '../../../src/services/point-of-interest/point-of-interest.normalizers';
 
-const testActor = { id: 'test', role: RoleEnum.ADMIN, permissions: [] };
+const testActor = { id: 'test', roles: [RoleEnum.ADMIN], permissions: [] };
 
 describe('PointOfInterest Normalizers', () => {
     it('normalizeCreateInput normalizes adminInfo and leaves other fields untouched', () => {

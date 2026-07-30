@@ -68,7 +68,7 @@ const adminActorId = crypto.randomUUID();
 
 const adminActor = {
     id: adminActorId,
-    role: RoleEnum.SUPER_ADMIN,
+    roles: [RoleEnum.SUPER_ADMIN],
     permissions: [
         PermissionEnum.ACCESS_PANEL_ADMIN,
         PermissionEnum.ACCESS_API_ADMIN,
@@ -82,12 +82,12 @@ const adminActor = {
  */
 const nonAdminActor = {
     id: crypto.randomUUID(),
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: [PermissionEnum.ACCESS_PANEL_ADMIN] // intentionally no AI_SETTINGS_MANAGE
 } as const;
 
 function makeHeaders(
-    actor: { id: string; role: string; permissions: readonly string[] },
+    actor: { id: string; roles: readonly string[]; permissions: readonly string[] },
     extra: Record<string, string> = {}
 ): Record<string, string> {
     return {
@@ -95,7 +95,7 @@ function makeHeaders(
         'user-agent': 'vitest',
         accept: 'application/json',
         'x-mock-actor-id': actor.id,
-        'x-mock-actor-role': actor.role,
+        'x-mock-actor-role': actor.roles.join(','),
         'x-mock-actor-permissions': JSON.stringify(actor.permissions),
         ...extra
     };

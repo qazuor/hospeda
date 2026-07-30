@@ -90,7 +90,7 @@ class MockAccommodationModel {
 function actorWith(permissions: PermissionEnum[], id = ADMIN_ID): Actor {
     return {
         id,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions
     };
 }

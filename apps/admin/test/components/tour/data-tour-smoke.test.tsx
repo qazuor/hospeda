@@ -269,7 +269,8 @@ vi.mock('@/contexts/tour-context', () => ({
 
 vi.mock('@/hooks/use-tours', () => ({
     useWelcomeTourForRole: () => undefined,
-    useContextualTourForRoute: () => undefined
+    useContextualTourForRoute: () => undefined,
+    resolvePrimaryTourRole: (roles: readonly string[] | null | undefined) => roles?.[0] ?? null
 }));
 
 vi.mock('@/hooks/use-translations', () => ({
@@ -290,7 +291,7 @@ vi.mock('@/hooks/use-auth-context', () => ({
         isAuthenticated: true,
         user: {
             id: 'user-1',
-            role: 'ADMIN',
+            roles: ['ADMIN'],
             permissions: [],
             displayName: 'Test User',
             email: 'test@example.com',

@@ -40,6 +40,7 @@ import PublishPrecheckPanel from '@/components/host/PublishPrecheckPanel.astro';
 import { hostOnboardingApi } from '@/lib/api/endpoints-protected';
 import type { HostOnboardingPrecheckDecision, HostOnboardingPrecheckDraft } from '@/lib/api/endpoints-protected';
 import { BuildingsIcon, ImageIcon, FileTextIcon, CheckCircleIcon } from '@repo/icons';
+import { OWNER_TRIAL_DAYS } from '@repo/billing';
 
 export const prerender = false;
 
@@ -208,6 +209,7 @@ const createUrl = buildUrlWithParams({ locale, path: 'publicar/nueva', params: {
                     adminUrl={adminUrl}
                     accountPropertiesUrl={accountPropertiesUrl}
                     canAccessAdminPanel={canAccessAdminPanel}
+                    trialDays={OWNER_TRIAL_DAYS}
                 />
             ) : (
                 /* BETA-197: precheck panel — resume/pick/delete/upgrade per the decision matrix. */

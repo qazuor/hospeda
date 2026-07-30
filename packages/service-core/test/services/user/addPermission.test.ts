@@ -92,7 +92,7 @@ describe('UserService.addPermission', () => {
         // Arrange
         const user = getUser({ id: userId, permissions: [] });
         asMock(userModelMock.findById).mockResolvedValue({ ...user, id: userId });
-        const forbiddenActor = createActor({ role: RoleEnum.ADMIN, permissions: [] });
+        const forbiddenActor = createActor({ roles: [RoleEnum.ADMIN], permissions: [] });
         // Act
         const result = await service.addPermission(forbiddenActor, input);
         // Assert
@@ -159,7 +159,7 @@ describe('UserService.addPermission', () => {
         const fakeActor = {
             id: 'x',
             permissions: [],
-            role: undefined as unknown as RoleEnum
+            roles: [undefined] as unknown as readonly RoleEnum[]
         } as Actor;
         const result = await service.addPermission(fakeActor, {
             userId: userId as string,

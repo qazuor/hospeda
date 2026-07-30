@@ -4,7 +4,7 @@
 
 ## Authentication
 
-- NEVER check roles directly (`if (user.role === 'ADMIN')`)
+- NEVER check roles directly (`if (actor.roles.includes(RoleEnum.ADMIN))` — an actor holds a SET of roles, HOS-296)
 - ALWAYS use `PermissionEnum` (`requirePermission(PermissionEnum.X)`)
 - Sessions: HTTP-only cookies, server-side validation
 - Three-tier API auth: public (none), protected (session), admin (session + permissions)

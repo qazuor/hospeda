@@ -8,6 +8,7 @@ import { UserModel } from '@repo/db';
 import { RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
+import { createActor } from '../../factories/actorFactory';
 import { createUser } from '../../factories/userFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import {
@@ -20,10 +21,13 @@ import {
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 
+// HOS-296: a `User` fixture is NOT an `Actor` any more — `Actor.roles` has no
+// counterpart on the entity now that hats live in `user_role`. Actors come from
+// the actor factory; the user row carries identity only.
 const getActor = (
     role: RoleEnum = RoleEnum.SUPER_ADMIN,
     id: string = getMockId('user') as string
-) => createUser({ id, role });
+) => createActor({ id, roles: [role], permissions: [] });
 const getUser = (overrides = {}) => createUser({ ...overrides });
 const asMock = <T>(fn: T) => fn as unknown as Mock;
 
@@ -33,8 +37,7 @@ describe('UserService.update', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     const user = getUser({
         id: getMockId('user') as string,
-        displayName: 'Original',
-        role: RoleEnum.USER
+        displayName: 'Original'
     });
     const updateInput = { displayName: 'Updated Name', slug: user.slug };
 

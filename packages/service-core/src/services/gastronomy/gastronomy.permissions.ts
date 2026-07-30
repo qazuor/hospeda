@@ -10,7 +10,9 @@
  * duplication.
  *
  * Design decisions:
- * - NEVER check `actor.role` directly.  Only `PermissionEnum` values.
+ * - NEVER check the actor's roles directly (`actor.roles`).  Only `PermissionEnum`
+ *   values.  Since HOS-296 an account holds a SET of hats, so "is the actor
+ *   role X" is not even a well-formed question here.
  * - These helpers are called by GastronomyService permission hooks only.
  * - Owner-scoped update gate uses `COMMERCE_EDIT_OWN` (single permission,
  *   SPEC-253 D2=b). The per-section `COMMERCE_*_EDIT_OWN` perms are removed.

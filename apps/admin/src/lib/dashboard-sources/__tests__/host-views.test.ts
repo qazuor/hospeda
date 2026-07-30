@@ -40,7 +40,7 @@ const mockFetchApi = vi.mocked(fetchApi);
 
 /** HOST context. */
 const ctx: ResolverContext = {
-    role: 'HOST',
+    roles: ['HOST'],
     userId: 'u-host-1',
     permissions: ['ACCOMMODATION_VIEW_OWN'],
     scope: 'own'

@@ -113,7 +113,7 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             // Arrange
             const mockOwner = createMockUserActor({
                 id: 'owner-123',
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [PermissionEnum.ACCESS_API_PRIVATE]
             });
 
@@ -135,7 +135,7 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             // Arrange
             const mockOwner = createMockUserActor({
                 id: 'owner-123',
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [PermissionEnum.ACCESS_API_PRIVATE]
             });
 
@@ -164,7 +164,7 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             // Arrange
             const mockOwner = createMockUserActor({
                 id: 'owner-123',
-                role: RoleEnum.HOST
+                roles: [RoleEnum.HOST]
             });
 
             // Act
@@ -217,7 +217,7 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             // Arrange - User without billing customer
             const mockUser = createMockUserActor({
                 id: 'new-user-123',
-                role: RoleEnum.USER
+                roles: [RoleEnum.USER]
             });
 
             // Act
@@ -253,7 +253,7 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             // Arrange
             const mockOwner = createMockUserActor({
                 id: 'owner-123',
-                role: RoleEnum.HOST
+                roles: [RoleEnum.HOST]
             });
 
             // Act
@@ -273,7 +273,7 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             // Arrange
             const mockOwner = createMockUserActor({
                 id: 'owner-123',
-                role: RoleEnum.HOST
+                roles: [RoleEnum.HOST]
             });
 
             // Act
@@ -306,7 +306,7 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             // Arrange
             const mockOwner = createMockUserActor({
                 id: 'owner-123',
-                role: RoleEnum.HOST
+                roles: [RoleEnum.HOST]
             });
 
             // Act
@@ -327,7 +327,7 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             // Arrange
             const mockOwner = createMockUserActor({
                 id: 'owner-123',
-                role: RoleEnum.HOST
+                roles: [RoleEnum.HOST]
             });
 
             // Act
@@ -378,7 +378,7 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             // Arrange - Regular user without admin permissions
             const mockUser = createMockUserActor({
                 id: 'user-123',
-                role: RoleEnum.HOST
+                roles: [RoleEnum.HOST]
             });
 
             // Act
@@ -396,7 +396,7 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             // Arrange - Admin user with BILLING_READ_ALL permission
             const mockAdmin = createMockUserActor({
                 id: 'admin-123',
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [
                     PermissionEnum.ACCESS_API_PRIVATE,
                     PermissionEnum.MANAGE_SUBSCRIPTIONS
@@ -427,7 +427,7 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             // Arrange
             const mockAdmin = createMockUserActor({
                 id: 'admin-123',
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [PermissionEnum.MANAGE_SUBSCRIPTIONS]
             });
 
@@ -452,7 +452,7 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             // Arrange
             const mockOwner = createMockUserActor({
                 id: 'owner-123',
-                role: RoleEnum.HOST
+                roles: [RoleEnum.HOST]
             });
 
             // Act - Make any API request

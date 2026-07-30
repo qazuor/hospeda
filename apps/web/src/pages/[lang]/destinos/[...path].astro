@@ -8,6 +8,7 @@
  */
 
 import DetailLayout from '@/layouts/DetailLayout.astro';
+import { DestinationViewTracker } from '@/components/analytics/DestinationViewTracker.client';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
@@ -858,6 +859,13 @@ const isThinContent = isThinDestination({
 			/>
 		)}
 	</div>
+
+	<DestinationViewTracker
+		client:idle
+		destinationId={destId}
+		destinationSlug={dest.slug as string}
+		locale={locale}
+	/>
 </DetailLayout>
 
 <style>

@@ -46,6 +46,7 @@
 
 import type { AiService } from '@repo/ai-core';
 import { getMonthlyCallCount, recordAiUsage } from '@repo/ai-core';
+import { AnalyticsEvents } from '@repo/analytics';
 import { ExchangeRateModel } from '@repo/db';
 import {
     type AccommodationImportAsyncStartResponse,
@@ -68,7 +69,7 @@ import {
     ServiceError
 } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getPostHogClient } from '../../../lib/posthog';
+import { captureServerAnalyticsEvent } from '../../../lib/posthog';
 import {
     AI_ENTITLEMENT_BY_FEATURE,
     AI_LIMIT_BY_FEATURE,
@@ -384,10 +385,13 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
         // disabled. Only the hostname is sent — never the full URL (may carry
         // tokens/PII).
         const sourceHost = safeHostname(input.url);
-        getPostHogClient()?.capture({
+        captureServerAnalyticsEvent({
             distinctId: actor.id,
-            event: 'accommodation_import_started',
-            properties: { host: sourceHost }
+            name: AnalyticsEvents.accommodationImportStarted,
+            properties: {
+                import_mode: 'request',
+                import_source: sourceHost
+            }
         });
 
         // Exchange-rate dependencies (BETA-181): a scraped USD price is
@@ -414,12 +418,6 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
         const dispatchResponse = buildImportFromUrlDispatchResponse(dispatch, gate);
 
         if (dispatchResponse.statusCode === 202) {
-            getPostHogClient()?.capture({
-                distinctId: actor.id,
-                event: 'accommodation_import_started_async',
-                properties: { host: sourceHost, source: dispatchResponse.body.source }
-            });
-
             // Bypass the route factory's 200/201 typing — same pattern as
             // accommodation-external-reputation/protected/refresh.ts.
             return ctx.json(
@@ -437,20 +435,26 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
 
         const final = dispatchResponse.body;
 
-        getPostHogClient()?.capture({
-            distinctId: actor.id,
-            event:
-                final.source === 'none'
-                    ? 'accommodation_import_failed'
-                    : 'accommodation_import_completed',
-            properties: {
-                host: sourceHost,
-                source: final.source,
-                partial: final.partial,
-                methodsUsed: final.methodsUsed.length,
-                aiBlocked: gate.blockedReason
-            }
-        });
+        if (final.source === 'none') {
+            captureServerAnalyticsEvent({
+                distinctId: actor.id,
+                name: AnalyticsEvents.accommodationImportFailed,
+                properties: {
+                    import_source: sourceHost,
+                    failure_reason: gate.blockedReason ?? 'no_source_detected'
+                }
+            });
+        } else {
+            captureServerAnalyticsEvent({
+                distinctId: actor.id,
+                name: AnalyticsEvents.accommodationImportCompleted,
+                properties: {
+                    import_source: final.source,
+                    partial: final.partial,
+                    prefilled_field_count: final.methodsUsed.length
+                }
+            });
+        }
 
         return final;
     }

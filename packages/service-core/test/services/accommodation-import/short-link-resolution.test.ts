@@ -93,7 +93,7 @@ const fakeCtx: ServiceConfig = {};
 
 const fakeActor: Actor = {
     id: '00000000-0000-0000-0000-000000000001',
-    role: 'HOST',
+    roles: ['HOST'],
     permissions: []
 } as unknown as Actor;
 
@@ -143,7 +143,7 @@ beforeEach(() => {
 
     // Default resolver stubs — return empty/safe values.
     mockResolveAmenities.mockResolvedValue({ amenityIds: [], unresolved: [] });
-    mockBuildDestinationHint.mockResolvedValue({ candidates: [] });
+    mockBuildDestinationHint.mockResolvedValue({ candidates: [], confident: false });
 
     // Default: safeExternalFetch returns blocked (should not be called for
     // canonical URLs; tests that need it override this).

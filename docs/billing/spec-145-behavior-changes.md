@@ -2,6 +2,16 @@
 
 > Generated 2026-06-05. Feeds the PR description and the staging smoke entry
 > for SPEC-145 (Billing Entitlements & Limits Enforcement).
+>
+> **Historical snapshot, not a live reference (HOS-331).** This document
+> records the gate wiring as it existed at SPEC-145 time. Some of the specific
+> tier assignments below were later changed by HOS-16 / SPEC-216 — e.g. the
+> WRITE_REVIEWS host-lockout described under "Key Decisions" was reversed
+> (owner/complex plans now inherit `WRITE_REVIEWS` via the tourist-VIP
+> entitlement set; see `apps/api/src/routes/accommodation/reviews/protected/create.ts`),
+> and `owner-basico` now also carries `CREATE_PROMOTIONS`. For the current
+> per-plan entitlement/limit truth, always check
+> `packages/billing/src/config/plans.config.ts` rather than this file.
 
 ## Purpose
 
@@ -25,28 +35,34 @@ After SPEC-145, callers without the required entitlement receive:
 
 | Route | Required Key | Blocked Tiers | Notes |
 |---|---|---|---|
-| `POST /api/v1/protected/accommodations` | `PUBLISH_ACCOMMODATIONS` | tourist-free, tourist-standard, tourist-premium | Tourists cannot publish |
-| `POST /api/v1/protected/accommodations/draft` | `PUBLISH_ACCOMMODATIONS` | tourist-free, tourist-standard, tourist-premium | Tourists cannot draft |
+| `POST /api/v1/protected/accommodations` | `PUBLISH_ACCOMMODATIONS` | tourist-free, tourist-plus, tourist-vip | Tourists cannot publish |
+| `POST /api/v1/protected/accommodations/draft` | `PUBLISH_ACCOMMODATIONS` | tourist-free, tourist-plus, tourist-vip | Tourists cannot draft |
 | `POST /api/v1/protected/host-onboarding/start` | exception | none | Onboarding funnel remains open for authenticated tourists; the owner trial still starts on first publish, not at draft creation |
-| `PUT /api/v1/protected/accommodations/{id}` | `EDIT_ACCOMMODATION_INFO` | tourist-free, tourist-standard, tourist-premium | Tourists cannot edit accommodation |
-| `PATCH /api/v1/protected/accommodations/{id}` | `EDIT_ACCOMMODATION_INFO` | tourist-free, tourist-standard, tourist-premium | Tourists cannot patch accommodation |
-| `POST /api/v1/protected/accommodations/{id}/faqs` | `EDIT_ACCOMMODATION_INFO` | tourist-free, tourist-standard, tourist-premium | Tourists cannot add FAQs |
-| `PUT /api/v1/protected/accommodations/{id}/faqs/{faqId}` | `EDIT_ACCOMMODATION_INFO` | tourist-free, tourist-standard, tourist-premium | Tourists cannot update FAQs |
-| `POST /api/v1/protected/owner-promotions` | `CREATE_PROMOTIONS` | tourist-*, owner-basico | Only owner-pro+ can create promotions |
-| `PATCH /api/v1/protected/owner-promotions/{id}` | `CREATE_PROMOTIONS` | tourist-*, owner-basico | Only owner-pro+ can edit promotions |
-| `PUT /api/v1/protected/owner-promotions/{id}` | `CREATE_PROMOTIONS` | tourist-*, owner-basico | Only owner-pro+ can update promotions |
-| `POST /api/v1/protected/accommodations/{id}/reviews` | `WRITE_REVIEWS` | owner-basico, owner-pro, owner-complex | **ALL hosts blocked** — intentional, owner decision 2026-06-05 (conflict-of-interest) |
-| `POST /api/v1/protected/destinations/{id}/reviews` | `WRITE_REVIEWS` | owner-basico, owner-pro, owner-complex | **ALL hosts blocked** — intentional, owner decision 2026-06-05 (conflict-of-interest) |
+| `PUT /api/v1/protected/accommodations/{id}` | `EDIT_ACCOMMODATION_INFO` | tourist-free, tourist-plus, tourist-vip | Tourists cannot edit accommodation |
+| `PATCH /api/v1/protected/accommodations/{id}` | `EDIT_ACCOMMODATION_INFO` | tourist-free, tourist-plus, tourist-vip | Tourists cannot patch accommodation |
+| `POST /api/v1/protected/accommodations/{id}/faqs` | `EDIT_ACCOMMODATION_INFO` | tourist-free, tourist-plus, tourist-vip | Tourists cannot add FAQs |
+| `PUT /api/v1/protected/accommodations/{id}/faqs/{faqId}` | `EDIT_ACCOMMODATION_INFO` | tourist-free, tourist-plus, tourist-vip | Tourists cannot update FAQs |
+| `POST /api/v1/protected/owner-promotions` | `CREATE_PROMOTIONS` | tourist-*, owner-basico | Only owner-pro+ can create promotions — **REVERSED by HOS-16**: `owner-basico` now grants `CREATE_PROMOTIONS` (`MAX_ACTIVE_PROMOTIONS: 2`) |
+| `PATCH /api/v1/protected/owner-promotions/{id}` | `CREATE_PROMOTIONS` | tourist-*, owner-basico | Only owner-pro+ can edit promotions — **REVERSED by HOS-16** (see above) |
+| `PUT /api/v1/protected/owner-promotions/{id}` | `CREATE_PROMOTIONS` | tourist-*, owner-basico | Only owner-pro+ can update promotions — **REVERSED by HOS-16** (see above) |
+| `POST /api/v1/protected/accommodations/{id}/reviews` | `WRITE_REVIEWS` | owner-basico, owner-pro, owner-premium | **ALL hosts blocked** — intentional, owner decision 2026-06-05 (conflict-of-interest). **REVERSED by SPEC-216**: owner plans inherit `WRITE_REVIEWS` via the tourist-VIP spread |
+| `POST /api/v1/protected/destinations/{id}/reviews` | `WRITE_REVIEWS` | owner-basico, owner-pro, owner-premium | **ALL hosts blocked** — intentional, owner decision 2026-06-05 (conflict-of-interest). **REVERSED by SPEC-216** (see above) |
 | `GET /api/v1/protected/accommodations/my/favorites-breakdown` | `VIEW_ADVANCED_STATS` | tourist-*, owner-basico | Only owner-pro+ can see advanced stats |
 | `GET /api/v1/protected/accommodations/my/market-comparison` | `VIEW_ADVANCED_STATS` | tourist-*, owner-basico | Only owner-pro+ can see advanced stats |
-| `GET /api/v1/protected/conversations/me/response-rate` | `VIEW_BASIC_STATS` | tourist-free, tourist-standard, tourist-premium | Tourists cannot see stats |
-| `GET /api/v1/protected/conversations/me/monthly-inquiries` | `VIEW_BASIC_STATS` | tourist-free, tourist-standard, tourist-premium | Tourists cannot see stats |
+| `GET /api/v1/protected/conversations/me/response-rate` | `VIEW_BASIC_STATS` | tourist-free, tourist-plus, tourist-vip | Tourists cannot see stats |
+| `GET /api/v1/protected/conversations/me/monthly-inquiries` | `VIEW_BASIC_STATS` | tourist-free, tourist-plus, tourist-vip | Tourists cannot see stats |
 
 ## Key Decisions
 
 ### WRITE_REVIEWS — host lockout is intentional
 
-Hosts on all owner/complex plans (owner-basico, owner-pro, owner-complex)
+> **No longer true.** SPEC-216 made every owner/complex plan spread the
+> tourist-VIP entitlement set, which includes `WRITE_REVIEWS`, so hosts can
+> write reviews today (see the comment in
+> `apps/api/src/routes/accommodation/reviews/protected/create.ts`). The
+> paragraph below records the SPEC-145 rule.
+
+Hosts on all owner/complex plans (owner-basico, owner-pro, owner-premium)
 intentionally **cannot** write reviews. This is a conflict-of-interest policy:
 hosts must not review competitor accommodations. Hosts retain `RESPOND_REVIEWS`
 (responding to reviews of their own properties).
@@ -63,8 +79,11 @@ that modifies accommodation content requires `PUBLISH_ACCOMMODATIONS` or
 
 ### CREATE_PROMOTIONS blocks basico
 
+> **No longer true.** HOS-16 granted `CREATE_PROMOTIONS` to `owner-basico` with a
+> cap of 2 active promotions. The paragraph below records the SPEC-145 rule.
+
 Owner-basico is an entry-level host plan without promotion capabilities.
-Only owner-pro and owner-complex (and staff bypass) can manage promotions.
+Only owner-pro and owner-premium (and staff bypass) can manage promotions.
 
 ### VIEW_ADVANCED / VIEW_BASIC block by tier
 

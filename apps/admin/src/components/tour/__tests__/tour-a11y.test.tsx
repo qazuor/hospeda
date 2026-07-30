@@ -279,11 +279,11 @@ describe('Tour system — a11y regression (SPEC-174 T-015)', () => {
                 version: 1
             });
             expect(mockedTrackEvent).toHaveBeenCalledWith(
-                'admin.tour.skipped',
-                expect.objectContaining({ tourId: 'host.misAlojamientos' })
+                'admin_tour_skipped',
+                expect.objectContaining({ tour_id: 'host.misAlojamientos' })
             );
             expect(mockedTrackEvent).not.toHaveBeenCalledWith(
-                'admin.tour.completed',
+                'admin_tour_completed',
                 expect.anything()
             );
         });
@@ -315,11 +315,11 @@ describe('Tour system — a11y regression (SPEC-174 T-015)', () => {
             });
 
             expect(mockedTrackEvent).toHaveBeenCalledWith(
-                'admin.tour.completed',
-                expect.objectContaining({ tourId: 'host.misAlojamientos' })
+                'admin_tour_completed',
+                expect.objectContaining({ tour_id: 'host.misAlojamientos' })
             );
             expect(mockedTrackEvent).not.toHaveBeenCalledWith(
-                'admin.tour.skipped',
+                'admin_tour_skipped',
                 expect.anything()
             );
         });
@@ -371,8 +371,8 @@ describe('Tour system — a11y regression (SPEC-174 T-015)', () => {
             // Assert — markSeen called (skip semantics preserved).
             expect(mockMarkSeen).toHaveBeenCalledWith({ tourId: 'host.welcome', version: 1 });
             expect(mockedTrackEvent).toHaveBeenCalledWith(
-                'admin.tour.skipped',
-                expect.objectContaining({ tourId: 'host.welcome' })
+                'admin_tour_skipped',
+                expect.objectContaining({ tour_id: 'host.welcome' })
             );
 
             // Driver must NOT have started.

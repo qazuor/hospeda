@@ -118,6 +118,9 @@ export * from './refund-status.enum.js';
 export * from './refund-status.schema.js';
 export * from './role.enum.js';
 export * from './role.schema.js';
+// Role grant/revoke audit action (HOS-296)
+export * from './role-grant-action.enum.js';
+export * from './role-grant-action.schema.js';
 export * from './service-error-code.enum.js';
 export * from './service-error-code.schema.js';
 // Social media publish enums (SPEC-254)

@@ -79,7 +79,7 @@ vi.mock('../../../src/middlewares/authorization', () => ({
         () => async (c: { set: (k: string, v: unknown) => void }, next: () => Promise<void>) => {
             c.set('actor', {
                 id: ACTOR_ID,
-                role: 'ADMIN',
+                roles: ['ADMIN'],
                 permissions: [
                     'newsletter.campaign.view',
                     'newsletter.campaign.write',

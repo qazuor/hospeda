@@ -138,7 +138,7 @@ const ASSET_ID = '00000000-0000-4000-8000-000000000007';
 function buildActor(hasApprove: boolean): Actor {
     return {
         id: ACTOR_ID,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: hasApprove ? [PermissionEnum.SOCIAL_POST_APPROVE] : []
     };
 }
@@ -146,7 +146,7 @@ function buildActor(hasApprove: boolean): Actor {
 function buildActorWithSchedule(hasPerm: boolean): Actor {
     return {
         id: ACTOR_ID,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: hasPerm ? [PermissionEnum.SOCIAL_POST_SCHEDULE] : []
     };
 }
@@ -154,7 +154,7 @@ function buildActorWithSchedule(hasPerm: boolean): Actor {
 function buildActorWithPause(hasPerm: boolean): Actor {
     return {
         id: ACTOR_ID,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: hasPerm ? [PermissionEnum.SOCIAL_POST_PAUSE] : []
     };
 }
@@ -162,7 +162,7 @@ function buildActorWithPause(hasPerm: boolean): Actor {
 function buildActorWithArchive(hasPerm: boolean): Actor {
     return {
         id: ACTOR_ID,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: hasPerm ? [PermissionEnum.SOCIAL_POST_ARCHIVE] : []
     };
 }
@@ -170,7 +170,7 @@ function buildActorWithArchive(hasPerm: boolean): Actor {
 function buildActorWithView(hasPerm: boolean): Actor {
     return {
         id: ACTOR_ID,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: hasPerm ? [PermissionEnum.SOCIAL_POST_VIEW] : []
     };
 }
@@ -178,7 +178,7 @@ function buildActorWithView(hasPerm: boolean): Actor {
 function buildActorWithViewAndHardDelete(): Actor {
     return {
         id: ACTOR_ID,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [PermissionEnum.SOCIAL_POST_VIEW, PermissionEnum.SOCIAL_POST_HARD_DELETE]
     };
 }
@@ -186,7 +186,7 @@ function buildActorWithViewAndHardDelete(): Actor {
 function buildActorWithUpdate(hasPerm: boolean): Actor {
     return {
         id: ACTOR_ID,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: hasPerm ? [PermissionEnum.SOCIAL_POST_UPDATE] : []
     };
 }
@@ -194,7 +194,7 @@ function buildActorWithUpdate(hasPerm: boolean): Actor {
 function buildActorWithHashtagManage(hasPerm: boolean): Actor {
     return {
         id: ACTOR_ID,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: hasPerm ? [PermissionEnum.SOCIAL_HASHTAG_MANAGE] : []
     };
 }

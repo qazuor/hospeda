@@ -1364,14 +1364,38 @@ const inMemorySlidingWindowStore: SlidingWindowStore = {
  *   to in-memory when Redis is unavailable).
  * - `'memory'` (default) → in-process {@link inMemorySlidingWindowStore}.
  *
- * Called lazily inside `createSlidingWindowPerUserRateLimit` so that the env is
- * already validated before this runs.
+ * Resolved on the FIRST REQUEST, not when the factory is called (HOS-325).
+ *
+ * The established pattern in this codebase is a module-level
+ * `const limiter = createSlidingWindowPerUserRateLimit({...})`, so "factory call
+ * time" is really "module import time" — which happens before `validateApiEnv()`
+ * runs. Reading `env` there threw `Cannot read properties of undefined` for any
+ * route file that mounts a limiter at module scope and is imported directly by a
+ * unit test, and in the app it meant the backend was picked from an env that was
+ * not validated yet. Deferring to the first request keeps the single-lookup
+ * optimisation (the result is memoised) while removing both problems.
  */
+let memoizedDefaultStore: SlidingWindowStore | undefined;
+
 function resolveDefaultSlidingWindowStore(): SlidingWindowStore {
-    if (env.HOSPEDA_RATE_LIMIT_BACKEND === 'redis') {
-        return getRedisSlidingWindowStore();
+    if (memoizedDefaultStore === undefined) {
+        // `env` is optional-chained on purpose: this can still run before
+        // validation in a test that imports a route module directly, and the
+        // documented default (memory) is the right degradation.
+        memoizedDefaultStore =
+            env?.HOSPEDA_RATE_LIMIT_BACKEND === 'redis'
+                ? getRedisSlidingWindowStore()
+                : inMemorySlidingWindowStore;
     }
-    return inMemorySlidingWindowStore;
+    return memoizedDefaultStore;
+}
+
+/**
+ * Test-only reset of the memoised default store, so a suite that changes
+ * `HOSPEDA_RATE_LIMIT_BACKEND` is not served a store resolved by an earlier one.
+ */
+export function resetDefaultSlidingWindowStore(): void {
+    memoizedDefaultStore = undefined;
 }
 
 /**
@@ -1415,9 +1439,12 @@ export function createSlidingWindowPerUserRateLimit(
     opts: SlidingWindowPerUserOptions,
     store?: SlidingWindowStore
 ): (c: Context, next: Next) => Promise<Response | undefined> {
-    // Resolve the store once at factory-creation time (not per request) so the
-    // env lookup is only performed once and the same store instance is reused.
-    const resolvedStore = store ?? resolveDefaultSlidingWindowStore();
+    // The store is resolved on first use, NOT here: a module-level
+    // `createSlidingWindowPerUserRateLimit(...)` runs at import time, before
+    // `validateApiEnv()`. An explicitly injected store still wins outright.
+    // `resolveDefaultSlidingWindowStore` memoises, so this stays a single lookup.
+    const getStoreForRequest = (): SlidingWindowStore =>
+        store ?? resolveDefaultSlidingWindowStore();
     const { windowMs, max, keyPrefix = 'sw' } = opts;
 
     return async (c: Context, next: Next): Promise<Response | undefined> => {
@@ -1439,11 +1466,11 @@ export function createSlidingWindowPerUserRateLimit(
         const storeKey = `${keyPrefix}:${identity}`;
 
         // ── Check current count BEFORE recording ──────────────────────────────
-        const currentCount = await resolvedStore.count(storeKey, windowMs);
+        const currentCount = await getStoreForRequest().count(storeKey, windowMs);
 
         if (currentCount >= max) {
             // Calculate Retry-After from the oldest timestamp in the window
-            const oldest = await resolvedStore.oldestInWindow(storeKey, windowMs);
+            const oldest = await getStoreForRequest().oldestInWindow(storeKey, windowMs);
             const retryAfterMs = oldest === undefined ? windowMs : windowMs - (Date.now() - oldest);
             const retryAfterSec = Math.max(1, Math.ceil(retryAfterMs / 1000));
             const resetEpochSec = Math.ceil((Date.now() + retryAfterMs) / 1000);
@@ -1486,7 +1513,7 @@ export function createSlidingWindowPerUserRateLimit(
         }
 
         // ── Record request and set informational headers ──────────────────────
-        const newCount = await resolvedStore.record(storeKey, windowMs);
+        const newCount = await getStoreForRequest().record(storeKey, windowMs);
         const remaining = Math.max(0, max - newCount);
         const resetEpochSec = Math.ceil((Date.now() + windowMs) / 1000);
 

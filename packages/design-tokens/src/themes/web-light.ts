@@ -40,6 +40,7 @@ import {
     brandSecondary,
     brandSecondaryForeground,
     brandTertiary,
+    channels,
     chartColors,
     danger,
     forest,
@@ -145,6 +146,25 @@ export const webLight: Theme = {
     'surface-dark': surfaces.dark,
     'surface-dark-foreground': surfaces.darkForeground,
     'surface-elevated': surfaces.elevated,
+
+    // ========================================================================
+    // Third-party channel colors (HOS-314)
+    //
+    // Declared ONLY here, not in web-dark.ts, and that is load-bearing rather
+    // than an omission: a channel's brand green is the same color in both
+    // themes, so the ink that has to stay readable on it must be frozen too.
+    // Routing `--channel-whatsapp-foreground` through `--core-foreground`
+    // (which inverts) would drop the button to 1.56:1, below the 1.98:1 it
+    // shipped with. `--channel-whatsapp-text` is the exception and DOES get a
+    // dark override, because it paints text on `--surface-warm`, which inverts.
+    // `-logo` is white on purpose: WCAG 1.4.3 exempts logotypes, so the
+    // logo-only badge keeps the mark as the brand publishes it.
+    // ========================================================================
+    'channel-whatsapp': channels.whatsapp,
+    'channel-whatsapp-foreground': channels.whatsappForeground,
+    'channel-whatsapp-logo': channels.whatsappLogo,
+    'channel-whatsapp-hover': channels.whatsappHover,
+    'channel-whatsapp-text': channels.whatsappText,
 
     // ========================================================================
     // Footer surface tokens — global.css lines 59–67

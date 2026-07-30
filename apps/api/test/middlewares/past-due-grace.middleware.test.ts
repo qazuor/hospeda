@@ -10,6 +10,7 @@
  * @module test/middlewares/past-due-grace.middleware
  */
 
+import { HTTPException } from 'hono/http-exception';
 import type { Mock } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -399,23 +400,22 @@ describe('pastDueGraceMiddleware', () => {
             const ctx = createMockContext();
             const middleware = pastDueGraceMiddleware();
 
-            // Act
-            await middleware(ctx as never, next);
-
-            // Assert
+            // Act / Assert — thrown, not `c.json`-ed, so the shared error formatter
+            // builds the body (HOS-283). The old hand-rolled shape put a STRING
+            // in `error` instead of the `{code, message}` envelope, which the
+            // web client could not parse at all.
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
+            expect(thrown).toBeInstanceOf(HTTPException);
+            const httpError = thrown as HTTPException;
+            expect(httpError.status).toBe(402);
+            expect(httpError.message).toContain('grace period has expired');
+            expect(httpError.cause).toEqual({
+                code: 'GRACE_PERIOD_EXPIRED',
+                // daysOverdue computed from currentPeriodEnd: ceil(8d) - 7d grace = 1
+                daysOverdue: 1
+            });
             expect(next).not.toHaveBeenCalled();
-            expect(ctx.json).toHaveBeenCalledOnce();
-
-            const [body, status] = (ctx.json as Mock).mock.calls[0] as [
-                { error: string; message: string; daysOverdue: number },
-                number
-            ];
-            expect(status).toBe(402);
-            expect(body.error).toBe('GRACE_PERIOD_EXPIRED');
-            expect(body).toHaveProperty('message');
-            expect(body).toHaveProperty('daysOverdue');
-            // daysOverdue computed from currentPeriodEnd: ceil(8d) - 7d grace = 1
-            expect(body.daysOverdue).toBe(1);
+            expect(ctx.json).not.toHaveBeenCalled();
         });
 
         it('should return 402 and not set grace header when grace exactly expired (daysRemaining = 0)', async () => {
@@ -430,20 +430,17 @@ describe('pastDueGraceMiddleware', () => {
             const middleware = pastDueGraceMiddleware();
 
             // Act
-            await middleware(ctx as never, next);
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
 
             // Assert
             expect(next).not.toHaveBeenCalled();
             expect(ctx.header).not.toHaveBeenCalled();
-
-            const [body, status] = (ctx.json as Mock).mock.calls[0] as [
-                { error: string; daysOverdue: number },
-                number
-            ];
-            expect(status).toBe(402);
-            expect(body.error).toBe('GRACE_PERIOD_EXPIRED');
-            // Math.abs(0) = 0
-            expect(body.daysOverdue).toBe(0);
+            expect(thrown).toBeInstanceOf(HTTPException);
+            expect((thrown as HTTPException).status).toBe(402);
+            expect((thrown as HTTPException).cause).toEqual({
+                code: 'GRACE_PERIOD_EXPIRED',
+                daysOverdue: 0
+            });
         });
 
         it('should not call next() when blocking with 402', async () => {
@@ -458,9 +455,32 @@ describe('pastDueGraceMiddleware', () => {
             const middleware = pastDueGraceMiddleware();
 
             // Act
-            await middleware(ctx as never, next);
+            await middleware(ctx as never, next).catch(() => undefined);
 
             // Assert
+            expect(next).not.toHaveBeenCalled();
+        });
+
+        // HOS-283: the block is now a THROW, and the catch below it fails OPEN.
+        // Without the `instanceof HTTPException` re-throw guard, this gate would
+        // swallow its own decision and let the past-due customer through — the
+        // gate would silently stop gating.
+        it('must not be swallowed by the fail-open catch', async () => {
+            // Arrange
+            const pastDueSub = createMockSubscription({
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -5
+            });
+            setupBillingWith([pastDueSub]);
+            const ctx = createMockContext();
+            const middleware = pastDueGraceMiddleware();
+
+            // Act
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
+
+            // Assert — the request is blocked, not allowed through
+            expect(thrown).toBeInstanceOf(HTTPException);
             expect(next).not.toHaveBeenCalled();
         });
     });
@@ -673,13 +693,12 @@ describe('pastDueGraceMiddleware', () => {
             const middleware = pastDueGraceMiddleware();
 
             // Act
-            await middleware(ctx as never, next);
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
 
             // Assert
             expect(next).not.toHaveBeenCalled();
-            expect(ctx.json).toHaveBeenCalledOnce();
-            const [_body, status] = (ctx.json as Mock).mock.calls[0] as [unknown, number];
-            expect(status).toBe(402);
+            expect(thrown).toBeInstanceOf(HTTPException);
+            expect((thrown as HTTPException).status).toBe(402);
         });
     });
 
@@ -705,13 +724,12 @@ describe('pastDueGraceMiddleware', () => {
             const middleware = pastDueGraceMiddleware();
 
             // Act
-            await middleware(ctx as never, next);
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
 
             // Assert - sub2 (0 days, expired) should be chosen, resulting in 402
             expect(next).not.toHaveBeenCalled();
-            expect(ctx.json).toHaveBeenCalledOnce();
-            const [_body, status] = (ctx.json as Mock).mock.calls[0] as [unknown, number];
-            expect(status).toBe(402);
+            expect(thrown).toBeInstanceOf(HTTPException);
+            expect((thrown as HTTPException).status).toBe(402);
         });
 
         it('should use the most expired subscription when both are past grace', async () => {
@@ -732,17 +750,15 @@ describe('pastDueGraceMiddleware', () => {
             const middleware = pastDueGraceMiddleware();
 
             // Act
-            await middleware(ctx as never, next);
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
 
             // Assert - sub1 (-1 days, most urgent) should be chosen, resulting in 402
             expect(next).not.toHaveBeenCalled();
-            expect(ctx.json).toHaveBeenCalledOnce();
-            const [body, status] = (ctx.json as Mock).mock.calls[0] as [
-                { daysOverdue: number },
-                number
-            ];
-            expect(status).toBe(402);
-            expect(body.daysOverdue).toBe(1); // ceil(8d) - 7d grace = 1
+            expect(thrown).toBeInstanceOf(HTTPException);
+            expect((thrown as HTTPException).status).toBe(402);
+            expect((thrown as HTTPException).cause).toMatchObject({
+                daysOverdue: 1 // ceil(8d) - 7d grace = 1
+            });
         });
     });
 
@@ -751,7 +767,7 @@ describe('pastDueGraceMiddleware', () => {
     // -----------------------------------------------------------------------
 
     describe('402 response body shape', () => {
-        it('should include error, message, and daysOverdue fields', async () => {
+        it('carries the cause the error formatter turns into reason + details', async () => {
             // Arrange
             const pastDueSub = createMockSubscription({
                 isPastDue: true,
@@ -764,15 +780,17 @@ describe('pastDueGraceMiddleware', () => {
             const middleware = pastDueGraceMiddleware();
 
             // Act
-            await middleware(ctx as never, next);
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
 
-            // Assert
-            const [body] = (ctx.json as Mock).mock.calls[0] as [
-                { error: string; message: string; daysOverdue: number }
-            ];
-            expect(body).toMatchObject({
-                error: 'GRACE_PERIOD_EXPIRED',
-                message: expect.any(String),
+            // Assert — the wire body is built by `createErrorHandler`, which maps
+            // this cause to `code: ENTITLEMENT_REQUIRED` + `reason:
+            // GRACE_PERIOD_EXPIRED` + `details.daysOverdue` (HOS-283; asserted
+            // end-to-end in test/middlewares/response.test.ts).
+            expect(thrown).toBeInstanceOf(HTTPException);
+            const httpError = thrown as HTTPException;
+            expect(httpError.message).toEqual(expect.any(String));
+            expect(httpError.cause).toMatchObject({
+                code: 'GRACE_PERIOD_EXPIRED',
                 daysOverdue: 3 // ceil(10d) - 7d grace = 3
             });
         });

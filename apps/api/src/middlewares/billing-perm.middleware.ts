@@ -69,7 +69,7 @@ export function billingPermMiddleware(
             apiLogger.warn(
                 {
                     actorId: actor.id,
-                    actorRole: actor.role,
+                    actorRoles: actor.roles,
                     requiredPermission,
                     path: c.req.path
                 },

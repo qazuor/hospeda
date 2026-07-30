@@ -42,10 +42,16 @@ export interface RequestContextStore {
     path: string;
     /** Authenticated user ID — set after actor resolution. */
     userId?: string;
-    /** Authenticated user role string — set after actor resolution. */
-    role?: string;
     /**
-     * Better Auth session ID — set alongside `userId`/`role` at actor
+     * Every role the authenticated user holds — set after actor resolution.
+     *
+     * HOS-296 turned this from a single `role` string into the full set: an
+     * account can wear several hats at once, and a log line attributing an
+     * action to one arbitrarily-chosen hat would misattribute it.
+     */
+    roles?: readonly string[];
+    /**
+     * Better Auth session ID — set alongside `userId`/`roles` at actor
      * resolution when the request carries a resolved session. `undefined`
      * for guest/anonymous requests.
      */
@@ -75,13 +81,13 @@ export interface RunWithRequestContextInput {
 export interface SetRequestContextActorInput {
     /** Authenticated user ID. */
     userId: string;
-    /** Authenticated user role string. */
-    role: string;
+    /** Every role the authenticated user holds (HOS-296). */
+    roles: readonly string[];
     /**
      * Better Auth session ID, when the request carries a resolved session.
-     * Set at the same seam as `userId`/`role` (actor middleware), so the
+     * Set at the same seam as `userId`/`roles` (actor middleware), so the
      * three fields land on the store together. Omitted for requests with no
-     * session (should not happen when `userId`/`role` are set, but the field
+     * session (should not happen when `userId`/`roles` are set, but the field
      * stays optional for forward compatibility).
      */
     sessionId?: string;
@@ -170,7 +176,7 @@ export function getRequestContext(): RequestContextStore | undefined {
  * @example
  * ```ts
  * // Inside actor middleware, after resolving the authenticated user:
- * setRequestContextActor({ userId: user.id, role: user.role, sessionId: session.id });
+ * setRequestContextActor({ userId: actor.id, roles: actor.roles, sessionId: session.id });
  * ```
  */
 export function setRequestContextActor(input: SetRequestContextActorInput): void {
@@ -181,7 +187,7 @@ export function setRequestContextActor(input: SetRequestContextActorInput): void
         return;
     }
     store.userId = input.userId;
-    store.role = input.role;
+    store.roles = input.roles;
     if (input.sessionId !== undefined) {
         store.sessionId = input.sessionId;
     }

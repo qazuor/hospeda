@@ -111,7 +111,7 @@ vi.mock('@/contexts/dashboard-resolver-context', () => ({
             }
         }),
         buildContextForScope: vi.fn(),
-        role: 'ADMIN',
+        roles: ['ADMIN'],
         isAuthenticated: true
     })
 }));
@@ -222,7 +222,7 @@ describe('DashboardRenderer', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Default: authenticated ADMIN user.
-        mockUseAuthContext.mockReturnValue({ user: { role: 'ADMIN' }, isAuthenticated: true });
+        mockUseAuthContext.mockReturnValue({ user: { roles: ['ADMIN'] }, isAuthenticated: true });
         mockUseCurrentRoleConfig.mockReturnValue(undefined);
     });
 
@@ -560,7 +560,7 @@ describe('DashboardRenderer', () => {
     });
 
     it('uses user role from auth context for query invalidation when role prop is omitted', () => {
-        mockUseAuthContext.mockReturnValue({ user: { role: 'EDITOR' }, isAuthenticated: true });
+        mockUseAuthContext.mockReturnValue({ user: { roles: ['EDITOR'] }, isAuthenticated: true });
         const dashboard = makeDashboard([makeWidget({ id: 'k1', type: 'kpi' })]);
 
         render(

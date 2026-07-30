@@ -151,17 +151,17 @@ describe('canViewExactLocation (SPEC-097)', () => {
     const ownerId = 'owner-aaaa-bbbb-cccc-dddddddddddd';
     const adminActor = {
         id: 'admin-id',
-        role: 'ADMIN',
+        roles: ['ADMIN'],
         permissions: [PermissionEnum.ACCOMMODATION_LOCATION_EXACT_VIEW]
     } as unknown as Actor;
     const ownerActor = {
         id: ownerId,
-        role: 'USER',
+        roles: ['USER'],
         permissions: []
     } as unknown as Actor;
     const guestActor = {
         id: 'guest-id',
-        role: 'USER',
+        roles: ['USER'],
         permissions: []
     } as unknown as Actor;
 
@@ -208,13 +208,13 @@ describe('applyAccommodationLocationPrivacy (SPEC-097)', () => {
 
     const guestActor = {
         id: 'guest-id',
-        role: 'USER',
+        roles: ['USER'],
         permissions: []
     } as unknown as Actor;
 
     const adminActor = {
         id: 'admin-id',
-        role: 'ADMIN',
+        roles: ['ADMIN'],
         permissions: [PermissionEnum.ACCOMMODATION_LOCATION_EXACT_VIEW]
     } as unknown as Actor;
 
@@ -252,7 +252,7 @@ describe('applyAccommodationLocationPrivacy (SPEC-097)', () => {
 
     it('keeps exact location for the owner', () => {
         const result = applyAccommodationLocationPrivacy(buildEntity(), {
-            actor: { id: ownerId, role: 'USER', permissions: [] } as unknown as Actor,
+            actor: { id: ownerId, roles: ['USER'], permissions: [] } as unknown as Actor,
             salt: SALT
         });
 

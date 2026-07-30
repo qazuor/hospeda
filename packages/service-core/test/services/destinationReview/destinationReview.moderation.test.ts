@@ -179,7 +179,7 @@ function makeReview(overrides: Partial<DestinationReview> = {}): DestinationRevi
 function makeModeratorActor() {
     return createActor({
         id: getMockId('user'),
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [PermissionEnum.DESTINATION_REVIEW_MODERATE]
     });
 }
@@ -187,7 +187,7 @@ function makeModeratorActor() {
 function makeUnprivilegedActor() {
     return createActor({
         id: getMockId('user'),
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: []
     });
 }

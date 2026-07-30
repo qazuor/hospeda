@@ -9,7 +9,7 @@ import {
 import { ServiceError } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 
-const baseActor = { id: 'actor-1', role: RoleEnum.USER, permissions: [] };
+const baseActor = { id: 'actor-1', roles: [RoleEnum.USER], permissions: [] };
 
 describe('accommodationReview.permissions', () => {
     describe('checkCanCreateAccommodationReview', () => {

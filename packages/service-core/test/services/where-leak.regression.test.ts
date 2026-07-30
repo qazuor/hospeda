@@ -26,7 +26,7 @@ function makeActor(): Actor {
     return {
         id: 'test-user',
         type: 'user',
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: []
     } as unknown as Actor;
 }

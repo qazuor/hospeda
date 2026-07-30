@@ -11,8 +11,9 @@
  * both email and OAuth signups.
  */
 
+import { AnalyticsEvents } from '@repo/analytics';
 import { createLogger } from '@repo/logger';
-import { getPostHogClient } from './posthog';
+import { captureServerAnalyticsEvent } from './posthog';
 
 const logger = createLogger('auth-signup-analytics');
 
@@ -62,10 +63,14 @@ export function captureSignupCompleted(input: {
     context: SignupContextLike | null | undefined;
 }): void {
     try {
-        getPostHogClient()?.capture({
+        captureServerAnalyticsEvent({
             distinctId: input.userId,
-            event: 'signup_completed',
-            properties: { provider: deriveSignupProvider(input.context) }
+            name: AnalyticsEvents.signUpCompleted,
+            properties: {
+                auth_method: deriveSignupProvider(input.context),
+                role: 'USER',
+                user_type: 'tourist'
+            }
         });
     } catch (error) {
         logger.warn(

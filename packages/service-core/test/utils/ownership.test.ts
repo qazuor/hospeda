@@ -11,7 +11,7 @@ import { getOwnershipDescriptor, OWNERSHIP_REGISTRY } from '../../src/utils/owne
 
 const makeActor = (id: string): Actor => ({
     id,
-    role: RoleEnum.HOST,
+    roles: [RoleEnum.HOST],
     permissions: []
 });
 

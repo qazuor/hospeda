@@ -14,6 +14,8 @@
  * `messageId` is ALWAYS present in the response (spec AC-002-01).
  */
 
+import { AnalyticsEvents } from '@repo/analytics';
+import { accommodations, eq, getDb } from '@repo/db';
 import {
     CreateConversationAuthSchema,
     InitiateAuthResponseSchema,
@@ -24,6 +26,7 @@ import {
 } from '@repo/schemas';
 import { ConversationService, MessageService, ServiceError } from '@repo/service-core';
 import { createConversationMailer } from '../../../lib/conversation-mailer';
+import { captureServerAnalyticsEvent } from '../../../lib/posthog';
 import { getActorFromContext } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
 import { env } from '../../../utils/env';
@@ -37,7 +40,9 @@ import {
 /** System-level actor used when calling services that require conversation permissions. */
 const SYSTEM_ACTOR = {
     id: '00000000-0000-0000-0000-000000000001',
-    role: RoleEnum.ADMIN,
+    // HOS-296: the actor carries a SET of hats. This synthetic system actor
+    // wears exactly one, ADMIN, which is all the conversation service checks.
+    roles: [RoleEnum.ADMIN],
     permissions: [
         PermissionEnum.CONVERSATION_VIEW_OWN,
         PermissionEnum.CONVERSATION_VIEW_ANY,
@@ -48,6 +53,24 @@ const SYSTEM_ACTOR = {
 } as const;
 
 const router = createRouter();
+
+async function resolveAccommodationAnalyticsContext(accommodationId: string): Promise<{
+    readonly destinationId?: string;
+    readonly ownerId?: string;
+}> {
+    const db = getDb();
+    const row = await db
+        .select({ destinationId: accommodations.destinationId, ownerId: accommodations.ownerId })
+        .from(accommodations)
+        .where(eq(accommodations.id, accommodationId))
+        .limit(1);
+
+    const found = row[0];
+    return {
+        destinationId: found?.destinationId ?? undefined,
+        ownerId: found?.ownerId ?? undefined
+    };
+}
 
 /**
  * POST /
@@ -76,6 +99,7 @@ router.post('/', async (c) => {
 
         const body = parseResult.data;
         const actor = getActorFromContext(c);
+        const analyticsContext = await resolveAccommodationAnalyticsContext(body.accommodationId);
 
         const conversationSvc = new ConversationService(
             { logger: apiLogger },
@@ -87,7 +111,7 @@ router.post('/', async (c) => {
         );
 
         const initiateResult = await conversationSvc.initiateAuthenticated(
-            { id: actor.id, role: actor.role, permissions: actor.permissions },
+            { id: actor.id, roles: actor.roles, permissions: actor.permissions },
             {
                 accommodationId: body.accommodationId,
                 message: body.message,
@@ -96,6 +120,23 @@ router.post('/', async (c) => {
         );
 
         if (initiateResult.error) {
+            captureServerAnalyticsEvent({
+                distinctId: actor.id,
+                name: AnalyticsEvents.contactOwnerFailed,
+                properties: {
+                    accommodation_id: body.accommodationId,
+                    destination_id: analyticsContext.destinationId,
+                    owner_id: analyticsContext.ownerId,
+                    contact_method: 'platform_message',
+                    failure_reason:
+                        initiateResult.error.code === ServiceErrorCode.ALREADY_EXISTS
+                            ? 'conversation_duplicate'
+                            : initiateResult.error.code.toLowerCase(),
+                    is_authenticated: true,
+                    locale: body.locale
+                }
+            });
+
             throw new ServiceError(
                 initiateResult.error.code,
                 initiateResult.error.message,
@@ -115,6 +156,20 @@ router.post('/', async (c) => {
 
             const messageId =
                 msgListResult.data?.messages?.[0]?.id ?? '00000000-0000-0000-0000-000000000000';
+
+            captureServerAnalyticsEvent({
+                distinctId: actor.id,
+                name: AnalyticsEvents.contactOwnerCompleted,
+                properties: {
+                    accommodation_id: body.accommodationId,
+                    destination_id: analyticsContext.destinationId,
+                    owner_id: analyticsContext.ownerId,
+                    contact_method: 'platform_message',
+                    conversation_flow: 'authenticated',
+                    is_authenticated: true,
+                    locale: body.locale
+                }
+            });
 
             return createResponse(
                 { conversationId, isNew: true, messageId },
@@ -139,6 +194,20 @@ router.post('/', async (c) => {
                 msgResult.error.details
             );
         }
+
+        captureServerAnalyticsEvent({
+            distinctId: actor.id,
+            name: AnalyticsEvents.contactOwnerCompleted,
+            properties: {
+                accommodation_id: body.accommodationId,
+                destination_id: analyticsContext.destinationId,
+                owner_id: analyticsContext.ownerId,
+                contact_method: 'platform_message',
+                conversation_flow: 'authenticated',
+                is_authenticated: true,
+                locale: body.locale
+            }
+        });
 
         return createResponse(
             { conversationId, isNew: false, messageId: msgResult.data.id },

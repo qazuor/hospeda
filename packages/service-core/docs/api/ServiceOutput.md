@@ -214,10 +214,10 @@ Represents a user or system performing an action.
 export type Actor = {
   /** Unique identifier of the actor */
   id: string;
-  /** Role of the actor in the system */
-  role: RoleEnum;
-  /** Permissions assigned to the actor (direct + by role) */
-  permissions: PermissionEnum[];
+  /** Every role the actor holds at once (HOS-296) — no single "primary role" */
+  roles: readonly RoleEnum[];
+  /** Permissions assigned to the actor (union across held roles + per-user overrides) */
+  permissions: readonly PermissionEnum[];
 };
 ```
 

@@ -40,7 +40,7 @@ describe('UserService.create', () => {
 
     it('should create a user (success)', async () => {
         // Arrange
-        const createdUser = createUser({ displayName: 'Test User', role: RoleEnum.USER });
+        const createdUser = createUser({ displayName: 'Test User' });
         asMock(userModelMock.create).mockResolvedValue(createdUser);
         // Act
         const result = await service.create(actor, input);
@@ -55,7 +55,7 @@ describe('UserService.create', () => {
 
     it('should return FORBIDDEN if actor lacks USER_CREATE permission', async () => {
         // Arrange - admin actor without USER_CREATE permission
-        const forbiddenActor = createActor({ role: RoleEnum.ADMIN, permissions: [] });
+        const forbiddenActor = createActor({ roles: [RoleEnum.ADMIN], permissions: [] });
         // Act
         const result = await service.create(forbiddenActor, input);
         // Assert

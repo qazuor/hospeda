@@ -32,7 +32,7 @@ describe('ExchangeRateService', () => {
         // Mock actor with all permissions
         mockActor = {
             id: 'test-actor-id',
-            role: RoleEnum.ADMIN,
+            roles: [RoleEnum.ADMIN],
             permissions: [
                 PermissionEnum.EXCHANGE_RATE_VIEW,
                 PermissionEnum.EXCHANGE_RATE_CREATE,
@@ -107,7 +107,7 @@ describe('ExchangeRateService', () => {
         it('should check CREATE permission', async () => {
             const actorWithoutPermission: Actor = {
                 id: 'test-actor-id',
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: []
             };
 

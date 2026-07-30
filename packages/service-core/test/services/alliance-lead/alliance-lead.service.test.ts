@@ -20,13 +20,13 @@ const GUEST_ID = '00000000-0000-4000-a000-000000000011';
 
 const adminActor: Actor = {
     id: ACTOR_ID,
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.ALLIANCE_LEAD_VIEW_ALL, PermissionEnum.ALLIANCE_LEAD_MANAGE]
 };
 
 const guestActor: Actor = {
     id: GUEST_ID,
-    role: RoleEnum.GUEST,
+    roles: [RoleEnum.GUEST],
     permissions: []
 };
 

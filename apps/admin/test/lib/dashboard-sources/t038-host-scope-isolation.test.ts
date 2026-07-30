@@ -72,7 +72,7 @@ const USER_ID_KEY_INDEX = 4;
  */
 function makeHostCtx(userId = 'usr_host_001'): ResolverContext {
     return {
-        role: 'HOST',
+        roles: ['HOST'],
         userId,
         permissions: ['ACCOMMODATION_VIEW_OWN', 'REVIEW_VIEW_OWN', 'CONVERSATION_VIEW_OWN'],
         scope: 'own'
@@ -84,7 +84,7 @@ function makeHostCtx(userId = 'usr_host_001'): ResolverContext {
  */
 function makeAdminAllCtx(userId = 'usr_admin_001'): ResolverContext {
     return {
-        role: 'ADMIN',
+        roles: ['ADMIN'],
         userId,
         permissions: ['ACCOMMODATION_VIEW_ALL'],
         scope: 'all'

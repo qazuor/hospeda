@@ -58,7 +58,7 @@ vi.mock('@repo/db', async () => {
 // Mock actor — admin with ACCOMMODATION_UPDATE_ANY so plan cap is bypassed.
 const mockActor = {
     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-    role: 'SUPER_ADMIN',
+    roles: ['SUPER_ADMIN'],
     permissions: ['accommodation.update.any', 'access.panelAdmin']
 };
 vi.mock('../../src/utils/actor.js', () => ({

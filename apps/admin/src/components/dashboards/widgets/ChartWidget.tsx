@@ -39,6 +39,7 @@
  * @see apps/admin/src/config/ia/schema.ts
  */
 
+import type { TranslationKey } from '@repo/i18n';
 import { useQuery } from '@tanstack/react-query';
 import {
     Area,
@@ -59,6 +60,7 @@ import {
 } from '@/components/ui/chart';
 import type { Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
+import { useTranslations } from '@/hooks/use-translations';
 import { accentVars } from '../dashboard-accents';
 import {
     WidgetCard,
@@ -147,6 +149,16 @@ export interface ChartWidgetConfig {
     readonly accent?: string;
     /** Dashboard icon name for the card header chip. */
     readonly icon?: string;
+    /**
+     * Optional i18n key rendered as a footnote under the chart.
+     *
+     * Exists for charts whose numbers are correct but read as broken without
+     * an explanation. The concrete case (HOS-296 §7.3) is the users-by-role
+     * ranking: a user now holds a SET of roles and contributes to every
+     * bucket they wear, so the bars legitimately sum to MORE than the total
+     * user count. Stating that is cheaper than fielding the bug report.
+     */
+    readonly noteKey?: string;
 }
 
 // ============================================================================
@@ -426,6 +438,8 @@ function ChartRenderer({ chartType, data, label, accent }: ChartRendererProps) {
  * ```
  */
 export function ChartWidget({ widget }: ChartWidgetProps) {
+    const { t } = useTranslations();
+
     // -- 1. Extract source id and config overrides ---------------------------
     const config = (widget.config ?? {}) as ChartWidgetConfig;
     const sourceId = config.source ?? '';
@@ -564,6 +578,14 @@ export function ChartWidget({ widget }: ChartWidgetProps) {
                 label={displayLabel}
                 accent={config.accent}
             />
+            {config.noteKey && (
+                <p
+                    className="mt-3 text-muted-foreground text-xs"
+                    data-testid="chart-widget-note"
+                >
+                    {t(config.noteKey as TranslationKey)}
+                </p>
+            )}
         </WidgetCard>
     );
 }

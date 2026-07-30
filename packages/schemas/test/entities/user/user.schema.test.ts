@@ -21,7 +21,6 @@ describe('UserSchema', () => {
             const result = UserSchema.parse(validData);
             expect(result.id).toBeDefined();
             expect(result.displayName).toBeDefined();
-            expect(result.role).toBeDefined();
             expect(Array.isArray(result.permissions)).toBe(true);
         });
 
@@ -48,7 +47,6 @@ describe('UserSchema', () => {
             expect(() => UserSchema.parse(adminData)).not.toThrow();
 
             const result = UserSchema.parse(adminData);
-            expect(result.role).toBe('ADMIN');
             expect(result.permissions?.length).toBeGreaterThan(0);
         });
 
@@ -58,7 +56,6 @@ describe('UserSchema', () => {
             expect(() => UserSchema.parse(superAdminData)).not.toThrow();
 
             const result = UserSchema.parse(superAdminData);
-            expect(result.role).toBe('SUPER_ADMIN');
             expect(result.permissions).toContain('system.maintenanceMode');
         });
     });
@@ -124,25 +121,26 @@ describe('UserSchema', () => {
             });
         });
 
-        describe('role field', () => {
-            it('should accept all valid roles', () => {
-                const validData = createValidUser();
-                const validRoles = ['USER', 'ADMIN', 'SUPER_ADMIN'];
-
-                for (const role of validRoles) {
-                    const data = { ...validData, role };
-                    expect(() => UserSchema.parse(data)).not.toThrow();
-                }
+        describe('role field (HOS-296: removed from the entity)', () => {
+            it('does not declare a `role` key at all', () => {
+                // The scalar `users.role` column is gone; a user holds a SET of
+                // hats in `user_role`. A schema that still declared `role` would
+                // keep every `user.role` read compiling while being `undefined`
+                // at runtime, because `BaseModelImpl<User>` is generic over this
+                // inferred type and never over the Drizzle table.
+                expect(Object.keys(UserSchema.shape)).not.toContain('role');
             });
 
-            it('should reject invalid roles', () => {
+            it('ignores a `role` supplied by a caller instead of validating it', () => {
                 const validData = createValidUser();
-                const invalidRoles = ['MODERATOR', 'CUSTOMER', 'invalid', '', null];
 
-                for (const role of invalidRoles) {
-                    const data = { ...validData, role };
-                    expect(() => UserSchema.parse(data)).toThrow(ZodError);
-                }
+                // Not `.strict()`, so an unknown key is stripped rather than
+                // rejected. What matters is that it never reaches the output.
+                const parsed = UserSchema.parse({ ...validData, role: 'ADMIN' }) as Record<
+                    string,
+                    unknown
+                >;
+                expect(parsed.role).toBeUndefined();
             });
         });
 
@@ -412,7 +410,6 @@ describe('UserSchema', () => {
             // TypeScript should infer these correctly
             expect(typeof result.id).toBe('string');
             expect(typeof result.displayName).toBe('string');
-            expect(typeof result.role).toBe('string');
             expect(Array.isArray(result.permissions)).toBe(true);
             // Contact email is optional, so check if it exists
             if (result.contactInfo?.personalEmail || result.contactInfo?.workEmail) {

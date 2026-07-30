@@ -42,11 +42,11 @@
 
 import { useLocation, useRouter } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
-import type { TourRole } from '@/config/ia/tour.schema';
 import { validatedConfig } from '@/config/ia/validate';
 import { useTour } from '@/contexts/tour-context';
 import { useAdminTourState } from '@/hooks/use-admin-tour-state';
 import { useAuthContext } from '@/hooks/use-auth-context';
+import { resolvePrimaryTourRole } from '@/hooks/use-tours';
 import { decideAutoTrigger } from '@/lib/tour/decide-auto-trigger';
 
 // ---------------------------------------------------------------------------
@@ -78,7 +78,9 @@ export function TourAutoTrigger() {
     const { pathname } = useLocation();
     const router = useRouter();
     const { user } = useAuthContext();
-    const role = (user?.role as TourRole | null | undefined) ?? null;
+    // HOS-296: the user holds a SET of roles; resolve the single tour-eligible
+    // role via the documented multi-hat tie-break (see resolvePrimaryTourRole).
+    const role = resolvePrimaryTourRole(user?.roles);
     const { isLoading, hasSeen } = useAdminTourState();
     const { isRunning, startTour } = useTour();
 

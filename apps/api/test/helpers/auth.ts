@@ -31,7 +31,7 @@ import type { Actor } from '@repo/service-core';
  */
 export const createMockAdminActor = (overrides?: Partial<Actor>): Actor => ({
     id: overrides?.id || crypto.randomUUID(),
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [
         PermissionEnum.ACCESS_API_PUBLIC,
         PermissionEnum.ACCESS_API_PRIVATE,
@@ -130,7 +130,7 @@ export const createMockAdminActor = (overrides?: Partial<Actor>): Actor => ({
  */
 export const createMockUserActor = (overrides?: Partial<Actor>): Actor => ({
     id: overrides?.id || crypto.randomUUID(),
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: [
         PermissionEnum.ACCESS_API_PUBLIC,
         PermissionEnum.ACCESS_API_PRIVATE,
@@ -150,7 +150,7 @@ export const createMockUserActor = (overrides?: Partial<Actor>): Actor => ({
  */
 export const createMockGuestActor = (overrides?: Partial<Actor>): Actor => ({
     id: overrides?.id || '00000000-0000-4000-8000-000000000000',
-    role: RoleEnum.GUEST,
+    roles: [RoleEnum.GUEST],
     permissions: [PermissionEnum.ACCESS_API_PUBLIC, ...(overrides?.permissions || [])],
     ...overrides
 });
@@ -162,7 +162,7 @@ export const createMockGuestActor = (overrides?: Partial<Actor>): Actor => ({
  */
 export const createMockClientManagerActor = (overrides?: Partial<Actor>): Actor => ({
     id: overrides?.id || crypto.randomUUID(),
-    role: RoleEnum.CLIENT_MANAGER,
+    roles: [RoleEnum.CLIENT_MANAGER],
     permissions: [
         PermissionEnum.ACCESS_API_PUBLIC,
         PermissionEnum.ACCESS_API_PRIVATE,
@@ -184,12 +184,14 @@ export const createMockClientManagerActor = (overrides?: Partial<Actor>): Actor 
  * @returns Mock actor with specified configuration
  */
 export const createMockActor = (
-    role: RoleEnum,
+    role: RoleEnum | readonly RoleEnum[],
     permissions: PermissionEnum[],
     id?: string
 ): Actor => ({
     id: id || crypto.randomUUID(),
-    role,
+    // HOS-296: accepts either a single hat (the overwhelmingly common case in
+    // these tests) or a full set, so a multi-hat scenario needs no new helper.
+    roles: Array.isArray(role) ? role : [role as RoleEnum],
     permissions
 });
 
@@ -282,7 +284,8 @@ export const createAuthenticatedRequest = (
         accept: 'application/json',
         // Mock actor headers (processed by actorMiddleware when ALLOW_MOCK_ACTOR=true)
         'x-mock-actor-id': actor.id,
-        'x-mock-actor-role': actor.role,
+        // The middleware accepts a comma-separated list here (HOS-296).
+        'x-mock-actor-role': actor.roles.join(','),
         'x-mock-actor-permissions': JSON.stringify(actor.permissions),
         ...additionalHeaders
     }

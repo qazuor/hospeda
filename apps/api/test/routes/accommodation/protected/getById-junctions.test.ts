@@ -127,6 +127,14 @@ vi.mock('@repo/db', async (importActual) => {
     };
 });
 
+// BETA-199 added an owner-entitlement lookup to this route (the rich-description
+// gate). Stubbed here so it neither reaches billing nor issues a THIRD `select()`
+// through the shared `getDb` mock — which would land in `capturedQueries` and
+// shift the junction assertions below off by one.
+vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
+    resolveOwnerEntitlementsForOwnerId: vi.fn().mockResolvedValue([])
+}));
+
 vi.mock('../../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
@@ -294,7 +302,7 @@ const SERVICE_ERROR_HTTP_STATUS: Partial<Record<ServiceErrorCode, number>> = {
 
 function buildApp(actor: {
     id: string;
-    role: RoleEnum;
+    roles: readonly RoleEnum[];
     permissions: PermissionEnum[];
 }): Hono<AppBindings> {
     const app = new Hono<AppBindings>();
@@ -327,7 +335,7 @@ function buildApp(actor: {
 
 const ownerActor = {
     id: OWNER_ID,
-    role: RoleEnum.HOST,
+    roles: [RoleEnum.HOST],
     permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
 };
 
@@ -526,7 +534,7 @@ describe('GET /api/v1/protected/accommodations/:id — junction relations (HOS-3
 
         const app = buildApp({
             id: OWNER_ID,
-            role: RoleEnum.ADMIN,
+            roles: [RoleEnum.ADMIN],
             permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY]
         });
         const res = await app.request(`/${ACCOMMODATION_ID}`);

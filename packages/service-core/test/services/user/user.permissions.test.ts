@@ -27,52 +27,54 @@ describe('user permission helpers', () => {
     // self-as-actor call sites.
 
     // Regular user with no special permissions
-    const self = createUser({ id: getMockId('user'), role: RoleEnum.USER, permissions: [] });
+    // HOS-296: `role` is no longer a field on `User`, so the fixture cannot
+    // carry one and the Actor projection names the role explicitly.
+    const self = createUser({ id: getMockId('user'), permissions: [] });
     const selfActor: Actor = {
         id: self.id,
-        role: self.role,
+        roles: [RoleEnum.USER],
         permissions: self.permissions
     };
 
     // Super admin has ALL permissions (as assigned by actor middleware in production)
     const superAdmin: Actor = {
         id: getMockId('user') as string,
-        role: RoleEnum.SUPER_ADMIN,
+        roles: [RoleEnum.SUPER_ADMIN],
         permissions: Object.values(PermissionEnum)
     };
 
     // Admin with USER_READ_ALL but no role management or update permissions
     const adminWithReadAll: Actor = {
         id: getMockId('user', 'admin-read') as string,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [PermissionEnum.USER_READ_ALL]
     };
 
     // Admin with USER_UPDATE_ANY permission (can update any user's profile)
     const adminWithUpdateAny: Actor = {
         id: getMockId('user', 'admin-update') as string,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [PermissionEnum.USER_UPDATE_ANY]
     };
 
     // Admin with USER_UPDATE_ROLES permission
     const adminWithRolePerms: Actor = {
         id: getMockId('user', 'admin-roles') as string,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [PermissionEnum.USER_UPDATE_ROLES]
     };
 
     // Admin with no relevant permissions
     const adminNoPerm: Actor = {
         id: getMockId('user', 'admin-noperm') as string,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: []
     };
 
     // Guest with no permissions
     const guestOther: Actor = {
         id: getMockId('user', 'guest-other') as string,
-        role: RoleEnum.GUEST,
+        roles: [RoleEnum.GUEST],
         permissions: []
     };
 
@@ -306,14 +308,14 @@ describe('checkCanAdminList', () => {
     it('allows actor with USER_READ_ALL permission', () => {
         const actor = {
             id: 'u1',
-            role: RoleEnum.ADMIN,
+            roles: [RoleEnum.ADMIN],
             permissions: [PermissionEnum.USER_READ_ALL]
         } as Actor;
         expect(() => checkCanAdminList(actor)).not.toThrow();
     });
 
     it('throws FORBIDDEN when actor lacks USER_READ_ALL', () => {
-        const actor = { id: 'u1', role: RoleEnum.ADMIN, permissions: [] } as unknown as Actor;
+        const actor = { id: 'u1', roles: [RoleEnum.ADMIN], permissions: [] } as unknown as Actor;
         expect(() => checkCanAdminList(actor)).toThrow(ServiceError);
         try {
             checkCanAdminList(actor);

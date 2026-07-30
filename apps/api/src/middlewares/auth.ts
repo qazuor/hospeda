@@ -85,11 +85,15 @@ export const authMiddleware = () => {
                     image: null,
                     createdAt: now,
                     updatedAt: now,
-                    role: RoleEnum.USER,
                     banned: false,
                     banReason: null,
                     banExpires: null
                 });
+                // HOS-296: the fabricated user exists in no database, so its
+                // hats have to be fabricated too — `actorMiddleware` would
+                // otherwise query `user_role` for an id that is not there.
+                // Read the note on `AppBindings.Variables.mockUserRoles`.
+                c.set('mockUserRoles', [RoleEnum.USER]);
                 c.set('session', {
                     id: 'test-session-id',
                     userId: MOCK_USER_ID,

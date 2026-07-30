@@ -120,7 +120,7 @@ describe('Admin media upload — actor.id UUID validation (GAP-078-058 + 175)', 
             headers: {
                 'user-agent': 'vitest',
                 'x-mock-actor-id': badActor.id,
-                'x-mock-actor-role': badActor.role,
+                'x-mock-actor-role': badActor.roles.join(','),
                 'x-mock-actor-permissions': JSON.stringify(badActor.permissions)
             },
             body: buildMultipartBody()

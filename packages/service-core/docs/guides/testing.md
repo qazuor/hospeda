@@ -22,19 +22,19 @@ describe('ArticleService', () => {
   // Test actors
   const adminActor: Actor = {
     id: 'admin-1',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.ARTICLE_CREATE, PermissionEnum.ARTICLE_UPDATE_ANY]
   };
 
   const userActor: Actor = {
     id: 'user-1',
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: [PermissionEnum.ARTICLE_CREATE]
   };
 
   const guestActor: Actor = {
     id: '',
-    role: RoleEnum.GUEST,
+    roles: [RoleEnum.GUEST],
     permissions: []
   };
 
@@ -465,7 +465,7 @@ function createTestArticle(overrides?: Partial<ArticleCreateInput>) {
 function createTestActor(role: RoleEnum = RoleEnum.USER): Actor {
   return {
     id: `user-${Math.random()}`,
-    role,
+    roles: [role],
     permissions: []
   };
 }

@@ -19,6 +19,15 @@
  * pattern (see PostHogScript.astro for details).
  */
 
+import type {
+    AnalyticsEventName,
+    AnalyticsEventProperties,
+    AnalyticsPersonProperties,
+    BrowserAnalyticsDiagnostics
+} from '@repo/analytics';
+import { createBrowserAnalytics } from '@repo/analytics';
+import { webLogger } from '@/lib/logger';
+
 /**
  * Shape of the `window.posthog` handle exposed by the inline snippet. Only
  * the methods used directly by app code are declared; the runtime stub
@@ -26,6 +35,7 @@
  */
 interface PostHogStub {
     capture(name: string, props?: Record<string, unknown>): void;
+    register(props: Record<string, unknown>): void;
     set_config(config: Record<string, unknown>): void;
     identify(distinctId: string, props?: Record<string, unknown>): void;
     setPersonProperties(props: Record<string, unknown>): void;
@@ -57,9 +67,51 @@ declare global {
  * @param name - Event name (use values from {@link ./events}).
  * @param props - Optional event properties; serialised to PostHog as-is.
  */
-export function trackEvent(name: string, props?: Record<string, unknown>): void {
-    if (typeof window === 'undefined') return;
-    window.posthog?.capture(name, props);
+function resolveBrowserEnvironment():
+    | 'development'
+    | 'test'
+    | 'preview'
+    | 'staging'
+    | 'production' {
+    if (typeof window === 'undefined') {
+        return import.meta.env.DEV ? 'development' : 'production';
+    }
+
+    const { hostname } = window.location;
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.local')) {
+        return 'development';
+    }
+    if (hostname.includes('staging')) {
+        return 'staging';
+    }
+    if (hostname.includes('preview')) {
+        return 'preview';
+    }
+    if (hostname.includes('test')) {
+        return 'test';
+    }
+    return 'production';
+}
+
+const analytics = createBrowserAnalytics({
+    debug: import.meta.env.DEV,
+    enabled: true,
+    getClient: () => (typeof window === 'undefined' ? undefined : window.posthog),
+    getGlobalProperties: () => ({
+        app: 'web',
+        app_version: import.meta.env.PUBLIC_VERSION ?? 'unknown',
+        environment: resolveBrowserEnvironment()
+    }),
+    onDiagnostic: ({ message, payload }: BrowserAnalyticsDiagnostics) => {
+        webLogger.debug(`[analytics] ${message}`, payload);
+    }
+});
+
+export function trackEvent<TName extends AnalyticsEventName>(
+    name: TName,
+    props: AnalyticsEventProperties<TName>
+): void {
+    analytics.capture(name, props);
 }
 
 /**
@@ -87,14 +139,14 @@ function hasAnalyticsConsent(): boolean {
  * flips to `true` via the `cookie-consent:changed` event (dispatched by
  * `cookie-consent.ts`). `null` means nothing pending.
  */
-let pendingIdentify: { userId: string; props?: Record<string, unknown> } | null = null;
+let pendingIdentify: { userId: string; props?: AnalyticsPersonProperties } | null = null;
 /**
  * Person properties requested before analytics consent was granted. Merged
  * across calls and flushed the moment consent flips to `true`. `null` means
  * nothing pending. Kept separate from {@link pendingIdentify} because person
  * properties can be set without (re-)identifying.
  */
-let pendingPersonProperties: Record<string, unknown> | null = null;
+let pendingPersonProperties: AnalyticsPersonProperties | null = null;
 /**
  * Group association requested before analytics consent was granted, flushed the
  * moment consent flips to `true`. Only the latest association per group type is
@@ -111,15 +163,15 @@ function attachConsentListenerOnce(): void {
         const detail = (event as CustomEvent<{ analytics?: boolean }>).detail;
         if (detail?.analytics !== true) return;
         if (pendingIdentify) {
-            window.posthog?.identify(pendingIdentify.userId, pendingIdentify.props);
+            analytics.identify(pendingIdentify.userId, pendingIdentify.props);
             pendingIdentify = null;
         }
         if (pendingPersonProperties) {
-            window.posthog?.setPersonProperties(pendingPersonProperties);
+            analytics.setPersonProperties(pendingPersonProperties);
             pendingPersonProperties = null;
         }
         for (const [groupType, groupKey] of Object.entries(pendingGroups)) {
-            window.posthog?.group(groupType, groupKey);
+            analytics.group(groupType, groupKey);
         }
         pendingGroups = {};
     });
@@ -152,10 +204,10 @@ function attachConsentListenerOnce(): void {
  *   email or other PII as the distinct id.
  * @param props - Optional non-sensitive person properties.
  */
-export function identifyUser(userId: string, props?: Record<string, unknown>): void {
+export function identifyUser(userId: string, props?: AnalyticsPersonProperties): void {
     if (typeof window === 'undefined') return;
     if (hasAnalyticsConsent()) {
-        window.posthog?.identify(userId, props);
+        analytics.identify(userId, props);
         return;
     }
     // No consent yet: defer until the visitor accepts analytics cookies.
@@ -172,10 +224,10 @@ export function identifyUser(userId: string, props?: Record<string, unknown>): v
  *
  * @param props - Non-sensitive person properties to set. Never pass PII.
  */
-export function setPersonProperties(props: Record<string, unknown>): void {
+export function setPersonProperties(props: AnalyticsPersonProperties): void {
     if (typeof window === 'undefined') return;
     if (hasAnalyticsConsent()) {
-        window.posthog?.setPersonProperties(props);
+        analytics.setPersonProperties(props);
         return;
     }
     pendingPersonProperties = { ...(pendingPersonProperties ?? {}), ...props };
@@ -202,7 +254,7 @@ export function setPersonProperties(props: Record<string, unknown>): void {
 export function associateGroup(groupType: string, groupKey: string): void {
     if (typeof window === 'undefined') return;
     if (hasAnalyticsConsent()) {
-        window.posthog?.group(groupType, groupKey);
+        analytics.group(groupType, groupKey);
         return;
     }
     pendingGroups = { ...pendingGroups, [groupType]: groupKey };
@@ -220,7 +272,7 @@ export function associateGroup(groupType: string, groupKey: string): void {
 export function resetGroups(): void {
     if (typeof window === 'undefined') return;
     pendingGroups = {};
-    window.posthog?.resetGroups();
+    analytics.resetGroups();
 }
 
 /**
@@ -234,5 +286,5 @@ export function resetUser(): void {
     pendingIdentify = null;
     pendingPersonProperties = null;
     pendingGroups = {};
-    window.posthog?.reset();
+    analytics.reset();
 }

@@ -38,6 +38,12 @@
  */
 
 import type { SearchIntentEntities } from '@repo/schemas';
+// Imported from the `validation` subpath, NOT the `@repo/utils` barrel: the
+// barrel reaches modules that touch `process` at import time, which throws
+// `ReferenceError: process is not defined` while hydrating a browser island and
+// takes the whole AI-search entry down. jsdom has `process`, so the unit tests
+// stay green either way — this only shows up in a real browser.
+import { isUsableEntityId } from '@repo/utils/validation';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './ActiveFilterChips.module.css';
@@ -327,6 +333,33 @@ function isKeyApplied(
 }
 
 /**
+ * Whether a `locationType` slot is an orphan left behind by a dropped
+ * destination id (HOS-298).
+ *
+ * `locationType: 'destinationId'` says "the location of this search is a
+ * destination id" — meaningless once no usable `destinationId` is present. The
+ * server strips the pair together, but `filters` here is client-held state that
+ * may predate that fix, and `locationType` lives in {@link LOCATION_KEYS}, not
+ * in {@link CITY_DESTINATION_KEYS}: without this guard it renders a generic
+ * "Ubicación" chip for a location that no longer exists — the same phantom the
+ * destination chip guard removed, wearing a different label.
+ *
+ * @param key - The key being considered for a chip.
+ * @param filters - The full intent object (needed to check the sibling id).
+ * @returns `true` when this key must not produce a chip.
+ */
+function isOrphanedDestinationLocationType(
+    key: keyof SearchIntentEntities,
+    filters: SearchIntentEntities
+): boolean {
+    return (
+        key === 'locationType' &&
+        filters.locationType === 'destinationId' &&
+        !isUsableEntityId(filters.destinationId)
+    );
+}
+
+/**
  * Resolves the single "location" chip shared by `city` and `destinationId`
  * (HOS-111 follow-up fix — see {@link CITY_DESTINATION_KEYS}).
  *
@@ -351,10 +384,20 @@ function resolveCityDestinationChip(
     t: ReturnType<typeof createTranslations>['t'],
     destinations?: Readonly<Record<string, string>>
 ): { readonly key: keyof SearchIntentEntities; readonly label: string } | null {
-    if (filters.destinationId === undefined && filters.city === undefined) return null;
+    // HOS-298: a destination id that cannot identify a row is treated as absent
+    // everywhere below. The model emits the nil UUID as a placeholder when it
+    // has no destination, and since it is a syntactically valid UUID it used to
+    // reach here and render as an unnamed "Destino filtrado" chip — advertising
+    // a filter the user never asked for. The server strips it now; this keeps a
+    // session that stored it before the fix from rendering the chip anyway.
+    const intentDestinationId = isUsableEntityId(filters.destinationId)
+        ? filters.destinationId
+        : undefined;
+
+    if (intentDestinationId === undefined && filters.city === undefined) return null;
 
     if (appliedParams) {
-        if (typeof appliedParams.destinationId === 'string') {
+        if (isUsableEntityId(appliedParams.destinationId)) {
             const descriptor = resolveChipLabel(
                 'destinationId',
                 appliedParams.destinationId,
@@ -373,13 +416,8 @@ function resolveCityDestinationChip(
     }
 
     // Legacy mode (no applied-params snapshot) — best-effort from raw intent.
-    if (filters.destinationId !== undefined) {
-        const descriptor = resolveChipLabel(
-            'destinationId',
-            filters.destinationId,
-            t,
-            destinations
-        );
+    if (intentDestinationId !== undefined) {
+        const descriptor = resolveChipLabel('destinationId', intentDestinationId, t, destinations);
         return descriptor.visible ? { key: 'destinationId', label: descriptor.label } : null;
     }
     const descriptor = resolveChipLabel('city', filters.city, t, destinations);
@@ -443,6 +481,9 @@ export function ActiveFilterChips({
 
         if (LOCATION_KEYS.has(key)) {
             if (locationChipRendered) continue;
+            // HOS-298: skip ONLY this key, without marking the group rendered —
+            // a real geo pair later in the entries must still get its chip.
+            if (isOrphanedDestinationLocationType(key, filters)) continue;
             // Only render if at least one location key has a non-null value.
             const descriptor = resolveChipLabel(key, value, t, destinations);
             if (!descriptor.visible) continue;
