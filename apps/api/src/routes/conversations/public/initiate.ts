@@ -7,6 +7,8 @@
  * - IP:    10 requests / 10 minutes
  * - Email: 5 requests / hour (keyed by the normalized guest email)
  */
+import { AnalyticsEvents } from '@repo/analytics';
+import { accommodations, eq, getDb } from '@repo/db';
 import {
     CreateConversationAnonSchema,
     PermissionEnum,
@@ -17,6 +19,7 @@ import { ConversationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { createConversationMailer } from '../../../lib/conversation-mailer';
+import { captureServerAnalyticsEvent } from '../../../lib/posthog';
 import {
     createKeyedRateLimitMiddleware,
     createPerRouteRateLimitMiddleware
@@ -53,6 +56,24 @@ function buildConversationService(): ConversationService {
             mailer: createConversationMailer()
         }
     );
+}
+
+async function resolveAccommodationAnalyticsContext(accommodationId: string): Promise<{
+    readonly destinationId?: string;
+    readonly ownerId?: string;
+}> {
+    const db = getDb();
+    const row = await db
+        .select({ destinationId: accommodations.destinationId, ownerId: accommodations.ownerId })
+        .from(accommodations)
+        .where(eq(accommodations.id, accommodationId))
+        .limit(1);
+
+    const found = row[0];
+    return {
+        destinationId: found?.destinationId ?? undefined,
+        ownerId: found?.ownerId ?? undefined
+    };
 }
 
 /**
@@ -152,6 +173,8 @@ async function handler(c: Context): Promise<Response> {
             locale?: string;
         };
 
+        const analyticsContext = await resolveAccommodationAnalyticsContext(body.accommodationId);
+
         const conversationSvc = buildConversationService();
 
         const result = await conversationSvc.initiateAnonymous(PUBLIC_SYSTEM_ACTOR, {
@@ -165,6 +188,20 @@ async function handler(c: Context): Promise<Response> {
 
         if (result.error) {
             if (result.error.code === ServiceErrorCode.ALREADY_EXISTS) {
+                captureServerAnalyticsEvent({
+                    distinctId: `anon:${body.accommodationId}`,
+                    name: AnalyticsEvents.contactOwnerFailed,
+                    properties: {
+                        accommodation_id: body.accommodationId,
+                        destination_id: analyticsContext.destinationId,
+                        owner_id: analyticsContext.ownerId,
+                        contact_method: 'platform_message',
+                        failure_reason: result.error.reason ?? 'conversation_duplicate',
+                        is_authenticated: false,
+                        locale: body.locale
+                    }
+                });
+
                 return createErrorResponse(
                     {
                         code: 'CONFLICT',
@@ -176,6 +213,20 @@ async function handler(c: Context): Promise<Response> {
                 );
             }
             if (result.error.code === ServiceErrorCode.NOT_FOUND) {
+                captureServerAnalyticsEvent({
+                    distinctId: `anon:${body.accommodationId}`,
+                    name: AnalyticsEvents.contactOwnerFailed,
+                    properties: {
+                        accommodation_id: body.accommodationId,
+                        destination_id: analyticsContext.destinationId,
+                        owner_id: analyticsContext.ownerId,
+                        contact_method: 'platform_message',
+                        failure_reason: result.error.reason ?? 'accommodation_deleted',
+                        is_authenticated: false,
+                        locale: body.locale
+                    }
+                });
+
                 return createErrorResponse(
                     {
                         code: result.error.code,
@@ -186,6 +237,21 @@ async function handler(c: Context): Promise<Response> {
                     404
                 );
             }
+
+            captureServerAnalyticsEvent({
+                distinctId: `anon:${body.accommodationId}`,
+                name: AnalyticsEvents.contactOwnerFailed,
+                properties: {
+                    accommodation_id: body.accommodationId,
+                    destination_id: analyticsContext.destinationId,
+                    owner_id: analyticsContext.ownerId,
+                    contact_method: 'platform_message',
+                    failure_reason: result.error.reason ?? result.error.code.toLowerCase(),
+                    is_authenticated: false,
+                    locale: body.locale
+                }
+            });
+
             return createErrorResponse(
                 {
                     code: result.error.code,
@@ -196,6 +262,20 @@ async function handler(c: Context): Promise<Response> {
                 400
             );
         }
+
+        captureServerAnalyticsEvent({
+            distinctId: `anon:${body.accommodationId}`,
+            name: AnalyticsEvents.contactOwnerCompleted,
+            properties: {
+                accommodation_id: body.accommodationId,
+                destination_id: analyticsContext.destinationId,
+                owner_id: analyticsContext.ownerId,
+                contact_method: 'platform_message',
+                conversation_flow: 'anonymous',
+                is_authenticated: false,
+                locale: body.locale
+            }
+        });
 
         return createResponse(
             {

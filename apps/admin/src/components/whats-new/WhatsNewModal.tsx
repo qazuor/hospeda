@@ -30,6 +30,7 @@
  * @see SPEC-175 §7.2, §12.4, AC-13
  */
 
+import { AnalyticsEvents } from '@repo/analytics';
 import type { TranslationKey } from '@repo/i18n';
 import type { WhatsNewItem } from '@repo/schemas';
 import { useCallback, useEffect, useMemo } from 'react';
@@ -99,8 +100,8 @@ export function WhatsNewModal({ open, onOpenChange, entryId }: WhatsNewModalProp
     // Track modal shown event when it opens with entries.
     useEffect(() => {
         if (open && displayedIds.length > 0) {
-            trackEvent('admin.whats_new.modal.shown', {
-                entryIds: displayedIds,
+            trackEvent(AnalyticsEvents.adminWhatsNewModalShown, {
+                entry_count: displayedIds.length,
                 role: user?.role
             });
         }
@@ -110,7 +111,9 @@ export function WhatsNewModal({ open, onOpenChange, entryId }: WhatsNewModalProp
     const handleClose = useCallback(() => {
         if (displayedIds.length > 0) {
             markSeen(displayedIds);
-            trackEvent('admin.whats_new.modal.closed', { entryIds: displayedIds });
+            trackEvent(AnalyticsEvents.adminWhatsNewModalClosed, {
+                entry_count: displayedIds.length
+            });
         }
         onOpenChange(false);
     }, [displayedIds, markSeen, onOpenChange]);

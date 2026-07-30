@@ -2,9 +2,11 @@
  * Protected publish accommodation endpoint
  * Requires authentication and ownership
  */
+import { AnalyticsEvents } from '@repo/analytics';
 import { AccommodationIdSchema, AccommodationProtectedSchema, PermissionEnum } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { captureServerAnalyticsEvent } from '../../../lib/posthog';
 import { buildAccommodationPublishDeps } from '../../../services/accommodation-publish-deps';
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
@@ -62,6 +64,21 @@ export const protectedPublishAccommodationRoute = createProtectedRoute({
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
         }
+
+        captureServerAnalyticsEvent({
+            distinctId: actor.id,
+            name: AnalyticsEvents.accommodationPublished,
+            properties: {
+                accommodation_id: result.data.id,
+                accommodation_type:
+                    typeof result.data.type === 'string' ? result.data.type : undefined,
+                destination_id:
+                    typeof result.data.destinationId === 'string'
+                        ? result.data.destinationId
+                        : undefined,
+                owner_id: typeof result.data.ownerId === 'string' ? result.data.ownerId : undefined
+            }
+        });
 
         // BETA-199: `AccommodationProtectedSchema` declares the premium
         // rich-description pair so the owner's editor GET can show translation

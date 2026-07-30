@@ -12,6 +12,7 @@
  */
 
 import { expo } from '@better-auth/expo';
+import { AnalyticsEvents } from '@repo/analytics';
 import {
     accounts,
     and,
@@ -42,6 +43,7 @@ import { env } from '../utils/env';
 import { resolveCookieDomain } from './auth-cookie-domain';
 import { captureSignupCompleted } from './auth-signup-analytics';
 import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
+import { captureServerAnalyticsEvent } from './posthog';
 
 const logger = createLogger('auth');
 
@@ -114,6 +116,21 @@ const COOKIE_CACHE_MAX_AGE = 5 * 60;
  * desktop, work computer) while bounding the attack surface.
  */
 const MAX_SESSIONS_PER_USER = 10;
+
+function resolveAnalyticsUserType(role: string | null | undefined): 'staff' | 'owner' | 'tourist' {
+    if (
+        role === RoleEnum.ADMIN ||
+        role === RoleEnum.CLIENT_MANAGER ||
+        role === RoleEnum.SUPER_ADMIN ||
+        role === RoleEnum.EDITOR
+    ) {
+        return 'staff';
+    }
+    if (role === RoleEnum.HOST || role === RoleEnum.COMMERCE_OWNER) {
+        return 'owner';
+    }
+    return 'tourist';
+}
 
 /** Default user settings for new signups */
 const DEFAULT_USER_SETTINGS = {
@@ -590,6 +607,35 @@ function buildAuth() {
 
                         // Allow session creation to proceed
                         return true;
+                    },
+                    after: async (session) => {
+                        try {
+                            const db = getDb();
+                            const row = await db
+                                .select({ role: users.role })
+                                .from(users)
+                                .where(eq(users.id, session.userId))
+                                .limit(1);
+
+                            const role = row[0]?.role ?? RoleEnum.USER;
+
+                            captureServerAnalyticsEvent({
+                                distinctId: session.userId,
+                                name: AnalyticsEvents.signInCompleted,
+                                properties: {
+                                    role,
+                                    user_type: resolveAnalyticsUserType(role)
+                                }
+                            });
+                        } catch (error) {
+                            logger.warn(
+                                {
+                                    userId: session.userId,
+                                    error: error instanceof Error ? error.message : String(error)
+                                },
+                                'Failed to capture sign_in_completed (non-blocking)'
+                            );
+                        }
                     }
                 }
             },

@@ -416,9 +416,7 @@ export function AuthProvider({ children, initialAuthState }: AuthProviderProps) 
 
     /**
      * PostHog identify — fires once the authenticated staff user is fully
-     * resolved (role + email already enriched by the sync effect above).
-     * Only non-sensitive traits are sent: `role`, and the email's domain
-     * (never the full address). The counterpart `resetUser()` call lives in
+     * resolved. Only non-sensitive traits are sent. The counterpart `resetUser()` call lives in
      * `handleSignOut`, not here, so this effect never needs to distinguish
      * "not yet loaded" from "signed out".
      */
@@ -426,7 +424,7 @@ export function AuthProvider({ children, initialAuthState }: AuthProviderProps) 
         if (authState.isAuthenticated && authState.user) {
             identifyUser(authState.user.id, {
                 role: authState.user.role,
-                emailDomain: authState.user.email?.split('@')[1]
+                user_type: 'staff'
             });
         }
     }, [authState.isAuthenticated, authState.user]);

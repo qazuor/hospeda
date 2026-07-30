@@ -353,7 +353,7 @@ describe('WhatsNewModal', () => {
     // -------------------------------------------------------------------------
 
     describe('analytics', () => {
-        it('fires admin.whats_new.modal.shown when opened with entries', async () => {
+        it('fires admin_whats_new_modal_shown when opened with entries', async () => {
             setup([UNSEEN_HIGHLIGHT]);
 
             render(
@@ -365,13 +365,13 @@ describe('WhatsNewModal', () => {
 
             await waitFor(() => {
                 expect(mockTrackEvent).toHaveBeenCalledWith(
-                    'admin.whats_new.modal.shown',
-                    expect.objectContaining({ entryIds: [UNSEEN_HIGHLIGHT.id] })
+                    'admin_whats_new_modal_shown',
+                    expect.objectContaining({ entry_count: 1 })
                 );
             });
         });
 
-        it('fires admin.whats_new.modal.closed on close', async () => {
+        it('fires admin_whats_new_modal_closed on close', async () => {
             setup([UNSEEN_HIGHLIGHT]);
             const user = userEvent.setup();
 
@@ -387,8 +387,8 @@ describe('WhatsNewModal', () => {
             );
 
             expect(mockTrackEvent).toHaveBeenCalledWith(
-                'admin.whats_new.modal.closed',
-                expect.objectContaining({ entryIds: [UNSEEN_HIGHLIGHT.id] })
+                'admin_whats_new_modal_closed',
+                expect.objectContaining({ entry_count: 1 })
             );
         });
     });

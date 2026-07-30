@@ -396,10 +396,9 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                         href: favoritesHref
                     }
                 });
-                trackEvent(WebEvents.FavoriteToggled, {
+                trackEvent(WebEvents.FavoriteToggledAdd, {
                     entity_type: entityType,
                     entity_id: entityId,
-                    action: 'add',
                     assigned_collection: Boolean(assignedCollectionId)
                 });
 
@@ -413,10 +412,9 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                     type: 'success',
                     message: t('account.favorites.toast.removed', 'Eliminado de favoritos')
                 });
-                trackEvent(WebEvents.FavoriteToggled, {
+                trackEvent(WebEvents.FavoriteToggledRemove, {
                     entity_type: entityType,
                     entity_id: entityId,
-                    action: 'remove',
                     assigned_collection: false
                 });
             }

@@ -33,6 +33,13 @@
  * ```
  */
 
+import type {
+    AnalyticsEventName,
+    AnalyticsEventProperties,
+    AnalyticsPersonProperties,
+    BrowserAnalyticsDiagnostics
+} from '@repo/analytics';
+import { buildAnalyticsGlobalProperties, createBrowserAnalytics } from '@repo/analytics';
 import posthog from 'posthog-js';
 import { env } from '@/env';
 import { adminLogger } from '@/utils/logger';
@@ -48,6 +55,46 @@ const DEFAULT_HOST = 'https://us.i.posthog.com';
  * components twice. Safe to call `initPostHog()` from multiple effects.
  */
 let isInitialized = false;
+
+function resolveBrowserEnvironment():
+    | 'development'
+    | 'test'
+    | 'preview'
+    | 'staging'
+    | 'production' {
+    if (typeof window === 'undefined') {
+        return import.meta.env.DEV ? 'development' : 'production';
+    }
+
+    const { hostname } = window.location;
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.local')) {
+        return 'development';
+    }
+    if (hostname.includes('staging')) {
+        return 'staging';
+    }
+    if (hostname.includes('preview')) {
+        return 'preview';
+    }
+    if (hostname.includes('test')) {
+        return 'test';
+    }
+    return 'production';
+}
+
+const analytics = createBrowserAnalytics({
+    debug: import.meta.env.DEV,
+    enabled: true,
+    getClient: () => (typeof window === 'undefined' ? undefined : posthog),
+    getGlobalProperties: () => ({
+        app: 'admin',
+        app_version: env.VITE_APP_VERSION,
+        environment: resolveBrowserEnvironment()
+    }),
+    onDiagnostic: ({ message, payload }: BrowserAnalyticsDiagnostics) => {
+        adminLogger.debug(`[analytics] ${message}`, payload);
+    }
+});
 
 /**
  * Check whether PostHog should be initialized given the current build mode
@@ -85,16 +132,19 @@ export function initPostHog(): void {
     posthog.init(env.VITE_POSTHOG_KEY as string, {
         api_host: env.VITE_POSTHOG_HOST ?? DEFAULT_HOST,
         person_profiles: 'identified_only',
-        capture_pageview: true,
-        autocapture: true,
+        capture_pageview: 'history_change',
+        capture_pageleave: false,
+        autocapture: false,
         disable_session_recording: true,
         respect_dnt: true,
         loaded: (instance) => {
-            instance.register({
-                app_type: 'admin',
-                project: 'hospeda',
-                app_version: env.VITE_APP_VERSION
-            });
+            instance.register(
+                buildAnalyticsGlobalProperties({
+                    app: 'admin',
+                    app_version: env.VITE_APP_VERSION,
+                    environment: resolveBrowserEnvironment()
+                })
+            );
         }
     });
 
@@ -122,10 +172,13 @@ export function isPostHogInitialized(): boolean {
  * @param props - Optional properties serialized to PostHog as-is. Avoid
  *   sending personally identifiable customer data; use generic identifiers.
  */
-export function trackEvent(name: string, props?: Record<string, unknown>): void {
+export function trackEvent<TName extends AnalyticsEventName>(
+    name: TName,
+    props: AnalyticsEventProperties<TName>
+): void {
     if (typeof window === 'undefined') return;
     if (!isInitialized) return;
-    posthog.capture(name, props);
+    analytics.capture(name, props);
 }
 
 /**
@@ -135,10 +188,10 @@ export function trackEvent(name: string, props?: Record<string, unknown>): void 
  * @param userId - Stable user ID (Better Auth user.id).
  * @param props - Optional user properties (role, email, name).
  */
-export function identifyUser(userId: string, props?: Record<string, unknown>): void {
+export function identifyUser(userId: string, props?: AnalyticsPersonProperties): void {
     if (typeof window === 'undefined') return;
     if (!isInitialized) return;
-    posthog.identify(userId, props);
+    analytics.identify(userId, props);
 }
 
 /**
@@ -148,5 +201,5 @@ export function identifyUser(userId: string, props?: Record<string, unknown>): v
 export function resetUser(): void {
     if (typeof window === 'undefined') return;
     if (!isInitialized) return;
-    posthog.reset();
+    analytics.reset();
 }

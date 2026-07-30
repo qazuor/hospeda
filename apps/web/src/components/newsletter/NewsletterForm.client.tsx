@@ -464,9 +464,9 @@ export function NewsletterForm({
                     status: payload.status
                 });
                 trackEvent(WebEvents.NewsletterSubscribed, {
-                    source: 'footer',
+                    source_page: 'footer',
                     locale,
-                    auth: false
+                    is_authenticated: false
                 });
                 const trimmed = guestEmail.trim();
                 // Use buildUrlWithParams so the confirmation URL keeps its
@@ -510,9 +510,9 @@ export function NewsletterForm({
                     status: 'active'
                 });
                 trackEvent(WebEvents.NewsletterSubscribed, {
-                    source: 'footer',
+                    source_page: 'footer',
                     locale,
-                    auth: true
+                    is_authenticated: true
                 });
                 return;
             }
@@ -530,7 +530,11 @@ export function NewsletterForm({
                 auth: true,
                 status: 'pending_verification'
             });
-            trackEvent(WebEvents.NewsletterSubscribed, { source: 'footer', locale, auth: true });
+            trackEvent(WebEvents.NewsletterSubscribed, {
+                source_page: 'footer',
+                locale,
+                is_authenticated: true
+            });
         } catch {
             const msg = t(
                 'footer.newsletter.errorMessage',

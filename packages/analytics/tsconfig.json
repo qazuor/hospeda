@@ -1,0 +1,8 @@
+{
+    "extends": "../typescript-config/package-base.json",
+    "compilerOptions": {
+        "types": ["node"]
+    },
+    "include": ["src/**/*", "test/**/*"],
+    "exclude": ["dist", "node_modules"]
+}

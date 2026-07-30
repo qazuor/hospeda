@@ -26,6 +26,7 @@
  * @see SPEC-174 §7.4
  */
 
+import { AnalyticsEvents } from '@repo/analytics';
 import {
     createContext,
     type ReactNode,
@@ -260,8 +261,8 @@ export function TourProvider({ children }: TourProviderProps) {
                 doneLabel,
                 onComplete: () => {
                     markSeen({ tourId: tour.id, version: tour.version });
-                    trackEvent('admin.tour.completed', {
-                        tourId: tour.id,
+                    trackEvent(AnalyticsEvents.adminTourCompleted, {
+                        tour_id: tour.id,
                         role: user?.role ?? 'unknown'
                     });
                     setIsRunning(false);
@@ -269,8 +270,8 @@ export function TourProvider({ children }: TourProviderProps) {
                 },
                 onSkip: () => {
                     markSeen({ tourId: tour.id, version: tour.version });
-                    trackEvent('admin.tour.skipped', {
-                        tourId: tour.id,
+                    trackEvent(AnalyticsEvents.adminTourSkipped, {
+                        tour_id: tour.id,
                         role: user?.role ?? 'unknown'
                     });
                     setIsRunning(false);
@@ -312,8 +313,8 @@ export function TourProvider({ children }: TourProviderProps) {
             }
 
             // Track 'shown' event before any modal or driver.
-            trackEvent('admin.tour.shown', {
-                tourId,
+            trackEvent(AnalyticsEvents.adminTourShown, {
+                tour_id: tourId,
                 role: user?.role ?? 'unknown',
                 source
             });
@@ -340,8 +341,8 @@ export function TourProvider({ children }: TourProviderProps) {
         if (!pendingTour) return;
         const { tour } = pendingTour;
         markSeen({ tourId: tour.id, version: tour.version });
-        trackEvent('admin.tour.skipped', {
-            tourId: tour.id,
+        trackEvent(AnalyticsEvents.adminTourSkipped, {
+            tour_id: tour.id,
             role: user?.role ?? 'unknown',
             source: 'modal-skip'
         });

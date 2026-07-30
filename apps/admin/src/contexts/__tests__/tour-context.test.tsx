@@ -269,8 +269,8 @@ describe('TourProvider / useTour', () => {
             });
 
             // Assert
-            expect(mockedTrackEvent).toHaveBeenCalledWith('admin.tour.shown', {
-                tourId: 'host.misAlojamientos',
+            expect(mockedTrackEvent).toHaveBeenCalledWith('admin_tour_shown', {
+                tour_id: 'host.misAlojamientos',
                 role: 'HOST',
                 source: 'auto'
             });
@@ -342,9 +342,9 @@ describe('TourProvider / useTour', () => {
             // Assert
             expect(mockMarkSeen).toHaveBeenCalledWith({ tourId: 'host.welcome', version: 1 });
             expect(mockedTrackEvent).toHaveBeenCalledWith(
-                'admin.tour.skipped',
+                'admin_tour_skipped',
                 expect.objectContaining({
-                    tourId: 'host.welcome'
+                    tour_id: 'host.welcome'
                 })
             );
             expect(mockDriverFactory).not.toHaveBeenCalled();
@@ -412,9 +412,9 @@ describe('TourProvider / useTour', () => {
                 version: 1
             });
             expect(mockedTrackEvent).toHaveBeenCalledWith(
-                'admin.tour.completed',
+                'admin_tour_completed',
                 expect.objectContaining({
-                    tourId: 'host.misAlojamientos'
+                    tour_id: 'host.misAlojamientos'
                 })
             );
         });

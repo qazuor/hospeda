@@ -20,6 +20,7 @@
  * @see SPEC-175 §7.4, §12.4
  */
 
+import { AnalyticsEvents } from '@repo/analytics';
 import type { TranslationKey } from '@repo/i18n';
 import type { WhatsNewItem } from '@repo/schemas';
 import { useCallback, useEffect, useState } from 'react';
@@ -65,8 +66,8 @@ export function WhatsNewPanel({ open, onOpenChange }: WhatsNewPanelProps) {
     // Fire PostHog event when panel opens.
     useEffect(() => {
         if (open) {
-            trackEvent('admin.whats_new.panel.opened', {
-                unseenCount,
+            trackEvent(AnalyticsEvents.adminWhatsNewPanelOpened, {
+                unseen_count: unseenCount,
                 role: user?.role
             });
         }

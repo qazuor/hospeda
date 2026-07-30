@@ -24,6 +24,8 @@
  * @module lib/posthog
  */
 
+import type { AnalyticsEventName, AnalyticsEventProperties } from '@repo/analytics';
+import { createServerAnalytics } from '@repo/analytics';
 import { PostHog } from 'posthog-node';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';
@@ -49,6 +51,14 @@ const SHUTDOWN_FLUSH_TIMEOUT_MS = 3_000;
 let _client: PostHog | null = null;
 /** Set to true once we have tried to initialise (prevents re-init after explicit shutdown). */
 let _initialised = false;
+
+function resolveServerEnvironment(): 'development' | 'test' | 'preview' | 'staging' | 'production' {
+    if (env.NODE_ENV === 'test') return 'test';
+    if (env.NODE_ENV === 'development') return 'development';
+    if (env.HOSPEDA_API_URL.includes('staging')) return 'staging';
+    if (env.HOSPEDA_API_URL.includes('preview')) return 'preview';
+    return 'production';
+}
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -104,6 +114,32 @@ export function getPostHogClient(): PostHog | null {
     }
 
     return _client;
+}
+
+const serverAnalytics = createServerAnalytics({
+    enabled: true,
+    getClient: () => getPostHogClient(),
+    getGlobalProperties: () => ({
+        app: 'api',
+        environment: resolveServerEnvironment()
+    }),
+    onError: (error, context) => {
+        apiLogger.warn(
+            {
+                ...context,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'PostHog analytics capture rejected (non-blocking)'
+        );
+    }
+});
+
+export function captureServerAnalyticsEvent<TName extends AnalyticsEventName>(input: {
+    distinctId: string;
+    name: TName;
+    properties: AnalyticsEventProperties<TName>;
+}): void {
+    serverAnalytics.capture(input);
 }
 
 /**
