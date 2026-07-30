@@ -12,6 +12,7 @@
  */
 
 import { expo } from '@better-auth/expo';
+import { AnalyticsEvents } from '@repo/analytics';
 import {
     accounts,
     and,
@@ -21,6 +22,7 @@ import {
     getDb,
     isNull,
     sessions,
+    userRole,
     users,
     verifications
 } from '@repo/db';
@@ -43,6 +45,7 @@ import { resolveCookieDomain } from './auth-cookie-domain';
 import { captureSignupCompleted } from './auth-signup-analytics';
 import { grantBaselineUserRole } from './auth-signup-baseline-role';
 import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
+import { captureServerAnalyticsEvent } from './posthog';
 
 const logger = createLogger('auth');
 
@@ -115,6 +118,23 @@ const COOKIE_CACHE_MAX_AGE = 5 * 60;
  * desktop, work computer) while bounding the attack surface.
  */
 const MAX_SESSIONS_PER_USER = 10;
+
+function resolveAnalyticsUserType(
+    roles: readonly (string | null | undefined)[]
+): 'staff' | 'owner' | 'tourist' {
+    if (
+        roles.includes(RoleEnum.ADMIN) ||
+        roles.includes(RoleEnum.CLIENT_MANAGER) ||
+        roles.includes(RoleEnum.SUPER_ADMIN) ||
+        roles.includes(RoleEnum.EDITOR)
+    ) {
+        return 'staff';
+    }
+    if (roles.includes(RoleEnum.HOST) || roles.includes(RoleEnum.COMMERCE_OWNER)) {
+        return 'owner';
+    }
+    return 'tourist';
+}
 
 /** Default user settings for new signups */
 const DEFAULT_USER_SETTINGS = {
@@ -653,6 +673,36 @@ function buildAuth() {
 
                         // Allow session creation to proceed
                         return true;
+                    },
+                    after: async (session) => {
+                        try {
+                            const db = getDb();
+                            const rows = await db
+                                .select({ role: userRole.role })
+                                .from(userRole)
+                                .where(eq(userRole.userId, session.userId));
+
+                            const roles = rows.map((row) => row.role);
+                            const effectiveRoles = roles.length > 0 ? roles : [RoleEnum.USER];
+
+                            captureServerAnalyticsEvent({
+                                distinctId: session.userId,
+                                name: AnalyticsEvents.signInCompleted,
+                                properties: {
+                                    role:
+                                        effectiveRoles.length === 1 ? effectiveRoles[0] : undefined,
+                                    user_type: resolveAnalyticsUserType(effectiveRoles)
+                                }
+                            });
+                        } catch (error) {
+                            logger.warn(
+                                {
+                                    userId: session.userId,
+                                    error: error instanceof Error ? error.message : String(error)
+                                },
+                                'Failed to capture sign_in_completed (non-blocking)'
+                            );
+                        }
                     }
                 }
             },

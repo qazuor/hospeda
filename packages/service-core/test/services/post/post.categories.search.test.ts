@@ -28,7 +28,7 @@ describe('PostService — categories filter forwarding (HOS-96 T-007)', () => {
         vi.clearAllMocks();
         modelMock = createTypedModelMock(PostModel, ['search', 'count']);
         service = createServiceTestInstance(PostService, modelMock);
-        actor = createActor({ permissions: [], id: 'actor-id', roles: [RoleEnum.USER]});
+        actor = createActor({ permissions: [], id: 'actor-id', roles: [RoleEnum.USER] });
     });
 
     it('forwards filters.categories to model.findAllWithRelations on search()', async () => {

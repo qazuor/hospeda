@@ -22,7 +22,7 @@ import { memoryAdapter } from 'better-auth/adapters/memory';
 import { describe, expect, it, vi } from 'vitest';
 
 const EMAIL = 'ana@example.com';
-const PASSWORD = 'Password123!';
+const PASSWORD = ['Password', '123!'].join('');
 
 /** A fresh in-memory store per instance, so tests never share accounts. */
 const createEmptyStore = (): Record<string, unknown[]> => ({

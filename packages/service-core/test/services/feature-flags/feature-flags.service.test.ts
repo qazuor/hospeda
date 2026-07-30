@@ -157,7 +157,9 @@ describe('FeatureFlagService', () => {
                 forceOffUserIds: []
             });
 
-            const result = await service.evaluateFlag('admin-only', { roles: [RoleEnum.SUPER_ADMIN]});
+            const result = await service.evaluateFlag('admin-only', {
+                roles: [RoleEnum.SUPER_ADMIN]
+            });
 
             expect(result).toBe(true);
         });

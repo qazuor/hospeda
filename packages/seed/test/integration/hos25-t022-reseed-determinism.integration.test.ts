@@ -74,9 +74,9 @@ import {
     initializeDb,
     PostModel,
     posts,
-    resetDb,
-    users
+    resetDb
 } from '@repo/db';
+import { users } from '@repo/db/schemas';
 import type { DestinationType } from '@repo/schemas';
 import { AccommodationReviewService, type ServiceContext } from '@repo/service-core';
 import { config as loadDotenv } from 'dotenv';

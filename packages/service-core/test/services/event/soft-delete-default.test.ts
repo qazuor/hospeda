@@ -25,8 +25,8 @@ import type { SQL } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
-import { createUser } from '../../factories/userFactory';
 import { createActor } from '../../factories/actorFactory';
+import { createUser } from '../../factories/userFactory';
 import { expectSuccess } from '../../helpers/assertions';
 
 type QueryChunk = { value?: unknown[] };

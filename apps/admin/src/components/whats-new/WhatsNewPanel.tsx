@@ -7,7 +7,7 @@
  *   Unseen entries: bold title + accent dot. Seen entries: muted styling.
  * - Row click: opens WhatsNewModal for that specific entry (entryId mode).
  * - Empty state: i18n key `admin-whats-new.panel.empty`.
- * - PostHog: `admin.whats_new.panel.opened` on open ({ unseenCount, roles }).
+ * - PostHog: `admin_whats_new_panel_opened` on open ({ unseen_count, roles }).
  *
  * Open state decision: WhatsNewPanel owns the modal state for the entry it opens.
  * The panel itself is controlled via `open` / `onOpenChange` props supplied by
@@ -20,6 +20,7 @@
  * @see SPEC-175 §7.4, §12.4
  */
 
+import { AnalyticsEvents } from '@repo/analytics';
 import type { TranslationKey } from '@repo/i18n';
 import type { WhatsNewItem } from '@repo/schemas';
 import { useCallback, useEffect, useState } from 'react';
@@ -71,10 +72,8 @@ export function WhatsNewPanel({ open, onOpenChange }: WhatsNewPanelProps) {
     // Fire PostHog event when panel opens.
     useEffect(() => {
         if (open) {
-            trackEvent('admin.whats_new.panel.opened', {
-                unseenCount,
-                // Send the full role set the user holds, not a single
-                // "primary" role.
+            trackEvent(AnalyticsEvents.adminWhatsNewPanelOpened, {
+                unseen_count: unseenCount,
                 roles: rolesKey === '' ? [] : rolesKey.split('|')
             });
         }

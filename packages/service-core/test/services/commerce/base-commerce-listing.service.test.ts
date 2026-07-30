@@ -720,7 +720,11 @@ describe('BaseCommerceListingService — listOwn (owner-tier read)', () => {
 
     it('forbids an actor with no id (never queries the model)', async () => {
         const { svc, model } = makeService();
-        const result = await svc.listOwn({ id: '', roles: [RoleEnum.USER], permissions: [] } as Actor);
+        const result = await svc.listOwn({
+            id: '',
+            roles: [RoleEnum.USER],
+            permissions: []
+        } as Actor);
 
         expect(result.data).toBeUndefined();
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);

@@ -725,11 +725,17 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         });
                         trackEvent(WebEvents.AccommodationSearched, {
                             destination_id: selectedDestination?.id ?? null,
-                            accommodation_types: Array.from(selectedTypes),
+                            destination_slug: null,
+                            search_type: 'accommodation',
                             has_dates: Boolean(dateRange?.from || dateRange?.to),
-                            adults,
-                            children,
-                            locale
+                            adult_count: adults,
+                            child_count: children,
+                            filter_count:
+                                selectedTypes.size +
+                                (selectedDestination ? 1 : 0) +
+                                (dateRange?.from || dateRange?.to ? 1 : 0),
+                            locale,
+                            source_page: 'home'
                         });
                         window.location.assign(url);
                     }}

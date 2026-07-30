@@ -16,7 +16,7 @@ describe('PostService.count', () => {
         vi.clearAllMocks();
         modelMock = createTypedModelMock(PostModel, ['count']);
         service = createServiceTestInstance(PostService, modelMock);
-        actor = createActor({ permissions: [], id: 'actor-id', roles: [RoleEnum.USER]});
+        actor = createActor({ permissions: [], id: 'actor-id', roles: [RoleEnum.USER] });
     });
 
     it('should return the count of posts if actor is authenticated', async () => {

@@ -17,7 +17,7 @@ describe('PostService.list', () => {
         vi.clearAllMocks();
         modelMock = createTypedModelMock(PostModel, ['findAll']);
         service = createServiceTestInstance(PostService, modelMock);
-        actor = createActor({ permissions: [], id: 'actor-id', roles: [RoleEnum.USER]});
+        actor = createActor({ permissions: [], id: 'actor-id', roles: [RoleEnum.USER] });
     });
 
     it('should return a list of posts if actor is authenticated', async () => {

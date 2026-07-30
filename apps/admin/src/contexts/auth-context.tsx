@@ -430,7 +430,6 @@ export function AuthProvider({ children, initialAuthState }: AuthProviderProps) 
     }, [authState.isAuthenticated, refreshSession]);
 
     /**
-     * PostHog identify — fires once the authenticated staff user is fully
      * resolved (roles + email already enriched by the sync effect above).
      * Only non-sensitive traits are sent: `roles` (the full set the account
      * holds, HOS-296 — never a single "primary" role), and the email's domain

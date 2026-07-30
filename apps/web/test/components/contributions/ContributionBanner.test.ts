@@ -112,8 +112,8 @@ describe('ContributionBanner.astro', () => {
         });
 
         it('forwards the banner source and variant in the event props', () => {
-            expect(src).toMatch(/source:\s*banner\?\.dataset\.source/);
-            expect(src).toMatch(/variant:\s*banner\?\.dataset\.variant/);
+            expect(src).toMatch(/source_page:\s*banner\?\.dataset\.source/);
+            expect(src).toMatch(/contribution_variant:\s*banner\?\.dataset\.variant/);
         });
 
         it('re-binds on every view-transitions navigation (astro:page-load)', () => {

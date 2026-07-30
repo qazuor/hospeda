@@ -606,11 +606,12 @@ describe('UserMenu — PostHog identify/reset', () => {
         renderMenu();
 
         await waitFor(() => {
-            expect(identifyUser).toHaveBeenCalledWith('user-1', {
+            expect(identifyUser).toHaveBeenLastCalledWith('user-1', {
                 // HOS-296: an ARRAY person property, sorted for stability.
                 // A multi-hat user reports every hat AND both segment
                 // booleans — under the old scalar only one could be true.
                 roles: ['COMMERCE_OWNER', 'HOST', 'USER'],
+                user_type: 'owner',
                 is_host: true,
                 is_commerce_owner: true,
                 is_staff: false
@@ -636,8 +637,9 @@ describe('UserMenu — PostHog identify/reset', () => {
         renderMenu();
 
         await waitFor(() => {
-            expect(identifyUser).toHaveBeenCalledWith('user-1', {
+            expect(identifyUser).toHaveBeenLastCalledWith('user-1', {
                 roles: ['ADMIN', 'USER'],
+                user_type: 'staff',
                 is_host: false,
                 is_commerce_owner: false,
                 is_staff: true

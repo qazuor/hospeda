@@ -35,7 +35,11 @@ type MockActor = { id: string; roles: readonly RoleEnum[]; permissions: Permissi
 describe('userBookmark.normalizers', () => {
     it('normalizeCreateInput trims name and description', () => {
         const input = { ...baseBookmark };
-        const result = normalizeCreateInput(input, { id: 'user-uuid', roles: [RoleEnum.USER], permissions: [] } as MockActor);
+        const result = normalizeCreateInput(input, {
+            id: 'user-uuid',
+            roles: [RoleEnum.USER],
+            permissions: []
+        } as MockActor);
         expect(result.name).toBe('My Bookmark');
         expect(result.description).toBe('Some description');
         expect(result.entityType).toBe(EntityTypeEnum.ACCOMMODATION);

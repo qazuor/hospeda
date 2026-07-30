@@ -92,6 +92,11 @@ vi.mock('@repo/icons', () => ({
 // Mock the API module — individual tests override specific methods as needed.
 const mockToggle = vi.fn();
 const mockCheckStatus = vi.fn();
+const trackEventSpy = vi.fn();
+
+vi.mock('../../../../src/lib/analytics/posthog-client', () => ({
+    trackEvent: (...args: unknown[]) => trackEventSpy(...args)
+}));
 
 vi.mock('../../../../src/lib/api/endpoints-protected', () => ({
     userBookmarksApi: {
@@ -1316,17 +1321,8 @@ describe('FavoriteButton — locale number formatting', () => {
 // ---------------------------------------------------------------------------
 
 describe('FavoriteButton — favorite_toggled analytics event', () => {
-    let captureSpy: ReturnType<typeof vi.fn>;
-
     beforeEach(() => {
-        captureSpy = vi.fn();
-        (window as unknown as { posthog: { capture: typeof captureSpy } }).posthog = {
-            capture: captureSpy
-        };
-    });
-
-    afterEach(() => {
-        (window as unknown as { posthog?: unknown }).posthog = undefined;
+        trackEventSpy.mockClear();
     });
 
     it('fires favorite_toggled with action="add" when favoriting succeeds', async () => {
@@ -1351,10 +1347,9 @@ describe('FavoriteButton — favorite_toggled analytics event', () => {
 
         // Assert
         await waitFor(() => {
-            expect(captureSpy).toHaveBeenCalledWith('favorite_toggled', {
+            expect(trackEventSpy).toHaveBeenCalledWith('favorite_added', {
                 entity_type: 'ACCOMMODATION',
                 entity_id: 'entity-add-1',
-                action: 'add',
                 assigned_collection: false
             });
         });
@@ -1382,10 +1377,9 @@ describe('FavoriteButton — favorite_toggled analytics event', () => {
 
         // Assert
         await waitFor(() => {
-            expect(captureSpy).toHaveBeenCalledWith('favorite_toggled', {
+            expect(trackEventSpy).toHaveBeenCalledWith('favorite_removed', {
                 entity_type: 'DESTINATION',
                 entity_id: 'entity-remove-1',
-                action: 'remove',
                 assigned_collection: false
             });
         });
@@ -1406,7 +1400,7 @@ describe('FavoriteButton — favorite_toggled analytics event', () => {
 
         // Assert
         await waitFor(() => expect(mockAddToast).toHaveBeenCalled());
-        expect(captureSpy).not.toHaveBeenCalled();
+        expect(trackEventSpy).not.toHaveBeenCalled();
     });
 
     it('does NOT fire favorite_toggled for a guest click', () => {
@@ -1421,6 +1415,6 @@ describe('FavoriteButton — favorite_toggled analytics event', () => {
         fireEvent.click(screen.getByRole('button'));
 
         // Assert
-        expect(captureSpy).not.toHaveBeenCalled();
+        expect(trackEventSpy).not.toHaveBeenCalled();
     });
 });

@@ -17,7 +17,7 @@ describe('PostService.search', () => {
         vi.clearAllMocks();
         modelMock = createTypedModelMock(PostModel, ['search']);
         service = createServiceTestInstance(PostService, modelMock);
-        actor = createActor({ permissions: [], id: 'actor-id', roles: [RoleEnum.USER]});
+        actor = createActor({ permissions: [], id: 'actor-id', roles: [RoleEnum.USER] });
     });
 
     it('should return a paginated list of posts if actor is authenticated', async () => {

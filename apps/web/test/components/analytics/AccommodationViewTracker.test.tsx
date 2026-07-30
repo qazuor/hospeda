@@ -96,16 +96,13 @@ describe('AccommodationViewTracker (SPEC-159 T-012)', () => {
         // Assert
         expect(trackEventMock).toHaveBeenCalledTimes(1);
         expect(trackEventMock).toHaveBeenCalledWith('accommodation_viewed', {
-            slug: DEFAULT_PROPS.slug,
             accommodation_id: DEFAULT_PROPS.accommodationId,
+            accommodation_slug: DEFAULT_PROPS.slug,
             locale: DEFAULT_PROPS.locale,
             accommodation_type: 'CABIN',
             is_featured: true,
             destination_id: 'dest-colon',
-            destination_name: 'Colón',
-            price: 12000,
-            currency: 'ARS',
-            owner_id: 'owner-9'
+            source_page: 'accommodation_detail'
         });
     });
 

@@ -14,8 +14,8 @@
 import { UserModel } from '@repo/db';
 import { ModerationStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock } from 'vitest';
-import type { Actor } from '../../../src/types';
 import { UserService } from '../../../src/services/user/user.service';
+import type { Actor } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { createUser } from '../../factories/userFactory';
 import { getMockId } from '../../factories/utilsFactory';

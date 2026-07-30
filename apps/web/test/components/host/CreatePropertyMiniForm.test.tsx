@@ -1299,10 +1299,10 @@ describe('CreatePropertyMiniForm — import analytics (SPEC-258 A7)', () => {
 
         // trackEvent should have been called with the success event
         expect(trackEvent).toHaveBeenCalledWith(
-            'property_import_succeeded',
+            'accommodation_import_completed',
             expect.objectContaining({
-                source: 'booking',
-                fieldsPrefilled: expect.any(Number)
+                import_source: 'booking',
+                prefilled_field_count: expect.any(Number)
             })
         );
     });
@@ -1315,8 +1315,8 @@ describe('CreatePropertyMiniForm — import analytics (SPEC-258 A7)', () => {
         await triggerImport(user);
 
         expect(trackEvent).toHaveBeenCalledWith(
-            'property_import_succeeded',
-            expect.objectContaining({ source: 'generic' })
+            'accommodation_import_completed',
+            expect.objectContaining({ import_source: 'generic' })
         );
     });
 });

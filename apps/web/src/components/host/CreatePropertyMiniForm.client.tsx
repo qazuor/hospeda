@@ -531,8 +531,8 @@ export function CreatePropertyMiniForm({
 
             // A7: fire import success event
             trackEvent(WebEvents.PropertyImportSucceeded, {
-                source: response.source,
-                fieldsPrefilled: filledCount + extraCount
+                import_source: response.source,
+                prefilled_field_count: filledCount + extraCount
             });
 
             // Destination hint. Only touched when the response actually says
@@ -587,14 +587,20 @@ export function CreatePropertyMiniForm({
      * the API call resolves). A7: fire attempt event here, before success/failure.
      */
     const handleImportAttempt = useCallback((source: string): void => {
-        trackEvent(WebEvents.PropertyImportAttempted, { source });
+        trackEvent(WebEvents.PropertyImportAttempted, {
+            import_mode: 'manual_submit',
+            import_source: source
+        });
     }, []);
 
     /**
      * Called by ImportFromUrl on import failure. A7: fire failure event.
      */
     const handleImportError = useCallback((source: string): void => {
-        trackEvent(WebEvents.PropertyImportFailed, { source });
+        trackEvent(WebEvents.PropertyImportFailed, {
+            import_source: source,
+            failure_reason: 'client_error'
+        });
     }, []);
 
     // City picker uses async mode — hits the public destinations endpoint

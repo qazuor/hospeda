@@ -428,7 +428,7 @@ describe('<SearchBar /> submit flow', () => {
         expect(navigatedTo).not.toContain('types=');
     });
 
-    it('sends accommodation_types as a plain array so PostHog does not drop it as {} (Set→Array regression)', async () => {
+    it('sends a plain serializable analytics payload on submit (no Set values)', async () => {
         const user = userEvent.setup();
         trackEventSpy.mockClear();
 
@@ -444,8 +444,7 @@ describe('<SearchBar /> submit flow', () => {
 
         expect(trackEventSpy).toHaveBeenCalledTimes(1);
         const [, payload] = trackEventSpy.mock.calls[0] as [string, Record<string, unknown>];
-        // A JS Set serializes to `{}` in PostHog; the fix wraps it in Array.from().
-        expect(Array.isArray(payload.accommodation_types)).toBe(true);
+        expect(Object.values(payload).some((value) => value instanceof Set)).toBe(false);
     });
 });
 

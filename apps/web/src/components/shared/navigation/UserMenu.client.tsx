@@ -121,6 +121,22 @@ const HOST_PERMISSION = 'accommodation.create' as const;
  */
 const COMMERCE_OWNER_PERMISSION = 'commerce.editOwn' as const;
 
+function resolveAnalyticsUserType(input: {
+    readonly permissions: readonly string[] | null;
+}): 'staff' | 'owner' | 'tourist' {
+    const { permissions } = input;
+    if (permissions?.includes(STAFF_DISCRIMINATOR_PERMISSION)) {
+        return 'staff';
+    }
+    if (
+        permissions?.includes(HOST_PERMISSION) ||
+        permissions?.includes(COMMERCE_OWNER_PERMISSION)
+    ) {
+        return 'owner';
+    }
+    return 'tourist';
+}
+
 /**
  * Re-exported from `@/lib/auth-cache` so existing importers of
  * `AUTH_ME_CACHE_KEY` from this module keep working without churn.
@@ -205,6 +221,7 @@ export function UserMenu({
             permissions === null
                 ? undefined
                 : {
+                      user_type: resolveAnalyticsUserType({ permissions }),
                       roles: rolesKey.length > 0 ? rolesKey.split(',') : [],
                       is_host: permissions.includes(HOST_PERMISSION),
                       is_commerce_owner: permissions.includes(COMMERCE_OWNER_PERMISSION),

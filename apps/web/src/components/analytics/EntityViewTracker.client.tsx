@@ -83,15 +83,17 @@ export function EntityViewTracker({
     useEffect(() => {
         if (entityType === 'POST') {
             trackEvent(WebEvents.PostViewed, {
-                slug,
                 post_id: entityId,
-                locale
+                post_slug: slug,
+                locale,
+                source_page: 'post_detail'
             });
         } else {
             trackEvent(WebEvents.EventViewed, {
-                slug,
                 event_id: entityId,
-                locale
+                event_slug: slug,
+                locale,
+                source_page: 'event_detail'
             });
         }
 

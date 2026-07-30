@@ -18,8 +18,8 @@
  * resolve in this worktree without an explicit alias in vitest.config.ts).
  *
  * PostHog events:
- *  - `admin.whats_new.modal.shown` on open ({ entryIds, roles })
- *  - `admin.whats_new.modal.closed` on close ({ entryIds })
+ *  - `admin_whats_new_modal_shown` on open ({ entry_count, roles })
+ *  - `admin_whats_new_modal_closed` on close ({ entry_count })
  *
  * Accessibility: Radix Dialog provides focus trap + ESC handling.
  * `aria-labelledby` is wired to `DialogTitle`.
@@ -30,6 +30,7 @@
  * @see SPEC-175 §7.2, §12.4, AC-13
  */
 
+import { AnalyticsEvents } from '@repo/analytics';
 import type { TranslationKey } from '@repo/i18n';
 import type { WhatsNewItem } from '@repo/schemas';
 import { useCallback, useEffect, useMemo } from 'react';
@@ -95,24 +96,25 @@ export function WhatsNewModal({ open, onOpenChange, entryId }: WhatsNewModalProp
     }, [items, entryId]);
 
     const displayedIds = useMemo(() => displayedEntries.map((e) => e.id), [displayedEntries]);
+    const rolesKey = (user?.roles ?? []).join('|');
 
     // Track modal shown event when it opens with entries.
     useEffect(() => {
         if (open && displayedIds.length > 0) {
-            trackEvent('admin.whats_new.modal.shown', {
-                entryIds: displayedIds,
-                // HOS-296: send the full role set the user holds, not a
-                // single "primary" role.
-                roles: user?.roles ?? []
+            trackEvent(AnalyticsEvents.adminWhatsNewModalShown, {
+                entry_count: displayedIds.length,
+                roles: rolesKey === '' ? [] : rolesKey.split('|')
             });
         }
-    }, [open, displayedIds, user?.roles]);
+    }, [open, displayedIds, rolesKey]);
 
     // Handle close: mark shown entries as seen + fire analytics.
     const handleClose = useCallback(() => {
         if (displayedIds.length > 0) {
             markSeen(displayedIds);
-            trackEvent('admin.whats_new.modal.closed', { entryIds: displayedIds });
+            trackEvent(AnalyticsEvents.adminWhatsNewModalClosed, {
+                entry_count: displayedIds.length
+            });
         }
         onOpenChange(false);
     }, [displayedIds, markSeen, onOpenChange]);
