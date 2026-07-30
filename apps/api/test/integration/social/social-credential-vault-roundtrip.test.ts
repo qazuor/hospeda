@@ -70,7 +70,7 @@ const BASE_PATH = '/api/v1/admin/social/credentials';
  * Real `createTestUser()` rows are seeded fresh in `beforeEach` (below) instead,
  * since `testDb.clean()` in `afterEach` truncates `users` between tests.
  */
-type TestActor = { id: string; roles: readonly string[]; permissions: readonly string[]};
+type TestActor = { id: string; roles: readonly string[]; permissions: readonly string[] };
 
 function makeHeaders(actor: TestActor, extra: Record<string, string> = {}): Record<string, string> {
     return {

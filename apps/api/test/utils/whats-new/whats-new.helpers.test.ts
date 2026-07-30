@@ -43,43 +43,43 @@ describe('filterEntriesByRole', () => {
     const multiRole = makeEntry({ id: 'multi', roles: ['HOST', 'EDITOR'] });
 
     it('should return all entries when role is HOST and roles field is absent', () => {
-        const result = filterEntriesByRole({ entries: [universal], roles: ['HOST']});
+        const result = filterEntriesByRole({ entries: [universal], roles: ['HOST'] });
         expect(result).toHaveLength(1);
         expect(result[0]?.id).toBe('universal');
     });
 
     it('should return all entries when role is HOST and roles is empty array', () => {
-        const result = filterEntriesByRole({ entries: [emptyRoles], roles: ['HOST']});
+        const result = filterEntriesByRole({ entries: [emptyRoles], roles: ['HOST'] });
         expect(result).toHaveLength(1);
     });
 
     it('should return ADMIN-targeted entry for ADMIN role', () => {
-        const result = filterEntriesByRole({ entries: [adminOnly], roles: ['ADMIN']});
+        const result = filterEntriesByRole({ entries: [adminOnly], roles: ['ADMIN'] });
         expect(result).toHaveLength(1);
     });
 
     it('should exclude ADMIN-targeted entry for HOST role', () => {
-        const result = filterEntriesByRole({ entries: [adminOnly], roles: ['HOST']});
+        const result = filterEntriesByRole({ entries: [adminOnly], roles: ['HOST'] });
         expect(result).toHaveLength(0);
     });
 
     it('should exclude HOST-targeted entry for EDITOR role', () => {
-        const result = filterEntriesByRole({ entries: [hostOnly], roles: ['EDITOR']});
+        const result = filterEntriesByRole({ entries: [hostOnly], roles: ['EDITOR'] });
         expect(result).toHaveLength(0);
     });
 
     it('should include multi-role entry when actor role matches one of the roles', () => {
-        const result = filterEntriesByRole({ entries: [multiRole], roles: ['HOST']});
+        const result = filterEntriesByRole({ entries: [multiRole], roles: ['HOST'] });
         expect(result).toHaveLength(1);
     });
 
     it('should include multi-role entry when actor role is EDITOR', () => {
-        const result = filterEntriesByRole({ entries: [multiRole], roles: ['EDITOR']});
+        const result = filterEntriesByRole({ entries: [multiRole], roles: ['EDITOR'] });
         expect(result).toHaveLength(1);
     });
 
     it('should exclude multi-role entry when actor role is ADMIN (not in list)', () => {
-        const result = filterEntriesByRole({ entries: [multiRole], roles: ['ADMIN']});
+        const result = filterEntriesByRole({ entries: [multiRole], roles: ['ADMIN'] });
         expect(result).toHaveLength(0);
     });
 
@@ -97,7 +97,7 @@ describe('filterEntriesByRole', () => {
     });
 
     it('should return empty array when entries is empty', () => {
-        const result = filterEntriesByRole({ entries: [], roles: ['HOST']});
+        const result = filterEntriesByRole({ entries: [], roles: ['HOST'] });
         expect(result).toHaveLength(0);
     });
 

@@ -10,9 +10,8 @@ import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vite
 import * as helpers from '../../../src/services/event/event.helpers';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
-import { createEventInput, createMockEvent } from '../../factories/eventFactory';
-import { createUser } from '../../factories/userFactory';
 import { createActor } from '../../factories/actorFactory';
+import { createEventInput, createMockEvent } from '../../factories/eventFactory';
 import {
     expectForbiddenError,
     expectInternalError,

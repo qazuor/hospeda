@@ -349,9 +349,7 @@ describe('Admin user create and restore routes - audit log [SPEC-026 GAP-009]', 
             // Both writes carry the SAME ctx — a grant enlisted in a different
             // boundary could not be rolled back by the insert's.
             expect(mockCreate.mock.calls[0]?.[2]).toBe(TX_CTX);
-            expect(mockGrantRole).toHaveBeenCalledWith(
-                expect.objectContaining({ ctx: TX_CTX })
-            );
+            expect(mockGrantRole).toHaveBeenCalledWith(expect.objectContaining({ ctx: TX_CTX }));
         });
 
         it('propagates the grant failure OUT of the transaction callback (what triggers the rollback)', async () => {

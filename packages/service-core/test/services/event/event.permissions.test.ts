@@ -9,9 +9,8 @@ import {
     checkCanViewEvent
 } from '../../../src/services/event/event.permissions';
 import { ServiceError } from '../../../src/types';
-import { createMockEvent } from '../../factories/eventFactory';
-import { createUser } from '../../factories/userFactory';
 import { createActor } from '../../factories/actorFactory';
+import { createMockEvent } from '../../factories/eventFactory';
 
 /**
  * Tests for EventService permission helpers.

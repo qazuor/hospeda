@@ -142,7 +142,7 @@ function attachTestErrorHandler(app: Hono<AppBindings>): void {
     });
 }
 
-type ActorOptions = { id: string; roles: readonly RoleEnum[]; permissions: PermissionEnum[]};
+type ActorOptions = { id: string; roles: readonly RoleEnum[]; permissions: PermissionEnum[] };
 
 function buildApp(
     actor: ActorOptions,

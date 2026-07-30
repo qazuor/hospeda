@@ -373,7 +373,11 @@ const MOCK_DOWNGRADE_PREVIEW_UNLIMITED_CAP: DowngradePreview = {
  * permissions required by the billing route stack (`BILLING_VIEW_OWN`).
  */
 function ownerAuthHeaders(
-    overrides: Partial<{ id: string; roles: readonly RoleEnum[]; permissions: PermissionEnum[]}> = {}
+    overrides: Partial<{
+        id: string;
+        roles: readonly RoleEnum[];
+        permissions: PermissionEnum[];
+    }> = {}
 ): Record<string, string> {
     const actor = createMockUserActor({
         roles: overrides.roles ?? [RoleEnum.USER],

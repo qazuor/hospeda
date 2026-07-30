@@ -175,7 +175,9 @@ const adminHandler = (path: string) => {
 describe('Field-level permissions on user settings (SPEC-096 / T-032)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockGetById.mockResolvedValue({ data: { id: 'x', roles: [RoleEnum.USER], permissions: [] } });
+        mockGetById.mockResolvedValue({
+            data: { id: 'x', roles: [RoleEnum.USER], permissions: [] }
+        });
         mockUpdate.mockResolvedValue({
             data: { id: 'web-user-id-123', settings: {} },
             error: undefined

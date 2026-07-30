@@ -87,9 +87,7 @@ type SingleRolePermissionsResult =
  * @param role - The role to look up permissions for
  * @returns `{ ok: true, permissions }`, or `{ ok: false }` when the lookup failed
  */
-async function getPermissionsForSingleRole(
-    role: RoleEnum
-): Promise<SingleRolePermissionsResult> {
+async function getPermissionsForSingleRole(role: RoleEnum): Promise<SingleRolePermissionsResult> {
     // Check cache first
     const cached = cache.get(role);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {

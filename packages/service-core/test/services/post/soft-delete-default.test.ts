@@ -13,7 +13,6 @@ import type { SQL } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
-import { createUser } from '../../factories/userFactory';
 import { createActor } from '../../factories/actorFactory';
 import { expectSuccess } from '../../helpers/assertions';
 

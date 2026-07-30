@@ -2,9 +2,8 @@ import { EventModel } from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
-import { createMockEvent } from '../../factories/eventFactory';
-import { createUser } from '../../factories/userFactory';
 import { createActor } from '../../factories/actorFactory';
+import { createMockEvent } from '../../factories/eventFactory';
 import { expectInternalError, expectSuccess } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 

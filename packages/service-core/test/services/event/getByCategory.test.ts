@@ -3,9 +3,8 @@ import { EventCategoryEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
-import { createMockEvent } from '../../factories/eventFactory';
-import { createUser } from '../../factories/userFactory';
 import { createActor } from '../../factories/actorFactory';
+import { createMockEvent } from '../../factories/eventFactory';
 import {
     expectInternalError,
     expectSuccess,

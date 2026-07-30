@@ -50,6 +50,7 @@ const buildFakeTx = (rows: FakeRows): DrizzleClient => {
         select: () => ({
             from: (table: unknown) => ({
                 where: () => ({
+                    // biome-ignore lint/suspicious/noThenProperty: Drizzle query builders ARE thenables; the double has to be awaitable to stand in for one
                     then: (
                         onFulfilled?: (value: unknown) => unknown,
                         onRejected?: (reason: unknown) => unknown
@@ -58,7 +59,6 @@ const buildFakeTx = (rows: FakeRows): DrizzleClient => {
                 })
             })
         })
-        // biome-ignore lint/suspicious/noExplicitAny: a partial Drizzle double; reconstructing the fluent builder's types has no value here
     } as any;
 };
 
@@ -66,7 +66,6 @@ const buildFakeTx = (rows: FakeRows): DrizzleClient => {
 const installDb = (tx: DrizzleClient): void => {
     setDb({
         transaction: async (callback: (client: DrizzleClient) => Promise<unknown>) => callback(tx)
-        // biome-ignore lint/suspicious/noExplicitAny: same rationale as buildFakeTx
     } as any);
 };
 
@@ -117,7 +116,6 @@ describe('revokeRole error codes through the real withTransaction (HOS-296)', ()
             transaction: async () => {
                 throw new Error('connection terminated unexpectedly');
             }
-            // biome-ignore lint/suspicious/noExplicitAny: partial Drizzle double
         } as any);
 
         // Act

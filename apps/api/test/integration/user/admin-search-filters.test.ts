@@ -67,7 +67,7 @@ describe('Admin User List - entity-specific filter params', () => {
      * Builds mock auth headers for a test actor.
      */
     function makeHeaders(
-        actor: { id: string; roles: readonly string[]; permissions: string[]},
+        actor: { id: string; roles: readonly string[]; permissions: string[] },
         extra: Record<string, string> = {}
     ): Record<string, string> {
         return {

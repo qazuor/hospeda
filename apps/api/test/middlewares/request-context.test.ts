@@ -165,7 +165,7 @@ describe('requestContextMiddleware', () => {
 
             // Simulate actor middleware enriching the context
             app.use(async (_c, next) => {
-                setRequestContextActor({ userId: 'user-42', roles: ['HOST']});
+                setRequestContextActor({ userId: 'user-42', roles: ['HOST'] });
                 await next();
             });
 
@@ -200,7 +200,7 @@ describe('requestContextMiddleware', () => {
                 callCount += 1;
                 // First request sets actor, second does not
                 if (callCount === 1) {
-                    setRequestContextActor({ userId: 'user-first', roles: ['HOST']});
+                    setRequestContextActor({ userId: 'user-first', roles: ['HOST'] });
                 }
                 capturedByRequest.push({ userId: getRequestContext()?.userId });
                 return c.json({ ok: true });

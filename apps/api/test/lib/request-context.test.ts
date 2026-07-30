@@ -105,7 +105,7 @@ describe('setRequestContextActor', () => {
         await runWithRequestContext({
             store,
             fn: async () => {
-                setRequestContextActor({ userId: 'user-uuid-001', roles: ['HOST']});
+                setRequestContextActor({ userId: 'user-uuid-001', roles: ['HOST'] });
                 captured = getRequestContext();
             }
         });
@@ -118,7 +118,7 @@ describe('setRequestContextActor', () => {
     it('should be a no-op when called outside any active scope', () => {
         // Arrange — no active scope
         // Act — must not throw
-        expect(() => setRequestContextActor({ userId: 'x', roles: ['HOST']})).not.toThrow();
+        expect(() => setRequestContextActor({ userId: 'x', roles: ['HOST'] })).not.toThrow();
         // Assert — no store leaked
         expect(getRequestContext()).toBeUndefined();
     });
@@ -132,7 +132,7 @@ describe('setRequestContextActor', () => {
         await runWithRequestContext({
             store,
             fn: async () => {
-                setRequestContextActor({ userId: 'u1', roles: ['ADMIN']});
+                setRequestContextActor({ userId: 'u1', roles: ['ADMIN'] });
                 captured = getRequestContext();
             }
         });
@@ -175,7 +175,7 @@ describe('setRequestContextActor', () => {
         await runWithRequestContext({
             store,
             fn: async () => {
-                setRequestContextActor({ userId: 'u2', roles: ['USER']});
+                setRequestContextActor({ userId: 'u2', roles: ['USER'] });
                 captured = getRequestContext();
             }
         });
@@ -221,7 +221,7 @@ describe('setRequestContextVisitor', () => {
         await runWithRequestContext({
             store,
             fn: async () => {
-                setRequestContextActor({ userId: 'u3', roles: ['HOST']});
+                setRequestContextActor({ userId: 'u3', roles: ['HOST'] });
                 setRequestContextVisitor({ visitorId: 'visitor-uuid-002' });
                 captured = getRequestContext();
             }
@@ -243,7 +243,7 @@ describe('setRequestContextVisitor', () => {
             store,
             fn: async () => {
                 setRequestContextVisitor({ visitorId: 'visitor-before-login' });
-                setRequestContextActor({ userId: 'u4', roles: ['USER']});
+                setRequestContextActor({ userId: 'u4', roles: ['USER'] });
                 captured = getRequestContext();
             }
         });
@@ -296,7 +296,7 @@ describe('isolation — nested and concurrent scopes', () => {
             store: makeStore({ requestId: 'A' }),
             fn: async () => {
                 await Promise.resolve();
-                setRequestContextActor({ userId: 'user-A', roles: ['HOST']});
+                setRequestContextActor({ userId: 'user-A', roles: ['HOST'] });
                 await Promise.resolve();
                 actorInA = getRequestContext()?.userId;
             }

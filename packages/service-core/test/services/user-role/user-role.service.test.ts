@@ -17,8 +17,7 @@
  * which is precisely the bug the criterion exists to prevent.
  */
 
-import { ServiceErrorCode } from '@repo/schemas';
-import { RoleEnum } from '@repo/schemas';
+import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -131,10 +130,8 @@ const matches = (row: Record<string, unknown>, predicate: Predicate): boolean =>
 
 type Thenable<T> = PromiseLike<T> & { for: (mode: string) => Promise<T> };
 
-const createWhereResult = <T>(
-    getRows: () => T[],
-    onLock: () => Promise<void>
-): Thenable<T[]> => ({
+const createWhereResult = <T>(getRows: () => T[], onLock: () => Promise<void>): Thenable<T[]> => ({
+    // biome-ignore lint/suspicious/noThenProperty: Drizzle query builders ARE thenables; the double has to be awaitable to stand in for one
     then: (onFulfilled, onRejected) => Promise.resolve(getRows()).then(onFulfilled, onRejected),
     for: async (_mode: string) => {
         await onLock();
@@ -145,7 +142,6 @@ const createWhereResult = <T>(
 /** Set by a test to mutate the store right before a DELETE executes. */
 let beforeDelete: (() => void) | null = null;
 
-// biome-ignore lint/suspicious/noExplicitAny: the fake client mimics Drizzle's fluent builder, whose per-step types are not worth reconstructing in a test double
 const createFakeClient = (releases: Array<() => void>): any => ({
     select: (_columns: unknown) => ({
         from: (table: unknown) => ({
@@ -195,6 +191,7 @@ const createFakeClient = (releases: Array<() => void>): any => ({
                     return chain;
                 },
                 returning: (_columns: unknown) => Promise.resolve(apply()),
+                // biome-ignore lint/suspicious/noThenProperty: Drizzle insert builders ARE thenables; the double has to be awaitable to stand in for one
                 then: (
                     onFulfilled?: (value: unknown) => unknown,
                     onRejected?: (reason: unknown) => unknown
@@ -231,6 +228,7 @@ const createFakeClient = (releases: Array<() => void>): any => ({
             };
             return {
                 returning: (_columns: unknown) => Promise.resolve(run()),
+                // biome-ignore lint/suspicious/noThenProperty: Drizzle delete builders ARE thenables; the double has to be awaitable to stand in for one
                 then: (
                     onFulfilled?: (value: unknown) => unknown,
                     onRejected?: (reason: unknown) => unknown

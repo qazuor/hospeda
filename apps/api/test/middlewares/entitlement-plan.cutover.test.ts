@@ -442,7 +442,12 @@ describe('entitlement middleware — host-draft plan cutover (SPEC-192 T-024)', 
         it('should NOT call PlanService for USER actors (uses tourist-free defaults)', async () => {
             // Arrange
             const ctx = makeCtx({
-                actor: { id: 'regular-user', roles: ['user'], permissions: [], email: 'user@test.com' }
+                actor: {
+                    id: 'regular-user',
+                    roles: ['user'],
+                    permissions: [],
+                    email: 'user@test.com'
+                }
             });
             const next = vi.fn().mockResolvedValue(undefined);
             const middleware = entitlementMiddleware();

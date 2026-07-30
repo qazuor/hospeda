@@ -44,8 +44,7 @@ export const createSystemActor = (): Actor => ({
  */
 export const isGuestActor = (actor: Actor): boolean => {
     return (
-        actor.id === '00000000-0000-4000-8000-000000000000' ||
-        actor.roles.includes(RoleEnum.GUEST)
+        actor.id === '00000000-0000-4000-8000-000000000000' || actor.roles.includes(RoleEnum.GUEST)
     );
 };
 

@@ -74,7 +74,7 @@ function attachTestErrorHandler(app: Hono<AppBindings>): void {
     });
 }
 
-type ActorOptions = { id: string; roles: readonly RoleEnum[]; permissions: PermissionEnum[]};
+type ActorOptions = { id: string; roles: readonly RoleEnum[]; permissions: PermissionEnum[] };
 
 /**
  * Builds a minimal Hono app with `actor` and `userEntitlements` injected

@@ -87,7 +87,7 @@ const nonAdminActor = {
 } as const;
 
 function makeHeaders(
-    actor: { id: string; roles: readonly string[]; permissions: readonly string[]},
+    actor: { id: string; roles: readonly string[]; permissions: readonly string[] },
     extra: Record<string, string> = {}
 ): Record<string, string> {
     return {

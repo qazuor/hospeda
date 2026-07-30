@@ -8,7 +8,7 @@ import {
     getDb,
     UserModel
 } from '@repo/db';
-import type { Destination, RoleEnum, User } from '@repo/schemas';
+import type { Destination, User } from '@repo/schemas';
 
 /**
  * E2E test data seeding helpers

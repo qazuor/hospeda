@@ -18,7 +18,7 @@
  */
 
 import { getDb, socialCredentialAudit } from '@repo/db';
-import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode } from '@repo/schemas';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { getDecryptedSocialCredential } from '../../../src/services/social-credential-vault.service';

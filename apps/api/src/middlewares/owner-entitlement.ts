@@ -43,7 +43,7 @@ import {
     type LimitKey
 } from '@repo/billing';
 import { accommodations, getDb, userRole as userRoleTable } from '@repo/db';
-import { getUserRoles, isAccommodationSubscription, RoleEnum } from '@repo/service-core';
+import { getUserRoles, isAccommodationSubscription, type RoleEnum } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { eq, inArray, type SQL } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';

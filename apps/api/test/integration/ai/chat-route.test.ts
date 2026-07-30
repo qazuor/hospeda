@@ -326,7 +326,11 @@ function buildTestApp(): OpenAPIHono<AppBindings> {
 }
 
 function makeMockActorHeaders(
-    overrides: { actorId?: string; roles?: readonly RoleEnum[]; permissions?: PermissionEnum[] } = {}
+    overrides: {
+        actorId?: string;
+        roles?: readonly RoleEnum[];
+        permissions?: PermissionEnum[];
+    } = {}
 ): Record<string, string> {
     return {
         'content-type': 'application/json',

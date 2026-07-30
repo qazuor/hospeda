@@ -22,9 +22,8 @@ vi.mock('@repo/db', async (importOriginal) => {
 
 import * as dbModule from '@repo/db';
 import { EventService } from '../../../src/services/event/event.service';
-import { createMockEvent } from '../../factories/eventFactory';
-import { createUser } from '../../factories/userFactory';
 import { createActor } from '../../factories/actorFactory';
+import { createMockEvent } from '../../factories/eventFactory';
 import { expectSuccess } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 

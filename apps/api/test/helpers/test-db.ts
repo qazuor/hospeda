@@ -9,7 +9,7 @@
 
 import { billingCustomers, eq, type getDb, initializeDb } from '@repo/db';
 import { users } from '@repo/db/schemas';
-import { RoleEnum, RoleGrantReason } from '@repo/schemas';
+import { type RoleEnum, RoleGrantReason } from '@repo/schemas';
 import { grantRole } from '@repo/service-core';
 import { Pool } from 'pg';
 

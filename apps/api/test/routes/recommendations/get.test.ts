@@ -153,7 +153,7 @@ function attachTestErrorHandler(app: Hono<AppBindings>): void {
 /** Inject a minimal tourist actor. */
 function injectActor(
     app: Hono<AppBindings>,
-    actor: { id: string; roles: readonly RoleEnum[]; permissions: readonly PermissionEnum[]}
+    actor: { id: string; roles: readonly RoleEnum[]; permissions: readonly PermissionEnum[] }
 ): void {
     app.use((c, next) => {
         c.set('actor', actor);

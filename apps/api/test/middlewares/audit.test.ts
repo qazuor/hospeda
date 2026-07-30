@@ -485,7 +485,7 @@ describe('Audit Middleware', () => {
 
         it('should use the authenticated user actor identity when available', async () => {
             // Arrange
-            const actor = createUserActor({ id: 'real-user-id', roles: [RoleEnum.USER]});
+            const actor = createUserActor({ id: 'real-user-id', roles: [RoleEnum.USER] });
             const app = createTestApp({ actor });
 
             // Act

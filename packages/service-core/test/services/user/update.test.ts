@@ -5,7 +5,7 @@
  * Covers: success (self, super admin), forbidden, not found, validation, internal error, edge cases.
  */
 import { UserModel } from '@repo/db';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
 import { createActor } from '../../factories/actorFactory';
