@@ -40,18 +40,24 @@ export const ROLES = RoleEnum;
 
 /**
  * Helper function to check if user is admin (SUPER_ADMIN or ADMIN)
+ *
+ * HOS-296: checks membership in the user's role SET, since an account can
+ * hold `ADMIN` alongside other hats.
  */
 export function useIsAdmin(): boolean {
     const { user } = useAuthContext();
-    return user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.ADMIN;
+    const userRoles = user?.roles ?? [];
+    return userRoles.includes(ROLES.SUPER_ADMIN) || userRoles.includes(ROLES.ADMIN);
 }
 
 /**
  * Helper function to check if user is super admin
+ *
+ * HOS-296: checks membership in the user's role SET.
  */
 export function useIsSuperAdmin(): boolean {
     const { user } = useAuthContext();
-    return user?.role === ROLES.SUPER_ADMIN;
+    return (user?.roles ?? []).includes(ROLES.SUPER_ADMIN);
 }
 
 /**

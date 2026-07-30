@@ -69,7 +69,7 @@ describe('DestinationService.getBreadcrumb', () => {
 
         asMock(modelMock.findOne).mockResolvedValue(city);
         asMock(modelMock.findAncestors).mockResolvedValue([country, region]);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationBreadcrumbInput = { destinationId: city.id };
 
         // Act
@@ -105,7 +105,7 @@ describe('DestinationService.getBreadcrumb', () => {
 
         asMock(modelMock.findOne).mockResolvedValue(country);
         asMock(modelMock.findAncestors).mockResolvedValue([]);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationBreadcrumbInput = { destinationId: country.id };
 
         // Act
@@ -132,7 +132,7 @@ describe('DestinationService.getBreadcrumb', () => {
 
         asMock(modelMock.findOne).mockResolvedValue(city);
         asMock(modelMock.findAncestors).mockResolvedValue([]);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationBreadcrumbInput = { destinationId: city.id };
 
         // Act
@@ -154,7 +154,7 @@ describe('DestinationService.getBreadcrumb', () => {
     it('should return NOT_FOUND if destination does not exist', async () => {
         // Arrange
         asMock(modelMock.findOne).mockResolvedValue(null);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationBreadcrumbInput = {
             destinationId: getMockId('destination', 'missing')
         };
@@ -168,7 +168,7 @@ describe('DestinationService.getBreadcrumb', () => {
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
         // Arrange
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params = { destinationId: 'bad' } as unknown as GetDestinationBreadcrumbInput;
 
         // Act
@@ -181,7 +181,7 @@ describe('DestinationService.getBreadcrumb', () => {
     it('should return INTERNAL_ERROR if model throws on findOne', async () => {
         // Arrange
         asMock(modelMock.findOne).mockRejectedValue(new Error('DB error'));
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationBreadcrumbInput = {
             destinationId: getMockId('destination', 'err')
         };
@@ -198,7 +198,7 @@ describe('DestinationService.getBreadcrumb', () => {
         const city = new DestinationFactoryBuilder().build();
         asMock(modelMock.findOne).mockResolvedValue(city);
         asMock(modelMock.findAncestors).mockRejectedValue(new Error('DB error'));
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationBreadcrumbInput = { destinationId: city.id };
 
         // Act

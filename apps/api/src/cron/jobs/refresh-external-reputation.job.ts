@@ -51,7 +51,7 @@ const DEFAULT_CRON_SCHEDULE = '0 2 * * 1';
  */
 const CRON_SYSTEM_ACTOR: Actor = {
     id: '00000000-0000-0000-0000-000000000002',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY] as readonly PermissionEnum[]
 } as const;
 

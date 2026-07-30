@@ -7,7 +7,7 @@
  *   Unseen entries: bold title + accent dot. Seen entries: muted styling.
  * - Row click: opens WhatsNewModal for that specific entry (entryId mode).
  * - Empty state: i18n key `admin-whats-new.panel.empty`.
- * - PostHog: `admin.whats_new.panel.opened` on open ({ unseenCount, role }).
+ * - PostHog: `admin.whats_new.panel.opened` on open ({ unseenCount, roles }).
  *
  * Open state decision: WhatsNewPanel owns the modal state for the entry it opens.
  * The panel itself is controlled via `open` / `onOpenChange` props supplied by
@@ -62,15 +62,23 @@ export function WhatsNewPanel({ open, onOpenChange }: WhatsNewPanelProps) {
     // Track which entry is open in the inner modal (null = modal closed).
     const [modalEntryId, setModalEntryId] = useState<string | null>(null);
 
+    // HOS-296: effect dependencies compare by REFERENCE, and `user.roles` is a
+    // fresh array on every render — unlike the scalar `role` it replaced, which
+    // compared by value. Depending on the array directly re-fired this event on
+    // every render while the panel stayed open. Derive a stable string key.
+    const rolesKey = (user?.roles ?? []).join('|');
+
     // Fire PostHog event when panel opens.
     useEffect(() => {
         if (open) {
             trackEvent('admin.whats_new.panel.opened', {
                 unseenCount,
-                role: user?.role
+                // Send the full role set the user holds, not a single
+                // "primary" role.
+                roles: rolesKey === '' ? [] : rolesKey.split('|')
             });
         }
-    }, [open, unseenCount, user?.role]);
+    }, [open, unseenCount, rolesKey]);
 
     const handleMarkAllRead = useCallback(() => {
         markAllSeen();

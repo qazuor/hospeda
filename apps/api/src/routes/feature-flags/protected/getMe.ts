@@ -20,7 +20,7 @@ export const protectedGetFeatureFlagsMeRoute = createProtectedRoute({
 
         const context = {
             userId: actor.id,
-            role: actor.role
+            roles: [...actor.roles]
         };
 
         for (const [key] of Object.entries(flags)) {

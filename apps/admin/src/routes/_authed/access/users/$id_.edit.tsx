@@ -36,7 +36,8 @@ function UserEditPage() {
     const displayName = userEntity?.displayName || userEntity?.slug || id;
 
     const headerProps = useUserHeaderProps({
-        entity: entityData.entity as Record<string, unknown> | undefined
+        entity: entityData.entity as Record<string, unknown> | undefined,
+        userId: id
     });
 
     const headerExtraActions = (

@@ -6,6 +6,14 @@ import { createActor } from '../../factories/actorFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
+// HOS-296: the SUPER_ADMIN guard and the `fromRole` computation read the target
+// user's hats from `user_role` through this primitive — the `users` row the
+// model mock returns no longer carries a role at all.
+const getUserRolesMock = vi.hoisted(() => vi.fn(async () => [] as unknown[]));
+vi.mock('../../../src/services/user-role/user-role.service.js', () => ({
+    getUserRoles: getUserRolesMock
+}));
+
 const userId = getMockId('user', 'user-1') as UserIdType;
 const validInput = { userId };
 
@@ -19,10 +27,11 @@ describe('PermissionService.getPermissionOverridesForUser', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        getUserRolesMock.mockResolvedValue([RoleEnum.EDITOR]);
         rolePermissionModelMock = createModelMock(['findAll']);
         userPermissionModelMock = createModelMock(['findAll']);
         userModelMock = createModelMock(['findById']);
-        userModelMock.findById.mockResolvedValue({ id: userId, role: RoleEnum.EDITOR });
+        userModelMock.findById.mockResolvedValue({ id: userId });
         loggerMock = createLoggerMock();
         service = new PermissionService(
             { logger: loggerMock },

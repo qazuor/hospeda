@@ -44,7 +44,7 @@ describe('mi-cuenta/aliados/index.astro (HOS-131 "Sumate como aliado" hub)', () 
 
     it('resolves the title via resolveDoorLabelKey (HOS-134 stateful label), and the subtitle via i18n, never hardcoded strings', () => {
         expect(source).toContain(
-            "import { isVisibleByRole, resolveDoorLabelKey } from '@/lib/nav-gating';"
+            "import { isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';"
         );
         expect(source).toContain('resolveDoorLabelKey({');
         expect(source).toContain('const title = t(labelKey);');
@@ -57,7 +57,7 @@ describe('mi-cuenta/aliados/index.astro (HOS-131 "Sumate como aliado" hub)', () 
         );
         expect(source).toContain("import { getAdminUrl } from '@/lib/env';");
         expect(source).toContain(
-            '<DiscoveryDoorHub locale={locale} door={door} role={user.role} adminUrl={getAdminUrl()} />'
+            '<DiscoveryDoorHub locale={locale} door={door} roles={user.roles} adminUrl={getAdminUrl()} />'
         );
     });
 

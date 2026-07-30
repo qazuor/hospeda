@@ -18,7 +18,7 @@
  * resolve in this worktree without an explicit alias in vitest.config.ts).
  *
  * PostHog events:
- *  - `admin.whats_new.modal.shown` on open ({ entryIds, role })
+ *  - `admin.whats_new.modal.shown` on open ({ entryIds, roles })
  *  - `admin.whats_new.modal.closed` on close ({ entryIds })
  *
  * Accessibility: Radix Dialog provides focus trap + ESC handling.
@@ -101,10 +101,12 @@ export function WhatsNewModal({ open, onOpenChange, entryId }: WhatsNewModalProp
         if (open && displayedIds.length > 0) {
             trackEvent('admin.whats_new.modal.shown', {
                 entryIds: displayedIds,
-                role: user?.role
+                // HOS-296: send the full role set the user holds, not a
+                // single "primary" role.
+                roles: user?.roles ?? []
             });
         }
-    }, [open, displayedIds, user?.role]);
+    }, [open, displayedIds, user?.roles]);
 
     // Handle close: mark shown entries as seen + fire analytics.
     const handleClose = useCallback(() => {

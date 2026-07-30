@@ -40,6 +40,7 @@ import { PlanService } from '../services/plan.service';
 import type { AppBindings } from '../types';
 import { isGuestActor } from '../utils/actor';
 import { apiLogger } from '../utils/logger';
+import { isStaffBypassRole } from '../utils/staff-roles';
 import { getQZPayBilling } from './billing';
 
 /**
@@ -339,33 +340,18 @@ async function buildHostDraftDefaultsResult(): Promise<LoadEntitlementsResult> {
 }
 
 /**
- * Platform staff roles that bypass billing entitlements entirely (SPEC-171).
+ * Whether the actor holds the HOST hat (HOS-296).
  *
- * These roles operate the admin panel on behalf of the platform and have no
- * billing customer/subscription. They are not "billing actors", so the
- * resolver grants them the unlimited entitlement set instead of treating
- * "no plan" as "no entitlements" (which would surface upsell gates at them).
+ * Also a deliberate role check rather than a `PermissionEnum` one, for a
+ * different reason than {@link isStaffBypassRole}: it selects which DEFAULT
+ * PLAN an actor with no live subscription falls back to (`owner-basico` vs
+ * tourist-free), and a plan is not a permission.
  *
- * HOST is deliberately excluded: it is the only paying role and must keep
- * seeing the real plan entitlements (and upsell gates when on a free tier).
- * Non-staff, non-HOST roles (USER, GUEST, SPONSOR, SYSTEM) keep the
- * tourist-free defaults.
+ * @param roles - Every role the actor holds. `undefined`/empty → not a host.
+ * @returns `true` when HOST is among the held roles.
  */
-const STAFF_BILLING_BYPASS_ROLES: ReadonlySet<RoleEnum> = new Set([
-    RoleEnum.SUPER_ADMIN,
-    RoleEnum.ADMIN,
-    RoleEnum.EDITOR,
-    RoleEnum.CLIENT_MANAGER
-]);
-
-/**
- * Whether the given role is platform staff that bypasses billing entitlements.
- *
- * @param role - The actor role to check (undefined → not staff).
- * @returns `true` when the role is in {@link STAFF_BILLING_BYPASS_ROLES}.
- */
-function isStaffBypassRole(role: RoleEnum | undefined): boolean {
-    return role !== undefined && STAFF_BILLING_BYPASS_ROLES.has(role);
+function holdsHostRole(roles: readonly RoleEnum[] | undefined): boolean {
+    return roles !== undefined && roles.includes(RoleEnum.HOST);
 }
 
 /**
@@ -416,16 +402,20 @@ function buildStaffUnlimitedResult(): LoadEntitlementsResult {
  * actors are unaffected — their real tourist plan always resolves normally.
  *
  * @param customerId - The QZPay customer ID
- * @param actorRole - The role of the authenticated actor. Used to select the
- *   correct fallback when no active subscription is found. HOST actors fall back
- *   to `owner-basico` defaults (SPEC-143 Block 1); all other roles fall back to
- *   tourist-free defaults.
+ * @param actorRoles - Every role the authenticated actor holds (HOS-296). Used
+ *   to select the correct fallback when no active subscription is found. An
+ *   actor HOLDING the HOST hat falls back to `owner-basico` defaults (SPEC-143
+ *   Block 1); everyone else falls back to tourist-free defaults. Reading the
+ *   whole set matters: a host who is also a commerce owner used to be able to
+ *   wear only one of the two, and whichever one won decided their host
+ *   entitlements.
  * @returns Entitlements, limits, and cache flag, or null if billing unavailable
  */
 async function loadEntitlements(
     customerId: string,
-    actorRole?: RoleEnum
+    actorRoles?: readonly RoleEnum[]
 ): Promise<LoadEntitlementsResult | null> {
+    const isHost = holdsHostRole(actorRoles);
     try {
         const billing = getQZPayBilling();
 
@@ -442,7 +432,7 @@ async function loadEntitlements(
             // owner-basico defaults so they can access host features during the
             // draft phase (SPEC-143 Block 1). All other roles receive tourist-free
             // defaults (SPEC-143 T-143-58).
-            if (actorRole === RoleEnum.HOST) {
+            if (isHost) {
                 return await buildHostDraftDefaultsResult();
             }
             return buildDefaultEntitlementsResult();
@@ -488,7 +478,7 @@ async function loadEntitlements(
         // `!== 'comp'` on the narrow type reports a bogus "no overlap".
         if (
             activeSubscription &&
-            actorRole === RoleEnum.HOST &&
+            isHost &&
             (activeSubscription.status as string) !== 'comp' &&
             !(await isOwnerCategorySubscription({ planId: activeSubscription.planId }))
         ) {
@@ -499,7 +489,7 @@ async function loadEntitlements(
             // Only cancelled / past_due / paused subscriptions — fall back to
             // role-appropriate defaults. Same rationale as the no-subscriptions
             // branch above (SPEC-143 Block 1 / T-143-58).
-            if (actorRole === RoleEnum.HOST) {
+            if (isHost) {
                 return await buildHostDraftDefaultsResult();
             }
             return buildDefaultEntitlementsResult();
@@ -684,7 +674,7 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
         // their premium fields. Running before the cache keeps role-dependent
         // payloads out of the customer-keyed cache (no cross-role leak).
         const staffActor = c.get('actor');
-        if (isStaffBypassRole(staffActor?.role as RoleEnum | undefined)) {
+        if (isStaffBypassRole(staffActor?.roles)) {
             const unlimited = buildStaffUnlimitedResult();
             c.set('userEntitlements', unlimited.entitlements);
             c.set('userLimits', unlimited.limits);
@@ -717,10 +707,9 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
                 return;
             }
 
-            const fallback =
-                (actor.role as RoleEnum | undefined) === RoleEnum.HOST
-                    ? await buildHostDraftDefaultsResult()
-                    : buildDefaultEntitlementsResult();
+            const fallback = holdsHostRole(actor.roles)
+                ? await buildHostDraftDefaultsResult()
+                : buildDefaultEntitlementsResult();
             c.set('userEntitlements', fallback.entitlements);
             c.set('userLimits', fallback.limits);
             c.set('billingLoadFailed', false);
@@ -751,10 +740,9 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
                 return;
             }
 
-            const fallback =
-                (actor.role as RoleEnum | undefined) === RoleEnum.HOST
-                    ? await buildHostDraftDefaultsResult()
-                    : buildDefaultEntitlementsResult();
+            const fallback = holdsHostRole(actor.roles)
+                ? await buildHostDraftDefaultsResult()
+                : buildDefaultEntitlementsResult();
             c.set('userEntitlements', fallback.entitlements);
             c.set('userLimits', fallback.limits);
             c.set('billingLoadFailed', false);
@@ -774,8 +762,7 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
                 // fallback path can select the correct default plan when the
                 // customer has no active subscription (SPEC-143 Block 1).
                 const actor = c.get('actor');
-                const actorRole = actor?.role as RoleEnum | undefined;
-                const result = await loadEntitlements(billingCustomerId, actorRole);
+                const result = await loadEntitlements(billingCustomerId, actor?.roles);
 
                 if (result) {
                     cached = {

@@ -202,6 +202,7 @@ describe('UserMenu — permission-gated items', () => {
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
                 permissions: ['accommodation.create'],
+                roles: ['USER', 'HOST'],
                 cachedAt: Date.now()
             })
         );
@@ -224,6 +225,7 @@ describe('UserMenu — permission-gated items', () => {
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
                 permissions: ['commerce.editOwn'],
+                roles: ['USER', 'COMMERCE_OWNER'],
                 cachedAt: Date.now()
             })
         );
@@ -244,6 +246,7 @@ describe('UserMenu — permission-gated items', () => {
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
                 permissions: ['accommodation.create', 'commerce.editOwn'],
+                roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
                 cachedAt: Date.now()
             })
         );
@@ -266,6 +269,7 @@ describe('UserMenu — permission-gated items', () => {
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'Host', email: 'h@e.com' },
                 permissions: ['access.panelAdmin'],
+                roles: ['USER', 'ADMIN'],
                 cachedAt: Date.now()
             })
         );
@@ -288,6 +292,7 @@ describe('UserMenu — permission-gated items', () => {
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'Admin', email: 'a@e.com' },
                 permissions: ['access.panelAdmin', 'access.apiAdmin'],
+                roles: ['USER'],
                 cachedAt: Date.now()
             })
         );
@@ -313,6 +318,7 @@ describe('UserMenu — permission-gated items', () => {
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'User', email: 'u@e.com' },
                 permissions: ['accommodation.create'],
+                roles: ['USER', 'HOST'],
                 cachedAt: Date.now()
             })
         );
@@ -344,6 +350,7 @@ describe('UserMenu — TTL guard (rate-limit fix)', () => {
                 isAuthenticated: true,
                 user: { id: 'u1', name: 'Test User', email: 'test@example.com' },
                 permissions: [],
+                roles: [],
                 cachedAt: Date.now() // just written — definitely fresh
             })
         );
@@ -366,6 +373,7 @@ describe('UserMenu — TTL guard (rate-limit fix)', () => {
                 isAuthenticated: true,
                 user: { id: 'u1', name: 'Cached User', email: 'cached@example.com' },
                 permissions: ['accommodation.create'],
+                roles: ['USER', 'HOST'],
                 cachedAt: Date.now()
             })
         );
@@ -401,6 +409,7 @@ describe('UserMenu — TTL guard (rate-limit fix)', () => {
                 isAuthenticated: false,
                 user: null,
                 permissions: [],
+                roles: [],
                 cachedAt: Date.now() // fresh guest cache, well within the 60s TTL
             })
         );
@@ -438,6 +447,7 @@ describe('UserMenu — TTL guard (rate-limit fix)', () => {
                 isAuthenticated: true,
                 user: { id: 'u1', name: 'Stale User', email: 'stale@example.com' },
                 permissions: [],
+                roles: [],
                 cachedAt: Date.now()
             })
         );
@@ -489,6 +499,7 @@ describe('UserMenu — TTL guard (rate-limit fix)', () => {
                 isAuthenticated: true,
                 user: { id: 'u1', name: 'Old User', email: 'old@example.com' },
                 permissions: [],
+                roles: [],
                 cachedAt: Date.now() - 65_000 // 65 seconds ago — past the 60s TTL
             })
         );
@@ -584,7 +595,7 @@ describe('UserMenu — PostHog identify/reset', () => {
                 data: {
                     actor: {
                         id: 'user-1',
-                        role: 'HOST',
+                        roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
                         permissions: ['accommodation.create', 'commerce.editOwn']
                     },
                     isAuthenticated: true
@@ -596,7 +607,10 @@ describe('UserMenu — PostHog identify/reset', () => {
 
         await waitFor(() => {
             expect(identifyUser).toHaveBeenCalledWith('user-1', {
-                role: 'HOST',
+                // HOS-296: an ARRAY person property, sorted for stability.
+                // A multi-hat user reports every hat AND both segment
+                // booleans — under the old scalar only one could be true.
+                roles: ['COMMERCE_OWNER', 'HOST', 'USER'],
                 is_host: true,
                 is_commerce_owner: true,
                 is_staff: false
@@ -611,7 +625,7 @@ describe('UserMenu — PostHog identify/reset', () => {
                 data: {
                     actor: {
                         id: 'user-1',
-                        role: 'ADMIN',
+                        roles: ['USER', 'ADMIN'],
                         permissions: ['access.panelAdmin', 'access.apiAdmin']
                     },
                     isAuthenticated: true
@@ -623,7 +637,7 @@ describe('UserMenu — PostHog identify/reset', () => {
 
         await waitFor(() => {
             expect(identifyUser).toHaveBeenCalledWith('user-1', {
-                role: 'ADMIN',
+                roles: ['ADMIN', 'USER'],
                 is_host: false,
                 is_commerce_owner: false,
                 is_staff: true

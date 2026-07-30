@@ -373,10 +373,14 @@ const MOCK_DOWNGRADE_PREVIEW_UNLIMITED_CAP: DowngradePreview = {
  * permissions required by the billing route stack (`BILLING_VIEW_OWN`).
  */
 function ownerAuthHeaders(
-    overrides: Partial<{ id: string; role: RoleEnum; permissions: PermissionEnum[] }> = {}
+    overrides: Partial<{
+        id: string;
+        roles: readonly RoleEnum[];
+        permissions: PermissionEnum[];
+    }> = {}
 ): Record<string, string> {
     const actor = createMockUserActor({
-        role: overrides.role ?? RoleEnum.USER,
+        roles: overrides.roles ?? [RoleEnum.USER],
         permissions: overrides.permissions ?? [
             PermissionEnum.ACCESS_API_PUBLIC,
             PermissionEnum.ACCESS_API_PRIVATE,
@@ -705,7 +709,7 @@ describe('GET /api/v1/protected/billing/subscriptions/downgrade-preview', () => 
                 headers: {
                     // user-agent intentionally absent
                     'x-mock-actor-id': actor.id,
-                    'x-mock-actor-role': actor.role,
+                    'x-mock-actor-role': actor.roles.join(','),
                     'x-mock-actor-permissions': JSON.stringify(actor.permissions)
                 }
             });

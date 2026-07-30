@@ -28,7 +28,7 @@ import * as permissionUtils from '../../../src/utils/permission';
 
 const makeActor = (permissions: PermissionEnum[] = [], id = 'actor-1'): Actor => ({
     id,
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions
 });
 

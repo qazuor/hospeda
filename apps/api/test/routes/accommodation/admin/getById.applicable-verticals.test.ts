@@ -118,11 +118,14 @@ vi.mock('@repo/db', async (importOriginal) => {
 vi.mock('../../../../src/utils/actor.js', () => ({
     getActorFromContext: () => ({
         id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
-        role: 'SUPER_ADMIN',
+        roles: ['SUPER_ADMIN'],
         permissions: ['access.panelAdmin']
     }),
-    isGuestActor: (actor: { role: string }) => actor.role === 'GUEST',
-    createGuestActor: () => ({ id: 'guest', role: 'GUEST', permissions: [] })
+    // HOS-296: mirrors the real `isGuestActor`, which asks whether the role SET
+    // contains GUEST. Left comparing a `role` scalar it would return false for
+    // every actor, silently — including a genuine guest.
+    isGuestActor: (actor: { roles?: readonly string[] }) => actor.roles?.includes('GUEST') ?? false,
+    createGuestActor: () => ({ id: 'guest', roles: ['GUEST'], permissions: [] })
 }));
 
 vi.mock('../../../../src/utils/logger.js', () => ({

@@ -11,7 +11,7 @@ import {
 import { DestinationFactoryBuilder } from '../../factories/destinationFactory';
 import { getMockId } from '../../factories/utilsFactory';
 
-const testActor = { id: 'test', role: RoleEnum.ADMIN, permissions: [] };
+const testActor = { id: 'test', roles: [RoleEnum.ADMIN], permissions: [] };
 
 const validLocation = {
     state: 'Entre Ríos',

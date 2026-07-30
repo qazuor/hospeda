@@ -56,7 +56,7 @@ const LINK_ID_2 = '00000000-0000-4000-8000-000000000021';
 function buildActorWithUpdate(hasPerm: boolean): Actor {
     return {
         id: ACTOR_ID,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: hasPerm ? [PermissionEnum.SOCIAL_POST_UPDATE] : []
     };
 }

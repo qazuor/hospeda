@@ -26,7 +26,7 @@ describe('AmenityService.getAmenitiesForAccommodation', () => {
     const actorWithPerms = createActor({
         permissions: [PermissionEnum.ACCOMMODATION_AMENITIES_EDIT]
     });
-    const actorNoPerms = createActor({ role: RoleEnum.GUEST, permissions: [] });
+    const actorNoPerms = createActor({ roles: [RoleEnum.GUEST], permissions: [] });
     const amenity = AmenityFactoryBuilder.create({ id: getMockAmenityId('am-1') });
 
     beforeEach(() => {

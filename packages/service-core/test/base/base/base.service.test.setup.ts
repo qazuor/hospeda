@@ -75,17 +75,18 @@ export class TestService extends BaseCrudService<
     }
     protected _canView(_actor: Actor, _entity: TestEntity): void {}
     protected _canUpdate(actor: Actor, entity: TestEntity): void {
-        if (actor.role !== RoleEnum.SUPER_ADMIN && actor.id !== entity.ownerId) {
+        if (!actor.roles.includes(RoleEnum.SUPER_ADMIN) && actor.id !== entity.ownerId) {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden');
         }
     }
     protected _canSoftDelete(actor: Actor, entity: TestEntity): void {
-        if (actor.role !== RoleEnum.SUPER_ADMIN && actor.id !== entity.ownerId) {
+        if (!actor.roles.includes(RoleEnum.SUPER_ADMIN) && actor.id !== entity.ownerId) {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden');
         }
     }
     protected _canHardDelete(actor: Actor, entity: TestEntity): void {
-        const isAdmin = actor.role === RoleEnum.ADMIN || actor.role === RoleEnum.SUPER_ADMIN;
+        const isAdmin =
+            actor.roles.includes(RoleEnum.ADMIN) || actor.roles.includes(RoleEnum.SUPER_ADMIN);
         const isOwner = actor.id === entity.ownerId;
 
         if (isAdmin || isOwner) {
@@ -95,7 +96,8 @@ export class TestService extends BaseCrudService<
         throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden');
     }
     protected _canRestore(actor: Actor, entity: TestEntity): void {
-        const isAdmin = actor.role === RoleEnum.ADMIN || actor.role === RoleEnum.SUPER_ADMIN;
+        const isAdmin =
+            actor.roles.includes(RoleEnum.ADMIN) || actor.roles.includes(RoleEnum.SUPER_ADMIN);
         const isOwner = actor.id === entity.ownerId;
 
         if (isAdmin || isOwner) {
@@ -108,7 +110,8 @@ export class TestService extends BaseCrudService<
     protected _canSearch(_actor: Actor): void {}
     protected _canCount(_actor: Actor): void {}
     protected _canUpdateVisibility(actor: Actor, entity: TestEntity): void {
-        const isAdmin = actor.role === RoleEnum.ADMIN || actor.role === RoleEnum.SUPER_ADMIN;
+        const isAdmin =
+            actor.roles.includes(RoleEnum.ADMIN) || actor.roles.includes(RoleEnum.SUPER_ADMIN);
         const isOwner = actor.id === entity.ownerId;
 
         if (isAdmin || isOwner) {

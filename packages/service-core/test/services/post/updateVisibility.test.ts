@@ -29,7 +29,7 @@ describe('PostService.updateVisibility', () => {
         actorWithPerm = createActor({
             permissions: [PermissionEnum.POST_UPDATE],
             id: 'actor-id',
-            role: RoleEnum.USER
+            roles: [RoleEnum.USER]
         });
     });
 
@@ -58,7 +58,7 @@ describe('PostService.updateVisibility', () => {
         const forbiddenActor = createActor({
             permissions: [],
             id: 'not-the-author-id',
-            role: RoleEnum.USER
+            roles: [RoleEnum.USER]
         });
         const result = await service.updateVisibility(
             forbiddenActor,

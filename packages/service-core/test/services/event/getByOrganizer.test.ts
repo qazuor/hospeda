@@ -4,8 +4,8 @@ import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas'
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
+import { createActor } from '../../factories/actorFactory';
 import { createMockEvent } from '../../factories/eventFactory';
-import { createUser } from '../../factories/userFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import {
     expectInternalError,
@@ -23,8 +23,8 @@ describe('EventService.getByOrganizer', () => {
     let modelMock: EventModel;
     let loggerMock: ServiceLogger;
     const organizerId = getMockId('event') as EventOrganizerIdType;
-    const actorWithPerm = createUser({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
-    const actorNoPerm = createUser();
+    const actorWithPerm = createActor({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
+    const actorNoPerm = createActor();
 
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findAll']);

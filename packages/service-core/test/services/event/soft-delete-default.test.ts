@@ -26,6 +26,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createUser } from '../../factories/userFactory';
+import { createActor } from '../../factories/actorFactory';
 import { expectSuccess } from '../../helpers/assertions';
 
 type QueryChunk = { value?: unknown[] };
@@ -88,7 +89,7 @@ function makeFindAllDbMock(opts: {
 describe('EventService.getByAuthor — soft-delete default (HOS-274, real EventModel)', () => {
     let service: EventService;
     let loggerMock: ServiceLogger;
-    const actorWithPerm = createUser({
+    const actorWithPerm = createActor({
         permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW]
     });
     const authorId = createUser().id;

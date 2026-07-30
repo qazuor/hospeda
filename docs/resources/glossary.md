@@ -37,13 +37,13 @@ const accommodation = await accommodationService.create({
 
 ### Actor
 
-The authenticated user performing an action in the system. Used for permission checks and audit logging throughout the application.
+The authenticated user performing an action in the system. Used for permission checks and audit logging throughout the application. Holds a SET of roles (`roles: readonly RoleEnum[]`, HOS-296) — one account can wear several hats at once (e.g. `HOST` and `COMMERCE_OWNER`) — and permission checks always test `actor.permissions`, never `actor.roles`.
 
 **Example**:
 
 ```typescript
 const ctx: ServiceContext = {
-  actor: { id: 'user-123', role: 'admin' },
+  actor: { id: 'user-123', roles: [RoleEnum.ADMIN] },
   logger,
 };
 
@@ -324,7 +324,7 @@ The execution context passed to all service methods, containing the actor and lo
 
 ```typescript
 type ServiceContext = {
-  actor: { id: string; role: string };
+  actor: { id: string; roles: readonly RoleEnum[] }; // every role held at once (HOS-296)
   logger: Logger;
 };
 ```
@@ -333,7 +333,7 @@ type ServiceContext = {
 
 ```typescript
 const ctx: ServiceContext = {
-  actor: { id: user.id, role: user.role },
+  actor: { id: user.id, roles: user.roles },
   logger: createLogger('accommodation-service'),
 };
 

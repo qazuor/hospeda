@@ -1,6 +1,7 @@
 import type { OpenAPIHono, RouteConfig, RouteHandler } from '@hono/zod-openapi';
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import type { EntitlementKey, LimitKey } from '@repo/billing';
+import type { RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import type { MiddlewareHandler, Schema } from 'hono';
 import type { ApiLogger } from './utils/logger';
@@ -34,11 +35,31 @@ export interface AuthUser {
     image: string | null;
     createdAt: Date;
     updatedAt: Date;
-    /** Role from Better Auth admin plugin */
-    role: string | null;
+    /**
+     * HOS-296 — there is deliberately NO `role` here.
+     *
+     * The Better Auth admin plugin still declares a `role` field on its user
+     * model, but `users.role` was dropped, so the value is always `undefined`
+     * on the session user. Keeping it in this mirror would be the exact
+     * silent-`undefined` failure the spec calls the worst kind: it compiles,
+     * it never throws, and every read is quietly empty. The role set is
+     * resolved from `user_role` in `actorMiddleware` and lives on
+     * `Actor.roles`.
+     */
     banned: boolean | null;
     banReason: string | null;
     banExpires: Date | null;
+    /**
+     * Mirrors `users.must_change_password`, exposed by Better Auth as an
+     * `additionalField` (see `lib/auth.ts`). `true` for commerce-owner accounts
+     * provisioned with a server-generated password (SPEC-239 T-041).
+     *
+     * Declared here — rather than being cast at each read site — because
+     * `actorMiddleware` now forwards it onto `Actor.mustChangePassword` so
+     * `/auth/me` carries it (HOS-296). Nullable/optional because the column is
+     * nullable and the mock-auth path fabricates a user without it.
+     */
+    mustChangePassword?: boolean | null;
 }
 
 export interface AppBindings {
@@ -49,6 +70,21 @@ export interface AppBindings {
         session?: AuthSession;
         /** Better Auth user for the current request */
         user?: AuthUser;
+        /**
+         * @internal TEST-ONLY (HOS-296).
+         *
+         * Roles fabricated by the mock-auth middleware when
+         * `HOSPEDA_DISABLE_AUTH=true` in a test run. That middleware invents a
+         * user that exists in NO database, so `actorMiddleware` cannot resolve
+         * its hats from `user_role` — the query would either fail (no DB in a
+         * unit test) or, worse, return the hats of some unrelated real row.
+         * When present, `actorMiddleware` uses this instead of querying.
+         *
+         * NEVER set outside the mock-auth path: the guard that makes it safe
+         * is that only that path writes it, and it only exists when
+         * `NODE_ENV=test` + `HOSPEDA_DISABLE_AUTH=true` + `CI!=='true'`.
+         */
+        mockUserRoles?: readonly RoleEnum[];
         qzpay?: QZPayBilling;
         billingEnabled?: boolean;
         billingCustomerId?: string | null;

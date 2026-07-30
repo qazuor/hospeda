@@ -38,7 +38,6 @@ describe('User CRUD Schemas', () => {
                 settings: user.settings,
                 visibility: user.visibility,
                 slug: user.slug,
-                role: user.role,
                 permissions: user.permissions
             };
 
@@ -137,12 +136,17 @@ describe('User CRUD Schemas', () => {
             expect(Object.hasOwn(parsed, 'serviceSuspended')).toBe(false);
         });
 
-        it('still allows role updates (no default, admin-editable)', () => {
+        it('no longer carries a scalar `role` (HOS-296)', () => {
+            // Role changes moved to the dedicated grant/revoke endpoints, so an
+            // update payload can neither set nor imply one. A schema that still
+            // accepted it would silently discard an admin's intent.
+            expect(Object.keys(UserUpdateInputSchema.shape)).not.toContain('role');
+
             const parsed = UserUpdateInputSchema.parse({ role: 'ADMIN' }) as Record<
                 string,
                 unknown
             >;
-            expect(parsed.role).toBe('ADMIN');
+            expect(parsed.role).toBeUndefined();
         });
     });
 
@@ -306,6 +310,24 @@ describe('User CRUD Schemas', () => {
                 };
 
                 expect(() => UserAssignRoleInputSchema.parse(invalidInput)).toThrow(ZodError);
+            });
+
+            it.each([
+                'SYSTEM',
+                'GUEST'
+            ])('should reject the non-assignable role %s (HOS-296)', (role) => {
+                // This is an HTTP-shaped input feeding `UserService.assignRole`,
+                // which delegates straight to `grantRole`. `GUEST` is synthesised
+                // in-memory for anonymous requests and never stored; `SYSTEM`
+                // belongs to one reserved non-loginable account. The seed grants
+                // `SYSTEM` by calling `grantRole` DIRECTLY, so restricting this
+                // schema does not block it.
+                const input = {
+                    userId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' as any,
+                    role: role as any
+                };
+
+                expect(() => UserAssignRoleInputSchema.parse(input)).toThrow(ZodError);
             });
         });
 

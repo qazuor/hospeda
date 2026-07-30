@@ -17,8 +17,8 @@
  * at module load time. This is intentionally a one-liner:
  *
  * ```ts
- * registerDataSource('admin.users.stats', ({ role, scope }) =>
- *   adminUsersStatsQueryOptions({ role, scope })
+ * registerDataSource('admin.users.stats', ({ roles, scope }) =>
+ *   adminUsersStatsQueryOptions({ roles, scope })
  * );
  * ```
  *
@@ -26,9 +26,11 @@
  *
  * - `staleTime`: 60 000 ms (1 minute) for all dashboard widgets.
  * - `refetchOnWindowFocus`: `true` (TanStack Query default — not overridden).
- * - `queryKey` scheme: `['dashboard', sourceId, role, scope, ...extras]`
- *   — guarantees cache isolation per role and per scope while deduplicating
- *   widgets that hit the same source with identical context.
+ * - `queryKey` scheme: `['dashboard', sourceId, rolesKey, scope, ...extras]`
+ *   where `rolesKey` is the user's full role set, sorted + joined (HOS-296,
+ *   see `joinRolesForKey`) — guarantees cache isolation per role SET and per
+ *   scope while deduplicating widgets that hit the same source with an
+ *   identical context.
  * - `'own'`-scoped sources include `userId` in the key so the cache is
  *   user-specific and never leaks cross-user data.
  *
@@ -77,7 +79,7 @@ export const DASHBOARD_QUERY_KEY_ROOT = 'dashboard' as const;
  * @example
  * ```ts
  * const ctx: ResolverContext = {
- *   role: 'HOST',
+ *   roles: ['HOST'],
  *   userId: 'usr_abc123',
  *   permissions: ['ACCOMMODATION_VIEW_OWN'],
  *   scope: 'own',
@@ -85,8 +87,14 @@ export const DASHBOARD_QUERY_KEY_ROOT = 'dashboard' as const;
  * ```
  */
 export interface ResolverContext {
-    /** Current user's role string (e.g. `'HOST'`, `'ADMIN'`, `'SUPER_ADMIN'`). */
-    readonly role: string;
+    /**
+     * Every role the current user holds (HOS-296; e.g. `['HOST']` or
+     * `['HOST', 'USER']`) — replaces the former single `role` scalar. Cache
+     * keys derive a single discriminator from this set via
+     * {@link joinRolesForKey} (sorted + joined) rather than picking one role,
+     * so cache isolation stays correct for a multi-hat user.
+     */
+    readonly roles: readonly string[];
     /** Current user's ID. Required for `'own'`-scoped sources. */
     readonly userId: string;
     /** Flat list of permission strings held by the current user. */
@@ -113,7 +121,7 @@ export interface ResolverContext {
  */
 export interface DashboardQueryOptions {
     /**
-     * Hierarchical cache key: `['dashboard', sourceId, role, scope?, userId?]`.
+     * Hierarchical cache key: `['dashboard', sourceId, rolesKey, scope?, userId?]`.
      * Must include enough discriminators to avoid cross-user/cross-role leaks.
      */
     readonly queryKey: readonly unknown[];
@@ -158,9 +166,31 @@ export type DataSourceResolver = (ctx: ResolverContext) => DashboardQueryOptions
 // ============================================================================
 
 /**
+ * Joins a user's role set into a single, order-independent cache-key
+ * discriminator (HOS-296).
+ *
+ * `buildDashboardQueryKey` needs ONE string per key position — a cache-key
+ * discriminator is exactly the case where a single value is structurally
+ * required (see the migration rules in the HOS-296 admin sweep). Rather than
+ * picking one role out of the set (which would break cache isolation for a
+ * multi-hat user — two different role combinations could collide, or the
+ * same combination could split into two keys depending on array order), the
+ * FULL set is sorted and joined, so `['HOST', 'USER']` and `['USER', 'HOST']`
+ * always produce the same key, and a genuinely different role set always
+ * produces a different key.
+ *
+ * @param roles - Every role the current user holds.
+ * @returns A stable, sorted, comma-joined string (e.g. `'HOST,USER'`).
+ */
+export function joinRolesForKey(roles: readonly string[]): string {
+    return [...roles].sort().join(',');
+}
+
+/**
  * Builds a canonical dashboard query key for a given source + context.
  *
- * Scheme: `['dashboard', sourceId, role, scope, ...scopedExtras]`
+ * Scheme: `['dashboard', sourceId, rolesKey, scope, ...scopedExtras]`, where
+ * `rolesKey` is {@link joinRolesForKey} applied to `ctx.roles` (HOS-296).
  *
  * For `'own'`-scoped sources, `userId` is appended so the cache is
  * user-specific and never leaks cross-user data on a shared browser session.
@@ -184,7 +214,12 @@ export function buildDashboardQueryKey(
     ctx: ResolverContext,
     ...extras: readonly unknown[]
 ): readonly unknown[] {
-    const base = [DASHBOARD_QUERY_KEY_ROOT, sourceId, ctx.role, ctx.scope] as const;
+    const base = [
+        DASHBOARD_QUERY_KEY_ROOT,
+        sourceId,
+        joinRolesForKey(ctx.roles),
+        ctx.scope
+    ] as const;
 
     if (ctx.scope === 'own') {
         return [...base, ctx.userId, ...extras] as const;
@@ -283,7 +318,7 @@ export function resolveDataSource(sourceId: string, ctx: ResolverContext): Resol
         // Return a stable no-op query so the renderer doesn't need to branch
         // before calling useQuery (hooks cannot be called conditionally).
         const noopOptions: DashboardQueryOptions = {
-            queryKey: [DASHBOARD_QUERY_KEY_ROOT, '__noop__', sourceId, ctx.role],
+            queryKey: [DASHBOARD_QUERY_KEY_ROOT, '__noop__', sourceId, joinRolesForKey(ctx.roles)],
             queryFn: () => Promise.resolve(null),
             staleTime: Number.POSITIVE_INFINITY,
             enabled: false

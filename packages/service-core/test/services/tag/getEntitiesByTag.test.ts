@@ -10,10 +10,10 @@ const asMock = <T>(fn: T) => fn as unknown as import('vitest').Mock;
 const mockTag = TagFactoryBuilder.create();
 const mockActor = {
     id: 'user-1',
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: [PermissionEnum.TAG_ASSIGN_VIEW]
 };
-const baseActor = { id: 'user-2', role: RoleEnum.USER, permissions: [] };
+const baseActor = { id: 'user-2', roles: [RoleEnum.USER], permissions: [] };
 
 describe('TagService.getEntitiesByTag', () => {
     let service: TagService;

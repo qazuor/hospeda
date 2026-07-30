@@ -1050,11 +1050,11 @@ interface Actor {
   /** User ID */
   id: string;
 
-  /** User role */
-  role: RoleEnum;
+  /** Every role the user holds at once (HOS-296) — no single "primary role" */
+  roles: readonly RoleEnum[];
 
   /** User permissions */
-  permissions: PermissionEnum[];
+  permissions: readonly PermissionEnum[];
 }
 ```
 

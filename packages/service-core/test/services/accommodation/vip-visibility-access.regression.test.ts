@@ -278,7 +278,7 @@ describe('SPEC-286 T-001 regression: VIP_VISIBILITY_ACCESS — _executeSearch / 
         const regularActor: Actor = {
             id: getMockId('user', 'regular'),
             type: 'user',
-            role: RoleEnum.USER,
+            roles: [RoleEnum.USER],
             permissions: []
         } as Actor;
         const params = { page: 1, pageSize: 10 };

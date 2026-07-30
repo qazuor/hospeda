@@ -11,7 +11,7 @@ import {
     createArrayQueryParam,
     createBooleanQueryParam
 } from '../../api/http/base-http.schema.js';
-import { RoleEnum, RoleEnumSchema } from '../../enums/index.js';
+import { RoleEnumSchema } from '../../enums/index.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { VisibilityEnum } from '../../enums/visibility.enum.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
@@ -79,7 +79,10 @@ export const UserCreateHttpSchema = z.object({
         .optional(),
     bio: z.string().max(1000).optional(),
     birthDate: z.coerce.date().max(new Date()).optional(), // Changed from 'dateOfBirth' to 'birthDate' for consistency with domain
-    role: RoleEnumSchema.default(RoleEnum.GUEST),
+    // HOS-296: no `role` here. A user's hats are a SET written through
+    // grant/revoke, so a create payload cannot carry one — accepting the field
+    // and silently dropping it in `httpToDomainUserCreate` would be worse than
+    // rejecting it as unknown.
     status: UserStatusHttpSchema.default('pending')
 });
 
@@ -161,7 +164,6 @@ export const httpToDomainUserCreate = (httpData: UserCreateHttp): UserCreateInpu
     firstName: httpData.firstName,
     lastName: httpData.lastName,
     birthDate: httpData.birthDate, // Direct field mapping - no conversion needed now that HTTP uses 'birthDate'
-    role: httpData.role,
 
     // Required fields with defaults for domain schema
     slug: `${httpData.firstName.toLowerCase()}-${httpData.lastName.toLowerCase()}-${Date.now()}`, // Generate slug
@@ -189,8 +191,10 @@ export const httpToDomainUserUpdate = (httpData: UserUpdateHttp): UserUpdateInpu
     // Basic updateable fields
     firstName: httpData.firstName,
     lastName: httpData.lastName,
-    birthDate: httpData.birthDate, // Direct field mapping - no conversion needed now that HTTP uses 'birthDate'
-    role: httpData.role
+    birthDate: httpData.birthDate // Direct field mapping - no conversion needed now that HTTP uses 'birthDate'
+
+    // HOS-296: `role` is no longer an updateable user field — role changes go
+    // through the dedicated grant/revoke endpoints.
 
     // Note: Contact info updates are complex due to required mobilePhone field
     // The service layer should handle merging existing contactInfo with new data

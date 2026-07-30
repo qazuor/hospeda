@@ -20,7 +20,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { getAdminUrl } from '@/lib/env';
-import { isVisibleByRole, resolveDoorLabelKey } from '@/lib/nav-gating';
+import { isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';
 
 export const prerender = false;
 
@@ -40,7 +40,7 @@ if (!door) {
 const { t } = createTranslations(locale);
 const labelKey = resolveDoorLabelKey({
     door,
-    visibility: (node) => isVisibleByRole(node, user.role)
+    visibility: (node) => isVisibleByRoles(node, user.roles)
 });
 const title = t(labelKey);
 const description = t(door.subtitleI18nKey);
@@ -48,5 +48,5 @@ const description = t(door.subtitleI18nKey);
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="aliados">
     <AccountPageHeader title={title} />
-    <DiscoveryDoorHub locale={locale} door={door} role={user.role} adminUrl={getAdminUrl()} />
+    <DiscoveryDoorHub locale={locale} door={door} roles={user.roles} adminUrl={getAdminUrl()} />
 </AccountLayout>

@@ -28,11 +28,11 @@ describe('EventService.findOptions (SPEC-169 §5.5)', () => {
     let model: ReturnType<typeof createModelMock>;
 
     const panelOnlyActor = createActor({
-        role: RoleEnum.EDITOR,
+        roles: [RoleEnum.EDITOR],
         permissions: [PermissionEnum.ACCESS_PANEL_ADMIN]
     });
     const noAccessActor = createActor({
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: [PermissionEnum.EVENT_VIEW_PRIVATE]
     });
 

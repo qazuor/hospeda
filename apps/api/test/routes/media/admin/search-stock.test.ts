@@ -70,7 +70,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 
 const makeActor = (permissions: PermissionEnum[], id = crypto.randomUUID()): Actor => ({
     id,
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions
 });
 

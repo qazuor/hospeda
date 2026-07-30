@@ -106,7 +106,7 @@ const mockGetActorFromContext = vi.mocked(getActorFromContext);
 
 const ADMIN_ACTOR: Actor = {
     id: 'admin-actor-id',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [
         PermissionEnum.ACCOMMODATION_REVIEW_MODERATE,
         PermissionEnum.DESTINATION_REVIEW_MODERATE
@@ -116,14 +116,14 @@ const ADMIN_ACTOR: Actor = {
 /** Actor that holds ONLY the destination-review moderate permission (OR gate scenario). */
 const DESTINATION_ONLY_MODERATOR: Actor = {
     id: 'dest-only-moderator-id',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.DESTINATION_REVIEW_MODERATE]
 };
 
 /** Actor that holds NEITHER moderate permission — both services should deny. */
 const NO_MODERATE_ACTOR: Actor = {
     id: 'no-moderate-actor-id',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: []
 };
 

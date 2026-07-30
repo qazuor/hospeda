@@ -64,7 +64,7 @@ function evaluateFlagWithCache(flag: FeatureFlag, context: FlagContext): boolean
         if (flag.forceOffUserIds.includes(context.userId)) return false;
     }
 
-    if (context.role && flag.enabledForRoles.includes(context.role)) return true;
+    if (context.roles?.some((role) => flag.enabledForRoles.includes(role))) return true;
 
     return flag.enabled;
 }

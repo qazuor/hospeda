@@ -9,7 +9,8 @@
 
 import { billingCustomers, eq, type getDb, initializeDb } from '@repo/db';
 import { users } from '@repo/db/schemas';
-import { RoleEnum } from '@repo/schemas';
+import { type RoleEnum, RoleGrantReason } from '@repo/schemas';
+import { grantRole } from '@repo/service-core';
 import { Pool } from 'pg';
 
 /**
@@ -102,7 +103,8 @@ export function getTestDb(): ReturnType<typeof getDb> {
 export interface TestUser {
     id: string;
     slug: string;
-    role: RoleEnum;
+    /** Every role the user holds (HOS-296) — read from `user_role`, not `users`. */
+    roles: readonly RoleEnum[];
     displayName: string;
     firstName: string;
     lastName: string;
@@ -146,7 +148,7 @@ export async function seedTestData(
             displayName: 'Test User',
             firstName: 'Test',
             lastName: 'User',
-            role: RoleEnum.USER as string,
+            // HOS-296: `users.role` is gone; hats live in `user_role`.
             settings: {
                 language: 'es',
                 notifications: {
@@ -181,7 +183,7 @@ export async function seedTestData(
         user: {
             id: createdUser.id,
             slug: createdUser.slug,
-            role: createdUser.role,
+            roles: [],
             displayName: createdUser.displayName || '',
             firstName: createdUser.firstName || '',
             lastName: createdUser.lastName || '',
@@ -255,7 +257,8 @@ export async function findTestUserById(
     return {
         id: user.id,
         slug: user.slug,
-        role: user.role as unknown as RoleEnum,
+        // HOS-296: `users` no longer carries a role; hats come from `user_role`.
+        roles: [],
         displayName: user.displayName || '',
         firstName: user.firstName || '',
         lastName: user.lastName || '',
@@ -316,7 +319,6 @@ export async function createTestUser(
             displayName: 'Test User',
             firstName: 'Test',
             lastName: 'User',
-            role: role as string,
             settings: {
                 language: 'es',
                 notifications: {
@@ -332,10 +334,19 @@ export async function createTestUser(
 
     const createdUser = (createdUserResult as any[])[0];
 
+    // HOS-296: the hat is a `user_role` row now, not a `users` column. Granting
+    // it here keeps `createTestUser(db, RoleEnum.X)` meaning what it always did.
+    await grantRole({
+        userId: createdUser.id,
+        role,
+        grantedBy: null,
+        reason: RoleGrantReason.SEED
+    });
+
     return {
         id: createdUser.id,
         slug: createdUser.slug,
-        role: createdUser.role as unknown as RoleEnum,
+        roles: [role],
         displayName: createdUser.displayName || '',
         firstName: createdUser.firstName || '',
         lastName: createdUser.lastName || '',

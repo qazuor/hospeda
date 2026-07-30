@@ -63,7 +63,7 @@ const defaultPaginatedResult = { items: [], total: 0 };
 
 const mockAdminActor = {
     id: 'admin-1',
-    role: RoleEnum.SUPER_ADMIN,
+    roles: [RoleEnum.SUPER_ADMIN],
     permissions: Object.values(PermissionEnum)
 };
 

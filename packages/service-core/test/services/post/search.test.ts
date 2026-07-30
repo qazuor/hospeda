@@ -17,7 +17,7 @@ describe('PostService.search', () => {
         vi.clearAllMocks();
         modelMock = createTypedModelMock(PostModel, ['search']);
         service = createServiceTestInstance(PostService, modelMock);
-        actor = createActor({ permissions: [], id: 'actor-id', role: RoleEnum.USER });
+        actor = createActor({ permissions: [], id: 'actor-id', roles: [RoleEnum.USER]});
     });
 
     it('should return a paginated list of posts if actor is authenticated', async () => {
@@ -44,7 +44,7 @@ describe('PostService.search', () => {
         const unauthenticatedActor = createActor({
             permissions: [],
             id: undefined,
-            role: RoleEnum.GUEST
+            roles: [RoleEnum.GUEST]
         });
         const result = await service.search(unauthenticatedActor, { page: 1, pageSize: 10 });
         expect(result.error).toBeDefined();

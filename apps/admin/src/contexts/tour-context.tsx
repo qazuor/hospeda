@@ -262,7 +262,7 @@ export function TourProvider({ children }: TourProviderProps) {
                     markSeen({ tourId: tour.id, version: tour.version });
                     trackEvent('admin.tour.completed', {
                         tourId: tour.id,
-                        role: user?.role ?? 'unknown'
+                        roles: user?.roles ?? []
                     });
                     setIsRunning(false);
                     setActiveTourId(null);
@@ -271,7 +271,7 @@ export function TourProvider({ children }: TourProviderProps) {
                     markSeen({ tourId: tour.id, version: tour.version });
                     trackEvent('admin.tour.skipped', {
                         tourId: tour.id,
-                        role: user?.role ?? 'unknown'
+                        roles: user?.roles ?? []
                     });
                     setIsRunning(false);
                     setActiveTourId(null);
@@ -287,7 +287,7 @@ export function TourProvider({ children }: TourProviderProps) {
             prevLabel,
             doneLabel,
             markSeen,
-            user?.role
+            user?.roles
         ]
     );
 
@@ -314,7 +314,7 @@ export function TourProvider({ children }: TourProviderProps) {
             // Track 'shown' event before any modal or driver.
             trackEvent('admin.tour.shown', {
                 tourId,
-                role: user?.role ?? 'unknown',
+                roles: user?.roles ?? [],
                 source
             });
 
@@ -329,7 +329,7 @@ export function TourProvider({ children }: TourProviderProps) {
                 void runDriver(tour);
             }
         },
-        [user?.role, runDriver]
+        [user?.roles, runDriver]
     );
 
     // -------------------------------------------------------------------------
@@ -342,11 +342,11 @@ export function TourProvider({ children }: TourProviderProps) {
         markSeen({ tourId: tour.id, version: tour.version });
         trackEvent('admin.tour.skipped', {
             tourId: tour.id,
-            role: user?.role ?? 'unknown',
+            roles: user?.roles ?? [],
             source: 'modal-skip'
         });
         setPendingTour(null);
-    }, [pendingTour, markSeen, user?.role]);
+    }, [pendingTour, markSeen, user?.roles]);
 
     const handleModalConfirm = useCallback(() => {
         if (!pendingTour) return;

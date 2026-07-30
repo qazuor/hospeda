@@ -97,7 +97,7 @@ await import('../../../src/routes/user/protected/subscription');
 // Fixtures
 // ---------------------------------------------------------------------------
 
-const ACTOR = { id: 'user-1', role: 'HOST', permissions: [] };
+const ACTOR = { id: 'user-1', roles: ['HOST'], permissions: [] };
 const CUSTOMER = { id: 'customer-1' };
 
 /** Builds a QZPay-shaped subscription row for a given domain + id. */

@@ -13,7 +13,6 @@ import {
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
-import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 import { withDomainBirthDate } from '../../../utils/user-birth-date';
@@ -59,32 +58,16 @@ export const adminUpdateUserRoute = createAdminRoute({
         // null` shape `UserService.update` expects (BETA-34).
         const userData = withDomainBirthDate(body) as UserUpdateInput;
 
-        // Fetch previous user state for permission change audit
-        const prevResult = await userService.getById(actor, id as string);
-        const previousUser = prevResult.data;
-
         const result = await userService.update(actor, id as string, userData);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        // Audit role changes. Permissions are NOT auditable here: they have no
-        // column on `users` and are not writable through the generic update
-        // schema — the canonical path is PermissionService / the dedicated
-        // `/admin/users/:id/permissions` endpoint.
-        if (result.data && previousUser) {
-            if (userData.role !== undefined && userData.role !== previousUser.role) {
-                auditLog({
-                    auditEvent: AuditEventType.PERMISSION_CHANGE,
-                    actorId: actor.id,
-                    targetUserId: id as string,
-                    changeType: 'role_assignment',
-                    oldValue: previousUser.role,
-                    newValue: userData.role
-                });
-            }
-        }
+        // HOS-296: no role audit here any more — see the equivalent note in
+        // `patch.ts`. `role` is not a field on `UserUpdateInputSchema`, so this
+        // route cannot change one; the grant/revoke endpoints own that
+        // transition and write `user_role_audit` rows themselves.
 
         // Invalidate cache for the updated user
         if (result.data?.id) {

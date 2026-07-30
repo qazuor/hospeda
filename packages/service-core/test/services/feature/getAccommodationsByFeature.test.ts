@@ -24,7 +24,7 @@ describe('FeatureService.getAccommodationsByFeature', () => {
     const actorWithPerms = createActor({
         permissions: [PermissionEnum.ACCOMMODATION_FEATURES_EDIT]
     });
-    const actorNoPerms = createActor({ role: RoleEnum.GUEST, permissions: [] });
+    const actorNoPerms = createActor({ roles: [RoleEnum.GUEST], permissions: [] });
     const feature = FeatureFactoryBuilder.create({ id: featureId });
     const accommodation = new AccommodationFactoryBuilder()
         .with({ id: getMockAccommodationId('acc-1') })

@@ -19,9 +19,9 @@
  * the admin-panel link built by the shared `buildAdminPanelItem`,
  * `@/lib/admin-panel-link`) mirrors UserMenu's session zone too.
  *
- * Auth state (user, permissions, role) resolves the SAME way UserMenu's
+ * Auth state (user, permissions, roles) resolves the SAME way UserMenu's
  * does: `useAccountPermissions` (`@/hooks/use-account-permissions`) in
- * SSR-reconciling mode, seeded from `initialUser`/`initialRole` (the SSR
+ * SSR-reconciling mode, seeded from `initialUser`/`initialRoles` (the SSR
  * hint from `Astro.locals.user`, forwarded through `MobileMenuIsland.astro`
  * — `null` on pages whose middleware didn't parse the session) and refined
  * client-side from the shared `authMeSnapshot` cache / `/auth/me` fetch.
@@ -29,7 +29,8 @@
  * `MobileMenuIsland.astro`'s file doc for why), so it can never assume a
  * freshly-parsed session — the host-mode CTA (`isHostMode`/`ctaLabel`/
  * `ctaHref`, formerly computed server-side in `MobileMenuIsland.astro`) is
- * now derived here from the resolved `user`/`role`.
+ * now derived here from the resolved `user` plus the resolved `roles` set
+ * (HOS-296 — an account holds a SET of hats, never a single `role`).
  *
  * Tasks: T-074, HOS-311
  */
@@ -107,8 +108,11 @@ interface MobileMenuProps {
      * — see the file JSDoc.
      */
     readonly initialUser: AuthMeUser | null;
-    /** SSR role hint (`Astro.locals.user?.role`), for the host-mode CTA on first paint. */
-    readonly initialRole: string | null;
+    /**
+     * SSR role-set hint (`Astro.locals.user?.roles`), for the host-mode CTA on
+     * first paint. Empty on pages whose middleware did not parse the session.
+     */
+    readonly initialRoles: readonly string[];
     /**
      * Admin panel base URL for the session-zone admin-panel link (HOS-131
      * §6.5, staff only in practice, gated by `access.panelAdmin`).
@@ -147,7 +151,7 @@ export function MobileMenu({
     logoSrc,
     homeHref,
     initialUser,
-    initialRole,
+    initialRoles,
     adminPanelUrl
 }: MobileMenuProps) {
     const { t } = createTranslations(locale);
@@ -158,29 +162,33 @@ export function MobileMenu({
     const authTexts = AUTH_TEXTS[locale] ?? AUTH_TEXTS.es;
 
     // ------------------------------------------------------------------
-    // Resolve auth state (user, permissions, role) for the whole auth
+    // Resolve auth state (user, permissions, roles) for the whole auth
     // section — curated account block, admin-panel session link, AND the
     // host-mode CTA. SSR-reconciling mode (same as UserMenu.client.tsx):
-    // `initialUser`/`initialRole` seed first paint, the shared
+    // `initialUser`/`initialRoles` seed first paint, the shared
     // `authMeSnapshot` cache / `/auth/me` fetch refines it on hydration.
     // Never a second auth mechanism — see the file JSDoc.
     // ------------------------------------------------------------------
     // `syncAuthenticatedAttribute: false` — UserMenu (client:load, mounted
     // on every page) is the single owner of `<html data-user-authenticated>`;
     // this island must not become a second writer of the same attribute.
-    const { user, permissions, role } = useAccountPermissions({
+    const { user, permissions, roles } = useAccountPermissions({
         initialUser,
-        initialRole,
+        initialRoles,
         syncAuthenticatedAttribute: false
     });
 
     // ------------------------------------------------------------------
     // Owner CTA (SPEC-182 D3, moved from the old server:defer
     // MobileMenuIsland.astro). A HOST may still be mid-onboarding with only
-    // a DRAFT, but role=HOST is still enough to point the CTA at the host
-    // surfaces. Unauthenticated visitors and tourists keep the /publicar
-    // funnel. `role`/`user` start at `initialRole`/`initialUser` and are
-    // refined by the same hook resolution as `permissions` above.
+    // a DRAFT, but HOLDING the HOST hat is still enough to point the CTA at
+    // the host surfaces. Unauthenticated visitors and tourists keep the
+    // /publicar funnel. `roles`/`user` start at `initialRoles`/`initialUser`
+    // and are refined by the same hook resolution as `permissions` above.
+    //
+    // HOS-296: this asks "does the actor HOLD the HOST hat", not "is the
+    // actor's role HOST" — a commerce owner who is also a host keeps the
+    // host-mode CTA, which the old scalar equality silently dropped.
     //
     // HOS-311: the host CTA must NEVER point at the admin panel. HOS-152
     // deliberately removed `ACCESS_PANEL_ADMIN` from the HOST role after a
@@ -197,11 +205,11 @@ export function MobileMenu({
     //  2. Everyone else (guests, tourists, staff) → the /publicar funnel.
     //
     // `user` is part of the gate on state 1 because the props allow a role
-    // hint WITHOUT a resolved user (a stale `initialRole: 'HOST'` on an
+    // hint WITHOUT a resolved user (a stale `initialRoles: ['HOST']` on an
     // expired session); in that state the menu falls back to the funnel
     // rather than offer a host surface to someone it cannot identify.
     // ------------------------------------------------------------------
-    const isHostMode = Boolean(user) && role === 'HOST';
+    const isHostMode = Boolean(user) && roles.includes('HOST');
     const ctaLabel = isHostMode ? t('nav.hostModeCta', 'Modo anfitrión') : t('nav.ownerCta');
     const ctaHref = isHostMode
         ? buildUrl({ locale, path: '/mi-cuenta/propiedades/' })

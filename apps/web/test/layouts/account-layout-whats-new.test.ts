@@ -42,7 +42,7 @@ describe('account layout whats-new wiring', () => {
     it('mounts the dashboard controller and restart-tour entry points', () => {
         expect(dashboardSource).toContain('<DashboardController');
         expect(preferencesSource).toContain(
-            '<RestartTour client:idle locale={locale} userRole={user.role} />'
+            '<RestartTour client:idle locale={locale} userRoles={user.roles} />'
         );
     });
 });

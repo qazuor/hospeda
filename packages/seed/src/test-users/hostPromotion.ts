@@ -231,7 +231,7 @@ export async function ensureHostPromotion(params: {
 
     const actor: Actor = {
         id: userId,
-        role: RoleEnum.SUPER_ADMIN,
+        roles: [RoleEnum.SUPER_ADMIN],
         permissions: HOST_PROMOTION_ACTOR_PERMISSIONS
     };
 

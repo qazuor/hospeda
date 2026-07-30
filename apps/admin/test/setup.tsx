@@ -432,14 +432,15 @@ vi.mock('@/components/auth/RoutePermissionGuard', () => ({
     RoutePermissionGuard: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
 
-// Mock useAuthContext — provides authenticated ADMIN user for page tests
+// Mock useAuthContext — provides authenticated ADMIN user for page tests.
+// HOS-296: `roles` (a set) replaces the former single `role` scalar.
 vi.mock('@/hooks/use-auth-context', () => ({
     useAuthContext: () => ({
         user: {
             id: 'test_user_id',
             name: 'Test User',
             email: 'test@example.com',
-            role: 'ADMIN'
+            roles: ['ADMIN']
         },
         isAuthenticated: true,
         isLoading: false

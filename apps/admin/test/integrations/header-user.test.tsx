@@ -24,7 +24,7 @@ let mockAuthState = {
     isAuthenticated: true,
     user: {
         id: 'user-1',
-        role: 'ADMIN',
+        roles: ['ADMIN'],
         permissions: [],
         displayName: 'John Doe',
         email: 'john@example.com',
@@ -62,7 +62,8 @@ vi.mock('@/contexts/tour-context', () => ({
 
 vi.mock('@/hooks/use-tours', () => ({
     useWelcomeTourForRole: () => undefined,
-    useContextualTourForRoute: () => undefined
+    useContextualTourForRoute: () => undefined,
+    resolvePrimaryTourRole: (roles: readonly string[] | null | undefined) => roles?.[0] ?? null
 }));
 
 vi.mock('@/hooks/use-translations', () => ({
@@ -92,7 +93,7 @@ describe('HeaderUser', () => {
             isAuthenticated: true,
             user: {
                 id: 'user-1',
-                role: 'ADMIN',
+                roles: ['ADMIN'],
                 permissions: [],
                 displayName: 'John Doe',
                 email: 'john@example.com',

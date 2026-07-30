@@ -108,7 +108,7 @@ const BOOKMARK_ID = 'bbbbbbbb-bbbb-4bbb-abbb-bbbbbbbbbbbb';
 function buildUserActor(): Actor {
     return {
         id: ACTOR_ID,
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: [
             PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW,
             PermissionEnum.USER_BOOKMARK_COLLECTION_CREATE
@@ -122,7 +122,7 @@ function actorHeaders(actor: Actor): Record<string, string> {
         'user-agent': 'vitest',
         accept: 'application/json',
         'x-mock-actor-id': actor.id,
-        'x-mock-actor-role': actor.role,
+        'x-mock-actor-role': actor.roles.join(','),
         'x-mock-actor-permissions': JSON.stringify(actor.permissions)
     };
 }

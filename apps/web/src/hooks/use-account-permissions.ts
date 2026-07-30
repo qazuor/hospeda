@@ -4,7 +4,7 @@
  * `UserMenu.client.tsx` so `MobileMenu.client.tsx` (HOS-131 §6.5) can reuse
  * the exact same cache-first fetch/parse logic instead of a near-duplicate
  * effect. Both islands end up calling this hook; only the amount of the
- * result they consume differs (UserMenu also needs `user`/`role`, MobileMenu
+ * result they consume differs (UserMenu also needs `user`/`roles`, MobileMenu
  * only needs `permissions` since it already has its own SSR `user` prop).
  *
  * Two modes, selected by whether `initialUser` is passed:
@@ -25,11 +25,15 @@
  * mode (for the same cache/SSR reconciliation), but must not become a
  * second writer of an attribute UserMenu already owns.
  *
- * `initialRole` is an optional companion to `initialUser`: it seeds the
- * `role` state so a caller with an SSR role hint (e.g. `MobileMenu`'s
+ * `initialRoles` is an optional companion to `initialUser`: it seeds the
+ * `roles` state so a caller with an SSR role hint (e.g. `MobileMenu`'s
  * host-mode CTA) renders correctly on first paint, before the cache/fetch
- * resolves. Purely additive — omitting it (as `UserMenu` does) keeps `role`
- * starting at `null`, unchanged from before this param existed.
+ * resolves. Purely additive — omitting it (as `UserMenu` does) keeps `roles`
+ * starting empty, unchanged from before this param existed.
+ *
+ * HOS-296: `role: string | null` became `roles: readonly string[]`. An
+ * account holds a SET of hats and there is no derived "primary role", so
+ * every consumer asks `roles.includes(X)`.
  */
 
 import { useEffect, useState } from 'react';
@@ -50,12 +54,12 @@ export interface UseAccountPermissionsParams {
      */
     readonly initialUser?: AuthMeUser | null;
     /**
-     * SSR role hint (`Astro.locals.user?.role`), seeding the `role` state so
-     * first paint is correct before the cache/fetch resolves. Optional and
-     * additive — omit to leave `role` starting at `null` (original
+     * SSR role-set hint (`Astro.locals.user?.roles`), seeding the `roles`
+     * state so first paint is correct before the cache/fetch resolves.
+     * Optional and additive — omit to leave `roles` starting empty (original
      * behavior, still used by `UserMenu`).
      */
-    readonly initialRole?: string | null;
+    readonly initialRoles?: readonly string[] | null;
     /**
      * Skip resolving entirely (e.g. a guest-only consumer with no `user`
      * prop to reconcile against). Defaults to `false`.
@@ -83,25 +87,29 @@ export interface UseAccountPermissionsResult {
      * `isVisibleByPermissions` loading-state contract.
      */
     readonly permissions: ReadonlyArray<string> | null;
-    /** Actor role (e.g. USER, HOST, ADMIN). `null` for guests or while loading. */
-    readonly role: string | null;
+    /**
+     * Every role the actor holds (e.g. `['USER', 'HOST']`). Empty for guests
+     * and while still resolving — gate with `roles.includes(X)`, which
+     * fails closed in both cases (HOS-296).
+     */
+    readonly roles: ReadonlyArray<string>;
 }
 
 /**
  * Resolves the current visitor's `/auth/me` snapshot on mount, cache-first.
  *
  * @param params - `{ initialUser?, skip? }` (RO-RO). See the two modes above.
- * @returns `{ user, permissions, role }`.
+ * @returns `{ user, permissions, roles }`.
  */
 export function useAccountPermissions({
     initialUser,
-    initialRole = null,
+    initialRoles = null,
     skip = false,
     syncAuthenticatedAttribute
 }: UseAccountPermissionsParams = {}): UseAccountPermissionsResult {
     const [user, setUser] = useState<AuthMeUser | null>(initialUser ?? null);
     const [permissions, setPermissions] = useState<ReadonlyArray<string> | null>(null);
-    const [role, setRole] = useState<string | null>(initialRole);
+    const [roles, setRoles] = useState<ReadonlyArray<string>>(initialRoles ?? []);
 
     // `initialUser === undefined` means the caller never passed it (simple
     // mode) — distinct from explicitly passing `null` for a guest
@@ -129,7 +137,7 @@ export function useAccountPermissions({
         if (cached && cacheMatchesSsr) {
             setUser(cached.user);
             setPermissions(cached.permissions);
-            setRole(cached.role);
+            setRoles(cached.roles);
             if (shouldSyncAttribute) {
                 document.documentElement.setAttribute(
                     'data-user-authenticated',
@@ -147,7 +155,7 @@ export function useAccountPermissions({
                 writeCachedAuthMe(snapshot);
                 setUser(snapshot.user);
                 setPermissions(snapshot.permissions);
-                setRole(snapshot.role);
+                setRoles(snapshot.roles);
                 if (shouldSyncAttribute) {
                     document.documentElement.setAttribute(
                         'data-user-authenticated',
@@ -165,5 +173,5 @@ export function useAccountPermissions({
         };
     }, [skip]);
 
-    return { user, permissions, role };
+    return { user, permissions, roles };
 }

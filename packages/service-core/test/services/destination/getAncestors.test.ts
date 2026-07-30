@@ -70,7 +70,7 @@ describe('DestinationService.getAncestors', () => {
             })
             .build();
         asMock(modelMock.findAncestors).mockResolvedValue([country, region, province]);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationAncestorsInput = { destinationId: cityId };
 
         // Act
@@ -89,7 +89,7 @@ describe('DestinationService.getAncestors', () => {
         // Arrange
         const countryId = getMockId('destination', 'root');
         asMock(modelMock.findAncestors).mockResolvedValue([]);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationAncestorsInput = { destinationId: countryId };
 
         // Act
@@ -102,7 +102,7 @@ describe('DestinationService.getAncestors', () => {
 
     it('should return VALIDATION_ERROR for invalid destinationId', async () => {
         // Arrange
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params = { destinationId: '' } as unknown as GetDestinationAncestorsInput;
 
         // Act
@@ -116,7 +116,7 @@ describe('DestinationService.getAncestors', () => {
         // Arrange
         const id = getMockId('destination', 'err');
         asMock(modelMock.findAncestors).mockRejectedValue(new Error('DB error'));
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationAncestorsInput = { destinationId: id };
 
         // Act

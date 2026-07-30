@@ -32,7 +32,7 @@ describe('UserService - setAdminInfo', () => {
         loggerMock = createLoggerMock();
         service = new UserService({ logger: loggerMock }, modelMock);
         superAdmin = createActor({
-            role: RoleEnum.SUPER_ADMIN,
+            roles: [RoleEnum.SUPER_ADMIN],
             permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.USER_UPDATE_PROFILE]
         });
         entity = createUser();
@@ -48,7 +48,7 @@ describe('UserService - setAdminInfo', () => {
         const forbiddenUser = createUser({ id: getMockId('user', 'user-entity-id') as string });
         const forbiddenActor = createActor({
             id: getMockId('user', 'actor-id-different') as string,
-            role: RoleEnum.USER,
+            roles: [RoleEnum.USER],
             permissions: []
         });
         asMock(modelMock.findById).mockResolvedValue(forbiddenUser);

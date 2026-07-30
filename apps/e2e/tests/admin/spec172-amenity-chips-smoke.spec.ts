@@ -40,6 +40,7 @@
  */
 
 import { expect, test } from '@playwright/test';
+import { setUserRole } from '../../fixtures/api-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
@@ -87,11 +88,13 @@ async function createAdminSession(): Promise<{
     }
 
     // Verify the email (Better Auth blocks sign-in for unverified accounts)
-    // and promote to SUPER_ADMIN. Done via direct SQL with the real column
-    // names (`email_verified` boolean, `role`) rather than the shared
-    // forceVerifyEmail fixture, which targets a column not present here.
+    // and grant the SUPER_ADMIN hat. Email verification stays inline SQL
+    // (`email_verified` boolean) rather than the shared forceVerifyEmail
+    // fixture; the role goes through `setUserRole`, which since HOS-296 writes
+    // the `user_role` junction table — the `users.role` column this used to
+    // UPDATE no longer exists.
     await execSQL('UPDATE users SET email_verified = true WHERE id = $1', [userId]);
-    await execSQL('UPDATE users SET role = $1 WHERE id = $2', ['SUPER_ADMIN', userId]);
+    await setUserRole(userId, 'SUPER_ADMIN');
 
     const signinRes = await fetch(`${API_URL}/api/auth/sign-in/email`, {
         method: 'POST',
@@ -179,6 +182,10 @@ test.describe('SPEC-172: amenity & feature chips smoke @p1 @admin @spec172 @chip
         try {
             await client.query('BEGIN');
             await client.query("SET LOCAL session_replication_role = 'replica'");
+            // `user_role` cascades on `user_id`, but replica mode disables FK
+            // triggers, so the cascade does not fire — delete the hats first or
+            // they survive as orphans pointing at a deleted user (HOS-296).
+            await client.query('DELETE FROM user_role WHERE user_id = ANY($1::uuid[])', [ids]);
             await client.query('DELETE FROM users WHERE id = ANY($1::uuid[])', [ids]);
             await client.query('COMMIT');
         } catch (error) {

@@ -59,7 +59,7 @@ const preProcessCollection = async (item: unknown, context: SeedContext): Promis
         // Set the actor to be the owner of the collection with the required creation permission.
         context.actor = {
             id: realUserId,
-            role: RoleEnum.SUPER_ADMIN,
+            roles: [RoleEnum.SUPER_ADMIN],
             permissions: [
                 PermissionEnum.USER_BOOKMARK_COLLECTION_CREATE,
                 PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW,

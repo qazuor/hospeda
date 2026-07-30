@@ -302,13 +302,13 @@ describe('EntityViewService', () => {
     describe('getStatsForHostAccommodations', () => {
         const hostActor = createActor({
             id: UUID_1,
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: [PermissionEnum.ACCOMMODATION_VIEW_OWN]
         });
 
         const noPermActor = createActor({
             id: UUID_1,
-            role: RoleEnum.USER,
+            roles: [RoleEnum.USER],
             permissions: []
         });
 
@@ -463,19 +463,19 @@ describe('EntityViewService', () => {
     describe('getStatsForEditorEntities', () => {
         const editorActorPost = createActor({
             id: UUID_1,
-            role: RoleEnum.EDITOR,
+            roles: [RoleEnum.EDITOR],
             permissions: [PermissionEnum.POST_VIEW_ALL]
         });
 
         const editorActorEvent = createActor({
             id: UUID_1,
-            role: RoleEnum.EDITOR,
+            roles: [RoleEnum.EDITOR],
             permissions: [PermissionEnum.EVENT_VIEW_ALL]
         });
 
         const noPermActor = createActor({
             id: UUID_1,
-            role: RoleEnum.USER,
+            roles: [RoleEnum.USER],
             permissions: []
         });
 

@@ -221,7 +221,7 @@ class TestServiceB extends BaseCrudService<
 
 const makeActor = (): Actor => ({
     id: 'actor-uuid-0000-0000-0000-000000000001',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [] as unknown as readonly PermissionEnum[]
 });
 

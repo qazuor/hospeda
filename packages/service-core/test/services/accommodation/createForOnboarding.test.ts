@@ -8,7 +8,8 @@
  * was removed. The web now calls `GET /host-onboarding/precheck` before showing
  * the form and decides create/resume/delete/upgrade itself; the accommodation
  * limit applies normally, drafts included. This suite validates the always-create
- * outcome, the no-op role promotion for already-privileged actors, the
+ * outcome, the ADDITIVE HOST grant (HOS-296 replaced the old
+ * `role === USER`-guarded scalar overwrite — see the grant tests below), the
  * defense-in-depth `ownerId = actor.id` override, and the SPEC-258 B-API
  * expansion: import-provided fields (capacity, location, price, contactInfo,
  * amenityIds) are persisted in the draft and amenities are synced transactionally.
@@ -28,11 +29,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as helpers from '../../../src/services/accommodation/accommodation.helpers';
 import * as junctionSync from '../../../src/services/accommodation/accommodation.junction-sync';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
+import { ServiceError } from '../../../src/types';
 import { createMockAccommodation } from '../../factories/accommodationFactory';
 import { createActor, createHostActor, createSuperAdminActor } from '../../factories/actorFactory';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
-import { asMock } from '../../utils/test-utils';
+
+const grantRoleMock = vi.hoisted(() => vi.fn());
+const getUserRolesMock = vi.hoisted(() => vi.fn(async () => []));
+
+vi.mock('../../../src/services/user-role/user-role.service.js', () => ({
+    grantRole: grantRoleMock,
+    // HOS-296: the module also exports the read primitive, and the
+    // billing-exempt-owner branch of publish/update calls it. A module mock
+    // that omits it turns that branch into "getUserRoles is not a function"
+    // — an INTERNAL_ERROR that looks nothing like a role problem.
+    getUserRoles: getUserRolesMock
+}));
 
 vi.mock('../../../src/utils/transaction.js', () => ({
     /**
@@ -137,6 +150,7 @@ describe('AccommodationService.createForOnboarding', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.spyOn(helpers, 'generateSlug').mockResolvedValue('mock-slug');
+        grantRoleMock.mockResolvedValue({ data: undefined });
 
         accommodationModel = createMockBaseModel();
         userModel = createUserModelMock();
@@ -147,10 +161,6 @@ describe('AccommodationService.createForOnboarding', () => {
         it('inserts a fresh DRAFT for a USER without an existing draft', async () => {
             // Arrange
             const actor = createActor({ id: 'user-001' });
-            asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'user-001',
-                role: RoleEnum.USER
-            });
             const created = createMockAccommodation({
                 id: 'acc-001',
                 ownerId: 'user-001',
@@ -171,33 +181,72 @@ describe('AccommodationService.createForOnboarding', () => {
             expect(accommodationModel.create).toHaveBeenCalledTimes(1);
         });
 
-        it('promotes the owner USER -> HOST in the same transaction as the draft insert', async () => {
+        it('grants the HOST hat in the same transaction as the draft insert', async () => {
             const actor = createActor({ id: 'user-001b' });
-            asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'user-001b',
-                role: RoleEnum.USER
-            });
             (accommodationModel.create as Mock).mockResolvedValue(
                 createMockAccommodation({ id: 'acc-001b', ownerId: 'user-001b' })
             );
 
             await service.createForOnboarding(actor, VALID_DRAFT_INPUT);
 
-            // The owner is promoted to HOST so they can access the admin panel.
-            expect(userModel.update).toHaveBeenCalledWith(
-                { id: 'user-001b' },
-                { role: RoleEnum.HOST },
-                expect.anything()
+            expect(grantRoleMock).toHaveBeenCalledWith({
+                userId: 'user-001b',
+                role: RoleEnum.HOST,
+                grantedBy: null,
+                reason: 'accommodation_created',
+                // The tx context stubbed by the `withServiceTransaction` mock —
+                // the grant must enlist in the draft insert's transaction, not
+                // open its own.
+                ctx: expect.objectContaining({ tx: expect.anything() })
+            });
+
+            // Never the old destructive scalar write.
+            expect(userModel.update).not.toHaveBeenCalled();
+        });
+
+        it.each([
+            ['COMMERCE_OWNER', RoleEnum.COMMERCE_OWNER],
+            ['SPONSOR', RoleEnum.SPONSOR],
+            ['EDITOR', RoleEnum.EDITOR]
+        ])('grants HOST to a %s actor — the removed `role === USER` guard used to skip them', async (label) => {
+            // HOS-296 §6.8: the old exact-match guard is exactly why a
+            // COMMERCE_OWNER starting host onboarding never became a host.
+            // The service no longer reads the actor's existing hats at all,
+            // so what this pins is that no guard was reintroduced.
+            const actor = createActor({ id: `user-${label}` });
+            (accommodationModel.create as Mock).mockResolvedValue(
+                createMockAccommodation({ id: `acc-${label}`, ownerId: `user-${label}` })
             );
+
+            const result = await service.createForOnboarding(actor, VALID_DRAFT_INPUT);
+
+            expect(result.error).toBeUndefined();
+            expect(grantRoleMock).toHaveBeenCalledWith(
+                expect.objectContaining({ userId: `user-${label}`, role: RoleEnum.HOST })
+            );
+            expect(userModel.update).not.toHaveBeenCalled();
+        });
+
+        it('rolls the draft insert back when the HOST grant fails', async () => {
+            // The grant runs inside the draft-insert transaction, so a failure
+            // must surface rather than leave a listing whose owner never got
+            // their hat (HOS-296 G-6, second half).
+            const actor = createActor({ id: 'user-grant-fail' });
+            (accommodationModel.create as Mock).mockResolvedValue(
+                createMockAccommodation({ id: 'acc-grant-fail', ownerId: 'user-grant-fail' })
+            );
+            grantRoleMock.mockResolvedValue({
+                error: new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'grant exploded')
+            });
+
+            const result = await service.createForOnboarding(actor, VALID_DRAFT_INPUT);
+
+            expect(result.error).toBeDefined();
         });
 
         it('forces ownerId to actor.id and lifecycleState to DRAFT (defense in depth)', async () => {
             // Arrange
             const actor = createActor({ id: 'user-002' });
-            asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'user-002',
-                role: RoleEnum.USER
-            });
             const created = createMockAccommodation({
                 id: 'acc-002',
                 ownerId: 'user-002',
@@ -227,10 +276,6 @@ describe('AccommodationService.createForOnboarding', () => {
             // the web decides create/resume/delete/upgrade via a separate precheck
             // endpoint, and this method unconditionally creates.
             const actor = createActor({ id: 'user-003' });
-            asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'user-003',
-                role: RoleEnum.USER
-            });
             const created = createMockAccommodation({
                 id: 'acc-created',
                 ownerId: 'user-003',
@@ -261,10 +306,6 @@ describe('AccommodationService.createForOnboarding', () => {
             // the web, and by `enforceAccommodationLimit()` (unconditional, no bypass)
             // on the `/start` route — both live outside this service method.
             const actor = createActor({ id: 'user-004' });
-            asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'user-004',
-                role: RoleEnum.USER
-            });
             (accommodationModel.create as Mock)
                 .mockResolvedValueOnce(
                     createMockAccommodation({ id: 'acc-first', ownerId: 'user-004' })
@@ -295,10 +336,6 @@ describe('AccommodationService.createForOnboarding', () => {
             // actors. With the fix, an existing HOST flows through normally and gets
             // a new DRAFT created so they do not lose their input.
             const actor = createHostActor({ id: 'user-host' });
-            asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'user-host',
-                role: RoleEnum.HOST
-            });
             const created = createMockAccommodation({
                 id: 'acc-host-new',
                 ownerId: 'user-host',
@@ -323,10 +360,6 @@ describe('AccommodationService.createForOnboarding', () => {
             // second DRAFT created (subject to the accommodation limit at the route
             // layer, not here).
             const actor = createHostActor({ id: 'user-host-draft' });
-            asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'user-host-draft',
-                role: RoleEnum.HOST
-            });
             const created = createMockAccommodation({
                 id: 'acc-host-second-draft',
                 ownerId: 'user-host-draft',
@@ -344,16 +377,8 @@ describe('AccommodationService.createForOnboarding', () => {
             expect(accommodationModel.create).toHaveBeenCalledTimes(1);
         });
 
-        it.each([
-            ['ADMIN', RoleEnum.ADMIN],
-            ['CLIENT_MANAGER', RoleEnum.CLIENT_MANAGER],
-            ['SUPER_ADMIN', RoleEnum.SUPER_ADMIN]
-        ])('returns created for a %s actor with no existing draft', async (_label, role) => {
+        it('returns created for a staff actor with no existing draft', async () => {
             const actor = createSuperAdminActor({ id: 'user-priv' });
-            asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'user-priv',
-                role
-            });
             (accommodationModel.create as Mock).mockResolvedValue(
                 createMockAccommodation({ id: 'acc-priv', ownerId: 'user-priv' })
             );
@@ -362,6 +387,10 @@ describe('AccommodationService.createForOnboarding', () => {
 
             expect(result.data?.status).toBe('created');
             expect(accommodationModel.create).toHaveBeenCalledTimes(1);
+            // Additive: staff keep every hat they already wear and gain HOST.
+            expect(grantRoleMock).toHaveBeenCalledWith(
+                expect.objectContaining({ userId: 'user-priv', role: RoleEnum.HOST })
+            );
         });
     });
 
@@ -387,10 +416,6 @@ describe('AccommodationService.createForOnboarding', () => {
 
         it('returns VALIDATION_ERROR when destination is not a CITY', async () => {
             const actor = createActor({ id: 'user-007' });
-            asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'user-007',
-                role: RoleEnum.USER
-            });
             // Override destination to a non-CITY type.
             // @ts-expect-error: override for test
             service._destinationModel = {
@@ -437,12 +462,7 @@ describe('AccommodationService.createForOnboarding', () => {
     // -------------------------------------------------------------------------
 
     describe('SPEC-258 B-API: import-provided optional fields are persisted', () => {
-        beforeEach(() => {
-            asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'user-import',
-                role: RoleEnum.USER
-            });
-        });
+        beforeEach(() => {});
 
         it('persists extraInfo (capacity/bedrooms/bathrooms/beds) when provided', async () => {
             // Arrange
@@ -566,10 +586,6 @@ describe('AccommodationService.createForOnboarding', () => {
         it('still works correctly with just the minimal required fields (regression)', async () => {
             // Arrange
             const actor = createActor({ id: 'user-minimal' });
-            asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'user-minimal',
-                role: RoleEnum.USER
-            });
             const created = createMockAccommodation({
                 id: 'acc-minimal',
                 ownerId: 'user-minimal',

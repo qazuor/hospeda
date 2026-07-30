@@ -14,7 +14,9 @@
 import { UserModel } from '@repo/db';
 import { ModerationStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock } from 'vitest';
+import type { Actor } from '../../../src/types';
 import { UserService } from '../../../src/services/user/user.service';
+import { createActor } from '../../factories/actorFactory';
 import { createUser } from '../../factories/userFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import {
@@ -28,11 +30,16 @@ import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFac
 
 const asMock = <T>(fn: T) => fn as unknown as Mock;
 
-/** Build a super-admin actor that has all permissions. */
-const getSuperAdmin = () =>
-    createUser({
+/**
+ * Build a super-admin actor that has all permissions.
+ *
+ * HOS-296: an `Actor`, not a `User` fixture — the entity no longer carries the
+ * role set the actor type requires.
+ */
+const getSuperAdmin = (): Actor =>
+    createActor({
         id: getMockId('user', 'super-admin') as string,
-        role: RoleEnum.SUPER_ADMIN,
+        roles: [RoleEnum.SUPER_ADMIN],
         permissions: Object.values(PermissionEnum)
     });
 
@@ -49,7 +56,7 @@ describe('UserService.updateAvatar', () => {
     let service: UserService;
     let userModelMock: UserModel;
 
-    const existingUser = createUser({ id: validInput.userId, role: RoleEnum.USER });
+    const existingUser = createUser({ id: validInput.userId });
 
     beforeEach(() => {
         userModelMock = createTypedModelMock(UserModel, ['findById', 'update']);

@@ -15,7 +15,7 @@ import { BaseFactoryBuilder } from './baseEntityFactory';
  */
 const baseActor: Actor = {
     id: getMockId('user'),
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: []
 };
 
@@ -24,7 +24,7 @@ const baseActor: Actor = {
  * @param overrides - Partial actor object to override default values.
  * @returns {Actor} A complete mock Actor object.
  * @example
- * const actor = createActor({ id: 'user-1', role: RoleEnum.ADMIN });
+ * const actor = createActor({ id: 'user-1', roles: [RoleEnum.ADMIN] });
  */
 export const createActor = (overrides: Partial<Actor> = {}): Actor =>
     new ActorFactoryBuilder().with(overrides).build();
@@ -80,7 +80,7 @@ export class ActorFactoryBuilder extends BaseFactoryBuilder<Actor> {
     public guest(): this {
         return this.with({
             id: '',
-            role: RoleEnum.GUEST,
+            roles: [RoleEnum.GUEST],
             permissions: []
         });
     }
@@ -91,7 +91,7 @@ export class ActorFactoryBuilder extends BaseFactoryBuilder<Actor> {
     public host(): this {
         return this.with({
             id: getMockId('user', 'host'),
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: [
                 PermissionEnum.ACCOMMODATION_CREATE,
                 PermissionEnum.ACCOMMODATION_UPDATE_OWN,
@@ -110,7 +110,7 @@ export class ActorFactoryBuilder extends BaseFactoryBuilder<Actor> {
     public admin(): this {
         return this.with({
             id: getMockId('user', 'admin'),
-            role: RoleEnum.ADMIN,
+            roles: [RoleEnum.ADMIN],
             permissions: [
                 PermissionEnum.ACCOMMODATION_CREATE,
                 PermissionEnum.ACCOMMODATION_UPDATE_ANY,
@@ -127,7 +127,7 @@ export class ActorFactoryBuilder extends BaseFactoryBuilder<Actor> {
     public superAdmin(): this {
         return this.with({
             id: getMockId('user', 'super-admin'),
-            role: RoleEnum.SUPER_ADMIN,
+            roles: [RoleEnum.SUPER_ADMIN],
             permissions: Object.values(PermissionEnum)
         });
     }
@@ -148,11 +148,20 @@ export class ActorFactoryBuilder extends BaseFactoryBuilder<Actor> {
         return this.with({ permissions });
     }
     /**
-     * Sets a custom role for the actor.
+     * Sets the actor's role SET, replacing whatever it held (HOS-296).
+     * @param roles - The roles to assign.
+     * @returns {ActorFactoryBuilder} The builder instance for chaining.
+     */
+    public withRoles(roles: readonly RoleEnum[]): this {
+        return this.with({ roles });
+    }
+
+    /**
+     * Sets a single role on the actor, replacing the whole set.
      * @param role - The role to assign.
      * @returns {ActorFactoryBuilder} The builder instance for chaining.
      */
     public withRole(role: RoleEnum): this {
-        return this.with({ role });
+        return this.with({ roles: [role] });
     }
 }

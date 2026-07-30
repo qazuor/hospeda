@@ -16,7 +16,7 @@ import {
 
 const buildActor = () => ({
     id: '00000000-0000-0000-0000-000000000001',
-    role: 'USER',
+    roles: ['USER'],
     permissions: [] as string[]
 });
 

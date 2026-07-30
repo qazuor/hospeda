@@ -22,7 +22,13 @@ export const usersConfig: EntityConfig<User> = {
     filterBarConfig: {
         filters: [
             {
-                paramKey: 'role',
+                // HOS-296: `roles`, NOT `role`. `users.role` was dropped, so the
+                // API's singular `role` query param is a filter on a column that
+                // no longer exists; the plural one is resolved by a semi-join
+                // against `user_role` and is the only form that still works.
+                // A single-select still fits: the API parses `roles` as a
+                // comma-separated list, and one value is a valid list.
+                paramKey: 'roles',
                 labelKey: 'admin-filters.role.label',
                 type: 'select',
                 order: 1,
@@ -97,8 +103,11 @@ export const usersConfig: EntityConfig<User> = {
     /**
      * Curated peek drawer fields for users.
      *
-     * Badge fields (role, authProvider, visibility, lifecycleState) all have matching
+     * Badge fields (authProvider, visibility, lifecycleState) all have matching
      * badge columns in users.columns.ts — badgeOptions are resolved automatically.
+     * HOS-296: `role` was removed from this list — `UserListItemSchema` no
+     * longer projects it on the admin user LIST payload (see
+     * users.columns.ts), so there is nothing for this field to read.
      *
      * Users have no `isFeatured` field, so `peekFeaturedField` is omitted.
      * `peekSubtitleField` uses `email` instead of `slug` as the identifiable subtitle.
@@ -110,11 +119,6 @@ export const usersConfig: EntityConfig<User> = {
      */
     peekFields: [
         { accessorKey: 'id', labelKey: 'admin-entities.columns.id', format: 'text' },
-        {
-            accessorKey: 'role',
-            labelKey: 'admin-entities.columns.role',
-            format: 'badge'
-        },
         {
             accessorKey: 'authProvider',
             labelKey: 'admin-entities.columns.authProvider',

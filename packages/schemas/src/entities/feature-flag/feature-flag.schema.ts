@@ -40,7 +40,13 @@ export type FeatureFlag = z.infer<typeof FeatureFlagSchema>;
 
 export const FlagContextSchema = z.object({
     userId: z.string().uuid().optional(),
-    role: RoleEnumSchema.optional()
+    /**
+     * Every role the evaluating actor holds (HOS-296). A flag targeted at any
+     * held role is on — an account that is both a host and an editor gets the
+     * union, which is the only sensible reading of "enabled for role X" once
+     * one account can wear several hats.
+     */
+    roles: RoleEnumSchema.array().optional()
 });
 
 export type FlagContext = z.infer<typeof FlagContextSchema>;

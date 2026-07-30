@@ -1,4 +1,4 @@
-import { EditIcon, getUserRoleIcon } from '@repo/icons';
+import { EditIcon } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 import { createElement, Fragment } from 'react';
@@ -17,56 +17,12 @@ import { UserRelationsSummaryCell } from '../components/UserRelationsSummaryCell
 import { useDeleteUserMutation, useUpdateUserMutation } from '../hooks/useUserQuery';
 import type { User } from '../schemas/users.schemas';
 
-/**
- * Role options for inline edit (7 total). SYSTEM and GUEST are kept in the
- * dropdown so users with those roles still render a labeled, colored badge,
- * but in normal operation admins won't pick them. The backend remains the
- * authoritative validation.
- */
-const ROLE_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
-    {
-        value: 'SUPER_ADMIN',
-        label: t('admin-entities.types.userRole.superAdmin'),
-        color: BadgeColor.RED,
-        icon: getUserRoleIcon({ role: 'super_admin' })
-    },
-    {
-        value: 'ADMIN',
-        label: t('admin-entities.types.userRole.admin'),
-        color: BadgeColor.ORANGE,
-        icon: getUserRoleIcon({ role: 'admin' })
-    },
-    {
-        value: 'EDITOR',
-        label: t('admin-entities.types.userRole.editor'),
-        color: BadgeColor.BLUE,
-        icon: getUserRoleIcon({ role: 'editor' })
-    },
-    {
-        value: 'HOST',
-        label: t('admin-entities.types.userRole.host'),
-        color: BadgeColor.PURPLE,
-        icon: getUserRoleIcon({ role: 'host' })
-    },
-    {
-        value: 'USER',
-        label: t('admin-entities.types.userRole.user'),
-        color: BadgeColor.GREEN,
-        icon: getUserRoleIcon({ role: 'user' })
-    },
-    {
-        value: 'GUEST',
-        label: t('admin-entities.types.userRole.guest'),
-        color: BadgeColor.GRAY,
-        icon: getUserRoleIcon({ role: 'guest' })
-    },
-    {
-        value: 'SYSTEM',
-        label: t('admin-entities.types.userRole.system'),
-        color: BadgeColor.SLATE,
-        icon: getUserRoleIcon({ role: 'system' })
-    }
-];
+// HOS-296: the inline-edit "role" column used to live here (ROLE_OPTIONS +
+// a `role` accessorKey column). `role` is gone from `UserListItemSchema` — the
+// admin user-list payload no longer projects it at all (a per-row role set
+// would need the list endpoint to join `user_role`, deliberately out of scope
+// for this cut) — so the column was deleted outright rather than rendered
+// empty. See `users.config.ts`'s `peekFields` for the matching removal.
 
 /**
  * Visibility options. Single source for both read-only badge and dropdown.
@@ -153,32 +109,6 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         enableSorting: true,
         columnType: ColumnType.STRING,
         startVisibleOnTable: false
-    },
-    {
-        id: 'role',
-        header: t('admin-entities.columns.role'),
-        accessorKey: 'role',
-        enableSorting: true,
-        columnType: ColumnType.WIDGET,
-        widgetRenderer: (row) =>
-            createElement(InlineStateSelectCell, {
-                entityId: row.id,
-                entityName:
-                    row.displayName ||
-                    `${row.firstName ?? ''} ${row.lastName ?? ''}`.trim() ||
-                    row.slug ||
-                    row.email ||
-                    '',
-                entityLabelKey: 'admin-entities.entities.user.singular',
-                field: 'role',
-                currentValue: row.role,
-                successMessageKey: 'admin-entities.messages.stateChanged',
-                options: ROLE_OPTIONS(t),
-                permission: PermissionEnum.USER_UPDATE_ROLES,
-                useUpdateMutation: useUpdateUserMutation,
-                confirmValues: ['SUPER_ADMIN', 'ADMIN'],
-                confirmCopyKey: 'roleChange'
-            })
     },
     {
         id: 'authProvider',

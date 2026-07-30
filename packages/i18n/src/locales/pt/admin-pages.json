@@ -162,6 +162,7 @@
             "verified": "Verificado",
             "notVerified": "Não verificado",
             "role": "Função",
+            "roles": "Funções",
             "permissions": "Permissões",
             "permissionsCount_one": "{{count}} permissão atribuída",
             "permissionsCount_other": "{{count}} permissões atribuídas",
@@ -721,6 +722,17 @@
                         "cap5": "Contatar anfitriões"
                     }
                 },
+                "COMMERCE_OWNER": {
+                    "name": "Dono de Comércio",
+                    "description": "Titular de um comércio que gerencia seu próprio perfil comercial",
+                    "capabilities": {
+                        "cap1": "Gerenciar seu perfil comercial",
+                        "cap2": "Atualizar horários e contato",
+                        "cap3": "Enviar fotos",
+                        "cap4": "Responder avaliações",
+                        "cap5": "Ver análises do seu comércio"
+                    }
+                },
                 "SPONSOR": {
                     "name": "Patrocinador",
                     "description": "Empresa externa com acesso a gerenciamento e análises de patrocínios",
@@ -828,7 +840,30 @@
                 "grantPermission": "Conceder",
                 "denyPermission": "Negar",
                 "cancel": "Cancelar",
-                "error": "Ocorreu um erro"
+                "error": "Ocorreu um erro",
+                "inheritedFromRolesDesc": "Este usuário herda a união das permissões de todas as funções que possui. As permissões por função são gerenciadas na página de Funções e valem para todos os usuários com essa função.",
+                "viewRoleDetailsRolesDesc": "Para ver a lista completa de permissões de cada função, acesse a"
+            },
+            "roles": {
+                "title": "Funções",
+                "description": "Todas as funções que esta conta possui. Conceder uma nunca remove outra.",
+                "loading": "Carregando funções…",
+                "error": "Algo deu errado",
+                "loadFailedBadge": "Funções indisponíveis",
+                "granted": "Função concedida",
+                "revoked": "Função revogada",
+                "grantedAt": "Concedida",
+                "grantedBySystem": "Automaticamente",
+                "grantRole": "Conceder função",
+                "revokeRole": "Revogar função",
+                "confirmRevoke": "Revogar esta função?",
+                "confirmRevokeDesc": "O usuário perde todas as permissões que só esta função fornecia. As demais funções não são afetadas.",
+                "cancel": "Cancelar",
+                "cannotRevokeLast": "Uma conta deve manter ao menos uma função, portanto a última não pode ser revogada.",
+                "selectRolePlaceholder": "Selecione uma função para conceder",
+                "reasonPlaceholder": "Motivo da concessão (opcional, registrado na auditoria)",
+                "revokeReasonPlaceholder": "Motivo desta revogação (opcional, registrado na auditoria)",
+                "changesTakeEffectNextRequest": "As alterações valem na próxima requisição do usuário"
             }
         }
     },

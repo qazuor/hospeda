@@ -141,7 +141,7 @@ export const userEntitlementsRoute = createProtectedRoute({
                     // find above includes comp.
                     if (
                         activeSub &&
-                        actor.role === RoleEnum.HOST &&
+                        actor.roles.includes(RoleEnum.HOST) &&
                         (activeSub.status as string) !== 'comp' &&
                         !(await isOwnerCategorySubscription({ planId: activeSub.planId }))
                     ) {

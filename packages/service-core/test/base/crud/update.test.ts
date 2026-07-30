@@ -95,7 +95,7 @@ describe('BaseService: update', () => {
     it('should return forbidden error if actor is not owner or admin', async () => {
         const nonOwnerActor: Actor = {
             id: 'non-owner',
-            role: RoleEnum.USER,
+            roles: [RoleEnum.USER],
             permissions: []
         };
         const result = await service.update(nonOwnerActor, MOCK_ENTITY_ID, {

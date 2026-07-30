@@ -24,6 +24,17 @@ import { createMockBaseModel } from '../../factories/baseServiceFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
 
+// HOS-296: the owner's billing-exempt hats come from `user_role`, read through
+// this primitive, NOT from the `users` row the model mock returns. Each test
+// below stubs the hats it needs via `getUserRolesMock`.
+const grantRoleMock = vi.hoisted(() => vi.fn(async () => ({ data: undefined })));
+const getUserRolesMock = vi.hoisted(() => vi.fn(async () => [] as unknown[]));
+
+vi.mock('../../../src/services/user-role/user-role.service.js', () => ({
+    grantRole: grantRoleMock,
+    getUserRoles: getUserRolesMock
+}));
+
 vi.mock('../../../src/utils/transaction.js', () => ({
     /**
      * Drop-in stub for `withServiceTransaction`. Runs the callback synchronously
@@ -76,6 +87,7 @@ describe('AccommodationService.publish', () => {
         vi.clearAllMocks();
         accommodationModel = createMockBaseModel();
         userModel = createUserModelMock();
+        getUserRolesMock.mockResolvedValue([RoleEnum.USER]);
     });
 
     describe('authorization', () => {
@@ -113,10 +125,8 @@ describe('AccommodationService.publish', () => {
                 lifecycleState: LifecycleStatusEnum.DRAFT
             });
             (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
-            asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'user-owner',
-                role: RoleEnum.USER
-            });
+            asMock(userModel.findById as Mock).mockResolvedValue({ id: 'user-owner' });
+            getUserRolesMock.mockResolvedValue([RoleEnum.USER]);
             (accommodationModel.update as Mock).mockResolvedValue({
                 ...accommodation,
                 lifecycleState: LifecycleStatusEnum.ACTIVE
@@ -169,10 +179,8 @@ describe('AccommodationService.publish', () => {
                 lifecycleState: LifecycleStatusEnum.DRAFT
             });
             (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
-            asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'admin-owner',
-                role
-            });
+            asMock(userModel.findById as Mock).mockResolvedValue({ id: 'admin-owner' });
+            getUserRolesMock.mockResolvedValue([RoleEnum.USER, role]);
             (accommodationModel.update as Mock).mockResolvedValue({
                 ...accommodation,
                 lifecycleState: LifecycleStatusEnum.ACTIVE
@@ -202,10 +210,8 @@ describe('AccommodationService.publish', () => {
             });
             (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
             // Owner is USER role at the model level (edge: no privileged role yet but has sub)
-            asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'host-006',
-                role: RoleEnum.USER
-            });
+            asMock(userModel.findById as Mock).mockResolvedValue({ id: 'host-006' });
+            getUserRolesMock.mockResolvedValue([RoleEnum.USER]);
             (accommodationModel.update as Mock).mockResolvedValue({
                 ...accommodation,
                 lifecycleState: LifecycleStatusEnum.ACTIVE
@@ -233,8 +239,7 @@ describe('AccommodationService.publish', () => {
             });
             (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
             asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'user-007',
-                role: RoleEnum.USER
+                id: 'user-007'
             });
 
             const actor = createActor({ id: 'user-007' });
@@ -263,8 +268,7 @@ describe('AccommodationService.publish', () => {
             });
             (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
             asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'user-008',
-                role: RoleEnum.USER
+                id: 'user-008'
             });
 
             const actor = createActor({ id: 'user-008' });
@@ -287,8 +291,7 @@ describe('AccommodationService.publish', () => {
             });
             (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
             asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'user-008',
-                role: RoleEnum.USER
+                id: 'user-008'
             });
 
             const actor = createActor({ id: 'user-008' });
@@ -310,8 +313,7 @@ describe('AccommodationService.publish', () => {
             });
             (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
             asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'host-incomplete-001',
-                role: RoleEnum.HOST
+                id: 'host-incomplete-001'
             });
 
             const actor = createHostActor({ id: 'host-incomplete-001' });
@@ -336,8 +338,7 @@ describe('AccommodationService.publish', () => {
             });
             (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
             asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'host-incomplete-002',
-                role: RoleEnum.HOST
+                id: 'host-incomplete-002'
             });
 
             const actor = createHostActor({ id: 'host-incomplete-002' });
@@ -358,8 +359,7 @@ describe('AccommodationService.publish', () => {
             });
             (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
             asMock(userModel.findById as Mock).mockResolvedValue({
-                id: 'host-complete-001',
-                role: RoleEnum.HOST
+                id: 'host-complete-001'
             });
             (accommodationModel.update as Mock).mockResolvedValue({
                 ...accommodation,

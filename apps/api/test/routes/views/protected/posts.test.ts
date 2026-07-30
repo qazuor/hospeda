@@ -105,7 +105,7 @@ const mockGetActorFromContext = vi.mocked(getActorFromContext);
 
 const EDITOR_ACTOR: Actor = {
     id: 'editor-uuid-001',
-    role: RoleEnum.EDITOR,
+    roles: [RoleEnum.EDITOR],
     permissions: [PermissionEnum.POST_VIEW_ALL]
 };
 

@@ -30,7 +30,7 @@ const AUTHENTICATED_RESPONSE = {
             id: 'u1',
             name: 'Test User',
             email: 'test@example.com',
-            role: 'HOST',
+            roles: ['USER', 'HOST'],
             permissions: ['accommodation.create']
         },
         isAuthenticated: true
@@ -60,7 +60,7 @@ describe('useAccountPermissions — SSR-reconciling mode (initialUser passed)', 
                 isAuthenticated: true,
                 user: { id: 'u1', name: 'Cached User', email: 'cached@example.com' },
                 permissions: ['accommodation.create'],
-                role: 'HOST',
+                roles: ['USER', 'HOST'],
                 cachedAt: Date.now()
             })
         );
@@ -76,7 +76,7 @@ describe('useAccountPermissions — SSR-reconciling mode (initialUser passed)', 
         await waitFor(() => {
             expect(result.current.permissions).toEqual(['accommodation.create']);
         });
-        expect(result.current.role).toBe('HOST');
+        expect(result.current.roles).toEqual(['USER', 'HOST']);
         expect(fetchMock).not.toHaveBeenCalled();
         expect(document.documentElement.getAttribute('data-user-authenticated')).toBe('true');
     });
@@ -88,7 +88,7 @@ describe('useAccountPermissions — SSR-reconciling mode (initialUser passed)', 
                 isAuthenticated: false,
                 user: null,
                 permissions: [],
-                role: null,
+                roles: [],
                 cachedAt: Date.now()
             })
         );
@@ -164,7 +164,7 @@ describe('useAccountPermissions — syncAuthenticatedAttribute opt-out (MobileMe
                 isAuthenticated: false,
                 user: null,
                 permissions: [],
-                role: null,
+                roles: [],
                 cachedAt: Date.now()
             })
         );
@@ -186,19 +186,60 @@ describe('useAccountPermissions — syncAuthenticatedAttribute opt-out (MobileMe
         expect(document.documentElement.hasAttribute('data-user-authenticated')).toBe(false);
     });
 
-    it('seeds role from initialRole on first render, before any effect runs', () => {
+    it('seeds roles from initialRoles on first render, before any effect runs', () => {
         // Never-resolving fetch: only the synchronous initial state is asserted.
         global.fetch = vi.fn(() => new Promise(() => {})) as unknown as typeof fetch;
 
         const { result } = renderHook(() =>
             useAccountPermissions({
                 initialUser: { id: 'u1', name: 'Test User', email: 'test@example.com' },
-                initialRole: 'HOST',
+                initialRoles: ['USER', 'HOST'],
                 syncAuthenticatedAttribute: false
             })
         );
 
-        expect(result.current.role).toBe('HOST');
+        expect(result.current.roles).toEqual(['USER', 'HOST']);
+    });
+
+    it('defaults roles to an empty array (never undefined) when initialRoles is omitted', () => {
+        // The fail-closed contract: consumers call `roles.includes(...)`
+        // straight away, so an undefined here would throw on first paint.
+        global.fetch = vi.fn(() => new Promise(() => {})) as unknown as typeof fetch;
+
+        const { result } = renderHook(() =>
+            useAccountPermissions({
+                initialUser: { id: 'u1', name: 'Test User', email: 'test@example.com' },
+                syncAuthenticatedAttribute: false
+            })
+        );
+
+        expect(result.current.roles).toEqual([]);
+    });
+
+    it('resolves the FULL role set from /auth/me for a multi-hat user (AC-1)', async () => {
+        mockFetchOnce({
+            data: {
+                actor: {
+                    id: 'u1',
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
+                    permissions: ['accommodation.create', 'commerce.editOwn']
+                },
+                isAuthenticated: true
+            }
+        });
+
+        const { result } = renderHook(() =>
+            useAccountPermissions({
+                initialUser: { id: 'u1', name: 'Test User', email: 'test@example.com' },
+                syncAuthenticatedAttribute: false
+            })
+        );
+
+        await waitFor(() => {
+            expect(result.current.roles).toEqual(['USER', 'HOST', 'COMMERCE_OWNER']);
+        });
     });
 });
 
@@ -221,7 +262,7 @@ describe('useAccountPermissions — simple mode (initialUser omitted)', () => {
                 isAuthenticated: true,
                 user: { id: 'u1', name: 'Cached User', email: 'cached@example.com' },
                 permissions: ['commerce.editOwn'],
-                role: 'COMMERCE_OWNER',
+                roles: ['USER', 'COMMERCE_OWNER'],
                 cachedAt: Date.now()
             })
         );
@@ -268,7 +309,7 @@ describe('useAccountPermissions — simple mode (initialUser omitted)', () => {
                 isAuthenticated: false,
                 user: null,
                 permissions: [],
-                role: null,
+                roles: [],
                 cachedAt: Date.now()
             })
         );

@@ -168,7 +168,7 @@ function attachTestErrorHandler(app: Hono<AppBindings>): void {
 
 type ActorOptions = {
     id: string;
-    role: RoleEnum;
+    roles: readonly RoleEnum[];
     permissions: PermissionEnum[];
 };
 
@@ -199,7 +199,7 @@ function buildApp(
 
 const adminActor: ActorOptions = {
     id: ADMIN_ID,
-    role: RoleEnum.SUPER_ADMIN,
+    roles: [RoleEnum.SUPER_ADMIN],
     // Must include ACCESS_PANEL_ADMIN (or ACCESS_API_ADMIN) so adminAuthMiddleware passes,
     // plus ACCOMMODATION_UPDATE_ANY for the service-level permission check.
     permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.ACCOMMODATION_UPDATE_ANY]
@@ -207,7 +207,7 @@ const adminActor: ActorOptions = {
 
 const noPermissionActor: ActorOptions = {
     id: ADMIN_ID,
-    role: RoleEnum.HOST,
+    roles: [RoleEnum.HOST],
     // Has ACCESS_PANEL_ADMIN so it passes the admin middleware, but lacks
     // ACCOMMODATION_UPDATE_ANY so the service returns FORBIDDEN.
     permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.ACCOMMODATION_UPDATE_OWN]
@@ -215,7 +215,7 @@ const noPermissionActor: ActorOptions = {
 
 const guestActor: ActorOptions = {
     id: '00000000-0000-4000-8000-000000000000',
-    role: RoleEnum.GUEST,
+    roles: [RoleEnum.GUEST],
     permissions: []
 };
 

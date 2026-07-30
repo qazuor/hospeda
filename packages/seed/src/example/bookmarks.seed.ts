@@ -102,7 +102,7 @@ const preProcessBookmark = async (item: unknown, context: SeedContext) => {
             // TODO: Get full user data from database if needed
             context.actor = {
                 id: realUserId,
-                role: RoleEnum.SUPER_ADMIN, // Default role, should be updated with actual user role
+                roles: [RoleEnum.SUPER_ADMIN], // Default hat, should be updated with the user's real role set
                 permissions: [
                     PermissionEnum.USER_BOOKMARK_CREATE,
                     PermissionEnum.USER_BOOKMARK_MANAGE

@@ -52,7 +52,7 @@ vi.mock('../../../../src/utils/route-factory', () => ({
 }));
 
 vi.mock('../../../../src/utils/actor', () => ({
-    getActorFromContext: vi.fn(() => ({ id: 'admin-actor-id', role: 'ADMIN', permissions: [] }))
+    getActorFromContext: vi.fn(() => ({ id: 'admin-actor-id', roles: ['ADMIN'], permissions: [] }))
 }));
 
 vi.mock('@repo/service-core', () => ({

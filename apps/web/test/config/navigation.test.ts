@@ -4,7 +4,7 @@ import { ACCOUNT_DISCOVERY_DOORS } from '../../src/config/discovery-doors';
 import { ACCOUNT_NAV_GROUPS, getNavForSurface, type NavGroup } from '../../src/config/navigation';
 import {
     isVisibleByPermissions,
-    isVisibleByRole,
+    isVisibleByRoles,
     PERMISSION_ROLE_MAP
 } from '../../src/lib/nav-gating';
 
@@ -208,7 +208,7 @@ describe('PERMISSION_ROLE_MAP exhaustiveness (regression guard)', () => {
             (permission) => PERMISSION_ROLE_MAP[permission] === undefined
         );
 
-        // A missing entry silently makes isVisibleByRole() return false for
+        // A missing entry silently makes isVisibleByRoles() return false for
         // EVERY role (including admin) on that group/item — this must fail
         // loudly the moment a future gated group (e.g. T-011 Aliados) adds a
         // requiredPermission without a matching PERMISSION_ROLE_MAP entry.
@@ -340,11 +340,11 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
     });
 });
 
-describe('getNavForSurface + isVisibleByRole (server SSR gating, approximate)', () => {
+describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)', () => {
     it('shows only cuenta + turista for an unauthenticated visitor (role = null)', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
-            visibility: (node) => isVisibleByRole(node, null)
+            visibility: (node) => isVisibleByRoles(node, null)
         });
         expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista']);
     });
@@ -352,7 +352,7 @@ describe('getNavForSurface + isVisibleByRole (server SSR gating, approximate)', 
     it('shows only cuenta + turista for a plain tourist USER role', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
-            visibility: (node) => isVisibleByRole(node, RoleEnum.USER)
+            visibility: (node) => isVisibleByRoles(node, [RoleEnum.USER])
         });
         expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista']);
     });
@@ -360,7 +360,7 @@ describe('getNavForSurface + isVisibleByRole (server SSR gating, approximate)', 
     it('adds anfitrion (with its "properties" item, AC-2) for a HOST role', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
-            visibility: (node) => isVisibleByRole(node, RoleEnum.HOST)
+            visibility: (node) => isVisibleByRoles(node, [RoleEnum.HOST])
         });
         expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista', 'anfitrion']);
         const anfitrion = findGroup(groups, 'anfitrion');
@@ -370,7 +370,7 @@ describe('getNavForSurface + isVisibleByRole (server SSR gating, approximate)', 
     it('adds comercio (with its "commerce" item) for a COMMERCE_OWNER role', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
-            visibility: (node) => isVisibleByRole(node, RoleEnum.COMMERCE_OWNER)
+            visibility: (node) => isVisibleByRoles(node, [RoleEnum.COMMERCE_OWNER])
         });
         expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista', 'comercio']);
         const comercio = findGroup(groups, 'comercio');
@@ -380,7 +380,7 @@ describe('getNavForSurface + isVisibleByRole (server SSR gating, approximate)', 
     it('adds both anfitrion and comercio for platform staff (ADMIN)', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
-            visibility: (node) => isVisibleByRole(node, RoleEnum.ADMIN)
+            visibility: (node) => isVisibleByRoles(node, [RoleEnum.ADMIN])
         });
         expect(groups.map((group) => group.id)).toEqual([
             'cuenta',

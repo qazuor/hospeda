@@ -57,14 +57,14 @@ import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
 
 function makeHeaders(
-    actor: { id: string; role: string; permissions: string[] },
+    actor: { id: string; roles: readonly string[]; permissions: string[] },
     extra: Record<string, string> = {}
 ): Record<string, string> {
     return {
         'content-type': 'application/json',
         'user-agent': 'vitest',
         'x-mock-actor-id': actor.id,
-        'x-mock-actor-role': actor.role,
+        'x-mock-actor-role': actor.roles.join(','),
         'x-mock-actor-permissions': JSON.stringify(actor.permissions),
         ...extra
     };
@@ -114,7 +114,7 @@ describe('T-029: review admin update — write-path permission boundaries', () =
         it('returns 403 when actor has *_REVIEW_UPDATE but lacks *_REVIEW_MODERATE (T-026 alignment)', async () => {
             const actor = {
                 id: crypto.randomUUID(),
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [
                     PermissionEnum.ACCESS_API_PUBLIC,
                     PermissionEnum.ACCESS_API_PRIVATE,
@@ -137,7 +137,7 @@ describe('T-029: review admin update — write-path permission boundaries', () =
         it('returns 200/2xx when actor has BOTH *_REVIEW_UPDATE and *_REVIEW_MODERATE', async () => {
             const actor = {
                 id: crypto.randomUUID(),
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [
                     PermissionEnum.ACCESS_API_PUBLIC,
                     PermissionEnum.ACCESS_API_PRIVATE,

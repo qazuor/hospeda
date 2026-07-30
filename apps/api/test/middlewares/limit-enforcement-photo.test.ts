@@ -92,7 +92,7 @@ function createMockContext(
 
 const BASE_ACTOR: Actor = {
     id: 'user-123',
-    role: RoleEnum.HOST,
+    roles: [RoleEnum.HOST],
     permissions: []
 };
 
@@ -253,7 +253,7 @@ describe('enforcePhotoLimit - relational table counting (SPEC-204)', () => {
         it('should continue when actor is not authenticated', async () => {
             vi.mocked(getActorFromContext).mockReturnValue({
                 id: '',
-                role: RoleEnum.GUEST,
+                roles: [RoleEnum.GUEST],
                 permissions: []
             });
 

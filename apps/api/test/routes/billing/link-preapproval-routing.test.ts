@@ -164,7 +164,7 @@ const VALID_BODY = {
 /** Regular authenticated USER actor — no admin permission. */
 const NON_ADMIN_ACTOR: Actor = {
     id: '00000000-0000-4000-8000-000000000099',
-    role: 'USER' as RoleEnum,
+    roles: ['USER' as RoleEnum],
     permissions: [],
     email: 'user@test.com',
     name: 'Test User'
@@ -173,7 +173,7 @@ const NON_ADMIN_ACTOR: Actor = {
 /** Admin actor — carries ACCESS_API_ADMIN, the only permission the guard checks. */
 const ADMIN_ACTOR: Actor = {
     id: '00000000-0000-4000-8000-000000000001',
-    role: 'ADMIN' as RoleEnum,
+    roles: ['ADMIN' as RoleEnum],
     permissions: [PermissionEnum.ACCESS_API_ADMIN],
     email: 'admin@test.com',
     name: 'Test Admin'

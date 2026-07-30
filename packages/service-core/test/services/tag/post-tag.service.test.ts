@@ -42,7 +42,7 @@ const ACTOR_UUID = '550e8400-e29b-41d4-a716-446655440020';
 // ---------------------------------------------------------------------------
 
 function makeActor(permissions: PermissionEnum[] = []) {
-    return { id: ACTOR_UUID, role: RoleEnum.ADMIN, permissions };
+    return { id: ACTOR_UUID, roles: [RoleEnum.ADMIN], permissions };
 }
 
 function makePostTag(overrides: Record<string, unknown> = {}) {

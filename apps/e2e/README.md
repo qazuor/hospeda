@@ -283,7 +283,8 @@ const rows = await execSQL<AddonPurchaseRow>(`SELECT id, status, customer_id FRO
 |---|---|---|
 | `403` from PATCH protected/accommodations | Subscription not active OR ownership check on a different actor | Confirm `createSubscription({status:'active'})` ran AND the cookie matches `ownerId` |
 | `409` / unique constraint on `idx_addon_purchases_active_unique` | Duplicate active addon row | Reset state in `afterEach`, or use a different `addon_slug` per test |
-| `500` from `/admin/billing/...` for super_admin | Permission check missing the right `PermissionEnum` | Confirm `createUser({role:'SUPER_ADMIN'})` was used; `setUserRole` flips role atomically |
+| `500` from `/admin/billing/...` for super_admin | Permission check missing the right `PermissionEnum` | Confirm `createUser({role:'SUPER_ADMIN'})` was used; `setUserRole` writes the hat to `user_role` and leaves the set at exactly `{USER, <requested>}` |
+| `column "role" does not exist` from any `execSQL` | Query still targets the `users.role` scalar, dropped by HOS-296 | Read hats with `getUserRoles(userId)` (fixtures/db-helpers.ts); write them with `setUserRole` / `demoteHostToUser`. Never `SELECT`/`UPDATE` `users.role` |
 | Mailpit timeout | SMTP transport not wired OR the email subject regex doesn't match locale | Check Mailpit web UI at :8025 for the actual subject line |
 | `qzpay-test-control endpoint not mounted` | Env gate missing on the API process | Restart API with `HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true` |
 | Webhook returns 401 | HMAC signature mismatch | Confirm `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` is set in BOTH the API process and this test process |

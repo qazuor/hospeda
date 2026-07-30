@@ -76,13 +76,13 @@ vi.mock('../../../../src/utils/actor', async (importOriginal) => {
         ...actual,
         getActorFromContext: vi.fn(() => ({
             id: '00000000-0000-4000-8000-000000000000',
-            role: 'GUEST',
+            roles: ['GUEST'],
             permissions: []
         })),
         isGuestActor: vi.fn(() => true),
         createGuestActor: vi.fn(() => ({
             id: '00000000-0000-4000-8000-000000000000',
-            role: 'GUEST',
+            roles: ['GUEST'],
             permissions: []
         }))
     };

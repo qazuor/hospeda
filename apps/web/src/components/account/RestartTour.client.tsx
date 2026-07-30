@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getWelcomeTourForRole } from '@/config/tours';
+import { getWelcomeTourForRoles } from '@/config/tours';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 
 interface RestartTourProps {
     readonly locale: SupportedLocale;
-    readonly userRole: string | null;
+    /** Every role the user holds (`Astro.locals.user.roles`) — HOS-296. */
+    readonly userRoles: readonly string[];
 }
 
 type DriverInstance = {
@@ -14,12 +15,12 @@ type DriverInstance = {
     hasNextStep: () => boolean;
 };
 
-export function RestartTour({ locale, userRole }: RestartTourProps) {
+export function RestartTour({ locale, userRoles }: RestartTourProps) {
     const { t } = createTranslations(locale);
     const [isRunning, setIsRunning] = useState(false);
     const driverRef = useRef<DriverInstance | null>(null);
 
-    const tour = getWelcomeTourForRole(userRole);
+    const tour = getWelcomeTourForRoles({ roles: userRoles });
 
     useEffect(() => {
         return () => {

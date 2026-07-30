@@ -50,6 +50,7 @@ import {
     RecurrenceTypeEnum,
     RefundStatusEnum,
     RoleEnum,
+    RoleGrantActionEnum,
     SocialApprovalStatusEnum,
     SocialAssetSourceEnum,
     SocialMediaTypeEnum,
@@ -159,6 +160,16 @@ export const PostCategoryPgEnum = pgEnum('post_category_enum', enumToTuple(PostC
 export const RecurrenceTypePgEnum = pgEnum('recurrence_type_enum', enumToTuple(RecurrenceTypeEnum));
 
 export const RolePgEnum = pgEnum('role_enum', enumToTuple(RoleEnum));
+
+/**
+ * PostgreSQL enum for the direction of a role mutation in `user_role_audit`
+ * (HOS-296). Values: `grant`, `revoke`. Typed rather than varchar, matching
+ * how `permission_effect_enum` backs `user_permission.effect`.
+ */
+export const RoleGrantActionPgEnum = pgEnum(
+    'role_grant_action_enum',
+    enumToTuple(RoleGrantActionEnum)
+);
 
 export const ModerationStatusPgEnum = pgEnum(
     'moderation_status_enum',

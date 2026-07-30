@@ -123,7 +123,7 @@ describe('Sponsor User E2E Flow', () => {
     // Test actors
     const sponsorActor = {
         id: 'sponsor-test-user-001',
-        role: RoleEnum.SPONSOR,
+        roles: [RoleEnum.SPONSOR],
         permissions: [
             PermissionEnum.SPONSORSHIP_VIEW,
             PermissionEnum.SPONSORSHIP_CREATE,
@@ -138,7 +138,7 @@ describe('Sponsor User E2E Flow', () => {
 
     const ownerActor = {
         id: 'owner-test-user-001',
-        role: RoleEnum.HOST,
+        roles: [RoleEnum.HOST],
         permissions: [
             PermissionEnum.ACCOMMODATION_CREATE,
             PermissionEnum.ACCOMMODATION_UPDATE_OWN,
@@ -149,7 +149,7 @@ describe('Sponsor User E2E Flow', () => {
 
     const touristActor = {
         id: 'tourist-test-user-001',
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: [PermissionEnum.USER_VIEW_PROFILE, PermissionEnum.ACCESS_API_PUBLIC]
     };
 
@@ -168,13 +168,13 @@ describe('Sponsor User E2E Flow', () => {
      */
     function createMockHeaders(actor: {
         id: string;
-        role: string;
+        roles: readonly string[];
         permissions: string[];
     }): Record<string, string> {
         return {
             'user-agent': 'vitest-test-agent',
             'x-mock-actor-id': actor.id,
-            'x-mock-actor-role': actor.role,
+            'x-mock-actor-role': actor.roles.join(','),
             'x-mock-actor-permissions': JSON.stringify(actor.permissions)
         };
     }
@@ -433,7 +433,7 @@ describe('Sponsor User E2E Flow', () => {
         it('should deny access when sponsor has no permissions', async () => {
             const headers = createMockHeaders({
                 id: 'deactivated-sponsor-001',
-                role: RoleEnum.SPONSOR,
+                roles: [RoleEnum.SPONSOR],
                 permissions: []
             });
             const response = await app.request('/api/v1/sponsorships', {

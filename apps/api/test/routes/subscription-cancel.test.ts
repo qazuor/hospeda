@@ -474,7 +474,7 @@ describe('billing-admin-guard: cancel allowedSubPaths', () => {
         const ctx = {
             get: vi.fn((key: string) => {
                 if (key === 'actor') {
-                    return { id: 'user-1', role: 'USER', permissions: [] };
+                    return { id: 'user-1', roles: ['USER'], permissions: [] };
                 }
                 return undefined;
             }),

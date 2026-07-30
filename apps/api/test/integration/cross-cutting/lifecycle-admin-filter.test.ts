@@ -63,14 +63,14 @@ import { validateApiEnv } from '../../../src/utils/env';
 
 function makeHeaders(actor: {
     id: string;
-    role: string;
+    roles: readonly string[];
     permissions: string[];
 }): Record<string, string> {
     return {
         'content-type': 'application/json',
         'user-agent': 'vitest',
         'x-mock-actor-id': actor.id,
-        'x-mock-actor-role': actor.role,
+        'x-mock-actor-role': actor.roles.join(','),
         'x-mock-actor-permissions': JSON.stringify(actor.permissions)
     };
 }
@@ -146,7 +146,7 @@ describe('T-027: lifecycleState filter on admin list endpoints', () => {
     describe.each(cases)('$label', ({ path, permissions, serviceMock }) => {
         const actor = {
             id: crypto.randomUUID(),
-            role: RoleEnum.ADMIN,
+            roles: [RoleEnum.ADMIN],
             permissions
         };
 

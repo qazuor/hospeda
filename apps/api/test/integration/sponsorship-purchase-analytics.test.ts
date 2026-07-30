@@ -129,7 +129,7 @@ describe('Sponsorship Purchase and Analytics E2E Flow', () => {
     // Test actors
     const sponsorActor = {
         id: 'sponsor-e2e-user-001',
-        role: RoleEnum.SPONSOR,
+        roles: [RoleEnum.SPONSOR],
         permissions: [
             PermissionEnum.SPONSORSHIP_VIEW,
             PermissionEnum.SPONSORSHIP_CREATE,
@@ -144,7 +144,7 @@ describe('Sponsorship Purchase and Analytics E2E Flow', () => {
 
     const sponsorActor2 = {
         id: 'sponsor-e2e-user-002',
-        role: RoleEnum.SPONSOR,
+        roles: [RoleEnum.SPONSOR],
         permissions: [
             PermissionEnum.SPONSORSHIP_VIEW,
             PermissionEnum.SPONSORSHIP_CREATE,
@@ -155,7 +155,7 @@ describe('Sponsorship Purchase and Analytics E2E Flow', () => {
 
     const adminActor = {
         id: 'admin-e2e-user-001',
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [
             PermissionEnum.SPONSORSHIP_VIEW,
             PermissionEnum.SPONSORSHIP_CREATE,
@@ -168,7 +168,7 @@ describe('Sponsorship Purchase and Analytics E2E Flow', () => {
 
     const touristActor = {
         id: 'tourist-e2e-user-001',
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: [PermissionEnum.USER_VIEW_PROFILE, PermissionEnum.ACCESS_API_PUBLIC]
     };
 
@@ -187,13 +187,13 @@ describe('Sponsorship Purchase and Analytics E2E Flow', () => {
      */
     function createMockHeaders(actor: {
         id: string;
-        role: string;
+        roles: readonly string[];
         permissions: string[];
     }): Record<string, string> {
         return {
             'user-agent': 'vitest-test-agent',
             'x-mock-actor-id': actor.id,
-            'x-mock-actor-role': actor.role,
+            'x-mock-actor-role': actor.roles.join(','),
             'x-mock-actor-permissions': JSON.stringify(actor.permissions)
         };
     }

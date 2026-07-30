@@ -117,7 +117,7 @@ describe('SponsorshipService.list', () => {
 
     it('should list sponsorships as super admin with all permissions', async () => {
         actor = createActor({
-            role: RoleEnum.SUPER_ADMIN,
+            roles: [RoleEnum.SUPER_ADMIN],
             permissions: Object.values(PermissionEnum)
         });
         const items = [createMockSponsorship({ id: getMockSponsorshipId('mock-id-1') })];

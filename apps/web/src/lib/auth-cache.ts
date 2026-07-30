@@ -21,7 +21,7 @@ import { getApiUrl } from '@/lib/env';
 /**
  * sessionStorage key under which the `/auth/me` snapshot is cached.
  *
- * Producers write `{ isAuthenticated, user, permissions, role, cachedAt }`
+ * Producers write `{ isAuthenticated, user, permissions, roles, cachedAt }`
  * as JSON via `writeCachedAuthMe`. Consumers read and TTL-check via
  * `readCachedAuthMe` (or, for the minimal user-id-only case, their own
  * narrow parse — see `AuthedPreferenceSync.client.tsx`).
@@ -44,23 +44,38 @@ export interface AuthMeSnapshot {
     readonly isAuthenticated: boolean;
     readonly user: AuthMeUser | null;
     readonly permissions: ReadonlyArray<string>;
-    /** Actor role (e.g. USER, HOST, ADMIN). Null for guests. Fed to PostHog. */
-    readonly role: string | null;
+    /**
+     * Every role the actor holds (e.g. `['USER', 'HOST', 'COMMERCE_OWNER']`).
+     * Empty for guests. HOS-296 replaced the former `role` scalar: an account
+     * can wear several hats and there is no derived "primary role", so
+     * consumers must ask `roles.includes(X)`.
+     */
+    readonly roles: ReadonlyArray<string>;
     readonly cachedAt: number;
 }
 
 /**
- * Reads the cached `/auth/me` snapshot from `sessionStorage`, if present and
- * still within `AUTH_ME_CACHE_TTL_MS`.
+ * Reads the cached `/auth/me` snapshot from `sessionStorage`, if present,
+ * still within `AUTH_ME_CACHE_TTL_MS`, AND shaped like the current schema.
  *
- * @returns The cached snapshot, or `null` if absent, expired, or unparsable.
+ * **Why the shape check.** `sessionStorage` outlives a deploy: a tab opened
+ * before HOS-296 holds a snapshot with the old `role: string | null` scalar
+ * and NO `roles` array. Trusting it blind would hand consumers
+ * `roles === undefined` and blow up the first `roles.includes(...)` gate.
+ * A snapshot that fails the check is treated exactly like a cache miss, so
+ * the caller refetches `/auth/me` and rewrites it in the current shape.
+ *
+ * @returns The cached snapshot, or `null` if absent, expired, unparsable, or
+ *   written by an incompatible (older) bundle.
  */
 export function readCachedAuthMe(): AuthMeSnapshot | null {
     try {
         const raw = sessionStorage.getItem(AUTH_ME_CACHE_KEY);
         if (!raw) return null;
         const parsed = JSON.parse(raw) as AuthMeSnapshot;
+        if (typeof parsed?.cachedAt !== 'number') return null;
         if (Date.now() - parsed.cachedAt > AUTH_ME_CACHE_TTL_MS) return null;
+        if (!Array.isArray(parsed.roles) || !Array.isArray(parsed.permissions)) return null;
         return parsed;
     } catch {
         return null;
@@ -89,7 +104,12 @@ interface AuthMeResponseBody {
             readonly name?: string;
             readonly email?: string;
             readonly image?: string;
-            readonly role?: string;
+            /**
+             * HOS-296: the actor's role SET. Replaces the former `role`
+             * scalar, which no longer exists in the payload — reading it would
+             * be silently `undefined` with no compile error (spec §7.2).
+             */
+            readonly roles?: ReadonlyArray<string>;
             readonly permissions?: ReadonlyArray<string>;
         };
         readonly isAuthenticated?: boolean;
@@ -158,7 +178,7 @@ function guestAuthMeSnapshot(): AuthMeSnapshot {
         isAuthenticated: false,
         user: null,
         permissions: [],
-        role: null,
+        roles: [],
         cachedAt: Date.now()
     };
 }
@@ -204,7 +224,7 @@ async function performAuthMeFetch({ apiUrl }: FetchAuthMeParams): Promise<AuthMe
                       }
                     : null,
             permissions: actor?.permissions ?? [],
-            role: isAuthenticated && actor?.role ? actor.role : null,
+            roles: isAuthenticated && Array.isArray(actor?.roles) ? actor.roles : [],
             cachedAt: Date.now()
         };
     } catch {

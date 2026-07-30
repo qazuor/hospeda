@@ -60,7 +60,7 @@ router.get('/', async (c) => {
         );
 
         const result = await conversationSvc.listForGuest(
-            { id: actor.id, role: actor.role, permissions: actor.permissions },
+            { id: actor.id, roles: actor.roles, permissions: actor.permissions },
             {
                 userId: actor.id,
                 page: query.page,

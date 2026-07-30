@@ -23,7 +23,7 @@ interface CapturedContext {
     method: string | undefined;
     path: string | undefined;
     userId: string | undefined;
-    role: string | undefined;
+    roles: readonly string[] | undefined;
 }
 
 /**
@@ -42,7 +42,7 @@ function buildApp({ withRequestId = true }: { withRequestId?: boolean } = {}): {
         method: undefined,
         path: undefined,
         userId: undefined,
-        role: undefined
+        roles: undefined
     };
 
     if (withRequestId) {
@@ -57,7 +57,7 @@ function buildApp({ withRequestId = true }: { withRequestId?: boolean } = {}): {
             method: ctx?.method,
             path: ctx?.path,
             userId: ctx?.userId,
-            role: ctx?.role
+            roles: ctx?.roles
         };
         return c.json({ ok: true });
     });
@@ -122,7 +122,7 @@ describe('requestContextMiddleware', () => {
 
             // Assert
             expect(getCaptured().userId).toBeUndefined();
-            expect(getCaptured().role).toBeUndefined();
+            expect(getCaptured().roles).toBeUndefined();
         });
     });
 
@@ -165,7 +165,7 @@ describe('requestContextMiddleware', () => {
 
             // Simulate actor middleware enriching the context
             app.use(async (_c, next) => {
-                setRequestContextActor({ userId: 'user-42', role: 'HOST' });
+                setRequestContextActor({ userId: 'user-42', roles: ['HOST'] });
                 await next();
             });
 
@@ -180,7 +180,7 @@ describe('requestContextMiddleware', () => {
 
             // Assert
             expect(captured?.userId).toBe('user-42');
-            expect(captured?.role).toBe('HOST');
+            expect(captured?.roles).toEqual(['HOST']);
         });
 
         it('should not leak actor from one request into a subsequent request', async () => {
@@ -200,7 +200,7 @@ describe('requestContextMiddleware', () => {
                 callCount += 1;
                 // First request sets actor, second does not
                 if (callCount === 1) {
-                    setRequestContextActor({ userId: 'user-first', role: 'HOST' });
+                    setRequestContextActor({ userId: 'user-first', roles: ['HOST'] });
                 }
                 capturedByRequest.push({ userId: getRequestContext()?.userId });
                 return c.json({ ok: true });

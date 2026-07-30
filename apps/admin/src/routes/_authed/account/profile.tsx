@@ -118,7 +118,11 @@ function MyProfilePage() {
     const avatarUrl = authUser?.avatar ?? profile?.profile?.avatar;
     const email = authUser?.email ?? profile?.email;
     const emailVerified = authUser?.emailVerified ?? false;
-    const role = authUser?.role ?? profile?.role;
+    // HOS-296: the account holds a SET of roles, not a single scalar. Prefer
+    // the live session's roles (authUser) and fall back to the fetched
+    // profile's roles only when the session hasn't resolved them yet.
+    const roles =
+        authUser?.roles && authUser.roles.length > 0 ? authUser.roles : (profile?.roles ?? []);
 
     const isSaving = updateMutation.isPending;
 
@@ -151,15 +155,17 @@ function MyProfilePage() {
                                     )}
                                 </div>
                                 <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
-                                    {role && (
+                                    {/* HOS-296: render every held role as its own badge, not one "primary" role */}
+                                    {roles.map((r) => (
                                         <Badge
+                                            key={r}
                                             variant="secondary"
                                             className="gap-1"
                                         >
                                             <ShieldIcon className="h-3 w-3" />
-                                            {role}
+                                            {r}
                                         </Badge>
-                                    )}
+                                    ))}
                                     {emailVerified ? (
                                         <Badge
                                             variant="outline"
@@ -441,9 +447,11 @@ function MyProfilePage() {
                                 </div>
                                 <div>
                                     <span className="mb-1 block font-medium text-muted-foreground text-xs uppercase">
-                                        {t('admin-pages.profile.security.role')}
+                                        {t('admin-pages.profile.security.roles')}
                                     </span>
-                                    <p className="text-sm">{role ?? '—'}</p>
+                                    <p className="text-sm">
+                                        {roles.length > 0 ? roles.join(', ') : '—'}
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>

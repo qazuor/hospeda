@@ -106,7 +106,7 @@ export const getWhatsNewHandler = async (
     const locale = (actorSettings.languageAdmin as string | undefined) ?? 'es';
 
     // Filter by audience role (D4 — content routing, not authorization).
-    const applicable = filterEntriesByRole({ entries: whatsNewEntries, role: actor.role });
+    const applicable = filterEntriesByRole({ entries: whatsNewEntries, roles: actor.roles });
 
     // Map to response items with seen computation and locale resolution.
     const items: WhatsNewItem[] = applicable.map((entry) => ({

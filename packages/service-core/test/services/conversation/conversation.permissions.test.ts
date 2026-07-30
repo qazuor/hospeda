@@ -79,7 +79,7 @@ describe('checkCanViewConversation', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [PermissionEnum.CONVERSATION_VIEW_ALL]
             });
             const conversation = makeConversation({ userId: USER_ID });
@@ -94,7 +94,7 @@ describe('checkCanViewConversation', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [PermissionEnum.CONVERSATION_VIEW_ANY]
             });
             const conversation = makeConversation({ userId: USER_ID });
@@ -109,7 +109,7 @@ describe('checkCanViewConversation', () => {
             // Arrange
             const actor = createActor({
                 id: USER_ID,
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: [PermissionEnum.CONVERSATION_VIEW_OWN]
             });
             const conversation = makeConversation({ userId: USER_ID });
@@ -122,7 +122,7 @@ describe('checkCanViewConversation', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: [PermissionEnum.CONVERSATION_VIEW_OWN]
             });
             const conversation = makeConversation({ userId: USER_ID });
@@ -137,7 +137,7 @@ describe('checkCanViewConversation', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [PermissionEnum.CONVERSATION_VIEW_OWN]
             });
             const conversation = makeConversation({ accommodationId: ACCOMMODATION_ID });
@@ -152,7 +152,7 @@ describe('checkCanViewConversation', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [PermissionEnum.CONVERSATION_VIEW_OWN]
             });
             const conversation = makeConversation({ accommodationId: ACCOMMODATION_ID });
@@ -169,7 +169,7 @@ describe('checkCanViewConversation', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: []
             });
             const conversation = makeConversation({ userId: USER_ID });
@@ -192,7 +192,7 @@ describe('checkCanReplyConversation', () => {
             // Arrange
             const actor = createActor({
                 id: USER_ID,
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: [PermissionEnum.CONVERSATION_REPLY_OWN]
             });
             const conversation = makeConversation({
@@ -210,7 +210,7 @@ describe('checkCanReplyConversation', () => {
             // Arrange
             const actor = createActor({
                 id: USER_ID,
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [PermissionEnum.CONVERSATION_REPLY_ANY]
             });
             const conversation = makeConversation({ status: 'BLOCKED' });
@@ -227,7 +227,7 @@ describe('checkCanReplyConversation', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [PermissionEnum.CONVERSATION_REPLY_ANY]
             });
             const conversation = makeConversation({ status: 'OPEN' });
@@ -242,7 +242,7 @@ describe('checkCanReplyConversation', () => {
             // Arrange
             const actor = createActor({
                 id: USER_ID,
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: [PermissionEnum.CONVERSATION_REPLY_OWN]
             });
             const conversation = makeConversation({ status: 'OPEN', userId: USER_ID });
@@ -257,7 +257,7 @@ describe('checkCanReplyConversation', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [PermissionEnum.CONVERSATION_REPLY_OWN]
             });
             const conversation = makeConversation({
@@ -275,7 +275,7 @@ describe('checkCanReplyConversation', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [PermissionEnum.CONVERSATION_REPLY_OWN]
             });
             const conversation = makeConversation({
@@ -295,7 +295,7 @@ describe('checkCanReplyConversation', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: []
             });
             const conversation = makeConversation({ status: 'OPEN' });
@@ -318,7 +318,7 @@ describe('checkCanUpdateStatus', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [PermissionEnum.CONVERSATION_UPDATE_STATUS_ANY]
             });
             const conversation = makeConversation();
@@ -333,7 +333,7 @@ describe('checkCanUpdateStatus', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN]
             });
             const conversation = makeConversation({ accommodationId: ACCOMMODATION_ID });
@@ -348,7 +348,7 @@ describe('checkCanUpdateStatus', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN]
             });
             const conversation = makeConversation({ accommodationId: ACCOMMODATION_ID });
@@ -365,7 +365,7 @@ describe('checkCanUpdateStatus', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: []
             });
             const conversation = makeConversation();
@@ -388,7 +388,7 @@ describe('checkCanBlock', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [PermissionEnum.CONVERSATION_BLOCK_ANY]
             });
             const conversation = makeConversation();
@@ -403,7 +403,7 @@ describe('checkCanBlock', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [PermissionEnum.CONVERSATION_BLOCK_OWN]
             });
             const conversation = makeConversation({ accommodationId: ACCOMMODATION_ID });
@@ -416,7 +416,7 @@ describe('checkCanBlock', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [PermissionEnum.CONVERSATION_BLOCK_OWN]
             });
             const conversation = makeConversation({ accommodationId: ACCOMMODATION_ID });
@@ -433,7 +433,7 @@ describe('checkCanBlock', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: []
             });
             const conversation = makeConversation();
@@ -456,7 +456,7 @@ describe('checkCanDelete', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [PermissionEnum.CONVERSATION_DELETE_ANY]
             });
             const conversation = makeConversation();
@@ -471,7 +471,7 @@ describe('checkCanDelete', () => {
             // Arrange — guest who owns the conversation
             const actor = createActor({
                 id: USER_ID,
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: [PermissionEnum.CONVERSATION_REPLY_OWN]
             });
             const conversation = makeConversation({ userId: USER_ID });
@@ -486,7 +486,7 @@ describe('checkCanDelete', () => {
             // Arrange
             const actor = createActor({
                 id: OTHER_USER_ID,
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: []
             });
             const conversation = makeConversation();

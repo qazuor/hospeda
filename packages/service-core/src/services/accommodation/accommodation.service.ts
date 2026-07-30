@@ -95,6 +95,7 @@ import {
     type NearbyPoi,
     PermissionEnum,
     RoleEnum,
+    RoleGrantReason,
     ServiceErrorCode,
     type Success,
     VisibilityEnum,
@@ -123,6 +124,7 @@ import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
 import { DestinationService } from '../destination/destination.service';
 import { PointOfInterestService } from '../point-of-interest/point-of-interest.service';
+import { getUserRoles, grantRole } from '../user-role/user-role.service.js';
 import {
     flattenAccommodationJoinRelations,
     flattenAccommodationJoinRelationsList,
@@ -205,29 +207,57 @@ export class AccommodationService extends BaseCrudService<
     typeof AccommodationSearchSchema
 > {
     static readonly ENTITY_NAME = 'accommodation';
-    /**
-     * Roles that already imply host-level capabilities. Used to skip the USER → HOST
-     * promotion in `createForOnboarding` (the promotion is a no-op for an already-
-     * privileged actor) and by the `_assignHostRoleIfNeeded` hook.
-     */
-    private static readonly PRIVILEGED_ROLES: ReadonlySet<string> = new Set([
-        RoleEnum.HOST,
-        RoleEnum.ADMIN,
-        RoleEnum.CLIENT_MANAGER,
-        RoleEnum.SUPER_ADMIN
-    ]);
+
+    // HOS-296 G-6: `PRIVILEGED_ROLES` (`{HOST, ADMIN, CLIENT_MANAGER,
+    // SUPER_ADMIN}`) used to live here as the write guard for the HOST
+    // promotion in `createForOnboarding` and `_assignHostRoleIfNeeded`. It is
+    // gone, not relocated: granting a hat is additive and idempotent, so there
+    // is nothing for a guard to protect. Keeping it would also keep the bug —
+    // the set omitted `COMMERCE_OWNER`, `SPONSOR` and `EDITOR`, which is why
+    // the old destructive write ate those hats.
+    //
+    // Do NOT reintroduce it as a "staff" set either: the canonical one is
+    // `STAFF_BILLING_BYPASS_ROLES` (see spec §12), and `PRIVILEGED_ROLES`
+    // disagreed with it by swapping `EDITOR` for `HOST`.
 
     /**
      * Roles whose accommodations bypass the billing eligibility check on
      * publish. Regular `HOST` users are NOT in this set — they go through the
      * trial / subscription flow like any other paying owner. Only true admin
      * roles publishing on behalf of the platform are exempt from billing.
+     *
+     * **Deliberate exception to the "always `PermissionEnum`" rule** (see
+     * `CLAUDE.md`), for the same reason as `STAFF_BILLING_BYPASS_ROLES` in
+     * `apps/api`: "does billing apply to this account" is a question about who
+     * the owner IS, not about a capability they were granted. Kept behind
+     * {@link AccommodationService.holdsBillingExemptRole} so the exception is
+     * one named, greppable predicate.
+     *
+     * It is deliberately NARROWER than `STAFF_BILLING_BYPASS_ROLES` (which also
+     * contains `EDITOR`): an editor curates content, they do not own listings,
+     * so exempting them from the owner-plan requirement would be wrong. The two
+     * sets answer different questions and are allowed to differ — what is NOT
+     * allowed is a third set that means "is staff" and disagrees.
      */
     private static readonly BILLING_EXEMPT_ROLES: ReadonlySet<string> = new Set([
         RoleEnum.ADMIN,
         RoleEnum.CLIENT_MANAGER,
         RoleEnum.SUPER_ADMIN
     ]);
+
+    /**
+     * Whether an account holding these hats bypasses the publish-time billing
+     * eligibility check (HOS-296: set intersection, not scalar equality).
+     *
+     * Holding ONE exempt hat is enough — an ADMIN who also wears HOST is still
+     * platform staff publishing on the platform's behalf.
+     *
+     * @param roles - Every role the account holds.
+     * @returns `true` when any held role is in {@link AccommodationService.BILLING_EXEMPT_ROLES}.
+     */
+    private static holdsBillingExemptRole(roles: readonly RoleEnum[]): boolean {
+        return roles.some((role) => AccommodationService.BILLING_EXEMPT_ROLES.has(role));
+    }
     protected readonly entityName = AccommodationService.ENTITY_NAME;
     /**
      * @inheritdoc
@@ -1311,15 +1341,16 @@ export class AccommodationService extends BaseCrudService<
             input: { actor, ...input },
             schema: AccommodationCreateDraftHttpSchema,
             ctx,
-            execute: async (validatedData, validatedActor, execCtx) => {
+            // `execCtx` is deliberately unused: HOS-296 removed the pre-read of
+            // the actor's user row (the old `role === USER` guard), and the
+            // draft insert opens its own `withServiceTransaction` below.
+            execute: async (validatedData, validatedActor, _execCtx) => {
                 if (!validatedActor.id) {
                     throw new ServiceError(
                         ServiceErrorCode.UNAUTHORIZED,
                         'Actor must be authenticated to start host onboarding'
                     );
                 }
-
-                const user = await this._userModel.findById(validatedActor.id, execCtx?.tx);
 
                 const domainInput = httpToDomainAccommodationCreateDraft(
                     validatedData,
@@ -1371,15 +1402,26 @@ export class AccommodationService extends BaseCrudService<
                                 'Failed to create onboarding draft accommodation'
                             );
                         }
-                        // Promote USER -> HOST. No-op if the actor is already HOST
-                        // or higher — an existing host creating another draft flows
-                        // here and the update is a benign no-op at the DB level.
-                        if (user && user.role === RoleEnum.USER) {
-                            await this._userModel.update(
-                                { id: validatedActor.id },
-                                { role: RoleEnum.HOST },
-                                txCtx.tx
-                            );
+                        // Grant the HOST hat, unconditionally and idempotently
+                        // (HOS-296 §6.8).
+                        //
+                        // The old `user.role === RoleEnum.USER` guard is gone,
+                        // and its removal is the point rather than a cleanup:
+                        // an exact-match on USER is precisely why a
+                        // COMMERCE_OWNER starting host onboarding never
+                        // received the host hat and stayed locked out of their
+                        // own draft. Granting is additive, so the guard bought
+                        // nothing that `grantRole`'s (user_id, role) primary key
+                        // does not already give for free.
+                        const granted = await grantRole({
+                            userId: validatedActor.id,
+                            role: RoleEnum.HOST,
+                            grantedBy: null,
+                            reason: RoleGrantReason.ACCOMMODATION_CREATED,
+                            ctx: txCtx
+                        });
+                        if (granted.error) {
+                            throw granted.error;
                         }
                         // Run _afterCreate INSIDE the transaction so that role
                         // promotion + amenity junction sync + media shadow-writes
@@ -1531,18 +1573,20 @@ export class AccommodationService extends BaseCrudService<
             );
             if (!actorIsAdmin) {
                 // Perf optimisation (SPEC-217): when the actor IS the owner we can
-                // derive the exempt check from actor.role directly, avoiding an extra
-                // DB round-trip for the common owner-edits-own-accommodation path.
+                // derive the exempt check from `actor.roles` directly, avoiding an
+                // extra DB round-trip for the common owner-edits-own-accommodation
+                // path. HOS-296: the "else" branch no longer loads the user row —
+                // `users.role` is gone, so the hats come from `user_role` via
+                // `getUserRoles`, which is a narrower query than `findById` was.
                 const ownerIsBillingExempt =
                     actor.id === current.ownerId
-                        ? AccommodationService.BILLING_EXEMPT_ROLES.has(actor.role)
-                        : await this._userModel
-                              .findById(current.ownerId, resolvedCtx?.tx)
-                              .then(
-                                  (owner) =>
-                                      !!owner &&
-                                      AccommodationService.BILLING_EXEMPT_ROLES.has(owner.role)
-                              );
+                        ? AccommodationService.holdsBillingExemptRole(actor.roles)
+                        : AccommodationService.holdsBillingExemptRole(
+                              await getUserRoles({
+                                  userId: current.ownerId,
+                                  ...(resolvedCtx === undefined ? {} : { ctx: resolvedCtx })
+                              })
+                          );
                 if (!ownerIsBillingExempt) {
                     const eligibility = await this._publishDeps.checkEligibility(
                         current.ownerId,
@@ -1754,13 +1798,20 @@ export class AccommodationService extends BaseCrudService<
                     );
                 }
 
-                const owner = await this._userModel.findById(accommodation.ownerId, execCtx?.tx);
                 // Owners with admin-grade roles (ADMIN/SUPER_ADMIN/CLIENT_MANAGER)
                 // bypass billing entirely. Regular HOST users — including the
                 // ones promoted from USER at draft creation — go through the
                 // standard eligibility check and trial flow.
+                //
+                // HOS-296: reads `user_role` rather than the dropped
+                // `users.role` scalar, so the full user row is no longer loaded
+                // just to read one column.
+                const ownerRoles = await getUserRoles({
+                    userId: accommodation.ownerId,
+                    ...(execCtx === undefined ? {} : { ctx: execCtx })
+                });
                 const ownerIsBillingExempt =
-                    !!owner && AccommodationService.BILLING_EXEMPT_ROLES.has(owner.role);
+                    AccommodationService.holdsBillingExemptRole(ownerRoles);
 
                 if (!ownerIsBillingExempt) {
                     if (!this._publishDeps) {
@@ -1947,41 +1998,59 @@ export class AccommodationService extends BaseCrudService<
     }
 
     /**
-     * Assigns the `HOST` role to a user if they do not already hold a privileged role.
+     * Grants the `HOST` hat to an accommodation owner (HOS-296 G-6).
      *
-     * Privileged roles that already imply host capabilities (no re-assignment needed):
-     * `HOST`, `ADMIN`, `CLIENT_MANAGER`, `SUPER_ADMIN`.
+     * The method keeps its `IfNeeded` name because HOS-296 AC-2 pins the
+     * regression test on it by name, but the "if needed" no longer lives here:
+     * {@link grantRole} is idempotent on the `(user_id, role)` primary key, so
+     * this is an unconditional call and repeated activations are free.
      *
-     * This is a best-effort operation: errors are logged but never propagated so that
-     * a role-assignment failure never rolls back the accommodation update itself.
+     * ## What this used to be, and why it changed
      *
-     * @param ownerId - The ID of the user to potentially assign the HOST role.
-     * @param ctx - Service execution context carrying transaction and hookState.
+     * It was `update(users, { role: HOST })`, guarded by a `PRIVILEGED_ROLES`
+     * set of `{HOST, ADMIN, CLIENT_MANAGER, SUPER_ADMIN}`. That set omits
+     * `COMMERCE_OWNER`, `SPONSOR` and `EDITOR`, so activating an accommodation
+     * owned by any of them silently DESTROYED that hat — a live data-loss bug.
+     * A grant is additive, so there is nothing left for a guard to protect.
+     *
+     * ## Why the error is no longer swallowed
+     *
+     * The old body wrapped everything in a `try/catch` that logged and
+     * returned. That was defensible for a destructive write nobody wanted to
+     * block an update on; it is not defensible now:
+     *
+     * - This hook is the ONLY thing that gives an owner their host hat on
+     *   activation. Swallowing means a listing goes live while its owner
+     *   silently never becomes a host — the second half of the "fails silently
+     *   in both directions" behaviour G-6 exists to remove.
+     * - {@link grantRole} deliberately RE-THROWS when it is enlisted in a
+     *   caller's transaction, precisely so the caller cannot commit a
+     *   half-applied unit of work. Catching that here would defeat the
+     *   primitive's contract and, worse, let the caller keep issuing statements
+     *   on a Postgres transaction Postgres has already aborted.
+     * - `createForOnboarding` already treats the promotion as atomic with the
+     *   accommodation write; the swallow made the two paths disagree.
+     *
+     * The realistic failure modes are "the database is unreachable" (in which
+     * case the accommodation write failed too) and an FK violation on a
+     * non-existent owner (impossible — `accommodations.owner_id` is an FK).
+     *
+     * @param ownerId - Owner receiving the `HOST` hat.
+     * @param ctx - Service execution context; `ctx.tx` enlists the grant in the
+     *   caller's transaction.
+     * @throws {ServiceError} When the grant fails.
      */
     private async _assignHostRoleIfNeeded(ownerId: string, ctx: ServiceContext): Promise<void> {
-        try {
-            const user = await this._userModel.findById(ownerId, ctx?.tx);
-            if (!user) {
-                this.logger.warn(
-                    { ownerId },
-                    '[accommodation] Cannot assign HOST role: owner user not found'
-                );
-                return;
-            }
-            if (AccommodationService.PRIVILEGED_ROLES.has(user.role)) {
-                // User already has a privileged role — no action required.
-                return;
-            }
-            await this._userModel.update({ id: ownerId }, { role: RoleEnum.HOST }, ctx?.tx);
-            this.logger.info(
-                { ownerId, previousRole: user.role },
-                '[accommodation] HOST role assigned to owner after accommodation became ACTIVE'
-            );
-        } catch (error) {
-            this.logger.warn(
-                { error, ownerId },
-                '[accommodation] Failed to assign HOST role (non-blocking)'
-            );
+        const granted = await grantRole({
+            userId: ownerId,
+            role: RoleEnum.HOST,
+            grantedBy: null,
+            reason: RoleGrantReason.ACCOMMODATION_ACTIVATED,
+            ctx
+        });
+
+        if (granted.error) {
+            throw granted.error;
         }
     }
 

@@ -12,15 +12,23 @@ vi.mock('../../src/utils/actor');
 vi.mock('../../src/utils/logger');
 vi.mock('../../src/utils/role-permissions-cache');
 vi.mock('../../src/utils/user-permissions-cache');
+// HOS-296: the role set is read from `user_role` per request, so the middleware
+// depends on this primitive rather than on `session.user.role`.
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return { ...actual, getUserRoles: vi.fn() };
+});
 
 // Import mocked modules
+import { getUserRoles } from '@repo/service-core';
 import { actorMiddleware } from '../../src/middlewares/actor';
 import { createGuestActor } from '../../src/utils/actor';
 import { apiLogger } from '../../src/utils/logger';
-import { getPermissionsForRole } from '../../src/utils/role-permissions-cache';
+import { getPermissionsForRoles } from '../../src/utils/role-permissions-cache';
 import { getUserPermissionsWithEffect } from '../../src/utils/user-permissions-cache';
 
-const mockGetPermissionsForRole = vi.mocked(getPermissionsForRole);
+const mockGetUserRoles = vi.mocked(getUserRoles);
+const mockGetPermissionsForRoles = vi.mocked(getPermissionsForRoles);
 const mockGetUserPermissionsWithEffect = vi.mocked(getUserPermissionsWithEffect);
 const mockCreateGuestActor = vi.mocked(createGuestActor);
 const _mockApiLogger = vi.mocked(apiLogger);
@@ -34,7 +42,6 @@ const createAuthUser = (overrides: Partial<AuthUser> = {}): AuthUser => ({
     image: null,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
-    role: 'USER',
     banned: false,
     banReason: null,
     banExpires: null,
@@ -65,12 +72,13 @@ describe('Actor Middleware', () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
-        mockGetPermissionsForRole.mockResolvedValue([]);
+        mockGetUserRoles.mockResolvedValue([RoleEnum.USER]);
+        mockGetPermissionsForRoles.mockResolvedValue([]);
         mockGetUserPermissionsWithEffect.mockResolvedValue({ grants: [], denies: [] });
 
         mockCreateGuestActor.mockReturnValue({
             id: '00000000-0000-4000-8000-000000000000',
-            role: RoleEnum.GUEST,
+            roles: [RoleEnum.GUEST],
             permissions: [PermissionEnum.ACCESS_API_PUBLIC]
         });
     });
@@ -87,16 +95,16 @@ describe('Actor Middleware', () => {
 
             expect(res.status).toBe(200);
             const data = await res.json();
-            expect(data.actor.role).toBe(RoleEnum.GUEST);
+            expect(data.actor.roles).toEqual([RoleEnum.GUEST]);
             expect(mockCreateGuestActor).toHaveBeenCalled();
         });
     });
 
     describe('Authenticated User Handling', () => {
         it('should create user actor with permissions from role and user tables', async () => {
-            const authUser = createAuthUser({ role: 'USER' });
+            const authUser = createAuthUser();
 
-            mockGetPermissionsForRole.mockResolvedValue([PermissionEnum.ACCESS_API_PUBLIC]);
+            mockGetPermissionsForRoles.mockResolvedValue([PermissionEnum.ACCESS_API_PUBLIC]);
             mockGetUserPermissionsWithEffect.mockResolvedValue({
                 grants: [PermissionEnum.USER_UPDATE_PROFILE],
                 denies: []
@@ -113,24 +121,22 @@ describe('Actor Middleware', () => {
             expect(res.status).toBe(200);
             const data = await res.json();
             expect(data.actor.id).toBe('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee');
-            expect(data.actor.role).toBe(RoleEnum.USER);
+            expect(data.actor.roles).toEqual([RoleEnum.USER]);
             expect(data.actor.permissions).toEqual(
                 expect.arrayContaining([
                     PermissionEnum.ACCESS_API_PUBLIC,
                     PermissionEnum.USER_UPDATE_PROFILE
                 ])
             );
-            expect(mockGetPermissionsForRole).toHaveBeenCalledWith(RoleEnum.USER);
+            expect(mockGetPermissionsForRoles).toHaveBeenCalledWith({ roles: [RoleEnum.USER] });
             expect(mockGetUserPermissionsWithEffect).toHaveBeenCalledWith({
                 userId: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'
             });
         });
 
         it('should grant all permissions to SUPER_ADMIN without DB lookup', async () => {
-            const authUser = createAuthUser({
-                id: 'admin-uuid',
-                role: 'SUPER_ADMIN'
-            });
+            const authUser = createAuthUser({ id: 'admin-uuid' });
+            mockGetUserRoles.mockResolvedValue([RoleEnum.SUPER_ADMIN]);
 
             const app = createTestApp(authUser);
             app.get('/test', (c) => {
@@ -143,16 +149,16 @@ describe('Actor Middleware', () => {
             expect(res.status).toBe(200);
             const data = await res.json();
             expect(data.actor.id).toBe('admin-uuid');
-            expect(data.actor.role).toBe(RoleEnum.SUPER_ADMIN);
+            expect(data.actor.roles).toEqual([RoleEnum.SUPER_ADMIN]);
             expect(data.actor.permissions).toEqual(Object.values(PermissionEnum));
-            // SUPER_ADMIN should NOT trigger a DB lookup
-            expect(mockGetPermissionsForRole).not.toHaveBeenCalled();
+            // SUPER_ADMIN should NOT trigger a role-permission lookup
+            expect(mockGetPermissionsForRoles).not.toHaveBeenCalled();
             expect(mockGetUserPermissionsWithEffect).not.toHaveBeenCalled();
         });
 
         it('should use empty permissions when no role or user permissions found', async () => {
             const authUser = createAuthUser();
-            mockGetPermissionsForRole.mockResolvedValue([]);
+            mockGetPermissionsForRoles.mockResolvedValue([]);
             mockGetUserPermissionsWithEffect.mockResolvedValue({ grants: [], denies: [] });
 
             const app = createTestApp(authUser);
@@ -166,7 +172,7 @@ describe('Actor Middleware', () => {
             expect(res.status).toBe(200);
             const data = await res.json();
             expect(data.actor.id).toBe('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee');
-            expect(data.actor.role).toBe(RoleEnum.USER);
+            expect(data.actor.roles).toEqual([RoleEnum.USER]);
             expect(data.actor.permissions).toEqual([]);
         });
 
@@ -175,7 +181,7 @@ describe('Actor Middleware', () => {
             // silently falling back to a guest actor. This ensures auth failures are
             // visible and not silently ignored.
             const authUser = createAuthUser();
-            mockGetPermissionsForRole.mockRejectedValue(new Error('Database error'));
+            mockGetPermissionsForRoles.mockRejectedValue(new Error('Database error'));
 
             const app = createTestApp(authUser);
             app.get('/test', (c) => {
@@ -188,8 +194,14 @@ describe('Actor Middleware', () => {
             expect(res.status).toBe(503);
         });
 
-        it('should default role to USER when auth user has no role', async () => {
-            const authUser = createAuthUser({ role: null });
+        it('should return 503 when the account holds NO roles, not default to the USER hat', async () => {
+            // Zero rows is a data bug, not a legitimate state. Degrading to
+            // [USER] would silently turn every account on a table-but-no-rows
+            // database — super admins included — into a plain USER, locking
+            // everyone out of the admin panel with no in-app self-repair. Same
+            // fail-loud policy as a failed read.
+            const authUser = createAuthUser();
+            mockGetUserRoles.mockResolvedValue([]);
 
             const app = createTestApp(authUser);
             app.get('/test', (c) => {
@@ -199,9 +211,7 @@ describe('Actor Middleware', () => {
 
             const res = await app.request('/test');
 
-            expect(res.status).toBe(200);
-            const data = await res.json();
-            expect(data.actor.role).toBe(RoleEnum.USER);
+            expect(res.status).toBe(503);
         });
     });
 
@@ -235,7 +245,7 @@ describe('Actor Middleware', () => {
                 const actor = c.get('actor');
                 return c.json({
                     hasId: 'id' in actor,
-                    hasRole: 'role' in actor,
+                    hasRole: 'roles' in actor,
                     hasPermissions: 'permissions' in actor
                 });
             });
@@ -306,7 +316,7 @@ describe('Actor Middleware', () => {
                 expect(res.status).toBe(200);
                 const data = await res.json();
                 expect(data.actor.id).toBe('mock-user-id');
-                expect(data.actor.role).toBe(RoleEnum.ADMIN);
+                expect(data.actor.roles).toEqual([RoleEnum.ADMIN]);
                 expect(data.actor.permissions).toEqual([PermissionEnum.ACCESS_API_PUBLIC]);
             } finally {
                 process.env.HOSPEDA_ALLOW_MOCK_ACTOR = originalAllowMock;
