@@ -104,7 +104,7 @@ describe('OwnerPromotionService.list', () => {
 
     it('should list owner promotions as super admin', async () => {
         actor = createActor({
-            role: RoleEnum.SUPER_ADMIN,
+            roles: [RoleEnum.SUPER_ADMIN],
             permissions: Object.values(PermissionEnum)
         });
         const items = [createMockOwnerPromotion({ id: getMockOwnerPromotionId('mock-id-1') })];

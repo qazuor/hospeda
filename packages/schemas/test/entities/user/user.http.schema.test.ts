@@ -12,7 +12,8 @@ import {
     httpToDomainUserCreate,
     httpToDomainUserSearch,
     httpToDomainUserUpdate,
-    UserSearchHttpSchema
+    UserSearchHttpSchema,
+    UserUpdateHttpSchema
 } from '../../../src/entities/user/user.http.schema.js';
 import { RoleEnum } from '../../../src/enums/index.js';
 import { LifecycleStatusEnum } from '../../../src/enums/lifecycle-state.enum.js';
@@ -197,7 +198,6 @@ describe('httpToDomainUserCreate', () => {
             email: 'host@example.com',
             firstName: 'Alice',
             lastName: 'Smith',
-            role: RoleEnum.HOST,
             status: 'pending' as const
         };
 
@@ -216,7 +216,6 @@ describe('httpToDomainUserCreate', () => {
             email: 'user@example.com',
             firstName: 'Bob',
             lastName: 'Jones',
-            role: RoleEnum.USER,
             status: 'pending' as const
         };
 
@@ -233,7 +232,6 @@ describe('httpToDomainUserCreate', () => {
             email: 'user@example.com',
             firstName: 'Carol',
             lastName: 'Williams',
-            role: RoleEnum.USER,
             status: 'pending' as const
         };
 
@@ -250,7 +248,6 @@ describe('httpToDomainUserCreate', () => {
             email: 'user@example.com',
             firstName: 'Dan',
             lastName: 'Brown',
-            role: RoleEnum.GUEST,
             status: 'pending' as const
         };
 
@@ -267,7 +264,6 @@ describe('httpToDomainUserCreate', () => {
             email: 'user@example.com',
             firstName: 'Eve',
             lastName: 'Davis',
-            role: RoleEnum.USER,
             status: 'pending' as const
         };
 
@@ -284,7 +280,6 @@ describe('httpToDomainUserCreate', () => {
             email: 'user@example.com',
             firstName: 'Frank',
             lastName: 'Miller',
-            role: RoleEnum.USER,
             status: 'pending' as const
         };
 
@@ -301,7 +296,6 @@ describe('httpToDomainUserCreate', () => {
             email: 'contact@example.com',
             firstName: 'Grace',
             lastName: 'Lee',
-            role: RoleEnum.USER,
             status: 'pending' as const
         };
 
@@ -320,7 +314,6 @@ describe('httpToDomainUserCreate', () => {
             firstName: 'Henry',
             lastName: 'Wilson',
             phone: '+5491112345678',
-            role: RoleEnum.USER,
             status: 'pending' as const
         };
 
@@ -360,15 +353,17 @@ describe('httpToDomainUserUpdate', () => {
         expect(result.lastName).toBe('UpdatedLast');
     });
 
-    it('should map role to domain update input', () => {
-        // Arrange
-        const httpData = { role: RoleEnum.EDITOR };
+    it('does not carry a role into the domain update input (HOS-296)', () => {
+        // Arrange — `role` is not part of `UserUpdateHttpSchema` any more, so a
+        // caller sending one is sending an unknown key.
+        const httpData = UserUpdateHttpSchema.parse({ role: 'EDITOR', firstName: 'Updated' });
 
         // Act
-        const result = httpToDomainUserUpdate(httpData);
+        const result = httpToDomainUserUpdate(httpData) as Record<string, unknown>;
 
         // Assert
-        expect(result.role).toBe(RoleEnum.EDITOR);
+        expect(result.role).toBeUndefined();
+        expect(result.firstName).toBe('Updated');
     });
 
     it('should handle empty update payload', () => {
@@ -381,6 +376,5 @@ describe('httpToDomainUserUpdate', () => {
         // Assert
         expect(result.firstName).toBeUndefined();
         expect(result.lastName).toBeUndefined();
-        expect(result.role).toBeUndefined();
     });
 });

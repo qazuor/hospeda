@@ -43,7 +43,7 @@ describe('PostService.softDelete', () => {
         const forbiddenActor = createActor({
             permissions: [],
             id: 'not-the-author-id',
-            role: RoleEnum.USER
+            roles: [RoleEnum.USER]
         });
         const result = await service.softDelete(forbiddenActor, postId);
         expectForbiddenError(result);

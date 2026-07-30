@@ -31,7 +31,7 @@ describe('AccommodationService - setAdminInfo', () => {
         loggerMock = createLoggerMock();
         service = new AccommodationService({ logger: loggerMock }, modelMock);
         superAdmin = createActor({
-            role: RoleEnum.SUPER_ADMIN,
+            roles: [RoleEnum.SUPER_ADMIN],
             permissions: [
                 PermissionEnum.ACCESS_PANEL_ADMIN,
                 PermissionEnum.ACCOMMODATION_UPDATE_ANY
@@ -48,7 +48,7 @@ describe('AccommodationService - setAdminInfo', () => {
         });
         const forbiddenActor = createActor({
             id: getMockId('user', 'actor-id-different'),
-            role: RoleEnum.USER,
+            roles: [RoleEnum.USER],
             permissions: []
         });
         asMock(modelMock.findById).mockResolvedValue(forbiddenAccommodation);

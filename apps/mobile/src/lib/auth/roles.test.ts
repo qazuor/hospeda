@@ -1,144 +1,260 @@
 /**
  * @file roles.test.ts
- * @description Unit tests for role-to-auth-group mapping helpers.
+ * @description Unit tests for role-set-to-auth-group mapping helpers.
  *
- * Regression coverage for SPEC-243 T-005: the mobile role gate must route
- * HOST/ADMIN/SUPER_ADMIN to (host), all other authenticated roles to (tourist),
- * and unauthenticated users to (auth). Unknown/future roles must default to
- * (tourist) — never leave a logged-in user with no shell.
+ * Regression coverage for SPEC-243 T-005 (the mobile role gate must route
+ * HOST/ADMIN/SUPER_ADMIN to `(host)`, all other authenticated roles to
+ * `(tourist)`, and unauthenticated users to `(auth)`) plus HOS-296 AC-9:
+ * dropping the scalar `users.role` must NOT silently route every user —
+ * hosts included — to `(tourist)`.
+ *
+ * The AC-9 assertions come in two halves, and both matter:
+ * - a host with a resolved role SET lands in `(host)`;
+ * - a host whose role set is still LOADING lands nowhere at all (`null`),
+ *   never in `(tourist)`. A transient tourist shell for a host is the same
+ *   bug wearing a different hat.
  */
 import { describe, expect, it } from 'vitest';
-import { isHostRole, resolveAuthGroup } from './roles';
+import type { ResolveAuthGroupInput } from './roles';
+import { hasHostRole, resolveAuthGroup } from './roles';
 
 // ---------------------------------------------------------------------------
-// isHostRole
+// Helpers
 // ---------------------------------------------------------------------------
 
-describe('isHostRole', () => {
-    it('returns true for HOST', () => {
+/** Builds a resolver input with sensible defaults for the case under test. */
+const input = (overrides: Partial<ResolveAuthGroupInput> = {}): ResolveAuthGroupInput => ({
+    sessionStatus: 'authenticated',
+    rolesStatus: 'ready',
+    roles: [],
+    ...overrides
+});
+
+// ---------------------------------------------------------------------------
+// hasHostRole
+// ---------------------------------------------------------------------------
+
+describe('hasHostRole', () => {
+    it('returns true for a set containing HOST', () => {
         // Arrange / Act / Assert
-        expect(isHostRole('HOST')).toBe(true);
+        expect(hasHostRole(['HOST'])).toBe(true);
     });
 
-    it('returns true for ADMIN', () => {
-        expect(isHostRole('ADMIN')).toBe(true);
+    it('returns true for a set containing ADMIN', () => {
+        expect(hasHostRole(['ADMIN'])).toBe(true);
     });
 
-    it('returns true for SUPER_ADMIN', () => {
-        expect(isHostRole('SUPER_ADMIN')).toBe(true);
+    it('returns true for a set containing SUPER_ADMIN', () => {
+        expect(hasHostRole(['SUPER_ADMIN'])).toBe(true);
     });
 
-    it('returns false for USER', () => {
-        expect(isHostRole('USER')).toBe(false);
+    it('returns true when a host role is held alongside non-host roles', () => {
+        // The multi-hat case HOS-296 exists for: USER + COMMERCE_OWNER + HOST.
+        expect(hasHostRole(['USER', 'COMMERCE_OWNER', 'HOST'])).toBe(true);
+    });
+
+    it('returns false for USER alone', () => {
+        expect(hasHostRole(['USER'])).toBe(false);
     });
 
     it('returns false for EDITOR (divergence from web — mobile sends to tourist)', () => {
-        expect(isHostRole('EDITOR')).toBe(false);
+        expect(hasHostRole(['EDITOR'])).toBe(false);
     });
 
     it('returns false for CLIENT_MANAGER (divergence from web — mobile sends to tourist)', () => {
-        expect(isHostRole('CLIENT_MANAGER')).toBe(false);
+        expect(hasHostRole(['CLIENT_MANAGER'])).toBe(false);
     });
 
     it('returns false for SPONSOR', () => {
-        expect(isHostRole('SPONSOR')).toBe(false);
+        expect(hasHostRole(['SPONSOR'])).toBe(false);
+    });
+
+    it('returns false for COMMERCE_OWNER', () => {
+        expect(hasHostRole(['COMMERCE_OWNER'])).toBe(false);
     });
 
     it('returns false for GUEST', () => {
-        expect(isHostRole('GUEST')).toBe(false);
+        expect(hasHostRole(['GUEST'])).toBe(false);
     });
 
     it('returns false for SYSTEM', () => {
-        expect(isHostRole('SYSTEM')).toBe(false);
+        expect(hasHostRole(['SYSTEM'])).toBe(false);
+    });
+
+    it('returns false for an empty set', () => {
+        expect(hasHostRole([])).toBe(false);
     });
 
     it('returns false for null', () => {
-        expect(isHostRole(null)).toBe(false);
+        expect(hasHostRole(null)).toBe(false);
     });
 
     it('returns false for undefined', () => {
-        expect(isHostRole(undefined)).toBe(false);
+        expect(hasHostRole(undefined)).toBe(false);
     });
 
-    it('returns false for an empty string', () => {
-        expect(isHostRole('')).toBe(false);
+    it('returns false for a set of unknown/future roles only', () => {
+        expect(hasHostRole(['UNKNOWN_FUTURE_ROLE', 'ANOTHER_ONE'])).toBe(false);
     });
 
-    it('returns false for an unknown/future role string', () => {
-        expect(isHostRole('UNKNOWN_FUTURE_ROLE')).toBe(false);
+    it('is case-sensitive — lowercase role strings do not match', () => {
+        // Every real role value is uppercase (RoleEnum.HOST === 'HOST').
+        expect(hasHostRole(['host'])).toBe(false);
     });
 });
 
 // ---------------------------------------------------------------------------
-// resolveAuthGroup
+// resolveAuthGroup — session gate
 // ---------------------------------------------------------------------------
 
-describe('resolveAuthGroup', () => {
-    // --- No session → (auth) ---
-
-    it('returns (auth) when hasSession is false, role is null', () => {
-        // Arrange / Act / Assert
-        expect(resolveAuthGroup(null, false)).toBe('(auth)');
+describe('resolveAuthGroup — session state', () => {
+    it('returns null while the session is still restoring', () => {
+        expect(resolveAuthGroup(input({ sessionStatus: 'loading' })).group).toBeNull();
     });
 
-    it('returns (auth) when hasSession is false, role is undefined', () => {
-        expect(resolveAuthGroup(undefined, false)).toBe('(auth)');
+    it('returns null while the session is restoring even if roles already resolved', () => {
+        expect(
+            resolveAuthGroup({
+                sessionStatus: 'loading',
+                rolesStatus: 'ready',
+                roles: ['HOST']
+            }).group
+        ).toBeNull();
     });
 
-    it('returns (auth) when hasSession is false even if role looks like a host role', () => {
-        // Session is required — role alone is not enough
-        expect(resolveAuthGroup('HOST', false)).toBe('(auth)');
-        expect(resolveAuthGroup('ADMIN', false)).toBe('(auth)');
-        expect(resolveAuthGroup('SUPER_ADMIN', false)).toBe('(auth)');
+    it('returns (auth) when there is no session', () => {
+        expect(resolveAuthGroup(input({ sessionStatus: 'unauthenticated' })).group).toBe('(auth)');
     });
 
-    // --- Host roles → (host) ---
-
-    it('returns (host) for HOST with session', () => {
-        expect(resolveAuthGroup('HOST', true)).toBe('(host)');
+    it('returns (auth) when there is no session even if roles are still loading', () => {
+        // No session means no waiting: the destination does not depend on roles.
+        expect(
+            resolveAuthGroup({
+                sessionStatus: 'unauthenticated',
+                rolesStatus: 'loading',
+                roles: undefined
+            }).group
+        ).toBe('(auth)');
     });
 
-    it('returns (host) for ADMIN with session', () => {
-        expect(resolveAuthGroup('ADMIN', true)).toBe('(host)');
+    it('returns (auth) when there is no session even if a host role set is present', () => {
+        expect(
+            resolveAuthGroup({
+                sessionStatus: 'unauthenticated',
+                rolesStatus: 'ready',
+                roles: ['HOST', 'ADMIN']
+            }).group
+        ).toBe('(auth)');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// resolveAuthGroup — AC-9
+// ---------------------------------------------------------------------------
+
+describe('resolveAuthGroup — HOS-296 AC-9 (a host must not land in (tourist))', () => {
+    it('returns (host) for a resolved role set containing HOST', () => {
+        expect(resolveAuthGroup(input({ roles: ['USER', 'HOST'] })).group).toBe('(host)');
     });
 
-    it('returns (host) for SUPER_ADMIN with session', () => {
-        expect(resolveAuthGroup('SUPER_ADMIN', true)).toBe('(host)');
+    it('returns (host) for a resolved role set containing ADMIN', () => {
+        expect(resolveAuthGroup(input({ roles: ['USER', 'ADMIN'] })).group).toBe('(host)');
     });
 
-    // --- Tourist roles → (tourist) ---
-
-    it('returns (tourist) for USER with session', () => {
-        expect(resolveAuthGroup('USER', true)).toBe('(tourist)');
+    it('returns (host) for a resolved role set containing SUPER_ADMIN', () => {
+        expect(resolveAuthGroup(input({ roles: ['SUPER_ADMIN'] })).group).toBe('(host)');
     });
 
-    it('returns (tourist) for EDITOR with session', () => {
-        expect(resolveAuthGroup('EDITOR', true)).toBe('(tourist)');
+    it('returns (host) for a multi-hat host (HOST + COMMERCE_OWNER)', () => {
+        // OQ-2 is deferred: dual-hat navigation does not exist, and the
+        // 1-of-3 mapping resolves a multi-hat user to (host).
+        expect(resolveAuthGroup(input({ roles: ['USER', 'HOST', 'COMMERCE_OWNER'] })).group).toBe(
+            '(host)'
+        );
     });
 
-    it('returns (tourist) for CLIENT_MANAGER with session', () => {
-        expect(resolveAuthGroup('CLIENT_MANAGER', true)).toBe('(tourist)');
+    it('returns null — NOT (tourist) — while a host session is still loading its roles', () => {
+        // The load state must not resolve to the tourist shell, not even for
+        // one frame: the gate holds the splash instead.
+        const result = resolveAuthGroup({
+            sessionStatus: 'authenticated',
+            rolesStatus: 'loading',
+            roles: undefined
+        });
+        expect(result.group).toBeNull();
+        expect(result.group).not.toBe('(tourist)');
     });
 
-    it('returns (tourist) for SPONSOR with session', () => {
-        expect(resolveAuthGroup('SPONSOR', true)).toBe('(tourist)');
+    it('returns null while roles load even if a stale role set is passed in', () => {
+        // `roles` is only meaningful when `rolesStatus` is `ready`.
+        expect(
+            resolveAuthGroup({
+                sessionStatus: 'authenticated',
+                rolesStatus: 'loading',
+                roles: ['HOST']
+            }).group
+        ).toBeNull();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// resolveAuthGroup — tourist + failure fallback
+// ---------------------------------------------------------------------------
+
+describe('resolveAuthGroup — authenticated non-host', () => {
+    it('returns (tourist) for USER', () => {
+        expect(resolveAuthGroup(input({ roles: ['USER'] })).group).toBe('(tourist)');
     });
 
-    it('returns (tourist) for GUEST with session (edge: GUEST should not have session, but if it does)', () => {
-        expect(resolveAuthGroup('GUEST', true)).toBe('(tourist)');
+    it('returns (tourist) for EDITOR', () => {
+        expect(resolveAuthGroup(input({ roles: ['USER', 'EDITOR'] })).group).toBe('(tourist)');
     });
 
-    // --- Default-to-tourist for unknown roles ---
-
-    it('returns (tourist) for an unknown/future role with session (never leaves user without shell)', () => {
-        expect(resolveAuthGroup('UNKNOWN_FUTURE_ROLE', true)).toBe('(tourist)');
+    it('returns (tourist) for CLIENT_MANAGER', () => {
+        expect(resolveAuthGroup(input({ roles: ['CLIENT_MANAGER'] })).group).toBe('(tourist)');
     });
 
-    it('returns (tourist) for null role with session (role not yet loaded — conservative default)', () => {
-        expect(resolveAuthGroup(null, true)).toBe('(tourist)');
+    it('returns (tourist) for SPONSOR', () => {
+        expect(resolveAuthGroup(input({ roles: ['SPONSOR'] })).group).toBe('(tourist)');
     });
 
-    it('returns (tourist) for empty string role with session', () => {
-        expect(resolveAuthGroup('', true)).toBe('(tourist)');
+    it('returns (tourist) for COMMERCE_OWNER without a host role', () => {
+        expect(resolveAuthGroup(input({ roles: ['USER', 'COMMERCE_OWNER'] })).group).toBe(
+            '(tourist)'
+        );
+    });
+
+    it('returns (tourist) for an unknown/future role (never leaves a user without a shell)', () => {
+        expect(resolveAuthGroup(input({ roles: ['UNKNOWN_FUTURE_ROLE'] })).group).toBe('(tourist)');
+    });
+
+    it('returns (tourist) for an empty resolved role set', () => {
+        expect(resolveAuthGroup(input({ roles: [] })).group).toBe('(tourist)');
+    });
+
+    it('returns (tourist) for a null resolved role set', () => {
+        expect(resolveAuthGroup(input({ roles: null })).group).toBe('(tourist)');
+    });
+});
+
+describe('resolveAuthGroup — roles failed to load', () => {
+    it('falls back to (tourist), the least-privileged authenticated shell', () => {
+        expect(
+            resolveAuthGroup({
+                sessionStatus: 'authenticated',
+                rolesStatus: 'error',
+                roles: undefined
+            }).group
+        ).toBe('(tourist)');
+    });
+
+    it('never grants (host) on a failed fetch, even with a stale host role set', () => {
+        expect(
+            resolveAuthGroup({
+                sessionStatus: 'authenticated',
+                rolesStatus: 'error',
+                roles: ['HOST']
+            }).group
+        ).toBe('(tourist)');
     });
 });

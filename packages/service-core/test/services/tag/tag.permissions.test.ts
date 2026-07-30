@@ -23,7 +23,7 @@ import {
 import { ServiceError } from '../../../src/types';
 import { TagFactoryBuilder } from '../../factories/tagFactory';
 
-const baseActor = { id: 'actor-id', role: RoleEnum.ADMIN, permissions: [] };
+const baseActor = { id: 'actor-id', roles: [RoleEnum.ADMIN], permissions: [] };
 const ownerId = 'actor-id'; // same as baseActor.id for ownership tests
 
 const systemTag = TagFactoryBuilder.create({

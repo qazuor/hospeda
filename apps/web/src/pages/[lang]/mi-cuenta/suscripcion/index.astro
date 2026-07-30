@@ -9,7 +9,7 @@
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { SubscriptionDashboard } from '@/components/account/SubscriptionDashboard.client';
-import { isHostRole } from '@/lib/account-roles';
+import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -39,10 +39,18 @@ const title =
 		? t('account.pages.subscription.titleCommerce', 'Suscripción de comercio')
 		: t('account.pages.subscription.title', 'Suscripción');
 
-/** Minimal user shape forwarded to the island (no sensitive fields) */
+/**
+ * Minimal user shape forwarded to the island (no sensitive fields).
+ *
+ * HOS-296: the previous `(user as { role?: string }).role ?? 'USER'` cast was
+ * exactly the silent-failure pattern spec §7.2 warns about — it type-checks
+ * against a hand-written local shape, so dropping the scalar would have
+ * degraded every subscriber to `'USER'` with no build error. `roles` comes
+ * from `Astro.locals.user`, which is typed, so a rename breaks the build.
+ */
 const islandUser = {
 	id: user.id,
-	role: (user as { role?: string }).role ?? 'USER',
+	roles: user.roles,
 };
 
 /**
@@ -52,10 +60,10 @@ const islandUser = {
  *
  * The plan category depends on the user's audience (BETA-173): a host sees
  * owner plans (Basic/Professional/Premium), a tourist sees tourist plans
- * (Plus/VIP) — matching the same `isHostRole` split used for the "Ver
+ * (Plus/VIP) — matching the same host-tier split used for the "Ver
  * planes" CTA (BETA-165).
  */
-const planCategory = isHostRole(islandUser.role) ? 'owner' : 'tourist';
+const planCategory = hasAccommodationsNavAccess({ roles: islandUser.roles }) ? 'owner' : 'tourist';
 const plansResult = await fetchPublicPlans();
 const availablePlans = plansResult.ok ? filterPlansByCategory(plansResult.plans, planCategory) : [];
 ---

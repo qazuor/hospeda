@@ -18,8 +18,15 @@
  *
  * The SPEC-211 additions test `resolveOwnerLimitsForOwnerId` independently
  * (it is exported and called directly by the chat route handler, not as a
- * Hono middleware). The DB mock is extended with a `mockUserRoleLookup` helper
- * for the `resolveOwnerRole` branch (no `innerJoin`, users-only query).
+ * Hono middleware).
+ *
+ * HOS-296: the owner's hats come from `user_role`, not the dropped
+ * `users.role` column, so the two lookups changed shape. The middleware's
+ * accommodation query is now a `leftJoin` onto `user_role` returning ONE ROW
+ * PER HAT (hence no `.limit(1)`), and `resolveOwnerRoles` delegates to the
+ * shared `getUserRoles` primitive rather than issuing its own query — which is
+ * why that one is mocked at the `@repo/service-core` boundary below instead of
+ * through the DB stub.
  */
 import {
     ENTITLEMENT_GRANTING_STATUSES,
@@ -29,7 +36,7 @@ import {
     LimitKey
 } from '@repo/billing';
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { RoleEnum } from '@repo/service-core';
+import { getUserRoles, RoleEnum } from '@repo/service-core';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getQZPayBilling } from '../../src/middlewares/billing';
@@ -48,8 +55,8 @@ vi.mock('../../src/middlewares/billing', () => ({
 }));
 
 // Mock the DB module — ownerEntitlementMiddleware uses getDb() to resolve
-// accommodation → ownerId (with innerJoin), and resolveOwnerRole uses getDb()
-// to resolve ownerId → role (without innerJoin).
+// accommodation → ownerId joined onto the owner's `user_role` rows, and the
+// batch resolver uses it for the `inArray` hats query.
 const mockAccommodationSelect = vi.fn();
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(() => ({
@@ -60,10 +67,21 @@ vi.mock('@repo/db', () => ({
         ownerId: 'accommodations.ownerId'
     },
     users: {
-        id: 'users.id',
-        role: 'users.role'
+        id: 'users.id'
+    },
+    userRole: {
+        userId: 'user_role.user_id',
+        role: 'user_role.role'
     }
 }));
+
+// HOS-296: `resolveOwnerRoles` reads the hats through the shared `getUserRoles`
+// primitive, so the single-owner paths are stubbed here rather than through the
+// DB chain stub.
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return { ...actual, getUserRoles: vi.fn() };
+});
 
 // Mock PlanService — resolveOwnerLimitsForOwnerId uses it for the owner-basico
 // fallback limits when the owner has no active subscription.
@@ -100,13 +118,13 @@ vi.mock('../../src/utils/logger', () => ({
  *     .limit(1)
  */
 function mockAccommodationLookup(row: { ownerId: string; ownerRole?: RoleEnum | null } | null) {
-    const whereChain = {
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue(row ? [row] : [])
-    };
+    // HOS-296: the join fans out to one row per hat and the query is awaited
+    // directly (no `.limit(1)`), so `where` must resolve to the row array.
+    const rows = row ? [{ ownerId: row.ownerId, ownerRole: row.ownerRole ?? null }] : [];
+    const whereChain = { where: vi.fn().mockResolvedValue(rows) };
     const fromChain = {
         from: vi.fn().mockReturnValue({
-            innerJoin: vi.fn().mockReturnValue(whereChain)
+            leftJoin: vi.fn().mockReturnValue(whereChain)
         })
     };
     mockAccommodationSelect.mockReturnValue(fromChain);
@@ -114,25 +132,14 @@ function mockAccommodationLookup(row: { ownerId: string; ownerRole?: RoleEnum | 
 }
 
 /**
- * Helper: stub the DB for the `resolveOwnerRole` query shape used by
- * `resolveOwnerLimitsForOwnerId`.
+ * Helper: stub the owner's held hats for `resolveOwnerRoles`, which is what
+ * `resolveOwnerLimitsForOwnerId` and `resolveOwnerEntitlementsForOwnerId` use.
  *
- * The query in resolveOwnerRole is:
- *   db.select({ role: users.role }).from(users).where(...).limit(1)
- *
- * Unlike the accommodation lookup there is NO innerJoin, so the chain is:
- *   select → from → where → limit
+ * HOS-296: this no longer stubs a DB chain — the hats come from the shared
+ * `getUserRoles` primitive, which is mocked at the package boundary.
  */
 function mockUserRoleLookup(role: RoleEnum | null) {
-    const whereChain = {
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue(role === null ? [] : [{ role }])
-    };
-    const fromChain = {
-        from: vi.fn().mockReturnValue(whereChain)
-    };
-    mockAccommodationSelect.mockReturnValue(fromChain);
-    return { fromChain, whereChain };
+    vi.mocked(getUserRoles).mockResolvedValue(role === null ? [] : [role]);
 }
 
 describe('ownerEntitlementMiddleware', () => {

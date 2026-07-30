@@ -15,10 +15,10 @@ import { type Actor, ServiceError } from '../../../src/types';
 
 const actorWithPerms: Actor = {
     id: 'user-1',
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: [PermissionEnum.ACCOMMODATION_AMENITIES_EDIT]
 };
-const actorNoPerms: Actor = { id: 'user-2', role: RoleEnum.USER, permissions: [] };
+const actorNoPerms: Actor = { id: 'user-2', roles: [RoleEnum.USER], permissions: [] };
 
 describe('AmenityService permissions', () => {
     it('should allow adding amenity to accommodation if actor has permission', () => {

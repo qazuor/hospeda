@@ -23,7 +23,7 @@ import type { Actor } from '../../../../src/types/index.js';
 const fakeActor: Actor = {
     id: 'actor-uuid-0001',
     permissions: [],
-    role: 'HOST'
+    roles: ['HOST']
 } as unknown as Actor;
 
 /**

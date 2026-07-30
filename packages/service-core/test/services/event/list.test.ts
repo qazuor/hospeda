@@ -2,8 +2,8 @@ import { EventModel } from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
+import { createActor } from '../../factories/actorFactory';
 import { createMockEvent } from '../../factories/eventFactory';
-import { createUser } from '../../factories/userFactory';
 import { expectInternalError, expectSuccess } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 
@@ -14,8 +14,8 @@ describe('EventService.list', () => {
     let service: EventService;
     let modelMock: EventModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
-    const actorWithPerm = createUser({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
-    const actorNoPerm = createUser();
+    const actorWithPerm = createActor({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
+    const actorNoPerm = createActor();
     const page = 1;
     const pageSize = 10;
     const paginatedResult = {

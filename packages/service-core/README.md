@@ -51,10 +51,10 @@ export class ProductService extends BaseCrudService<
     return {}; // No relations by default
   }
 
-  // Implement permission hooks
+  // Implement permission hooks — NEVER check roles, always PermissionEnum
   protected _canCreate(actor: Actor, data: unknown): void {
-    if (actor.role !== 'ADMIN') {
-      throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Only admins can create products');
+    if (!actor.permissions.includes(PermissionEnum.PRODUCT_CREATE)) {
+      throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Only actors with PRODUCT_CREATE can create products');
     }
   }
 
@@ -127,8 +127,8 @@ Every service method requires an `Actor` that represents the user or system perf
 ```typescript
 type Actor = {
   id: string;
-  role: RoleEnum;
-  permissions: PermissionEnum[];
+  roles: readonly RoleEnum[]; // every role the actor holds at once (HOS-296)
+  permissions: readonly PermissionEnum[];
 };
 ```
 

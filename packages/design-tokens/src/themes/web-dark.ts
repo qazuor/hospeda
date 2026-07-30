@@ -55,6 +55,21 @@ export const webDark: Theme = {
     // forest fill (date-block bg) stays the saturated base green.
     'hospeda-forest-link': oklchValue(0.72, 0.15, 155),
 
+    // HOS-314: WhatsApp teal used as TEXT on --surface-warm (the tier that
+    // shows the number without a click-to-chat link). Same shape as the two
+    // *-link tokens above: the light value (0.48) reads 5.42:1 on the pale warm
+    // surface but only 2.52:1 once --surface-warm flips to navy, so it is
+    // lifted here to 7.49:1.
+    //
+    // The other four --channel-whatsapp* tokens are intentionally ABSENT from
+    // this file. They paint the brand green fill and the ink on top of it, both
+    // theme-invariant; overriding the foreground with dark mode's near-white
+    // --core-foreground would take the button DOWN to 1.56:1. This is the same
+    // class of mistake as the --surface-warm-foreground gap noted below, only
+    // inverted: there the dark override was missing, here adding one would
+    // break it.
+    'channel-whatsapp-text': oklchValue(0.75, 0.11, 182.4),
+
     muted: oklchValue(0.255, 0.035, 258),
     'core-muted-foreground': oklchValue(0.68, 0.03, 261),
 

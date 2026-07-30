@@ -12,7 +12,7 @@ All entity routes are split across three URL prefixes. Each tier enforces its ow
 |------|-----------|------|---------|
 | Public | `/api/v1/public/<entity>` | None | Read-only, published content only |
 | Protected | `/api/v1/protected/<entity>` | User session required | CRUD on own resources |
-| Admin | `/api/v1/admin/<entity>` | Admin role + `PermissionEnum` | Full CRUD, all resources |
+| Admin | `/api/v1/admin/<entity>` | Admin-access permission + `PermissionEnum` | Full CRUD, all resources |
 
 ### How Authorization Is Enforced
 
@@ -22,7 +22,7 @@ Authorization is applied per-route via the factory functions. Each factory injec
 - `protectedAuthMiddleware(permissions?)` - rejects unauthenticated actors with 401; optionally checks all listed permissions (403 on failure)
 - `adminAuthMiddleware(permissions?)` - rejects guests (401), then rejects actors without admin access (403), then optionally checks all listed permissions (403 on failure)
 
-Admin access is granted when the actor has `RoleEnum.SUPER_ADMIN` or holds either `PermissionEnum.ACCESS_PANEL_ADMIN` or `PermissionEnum.ACCESS_API_ADMIN`.
+Admin access is granted solely by permission, never by role: the actor must hold `PermissionEnum.ACCESS_PANEL_ADMIN` or `PermissionEnum.ACCESS_API_ADMIN` (`hasAdminAccess` in `apps/api/src/middlewares/authorization.ts`). `RoleEnum.SUPER_ADMIN` grants access indirectly, only because its role→permission mapping includes those permissions — the middleware never inspects `actor.roles` directly.
 
 ---
 
@@ -885,11 +885,11 @@ export const adminRoute = createAdminRoute({
 ```
 
 **Never check roles directly. Use `PermissionEnum`.**
-Services and routes must not compare `actor.role` to string literals. Always use `PermissionEnum` values and let `adminAuthMiddleware` or `protectedAuthMiddleware` enforce access.
+Services and routes must not inspect `actor.roles` to decide access. Always use `PermissionEnum` values and let `adminAuthMiddleware` or `protectedAuthMiddleware` enforce access.
 
 ```typescript
 // WRONG - in a route handler
-if (actor.role !== 'admin') {
+if (!actor.roles.includes(RoleEnum.ADMIN)) {
   throw new HTTPException(403);
 }
 

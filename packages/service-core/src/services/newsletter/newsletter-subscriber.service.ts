@@ -704,7 +704,7 @@ export class NewsletterSubscriberService extends BaseService {
         // Use a minimal system actor so runWithLoggingAndValidation is happy
         const systemActor: Actor = {
             id: '00000000-0000-0000-0000-000000000001',
-            role: 'SUPER_ADMIN' as never,
+            roles: ['SUPER_ADMIN'] as never,
             permissions: Object.values(PermissionEnum) as never
         };
         return this.runWithLoggingAndValidation({
@@ -926,7 +926,7 @@ export class NewsletterSubscriberService extends BaseService {
     ): Promise<ServiceOutput<UnsubscribeByTokenResult>> {
         const systemActor: Actor = {
             id: '00000000-0000-0000-0000-000000000001',
-            role: 'SUPER_ADMIN' as never,
+            roles: ['SUPER_ADMIN'] as never,
             permissions: Object.values(PermissionEnum) as never
         };
         return this.runWithLoggingAndValidation({
@@ -1326,7 +1326,7 @@ export class NewsletterSubscriberService extends BaseService {
     ): Promise<ServiceOutput<LinkAnonymousSubscribersResult>> {
         const systemActor: Actor = {
             id: '00000000-0000-0000-0000-000000000001',
-            role: 'SUPER_ADMIN' as never,
+            roles: ['SUPER_ADMIN'] as never,
             permissions: Object.values(PermissionEnum) as never
         };
         return this.runWithLoggingAndValidation({
@@ -1468,7 +1468,7 @@ export class NewsletterSubscriberService extends BaseService {
     ): Promise<ServiceOutput<SubscribeResult>> {
         const systemActor: Actor = {
             id: '00000000-0000-0000-0000-000000000001',
-            role: 'SUPER_ADMIN' as never,
+            roles: ['SUPER_ADMIN'] as never,
             permissions: Object.values(PermissionEnum) as never
         };
         return this.runWithLoggingAndValidation({
@@ -1624,7 +1624,7 @@ export class NewsletterSubscriberService extends BaseService {
     ): Promise<ServiceOutput<{ sent: true }>> {
         const systemActor: Actor = {
             id: '00000000-0000-0000-0000-000000000001',
-            role: 'SUPER_ADMIN' as never,
+            roles: ['SUPER_ADMIN'] as never,
             permissions: Object.values(PermissionEnum) as never
         };
         return this.runWithLoggingAndValidation({
@@ -1731,7 +1731,7 @@ export class NewsletterSubscriberService extends BaseService {
     ): Promise<ServiceOutput<GetEligibleForCampaignResult>> {
         const systemActor: Actor = {
             id: '00000000-0000-0000-0000-000000000001',
-            role: 'SUPER_ADMIN' as never,
+            roles: ['SUPER_ADMIN'] as never,
             permissions: Object.values(PermissionEnum) as never
         };
         return this.runWithLoggingAndValidation({

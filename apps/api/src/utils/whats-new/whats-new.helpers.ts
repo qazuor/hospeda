@@ -21,38 +21,40 @@ export interface FilterEntriesByRoleInput {
     /** Full catalog of curated entries. */
     readonly entries: readonly WhatsNewEntry[];
     /**
-     * The actor's role for audience targeting.
-     * `undefined` / `null` means unauthenticated — returns nothing.
+     * Every role the actor holds, for audience targeting (HOS-296).
+     * `undefined` / `null` / empty means unauthenticated — returns nothing.
      */
-    readonly role: WhatsNewAudienceRole | string | null | undefined;
+    readonly roles: readonly (WhatsNewAudienceRole | string)[] | null | undefined;
 }
 
 /**
  * Filters a catalog of What's New entries to only those applicable to the
- * given role.
+ * roles the actor holds.
  *
  * Audience-targeting rules (per SPEC-175 §6.4, D4):
  * - An entry with an absent or empty `roles` array is visible to **all** roles.
- * - An entry with a non-empty `roles` array is visible only to roles in that list.
- * - This is content routing, NOT authorization — the endpoint already requires
- *   an authenticated session; `roles` merely controls what each user sees.
+ * - An entry with a non-empty `roles` array is visible to an actor holding
+ *   **any** of those roles. HOS-296: a host who is also a commerce owner sees
+ *   the union of both audiences rather than whichever hat happened to be the
+ *   scalar — this widens what such an account sees, which is the intended
+ *   behaviour for a content feed (it is explicitly not authorization).
  *
- * @param input - `{ entries, role }`
- * @returns Filtered array of entries applicable to the given role.
+ * @param input - `{ entries, roles }`
+ * @returns Filtered array of entries applicable to the held roles.
  *
  * @example
  * ```ts
- * filterEntriesByRole({ entries, role: 'HOST' })
+ * filterEntriesByRole({ entries, roles: ['HOST'] })
  * // returns entries where roles is absent/empty OR includes 'HOST'
  * ```
  */
-export function filterEntriesByRole({ entries, role }: FilterEntriesByRoleInput): WhatsNewEntry[] {
-    if (!role) return [];
+export function filterEntriesByRole({ entries, roles }: FilterEntriesByRoleInput): WhatsNewEntry[] {
+    if (!roles || roles.length === 0) return [];
 
     return entries.filter((entry) => {
         // Absent or empty roles = universal broadcast
         if (!entry.roles || entry.roles.length === 0) return true;
-        return entry.roles.includes(role as WhatsNewAudienceRole);
+        return roles.some((held) => entry.roles?.includes(held as WhatsNewAudienceRole));
     });
 }
 

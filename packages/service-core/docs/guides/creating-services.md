@@ -828,19 +828,19 @@ describe('ArticleService', () => {
 
   const adminActor: Actor = {
     id: 'admin-1',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.ARTICLE_CREATE, PermissionEnum.ARTICLE_UPDATE_ANY]
   };
 
   const userActor: Actor = {
     id: 'user-1',
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: [PermissionEnum.ARTICLE_CREATE]
   };
 
   const guestActor: Actor = {
     id: '',
-    role: RoleEnum.GUEST,
+    roles: [RoleEnum.GUEST],
     permissions: []
   };
 

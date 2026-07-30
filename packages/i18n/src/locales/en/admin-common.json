@@ -47,7 +47,8 @@
         "stop": "Stop impersonating",
         "start": "Impersonate user",
         "confirm": "Are you sure you want to impersonate this user?",
-        "error": "Failed to impersonate user. Please try again."
+        "error": "Failed to impersonate user. Please try again.",
+        "unavailable": "Impersonation is temporarily unavailable"
     },
     "createHost": {
         "trigger": "Create host",

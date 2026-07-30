@@ -61,14 +61,14 @@ function makeGastronomyEntity(overrides: Partial<Record<string, unknown>> = {}):
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    role: RoleEnum.COMMERCE_OWNER,
+    roles: [RoleEnum.COMMERCE_OWNER],
     // SPEC-253 D2=b: single COMMERCE_EDIT_OWN replaces 10 per-section perms
     permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
 };
 
 const staffActor: Actor = {
     id: 'staff-uuid-1',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [
         PermissionEnum.COMMERCE_CREATE,
         PermissionEnum.COMMERCE_EDIT_ALL,
@@ -79,7 +79,7 @@ const staffActor: Actor = {
 
 const otherUserActor: Actor = {
     id: OTHER_USER,
-    role: RoleEnum.COMMERCE_OWNER,
+    roles: [RoleEnum.COMMERCE_OWNER],
     // SPEC-253 D2=b: COMMERCE_EDIT_OWN gives owner rights but entity.ownerId != OTHER_USER
     permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
 };
@@ -226,7 +226,7 @@ describe('GastronomyService.updateOwn', () => {
         // Actor is the owner but has NO permissions (not COMMERCE_EDIT_OWN, not COMMERCE_EDIT_ALL)
         const actorNoPerm: Actor = {
             id: OWNER_ID,
-            role: RoleEnum.COMMERCE_OWNER,
+            roles: [RoleEnum.COMMERCE_OWNER],
             permissions: []
         };
         const result = await service.updateOwn(

@@ -125,7 +125,7 @@ function makeCollections(count: number, withBookmarkCount = false) {
 function buildUserActor(id = ACTOR_ID): Actor {
     return {
         id,
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         // USER_BOOKMARK_COLLECTION_VIEW is the correct permission (VIEW_OWN does not exist)
         permissions: [PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW] as PermissionEnum[]
     };
@@ -137,7 +137,7 @@ function actorHeaders(actor: Actor): Record<string, string> {
         'user-agent': 'vitest',
         accept: 'application/json',
         'x-mock-actor-id': actor.id,
-        'x-mock-actor-role': actor.role,
+        'x-mock-actor-role': actor.roles.join(','),
         'x-mock-actor-permissions': JSON.stringify(actor.permissions)
     };
 }

@@ -50,7 +50,7 @@ import {
 
 function makeAdminCtx(): ResolverContext {
     return {
-        role: 'ADMIN',
+        roles: ['ADMIN'],
         userId: 'usr_admin_para_test',
         permissions: ['ACCOMMODATION_VIEW_ALL'],
         scope: 'all'
@@ -59,7 +59,7 @@ function makeAdminCtx(): ResolverContext {
 
 function makeHostCtx(userId = 'usr_host_para_test'): ResolverContext {
     return {
-        role: 'HOST',
+        roles: ['HOST'],
         userId,
         permissions: ['ACCOMMODATION_VIEW_OWN'],
         scope: 'own'

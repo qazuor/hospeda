@@ -60,7 +60,7 @@ const {
 const { mockActor } = vi.hoisted(() => ({
     mockActor: {
         id: '11111111-1111-4111-8111-111111111111',
-        role: 'SUPER_ADMIN',
+        roles: ['SUPER_ADMIN'],
         permissions: ['socialSettings.manage']
     }
 }));

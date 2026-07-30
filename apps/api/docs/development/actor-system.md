@@ -12,7 +12,14 @@ The Actor System provides a unified way to handle authentication and authorizati
 
 - **Actor** - Represents the current user/requester
 - **Authentication** - Who is the user? (via Better Auth JWT)
-- **Authorization** - What can the user do? (via roles & permissions)
+- **Authorization** - What can the user do? (always via `permissions`, never via `roles` — see [Authorization](#authorization))
+
+> **Multi-role actors (HOS-296).** An actor holds a SET of roles (backed by the
+> `user_role` table), not a single scalar. One account can be `HOST` and
+> `COMMERCE_OWNER` at the same time. `actor.permissions` is already the union
+> of every held role's permissions plus per-user overrides, so authorization
+> code should almost never need to inspect `actor.roles` directly — check
+> `actor.permissions` instead.
 
 ---
 
@@ -25,10 +32,10 @@ The actor object contains information about the current requester.
 ```typescript
 {
   isAuthenticated: true,
-  userId: string,           // Better Auth user ID
-  email: string,            // User's email
-  role: string,             // User's role (e.g., 'admin', 'user')
-  permissions: string[]     // User's permissions
+  id: string,                    // Better Auth user ID
+  email: string,                 // User's email
+  roles: readonly RoleEnum[],    // Every role the actor holds (HOS-296) — e.g. [RoleEnum.HOST]
+  permissions: readonly PermissionEnum[] // Union of permissions across all held roles + overrides
 }
 ```
 
@@ -58,7 +65,7 @@ export const myRoute = createSimpleRoute({
     }
     
     console.log(`User: ${actor.email}`);
-    console.log(`Role: ${actor.role}`);
+    console.log(`Roles: ${actor.roles.join(', ')}`);
     console.log(`Permissions:`, actor.permissions);
     
     // Use actor data...
@@ -75,9 +82,9 @@ const actor: Actor = getActorFromContext(c);
 
 if (actor.isAuthenticated) {
   // TypeScript knows these properties exist
-  const userId: string = actor.userId;
+  const id: string = actor.id;
   const email: string = actor.email;
-  const role: string = actor.role;
+  const roles: readonly RoleEnum[] = actor.roles;
 }
 ```
 
@@ -136,23 +143,14 @@ if (!actor.isAuthenticated) {
 
 Authorization checks what authenticated users can do.
 
-### Role-Based Authorization
-
-```typescript
-const actor = getActorFromContext(c);
-
-if (!actor.isAuthenticated) {
-  return c.json({ error: 'Unauthorized' }, 401);
-}
-
-if (actor.role !== 'admin') {
-  return c.json({ error: 'Forbidden' }, 403);
-}
-
-// User is admin
-```
-
 ### Permission-Based Authorization
+
+Hospeda authorizes exclusively on `actor.permissions`. **Never compare
+`actor.roles` to decide what an actor may do** — a role can grant a
+permission through several paths (direct role grant, per-user override), and
+gating on the role name directly bypasses that resolution and breaks for any
+actor who holds the permission through a different role than the one you
+hardcoded.
 
 ```typescript
 const actor = getActorFromContext(c);
@@ -166,16 +164,6 @@ if (!actor.permissions.includes('accommodation:write')) {
 }
 
 // User has write permission
-```
-
-### Multiple Roles
-
-```typescript
-const allowedRoles = ['admin', 'manager'];
-
-if (!allowedRoles.includes(actor.role)) {
-  return c.json({ error: 'Forbidden' }, 403);
-}
 ```
 
 ### Multiple Permissions
@@ -204,14 +192,6 @@ if (!hasAllPermissions) {
 export const requireAuth = (actor: Actor) => {
   if (!actor.isAuthenticated) {
     throw new Error('Authentication required');
-  }
-};
-
-export const requireRole = (actor: Actor, role: string) => {
-  requireAuth(actor);
-  
-  if (actor.role !== role) {
-    throw new Error('Forbidden');
   }
 };
 
@@ -247,19 +227,19 @@ export const requireAllPermissions = (actor: Actor, permissions: string[]) => {
 ### Using Helpers
 
 ```typescript
-import { requireRole, requirePermission } from '../utils/auth-helpers';
+import { requirePermission } from '../utils/auth-helpers';
 
 export const adminRoute = createSimpleRoute({
   handler: async (c) => {
     const actor = getActorFromContext(c);
     
     try {
-      requireRole(actor, 'admin');
+      requirePermission(actor, 'accommodation:write');
     } catch (error) {
       return c.json({ error: error.message }, 403);
     }
     
-    // User is admin
+    // Actor has the required permission
   }
 });
 ```
@@ -270,9 +250,19 @@ export const adminRoute = createSimpleRoute({
 
 ### Standard Roles
 
-- **`user`** - Default role for all authenticated users
-- **`admin`** - Administrator with full access
-- **`manager`** - Manager with extended permissions
+Defined in `RoleEnum` (`@repo/schemas`) — an actor can hold several of these
+at once (HOS-296), e.g. `HOST` + `COMMERCE_OWNER`:
+
+- **`SUPER_ADMIN`** - Every permission, including system-level actions
+- **`ADMIN`** - Almost everything except editing accommodation info directly
+- **`CLIENT_MANAGER`** - Client accounts, billing, subscriptions, analytics
+- **`EDITOR`** - Create/edit/publish events and posts only
+- **`HOST`** - Owner of an accommodation, can only edit their own
+- **`COMMERCE_OWNER`** - Owner of a commerce listing (gastronomy, experience, etc.)
+- **`SPONSOR`** - External sponsor of events/posts, limited dashboard access
+- **`USER`** - Default role for all logged-in users of the public portal
+- **`GUEST`** - Public, not logged in
+- **`SYSTEM`** - Reserved non-loginable account for automated writes
 
 ### Permission Format
 
@@ -287,25 +277,22 @@ Permissions follow the format: `resource:action`
 - `user:write` - Create/update users
 - `user:delete` - Delete users
 
-### Setting Roles in Better Auth
+### Granting and Revoking Roles
 
-1. Go to Better Auth Dashboard
-2. Select user
-3. Edit "Public metadata"
-4. Add role and permissions:
+Roles are NOT edited via Better Auth metadata — they live in the `user_role`
+table (HOS-296), one row per `(userId, role)` pair, and are mutated
+exclusively through `grantRole` / `revokeRole`
+(`packages/service-core/src/services/user-role/user-role.service.ts`):
 
-```json
-{
-  "role": "admin",
-  "permissions": [
-    "accommodation:read",
-    "accommodation:write",
-    "accommodation:delete",
-    "user:read",
-    "user:write"
-  ]
-}
-```
+- **`grantRole`** — additive and idempotent; granting a role the user already
+  holds is a no-op. Writes an audit row (`user_role_audit`) on every actual
+  change.
+- **`revokeRole`** — refuses to remove a user's last remaining role, so an
+  account can never end up with an empty role set.
+
+Both are gated by permission checks (`canAssignRole` / equivalent), never by
+comparing the caller's own role. Read a user's current roles with
+`getUserRoles({ userId })`.
 
 ---
 
@@ -322,7 +309,7 @@ export const adminRoute = createSimpleRoute({
       return c.json({ error: 'Unauthorized' }, 401);
     }
     
-    if (actor.role !== 'admin') {
+    if (!actor.permissions.includes(PermissionEnum.ACCESS_PANEL_ADMIN)) {
       return c.json({ error: 'Forbidden' }, 403);
     }
     
@@ -344,7 +331,7 @@ export const updateProfileRoute = createOpenApiRoute({
     }
     
     // Check if user is updating their own profile
-    if (actor.userId !== userId && actor.role !== 'admin') {
+    if (actor.id !== userId && !actor.permissions.includes(PermissionEnum.USER_UPDATE_ANY)) {
       return c.json({ error: 'Forbidden' }, 403);
     }
     
@@ -397,9 +384,9 @@ export const sensitiveRoute = createSimpleRoute({
     
     // Log who performed the action
     logger.info('Sensitive action performed', {
-      userId: actor.userId,
+      userId: actor.id,
       email: actor.email,
-      role: actor.role,
+      roles: actor.roles,
       timestamp: new Date().toISOString()
     });
     
@@ -423,7 +410,7 @@ export class AccommodationService extends BaseCrudService {
     // Add created_by info
     const result = await this.model.create({
       ...data,
-      createdBy: actor.userId
+      createdBy: actor.id
     });
     
     return result;
@@ -443,9 +430,9 @@ import { describe, it, expect } from 'vitest';
 // Mock authenticated admin
 const mockAdminActor = {
   isAuthenticated: true,
-  userId: 'test-user-123',
+  id: 'test-user-123',
   email: 'admin@test.com',
-  role: 'admin',
+  roles: [RoleEnum.ADMIN],
   permissions: ['accommodation:read', 'accommodation:write']
 };
 
@@ -481,7 +468,7 @@ if (!actor.isAuthenticated) {
 }
 
 // ❌ Bad - Assuming authentication
-const userId = actor.userId; // Might not exist!
+const id = actor.id; // Might not exist!
 ```
 
 ### Use Helpers
@@ -489,7 +476,7 @@ const userId = actor.userId; // Might not exist!
 ```typescript
 // ✅ Good - Use helpers
 try {
-  requireRole(actor, 'admin');
+  requirePermission(actor, 'accommodation:write');
 } catch (error) {
   return c.json({ error: error.message }, 403);
 }
@@ -498,7 +485,7 @@ try {
 if (!actor.isAuthenticated) {
   return c.json({ error: 'Unauthorized' }, 401);
 }
-if (actor.role !== 'admin') {
+if (!actor.permissions.includes('accommodation:write')) {
   return c.json({ error: 'Forbidden' }, 403);
 }
 ```
@@ -524,7 +511,7 @@ if (actor.permissions.includes('sensitive:action')) {
 // ✅ Good - Log sensitive actions
 logger.info('User deleted', {
   deletedUserId: params.id,
-  deletedBy: actor.userId,
+  deletedBy: actor.id,
   timestamp: new Date()
 });
 ```
@@ -547,9 +534,9 @@ logger.info('User deleted', {
 
 ### Permissions not working
 
-**Cause**: Permissions not set in Better Auth
+**Cause**: The actor's role set (`user_role` table) doesn't grant the permission required
 
-**Solution**: Update user's public metadata in Better Auth Dashboard
+**Solution**: Check the actor's roles with `getUserRoles({ userId })` and grant the missing one via `grantRole` (see [Granting and Revoking Roles](#granting-and-revoking-roles))
 
 ---
 

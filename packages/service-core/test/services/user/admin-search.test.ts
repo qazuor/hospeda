@@ -26,7 +26,18 @@ vi.mock('@repo/db', async (importOriginal) => {
     const original = await importOriginal<typeof import('@repo/db')>();
     return {
         ...original,
-        buildSearchCondition: vi.fn()
+        buildSearchCondition: vi.fn(),
+        // HOS-296: the role filter is no longer a column comparison. It builds
+        // a semi-join subquery against `user_role`, which reaches for the live
+        // client. These tests never initialise one, so the builder is stubbed
+        // just far enough to hand back something `inArray` can hold.
+        getDb: vi.fn(() => ({
+            select: () => ({
+                from: () => ({
+                    where: () => ({ __stubSubquery: true })
+                })
+            })
+        }))
     };
 });
 
@@ -51,7 +62,7 @@ const defaultPaginatedResult = { items: [], total: 0 };
 
 const mockAdminActor = {
     id: 'admin-1',
-    role: RoleEnum.SUPER_ADMIN,
+    roles: [RoleEnum.SUPER_ADMIN],
     permissions: Object.values(PermissionEnum)
 };
 
@@ -184,9 +195,12 @@ describe('UserService: _executeAdminSearch override', () => {
         });
 
         it('should pass email-stripped filters and email as extraConditions to the model', async () => {
-            // Arrange
+            // Arrange — `displayName` is a real `users` column, so it is the
+            // right stand-in for "an ordinary filter that survives to the
+            // where clause". This assertion used to use `role`, which stopped
+            // being a column in HOS-296.
             const params = buildDefaultParams({
-                entityFilters: { email: 'john@', role: 'USER' }
+                entityFilters: { email: 'john@', displayName: 'John' }
             });
 
             // Act
@@ -197,7 +211,7 @@ describe('UserService: _executeAdminSearch override', () => {
             const whereArg = callArgs[0] as Record<string, unknown>;
             const conditions = callArgs[2] as unknown[];
             expect(whereArg).not.toHaveProperty('email');
-            expect(whereArg).toHaveProperty('role', 'USER');
+            expect(whereArg).toHaveProperty('displayName', 'John');
             expect(conditions).toBeDefined();
             expect(conditions.length).toBe(1);
         });
@@ -232,17 +246,80 @@ describe('UserService: _executeAdminSearch override', () => {
         it('should pass non-email entityFilters into the where clause', async () => {
             // Arrange
             const params = buildDefaultParams({
+                entityFilters: { displayName: 'Alice', authProvider: 'google' }
+            });
+
+            // Act
+            await callExecuteAdminSearch(service, params);
+
+            // Assert: ordinary column filters end up in the merged where
+            const callArgs = asMock(mockModel.findAllWithCounts).mock.calls[0] as unknown[];
+            const whereArg = callArgs[0] as Record<string, unknown>;
+            expect(whereArg).toHaveProperty('displayName', 'Alice');
+            expect(whereArg).toHaveProperty('authProvider', 'google');
+        });
+    });
+
+    // --- role filters never reach the where clause (HOS-296) ---
+
+    describe('role filters', () => {
+        /**
+         * Regression guard. Before HOS-296 this suite asserted the opposite —
+         * that `role` was forwarded into the where clause — which is exactly
+         * what broke once `users.role` was dropped: the filter reached the
+         * model as a WHERE on a column that no longer exists, making
+         * `GET /admin/users?role=ADMIN` a runtime failure. Neither `role` nor
+         * `roles` may ever be a column comparison again.
+         */
+        it('should keep the legacy singular role out of the where clause', async () => {
+            // Arrange
+            const params = buildDefaultParams({
                 entityFilters: { role: 'ADMIN', displayName: 'Alice' }
             });
 
             // Act
             await callExecuteAdminSearch(service, params);
 
-            // Assert: role and displayName end up in the merged where
+            // Assert
             const callArgs = asMock(mockModel.findAllWithCounts).mock.calls[0] as unknown[];
             const whereArg = callArgs[0] as Record<string, unknown>;
-            expect(whereArg).toHaveProperty('role', 'ADMIN');
+            const conditions = callArgs[2] as unknown[];
+            expect(whereArg).not.toHaveProperty('role');
             expect(whereArg).toHaveProperty('displayName', 'Alice');
+            // It becomes a semi-join condition instead of disappearing.
+            expect(conditions).toBeDefined();
+            expect(conditions.length).toBe(1);
+        });
+
+        it('should keep the multi-value roles filter out of the where clause', async () => {
+            // Arrange
+            const params = buildDefaultParams({
+                entityFilters: { roles: ['HOST', 'COMMERCE_OWNER'] }
+            });
+
+            // Act
+            await callExecuteAdminSearch(service, params);
+
+            // Assert
+            const callArgs = asMock(mockModel.findAllWithCounts).mock.calls[0] as unknown[];
+            const whereArg = callArgs[0] as Record<string, unknown>;
+            const conditions = callArgs[2] as unknown[];
+            expect(whereArg).not.toHaveProperty('roles');
+            expect(conditions?.length).toBe(1);
+        });
+
+        it('should not constrain the query when no role filter is supplied', async () => {
+            // Arrange
+            const params = buildDefaultParams({ entityFilters: { displayName: 'Alice' } });
+
+            // Act
+            await callExecuteAdminSearch(service, params);
+
+            // Assert — no role filter means no extra condition at all, which is
+            // what keeps `?roles=` from collapsing into a match-nothing query.
+            const callArgs = asMock(mockModel.findAllWithCounts).mock.calls[0] as unknown[];
+            const conditions = callArgs[2] as unknown[] | undefined;
+            expect(conditions).toBeUndefined();
         });
     });
 

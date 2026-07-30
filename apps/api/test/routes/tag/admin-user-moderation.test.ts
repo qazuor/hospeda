@@ -32,6 +32,11 @@ let mockDbWhereResult: unknown[] = [];
 const mockDbClient = {
     select: () => ({
         from: () => ({
+            // HOS-296: the owner enrichment LEFT JOINs `user_role` to collect
+            // every hat, so the chain gained a step.
+            leftJoin: () => ({
+                where: () => Promise.resolve(mockDbWhereResult)
+            }),
             where: () => Promise.resolve(mockDbWhereResult)
         })
     })
@@ -68,7 +73,14 @@ vi.mock('@repo/db', async (importOriginal) => {
     // relative import to the canonical source file instead of an absolute path.
     // Path from apps/api/test/routes/tag/ → repo-root/packages/db/src/schemas/user/
     const { users } = await import('../../../../../packages/db/src/schemas/user/user.dbschema');
-    return { ...actual, users };
+    // HOS-296: `userRole` is re-exported the same way and hits the same
+    // resolution gap, so it needs the same portable relative import — without
+    // it the route's `leftJoin(userRole, ...)` reads a property off undefined
+    // and the whole list 500s.
+    const { userRole } = await import(
+        '../../../../../packages/db/src/schemas/user/r_user_role.dbschema'
+    );
+    return { ...actual, users, userRole };
 });
 
 vi.mock('../../../src/utils/logger', () => ({
@@ -109,7 +121,7 @@ const ALL_MODERATION_PERMISSIONS: PermissionEnum[] = [
 function buildAdminActor(permissions: PermissionEnum[]): Actor {
     return {
         id: 'dddddddd-dddd-4ddd-addd-dddddddddddd',
-        role: RoleEnum.SUPER_ADMIN,
+        roles: [RoleEnum.SUPER_ADMIN],
         permissions: [
             PermissionEnum.ACCESS_PANEL_ADMIN,
             PermissionEnum.ACCESS_API_ADMIN,
@@ -124,7 +136,7 @@ function actorHeaders(actor: Actor): Record<string, string> {
         'user-agent': 'vitest',
         accept: 'application/json',
         'x-mock-actor-id': actor.id,
-        'x-mock-actor-role': actor.role,
+        'x-mock-actor-role': actor.roles.join(','),
         'x-mock-actor-permissions': JSON.stringify(actor.permissions)
     };
 }
@@ -202,7 +214,7 @@ describe('Admin USER tag moderation routes (SPEC-086 T-026)', () => {
             }
         });
 
-        it('should enrich list items with owner displayName, email, and role', async () => {
+        it('should enrich list items with owner displayName, email, and every held role', async () => {
             // Arrange
             const actor = buildAdminActor(ALL_MODERATION_PERMISSIONS);
             mockTagService.adminList.mockResolvedValue({
@@ -210,12 +222,20 @@ describe('Admin USER tag moderation routes (SPEC-086 T-026)', () => {
             });
 
             // Set the DB query result to return the owner row for OWNER_ID
+            // One row per (owner, hat) pair — the multi-hat case is the point
+            // of OQ-5: the panel shows ALL of them, not a picked one.
             mockDbWhereResult = [
                 {
                     id: OWNER_ID,
                     displayName: 'Test Owner',
                     email: 'owner@example.com',
                     role: 'USER'
+                },
+                {
+                    id: OWNER_ID,
+                    displayName: 'Test Owner',
+                    email: 'owner@example.com',
+                    role: 'HOST'
                 }
             ];
 
@@ -233,7 +253,7 @@ describe('Admin USER tag moderation routes (SPEC-086 T-026)', () => {
             expect(firstItem).toBeDefined();
             expect(firstItem?.ownerDisplayName).toBe('Test Owner');
             expect(firstItem?.ownerEmail).toBe('owner@example.com');
-            expect(firstItem?.ownerRole).toBe('USER');
+            expect(firstItem?.ownerRoles).toEqual(['USER', 'HOST']);
         });
 
         it('should set owner fields to null when owner does not exist in users table', async () => {
@@ -258,7 +278,7 @@ describe('Admin USER tag moderation routes (SPEC-086 T-026)', () => {
                 .items[0];
             expect(firstItem?.ownerDisplayName).toBeNull();
             expect(firstItem?.ownerEmail).toBeNull();
-            expect(firstItem?.ownerRole).toBeNull();
+            expect(firstItem?.ownerRoles).toEqual([]);
         });
     });
 

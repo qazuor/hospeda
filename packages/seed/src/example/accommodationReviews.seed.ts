@@ -88,7 +88,7 @@ const preProcessReview = async (item: unknown, context: SeedContext) => {
             // TODO: Get full user data from database if needed
             context.actor = {
                 id: realUserId,
-                role: RoleEnum.SUPER_ADMIN, // Default role, should be updated with actual user role
+                roles: [RoleEnum.SUPER_ADMIN], // Default hat, should be updated with the user's real role set
                 permissions: [PermissionEnum.ACCOMMODATION_REVIEW_CREATE] as PermissionEnum[] // Default permissions, should be updated with actual user permissions
             };
         }

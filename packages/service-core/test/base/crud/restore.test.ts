@@ -83,7 +83,7 @@ describe('BaseService: restore', () => {
     it('should return forbidden error if actor lacks permission', async () => {
         const nonAdminActor: Actor = {
             id: 'non-admin',
-            role: RoleEnum.USER,
+            roles: [RoleEnum.USER],
             permissions: []
         };
         const result = await service.restore(nonAdminActor, MOCK_ENTITY_ID);

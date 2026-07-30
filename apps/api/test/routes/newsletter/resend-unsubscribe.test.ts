@@ -18,7 +18,9 @@ const ACTOR_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const buildCtx = () =>
     ({
         get: (k: string) =>
-            k === 'actor' ? { id: ACTOR_ID, role: 'USER', permissions: [] as string[] } : undefined,
+            k === 'actor'
+                ? { id: ACTOR_ID, roles: ['USER'], permissions: [] as string[] }
+                : undefined,
         req: { header: () => undefined }
     }) as unknown as Parameters<typeof resendHandler>[0];
 

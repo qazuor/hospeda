@@ -26,11 +26,48 @@
  */
 
 import { useMemo } from 'react';
-import type { Tour, TourRole } from '@/config/ia/tour.schema';
+import { type Tour, type TourRole, TourRoleSchema } from '@/config/ia/tour.schema';
 import { validatedConfig } from '@/config/ia/validate';
 import { useAdminTourState } from './use-admin-tour-state';
 import { useAuthContext } from './use-auth-context';
 import { useCurrentSection } from './use-current-section';
+
+// ============================================================================
+// resolvePrimaryTourRole — HOS-296 multi-hat tie-break
+// ============================================================================
+
+/**
+ * Declaration order of `TourRoleSchema` — the multi-hat tie-break for tour
+ * role resolution (HOS-296). A user holding e.g. both `HOST` and `ADMIN`
+ * resolves to `HOST` here, mirroring the same "declaration order decides"
+ * pattern used by `apps/web/src/config/tours.ts` `getWelcomeTourForRoles`
+ * (see that file for the reference implementation this mirrors) and by
+ * `resolvePrimaryRole` in `use-current-role-config.ts`. A dedicated fixed
+ * order (rather than reusing `validatedConfig.roles`' key order) is used here
+ * because the tour catalog's role space (`TourRoleSchema`, 4 values) is a
+ * strict subset of the full IA role catalog.
+ */
+const TOUR_ROLE_PRECEDENCE: readonly TourRole[] = TourRoleSchema.options;
+
+/**
+ * Resolves the single tour-eligible role to use for tour selectors out of a
+ * user's full role set, per {@link TOUR_ROLE_PRECEDENCE}.
+ *
+ * @param roles - The full set of roles the user holds (may be `null`/`undefined`).
+ * @returns The first tour-eligible role the user holds, or `null` if none match.
+ *
+ * @example
+ * ```ts
+ * resolvePrimaryTourRole(['USER', 'HOST']); // 'HOST'
+ * resolvePrimaryTourRole(['USER']); // null — USER has no tour catalog entries
+ * ```
+ */
+export function resolvePrimaryTourRole(
+    roles: readonly string[] | null | undefined
+): TourRole | null {
+    if (!roles || roles.length === 0) return null;
+    return TOUR_ROLE_PRECEDENCE.find((candidate) => roles.includes(candidate)) ?? null;
+}
 
 // ============================================================================
 // useTourById
@@ -244,7 +281,7 @@ export interface UseWelcomeTourPendingReturn {
  */
 export function useWelcomeTourPending(): UseWelcomeTourPendingReturn {
     const { user } = useAuthContext();
-    const role = (user?.role as TourRole | null | undefined) ?? null;
+    const role = resolvePrimaryTourRole(user?.roles);
     const welcomeTour = useWelcomeTourForRole({ role });
     const { isLoading, hasSeen } = useAdminTourState();
 

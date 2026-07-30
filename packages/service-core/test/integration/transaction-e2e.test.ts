@@ -165,7 +165,7 @@ class TestTagService extends BaseCrudService<
 
 const makeActor = (permissions: PermissionEnum[] = []): Actor => ({
     id: 'actor-uuid-0000-0000-0000-000000000001',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions
 });
 

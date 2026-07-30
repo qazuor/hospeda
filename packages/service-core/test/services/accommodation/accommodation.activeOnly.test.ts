@@ -88,18 +88,18 @@ function makeModelMock() {
 // ---------------------------------------------------------------------------
 
 function makeAnonymousActor(): Actor {
-    return { id: OTHER_UUID, type: 'user', role: RoleEnum.USER, permissions: [] } as Actor;
+    return { id: OTHER_UUID, type: 'user', roles: [RoleEnum.USER], permissions: [] } as Actor;
 }
 
 function makeOwnerActor(): Actor {
-    return { id: OWNER_UUID, type: 'user', role: RoleEnum.USER, permissions: [] } as Actor;
+    return { id: OWNER_UUID, type: 'user', roles: [RoleEnum.USER], permissions: [] } as Actor;
 }
 
 function makeVipActor(): Actor {
     return {
         id: OTHER_UUID,
         type: 'user',
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: [],
         entitlements: new Set(['vip_visibility_access'])
     } as Actor;
@@ -109,7 +109,7 @@ function makeStaffActor(): Actor {
     return {
         id: OTHER_UUID,
         type: 'user',
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL]
     } as Actor;
 }

@@ -117,7 +117,7 @@ export type NewsletterTrackingServiceOptions = Record<string, never>;
 
 const SYSTEM_ACTOR: Actor = {
     id: '00000000-0000-0000-0000-000000000001',
-    role: 'SUPER_ADMIN' as never,
+    roles: ['SUPER_ADMIN'] as never,
     permissions: Object.values(PermissionEnum) as never,
     _isSystemActor: true
 };

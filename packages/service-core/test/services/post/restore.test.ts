@@ -43,7 +43,7 @@ describe('PostService.restore', () => {
         const forbiddenActor = createActor({
             permissions: [],
             id: 'not-the-author-id',
-            role: RoleEnum.USER
+            roles: [RoleEnum.USER]
         });
         const result = await service.restore(forbiddenActor, postId);
         expectForbiddenError(result);

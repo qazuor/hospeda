@@ -66,8 +66,20 @@ export interface ServiceContext<THookState = Record<string, unknown>> extends Qu
 export type Actor = {
     /** Unique identifier of the actor */
     id: string;
-    /** Role of the actor in the system */
-    role: RoleEnum;
+    /**
+     * Every role the actor holds (HOS-296).
+     *
+     * Replaces the former single `role: RoleEnum` scalar: `users.role` no
+     * longer exists and one account can wear several hats at once (host and
+     * commerce owner, say). Effective permissions are the union over these
+     * roles, then the per-user overrides:
+     * `(⋃ perms(role_i) ∪ grants) \ denies`.
+     *
+     * Deliberately shipped with NO compatibility shim and no derived "primary
+     * role" — every read site must ask "does the actor hold role X" rather
+     * than "is the actor's role X".
+     */
+    roles: readonly RoleEnum[];
     /** Permissions assigned to the actor (direct + by role) */
     permissions: readonly PermissionEnum[];
     /** Entitlements granted to the actor (VIP access, premium features, etc.) */
@@ -107,6 +119,24 @@ export type Actor = {
      * schema's `.nullish()`), so a full `User` row is assignable to an `Actor`.
      */
     image?: string | null;
+    /**
+     * Whether the account must rotate a server-generated password before it can
+     * use protected routes — mirrors `users.must_change_password`, set when a
+     * commerce-owner account is provisioned (SPEC-239 T-041).
+     *
+     * Carried on the actor since HOS-296 so `GET /auth/me` surfaces it. Before
+     * that, the flag existed ONLY as a Better Auth `additionalField`, which
+     * forced `apps/web`'s middleware into a second `get-session` request on
+     * every protected route once it stopped reading that endpoint for roles.
+     *
+     * NOT the same flag as `AuthMeResponse.passwordChangeRequired`: that one is
+     * `users.adminInfo.passwordChangeRequired`, is computed only for actors
+     * holding `ACCESS_PANEL_ADMIN`, and is therefore always `false` for the
+     * commerce owners this field exists to gate. Optional because guests and
+     * system actors have no password; callers MUST treat `undefined` as
+     * "no rotation required" (fail-open, matching the pre-existing gate).
+     */
+    mustChangePassword?: boolean;
     /** Flag indicating this is a system actor, not a real user */
     _isSystemActor?: boolean;
 };

@@ -121,7 +121,7 @@ const mockGetActorFromContext = vi.mocked(getActorFromContext);
 
 const ADMIN_ACTOR: Actor = {
     id: 'admin-actor-id',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.USER_DELETE, PermissionEnum.USER_HARD_DELETE]
 };
 

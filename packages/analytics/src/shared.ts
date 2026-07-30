@@ -45,6 +45,7 @@ export const AnalyticsGlobalPropertiesSchema = z.object({
     locale: z.string().min(2).max(8).optional(),
     plan: z.string().min(1).optional(),
     role: z.string().min(1).optional(),
+    roles: z.array(z.string().min(1)).optional(),
     user_type: z.string().min(1).optional()
 });
 
@@ -54,6 +55,7 @@ export const AnalyticsPersonPropertiesSchema = z.object({
     account_status: z.string().min(1).optional(),
     accommodation_count: z.number().int().nonnegative().optional(),
     created_at: z.string().min(1).optional(),
+    emailDomain: z.string().min(1).optional(),
     has_published_accommodation: z.boolean().optional(),
     is_commerce_owner: z.boolean().optional(),
     is_host: z.boolean().optional(),
@@ -65,6 +67,7 @@ export const AnalyticsPersonPropertiesSchema = z.object({
     plan_status: z.string().min(1).optional(),
     preferred_language: z.string().min(2).max(8).optional(),
     role: z.string().min(1).optional(),
+    roles: z.array(z.string().min(1)).optional(),
     user_type: z.string().min(1).optional(),
     converted_from_trial: z.boolean().optional()
 });

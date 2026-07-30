@@ -104,7 +104,7 @@ const DB_USER_ROW = {
     displayName: 'María Pérez',
     firstName: 'María',
     lastName: 'Pérez',
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     email: 'maria@example.com',
     contactInfo: {
         mobilePhone: '+5493442123456',

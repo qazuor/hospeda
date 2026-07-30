@@ -163,7 +163,7 @@ describe('Limit Enforcement Middleware', () => {
     describe('enforceAccommodationLimit', () => {
         const mockActor: Actor = {
             id: 'user-123',
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
         };
 
@@ -217,7 +217,7 @@ describe('Limit Enforcement Middleware', () => {
         it('should continue when actor is not authenticated', async () => {
             vi.mocked(getActorFromContext).mockReturnValue({
                 id: '',
-                role: RoleEnum.GUEST,
+                roles: [RoleEnum.GUEST],
                 permissions: []
             });
 
@@ -357,7 +357,7 @@ describe('Limit Enforcement Middleware', () => {
     describe('enforcePhotoLimit', () => {
         const mockActor: Actor = {
             id: 'user-123',
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: [PermissionEnum.ACCOMMODATION_LISTING_UPDATE]
         };
 
@@ -520,7 +520,7 @@ describe('Limit Enforcement Middleware', () => {
     describe('enforcePromotionLimit', () => {
         const mockActor: Actor = {
             id: 'user-123',
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: [PermissionEnum.OWNER_PROMOTION_CREATE]
         };
 
@@ -767,7 +767,7 @@ describe('Limit Enforcement Middleware', () => {
                 attachTestErrorHandler(app);
                 const mockActor: Actor = {
                     id: 'user-123',
-                    role: RoleEnum.HOST,
+                    roles: [RoleEnum.HOST],
                     permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
                 };
 
@@ -812,7 +812,7 @@ describe('Limit Enforcement Middleware', () => {
                 attachTestErrorHandler(app);
                 const mockActor: Actor = {
                     id: 'user-123',
-                    role: RoleEnum.HOST,
+                    roles: [RoleEnum.HOST],
                     permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
                 };
 
@@ -872,7 +872,7 @@ describe('Limit Enforcement Middleware', () => {
                 attachTestErrorHandler(app);
                 const mockActor: Actor = {
                     id: 'user-123',
-                    role: RoleEnum.HOST,
+                    roles: [RoleEnum.HOST],
                     permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
                 };
 
@@ -911,7 +911,7 @@ describe('Limit Enforcement Middleware', () => {
                 attachTestErrorHandler(app);
                 const mockActor: Actor = {
                     id: 'user-123',
-                    role: RoleEnum.HOST,
+                    roles: [RoleEnum.HOST],
                     permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
                 };
 
@@ -956,7 +956,7 @@ describe('Limit Enforcement Middleware', () => {
                 // Arrange
                 const mockActor: Actor = {
                     id: 'user-123',
-                    role: RoleEnum.HOST,
+                    roles: [RoleEnum.HOST],
                     permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
                 };
 
@@ -984,7 +984,7 @@ describe('Limit Enforcement Middleware', () => {
                 // Arrange
                 const mockActor: Actor = {
                     id: 'user-123',
-                    role: RoleEnum.HOST,
+                    roles: [RoleEnum.HOST],
                     permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
                 };
 
@@ -1012,7 +1012,7 @@ describe('Limit Enforcement Middleware', () => {
                 attachTestErrorHandler(app);
                 const mockActor: Actor = {
                     id: 'user-123',
-                    role: RoleEnum.HOST,
+                    roles: [RoleEnum.HOST],
                     permissions: [PermissionEnum.OWNER_PROMOTION_CREATE]
                 };
 
@@ -1057,7 +1057,7 @@ describe('Limit Enforcement Middleware', () => {
                 attachTestErrorHandler(app);
                 const mockActor: Actor = {
                     id: 'user-123',
-                    role: RoleEnum.HOST,
+                    roles: [RoleEnum.HOST],
                     permissions: [PermissionEnum.OWNER_PROMOTION_CREATE]
                 };
 
@@ -1116,7 +1116,7 @@ describe('Limit Enforcement Middleware', () => {
                 attachTestErrorHandler(app);
                 const mockActor: Actor = {
                     id: 'user-123',
-                    role: RoleEnum.HOST,
+                    roles: [RoleEnum.HOST],
                     permissions: [
                         PermissionEnum.ACCOMMODATION_LISTING_CREATE,
                         PermissionEnum.OWNER_PROMOTION_CREATE
@@ -1182,7 +1182,7 @@ describe('Limit Enforcement Middleware', () => {
             // Arrange
             const mockActor: Actor = {
                 id: 'user-123',
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
             };
 
@@ -1269,7 +1269,7 @@ describe('RESERVED-LIMIT stubs — pinning tests (SPEC-145)', () => {
             // Arrange — actor is authenticated and limit ceiling is 1 (very tight)
             const actor: Actor = {
                 id: 'host-stub-123',
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
             };
             vi.mocked(getActorFromContext).mockReturnValue(actor);
@@ -1291,7 +1291,7 @@ describe('RESERVED-LIMIT stubs — pinning tests (SPEC-145)', () => {
             // checkLimit treats 0 as "not configured" / unlimited so the stub still passes
             const actor: Actor = {
                 id: 'host-stub-456',
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
             };
             vi.mocked(getActorFromContext).mockReturnValue(actor);
@@ -1310,7 +1310,7 @@ describe('RESERVED-LIMIT stubs — pinning tests (SPEC-145)', () => {
             // Arrange — actor is authenticated and limit ceiling is 1 (very tight)
             const actor: Actor = {
                 id: 'host-staff-stub-123',
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
             };
             vi.mocked(getActorFromContext).mockReturnValue(actor);
@@ -1337,7 +1337,7 @@ describe('RESERVED-LIMIT stubs — pinning tests (SPEC-145)', () => {
             // Arrange
             const actor: Actor = {
                 id: 'host-staff-stub-456',
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
             };
             vi.mocked(getActorFromContext).mockReturnValue(actor);

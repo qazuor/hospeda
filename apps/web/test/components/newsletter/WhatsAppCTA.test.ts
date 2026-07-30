@@ -16,6 +16,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { findBareInkDeclarations } from '../../static-guards/ink-literals';
+
 const src = readFileSync(
     resolve(__dirname, '../../../src/components/newsletter/WhatsAppCTA.astro'),
     'utf8'
@@ -149,10 +151,72 @@ describe('WhatsAppCTA.module.css', () => {
         expect(cssSrc).toContain('--surface-warm');
     });
 
-    it('uses the WhatsApp brand green for the CTA / icon colour', () => {
-        // No system token exists for WhatsApp green — colour is intentionally
-        // hard-coded so the brand colour never drifts when palette changes.
-        expect(cssSrc.toLowerCase()).toContain('#25d366');
+    it('takes the WhatsApp brand colours from the channel tokens (HOS-314)', () => {
+        // This assertion used to read `toContain('#25d366')`, justified by "no
+        // system token exists for WhatsApp green". HOS-314 created one, so the
+        // hard-code is no longer the way to keep the brand colour from
+        // drifting — the token is, and it carries the AA-safe ink with it.
+        expect(cssSrc).toContain('background-color: var(--channel-whatsapp)');
+        expect(cssSrc).toContain('color: var(--channel-whatsapp-foreground)');
+        expect(cssSrc).toContain('background-color: var(--channel-whatsapp-hover)');
+    });
+
+    it('inks the labelled CTA from the AA-safe token', () => {
+        const cta = /\.cta\s*\{([^}]*)\}/.exec(cssSrc);
+        expect(cta, 'no .cta rule found').not.toBeNull();
+        expect(cta?.[1] ?? '').toContain('color: var(--channel-whatsapp-foreground)');
+    });
+
+    it('takes EVERY text colour from a token, wherever it is declared', () => {
+        // Replaces a `not.toContain('color: #ffffff')` scoped to the FIRST .cta
+        // body — which every other spelling satisfied (`#fff`, `white`,
+        // `rgb(255 255 255)`, `-webkit-text-fill-color`) and which could not see
+        // the second `.cta` rule this file already has inside
+        // `@media (max-width: 600px)`, nor a descendant rule. Whole-file and
+        // token-only, via the helper the other two WhatsApp surfaces share.
+        expect(findBareInkDeclarations(cssSrc)).toEqual([]);
+        expect(findBareInkDeclarations(src)).toEqual([]);
+    });
+
+    it('keeps the logo badge text-free, which is what its white ink depends on', () => {
+        // The WCAG 1.4.3 exemption the white ink rests on applies to a LOGOTYPE.
+        // Put a label inside this div and the same `color` becomes 1.98:1 text on
+        // the brand green — a change no colour guard can see, since the CSS would
+        // be untouched. So the invariant is asserted on the markup: the badge
+        // holds the icon component and nothing else.
+        // The div is matched by the class it carries, not by attribute ORDER:
+        // `<div aria-hidden="true" class={styles.iconWrap}>` is the same markup and
+        // used to fail with "no iconWrap div found".
+        const badge = /<div[^>]*class=\{styles\.iconWrap\}[^>]*>([\s\S]*?)<\/div>/.exec(src);
+        expect(badge, 'no iconWrap div found').not.toBeNull();
+        const contents = (badge?.[1] ?? '').trim();
+        // The invariant is "one self-closing icon element and no text node", NOT
+        // a byte-exact string: pinning prop order, values and spacing would make a
+        // `size={40}` or a Biome reflow fail a test named "text-free", with a diff
+        // that says nothing about text.
+        expect(contents).toMatch(/^<WhatsappIcon\b[^>]*\/>$/);
+        // No colour prop on the icon either: `<WhatsappIcon color="#fff" />` would
+        // paint the mark white without touching any CSS.
+        expect(contents).not.toMatch(/\bcolor=/);
+        expect(src).toMatch(/<div[^>]*class=\{styles\.iconWrap\}[^>]*aria-hidden="true"/);
+    });
+
+    it('inks the logo-only badge with the logotype token (WCAG 1.4.3 exemption)', () => {
+        // The badge holds only the WhatsApp mark, which WCAG exempts from
+        // contrast, so it stays white — but via a NAMED token whose single
+        // legitimate consumer the static guard enumerates, not a raw literal.
+        const badge = /\.iconWrap\s*\{([^}]*)\}/.exec(cssSrc);
+        expect(badge, 'no .iconWrap rule found').not.toBeNull();
+        expect(badge?.[1] ?? '').toContain('color: var(--channel-whatsapp-logo)');
+    });
+
+    it('gives the CTA a 44px minimum tap target', () => {
+        // 8px of block padding around a 14px line box left it at ~33px. Scoped to
+        // the .cta body: file-scoped, it would also pass if the declaration were
+        // moved to .iconWrap, which is already 48px.
+        const cta = /\.cta\s*\{([^}]*)\}/.exec(cssSrc);
+        expect(cta, 'no .cta rule found').not.toBeNull();
+        expect(cta?.[1] ?? '').toContain('min-height: 44px');
     });
 
     it('declares a focus-visible style with outline (a11y)', () => {

@@ -5,7 +5,9 @@
  *
  * Design rules:
  *  - ALL checks use `hasPermission(actor, PermissionEnum.COMMERCE_*)` exclusively.
- *  - NEVER check `actor.role` directly.
+ *  - NEVER check the actor's roles directly (`actor.roles`). Since HOS-296 an
+ *    account holds a SET of hats, so "is the actor role X" is not even a
+ *    well-formed question here — ask what they are ALLOWED to do.
  *  - For admin-list, both VIEW_ALL (staff, unscoped) and the entity's VIEW_OWN
  *    permission are accepted; the scoping decision is enforced in `_executeAdminSearch`,
  *    not here.

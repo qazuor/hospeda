@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 
-import { RoleEnum } from '@repo/schemas';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { User } from '@/features/users/schemas/users.schemas';
@@ -10,7 +9,6 @@ import { UserRelationsSummaryCell } from '../UserRelationsSummaryCell';
 function createUser(overrides: Partial<User> = {}): User {
     return {
         id: 'user-1',
-        role: 'USER',
         currentPlanSlug: null,
         accommodationsCount: 0,
         gastronomiesCount: 0,
@@ -28,22 +26,12 @@ describe('CustomerTypeBadge', () => {
         expect(screen.getByText('billing.plan.owner-pro.name')).toBeInTheDocument();
     });
 
-    it('renders staff when the user has an internal role and no current plan', () => {
-        render(<CustomerTypeBadge row={createUser({ role: RoleEnum.ADMIN })} />);
-
-        const badge = screen.getByText('admin-pages.access.users.customerType.staff');
-        expect(badge).toBeInTheDocument();
-        expect(badge).toHaveClass('bg-blue-100');
-    });
-
-    it('renders no plan for host-like roles without an active plan', () => {
-        render(<CustomerTypeBadge row={createUser({ role: RoleEnum.HOST })} />);
-
-        const badge = screen.getByText('admin-pages.access.users.customerType.noPlan');
-        expect(badge).toBeInTheDocument();
-        expect(badge).toHaveClass('bg-amber-100');
-    });
-
+    // HOS-296: `role` no longer exists on the admin user LIST payload
+    // (UserListItemSchema drops it — see CustomerTypeBadge.tsx), so the former
+    // "staff"/"no plan" role-derived branches were removed rather than
+    // fabricated from another field. Every row without a current plan now
+    // falls back to the tourist-free label, regardless of the roles the
+    // account actually holds.
     it('renders free with its own colored badge when there is no current plan', () => {
         render(<CustomerTypeBadge row={createUser()} />);
 

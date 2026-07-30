@@ -5,17 +5,23 @@
  * tested without mocking TanStack Router internals or the `redirect()` API.
  *
  * The guard differentiates between four classes of incoming users when the
- * admin permission `ACCESS_PANEL_ADMIN` is missing:
+ * admin permission `ACCESS_PANEL_ADMIN` is missing. HOS-296: an account holds
+ * a SET of roles, not a single scalar, so the classification below checks set
+ * membership/shape rather than equality against one value:
  *
- *   - `USER` (tourist) → external redirect to the public host-onboarding
- *     funnel (`/{lang}/publicar/?from=admin`). 90% of the cases — we send
- *     them straight to a friendly conversion surface instead of a cold wall.
- *   - `HOST` (host without panel access) → internal redirect to forbidden
- *     with `reason=host-missing-permission`. Expected access boundary, not a
- *     config error — hosts manage their account from the main site, not the
- *     admin panel.
- *   - Anything else (guest, staff with wrong account, exotic roles) →
- *     internal redirect to forbidden with `reason=generic`.
+ *   - Holds ONLY the `USER` hat (tourist) → external redirect to the public
+ *     host-onboarding funnel (`/{lang}/publicar/?from=admin`). 90% of the
+ *     cases — we send them straight to a friendly conversion surface instead
+ *     of a cold wall. A user who ALSO holds `HOST` (or any other hat) is
+ *     NOT "only a tourist" and falls through to the next branches.
+ *   - Holds the `HOST` hat (with or without other non-panel hats) → internal
+ *     redirect to forbidden with `reason=host-missing-permission`. Expected
+ *     access boundary, not a config error — hosts manage their account from
+ *     the main site, not the admin panel. This takes precedence over the
+ *     "only USER" branch: someone holding both `USER` and `HOST` is treated
+ *     as a host.
+ *   - Anything else (guest, staff with wrong account, exotic roles, `USER`
+ *     plus a staff hat) → internal redirect to forbidden with `reason=generic`.
  *
  * Authenticated users with full access continue normally, with the existing
  * `passwordChangeRequired` short-circuit honored before allow.
@@ -137,15 +143,19 @@ export const decideAuthedGuard = (args: DecideAuthedGuardArgs): GuardDecision =>
     const hasPanelAccess = authState.permissions.includes(PermissionEnum.ACCESS_PANEL_ADMIN);
 
     if (!hasPanelAccess) {
-        if (authState.role === USER_ROLE) {
+        // Holds ONLY the USER hat — a plain tourist, no other role to consider.
+        const holdsOnlyUser = authState.roles.length === 1 && authState.roles[0] === USER_ROLE;
+        if (holdsOnlyUser) {
             return {
                 kind: 'redirect-tourist-funnel',
                 href: buildTouristFunnelHref(siteUrl, preferredLocale)
             };
         }
 
-        const reason: ForbiddenReason =
-            authState.role === HOST_ROLE ? 'host-missing-permission' : 'generic';
+        // Holds the HOST hat (whether alone or alongside USER/other hats) —
+        // checked AFTER the "only USER" branch so USER+HOST is treated as host.
+        const holdsHost = authState.roles.includes(HOST_ROLE);
+        const reason: ForbiddenReason = holdsHost ? 'host-missing-permission' : 'generic';
 
         return {
             kind: 'redirect-forbidden',

@@ -26,7 +26,7 @@ import superAdminData from '../data/user/required/super-admin-user.json';
 export const getSuperAdminActor = (): Actor => {
     return {
         id: superAdminData.id,
-        role: superAdminData.role as RoleEnum,
+        roles: [superAdminData.role as RoleEnum],
         permissions: superAdminData.permissions as PermissionEnum[]
     };
 };

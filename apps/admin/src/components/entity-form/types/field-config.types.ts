@@ -8,11 +8,14 @@ import type {
 } from '../enums/form-config.enums';
 
 /**
- * Actor type for permission checks
+ * Actor type for permission checks.
+ *
+ * HOS-296: `roles` (every role the actor holds) replaces the former single
+ * `role` scalar — an account can hold multiple hats at once.
  */
 export type Actor = {
     id: string;
-    role: string;
+    roles: readonly string[];
     permissions: PermissionEnum[];
 };
 

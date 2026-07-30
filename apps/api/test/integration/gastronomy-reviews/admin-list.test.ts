@@ -66,7 +66,7 @@ describe('Admin GastronomyReview List — moderation status filter (SPEC-259 reg
     // COMMERCE_MODERATE_REVIEW.
     const adminActor = {
         id: crypto.randomUUID(),
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [
             PermissionEnum.ACCESS_API_PUBLIC,
             PermissionEnum.ACCESS_API_PRIVATE,
@@ -86,14 +86,14 @@ describe('Admin GastronomyReview List — moderation status filter (SPEC-259 reg
      */
     function makeHeaders(actor: {
         id: string;
-        role: string;
+        roles: readonly string[];
         permissions: string[];
     }): Record<string, string> {
         return {
             'content-type': 'application/json',
             'user-agent': 'vitest',
             'x-mock-actor-id': actor.id,
-            'x-mock-actor-role': actor.role,
+            'x-mock-actor-role': actor.roles.join(','),
             'x-mock-actor-permissions': JSON.stringify(actor.permissions)
         };
     }

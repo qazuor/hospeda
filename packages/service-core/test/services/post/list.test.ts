@@ -17,7 +17,7 @@ describe('PostService.list', () => {
         vi.clearAllMocks();
         modelMock = createTypedModelMock(PostModel, ['findAll']);
         service = createServiceTestInstance(PostService, modelMock);
-        actor = createActor({ permissions: [], id: 'actor-id', role: RoleEnum.USER });
+        actor = createActor({ permissions: [], id: 'actor-id', roles: [RoleEnum.USER] });
     });
 
     it('should return a list of posts if actor is authenticated', async () => {
@@ -44,7 +44,7 @@ describe('PostService.list', () => {
         const guestActor = createActor({
             permissions: [],
             id: undefined,
-            role: RoleEnum.GUEST
+            roles: [RoleEnum.GUEST]
         });
         const result = await service.list(guestActor, { page: 1, pageSize: 20 });
         expect(result.error).toBeDefined();

@@ -162,6 +162,7 @@
             "verified": "Verificado",
             "notVerified": "No verificado",
             "role": "Rol",
+            "roles": "Roles",
             "permissions": "Permisos",
             "permissionsCount_one": "{{count}} permiso asignado",
             "permissionsCount_other": "{{count}} permisos asignados",
@@ -721,6 +722,17 @@
                         "cap5": "Contactar anfitriones"
                     }
                 },
+                "COMMERCE_OWNER": {
+                    "name": "Dueño de Comercio",
+                    "description": "Titular de un comercio que gestiona su propia ficha comercial",
+                    "capabilities": {
+                        "cap1": "Gestionar su ficha comercial",
+                        "cap2": "Actualizar horarios y contacto",
+                        "cap3": "Subir fotos",
+                        "cap4": "Responder reseñas",
+                        "cap5": "Ver analíticas de su comercio"
+                    }
+                },
                 "SPONSOR": {
                     "name": "Patrocinador",
                     "description": "Empresa externa con acceso a gestión y analíticas de patrocinios",
@@ -828,7 +840,30 @@
                 "grantPermission": "Otorgar",
                 "denyPermission": "Denegar",
                 "cancel": "Cancelar",
-                "error": "Ocurrió un error"
+                "error": "Ocurrió un error",
+                "inheritedFromRolesDesc": "Este usuario hereda la unión de los permisos de todos los roles que tiene. Los permisos por rol se gestionan en la página de Roles y aplican a todos los usuarios con ese rol.",
+                "viewRoleDetailsRolesDesc": "Para ver la lista completa de permisos de cada rol, visitá la"
+            },
+            "roles": {
+                "title": "Roles",
+                "description": "Todos los roles que tiene esta cuenta. Otorgar uno nunca quita otro.",
+                "loading": "Cargando roles…",
+                "error": "Algo salió mal",
+                "loadFailedBadge": "Roles no disponibles",
+                "granted": "Rol otorgado",
+                "revoked": "Rol revocado",
+                "grantedAt": "Otorgado",
+                "grantedBySystem": "Automáticamente",
+                "grantRole": "Otorgar rol",
+                "revokeRole": "Revocar rol",
+                "confirmRevoke": "¿Revocar este rol?",
+                "confirmRevokeDesc": "El usuario pierde todos los permisos que solo aportaba este rol. Sus otros roles no se tocan.",
+                "cancel": "Cancelar",
+                "cannotRevokeLast": "Una cuenta debe conservar al menos un rol, así que el último no se puede revocar.",
+                "selectRolePlaceholder": "Elegí un rol para otorgar",
+                "reasonPlaceholder": "Motivo del otorgamiento (opcional, queda en la auditoría)",
+                "revokeReasonPlaceholder": "Motivo de la revocación (opcional, queda en la auditoría)",
+                "changesTakeEffectNextRequest": "Los cambios se aplican en la próxima request del usuario"
             }
         }
     },

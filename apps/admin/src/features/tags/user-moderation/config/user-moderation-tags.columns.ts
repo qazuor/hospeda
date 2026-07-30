@@ -39,6 +39,11 @@ const LIFECYCLE_BADGE_OPTIONS = [
  * Per D-012, there is NO edit action — only delete is permitted from the admin.
  */
 function OwnerCell({ row }: { readonly row: UserTagWithOwner }) {
+    // HOS-296: the owner wears a SET of hats; show all of them. A moderator
+    // judging who created a tag loses exactly the context they came for if the
+    // set is collapsed to one arbitrary value.
+    const ownerRoles = row.ownerRoles?.join(', ');
+
     return createElement(
         'div',
         { className: 'flex flex-col gap-0.5' },
@@ -47,8 +52,8 @@ function OwnerCell({ row }: { readonly row: UserTagWithOwner }) {
             { className: 'font-medium' },
             row.ownerDisplayName ?? row.ownerId ?? '—'
         ),
-        row.ownerRole
-            ? createElement('span', { className: 'text-muted-foreground text-xs' }, row.ownerRole)
+        ownerRoles
+            ? createElement('span', { className: 'text-muted-foreground text-xs' }, ownerRoles)
             : null,
         row.ownerEmail
             ? createElement('span', { className: 'text-muted-foreground text-xs' }, row.ownerEmail)

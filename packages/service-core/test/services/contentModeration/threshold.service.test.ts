@@ -43,7 +43,7 @@ function buildModel(updatedRow?: Record<string, unknown>) {
 describe('ContentModerationThresholdService', () => {
     it('invalidates accessor cache after updates', async () => {
         const actor = createActor({
-            role: RoleEnum.ADMIN,
+            roles: [RoleEnum.ADMIN],
             permissions: [PermissionEnum.MODERATION_THRESHOLD_UPDATE]
         });
         const model = buildModel({ pending: 0.4, reject: 0.8, updatedById: actor.id });
@@ -67,7 +67,7 @@ describe('ContentModerationThresholdService', () => {
 
     describe('partial update pending < reject invariant', () => {
         const actor = createActor({
-            role: RoleEnum.ADMIN,
+            roles: [RoleEnum.ADMIN],
             permissions: [PermissionEnum.MODERATION_THRESHOLD_UPDATE]
         });
 

@@ -12,8 +12,8 @@ import {
     sql,
     UserModel
 } from '@repo/db';
-import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
-import { ADDON_RECALC_SOURCE_ID } from '@repo/service-core';
+import { LifecycleStatusEnum, RoleEnum, RoleGrantReason, VisibilityEnum } from '@repo/schemas';
+import { ADDON_RECALC_SOURCE_ID, getUserRoles, grantRole, revokeRole } from '@repo/service-core';
 import { hash } from 'bcryptjs';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
@@ -464,6 +464,73 @@ async function ensureAddonPurchase(
 }
 
 /**
+ * Brings a test user's set of hats to exactly `{ USER, declaredRole }`
+ * (HOS-296).
+ *
+ * The seed used to heal drift with a single `update(users, { role })`. That
+ * write no longer exists, and "restore the declared shape" is now a SET
+ * operation rather than a scalar assignment — a user who gained HOST through
+ * the host-onboarding funnel after the initial seed holds `{USER, HOST}`, and
+ * granting the declared role alone would leave the extra hat in place. The
+ * smoke matrix depends on a predictable baseline (a `tourist-*` fixture that
+ * still wears HOST shows host navigation), so extras are revoked.
+ *
+ * `USER` is always part of the target set because that is what a real signup
+ * produces: Better Auth's create hook grants `USER`, and anything else is
+ * layered on top. Keeping it also guarantees the extras-revoke below can never
+ * hit `revokeRole`'s last-role guard.
+ *
+ * Grants run BEFORE revokes for the same reason.
+ *
+ * @param params.userId - The seeded user's id.
+ * @param params.email - Used only for log output.
+ * @param params.declaredRole - The role this fixture declares in `TEST_USERS`.
+ */
+async function syncTestUserRoles(params: {
+    userId: string;
+    email: string;
+    declaredRole: (typeof RoleEnum)[keyof typeof RoleEnum];
+}): Promise<void> {
+    const { userId, email, declaredRole } = params;
+
+    const desired = new Set<(typeof RoleEnum)[keyof typeof RoleEnum]>([
+        RoleEnum.USER,
+        declaredRole
+    ]);
+
+    for (const role of desired) {
+        const granted = await grantRole({
+            userId,
+            role,
+            grantedBy: null,
+            reason: RoleGrantReason.SEED
+        });
+        if (granted.error) {
+            throw new Error(`Failed to grant ${role} to ${email}: ${granted.error.message}`);
+        }
+    }
+
+    const held = await getUserRoles({ userId });
+    for (const role of held) {
+        if (desired.has(role)) {
+            continue;
+        }
+        const revoked = await revokeRole({
+            userId,
+            role,
+            revokedBy: null,
+            reason: RoleGrantReason.SEED
+        });
+        if (revoked.error) {
+            throw new Error(`Failed to revoke ${role} from ${email}: ${revoked.error.message}`);
+        }
+        logger.info(
+            `${STATUS_ICONS.Info}    Healed role drift for ${email} (revoked extra ${role})`
+        );
+    }
+}
+
+/**
  * Seeds 13 test users for SPEC-143 Block 1 local entitlement testing.
  *
  * Each user receives:
@@ -538,16 +605,8 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
                 );
                 skipped++;
 
-                // Heal role drift: a downstream flow (e.g. host-onboarding) may have
-                // promoted a USER to HOST after the initial seed. Re-running the seed
-                // must restore the matrix to its declared shape so smoke runs against
-                // a predictable baseline.
-                if (existing.role !== spec.role) {
-                    await userModel.update({ id: userId }, { role: spec.role });
-                    logger.info(
-                        `${STATUS_ICONS.Info}    Healed role drift for ${spec.email} (${existing.role} → ${spec.role})`
-                    );
-                }
+                // Role drift is healed below, after the user row is guaranteed
+                // to exist — see `syncTestUserRoles`.
 
                 // Even if the user row exists, fill in missing account/billing rows below.
             } else {
@@ -560,7 +619,6 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
                     displayName: spec.displayName,
                     firstName,
                     lastName,
-                    role: spec.role,
                     lifecycleState: LifecycleStatusEnum.ACTIVE,
                     visibility: VisibilityEnum.PUBLIC
                 });
@@ -572,6 +630,9 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
                     msg: `${STATUS_ICONS.Success}  Created user ${spec.email} (${spec.role}, id: ${userId})`
                 });
             }
+
+            // ── Sync the declared role SET (HOS-296) ─────────────────────────
+            await syncTestUserRoles({ userId, email: spec.email, declaredRole: spec.role });
 
             // ── Mark user ready (SPEC-264) ───────────────────────────────────
             // Writes the domain state that onboarding gates read so the user is

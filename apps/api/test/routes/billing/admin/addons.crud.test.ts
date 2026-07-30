@@ -101,7 +101,7 @@ vi.mock('../../../../src/utils/create-app', () => ({
 vi.mock('../../../../src/middlewares/actor', () => ({
     getActorFromContext: vi.fn().mockReturnValue({
         id: 'actor-00000000-0000-0000-0000-000000000001',
-        role: 'SUPER_ADMIN',
+        roles: ['SUPER_ADMIN'],
         permissions: ['billing:read_all', 'billing:manage']
     })
 }));

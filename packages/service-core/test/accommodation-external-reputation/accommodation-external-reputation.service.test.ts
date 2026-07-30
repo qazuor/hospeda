@@ -168,7 +168,7 @@ function makeReputation(
 function makeOwnerActor(): Actor {
     return {
         id: OWNER_ID,
-        role: 'HOST' as never,
+        roles: ['HOST'] as never,
         permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
     };
 }
@@ -176,7 +176,7 @@ function makeOwnerActor(): Actor {
 function makeAdminActor(): Actor {
     return {
         id: ADMIN_ID,
-        role: 'ADMIN' as never,
+        roles: ['ADMIN'] as never,
         permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY]
     };
 }
@@ -184,7 +184,7 @@ function makeAdminActor(): Actor {
 function makeNonOwnerActor(): Actor {
     return {
         id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
-        role: 'HOST' as never,
+        roles: ['HOST'] as never,
         permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
     };
 }

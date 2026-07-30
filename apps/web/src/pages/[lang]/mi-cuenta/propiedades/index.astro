@@ -23,7 +23,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
-import { isHostRole } from '@/lib/account-roles';
+import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import { MAX_ACCOMMODATIONS_LIMIT_KEY, parseUsageResponse } from '@/lib/host/usage-badge';
@@ -56,7 +56,10 @@ if (!user) {
 
 // Role gate: only host-level roles may manage properties. A plain tourist
 // reaching this URL directly is redirected back to the account home.
-if (!isHostRole(user.role)) {
+// HOS-296: gate through the shared `nav-gating` predicate over the role SET,
+// so this page and the sidebar that links to it can never disagree, and a
+// user who holds HOST alongside other hats still passes.
+if (!hasAccommodationsNavAccess({ roles: user.roles })) {
     return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
 }
 

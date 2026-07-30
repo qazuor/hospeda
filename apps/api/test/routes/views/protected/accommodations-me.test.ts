@@ -134,13 +134,13 @@ const mockGetActorFromContext = vi.mocked(getActorFromContext);
 
 const HOST_ACTOR: Actor = {
     id: 'host-uuid-001',
-    role: RoleEnum.HOST,
+    roles: [RoleEnum.HOST],
     permissions: [PermissionEnum.ACCOMMODATION_VIEW_OWN]
 };
 
 const ANOTHER_HOST_ACTOR: Actor = {
     id: 'host-uuid-002',
-    role: RoleEnum.HOST,
+    roles: [RoleEnum.HOST],
     permissions: [PermissionEnum.ACCOMMODATION_VIEW_OWN]
 };
 
@@ -375,7 +375,7 @@ describe('hostAccommodationViewStatsRoute handler — SPEC-159 T-009', () => {
             // Arrange — actor has no permissions
             const actorWithoutPermission: Actor = {
                 id: 'no-perm-user',
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: []
             };
             mockGetActorFromContext.mockReturnValue(actorWithoutPermission);

@@ -17,7 +17,7 @@ import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { CommerceListingActions } from '@/components/commerce/CommerceListingActions.client';
-import { isCommerceOwnerRole } from '@/lib/account-roles';
+import { hasCommerceNavAccess } from '@/lib/nav-gating';
 import { fetchOwnerCommerceListingsWithState } from '@/lib/commerce/owner-listings';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -34,7 +34,9 @@ if (!user) {
 }
 
 // Role gate: only commerce owners (and staff) may manage commerce listings.
-if (!isCommerceOwnerRole(user.role)) {
+// HOS-296: gate through the shared `nav-gating` predicate over the role SET,
+// so a COMMERCE_OWNER who is ALSO a HOST keeps commerce access (AC-1).
+if (!hasCommerceNavAccess({ roles: user.roles })) {
     return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
 }
 

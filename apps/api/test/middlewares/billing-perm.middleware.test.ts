@@ -50,7 +50,7 @@ function createMockContext(
     return {
         get: vi.fn((key: string) => {
             if (key === 'actor') {
-                return actorId ? { id: actorId, role: actorRole, permissions } : undefined;
+                return actorId ? { id: actorId, roles: [actorRole], permissions } : undefined;
             }
             return undefined;
         }),

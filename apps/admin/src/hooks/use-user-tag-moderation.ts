@@ -17,7 +17,14 @@ export const userTagModerationQueryKeys = {
 export interface UserTagWithOwner extends Tag {
     readonly ownerDisplayName?: string;
     readonly ownerEmail?: string;
-    readonly ownerRole?: string;
+    /**
+     * Every role the tag's owner holds (HOS-296).
+     *
+     * Replaces the singular `ownerRole`, which the API stopped emitting when
+     * `users.role` was dropped — declared optional, it kept type-checking and
+     * kept the column permanently blank.
+     */
+    readonly ownerRoles?: readonly string[];
     readonly usageCount?: number;
 }
 

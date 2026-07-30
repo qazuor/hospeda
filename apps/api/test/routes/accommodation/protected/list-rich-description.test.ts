@@ -107,7 +107,7 @@ function buildApp(): Hono<AppBindings> {
     app.use((c, next) => {
         c.set('actor', {
             id: OWNER_ID,
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
         });
         return next();

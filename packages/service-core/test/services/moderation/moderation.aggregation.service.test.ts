@@ -55,7 +55,7 @@ import { expectSuccess } from '../../helpers/assertions';
 function makeModerationActor() {
     return createActor({
         id: getMockId('user'),
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [PermissionEnum.ACCOMMODATION_MODERATION_CHANGE]
     });
 }
@@ -64,7 +64,7 @@ function makeModerationActor() {
 function makeUnprivilegedActor() {
     return createActor({
         id: getMockId('user'),
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: []
     });
 }
@@ -237,7 +237,7 @@ describe('ModerationAggregationService.getPendingCount', () => {
             // Arrange — actor with no id simulates a guest/unauthenticated request
             const actor = createActor({
                 id: '' as unknown as string,
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [PermissionEnum.ACCOMMODATION_MODERATION_CHANGE]
             });
 

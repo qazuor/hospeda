@@ -57,6 +57,7 @@ import { DashboardResolverProvider } from '@/contexts/dashboard-resolver-context
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { useCurrentRoleConfig } from '@/hooks/use-current-role-config';
 import { useTranslations } from '@/hooks/use-translations';
+import { joinRolesForKey } from '@/lib/dashboard-sources';
 // Side-effect import — registers all per-role data sources at module load time.
 import '@/lib/dashboard-sources/index';
 import { RefreshIcon } from '@repo/icons';
@@ -293,7 +294,9 @@ export interface DashboardRendererProps {
      * Explicit role string used for query invalidation (maps to the second
      * segment of the `['dashboard', userRole]` query key prefix).
      *
-     * When omitted, the value is read from `useAuthContext().user?.role ?? ''`.
+     * When omitted, the value is derived from `useAuthContext().user?.roles`
+     * via {@link joinRolesForKey} (HOS-296: sorted + joined, since the user
+     * holds a SET of roles, not a single scalar).
      */
     readonly userRole?: string;
 }
@@ -336,8 +339,10 @@ export function DashboardRenderer({
     const roleConfig = useCurrentRoleConfig();
 
     // The role string drives query invalidation.
-    // Prefer the explicit prop; fall back to the authenticated user's role.
-    const activeRole = userRoleProp ?? user?.role ?? '';
+    // Prefer the explicit prop; fall back to the authenticated user's role
+    // SET, sorted + joined (HOS-296) so a multi-hat user still gets a stable,
+    // unambiguous discriminator.
+    const activeRole = userRoleProp ?? joinRolesForKey(user?.roles ?? []);
 
     // Resolve the dashboard definition.
     let activeDashboard: Dashboard | undefined = dashboardProp;

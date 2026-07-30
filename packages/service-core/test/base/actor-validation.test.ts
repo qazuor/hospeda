@@ -58,7 +58,7 @@ describe('BaseCrudService — actor validation (SPEC-059 GAP-053)', () => {
 
     it('returns UNAUTHORIZED (not INTERNAL_ERROR) when actor.id is undefined', async () => {
         // Arrange — actor is an object but has no id
-        const missingIdActor = { permissions: [], role: 'USER' } as unknown as Actor;
+        const missingIdActor = { permissions: [], roles: ['USER'] } as unknown as Actor;
 
         // Act
         const result = await service.getById(missingIdActor, 'any-id');

@@ -2,8 +2,8 @@
  * Authentication context for the admin application.
  *
  * Provides centralized auth state using Better Auth's useSession hook,
- * enriched with user role and permissions from the API. Replaces the
- * previous auth context.
+ * enriched with the user's roles (HOS-296: a set, not a single scalar) and
+ * permissions from the API. Replaces the previous auth context.
  *
  * @module auth-context
  */
@@ -21,7 +21,12 @@ import { adminLogger } from '../utils/logger';
  */
 interface UserSession {
     id: string;
-    role: string;
+    /**
+     * Every role the user holds (HOS-296). Replaces the former single `role`
+     * scalar — an account can wear multiple hats (e.g. `HOST` + `USER`).
+     * Sourced from `/api/v1/public/auth/me`'s `data.actor.roles`.
+     */
+    roles: readonly string[];
     permissions: string[];
     displayName?: string;
     email?: string;
@@ -88,7 +93,16 @@ function getStoredSession(): { user: UserSession | null; isValid: boolean } {
             return { user: null, isValid: false };
         }
 
-        const user = JSON.parse(userStr) as UserSession;
+        const parsed = JSON.parse(userStr) as Partial<UserSession> & Record<string, unknown>;
+        // HOS-296: a session persisted under the OLD shape (`{ role: 'ADMIN' }`,
+        // pre-multi-role) would otherwise hydrate with `roles === undefined` and
+        // crash the first `.includes()` call downstream. The storage key is
+        // unchanged across this migration, so a stale entry is a real
+        // upgrade-path case, not a hypothetical one — default to `[]`.
+        const user: UserSession = {
+            ...(parsed as UserSession),
+            roles: Array.isArray(parsed.roles) ? parsed.roles : []
+        };
         return { user, isValid: true };
     } catch (error) {
         adminLogger.warn('Failed to parse stored session', error);
@@ -150,7 +164,8 @@ async function fetchUserSession(): Promise<UserSession | null> {
                 isAuthenticated: boolean;
                 actor?: {
                     id: string;
-                    role: string;
+                    /** Every role the actor holds (HOS-296). Defaults to `[]` when absent. */
+                    roles?: string[];
                     permissions?: string[];
                 };
             };
@@ -165,7 +180,7 @@ async function fetchUserSession(): Promise<UserSession | null> {
             const actor = responseData.data.actor;
             return {
                 id: actor.id,
-                role: actor.role,
+                roles: actor.roles ?? [],
                 permissions: actor.permissions || []
             };
         }
@@ -204,7 +219,7 @@ export function AuthProvider({ children, initialAuthState }: AuthProviderProps) 
                 isAuthenticated: true,
                 user: {
                     id: initialAuthState.userId,
-                    role: initialAuthState.role ?? '',
+                    roles: initialAuthState.roles ?? [],
                     permissions: [...initialAuthState.permissions],
                     displayName: initialAuthState.displayName ?? undefined,
                     email: initialAuthState.email ?? undefined,
@@ -415,16 +430,18 @@ export function AuthProvider({ children, initialAuthState }: AuthProviderProps) 
     }, [authState.isAuthenticated, refreshSession]);
 
     /**
-     * PostHog identify — fires once the authenticated staff user is fully
-     * resolved. Only non-sensitive traits are sent. The counterpart `resetUser()` call lives in
+     * resolved (roles + email already enriched by the sync effect above).
+     * Only non-sensitive traits are sent: `roles` (the full set the account
+     * holds, HOS-296 — never a single "primary" role), and the email's domain
+     * (never the full address). The counterpart `resetUser()` call lives in
      * `handleSignOut`, not here, so this effect never needs to distinguish
      * "not yet loaded" from "signed out".
      */
     useEffect(() => {
         if (authState.isAuthenticated && authState.user) {
             identifyUser(authState.user.id, {
-                role: authState.user.role,
-                user_type: 'staff'
+                roles: [...authState.user.roles],
+                emailDomain: authState.user.email?.split('@')[1]
             });
         }
     }, [authState.isAuthenticated, authState.user]);

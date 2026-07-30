@@ -3,7 +3,6 @@ import type { User as UserType } from '../../src/entities/user/user.schema.js';
 import {
     LifecycleStatusEnum,
     PermissionEnum,
-    RoleEnum,
     VisibilityEnum
 } from '../../src/enums/index.js';
 
@@ -26,8 +25,8 @@ export const createUserFixture = (overrides: Partial<UserType> = {}): UserType =
         firstName: 'John',
         lastName: 'Doe',
 
-        // Role and permissions
-        role: RoleEnum.USER,
+        // Permissions. HOS-296 dropped the scalar `role` from `UserSchema`;
+        // a user's hats live in `user_role` and are never part of the entity.
         permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
 
         // Contact info
@@ -101,7 +100,6 @@ export const createMinimalUserFixture = (overrides: Partial<UserType> = {}): Par
         displayName: 'Jane Doe',
         lifecycleState: LifecycleStatusEnum.ACTIVE,
         visibility: VisibilityEnum.PUBLIC,
-        role: RoleEnum.USER,
         permissions: [],
         contactInfo: {
             personalEmail: 'jane@example.com',
@@ -119,13 +117,15 @@ export const createMinimalUserFixture = (overrides: Partial<UserType> = {}): Par
 };
 
 /**
- * Creates a user fixture with admin role
+ * Creates a user fixture for an admin-capable account.
+ *
+ * HOS-296: "admin" is now expressed purely through the permission set — the
+ * hat itself lives in `user_role`, outside the user entity.
  */
 export const createAdminUserFixture = (overrides: Partial<UserType> = {}): UserType => {
     return createUserFixture({
         email: 'admin.user@example.com',
         displayName: 'Admin User',
-        role: RoleEnum.ADMIN,
         permissions: [
             PermissionEnum.ACCOMMODATION_VIEW_ALL,
             PermissionEnum.ACCOMMODATION_UPDATE_ANY,
@@ -137,13 +137,12 @@ export const createAdminUserFixture = (overrides: Partial<UserType> = {}): UserT
 };
 
 /**
- * Creates a user fixture with super admin role
+ * Creates a user fixture for a super-admin-capable account (see above).
  */
 export const createSuperAdminUserFixture = (overrides: Partial<UserType> = {}): UserType => {
     return createUserFixture({
         email: 'super.admin@example.com',
         displayName: 'Super Admin',
-        role: RoleEnum.SUPER_ADMIN,
         permissions: Object.values(PermissionEnum),
         ...overrides
     });

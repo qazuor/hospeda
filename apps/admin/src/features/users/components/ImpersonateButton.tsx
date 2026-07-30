@@ -4,6 +4,23 @@
  * Button that triggers user impersonation via Better Auth admin plugin.
  * Gated behind USER_IMPERSONATE permission.
  *
+ * ## TEMPORARILY DISABLED — HOS-296 / re-enabled by HOS-354
+ *
+ * Impersonation is currently NON-FUNCTIONAL and the button is rendered
+ * disabled on purpose. Dropping `users.role` (HOS-296) means Better Auth's
+ * `admin()` plugin can no longer resolve a role for `hasPermission()`: it
+ * falls back to `defaultRole`, decides `noAdminRole`, and every
+ * `/api/auth/admin/*` route answers 403. The failure is CLOSED — nobody gains
+ * access — but the affordance would promise something that cannot work, so it
+ * is disabled with an explanatory tooltip instead of silently erroring.
+ *
+ * Nothing here is deleted: the click handler, the `impersonatedBy` plumbing in
+ * `contexts/auth-context.tsx` and the banner in `AppLayout.tsx` all stay, and
+ * **HOS-354** is the issue that restores impersonation on top of the role set.
+ * Re-enabling should be a matter of flipping {@link IMPERSONATION_ENABLED}
+ * once the Better Auth side resolves roles again.
+ *
+ * @see https://linear.app/hospeda-beta/issue/HOS-354
  * @module ImpersonateButton
  */
 
@@ -15,6 +32,15 @@ import { PermissionGate } from '@/components/auth/PermissionGate';
 import { useTranslations } from '@/hooks/use-translations';
 import { authClient } from '@/lib/auth-client';
 import { adminLogger } from '@/utils/logger';
+
+/**
+ * Master switch for the impersonation affordance.
+ *
+ * `false` until HOS-354 restores a working `/api/auth/admin/*` path. Kept as a
+ * named constant rather than inlined so re-enabling is one edit and greps for
+ * "impersonation disabled" land here.
+ */
+const IMPERSONATION_ENABLED = false;
 
 export interface ImpersonateButtonProps {
     /** The user ID to impersonate */
@@ -62,6 +88,11 @@ export function ImpersonateButton({ userId, variant = 'icon' }: ImpersonateButto
     }, [userId, t]);
 
     const label = t('admin-common.impersonation.start' as TranslationKey);
+    // HOS-354: while disabled, the tooltip/aria label must say WHY — an inert
+    // button with the normal label reads as a bug.
+    const unavailableLabel = t('admin-common.impersonation.unavailable' as TranslationKey);
+    const isDisabled = !IMPERSONATION_ENABLED || isLoading;
+    const title = IMPERSONATION_ENABLED ? label : unavailableLabel;
 
     if (variant === 'icon') {
         return (
@@ -69,10 +100,10 @@ export function ImpersonateButton({ userId, variant = 'icon' }: ImpersonateButto
                 <button
                     type="button"
                     onClick={handleImpersonate}
-                    disabled={isLoading}
-                    title={label}
-                    aria-label={label}
-                    className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-warning/20 hover:text-warning disabled:opacity-50"
+                    disabled={isDisabled}
+                    title={title}
+                    aria-label={title}
+                    className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-warning/20 hover:text-warning disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     <UserSwitchIcon size={16} />
                 </button>
@@ -87,14 +118,14 @@ export function ImpersonateButton({ userId, variant = 'icon' }: ImpersonateButto
             <button
                 type="button"
                 onClick={handleImpersonate}
-                disabled={isLoading}
-                title={label}
-                aria-label={label}
-                className="inline-flex items-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-2 py-1.5 font-medium text-sm text-warning transition-colors hover:bg-warning/20 disabled:opacity-50 sm:px-3"
+                disabled={isDisabled}
+                title={title}
+                aria-label={title}
+                className="inline-flex items-center gap-2 rounded-md border border-warning/40 bg-warning/10 px-2 py-1.5 font-medium text-sm text-warning transition-colors hover:bg-warning/20 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
             >
                 <UserSwitchIcon size={16} />
                 <span className={variant === 'responsive' ? 'hidden sm:inline' : undefined}>
-                    {label}
+                    {IMPERSONATION_ENABLED ? label : unavailableLabel}
                 </span>
             </button>
         </PermissionGate>

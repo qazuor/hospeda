@@ -44,7 +44,7 @@ function createMockContext(
     return {
         get: vi.fn((key: string) => {
             if (key === 'actor') {
-                return actorRole ? { id: 'user-1', role: actorRole, permissions } : null;
+                return actorRole ? { id: 'user-1', roles: [actorRole], permissions } : null;
             }
             return undefined;
         }),
@@ -539,7 +539,7 @@ describe('billingAdminGuardMiddleware', () => {
             const ctx = {
                 get: vi.fn((key: string) => {
                     if (key === 'actor') {
-                        return { id: 'user-1', role: RoleEnum.ADMIN };
+                        return { id: 'user-1', roles: [RoleEnum.ADMIN] };
                     }
                     return undefined;
                 }),

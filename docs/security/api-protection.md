@@ -2475,7 +2475,7 @@ const permissions = ['admin:all'];
 
 // ✅ CORRECT - Minimal permissions
 
-const permissions = getUserPermissions(user.role);
+const permissions = await getPermissionsForRoles({ roles: user.roles }); // HOS-296: a user holds a SET of roles
 ```
 
 ### Fail Securely

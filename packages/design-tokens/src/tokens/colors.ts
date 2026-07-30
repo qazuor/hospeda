@@ -343,6 +343,89 @@ export const chartColors = [
     { l: 0.5, c: 0.08, h: 240 } // chart-5 — deep blue
 ] as const satisfies ReadonlyArray<OKLCH>;
 
+// ============================================================================
+// Third-party channel colors (HOS-314)
+//
+// Brand colors owned by an external messaging channel, plus the values needed
+// to render text ON them accessibly. They are NOT part of the brand palette
+// ladder — a third-party green has no 50-900 ramp in our system and no dark
+// variant, because the channel's identity does not change with our theme.
+//
+// Every value here exists to keep one pairing above WCAG AA; the ratios are in
+// each JSDoc and are asserted (not just documented) in
+// `tokens/channel-contrast.test.ts`.
+// ============================================================================
+
+export const channels = {
+    /**
+     * WhatsApp brand green. Converted from the brand's canonical `#25d366`;
+     * at this module's 3-decimal precision it round-trips to `#26d366`, one
+     * step of 255 on the red channel (visually identical, and it moves the
+     * contrast ratios below by 0.01). Kept in OKLCH rather than pinned as a
+     * hex literal so it lives in the same color space as every other token —
+     * the same call the repo already makes for third-party brands in
+     * `tokens/auth-providers.ts`, which maps Google/Facebook/GitHub onto our
+     * palettes instead of their exact brand hexes.
+     */
+    whatsapp: { l: 0.761, c: 0.201, h: 149.74 },
+
+    /**
+     * Ink for text and icons sitting ON the WhatsApp fill — 9.12:1 (AAA).
+     *
+     * FROZEN ON PURPOSE, and this is the whole trap of HOS-314: the value is
+     * web-light's `--core-foreground`, but it must NEVER become
+     * `var(--core-foreground)`. That token inverts to near-white in dark
+     * (`oklch(0.92 0.01 210)`), and near-white on this green measures 1.56:1 —
+     * WORSE than the 1.98:1 white-on-green pairing this issue fixed. The fill
+     * is theme-invariant (a brand color does not have a dark variant), so its
+     * foreground has to be theme-invariant too. `web-dark.ts` deliberately
+     * does not override it; `tokens/channel-contrast.test.ts` asserts both
+     * halves of that invariant.
+     */
+    whatsappForeground: { l: 0.2, c: 0.02, h: 220 },
+
+    /**
+     * Ink for the WhatsApp LOGOTYPE when it sits alone on the brand fill —
+     * white, i.e. the mark as the brand publishes it.
+     *
+     * Deliberately NOT `whatsappForeground`. WCAG 1.4.3 exempts logotypes from
+     * the contrast requirement, so white-on-green was never a violation for a
+     * badge that contains only the logo and no text; inverting the mark there
+     * would alter a third party's brand for zero accessibility gain (owner
+     * decision, HOS-314). The distinction is text: a button's label and glyph
+     * share `currentColor`, so a labelled CTA must use `whatsappForeground`.
+     *
+     * Its one legitimate consumer is enumerated in the web static guard —
+     * `apps/web/test/static-guards/whatsapp-channel-tokens.test.ts` — so this
+     * cannot become a back door for white text on the green.
+     */
+    whatsappLogo: { l: 1, c: 0, h: 0 },
+
+    /**
+     * Hover fill — WhatsApp's darker green, 7.39:1 against the foreground
+     * above. An explicit shade rather than the `opacity: 0.85` these buttons
+     * used before, because opacity fades the label and the fill together and
+     * so cannot improve their ratio.
+     *
+     * Converted from the brand's `#1ebe5d` and, like `whatsapp` above, one
+     * 8-bit step off it after the round trip: it renders `#1fbe5d`.
+     */
+    whatsappHover: { l: 0.704, c: 0.185, h: 150.223 },
+
+    /**
+     * WhatsApp teal used as TEXT on `--surface-warm` (the display-only tier
+     * that shows the number without a click-to-chat link). 5.42:1 in light.
+     *
+     * Unlike `whatsappForeground` this one MUST invert: `--surface-warm` flips
+     * to a dark navy in dark mode, where this value drops to 2.52:1. The dark
+     * step lives in `web-dark.ts`, mirroring `--hospeda-forest-link` and
+     * `--brand-primary-link` (SPEC-308). The brand's own `#128c7e` is not
+     * usable here — it measures 3.57:1 light / 3.82:1 dark, failing AA in
+     * both.
+     */
+    whatsappText: { l: 0.48, c: 0.08, h: 182.4 }
+} as const satisfies Record<string, OKLCH>;
+
 /**
  * Surface colors — background variants for warm / dark / elevated contexts.
  * Web tokens `--surface-warm`, `--surface-warm-foreground`, `--surface-dark`,

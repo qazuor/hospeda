@@ -18,8 +18,8 @@
  * resolve in this worktree without an explicit alias in vitest.config.ts).
  *
  * PostHog events:
- *  - `admin.whats_new.modal.shown` on open ({ entryIds, role })
- *  - `admin.whats_new.modal.closed` on close ({ entryIds })
+ *  - `admin_whats_new_modal_shown` on open ({ entry_count, roles })
+ *  - `admin_whats_new_modal_closed` on close ({ entry_count })
  *
  * Accessibility: Radix Dialog provides focus trap + ESC handling.
  * `aria-labelledby` is wired to `DialogTitle`.
@@ -96,16 +96,17 @@ export function WhatsNewModal({ open, onOpenChange, entryId }: WhatsNewModalProp
     }, [items, entryId]);
 
     const displayedIds = useMemo(() => displayedEntries.map((e) => e.id), [displayedEntries]);
+    const rolesKey = (user?.roles ?? []).join('|');
 
     // Track modal shown event when it opens with entries.
     useEffect(() => {
         if (open && displayedIds.length > 0) {
             trackEvent(AnalyticsEvents.adminWhatsNewModalShown, {
                 entry_count: displayedIds.length,
-                role: user?.role
+                roles: rolesKey === '' ? [] : rolesKey.split('|')
             });
         }
-    }, [open, displayedIds, user?.role]);
+    }, [open, displayedIds, rolesKey]);
 
     // Handle close: mark shown entries as seen + fire analytics.
     const handleClose = useCallback(() => {

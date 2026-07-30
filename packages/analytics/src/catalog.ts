@@ -277,25 +277,30 @@ export const AnalyticsEventSchemas = {
     }),
     [AnalyticsEvents.adminTourShown]: z.object({
         role: nullableStringSchema,
+        roles: z.array(z.string().min(1)).optional(),
         source: nullableStringSchema,
         tour_id: idSchema
     }),
     [AnalyticsEvents.adminTourCompleted]: z.object({
         role: nullableStringSchema,
+        roles: z.array(z.string().min(1)).optional(),
         tour_id: idSchema
     }),
     [AnalyticsEvents.adminTourSkipped]: z.object({
         role: nullableStringSchema,
+        roles: z.array(z.string().min(1)).optional(),
         source: nullableStringSchema,
         tour_id: idSchema
     }),
     [AnalyticsEvents.adminWhatsNewPanelOpened]: z.object({
         role: nullableStringSchema,
+        roles: z.array(z.string().min(1)).optional(),
         unseen_count: countSchema.optional()
     }),
     [AnalyticsEvents.adminWhatsNewModalShown]: z.object({
         entry_count: countSchema,
-        role: nullableStringSchema
+        role: nullableStringSchema,
+        roles: z.array(z.string().min(1)).optional()
     }),
     [AnalyticsEvents.adminWhatsNewModalClosed]: z.object({
         entry_count: countSchema

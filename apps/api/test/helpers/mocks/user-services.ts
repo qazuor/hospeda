@@ -19,7 +19,7 @@ export class UserService {
         return {
             data: {
                 id: userId,
-                role: 'ADMIN',
+                roles: ['ADMIN'],
                 permissions: ['*']
             }
         };

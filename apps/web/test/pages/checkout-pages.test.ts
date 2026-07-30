@@ -168,7 +168,7 @@ describe('SPEC-143 T-143-44 — checkout return pages (D1, D2, D3, index)', () =
             // resolved server-side here (middleware does not parse the session
             // for /suscriptores/*). The actual planes-vs-turistas decision is
             // unit-tested in src/lib/__tests__/account-roles.test.ts.
-            expect(failureSrc).toContain('resolveSubscriptionPlansPath({ role:');
+            expect(failureSrc).toContain('resolveSubscriptionPlansPath({ roles:');
             expect(failureSrc).toContain('href: planesUrl');
             // The bug was a hardcoded owner-page link; it must no longer appear.
             expect(failureSrc).not.toContain("path: 'suscriptores/planes'");
@@ -277,7 +277,7 @@ describe('SPEC-143 T-143-44 — checkout return pages (D1, D2, D3, index)', () =
             // owner link. Emitted as an explicit Response (not Astro.redirect) so
             // the Cache-Control header rides along with the 302.
             expect(indexSrc).toContain('requestHasSessionCookie');
-            expect(indexSrc).toContain('resolveSubscriptionPlansPath({ role:');
+            expect(indexSrc).toContain('resolveSubscriptionPlansPath({ roles:');
             expect(indexSrc).toContain('status: 302');
             expect(indexSrc).toContain('Location:');
             expect(indexSrc).not.toContain("path: 'suscriptores/planes'");

@@ -96,7 +96,7 @@ const ALL_ENTITY_PERMISSIONS: readonly PermissionEnum[] = [
 function createFullAdminActor(extraPermissions: readonly PermissionEnum[] = []): Actor {
     return {
         id: crypto.randomUUID(),
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [...ADMIN_ACCESS_PERMISSIONS, ...ALL_ENTITY_PERMISSIONS, ...extraPermissions]
     };
 }
@@ -374,7 +374,7 @@ describe('Admin List Routes (adminList)', () => {
             // Arrange - user with entity permission but no admin access
             const actor: Actor = {
                 id: crypto.randomUUID(),
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: [representativeRoute.permission]
             };
             const reqOpts = createAuthenticatedRequest(actor);
@@ -390,7 +390,7 @@ describe('Admin List Routes (adminList)', () => {
             // Arrange - admin with panel access but no entity permission
             const actor: Actor = {
                 id: crypto.randomUUID(),
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [...ADMIN_ACCESS_PERMISSIONS]
             };
             const reqOpts = createAuthenticatedRequest(actor);

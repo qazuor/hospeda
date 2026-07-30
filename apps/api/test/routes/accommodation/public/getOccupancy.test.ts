@@ -73,7 +73,7 @@ function buildApp(
     const app = new Hono<AppBindings>();
     attachTestErrorHandler(app);
     app.use((c, next) => {
-        c.set('actor', { id: GUEST_ID, role: RoleEnum.GUEST, permissions: [] });
+        c.set('actor', { id: GUEST_ID, roles: [RoleEnum.GUEST], permissions: [] });
         return next();
     });
     for (const route of routes) {

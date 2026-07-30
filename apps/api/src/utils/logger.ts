@@ -57,8 +57,15 @@ interface PermissionValidationParams {
     permission: string;
     /** The ID of the user whose permission is being checked. */
     userId: string;
-    /** The role of the user. */
-    role: string;
+    /**
+     * Every role the user holds (HOS-296). Mirrors
+     * `PermissionValidationParams` in `@repo/service-core`'s `service-logger`,
+     * which this shape must stay structurally compatible with — the two logger
+     * types are assigned to each other across the app/package boundary, so a
+     * divergence here is a typecheck failure at every call site that passes an
+     * `apiLogger` where a `ServiceLogger` is expected.
+     */
+    roles: readonly string[];
     /** Any additional data relevant to the permission check. */
     extraData: unknown;
 }

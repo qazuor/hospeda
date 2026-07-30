@@ -101,7 +101,7 @@ describe('BaseCrudService.create forwards ctx to _canCreate (BETA-106)', () => {
     const actor = {
         id: 'u1',
         type: 'user',
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: []
     } as unknown as Actor;
 

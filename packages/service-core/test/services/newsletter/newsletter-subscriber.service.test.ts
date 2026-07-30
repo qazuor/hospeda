@@ -95,7 +95,7 @@ const EMAIL = 'user@example.com';
 function makeOwnerActor(id = USER_ID, options: { emailVerified?: boolean } = {}): Actor {
     return {
         id,
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: [],
         emailVerified: options.emailVerified ?? true
     };
@@ -107,7 +107,7 @@ function makeOwnerActor(id = USER_ID, options: { emailVerified?: boolean } = {})
 function makeAdminActor(): Actor {
     return {
         id: '33333333-3333-4333-a333-333333333333',
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [PermissionEnum.NEWSLETTER_SUBSCRIBER_VIEW]
     };
 }
@@ -351,7 +351,7 @@ describe('NewsletterSubscriberService.subscribe', () => {
             // Force-strip emailVerified to mimic a legacy actor.
             const actor: Actor = {
                 id: USER_ID,
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: []
             };
 

@@ -9,7 +9,7 @@
  * Gating (HOS-131 D-4): each group/item declares its own `requiredPermission`
  * (`PermissionEnum`) as the single source of gating semantics. Evaluation is
  * asymmetric by surface — see `src/lib/nav-gating.ts` for the two evaluators
- * (`isVisibleByPermissions` for client surfaces, `isVisibleByRole` for the
+ * (`isVisibleByPermissions` for client surfaces, `isVisibleByRoles` for the
  * server-rendered sidebar) that consume these declarations.
  *
  * Labels are stored as i18n **keys** (not resolved text) — surfaces resolve
@@ -63,7 +63,7 @@ export interface NavItem {
     readonly icon: ComponentType<IconProps>;
     /**
      * Gating declaration (HOS-131 D-4). Omitted means "always visible" —
-     * evaluated by `isVisibleByPermissions` / `isVisibleByRole`.
+     * evaluated by `isVisibleByPermissions` / `isVisibleByRoles`.
      */
     readonly requiredPermission?: PermissionEnum;
     /** Which surfaces render this item. */
@@ -297,7 +297,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
 /**
  * A predicate that decides whether a gated node (a `NavGroup` or `NavItem`)
  * should be visible, given its `requiredPermission` declaration. Implemented
- * by `isVisibleByPermissions` and `isVisibleByRole` in `src/lib/nav-gating.ts`.
+ * by `isVisibleByPermissions` and `isVisibleByRoles` in `src/lib/nav-gating.ts`.
  */
 export type NavVisibilityPredicate = (node: {
     readonly requiredPermission?: PermissionEnum;
@@ -309,7 +309,7 @@ export interface GetNavForSurfaceParams {
     readonly surface: NavSurface;
     /**
      * Gating predicate — pass `isVisibleByPermissions(permissions)` on client
-     * surfaces or `isVisibleByRole(role)` on the server-rendered sidebar.
+     * surfaces or `isVisibleByRoles(roles)` on the server-rendered sidebar.
      */
     readonly visibility: NavVisibilityPredicate;
 }

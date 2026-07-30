@@ -25,11 +25,11 @@ describe('UserService.count', () => {
     let userModelMock: UserModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     const admin = createActor({
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [PermissionEnum.USER_READ_ALL]
     });
     const superAdmin = createSuperAdminActor();
-    const user = createActor({ role: RoleEnum.USER, permissions: [] });
+    const user = createActor({ roles: [RoleEnum.USER], permissions: [] });
 
     beforeEach(() => {
         userModelMock = createTypedModelMock(UserModel, ['count']);

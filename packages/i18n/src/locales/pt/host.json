@@ -182,8 +182,8 @@
     },
     "properties": {
         "list": {
-            "title": "[TODO]",
-            "subtitle": "[TODO]",
+            "title": "Minhas propriedades",
+            "subtitle": "Gerencie suas publicações",
             "publishAnother": "Publicar outra",
             "needsPlanBanner": {
                 "title": "Você é um anfitrião em preparação",
@@ -198,16 +198,16 @@
         },
         "card": {
             "status": {
-                "DRAFT": "[TODO]",
-                "PUBLISHED": "[TODO]",
-                "SUSPENDED": "[TODO]",
+                "DRAFT": "Rascunho",
+                "PUBLISHED": "Publicada",
+                "SUSPENDED": "Suspensa",
                 "INACTIVE": "Pausada"
             },
             "actions": {
                 "edit": "Editar",
-                "publish": "[TODO]",
-                "unpublish": "[TODO]",
-                "viewOnSite": "[TODO]",
+                "publish": "Publicar",
+                "unpublish": "Despublicar",
+                "viewOnSite": "Ver no site",
                 "unpublishConfirm": "Despublicar este imóvel? Ele não aparecerá mais no site.",
                 "confirmYes": "Sim, despublicar",
                 "confirmNo": "Cancelar",
@@ -218,7 +218,7 @@
                 "publishConfirmNote": "Vai aparecer no site, visível para os turistas.",
                 "publishYes": "Sim, publicar"
             },
-            "pricePerNight": "[TODO]",
+            "pricePerNight": "por noite",
             "unpublishSuccess": "Imóvel despublicado",
             "unpublishError": "Não foi possível despublicar. Tente novamente.",
             "deleteError": "Não foi possível excluir. Tente novamente.",
@@ -492,15 +492,15 @@
             }
         },
         "empty": {
-            "title": "[TODO]",
-            "cta": "[TODO]"
+            "title": "Você ainda não publicou nenhuma propriedade",
+            "cta": "Publicar agora"
         }
     },
     "landing": {
-        "heroHeadline": "[TODO]",
-        "heroSubheadline": "[TODO]",
-        "primaryCta": "[TODO]",
-        "secondaryCta": "[TODO]",
+        "heroHeadline": "Transforme sua propriedade em renda",
+        "heroSubheadline": "Publique em minutos e comece a receber hóspedes",
+        "primaryCta": "Publicar sua propriedade",
+        "secondaryCta": "Ver minhas propriedades",
         "trialCallout": "Experimente o Hospeda gratis por {{trialDays}} dias na sua primeira assinatura. Você escolhe seu plano, cadastra seu cartão e nada é cobrado até o teste terminar."
     },
     "fromAdminBanner": {

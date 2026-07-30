@@ -162,6 +162,7 @@
             "verified": "Verified",
             "notVerified": "Not verified",
             "role": "Role",
+            "roles": "Roles",
             "permissions": "Permissions",
             "permissionsCount_one": "{{count}} permission assigned",
             "permissionsCount_other": "{{count}} permissions assigned",
@@ -721,6 +722,17 @@
                         "cap5": "Contact hosts"
                     }
                 },
+                "COMMERCE_OWNER": {
+                    "name": "Commerce Owner",
+                    "description": "Owner of a commerce listing who manages their own business profile",
+                    "capabilities": {
+                        "cap1": "Manage their commerce listing",
+                        "cap2": "Update opening hours and contact details",
+                        "cap3": "Upload photos",
+                        "cap4": "Reply to reviews",
+                        "cap5": "View their commerce analytics"
+                    }
+                },
                 "SPONSOR": {
                     "name": "Sponsor",
                     "description": "External business sponsor with access to sponsorship management and analytics",
@@ -828,7 +840,30 @@
                 "grantPermission": "Grant",
                 "denyPermission": "Deny",
                 "cancel": "Cancel",
-                "error": "Something went wrong"
+                "error": "Something went wrong",
+                "inheritedFromRolesDesc": "This user inherits the union of the permissions of every role they hold. Role-based permissions are managed on the Roles page and apply to every user with that role.",
+                "viewRoleDetailsRolesDesc": "To see the complete permission list of each role, visit the"
+            },
+            "roles": {
+                "title": "Roles",
+                "description": "Every role this account holds. Granting one never removes another.",
+                "loading": "Loading roles…",
+                "error": "Something went wrong",
+                "loadFailedBadge": "Roles unavailable",
+                "granted": "Role granted",
+                "revoked": "Role revoked",
+                "grantedAt": "Granted",
+                "grantedBySystem": "Automatically",
+                "grantRole": "Grant role",
+                "revokeRole": "Revoke role",
+                "confirmRevoke": "Revoke this role?",
+                "confirmRevokeDesc": "The user loses every permission that only this role provided. Their other roles are untouched.",
+                "cancel": "Cancel",
+                "cannotRevokeLast": "An account must keep at least one role, so the last one cannot be revoked.",
+                "selectRolePlaceholder": "Select a role to grant",
+                "reasonPlaceholder": "Reason for this grant (optional, recorded in the audit trail)",
+                "revokeReasonPlaceholder": "Reason for this revoke (optional, recorded in the audit trail)",
+                "changesTakeEffectNextRequest": "Changes take effect on the user's next request"
             }
         }
     },

@@ -138,7 +138,7 @@ const mockGetActorFromContext = vi.mocked(getActorFromContext);
 
 const HOST_ACTOR: Actor = {
     id: 'host-owner-id',
-    role: RoleEnum.HOST,
+    roles: [RoleEnum.HOST],
     permissions: []
 };
 

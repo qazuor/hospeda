@@ -94,7 +94,7 @@ vi.mock('../../../../src/middlewares/authorization', () => ({
             c: { set: (key: string, value: unknown) => void },
             next: () => Promise<void>
         ): Promise<void> => {
-            c.set('actor', { id: TEST_ACTOR_ID, role: 'USER', permissions: [] });
+            c.set('actor', { id: TEST_ACTOR_ID, roles: ['USER'], permissions: [] });
             await next();
         }
 }));

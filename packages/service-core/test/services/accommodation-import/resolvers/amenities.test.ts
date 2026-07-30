@@ -80,7 +80,7 @@ const emptySearchResult: AmenitySearchForListOutput = {
 /** Minimal fake Actor used across all tests. */
 const fakeActor: Actor = {
     id: 'actor-uuid-001',
-    role: 'ADMIN',
+    roles: ['ADMIN'],
     permissions: ['amenity.view']
 } as unknown as Actor;
 

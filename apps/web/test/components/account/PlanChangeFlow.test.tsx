@@ -233,7 +233,7 @@ const ACTIVE_SUBSCRIPTION = {
     paymentMethod: null
 };
 
-const USER: SubscriptionDashboardUser = { id: 'user-1', role: 'HOST' };
+const USER: SubscriptionDashboardUser = { id: 'user-1', roles: ['USER', 'HOST'] };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

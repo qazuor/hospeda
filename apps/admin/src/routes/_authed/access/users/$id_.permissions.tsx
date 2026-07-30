@@ -1,23 +1,24 @@
 /**
  * User Permissions Tab Route
  *
- * Displays permissions for a specific user based on their role.
- * Shows inherited permissions from role and any direct overrides.
+ * Displays the roles a user holds and the permissions that follow from them.
+ *
+ * HOS-296: the "current role" summary card was a single-value read of
+ * `user.role`, a column that no longer exists. It is replaced by
+ * {@link UserRolesCard}, which shows the full SET with each hat's provenance
+ * and lets an operator grant/revoke — the panel-side half of AC-10.
  *
  * Uses the same sticky header chrome as `$id.tsx` and `$id_.edit.tsx` via
  * `UserSiblingPageShell` so navigation between Perfil / Permisos / Actividad
  * stays visually cohesive.
  */
 
-import type { TranslationKey } from '@repo/i18n';
-import { InfoIcon, ShieldIcon } from '@repo/icons';
-import { RoleEnum } from '@repo/schemas';
+import { InfoIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PermissionOverridesCard } from '@/features/users/components/permissions/PermissionOverridesCard';
+import { UserRolesCard } from '@/features/users/components/roles/UserRolesCard';
 import { UserSiblingPageShell } from '@/features/users/components/UserSiblingPageShell';
-import { useUserQuery } from '@/features/users/hooks/useUserQuery';
 import { useTranslations } from '@/hooks/use-translations';
 
 export const Route = createFileRoute('/_authed/access/users/$id_/permissions')({
@@ -36,49 +37,11 @@ function UserPermissionsPage() {
 
 function PermissionsBody({ userId }: { readonly userId: string }) {
     const { t } = useTranslations();
-    const { data: user } = useUserQuery(userId);
-
-    if (!user) return null;
-
-    const userRole = (user.role || RoleEnum.USER) as RoleEnum;
-    const roleInfo = {
-        label: t(`admin-pages.access.roles.catalog.${userRole}.name` as TranslationKey),
-        description: t(`admin-pages.access.roles.catalog.${userRole}.description` as TranslationKey)
-    };
 
     return (
         <div className="space-y-6">
-            {/* User role card */}
-            <Card>
-                <CardHeader>
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                            <ShieldIcon className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                            <CardTitle className="text-lg">
-                                {t('admin-pages.access.users.permissions.currentRole')}
-                            </CardTitle>
-                            <p className="text-muted-foreground text-sm">
-                                {t('admin-pages.access.users.permissions.currentRoleDesc')}
-                            </p>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                            <Badge
-                                variant="default"
-                                className="text-sm"
-                            >
-                                {roleInfo.label}
-                            </Badge>
-                        </div>
-                        <p className="text-muted-foreground text-sm">{roleInfo.description}</p>
-                    </div>
-                </CardContent>
-            </Card>
+            {/* Held roles + grant/revoke (HOS-296) */}
+            <UserRolesCard userId={userId} />
 
             {/* Inherited permissions info */}
             <Card>
@@ -99,10 +62,11 @@ function PermissionsBody({ userId }: { readonly userId: string }) {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
+                        {/* HOS-296: the copy is role-set aware — a user inherits the
+                            UNION of the permissions of every hat they wear, not the
+                            permissions of "their role". */}
                         <p className="text-muted-foreground text-sm">
-                            {t('admin-pages.access.users.permissions.inheritedDesc')}{' '}
-                            <strong>{roleInfo.label}</strong>{' '}
-                            {t('admin-pages.access.users.permissions.inheritedNote')}
+                            {t('admin-pages.access.users.permissions.inheritedFromRolesDesc')}
                         </p>
 
                         <div className="rounded-lg border border-info/30 bg-info/10 p-4">
@@ -110,8 +74,7 @@ function PermissionsBody({ userId }: { readonly userId: string }) {
                                 <strong>
                                     {t('admin-pages.access.users.permissions.viewRoleDetails')}
                                 </strong>{' '}
-                                {t('admin-pages.access.users.permissions.viewRoleDetailsDesc')}{' '}
-                                {roleInfo.label},{' '}
+                                {t('admin-pages.access.users.permissions.viewRoleDetailsRolesDesc')}{' '}
                                 <a
                                     href="/access/roles"
                                     className="underline hover:text-info"

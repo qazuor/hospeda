@@ -5,7 +5,7 @@ import type { DestinationService } from '../../../src/services/destination/desti
 import { WeatherService } from '../../../src/services/weather/weather.service.js';
 import type { Actor } from '../../../src/types/index.js';
 
-const ACTOR = { id: 'guest', role: 'GUEST', permissions: [] } as unknown as Actor;
+const ACTOR = { id: 'guest', roles: ['GUEST'], permissions: [] } as unknown as Actor;
 
 const WEATHER: DestinationWeatherCacheInput = {
     current: {

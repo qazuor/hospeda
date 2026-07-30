@@ -36,7 +36,7 @@ import {
 
 function makeHostCtx(userId = 'usr_host_001'): ResolverContext {
     return {
-        role: 'HOST',
+        roles: ['HOST'],
         userId,
         permissions: ['ACCOMMODATION_VIEW_OWN', 'REVIEW_VIEW_OWN', 'CONVERSATION_VIEW_OWN'],
         scope: 'own'
@@ -198,7 +198,7 @@ describe('HOST scope isolation', () => {
 
     it('buildDashboardQueryKey with scope:all omits userId — confirming own isolation semantics', () => {
         const ctx: ResolverContext = {
-            role: 'HOST',
+            roles: ['HOST'],
             userId: 'usr_should_be_absent',
             permissions: [],
             scope: 'all'

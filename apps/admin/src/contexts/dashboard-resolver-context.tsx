@@ -9,7 +9,7 @@
  * ## Usage
  *
  * Wrap the dashboard page (or the admin shell) with `DashboardResolverProvider`.
- * It reads the current user's role, ID, and permissions from the existing
+ * It reads the current user's roles, ID, and permissions from the existing
  * `useAuthContext()` — no duplication of auth state.
  *
  * The `scope` in the context is the widget's configured scope from the IA config.
@@ -71,8 +71,11 @@ export interface DashboardResolverContextValue {
         scope: WidgetScope
     ) => { readonly found: boolean; readonly options: DashboardQueryOptions };
 
-    /** The current user's role string (read-only, for display purposes). */
-    readonly role: string;
+    /**
+     * Every role the current user holds (HOS-296; read-only, for display
+     * purposes). Replaces the former single `role` scalar.
+     */
+    readonly roles: readonly string[];
     /** Whether the context has a valid authenticated user. */
     readonly isAuthenticated: boolean;
 }
@@ -120,8 +123,10 @@ interface DashboardResolverProviderProps {
 export function DashboardResolverProvider({ children }: DashboardResolverProviderProps) {
     const { user, isAuthenticated } = useAuthContext();
 
-    // Stable base values — only recomputed when auth state changes.
-    const role = user?.role ?? '';
+    // Stable base values — only recomputed when auth state changes. `roles`
+    // is memoized (not a bare `?? []` fallback) so an unauthenticated render
+    // doesn't hand `buildContextForScope` a fresh array identity every time.
+    const roles = useMemo<readonly string[]>(() => user?.roles ?? [], [user?.roles]);
     const userId = user?.id ?? '';
     const permissions = useMemo<readonly string[]>(
         () => user?.permissions ?? [],
@@ -130,12 +135,12 @@ export function DashboardResolverProvider({ children }: DashboardResolverProvide
 
     const buildContextForScope = useCallback(
         (scope: WidgetScope): ResolverContext => ({
-            role,
+            roles,
             userId,
             permissions,
             scope
         }),
-        [role, userId, permissions]
+        [roles, userId, permissions]
     );
 
     const resolveForScope = useCallback(
@@ -150,10 +155,10 @@ export function DashboardResolverProvider({ children }: DashboardResolverProvide
         () => ({
             buildContextForScope,
             resolveForScope,
-            role,
+            roles,
             isAuthenticated
         }),
-        [buildContextForScope, resolveForScope, role, isAuthenticated]
+        [buildContextForScope, resolveForScope, roles, isAuthenticated]
     );
 
     return (
@@ -198,19 +203,19 @@ export function useDashboardResolver(): DashboardResolverContextValue {
         // Safe fallback — never crash. Widgets will render as "unavailable".
         const noopCtx: DashboardResolverContextValue = {
             buildContextForScope: (scope) => ({
-                role: '',
+                roles: [],
                 userId: '',
                 permissions: [],
                 scope
             }),
             resolveForScope: (sourceId, scope) =>
                 resolveDataSource(sourceId, {
-                    role: '',
+                    roles: [],
                     userId: '',
                     permissions: [],
                     scope
                 }),
-            role: '',
+            roles: [],
             isAuthenticated: false
         };
         return noopCtx;

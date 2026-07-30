@@ -50,7 +50,7 @@ const targetUuid = 'c4f1d2c4-5e6a-4b7c-8d9e-0f1a2b3c4d5f';
 
 const selfActor = {
     id: validUuid,
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: [PermissionEnum.ACCESS_API_PUBLIC, PermissionEnum.ACCESS_API_PRIVATE]
 };
 
@@ -69,7 +69,7 @@ const selfActor = {
  */
 const adminActor = {
     id: 'a1f1d2c4-5e6a-4b7c-8d9e-0f1a2b3c4d5e',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [
         PermissionEnum.ACCESS_API_PUBLIC,
         PermissionEnum.ACCESS_API_PRIVATE,
@@ -113,14 +113,14 @@ const mockAdminUser = {
 
 function makeHeaders(actor: {
     id: string;
-    role: string;
+    roles: readonly string[];
     permissions: string[];
 }): Record<string, string> {
     return {
         'content-type': 'application/json',
         'user-agent': 'vitest',
         'x-mock-actor-id': actor.id,
-        'x-mock-actor-role': actor.role,
+        'x-mock-actor-role': actor.roles.join(','),
         'x-mock-actor-permissions': JSON.stringify(actor.permissions)
     };
 }

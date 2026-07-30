@@ -1,11 +1,14 @@
 export * from './account.dbschema.ts';
 export * from './r_role_permission.dbschema.ts';
 export * from './r_user_permission.dbschema.ts';
+// HOS-296: multi-role capability set + its append-only audit trail
+export * from './r_user_role.dbschema.ts';
 export * from './session.dbschema.ts';
 export * from './user.dbschema.ts';
 export * from './user_bookmark.dbschema.ts';
 export * from './user_bookmark_collection.dbschema.ts';
 export * from './user_identity.dbschema.ts';
 export * from './user_push_tokens.dbschema.ts';
+export * from './user_role_audit.dbschema.ts';
 export * from './user_search_history.dbschema.ts';
 export * from './verification.dbschema.ts';

@@ -28,19 +28,19 @@ const mockApiLogger = vi.mocked(apiLogger);
 // Helper to create actors
 const createGuestActor = (): Actor => ({
     id: 'guest-actor-id',
-    role: RoleEnum.GUEST,
+    roles: [RoleEnum.GUEST],
     permissions: [PermissionEnum.ACCESS_API_PUBLIC]
 });
 
 const createUserActor = (permissions: PermissionEnum[] = []): Actor => ({
     id: 'user-123',
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: [PermissionEnum.ACCESS_API_PUBLIC, ...permissions]
 });
 
 const createAdminActor = (permissions: PermissionEnum[] = []): Actor => ({
     id: 'admin-123',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [
         PermissionEnum.ACCESS_API_PUBLIC,
         PermissionEnum.ACCESS_PANEL_ADMIN,
@@ -51,7 +51,7 @@ const createAdminActor = (permissions: PermissionEnum[] = []): Actor => ({
 
 const createSuperAdminActor = (): Actor => ({
     id: 'superadmin-123',
-    role: RoleEnum.SUPER_ADMIN,
+    roles: [RoleEnum.SUPER_ADMIN],
     permissions: Object.values(PermissionEnum)
 });
 
@@ -404,7 +404,7 @@ describe('Authorization Middleware', () => {
         it('should handle actors with undefined permissions', async () => {
             const actorWithNoPermissions: Actor = {
                 id: 'user-123',
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: undefined as unknown as PermissionEnum[]
             };
             mockGetActorFromContext.mockReturnValue(actorWithNoPermissions);
@@ -426,7 +426,7 @@ describe('Authorization Middleware', () => {
         it('should handle actors with null permissions', async () => {
             const actorWithNullPermissions: Actor = {
                 id: 'user-123',
-                role: RoleEnum.USER,
+                roles: [RoleEnum.USER],
                 permissions: null as unknown as PermissionEnum[]
             };
             mockGetActorFromContext.mockReturnValue(actorWithNullPermissions);

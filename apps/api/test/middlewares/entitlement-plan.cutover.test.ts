@@ -223,7 +223,7 @@ describe('entitlement middleware — host-draft plan cutover (SPEC-192 T-024)', 
             mockGetBySlug.mockResolvedValue(PLAN_FOUND);
 
             const ctx = makeCtx({
-                actor: { id: 'host-user', role: 'host', permissions: [], email: 'host@test.com' }
+                actor: { id: 'host-user', roles: ['host'], permissions: [], email: 'host@test.com' }
             });
             const next = vi.fn().mockResolvedValue(undefined);
             const middleware = entitlementMiddleware();
@@ -241,7 +241,7 @@ describe('entitlement middleware — host-draft plan cutover (SPEC-192 T-024)', 
             mockGetBySlug.mockResolvedValue(PLAN_FOUND);
 
             const ctx = makeCtx({
-                actor: { id: 'host-user', role: 'host', permissions: [], email: 'host@test.com' }
+                actor: { id: 'host-user', roles: ['host'], permissions: [], email: 'host@test.com' }
             });
             const next = vi.fn().mockResolvedValue(undefined);
             const middleware = entitlementMiddleware();
@@ -260,7 +260,7 @@ describe('entitlement middleware — host-draft plan cutover (SPEC-192 T-024)', 
             mockGetBySlug.mockResolvedValue(PLAN_FOUND);
 
             const ctx = makeCtx({
-                actor: { id: 'host-user', role: 'host', permissions: [], email: 'host@test.com' }
+                actor: { id: 'host-user', roles: ['host'], permissions: [], email: 'host@test.com' }
             });
             const next = vi.fn().mockResolvedValue(undefined);
             const middleware = entitlementMiddleware();
@@ -287,7 +287,7 @@ describe('entitlement middleware — host-draft plan cutover (SPEC-192 T-024)', 
                 makeCtx({
                     actor: {
                         id: 'host-user',
-                        role: 'host',
+                        roles: ['host'],
                         permissions: [],
                         email: 'host@test.com'
                     }
@@ -311,7 +311,7 @@ describe('entitlement middleware — host-draft plan cutover (SPEC-192 T-024)', 
                 makeCtx({
                     actor: {
                         id: 'host-user',
-                        role: 'host',
+                        roles: ['host'],
                         permissions: [],
                         email: 'host@test.com'
                     }
@@ -342,7 +342,7 @@ describe('entitlement middleware — host-draft plan cutover (SPEC-192 T-024)', 
             mockGetBySlug.mockResolvedValue(PLAN_NOT_FOUND);
 
             const ctx = makeCtx({
-                actor: { id: 'host-user', role: 'host', permissions: [], email: 'host@test.com' }
+                actor: { id: 'host-user', roles: ['host'], permissions: [], email: 'host@test.com' }
             });
             const next = vi.fn().mockResolvedValue(undefined);
             const middleware = entitlementMiddleware();
@@ -365,7 +365,7 @@ describe('entitlement middleware — host-draft plan cutover (SPEC-192 T-024)', 
                 makeCtx({
                     actor: {
                         id: 'host-user',
-                        role: 'host',
+                        roles: ['host'],
                         permissions: [],
                         email: 'host@test.com'
                     }
@@ -393,7 +393,7 @@ describe('entitlement middleware — host-draft plan cutover (SPEC-192 T-024)', 
             mockGetBySlug.mockRejectedValue(new Error('connection terminated'));
 
             const ctx = makeCtx({
-                actor: { id: 'host-user', role: 'host', permissions: [], email: 'host@test.com' }
+                actor: { id: 'host-user', roles: ['host'], permissions: [], email: 'host@test.com' }
             });
             const next = vi.fn().mockResolvedValue(undefined);
             const middleware = entitlementMiddleware();
@@ -417,7 +417,7 @@ describe('entitlement middleware — host-draft plan cutover (SPEC-192 T-024)', 
                 makeCtx({
                     actor: {
                         id: 'host-user',
-                        role: 'host',
+                        roles: ['host'],
                         permissions: [],
                         email: 'host@test.com'
                     }
@@ -442,7 +442,12 @@ describe('entitlement middleware — host-draft plan cutover (SPEC-192 T-024)', 
         it('should NOT call PlanService for USER actors (uses tourist-free defaults)', async () => {
             // Arrange
             const ctx = makeCtx({
-                actor: { id: 'regular-user', role: 'user', permissions: [], email: 'user@test.com' }
+                actor: {
+                    id: 'regular-user',
+                    roles: ['user'],
+                    permissions: [],
+                    email: 'user@test.com'
+                }
             });
             const next = vi.fn().mockResolvedValue(undefined);
             const middleware = entitlementMiddleware();

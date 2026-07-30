@@ -163,7 +163,7 @@ const SERVICE_ERROR_HTTP_STATUS: Partial<Record<ServiceErrorCode, number>> = {
 
 function buildApp(actor: {
     id: string;
-    role: RoleEnum;
+    roles: readonly RoleEnum[];
     permissions: PermissionEnum[];
 }): Hono<AppBindings> {
     const app = new Hono<AppBindings>();
@@ -196,7 +196,7 @@ function buildApp(actor: {
 
 const ownerActor = {
     id: OWNER_ID,
-    role: RoleEnum.HOST,
+    roles: [RoleEnum.HOST],
     permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
 };
 
@@ -257,7 +257,7 @@ describe('GET /api/v1/protected/accommodations/:id — rich description (BETA-19
 
         const app = buildApp({
             id: OWNER_ID,
-            role: RoleEnum.ADMIN,
+            roles: [RoleEnum.ADMIN],
             permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY]
         });
         const res = await app.request(`/${ACCOMMODATION_ID}`);

@@ -79,14 +79,56 @@ export async function execSQL<T extends Record<string, unknown> = Record<string,
 }
 
 /**
- * Demotes a HOST user back to USER role.
- * Used by HOST-07a (idempotency) to simulate legacy data where a user was
- * promoted then later demoted manually.
+ * Reads the set of roles a user holds, from the `user_role` junction table.
+ *
+ * HOS-296 dropped `users.role`; the hats now live one row each in `user_role`.
+ * Tests that used to assert on the scalar (`SELECT role FROM users`) must go
+ * through this helper instead — the old query fails at runtime with
+ * `column "role" does not exist`, never at typecheck.
+ *
+ * Assert with `toContain('HOST')` when the test cares that a hat was granted,
+ * and with `not.toContain('HOST')` when it cares that one was revoked. Only
+ * assert on the whole array when the exact set is the point (e.g. "no extra
+ * hat was granted as a side effect") — the result is sorted so such an
+ * assertion is stable.
+ *
+ * @param userId - UUID of the user whose hats to read
+ * @returns The held role names, sorted alphabetically (empty when none)
+ */
+export async function getUserRoles(userId: string): Promise<readonly string[]> {
+    const rows = await execSQL<{ role: string }>(
+        'SELECT role FROM user_role WHERE user_id = $1 ORDER BY role ASC',
+        [userId]
+    );
+    return rows.map((row) => row.role);
+}
+
+/**
+ * Takes the HOST hat off a user, leaving every other hat untouched.
+ *
+ * Used by HOST-07a (idempotency) to simulate a user who was promoted and later
+ * demoted. Before HOS-296 this overwrote the single `users.role` scalar with
+ * `'USER'`, which was both a demotion AND a wipe of anything else the account
+ * held; with multi-role the faithful equivalent is a targeted revoke of the one
+ * hat, mirroring what the `archive-abandoned-drafts` cron actually does.
+ *
+ * The baseline USER hat is granted first (idempotently) so the account can
+ * never be left holding zero roles — the same invariant `revokeRole` enforces
+ * in production (HOS-296 AC-5). Insert-then-delete, not the reverse, so there
+ * is no window in which the user holds nothing.
  *
  * @param userId - UUID of the user to demote
  */
 export async function demoteHostToUser(userId: string): Promise<void> {
-    await execSQL(`UPDATE users SET role = 'USER' WHERE id = $1`, [userId]);
+    await execSQL(
+        `INSERT INTO user_role (user_id, role, grant_reason)
+         VALUES ($1, 'USER'::role_enum, 'e2e_fixture_demote')
+         ON CONFLICT (user_id, role) DO NOTHING`,
+        [userId]
+    );
+    await execSQL(`DELETE FROM user_role WHERE user_id = $1 AND role = 'HOST'::role_enum`, [
+        userId
+    ]);
 }
 
 /**

@@ -23,7 +23,7 @@ import { ServiceError } from '../../../src/types';
 
 const makeActor = (permissions: PermissionEnum[]): Actor => ({
     id: 'boundary-test-actor',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions
 });
 

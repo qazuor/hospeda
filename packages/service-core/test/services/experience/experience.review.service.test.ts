@@ -62,7 +62,7 @@ function makeReview(overrides: Partial<Record<string, unknown>> = {}): Experienc
 
 const staffActor: Actor = {
     id: STAFF_ID,
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [
         PermissionEnum.COMMERCE_EDIT_ALL,
         PermissionEnum.COMMERCE_MODERATE_REVIEW,
@@ -72,19 +72,19 @@ const staffActor: Actor = {
 
 const reviewerActor: Actor = {
     id: REVIEWER_ID,
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: []
 };
 
 const unauthActor: Actor = {
     id: '',
-    role: RoleEnum.GUEST,
+    roles: [RoleEnum.GUEST],
     permissions: []
 };
 
 const otherActor: Actor = {
     id: OTHER_USER,
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: []
 };
 
