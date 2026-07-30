@@ -157,7 +157,29 @@ describe('WhatsAppCTA.module.css', () => {
         expect(cssSrc).toContain('background-color: var(--channel-whatsapp)');
         expect(cssSrc).toContain('color: var(--channel-whatsapp-foreground)');
         expect(cssSrc).toContain('background-color: var(--channel-whatsapp-hover)');
-        expect(cssSrc.toLowerCase()).not.toContain('color: #ffffff');
+    });
+
+    it('inks the labelled CTA from a token, never a white literal', () => {
+        // Was `not.toContain('color: #ffffff')`, which every plausible spelling
+        // of the thing it forbade (`color:#ffffff`, `#fff`, `white`) satisfied.
+        const cta = /\.cta\s*\{([^}]*)\}/.exec(cssSrc);
+        expect(cta, 'no .cta rule found').not.toBeNull();
+        expect(cta?.[1] ?? '').toContain('color: var(--channel-whatsapp-foreground)');
+        expect(cta?.[1] ?? '').not.toMatch(/(?<!-)color:\s*(?:white|#fff(?:fff)?)\b/i);
+    });
+
+    it('inks the logo-only badge with the logotype token (WCAG 1.4.3 exemption)', () => {
+        // The badge holds only the WhatsApp mark, which WCAG exempts from
+        // contrast, so it stays white — but via a NAMED token whose single
+        // legitimate consumer the static guard enumerates, not a raw literal.
+        const badge = /\.iconWrap\s*\{([^}]*)\}/.exec(cssSrc);
+        expect(badge, 'no .iconWrap rule found').not.toBeNull();
+        expect(badge?.[1] ?? '').toContain('color: var(--channel-whatsapp-logo)');
+    });
+
+    it('gives the CTA a 44px minimum tap target on mobile', () => {
+        // 8px of block padding around a 14px line box left it at ~33px.
+        expect(cssSrc).toContain('min-height: 44px');
     });
 
     it('declares a focus-visible style with outline (a11y)', () => {

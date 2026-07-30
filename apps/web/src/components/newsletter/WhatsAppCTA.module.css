@@ -29,7 +29,13 @@
     justify-content: center;
     border-radius: 50%;
     background-color: var(--channel-whatsapp);
-    color: var(--channel-whatsapp-foreground);
+    /* The badge holds ONLY the WhatsApp logotype, and WCAG 1.4.3 exempts
+       logotypes from contrast — so the mark stays white, as the brand
+       publishes it (owner decision, HOS-314). The labelled CTA below is the
+       opposite case: its text and glyph share currentColor, so it needs the
+       AA-safe ink. The web static guard enumerates this rule as the one place
+       allowed to use the logo token. */
+    color: var(--channel-whatsapp-logo);
 }
 
 .body {
@@ -62,6 +68,11 @@
     align-items: center;
     justify-content: center;
     padding: var(--space-2) var(--space-4);
+    /* HOS-314: 8px of block padding around a 14px line box left this at ~33px
+       tall. It cleared WCAG 2.2 SC 2.5.8 (24x24) but not the 44x44 the issue
+       asked for — a premise that had been dismissed on the accommodation
+       button's 253x50 without measuring this surface. */
+    min-height: 44px;
     border-radius: var(--radius-md);
     background-color: var(--channel-whatsapp);
     color: var(--channel-whatsapp-foreground);

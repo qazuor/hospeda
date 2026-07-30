@@ -93,6 +93,16 @@ describe('ExperienceContactCTA.astro', () => {
             expect(src).toContain('background-color: var(--channel-whatsapp-hover)');
         });
 
+        it('does not fade the CTA on hover (opacity dims ink and fill alike)', () => {
+            // The static guard deliberately does not inspect hover states, so
+            // without this the button could regress to `opacity: 0.85` with the
+            // whole suite green — the sibling accommodation button has the same
+            // assertion.
+            const match = /\.exp-contact-cta__whatsapp-btn:hover\s*\{([^}]*)\}/.exec(src);
+            expect(match, 'no :hover rule found for the WhatsApp button').not.toBeNull();
+            expect(match?.[1] ?? '').not.toContain('opacity');
+        });
+
         it('does not use Tailwind utility classes', () => {
             expect(src).not.toMatch(/class="[^"]*\b(text-|bg-|p-|m-)\w/);
         });

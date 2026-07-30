@@ -31,7 +31,7 @@ function serializeThemeValue(value: unknown): string {
 }
 
 describe('webLight — coverage', () => {
-    it('declares all 221 web :root tokens', () => {
+    it('declares all 238 web :root tokens', () => {
         // 155 was the prior count (accommodation-type tokens + base). Count grew
         // to 208 after the SSOT icon+color passes added event-category (8),
         // post-category (18), user-role (7), auth-provider (5), amenity-type (12)
@@ -42,9 +42,9 @@ describe('webLight — coverage', () => {
         // popover-scrim → 220, then z-popover-in-overlay (SortPopover-in-drawer
         // z fix) → 221, then HOS-182's 6 poi-category bucket tokens + their 6
         // `-on` glyph companions → 233, then HOS-314's 4 --channel-whatsapp*
-        // tokens (fill, frozen foreground, hover, AA text) → 237. Adding or
-        // removing entries should be intentional.
-        expect(Object.keys(webLight)).toHaveLength(237);
+        // tokens (fill, frozen foreground, logotype ink, hover, AA text) → 238.
+        // Adding or removing entries should be intentional.
+        expect(Object.keys(webLight)).toHaveLength(238);
     });
 
     it('declares the 10 per-accommodation-type tokens referencing palette primitives', () => {

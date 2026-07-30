@@ -385,10 +385,30 @@ export const channels = {
     whatsappForeground: { l: 0.2, c: 0.02, h: 220 },
 
     /**
-     * Hover fill — WhatsApp's darker green (`#1ebe5d`), 7.39:1 against the
-     * foreground above. An explicit shade rather than the `opacity: 0.85`
-     * these buttons used before, because opacity fades the label and the fill
-     * together and so cannot improve their ratio.
+     * Ink for the WhatsApp LOGOTYPE when it sits alone on the brand fill —
+     * white, i.e. the mark as the brand publishes it.
+     *
+     * Deliberately NOT `whatsappForeground`. WCAG 1.4.3 exempts logotypes from
+     * the contrast requirement, so white-on-green was never a violation for a
+     * badge that contains only the logo and no text; inverting the mark there
+     * would alter a third party's brand for zero accessibility gain (owner
+     * decision, HOS-314). The distinction is text: a button's label and glyph
+     * share `currentColor`, so a labelled CTA must use `whatsappForeground`.
+     *
+     * Its one legitimate consumer is enumerated in the web static guard —
+     * `apps/web/test/static-guards/whatsapp-channel-tokens.test.ts` — so this
+     * cannot become a back door for white text on the green.
+     */
+    whatsappLogo: { l: 1, c: 0, h: 0 },
+
+    /**
+     * Hover fill — WhatsApp's darker green, 7.39:1 against the foreground
+     * above. An explicit shade rather than the `opacity: 0.85` these buttons
+     * used before, because opacity fades the label and the fill together and
+     * so cannot improve their ratio.
+     *
+     * Converted from the brand's `#1ebe5d` and, like `whatsapp` above, one
+     * 8-bit step off it after the round trip: it renders `#1fbe5d`.
      */
     whatsappHover: { l: 0.704, c: 0.185, h: 150.223 },
 

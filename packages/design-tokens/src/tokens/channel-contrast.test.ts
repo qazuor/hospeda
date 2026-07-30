@@ -35,7 +35,7 @@ import { describe, expect, it } from 'vitest';
 import type { Theme, ThemeValue } from '../themes/types.js';
 import { webDark } from '../themes/web-dark.js';
 import { webLight } from '../themes/web-light.js';
-import { channels, type OKLCH } from './colors.js';
+import type { OKLCH } from './colors.js';
 
 /** WCAG 2.1 AA minimum for normal-size text. */
 const AA_NORMAL = 4.5;
@@ -69,7 +69,16 @@ function oklchToken(theme: Theme, token: string): OKLCH {
     return value;
 }
 
-/** sRGB channels in [0, 1] after CSS Color 4 gamut mapping toward sRGB. */
+/**
+ * sRGB channels in [0, 1] after CSS Color 4 gamut mapping toward sRGB, then
+ * QUANTIZED to 8 bits.
+ *
+ * The quantization is not cosmetic: a browser composites 8-bit channels, so the
+ * unquantized float ratio is not the ratio a user experiences. The two diverge
+ * by up to 0.05 here (7.44 unquantized vs 7.49 painted), which is enough to
+ * make the numbers documented alongside the tokens irreproducible from this
+ * guard — and a documented ratio nobody can reproduce stops being evidence.
+ */
 function toSrgb(value: OKLCH): { r: number; g: number; b: number } {
     const mapped = clampChroma(
         { mode: 'oklch', l: value.l, c: value.c, h: value.h },
@@ -77,8 +86,9 @@ function toSrgb(value: OKLCH): { r: number; g: number; b: number } {
         'rgb'
     );
     const rgb = toRgb(mapped);
-    const clamp = (channel: number | undefined) => Math.max(0, Math.min(1, channel ?? 0));
-    return { r: clamp(rgb?.r), g: clamp(rgb?.g), b: clamp(rgb?.b) };
+    const quantize = (channel: number | undefined) =>
+        Math.round(Math.max(0, Math.min(1, channel ?? 0)) * 255) / 255;
+    return { r: quantize(rgb?.r), g: quantize(rgb?.g), b: quantize(rgb?.b) };
 }
 
 /** WCAG 2.1 relative luminance of an sRGB triple in [0, 1]. */
@@ -109,10 +119,11 @@ function to255(value: OKLCH): [number, number, number] {
  */
 const webDarkEffective: Theme = { ...webLight, ...webDark };
 
-/** The three tokens that describe the theme-invariant brand fill. */
+/** The tokens that describe the theme-invariant brand fill and its inks. */
 const THEME_INVARIANT_TOKENS = [
     'channel-whatsapp',
     'channel-whatsapp-foreground',
+    'channel-whatsapp-logo',
     'channel-whatsapp-hover'
 ] as const;
 
@@ -125,10 +136,29 @@ describe('HOS-314 — WhatsApp channel tokens clear WCAG AA', () => {
             expect(isOklch(webLight[token])).toBe(true);
         });
 
-        it('the foreground is web-light core-foreground, frozen (not a var() reference)', () => {
-            // Provenance, and the reason it is a COPY: `var(--core-foreground)`
-            // would look identical in light and collapse to 1.56:1 in dark.
-            expect(channels.whatsappForeground).toEqual(webLight['core-foreground']);
+        it('the foreground is a frozen literal, decoupled from --core-foreground', () => {
+            // Provenance (documented, not asserted): the value was COPIED from
+            // web-light's --core-foreground, `oklch(0.2 0.02 220)`. Asserting
+            // equality with that token instead would be backwards — it would
+            // re-create the coupling the freeze exists to break, so an unrelated
+            // tuning of --core-foreground would turn this suite red and the
+            // obvious remedy would be to drag the WhatsApp ink along with it.
+            // What must hold is that the value is a literal and stays this dark.
+            expect(webLight['channel-whatsapp-foreground']).toEqual({
+                l: 0.2,
+                c: 0.02,
+                h: 220
+            });
+        });
+
+        it('the logo ink is white — a logotype exemption, not a contrast pairing', () => {
+            // WCAG 1.4.3 exempts logotypes, so the logo-only badge keeps the
+            // mark white (owner decision, HOS-314). White on the fill is 1.98:1,
+            // which is exactly why this token must never reach TEXT; the web
+            // static guard enumerates its single legitimate consumer.
+            const logo = oklchToken(webLight, 'channel-whatsapp-logo');
+            expect(logo.l).toBe(1);
+            expect(logo.c).toBe(0);
         });
     });
 
@@ -179,6 +209,28 @@ describe('HOS-314 — WhatsApp channel tokens clear WCAG AA', () => {
                 oklchToken(webDarkEffective, 'surface-warm')
             );
             expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL);
+        });
+    });
+
+    describe('focus ring on the WhatsApp surfaces (WCAG 1.4.11, 3:1)', () => {
+        // The ring is `2px solid var(--brand-primary)` with `outline-offset:
+        // 2px`, so the 2px gap is filled by the block's own --surface-warm and
+        // THAT is the adjacent color the ratio is measured against, not the
+        // green. It passes — but by 0.08 in light, against a shared token that
+        // has already been lifted twice for AA reasons (SPEC-308, BETA-126).
+        // The PR's own thesis is that a pairing a reviewer cannot eyeball needs
+        // a guard; this was the last pairing it asserted only in prose.
+        const NON_TEXT_MIN = 3;
+
+        it.each([
+            ['light', webLight],
+            ['dark', webDarkEffective]
+        ] as const)('the ring clears %s against --surface-warm', (_label, theme) => {
+            const ratio = contrastRatio(
+                oklchToken(theme, 'brand-primary'),
+                oklchToken(theme, 'surface-warm')
+            );
+            expect(ratio).toBeGreaterThanOrEqual(NON_TEXT_MIN);
         });
     });
 

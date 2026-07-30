@@ -157,9 +157,12 @@ export const webLight: Theme = {
     // (which inverts) would drop the button to 1.56:1, below the 1.98:1 it
     // shipped with. `--channel-whatsapp-text` is the exception and DOES get a
     // dark override, because it paints text on `--surface-warm`, which inverts.
+    // `-logo` is white on purpose: WCAG 1.4.3 exempts logotypes, so the
+    // logo-only badge keeps the mark as the brand publishes it.
     // ========================================================================
     'channel-whatsapp': channels.whatsapp,
     'channel-whatsapp-foreground': channels.whatsappForeground,
+    'channel-whatsapp-logo': channels.whatsappLogo,
     'channel-whatsapp-hover': channels.whatsappHover,
     'channel-whatsapp-text': channels.whatsappText,
 

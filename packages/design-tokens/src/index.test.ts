@@ -172,9 +172,9 @@ describe('theme exports', () => {
         // toast/popover contrast fix (z-popover, surface-overlay, overlay-ring,
         // shadow-overlay, popover-scrim), then to 221 after z-popover-in-overlay
         // (SortPopover-in-drawer z fix), then to 233 after HOS-182 added the 6 poi-category
-        // bucket tokens + their 6 -on companions, then to 237 after HOS-314 added
-        // the 4 --channel-whatsapp* tokens (only 1 of which is dark-overridden).
-        expect(Object.keys(webLight)).toHaveLength(237);
+        // bucket tokens + their 6 -on companions, then to 238 after HOS-314 added
+        // the 5 --channel-whatsapp* tokens (only 1 of which is dark-overridden).
+        expect(Object.keys(webLight)).toHaveLength(238);
         expect(Object.keys(webDark)).toHaveLength(70);
         // Admin: 39 was prior count (17 core + 12 brand + 10 per-accommodation-type).
         // Grew to 92 after the same SSOT passes added event-category/post-category/

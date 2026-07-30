@@ -98,12 +98,29 @@ describe('WhatsAppContact.astro', () => {
             expect(src).toContain('color: var(--channel-whatsapp-text)');
         });
 
-        it('does not fade the CTA on hover (opacity dims ink and fill alike)', () => {
-            const buttonRule = src.slice(
-                src.indexOf('.acc-whatsapp__btn:hover'),
-                src.indexOf('.acc-whatsapp__number')
+        // Reads each :hover rule's OWN body. An earlier revision sliced from one
+        // selector to another, which returns '' the moment the stylesheet is
+        // reordered — and `expect('').not.toContain(...)` passes forever.
+        const hoverBody = (selector: string): string => {
+            const match = new RegExp(`${selector.replace('.', '\\.')}:hover\\s*\\{([^}]*)\\}`).exec(
+                src
             );
-            expect(buttonRule).not.toContain('opacity');
+            expect(match, `no :hover rule found for ${selector}`).not.toBeNull();
+            return match?.[1] ?? '';
+        };
+
+        it.each([
+            '.acc-whatsapp__btn',
+            '.acc-whatsapp__upsell-cta'
+        ])('%s does not fade on hover (opacity dims ink and fill alike)', (selector) => {
+            expect(hoverBody(selector)).not.toContain('opacity');
+        });
+
+        it('inks the upsell CTA with the primary-foreground token, not a literal', () => {
+            // Hard-coded `white` here measured 2.92:1 on the dark brand blue —
+            // below every AA floor — on the branch anonymous visitors see.
+            expect(src).toContain('color: var(--primary-foreground)');
+            expect(src).not.toMatch(/(?<!-)color:\s*(?:white|#fff(?:fff)?)\b/i);
         });
 
         it('does not use Tailwind utility classes (web is vanilla CSS)', () => {

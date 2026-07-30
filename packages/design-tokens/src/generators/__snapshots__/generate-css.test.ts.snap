@@ -208,6 +208,7 @@ exports[`buildCSS — snapshot > matches the recorded full output (regression ga
     --surface-elevated: oklch(1 0 0);
     --channel-whatsapp: oklch(0.761 0.201 149.74);
     --channel-whatsapp-foreground: oklch(0.2 0.02 220);
+    --channel-whatsapp-logo: oklch(1 0 0);
     --channel-whatsapp-hover: oklch(0.704 0.185 150.223);
     --channel-whatsapp-text: oklch(0.48 0.08 182.4);
     --footer-bg: var(--surface-dark);
