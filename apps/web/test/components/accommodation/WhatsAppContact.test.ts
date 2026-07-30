@@ -10,6 +10,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { findBareInkDeclarations } from '../../static-guards/ink-literals';
+
 const src = readFileSync(
     resolve(__dirname, '../../../src/components/accommodation/WhatsAppContact.astro'),
     'utf8'
@@ -88,8 +90,49 @@ describe('WhatsAppContact.astro', () => {
     });
 
     describe('CSS', () => {
-        it('uses #25d366 green for the WhatsApp brand color', () => {
-            expect(src).toContain('#25d366');
+        // Until HOS-314 this suite asserted `toContain('#25d366')`, which meant
+        // CI was certifying the hard-coded brand hex — and with it the 1.98:1
+        // white-on-green pairing — rather than catching it.
+        it('takes the WhatsApp brand colors from the channel tokens (HOS-314)', () => {
+            expect(src).toContain('background-color: var(--channel-whatsapp)');
+            expect(src).toContain('color: var(--channel-whatsapp-foreground)');
+            expect(src).toContain('background-color: var(--channel-whatsapp-hover)');
+            expect(src).toContain('color: var(--channel-whatsapp-text)');
+        });
+
+        // Reads each :hover rule's OWN body. An earlier revision sliced from one
+        // selector to another, which returns '' the moment the stylesheet is
+        // reordered — and `expect('').not.toContain(...)` passes forever.
+        const hoverBody = (selector: string): string => {
+            const match = new RegExp(`${selector.replace('.', '\\.')}:hover\\s*\\{([^}]*)\\}`).exec(
+                src
+            );
+            expect(match, `no :hover rule found for ${selector}`).not.toBeNull();
+            return match?.[1] ?? '';
+        };
+
+        it.each([
+            '.acc-whatsapp__btn',
+            '.acc-whatsapp__upsell-cta'
+        ])('%s does not fade on hover (opacity dims ink and fill alike)', (selector) => {
+            expect(hoverBody(selector)).not.toContain('opacity');
+        });
+
+        it('inks the upsell CTA with the primary-foreground token, not a literal', () => {
+            // Hard-coded `white` here measured 2.93:1 on the dark brand blue —
+            // below every AA floor — on the branch anonymous visitors see.
+            expect(src).toContain('color: var(--primary-foreground)');
+        });
+
+        it('takes EVERY text colour from a token, wherever it is declared', () => {
+            // This is where HOS-314's pairing invariant lives. It is a whole-FILE
+            // rule on purpose: the three static-guard revisions that tried to
+            // check it per rule were each defeated by the cascade (a duplicate
+            // selector, a @media re-declaration, a descendant, or
+            // -webkit-text-fill-color overriding the ink from somewhere the
+            // selector regex never looked). Asking "is any ink a literal" makes
+            // position irrelevant and covers every spelling of white at once.
+            expect(findBareInkDeclarations(src)).toEqual([]);
         });
 
         it('does not use Tailwind utility classes (web is vanilla CSS)', () => {

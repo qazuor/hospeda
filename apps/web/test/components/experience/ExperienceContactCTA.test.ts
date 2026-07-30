@@ -7,6 +7,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { findBareInkDeclarations } from '../../static-guards/ink-literals';
+
 const src = readFileSync(
     resolve(__dirname, '../../../src/components/experience/ExperienceContactCTA.astro'),
     'utf8'
@@ -83,8 +85,33 @@ describe('ExperienceContactCTA.astro', () => {
     });
 
     describe('CSS tokens', () => {
-        it('uses #25d366 green for WhatsApp brand color', () => {
-            expect(src).toContain('#25d366');
+        // Was `toContain('#25d366')` before HOS-314. This block is dormant
+        // (HOS-363) but stays in lockstep with the accommodation button on
+        // purpose: the divergence this issue fixed started with one surface
+        // being left behind.
+        it('takes the WhatsApp brand colors from the channel tokens (HOS-314)', () => {
+            expect(src).toContain('background-color: var(--channel-whatsapp)');
+            expect(src).toContain('color: var(--channel-whatsapp-foreground)');
+            expect(src).toContain('background-color: var(--channel-whatsapp-hover)');
+        });
+
+        it('takes EVERY text colour from a token, wherever it is declared', () => {
+            // Same whole-file invariant as the accommodation button, via the same
+            // shared helper — this surface had NO ink-literal assertion at all
+            // until round 3 pointed out that "kept in lockstep" was a claim its
+            // tests did not back. Three copies of an invariant is how the original
+            // divergence happened, so it is one helper, not three regexes.
+            expect(findBareInkDeclarations(src)).toEqual([]);
+        });
+
+        it('does not fade the CTA on hover (opacity dims ink and fill alike)', () => {
+            // The static guard deliberately does not inspect hover states, so
+            // without this the button could regress to `opacity: 0.85` with the
+            // whole suite green — the sibling accommodation button has the same
+            // assertion.
+            const match = /\.exp-contact-cta__whatsapp-btn:hover\s*\{([^}]*)\}/.exec(src);
+            expect(match, 'no :hover rule found for the WhatsApp button').not.toBeNull();
+            expect(match?.[1] ?? '').not.toContain('opacity');
         });
 
         it('does not use Tailwind utility classes', () => {

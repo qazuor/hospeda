@@ -106,18 +106,23 @@ const ctaLabel = t('experience.detail.whatsapp', 'Consultar por WhatsApp');
         gap: 10px;
         padding: 12px 24px;
         border-radius: var(--radius-button, 8px);
-        background-color: #25d366;
-        color: white;
+        /* HOS-314: same channel tokens as the accommodation contact button —
+           dark ink on the brand green (9.12:1) instead of white (1.98:1).
+           Unified here even though this block is dormant (HOS-363): leaving one
+           of the three WhatsApp surfaces on a hard-coded hex is how they
+           diverged in the first place. */
+        background-color: var(--channel-whatsapp);
+        color: var(--channel-whatsapp-foreground);
         font-family: var(--font-sans);
         font-weight: 600;
         font-size: 1rem;
         text-decoration: none;
-        transition: opacity 200ms ease-out;
+        transition: background-color 200ms ease-out;
         width: fit-content;
     }
 
     .exp-contact-cta__whatsapp-btn:hover {
-        opacity: 0.85;
+        background-color: var(--channel-whatsapp-hover);
     }
 
     .exp-contact-cta__whatsapp-btn:focus-visible {
