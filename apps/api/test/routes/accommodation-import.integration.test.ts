@@ -29,7 +29,15 @@ vi.mock('@repo/utils/safe-fetch', async (importActual) => {
 
 vi.mock('../../src/lib/posthog', () => ({
     getPostHogClient: () => ({ capture: mockCapture }),
-    captureServerAnalyticsEvent: ({ distinctId, name, properties }) => {
+    captureServerAnalyticsEvent: ({
+        distinctId,
+        name,
+        properties
+    }: {
+        distinctId: string;
+        name: string;
+        properties: Record<string, unknown>;
+    }) => {
         mockCapture({ distinctId, event: name, properties });
     }
 }));

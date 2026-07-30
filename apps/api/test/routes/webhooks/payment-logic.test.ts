@@ -28,7 +28,15 @@ const { mockPostHogCapture, mockGetPostHogClient } = vi.hoisted(() => ({
 
 vi.mock('../../../src/lib/posthog', () => ({
     getPostHogClient: mockGetPostHogClient,
-    captureServerAnalyticsEvent: ({ distinctId, name, properties }) => {
+    captureServerAnalyticsEvent: ({
+        distinctId,
+        name,
+        properties
+    }: {
+        distinctId: string;
+        name: string;
+        properties: Record<string, unknown>;
+    }) => {
         const client = mockGetPostHogClient();
         if (client) {
             client.capture({ distinctId, event: name, properties });

@@ -53,8 +53,16 @@ vi.mock('../../../src/lib/posthog.js', () => {
     const mockClient = vi.fn(() => null);
     return {
         getPostHogClient: mockClient,
-        captureServerAnalyticsEvent: ({ distinctId, name, properties }) => {
-            const client = mockClient();
+        captureServerAnalyticsEvent: ({
+            distinctId,
+            name,
+            properties
+        }: {
+            distinctId: string;
+            name: string;
+            properties: Record<string, unknown>;
+        }) => {
+            const client = mockClient() as { capture: (args: unknown) => void } | null;
             if (client) {
                 client.capture({ distinctId, event: name, properties });
             }
