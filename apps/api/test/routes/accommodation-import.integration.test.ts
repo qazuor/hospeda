@@ -28,7 +28,10 @@ vi.mock('@repo/utils/safe-fetch', async (importActual) => {
 });
 
 vi.mock('../../src/lib/posthog', () => ({
-    getPostHogClient: () => ({ capture: mockCapture })
+    getPostHogClient: () => ({ capture: mockCapture }),
+    captureServerAnalyticsEvent: ({ distinctId, name, properties }) => {
+        mockCapture({ distinctId, event: name, properties });
+    }
 }));
 
 import { safeExternalFetch } from '@repo/utils/safe-fetch';
@@ -189,7 +192,7 @@ describe('POST /api/v1/protected/accommodations/import-from-url', () => {
         const startedCall = mockCapture.mock.calls.find(
             (call) => call[0].event === 'accommodation_import_started'
         );
-        expect(startedCall?.[0].properties.host).toBe('example.com');
+        expect(startedCall?.[0].properties.import_source).toBe('example.com');
     });
 
     it('allows a plain USER (pre-host, no accommodation permissions) to import — never 403 (BETA-153)', async () => {

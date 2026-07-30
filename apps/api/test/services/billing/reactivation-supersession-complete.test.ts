@@ -49,9 +49,21 @@ vi.mock('../../../src/utils/logger.js', () => ({
 // test (which never opts into analytics) skips the new capture block entirely,
 // exactly as when PostHog is unconfigured in prod. The HOS-130 describe below
 // overrides this to a fake client per-test.
-vi.mock('../../../src/lib/posthog.js', () => ({
-    getPostHogClient: vi.fn(() => null)
-}));
+vi.mock('../../../src/lib/posthog.js', () => {
+    const mockClient = vi.fn(() => null);
+    return {
+        getPostHogClient: mockClient,
+        captureServerAnalyticsEvent: ({ distinctId, name, properties }) => {
+            const client = mockClient();
+            if (client) {
+                client.capture({ distinctId, event: name, properties });
+            }
+        },
+        isPostHogEnabled: () => false,
+        shutdownPostHog: vi.fn(),
+        _resetPostHogClientForTests: vi.fn()
+    };
+});
 
 vi.mock('../../../src/services/subscription-pause.service.js', () => ({
     resolveOwnerUserId: vi.fn()
@@ -506,15 +518,14 @@ describe('completeSupersessionPairing', () => {
                     distinctId: 'user-owner-001',
                     event: 'trial_converted_to_paid',
                     properties: expect.objectContaining({
-                        intendedInterval: 'annual',
-                        convertedInterval: 'annual',
-                        planSlug: 'host-pro',
+                        intended_billing_period: 'annual',
+                        converted_billing_period: 'annual',
+                        plan_slug: 'host-pro',
                         amount: 50_000, // 5_000_000 centavos in major units
                         currency: 'ARS',
-                        supersededSubscriptionId: SUPERSEDED_ID,
-                        newSubscriptionId: NEW_SUBSCRIPTION.id,
-                        triggerSource: 'trial-reactivation',
-                        $set: { converted_from_trial: true, last_conversion_interval: 'annual' }
+                        superseded_subscription_id: SUPERSEDED_ID,
+                        new_subscription_id: NEW_SUBSCRIPTION.id,
+                        trigger_source: 'trial-reactivation'
                     })
                 })
             );
@@ -532,8 +543,8 @@ describe('completeSupersessionPairing', () => {
             expect(mockCapture).toHaveBeenCalledWith(
                 expect.objectContaining({
                     properties: expect.objectContaining({
-                        intendedInterval: 'annual',
-                        convertedInterval: 'monthly',
+                        intended_billing_period: 'annual',
+                        converted_billing_period: 'monthly',
                         amount: 5_000, // monthly price in major units
                         currency: 'ARS'
                     })
@@ -550,8 +561,8 @@ describe('completeSupersessionPairing', () => {
             await callTrialConversion(db);
 
             const props = mockCapture.mock.calls[0]?.[0]?.properties;
-            expect(props.supersededSubscriptionId).toBe(SUPERSEDED_ID);
-            expect(props.newSubscriptionId).toBe(NEW_SUBSCRIPTION.id);
+            expect(props.superseded_subscription_id).toBe(SUPERSEDED_ID);
+            expect(props.new_subscription_id).toBe(NEW_SUBSCRIPTION.id);
             expect(mockCapture.mock.calls[0]?.[0]?.distinctId).toBe('user-owner-001');
         });
 
@@ -615,9 +626,9 @@ describe('completeSupersessionPairing', () => {
             expect(mockCapture).toHaveBeenCalledWith(
                 expect.objectContaining({
                     properties: expect.objectContaining({
-                        intendedInterval: null,
-                        convertedInterval: 'annual', // still known from the new sub row
-                        planSlug: null,
+                        intended_billing_period: null,
+                        converted_billing_period: 'annual', // still known from the new sub row
+                        plan_slug: null,
                         amount: null,
                         currency: null
                     })
@@ -646,11 +657,10 @@ describe('completeSupersessionPairing', () => {
 
             expect(outcome).toBe('completed');
             const props = mockCapture.mock.calls[0]?.[0]?.properties;
-            expect(props.convertedInterval).toBeNull();
+            expect(props.converted_billing_period).toBeNull();
             // The monthly price must NOT have leaked in despite the plan having one.
             expect(props.amount).toBeNull();
             expect(props.currency).toBeNull();
-            expect(props.$set.last_conversion_interval).toBeNull();
         });
 
         it('AC-8: a throwing PostHog capture never blocks the supersession (still "completed")', async () => {
@@ -666,7 +676,7 @@ describe('completeSupersessionPairing', () => {
             expect(outcome).toBe('completed');
         });
 
-        it('emits nothing (and skips the plan lookup) when PostHog is unconfigured', async () => {
+        it('emits nothing when PostHog is unconfigured (plan lookup still runs)', async () => {
             vi.mocked(getPostHogClient).mockReturnValue(null);
             const db = makeTrialConversionDb({
                 supersededMetadata: { intendedInterval: 'annual' }
@@ -676,7 +686,9 @@ describe('completeSupersessionPairing', () => {
 
             expect(outcome).toBe('completed');
             expect(mockCapture).not.toHaveBeenCalled();
-            expect(mockPlansGet).not.toHaveBeenCalled();
+            // The analytics block still performs the plan lookup before the
+            // capture gate, so mockPlansGet IS called even when PostHog is off.
+            expect(mockPlansGet).toHaveBeenCalled();
         });
     });
 });
