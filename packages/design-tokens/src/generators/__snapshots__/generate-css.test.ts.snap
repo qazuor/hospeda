@@ -206,6 +206,10 @@ exports[`buildCSS — snapshot > matches the recorded full output (regression ga
     --surface-dark: oklch(0.15 0.02 160);
     --surface-dark-foreground: oklch(0.92 0.01 210);
     --surface-elevated: oklch(1 0 0);
+    --channel-whatsapp: oklch(0.761 0.201 149.74);
+    --channel-whatsapp-foreground: oklch(0.2 0.02 220);
+    --channel-whatsapp-hover: oklch(0.704 0.185 150.223);
+    --channel-whatsapp-text: oklch(0.48 0.08 182.4);
     --footer-bg: var(--surface-dark);
     --footer-fg: var(--surface-dark-foreground);
     --footer-fg-muted: oklch(0.74 0.02 240);
@@ -960,6 +964,7 @@ exports[`buildCSS — snapshot > matches the recorded full output (regression ga
     --brand-secondary-foreground: oklch(0.8 0.08 255);
     --brand-tertiary: oklch(0.28 0.05 155);
     --hospeda-forest-link: oklch(0.72 0.15 155);
+    --channel-whatsapp-text: oklch(0.75 0.11 182.4);
     --muted: oklch(0.255 0.035 258);
     --core-muted-foreground: oklch(0.68 0.03 261);
     --brand-accent: oklch(0.72 0.19 55);
