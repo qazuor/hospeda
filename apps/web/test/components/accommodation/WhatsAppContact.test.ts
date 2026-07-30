@@ -10,6 +10,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { findBareInkDeclarations } from '../../static-guards/ink-literals';
+
 const src = readFileSync(
     resolve(__dirname, '../../../src/components/accommodation/WhatsAppContact.astro'),
     'utf8'
@@ -117,10 +119,20 @@ describe('WhatsAppContact.astro', () => {
         });
 
         it('inks the upsell CTA with the primary-foreground token, not a literal', () => {
-            // Hard-coded `white` here measured 2.92:1 on the dark brand blue —
+            // Hard-coded `white` here measured 2.93:1 on the dark brand blue —
             // below every AA floor — on the branch anonymous visitors see.
             expect(src).toContain('color: var(--primary-foreground)');
-            expect(src).not.toMatch(/(?<!-)color:\s*(?:white|#fff(?:fff)?)\b/i);
+        });
+
+        it('takes EVERY text colour from a token, wherever it is declared', () => {
+            // This is where HOS-314's pairing invariant lives. It is a whole-FILE
+            // rule on purpose: the three static-guard revisions that tried to
+            // check it per rule were each defeated by the cascade (a duplicate
+            // selector, a @media re-declaration, a descendant, or
+            // -webkit-text-fill-color overriding the ink from somewhere the
+            // selector regex never looked). Asking "is any ink a literal" makes
+            // position irrelevant and covers every spelling of white at once.
+            expect(findBareInkDeclarations(src)).toEqual([]);
         });
 
         it('does not use Tailwind utility classes (web is vanilla CSS)', () => {

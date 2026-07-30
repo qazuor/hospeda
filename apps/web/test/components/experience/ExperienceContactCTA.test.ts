@@ -7,6 +7,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { findBareInkDeclarations } from '../../static-guards/ink-literals';
+
 const src = readFileSync(
     resolve(__dirname, '../../../src/components/experience/ExperienceContactCTA.astro'),
     'utf8'
@@ -91,6 +93,15 @@ describe('ExperienceContactCTA.astro', () => {
             expect(src).toContain('background-color: var(--channel-whatsapp)');
             expect(src).toContain('color: var(--channel-whatsapp-foreground)');
             expect(src).toContain('background-color: var(--channel-whatsapp-hover)');
+        });
+
+        it('takes EVERY text colour from a token, wherever it is declared', () => {
+            // Same whole-file invariant as the accommodation button, via the same
+            // shared helper — this surface had NO ink-literal assertion at all
+            // until round 3 pointed out that "kept in lockstep" was a claim its
+            // tests did not back. Three copies of an invariant is how the original
+            // divergence happened, so it is one helper, not three regexes.
+            expect(findBareInkDeclarations(src)).toEqual([]);
         });
 
         it('does not fade the CTA on hover (opacity dims ink and fill alike)', () => {

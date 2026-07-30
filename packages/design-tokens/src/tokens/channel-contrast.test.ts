@@ -263,9 +263,15 @@ describe('HOS-314 — WhatsApp channel tokens clear WCAG AA', () => {
                 7.39
             ],
             ['number text, light', webLight, 'channel-whatsapp-text', 'surface-warm', 5.42],
-            ['number text, dark', webDarkEffective, 'channel-whatsapp-text', 'surface-warm', 7.49],
-            ['focus ring, light', webLight, 'brand-primary', 'surface-warm', 3.08],
-            ['focus ring, dark', webDarkEffective, 'brand-primary', 'surface-warm', 5.4]
+            ['number text, dark', webDarkEffective, 'channel-whatsapp-text', 'surface-warm', 7.49]
+            // The focus ring is deliberately NOT pinned here: it is
+            // --brand-primary against --surface-warm, two repo-wide tokens that
+            // have already been lifted twice for AA reasons (SPEC-308, BETA-126)
+            // and whose light value HOS-367 is expected to change. An exact pin
+            // would make an unrelated theme fix redden a WhatsApp file with a
+            // message about "documented ratios" — a tripwire pointed at a token
+            // this file does not own. The `>= 3` threshold above is the part that
+            // actually has to hold.
         ] as const)('%s measures exactly as documented', (_label, theme, a, b, expected) => {
             expect(contrastRatio(oklchToken(theme, a), oklchToken(theme, b))).toBe(expected);
         });

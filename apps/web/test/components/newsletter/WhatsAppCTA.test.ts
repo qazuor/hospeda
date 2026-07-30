@@ -16,6 +16,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { findBareInkDeclarations } from '../../static-guards/ink-literals';
+
 const src = readFileSync(
     resolve(__dirname, '../../../src/components/newsletter/WhatsAppCTA.astro'),
     'utf8'
@@ -159,13 +161,21 @@ describe('WhatsAppCTA.module.css', () => {
         expect(cssSrc).toContain('background-color: var(--channel-whatsapp-hover)');
     });
 
-    it('inks the labelled CTA from a token, never a white literal', () => {
-        // Was `not.toContain('color: #ffffff')`, which every plausible spelling
-        // of the thing it forbade (`color:#ffffff`, `#fff`, `white`) satisfied.
+    it('inks the labelled CTA from the AA-safe token', () => {
         const cta = /\.cta\s*\{([^}]*)\}/.exec(cssSrc);
         expect(cta, 'no .cta rule found').not.toBeNull();
         expect(cta?.[1] ?? '').toContain('color: var(--channel-whatsapp-foreground)');
-        expect(cta?.[1] ?? '').not.toMatch(/(?<!-)color:\s*(?:white|#fff(?:fff)?)\b/i);
+    });
+
+    it('takes EVERY text colour from a token, wherever it is declared', () => {
+        // Replaces a `not.toContain('color: #ffffff')` scoped to the FIRST .cta
+        // body — which every other spelling satisfied (`#fff`, `white`,
+        // `rgb(255 255 255)`, `-webkit-text-fill-color`) and which could not see
+        // the second `.cta` rule this file already has inside
+        // `@media (max-width: 600px)`, nor a descendant rule. Whole-file and
+        // token-only, via the helper the other two WhatsApp surfaces share.
+        expect(findBareInkDeclarations(cssSrc)).toEqual([]);
+        expect(findBareInkDeclarations(src)).toEqual([]);
     });
 
     it('keeps the logo badge text-free, which is what its white ink depends on', () => {
@@ -177,8 +187,12 @@ describe('WhatsAppCTA.module.css', () => {
         const badge = /<div class=\{styles\.iconWrap\}[^>]*>([\s\S]*?)<\/div>/.exec(src);
         expect(badge, 'no iconWrap div found').not.toBeNull();
         const contents = (badge?.[1] ?? '').trim();
-        expect(contents).toBe('<WhatsappIcon size={32} weight="fill" />');
-        expect(src).toContain('class={styles.iconWrap} aria-hidden="true"');
+        // The invariant is "one self-closing icon element and no text node", NOT
+        // a byte-exact string: pinning prop order, values and spacing would make a
+        // `size={40}` or a Biome reflow fail a test named "text-free", with a diff
+        // that says nothing about text.
+        expect(contents).toMatch(/^<WhatsappIcon\b[^>]*\/>$/);
+        expect(src).toMatch(/class=\{styles\.iconWrap\}[^>]*aria-hidden="true"/);
     });
 
     it('inks the logo-only badge with the logotype token (WCAG 1.4.3 exemption)', () => {
