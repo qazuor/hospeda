@@ -136,8 +136,9 @@ export function prepareAnalyticsEvent<TName extends AnalyticsEventName>(input: {
     properties: AnalyticsEventProperties<TName>;
     globalProperties?: AnalyticsGlobalProperties;
 }): Record<string, Primitive | readonly Primitive[] | Record<string, Primitive>> {
+    const rawEventProperties = sanitizeObject(input.properties as AnalyticsPropertiesRecord);
     const eventProperties = sanitizeObject(
-        AnalyticsEventSchemas[input.name].parse(input.properties) as AnalyticsPropertiesRecord
+        AnalyticsEventSchemas[input.name].parse(rawEventProperties) as AnalyticsPropertiesRecord
     );
 
     if (!input.globalProperties) {

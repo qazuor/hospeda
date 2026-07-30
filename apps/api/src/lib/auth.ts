@@ -22,6 +22,7 @@ import {
     getDb,
     isNull,
     sessions,
+    userRole,
     users,
     verifications
 } from '@repo/db';
@@ -118,16 +119,18 @@ const COOKIE_CACHE_MAX_AGE = 5 * 60;
  */
 const MAX_SESSIONS_PER_USER = 10;
 
-function resolveAnalyticsUserType(role: string | null | undefined): 'staff' | 'owner' | 'tourist' {
+function resolveAnalyticsUserType(
+    roles: readonly (string | null | undefined)[]
+): 'staff' | 'owner' | 'tourist' {
     if (
-        role === RoleEnum.ADMIN ||
-        role === RoleEnum.CLIENT_MANAGER ||
-        role === RoleEnum.SUPER_ADMIN ||
-        role === RoleEnum.EDITOR
+        roles.includes(RoleEnum.ADMIN) ||
+        roles.includes(RoleEnum.CLIENT_MANAGER) ||
+        roles.includes(RoleEnum.SUPER_ADMIN) ||
+        roles.includes(RoleEnum.EDITOR)
     ) {
         return 'staff';
     }
-    if (role === RoleEnum.HOST || role === RoleEnum.COMMERCE_OWNER) {
+    if (roles.includes(RoleEnum.HOST) || roles.includes(RoleEnum.COMMERCE_OWNER)) {
         return 'owner';
     }
     return 'tourist';
@@ -674,20 +677,21 @@ function buildAuth() {
                     after: async (session) => {
                         try {
                             const db = getDb();
-                            const row = await db
-                                .select({ role: users.role })
-                                .from(users)
-                                .where(eq(users.id, session.userId))
-                                .limit(1);
+                            const rows = await db
+                                .select({ role: userRole.role })
+                                .from(userRole)
+                                .where(eq(userRole.userId, session.userId));
 
-                            const role = row[0]?.role ?? RoleEnum.USER;
+                            const roles = rows.map((row) => row.role);
+                            const effectiveRoles = roles.length > 0 ? roles : [RoleEnum.USER];
 
                             captureServerAnalyticsEvent({
                                 distinctId: session.userId,
                                 name: AnalyticsEvents.signInCompleted,
                                 properties: {
-                                    role,
-                                    user_type: resolveAnalyticsUserType(role)
+                                    role:
+                                        effectiveRoles.length === 1 ? effectiveRoles[0] : undefined,
+                                    user_type: resolveAnalyticsUserType(effectiveRoles)
                                 }
                             });
                         } catch (error) {
