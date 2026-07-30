@@ -65,10 +65,7 @@ export interface UserHeaderProps {
     readonly badges: ReactNode;
 }
 
-export const useUserHeaderProps = ({
-    entity,
-    userId
-}: UseUserHeaderPropsArgs): UserHeaderProps => {
+export const useUserHeaderProps = ({ entity, userId }: UseUserHeaderPropsArgs): UserHeaderProps => {
     const { t } = useTranslations();
     const { data: roleGrants, isError: rolesFailed } = useUserRoles(userId ?? '', {
         enabled: Boolean(userId)

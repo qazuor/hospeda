@@ -255,10 +255,7 @@ export function UserRolesCard({ userId }: UserRolesCardProps) {
         }
     };
 
-    const handleRevoke = async (params: {
-        role: RoleEnum;
-        reason: string;
-    }): Promise<void> => {
+    const handleRevoke = async (params: { role: RoleEnum; reason: string }): Promise<void> => {
         const { role } = params;
         const trimmed = params.reason.trim();
         try {

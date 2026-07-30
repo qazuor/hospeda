@@ -39,10 +39,12 @@ import type { AppBindings } from '../../../../src/types';
 
 const ACC_ID = 'aaaaaaaa-0000-4000-8000-000000000353';
 
-/** A privileged reader: staff role plus the VIP visibility entitlement. */
+/** A privileged reader: staff hat plus the VIP visibility entitlement. */
 const PRIVILEGED_ACTOR = {
     id: '11111111-0000-4000-8000-000000000353',
-    role: 'SUPER_ADMIN',
+    // HOS-296: an actor holds a SET of roles, so the privileged fixture wears
+    // the staff hat alongside the baseline one every real account carries.
+    roles: ['USER', 'SUPER_ADMIN'],
     permissions: ['ACCOMMODATION_VIEW_ALL'],
     entitlements: new Set(['vip_visibility_access'])
 };
@@ -146,13 +148,22 @@ vi.mock('../../../../src/utils/route-factory', () => {
 /**
  * Asserts the actor handed to a service is anonymous.
  *
- * Checked positively (role GUEST) AND negatively (no entitlement set, no
- * view-all permission): asserting only "not the privileged actor" would pass for
- * any actor at all, including a differently-privileged one.
+ * Checked positively (holds exactly GUEST) AND negatively (no entitlement set,
+ * no view-all permission): asserting only "not the privileged actor" would pass
+ * for any actor at all, including a differently-privileged one.
+ *
+ * HOS-296: the actor carries `roles` (a set) rather than a `role` scalar. The
+ * assertion is on the EXACT set, not `toContain`, because a guest that also
+ * held some other hat would still satisfy "contains GUEST" while no longer
+ * being anonymous — which is precisely the leak this suite exists to catch.
  */
 function expectGuestActor(actor: unknown): void {
-    const a = actor as { role?: string; permissions?: string[]; entitlements?: Set<string> };
-    expect(a.role).toBe('GUEST');
+    const a = actor as {
+        roles?: readonly string[];
+        permissions?: string[];
+        entitlements?: Set<string>;
+    };
+    expect(a.roles).toEqual(['GUEST']);
     expect(a.entitlements).toBeUndefined();
     expect(a.permissions ?? []).not.toContain('ACCOMMODATION_VIEW_ALL');
 }

@@ -372,7 +372,7 @@ describe('UserRolesCard (HOS-296)', () => {
         expect(del?.path).not.toContain('promoting');
     });
 
-    it('keeps each row\'s revoke reason to itself', async () => {
+    it("keeps each row's revoke reason to itself", async () => {
         // The dialogs are per-row: a justification typed for one hat must not
         // travel to another hat's audit row.
         stubRoles(TWO_HATS);
