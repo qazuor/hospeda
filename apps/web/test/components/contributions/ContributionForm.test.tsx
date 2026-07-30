@@ -146,7 +146,7 @@ describe('ContributionForm', () => {
             await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
             await waitFor(() =>
                 expect(trackEventMock).toHaveBeenCalledWith('contribution_report_submitted', {
-                    destino: 'colon',
+                    destination_slug: 'colon',
                     locale: 'es'
                 })
             );

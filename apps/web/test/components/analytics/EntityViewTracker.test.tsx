@@ -87,9 +87,10 @@ describe('EntityViewTracker — POST (SPEC-159 T-013)', () => {
         // Assert
         expect(trackEventMock).toHaveBeenCalledTimes(1);
         expect(trackEventMock).toHaveBeenCalledWith('post_viewed', {
-            slug: POST_PROPS.slug,
             post_id: POST_PROPS.entityId,
-            locale: POST_PROPS.locale
+            post_slug: POST_PROPS.slug,
+            locale: POST_PROPS.locale,
+            source_page: 'post_detail'
         });
     });
 
@@ -181,9 +182,10 @@ describe('EntityViewTracker — EVENT (SPEC-159 T-013)', () => {
         // Assert
         expect(trackEventMock).toHaveBeenCalledTimes(1);
         expect(trackEventMock).toHaveBeenCalledWith('event_viewed', {
-            slug: EVENT_PROPS.slug,
             event_id: EVENT_PROPS.entityId,
-            locale: EVENT_PROPS.locale
+            event_slug: EVENT_PROPS.slug,
+            locale: EVENT_PROPS.locale,
+            source_page: 'event_detail'
         });
     });
 

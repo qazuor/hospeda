@@ -263,7 +263,7 @@ export function TourProvider({ children }: TourProviderProps) {
                     markSeen({ tourId: tour.id, version: tour.version });
                     trackEvent(AnalyticsEvents.adminTourCompleted, {
                         tour_id: tour.id,
-                        roles: user?.roles ?? []
+                        roles: [...(user?.roles ?? [])]
                     });
                     setIsRunning(false);
                     setActiveTourId(null);
@@ -272,7 +272,7 @@ export function TourProvider({ children }: TourProviderProps) {
                     markSeen({ tourId: tour.id, version: tour.version });
                     trackEvent(AnalyticsEvents.adminTourSkipped, {
                         tour_id: tour.id,
-                        roles: user?.roles ?? []
+                        roles: [...(user?.roles ?? [])]
                     });
                     setIsRunning(false);
                     setActiveTourId(null);
@@ -315,7 +315,7 @@ export function TourProvider({ children }: TourProviderProps) {
             // Track 'shown' event before any modal or driver.
             trackEvent(AnalyticsEvents.adminTourShown, {
                 tour_id: tourId,
-                roles: user?.roles ?? [],
+                roles: [...(user?.roles ?? [])],
                 source
             });
 
@@ -343,7 +343,7 @@ export function TourProvider({ children }: TourProviderProps) {
         markSeen({ tourId: tour.id, version: tour.version });
         trackEvent(AnalyticsEvents.adminTourSkipped, {
             tour_id: tour.id,
-            roles: user?.roles ?? [],
+            roles: [...(user?.roles ?? [])],
             source: 'modal-skip'
         });
         setPendingTour(null);
