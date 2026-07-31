@@ -272,6 +272,8 @@ const articleAuthorName =
 	authorForCard?.displayName ||
 	[authorForCard?.firstName, authorForCard?.lastName].filter(Boolean).join(' ') ||
 	'';
+/** Byline for the Article JSON-LD, falling back to the site itself. */
+const articleAuthor = { name: articleAuthorName || 'Hospeda' } as const;
 
 // Speakable selectors (AEO / voice): the article headline and lead/summary
 // rendered by PostDetailHeader.astro. Class names are the stable BEM-lite
@@ -303,33 +305,24 @@ const breadcrumbItems = [
 	showBreadcrumbs={true}
 	showSidebar={true}
 >
-	{articleAuthorName ? (
-		<ArticleJsonLd
-			slot="head-extra"
-			headline={title}
-			description={seoDescription}
-			url={`${siteBase}${Astro.url.pathname}`}
-			image={featuredImage !== '/assets/images/placeholder-blog.svg' ? featuredImage : undefined}
-			datePublished={publishedAt}
-			dateModified={updatedAt && updatedAt > publishedAt ? updatedAt : undefined}
-			author={{ name: articleAuthorName }}
-			articleType="BlogPosting"
-			speakableCssSelectors={speakableSelectors}
-		/>
-	) : (
-		<ArticleJsonLd
-			slot="head-extra"
-			headline={title}
-			description={seoDescription}
-			url={`${siteBase}${Astro.url.pathname}`}
-			image={featuredImage !== '/assets/images/placeholder-blog.svg' ? featuredImage : undefined}
-			datePublished={publishedAt}
-			dateModified={updatedAt && updatedAt > publishedAt ? updatedAt : undefined}
-			author={{ name: 'Hospeda' }}
-			articleType="BlogPosting"
-			speakableCssSelectors={speakableSelectors}
-		/>
-	)}
+	{/*
+	  These two must stay PLAIN siblings, never wrapped in a `{cond ? … : …}`
+	  expression: when the first contributor to a named slot comes from an
+	  expression, Astro drops the plain siblings that follow it — which is how
+	  this page silently shipped without its BreadcrumbList for so long.
+	*/}
+	<ArticleJsonLd
+		slot="head-extra"
+		headline={title}
+		description={seoDescription}
+		url={`${siteBase}${Astro.url.pathname}`}
+		image={featuredImage !== '/assets/images/placeholder-blog.svg' ? featuredImage : undefined}
+		datePublished={publishedAt}
+		dateModified={updatedAt && updatedAt > publishedAt ? updatedAt : undefined}
+		author={articleAuthor}
+		articleType="BlogPosting"
+		speakableCssSelectors={speakableSelectors}
+	/>
 	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
 
 	<ReadingProgressBar client:idle />
