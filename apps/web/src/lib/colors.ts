@@ -421,42 +421,10 @@ export function getPostCategoryLabel({
     return t(i18nKey, category);
 }
 
-/** Emoji icons per post category for placeholder images. */
-const POST_CATEGORY_EMOJI: Readonly<Record<string, string>> = {
-    [PostCategoryEnum.TOURISM]: '✈️',
-    [PostCategoryEnum.TIPS]: '💡',
-    [PostCategoryEnum.GASTRONOMY]: '🍽️',
-    [PostCategoryEnum.CULTURE]: '🎭',
-    [PostCategoryEnum.NATURE]: '🌿',
-    [PostCategoryEnum.EVENTS]: '🎉',
-    [PostCategoryEnum.SPORT]: '🏃',
-    [PostCategoryEnum.CARNIVAL]: '🎊',
-    [PostCategoryEnum.NIGHTLIFE]: '🌙',
-    [PostCategoryEnum.HISTORY]: '📜',
-    [PostCategoryEnum.TRADITIONS]: '🧉',
-    [PostCategoryEnum.WELLNESS]: '🧘',
-    [PostCategoryEnum.FAMILY]: '👨‍👩‍👧',
-    [PostCategoryEnum.ART]: '🎨',
-    [PostCategoryEnum.BEACH]: '🏖️',
-    [PostCategoryEnum.RURAL]: '🌾',
-    [PostCategoryEnum.FESTIVALS]: '🎶',
-    [PostCategoryEnum.GENERAL]: '📰'
-};
-
-/**
- * Returns an emoji icon for a post category (used in placeholder images).
- *
- * @param params - Object containing the post category string.
- * @returns Emoji string for the category.
- *
- * @example
- * ```ts
- * getPostCategoryEmoji({ category: 'SPORT' }) // '🏃'
- * ```
- */
-export function getPostCategoryEmoji({ category }: { readonly category: string }): string {
-    return POST_CATEGORY_EMOJI[category] ?? '📰';
-}
+// Post-category placeholder art lives in
+// `components/shared/cards/utils/postCategoryIcon.ts` — blog cards render a
+// large `@repo/icons` category icon, matching the event cards. The emoji map
+// that used to live here was retired with it.
 
 // ---------------------------------------------------------------------------
 // Badge status (featured, new, trending, promoted, past, cancelled)

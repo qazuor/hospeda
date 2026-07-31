@@ -497,6 +497,7 @@ const breadcrumbItems = [
 								(p.media as { featuredImage?: { url?: string } } | null | undefined)
 									?.featuredImage?.url ?? null
 							}
+							category={p.category ? String(p.category) : null}
 							publishedAt={p.publishedAt ? String(p.publishedAt) : null}
 							lang={locale}
 						/>
