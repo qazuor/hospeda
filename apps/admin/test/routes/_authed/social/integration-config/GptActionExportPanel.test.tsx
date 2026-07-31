@@ -32,7 +32,7 @@ vi.mock('@/hooks/use-toast', () => ({
     useToast: () => ({ addToast: addToastMock })
 }));
 
-import { GptActionExportPanel } from '../-components/GptActionExportPanel';
+import { GptActionExportPanel } from '../../../../../src/routes/_authed/social/integration-config/-components/GptActionExportPanel';
 
 const SAMPLE_DOC = {
     openapi: '3.1.0',

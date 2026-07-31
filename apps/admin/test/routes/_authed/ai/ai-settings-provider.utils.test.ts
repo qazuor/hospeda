@@ -16,7 +16,7 @@ import {
     applyProviderToAllFeatures,
     buildProviderOptions,
     filterRenderableModels
-} from '../-components/ai-settings-provider.utils';
+} from '../../../../src/routes/_authed/ai/-components/ai-settings-provider.utils';
 
 describe('buildProviderOptions', () => {
     it('includes stub + current value + credentials, deduped', () => {

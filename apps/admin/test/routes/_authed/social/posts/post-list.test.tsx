@@ -84,7 +84,7 @@ import { PermissionEnum } from '@repo/schemas';
 import type { SocialPostListItem } from '@repo/service-core';
 import { useApproveSocialPost } from '@/hooks/use-social-posts';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
-import { SocialPostsTable } from '../-components/SocialPostsTable';
+import { SocialPostsTable } from '../../../../../src/routes/_authed/social/posts/-components/SocialPostsTable';
 
 // ---------------------------------------------------------------------------
 // Test helpers

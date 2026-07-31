@@ -94,7 +94,7 @@ vi.mock('@/components/ui/label', () => ({
     )
 }));
 
-import { SettingEditModal } from '../SettingEditModal';
+import { SettingEditModal } from '../../../../../src/routes/_authed/social/settings/-components/SettingEditModal';
 
 function buildSetting(overrides: Partial<SocialSetting> = {}): SocialSetting {
     return {

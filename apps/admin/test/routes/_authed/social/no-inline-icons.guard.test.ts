@@ -30,8 +30,8 @@ import { describe, expect, it } from 'vitest';
 // Constants
 // ---------------------------------------------------------------------------
 
-/** The social admin subtree root (this file lives at `<subtree>/__tests__/`). */
-const SOCIAL_ROOT = resolve(__dirname, '..');
+/** The social admin subtree root (production sources live under src/routes/_authed/social). */
+const SOCIAL_ROOT = resolve(__dirname, '../../../../src/routes/_authed/social');
 
 /**
  * The two forbidden patterns. Kind labels drive the failure message.

@@ -81,7 +81,7 @@ vi.mock('@/components/ui/label', () => ({
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useRotateSocialCredentialMutation } from '@/features/social-credentials';
-import { RotateCredentialDialog } from '../-components/RotateCredentialDialog';
+import { RotateCredentialDialog } from '../../../../../src/routes/_authed/social/credentials/-components/RotateCredentialDialog';
 
 const mockUseRotateSocialCredentialMutation = vi.mocked(useRotateSocialCredentialMutation);
 

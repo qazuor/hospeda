@@ -213,10 +213,10 @@ import {
     useUpdateSocialSetting
 } from '@/hooks/use-social-platform-settings';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
-import { PlatformFormatFormModal } from '../platform-formats/-components/PlatformFormatFormModal';
-import { PlatformFormatsTable } from '../platform-formats/-components/PlatformFormatsTable';
-import { SettingEditModal } from '../settings/-components/SettingEditModal';
-import { SettingsTable } from '../settings/-components/SettingsTable';
+import { PlatformFormatFormModal } from '../../../../src/routes/_authed/social/platform-formats/-components/PlatformFormatFormModal';
+import { PlatformFormatsTable } from '../../../../src/routes/_authed/social/platform-formats/-components/PlatformFormatsTable';
+import { SettingEditModal } from '../../../../src/routes/_authed/social/settings/-components/SettingEditModal';
+import { SettingsTable } from '../../../../src/routes/_authed/social/settings/-components/SettingsTable';
 
 // ---------------------------------------------------------------------------
 // Test helpers

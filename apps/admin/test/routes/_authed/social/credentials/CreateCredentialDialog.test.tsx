@@ -111,7 +111,7 @@ vi.mock('@/components/ui/select', () => ({
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useCreateSocialCredentialMutation } from '@/features/social-credentials';
-import { CreateCredentialDialog } from '../-components/CreateCredentialDialog';
+import { CreateCredentialDialog } from '../../../../../src/routes/_authed/social/credentials/-components/CreateCredentialDialog';
 
 const mockUseCreateSocialCredentialMutation = vi.mocked(useCreateSocialCredentialMutation);
 

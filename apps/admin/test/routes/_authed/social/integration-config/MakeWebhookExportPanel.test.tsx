@@ -32,8 +32,8 @@ vi.mock('@/hooks/use-toast', () => ({
     useToast: () => ({ addToast: addToastMock })
 }));
 
-import { MakeWebhookExportPanel } from '../-components/MakeWebhookExportPanel';
-import type { MakeWebhookSchemaResponse } from '../-hooks/use-integration-config';
+import { MakeWebhookExportPanel } from '../../../../../src/routes/_authed/social/integration-config/-components/MakeWebhookExportPanel';
+import type { MakeWebhookSchemaResponse } from '../../../../../src/routes/_authed/social/integration-config/-hooks/use-integration-config';
 
 const REAL_API_KEY = 'super-secret-make-api-key-do-not-leak';
 const REAL_WEBHOOK_URL = 'https://hook.make.com/abc123';
