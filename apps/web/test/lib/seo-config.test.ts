@@ -1,97 +1,21 @@
 /**
  * @fileoverview
- * Unit tests for the static-sitemap SEO helpers in src/lib/seo-config.ts.
+ * Unit tests for the sitemap/robots path-exclusion helper in
+ * src/lib/seo-config.ts.
  *
- * These helpers back the `@astrojs/sitemap` `serialize()` and `filter()` hooks
- * in astro.config.mjs (which is not itself testable under Vitest). They are
- * pure functions, so we test their behavior directly.
+ * `SITEMAP_EXCLUDED_PATHS` is the single source of truth shared by
+ * `src/pages/robots.txt.ts` (which emits it as `Disallow:` directives) and the
+ * static-sitemap drift guard (which uses `isExcludedSitemapPage` to skip these
+ * prefixes when checking that every page is classified).
  *
- * SPEC-157 follow-up (sitemap es-prefix): the static sitemap must match the
- * dynamic sitemap strategy (REQ-2/REQ-12):
- *  - the `es` locale carries the `/es` prefix (never unprefixed),
- *  - `x-default` points at the Spanish (`/es`) URL,
- *  - no locale prefix is ever doubled (e.g. `/en/es/...`),
- *  - the root `/` (which 301-redirects to `/es/`) is excluded from the sitemap.
+ * hreflang/alternate construction used to live here too, backing the
+ * `@astrojs/sitemap` `serialize()` hook. That integration is gone (it emitted
+ * an empty urlset on this fully-SSR app); the alternates logic now lives in
+ * `src/lib/seo/sitemap-xml.ts` and is tested in `test/lib/seo/sitemap-xml.test.ts`.
  */
 
 import { describe, expect, it } from 'vitest';
-import {
-    buildSitemapAlternateLinks,
-    isExcludedSitemapPage,
-    SITEMAP_EXCLUDED_PATHS
-} from '../../src/lib/seo-config.js';
-
-const SITE = 'https://hospeda.test';
-
-describe('buildSitemapAlternateLinks', () => {
-    it('builds es/en/pt/x-default alternates for an es-prefixed path', () => {
-        const links = buildSitemapAlternateLinks({ pathname: '/es/nosotros/', siteUrl: SITE });
-
-        expect(links).toEqual([
-            { lang: 'es', url: 'https://hospeda.test/es/nosotros/' },
-            { lang: 'en', url: 'https://hospeda.test/en/nosotros/' },
-            { lang: 'pt', url: 'https://hospeda.test/pt/nosotros/' },
-            { lang: 'x-default', url: 'https://hospeda.test/es/nosotros/' }
-        ]);
-    });
-
-    it('produces the identical alternate set regardless of the source locale prefix', () => {
-        const fromEs = buildSitemapAlternateLinks({ pathname: '/es/nosotros/', siteUrl: SITE });
-        const fromEn = buildSitemapAlternateLinks({ pathname: '/en/nosotros/', siteUrl: SITE });
-        const fromPt = buildSitemapAlternateLinks({ pathname: '/pt/nosotros/', siteUrl: SITE });
-
-        expect(fromEn).toEqual(fromEs);
-        expect(fromPt).toEqual(fromEs);
-    });
-
-    it('always prefixes the es alternate with /es (never unprefixed)', () => {
-        // Regression for P1: /en/ and /pt/ pages used to emit es="/nosotros/".
-        const links = buildSitemapAlternateLinks({ pathname: '/en/nosotros/', siteUrl: SITE });
-        const es = links.find((l) => l.lang === 'es');
-        const xDefault = links.find((l) => l.lang === 'x-default');
-
-        expect(es?.url).toBe('https://hospeda.test/es/nosotros/');
-        expect(xDefault?.url).toBe('https://hospeda.test/es/nosotros/');
-    });
-
-    it('never doubles a locale prefix', () => {
-        // Regression for P2: /es/ pages used to emit en="/en/es/nosotros/".
-        const links = buildSitemapAlternateLinks({ pathname: '/es/nosotros/', siteUrl: SITE });
-
-        for (const { url } of links) {
-            expect(url).not.toContain('/en/es/');
-            expect(url).not.toContain('/pt/es/');
-            expect(url).not.toContain('/es/es/');
-        }
-    });
-
-    it('handles the locale home root (e.g. /es/) without a trailing path', () => {
-        expect(buildSitemapAlternateLinks({ pathname: '/es/', siteUrl: SITE })).toEqual([
-            { lang: 'es', url: 'https://hospeda.test/es/' },
-            { lang: 'en', url: 'https://hospeda.test/en/' },
-            { lang: 'pt', url: 'https://hospeda.test/pt/' },
-            { lang: 'x-default', url: 'https://hospeda.test/es/' }
-        ]);
-    });
-
-    it('does not strip a prefix from paths that merely start with locale letters', () => {
-        // The /es|en|pt match must be a full segment, not a substring.
-        const links = buildSitemapAlternateLinks({ pathname: '/entradas/', siteUrl: SITE });
-        const es = links.find((l) => l.lang === 'es');
-
-        expect(es?.url).toBe('https://hospeda.test/es/entradas/');
-    });
-
-    it('normalizes a site URL that carries a trailing slash', () => {
-        const links = buildSitemapAlternateLinks({
-            pathname: '/en/contacto/',
-            siteUrl: 'https://hospeda.test/'
-        });
-        const es = links.find((l) => l.lang === 'es');
-
-        expect(es?.url).toBe('https://hospeda.test/es/contacto/');
-    });
-});
+import { isExcludedSitemapPage, SITEMAP_EXCLUDED_PATHS } from '../../src/lib/seo-config.js';
 
 describe('isExcludedSitemapPage', () => {
     it('excludes the bare root "/" (it 301-redirects to /es/)', () => {

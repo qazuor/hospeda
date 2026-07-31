@@ -342,12 +342,12 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         const response = await GET({});
         const body = await response.text();
 
-        // Listing pages (SSR, not included by @astrojs/sitemap) must be here
+        // Entity listing pages belong here: their content is the entity set.
         expect(body).toContain('<loc>https://hospeda.test/es/gastronomia/</loc>');
         expect(body).toContain('<loc>https://hospeda.test/es/experiencias/</loc>');
         expect(body).toContain('<priority>0.7</priority>');
-        // Home is SSG — @astrojs/sitemap handles it with priority 1.0 (astro.config.mjs).
-        // The dynamic sitemap must NOT duplicate it.
+        // Home belongs to /sitemap-static.xml (priority 1.0). Emitting it here
+        // too would put the same URL in two sitemaps.
         expect(body).not.toContain('<loc>https://hospeda.test/es/</loc>');
     });
 
@@ -480,7 +480,7 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         expect(body).toContain('<urlset');
         expect(body).toContain('</urlset>');
         // Listing pages are always emitted (priority 0.7) even when API fetches fail.
-        // Home is NOT emitted here — it belongs to the static sitemap (@astrojs/sitemap).
+        // Home is NOT emitted here — it belongs to /sitemap-static.xml.
         expect(body).not.toContain('<loc>https://hospeda.test/es/</loc>');
         expect(body).toContain('<loc>https://hospeda.test/es/alojamientos/</loc>');
         expect(body).toContain('<loc>https://hospeda.test/es/destinos/</loc>');
