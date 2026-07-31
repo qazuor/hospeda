@@ -42,7 +42,7 @@ vi.mock('@/features/ai-settings', async (importOriginal) => {
 import type { AiSyncModelsResult } from '@repo/schemas';
 import { useSyncModelsMutation } from '@/features/ai-settings';
 import { ApiError } from '@/lib/errors';
-import { SyncModelsSection } from '../SyncModelsSection';
+import { SyncModelsSection } from '../../../../src/routes/_authed/ai/-components/SyncModelsSection';
 
 const mockUseSyncModelsMutation = vi.mocked(useSyncModelsMutation);
 

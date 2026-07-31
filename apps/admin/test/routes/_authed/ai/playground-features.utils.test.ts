@@ -4,7 +4,7 @@ import {
     isPlaygroundSupportedFeature,
     PLAYGROUND_SUPPORTED_FEATURES,
     PLAYGROUND_UNSUPPORTED_REASON
-} from '../-components/playground-features.utils';
+} from '../../../../src/routes/_authed/ai/-components/playground-features.utils';
 
 const ALL_FEATURES: AiFeatureId[] = [
     'text_improve',

@@ -137,12 +137,12 @@ vi.mock('@repo/icons', async (importOriginal) => ({
 
 import type { SocialDashboardResponse } from '@repo/schemas';
 import { useApproveSocialPost, useSocialDashboard } from '@/hooks/use-social-posts';
-import { DashboardDateRangeFilter } from '../-components/DashboardDateRangeFilter';
-import { DashboardKpiCards } from '../-components/DashboardKpiCards';
-import { PlatformBreakdownChart } from '../-components/PlatformBreakdownChart';
-import { QuickApprovalQueue } from '../-components/QuickApprovalQueue';
-import { RecentFailures } from '../-components/RecentFailures';
-import { WebhookAlert } from '../-components/WebhookAlert';
+import { DashboardDateRangeFilter } from '../../../../src/routes/_authed/social/-components/DashboardDateRangeFilter';
+import { DashboardKpiCards } from '../../../../src/routes/_authed/social/-components/DashboardKpiCards';
+import { PlatformBreakdownChart } from '../../../../src/routes/_authed/social/-components/PlatformBreakdownChart';
+import { QuickApprovalQueue } from '../../../../src/routes/_authed/social/-components/QuickApprovalQueue';
+import { RecentFailures } from '../../../../src/routes/_authed/social/-components/RecentFailures';
+import { WebhookAlert } from '../../../../src/routes/_authed/social/-components/WebhookAlert';
 
 // ---------------------------------------------------------------------------
 // Test helpers

@@ -18,7 +18,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { resolveCredentialModelsToPersist } from '../-components/credential-models.utils';
+import { resolveCredentialModelsToPersist } from '../../../../src/routes/_authed/ai/-components/credential-models.utils';
 
 describe('resolveCredentialModelsToPersist', () => {
     describe('pre-sync (hasSyncedPreview: false)', () => {

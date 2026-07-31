@@ -4,7 +4,7 @@
  * follow-up (HOS-94 owner adjustment).
  *
  * Mocking strategy mirrors the sibling
- * `routes/_authed/social/credentials/__tests__/EditCredentialDialog.test.tsx`
+ * `test/routes/_authed/social/credentials/EditCredentialDialog.test.tsx`
  * (Dialog/Button/Input/Label stubs driven by a real React context so
  * `DialogTrigger`'s click routes through the component's own
  * `onOpenChange`), plus the identity-`t` i18n mock used by
@@ -124,7 +124,7 @@ import {
     useSyncModelsMutation,
     useUpdateAiCredentialMutation
 } from '@/features/ai-settings';
-import { EditCredentialDialog } from '../credentials';
+import { EditCredentialDialog } from '../../../../src/routes/_authed/ai/credentials';
 
 const mockUseUpdateAiCredentialMutation = vi.mocked(useUpdateAiCredentialMutation);
 const mockUseRotateAiCredentialMutation = vi.mocked(useRotateAiCredentialMutation);

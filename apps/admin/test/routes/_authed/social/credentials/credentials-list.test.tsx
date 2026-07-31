@@ -15,7 +15,7 @@ import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import type { SocialCredentialMasked } from '@/features/social-credentials';
-import { CredentialsList } from '../-components/CredentialsList';
+import { CredentialsList } from '../../../../../src/routes/_authed/social/credentials/-components/CredentialsList';
 
 vi.mock('@/hooks/use-toast', () => ({
     useToast: () => ({ addToast: vi.fn() })

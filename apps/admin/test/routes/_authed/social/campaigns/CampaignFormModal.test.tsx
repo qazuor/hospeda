@@ -110,7 +110,7 @@ vi.mock('@/components/ui/textarea', () => ({
     )
 }));
 
-import { CampaignFormModal } from '../CampaignFormModal';
+import { CampaignFormModal } from '../../../../../src/routes/_authed/social/campaigns/-components/CampaignFormModal';
 
 function buildCampaign(overrides: Partial<SocialCampaign> = {}): SocialCampaign {
     return {

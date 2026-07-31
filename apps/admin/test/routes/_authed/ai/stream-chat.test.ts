@@ -18,8 +18,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SseEvent } from '../stream-chat';
-import { streamChat } from '../stream-chat';
+import type { SseEvent } from '../../../../src/routes/_authed/ai/-components/stream-chat';
+import { streamChat } from '../../../../src/routes/_authed/ai/-components/stream-chat';
 
 // --- Helpers ------------------------------------------------------------------
 

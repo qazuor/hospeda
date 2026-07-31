@@ -174,11 +174,11 @@ import {
     useUpdateSocialHashtag
 } from '@/hooks/use-social-catalog';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
-import { AudiencesTable } from '../audiences/-components/AudiencesTable';
-import { BatchesTable } from '../batches/-components/BatchesTable';
-import { CampaignsTable } from '../campaigns/-components/CampaignsTable';
-import { FootersTable } from '../footers/-components/FootersTable';
-import { HashtagsTable } from '../hashtags/-components/HashtagsTable';
+import { AudiencesTable } from '../../../../src/routes/_authed/social/audiences/-components/AudiencesTable';
+import { BatchesTable } from '../../../../src/routes/_authed/social/batches/-components/BatchesTable';
+import { CampaignsTable } from '../../../../src/routes/_authed/social/campaigns/-components/CampaignsTable';
+import { FootersTable } from '../../../../src/routes/_authed/social/footers/-components/FootersTable';
+import { HashtagsTable } from '../../../../src/routes/_authed/social/hashtags/-components/HashtagsTable';
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -695,7 +695,9 @@ describe('HashtagFormModal — 409 conflict surfacing', () => {
         const { isConflictError } = await import('@/hooks/use-social-catalog');
         vi.mocked(isConflictError).mockReturnValue(true);
 
-        const { HashtagFormModal } = await import('../hashtags/-components/HashtagFormModal');
+        const { HashtagFormModal } = await import(
+            '../../../../src/routes/_authed/social/hashtags/-components/HashtagFormModal'
+        );
 
         render(
             <TestWrapper>
