@@ -225,7 +225,8 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 	</Fragment>
 
 	<div class="event-detail">
-		<!-- Gallery or hero image -->
+		<!-- Gallery or hero image. An event with no real imagery renders nothing
+		     here: no placeholder and no reserved space. -->
 		{hasGallery ? (
 			<div class="event-detail__gallery">
 				<ImageGallery
@@ -235,39 +236,26 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 					locale={locale}
 				/>
 			</div>
-		) : (
+		) : !featuredIsPlaceholder ? (
 			<div class="event-detail__hero">
-				{!featuredIsPlaceholder ? (
-					<>
-						<Image
-							src={featuredImage.url}
-							alt={featuredImage.caption || name}
-							width={1200}
-							height={675}
-							format="webp"
-							loading="eager"
-							class="event-detail__hero-img"
-						/>
-						{featuredImage.attribution && (
-							<ImageAttribution
-								attribution={featuredImage.attribution}
-								locale={locale}
-								variant="overlay"
-							/>
-						)}
-					</>
-				) : (
-					<img
-						src={featuredImage.url}
-						alt=""
-						loading="eager"
-						class="event-detail__hero-img"
-						width="1200"
-						height="675"
+				<Image
+					src={featuredImage.url}
+					alt={featuredImage.caption || name}
+					width={1200}
+					height={675}
+					format="webp"
+					loading="eager"
+					class="event-detail__hero-img"
+				/>
+				{featuredImage.attribution && (
+					<ImageAttribution
+						attribution={featuredImage.attribution}
+						locale={locale}
+						variant="overlay"
 					/>
 				)}
 			</div>
-		)}
+		) : null}
 
 		<!-- Description body -->
 		{safeDescriptionHtml && (

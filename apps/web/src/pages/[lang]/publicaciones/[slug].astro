@@ -23,7 +23,6 @@ import { ImageGallery } from '@/components/ImageGallery.client';
 import CommentThread from '@/components/comments/CommentThread.astro';
 import { ReadingProgressBar } from '@/components/post/ReadingProgressBar.client';
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
-import ImageAttribution from '@/components/shared/ImageAttribution.astro';
 import { buildUrl } from '@/lib/urls';
 import { postsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
@@ -393,8 +392,9 @@ const breadcrumbItems = [
 	)}
 
 	<article class="post-detail">
-		<!-- Cover + gallery -->
-		{hasRealFeatured && galleryImages.length > 0 ? (
+		<!-- Cover + gallery. A post with no real imagery renders nothing here:
+		     no placeholder and no reserved space. -->
+		{galleryImages.length > 0 && (
 			<div class="post-detail__gallery">
 				<ImageGallery
 					images={galleryImages}
@@ -402,24 +402,6 @@ const breadcrumbItems = [
 					locale={locale}
 					client:visible
 				/>
-			</div>
-		) : (
-			<div class="post-detail__cover">
-				<img
-					src={featuredImage}
-					alt=""
-					loading="eager"
-					class="post-detail__cover-img"
-					width="1200"
-					height="675"
-				/>
-				{mediaObj?.featuredImage?.attribution && (
-					<ImageAttribution
-						attribution={mediaObj.featuredImage.attribution}
-						locale={locale}
-						variant="overlay"
-					/>
-				)}
 			</div>
 		)}
 
@@ -559,18 +541,6 @@ const breadcrumbItems = [
 
 	.post-detail {
 		min-width: 0;
-	}
-
-	.post-detail__cover {
-		margin-bottom: var(--space-6, 1.5rem);
-		border-radius: var(--radius-card);
-		overflow: hidden;
-	}
-
-	.post-detail__cover-img {
-		width: 100%;
-		aspect-ratio: 16 / 9;
-		object-fit: cover;
 	}
 
 	.post-detail__gallery {
