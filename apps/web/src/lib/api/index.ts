@@ -48,11 +48,13 @@ export type {
     ExchangeRateConfig,
     ExchangeRateItem,
     InvoiceItem,
+    LimitUsage,
     PaymentItem,
     PlanItem,
     SubscriptionData,
     TagPublicResponse,
     UsageSummary,
+    UsageThresholdLevel,
     UserAddon
 } from './endpoints-protected';
 

@@ -337,7 +337,39 @@
         "usageUnlimited": "Ilimitado",
         "usageWarning": "Estás cerca del límite",
         "usageAtLimit": "Límite alcanzado",
-        "usageOf": "{{current}} de {{max}}"
+        "usageOf": "{{current}} de {{max}}",
+        "usage": {
+            "title": "Uso de tu plan",
+            "subtitle": "Cuánto consumiste de cada límite incluido en tu plan.",
+            "loading": "Cargando el uso de tu plan...",
+            "unlimited": "Ilimitado",
+            "ofMax": "{{current}} de {{max}}",
+            "unlimitedUsage": "{{current}} en uso",
+            "addonBonus": "Incluye {{bonus}} extra por complementos",
+            "thresholdWarning": "Cerca del límite",
+            "thresholdCritical": "Casi sin margen",
+            "thresholdReached": "Llegaste al límite",
+            "thresholdExceeded": "Límite superado",
+            "limits": {
+                "max_accommodations": "Alojamientos publicados",
+                "max_photos_per_accommodation": "Fotos por alojamiento",
+                "max_active_promotions": "Promociones activas",
+                "max_favorites": "Favoritos guardados",
+                "max_properties": "Propiedades del complejo",
+                "max_staff_accounts": "Cuentas de equipo",
+                "max_active_alerts": "Alertas de precio activas",
+                "max_compare_items": "Alojamientos en comparación",
+                "max_ai_text_improve_per_month": "Mejoras de texto con IA (por mes)",
+                "max_ai_chat_per_month": "Consultas de IA respondidas en tus alojamientos (por mes)",
+                "max_ai_chat_consumer_per_month": "Consultas al asistente de IA (por mes)",
+                "max_ai_search_per_month": "Búsquedas con IA (por mes)",
+                "max_ai_support_per_month": "Consultas al soporte con IA (por mes)",
+                "max_ai_translate_per_month": "Traducciones con IA (por mes)",
+                "max_ai_accommodation_import_per_month": "Importaciones de alojamiento con IA (por mes)",
+                "max_search_history_entries": "Búsquedas guardadas en el historial",
+                "max_collections": "Colecciones de favoritos"
+            }
+        }
     },
     "favorites": {
         "tabs": {
