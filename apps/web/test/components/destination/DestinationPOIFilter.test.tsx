@@ -13,7 +13,9 @@
  */
 
 import { fireEvent, render, screen } from '@testing-library/react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { shouldNofollowFacetHref } from '../../../src/lib/filters/facet-crawl-policy';
 import { POI_CATEGORY_FILTER_EVENT } from '../../../src/lib/filters/poi-category-filter-event';
 
 // ─── Module mocks ──────────────────────────────────────────────────────────
@@ -203,5 +205,66 @@ describe('DestinationPOIFilter (HOS-147)', () => {
         // Toggle off → flag removed (back to the overflow-collapsed view).
         fireEvent.click(screen.getByRole('link', { name: 'Termas' }));
         expect(section.hasAttribute('data-poi-filtered')).toBe(false);
+    });
+});
+
+// ─── HOS-369 WA-2 / AC-A1 — facet chips carry rel="nofollow" ───────────────
+//
+// Asserted on the RAW SSR HTML (`renderToStaticMarkup`), not the hydrated DOM,
+// because that is exactly what a crawler reads: GPTBot/Applebot never run the
+// `preventDefault` click handler, so the chip href IS a live edge of the link
+// graph for them. This island is the measured source of the crawl storm — the
+// destination page SSRs one `<a href="?categories=...">` per present category
+// and the param is cumulative (spec §5.9).
+
+/** Every `<a>` open tag in a markup string, with its href/rel decoded. */
+function extractAnchors(markup: string): ReadonlyArray<{ href: string; rel: string | null }> {
+    const anchors: Array<{ href: string; rel: string | null }> = [];
+    for (const tag of markup.match(/<a\b[^>]*>/g) ?? []) {
+        const href = /href="([^"]*)"/.exec(tag)?.[1] ?? '';
+        const rel = /rel="([^"]*)"/.exec(tag)?.[1] ?? null;
+        // React escapes `&` as `&amp;` in attribute values.
+        anchors.push({ href: href.replace(/&amp;/g, '&'), rel });
+    }
+    return anchors;
+}
+
+describe('DestinationPOIFilter — AC-A1: facet chips are rel="nofollow" in SSR HTML', () => {
+    it('emits one facet-query anchor per present category', () => {
+        const markup = renderToStaticMarkup(
+            <DestinationPOIFilter
+                categories={CATEGORIES}
+                locale="es"
+            />
+        );
+        const facetAnchors = extractAnchors(markup).filter((a) => a.href.includes('categories='));
+
+        // Non-vacuity: the assertion below is worthless if nothing is emitted.
+        expect(facetAnchors).toHaveLength(CATEGORIES.length);
+    });
+
+    it('emits ZERO facet-query anchors without rel="nofollow"', () => {
+        const markup = renderToStaticMarkup(
+            <DestinationPOIFilter
+                categories={CATEGORIES}
+                locale="es"
+            />
+        );
+
+        const offenders = extractAnchors(markup).filter(
+            (a) => shouldNofollowFacetHref({ href: a.href }) && a.rel !== 'nofollow'
+        );
+
+        expect(offenders, `unfollowed facet links: ${JSON.stringify(offenders)}`).toEqual([]);
+    });
+
+    it('renders nothing at all when the destination has no categories (no links to nofollow)', () => {
+        const markup = renderToStaticMarkup(
+            <DestinationPOIFilter
+                categories={[]}
+                locale="es"
+            />
+        );
+        expect(extractAnchors(markup)).toEqual([]);
     });
 });

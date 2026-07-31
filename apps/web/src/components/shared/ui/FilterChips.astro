@@ -34,10 +34,20 @@
  * The mobile edge-fade (BETA-30) is unchanged and always active regardless
  * of this prop — arrows are additive, not a replacement.
  *
+ * HOS-369 WA-2 (crawl trap): a chip whose `href` carries a facet query param
+ * gets `rel="nofollow"`, decided here from the href itself via
+ * `shouldNofollowFacetHref` rather than by a per-caller prop. This component is
+ * href-agnostic and shared by consumers that link BOTH query-param facet views
+ * (`/eventos/?categories=A,B`) and path-based facet landings
+ * (`/alojamientos/tipo/hotel/`); deriving the rule from the href keeps the
+ * landings followable (they are deliberate SEO surface, spec R-8) and makes the
+ * nofollow impossible for a call site to forget.
+ *
  * Rendering: Static (no client JavaScript besides the scroll-fade/arrow script).
  */
 import type { ComponentType } from 'react';
 import type { IconProps } from '@repo/icons';
+import { shouldNofollowFacetHref } from '@/lib/filters/facet-crawl-policy';
 
 interface ChipItem {
     /** Visible label rendered inside the chip. */
@@ -116,23 +126,29 @@ const {
     <nav class="filter-chips__nav" aria-label={ariaLabel}>
         <div class="filter-chips__fade-wrapper">
             <ul class="filter-chips__list" role="list" data-filter-chips-list>
-                {chips.map(({ label, href, active, icon: Icon, ariaLabel }) => (
-                    <li class="filter-chips__item">
-                        <a
-                            href={href}
-                            class:list={['filter-chips__chip', { 'filter-chips__chip--active': active }]}
-                            aria-current={active ? 'true' : undefined}
-                            aria-label={ariaLabel}
-                        >
-                            {Icon && (
-                                <span class="filter-chips__chip-icon" aria-hidden="true">
-                                    <Icon size={14} weight="regular" />
-                                </span>
-                            )}
-                            <span class="filter-chips__chip-label">{label}</span>
-                        </a>
-                    </li>
-                ))}
+                {chips.map(({ label, href, active, icon: Icon, ariaLabel }) => {
+                    // HOS-369 WA-2: nofollow only the query-param facet views;
+                    // path-based landings keep their crawlable link equity.
+                    const rel = shouldNofollowFacetHref({ href }) ? 'nofollow' : undefined;
+                    return (
+                        <li class="filter-chips__item">
+                            <a
+                                href={href}
+                                rel={rel}
+                                class:list={['filter-chips__chip', { 'filter-chips__chip--active': active }]}
+                                aria-current={active ? 'true' : undefined}
+                                aria-label={ariaLabel}
+                            >
+                                {Icon && (
+                                    <span class="filter-chips__chip-icon" aria-hidden="true">
+                                        <Icon size={14} weight="regular" />
+                                    </span>
+                                )}
+                                <span class="filter-chips__chip-label">{label}</span>
+                            </a>
+                        </li>
+                    );
+                })}
             </ul>
         </div>
     </nav>
