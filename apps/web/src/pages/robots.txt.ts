@@ -18,10 +18,17 @@
  * REQ-17: `Disallow` directives for non-indexable paths are derived from
  * `SITEMAP_EXCLUDED_PATHS` (shared constant with `astro.config.mjs`) so the
  * two lists stay in sync automatically.
+ *
+ * HOS-369 WA-1: facet query params are additionally disallowed, derived from
+ * `FACET_QUERY_PARAM_KEYS` (shared with the `rel="nofollow"` rule on the chip
+ * links). This closes the combinatorial crawl trap at the source. The rules are
+ * key-scoped, never a blanket `Disallow: /*?*`, so the path-based facet
+ * landings stay crawlable — see `facet-crawl-policy.ts` for the full rationale.
  */
 
 import type { APIRoute } from 'astro';
 import { getNoindexHosts, getSiteUrl } from '@/lib/env';
+import { buildFacetDisallowDirectives } from '@/lib/filters/facet-crawl-policy';
 import { parseNoindexHosts } from '@/lib/middleware-helpers';
 import { SITEMAP_EXCLUDED_PATHS } from '@/lib/seo-config';
 
@@ -77,16 +84,19 @@ const DISALLOW_PATHS: ReadonlyArray<string> = [
 ];
 
 /**
- * Build a single `User-agent` block: the agent line, an `Allow: /`, and the
- * full {@link DISALLOW_PATHS} list. Used for `*` and each AI crawler so the
- * disallow rules can never drift between blocks.
+ * Build a single `User-agent` block: the agent line, an `Allow: /`, the full
+ * {@link DISALLOW_PATHS} list, and the facet query-param `Disallow`s (HOS-369
+ * WA-1). Used for `*` and each AI crawler so the disallow rules can never drift
+ * between blocks — in robots.txt a named block does NOT inherit the `*` rules,
+ * so both lists are repeated verbatim in every block.
  *
  * @param userAgent - The robots.txt user-agent token (e.g. `*`, `GPTBot`)
  * @returns The multi-line block (no trailing blank line)
  */
 function buildAgentBlock(userAgent: string): string {
     const disallowLines = DISALLOW_PATHS.map((path) => `Disallow: ${path}`).join('\n');
-    return `User-agent: ${userAgent}\nAllow: /\n${disallowLines}`;
+    const facetLines = buildFacetDisallowDirectives().join('\n');
+    return `User-agent: ${userAgent}\nAllow: /\n${disallowLines}\n${facetLines}`;
 }
 
 /**
