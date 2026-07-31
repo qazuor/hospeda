@@ -48,7 +48,7 @@
     },
     "icon": "landscape",
     "isBuiltin": true,
-    "isFeatured": false,
-    "displayWeight": 55,
+    "isFeatured": true,
+    "displayWeight": 100,
     "lifecycleState": "ACTIVE"
 }
