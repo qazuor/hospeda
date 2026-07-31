@@ -702,8 +702,34 @@ export function buildCspHeader({
         // mount and no token is produced (SPEC-301 feedback form). Every other
         // embed origin stays blocked; frame-ancestors 'none' still stops others
         // from embedding us.
-        'frame-src https://challenges.cloudflare.com',
-        "frame-ancestors 'none'",
+        //
+        // `'self'` in dev ONLY: Astro's ClientRouter runs a dev-only code path,
+        // `prepareForClientOnlyComponents()`, which appends a hidden same-origin
+        // iframe pointing at the destination URL to collect the Vite-injected
+        // styles of `client:only` islands, then `await hydrationDone(iframe)`.
+        // A `frame-src` without 'self' blocks that iframe, the await never
+        // settles, and the navigation hangs forever between
+        // `astro:before-preparation` and `astro:before-swap` — the DOM is never
+        // swapped and NavigationProgress' overlay (removed only on
+        // `astro:after-swap`) stays pinned over the previous page. It reproduces
+        // on every soft-nav to a page holding a `client:only` island, which here
+        // means every page with a map (accommodation/destination/event detail,
+        // contacto, comparar, */mapa). The production build never emits that
+        // iframe, so prod keeps the stricter policy. Sibling of the HOS-91
+        // dev-only `style-src` relaxation above, same root cause: dev-only
+        // ClientRouter behaviour meeting an enforcing CSP.
+        isDev
+            ? "frame-src 'self' https://challenges.cloudflare.com"
+            : 'frame-src https://challenges.cloudflare.com',
+        // The same dev-only iframe needs BOTH sides of the embed relationship:
+        // `frame-src` authorises the PARENT to embed, `frame-ancestors` (sent on
+        // the iframe's own response, since it loads one of our pages) authorises
+        // the CHILD to be embedded. Relaxing only `frame-src` just moves the
+        // block to `frame-ancestors 'none'` and the navigation still hangs
+        // (verified in the browser — the CSP violation simply changes name).
+        // Dev widens it to 'self', so only our own origin may frame us; prod
+        // keeps 'none' and stays unembeddable by anyone, ourselves included.
+        isDev ? "frame-ancestors 'self'" : "frame-ancestors 'none'",
         "media-src 'self'",
         'upgrade-insecure-requests',
         sentryReportUri ? `report-uri ${sentryReportUri}` : null
