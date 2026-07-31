@@ -37,6 +37,20 @@ export interface LimitUsage {
     readonly planBaseLimit: number;
     /** Additional limit from add-ons */
     readonly addonBonusLimit: number;
+    /**
+     * Whether `currentUsage` is an actual measurement or a placeholder.
+     *
+     * Most `LimitKey`s have no counter implemented: their usage falls through
+     * to a hardcoded `0` (either an explicit "blocked — table not created yet"
+     * branch, a per-request limit enforced in middleware rather than counted,
+     * or the `default` case). A `0` from those keys is indistinguishable from
+     * a genuine zero, so any consumer that DISPLAYS usage must skip them —
+     * otherwise it tells a user who has run 40 AI searches that they have run
+     * none.
+     *
+     * `false` means: the number is not a measurement, do not show it.
+     */
+    readonly isMeasured: boolean;
 }
 
 /**

@@ -24,6 +24,8 @@ import {
     AccommodationService,
     calculateThreshold,
     determineOverallThreshold,
+    isAccommodationSubscription,
+    isCommerceSubscription,
     type LimitUsage,
     OwnerPromotionService,
     type ServiceResult,
@@ -32,12 +34,67 @@ import {
     UserBookmarkService
 } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
+import type { ProductDomainScope } from '../schemas/product-domain-query.schema';
 import { createSystemActor } from '../utils/actor';
 import { lookupCustomerDetails } from '../utils/customer-lookup';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
 export type { LimitUsage, ServiceResult, UsageSummary, UsageThreshold };
+
+/**
+ * The limit keys `getCurrentUsage` actually counts.
+ *
+ * Every other `LimitKey` returns a hardcoded `0` — `MAX_PHOTOS_PER_ACCOMMODATION`
+ * is a per-request middleware check rather than an account-wide total,
+ * `MAX_PROPERTIES` / `MAX_STAFF_ACCOUNTS` are blocked on tables that do not
+ * exist yet, and everything else (the AI meters, search history, collections,
+ * compare items) falls through the `switch`'s `default`. AI consumption IS
+ * recorded in `ai_usage`, but only as admin-side rollups; nothing maps a
+ * `LimitKey` to its per-user monthly total yet.
+ *
+ * This set MUST be kept in step with the `switch` in `getCurrentUsage`: adding
+ * a real counter without adding its key here leaves a working measurement
+ * hidden, and adding a key here without a counter re-introduces the fake
+ * zero this set exists to prevent.
+ */
+const MEASURED_LIMIT_KEYS: ReadonlySet<string> = new Set<string>([
+    LimitKey.MAX_ACCOMMODATIONS,
+    LimitKey.MAX_ACTIVE_PROMOTIONS,
+    LimitKey.MAX_FAVORITES
+]);
+
+/**
+ * Picks the subscription whose usage should be reported, scoped to one
+ * product domain.
+ *
+ * A billing customer can hold BOTH an accommodation subscription and a
+ * commerce one (SPEC-239 / HOS-259). Before this scoping, both usage methods
+ * took the first `active`/`trialing` row `getByCustomerId()` returned, so a
+ * dual-role owner asking for their commerce usage could be shown the limits
+ * of their accommodation plan — wrong numbers, with no signal that they were
+ * wrong.
+ *
+ * The domain predicates come from `@repo/service-core` and carry the
+ * asymmetry each domain needs: accommodation fails OPEN (a `null`/absent
+ * `productDomain` is a legacy row and counts as accommodation), commerce
+ * fails CLOSED (only an explicit `'commerce'` matches).
+ *
+ * @param input.subscriptions - Rows as returned by `subscriptions.getByCustomerId()`.
+ * @param input.productDomain - Domain to scope to; defaults to `'accommodation'`.
+ * @returns The matching subscription, or `undefined` when the customer has none in that domain.
+ */
+function findActiveSubscriptionForDomain<T extends { status: string }>(input: {
+    subscriptions: readonly T[];
+    productDomain: ProductDomainScope;
+}): T | undefined {
+    const domainPredicate =
+        input.productDomain === 'commerce' ? isCommerceSubscription : isAccommodationSubscription;
+
+    return input.subscriptions.find(
+        (sub) => (sub.status === 'active' || sub.status === 'trialing') && domainPredicate(sub)
+    );
+}
 
 /**
  * Usage Tracking Service
@@ -54,9 +111,13 @@ export class UsageTrackingService {
      * for all resources tracked by the billing system.
      *
      * @param customerId - The billing customer ID
+     * @param productDomain - Which domain's subscription to report on (defaults to `'accommodation'`)
      * @returns Usage summary with all limits and thresholds
      */
-    async getUsageSummary(customerId: string): Promise<ServiceResult<UsageSummary>> {
+    async getUsageSummary(
+        customerId: string,
+        productDomain: ProductDomainScope = 'accommodation'
+    ): Promise<ServiceResult<UsageSummary>> {
         if (!this.billing) {
             return {
                 success: false,
@@ -81,16 +142,17 @@ export class UsageTrackingService {
                 };
             }
 
-            const activeSubscription = subscriptions.find(
-                (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
-            );
+            const activeSubscription = findActiveSubscriptionForDomain({
+                subscriptions,
+                productDomain
+            });
 
             if (!activeSubscription) {
                 return {
                     success: false,
                     error: {
                         code: ServiceErrorCode.NOT_FOUND,
-                        message: 'Customer has no active subscription'
+                        message: `Customer has no active ${productDomain} subscription`
                     }
                 };
             }
@@ -148,7 +210,8 @@ export class UsageTrackingService {
                     usagePercentage: Math.round(usagePercentage * 100) / 100,
                     threshold,
                     planBaseLimit,
-                    addonBonusLimit
+                    addonBonusLimit,
+                    isMeasured: MEASURED_LIMIT_KEYS.has(limitKey)
                 });
             }
 
@@ -202,14 +265,16 @@ export class UsageTrackingService {
      *
      * @param customerId - The billing customer ID
      * @param limitKey - The limit key to check
+     * @param productDomain - Which domain's subscription to report on (defaults to `'accommodation'`)
      * @returns Threshold status
      */
     async checkUsageThreshold(
         customerId: string,
-        limitKey: string
+        limitKey: string,
+        productDomain: ProductDomainScope = 'accommodation'
     ): Promise<ServiceResult<UsageThreshold>> {
         try {
-            const usageResult = await this.getUsageForLimit(customerId, limitKey);
+            const usageResult = await this.getUsageForLimit(customerId, limitKey, productDomain);
 
             if (!usageResult.success || !usageResult.data) {
                 return {
@@ -250,11 +315,13 @@ export class UsageTrackingService {
      *
      * @param customerId - The billing customer ID
      * @param limitKey - The limit key to check
+     * @param productDomain - Which domain's subscription to report on (defaults to `'accommodation'`)
      * @returns Detailed limit usage or null if not found
      */
     async getUsageForLimit(
         customerId: string,
-        limitKey: string
+        limitKey: string,
+        productDomain: ProductDomainScope = 'accommodation'
     ): Promise<ServiceResult<LimitUsage | null>> {
         if (!this.billing) {
             return {
@@ -277,9 +344,10 @@ export class UsageTrackingService {
                 };
             }
 
-            const activeSubscription = subscriptions.find(
-                (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
-            );
+            const activeSubscription = findActiveSubscriptionForDomain({
+                subscriptions,
+                productDomain
+            });
 
             if (!activeSubscription) {
                 return {
@@ -331,7 +399,8 @@ export class UsageTrackingService {
                 usagePercentage: Math.round(usagePercentage * 100) / 100,
                 threshold,
                 planBaseLimit,
-                addonBonusLimit
+                addonBonusLimit,
+                isMeasured: MEASURED_LIMIT_KEYS.has(limitKey)
             };
 
             apiLogger.debug(

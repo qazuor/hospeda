@@ -9,6 +9,7 @@ import { isAccommodationSubscription, isCommerceSubscription } from '@repo/servi
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
+import { ProductDomainQuerySchema } from '../../../schemas/product-domain-query.schema';
 import { PlanService } from '../../../services/plan.service';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -55,19 +56,6 @@ const QZPAY_STATUS_MAP: Record<string, (typeof SUBSCRIPTION_STATUSES)[number]> =
     paused: 'paused',
     pending: 'pending'
 };
-
-/**
- * Which product domain's subscription to resolve (HOS-259). A dual-role
- * owner (accommodation host AND commerce-listing owner) can have TWO
- * subscriptions under the same billing customer; without this the `.find()`
- * below picked whichever one came first, which could surface the
- * accommodation subscription when the caller actually needed the commerce
- * one (e.g. the commerce SUSPENDED recover CTA). Defaults to `'accommodation'`
- * to match every existing caller's behaviour unchanged.
- */
-const ProductDomainQuerySchema = z.object({
-    productDomain: z.enum(['accommodation', 'commerce']).optional().default('accommodation')
-});
 
 /** Response schema for user subscription */
 const SubscriptionResponseSchema = z.object({

@@ -12,9 +12,14 @@
  */
 
 import { LimitKey } from '@repo/billing';
+import { ServiceErrorCode } from '@repo/schemas';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../middlewares/billing';
+import {
+    ProductDomainQuerySchema,
+    type ProductDomainScope
+} from '../../schemas/product-domain-query.schema';
 import { UsageTrackingService } from '../../services/usage-tracking.service';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
@@ -31,7 +36,13 @@ const limitUsageSchema = z.object({
     usagePercentage: z.number(),
     threshold: z.enum(['ok', 'warning', 'critical', 'exceeded']),
     planBaseLimit: z.number(),
-    addonBonusLimit: z.number()
+    addonBonusLimit: z.number(),
+    /**
+     * `false` means `currentUsage` is a placeholder zero, not a measurement —
+     * most limit keys have no counter implemented. Consumers that display
+     * usage to a user MUST skip these rows.
+     */
+    isMeasured: z.boolean()
 });
 
 const usageSummarySchema = z.object({
@@ -59,8 +70,11 @@ export const getUserUsageSummaryRoute = createProtectedRoute({
     description:
         "Returns current user's resource usage across all plan limits with threshold status",
     tags: ['Billing', 'Usage'],
+    requestQuery: ProductDomainQuerySchema.shape,
     responseSchema: usageSummarySchema,
-    handler: async (c) => {
+    handler: async (c, _params, _body, query) => {
+        const { productDomain } = (query || {}) as { productDomain?: ProductDomainScope };
+        const resolvedProductDomain: ProductDomainScope = productDomain ?? 'accommodation';
         const billingEnabled = c.get('billingEnabled');
 
         if (!billingEnabled) {
@@ -90,11 +104,32 @@ export const getUserUsageSummaryRoute = createProtectedRoute({
         // Create usage tracking service
         const usageTrackingService = new UsageTrackingService(billing);
 
-        // Get usage summary
-        const result = await usageTrackingService.getUsageSummary(billingCustomerId);
+        // Get usage summary, scoped to the requested product domain
+        const result = await usageTrackingService.getUsageSummary(
+            billingCustomerId,
+            resolvedProductDomain
+        );
 
         if (!result.success || !result.data) {
             const errorMessage = result.error?.message || 'Failed to get usage summary';
+
+            // A customer with no subscription in the requested domain is an
+            // expected state (free user, or a host who has no commerce
+            // subscription), not a server fault. Reporting it as 500 made
+            // every free account look like an outage in the logs and gave
+            // callers no way to tell "nothing to show" from "we broke".
+            if (result.error?.code === ServiceErrorCode.NOT_FOUND) {
+                apiLogger.debug(
+                    {
+                        customerId: billingCustomerId,
+                        productDomain: resolvedProductDomain
+                    },
+                    'No active subscription in the requested product domain for usage summary'
+                );
+
+                throw new HTTPException(404, { message: errorMessage });
+            }
+
             apiLogger.error(
                 {
                     customerId: billingCustomerId,
@@ -132,8 +167,11 @@ export const getUsageForLimitRoute = createProtectedRoute({
         'Returns detailed usage information for a specific resource limit including plan base and add-on bonuses',
     tags: ['Billing', 'Usage'],
     requestParams: limitKeyParamSchema.shape,
+    requestQuery: ProductDomainQuerySchema.shape,
     responseSchema: limitUsageSchema,
-    handler: async (c, params) => {
+    handler: async (c, params, _body, query) => {
+        const { productDomain } = (query || {}) as { productDomain?: ProductDomainScope };
+        const resolvedProductDomain: ProductDomainScope = productDomain ?? 'accommodation';
         const billingEnabled = c.get('billingEnabled');
 
         if (!billingEnabled) {
@@ -169,7 +207,8 @@ export const getUsageForLimitRoute = createProtectedRoute({
         // Get usage for specific limit
         const result = await usageTrackingService.getUsageForLimit(
             billingCustomerId,
-            limitKey as string
+            limitKey as string,
+            resolvedProductDomain
         );
 
         if (!result.success) {

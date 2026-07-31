@@ -775,4 +775,211 @@ describe('UsageTrackingService', () => {
             }
         });
     });
+
+    describe('isMeasured flag', () => {
+        it('should mark only the limits that have a real counter', async () => {
+            // Act
+            const result = await service.getUsageSummary(mockCustomerId);
+
+            // Assert
+            expect(result.success).toBe(true);
+            const measured = result
+                .data!.limits.filter((l) => l.isMeasured)
+                .map((l) => l.limitKey)
+                .sort();
+
+            expect(measured).toEqual(
+                [
+                    LimitKey.MAX_ACCOMMODATIONS,
+                    LimitKey.MAX_ACTIVE_PROMOTIONS,
+                    LimitKey.MAX_FAVORITES
+                ].sort()
+            );
+        });
+
+        it('should mark a placeholder-zero limit as unmeasured', async () => {
+            // Arrange — MAX_PHOTOS_PER_ACCOMMODATION is a per-request check,
+            // not an account-wide count, so its 0 is not a measurement.
+            const result = await service.getUsageSummary(mockCustomerId);
+
+            // Assert
+            const photos = result.data!.limits.find(
+                (l) => l.limitKey === LimitKey.MAX_PHOTOS_PER_ACCOMMODATION
+            );
+            expect(photos?.isMeasured).toBe(false);
+        });
+
+        it('should expose isMeasured on getUsageForLimit too', async () => {
+            // Act
+            const measuredResult = await service.getUsageForLimit(
+                mockCustomerId,
+                LimitKey.MAX_ACCOMMODATIONS
+            );
+            const unmeasuredResult = await service.getUsageForLimit(
+                mockCustomerId,
+                LimitKey.MAX_PROPERTIES
+            );
+
+            // Assert
+            expect(measuredResult.data?.isMeasured).toBe(true);
+            expect(unmeasuredResult.data?.isMeasured).toBe(false);
+        });
+    });
+
+    describe('product domain scoping (HOS-259)', () => {
+        const commercePlanId = 'plan_commerce_monthly';
+
+        /** A commerce-domain subscription living under the SAME billing customer. */
+        const commerceSubscription = {
+            ...mockSubscription,
+            id: 'sub_commerce_1',
+            planId: commercePlanId,
+            productDomain: 'commerce'
+        };
+
+        /** An explicitly accommodation-domain subscription. */
+        const accommodationSubscription = {
+            ...mockSubscription,
+            id: 'sub_accommodation_1',
+            productDomain: 'accommodation'
+        };
+
+        const commercePlan = {
+            id: commercePlanId,
+            name: 'Commerce Monthly',
+            limits: {
+                [LimitKey.MAX_ACCOMMODATIONS]: 99
+            }
+        };
+
+        beforeEach(() => {
+            (mockBilling.plans.get as Mock).mockImplementation((planId: string) =>
+                Promise.resolve(planId === commercePlanId ? commercePlan : mockPlan)
+            );
+        });
+
+        it('should resolve the commerce subscription when the commerce domain is requested, even when the accommodation one is listed first', async () => {
+            // Arrange — a dual-role owner: accommodation sub ordered BEFORE the
+            // commerce one, which is exactly what made the old unscoped
+            // `.find()` return the wrong row.
+            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
+                accommodationSubscription,
+                commerceSubscription
+            ]);
+
+            // Act
+            const result = await service.getUsageSummary(mockCustomerId, 'commerce');
+
+            // Assert — the commerce plan's limits, not the accommodation plan's.
+            expect(result.success).toBe(true);
+            const accommodationsLimit = result.data!.limits.find(
+                (l) => l.limitKey === LimitKey.MAX_ACCOMMODATIONS
+            );
+            expect(accommodationsLimit?.maxAllowed).toBe(99);
+            expect(mockBilling.plans.get).toHaveBeenCalledWith(commercePlanId);
+        });
+
+        it('should resolve the accommodation subscription when the commerce one is listed first', async () => {
+            // Arrange — the mirror case: commerce ordered first, accommodation
+            // requested.
+            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
+                commerceSubscription,
+                accommodationSubscription
+            ]);
+
+            // Act
+            const result = await service.getUsageSummary(mockCustomerId, 'accommodation');
+
+            // Assert
+            expect(result.success).toBe(true);
+            const accommodationsLimit = result.data!.limits.find(
+                (l) => l.limitKey === LimitKey.MAX_ACCOMMODATIONS
+            );
+            expect(accommodationsLimit?.maxAllowed).toBe(5);
+            expect(mockBilling.plans.get).toHaveBeenCalledWith(mockPlanId);
+        });
+
+        it('should default to the accommodation domain when none is given', async () => {
+            // Arrange
+            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
+                commerceSubscription,
+                accommodationSubscription
+            ]);
+
+            // Act — no productDomain argument at all (every pre-HOS-259 caller).
+            const result = await service.getUsageSummary(mockCustomerId);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(mockBilling.plans.get).toHaveBeenCalledWith(mockPlanId);
+        });
+
+        it('should treat a legacy subscription with no productDomain as accommodation', async () => {
+            // Arrange — `mockSubscription` has no productDomain key at all,
+            // which is every row that predates the column.
+            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
+                mockSubscription
+            ]);
+
+            // Act
+            const result = await service.getUsageSummary(mockCustomerId, 'accommodation');
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(mockBilling.plans.get).toHaveBeenCalledWith(mockPlanId);
+        });
+
+        it('should NOT fall back to the accommodation subscription when no commerce one exists', async () => {
+            // Arrange — an accommodation-only customer asking for commerce
+            // usage. Returning the accommodation numbers here would be the
+            // original bug in its most misleading form.
+            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
+                accommodationSubscription
+            ]);
+
+            // Act
+            const result = await service.getUsageSummary(mockCustomerId, 'commerce');
+
+            // Assert
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
+
+        it('should scope getUsageForLimit by product domain too', async () => {
+            // Arrange
+            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
+                accommodationSubscription,
+                commerceSubscription
+            ]);
+
+            // Act
+            const result = await service.getUsageForLimit(
+                mockCustomerId,
+                LimitKey.MAX_ACCOMMODATIONS,
+                'commerce'
+            );
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.data?.maxAllowed).toBe(99);
+        });
+
+        it('should return null from getUsageForLimit when the domain has no subscription', async () => {
+            // Arrange
+            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
+                accommodationSubscription
+            ]);
+
+            // Act
+            const result = await service.getUsageForLimit(
+                mockCustomerId,
+                LimitKey.MAX_ACCOMMODATIONS,
+                'commerce'
+            );
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.data).toBeNull();
+        });
+    });
 });
