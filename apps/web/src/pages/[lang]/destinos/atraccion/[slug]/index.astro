@@ -9,6 +9,7 @@ import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import TouristAttractionJsonLd from '@/components/seo/TouristAttractionJsonLd.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import { attractionsApi } from '@/lib/api/endpoints';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -31,6 +32,20 @@ const destObj = attraction.destination as Record<string, unknown> | undefined;
 const destName = String(destObj?.name || '');
 const destSlug = String(destObj?.slug || '');
 const canonicalPath = buildUrl({ locale, path: `destinos/atraccion/${slug}/` });
+
+// --- Breadcrumb JSON-LD ---
+// Mirrors the visible trail below PLUS the current page: the visible component
+// drops the leaf (it is already the H1), but BreadcrumbList must stay complete.
+// The destination level is conditional here, exactly as in the visible trail.
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const breadcrumbItems = [
+	{ name: t('nav.home', 'Inicio'), url: `${siteOrigin}${buildUrl({ locale, path: '' })}` },
+	{ name: t('destinations.title', 'Destinos'), url: `${siteOrigin}${buildUrl({ locale, path: 'destinos' })}` },
+	...(destSlug
+		? [{ name: destName, url: `${siteOrigin}${buildUrl({ locale, path: `destinos/${destSlug}` })}` }]
+		: []),
+	{ name, url: `${siteOrigin}${canonicalPath}` }
+];
 ---
 
 <DetailLayout locale={locale} title={name} description={description} canonicalPath={canonicalPath} showBreadcrumbs={true} showSidebar={true}>
@@ -41,6 +56,7 @@ const canonicalPath = buildUrl({ locale, path: `destinos/atraccion/${slug}/` });
 		url={canonicalPath}
 		image={featuredImage}
 	/>
+	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[
 		{ label: t('destinations.title', 'Destinos'), path: 'destinos' },
 		...(destSlug ? [{ label: destName, path: `destinos/${destSlug}` }] : []),
