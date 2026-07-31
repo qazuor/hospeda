@@ -30,6 +30,8 @@ import { CalendarDotsIcon, LocationIcon } from '@repo/icons';
 interface Props {
     readonly eventId: string;
     readonly name: string;
+    /** Short lead-in shown under the title. Omitted when the event has none. */
+    readonly summary?: string | null;
     readonly category: string;
     readonly startDate: string | Date;
     readonly endDate?: string | Date | null;
@@ -49,6 +51,7 @@ interface Props {
 const {
     eventId,
     name,
+    summary,
     category,
     startDate,
     endDate,
@@ -113,6 +116,8 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
             </div>
 
             <h1 class="event-header__title wh-compact-title">{name}</h1>
+
+            {summary && <p class="event-header__summary wh-compact-hide">{summary}</p>}
 
             <div class="event-header__meta wh-compact-hide">
                 {startDate && (
@@ -277,6 +282,35 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         transition: font-size 0.3s ease;
     }
 
+    /* Mirrors `.post-header__summary`: full measure (no max-width, so it spans
+       the same width as the H1 above it), clamped to 3 rows, and a max-height
+       that is an EXACT multiple of line-height (3 x 1.55) so the cut lands
+       between rows rather than through the middle of a row's glyphs. The
+       max-height also gives `wh-compact-hide` something to animate to 0 for
+       the compact collapse (contract in WaveHeader.astro). */
+    .event-header__summary {
+        font-family: var(--font-sans);
+        font-size: clamp(0.95rem, 1.6vw, 1.1rem);
+        line-height: 1.55;
+        color: var(--core-muted-foreground);
+        margin: 0.15rem 0 0;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        overflow: hidden;
+        max-height: 4.65em;
+        opacity: 1;
+        transition:
+            max-height 0.3s ease,
+            opacity 0.2s ease,
+            margin-top 0.3s ease;
+    }
+
+    :global(.wave-header--compact) .event-header__summary {
+        margin-top: 0;
+    }
+
     .event-header__meta {
         display: flex;
         align-items: center;
@@ -344,6 +378,7 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         .event-header__status-pill,
         .event-header__estimated-badge,
         .event-header__title,
+        .event-header__summary,
         .event-header__meta {
             transition: none;
         }
