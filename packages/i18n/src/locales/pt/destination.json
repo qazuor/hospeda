@@ -161,6 +161,26 @@
             "text": "O Litoral argentino compreende as províncias de Entre Ríos, Corrientes e Santa Fe. Esta região é caracterizada por sua riqueza natural, com o rio Paraná como eixo vertebral, suas termas naturais, sua história colonial e o calor de sua gente. Concepción del Uruguay, em Entre Ríos, é uma das cidades históricas mais importantes da região."
         }
     },
+    "byAttraction": {
+        "tagline": "Atração",
+        "heading": "Destinos com {{attraction}}",
+        "seoSuffix": "Descubra os destinos do Litoral que a oferecem.",
+        "linkLabel": "Ver destinos com {{attraction}}"
+    },
+    "poiPage": {
+        "tagline": "Lugar",
+        "about": "Sobre este lugar",
+        "address": "Endereço",
+        "inDestinations": "Está em",
+        "inDestinationsIntro": "Este lugar faz parte da oferta destes destinos.",
+        "nearbyAccommodations": "Hospedagens por perto",
+        "nearbyIntro": "Hospedagens a menos de {{km}} km deste lugar.",
+        "destinationFallbackTitle": "Hospedagens em {{destination}}",
+        "destinationFallbackIntro": "Não há hospedagens cadastradas a menos de {{km}} km, então mostramos as de {{destination}}.",
+        "noAccommodations": "Ainda não há hospedagens cadastradas perto deste lugar.",
+        "seeAllInDestination": "Ver todas as hospedagens em {{destination}}",
+        "seoSuffix": "Como chegar, em quais destinos está e onde se hospedar por perto."
+    },
     "accommodationsPage": {
         "home": "Início",
         "destinations": "Destinos",
