@@ -2,13 +2,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import node from '@astrojs/node';
 import react from '@astrojs/react';
-import sitemap from '@astrojs/sitemap';
 import sentry from '@sentry/astro';
 import { defineConfig } from 'astro/config';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { validateWebEnv } from './src/env.ts';
 import { ALLOWED_REMOTE_HOSTS } from './src/lib/media.ts';
-import { buildSitemapAlternateLinks, isExcludedSitemapPage } from './src/lib/seo-config.ts';
 import {
     resolveSentrySourcemapsOption,
     resolveSourcemapSetting
@@ -151,40 +149,15 @@ export default defineConfig({
                 authToken: process.env.SENTRY_AUTH_TOKEN
             })
         }),
-        react(),
-        sitemap({
-            // Exclude private/redirecting pages. The bare root `/` 301-redirects
-            // to `/es/` (listed separately), so it is excluded here too — keeping
-            // redirecting URLs out of the sitemap preserves crawl budget/trust
-            // (same rationale as the dynamic sitemap, SPEC-157 REQ-2).
-            filter: (page) => !isExcludedSitemapPage(new URL(page).pathname),
-            // Inject hreflang alternates for each entry so search engines know
-            // the three locales (es/en/pt) are translations of the same page.
-            // Improves international SEO for the Argentina-Litoral market.
-            // Skips XML paths (e.g. customPages-injected sitemap-of-sitemaps)
-            // since hreflang on a sitemap file is not meaningful. The alternate
-            // set is built by a tested pure helper that mirrors the dynamic
-            // sitemap strategy (es carries /es, x-default -> /es, no doubled
-            // prefixes). SPEC-157 REQ-2/REQ-12.
-            serialize(item) {
-                const url = new URL(item.url);
-                if (url.pathname.endsWith('.xml')) {
-                    return item;
-                }
-                const isHomePage = /^\/(es|en|pt)\/$/.test(url.pathname);
-                return {
-                    ...item,
-                    ...(isHomePage ? { priority: 1.0, changefreq: 'daily' } : {}),
-                    links: buildSitemapAlternateLinks({
-                        pathname: url.pathname,
-                        siteUrl: HOSPEDA_SITE_URL
-                    })
-                };
-            },
-            // Include the dynamic sitemap (published entities × 3 locales) so
-            // sitemap-index.xml lists it alongside the statically-generated sitemap.
-            customPages: [`${HOSPEDA_SITE_URL.replace(/\/$/, '')}/sitemap-dynamic.xml`]
-        })
+        react()
+        // NO `@astrojs/sitemap` here, deliberately. It only enumerates routes
+        // rendered to static HTML at build time, and this app prerenders none
+        // (zero `prerender = true` pages), so it emitted a `<urlset>` with no
+        // pages in it. Its `customPages` option could not fix that either: it
+        // appends to the `<urlset>`, so `/sitemap-dynamic.xml` was advertised
+        // as a crawlable page instead of being registered as a sitemap, and the
+        // entity URLs were never submitted. All three sitemaps are SSR
+        // endpoints under `src/pages` now — see `src/lib/seo/sitemap-xml.ts`.
     ],
     vite: {
         plugins: [
