@@ -34,6 +34,7 @@ import { translatePoiCategoryLabel, translatePoiName } from '@/lib/poi-labels';
 import { getPointOfInterestTypeIcon } from '@/lib/poi-type-icons';
 import type { I18nTextLike } from '@/lib/resolve-i18n-text';
 import { resolveI18nText } from '@/lib/resolve-i18n-text';
+import { buildUrl } from '@/lib/urls';
 import { getPoiCategoryColorScheme, getPoiCategoryIcon } from '@repo/icons';
 
 /** A single point of interest belonging to a destination. */
@@ -44,6 +45,12 @@ export interface DestinationPOIItem {
 	readonly description?: string | null;
 	readonly isFeatured?: boolean;
 	readonly displayWeight?: number;
+	/**
+	 * Whether this POI has a detail page at `/destinos/lugar/{slug}/`. Only the
+	 * curated few do — the route 404s every other catalog row — so the card
+	 * links its name only when this is `true`. Absent is treated as `false`.
+	 */
+	readonly hasOwnPage?: boolean;
 	/**
 	 * Admin-editable multilang name content (HOS-138); null for POIs not yet
 	 * migrated. `I18nTextLike` (not the stricter `I18nText`) because the
@@ -156,7 +163,18 @@ const overflowCount = Math.max(0, sorted.length - POI_VISIBLE_LIMIT);
 					<span class="poi-section__icon" aria-hidden="true">
 						<Icon size={28} weight="fill" color={iconColor} aria-hidden="true" />
 					</span>
-					<h3 class="poi-section__name">{poi.displayName}</h3>
+					<h3 class="poi-section__name">
+							{poi.hasOwnPage ? (
+								<a
+									class="poi-section__name-link"
+									href={buildUrl({ locale, path: `destinos/lugar/${poi.slug}` })}
+								>
+									{poi.displayName}
+								</a>
+							) : (
+								poi.displayName
+							)}
+						</h3>
 					<span class="poi-section__type-badge">{typeLabel}</span>
 					{poi.resolvedDescription && (
 						<p class="poi-section__description">{poi.resolvedDescription}</p>
@@ -257,6 +275,21 @@ const overflowCount = Math.max(0, sorted.length - POI_VISIBLE_LIMIT);
 		font-weight: 600;
 		color: var(--core-foreground);
 		margin: 0;
+	}
+
+	/* Only the curated POIs that have a detail page render as a link, so the
+	   underline doubles as the affordance telling them apart from the rest of
+	   the grid. */
+	.poi-section__name-link {
+		color: inherit;
+		text-decoration: underline;
+		text-decoration-color: var(--brand-primary);
+		text-underline-offset: 3px;
+		transition: color var(--duration-fast) ease;
+	}
+
+	.poi-section__name-link:hover {
+		color: var(--brand-primary);
 	}
 
 	.poi-section__type-badge {
