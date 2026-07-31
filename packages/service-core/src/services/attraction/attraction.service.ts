@@ -183,8 +183,8 @@ export class AttractionService extends BaseCrudRelatedService<
     protected _canDelete(actor: Actor): void {
         checkCanDeleteAttraction(actor);
     }
-    protected _canView(actor: Actor): void {
-        checkCanViewAttraction(actor);
+    protected _canView(actor: Actor, entity: Attraction): void {
+        checkCanViewAttraction(actor, entity);
     }
     protected _canList(actor: Actor): void {
         checkCanListAttractions(actor);
