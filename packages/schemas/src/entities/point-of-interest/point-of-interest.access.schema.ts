@@ -33,7 +33,18 @@ export const PointOfInterestPublicSchema = PointOfInterestSchema.pick({
     icon: true,
     isFeatured: true,
     isBuiltin: true,
-    displayWeight: true
+    displayWeight: true,
+
+    // Detail-page fields. A POI with `hasOwnPage` gets a public page at
+    // `/destinos/lugar/{slug}/`, so the payload has to carry both the flag
+    // (every consumer needs it to decide whether to LINK to that page, and the
+    // page itself needs it to gate access) and the content the page renders.
+    // Same tier as the fields above: `descriptionI18n` is the multilang
+    // successor to the already-public `description` (HOS-138), and `address` is
+    // a street address for a public landmark — both are printed on the page.
+    hasOwnPage: true,
+    descriptionI18n: true,
+    address: true
 }).extend({
     /**
      * HOS-182: the POI's primary category (`{ slug, nameI18n }`), or `null`
