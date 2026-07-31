@@ -450,9 +450,15 @@ export const featuresApi = {
 
 /** Public attraction API endpoints */
 export const attractionsApi = {
-    /** Get attraction by slug */
+    /**
+     * Get attraction by slug.
+     *
+     * The path segment is `slug`, not `by-slug`: the API registers
+     * `/attractions/slug/{slug}`. The mismatch made every attraction detail page
+     * 404 with a "Route not found" that masked a second bug behind it.
+     */
     getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<Record<string, unknown>>> {
-        return apiClient.get({ path: `${BASE}/attractions/by-slug/${slug}` });
+        return apiClient.get({ path: `${BASE}/attractions/slug/${slug}` });
     }
 };
 
