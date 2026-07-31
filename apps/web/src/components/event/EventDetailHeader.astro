@@ -24,7 +24,7 @@ import HeaderBackButton from '@/components/shared/ui/HeaderBackButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getEventCategoryColor, getBadgeStatusColor } from '@/lib/colors';
-import { formatEventDetailDateRange } from '@/lib/format-utils';
+import { formatEventDetailDateRange, formatEventDetailDateRangeCompact } from '@/lib/format-utils';
 import { CalendarDotsIcon, LocationIcon } from '@repo/icons';
 
 interface Props {
@@ -70,6 +70,17 @@ const {
 const { t, tPlural } = createTranslations(locale);
 
 const dateRange = formatEventDetailDateRange({ startDate, endDate, precision, locale });
+// Both variants are rendered and swapped with a CSS media query rather than
+// picked at runtime: this is SSR HTML, so the server cannot know the viewport,
+// and a JS-side breakpoint would leave crawlers (and the pre-hydration frame)
+// with whichever variant happened to be the default. `display: none` keeps the
+// hidden one out of the accessibility tree, so screen readers announce one date.
+const dateRangeCompact = formatEventDetailDateRangeCompact({
+    startDate,
+    endDate,
+    precision,
+    locale
+});
 
 const categoryColors = getEventCategoryColor({ category: category.toLowerCase() });
 const pastColors = getBadgeStatusColor({ status: 'past' });
@@ -123,17 +134,22 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
                 {startDate && (
                     <span class="event-header__meta-item">
                         <CalendarDotsIcon size={15} aria-hidden="true" />
-                        {dateRange.precision === 'EXACT' ? (
-                            <>
-                                {dateRange.startLabel}
-                                {dateRange.endLabel && (
-                                    <span class="event-header__meta-separator" aria-hidden="true">–</span>
-                                )}
-                                {dateRange.endLabel}
-                            </>
-                        ) : (
-                            dateRange.label
-                        )}
+                        <span class="event-header__date event-header__date--long">
+                            {dateRange.precision === 'EXACT' ? (
+                                <>
+                                    {dateRange.startLabel}
+                                    {dateRange.endLabel && (
+                                        <span class="event-header__meta-separator" aria-hidden="true">–</span>
+                                    )}
+                                    {dateRange.endLabel}
+                                </>
+                            ) : (
+                                dateRange.label
+                            )}
+                        </span>
+                        <span class="event-header__date event-header__date--compact">
+                            {dateRangeCompact.label}
+                        </span>
                     </span>
                 )}
                 {locationLabel && (
@@ -331,6 +347,33 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         font-family: var(--font-sans);
         font-size: var(--text-body-sm, 0.875rem);
         color: var(--core-muted-foreground);
+    }
+
+    /* Long form is the default; the compact one takes over under 640px. Both
+       ship in the HTML because the server cannot know the viewport — see the
+       frontmatter note. `display: none` (not `visibility`/clipping) so the
+       inactive variant leaves the accessibility tree and a screen reader
+       announces the date exactly once.
+
+       `nowrap` matters even on the compact variant: without it a range can
+       still split between its endpoints and reintroduce the ragged two-line
+       break this replaced. */
+    .event-header__date {
+        white-space: nowrap;
+    }
+
+    .event-header__date--compact {
+        display: none;
+    }
+
+    @media (max-width: 640px) {
+        .event-header__date--long {
+            display: none;
+        }
+
+        .event-header__date--compact {
+            display: inline;
+        }
     }
 
     .event-header__meta-separator {
