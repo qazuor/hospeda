@@ -260,7 +260,28 @@ export default defineConfig({
         // browser bundles free of the Cloudinary SDK. Web source must not
         // import `@repo/media/server` (enforced by Biome `noRestrictedImports`).
         optimizeDeps: {
-            exclude: ['cloudinary', 'image-size']
+            exclude: ['cloudinary', 'image-size'],
+            // Workspace packages are linked and resolved (via the aliases above)
+            // to their `src/`, i.e. OUTSIDE node_modules. Vite treats linked
+            // packages as source and does NOT pre-bundle them, so in dev it
+            // serves every file of these barrels as its own HTTP request —
+            // measured at 1360 (schemas) + 926 (icons) + 324 (i18n) of 3128
+            // requests for a single listing → detail soft-navigation, because
+            // the ClientRouter's client:only iframe walks the tree once and the
+            // swapped document walks it again. Forcing them into the pre-bundle
+            // collapses each barrel into a handful of cached chunks.
+            //
+            // Dev-only by construction: pre-bundling is a dev-server concern
+            // (`vite build` runs Rollup over the real module graph and
+            // tree-shakes these barrels away — verified against the deployed
+            // prod chunk, which contains no schemas/zod code at all). Adding a
+            // package here can only change how dev serves it, never what ships.
+            // `@repo/i18n/web` is listed by its SUBPATH, not as `@repo/i18n`:
+            // the web app imports only that entry point, and an include entry
+            // matches the specifier as written, so the bare package name leaves
+            // every `/web` import unbundled (measured: it stayed at ~485
+            // requests until the subpath was listed here).
+            include: ['@repo/schemas', '@repo/icons', '@repo/i18n/web']
         },
         ssr: {
             noExternal: [],
