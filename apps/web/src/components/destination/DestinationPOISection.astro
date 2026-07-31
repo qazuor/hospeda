@@ -112,6 +112,15 @@ const sorted = [...primaryOnly]
 		resolvedDescription: resolveI18nText(poi.descriptionI18n, locale) || poi.description
 	}))
 	.sort((a, b) => {
+		// POIs with their own detail page first. Editorial curation is a
+		// stronger relevance signal than any of the keys below: `isFeatured`
+		// carries no curation weight here (597 of 842 catalog rows have it,
+		// Hospital Paranacito included), and `displayWeight` routinely ranks a
+		// hospital above a museum. Without this key the only link into a POI
+		// detail page can land past the 12-card fold — Palacio San José sat at
+		// position 17 of 30 on its own destination.
+		const ownPageDelta = (a.hasOwnPage ? 0 : 1) - (b.hasOwnPage ? 0 : 1);
+		if (ownPageDelta !== 0) return ownPageDelta;
 		// Featured first.
 		const featuredDelta = (a.isFeatured ? 0 : 1) - (b.isFeatured ? 0 : 1);
 		if (featuredDelta !== 0) return featuredDelta;
