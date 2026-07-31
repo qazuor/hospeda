@@ -167,6 +167,20 @@
         "seoSuffix": "Descubrí los destinos del Litoral que lo ofrecen.",
         "linkLabel": "Ver destinos con {{attraction}}"
     },
+    "poiPage": {
+        "tagline": "Lugar",
+        "about": "Sobre este lugar",
+        "address": "Dirección",
+        "inDestinations": "Está en",
+        "inDestinationsIntro": "Este lugar forma parte de la oferta de estos destinos.",
+        "nearbyAccommodations": "Alojamientos cerca",
+        "nearbyIntro": "Alojamientos a menos de {{km}} km de este lugar.",
+        "destinationFallbackTitle": "Alojamientos en {{destination}}",
+        "destinationFallbackIntro": "No hay alojamientos cargados a menos de {{km}} km, así que te mostramos los de {{destination}}.",
+        "noAccommodations": "Todavía no hay alojamientos cargados cerca de este lugar.",
+        "seeAllInDestination": "Ver todos los alojamientos en {{destination}}",
+        "seoSuffix": "Cómo llegar, en qué destinos está y dónde alojarte cerca."
+    },
     "accommodationsPage": {
         "home": "Inicio",
         "destinations": "Destinos",

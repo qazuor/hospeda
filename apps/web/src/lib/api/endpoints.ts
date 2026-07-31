@@ -516,6 +516,22 @@ export const pointOfInterestApi = {
         readonly slug: string;
     }): Promise<ApiResult<PointOfInterestPublic | null>> {
         return apiClient.get({ path: `${BASE}/points-of-interest/slug/${slug}` });
+    },
+
+    /**
+     * Get the destinations that reference a point of interest.
+     *
+     * Backs the "Está en" block of the POI detail page. A POI is many-to-many
+     * with destinations (the Molino Forclaz belongs to four), so there is no
+     * single parent to read off the POI payload — the whole set has to be
+     * fetched. Unpaginated by design: the largest real set is a handful.
+     */
+    getDestinations({
+        id
+    }: {
+        readonly id: string;
+    }): Promise<ApiResult<ReadonlyArray<Record<string, unknown>>>> {
+        return apiClient.get({ path: `${BASE}/points-of-interest/${id}/destinations` });
     }
 };
 

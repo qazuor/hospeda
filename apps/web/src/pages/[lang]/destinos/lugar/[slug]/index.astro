@@ -1,0 +1,407 @@
+---
+/**
+ * @file destinos/lugar/[slug]/index.astro
+ * @description Detail page for a curated point of interest.
+ * @route /{lang}/destinos/lugar/{slug}/
+ * @rendering SSR
+ *
+ * GATED BY `hasOwnPage`. A POI without the flag 404s here and is absent from
+ * the sitemap, deliberately: the catalog has 842 rows, 60% typed `OTHER`, 156
+ * without coordinates and a median description of 115 characters. Publishing
+ * all of them would be doorway content — and since a POI's nearby
+ * accommodations are in practice its destination's accommodations, most pages
+ * would restate `/destinos/{slug}/alojamientos/` under a new URL. The long tail
+ * stays indexed on the destination page, where HOS-146 already renders it.
+ *
+ * Lives under `/destinos/` rather than a top-level `/lugares/` to mirror
+ * `/destinos/atraccion/{slug}/`, and flat rather than nested under a
+ * destination because the POI↔destination relation is many-to-many: the Molino
+ * Forclaz belongs to four destinations at once, so any nested URL would either
+ * pick an arbitrary parent or create four duplicates of one page.
+ */
+import DetailLayout from '@/layouts/DetailLayout.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import PlaceJsonLd from '@/components/seo/PlaceJsonLd.astro';
+import DestinationMiniMap from '@/components/destination/DestinationMiniMap.astro';
+import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import { accommodationsApi, pointOfInterestApi } from '@/lib/api/endpoints';
+import { toAccommodationCardProps } from '@/lib/api/transforms';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { translatePoiCategoryLabel } from '@/lib/poi-labels';
+import { translatePoiName } from '@/lib/poi-labels';
+import { resolveI18nText } from '@/lib/resolve-i18n-text';
+import { buildUrl } from '@/lib/urls';
+import { LocationIcon } from '@repo/icons';
+
+/**
+ * Radius for the "nearby accommodations" query, in km. Matches
+ * `DEFAULT_POI_PROXIMITY_RADIUS_KM` in service-core — the same radius the
+ * accommodation search's "near a POI" filter uses, so a visitor who clicks
+ * through to the filtered listing sees the same set.
+ */
+const NEARBY_RADIUS_KM = 5;
+
+/** How many accommodations the block shows before linking out. */
+const NEARBY_LIMIT = 6;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+const isAuthenticated = Boolean(Astro.locals.user);
+const { slug } = Astro.params;
+if (!slug) return new Response(null, { status: 404 });
+
+const poiResult = await pointOfInterestApi.getBySlug({ slug });
+if (!poiResult.ok || !poiResult.data) {
+	return new Response(null, { status: poiResult.ok ? 404 : (poiResult.error.status === 410 ? 410 : 404) });
+}
+
+const poi = poiResult.data as unknown as Record<string, unknown>;
+
+// The gate. `hasOwnPage` is what separates a curated landmark from the 839
+// catalog rows that must never get a URL of their own.
+if (poi.hasOwnPage !== true) return new Response(null, { status: 404 });
+
+const poiId = String(poi.id || '');
+const name = translatePoiName({
+	slug,
+	nameI18n: poi.nameI18n as Parameters<typeof translatePoiName>[0]['nameI18n'],
+	locale
+});
+const categoryLabel = translatePoiCategoryLabel({
+	t,
+	type: String(poi.type || ''),
+	primaryCategory: poi.primaryCategory as Parameters<
+		typeof translatePoiCategoryLabel
+	>[0]['primaryCategory'],
+	locale
+});
+
+// `descriptionI18n` (HOS-138) supersedes the legacy flat `description` where
+// present; fall back so a POI predating the multilang migration still reads.
+const description =
+	resolveI18nText(poi.descriptionI18n as Parameters<typeof resolveI18nText>[0], locale) ||
+	String(poi.description || '');
+const address = String(poi.address || '');
+const lat = typeof poi.lat === 'number' ? poi.lat : null;
+const long = typeof poi.long === 'number' ? poi.long : null;
+
+const destinationsResult = await pointOfInterestApi.getDestinations({ id: poiId });
+const destinations = destinationsResult.ok
+	? destinationsResult.data.map((item) => ({
+			id: String((item as Record<string, unknown>).id || ''),
+			slug: String((item as Record<string, unknown>).slug || ''),
+			name: String((item as Record<string, unknown>).name || '')
+		}))
+	: [];
+const primaryDestination = destinations[0];
+
+// Accommodations near the POI, resolved server-side from its coordinates by the
+// same `poiSlug` proximity filter the search sidebar uses (HOS-113 §6.2).
+const nearbyResult = await accommodationsApi.list({
+	poiSlug: slug,
+	radius: NEARBY_RADIUS_KM,
+	pageSize: NEARBY_LIMIT
+});
+const nearbyItems = nearbyResult.ok ? nearbyResult.data.items : [];
+
+// A landmark can legitimately have nothing within the radius — El Palmar
+// returns zero up to 50 km. Rather than render an empty block, fall back to the
+// accommodations of the destination this place belongs to, labelled honestly as
+// such so the heading never claims a proximity the data does not support.
+const useDestinationFallback = nearbyItems.length === 0 && Boolean(primaryDestination);
+const fallbackResult = useDestinationFallback
+	? await accommodationsApi.list({
+			destinationId: primaryDestination?.id,
+			pageSize: NEARBY_LIMIT
+		})
+	: null;
+const fallbackItems = fallbackResult?.ok ? fallbackResult.data.items : [];
+
+const accommodationItems = nearbyItems.length > 0 ? nearbyItems : fallbackItems;
+const accommodationCards = accommodationItems.map((item) =>
+	toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
+
+const accommodationsHeading = useDestinationFallback
+	? t('destinations.poiPage.destinationFallbackTitle', 'Alojamientos en {{destination}}', {
+			destination: primaryDestination?.name ?? ''
+		})
+	: t('destinations.poiPage.nearbyAccommodations', 'Alojamientos cerca');
+const accommodationsIntro = useDestinationFallback
+	? t(
+			'destinations.poiPage.destinationFallbackIntro',
+			'No hay alojamientos cargados a menos de {{km}} km, así que te mostramos los de {{destination}}.',
+			{ km: String(NEARBY_RADIUS_KM), destination: primaryDestination?.name ?? '' }
+		)
+	: t('destinations.poiPage.nearbyIntro', 'Alojamientos a menos de {{km}} km de este lugar.', {
+			km: String(NEARBY_RADIUS_KM)
+		});
+
+const seoDescription = description
+	? `${description} ${t('destinations.poiPage.seoSuffix', 'Cómo llegar, en qué destinos está y dónde alojarte cerca.')}`
+	: `${name}. ${t('destinations.poiPage.seoSuffix', 'Cómo llegar, en qué destinos está y dónde alojarte cerca.')}`;
+
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const canonicalPath = buildUrl({ locale, path: `destinos/lugar/${slug}` });
+
+// Mirrors the visible trail below PLUS the current page: the visible component
+// drops the leaf (it is already the H1), but BreadcrumbList must stay complete.
+const breadcrumbItems = [
+	{ name: t('nav.home', 'Inicio'), url: `${siteOrigin}${buildUrl({ locale, path: '' })}` },
+	{
+		name: t('destinations.title', 'Destinos'),
+		url: `${siteOrigin}${buildUrl({ locale, path: 'destinos' })}`
+	},
+	{ name, url: `${siteOrigin}${canonicalPath}` }
+];
+---
+
+<DetailLayout
+	locale={locale}
+	title={name}
+	description={seoDescription}
+	canonicalPath={canonicalPath}
+>
+	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
+	<PlaceJsonLd
+		slot="head-extra"
+		schemaType="TouristAttraction"
+		name={name}
+		description={description || name}
+		url={`${siteOrigin}${canonicalPath}`}
+		address={primaryDestination
+			? {
+					...(address ? { streetAddress: address } : {}),
+					addressLocality: primaryDestination.name,
+					addressRegion: 'Entre Ríos',
+					addressCountry: 'AR'
+				}
+			: undefined}
+		geo={lat !== null && long !== null ? { latitude: lat, longitude: long } : undefined}
+	/>
+
+	<Breadcrumbs
+		slot="breadcrumbs"
+		locale={locale}
+		items={[{ label: t('destinations.title', 'Destinos'), path: 'destinos' }, { label: name }]}
+	/>
+
+	<header slot="page-header" class="poi-header">
+		<p class="poi-header__tagline">{t('destinations.poiPage.tagline', 'Lugar')}</p>
+		<h1 class="poi-header__title">{name}</h1>
+		<p class="poi-header__badge">{categoryLabel}</p>
+	</header>
+
+	{description && (
+		<section class="poi-section" aria-labelledby="poi-about">
+			<h2 id="poi-about" class="poi-section__title">
+				{t('destinations.poiPage.about', 'Sobre este lugar')}
+			</h2>
+			<p class="poi-section__text">{description}</p>
+		</section>
+	)}
+
+	{destinations.length > 0 && (
+		<section class="poi-section" aria-labelledby="poi-destinations">
+			<h2 id="poi-destinations" class="poi-section__title">
+				{t('destinations.poiPage.inDestinations', 'Está en')}
+			</h2>
+			<p class="poi-section__text">
+				{t(
+					'destinations.poiPage.inDestinationsIntro',
+					'Este lugar forma parte de la oferta de estos destinos.'
+				)}
+			</p>
+			<ul class="poi-dest-list">
+				{destinations.map((destination) => (
+					<li>
+						<a
+							class="poi-dest-chip"
+							href={buildUrl({ locale, path: `destinos/${destination.slug}` })}
+						>
+							{destination.name}
+						</a>
+					</li>
+				))}
+			</ul>
+		</section>
+	)}
+
+	<section class="poi-section" aria-labelledby="poi-stays">
+		<h2 id="poi-stays" class="poi-section__title">{accommodationsHeading}</h2>
+		<p class="poi-section__text">{accommodationsIntro}</p>
+
+		{accommodationCards.length === 0 && (
+			<EmptyState
+				locale={locale}
+				variant="empty"
+				actionUrl={buildUrl({ locale, path: 'alojamientos' })}
+			/>
+		)}
+
+		{accommodationCards.length > 0 && (
+			<div class="poi-accom-grid">
+				{accommodationCards.map((card) => (
+					<AccommodationCard
+						data={card}
+						locale={locale}
+						isAuthenticated={isAuthenticated}
+					/>
+				))}
+			</div>
+		)}
+
+		{primaryDestination && accommodationCards.length > 0 && (
+			<a
+				class="poi-section__more"
+				href={buildUrl({
+					locale,
+					path: `destinos/${primaryDestination.slug}/alojamientos`
+				})}
+			>
+				{t(
+					'destinations.poiPage.seeAllInDestination',
+					'Ver todos los alojamientos en {{destination}}',
+					{ destination: primaryDestination.name }
+				)}
+			</a>
+		)}
+	</section>
+
+	<Fragment slot="sidebar">
+		{lat !== null && long !== null && (
+			<DestinationMiniMap lat={lat} lng={long} name={name} locale={locale} zoom={14} />
+		)}
+
+		{address && (
+			<aside class="poi-address">
+				<h2 class="poi-address__title">
+					<LocationIcon size={16} aria-hidden="true" />
+					{t('destinations.poiPage.address', 'Dirección')}
+				</h2>
+				<p class="poi-address__text">{address}</p>
+			</aside>
+		)}
+	</Fragment>
+</DetailLayout>
+
+<style>
+	.poi-header__tagline {
+		font-family: var(--font-decorative);
+		font-size: 1.25rem;
+		color: var(--brand-accent);
+		margin: 0;
+	}
+
+	.poi-header__title {
+		font-family: var(--font-heading);
+		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		font-weight: 600;
+		color: var(--core-foreground);
+		margin: 0.25rem 0 0.5rem;
+	}
+
+	.poi-header__badge {
+		display: inline-block;
+		font-family: var(--font-sans);
+		font-size: 0.8rem;
+		color: var(--brand-primary);
+		background-color: oklch(from var(--brand-primary) l c h / 0.12);
+		border-radius: var(--radius-pill);
+		padding: 0.25rem 0.75rem;
+		margin: 0;
+	}
+
+	.poi-section {
+		margin-bottom: var(--space-8, 2rem);
+	}
+
+	.poi-section__title {
+		font-family: var(--font-heading);
+		font-size: 1.35rem;
+		font-weight: 600;
+		color: var(--core-foreground);
+		margin: 0 0 0.5rem;
+	}
+
+	.poi-section__text {
+		font-family: var(--font-sans);
+		color: var(--core-muted-foreground);
+		line-height: 1.7;
+		margin: 0 0 1rem;
+	}
+
+	.poi-section__more {
+		display: inline-block;
+		margin-top: 1rem;
+		font-family: var(--font-sans);
+		font-weight: 500;
+		color: var(--brand-primary);
+	}
+
+	.poi-dest-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	.poi-dest-chip {
+		display: inline-block;
+		font-family: var(--font-sans);
+		font-size: 0.9rem;
+		color: var(--core-foreground);
+		background-color: var(--core-card);
+		border-radius: var(--radius-pill);
+		box-shadow: var(--shadow-card);
+		padding: 0.4rem 0.9rem;
+		transition: background-color var(--duration-normal) ease-in-out;
+	}
+
+	.poi-dest-chip:hover {
+		background-color: var(--surface-warm);
+	}
+
+	.poi-accom-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: var(--space-card-gap);
+	}
+
+	@media (max-width: 640px) {
+		.poi-accom-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.poi-address {
+		background-color: var(--core-card);
+		border-radius: var(--radius-card);
+		box-shadow: var(--shadow-card);
+		padding: 1rem 1.25rem;
+		margin-top: var(--space-card-gap);
+	}
+
+	.poi-address__title {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-family: var(--font-heading);
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--core-foreground);
+		margin: 0 0 0.35rem;
+	}
+
+	.poi-address__text {
+		font-family: var(--font-sans);
+		font-size: 0.9rem;
+		color: var(--core-muted-foreground);
+		margin: 0;
+	}
+</style>
