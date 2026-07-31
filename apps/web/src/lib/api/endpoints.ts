@@ -459,6 +459,21 @@ export const attractionsApi = {
      */
     getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<Record<string, unknown>>> {
         return apiClient.get({ path: `${BASE}/attractions/slug/${slug}` });
+    },
+
+    /**
+     * List the destinations that offer a given attraction.
+     *
+     * Backs the `/destinos/atraccion/{slug}/` landing: an attraction is a
+     * taxonomy term, so its page lists the destinations that have it rather
+     * than describing the term.
+     */
+    getDestinations({
+        id
+    }: {
+        readonly id: string;
+    }): Promise<ApiResult<ReadonlyArray<Record<string, unknown>>>> {
+        return apiClient.get({ path: `${BASE}/attractions/${id}/destinations` });
     }
 };
 
