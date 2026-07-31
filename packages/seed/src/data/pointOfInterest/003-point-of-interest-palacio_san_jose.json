@@ -47,6 +47,7 @@
         }
     },
     "icon": "museum",
+    "hasOwnPage": true,
     "isBuiltin": true,
     "isFeatured": true,
     "displayWeight": 90,

@@ -27,7 +27,7 @@
         "monumento historico",
         "colonia san jose"
     ],
-    "hasOwnPage": false,
+    "hasOwnPage": true,
     "isBuiltin": true,
     "isFeatured": true,
     "displayWeight": 100,
