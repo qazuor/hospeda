@@ -615,4 +615,104 @@ describe('sitemap-dynamic.xml — GET handler', () => {
             expect(musicEntryBlock).not.toContain('<lastmod>');
         });
     });
+
+    describe('attraction facet landings', () => {
+        /**
+         * Mocks the two endpoints the attraction filter depends on: the
+         * attraction catalog (slug + id) and the destinations that embed the
+         * attractions they offer (id only, no slug — hence the id join).
+         */
+        function stubAttractionFetch(options: {
+            catalog: Array<{ slug: string; id: string }>;
+            destinationAttractionIds: string[][];
+        }): void {
+            const fetchMock = vi.fn().mockImplementation((url: string) => {
+                const urlStr = String(url);
+                const isFirstPage = urlStr.includes('page=1');
+
+                if (urlStr.includes('/attractions')) {
+                    return Promise.resolve(
+                        isFirstPage ? makeApiResponse(options.catalog) : makeEmptyApiResponse()
+                    );
+                }
+
+                if (urlStr.includes('/destinations')) {
+                    if (!isFirstPage) return Promise.resolve(makeEmptyApiResponse());
+                    const items = options.destinationAttractionIds.map((ids, index) => ({
+                        slug: `destino-${index}`,
+                        attractions: ids.map((id) => ({ id }))
+                    }));
+                    return Promise.resolve(makeApiResponse(items));
+                }
+
+                return Promise.resolve(makeEmptyApiResponse());
+            });
+            vi.stubGlobal('fetch', fetchMock);
+        }
+
+        it('emits a landing for an attraction a destination offers', async () => {
+            stubAttractionFetch({
+                catalog: [{ slug: 'playa-fluvial', id: 'attr-1' }],
+                destinationAttractionIds: [['attr-1']]
+            });
+
+            const body = await (await GET({})).text();
+            expect(body).toContain('/es/destinos/atraccion/playa-fluvial/');
+        });
+
+        it('omits an attraction no destination offers, which would render an empty page', async () => {
+            stubAttractionFetch({
+                catalog: [
+                    { slug: 'playa-fluvial', id: 'attr-1' },
+                    { slug: 'anfiteatro', id: 'attr-2' }
+                ],
+                destinationAttractionIds: [['attr-1']]
+            });
+
+            const body = await (await GET({})).text();
+            expect(body).toContain('/es/destinos/atraccion/playa-fluvial/');
+            expect(body).not.toContain('/es/destinos/atraccion/anfiteatro/');
+        });
+
+        it('emits every locale for an in-use attraction', async () => {
+            stubAttractionFetch({
+                catalog: [{ slug: 'costanera', id: 'attr-9' }],
+                destinationAttractionIds: [['attr-9']]
+            });
+
+            const body = await (await GET({})).text();
+            for (const locale of ['es', 'en', 'pt']) {
+                expect(body).toContain(`/${locale}/destinos/atraccion/costanera/`);
+            }
+        });
+
+        it('emits no attraction landing when the destination fetch fails', async () => {
+            // Without destinations there is no membership set, so nothing can be
+            // proven in use — the sitemap must not advertise the whole catalog.
+            const fetchMock = vi.fn().mockImplementation((url: string) => {
+                const urlStr = String(url);
+                if (urlStr.includes('/destinations')) {
+                    return Promise.reject(new Error('Network error'));
+                }
+                if (urlStr.includes('/attractions') && urlStr.includes('page=1')) {
+                    return Promise.resolve(makeApiResponse([{ slug: 'playa-fluvial', id: 'a1' }]));
+                }
+                return Promise.resolve(makeEmptyApiResponse());
+            });
+            vi.stubGlobal('fetch', fetchMock);
+
+            const body = await (await GET({})).text();
+            expect(body).not.toContain('/destinos/atraccion/');
+        });
+
+        it('tolerates a destination with no embedded attractions', async () => {
+            stubAttractionFetch({
+                catalog: [{ slug: 'playa-fluvial', id: 'attr-1' }],
+                destinationAttractionIds: [[], ['attr-1']]
+            });
+
+            const body = await (await GET({})).text();
+            expect(body).toContain('/es/destinos/atraccion/playa-fluvial/');
+        });
+    });
 });

@@ -258,6 +258,50 @@ function buildEntriesForStaticSlugs({
 }
 
 /**
+ * Attraction facet-landing slugs, restricted to attractions at least one
+ * destination actually offers.
+ *
+ * `/destinos/atraccion/{slug}/` lists the destinations that have the attraction,
+ * so an unused one renders an empty page. Only 45 of the 88 catalog rows are in
+ * use, and shipping the other 43 as empty URLs is the thin-content pattern this
+ * landing exists to avoid.
+ *
+ * The membership set comes from the destination payloads already fetched above
+ * — their embedded `attractions` carry an `id` but no `slug`, hence the id-based
+ * intersection with the attraction catalog. No extra requests.
+ *
+ * @param attractions - Attraction catalog (carries slug + id).
+ * @param destinations - Destination list items (carry embedded attractions).
+ * @returns The slugs to emit, in catalog order.
+ */
+function resolveUsedAttractionSlugs(
+    attractions: readonly EntityItem[],
+    destinations: readonly EntityItem[]
+): readonly string[] {
+    const usedIds = new Set<string>();
+    for (const destination of destinations) {
+        // TYPE-WORKAROUND: `EntityItem` models only the fields the sitemap needs
+        // from every entity (slug + updatedAt); the destination payload also
+        // carries an embedded `attractions` relation this function reads.
+        const embedded = (destination as unknown as { attractions?: readonly { id?: string }[] })
+            .attractions;
+        for (const attraction of embedded ?? []) {
+            if (attraction?.id) usedIds.add(attraction.id);
+        }
+    }
+
+    return attractions
+        .filter((attraction) => {
+            // TYPE-WORKAROUND: same as above — `id` is present on the attraction
+            // payload but absent from the shared `EntityItem` shape.
+            const id = (attraction as unknown as { id?: string }).id;
+            return Boolean(id) && usedIds.has(id as string);
+        })
+        .map((attraction) => attraction.slug)
+        .filter((slug): slug is string => Boolean(slug));
+}
+
+/**
  * Event category facet-landing slugs (SPEC-306 §4). Mirrors the
  * `VALID_CATEGORIES` slug → `EventCategoryEnum` mapping in
  * `pages/[lang]/eventos/categoria/[category]/index.astro` — keep both in
@@ -305,14 +349,15 @@ export const GET: APIRoute = async () => {
     // (published) content, and they reject an unknown `status` query param with
     // HTTP 400 — which previously made every entity fetch fail and the sitemap
     // come back empty.
-    const [accommodations, destinations, events, posts, gastronomy, experiences] =
+    const [accommodations, destinations, events, posts, gastronomy, experiences, attractions] =
         await Promise.allSettled([
             fetchAllEntities(apiUrl, `${base}/accommodations`),
             fetchAllEntities(apiUrl, `${base}/destinations`, { includeEventCount: 'true' }),
             fetchAllEntities(apiUrl, `${base}/events`),
             fetchAllEntities(apiUrl, `${base}/posts`),
             fetchAllEntities(apiUrl, `${base}/gastronomies`),
-            fetchAllEntities(apiUrl, `${base}/experiences`)
+            fetchAllEntities(apiUrl, `${base}/experiences`),
+            fetchAllEntities(apiUrl, `${base}/attractions`)
         ]);
 
     const resolvedAccommodations =
@@ -322,6 +367,7 @@ export const GET: APIRoute = async () => {
     const resolvedPosts = posts.status === 'fulfilled' ? posts.value : [];
     const resolvedGastronomy = gastronomy.status === 'fulfilled' ? gastronomy.value : [];
     const resolvedExperiences = experiences.status === 'fulfilled' ? experiences.value : [];
+    const resolvedAttractions = attractions.status === 'fulfilled' ? attractions.value : [];
 
     const entries: string[] = [];
 
@@ -459,6 +505,18 @@ export const GET: APIRoute = async () => {
             pathFn: (slug) => `/alojamientos/tipo/${slug}/`,
             changefreq: 'monthly',
             priority: 0.7
+        })
+    );
+
+    // Attraction facet landings: /destinos/atraccion/{slug}/ — only the ones a
+    // destination actually offers, so no empty page is ever advertised.
+    entries.push(
+        ...buildEntriesForStaticSlugs({
+            slugs: resolveUsedAttractionSlugs(resolvedAttractions, resolvedDestinations),
+            siteUrl,
+            pathFn: (slug) => `/destinos/atraccion/${slug}/`,
+            changefreq: 'monthly',
+            priority: 0.6
         })
     );
 
