@@ -290,16 +290,25 @@ export const GET: APIRoute = async () => {
     // (published) content, and they reject an unknown `status` query param with
     // HTTP 400 — which previously made every entity fetch fail and the sitemap
     // come back empty.
-    const [accommodations, destinations, events, posts, gastronomy, experiences, attractions] =
-        await Promise.allSettled([
-            fetchAllEntities(apiUrl, `${base}/accommodations`),
-            fetchAllEntities(apiUrl, `${base}/destinations`, { includeEventCount: 'true' }),
-            fetchAllEntities(apiUrl, `${base}/events`),
-            fetchAllEntities(apiUrl, `${base}/posts`),
-            fetchAllEntities(apiUrl, `${base}/gastronomies`),
-            fetchAllEntities(apiUrl, `${base}/experiences`),
-            fetchAllEntities(apiUrl, `${base}/attractions`)
-        ]);
+    const [
+        accommodations,
+        destinations,
+        events,
+        posts,
+        gastronomy,
+        experiences,
+        attractions,
+        pointsOfInterest
+    ] = await Promise.allSettled([
+        fetchAllEntities(apiUrl, `${base}/accommodations`),
+        fetchAllEntities(apiUrl, `${base}/destinations`, { includeEventCount: 'true' }),
+        fetchAllEntities(apiUrl, `${base}/events`),
+        fetchAllEntities(apiUrl, `${base}/posts`),
+        fetchAllEntities(apiUrl, `${base}/gastronomies`),
+        fetchAllEntities(apiUrl, `${base}/experiences`),
+        fetchAllEntities(apiUrl, `${base}/attractions`),
+        fetchAllEntities(apiUrl, `${base}/points-of-interest`)
+    ]);
 
     const resolvedAccommodations =
         accommodations.status === 'fulfilled' ? accommodations.value : [];
@@ -309,6 +318,8 @@ export const GET: APIRoute = async () => {
     const resolvedGastronomy = gastronomy.status === 'fulfilled' ? gastronomy.value : [];
     const resolvedExperiences = experiences.status === 'fulfilled' ? experiences.value : [];
     const resolvedAttractions = attractions.status === 'fulfilled' ? attractions.value : [];
+    const resolvedPointsOfInterest =
+        pointsOfInterest.status === 'fulfilled' ? pointsOfInterest.value : [];
 
     const entries: string[] = [];
 
@@ -413,6 +424,26 @@ export const GET: APIRoute = async () => {
             pathFn: (slug) => `/experiencias/${slug}/`,
             changefreq: 'weekly',
             priority: 0.8
+        })
+    );
+
+    // Points of interest: /destinos/lugar/{slug}/ — ONLY the curated few that
+    // carry `hasOwnPage`. The other ~839 catalog rows have no page (the route
+    // 404s on them by design), so emitting them would advertise 404s; and were
+    // they published, they would be doorway content restating their
+    // destination's accommodation listing. See the page's own file header.
+    entries.push(
+        ...buildEntriesForEntity({
+            items: resolvedPointsOfInterest.filter(
+                // TYPE-WORKAROUND: `EntityItem` models only the fields every
+                // entity shares (slug + updatedAt); `hasOwnPage` is specific to
+                // the point-of-interest payload, which this filter reads.
+                (item) => (item as unknown as { hasOwnPage?: boolean }).hasOwnPage === true
+            ),
+            siteUrl,
+            pathFn: (slug) => `/destinos/lugar/${slug}/`,
+            changefreq: 'monthly',
+            priority: 0.6
         })
     );
 
