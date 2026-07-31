@@ -309,7 +309,11 @@ const breadcrumbItems = [
 		font-family: var(--font-sans);
 		font-size: 0.8rem;
 		color: var(--brand-primary);
-		background-color: oklch(from var(--brand-primary) l c h / 0.12);
+		/* Same token pair the sibling badge in DestinationPOISection uses. A
+		   relative-color tint would be a new `oklch(from …)` call site, which
+		   the SPEC-176 guard rejects — the codemod moved all statically
+		   resolvable ones to precomputed tokens. */
+		background-color: var(--surface-warm);
 		border-radius: var(--radius-pill);
 		padding: 0.25rem 0.75rem;
 		margin: 0;
