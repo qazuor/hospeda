@@ -1,10 +1,20 @@
-# Fixture — Cloudflare's managed content block as observed prepended to
-# https://hospeda.com.ar/robots.txt on 2026-07-30 (HOS-369 spec §5.10).
+# Fixture — Cloudflare's managed content block, CAPTURED VERBATIM from
+# https://hospeda.com.ar/robots.txt on 2026-07-31 (HOS-369 spec §5.10).
 #
-# This is NOT emitted by this app. Cloudflare concatenates it at the edge ahead
-# of the app's dynamic robots.txt. It is checked in so the AC-A3 guard can prove
-# it detects the real production contradiction, instead of only testing the
-# app's own (already consistent) output.
+# This is NOT emitted by this app. Cloudflare prepends it at the edge, ahead of
+# the app's dynamic robots.txt. It is checked in so the AC-A3 guard can prove it
+# detects the real production contradiction, instead of only testing the app's
+# own (already consistent) output.
+#
+# Source: Cloudflare dashboard -> hospeda.com.ar -> AI Crawl Control -> Señales
+# -> "robots.txt gestionado" toggle. It applies to EVERY hostname in the zone
+# (hospeda, www, staging, api, staging-admin), not just the apex.
+#
+# The ~25 lines of Content Signals licence prose that Cloudflare emits above
+# `# BEGIN` are elided here: they are all comments, so the parser strips them
+# and they change no assertion. Everything from `# BEGIN` down is verbatim,
+# including the `Allow: /` on the `*` group — an earlier hand-written version of
+# this fixture omitted it and made a passing test pass for the wrong reason.
 #
 # Keep in sync with the live file if the managed block changes.
 
@@ -12,6 +22,7 @@
 
 User-agent: *
 Content-Signal: search=yes,ai-train=no,use=reference
+Allow: /
 
 User-agent: Amazonbot
 Disallow: /
@@ -40,4 +51,4 @@ Disallow: /
 User-agent: meta-externalagent
 Disallow: /
 
-# END Cloudflare Managed content
+# END Cloudflare Managed Content

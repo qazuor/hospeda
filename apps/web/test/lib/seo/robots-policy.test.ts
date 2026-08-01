@@ -76,17 +76,20 @@ describe('parseRobotsGroups', () => {
         expect(groups[0]?.rules).toEqual([{ directive: 'disallow', value: '/' }]);
     });
 
-    it('does NOT merge a non-rule preamble group into the next group', () => {
-        // Cloudflare's block opens with `User-agent: *` + `Content-Signal:`.
-        // If that unrecognized field did not close the header, `*` would absorb
-        // the following `Disallow: /` and every guard below would report a
-        // phantom conflict on `*`.
+    it('handles the real Cloudflare preamble shape (unknown field between rules)', () => {
+        // Verbatim from production: `User-agent: *`, then the unrecognized
+        // `Content-Signal:` field, then a real `Allow: /`. The unknown field
+        // must neither be recorded as a rule nor swallow the `Allow` that
+        // follows it, and the next `User-agent` must still start a NEW group —
+        // otherwise `*` would absorb Amazonbot's `Disallow: /` and the guards
+        // below would report a phantom conflict on `*`.
         const groups = parseRobotsGroups({
-            body: 'User-agent: *\nContent-Signal: search=yes\n\nUser-agent: Bytespider\nDisallow: /'
+            body: 'User-agent: *\nContent-Signal: search=yes,ai-train=no,use=reference\nAllow: /\n\nUser-agent: Amazonbot\nDisallow: /'
         });
 
-        expect(groups.map((g) => g.userAgents)).toEqual([['*'], ['bytespider']]);
-        expect(groups[0]?.rules).toEqual([]);
+        expect(groups.map((g) => g.userAgents)).toEqual([['*'], ['amazonbot']]);
+        expect(groups[0]?.rules).toEqual([{ directive: 'allow', value: '/' }]);
+        expect(groups[1]?.rules).toEqual([{ directive: 'disallow', value: '/' }]);
     });
 
     it('ignores a Sitemap directive rather than recording it as a rule', () => {
@@ -252,10 +255,26 @@ describe('AC-A3 — residual conflict with the Cloudflare managed block', () => 
         }
     });
 
-    it('does not flag `*` (Cloudflare declares no root rule for it)', async () => {
+    it('does not flag `*` — BOTH sides grant it Allow: /', async () => {
+        // Verified against the live file on 2026-07-31: Cloudflare's `*` group
+        // carries its own `Allow: /` alongside the Content-Signal line. So `*`
+        // is allowed twice, never contradicted. (This is also why `Applebot`,
+        // which no group names, falls through to `Allow: /` and crawls
+        // unthrottled — 326,810 requests/day, spec §5.10.)
         const served = `${CLOUDFLARE_MANAGED_BLOCK}\n${await getAppBody()}`;
-        const flagged = new Set(findConflictingRootRules({ body: served }).map((c) => c.userAgent));
+        const conflicts = findConflictingRootRules({ body: served });
 
-        expect(flagged.has('*')).toBe(false);
+        expect(conflicts.map((c) => c.userAgent)).not.toContain('*');
+    });
+
+    it('confirms the fixture really does grant `*` Allow: / on the Cloudflare side', async () => {
+        // Non-vacuity for the assertion above: if the fixture silently lost that
+        // line, the test would still pass but for the wrong reason. An earlier
+        // hand-written fixture did exactly that.
+        const cloudflareStarGroup = parseRobotsGroups({ body: CLOUDFLARE_MANAGED_BLOCK }).find(
+            (group) => group.userAgents.includes('*')
+        );
+
+        expect(cloudflareStarGroup?.rules).toEqual([{ directive: 'allow', value: '/' }]);
     });
 });
