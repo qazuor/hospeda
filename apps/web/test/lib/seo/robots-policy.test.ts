@@ -154,24 +154,80 @@ describe('AC-A3 — the app-generated robots.txt expresses one policy per agent'
     it('is non-vacuous: the app body really does declare root rules to check', async () => {
         // Without this, the assertion above would also pass on an empty file.
         const groups = parseRobotsGroups({ body: await getAppBody() });
-        const rootAllowGroups = groups.filter((g) =>
+        const rootAllow = groups.filter((g) =>
             g.rules.some((r) => r.directive === 'allow' && r.value === '/')
         );
+        const rootDisallow = groups.filter((g) =>
+            g.rules.some((r) => r.directive === 'disallow' && r.value === '/')
+        );
 
-        expect(rootAllowGroups.length).toBeGreaterThanOrEqual(9); // `*` + 8 AI agents
+        expect(rootAllow.length).toBe(7); // `*` + 6 citation agents
+        expect(rootDisallow.length).toBe(9); // 4 training-only + 5 ex-Cloudflare
+    });
+
+    it('states every agent exactly once, in exactly one direction (D-3)', async () => {
+        // The whole point of WA-4: no agent may be readable as both allowed and
+        // denied WITHIN this file. Cross-file conflicts are covered below.
+        const groups = parseRobotsGroups({ body: await getAppBody() });
+        const seen = new Map<string, number>();
+
+        for (const group of groups) {
+            for (const agent of group.userAgents) {
+                seen.set(agent, (seen.get(agent) ?? 0) + 1);
+            }
+        }
+
+        const duplicated = [...seen.entries()].filter(([, count]) => count > 1);
+        expect(duplicated, `agents declared more than once: ${JSON.stringify(duplicated)}`).toEqual(
+            []
+        );
     });
 });
 
-describe('AC-A3 — the guard FAILS on the real production concatenation', () => {
-    it('detects the Cloudflare-managed vs app-block contradiction', async () => {
-        // This is the assertion the spec asks for: prove the detector fires on
-        // what production serves today. If this ever returns [], the guard has
-        // become vacuous and AC-A3 is no longer being tested.
+describe('AC-A3 — residual conflict with the Cloudflare managed block', () => {
+    it('WA-4 shrank the contradiction from four agents to exactly one', async () => {
+        // Before WA-4 the served file contradicted itself for ccbot, claudebot,
+        // google-extended AND gptbot: the app granted `Allow: /` to all four
+        // while the managed block denied them, and least-restrictive-wins meant
+        // the app silently won.
+        //
+        // Three of those are now denied on BOTH sides, so they agree. The one
+        // that remains is `Google-Extended`, and it remains BY DESIGN: it is not
+        // a crawler (zero requests), blocking it costs Gemini grounding, and
+        // Google documents that it carries no Search ranking or inclusion
+        // effect. Denying it to make this assertion green would be optimizing
+        // the test over the product.
+        //
+        // This residual can ONLY be closed in the Cloudflare dashboard by
+        // turning the managed content block off. Until that happens AC-A3 is
+        // NOT fully satisfied for the served file, and this test says so out
+        // loud rather than pretending otherwise.
         const served = `${CLOUDFLARE_MANAGED_BLOCK}\n${await getAppBody()}`;
         const conflicts = findConflictingRootRules({ body: served });
 
-        expect(conflicts.length).toBeGreaterThan(0);
-        expect(conflicts.map((c) => c.userAgent)).toEqual([
+        expect(conflicts.map((c) => c.userAgent)).toEqual(['google-extended']);
+    });
+
+    it('the four agents that used to contradict now agree on both sides', async () => {
+        const served = `${CLOUDFLARE_MANAGED_BLOCK}\n${await getAppBody()}`;
+        const flagged = new Set(findConflictingRootRules({ body: served }).map((c) => c.userAgent));
+
+        for (const agent of ['ccbot', 'claudebot', 'gptbot']) {
+            expect(flagged.has(agent), `${agent} should no longer conflict`).toBe(false);
+        }
+    });
+
+    it('is non-vacuous: the detector still fires on a pre-WA-4-shaped file', async () => {
+        // Guards the guard. If `findConflictingRootRules` ever silently stopped
+        // detecting anything, the assertions above would pass for the wrong
+        // reason. This reconstructs the exact shape production served before
+        // WA-4 and requires all four conflicts back.
+        const preWa4AppBlocks = ['GPTBot', 'ClaudeBot', 'Google-Extended', 'CCBot']
+            .map((ua) => `User-agent: ${ua}\nAllow: /\nDisallow: /api/`)
+            .join('\n\n');
+        const served = `${CLOUDFLARE_MANAGED_BLOCK}\n${preWa4AppBlocks}\n`;
+
+        expect(findConflictingRootRules({ body: served }).map((c) => c.userAgent)).toEqual([
             'ccbot',
             'claudebot',
             'google-extended',

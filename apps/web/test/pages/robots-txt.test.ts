@@ -319,57 +319,80 @@ describe('robots.txt — GET handler', () => {
     // AEO: explicit AI crawler allow blocks
     // -----------------------------------------------------------------------
 
-    describe('AI crawler blocks (AEO)', () => {
-        const AI_BOTS = [
-            'GPTBot',
+    describe('AI crawler policy (AEO, HOS-369 WA-4)', () => {
+        /**
+         * Agents that produce CITATIONS — the visibility Hospeda actually wants.
+         * Each is verified against its vendor's own documentation; see the
+         * rationale block in `robots.txt.ts`.
+         */
+        const CITATION_BOTS = [
             'OAI-SearchBot',
             'ChatGPT-User',
-            'ClaudeBot',
-            'anthropic-ai',
+            'Claude-User',
+            'Claude-SearchBot',
             'PerplexityBot',
-            'Google-Extended',
-            'CCBot'
+            'Google-Extended'
         ];
 
-        it('emits an explicit User-agent block for every AI crawler', async () => {
-            const { getSiteUrl } = await import('@/lib/env');
-            vi.mocked(getSiteUrl).mockReturnValue('https://hospeda.test');
+        /** Training-only crawlers + the list Cloudflare's managed block used to own. */
+        const BLOCKED_BOTS = [
+            'GPTBot',
+            'ClaudeBot',
+            'anthropic-ai',
+            'CCBot',
+            'Applebot-Extended',
+            'Amazonbot',
+            'Bytespider',
+            'meta-externalagent',
+            'CloudflareBrowserRenderingCrawler'
+        ];
 
-            const { GET } = await import('../../src/pages/robots.txt.js');
-            const response = await GET({ request: makeRequest('hospeda.com.ar') } as never);
-            const body = await response.text();
+        it('emits an explicit User-agent block for every agent it has an opinion about', async () => {
+            const body = await getPermissiveBody();
 
-            for (const bot of AI_BOTS) {
-                expect(body).toContain(`User-agent: ${bot}`);
+            for (const bot of [...CITATION_BOTS, ...BLOCKED_BOTS]) {
+                expect(body, `missing block for ${bot}`).toContain(`User-agent: ${bot}`);
             }
         });
 
-        it('each AI crawler block carries Allow: / so they may crawl public pages', async () => {
-            const { getSiteUrl } = await import('@/lib/env');
-            vi.mocked(getSiteUrl).mockReturnValue('https://hospeda.test');
+        it('each citation agent carries Allow: / so it may crawl public pages', async () => {
+            const body = await getPermissiveBody();
 
-            const { GET } = await import('../../src/pages/robots.txt.js');
-            const response = await GET({ request: makeRequest('hospeda.com.ar') } as never);
-            const body = await response.text();
-
-            // Each AI bot block must be immediately followed by an Allow: / line.
-            for (const bot of AI_BOTS) {
+            for (const bot of CITATION_BOTS) {
                 const block = body.slice(body.indexOf(`User-agent: ${bot}`));
                 const firstLines = block.split('\n').slice(0, 2).join('\n');
-                expect(firstLines).toContain('Allow: /');
+                expect(firstLines, `${bot} is not allowed`).toContain('Allow: /');
             }
         });
 
-        it('each AI crawler block repeats the same Disallow rules as the * block (no privileged paths leak)', async () => {
-            const { getSiteUrl } = await import('@/lib/env');
-            vi.mocked(getSiteUrl).mockReturnValue('https://hospeda.test');
+        it('each blocked agent carries a bare Disallow: / and nothing else', async () => {
+            const body = await getPermissiveBody();
+            const blocks = body.split('\n\n');
 
-            const { GET } = await import('../../src/pages/robots.txt.js');
-            const response = await GET({ request: makeRequest('hospeda.com.ar') } as never);
-            const body = await response.text();
+            for (const bot of BLOCKED_BOTS) {
+                const block = blocks.find((b) => b.includes(`User-agent: ${bot}`));
+                expect(block, `block for ${bot}`).toBeDefined();
+                // A bare `Disallow: /` already covers everything. An `Allow: /`
+                // here would defeat the block outright.
+                expect(block).toBe(`User-agent: ${bot}\nDisallow: /`);
+            }
+        });
+
+        it('keeps Applebot itself ALLOWED (D-1: real Siri/Spotlight visibility)', async () => {
+            const body = await getPermissiveBody();
+            const blocks = body.split('\n\n');
+
+            // `Applebot-Extended` (the training opt-out token) IS blocked, but
+            // the fetching crawler must not be caught by a prefix mistake.
+            const applebotBlock = blocks.find((b) => b.startsWith('User-agent: Applebot\n'));
+            expect(applebotBlock, 'Applebot must have no block of its own').toBeUndefined();
+        });
+
+        it('each citation-agent block repeats the same Disallow rules as the * block (no privileged paths leak)', async () => {
+            const body = await getPermissiveBody();
 
             // Split into per-agent blocks (blank line delimited) and verify each
-            // AI-bot block contains the privileged-path disallows + every
+            // citation block contains the privileged-path disallows + every
             // SITEMAP_EXCLUDED_PATHS entry. A named block does NOT inherit the
             // `*` rules in the robots.txt spec, so they must be repeated.
             const blocks = body.split('\n\n');
@@ -383,7 +406,7 @@ describe('robots.txt — GET handler', () => {
                 ...SITEMAP_EXCLUDED_PATHS.map((p) => `Disallow: ${p}`)
             ];
 
-            for (const bot of AI_BOTS) {
+            for (const bot of CITATION_BOTS) {
                 const block = blocks.find((b) => b.includes(`User-agent: ${bot}`));
                 expect(block, `block for ${bot}`).toBeDefined();
                 for (const line of requiredDisallows) {
@@ -409,14 +432,20 @@ describe('robots.txt — GET handler', () => {
             }
         });
 
-        it('repeats the facet Disallow rules in every named AI-crawler block', async () => {
+        it('repeats the facet Disallow rules in every named allow block', async () => {
             // A named `User-agent` block does NOT inherit the `*` rules, so a
-            // facet rule present only in `*` would leave every AI crawler — the
-            // measured source of the storm — free to walk the tree.
+            // facet rule present only in `*` would leave every allowed agent free
+            // to walk the combinatorial tree. (Blocked agents need no facet rule
+            // — their bare `Disallow: /` already covers it.)
             const body = await getPermissiveBody();
             const blocks = body.split('\n\n');
 
-            for (const bot of ['GPTBot', 'ClaudeBot', 'PerplexityBot', 'CCBot']) {
+            for (const bot of [
+                'OAI-SearchBot',
+                'ChatGPT-User',
+                'Claude-SearchBot',
+                'PerplexityBot'
+            ]) {
                 const block = blocks.find((b) => b.includes(`User-agent: ${bot}`));
                 expect(block, `block for ${bot}`).toBeDefined();
                 expect(block, `${bot} missing facet rules`).toContain('Disallow: /*?*categories=');
