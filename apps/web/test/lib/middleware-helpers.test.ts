@@ -679,6 +679,23 @@ describe('isSessionOptionalRoute', () => {
         expect(isSessionOptionalRoute({ path: '/es/publicar-otra-cosa/' })).toBe(false);
     });
 
+    // Same regression, one form later: the four alliance lead pages
+    // (/sumate/partner|proveedor|sponsor, /colaborar/editores) mount
+    // `AllianceLead`, which pre-fills the signed-in visitor's name and email
+    // from an `Astro.locals.user` prop. Neither segment was listed, so the
+    // frontmatter had no user to hand down and the prefill never happened.
+    it('returns true for the alliance lead pages', () => {
+        expect(isSessionOptionalRoute({ path: '/es/sumate/partner/' })).toBe(true);
+        expect(isSessionOptionalRoute({ path: '/es/sumate/proveedor/' })).toBe(true);
+        expect(isSessionOptionalRoute({ path: '/es/sumate/sponsor/' })).toBe(true);
+        expect(isSessionOptionalRoute({ path: '/es/colaborar/editores/' })).toBe(true);
+    });
+
+    it('returns true for the alliance lead pages across locales', () => {
+        expect(isSessionOptionalRoute({ path: '/en/sumate/partner/' })).toBe(true);
+        expect(isSessionOptionalRoute({ path: '/pt/colaborar/editores/' })).toBe(true);
+    });
+
     it('returns true for the pre-existing session-optional segments', () => {
         expect(isSessionOptionalRoute({ path: '/es/alojamientos/' })).toBe(true);
         expect(isSessionOptionalRoute({ path: '/es/gastronomia/' })).toBe(true);
@@ -708,6 +725,19 @@ describe('isProfileCompletionRequiredSessionOptionalRoute', () => {
         ).toBe(false);
         expect(
             isProfileCompletionRequiredSessionOptionalRoute({ path: '/es/publicar-experiencia/' })
+        ).toBe(false);
+    });
+
+    // Same call for the alliance lead pages, for the same reason: they are
+    // top-of-funnel capture forms that work fully anonymously, so a signed-in
+    // visitor with an incomplete profile must not be bounced away from a form a
+    // logged-out visitor can just submit.
+    it('returns false for the alliance lead pages', () => {
+        expect(
+            isProfileCompletionRequiredSessionOptionalRoute({ path: '/es/sumate/partner/' })
+        ).toBe(false);
+        expect(
+            isProfileCompletionRequiredSessionOptionalRoute({ path: '/es/colaborar/editores/' })
         ).toBe(false);
     });
 

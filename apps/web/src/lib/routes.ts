@@ -56,7 +56,24 @@ export const SESSION_OPTIONAL_SEGMENTS = [
     // (HOS-128), it MUST bypass on the auth cookie, or one visitor's prefilled
     // form gets served to the next.
     'publicar-restaurante',
-    'publicar-experiencia'
+    'publicar-experiencia',
+    // Alliance lead forms — "Sumate como partner/proveedor/sponsor" and
+    // "Colaborá como editor". All four pages mount the AllianceLead island,
+    // which pre-fills the visitor's name and email exactly like CommerceLead
+    // above, and needs the frontmatter to hand the user down for the same
+    // reason: an island cannot read `Astro.locals`.
+    //
+    // `colaborar` covers three pages (`editores`, `fotos`, `reportar`) because
+    // the match is on the segment, not the full path. Only `editores` reads the
+    // user today; the other two just resolve a session they ignore.
+    //
+    // Same cache consequence as the commerce pair: these pages now render
+    // user-dependent HTML and neither sets `Cache-Control`, so Cloudflare serves
+    // them dynamic today. A path-based Cache Rule over `/sumate/*` or
+    // `/colaborar/*` (HOS-128) MUST bypass on the auth cookie, or one visitor's
+    // prefilled form gets served to the next.
+    'sumate',
+    'colaborar'
 ] as const;
 
 /**

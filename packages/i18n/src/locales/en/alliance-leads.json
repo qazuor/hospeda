@@ -16,6 +16,7 @@
             "experience": "Previous experience (optional)"
         },
         "messageIntro": "Message:",
+        "prefillNotice": "We filled in your name and email from your account. Feel free to edit them if the contact for this request is someone else — that is the address we will reply to.",
         "submit": "Submit request",
         "submitting": "Submitting...",
         "success": "Thank you! We received your request and will be in touch shortly.",
@@ -26,6 +27,9 @@
             "email": "Please enter a valid email address.",
             "url": "Please enter a valid URL (starting with http:// or https://)."
         }
+    },
+    "breadcrumb": {
+        "joinUs": "Join us"
     },
     "partner": {
         "title": "Become a Hospeda partner",

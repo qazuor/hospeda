@@ -16,6 +16,17 @@
  * `CommerceLead.client.tsx`. Rate-limit (429) and generic API errors surface
  * friendly i18n messages.
  *
+ * Signed-in visitors: the page frontmatter passes `currentUser` (read from
+ * `Astro.locals.user`) and the contact fields are seeded from it, exactly as
+ * `CommerceLead` does. They stay EDITABLE on purpose — an applicant's business
+ * contact may legitimately differ from the address they signed in with, and the
+ * lead is a reply-to, not an identity claim. The form must keep working
+ * unchanged for anonymous visitors, which is its primary case.
+ *
+ * NOTE: the submitted email does NOT link the lead to an existing account.
+ * Approval is a manual admin decision (HOS-277 NG-1) with no automatic role or
+ * entity provisioning — do not write copy here that promises either.
+ *
  * Hydration: caller MUST use `client:load` (the `kind` prop is fixed per
  * landing page, so there is no reason to defer hydration).
  */
@@ -30,10 +41,15 @@ import {
     serializeAllianceLeadMessage,
     validateAllianceLeadSpecificFields
 } from '@/lib/forms/alliance-lead-message';
+import { buildDescribedBy } from '@/lib/forms/aria-describedby';
 import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
+import type { SessionPrefillUser } from '@/lib/forms/session-prefill';
+import { useScrollIntoViewWhen } from '@/lib/forms/use-scroll-into-view-when';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './AllianceLead.module.css';
+import type { GenericFields } from './alliance-lead-fields';
+import { buildInitialGenericFields, hasSessionPrefill } from './alliance-lead-fields';
 
 // API base URL — must be absolute because the web app (host A) and the API
 // (host B) live on different origins both in dev (4321 vs 3001) and prod.
@@ -47,23 +63,14 @@ export interface AllianceLeadProps {
     readonly locale: SupportedLocale;
     /** Which "aliados" program this form submits for. Fixed per landing page. */
     readonly kind: AllianceLeadKind;
-}
-
-interface GenericFields {
-    contactName: string;
-    email: string;
-    phone: string;
-    freeText: string;
+    /**
+     * The signed-in visitor, when there is one. Seeds `contactName` and `email`
+     * so a registered user does not retype what we already know.
+     */
+    readonly currentUser?: SessionPrefillUser | null;
 }
 
 type FieldErrors = Record<string, string>;
-
-const INITIAL_GENERIC_FIELDS: GenericFields = {
-    contactName: '',
-    email: '',
-    phone: '',
-    freeText: ''
-};
 
 /** Maps each kind to the i18n namespace segment carrying its landing copy. */
 const KIND_NAMESPACE: Record<AllianceLeadKind, string> = {
@@ -86,20 +93,31 @@ const KIND_NAMESPACE: Record<AllianceLeadKind, string> = {
  *
  * @param props - Component props (see {@link AllianceLeadProps})
  */
-export function AllianceLead({ locale, kind }: AllianceLeadProps) {
+export function AllianceLead({ locale, kind, currentUser = null }: AllianceLeadProps) {
     const { t } = createTranslations(locale);
 
     const namespaceKey = KIND_NAMESPACE[kind];
     const formTitleKey = `alliance-leads.${namespaceKey}.form.heading`;
     const specificFields = ALLIANCE_LEAD_SPECIFIC_FIELDS[kind];
 
-    const [fields, setFields] = useState<GenericFields>(INITIAL_GENERIC_FIELDS);
+    const [fields, setFields] = useState<GenericFields>(() =>
+        buildInitialGenericFields({ currentUser })
+    );
     const [specificValues, setSpecificValues] = useState<AllianceLeadSpecificValues>({});
     const [hp, setHp] = useState('');
     const [errors, setErrors] = useState<FieldErrors>({});
     const [formError, setFormError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+
+    // The confirmation replaces a form tall enough to have scrolled the visitor
+    // well past it, so bring it back into view instead of leaving them looking
+    // at the footer.
+    const successRef = useScrollIntoViewWhen<HTMLDivElement>({ active: isSuccess });
+
+    // A session can carry an empty name, so "signed in" is not the same as
+    // "something was pre-filled" — the notice must only claim what happened.
+    const showsPrefillNotice = hasSessionPrefill({ currentUser });
 
     function handleChange(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void {
         const { name, value } = e.currentTarget;
@@ -203,9 +221,13 @@ export function AllianceLead({ locale, kind }: AllianceLeadProps) {
     if (isSuccess) {
         return (
             <div
+                ref={successRef}
                 className={styles.success}
                 role="alert"
                 aria-live="assertive"
+                // Focusable so `useScrollIntoViewWhen` can land focus here: the
+                // submit button that held it is gone once the form is replaced.
+                tabIndex={-1}
             >
                 <span
                     className={styles.successIcon}
@@ -250,6 +272,21 @@ export function AllianceLead({ locale, kind }: AllianceLeadProps) {
                 />
             </div>
 
+            {/* Signed-in prefill notice — the contact fields carry account data
+                but stay editable, so say so explicitly. Described-by the two
+                seeded inputs, which is where the explanation applies. */}
+            {showsPrefillNotice && (
+                <p
+                    id="al-prefill-notice"
+                    className={styles.prefillNotice}
+                >
+                    {t(
+                        'alliance-leads.form.prefillNotice',
+                        'Completamos tu nombre y tu correo con los datos de tu cuenta. Podés editarlos si el contacto para esta solicitud es otro: a ese correo te vamos a responder.'
+                    )}
+                </p>
+            )}
+
             {/* Contact name */}
             <div className={styles.field}>
                 <label
@@ -272,7 +309,12 @@ export function AllianceLead({ locale, kind }: AllianceLeadProps) {
                     onChange={handleChange}
                     className={`${styles.input}${errors.contactName ? ` ${styles.inputError}` : ''}`}
                     autoComplete="name"
-                    aria-describedby={errors.contactName ? 'al-contactName-error' : undefined}
+                    aria-describedby={buildDescribedBy({
+                        ids: [
+                            showsPrefillNotice ? 'al-prefill-notice' : null,
+                            errors.contactName ? 'al-contactName-error' : null
+                        ]
+                    })}
                     aria-invalid={!!errors.contactName}
                     required
                 />
@@ -309,7 +351,12 @@ export function AllianceLead({ locale, kind }: AllianceLeadProps) {
                     onChange={handleChange}
                     className={`${styles.input}${errors.email ? ` ${styles.inputError}` : ''}`}
                     autoComplete="email"
-                    aria-describedby={errors.email ? 'al-email-error' : undefined}
+                    aria-describedby={buildDescribedBy({
+                        ids: [
+                            showsPrefillNotice ? 'al-prefill-notice' : null,
+                            errors.email ? 'al-email-error' : null
+                        ]
+                    })}
                     aria-invalid={!!errors.email}
                     required
                 />

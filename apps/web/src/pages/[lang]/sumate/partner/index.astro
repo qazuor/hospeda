@@ -39,6 +39,19 @@ const benefits = [
 ].filter((item) => item.length > 0);
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+// The page stays public — an anonymous visitor is the primary case. When there
+// IS a session, hand the visitor down so the island can pre-fill the contact
+// fields; islands cannot read `Astro.locals` themselves. Only populated because
+// `sumate` is listed in `SESSION_OPTIONAL_SEGMENTS` (see `@/lib/routes`). Only
+// the two fields the form seeds: island props are serialized into the rendered
+// HTML, so the user id has no business being here.
+const currentUser = Astro.locals.user
+    ? {
+          name: Astro.locals.user.name ?? null,
+          email: Astro.locals.user.email ?? null
+      }
+    : null;
 ---
 
 <BaseLayout locale={locale} title={title} description={subtitle}>
@@ -51,7 +64,17 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         noindex={false}
     />
 
-    <Breadcrumbs locale={locale} items={[{ label: title }]} />
+    {/* `Breadcrumbs` drops the last item (it is this page's own <h1>) and
+        renders nothing when only "Inicio" would remain — so the parent level
+        has to be passed for the trail to exist at all. It carries no `path`:
+        there is no /sumate/ index page, so this level is context, not a link.
+        The wrapper supplies the container the component does not bring. */}
+    <div class="sumate__breadcrumbs">
+        <Breadcrumbs
+            locale={locale}
+            items={[{ label: t('alliance-leads.breadcrumb.joinUs', 'Sumate') }, { label: title }]}
+        />
+    </div>
 
     <section class="sumate__hero section">
         <div class="sumate__container section__container">
@@ -77,14 +100,24 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
     <section class="sumate__form section section--warm">
         <div class="sumate__form-container section__container">
-            <AllianceLead client:load locale={locale} kind="partner" />
+            <AllianceLead client:load locale={locale} kind="partner" currentUser={currentUser} />
         </div>
     </section>
 </BaseLayout>
 
 <style>
+    .sumate__breadcrumbs {
+        max-width: var(--container-max, 1350px);
+        margin-inline: auto;
+        padding-inline: var(--space-5, 1.25rem);
+        padding-block: var(--space-4, 1rem) 0;
+    }
     .sumate__hero {
-        padding-block: var(--space-section, 120px);
+        /* Tighter than the default --space-section: this is a lead form
+           landing, and 120px top+bottom pushed the form itself below the fold
+           on a 1366x800 screen — the visitor saw a wall of copy and no form.
+           Scales 48px..72px with viewport. */
+        padding-block: var(--space-6, 1.5rem) clamp(3rem, 6vw, 4.5rem);
         background-color: var(--core-background);
     }
     .sumate__container {
@@ -138,7 +171,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         margin-top: 0.2em;
     }
     .sumate__form {
-        padding-block: var(--space-section, 120px);
+        padding-block: clamp(3rem, 6vw, 4.5rem);
     }
     .sumate__form-container {
         max-width: 720px;
