@@ -16,6 +16,7 @@
             "experience": "Experiencia previa (opcional)"
         },
         "messageIntro": "Mensaje:",
+        "prefillNotice": "Completamos tu nombre y tu correo con los datos de tu cuenta. Podés editarlos si el contacto para esta solicitud es otro: a ese correo te vamos a responder.",
         "submit": "Enviar solicitud",
         "submitting": "Enviando...",
         "success": "¡Gracias! Recibimos tu solicitud y nos contactaremos a la brevedad.",
@@ -26,6 +27,9 @@
             "email": "Ingresá un correo electrónico válido.",
             "url": "Ingresá una URL válida (con http:// o https://)."
         }
+    },
+    "breadcrumb": {
+        "joinUs": "Sumate"
     },
     "partner": {
         "title": "Convertite en partner de Hospeda",

@@ -16,6 +16,7 @@
             "experience": "Experiência anterior (opcional)"
         },
         "messageIntro": "Mensagem:",
+        "prefillNotice": "Preenchemos seu nome e seu e-mail com os dados da sua conta. Você pode editá-los se o contato para esta solicitação for outro: é para esse e-mail que vamos responder.",
         "submit": "Enviar solicitação",
         "submitting": "Enviando...",
         "success": "Obrigado! Recebemos sua solicitação e entraremos em contato em breve.",
@@ -26,6 +27,9 @@
             "email": "Digite um e-mail válido.",
             "url": "Digite uma URL válida (começando com http:// ou https://)."
         }
+    },
+    "breadcrumb": {
+        "joinUs": "Cadastre-se"
     },
     "partner": {
         "title": "Torne-se parceiro da Hospeda",

@@ -94,6 +94,20 @@
     line-height: 1.5;
 }
 
+/* ─── Signed-in prefill notice ──────────────────────────────────────────────── */
+
+.prefillNotice {
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    background-color: var(--brand-primary-a10);
+    border: 1px solid var(--brand-primary-a20);
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--core-foreground);
+    line-height: 1.5;
+    margin: 0;
+}
+
 /* ─── Honeypot ──────────────────────────────────────────────────────────────── */
 
 .honeypot {
@@ -183,6 +197,18 @@
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
     border: 1px solid var(--brand-accent-a20);
+    /* Clears the sticky navbar when `useScrollIntoViewWhen` reveals this. */
+    scroll-margin-top: calc(var(--navbar-height, 80px) + 24px);
+}
+
+/*
+ * The panel is focused programmatically (never reachable by Tab), so the ring
+ * would only ever appear as an unexplained outline around a confirmation the
+ * visitor did not navigate to. Keyboard indication is unaffected: nothing
+ * tab-focuses this element.
+ */
+.success:focus {
+    outline: none;
 }
 
 .successIcon {
