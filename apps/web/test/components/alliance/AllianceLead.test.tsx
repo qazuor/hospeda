@@ -424,4 +424,153 @@ describe('AllianceLead', () => {
             });
         });
     });
+
+    // ── Signed-in prefill ────────────────────────────────────────────────────
+
+    // Regression: the four landing pages did not pre-fill a signed-in visitor's
+    // name and email. The island had no `currentUser` prop, and the pages could
+    // not have supplied one anyway — `sumate`/`colaborar` were missing from
+    // `SESSION_OPTIONAL_SEGMENTS`, so their frontmatter had no `Astro.locals.user`.
+    describe('Signed-in prefill', () => {
+        const signedInUser = { name: 'Ana Gómez', email: 'ana@example.com' } as const;
+
+        function renderSignedIn(currentUser: { name: string | null; email: string | null }) {
+            return render(
+                <AllianceLead
+                    locale="es"
+                    kind="partner"
+                    currentUser={currentUser}
+                />
+            );
+        }
+
+        it('seeds the contact fields from the session', () => {
+            renderSignedIn(signedInUser);
+
+            expect(screen.getByLabelText(/tu nombre/i)).toHaveValue('Ana Gómez');
+            expect(screen.getByLabelText(/correo electrónico/i)).toHaveValue('ana@example.com');
+        });
+
+        it('leaves the seeded fields editable', () => {
+            renderSignedIn(signedInUser);
+
+            const email = screen.getByLabelText(/correo electrónico/i);
+            fireEvent.change(email, { target: { value: 'otro@example.com' } });
+
+            expect(email).toHaveValue('otro@example.com');
+            expect(email).not.toHaveAttribute('readonly');
+        });
+
+        it('starts empty and silent for an anonymous visitor', () => {
+            renderForm('partner');
+
+            expect(screen.getByLabelText(/tu nombre/i)).toHaveValue('');
+            expect(screen.getByLabelText(/correo electrónico/i)).toHaveValue('');
+            expect(document.getElementById('al-prefill-notice')).toBeNull();
+        });
+
+        it('explains the prefill when the session seeded something', () => {
+            renderSignedIn(signedInUser);
+
+            expect(document.getElementById('al-prefill-notice')).not.toBeNull();
+        });
+
+        it('stays silent when the session had nothing to seed', () => {
+            // Better Auth stores '' rather than null for an account that never
+            // set a name; with no email either, nothing was pre-filled and the
+            // notice must not claim otherwise.
+            renderSignedIn({ name: '', email: null });
+
+            expect(document.getElementById('al-prefill-notice')).toBeNull();
+        });
+
+        it('points the seeded fields at the notice through aria-describedby', () => {
+            renderSignedIn(signedInUser);
+
+            expect(screen.getByLabelText(/tu nombre/i)).toHaveAttribute(
+                'aria-describedby',
+                'al-prefill-notice'
+            );
+            expect(screen.getByLabelText(/correo electrónico/i)).toHaveAttribute(
+                'aria-describedby',
+                'al-prefill-notice'
+            );
+        });
+
+        it('keeps the error id alongside the notice when a seeded field is invalid', async () => {
+            renderSignedIn(signedInUser);
+
+            fireEvent.change(screen.getByLabelText(/correo electrónico/i), {
+                target: { value: 'not-an-email' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                expect(screen.getByLabelText(/correo electrónico/i)).toHaveAttribute(
+                    'aria-describedby',
+                    'al-prefill-notice al-email-error'
+                );
+            });
+        });
+    });
+
+    // ── Confirmation reveal ──────────────────────────────────────────────────
+
+    // Regression: submitting left the visitor scrolled where the (tall) form
+    // used to be — staring at the footer — because the short confirmation that
+    // replaces it renders above the current scroll offset.
+    describe('Confirmation reveal', () => {
+        // jsdom implements neither `scrollIntoView` nor `matchMedia`; the hook
+        // feature-detects both, so `scrollIntoView` has to be installed here to
+        // be observable at all.
+        let scrollIntoView: ReturnType<typeof vi.fn>;
+
+        beforeEach(() => {
+            scrollIntoView = vi.fn();
+            Element.prototype.scrollIntoView = scrollIntoView;
+        });
+
+        async function submitPartnerForm() {
+            renderForm('partner');
+            await fillGenericRequiredFields();
+            fireEvent.change(screen.getByLabelText(/^businessName/i), {
+                target: { value: 'Acme Turismo' }
+            });
+            fireEvent.change(screen.getByLabelText(/^partnershipType/i), {
+                target: { value: 'Agencia' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+        }
+
+        it('scrolls the confirmation into view and focuses it on success', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: true,
+                status: 201,
+                json: async () => ({})
+            } as Response);
+
+            await submitPartnerForm();
+
+            const confirmation = await screen.findByRole('alert');
+
+            expect(scrollIntoView).toHaveBeenCalledTimes(1);
+            expect(scrollIntoView.mock.calls[0]?.[0]).toMatchObject({ block: 'start' });
+            expect(document.activeElement).toBe(confirmation);
+        });
+
+        it('does not scroll while the form is still on screen', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: false,
+                status: 500,
+                json: async () => ({ error: { message: 'Server error' } })
+            } as Response);
+
+            await submitPartnerForm();
+
+            await waitFor(() => {
+                expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
+            });
+            expect(scrollIntoView).not.toHaveBeenCalled();
+        });
+    });
 });
