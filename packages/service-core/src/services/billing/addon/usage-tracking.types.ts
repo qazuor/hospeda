@@ -18,6 +18,25 @@
 export type UsageThreshold = 'ok' | 'warning' | 'critical' | 'exceeded';
 
 /**
+ * Photo consumption of ONE accommodation.
+ *
+ * `MAX_PHOTOS_PER_ACCOMMODATION` caps each accommodation separately, so there
+ * is no single account-wide figure to report — the honest answer is one number
+ * per accommodation, which is also what tells an owner WHICH listing is close
+ * to rejecting its next upload.
+ */
+export interface AccommodationPhotoUsage {
+    /** The accommodation's id. */
+    readonly accommodationId: string;
+    /** Display name, falling back to the slug and then the id. */
+    readonly name: string;
+    /** Slug, when the accommodation has one. */
+    readonly slug: string | null;
+    /** Visible photos currently attached to this accommodation. */
+    readonly currentUsage: number;
+}
+
+/**
  * Usage information for a single limit
  */
 export interface LimitUsage {
@@ -51,6 +70,28 @@ export interface LimitUsage {
      * `false` means: the number is not a measurement, do not show it.
      */
     readonly isMeasured: boolean;
+
+    /**
+     * How this limit's consumption behaves, which decides how a consumer
+     * should present it. See `UsageKind` in the API's usage-tracking service
+     * for the full contract.
+     *
+     * - `'stock'` — a quantity the account holds now; counted, no reset.
+     * - `'monthly'` — calls consumed this UTC calendar month; counted, resets.
+     * - `'per_accommodation'` — capped per accommodation; the real figures are
+     *   in {@link perAccommodation} and `currentUsage` stays 0.
+     * - `'per_operation'` — bounds a single request; nothing is stored.
+     * - `'unbuilt'` — granted by the plan, but the feature does not exist yet.
+     *
+     * Optional so a consumer compiled against an older API keeps working.
+     */
+    readonly usageKind?: string;
+
+    /**
+     * Photo consumption per accommodation, sorted fullest-first. Present only
+     * when `usageKind` is `'per_accommodation'`.
+     */
+    readonly perAccommodation?: readonly AccommodationPhotoUsage[];
 }
 
 /**

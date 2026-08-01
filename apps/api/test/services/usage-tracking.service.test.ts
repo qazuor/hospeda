@@ -776,12 +776,12 @@ describe('UsageTrackingService', () => {
         });
     });
 
-    describe('isMeasured flag', () => {
+    describe('isMeasured flag and usage kinds', () => {
         it('should mark only the limits that have a real counter', async () => {
             // Act
             const result = await service.getUsageSummary(mockCustomerId);
 
-            // Assert
+            // Assert — the six account-wide stocks plus the seven AI meters.
             expect(result.success).toBe(true);
             const measured = result
                 .data!.limits.filter((l) => l.isMeasured)
@@ -792,14 +792,25 @@ describe('UsageTrackingService', () => {
                 [
                     LimitKey.MAX_ACCOMMODATIONS,
                     LimitKey.MAX_ACTIVE_PROMOTIONS,
-                    LimitKey.MAX_FAVORITES
+                    LimitKey.MAX_FAVORITES,
+                    LimitKey.MAX_ACTIVE_ALERTS,
+                    LimitKey.MAX_COLLECTIONS,
+                    LimitKey.MAX_SEARCH_HISTORY_ENTRIES,
+                    LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
+                    LimitKey.MAX_AI_CHAT_PER_MONTH,
+                    LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH,
+                    LimitKey.MAX_AI_SEARCH_PER_MONTH,
+                    LimitKey.MAX_AI_SUPPORT_PER_MONTH,
+                    LimitKey.MAX_AI_TRANSLATE_PER_MONTH,
+                    LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH
                 ].sort()
             );
         });
 
-        it('should mark a placeholder-zero limit as unmeasured', async () => {
-            // Arrange — MAX_PHOTOS_PER_ACCOMMODATION is a per-request check,
-            // not an account-wide count, so its 0 is not a measurement.
+        it('should mark a per-accommodation limit as unmeasured account-wide', async () => {
+            // Arrange — MAX_PHOTOS_PER_ACCOMMODATION caps each accommodation
+            // separately, so its account-level 0 is not a measurement; the real
+            // figures travel in `perAccommodation`.
             const result = await service.getUsageSummary(mockCustomerId);
 
             // Assert
@@ -807,9 +818,50 @@ describe('UsageTrackingService', () => {
                 (l) => l.limitKey === LimitKey.MAX_PHOTOS_PER_ACCOMMODATION
             );
             expect(photos?.isMeasured).toBe(false);
+            expect(photos?.usageKind).toBe('per_accommodation');
         });
 
-        it('should expose isMeasured on getUsageForLimit too', async () => {
+        it('should classify the compare cap as a per-operation limit', async () => {
+            // Arrange — the comparison endpoint bounds an `ids[]` array; there
+            // is no stored quantity to report.
+            const result = await service.getUsageSummary(mockCustomerId);
+
+            // Assert
+            const compare = result.data!.limits.find(
+                (l) => l.limitKey === LimitKey.MAX_COMPARE_ITEMS
+            );
+            expect(compare?.usageKind).toBe('per_operation');
+            expect(compare?.isMeasured).toBe(false);
+        });
+
+        it('should classify limits with no feature behind them as unbuilt', async () => {
+            // Arrange — no properties/staff table exists.
+            const result = await service.getUsageSummary(mockCustomerId);
+
+            // Assert
+            const properties = result.data!.limits.find(
+                (l) => l.limitKey === LimitKey.MAX_PROPERTIES
+            );
+            const staff = result.data!.limits.find(
+                (l) => l.limitKey === LimitKey.MAX_STAFF_ACCOUNTS
+            );
+            expect(properties?.usageKind).toBe('unbuilt');
+            expect(staff?.usageKind).toBe('unbuilt');
+        });
+
+        it('should classify AI meters as monthly', async () => {
+            // Act
+            const result = await service.getUsageSummary(mockCustomerId);
+
+            // Assert
+            const aiSearch = result.data!.limits.find(
+                (l) => l.limitKey === LimitKey.MAX_AI_SEARCH_PER_MONTH
+            );
+            expect(aiSearch?.usageKind).toBe('monthly');
+            expect(aiSearch?.isMeasured).toBe(true);
+        });
+
+        it('should expose isMeasured and usageKind on getUsageForLimit too', async () => {
             // Act
             const measuredResult = await service.getUsageForLimit(
                 mockCustomerId,
@@ -822,7 +874,9 @@ describe('UsageTrackingService', () => {
 
             // Assert
             expect(measuredResult.data?.isMeasured).toBe(true);
+            expect(measuredResult.data?.usageKind).toBe('stock');
             expect(unmeasuredResult.data?.isMeasured).toBe(false);
+            expect(unmeasuredResult.data?.usageKind).toBe('unbuilt');
         });
     });
 

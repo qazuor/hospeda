@@ -15,22 +15,27 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { getMonthlyCallCount } from '@repo/ai-core';
 import { isLimitKey, LIMIT_METADATA, LimitKey } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
-import { getDb } from '@repo/db';
+import { accommodationMediaModel, accommodationModel, getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
 import { LifecycleStatusEnum, ServiceErrorCode } from '@repo/schemas';
+import type { AccommodationPhotoUsage } from '@repo/service-core';
 import {
     AccommodationService,
+    AlertSubscriptionService,
     calculateThreshold,
     determineOverallThreshold,
     isAccommodationSubscription,
     isCommerceSubscription,
     type LimitUsage,
     OwnerPromotionService,
+    SearchHistoryService,
     type ServiceResult,
     type UsageSummary,
     type UsageThreshold,
+    UserBookmarkCollectionService,
     UserBookmarkService
 } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
@@ -43,26 +48,124 @@ import { apiLogger } from '../utils/logger';
 export type { LimitUsage, ServiceResult, UsageSummary, UsageThreshold };
 
 /**
- * The limit keys `getCurrentUsage` actually counts.
+ * How many of an owner's accommodations the photo breakdown covers.
  *
- * Every other `LimitKey` returns a hardcoded `0` — `MAX_PHOTOS_PER_ACCOMMODATION`
- * is a per-request middleware check rather than an account-wide total,
- * `MAX_PROPERTIES` / `MAX_STAFF_ACCOUNTS` are blocked on tables that do not
- * exist yet, and everything else (the AI meters, search history, collections,
- * compare items) falls through the `switch`'s `default`. AI consumption IS
- * recorded in `ai_usage`, but only as admin-side rollups; nothing maps a
- * `LimitKey` to its per-user monthly total yet.
- *
- * This set MUST be kept in step with the `switch` in `getCurrentUsage`: adding
- * a real counter without adding its key here leaves a working measurement
- * hidden, and adding a key here without a counter re-introduces the fake
- * zero this set exists to prevent.
+ * `BaseModelImpl` caps a page at 200 rows, and no owner plan (or stack of
+ * add-ons) comes close to that many accommodations — an owner beyond it gets
+ * the first page, which is still every listing that matters for "which one is
+ * nearly full".
  */
-const MEASURED_LIMIT_KEYS: ReadonlySet<string> = new Set<string>([
-    LimitKey.MAX_ACCOMMODATIONS,
-    LimitKey.MAX_ACTIVE_PROMOTIONS,
-    LimitKey.MAX_FAVORITES
-]);
+const ACCOMMODATION_BREAKDOWN_PAGE_SIZE = 200;
+
+/**
+ * Maps a `LimitKey` to the `ai_usage.feature` its consumption is recorded
+ * under, so the monthly AI meters can be counted with the very same helper the
+ * quota middleware enforces with (`getMonthlyCallCount`).
+ *
+ * Mirrors `AI_LIMIT_BY_FEATURE` (`middlewares/ai-quota.ts`) inverted, plus the
+ * consumer-side chat limit that has no entry there.
+ *
+ * **Known limitation carried from the enforcement side** (SPEC-283, documented
+ * in `routes/ai/protected/chat.ts`): owner-side and consumer-side chat both
+ * meter under `feature='chat'`, so both limits report the same number for a
+ * user who is on both sides of a conversation. Reporting inherits the quirk
+ * rather than inventing a different one — the figure shown is exactly the
+ * figure enforced.
+ */
+const AI_FEATURE_BY_LIMIT_KEY: Readonly<Record<string, string | undefined>> = {
+    [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH]: 'text_improve',
+    [LimitKey.MAX_AI_CHAT_PER_MONTH]: 'chat',
+    [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH]: 'chat',
+    [LimitKey.MAX_AI_SEARCH_PER_MONTH]: 'search',
+    [LimitKey.MAX_AI_SUPPORT_PER_MONTH]: 'support',
+    [LimitKey.MAX_AI_TRANSLATE_PER_MONTH]: 'translate',
+    [LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH]: 'accommodation_import'
+};
+
+/**
+ * How a limit's consumption behaves, which decides whether `currentUsage`
+ * means anything and how a consumer should present it.
+ *
+ * - `stock` — a quantity the account currently holds (accommodations,
+ *   collections, active alerts). Counted, cumulative, no reset.
+ * - `monthly` — calls consumed this UTC calendar month (the AI meters).
+ *   Counted, resets on the 1st.
+ * - `per_accommodation` — a cap applied to each accommodation separately
+ *   (photos). There is no single account-wide figure; `currentUsage` stays 0
+ *   and the real numbers travel in `perAccommodation`.
+ * - `per_operation` — a cap on ONE request rather than a stored quantity
+ *   (compare items: the endpoint bounds an `ids[]` array). Nothing is
+ *   persisted, so no consumption exists to report.
+ * - `unbuilt` — the plan grants it but the feature does not exist yet
+ *   (properties, staff accounts: no table, no UI). Not countable, and not
+ *   something to advertise.
+ */
+export const UsageKind = {
+    STOCK: 'stock',
+    MONTHLY: 'monthly',
+    PER_ACCOMMODATION: 'per_accommodation',
+    PER_OPERATION: 'per_operation',
+    UNBUILT: 'unbuilt'
+} as const;
+
+export type UsageKindValue = (typeof UsageKind)[keyof typeof UsageKind];
+
+/**
+ * The nature of every `LimitKey`.
+ *
+ * Exhaustive by construction: `usageKindForLimit` falls back to `MONTHLY` only
+ * for keys present in {@link AI_FEATURE_BY_LIMIT_KEY}, and the guard test
+ * cross-checks this table against the `switch` in `getCurrentUsage` so a new
+ * key cannot be added on one side alone.
+ */
+const USAGE_KIND_BY_LIMIT_KEY: Readonly<Record<string, UsageKindValue>> = {
+    [LimitKey.MAX_ACCOMMODATIONS]: UsageKind.STOCK,
+    [LimitKey.MAX_ACTIVE_PROMOTIONS]: UsageKind.STOCK,
+    [LimitKey.MAX_FAVORITES]: UsageKind.STOCK,
+    [LimitKey.MAX_ACTIVE_ALERTS]: UsageKind.STOCK,
+    [LimitKey.MAX_COLLECTIONS]: UsageKind.STOCK,
+    [LimitKey.MAX_SEARCH_HISTORY_ENTRIES]: UsageKind.STOCK,
+    [LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]: UsageKind.PER_ACCOMMODATION,
+    [LimitKey.MAX_COMPARE_ITEMS]: UsageKind.PER_OPERATION,
+    [LimitKey.MAX_PROPERTIES]: UsageKind.UNBUILT,
+    [LimitKey.MAX_STAFF_ACCOUNTS]: UsageKind.UNBUILT,
+    [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH]: UsageKind.MONTHLY,
+    [LimitKey.MAX_AI_CHAT_PER_MONTH]: UsageKind.MONTHLY,
+    [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH]: UsageKind.MONTHLY,
+    [LimitKey.MAX_AI_SEARCH_PER_MONTH]: UsageKind.MONTHLY,
+    [LimitKey.MAX_AI_SUPPORT_PER_MONTH]: UsageKind.MONTHLY,
+    [LimitKey.MAX_AI_TRANSLATE_PER_MONTH]: UsageKind.MONTHLY,
+    [LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH]: UsageKind.MONTHLY
+};
+
+/**
+ * Resolves a limit's {@link UsageKind}.
+ *
+ * Unknown keys fall back to `UNBUILT` rather than to a counted kind: a limit
+ * nobody classified has no counter either, and treating it as measured would
+ * publish a placeholder zero as fact.
+ *
+ * @param limitKey - The limit key to classify.
+ * @returns Its usage kind.
+ */
+function usageKindForLimit(limitKey: string): UsageKindValue {
+    return USAGE_KIND_BY_LIMIT_KEY[limitKey] ?? UsageKind.UNBUILT;
+}
+
+/**
+ * Whether `currentUsage` is a genuine measurement for this limit.
+ *
+ * Only `stock` and `monthly` kinds are counted account-wide. The others report
+ * a structural `0` that must never be displayed as consumption — see
+ * {@link UsageKind}.
+ *
+ * @param limitKey - The limit key to check.
+ * @returns `true` when the reported `currentUsage` is real.
+ */
+function isMeasuredLimit(limitKey: string): boolean {
+    const kind = usageKindForLimit(limitKey);
+    return kind === UsageKind.STOCK || kind === UsageKind.MONTHLY;
+}
 
 /**
  * Picks the subscription whose usage should be reported, scoped to one
@@ -202,6 +305,8 @@ export class UsageTrackingService {
                 // Calculate threshold
                 const threshold = calculateThreshold({ current: currentUsage, max: maxAllowed });
 
+                const usageKind = usageKindForLimit(limitKey);
+
                 limitUsageList.push({
                     limitKey,
                     displayName,
@@ -211,7 +316,14 @@ export class UsageTrackingService {
                     threshold,
                     planBaseLimit,
                     addonBonusLimit,
-                    isMeasured: MEASURED_LIMIT_KEYS.has(limitKey)
+                    isMeasured: isMeasuredLimit(limitKey),
+                    usageKind,
+                    // Per-accommodation caps have no single account-wide figure;
+                    // the real numbers are one per accommodation.
+                    perAccommodation:
+                        usageKind === UsageKind.PER_ACCOMMODATION
+                            ? await this.getPerAccommodationUsage(customerId)
+                            : undefined
                 });
             }
 
@@ -391,6 +503,8 @@ export class UsageTrackingService {
             // Calculate threshold
             const threshold = calculateThreshold({ current: currentUsage, max: maxAllowed });
 
+            const usageKind = usageKindForLimit(limitKey);
+
             const limitUsage: LimitUsage = {
                 limitKey,
                 displayName,
@@ -400,7 +514,12 @@ export class UsageTrackingService {
                 threshold,
                 planBaseLimit,
                 addonBonusLimit,
-                isMeasured: MEASURED_LIMIT_KEYS.has(limitKey)
+                isMeasured: isMeasuredLimit(limitKey),
+                usageKind,
+                perAccommodation:
+                    usageKind === UsageKind.PER_ACCOMMODATION
+                        ? await this.getPerAccommodationUsage(customerId)
+                        : undefined
             };
 
             apiLogger.debug(
@@ -427,6 +546,96 @@ export class UsageTrackingService {
                     message: errorMessage
                 }
             };
+        }
+    }
+
+    /**
+     * Per-request memo for the photo breakdown.
+     *
+     * `getUsageSummary` iterates every `LimitKey`, so without this the
+     * breakdown would be rebuilt for each per-accommodation limit. Scoped to
+     * the service instance, which the routes create per request — same
+     * lifetime as {@link userIdCache}.
+     */
+    private perAccommodationCache = new Map<
+        string,
+        readonly AccommodationPhotoUsage[] | undefined
+    >();
+
+    /**
+     * Builds the per-accommodation photo counts for an owner.
+     *
+     * `MAX_PHOTOS_PER_ACCOMMODATION` caps each accommodation separately, so
+     * there is no account-wide total to report — the honest answer is one
+     * figure per accommodation, which is also what the owner needs in order to
+     * know WHICH listing is close to full.
+     *
+     * Media is read with the batched `findByAccommodations` (a single grouped
+     * query) rather than one call per accommodation.
+     *
+     * @param customerId - The billing customer ID.
+     * @returns One entry per accommodation the owner holds; empty when they have none.
+     */
+    private async getPerAccommodationUsage(
+        customerId: string
+    ): Promise<readonly AccommodationPhotoUsage[] | undefined> {
+        if (this.perAccommodationCache.has(customerId)) {
+            return this.perAccommodationCache.get(customerId);
+        }
+
+        try {
+            const userId = await this.resolveUserId(customerId);
+
+            if (!userId) {
+                this.perAccommodationCache.set(customerId, []);
+                return [];
+            }
+
+            // Read the owner's accommodations straight from the model rather
+            // than through `AccommodationService.search`: the standard search
+            // schema has NO `ownerId` filter, so passing one is silently
+            // dropped and the query answers for the whole catalogue.
+            const { items } = await accommodationModel.findAll(
+                { ownerId: userId },
+                { page: 1, pageSize: ACCOMMODATION_BREAKDOWN_PAGE_SIZE }
+            );
+
+            if (items.length === 0) {
+                this.perAccommodationCache.set(customerId, []);
+                return [];
+            }
+
+            const mediaByAccommodation = await accommodationMediaModel.findByAccommodations({
+                accommodationIds: items.map((item) => item.id),
+                state: 'visible'
+            });
+
+            const breakdown: AccommodationPhotoUsage[] = items.map((item) => ({
+                accommodationId: item.id,
+                name: item.name ?? item.slug ?? item.id,
+                slug: item.slug ?? null,
+                currentUsage: mediaByAccommodation.get(item.id)?.length ?? 0
+            }));
+
+            // Fullest first — the one at risk of rejecting the next upload is
+            // the only actionable row.
+            breakdown.sort((a, b) => b.currentUsage - a.currentUsage);
+
+            this.perAccommodationCache.set(customerId, breakdown);
+            return breakdown;
+        } catch (error) {
+            apiLogger.error(
+                'Failed to build per-accommodation photo usage',
+                JSON.stringify({
+                    customerId,
+                    error: error instanceof Error ? error.message : String(error)
+                })
+            );
+            // `undefined`, NOT `[]`: an empty array is a claim ("you have no
+            // accommodations") and a failed read is not entitled to make it.
+            // The consumer shows the cap alone when the breakdown is absent.
+            this.perAccommodationCache.set(customerId, undefined);
+            return undefined;
         }
     }
 
@@ -498,8 +707,51 @@ export class UsageTrackingService {
                     return 0;
                 }
 
-                default:
+                case LimitKey.MAX_ACTIVE_ALERTS: {
+                    const alertService = new AlertSubscriptionService({ logger: apiLogger });
+                    const result = await alertService.countActive(actor);
+                    return result.data?.count || 0;
+                }
+
+                case LimitKey.MAX_COLLECTIONS: {
+                    const collectionService = new UserBookmarkCollectionService({
+                        logger: apiLogger
+                    });
+                    const result = await collectionService.countActiveCollections(actor);
+                    return result.data?.count || 0;
+                }
+
+                case LimitKey.MAX_SEARCH_HISTORY_ENTRIES: {
+                    const searchHistoryService = new SearchHistoryService({ logger: apiLogger });
+                    const result = await searchHistoryService.countForActor(actor);
+                    return result.data?.count || 0;
+                }
+
+                case LimitKey.MAX_COMPARE_ITEMS: {
+                    // Per-REQUEST cap, not a stored quantity: the comparison
+                    // endpoint takes an `ids[]` body and the limit bounds that
+                    // array. Nothing is persisted, so there is no consumption
+                    // to report — `usageKindForLimit` marks it PER_OPERATION so
+                    // consumers show the cap alone.
                     return 0;
+                }
+
+                default: {
+                    // The AI meters are the only remaining measured keys: each
+                    // maps to an `ai_usage` feature counted per calendar month
+                    // by the same helper the quota middleware enforces with.
+                    const aiFeature = AI_FEATURE_BY_LIMIT_KEY[limitKey];
+
+                    if (aiFeature) {
+                        return await getMonthlyCallCount({
+                            userId,
+                            feature: aiFeature,
+                            now: new Date()
+                        });
+                    }
+
+                    return 0;
+                }
             }
         } catch (error) {
             apiLogger.error(

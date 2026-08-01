@@ -38,11 +38,30 @@ const limitUsageSchema = z.object({
     planBaseLimit: z.number(),
     addonBonusLimit: z.number(),
     /**
-     * `false` means `currentUsage` is a placeholder zero, not a measurement —
-     * most limit keys have no counter implemented. Consumers that display
-     * usage to a user MUST skip these rows.
+     * `false` means `currentUsage` is a placeholder zero, not a measurement.
+     * Consumers that display usage to a user MUST skip these rows.
      */
-    isMeasured: z.boolean()
+    isMeasured: z.boolean(),
+    /**
+     * How the limit's consumption behaves — decides how to present it.
+     * See `UsageKind` in `services/usage-tracking.service.ts`.
+     */
+    usageKind: z.enum(['stock', 'monthly', 'per_accommodation', 'per_operation', 'unbuilt']),
+    /**
+     * Photo consumption per accommodation, fullest-first. Present only when
+     * `usageKind` is `per_accommodation` — that cap applies to each
+     * accommodation separately, so there is no account-wide figure.
+     */
+    perAccommodation: z
+        .array(
+            z.object({
+                accommodationId: z.string(),
+                name: z.string(),
+                slug: z.string().nullable(),
+                currentUsage: z.number()
+            })
+        )
+        .optional()
 });
 
 const usageSummarySchema = z.object({

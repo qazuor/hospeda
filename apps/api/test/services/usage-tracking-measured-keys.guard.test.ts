@@ -1,23 +1,28 @@
 /**
- * Guard: `MEASURED_LIMIT_KEYS` must match the counters `getCurrentUsage`
- * actually implements.
+ * Guard: the usage-kind classification must match the counters
+ * `getCurrentUsage` actually implements.
  *
- * Only a handful of `LimitKey`s have a real usage counter. Every other key
- * returns a hardcoded `0`, which is indistinguishable from a genuine zero once
- * it leaves the service. `MEASURED_LIMIT_KEYS` is what lets a consumer tell
- * the two apart, and the web subscription page filters on the `isMeasured`
- * flag derived from it.
+ * `USAGE_KIND_BY_LIMIT_KEY` decides whether a limit's `currentUsage` is a real
+ * measurement (`stock` / `monthly`) or a structural zero (`per_accommodation`,
+ * `per_operation`, `unbuilt`). The web subscription page renders only the
+ * measured ones, so that table is what stands between a user and a confidently
+ * displayed fake number.
  *
- * That set and the `switch` are two independently maintained lists, so they
- * can drift silently in both directions:
- * - implement a counter, forget the set → a working measurement stays hidden
- *   from the user forever, with nothing failing;
- * - add a key to the set with no counter → the fake `0` is displayed as fact
- *   ("0 búsquedas con IA" to someone who ran 40), which is the exact bug this
- *   mechanism exists to prevent.
+ * The table and the `switch` are two independently maintained lists, and they
+ * drift silently in both directions:
+ * - a counter implemented but classified as unmeasured → the measurement stays
+ *   hidden from the user forever, with nothing failing;
+ * - a key classified as measured with no counter → its placeholder `0` is
+ *   displayed as fact ("0 búsquedas con IA" to someone who ran 40), which is
+ *   the exact bug this mechanism exists to prevent.
  *
  * Neither direction breaks a type or a unit test, so this parses the source of
- * `getCurrentUsage` and compares the two directly.
+ * the service and compares the two directly.
+ *
+ * A counter reaches `getCurrentUsage` by one of two routes, and BOTH count as
+ * implemented: a dedicated `case` arm whose body is not a bare `return 0`, or
+ * membership in `AI_FEATURE_BY_LIMIT_KEY` (the AI meters share one `default`
+ * branch that resolves the feature and calls `getMonthlyCallCount`).
  *
  * @module test/services/usage-tracking-measured-keys.guard.test
  */
@@ -30,22 +35,37 @@ import { describe, expect, it } from 'vitest';
 const SERVICE_PATH = resolve(__dirname, '../../src/services/usage-tracking.service.ts');
 const SOURCE = readFileSync(SERVICE_PATH, 'utf8');
 
+/** Usage kinds whose `currentUsage` is a genuine account-wide measurement. */
+const MEASURED_KINDS = new Set(['UsageKind.STOCK', 'UsageKind.MONTHLY']);
+
 /**
- * Extracts the body of `getCurrentUsage`'s `switch (limitKey)` block by
- * brace-matching from the `switch` keyword, so the guard does not depend on
- * where the method sits in the file.
+ * Resolves a `LimitKey.FOO` member name to its runtime string value, failing
+ * loudly rather than silently dropping an entry the parser cannot resolve.
  *
- * @returns The switch body source, braces included
+ * @param member - Enum member name as written in the source.
+ * @returns The enum's string value.
  */
-function extractSwitchBody(): string {
-    const switchStart = SOURCE.indexOf('switch (limitKey) {');
-    if (switchStart === -1) {
-        throw new Error(
-            'Could not find `switch (limitKey) {` in usage-tracking.service.ts — this guard needs updating.'
-        );
+function resolveLimitKey(member: string): string {
+    const value = (LimitKey as unknown as Record<string, string>)[member];
+    if (!value) {
+        throw new Error(`Source references LimitKey.${member}, which does not exist.`);
+    }
+    return value;
+}
+
+/**
+ * Extracts a brace-balanced block starting at the first `{` after `marker`.
+ *
+ * @param marker - Literal text that precedes the block.
+ * @returns The block source, braces included.
+ */
+function extractBlock(marker: string): string {
+    const markerStart = SOURCE.indexOf(marker);
+    if (markerStart === -1) {
+        throw new Error(`Could not find \`${marker}\` — this guard needs updating.`);
     }
 
-    const openBrace = SOURCE.indexOf('{', switchStart);
+    const openBrace = SOURCE.indexOf('{', markerStart);
     let depth = 0;
 
     for (let i = openBrace; i < SOURCE.length; i++) {
@@ -58,121 +78,135 @@ function extractSwitchBody(): string {
         }
     }
 
-    throw new Error('Unbalanced braces while extracting the `switch (limitKey)` body.');
+    throw new Error(`Unbalanced braces while extracting the block after \`${marker}\`.`);
 }
 
 /**
- * Reads the `MEASURED_LIMIT_KEYS` declaration and resolves each
- * `LimitKey.FOO` member reference to its runtime string value.
+ * Reads `USAGE_KIND_BY_LIMIT_KEY` and returns the keys classified as measured.
  *
- * @returns The declared measured keys, as their enum string values
+ * @returns Enum string values whose kind is `stock` or `monthly`.
  */
-function parseDeclaredMeasuredKeys(): ReadonlySet<string> {
-    const match = SOURCE.match(
-        /const MEASURED_LIMIT_KEYS[^=]*=\s*new Set<string>\(\[([\s\S]*?)\]\)/
-    );
-    if (!match?.[1]) {
-        throw new Error(
-            'Could not parse the `MEASURED_LIMIT_KEYS` declaration — this guard needs updating.'
-        );
+function parseMeasuredClassification(): ReadonlySet<string> {
+    const block = extractBlock('const USAGE_KIND_BY_LIMIT_KEY');
+    const measured = new Set<string>();
+
+    for (const entry of block.matchAll(/\[LimitKey\.([A-Z0-9_]+)\]:\s*(UsageKind\.[A-Z_]+)/g)) {
+        const member = entry[1] as string;
+        const kind = entry[2] as string;
+
+        if (MEASURED_KINDS.has(kind)) {
+            measured.add(resolveLimitKey(member));
+        }
     }
 
-    const members = [...match[1].matchAll(/LimitKey\.([A-Z0-9_]+)/g)].map((m) => m[1] as string);
-
-    return new Set(
-        members.map((member) => {
-            const value = (LimitKey as unknown as Record<string, string>)[member];
-            if (!value) {
-                throw new Error(
-                    `MEASURED_LIMIT_KEYS references LimitKey.${member}, which does not exist.`
-                );
-            }
-            return value;
-        })
-    );
+    return measured;
 }
 
 /**
- * Finds the keys whose `case` arm does real work, i.e. whose body is anything
- * other than a bare `return 0;` (comments ignored).
+ * Reads `AI_FEATURE_BY_LIMIT_KEY` — every key there is counted through the
+ * `switch`'s `default` branch via `getMonthlyCallCount`.
  *
- * @param switchBody - Source of the `switch (limitKey)` block
- * @returns Enum string values of the keys that are genuinely counted
+ * @returns Enum string values that resolve to an `ai_usage` feature.
  */
-function parseImplementedCounters(switchBody: string): ReadonlySet<string> {
+function parseAiBackedKeys(): ReadonlySet<string> {
+    const block = extractBlock('const AI_FEATURE_BY_LIMIT_KEY');
+    const keys = new Set<string>();
+
+    for (const entry of block.matchAll(/\[LimitKey\.([A-Z0-9_]+)\]:\s*'[a-z_]+'/g)) {
+        keys.add(resolveLimitKey(entry[1] as string));
+    }
+
+    return keys;
+}
+
+/**
+ * Finds keys whose dedicated `case` arm does real work — i.e. whose body is
+ * anything other than a bare `return 0;` once comments are stripped.
+ *
+ * @returns Enum string values counted by an explicit `case` arm.
+ */
+function parseCaseArmCounters(): ReadonlySet<string> {
+    const switchBody = extractBlock('switch (limitKey)');
     const implemented = new Set<string>();
 
-    // Each arm looks like: `case LimitKey.FOO: { ...body... }`
-    const armPattern = /case LimitKey\.([A-Z0-9_]+):\s*\{([\s\S]*?)\n {16}\}/g;
-
-    for (const arm of switchBody.matchAll(armPattern)) {
-        const member = arm[1] as string;
-        const body = arm[2] as string;
-
-        // Strip line comments, then whitespace, and see what is left.
-        const meaningful = body
+    for (const arm of switchBody.matchAll(
+        /case LimitKey\.([A-Z0-9_]+):\s*\{([\s\S]*?)\n {16}\}/g
+    )) {
+        const body = (arm[2] as string)
             .replace(/\/\/[^\n]*/g, '')
             .replace(/\s+/g, ' ')
             .trim();
 
-        if (meaningful === 'return 0;') {
+        if (body === 'return 0;') {
             continue;
         }
 
-        const value = (LimitKey as unknown as Record<string, string>)[member];
-        if (!value) {
-            throw new Error(`getCurrentUsage handles LimitKey.${member}, which does not exist.`);
-        }
-        implemented.add(value);
+        implemented.add(resolveLimitKey(arm[1] as string));
     }
 
     return implemented;
 }
 
-describe('MEASURED_LIMIT_KEYS guard', () => {
-    const switchBody = extractSwitchBody();
-    const declared = parseDeclaredMeasuredKeys();
-    const implemented = parseImplementedCounters(switchBody);
+describe('usage-kind classification guard', () => {
+    const classifiedAsMeasured = parseMeasuredClassification();
+    const aiBacked = parseAiBackedKeys();
+    const caseArmCounters = parseCaseArmCounters();
+    const implemented = new Set<string>([...caseArmCounters, ...aiBacked]);
 
     it('should parse a non-empty set from each side', () => {
         // Non-vacuity: a parser that silently matched nothing would make every
         // assertion below pass regardless of the source.
-        expect(declared.size).toBeGreaterThan(0);
-        expect(implemented.size).toBeGreaterThan(0);
+        expect(classifiedAsMeasured.size).toBeGreaterThan(0);
+        expect(caseArmCounters.size).toBeGreaterThan(0);
+        expect(aiBacked.size).toBeGreaterThan(0);
     });
 
-    it('should declare exactly the keys that have a real counter', () => {
-        expect([...declared].sort()).toEqual([...implemented].sort());
+    it('should classify as measured exactly the keys that have a counter', () => {
+        expect([...classifiedAsMeasured].sort()).toEqual([...implemented].sort());
     });
 
-    it('should not declare a key whose case arm is a hardcoded zero', () => {
-        // Direction 1: a key in the set with no counter → fake zero shown as fact.
-        const declaredWithoutCounter = [...declared].filter((key) => !implemented.has(key));
-        expect(declaredWithoutCounter).toEqual([]);
+    it('should not classify a key as measured when nothing counts it', () => {
+        // Direction 1: measured without a counter → fake zero shown as fact.
+        const measuredWithoutCounter = [...classifiedAsMeasured].filter(
+            (key) => !implemented.has(key)
+        );
+        expect(measuredWithoutCounter).toEqual([]);
     });
 
-    it('should not leave an implemented counter out of the set', () => {
-        // Direction 2: a real counter missing from the set → measurement hidden.
-        const counterNotDeclared = [...implemented].filter((key) => !declared.has(key));
-        expect(counterNotDeclared).toEqual([]);
+    it('should not leave an implemented counter classified as unmeasured', () => {
+        // Direction 2: a real counter hidden behind a non-measured kind.
+        const counterNotMeasured = [...implemented].filter((key) => !classifiedAsMeasured.has(key));
+        expect(counterNotMeasured).toEqual([]);
     });
 
-    it('should treat a bare `return 0` arm as unmeasured', () => {
-        // Reversion check: proves the body classifier actually inspects the
-        // arm rather than accepting every `case` it sees. These three are
-        // hardcoded zeros in the source today.
-        expect(implemented.has(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION)).toBe(false);
-        expect(implemented.has(LimitKey.MAX_PROPERTIES)).toBe(false);
-        expect(implemented.has(LimitKey.MAX_STAFF_ACCOUNTS)).toBe(false);
+    it('should treat a bare `return 0` arm as having no counter', () => {
+        // Reversion check: proves the body classifier inspects the arm rather
+        // than accepting every `case` it sees. These are hardcoded zeros today.
+        expect(caseArmCounters.has(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION)).toBe(false);
+        expect(caseArmCounters.has(LimitKey.MAX_PROPERTIES)).toBe(false);
+        expect(caseArmCounters.has(LimitKey.MAX_STAFF_ACCOUNTS)).toBe(false);
+        expect(caseArmCounters.has(LimitKey.MAX_COMPARE_ITEMS)).toBe(false);
     });
 
-    it('should treat keys handled only by the switch default as unmeasured', () => {
-        // The AI meters, search history and collections never get a `case` arm
-        // at all — they fall through `default: return 0`. If a counter is ever
-        // added for one, it gets a `case` arm and this expectation is the
-        // reminder to update the set.
-        expect(implemented.has(LimitKey.MAX_AI_SEARCH_PER_MONTH)).toBe(false);
-        expect(implemented.has(LimitKey.MAX_COLLECTIONS)).toBe(false);
-        expect(declared.has(LimitKey.MAX_AI_SEARCH_PER_MONTH)).toBe(false);
+    it('should count every AI limit through the ai_usage feature map', () => {
+        // The AI meters have no `case` arm at all — if the default branch or
+        // the feature map is dropped, they must stop being classified measured.
+        expect(aiBacked.has(LimitKey.MAX_AI_SEARCH_PER_MONTH)).toBe(true);
+        expect(aiBacked.has(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH)).toBe(true);
+        expect(aiBacked.has(LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH)).toBe(true);
+        expect(caseArmCounters.has(LimitKey.MAX_AI_SEARCH_PER_MONTH)).toBe(false);
+    });
+
+    it('should classify every LimitKey exactly once', () => {
+        // A key missing from the table silently falls back to `unbuilt`, which
+        // hides it from the page forever — the failure mode that looks like
+        // "the feature just never shipped".
+        const block = extractBlock('const USAGE_KIND_BY_LIMIT_KEY');
+        const classified = [...block.matchAll(/\[LimitKey\.([A-Z0-9_]+)\]:/g)].map((m) =>
+            resolveLimitKey(m[1] as string)
+        );
+
+        expect(new Set(classified).size).toBe(classified.length);
+        expect(classified.sort()).toEqual([...Object.values(LimitKey)].sort());
     });
 });
