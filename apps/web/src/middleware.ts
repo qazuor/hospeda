@@ -54,6 +54,22 @@ import {
     parseSessionUser,
     resolveSentryReportUri
 } from './lib/middleware-helpers';
+import { CJS_ESM_BRIDGES_WARMED } from './lib/warm-cjs-esm-bridges';
+
+/**
+ * Boot-time link of CommonJS -> ESM-only dependency bridges (HOS-370).
+ *
+ * Middleware is part of the SSR **entry** chunk, so importing the warm-up module
+ * here is what forces those bridges to be linked during boot — single-threaded,
+ * before the listener accepts traffic — instead of mid-request from a lazily
+ * loaded route chunk, where the synchronous `require(esm)` link can lose a race
+ * and permanently 500 that route. The assertion exists so the module cannot be
+ * tree-shaken out of the entry: a side-effect-only import with no referenced
+ * binding is droppable, a referenced one is not.
+ */
+if (!CJS_ESM_BRIDGES_WARMED) {
+    throw new Error('[middleware] CJS/ESM bridge warm-up module failed to load');
+}
 
 /**
  * Hosts whose responses must include `X-Robots-Tag: noindex, nofollow`.
