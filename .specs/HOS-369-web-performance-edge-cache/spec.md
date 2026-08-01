@@ -1,5 +1,5 @@
 ---
-title: Web performance end-to-end — Cloudflare edge cache, web-prod CPU runaway, document weight
+title: Web performance end-to-end — AI crawl trap, Cloudflare edge cache, document weight
 linear: HOS-369
 statusSource: linear
 created: 2026-07-31
@@ -10,27 +10,61 @@ areas:
   - api
 ---
 
-# Web performance end-to-end — Cloudflare edge cache, web-prod CPU runaway, document weight
+# Web performance end-to-end — AI crawl trap, Cloudflare edge cache, document weight
+
+## 0. Revision log
+
+### Rev 2 — 2026-07-31, same day: the "CPU runaway" was misdiagnosed
+
+Rev 1 listed a `hospeda-web-prod` CPU runaway as an independent root cause and
+declared its origin uninvestigated (old §5.8). It has now been investigated and
+**that framing was wrong**. There is no runaway loop. The container is doing
+real work: serving an **AI crawler storm against a zero-cache origin**, and the
+crawl volume is amplified by a **self-inflicted infinite URL space** in our own
+markup.
+
+What changed in this revision:
+
+- **Causes 1 and 2 collapsed into one.** The edge cache is not "scaling
+  insurance" (HOS-128's framing) — it is the direct fix for the CPU saturation.
+- **A new, larger root cause was found**: the destination pages emit 35
+  crawlable, accumulative filter links with no `rel="nofollow"`, turning a
+  381-URL site into a combinatorial crawl space. See §5.9.
+- **A second bug was found**: `robots.txt` contains contradictory duplicate
+  groups; the app's dynamic block neutralizes Cloudflare's managed AI-bot
+  blocks. See §5.10.
+- **Owner decisions were taken** on crawler policy and work ordering. See §11.
+- The wave plan was restructured accordingly (§6): closing the crawl trap is now
+  Wave A and precedes the edge cache.
+
+Rev 1's §5.1–§5.7 measurements are unchanged and still valid.
 
 ## 1. Summary
 
-Make `hospeda.com.ar` fast for Argentinian visitors and for bots (Googlebot,
-PageSpeed, AI crawlers) by fixing the three measured causes of the current
-1.6–3.4 s TTFB, in the order that their evidence justifies:
+Make `hospeda.com.ar` fast for Argentinian visitors and for the crawlers that
+matter, by fixing the measured causes of the current 1.6–3.4 s TTFB, in the
+order their evidence justifies:
 
-1. Cloudflare caches **zero** HTML. The origin already emits correct
-   `s-maxage` headers on part of the catalog; the Cache Rule that would make
-   them effective does not exist. Every request, from every visitor and every
-   bot, reaches the Node origin.
-2. The `hospeda-web-prod` container burns a **full CPU core continuously while
-   idle**, on a 3-vCPU VPS. This is the hard ceiling on origin render time.
-3. Production ships **254 KB of JavaScript that staging does not**, containing
+1. **A self-inflicted crawl trap.** The destination pages publish 35 crawlable
+   filter-combination links each, with no `rel="nofollow"` and no `robots.txt`
+   guard. A site with 381 sitemap URLs is offering crawlers an effectively
+   unbounded URL space, and they are taking it: **464,000 AI-crawler requests
+   and ~83.7 GB of egress in 24 h**, one single URL absorbing 84,830 of them.
+2. **Cloudflare caches zero HTML.** The origin already emits correct `s-maxage`
+   headers on part of the catalog; the Cache Rule that would make them effective
+   does not exist. Every one of those 464,000 requests is therefore a full SSR
+   render with a ~10-call API fan-out — which is exactly what saturates the CPU
+   on the 3-vCPU VPS.
+3. **`robots.txt` contradicts itself**, so neither the managed nor the app-side
+   AI-bot policy is actually in force.
+4. **Production ships 254 KB of JavaScript that staging does not**, containing
    the complete `@repo/config` environment-variable registry — an information
    disclosure as well as a weight problem.
 
-Everything in §5 is measured against production, staging and the VPS on
-2026-07-31, not inferred from code. Where static analysis and measurement
-disagreed, measurement won — twice, in both directions (§12.2).
+Everything in §5 is measured against production, staging, the VPS and the
+Cloudflare dashboard on 2026-07-31, not inferred from code. Where static
+analysis and measurement disagreed, measurement won — three times now, in both
+directions (§12.2).
 
 ## 2. Problem
 
@@ -76,8 +110,12 @@ listings, and the pricing pages emit `s-maxage=300, stale-while-revalidate=60`.
 Both are inert. The file's own docstring says so explicitly — this was known
 and documented at the time it shipped, and the missing half was never built.
 
-**Cause 2 — `hospeda-web-prod` spins a core while idle.** Five `docker stats`
-samples 8 s apart, with no traffic generated during the window:
+**Cause 2 — the origin renders continuously because nothing is cached.**
+Superseded framing: Rev 1 called this an idle CPU runaway. It is not idle and it
+is not a runaway — see §5.9 for the real driver (464k AI-crawler requests/day
+against a zero-cache origin). The CPU measurements below stand; only their
+interpretation changed. Five `docker stats` samples 8 s apart, with no traffic
+generated *by us* during the window:
 
 ```
 web-prod 100.81 %   api-prod  8.31 %   load 2.93 2.59 2.43
@@ -87,12 +125,18 @@ web-prod 105.30 %   api-prod  0.78 %   load 3.01 2.65 2.46
 web-prod  97.46 %   api-prod  2.29 %   load 3.63 2.80 2.51
 ```
 
-`api-prod` dropping to 0.78 % in the same window proves the box is genuinely
-idle. The VPS has 3 vCPU and 7.9 GB RAM (6.2 GB used, 1.1 GB available), shared
-between prod and staging of all three apps plus Coolify. Idle load average is
-2.4–2.8 out of 3. The container started `2026-07-27T16:00:19Z`, the same date
-as the mobile `/mi-cuenta` incident — worth checking whether they are the same
-event.
+The VPS has 3 vCPU and 7.9 GB RAM (6.2 GB used, 1.1 GB available, 2.6 GB swap in
+use), shared between prod and staging of all three apps plus Coolify. Load
+average is 2.4–2.8 out of 3. The container started `2026-07-27T16:00:19Z` with
+`RestartCount=0`.
+
+Thread-level detail (`top -H`): the **main JS thread** holds 3,722 minutes of CPU
+over 4 d 4 h elapsed (~62 % of a core sustained), while the four V8 platform
+worker threads hold only ~352 minutes each — so this is **JS execution, not GC
+thrashing**. `docker logs --since 2m` returns **zero lines**, i.e. the work is
+silent, which is what initially made it look like a spin loop.
+
+It is not. The process is serving requests. §5.9 has the driver.
 
 **Cause 3 — production ships a JS chunk staging does not.**
 `MobileMenu.client.js` hydrates with `client:load` in the header of *every*
@@ -163,6 +207,17 @@ with no validatable form.
   immutable, edge-cacheable asset.
 - **G-7** — Bots (Googlebot, PageSpeed, AI crawlers) get the same cached-edge
   benefit as human visitors, and are not throttled by the public rate limit.
+
+Added in Rev 2:
+
+- **G-8** — The site stops publishing an unbounded crawlable URL space. Crawlers
+  are offered the ~381 real URLs, not their filter combinations.
+- **G-9** — AI visibility is **preserved, not traded away**. Load drops without
+  blocking Applebot, GPTBot or any other crawler (decision D-1).
+- **G-10** — `robots.txt` expresses exactly one coherent policy, and a guard test
+  keeps it that way.
+- **G-11** — Googlebot's crawl rate recovers to something proportionate to a
+  381-URL site, rather than 151 requests/day against Applebot's 326,810.
 
 ## 4. Non-goals
 
@@ -350,37 +405,214 @@ Recording these so nobody re-spends effort:
 Explicit gaps in this baseline, so the spec is not read as more complete than
 it is:
 
-- **The Cloudflare zone configuration itself was not read.** No API token was
-  used; the absence of a Cache Rule is inferred from `cf-cache-status: DYNAMIC`
-  on every HTML route plus the absence of any config-as-code in the repo. The
-  actual dashboard state (existing rules, plan tier, Tiered Cache, Argo)
-  is unverified.
-- **The cause of the `web-prod` CPU runaway.** Measured, not diagnosed. No
-  profiling, heap snapshot or log correlation was done.
+- ~~**The Cloudflare zone configuration itself was not read.**~~ **Rev 2: partly
+  closed.** The dashboard was read (Analytics → HTTP Traffic, AI Crawl Control).
+  Confirmed: the zone is on the **Free** plan. Still unread: the Cache Rules /
+  Page Rules list itself, Tiered Cache and Argo settings. The absence of an
+  HTML Cache Rule remains inferred from `cf-cache-status: DYNAMIC` on every HTML
+  route plus the absence of config-as-code, not confirmed by reading the rule
+  list.
+- ~~**The cause of the `web-prod` CPU runaway.**~~ **Rev 2: CLOSED.** Diagnosed —
+  see §5.9. It is crawler load against an uncached origin, not a loop.
 - **The import chain that pulls `@repo/config` into the client bundle.** Static
   grep finds no importer in `apps/web/src`; the chain is transitive and was not
   traced. A production build with `ANALYZE=1` (already wired, emits
-  `apps/web/stats.html`) is the next step.
+  `apps/web/stats.html`) is the next step. Still open.
 - **Field Core Web Vitals.** Only lab/synthetic measurements were taken. The
-  PostHog web-vitals data was not queried.
+  PostHog web-vitals data was not queried. Still open.
+- **Google Search Console crawl stats.** §5.9 shows Googlebot at 151 requests/day
+  against Applebot's 326,810. Whether Google has actively throttled our crawl
+  budget because of origin latency is a *hypothesis*, not a measurement — it must
+  be confirmed in Search Console → Crawl stats before being treated as fact.
 - **Traefik/Coolify layer behavior** (compression between origin and
-  Cloudflare, keep-alive, connection limits).
+  Cloudflare, keep-alive, connection limits). Traefik access logs are **not
+  enabled** (0 lines in 30 s), which is why crawler identification had to come
+  from the Cloudflare dashboard.
 - **`apps/admin` and `apps/mobile`** were out of scope entirely.
+
+### 5.9 The AI crawl storm (Rev 2 — the real driver of §2.3 cause 2)
+
+Read from the Cloudflare dashboard on 2026-07-31, **last 24 hours**:
+
+| Crawler | Requests | Egress | Change |
+|---|---:|---:|---|
+| **Applebot** | **326,810** | **63.3 GB** | **+254.75 %** |
+| **GPTBot** | **136,990** | **20.39 GB** | +47.49 % |
+| Baidu | 156 | 3.19 MB | +19.59 % |
+| **Googlebot** | **151** | 10.43 MB | +73.86 % |
+| ClaudeBot | 12 | — | — |
+| BingBot | 4 | — | — |
+| OAI-SearchBot | (in "+2") | 360.72 kB | — |
+| Bytespider, PerplexityBot, CCBot, DuckAssistBot | 0 | — | — |
+
+Totals: **464,000 requests, 100 % allowed, 0 blocked, +31.38 % vs the previous
+period.** Status codes: 2xx 464,120 · 4xx 193 · 3xx 61 · 5xx 22. Aggregate egress
+**≈ 83.7 GB/day ≈ 2.5 TB/month**.
+
+Traffic by country, same window: **United States 611,398** · Brazil 2,076 ·
+Singapore 1,869 · Germany 1,761 · Australia 1,728. **Argentina is not in the top
+five** — the audience the site is actually built for is a rounding error next to
+the crawler load.
+
+Cloudflare's own summary line: *"`hospeda.com.ar/pt/destinos/concepcion-del-uruguay/`
+is the most-crawled path with **84,830** successful requests."* One path, 18 % of
+all crawl traffic, ~1 request/second sustained — on the **Portuguese** variant of
+a destination page.
+
+**The arithmetic closes exactly**, which is what confirms the chain: 464k
+requests × ~180 KB brotli HTML ≈ 83 GB egress; 464k renders × ~10 API calls per
+render ≈ the 38 req/s measured on the API side (1,143 log lines in 30 s). The CPU
+saturation in §2.3, the API request volume, and the egress bill are all one
+phenomenon.
+
+Note the compounding factor: the **631 KB of inline i18n JSON (§2.4) is being
+served 464,000 times a day**. Document weight (Wave D) is therefore not cosmetic
+— it is a direct multiplier on egress.
+
+#### 5.9.1 Why the volume is pathological: a self-inflicted crawl trap
+
+The sitemap declares **381 URLs** (`sitemap-dynamic.xml`: 168 eventos, 69
+publicaciones, 69 destinos, 45 alojamientos, 18 gastronomía, 12 experiencias).
+Applebot alone made 326,810 requests against it — **857 fetches per URL per day**.
+No legitimate crawler needs that. The excess is not repeat-fetching of the 381
+canonical URLs; it is exploration of a URL space we generate ourselves.
+
+Measured on `https://hospeda.com.ar/pt/destinos/concepcion-del-uruguay/`
+(1,032,721 bytes of HTML):
+
+- **107 `<a href>` total, of which 42 carry a query string.**
+- **35 of them are `?categories=<value>`** — the POI thematic filter chips
+  (HOS-147).
+- **Zero `rel="nofollow"`** anywhere on the page (the only `rel` values present
+  are `stylesheet`, `noopener noreferrer`, `preconnect`, `alternate`, `icon`,
+  `preload`, `manifest`, `canonical`, `apple-touch-icon`).
+- `robots.txt` has **no `Disallow` for query strings**.
+
+The filter is **multi-select and accumulative** (`apps/web/CLAUDE.md`: "clicking a
+chip accumulates its value in a CSV array query param"). So a crawler that
+follows a filtered URL lands on a page that offers *further* filtered URLs, each
+a new combination. Across 69 destinations × 3 locales this is a combinatorial
+tree, and every node is a full uncached ~1 MB SSR render with a 10-call API
+fan-out.
+
+**`noindex` does not help here.** HOS-96's rule marks 2+-value facet URLs
+`noindex,follow`, which prevents *indexing* — but the crawler must still fetch
+the megabyte to read the tag. Crawl cost is paid in full. (`follow` arguably makes
+it worse by inviting the crawler onward.)
+
+This also explains why the Cloudflare panel attributes 84,830 requests to a
+single *path*: those are thousands of distinct query-string variants that the
+panel groups under the same path.
+
+### 5.10 `robots.txt` contradicts itself
+
+`https://hospeda.com.ar/robots.txt` contains **two competing sources** that are
+concatenated into one file:
+
+1. Cloudflare's **managed content block** (`# BEGIN Cloudflare Managed content`),
+   which sets `Content-Signal: search=yes,ai-train=no,use=reference` and
+   `Disallow: /` for Amazonbot, **Applebot-Extended**, Bytespider, CCBot,
+   **ClaudeBot**, CloudflareBrowserRenderingCrawler, **Google-Extended**,
+   **GPTBot**, meta-externalagent.
+2. The app's **dynamic `robots.txt`** (`apps/web/src/pages/robots.txt.ts`), which
+   then emits its own groups — including `User-agent: GPTBot` / `Allow: /`,
+   `User-agent: ClaudeBot` / `Allow: /`, `User-agent: Google-Extended` / `Allow: /`
+   and `User-agent: CCBot` / `Allow: /`.
+
+Per RFC 9309 crawlers **merge** groups matching the same user-agent, and on an
+equally-specific conflict the least restrictive rule wins — so `Allow: /` beats
+the managed `Disallow: /`. Observed behavior matches: GPTBot crawled 136,990
+times despite the managed block.
+
+**Net effect: neither policy is in force.** The managed block is inert, and the
+app block is silently granting access the operator believes was revoked.
+
+Two further notes:
+
+- **`Applebot-Extended: Disallow: /` is correctly set** and should stay. But it
+  reduces **zero** traffic: `Applebot-Extended` is not a separate fetching
+  crawler, it is a robots token governing whether data already fetched by
+  `Applebot` may be used for Apple Intelligence training.
+- **`Applebot` itself has no rule** and falls through to `User-agent: *` /
+  `Allow: /`. That is why it crawls unthrottled at 326,810/day.
+
+#### 5.10.1 Which crawler buys what (basis for the §11 policy decision)
+
+| Crawler | What it actually does | Blocking it costs |
+|---|---|---|
+| `Applebot` | Crawls for **Siri, Spotlight, Safari suggestions** | Apple search visibility — real |
+| `Applebot-Extended` | Robots token: opt out of **Apple Intelligence training** | Nothing; already disallowed |
+| `GPTBot` | Crawls for **OpenAI model training** | Presence in training corpora |
+| `OAI-SearchBot` | Indexes for **ChatGPT search results** | **Being cited in ChatGPT** |
+| `ChatGPT-User` | Live fetch when a user asks ChatGPT to open the page | Live retrieval |
+| `Googlebot` | Google Search | Organic search — the revenue channel |
+
+The operational consequence: **blocking `GPTBot` does not remove the site from
+ChatGPT's answers** — `OAI-SearchBot` and `ChatGPT-User` do that, and they are
+separate agents currently moving 360 kB and near-zero traffic respectively.
+Blocking `Applebot`, by contrast, does cost real Siri/Spotlight visibility.
 
 ## 6. Proposed design
 
-Four waves, ordered by evidence strength and by dependency. Waves 0 and 1
-contain no application-code changes.
+**Rev 2 restructure.** The wave plan changed once §5.9/§5.10 landed. The chosen
+strategy is **A → B, explicitly not C** (owner decision D-1, §11):
 
-### 6.1 Wave 0 — stop the bleeding
+- **A — close the crawl trap.** Cut the URL space at the source. This is the only
+  lever that reduces load **without surrendering any AI visibility**, and it is
+  cheap and reversible.
+- **B — turn on the edge cache.** Protects the origin for all traffic, bots and
+  humans alike, and is a prerequisite for the site being fast for real users.
+- **C — throttling/blocking crawlers is rejected** as a first move. It treats the
+  symptom, and it costs exactly the thing the owner wants (AI visibility).
+  Revisit only with post-A data (§11 D-2).
 
-**W0-1 — Diagnose and fix the `web-prod` CPU runaway.**
-This gates everything else: while a third of the box is consumed by a spinning
-process, every SSR render is slow, and edge caching would hide the symptom for
-visitors while leaving the origin equally fragile. Steps: correlate with the
-2026-07-27 deploy, inspect container logs for a retry/poll loop, take a CPU
-profile of the Node process, check for an unbounded `setInterval` or a failing
-fetch retried without backoff.
+A precedes B for a concrete technical reason, not just cost: **B without A
+under-performs**, because un-normalized filter query strings fragment the edge
+cache across thousands of variants and collapse the hit rate.
+
+### 6.1 Wave A — close the crawl trap
+
+The highest-yield, lowest-risk work, and the fastest to ship. Three independent
+mechanisms; do all three, since each covers a gap the others leave.
+
+**WA-1 — `Disallow` filter query strings in `robots.txt`.**
+Stop the combinatorial exploration at the source, in
+`apps/web/src/pages/robots.txt.ts`. Target the facet params (`categories`,
+`types`, `attractions`, and the date/occupancy params) rather than a blanket
+`Disallow: /*?*`, so that legitimate parameterised URLs are not caught. The
+path-based facet landings (`/alojamientos/tipo/*`, `/eventos/categoria/*`) are
+**not** query strings and must stay crawlable — they are indexable SEO surface.
+
+**WA-2 — `rel="nofollow"` on every facet chip link.**
+`robots.txt` governs fetching; `nofollow` governs link-graph discovery. A crawler
+that already has a filtered URL queued will still try it, so both are needed.
+Applies to the POI category chips (`DestinationPOIFilter` / the SSR chips in
+`DestinationPOISection.astro`) and to the `FilterChips.astro` consumers on the
+accommodation/event/post listings. Note the existing `aria-current` convention on
+those `<a>` elements — do not disturb it.
+
+**WA-3 — Verify canonical on filtered URLs.**
+Every facet-combination URL must carry a canonical pointing at the clean listing.
+`resolveFacetSeoDecision` (`src/lib/seo/promoted-facet-canonical.ts`) already
+implements this rule; WA-3 is a verification task, not new logic — confirm it is
+actually emitted on the destination detail page, which reached the facet pattern
+via HOS-147 and may not be wired into that predicate.
+
+**WA-4 — Fix the contradictory `robots.txt` (§5.10).**
+Reconcile the app-generated groups with Cloudflare's managed block so exactly one
+policy is in force. This is where the GPTBot decision (§11 D-3) is actually
+expressed. Add a guard test asserting no user-agent appears in two groups with
+conflicting root rules.
+
+**WA-5 — Measure the effect before doing anything else.**
+Re-read AI Crawl Control after 48–72 h (crawlers must re-read `robots.txt` and
+drain their queues). Record the new per-crawler numbers against the §5.9
+baseline. **If Applebot has not dropped materially, that is the trigger to
+reconsider C** — with data, not preemptively.
+
+### 6.2 Wave 0 — housekeeping (independent, can run in parallel with A)
+
+These do not depend on A or B and should not block them.
 
 **W0-2 — Promote `staging` → `main`.**
 Recovers 254 KB of JS on every page and closes the env-registry disclosure. The
@@ -399,7 +631,7 @@ in `apps/api/test/routes/isverified-badge-gate.guard.test.ts` — discovery by
 symbol reference, explicit non-vacuity check, and a documented statement of
 what the guard does **not** cover.
 
-### 6.2 Wave 1 — turn on the edge
+### 6.3 Wave B — turn on the edge
 
 **W1-1 — Selective purge (prerequisite, not follow-up).**
 Wire `entity-path-mapper.getAffectedPaths()` into
@@ -438,7 +670,7 @@ Rules and Redirect Rules must not be dashboard-only — that is precisely how a
 dead header survived unnoticed. At minimum, commit the rule expressions as
 documentation under `infra/cloudflare/`; ideally as Terraform.
 
-### 6.3 Wave 2 — extend the pattern across the catalog
+### 6.4 Wave C — extend the pattern across the catalog
 
 **W2-1 — Home.** The easiest case: it never reads the session, is already
 unconditionally anonymous, and emits no cache header at all. Apply the
@@ -472,7 +704,13 @@ separate tier for verified crawler traffic hitting the API directly.
 implement the caching they claim (covered by W2-3) or correct the comment. A
 comment promising a mechanism that does not exist is worse than no comment.
 
-### 6.4 Wave 3 — document weight
+### 6.5 Wave D — document weight
+
+> **Rev 2 reprioritisation.** Rev 1 treated this as the lowest-value wave. §5.9
+> changes that: the 631 KB inline i18n payload is served **464,000 times a day**,
+> so document weight is a direct multiplier on the ~83.7 GB/day egress bill, not
+> a page-speed nicety. W3-1 is now the largest single byte win available anywhere
+> in this spec.
 
 Overlaps HOS-168; this spec supplies the measurements it lacked.
 
@@ -487,7 +725,7 @@ Overlaps HOS-168; this spec supplies the measurements it lacked.
   CSP/`inlineStylesheets` constraint (HOS-164/HOS-168) — do not start before
   that resolves.
 
-### 6.5 Documentation cleanup
+### 6.6 Documentation cleanup
 
 `docs/performance/caching.md`, `docs/performance/README.md`,
 `docs/runbooks/scaling.md`, `docs/deployment/apps/web.md` and
@@ -547,6 +785,29 @@ should be confirmed as acceptable on the newly cached routes.
 
 ## 9. Acceptance criteria
 
+Wave A (added Rev 2):
+
+- **AC-A1** — `/pt/destinos/concepcion-del-uruguay/` emits **zero** `<a href>`
+  containing a facet query string without `rel="nofollow"`. Asserted on the raw
+  SSR HTML, per the repo's existing SSR-assertion convention.
+- **AC-A2** — `robots.txt` `Disallow`s the facet query params, while the
+  path-based facet landings (`/alojamientos/tipo/*`, `/eventos/categoria/*`)
+  remain crawlable. A guard test covers both directions — the second half is what
+  stops an over-broad `Disallow: /*?*` from silently de-indexing real SEO surface.
+- **AC-A3** — No user-agent appears in two `robots.txt` groups with conflicting
+  root rules. Guard test, non-vacuous: it must fail if the managed block and the
+  app block are concatenated as they are today.
+- **AC-A4** — 48–72 h after Wave A ships, AI Crawl Control shows a **material
+  drop** against the §5.9 baseline (464k requests / 83.7 GB / 24 h). Recorded
+  with the same per-crawler breakdown so the comparison is like-for-like. No
+  numeric target is set deliberately — the baseline is one day's reading of a
+  metric that moved +31 % in a day, and inventing a threshold would be false
+  precision.
+- **AC-A5** — Googlebot's daily request count is re-read in Search Console before
+  and after. Directional evidence for D-2, not a pass/fail gate.
+
+Wave B onward:
+
 - **AC-1** — `curl -D -` on `/es/alojamientos/` returns `cf-cache-status: HIT`
   on the second request, with a non-zero `age`.
 - **AC-2** — The same URL requested **with** a valid `better-auth.session_token`
@@ -596,12 +857,62 @@ should be confirmed as acceptable on the newly cached routes.
   only `isAuthenticated`, but this was not verified page by page. W2-3 must
   start with that audit, not skip to the header.
 
-## 11. Open questions
+Added in Rev 2:
+
+- **R-8 — An over-broad `robots.txt` `Disallow` de-indexes real SEO surface.**
+  The blunt fix (`Disallow: /*?*`) is tempting and wrong: it would also block any
+  legitimate parameterised URL. The facet **landings** are path-based
+  (`/alojamientos/tipo/*`, `/eventos/categoria/*`) and must stay crawlable — they
+  are deliberate SEO surface from HOS-96. AC-A2 tests both directions precisely
+  because the failure here is silent and slow to notice.
+- **R-9 — `robots.txt` and `nofollow` are advisory and lagged.** Well-behaved
+  crawlers (Applebot, GPTBot both qualify) honour them, but only after re-reading
+  the file and draining queued URLs — expect 48–72 h, not minutes. Wave A is not
+  an emergency brake. If the situation degrades before it takes effect, that is
+  the one case for a temporary C-style throttle, as a stopgap and not as the
+  strategy.
+- **R-10 — Caching a crawl trap makes it cheaper to crawl.** If B shipped before
+  A, the filter-combination URLs would become fast to fetch, which plausibly
+  *increases* crawl rate while fragmenting the cache across thousands of
+  low-value variants. This is the concrete reason A precedes B (§12.3), beyond
+  cost ordering.
+- **R-11 — Applebot may not respond to Wave A at all.** Its +254 % growth is
+  anomalous for a 381-URL site, and the crawl-trap explanation, while
+  well-evidenced, is not proven to be the *whole* explanation. WA-5 exists to
+  detect that case rather than assume it away.
+
+## 11. Decisions and open questions
+
+### 11.1 Decisions taken (owner, 2026-07-31)
+
+- **D-1 — Strategy is A → B, explicitly not C.** Close the crawl trap first
+  (Wave A), then turn on the edge cache (Wave B). Do **not** block or throttle AI
+  crawlers as a first move. Rationale: the owner wants AI visibility; A is the
+  only lever that reduces load without surrendering any of it; and C treats the
+  symptom. C is reconsidered only if WA-5's post-A measurement shows Applebot has
+  not dropped materially.
+- **D-2 — Googlebot's 151 requests/day is treated as a first-class concern**, not
+  a footnote. Organic search is the revenue channel; Applebot and GPTBot are not.
+  The working hypothesis — that Google throttled our crawl budget because of
+  origin latency — must be confirmed in Search Console → Crawl stats (§5.8), not
+  assumed.
+- **D-3 — `robots.txt` must express exactly one policy** (WA-4). The current
+  contradiction (§5.10) means neither the managed nor the app-side policy is in
+  force, which is strictly worse than either choice. The specific GPTBot
+  allow/deny call is made inside WA-4; it is informed by §5.10.1 —
+  **blocking `GPTBot` does not remove the site from ChatGPT answers**, because
+  `OAI-SearchBot` and `ChatGPT-User` are the agents that produce citations.
+- **D-4 — `Applebot-Extended: Disallow: /` stays.** It is the Apple Intelligence
+  training opt-out. It costs nothing and reduces no traffic (§5.10).
+- **D-5 — Wave D (document weight) is promoted** from "nice to have" to a direct
+  egress lever, on the strength of §5.9 (631 KB × 464k requests/day).
+
+### 11.2 Still open
 
 - **OQ-1** — Should HOS-128 be closed as superseded by this spec, or kept as a
   sub-scope? This spec absorbs its goal and adds causes it never contemplated;
   its "gated on real traffic" trigger is now overtaken by measurement. Owner
-  decision.
+  decision, still pending.
 - **OQ-2** — TTL values for the newly cached routes. The existing 300 s / 600 s
   (listings) and 300 s / 60 s (pricing) are unexamined defaults. Content that
   changes rarely (legal, `nosotros`) can take far longer.
@@ -609,11 +920,19 @@ should be confirmed as acceptable on the newly cached routes.
   pages to a hash-based inline strategy (HOS-164's subject)? Deciding "accept"
   is fine; deciding by omission is not.
 - **OQ-4** — Is the VPS adequately sized? 3 vCPU / 7.9 GB hosting prod and
-  staging of three apps plus Coolify, at 2.4–2.8 idle load average, with 1.1 GB
-  RAM free. Answerable only after W0-1 removes the runaway.
+  staging of three apps plus Coolify, at 2.4–2.8 load average with 1.1 GB RAM
+  free and 2.6 GB of swap in use. **Rev 2: not answerable until A and B land** —
+  the current load is crawler-driven, so sizing cannot be judged against it.
 - **OQ-5** — Should staging be moved off the production box entirely?
-- **OQ-6** — Does the Cloudflare plan tier support the needed rule count and
-  features (Tiered Cache, Cache Reserve)? Unverified (§5.8).
+- **OQ-6** — The zone is on the **Free** plan (confirmed Rev 2). Does Free
+  support the needed Cache Rule / Redirect Rule count? Tiered Cache and Cache
+  Reserve are paid features and are **not** available at this tier — if either is
+  wanted, that is a plan-upgrade decision.
+- **OQ-7** — Is the `hospeda_vid` cookie churn worth fixing? The SSR client does
+  not return the cookie the API sets, so the API mints a new visitor id on every
+  internal call — ~38/second (§12.2). Harmless for caching (the web origin sets
+  no cookies of its own) but it makes `hospeda_vid` useless as an analytics
+  dimension and adds a `Set-Cookie` to every API response.
 
 ## 12. Implementation notes
 
@@ -651,18 +970,42 @@ The decisive technique for separating "code bug" from "stale production" was
 downloading the *same component* from both environments and diffing size and
 marker counts.
 
+- **Rev 2, a third miss — and this one was mine, mid-diagnosis.** With the CPU
+  pegged and no logs, the obvious hypothesis was a spin loop, and two plausible
+  suspects turned up immediately: a `setInterval(i,50)` in the bundle and a
+  `while (resolvedStore.size >= MAX)` in `ssr-cache.ts`. Both were wrong. The
+  interval was in the **client** bundle (`/app/dist/client/_astro/client.*.js`),
+  never executed by the server; the `while` has a `break` on an empty store and
+  cannot hang. Grepping source for loop-shaped code finds loop-shaped code, not
+  the loop that is running. What actually settled it was following the process
+  outward — thread-level CPU, then open sockets, then the API's own logs, then
+  the CDN's crawler analytics.
+- **A near-miss worth recording.** 300 consecutive API requests carried 300
+  distinct `vid` values, zero repeats. The tempting read was "cookie-less bots".
+  Wrong: `hospeda_vid` is minted by the API and the SSR client never returns it,
+  so a fresh id per internal call is structural and says nothing about the
+  inbound caller. It did surface a genuine side finding (OQ-7).
+
 ### 12.3 Order dependencies
 
 ```
-W0-1 (CPU runaway) ─── gates meaningful TTFB measurement of everything else
-W0-2 (promote)     ─── independent, do early
+WA-1 + WA-2 + WA-4 ─── do together; robots.txt and nofollow cover different gaps
+WA-3               ─── verification only, no new logic
+WA-1..4 → WA-5     ─── measure 48–72 h after; crawlers must re-read robots.txt
+WA-5               ─── the ONLY trigger for reconsidering strategy C
+WA-*  → WB-*       ─── A before B: unnormalized query strings fragment the cache
+W0-2 (promote)     ─── independent, do early, parallel to A
 W0-3 → W0-4        ─── understand before guarding
-W1-1 (purge)       ─── HARD prerequisite of W1-2
-W1-2 → W1-3        ─── never ship the rule without the verification
-W1-3 → W1-4        ─── redirects after the cache is proven correct
-W2-4               ─── requires the SSR personalization move first
-W3-5               ─── blocked on HOS-164 / HOS-168 CSP resolution
+WB-1 (purge)       ─── HARD prerequisite of WB-2
+WB-2 → WB-3        ─── never ship the rule without the verification
+WB-3 → WB-4        ─── redirects after the cache is proven correct
+WC-4               ─── requires the SSR personalization move first
+WD-5               ─── blocked on HOS-164 / HOS-168 CSP resolution
 ```
+
+Note the wave labels changed in Rev 2 (0/1/2/3 → A/0/B/C/D). Task ids inside the
+carried-over waves kept their original `W1-*`/`W2-*`/`W3-*` numbering to avoid
+breaking references; read `W1-*` as Wave B, `W2-*` as Wave C, `W3-*` as Wave D.
 
 ### 12.4 Related work
 

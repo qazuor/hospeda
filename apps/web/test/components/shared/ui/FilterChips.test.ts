@@ -411,4 +411,40 @@ describe('FilterChips.astro', () => {
             expect(src).toContain('container.dataset.scrollEnd');
         });
     });
+
+    // -----------------------------------------------------------------------
+    // HOS-369 WA-2 — crawl-trap containment
+    // -----------------------------------------------------------------------
+
+    describe('WA-2 — rel="nofollow" on facet query-param chips', () => {
+        it('derives rel from the shared facet crawl policy, not from a per-caller prop', () => {
+            // Six pages feed this component. A `nofollow` prop is a gate some of
+            // them would eventually forget; deriving it from the href here makes
+            // it unforgettable.
+            expect(src).toContain(
+                "import { shouldNofollowFacetHref } from '@/lib/filters/facet-crawl-policy'"
+            );
+            expect(src).toContain('shouldNofollowFacetHref({ href })');
+        });
+
+        it('passes the computed rel to the chip anchor', () => {
+            expect(src).toMatch(
+                /const rel = shouldNofollowFacetHref\(\{ href \}\) \? 'nofollow' : undefined;/
+            );
+            expect(src).toMatch(/<a\s[\s\S]*?rel=\{rel\}/);
+        });
+
+        it('does NOT hardcode rel="nofollow" on every chip (R-8: path landings stay followable)', () => {
+            // `/alojamientos/tipo/{slug}/` and `/eventos/categoria/{slug}/` are
+            // routed through this same component and are deliberate SEO surface.
+            // Scoped to the template — the frontmatter JSDoc discusses the
+            // attribute in prose, which must not trip this guard.
+            const fenceEnd = src.indexOf('\n---\n');
+            expect(fenceEnd, 'frontmatter fence not found').toBeGreaterThan(-1);
+            const template = src.slice(fenceEnd + '\n---\n'.length);
+
+            expect(template).not.toContain('rel="nofollow"');
+            expect(template).not.toContain("rel='nofollow'");
+        });
+    });
 });
