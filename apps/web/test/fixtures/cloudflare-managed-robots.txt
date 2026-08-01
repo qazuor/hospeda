@@ -1,0 +1,43 @@
+# Fixture — Cloudflare's managed content block as observed prepended to
+# https://hospeda.com.ar/robots.txt on 2026-07-30 (HOS-369 spec §5.10).
+#
+# This is NOT emitted by this app. Cloudflare concatenates it at the edge ahead
+# of the app's dynamic robots.txt. It is checked in so the AC-A3 guard can prove
+# it detects the real production contradiction, instead of only testing the
+# app's own (already consistent) output.
+#
+# Keep in sync with the live file if the managed block changes.
+
+# BEGIN Cloudflare Managed content
+
+User-agent: *
+Content-Signal: search=yes,ai-train=no,use=reference
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: CloudflareBrowserRenderingCrawler
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: meta-externalagent
+Disallow: /
+
+# END Cloudflare Managed content
