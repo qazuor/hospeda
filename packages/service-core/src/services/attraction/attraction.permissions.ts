@@ -1,22 +1,56 @@
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import type { Attraction } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils';
 
 /**
- * Checks if an actor has permission to view an attraction.
- * Public attractions are always viewable. Private/Restricted require specific permissions.
- * @param actor The actor performing the action.
- * @throws {ServiceError} If the permission check fails.
+ * Whether the actor holds one of the privileged attraction-viewing permissions.
+ * Attractions reuse the destination permission set — they have no dedicated one.
  */
-export function checkCanViewAttraction(actor: Actor): void {
-    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
-    if (
+function canViewNonPublicAttractions(actor: Actor): boolean {
+    return (
         hasPermission(actor, PermissionEnum.DESTINATION_VIEW_PRIVATE) ||
         hasPermission(actor, PermissionEnum.DESTINATION_VIEW_DRAFT)
-    ) {
-        return;
+    );
+}
+
+/**
+ * Checks if an actor has permission to view an attraction.
+ *
+ * ACTIVE attractions are public content: anyone may view them, signed in or not.
+ * Any other lifecycle state (DRAFT, INACTIVE, ARCHIVED) is not published yet or
+ * no longer published, so it requires a privileged viewer.
+ *
+ * Attractions have no `visibility` column — `lifecycleState` is the only
+ * publication signal, so it stands in for the PUBLIC/PRIVATE split that
+ * {@link checkCanViewPost} and {@link checkCanViewEvent} gate on.
+ *
+ * Soft-deleted attractions existed but are permanently gone: the base model's
+ * read path does not filter `deleted_at IS NULL`, so it is enforced here to stop
+ * ghost rows leaking a 200. One that was ACTIVE (and therefore indexable)
+ * surfaces as GONE so crawlers deindex the URL fast; one that was never public
+ * returns NOT_FOUND to preserve the anti-enumeration contract (SPEC-092 T-087),
+ * matching the post and event precedent (HOS-117 T-022).
+ *
+ * @param actor The actor performing the action.
+ * @param attraction The attraction being viewed.
+ * @throws {ServiceError} If the permission check fails.
+ */
+export function checkCanViewAttraction(actor: Actor, attraction: Attraction): void {
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: no actor');
+
+    const isPublished = attraction.lifecycleState === LifecycleStatusEnum.ACTIVE;
+    const isPrivileged = canViewNonPublicAttractions(actor);
+
+    if (attraction.deletedAt !== null && attraction.deletedAt !== undefined && !isPrivileged) {
+        throw isPublished
+            ? new ServiceError(ServiceErrorCode.GONE, 'Attraction is gone')
+            : new ServiceError(ServiceErrorCode.NOT_FOUND, 'Attraction not found');
     }
+
+    if (isPublished || isPrivileged) return;
+
     throw new ServiceError(
         ServiceErrorCode.FORBIDDEN,
         'FORBIDDEN: Permission denied to view attraction'

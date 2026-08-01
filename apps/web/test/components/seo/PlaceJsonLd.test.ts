@@ -39,8 +39,24 @@ describe('PlaceJsonLd.astro', () => {
             expect(src).toContain("'@context': 'https://schema.org'");
         });
 
-        it('uses TouristDestination @type', () => {
-            expect(src).toContain("'@type': 'TouristDestination'");
+        it('emits the @type from the schemaType prop', () => {
+            expect(src).toContain("'@type': schemaType");
+        });
+
+        it('defaults schemaType to TouristDestination', () => {
+            // The literal `'@type': 'TouristDestination'` this used to assert is
+            // gone: the component now serves both destination pages and POI
+            // detail pages, so the type moved to a prop. The invariant that
+            // still matters is that a caller passing nothing keeps the old
+            // behaviour — a destination page must never silently become a
+            // TouristAttraction.
+            expect(src).toContain("schemaType = 'TouristDestination'");
+        });
+
+        it('accepts only the two schema types that are correct for a place', () => {
+            expect(src).toContain(
+                "readonly schemaType?: 'TouristDestination' | 'TouristAttraction'"
+            );
         });
     });
 

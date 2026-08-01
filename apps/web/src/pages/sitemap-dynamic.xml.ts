@@ -22,26 +22,17 @@ import { AccommodationTypeEnum } from '@repo/schemas';
 import type { APIRoute } from 'astro';
 import { getApiUrl, getSiteUrl } from '../lib/env';
 import {
+    buildLocalizedUrlEntries,
+    buildUrlsetDocument,
+    SITEMAP_RESPONSE_HEADERS
+} from '../lib/seo/sitemap-xml';
+import {
     type DestinationListItem,
     destinationListItemCounts,
     isThinDestination
 } from '../lib/seo/thin-destination';
 
 export const prerender = false;
-
-/**
- * Supported locales and their URL prefix.
- *
- * SPEC-157 REQ-2: es uses the /es prefix (not empty) so every Spanish sitemap
- * URL matches the page canonical and returns HTTP 200. The unprefixed form
- * 302-redirects to /es/, which made crawlers see a sitemap full of redirecting
- * URLs disagreeing with the declared canonical (crawl-budget + trust problem).
- */
-const LOCALES = [
-    { code: 'es', prefix: '/es' },
-    { code: 'en', prefix: '/en' },
-    { code: 'pt', prefix: '/pt' }
-] as const;
 
 /** Minimal shape expected from each paginated entity list response. */
 interface EntityItem {
@@ -126,36 +117,6 @@ async function fetchAllEntities(
 }
 
 /**
- * Build <url> XML block for an entity.
- *
- * @param loc - Absolute URL string
- * @param lastmod - ISO date string for last modification (optional)
- * @param changefreq - Sitemap changefreq value
- * @param priority - Sitemap priority (0.0–1.0)
- */
-function buildUrlEntry({
-    loc,
-    lastmod,
-    changefreq,
-    priority,
-    alternates
-}: {
-    readonly loc: string;
-    readonly lastmod?: string;
-    readonly changefreq: string;
-    readonly priority: number;
-    /** Pre-rendered <xhtml:link> hreflang alternates block (one line each). */
-    readonly alternates: string;
-}): string {
-    const lastmodTag = lastmod ? `\n    <lastmod>${lastmod}</lastmod>` : '';
-    return `  <url>
-    <loc>${loc}</loc>${lastmodTag}
-    <changefreq>${changefreq}</changefreq>
-    <priority>${priority.toFixed(1)}</priority>
-${alternates}  </url>`;
-}
-
-/**
  * Generate sitemap entries for all items of an entity type across all locales.
  *
  * @param items - Entity items from the API
@@ -182,25 +143,17 @@ function buildEntriesForEntity({
     for (const item of items) {
         if (!item.slug) continue;
 
-        const lastmod = item.updatedAt ?? item.updated_at;
-        const path = pathFn(item.slug);
-
         // SPEC-157 REQ-12: the hreflang alternate set is shared by every locale
         // variant of this entity. x-default points to the Spanish (default) URL.
-        const alternateLinks = LOCALES.map(
-            ({ code, prefix }) =>
-                `    <xhtml:link rel="alternate" hreflang="${code}" href="${siteUrl}${prefix}${path}"/>`
+        entries.push(
+            ...buildLocalizedUrlEntries({
+                path: pathFn(item.slug),
+                siteUrl,
+                lastmod: item.updatedAt ?? item.updated_at,
+                changefreq,
+                priority
+            })
         );
-        const esPrefix = LOCALES.find((locale) => locale.code === 'es')?.prefix ?? '';
-        alternateLinks.push(
-            `    <xhtml:link rel="alternate" hreflang="x-default" href="${siteUrl}${esPrefix}${path}"/>`
-        );
-        const alternates = `${alternateLinks.join('\n')}\n`;
-
-        for (const { prefix } of LOCALES) {
-            const loc = `${siteUrl}${prefix}${path}`;
-            entries.push(buildUrlEntry({ loc, lastmod, changefreq, priority, alternates }));
-        }
     }
 
     return entries;
@@ -234,27 +187,59 @@ function buildEntriesForStaticSlugs({
     const entries: string[] = [];
 
     for (const slug of slugs) {
-        const path = pathFn(slug);
-
         // SPEC-157 REQ-12: the hreflang alternate set is shared by every locale
         // variant of this facet landing. x-default points to the Spanish (default) URL.
-        const alternateLinks = LOCALES.map(
-            ({ code, prefix }) =>
-                `    <xhtml:link rel="alternate" hreflang="${code}" href="${siteUrl}${prefix}${path}"/>`
+        // No `lastmod`: a facet landing has no single underlying row to date.
+        entries.push(
+            ...buildLocalizedUrlEntries({ path: pathFn(slug), siteUrl, changefreq, priority })
         );
-        const esPrefix = LOCALES.find((locale) => locale.code === 'es')?.prefix ?? '';
-        alternateLinks.push(
-            `    <xhtml:link rel="alternate" hreflang="x-default" href="${siteUrl}${esPrefix}${path}"/>`
-        );
-        const alternates = `${alternateLinks.join('\n')}\n`;
-
-        for (const { prefix } of LOCALES) {
-            const loc = `${siteUrl}${prefix}${path}`;
-            entries.push(buildUrlEntry({ loc, changefreq, priority, alternates }));
-        }
     }
 
     return entries;
+}
+
+/**
+ * Attraction facet-landing slugs, restricted to attractions at least one
+ * destination actually offers.
+ *
+ * `/destinos/atraccion/{slug}/` lists the destinations that have the attraction,
+ * so an unused one renders an empty page. Only 45 of the 88 catalog rows are in
+ * use, and shipping the other 43 as empty URLs is the thin-content pattern this
+ * landing exists to avoid.
+ *
+ * The membership set comes from the destination payloads already fetched above
+ * — their embedded `attractions` carry an `id` but no `slug`, hence the id-based
+ * intersection with the attraction catalog. No extra requests.
+ *
+ * @param attractions - Attraction catalog (carries slug + id).
+ * @param destinations - Destination list items (carry embedded attractions).
+ * @returns The slugs to emit, in catalog order.
+ */
+function resolveUsedAttractionSlugs(
+    attractions: readonly EntityItem[],
+    destinations: readonly EntityItem[]
+): readonly string[] {
+    const usedIds = new Set<string>();
+    for (const destination of destinations) {
+        // TYPE-WORKAROUND: `EntityItem` models only the fields the sitemap needs
+        // from every entity (slug + updatedAt); the destination payload also
+        // carries an embedded `attractions` relation this function reads.
+        const embedded = (destination as unknown as { attractions?: readonly { id?: string }[] })
+            .attractions;
+        for (const attraction of embedded ?? []) {
+            if (attraction?.id) usedIds.add(attraction.id);
+        }
+    }
+
+    return attractions
+        .filter((attraction) => {
+            // TYPE-WORKAROUND: same as above — `id` is present on the attraction
+            // payload but absent from the shared `EntityItem` shape.
+            const id = (attraction as unknown as { id?: string }).id;
+            return Boolean(id) && usedIds.has(id as string);
+        })
+        .map((attraction) => attraction.slug)
+        .filter((slug): slug is string => Boolean(slug));
 }
 
 /**
@@ -305,15 +290,25 @@ export const GET: APIRoute = async () => {
     // (published) content, and they reject an unknown `status` query param with
     // HTTP 400 — which previously made every entity fetch fail and the sitemap
     // come back empty.
-    const [accommodations, destinations, events, posts, gastronomy, experiences] =
-        await Promise.allSettled([
-            fetchAllEntities(apiUrl, `${base}/accommodations`),
-            fetchAllEntities(apiUrl, `${base}/destinations`, { includeEventCount: 'true' }),
-            fetchAllEntities(apiUrl, `${base}/events`),
-            fetchAllEntities(apiUrl, `${base}/posts`),
-            fetchAllEntities(apiUrl, `${base}/gastronomies`),
-            fetchAllEntities(apiUrl, `${base}/experiences`)
-        ]);
+    const [
+        accommodations,
+        destinations,
+        events,
+        posts,
+        gastronomy,
+        experiences,
+        attractions,
+        pointsOfInterest
+    ] = await Promise.allSettled([
+        fetchAllEntities(apiUrl, `${base}/accommodations`),
+        fetchAllEntities(apiUrl, `${base}/destinations`, { includeEventCount: 'true' }),
+        fetchAllEntities(apiUrl, `${base}/events`),
+        fetchAllEntities(apiUrl, `${base}/posts`),
+        fetchAllEntities(apiUrl, `${base}/gastronomies`),
+        fetchAllEntities(apiUrl, `${base}/experiences`),
+        fetchAllEntities(apiUrl, `${base}/attractions`),
+        fetchAllEntities(apiUrl, `${base}/points-of-interest`)
+    ]);
 
     const resolvedAccommodations =
         accommodations.status === 'fulfilled' ? accommodations.value : [];
@@ -322,13 +317,16 @@ export const GET: APIRoute = async () => {
     const resolvedPosts = posts.status === 'fulfilled' ? posts.value : [];
     const resolvedGastronomy = gastronomy.status === 'fulfilled' ? gastronomy.value : [];
     const resolvedExperiences = experiences.status === 'fulfilled' ? experiences.value : [];
+    const resolvedAttractions = attractions.status === 'fulfilled' ? attractions.value : [];
+    const resolvedPointsOfInterest =
+        pointsOfInterest.status === 'fulfilled' ? pointsOfInterest.value : [];
 
     const entries: string[] = [];
 
-    // ── Static listing pages (priority 0.7) ──────────────────────────────
-    // These are SSR pages (not SSG), so @astrojs/sitemap does not include them.
-    // Listing pages: /{lang}/alojamientos/, /destinos/, /eventos/, /gastronomia/,
-    //                /experiencias/, /publicaciones/
+    // ── Entity listing pages (priority 0.7) ──────────────────────────────
+    // These belong here rather than in the static sitemap: their content is
+    // the entity set fetched below, so they change whenever a row does.
+    // Purely informational pages live in `/sitemap-static.xml` instead.
     const LISTING_PATHS = [
         'alojamientos',
         'destinos',
@@ -338,29 +336,18 @@ export const GET: APIRoute = async () => {
         'publicaciones'
     ] as const;
 
-    const listingEsPrefix = LOCALES.find((l) => l.code === 'es')?.prefix ?? '';
+    const listingLastmod = new Date().toISOString().slice(0, 10);
 
     for (const listingPath of LISTING_PATHS) {
-        const alternateLinks = LOCALES.map(
-            ({ code, prefix }) =>
-                `    <xhtml:link rel="alternate" hreflang="${code}" href="${siteUrl}${prefix}/${listingPath}/"/>`
+        entries.push(
+            ...buildLocalizedUrlEntries({
+                path: `/${listingPath}/`,
+                siteUrl,
+                lastmod: listingLastmod,
+                changefreq: 'weekly',
+                priority: 0.7
+            })
         );
-        alternateLinks.push(
-            `    <xhtml:link rel="alternate" hreflang="x-default" href="${siteUrl}${listingEsPrefix}/${listingPath}/"/>`
-        );
-        const alternates = `${alternateLinks.join('\n')}\n`;
-
-        for (const { prefix } of LOCALES) {
-            entries.push(
-                buildUrlEntry({
-                    loc: `${siteUrl}${prefix}/${listingPath}/`,
-                    lastmod: new Date().toISOString().split('T')[0],
-                    changefreq: 'weekly',
-                    priority: 0.7,
-                    alternates
-                })
-            );
-        }
     }
 
     // ── Detail entity pages (priority 0.8) ───────────────────────────────
@@ -440,6 +427,26 @@ export const GET: APIRoute = async () => {
         })
     );
 
+    // Points of interest: /destinos/lugar/{slug}/ — ONLY the curated few that
+    // carry `hasOwnPage`. The other ~839 catalog rows have no page (the route
+    // 404s on them by design), so emitting them would advertise 404s; and were
+    // they published, they would be doorway content restating their
+    // destination's accommodation listing. See the page's own file header.
+    entries.push(
+        ...buildEntriesForEntity({
+            items: resolvedPointsOfInterest.filter(
+                // TYPE-WORKAROUND: `EntityItem` models only the fields every
+                // entity shares (slug + updatedAt); `hasOwnPage` is specific to
+                // the point-of-interest payload, which this filter reads.
+                (item) => (item as unknown as { hasOwnPage?: boolean }).hasOwnPage === true
+            ),
+            siteUrl,
+            pathFn: (slug) => `/destinos/lugar/${slug}/`,
+            changefreq: 'monthly',
+            priority: 0.6
+        })
+    );
+
     // Event category facet landings: /eventos/categoria/{slug}/ (SPEC-306, 9 URLs).
     entries.push(
         ...buildEntriesForStaticSlugs({
@@ -462,16 +469,20 @@ export const GET: APIRoute = async () => {
         })
     );
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
-${entries.join('\n')}
-</urlset>`;
+    // Attraction facet landings: /destinos/atraccion/{slug}/ — only the ones a
+    // destination actually offers, so no empty page is ever advertised.
+    entries.push(
+        ...buildEntriesForStaticSlugs({
+            slugs: resolveUsedAttractionSlugs(resolvedAttractions, resolvedDestinations),
+            siteUrl,
+            pathFn: (slug) => `/destinos/atraccion/${slug}/`,
+            changefreq: 'monthly',
+            priority: 0.6
+        })
+    );
 
-    return new Response(xml, {
+    return new Response(buildUrlsetDocument(entries), {
         status: 200,
-        headers: {
-            'Content-Type': 'application/xml; charset=utf-8',
-            'Cache-Control': 'public, max-age=86400, stale-while-revalidate=86400'
-        }
+        headers: SITEMAP_RESPONSE_HEADERS
     });
 };

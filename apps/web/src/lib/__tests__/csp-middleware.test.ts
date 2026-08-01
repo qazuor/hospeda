@@ -196,7 +196,7 @@ describe('buildCspHeader — prerendered-page header-only invocation', () => {
         expect(scriptSrc).not.toContain("'unsafe-inline'");
     });
 
-    it('frame-src allowlists only the Cloudflare Turnstile host (SPEC-301 feedback widget iframe; MercadoPago checkout is a redirect, not an embedded Brick — HOS-30 2.B)', () => {
+    it('frame-src allowlists only the Cloudflare Turnstile host in prod (SPEC-301 feedback widget iframe; MercadoPago checkout is a redirect, not an embedded Brick — HOS-30 2.B)', () => {
         const header = buildCspHeader({ nonce: 'x' });
         const frameSrc = header.split('; ').find((d) => d.startsWith('frame-src '));
         expect(frameSrc).toBe('frame-src https://challenges.cloudflare.com');
@@ -245,6 +245,70 @@ describe('buildCspHeader — HOS-91 dev-only style-src relaxation', () => {
         expect(styleSrc).toContain("'unsafe-inline'");
         expect(styleSrc).not.toContain("'nonce-");
         expect(styleSrc).not.toContain("'sha256-");
+    });
+});
+
+// ---------------------------------------------------------------------------
+// buildCspHeader — dev-only frame-src 'self' (ClientRouter client:only iframe)
+// ---------------------------------------------------------------------------
+
+/** Isolates the `frame-src` directive (`frame-ancestors` is a distinct one). */
+const findFrameSrcDirective = (header: string): string =>
+    header.split('; ').find((d) => /^frame-src /.test(d)) ?? '';
+
+describe("buildCspHeader — dev-only frame-src 'self'", () => {
+    it("does NOT grant 'self' in prod (isDev: false)", () => {
+        const header = buildCspHeader({ nonce: 'prod-nonce', isDev: false });
+
+        expect(findFrameSrcDirective(header)).toBe('frame-src https://challenges.cloudflare.com');
+    });
+
+    it("does NOT grant 'self' by default (isDev omitted)", () => {
+        const header = buildCspHeader({ nonce: 'default-nonce' });
+
+        expect(findFrameSrcDirective(header)).toBe('frame-src https://challenges.cloudflare.com');
+    });
+
+    it("grants 'self' in dev so the ClientRouter client:only iframe is not blocked", () => {
+        const header = buildCspHeader({ nonce: 'dev-nonce', isDev: true });
+
+        expect(findFrameSrcDirective(header)).toBe(
+            "frame-src 'self' https://challenges.cloudflare.com"
+        );
+    });
+
+    it('keeps the Turnstile host allowlisted in dev (SPEC-301 widget must still mount)', () => {
+        const header = buildCspHeader({ nonce: 'dev-nonce', isDev: true });
+
+        expect(findFrameSrcDirective(header)).toContain('https://challenges.cloudflare.com');
+    });
+
+    it("keeps frame-ancestors 'none' in prod, so nobody can embed us", () => {
+        const header = buildCspHeader({ nonce: 'prod-nonce', isDev: false });
+
+        expect(header).toContain("frame-ancestors 'none'");
+        expect(header).not.toContain("frame-ancestors 'self'");
+    });
+
+    it("widens frame-ancestors to 'self' in dev — relaxing frame-src alone still blocks the iframe", () => {
+        // Both directives are required: `frame-src` authorises the parent to
+        // embed, `frame-ancestors` (on the iframe's own response) authorises the
+        // child to be embedded. With only `frame-src` relaxed the browser blocks
+        // on `frame-ancestors 'none'` instead and the soft-nav still hangs.
+        const header = buildCspHeader({ nonce: 'dev-nonce', isDev: true });
+
+        expect(header).toContain("frame-ancestors 'self'");
+        expect(header).not.toContain("frame-ancestors 'none'");
+    });
+
+    it("never widens frame-ancestors beyond 'self' — no wildcard in either mode", () => {
+        for (const isDev of [true, false]) {
+            const header = buildCspHeader({ nonce: 'n', isDev });
+            const frameAncestors =
+                header.split('; ').find((d) => /^frame-ancestors /.test(d)) ?? '';
+            expect(frameAncestors).not.toContain('*');
+            expect(frameAncestors).not.toContain('http:');
+        }
     });
 });
 

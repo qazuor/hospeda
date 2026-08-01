@@ -667,6 +667,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
                     title={String(item.title || '')}
                     summary={String(item.summary || item.description || '')}
                     featuredImage={item.featuredImage ? String(item.featuredImage) : null}
+                    category={item.category ? String(item.category) : null}
                     destinationName={accommodation.destination.name}
                     publishedAt={item.publishedAt ? String(item.publishedAt) : null}
                     lang={locale}

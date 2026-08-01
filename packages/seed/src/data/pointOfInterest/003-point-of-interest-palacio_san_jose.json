@@ -47,9 +47,10 @@
         }
     },
     "icon": "museum",
+    "hasOwnPage": true,
     "isBuiltin": true,
     "isFeatured": true,
-    "displayWeight": 90,
+    "displayWeight": 100,
     "lifecycleState": "ACTIVE",
     "verified": true,
     "verifiedAt": null,

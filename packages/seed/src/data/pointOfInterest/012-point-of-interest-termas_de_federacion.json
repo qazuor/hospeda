@@ -49,6 +49,6 @@
     "icon": "hot_tub",
     "isBuiltin": true,
     "isFeatured": true,
-    "displayWeight": 72,
+    "displayWeight": 100,
     "lifecycleState": "ACTIVE"
 }

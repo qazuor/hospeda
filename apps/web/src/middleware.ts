@@ -399,7 +399,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
             // Drop the external *.sentry.io connect-src when the first-party
             // Sentry tunnel is active (SPEC-181 follow-up).
             sentryTunnelEnabled: Boolean(import.meta.env.PUBLIC_SENTRY_TUNNEL),
-            // HOS-91: relax style-src in dev only (see buildCspHeader JSDoc).
+            // Dev-only CSP relaxations, both caused by Astro's ClientRouter
+            // behaving differently under `astro dev` (see buildCspHeader JSDoc):
+            // HOS-91's style-src, plus frame-src 'self' for the hidden
+            // same-origin iframe it uses to prepare `client:only` islands.
             isDev: isDevelopment()
         });
 

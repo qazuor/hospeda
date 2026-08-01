@@ -161,6 +161,26 @@
             "text": "The Argentine Litoral comprises the provinces of Entre Ríos, Corrientes and Santa Fe. This region is characterized by its natural richness, with the Paraná River as its backbone, its natural hot springs, its colonial history and the warmth of its people. Concepción del Uruguay, in Entre Ríos, is one of the most important historic cities in the region."
         }
     },
+    "byAttraction": {
+        "tagline": "Attraction",
+        "heading": "Destinations with {{attraction}}",
+        "seoSuffix": "Discover the Litoral destinations that offer it.",
+        "linkLabel": "See destinations with {{attraction}}"
+    },
+    "poiPage": {
+        "tagline": "Place",
+        "about": "About this place",
+        "address": "Address",
+        "inDestinations": "Found in",
+        "inDestinationsIntro": "This place is part of what these destinations offer.",
+        "nearbyAccommodations": "Places to stay nearby",
+        "nearbyIntro": "Accommodations within {{km}} km of this place.",
+        "destinationFallbackTitle": "Places to stay in {{destination}}",
+        "destinationFallbackIntro": "No accommodations are listed within {{km}} km, so here are the ones in {{destination}}.",
+        "noAccommodations": "No accommodations are listed near this place yet.",
+        "seeAllInDestination": "See every place to stay in {{destination}}",
+        "seoSuffix": "How to get there, which destinations it belongs to, and where to stay nearby."
+    },
     "accommodationsPage": {
         "home": "Home",
         "destinations": "Destinations",

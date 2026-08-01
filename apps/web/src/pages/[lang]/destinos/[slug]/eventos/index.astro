@@ -7,6 +7,7 @@
  */
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
@@ -81,9 +82,21 @@ const heading = t('events.typeInLocation', '{{type}} en {{location}}', {
 	type: t('events.title', 'Eventos'),
 	location: destName
 });
+
+// --- Breadcrumb JSON-LD ---
+// Mirrors the visible trail below PLUS the current page: the visible component
+// drops the leaf (it is already the H1), but BreadcrumbList must stay complete.
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const breadcrumbItems = [
+	{ name: t('nav.home', 'Inicio'), url: `${siteOrigin}${buildUrl({ locale, path: '' })}` },
+	{ name: t('destinations.title', 'Destinos'), url: `${siteOrigin}${buildUrl({ locale, path: 'destinos' })}` },
+	{ name: destName, url: `${siteOrigin}${buildUrl({ locale, path: `destinos/${slug}` })}` },
+	{ name: t('events.title', 'Eventos'), url: `${siteOrigin}${Astro.url.pathname}` }
+];
 ---
 
 <ListingLayout locale={locale} title={heading} showFilters={false} totalCount={total}>
+	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('destinations.title', 'Destinos'), path: 'destinos' }, { label: destName, path: `destinos/${slug}` }, { label: t('events.title', 'Eventos') }]} />
 	<ListingPageHeader slot="page-header" locale={locale} tagline={t('events.tagline', 'No te pierdas nada')} title={heading} />
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="eventos" />}

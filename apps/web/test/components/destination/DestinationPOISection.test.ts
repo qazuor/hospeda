@@ -178,3 +178,31 @@ describe('DestinationPOISection.astro — HOS-181 visual-weight reduction', () =
         expect(sectionSrc).toMatch(/-webkit-line-clamp:\s*1/);
     });
 });
+
+// The POI detail page (`/destinos/lugar/{slug}/`) is gated by `hasOwnPage` and
+// 404s every other catalog row. This grid is the ONLY UI surface that links to
+// it, so a regression here does not merely lose a link — it orphans the page.
+// Equally, linking a POI without the flag would publish a 404 into the grid.
+describe('DestinationPOISection.astro — POI detail page links', () => {
+    it('links the card name only when the POI has its own page', () => {
+        expect(sectionSrc).toMatch(/poi\.hasOwnPage\s*\?/);
+        // Regex rather than a literal: the source interpolates the slug, and a
+        // plain string holding `${...}` trips biome's noTemplateCurlyInString.
+        expect(sectionSrc).toMatch(/destinos\/lugar\/\$\{poi\.slug\}/);
+    });
+
+    it('builds the href through buildUrl so the locale prefix and trailing slash are right', () => {
+        expect(sectionSrc).toContain("import { buildUrl } from '@/lib/urls'");
+        expect(sectionSrc).toMatch(/buildUrl\(\{\s*locale,\s*path:\s*`destinos\/lugar\//);
+    });
+
+    it('still renders a plain name for POIs without a page (no bare <a> for everyone)', () => {
+        // The ternary must keep an unlinked branch; a template that always
+        // wrapped the name would advertise 404s for ~839 catalog rows.
+        expect(sectionSrc).toMatch(/\)\s*:\s*\(\s*poi\.displayName\s*\)/);
+    });
+
+    it('carries hasOwnPage on the item contract the page passes in', () => {
+        expect(sectionSrc).toMatch(/readonly hasOwnPage\?:\s*boolean/);
+    });
+});

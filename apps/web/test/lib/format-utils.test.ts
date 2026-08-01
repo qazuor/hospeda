@@ -4,7 +4,12 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { formatDate, formatEventDetailDateRange, formatPrice } from '../../src/lib/format-utils';
+import {
+    formatDate,
+    formatEventDetailDateRange,
+    formatEventDetailDateRangeCompact,
+    formatPrice
+} from '../../src/lib/format-utils';
 
 describe('formatPrice', () => {
     it('should format ARS price with es locale', () => {
@@ -222,6 +227,131 @@ describe('formatEventDetailDateRange', () => {
                 if (result.precision !== 'MONTH') throw new Error('unreachable');
                 expect(result.label.toLowerCase()).toBe('febrero de 2027');
             });
+        });
+    });
+});
+
+describe('formatEventDetailDateRangeCompact', () => {
+    const SEP_5 = '2026-09-05T00:00:00.000Z';
+    const SEP_12 = '2026-09-12T00:00:00.000Z';
+    const AUG_28 = '2026-08-28T00:00:00.000Z';
+    const DEC_28 = '2026-12-28T00:00:00.000Z';
+    const JAN_3 = '2027-01-03T00:00:00.000Z';
+
+    describe('EXACT precision', () => {
+        it('collapses the shared month and year when both dates fall in the same month', () => {
+            const { label } = formatEventDetailDateRangeCompact({
+                startDate: SEP_5,
+                endDate: SEP_12,
+                locale: 'es'
+            });
+
+            // The month and the year appear exactly once — that redundancy is
+            // what made the long form wrap mid-date on narrow viewports.
+            expect(label.match(/sept/gi)).toHaveLength(1);
+            expect(label.match(/2026/g)).toHaveLength(1);
+            expect(label).toContain('5');
+            expect(label).toContain('12');
+        });
+
+        it('keeps both months but a single year when the range stays inside one year', () => {
+            const { label } = formatEventDetailDateRangeCompact({
+                startDate: AUG_28,
+                endDate: SEP_12,
+                locale: 'es'
+            });
+
+            expect(label.match(/2026/g)).toHaveLength(1);
+            expect(label.toLowerCase()).toContain('ago');
+            expect(label.toLowerCase()).toContain('sept');
+        });
+
+        it('keeps both years when the range crosses a year boundary', () => {
+            const { label } = formatEventDetailDateRangeCompact({
+                startDate: DEC_28,
+                endDate: JAN_3,
+                locale: 'es'
+            });
+
+            expect(label).toContain('2026');
+            expect(label).toContain('2027');
+        });
+
+        it('formats a single date when there is no end date', () => {
+            const { label } = formatEventDetailDateRangeCompact({
+                startDate: SEP_5,
+                locale: 'es'
+            });
+
+            expect(label).toContain('5');
+            expect(label).toContain('2026');
+            expect(label).not.toContain('–');
+        });
+
+        it('is shorter than the long form it replaces on narrow viewports', () => {
+            const compact = formatEventDetailDateRangeCompact({
+                startDate: SEP_5,
+                endDate: SEP_12,
+                locale: 'es'
+            });
+            const long = formatEventDetailDateRange({
+                startDate: SEP_5,
+                endDate: SEP_12,
+                locale: 'es'
+            });
+            if (long.precision !== 'EXACT') throw new Error('unreachable');
+            const longLength = `${long.startLabel} – ${long.endLabel}`.length;
+
+            // Guards the whole point of the variant: if a future change made it
+            // no shorter, the mobile wrap it exists to prevent would be back.
+            expect(compact.label.length).toBeLessThan(longLength / 2);
+        });
+    });
+
+    describe('MONTH precision', () => {
+        it('drops the day, since the stored day-of-month is a placeholder', () => {
+            const { label } = formatEventDetailDateRangeCompact({
+                startDate: '2027-02-01T00:00:00.000Z',
+                precision: 'MONTH',
+                locale: 'es'
+            });
+
+            expect(label.toLowerCase()).toContain('feb');
+            expect(label).toContain('2027');
+            expect(label).not.toMatch(/\b1\b/);
+        });
+    });
+
+    describe('locale field order', () => {
+        // The reason this delegates to Intl.formatRange instead of joining
+        // strings by hand: `en` puts the month before the day, so a hardcoded
+        // "{day} – {day} {month} {year}" template would be wrong there.
+        it('puts the month before the day in en, and after it in es', () => {
+            const en = formatEventDetailDateRangeCompact({
+                startDate: SEP_5,
+                endDate: SEP_12,
+                locale: 'en'
+            }).label;
+            const es = formatEventDetailDateRangeCompact({
+                startDate: SEP_5,
+                endDate: SEP_12,
+                locale: 'es'
+            }).label;
+
+            expect(en.toLowerCase().indexOf('sep')).toBeLessThan(en.indexOf('5'));
+            expect(es.toLowerCase().indexOf('sept')).toBeGreaterThan(es.indexOf('5'));
+        });
+
+        it('produces a non-empty label for every supported locale', () => {
+            for (const locale of ['es', 'en', 'pt'] as const) {
+                const { label } = formatEventDetailDateRangeCompact({
+                    startDate: SEP_5,
+                    endDate: SEP_12,
+                    locale
+                });
+                expect(label.length).toBeGreaterThan(0);
+                expect(label).toContain('2026');
+            }
         });
     });
 });

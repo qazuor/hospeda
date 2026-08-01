@@ -93,6 +93,12 @@ describe('PointOfInterestService.getNearby', () => {
                 isFeatured: row.isFeatured,
                 isBuiltin: row.isBuiltin,
                 displayWeight: row.displayWeight,
+                // `NearbyPoiSchema` derives from `PointOfInterestPublicSchema`,
+                // which gained `hasOwnPage` when POI detail pages landed. The
+                // fixture omits it and the schema defaults it to `false`, so it
+                // is part of the projected public shape — consumers gate the
+                // card's link on it and must never advertise a URL that 404s.
+                hasOwnPage: false,
                 distanceKm: 2.5,
                 primaryCategory: null
             }

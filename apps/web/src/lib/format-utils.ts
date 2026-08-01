@@ -243,6 +243,90 @@ export function formatEventDetailDateRange({
     return { precision: 'MONTH', label: `${startMonthYearLabel} – ${endMonthYearLabel}` };
 }
 
+/**
+ * Input for {@link formatEventDetailDateRangeCompact}.
+ */
+export interface FormatEventDetailDateRangeCompactParams {
+    /** Event start date value. Accepts `Date` or ISO string. */
+    readonly startDate: Date | string;
+    /** Optional event end date value. */
+    readonly endDate?: Date | string | null;
+    /** Date precision (HOS-280). Defaults to `'EXACT'`. */
+    readonly precision?: 'EXACT' | 'MONTH';
+    /** Short locale code used to select formatting conventions. */
+    readonly locale: SupportedLocale;
+}
+
+/**
+ * Result of {@link formatEventDetailDateRangeCompact}.
+ */
+export interface FormatEventDetailDateRangeCompactResult {
+    /** Single pre-joined, abbreviated label for the whole range. */
+    readonly label: string;
+}
+
+/**
+ * Abbreviated single-line variant of {@link formatEventDetailDateRange}, for
+ * narrow viewports where the long form wraps mid-date.
+ *
+ * The long form prints two fully independent dates joined by a separator, so
+ * `5 de septiembre de 2026 – 12 de septiembre de 2026` repeats the month and
+ * the year and breaks across two ragged lines under ~640px. This variant
+ * delegates to `Intl.DateTimeFormat.prototype.formatRange`, which collapses
+ * whatever the two endpoints share AND honours each locale's field order —
+ * something string concatenation cannot do (`en` puts the month first, so a
+ * hand-built `"{day} – {day} {month} {year}"` would be wrong there):
+ *
+ * | case          | es                      | en                    |
+ * |---------------|-------------------------|-----------------------|
+ * | same month    | `5–12 sept 2026`        | `Sep 5 – 12, 2026`    |
+ * | same year     | `28 ago – 3 sept 2026`  | `Aug 28 – Sep 3, 2026`|
+ * | crosses years | `28 dic 2026 – 3 ene 2027` | `Dec 28, 2026 – Jan 3, 2027` |
+ *
+ * `'MONTH'` precision drops the day entirely, matching the long form's rule
+ * that the stored day-of-month is a placeholder.
+ *
+ * `timeZone: 'UTC'` is forced for the same reason as the long form: the stored
+ * date must not shift a day/month in a non-UTC runtime timezone.
+ *
+ * @param params - {@link FormatEventDetailDateRangeCompactParams}
+ * @returns {@link FormatEventDetailDateRangeCompactResult}
+ *
+ * @example
+ * ```ts
+ * formatEventDetailDateRangeCompact({
+ *   startDate: '2026-09-05T00:00:00.000Z',
+ *   endDate: '2026-09-12T00:00:00.000Z',
+ *   locale: 'es',
+ * }); // → { label: '5–12 sept 2026' }
+ * ```
+ */
+export function formatEventDetailDateRangeCompact({
+    startDate,
+    endDate,
+    precision = 'EXACT',
+    locale
+}: FormatEventDetailDateRangeCompactParams): FormatEventDetailDateRangeCompactResult {
+    const start = startDate instanceof Date ? startDate : new Date(startDate);
+    const end = endDate ? (endDate instanceof Date ? endDate : new Date(endDate)) : null;
+
+    const options: Intl.DateTimeFormatOptions =
+        precision === 'MONTH'
+            ? { year: 'numeric', month: 'short', timeZone: 'UTC' }
+            : { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' };
+
+    const formatter = new Intl.DateTimeFormat(locale, options);
+
+    if (!end) {
+        return { label: formatter.format(start) };
+    }
+
+    // `formatRange` emits a single endpoint on its own when both sides format
+    // identically (e.g. two days inside one month at MONTH precision), so the
+    // same-value case needs no special handling here.
+    return { label: formatter.formatRange(start, end) };
+}
+
 // ---------------------------------------------------------------------------
 // Relative time
 // ---------------------------------------------------------------------------

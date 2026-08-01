@@ -108,6 +108,16 @@ export interface LocationMapMultiMarker {
     readonly label: string;
     /** Popup subtitle. */
     readonly typeLabel: string;
+    /**
+     * Absolute path of the POI's detail page, when it has one. Only the
+     * curated few do — the route 404s every other catalog row — so this is
+     * `null`/absent for almost every marker and the popup title stays plain
+     * text. It matters most for a NEARBY pin: the SSR card grid filters those
+     * out, so the map popup is the ONLY way a visitor browsing the nearest big
+     * city reaches a landmark 28 km away (Palacio San José from Concepción del
+     * Uruguay).
+     */
+    readonly detailUrl?: string | null;
 }
 
 /** `[[south, west], [north, east]]` — Leaflet's `fitBounds` corner order. */

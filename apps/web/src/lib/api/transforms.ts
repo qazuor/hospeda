@@ -513,6 +513,13 @@ export interface DestinationPointOfInterestItem {
     readonly isFeatured?: boolean;
     readonly displayWeight?: number;
     /**
+     * Whether this POI has a detail page at `/destinos/lugar/{slug}/`. Only a
+     * curated handful of the 842-row catalog do; the route 404s the rest. The
+     * card links its name only when this is `true`, so the grid can never
+     * advertise a URL that does not resolve.
+     */
+    readonly hasOwnPage?: boolean;
+    /**
      * The POI's primary category (HOS-182) — `{ slug, nameI18n }`, or `null`
      * when the POI has no primary category assigned. Absent/null is an
      * EXPECTED state (data is known-dirty, see HOS-177), never an error.
@@ -582,6 +589,11 @@ export function toDestinationPointOfInterestListProps({
             descriptionI18n: (poi.descriptionI18n as I18nTextLike | null | undefined) ?? null,
             nameI18n: (poi.nameI18n as I18nTextLike | null | undefined) ?? null,
             isFeatured: Boolean(poi.isFeatured),
+            // Strict `=== true`: a payload that omits the key must be treated
+            // as "no page", matching the route's own gate. `Boolean()` would
+            // agree here, but the explicit comparison keeps the three
+            // enforcement points (route, sitemap, card) reading identically.
+            hasOwnPage: poi.hasOwnPage === true,
             displayWeight: typeof poi.displayWeight === 'number' ? poi.displayWeight : 0,
             primaryCategory,
             categories

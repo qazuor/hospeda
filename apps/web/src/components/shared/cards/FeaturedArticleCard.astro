@@ -22,7 +22,8 @@ import {
 import { Image } from 'astro:assets';
 import { CalendarIcon, ClockIcon, StarIcon, UserIcon } from '@repo/icons';
 import Badge from '@/components/shared/ui/Badge.astro';
-import { getPostCategoryColor, getPostCategoryLabel, getPostCategoryEmoji, getBadgeStatusColor, getMutedColorScheme } from '@/lib/colors';
+import { getPostCategoryColor, getPostCategoryLabel, getBadgeStatusColor, getMutedColorScheme } from '@/lib/colors';
+import { getPostCategoryIconComponent } from './utils/postCategoryIcon';
 
 interface Props {
     /** Full article card data. */
@@ -40,8 +41,11 @@ const trendingColors = getBadgeStatusColor({ status: 'trending' });
 const articleUrl = buildUrl({ locale, path: `/publicaciones/${data.slug}/` });
 const categoryColor = getPostCategoryColor({ category: data.category });
 const categoryLabel = getPostCategoryLabel({ category: data.category, t });
-const categoryEmoji = getPostCategoryEmoji({ category: data.category });
-const hasImage = Boolean(data.featuredImage?.url);
+const CategoryIcon = getPostCategoryIconComponent(data.category);
+// A local `placeholder-*.svg` path is the API transform's "no photo" sentinel,
+// not a real cover — it must not cover the category-icon placeholder.
+const hasImage =
+    Boolean(data.featuredImage?.url) && !data.featuredImage?.url?.includes('placeholder');
 
 const { visible: visibleTags } = truncateTags({ tags: data.tags ?? [], maxVisible: 3 });
 const { text: excerpt } = truncateExcerpt({ text: data.summary, variant: 'featured' });
@@ -80,7 +84,9 @@ const mutedColorScheme = getMutedColorScheme();
         <div class="featured-card__image-wrapper">
             <!-- Placeholder always rendered behind the image -->
             <div class="featured-card__placeholder" style={`background-color: ${categoryColor.bg};`} aria-hidden="true">
-                <span class="featured-card__placeholder-emoji">{categoryEmoji}</span>
+                <span class="featured-card__placeholder-icon">
+                    <CategoryIcon size={96} weight="duotone" aria-hidden="true" />
+                </span>
             </div>
             {hasImage && (
                 <img
@@ -270,14 +276,15 @@ const mutedColorScheme = getMutedColorScheme();
         z-index: 0;
     }
 
-    .featured-card__placeholder-emoji {
-        font-size: 4.5rem;
+    .featured-card__placeholder-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
         line-height: 1;
-        filter: grayscale(0.15);
         transition: transform var(--duration-normal) ease;
     }
 
-    .featured-card:hover .featured-card__placeholder-emoji {
+    .featured-card:hover .featured-card__placeholder-icon {
         transform: scale(1.15);
     }
 

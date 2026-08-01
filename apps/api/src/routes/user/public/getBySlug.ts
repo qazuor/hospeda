@@ -72,7 +72,13 @@ export const publicGetUserBySlugRoute = createPublicRoute({
         const actor = getActorFromContext(ctx);
         const slug = params.slug as string;
 
-        const result = await userService.getBySlug(actor, slug);
+        // `getPublicProfileBySlug`, NOT `getBySlug`: the latter runs the
+        // self-or-USER_READ_ALL gate on the full user row, so every anonymous
+        // visitor used to get a 403 here — which the web app renders as a 404,
+        // making the author page unreachable from a post byline. See the method
+        // docstring for why the gate is bypassed with a narrow projection
+        // instead of being loosened.
+        const result = await userService.getPublicProfileBySlug(actor, { slug });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
@@ -85,15 +91,7 @@ export const publicGetUserBySlugRoute = createPublicRoute({
             );
         }
 
-        const user = result.data;
-
-        return {
-            id: user.id,
-            displayName: user.displayName ?? null,
-            slug: user.slug,
-            avatar: user.profile?.avatar ?? null,
-            bio: user.profile?.bio ?? null
-        };
+        return result.data;
     },
     options: {
         cacheTTL: 300,

@@ -12,6 +12,8 @@ import JsonLd from './JsonLd.astro';
 
 /** Address interface for destination structured data. */
 export interface PlaceAddress {
+	/** Street address, when the place has a specific one (POIs do; destinations do not) */
+	readonly streetAddress?: string;
 	/** City or locality name */
 	readonly addressLocality: string;
 	/** State or region name */
@@ -48,13 +50,30 @@ interface Props {
 	 * non-empty, emitted as `sameAs` on the TouristDestination.
 	 */
 	readonly sameAs?: ReadonlyArray<string>;
+	/**
+	 * schema.org type to emit. Defaults to `TouristDestination`, which is what a
+	 * destination page is. A point-of-interest page passes `TouristAttraction`
+	 * instead: a museum or a castle is a single visitable place, not a region a
+	 * visitor travels to, and mistyping it would describe the Palacio San José
+	 * as a destination competing with Concepción del Uruguay.
+	 */
+	readonly schemaType?: 'TouristDestination' | 'TouristAttraction';
 }
 
-const { name, description, url, image, address, geo, sameAs } = Astro.props;
+const {
+	name,
+	description,
+	url,
+	image,
+	address,
+	geo,
+	sameAs,
+	schemaType = 'TouristDestination',
+} = Astro.props;
 
 const structuredData: Record<string, unknown> = {
 	'@context': 'https://schema.org',
-	'@type': 'TouristDestination',
+	'@type': schemaType,
 	name,
 	description,
 	url,
@@ -67,6 +86,7 @@ if (image) {
 if (address) {
 	structuredData.address = {
 		'@type': 'PostalAddress',
+		...(address.streetAddress && { streetAddress: address.streetAddress }),
 		addressLocality: address.addressLocality,
 		addressCountry: address.addressCountry,
 		...(address.addressRegion && { addressRegion: address.addressRegion }),
