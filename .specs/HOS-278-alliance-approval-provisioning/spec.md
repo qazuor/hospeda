@@ -172,9 +172,10 @@ construye una sola vez.
   patrón de `commerce/protected/my-lead.ts` — auth-only, sin permiso extra,
   degradando a lista vacía en vez de 404.
 
-**Decisión pendiente sobre los datos existentes** (ver §11 OQ-1): una columna
-nueva sólo cubre postulaciones futuras. Las ya aprobadas — incluida la que motivó
-esta spec — quedarían huérfanas.
+**No hace falta retrocompatibilidad.** El owner confirmó (2026-08-01) que no
+existe ninguna aprobación real: las que hay en la base son pruebas suyas. La
+columna arranca vacía y sólo se puebla hacia adelante. Sin backfill, sin matcheo
+por email, y por lo tanto sin el riesgo de exposición que eso implicaba.
 
 ### 6.2 Bloque B — proveedor
 
@@ -304,11 +305,10 @@ Toda la copy nueva va por i18n en es/en/pt, **traducida, no copiada**.
 
 ## 10. Risks
 
-- **R-1 — Matcheo por email como vía retroactiva.** Es la única forma de vincular
-  postulaciones viejas, y el email del lead **no está verificado**: cualquiera
-  puede escribir el de otra persona. Un backfill ciego expone las postulaciones de
-  un tercero a quien registre ese email. Si se hace, tiene que ser una migración
-  puntual y auditada, nunca un matcheo en tiempo de lectura.
+- **R-1 — El email del lead no está verificado.** Ya no aplica al backfill (no hay
+  datos que migrar), pero sigue vigente como regla permanente: **nunca resolver
+  "mis postulaciones" matcheando por email**. Cualquiera puede escribir el de otra
+  persona en un formulario público. El vínculo es siempre por `applicant_user_id`.
 - **R-2 — Alcance de partner sujeto a HOS-294.** Todo el bloque C asume que la
   superficie pública es el carrusel. Si HOS-294 se revisara, cambia qué administra
   el partner y probablemente qué se le cobra.
@@ -326,10 +326,9 @@ Toda la copy nueva va por i18n en es/en/pt, **traducida, no copiada**.
 
 ## 11. Open questions
 
-- **OQ-1** — ¿Qué se hace con las postulaciones ya aprobadas? Tres caminos: (a) no
-  hacer nada y que sólo funcione hacia adelante; (b) backfill por email en una
-  migración auditada, asumiendo R-1; (c) que el admin vincule a mano desde el
-  panel. La postulación que motivó esta spec está en ese grupo.
+- ~~OQ-1~~ **CERRADA** (2026-08-01, owner): no hay aprobaciones reales — las
+  existentes son pruebas del propio owner. No se necesita retrocompatibilidad ni
+  backfill. La columna arranca vacía y funciona sólo hacia adelante.
 - **OQ-2** — ¿El provisioning es automático en `markHandled` o un botón explícito
   "Aprobar y provisionar" por tipo? Commerce usa botón explícito. Que sean pasos
   separados permite aprobar sin provisionar todavía.
