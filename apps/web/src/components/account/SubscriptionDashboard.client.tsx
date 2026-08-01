@@ -1075,6 +1075,7 @@ export function SubscriptionDashboard({
             {/* ── Plan usage ── Renders itself as null when there is nothing to show. */}
             <PlanUsageSection
                 locale={locale}
+                roles={user.roles}
                 productDomain={productDomain}
             />
 

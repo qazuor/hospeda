@@ -350,6 +350,13 @@
             "thresholdCritical": "Quase sem margem",
             "thresholdReached": "Você chegou ao limite",
             "thresholdExceeded": "Limite ultrapassado",
+            "audienceHost": "Como anfitrião",
+            "audienceTraveler": "Como viajante",
+            "monthlyNote": "Reinicia no começo de cada mês.",
+            "capOnly": "Até {{max}}",
+            "perAccommodationEmpty": "Você ainda não publicou nenhuma hospedagem.",
+            "upgradePlan": "Melhorar meu plano",
+            "buyAddon": "Ampliar com um complemento",
             "limits": {
                 "max_accommodations": "Hospedagens publicadas",
                 "max_photos_per_accommodation": "Fotos por hospedagem",

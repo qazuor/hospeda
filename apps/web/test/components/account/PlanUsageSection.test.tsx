@@ -3,18 +3,18 @@
  * @description RTL tests for the PlanUsageSection React island.
  *
  * Covers:
- *  - Renders one row per granted limit with the "N de M" figure
- *  - Limits the plan does not grant (`maxAllowed: 0`) are filtered out
- *  - Unlimited limits (`maxAllowed: -1`) show the consumption + "Ilimitado"
- *    and render NO progress bar
- *  - The progress bar caps at 100% while the figure keeps reporting the truth
- *  - The label comes from i18n keyed by limitKey, never the API's English
- *    `displayName`
- *  - A failed usage read renders nothing at all (no error box)
- *  - The requested product domain is forwarded to the API
+ *  - Rows render per audience group, with the group dropped when empty
+ *  - "N de M" for counted limits, cap-only for per-operation ones
+ *  - Unmeasured / ungranted / unbuilt limits never reach the DOM
+ *  - Unlimited limits show consumption + "Ilimitado" and no bar
+ *  - The bar caps at 100% while the figure keeps reporting the truth
+ *  - "Llegaste al límite" vs "Límite superado" split on the raw figures
+ *  - Per-accommodation breakdown renders one sub-row per accommodation
+ *  - Upgrade / add-on links appear only on rows that are running out
+ *  - A failed usage read renders nothing at all
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanUsageSection } from '../../../src/components/account/PlanUsageSection.client';
 import type { LimitUsage } from '../../../src/lib/api/endpoints-protected';
@@ -33,7 +33,10 @@ vi.mock('../../../src/components/account/PlanUsageSection.module.css', () => ({
  */
 const TRANSLATIONS: Record<string, string> = {
     'account.subscription.usage.limits.max_accommodations': 'Alojamientos publicados',
-    'account.subscription.usage.limits.max_favorites': 'Favoritos guardados'
+    'account.subscription.usage.limits.max_favorites': 'Favoritos guardados',
+    'account.subscription.usage.limits.max_photos_per_accommodation': 'Fotos por alojamiento',
+    'account.subscription.usage.limits.max_compare_items': 'Alojamientos en comparación',
+    'account.subscription.usage.limits.max_ai_search_per_month': 'Búsquedas con IA (por mes)'
 };
 
 vi.mock('../../../src/lib/i18n', () => {
@@ -75,6 +78,7 @@ function buildLimit(overrides: Partial<LimitUsage> & { limitKey: string }): Limi
         planBaseLimit: 5,
         addonBonusLimit: 0,
         isMeasured: true,
+        usageKind: 'stock',
         ...overrides
     };
 }
@@ -90,6 +94,16 @@ function okUsage(limits: readonly LimitUsage[]) {
             upgradeUrl: '/billing/plans'
         }
     };
+}
+
+/** Renders the island with the props every test needs. */
+function renderSection(props: { roles?: readonly string[] } = {}) {
+    return render(
+        <PlanUsageSection
+            locale="es"
+            roles={props.roles ?? ['HOST']}
+        />
+    );
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -113,7 +127,7 @@ describe('PlanUsageSection', () => {
         );
 
         // Act
-        render(<PlanUsageSection locale="es" />);
+        renderSection();
 
         // Assert
         expect(await screen.findByText('Alojamientos publicados')).toBeInTheDocument();
@@ -132,16 +146,85 @@ describe('PlanUsageSection', () => {
         );
 
         // Act
-        render(<PlanUsageSection locale="es" />);
+        renderSection();
 
         // Assert
         expect(await screen.findByText('Alojamientos publicados')).toBeInTheDocument();
         expect(screen.queryByText('Maximum accommodations')).not.toBeInTheDocument();
     });
 
+    // ── Grouping ──────────────────────────────────────────────────────────
+
+    it('should group limits by audience', async () => {
+        // Arrange
+        mockGetUsage.mockResolvedValue(
+            okUsage([
+                buildLimit({ limitKey: 'max_accommodations', currentUsage: 1 }),
+                buildLimit({ limitKey: 'max_favorites', currentUsage: 2, maxAllowed: 20 })
+            ])
+        );
+
+        // Act
+        renderSection();
+
+        // Assert
+        const hostGroup = await screen.findByRole('region', { name: 'Como anfitrión' });
+        const travelerGroup = screen.getByRole('region', { name: 'Como viajero' });
+
+        expect(within(hostGroup).getByText('Alojamientos publicados')).toBeInTheDocument();
+        expect(within(travelerGroup).getByText('Favoritos guardados')).toBeInTheDocument();
+    });
+
+    it('should not render an audience group that has no visible limits', async () => {
+        // Arrange — a traveller-only user: host limits are simply not granted.
+        mockGetUsage.mockResolvedValue(
+            okUsage([
+                buildLimit({ limitKey: 'max_accommodations', maxAllowed: 0 }),
+                buildLimit({ limitKey: 'max_favorites', currentUsage: 2, maxAllowed: 20 })
+            ])
+        );
+
+        // Act
+        renderSection({ roles: ['USER'] });
+
+        // Assert
+        expect(await screen.findByRole('region', { name: 'Como viajero' })).toBeInTheDocument();
+        expect(screen.queryByRole('region', { name: 'Como anfitrión' })).not.toBeInTheDocument();
+    });
+
+    it('should note the monthly reset only in groups that contain a monthly limit', async () => {
+        // Arrange
+        mockGetUsage.mockResolvedValue(
+            okUsage([
+                buildLimit({ limitKey: 'max_accommodations', currentUsage: 1 }),
+                buildLimit({
+                    limitKey: 'max_ai_search_per_month',
+                    usageKind: 'monthly',
+                    currentUsage: 3,
+                    maxAllowed: 200
+                })
+            ])
+        );
+
+        // Act
+        renderSection();
+
+        // Assert — the AI meter is traveller-side; the host group has no reset.
+        const travelerGroup = await screen.findByRole('region', { name: 'Como viajero' });
+        const hostGroup = screen.getByRole('region', { name: 'Como anfitrión' });
+
+        expect(
+            within(travelerGroup).getByText('Se reinicia al comenzar cada mes.')
+        ).toBeInTheDocument();
+        expect(
+            within(hostGroup).queryByText('Se reinicia al comenzar cada mes.')
+        ).not.toBeInTheDocument();
+    });
+
+    // ── Visibility rules ──────────────────────────────────────────────────
+
     it('should hide limits the plan does not grant (maxAllowed 0)', async () => {
-        // Arrange — the endpoint returns EVERY LimitKey; ungranted ones come
-        // back as 0 and must never render as a "0 de 0" row.
+        // Arrange
         mockGetUsage.mockResolvedValue(
             okUsage([
                 buildLimit({ limitKey: 'max_accommodations', currentUsage: 1, maxAllowed: 5 }),
@@ -155,7 +238,7 @@ describe('PlanUsageSection', () => {
         );
 
         // Act
-        render(<PlanUsageSection locale="es" />);
+        renderSection();
 
         // Assert
         expect(await screen.findByText('Alojamientos publicados')).toBeInTheDocument();
@@ -163,42 +246,38 @@ describe('PlanUsageSection', () => {
         expect(screen.queryByText('0 de 0')).not.toBeInTheDocument();
     });
 
-    it('should hide limits whose usage the server does not actually measure', async () => {
-        // Arrange — most LimitKeys have no counter and report a placeholder 0.
-        // Rendering one would tell a user who HAS used the feature that they
-        // have used none of it.
+    it('should hide limits whose feature does not exist yet', async () => {
+        // Arrange — properties/staff have no table and no UI anywhere.
         mockGetUsage.mockResolvedValue(
             okUsage([
-                buildLimit({ limitKey: 'max_accommodations', currentUsage: 2, maxAllowed: 5 }),
+                buildLimit({ limitKey: 'max_accommodations', currentUsage: 1 }),
                 buildLimit({
-                    limitKey: 'max_favorites',
-                    currentUsage: 0,
-                    maxAllowed: 200,
-                    planBaseLimit: 200,
+                    limitKey: 'max_properties',
+                    maxAllowed: 5,
+                    usageKind: 'unbuilt',
                     isMeasured: false
                 })
             ])
         );
 
         // Act
-        render(<PlanUsageSection locale="es" />);
+        renderSection();
 
         // Assert
         expect(await screen.findByText('Alojamientos publicados')).toBeInTheDocument();
-        expect(screen.queryByText('Favoritos guardados')).not.toBeInTheDocument();
-        expect(screen.queryByText('0 de 200')).not.toBeInTheDocument();
+        expect(screen.queryByText(/propiedades/i)).not.toBeInTheDocument();
     });
 
-    it('should render nothing when every limit is unmeasured', async () => {
+    it('should render nothing when every limit is hidden', async () => {
         // Arrange
         mockGetUsage.mockResolvedValue(
             okUsage([
-                buildLimit({ limitKey: 'max_accommodations', maxAllowed: 5, isMeasured: false })
+                buildLimit({ limitKey: 'max_properties', usageKind: 'unbuilt', maxAllowed: 5 })
             ])
         );
 
         // Act
-        const { container } = render(<PlanUsageSection locale="es" />);
+        const { container } = renderSection();
 
         // Assert
         await waitFor(() => {
@@ -206,7 +285,9 @@ describe('PlanUsageSection', () => {
         });
     });
 
-    it('should render an unlimited limit as consumption + Ilimitado, with no progress bar', async () => {
+    // ── Per-kind rendering ────────────────────────────────────────────────
+
+    it('should render an unlimited limit as consumption + Ilimitado, with no bar', async () => {
         // Arrange
         mockGetUsage.mockResolvedValue(
             okUsage([
@@ -220,12 +301,126 @@ describe('PlanUsageSection', () => {
         );
 
         // Act
-        render(<PlanUsageSection locale="es" />);
+        renderSection();
 
         // Assert
         expect(await screen.findByText('12 en uso · Ilimitado')).toBeInTheDocument();
         expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
+
+    it('should render a per-operation cap without inventing consumption', async () => {
+        // Arrange — the comparison endpoint bounds one request's `ids[]`;
+        // nothing is stored, so "0 de 4" would be a fabricated number.
+        mockGetUsage.mockResolvedValue(
+            okUsage([
+                buildLimit({
+                    limitKey: 'max_compare_items',
+                    maxAllowed: 4,
+                    currentUsage: 0,
+                    usageKind: 'per_operation',
+                    isMeasured: false
+                })
+            ])
+        );
+
+        // Act
+        renderSection();
+
+        // Assert
+        expect(await screen.findByText('Hasta 4')).toBeInTheDocument();
+        expect(screen.queryByText('0 de 4')).not.toBeInTheDocument();
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+
+    it('should render one sub-row per accommodation for a per-accommodation cap', async () => {
+        // Arrange
+        mockGetUsage.mockResolvedValue(
+            okUsage([
+                buildLimit({
+                    limitKey: 'max_photos_per_accommodation',
+                    maxAllowed: 50,
+                    currentUsage: 0,
+                    usageKind: 'per_accommodation',
+                    isMeasured: false,
+                    perAccommodation: [
+                        {
+                            accommodationId: 'a1',
+                            name: 'Casa El Molino',
+                            slug: 'casa-el-molino',
+                            currentUsage: 28
+                        },
+                        {
+                            accommodationId: 'a2',
+                            name: 'Cabaña del Río',
+                            slug: 'cabana-del-rio',
+                            currentUsage: 7
+                        }
+                    ]
+                })
+            ])
+        );
+
+        // Act
+        renderSection();
+
+        // Assert — the cap on the parent row, real figures per accommodation.
+        expect(await screen.findByText('Hasta 50')).toBeInTheDocument();
+        expect(screen.getByText('Casa El Molino')).toBeInTheDocument();
+        expect(screen.getByText('28 de 50')).toBeInTheDocument();
+        expect(screen.getByText('Cabaña del Río')).toBeInTheDocument();
+        expect(screen.getByText('7 de 50')).toBeInTheDocument();
+    });
+
+    it('should NOT claim the owner has no accommodations when the breakdown is absent', async () => {
+        // Arrange — the server omits `perAccommodation` when it could not build
+        // it. Rendering the empty-state message there tells an owner who has
+        // listings that they have none. Absent must stay silent; only an
+        // explicitly empty array is evidence.
+        mockGetUsage.mockResolvedValue(
+            okUsage([
+                buildLimit({
+                    limitKey: 'max_photos_per_accommodation',
+                    maxAllowed: 15,
+                    usageKind: 'per_accommodation',
+                    isMeasured: false
+                })
+            ])
+        );
+
+        // Act
+        renderSection();
+
+        // Assert
+        expect(await screen.findByText('Hasta 15')).toBeInTheDocument();
+        expect(
+            screen.queryByText('Todavía no publicaste ningún alojamiento.')
+        ).not.toBeInTheDocument();
+    });
+
+    it('should tell an owner with no accommodations that there is nothing to show', async () => {
+        // Arrange
+        mockGetUsage.mockResolvedValue(
+            okUsage([
+                buildLimit({
+                    limitKey: 'max_photos_per_accommodation',
+                    maxAllowed: 50,
+                    usageKind: 'per_accommodation',
+                    isMeasured: false,
+                    perAccommodation: []
+                })
+            ])
+        );
+
+        // Act
+        renderSection();
+
+        // Assert
+        expect(
+            await screen.findByText('Todavía no publicaste ningún alojamiento.')
+        ).toBeInTheDocument();
+    });
+
+    // ── Threshold wording ─────────────────────────────────────────────────
 
     it('should cap the bar at 100% while the figure still reports the overage', async () => {
         // Arrange — reachable after a downgrade or an addon expiry.
@@ -242,7 +437,7 @@ describe('PlanUsageSection', () => {
         );
 
         // Act
-        render(<PlanUsageSection locale="es" />);
+        renderSection();
 
         // Assert
         expect(await screen.findByText('7 de 5')).toBeInTheDocument();
@@ -269,7 +464,7 @@ describe('PlanUsageSection', () => {
         );
 
         // Act
-        render(<PlanUsageSection locale="es" />);
+        renderSection();
 
         // Assert
         expect(await screen.findByText('Llegaste al límite')).toBeInTheDocument();
@@ -291,7 +486,7 @@ describe('PlanUsageSection', () => {
         );
 
         // Act
-        render(<PlanUsageSection locale="es" />);
+        renderSection();
 
         // Assert
         expect(await screen.findByText('Límite superado')).toBeInTheDocument();
@@ -312,12 +507,116 @@ describe('PlanUsageSection', () => {
         );
 
         // Act
-        render(<PlanUsageSection locale="es" />);
+        renderSection();
 
         // Assert — a bare bar with no name tells a screen-reader user nothing.
-        const bar = await screen.findByRole('progressbar', { name: 'Alojamientos publicados' });
-        expect(bar).toBeInTheDocument();
+        expect(
+            await screen.findByRole('progressbar', { name: 'Alojamientos publicados' })
+        ).toBeInTheDocument();
     });
+
+    // ── Upgrade paths ─────────────────────────────────────────────────────
+
+    it('should offer the add-on and the plan upgrade when a limit is running out', async () => {
+        // Arrange
+        mockGetUsage.mockResolvedValue(
+            okUsage([
+                buildLimit({
+                    limitKey: 'max_accommodations',
+                    currentUsage: 5,
+                    maxAllowed: 5,
+                    usagePercentage: 100,
+                    threshold: 'exceeded'
+                })
+            ])
+        );
+
+        // Act
+        renderSection();
+
+        // Assert
+        const addonLink = await screen.findByRole('link', {
+            name: 'Ampliar con un complemento'
+        });
+        expect(addonLink).toHaveAttribute(
+            'href',
+            expect.stringContaining('#addon-extra-accommodations-5')
+        );
+        expect(screen.getByRole('link', { name: 'Mejorar mi plan' })).toBeInTheDocument();
+    });
+
+    it('should not offer upgrade links while comfortably under the limit', async () => {
+        // Arrange — otherwise the whole section reads as an ad.
+        mockGetUsage.mockResolvedValue(
+            okUsage([
+                buildLimit({
+                    limitKey: 'max_accommodations',
+                    currentUsage: 1,
+                    maxAllowed: 10,
+                    usagePercentage: 10,
+                    threshold: 'ok'
+                })
+            ])
+        );
+
+        // Act
+        renderSection();
+
+        // Assert
+        expect(await screen.findByText('Alojamientos publicados')).toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: 'Mejorar mi plan' })).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('link', { name: 'Ampliar con un complemento' })
+        ).not.toBeInTheDocument();
+    });
+
+    it('should offer only the plan upgrade when no add-on raises that limit', async () => {
+        // Arrange — no purchasable add-on targets AI searches.
+        mockGetUsage.mockResolvedValue(
+            okUsage([
+                buildLimit({
+                    limitKey: 'max_ai_search_per_month',
+                    usageKind: 'monthly',
+                    currentUsage: 195,
+                    maxAllowed: 200,
+                    usagePercentage: 97.5,
+                    threshold: 'critical'
+                })
+            ])
+        );
+
+        // Act
+        renderSection();
+
+        // Assert
+        expect(await screen.findByRole('link', { name: 'Mejorar mi plan' })).toBeInTheDocument();
+        expect(
+            screen.queryByRole('link', { name: 'Ampliar con un complemento' })
+        ).not.toBeInTheDocument();
+    });
+
+    it('should never offer upgrade links for an unlimited grant', async () => {
+        // Arrange — nothing to run out of, whatever bucket the server sent.
+        mockGetUsage.mockResolvedValue(
+            okUsage([
+                buildLimit({
+                    limitKey: 'max_accommodations',
+                    currentUsage: 40,
+                    maxAllowed: -1,
+                    threshold: 'exceeded'
+                })
+            ])
+        );
+
+        // Act
+        renderSection();
+
+        // Assert
+        expect(await screen.findByText('40 en uso · Ilimitado')).toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: 'Mejorar mi plan' })).not.toBeInTheDocument();
+    });
+
+    // ── Degradation ───────────────────────────────────────────────────────
 
     it('should render nothing when the usage read fails', async () => {
         // Arrange — 404 (no subscription) and 503 (billing off) are expected
@@ -331,7 +630,7 @@ describe('PlanUsageSection', () => {
         });
 
         // Act
-        const { container } = render(<PlanUsageSection locale="es" />);
+        const { container } = renderSection();
 
         // Assert
         await waitFor(() => {
@@ -344,7 +643,7 @@ describe('PlanUsageSection', () => {
         mockGetUsage.mockRejectedValue(new Error('network down'));
 
         // Act
-        const { container } = render(<PlanUsageSection locale="es" />);
+        const { container } = renderSection();
 
         // Assert
         await waitFor(() => {
@@ -360,6 +659,7 @@ describe('PlanUsageSection', () => {
         render(
             <PlanUsageSection
                 locale="es"
+                roles={['HOST']}
                 productDomain="commerce"
             />
         );
@@ -392,7 +692,7 @@ describe('PlanUsageSection', () => {
         );
 
         // Act
-        render(<PlanUsageSection locale="es" />);
+        renderSection();
 
         // Assert
         expect(await screen.findByText('Incluye 3 extra por complementos')).toBeInTheDocument();

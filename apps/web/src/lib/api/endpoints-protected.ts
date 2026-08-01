@@ -562,13 +562,43 @@ export interface LimitUsage {
     readonly planBaseLimit: number;
     readonly addonBonusLimit: number;
     /**
-     * Whether `currentUsage` is a real measurement. Only a few limit keys have
-     * a counter implemented server-side; the rest report a hardcoded `0` that
-     * is indistinguishable from a genuine zero. Never display a row with
-     * `isMeasured: false` — it would tell the user they have consumed nothing
-     * when they have.
+     * Whether `currentUsage` is a real measurement. A limit with no counter
+     * reports a hardcoded `0` that is indistinguishable from a genuine zero.
+     * Never display a row with `isMeasured: false` as consumption — it would
+     * tell the user they have used nothing when they have.
      */
     readonly isMeasured: boolean;
+    /**
+     * How this limit's consumption behaves, which decides how to render it.
+     * See `UsageKind` in `apps/api/src/services/usage-tracking.service.ts`.
+     */
+    readonly usageKind: UsageKind;
+    /**
+     * Photo consumption per accommodation, fullest-first. Present only when
+     * `usageKind` is `'per_accommodation'`.
+     */
+    readonly perAccommodation?: readonly AccommodationPhotoUsage[];
+}
+
+/**
+ * How a limit's consumption behaves.
+ *
+ * - `stock` — a quantity the account holds now; counted, never resets.
+ * - `monthly` — calls used this calendar month; counted, resets on the 1st.
+ * - `per_accommodation` — capped per accommodation; the real numbers are in
+ *   `perAccommodation` and `currentUsage` is meaningless.
+ * - `per_operation` — bounds a single request (how many items you may compare
+ *   at once); nothing is stored, so there is no consumption.
+ * - `unbuilt` — granted by the plan but the feature does not exist yet.
+ */
+export type UsageKind = 'stock' | 'monthly' | 'per_accommodation' | 'per_operation' | 'unbuilt';
+
+/** Photo consumption of one accommodation, for a `per_accommodation` limit. */
+export interface AccommodationPhotoUsage {
+    readonly accommodationId: string;
+    readonly name: string;
+    readonly slug: string | null;
+    readonly currentUsage: number;
 }
 
 /** The full usage picture for one subscription. */

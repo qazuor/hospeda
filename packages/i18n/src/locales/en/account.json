@@ -350,6 +350,13 @@
             "thresholdCritical": "Almost no room left",
             "thresholdReached": "You have reached the limit",
             "thresholdExceeded": "Limit exceeded",
+            "audienceHost": "As a host",
+            "audienceTraveler": "As a traveller",
+            "monthlyNote": "Resets at the start of each month.",
+            "capOnly": "Up to {{max}}",
+            "perAccommodationEmpty": "You have not published any accommodation yet.",
+            "upgradePlan": "Upgrade my plan",
+            "buyAddon": "Extend it with an add-on",
             "limits": {
                 "max_accommodations": "Published accommodations",
                 "max_photos_per_accommodation": "Photos per accommodation",

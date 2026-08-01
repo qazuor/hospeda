@@ -36,6 +36,32 @@
     margin: 0;
 }
 
+/* ── Audience group ────────────────────────────────────────────────────────── */
+
+.group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+    margin-top: var(--space-4, 16px);
+}
+
+.groupTitle {
+    font-family: var(--font-sans);
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+.groupNote {
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
 /* ── Limit list ────────────────────────────────────────────────────────────── */
 
 .list {
@@ -90,6 +116,52 @@
 
 .itemHint {
     color: var(--core-muted-foreground);
+}
+
+/* ── Per-accommodation breakdown ───────────────────────────────────────────── */
+
+.subList {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 var(--space-4, 16px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+    border-left: 2px solid var(--core-muted-foreground-a12);
+}
+
+.subItem {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.subLabel {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ── Upgrade actions ───────────────────────────────────────────────────────── */
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 12px);
+    margin: 0;
+}
+
+.actionLink {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--brand-primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.actionLink:hover {
+    color: var(--brand-accent);
 }
 
 /* ── Progress bar ──────────────────────────────────────────────────────────── */
