@@ -257,7 +257,30 @@ export default defineConfig({
             include: ['@repo/schemas', '@repo/icons', '@repo/i18n/web']
         },
         ssr: {
-            noExternal: [],
+            // `sanitize-html` is CommonJS but depends on `htmlparser2@12`, which is
+            // ESM-only (`type: module`, no CommonJS build). Left external, its
+            // `require('htmlparser2')` falls into Node's `require(esm)` path
+            // (`loadESMFromCJS`), which must link the whole ESM graph
+            // synchronously — htmlparser2 -> `entities/decode` -> `decode-codepoint.js`.
+            // Under concurrent warm-up traffic that synchronous link races against
+            // an `import()` of the same graph from another route chunk and throws
+            // `request for './decode-codepoint.js' is from a module not been linked`.
+            // Node then caches the rejected chunk, so the losing route serves 500s
+            // until the process restarts (HOS-370: destination detail pages were
+            // down for ~1h in production after a deploy).
+            //
+            // Bundling it resolves the CommonJS -> ESM interop at build time, so no
+            // `require(esm)` exists at runtime and the race cannot happen.
+            // `test/integration/cjs-esm-bridges.test.ts` fails if a new
+            // CommonJS -> ESM-only dependency edge appears without being handled here.
+            // `recharts` is the same shape: CommonJS, and it pulls `victory-vendor`
+            // (also CommonJS), whose `d3-*` subpath modules each `require()` an
+            // ESM-only `d3-*` package. It is imported from a lazily-loaded server
+            // chunk (the host dashboard), so it is linked mid-traffic exactly like
+            // sanitize-html was. Bundling is preferred over warming it at boot
+            // because `victory-vendor` exposes no root entry point — warming it
+            // would mean importing every `d3-*` subpath by hand.
+            noExternal: ['sanitize-html', 'recharts'],
             external: ['cloudinary', 'image-size']
         },
         define: {
