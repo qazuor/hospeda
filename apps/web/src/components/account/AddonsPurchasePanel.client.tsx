@@ -163,6 +163,10 @@ export function AddonsPurchasePanel({
         return (
             <article
                 key={addon.slug}
+                // Anchor target: the plan-usage section on the subscription
+                // page deep-links here (`#addon-<slug>`) when a limit that this
+                // add-on raises is running out.
+                id={`addon-${addon.slug}`}
                 className={styles.card}
                 data-testid={`addon-card-${addon.slug}`}
             >

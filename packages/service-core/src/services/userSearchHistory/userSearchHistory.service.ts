@@ -300,6 +300,46 @@ export class SearchHistoryService extends BaseService {
     }
 
     // -------------------------------------------------------------------------
+    // countForActor
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns how many search history entries the actor currently has stored.
+     *
+     * Exists so the plan-usage surface can report real consumption of
+     * `MAX_SEARCH_HISTORY_ENTRIES`. `list()` already returns a `total`, but it
+     * requires a `planLimit` and fetches a page of rows the caller does not
+     * need — this is a plain count.
+     *
+     * Note the stored total is bounded by the trim performed after each
+     * `record()`, so it never exceeds the actor's plan cap by more than the
+     * global {@link HARD_CAP}.
+     *
+     * @param actor - The authenticated actor.
+     * @param ctx - Optional service context.
+     * @returns `{ count: N }` — stored entries owned by the actor.
+     */
+    public async countForActor(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ count: number }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'countForActor',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, validatedActor, execCtx) => {
+                const count = await this.model.count(
+                    { userId: validatedActor.id },
+                    { tx: execCtx.tx }
+                );
+
+                return { count };
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------------
     // clearAll
     // -------------------------------------------------------------------------
 

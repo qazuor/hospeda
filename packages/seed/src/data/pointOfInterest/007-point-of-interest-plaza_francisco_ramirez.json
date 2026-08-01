@@ -48,7 +48,7 @@
     },
     "icon": "location_city",
     "isBuiltin": true,
-    "isFeatured": true,
-    "displayWeight": 70,
+    "isFeatured": false,
+    "displayWeight": 50,
     "lifecycleState": "ACTIVE"
 }

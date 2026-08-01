@@ -12,6 +12,13 @@
  *   for the active state — NEVER `aria-pressed` (invalid on `<a>`; the CI a11y
  *   sweep removes it). The `href` reflects the toggled URL, but the click is
  *   intercepted (`preventDefault`) and handled client-side.
+ * - Every chip whose `href` carries the `?categories=` facet param also carries
+ *   `rel="nofollow"` (HOS-369 WA-2). These chips are the measured source of the
+ *   AI-crawler storm: the destination page SSRs one `<a href="?categories=...">`
+ *   per present category, the param is CUMULATIVE, and crawlers walked the
+ *   resulting combinatorial tree (spec §5.9). `preventDefault` stops a human
+ *   from navigating; it does nothing for a crawler, which reads the raw SSR
+ *   HTML and never runs the handler.
  * - The active selection lives ONLY in the URL `?categories=` param (for
  *   shareability + back/forward), read via `readFacetActiveValues`.
  * - OR / any-of semantics via the shared `matchesActivePoiCategories` predicate,
@@ -29,6 +36,7 @@ import { type MouseEvent, useCallback, useEffect, useMemo, useState } from 'reac
 import { cn } from '@/lib/cn';
 import { buildClearFacetChip } from '@/lib/filters/build-clear-facet-chip';
 import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
+import { shouldNofollowFacetHref } from '@/lib/filters/facet-crawl-policy';
 import { matchesActivePoiCategories } from '@/lib/filters/match-poi-category-filter';
 import { POI_CATEGORY_FILTER_EVENT } from '@/lib/filters/poi-category-filter-event';
 import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
@@ -213,6 +221,7 @@ export function DestinationPOIFilter({ categories, locale }: DestinationPOIFilte
                         <li key={category.slug}>
                             <a
                                 href={href}
+                                rel={shouldNofollowFacetHref({ href }) ? 'nofollow' : undefined}
                                 className={cn(styles.chip, active && styles.chipActive)}
                                 aria-current={active ? 'true' : undefined}
                                 onClick={(event) => handleToggle(category.slug, event)}
@@ -232,6 +241,11 @@ export function DestinationPOIFilter({ categories, locale }: DestinationPOIFilte
                     <li>
                         <a
                             href={clearChip.href}
+                            rel={
+                                shouldNofollowFacetHref({ href: clearChip.href })
+                                    ? 'nofollow'
+                                    : undefined
+                            }
                             className={cn(styles.chip, styles.chipClear)}
                             aria-label={clearChip.ariaLabel}
                             onClick={handleClear}

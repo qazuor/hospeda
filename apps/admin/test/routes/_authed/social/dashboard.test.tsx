@@ -1,0 +1,574 @@
+// @vitest-environment jsdom
+/**
+ * Smoke tests for the social dashboard page (SPEC-254 T-041).
+ *
+ * Strategy:
+ * - Mock `useSocialDashboard` to inject controlled data.
+ * - Mock `useApproveSocialPost` to track optimistic approve calls.
+ * - Mock `useTranslations` to return predictable key strings.
+ * - Wrap renders in QueryClientProvider so TanStack Query hooks work.
+ *
+ * Covers:
+ * - KPI cards render with correct counts.
+ * - Approval queue renders items with approve buttons.
+ * - Optimistic approve removes the item from the queue.
+ * - Webhook alert shows when makeWebhookConfigured is false.
+ * - Webhook alert is hidden when makeWebhookConfigured is true.
+ * - Recent failures section renders failure items.
+ * - Empty approval queue shows the empty message.
+ */
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// ---------------------------------------------------------------------------
+// Module mocks — must be declared before component imports
+// ---------------------------------------------------------------------------
+
+vi.mock('@/hooks/use-social-posts', () => ({
+    useSocialDashboard: vi.fn(),
+    useApproveSocialPost: vi.fn(),
+    socialPostQueryKeys: {
+        all: ['social-posts'],
+        lists: () => ['social-posts', 'list'],
+        list: (f: unknown) => ['social-posts', 'list', f],
+        detail: (id: string) => ['social-posts', 'detail', id],
+        dashboard: () => ['social-posts', 'dashboard']
+    }
+}));
+
+vi.mock('@/hooks/use-auth-context', () => ({
+    useAuthContext: () => ({ isLoading: false, user: null }),
+    useHasPermission: vi.fn(() => true),
+    useHasRole: vi.fn(() => false),
+    useHasAnyRole: vi.fn(() => false)
+}));
+
+vi.mock('@/hooks/use-user-permissions', () => ({
+    useUserPermissions: vi.fn(() => [])
+}));
+
+vi.mock('@/hooks/use-translations', () => ({
+    useTranslations: () => ({
+        t: (key: string) => key,
+        tPlural: (key: string) => key
+    })
+}));
+
+vi.mock('@/components/auth/RoutePermissionGuard', () => ({
+    RoutePermissionGuard: ({ children }: { children: ReactNode }) => <>{children}</>
+}));
+
+vi.mock('@tanstack/react-router', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@tanstack/react-router')>();
+    return {
+        ...actual,
+        createFileRoute: () => () => ({ component: null }),
+        Link: ({
+            children,
+            to,
+            'data-testid': testId
+        }: {
+            children: ReactNode;
+            'data-testid'?: string;
+            to?: string;
+            params?: unknown;
+            search?: unknown;
+        }) => (
+            <a
+                href={to ?? '/'}
+                data-testid={testId}
+            >
+                {children}
+            </a>
+        )
+    };
+});
+
+// Recharts uses ResizeObserver + SVG APIs not available in jsdom.
+// Mock the charting primitives so render does not throw (mirrors
+// features/ai-usage/components/__tests__/AiUsageCharts.test.tsx).
+vi.mock('recharts', () => ({
+    ResponsiveContainer: ({ children }: { children: ReactNode }) => (
+        <div data-testid="recharts-container">{children}</div>
+    ),
+    BarChart: ({ children }: { children: ReactNode }) => (
+        <div data-testid="bar-chart">{children}</div>
+    ),
+    Bar: () => null,
+    Cell: () => null,
+    XAxis: () => null,
+    YAxis: () => null,
+    CartesianGrid: () => null,
+    Tooltip: () => null,
+    Legend: () => null
+}));
+
+vi.mock('@repo/icons', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/icons')>()),
+    InstagramIcon: ({ className }: { className?: string }) => (
+        <svg
+            data-testid="instagram-icon"
+            className={className}
+            aria-hidden="true"
+        />
+    ),
+    FacebookIcon: ({ className }: { className?: string }) => (
+        <svg
+            data-testid="facebook-icon"
+            className={className}
+            aria-hidden="true"
+        />
+    ),
+    XIcon: ({ className }: { className?: string }) => (
+        <svg
+            data-testid="x-icon"
+            className={className}
+            aria-hidden="true"
+        />
+    )
+}));
+
+// ---------------------------------------------------------------------------
+// Imports after mocks
+// ---------------------------------------------------------------------------
+
+import type { SocialDashboardResponse } from '@repo/schemas';
+import { useApproveSocialPost, useSocialDashboard } from '@/hooks/use-social-posts';
+import { DashboardDateRangeFilter } from '../../../../src/routes/_authed/social/-components/DashboardDateRangeFilter';
+import { DashboardKpiCards } from '../../../../src/routes/_authed/social/-components/DashboardKpiCards';
+import { PlatformBreakdownChart } from '../../../../src/routes/_authed/social/-components/PlatformBreakdownChart';
+import { QuickApprovalQueue } from '../../../../src/routes/_authed/social/-components/QuickApprovalQueue';
+import { RecentFailures } from '../../../../src/routes/_authed/social/-components/RecentFailures';
+import { WebhookAlert } from '../../../../src/routes/_authed/social/-components/WebhookAlert';
+
+// ---------------------------------------------------------------------------
+// Test helpers
+// ---------------------------------------------------------------------------
+
+function makeQueryClient() {
+    return new QueryClient({
+        defaultOptions: {
+            queries: { retry: false, refetchOnWindowFocus: false, refetchOnMount: false }
+        }
+    });
+}
+
+function TestWrapper({ children }: { readonly children: ReactNode }) {
+    const qc = makeQueryClient();
+    return <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
+}
+
+function makeDashboardData(
+    overrides: Partial<SocialDashboardResponse> = {}
+): SocialDashboardResponse {
+    return {
+        kpis: {
+            totalPosts: 42,
+            pendingReview: 3,
+            scheduled: 5,
+            publishedLast30Days: 18,
+            failedActionNeeded: 2
+        },
+        quickApprovalQueue: [
+            {
+                id: 'post-1',
+                title: 'Post One',
+                status: 'NEEDS_REVIEW',
+                platforms: ['INSTAGRAM'],
+                thumbnailUrl: null,
+                createdAt: new Date('2026-01-01T00:00:00Z')
+            },
+            {
+                id: 'post-2',
+                title: 'Post Two',
+                status: 'NEEDS_REVIEW',
+                platforms: ['FACEBOOK'],
+                thumbnailUrl: null,
+                createdAt: new Date('2026-01-02T00:00:00Z')
+            }
+        ],
+        recentFailures: [
+            {
+                targetId: 'target-1',
+                postTitle: 'Failed Post',
+                platform: 'INSTAGRAM',
+                lastError: 'Rate limit exceeded',
+                retryCount: 3,
+                failedAt: new Date('2026-01-03T00:00:00Z')
+            }
+        ],
+        makeWebhookConfigured: true,
+        platformBreakdown: [
+            { platform: 'INSTAGRAM', count: 1 },
+            { platform: 'FACEBOOK', count: 1 },
+            { platform: 'X', count: 0 }
+        ],
+        ...overrides
+    };
+}
+
+const mockUseSocialDashboard = vi.mocked(useSocialDashboard);
+const mockUseApproveSocialPost = vi.mocked(useApproveSocialPost);
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+describe('DashboardKpiCards', () => {
+    it('renders all five KPI cards with correct values', () => {
+        const kpis = {
+            totalPosts: 42,
+            pendingReview: 3,
+            scheduled: 5,
+            publishedLast30Days: 18,
+            failedActionNeeded: 2
+        };
+
+        render(
+            <TestWrapper>
+                <DashboardKpiCards kpis={kpis} />
+            </TestWrapper>
+        );
+
+        expect(screen.getByTestId('kpi-totalPosts')).toBeInTheDocument();
+        expect(screen.getByTestId('kpi-pendingReview')).toBeInTheDocument();
+        expect(screen.getByTestId('kpi-scheduled')).toBeInTheDocument();
+        expect(screen.getByTestId('kpi-publishedLast30Days')).toBeInTheDocument();
+        expect(screen.getByTestId('kpi-failedActionNeeded')).toBeInTheDocument();
+    });
+
+    it('displays the correct count for each KPI', () => {
+        const kpis = {
+            totalPosts: 42,
+            pendingReview: 3,
+            scheduled: 5,
+            publishedLast30Days: 18,
+            failedActionNeeded: 2
+        };
+
+        render(
+            <TestWrapper>
+                <DashboardKpiCards kpis={kpis} />
+            </TestWrapper>
+        );
+
+        expect(screen.getByTestId('kpi-totalPosts')).toHaveTextContent('42');
+        expect(screen.getByTestId('kpi-failedActionNeeded')).toHaveTextContent('2');
+    });
+});
+
+describe('WebhookAlert', () => {
+    it('renders the alert banner', () => {
+        render(
+            <TestWrapper>
+                <WebhookAlert />
+            </TestWrapper>
+        );
+
+        expect(screen.getByTestId('webhook-alert')).toBeInTheDocument();
+        expect(screen.getByRole('alert')).toBeInTheDocument();
+    });
+});
+
+describe('QuickApprovalQueue', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockUseApproveSocialPost.mockReturnValue({
+            mutate: vi.fn(),
+            isPending: false,
+            variables: undefined
+        } as unknown as ReturnType<typeof useApproveSocialPost>);
+    });
+
+    it('renders items in the approval queue', () => {
+        const data = makeDashboardData();
+
+        render(
+            <TestWrapper>
+                <QuickApprovalQueue items={data.quickApprovalQueue} />
+            </TestWrapper>
+        );
+
+        expect(screen.getByTestId('queue-item-post-1')).toBeInTheDocument();
+        expect(screen.getByTestId('queue-item-post-2')).toBeInTheDocument();
+    });
+
+    it('renders approve button for each queue item', () => {
+        const data = makeDashboardData();
+
+        render(
+            <TestWrapper>
+                <QuickApprovalQueue items={data.quickApprovalQueue} />
+            </TestWrapper>
+        );
+
+        expect(screen.getByTestId('queue-approve-btn-post-1')).toBeInTheDocument();
+        expect(screen.getByTestId('queue-approve-btn-post-2')).toBeInTheDocument();
+    });
+
+    it('shows empty message when queue is empty', () => {
+        render(
+            <TestWrapper>
+                <QuickApprovalQueue items={[]} />
+            </TestWrapper>
+        );
+
+        expect(screen.getByTestId('approval-queue-empty')).toBeInTheDocument();
+    });
+
+    it('calls approve mutation when approve button is clicked', () => {
+        const mutateMock = vi.fn();
+        mockUseApproveSocialPost.mockReturnValue({
+            mutate: mutateMock,
+            isPending: false,
+            variables: undefined
+        } as unknown as ReturnType<typeof useApproveSocialPost>);
+
+        const data = makeDashboardData();
+
+        render(
+            <TestWrapper>
+                <QuickApprovalQueue items={data.quickApprovalQueue} />
+            </TestWrapper>
+        );
+
+        fireEvent.click(screen.getByTestId('queue-approve-btn-post-1'));
+        expect(mutateMock).toHaveBeenCalledWith('post-1', expect.any(Object));
+    });
+
+    it('optimistically removes approved item from queue on approve click', () => {
+        const mutateMock = vi.fn();
+        mockUseApproveSocialPost.mockReturnValue({
+            mutate: mutateMock,
+            isPending: false,
+            variables: undefined
+        } as unknown as ReturnType<typeof useApproveSocialPost>);
+
+        const data = makeDashboardData();
+        const queryClient = makeQueryClient();
+
+        queryClient.setQueryData(['social-posts', 'dashboard'], data);
+
+        render(
+            <QueryClientProvider client={queryClient}>
+                <QuickApprovalQueue items={data.quickApprovalQueue} />
+            </QueryClientProvider>
+        );
+
+        fireEvent.click(screen.getByTestId('queue-approve-btn-post-1'));
+
+        // The dashboard cache should have post-1 removed from the queue
+        const cached = queryClient.getQueryData<SocialDashboardResponse>([
+            'social-posts',
+            'dashboard'
+        ]);
+        expect(cached?.quickApprovalQueue.find((i) => i.id === 'post-1')).toBeUndefined();
+        expect(cached?.quickApprovalQueue.find((i) => i.id === 'post-2')).toBeDefined();
+    });
+});
+
+describe('RecentFailures', () => {
+    it('renders failure items', () => {
+        const data = makeDashboardData();
+
+        render(
+            <TestWrapper>
+                <RecentFailures items={data.recentFailures} />
+            </TestWrapper>
+        );
+
+        expect(screen.getByTestId('failure-item-target-1')).toBeInTheDocument();
+        expect(screen.getByTestId('failure-post-title-target-1')).toHaveTextContent('Failed Post');
+        expect(screen.getByTestId('failure-error-target-1')).toHaveTextContent(
+            'Rate limit exceeded'
+        );
+    });
+
+    it('renders empty message when no failures', () => {
+        render(
+            <TestWrapper>
+                <RecentFailures items={[]} />
+            </TestWrapper>
+        );
+
+        expect(screen.getByTestId('recent-failures-empty')).toBeInTheDocument();
+    });
+});
+
+describe('DashboardDateRangeFilter', () => {
+    it('renders from/to date inputs with current values', () => {
+        render(
+            <DashboardDateRangeFilter
+                dateFrom="2026-01-01"
+                dateTo="2026-01-31"
+                onChangeDateFrom={vi.fn()}
+                onChangeDateTo={vi.fn()}
+            />
+        );
+
+        expect(screen.getByTestId('dashboard-date-from')).toHaveValue('2026-01-01');
+        expect(screen.getByTestId('dashboard-date-to')).toHaveValue('2026-01-31');
+    });
+
+    it('calls onChangeDateFrom when the from input changes', () => {
+        const onChangeDateFrom = vi.fn();
+
+        render(
+            <DashboardDateRangeFilter
+                dateFrom={undefined}
+                dateTo={undefined}
+                onChangeDateFrom={onChangeDateFrom}
+                onChangeDateTo={vi.fn()}
+            />
+        );
+
+        fireEvent.change(screen.getByTestId('dashboard-date-from'), {
+            target: { value: '2026-02-01' }
+        });
+
+        expect(onChangeDateFrom).toHaveBeenCalledWith('2026-02-01');
+    });
+
+    it('calls onChangeDateTo when the to input changes', () => {
+        const onChangeDateTo = vi.fn();
+
+        render(
+            <DashboardDateRangeFilter
+                dateFrom={undefined}
+                dateTo={undefined}
+                onChangeDateFrom={vi.fn()}
+                onChangeDateTo={onChangeDateTo}
+            />
+        );
+
+        fireEvent.change(screen.getByTestId('dashboard-date-to'), {
+            target: { value: '2026-02-28' }
+        });
+
+        expect(onChangeDateTo).toHaveBeenCalledWith('2026-02-28');
+    });
+
+    it('clearing an input calls onChange with undefined', () => {
+        const onChangeDateFrom = vi.fn();
+
+        render(
+            <DashboardDateRangeFilter
+                dateFrom="2026-01-01"
+                dateTo={undefined}
+                onChangeDateFrom={onChangeDateFrom}
+                onChangeDateTo={vi.fn()}
+            />
+        );
+
+        fireEvent.change(screen.getByTestId('dashboard-date-from'), {
+            target: { value: '' }
+        });
+
+        expect(onChangeDateFrom).toHaveBeenCalledWith(undefined);
+    });
+
+    it('shows a reset button only when a bound is active, and clears both on click', () => {
+        const onChangeDateFrom = vi.fn();
+        const onChangeDateTo = vi.fn();
+
+        const { rerender } = render(
+            <DashboardDateRangeFilter
+                dateFrom={undefined}
+                dateTo={undefined}
+                onChangeDateFrom={onChangeDateFrom}
+                onChangeDateTo={onChangeDateTo}
+            />
+        );
+
+        expect(screen.queryByTestId('dashboard-date-reset')).not.toBeInTheDocument();
+
+        rerender(
+            <DashboardDateRangeFilter
+                dateFrom="2026-01-01"
+                dateTo={undefined}
+                onChangeDateFrom={onChangeDateFrom}
+                onChangeDateTo={onChangeDateTo}
+            />
+        );
+
+        const resetButton = screen.getByTestId('dashboard-date-reset');
+        fireEvent.click(resetButton);
+
+        expect(onChangeDateFrom).toHaveBeenCalledWith(undefined);
+        expect(onChangeDateTo).toHaveBeenCalledWith(undefined);
+    });
+});
+
+describe('PlatformBreakdownChart', () => {
+    it('renders one item per platform with the correct count', () => {
+        render(
+            <PlatformBreakdownChart
+                data={[
+                    { platform: 'INSTAGRAM', count: 5 },
+                    { platform: 'FACEBOOK', count: 3 },
+                    { platform: 'X', count: 0 }
+                ]}
+            />
+        );
+
+        expect(screen.getByTestId('platform-breakdown-item-INSTAGRAM')).toHaveTextContent('5');
+        expect(screen.getByTestId('platform-breakdown-item-FACEBOOK')).toHaveTextContent('3');
+        expect(screen.getByTestId('platform-breakdown-item-X')).toHaveTextContent('0');
+        expect(screen.getByTestId('recharts-container')).toBeInTheDocument();
+    });
+
+    it('renders an empty state when platformBreakdown is empty', () => {
+        render(<PlatformBreakdownChart data={[]} />);
+
+        expect(screen.getByTestId('platform-breakdown-empty')).toBeInTheDocument();
+        expect(screen.queryByTestId('recharts-container')).not.toBeInTheDocument();
+    });
+});
+
+describe('Social dashboard integration', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockUseApproveSocialPost.mockReturnValue({
+            mutate: vi.fn(),
+            isPending: false,
+            variables: undefined
+        } as unknown as ReturnType<typeof useApproveSocialPost>);
+    });
+
+    it('shows webhook alert when makeWebhookConfigured is false', () => {
+        mockUseSocialDashboard.mockReturnValue({
+            data: makeDashboardData({ makeWebhookConfigured: false }),
+            isLoading: false,
+            error: null
+        } as unknown as ReturnType<typeof useSocialDashboard>);
+
+        render(
+            <TestWrapper>
+                <WebhookAlert />
+            </TestWrapper>
+        );
+
+        expect(screen.getByTestId('webhook-alert')).toBeInTheDocument();
+    });
+
+    it('KPI cards render data from dashboard response', () => {
+        const dashData = makeDashboardData();
+        mockUseSocialDashboard.mockReturnValue({
+            data: dashData,
+            isLoading: false,
+            error: null
+        } as unknown as ReturnType<typeof useSocialDashboard>);
+
+        render(
+            <TestWrapper>
+                <DashboardKpiCards kpis={dashData.kpis} />
+            </TestWrapper>
+        );
+
+        expect(screen.getByTestId('dashboard-kpi-cards')).toBeInTheDocument();
+        expect(screen.getByTestId('kpi-pendingReview')).toHaveTextContent('3');
+    });
+});

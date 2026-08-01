@@ -23,6 +23,7 @@ import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.clie
 import HeaderBackButton from '@/components/shared/ui/HeaderBackButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 
 /** Minimal attraction shape rendered as a header badge. */
 export interface HeaderAttraction {
@@ -83,7 +84,24 @@ const remainingAttractions = Math.max(0, attractions.length - sortedAttractions.
 			{sortedAttractions.length > 0 && (
 				<ul class="dest-header__attractions wh-compact-hide" aria-label={t('destinations.detail.attractions.title', 'Qué hacer acá')}>
 					{sortedAttractions.map((a) => (
-						<li class="dest-header__attraction-badge">{a.name}</li>
+						<li class="dest-header__attraction-badge">
+							{/*
+							  Links to the attraction's landing — the destinations that
+							  also offer it. Degrades to plain text when the payload
+							  carries no slug, so a badge is never a dead link.
+							*/}
+							{a.slug ? (
+								<a
+									href={buildUrl({ locale, path: `destinos/atraccion/${a.slug}` })}
+									class="dest-header__attraction-link"
+									title={t('destinations.byAttraction.linkLabel', 'Ver destinos con {{attraction}}', { attraction: a.name })}
+								>
+									{a.name}
+								</a>
+							) : (
+								a.name
+							)}
+						</li>
 					))}
 					{remainingAttractions > 0 && (
 						<li class="dest-header__attraction-badge dest-header__attraction-badge--more">
@@ -190,6 +208,25 @@ const remainingAttractions = Math.max(0, attractions.length - sortedAttractions.
 		line-height: 1.4;
 		white-space: nowrap;
 		transition: padding 0.3s ease, font-size 0.3s ease;
+	}
+
+	/*
+	 * The badge keeps its own padding, so the link fills it rather than
+	 * nesting a second inset box inside the pill.
+	 */
+	.dest-header__attraction-link {
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.dest-header__attraction-link:hover {
+		text-decoration: underline;
+	}
+
+	.dest-header__attraction-link:focus-visible {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: 2px;
+		border-radius: var(--radius-pill);
 	}
 
 	.dest-header__attraction-badge--more {

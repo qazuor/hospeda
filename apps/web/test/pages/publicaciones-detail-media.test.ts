@@ -34,8 +34,11 @@ describe('publicaciones/[slug].astro — media + content enrichment', () => {
             expect(pageSrc).not.toMatch(/post\.featuredImage(?!\?\.url)/);
         });
 
-        it('keeps a placeholder fallback when no real media is present', () => {
+        it('keeps the placeholder constant only as an SEO sentinel, never as rendered markup', () => {
+            // The placeholder string still exists so ogImage / JSON-LD can tell a
+            // real cover from the fallback, but it must not reach the DOM.
             expect(pageSrc).toContain('/assets/images/placeholder-blog.svg');
+            expect(pageSrc).not.toMatch(/src=\{featuredImage\}/);
         });
     });
 
@@ -71,8 +74,12 @@ describe('publicaciones/[slug].astro — media + content enrichment', () => {
             expect(pageSrc).toMatch(/<ImageGallery[\s\S]*?client:visible/);
         });
 
-        it('falls back to a static <img> placeholder when no real media is loaded', () => {
-            expect(pageSrc).toContain('hasRealFeatured');
+        it('renders nothing at all when the post has no real imagery', () => {
+            // A post with no usable image must not reserve vertical space: no
+            // placeholder <img>, no empty cover wrapper. The gallery block is the
+            // only image markup, and it is gated on galleryImages having entries.
+            expect(pageSrc).toMatch(/\{galleryImages\.length > 0 && \(/);
+            expect(pageSrc).not.toContain('post-detail__cover');
         });
     });
 

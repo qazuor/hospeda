@@ -24,12 +24,14 @@ import HeaderBackButton from '@/components/shared/ui/HeaderBackButton.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getEventCategoryColor, getBadgeStatusColor } from '@/lib/colors';
-import { formatEventDetailDateRange } from '@/lib/format-utils';
+import { formatEventDetailDateRange, formatEventDetailDateRangeCompact } from '@/lib/format-utils';
 import { CalendarDotsIcon, LocationIcon } from '@repo/icons';
 
 interface Props {
     readonly eventId: string;
     readonly name: string;
+    /** Short lead-in shown under the title. Omitted when the event has none. */
+    readonly summary?: string | null;
     readonly category: string;
     readonly startDate: string | Date;
     readonly endDate?: string | Date | null;
@@ -49,6 +51,7 @@ interface Props {
 const {
     eventId,
     name,
+    summary,
     category,
     startDate,
     endDate,
@@ -67,6 +70,17 @@ const {
 const { t, tPlural } = createTranslations(locale);
 
 const dateRange = formatEventDetailDateRange({ startDate, endDate, precision, locale });
+// Both variants are rendered and swapped with a CSS media query rather than
+// picked at runtime: this is SSR HTML, so the server cannot know the viewport,
+// and a JS-side breakpoint would leave crawlers (and the pre-hydration frame)
+// with whichever variant happened to be the default. `display: none` keeps the
+// hidden one out of the accessibility tree, so screen readers announce one date.
+const dateRangeCompact = formatEventDetailDateRangeCompact({
+    startDate,
+    endDate,
+    precision,
+    locale
+});
 
 const categoryColors = getEventCategoryColor({ category: category.toLowerCase() });
 const pastColors = getBadgeStatusColor({ status: 'past' });
@@ -114,21 +128,28 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
 
             <h1 class="event-header__title wh-compact-title">{name}</h1>
 
+            {summary && <p class="event-header__summary wh-compact-hide">{summary}</p>}
+
             <div class="event-header__meta wh-compact-hide">
                 {startDate && (
                     <span class="event-header__meta-item">
                         <CalendarDotsIcon size={15} aria-hidden="true" />
-                        {dateRange.precision === 'EXACT' ? (
-                            <>
-                                {dateRange.startLabel}
-                                {dateRange.endLabel && (
-                                    <span class="event-header__meta-separator" aria-hidden="true">–</span>
-                                )}
-                                {dateRange.endLabel}
-                            </>
-                        ) : (
-                            dateRange.label
-                        )}
+                        <span class="event-header__date event-header__date--long">
+                            {dateRange.precision === 'EXACT' ? (
+                                <>
+                                    {dateRange.startLabel}
+                                    {dateRange.endLabel && (
+                                        <span class="event-header__meta-separator" aria-hidden="true">–</span>
+                                    )}
+                                    {dateRange.endLabel}
+                                </>
+                            ) : (
+                                dateRange.label
+                            )}
+                        </span>
+                        <span class="event-header__date event-header__date--compact">
+                            {dateRangeCompact.label}
+                        </span>
                     </span>
                 )}
                 {locationLabel && (
@@ -277,6 +298,35 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         transition: font-size 0.3s ease;
     }
 
+    /* Mirrors `.post-header__summary`: full measure (no max-width, so it spans
+       the same width as the H1 above it), clamped to 3 rows, and a max-height
+       that is an EXACT multiple of line-height (3 x 1.55) so the cut lands
+       between rows rather than through the middle of a row's glyphs. The
+       max-height also gives `wh-compact-hide` something to animate to 0 for
+       the compact collapse (contract in WaveHeader.astro). */
+    .event-header__summary {
+        font-family: var(--font-sans);
+        font-size: clamp(0.95rem, 1.6vw, 1.1rem);
+        line-height: 1.55;
+        color: var(--core-muted-foreground);
+        margin: 0.15rem 0 0;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        overflow: hidden;
+        max-height: 4.65em;
+        opacity: 1;
+        transition:
+            max-height 0.3s ease,
+            opacity 0.2s ease,
+            margin-top 0.3s ease;
+    }
+
+    :global(.wave-header--compact) .event-header__summary {
+        margin-top: 0;
+    }
+
     .event-header__meta {
         display: flex;
         align-items: center;
@@ -297,6 +347,33 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         font-family: var(--font-sans);
         font-size: var(--text-body-sm, 0.875rem);
         color: var(--core-muted-foreground);
+    }
+
+    /* Long form is the default; the compact one takes over under 640px. Both
+       ship in the HTML because the server cannot know the viewport — see the
+       frontmatter note. `display: none` (not `visibility`/clipping) so the
+       inactive variant leaves the accessibility tree and a screen reader
+       announces the date exactly once.
+
+       `nowrap` matters even on the compact variant: without it a range can
+       still split between its endpoints and reintroduce the ragged two-line
+       break this replaced. */
+    .event-header__date {
+        white-space: nowrap;
+    }
+
+    .event-header__date--compact {
+        display: none;
+    }
+
+    @media (max-width: 640px) {
+        .event-header__date--long {
+            display: none;
+        }
+
+        .event-header__date--compact {
+            display: inline;
+        }
     }
 
     .event-header__meta-separator {
@@ -344,6 +421,7 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         .event-header__status-pill,
         .event-header__estimated-badge,
         .event-header__title,
+        .event-header__summary,
         .event-header__meta {
             transition: none;
         }

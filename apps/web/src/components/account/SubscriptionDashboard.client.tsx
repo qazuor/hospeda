@@ -21,6 +21,7 @@ import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import { PlanChangeFlow } from './PlanChangeFlow.client';
+import { PlanUsageSection } from './PlanUsageSection.client';
 import styles from './SubscriptionDashboard.module.css';
 
 // ---------------------------------------------------------------------------
@@ -1070,6 +1071,13 @@ export function SubscriptionDashboard({
 
             {/* ── Features card — rendered only when plan features are available ── */}
             {/* TODO: fetch plan features from public /api/v1/public/plans and render here */}
+
+            {/* ── Plan usage ── Renders itself as null when there is nothing to show. */}
+            <PlanUsageSection
+                locale={locale}
+                roles={user.roles}
+                productDomain={productDomain}
+            />
 
             {/* ── Actions card ── */}
             <section

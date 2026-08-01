@@ -60,6 +60,7 @@ import {
     computeFrameRadiusKm,
     computeSurroundingsBounds
 } from '@/lib/poi-map-bounds';
+import { buildUrl } from '@/lib/urls';
 
 export interface DestinationPOIMapProps {
     /**
@@ -241,7 +242,15 @@ export function DestinationPOIMap({
                 categorySlug: poi.primaryCategory?.slug ?? null,
                 relation: poi.relation,
                 label: translatePoiName({ slug: poi.slug, nameI18n: poi.nameI18n, locale }),
-                typeLabel: translatePoiTypeLabel({ t, type: poi.type })
+                typeLabel: translatePoiTypeLabel({ t, type: poi.type }),
+                // Only the curated few have a page; everything else stays plain
+                // text in the popup rather than linking to a 404. This is the
+                // only path to a NEARBY landmark's page — the SSR card grid
+                // filters NEARBY out, so without it a visitor browsing
+                // Concepción del Uruguay has no way to reach Palacio San José.
+                detailUrl: poi.hasOwnPage
+                    ? buildUrl({ locale, path: `destinos/lugar/${poi.slug}` })
+                    : null
             })),
         [geolocated, locale]
     );

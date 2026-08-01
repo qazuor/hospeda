@@ -38,6 +38,10 @@ describe('toDestinationPointOfInterestListProps', () => {
             descriptionI18n: { es: 'Una playa', en: null, pt: null },
             nameI18n: { es: 'Playa Ita Pirú', en: null, pt: null },
             isFeatured: true,
+            // The fixture omits `hasOwnPage`, and the transform compares
+            // `=== true`, so an absent key means "no detail page" — the card
+            // must not link a name to a URL the route would 404.
+            hasOwnPage: false,
             displayWeight: 80,
             primaryCategory: { slug: 'beach', nameI18n: { es: 'Playa', en: null, pt: null } },
             categories: []

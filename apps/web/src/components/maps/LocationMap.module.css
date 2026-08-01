@@ -207,6 +207,19 @@
     color: var(--core-foreground);
 }
 
+/* Only the curated POIs that have a detail page render as a link, so the
+   underline is what tells them apart from every other pin's popup. */
+.poiPopupLink {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--brand-primary);
+    text-underline-offset: 3px;
+}
+
+.poiPopupLink:hover {
+    color: var(--brand-primary);
+}
+
 .poiPopupType {
     display: block;
     margin-top: 2px;

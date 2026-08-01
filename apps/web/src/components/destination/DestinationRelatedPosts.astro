@@ -18,6 +18,7 @@ interface RelatedPost {
     readonly title: string;
     readonly summary?: string;
     readonly featuredImage?: string | null;
+    readonly category?: string | null;
     readonly destinationName?: string | null;
     readonly publishedAt?: string | null;
 }
@@ -60,6 +61,7 @@ const seeAllHref = `/${locale}/publicaciones/${destinationId ? `?destinationId=$
                 title={post.title}
                 summary={post.summary ?? ''}
                 featuredImage={post.featuredImage}
+                category={post.category}
                 destinationName={post.destinationName}
                 publishedAt={post.publishedAt}
                 lang={locale}

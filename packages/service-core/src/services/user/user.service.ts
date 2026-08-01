@@ -77,7 +77,7 @@ import {
     normalizeViewInput
 } from './user.normalizers';
 import { canAssignRole, checkCanAdminList } from './user.permissions';
-import type { UserHookState } from './user.types';
+import type { UserHookState, UserPublicProfile } from './user.types';
 
 /** Entity-specific filter fields for user admin search. */
 type UserEntityFilters = EntityFilters<typeof UserAdminSearchSchema>;
@@ -260,6 +260,67 @@ export class UserService extends BaseCrudService<
                 }));
 
                 return { items: options };
+            }
+        });
+    }
+
+    /**
+     * Resolves a user's PUBLIC author profile by slug.
+     *
+     * Deliberately does NOT go through `getBySlug`/`_canView`. `_canView` gates
+     * the full user row on "self or USER_READ_ALL", which is correct for that
+     * row — it carries email, phone, address, roles, settings and onboarding
+     * state — but it also made the public author page unreachable: every
+     * anonymous visitor got a 403 on
+     * `GET /api/v1/public/users/by-slug/{slug}`, which the web app renders as a
+     * 404. Loosening `_canView` instead would have been the wrong fix: it also
+     * feeds `POST /api/v1/public/users/batch`, which takes a caller-supplied
+     * list of ids, so relaxing it would turn a currently-dead endpoint into a
+     * live user-enumeration surface.
+     *
+     * So this method is a separate, narrow read path. It projects exactly
+     * {@link UserPublicProfile} and never returns anything else, which is what
+     * makes skipping the permission check safe.
+     *
+     * The projection is a pure function of the row: no branch reads `actor`, so
+     * the response is byte-identical for an anonymous visitor, the user
+     * themselves, and an admin. The route is edge-cached and its cache key does
+     * NOT include the session, so any actor-dependent field here would poison
+     * the cache for everyone.
+     *
+     * Soft-deleted users are treated as absent (`null`). `findOne` does not
+     * filter `deleted_at`, so it is filtered explicitly — otherwise a deleted
+     * author's profile would keep serving a 200 from a public URL.
+     *
+     * @param actor - The requesting actor. Used for logging only; it never
+     *   changes the result. A guest actor is expected and valid.
+     * @param params - `{ slug }` — the user's URL slug.
+     * @param ctx - Optional service context (transaction).
+     * @returns A `ServiceOutput` with the public profile, or `null` when no
+     *   live user owns that slug.
+     */
+    public async getPublicProfileBySlug(
+        actor: Actor,
+        params: { slug: string },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<UserPublicProfile | null>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getPublicProfileBySlug',
+            input: { actor, ...params },
+            schema: z.object({ slug: z.string().trim().min(1) }),
+            ctx,
+            execute: async (validatedInput, _validatedActor, execCtx) => {
+                const user = await this.model.findOne({ slug: validatedInput.slug }, execCtx?.tx);
+
+                if (!user || user.deletedAt) return null;
+
+                return {
+                    id: user.id,
+                    displayName: user.displayName ?? null,
+                    slug: user.slug,
+                    avatar: user.profile?.avatar ?? null,
+                    bio: user.profile?.bio ?? null
+                };
             }
         });
     }

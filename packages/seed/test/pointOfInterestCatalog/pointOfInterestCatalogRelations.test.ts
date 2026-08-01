@@ -210,9 +210,14 @@ describe('seedPointOfInterestCatalogRelations (HOS-142 fresh-DB relations step)'
     });
 
     it('sanity: the real pipeline data has the expected shape at authoring time', () => {
+        // 837/549, not the original 836/550: data-migration
+        // `0033-molino-forclaz-primary-colon` promoted one pair
+        // (`colon`/`molino_forclaz`, 5.0 km apart) from NEARBY to PRIMARY, and
+        // this fixture is its dual-write baseline. The TOTAL is unchanged — a
+        // promotion moves a row between buckets, it never adds one.
         expect(realRelations).toHaveLength(EXPECTED_TOTAL_RELATION_ENTRIES);
-        expect(realRelations.filter((r) => r.relation === 'PRIMARY')).toHaveLength(836);
-        expect(realRelations.filter((r) => r.relation === 'NEARBY')).toHaveLength(550);
+        expect(realRelations.filter((r) => r.relation === 'PRIMARY')).toHaveLength(837);
+        expect(realRelations.filter((r) => r.relation === 'NEARBY')).toHaveLength(549);
     });
 
     it('creates every new relation and converges on the SAME counts 0013 produces for the live-env path (AC-2)', async () => {

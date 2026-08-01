@@ -68,6 +68,13 @@ describe('GET /api/v1/public/users/by-slug/:slug', () => {
     // -----------------------------------------------------------------------
 
     describe('Public access', () => {
+        // NOTE: this case is necessary but NOT sufficient, and it is why the
+        // 403 shipped. `NONEXISTENT_SLUG` matches no row, so the read returns
+        // empty before any permission gate sees an entity — the route answered
+        // 404 for everyone and the guard stayed green while every real author
+        // page 403'd. The gate is exercised against an actual row in
+        // `packages/service-core/test/services/user/getPublicProfileBySlug.test.ts`;
+        // do not treat a green run here as proof the endpoint is reachable.
         it('should not require authentication (no 401 or 403)', async () => {
             const res = await app.request(`${BASE}/${NONEXISTENT_SLUG}`, {
                 method: 'GET',
