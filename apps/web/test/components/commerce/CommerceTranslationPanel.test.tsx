@@ -26,7 +26,23 @@ vi.mock('../../../src/components/commerce/CommerceTranslationPanel.module.css', 
 }));
 
 vi.mock('../../../src/lib/i18n', () => ({
-    createTranslations: () => ({ t: (key: string, fallback?: string) => fallback ?? key })
+    // Mirrors the real resolver on the one point that matters here: when a key
+    // EXISTS in the catalog its value wins and the fallback is discarded, so an
+    // interpolation baked into the fallback never reaches the screen. A plain
+    // `fallback ?? key` mock hides exactly that class of bug (BETA-124).
+    createTranslations: () => ({
+        t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
+            const raw =
+                key === 'commerce.owner.editor.translationPanel.localePlaceholder'
+                    ? 'Ingresá el texto en {{locale}}...'
+                    : (fallback ?? key);
+            if (!params) return raw;
+            return Object.keys(params).reduce(
+                (acc, name) => acc.replaceAll(`{{${name}}}`, String(params[name])),
+                raw
+            );
+        }
+    })
 }));
 
 // ---------------------------------------------------------------------------
@@ -62,6 +78,28 @@ function renderPanel(initialValues: CommerceI18nValues = EMPTY_I18N, onChange = 
 // ---------------------------------------------------------------------------
 
 describe('CommerceTranslationPanel', () => {
+    it('interpolates the active locale into the placeholder instead of printing the template', () => {
+        renderPanel();
+
+        const textareas = screen.getAllByRole('textbox') as HTMLTextAreaElement[];
+        expect(textareas.length).toBeGreaterThan(0);
+        for (const textarea of textareas) {
+            expect(textarea.placeholder).toBe('Ingresá el texto en ES...');
+            expect(textarea.placeholder).not.toContain('{{');
+        }
+    });
+
+    it('re-interpolates the placeholder after switching locale tabs', () => {
+        renderPanel();
+
+        fireEvent.click(screen.getByRole('tab', { name: /PT/i }));
+
+        const textareas = screen.getAllByRole('textbox') as HTMLTextAreaElement[];
+        for (const textarea of textareas) {
+            expect(textarea.placeholder).toBe('Ingresá el texto en PT...');
+        }
+    });
+
     it('renders locale tabs for es, en, pt', () => {
         renderPanel();
         expect(screen.getByRole('tab', { name: /ES/i })).toBeInTheDocument();

@@ -11,6 +11,12 @@ name: Validate PR Title
 # Bot-authored PRs (dependabot, github-actions back-sync merges) are exempt:
 # the job is skipped for them, which reports as a neutral/skipped check and
 # does not block the merge.
+#
+# The exemption keys off the PR AUTHOR, not `github.actor`. `github.actor` is
+# whoever triggered the current event, so a human updating a dependabot PR's
+# branch (or any `synchronize` they cause) made the job run and fail on a title
+# the bot wrote and no one is expected to fix. That happened to #2413, #2509 and
+# #2559 at once.
 
 on:
   pull_request:
@@ -32,7 +38,9 @@ jobs:
     name: Validate PR Title
     runs-on: ubuntu-latest
     timeout-minutes: 2
-    if: github.actor != 'dependabot[bot]' && github.actor != 'github-actions[bot]'
+    if: >-
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      github.event.pull_request.user.login != 'github-actions[bot]'
 
     steps:
       - name: Check title matches work-tag convention

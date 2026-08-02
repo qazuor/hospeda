@@ -27,6 +27,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { renderChatMarkdown } from '@/lib/ai-search/render-chat-markdown';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -47,8 +48,9 @@ import { useSearchChat } from './useSearchChat';
  * @property locale - Active locale for translations and detail links.
  * @property apiUrl - Base URL of the API server (e.g. `http://localhost:3001`).
  *   Passed by the Astro host from `import.meta.env.PUBLIC_API_URL`.
- * @property isAuthenticated - Whether the current visitor has an active session.
- *   When false, the chat UI is replaced by a login CTA (W14).
+ * @property isAuthenticated - Deprecated and ignored since HOS-369 WB0-4; the
+ *   session is resolved client-side. Whether the chat UI or the login CTA (W14)
+ *   renders is decided after that resolution.
  * @property currentUrl - Full URL of the current page, used to build the
  *   post-login redirect href. Pass `Astro.url.href` from the host page.
  * @property destinations - Catalog of city destinations for chip label
@@ -64,7 +66,8 @@ import { useSearchChat } from './useSearchChat';
 export interface SearchChatPanelProps {
     readonly locale: SupportedLocale;
     readonly apiUrl: string;
-    readonly isAuthenticated: boolean;
+    /** @deprecated Ignored since HOS-369 WB0-4 — resolved client-side. */
+    readonly isAuthenticated?: boolean;
     readonly currentUrl: string;
     readonly destinations?: Readonly<Record<string, string>>;
     readonly pageType?: string;
@@ -101,13 +104,18 @@ export interface SearchChatPanelProps {
 export function SearchChatPanel({
     locale,
     apiUrl,
-    isAuthenticated,
     currentUrl,
     destinations,
     pageType
 }: SearchChatPanelProps) {
     const { t } = createTranslations(locale);
     const [draft, setDraft] = useState('');
+
+    // Session resolved client-side (HOS-369 WB0-4). Until it resolves the login
+    // CTA renders — the same thing the server emits — and the panel swaps in
+    // once a session is confirmed.
+    const { user } = useAccountPermissions();
+    const isAuthenticated = user !== null;
 
     const chat = useSearchChat({ apiUrl, locale });
 

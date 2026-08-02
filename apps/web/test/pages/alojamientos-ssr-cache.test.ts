@@ -93,12 +93,14 @@ describe('HOS-299 — the high-cardinality reads stay OUT of the cache', () => {
     });
 
     /**
-     * The single security-relevant assertion in this file. Anchored on the CALL,
-     * not the identifier: `indexOf('userBookmarksApi')` matches the import line
-     * ~9 KB earlier and inspects a block of imports instead.
+     * The single security-relevant assertion in this file. It used to check
+     * that the SSR bookmarks read was not cached; since HOS-369 WB0-5 there is
+     * no SSR bookmarks read at all, which is strictly stronger — a call that
+     * does not exist cannot be cached across visitors.
      */
-    it('does not cache the per-user bookmarks read', () => {
-        expect(callArgsOf(listingSource, 'userBookmarksApi.checkBulk')).not.toContain('cacheTtlMs');
+    it('performs no per-user bookmarks read at all', () => {
+        expect(listingSource).not.toContain('userBookmarksApi.checkBulk');
+        expect(listingSource).not.toContain('userBookmarksApi.checkStatus');
     });
 });
 

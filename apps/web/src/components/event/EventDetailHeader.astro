@@ -43,9 +43,6 @@ interface Props {
     readonly isCancelled: boolean;
     readonly bookmarkCount?: number;
     readonly locale: SupportedLocale;
-    readonly isAuthenticated: boolean;
-    readonly initialIsFavorited?: boolean;
-    readonly initialBookmarkId?: string | null;
 }
 
 const {
@@ -62,9 +59,6 @@ const {
     isCancelled,
     bookmarkCount,
     locale,
-    isAuthenticated,
-    initialIsFavorited,
-    initialBookmarkId = null,
 } = Astro.props;
 
 const { t, tPlural } = createTranslations(locale);
@@ -179,9 +173,6 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
                 client:load
                 entityId={eventId}
                 entityType="EVENT"
-                initialIsFavorited={initialIsFavorited}
-                initialBookmarkId={initialBookmarkId}
-                isAuthenticated={isAuthenticated}
                 variant="standalone"
                 locale={locale}
             />

@@ -26,6 +26,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CompareModeToggle } from '../../../../src/components/shared/compare/CompareModeToggle.client';
+import { buildAuthSnapshot } from '../../../helpers/auth-session';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -122,6 +123,17 @@ vi.mock('../../../../src/components/shared/compare/CompareUpsellPopover.client',
     )
 }));
 
+// HOS-369 WB0-4: the toggle resolves the session client-side via
+// `useAccountPermissions`, which reads `auth-cache`. See test/helpers/auth-session.ts.
+const mockReadCachedAuthMe = vi.fn();
+
+vi.mock('@/lib/auth-cache', () => ({
+    readCachedAuthMe: () => mockReadCachedAuthMe(),
+    fetchAuthMe: () => new Promise(() => undefined),
+    writeCachedAuthMe: () => undefined,
+    resetInFlightAuthMe: () => undefined
+}));
+
 // ---------------------------------------------------------------------------
 // Setup / teardown
 // ---------------------------------------------------------------------------
@@ -130,6 +142,9 @@ beforeEach(() => {
     vi.clearAllMocks();
     mockMode.value = false;
     mockGuard.value = { canCompare: true, isLoading: false };
+    // Default: a guest. Tests that need a confirmed session override this —
+    // only a confirmed session may be shown the paid upsell.
+    mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: false }));
 });
 
 afterEach(() => {
@@ -142,56 +157,31 @@ afterEach(() => {
 
 describe('CompareModeToggle — render', () => {
     it('renders the visible toggle label', () => {
-        render(
-            <CompareModeToggle
-                locale="es"
-                isAuthenticated={true}
-            />
-        );
+        render(<CompareModeToggle locale="es" />);
         expect(screen.getByText('Comparar alojamientos')).toBeInTheDocument();
     });
 
     it('has aria-pressed=false when compare mode is off', () => {
         mockMode.value = false;
-        render(
-            <CompareModeToggle
-                locale="es"
-                isAuthenticated={true}
-            />
-        );
+        render(<CompareModeToggle locale="es" />);
         expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'false');
     });
 
     it('has aria-pressed=true when compare mode is on', () => {
         mockMode.value = true;
-        render(
-            <CompareModeToggle
-                locale="es"
-                isAuthenticated={true}
-            />
-        );
+        render(<CompareModeToggle locale="es" />);
         expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'true');
     });
 
     it('marks data-active when compare mode is on', () => {
         mockMode.value = true;
-        render(
-            <CompareModeToggle
-                locale="es"
-                isAuthenticated={true}
-            />
-        );
+        render(<CompareModeToggle locale="es" />);
         expect(screen.getByRole('button')).toHaveAttribute('data-active', 'true');
     });
 
     it('does not set data-active when compare mode is off', () => {
         mockMode.value = false;
-        render(
-            <CompareModeToggle
-                locale="es"
-                isAuthenticated={true}
-            />
-        );
+        render(<CompareModeToggle locale="es" />);
         expect(screen.getByRole('button')).not.toHaveAttribute('data-active');
     });
 });
@@ -199,34 +189,19 @@ describe('CompareModeToggle — render', () => {
 describe('CompareModeToggle — active-state label (post-review fix)', () => {
     it('shows the compact "Comparando" label when compare mode is on', () => {
         mockMode.value = true;
-        render(
-            <CompareModeToggle
-                locale="es"
-                isAuthenticated={true}
-            />
-        );
+        render(<CompareModeToggle locale="es" />);
         expect(screen.getByText('Comparando')).toBeInTheDocument();
     });
 
     it('shows the inline guidance hint when compare mode is on', () => {
         mockMode.value = true;
-        render(
-            <CompareModeToggle
-                locale="es"
-                isAuthenticated={true}
-            />
-        );
+        render(<CompareModeToggle locale="es" />);
         expect(screen.getByText('Elegí los alojamientos que querés comparar')).toBeInTheDocument();
     });
 
     it('does not show the off-state label or the hint when compare mode is off', () => {
         mockMode.value = false;
-        render(
-            <CompareModeToggle
-                locale="es"
-                isAuthenticated={true}
-            />
-        );
+        render(<CompareModeToggle locale="es" />);
         expect(screen.queryByText('Comparando')).not.toBeInTheDocument();
         expect(
             screen.queryByText('Elegí los alojamientos que querés comparar')
@@ -236,12 +211,7 @@ describe('CompareModeToggle — active-state label (post-review fix)', () => {
 
 describe('CompareModeToggle — hydration', () => {
     it('re-hydrates the compare-mode flag from storage on mount', () => {
-        render(
-            <CompareModeToggle
-                locale="es"
-                isAuthenticated={true}
-            />
-        );
+        render(<CompareModeToggle locale="es" />);
         expect(mockLoadCompareModeFromStorage).toHaveBeenCalledTimes(1);
     });
 });
@@ -249,12 +219,7 @@ describe('CompareModeToggle — hydration', () => {
 describe('CompareModeToggle — entitlement gate (post-review fix)', () => {
     it('toggles compare mode when the plan includes the comparison entitlement', () => {
         mockGuard.value = { canCompare: true, isLoading: false };
-        render(
-            <CompareModeToggle
-                locale="es"
-                isAuthenticated={true}
-            />
-        );
+        render(<CompareModeToggle locale="es" />);
         fireEvent.click(screen.getByRole('button'));
         expect(mockToggleCompareMode).toHaveBeenCalledTimes(1);
         expect(screen.queryByTestId('auth-required-popover')).not.toBeInTheDocument();
@@ -263,6 +228,18 @@ describe('CompareModeToggle — entitlement gate (post-review fix)', () => {
 
     it('opens the auth-required popover on guest click and does not toggle the mode', () => {
         mockGuard.value = { canCompare: false, isLoading: false };
+        render(<CompareModeToggle locale="es" />);
+        fireEvent.click(screen.getByRole('button'));
+        expect(mockToggleCompareMode).not.toHaveBeenCalled();
+        expect(screen.getByTestId('auth-required-popover')).toBeInTheDocument();
+        expect(screen.queryByTestId('compare-upsell-popover')).not.toBeInTheDocument();
+    });
+
+    it('opens the upsell, not the sign-in prompt, when the SSR prop says guest but a session exists', () => {
+        // HOS-369 WB0-4: cached anonymous HTML served to a subscriber. The
+        // deprecated prop must not send them to a sign-in they do not need.
+        mockGuard.value = { canCompare: false, isLoading: false };
+        mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
         render(
             <CompareModeToggle
                 locale="es"
@@ -270,19 +247,28 @@ describe('CompareModeToggle — entitlement gate (post-review fix)', () => {
             />
         );
         fireEvent.click(screen.getByRole('button'));
-        expect(mockToggleCompareMode).not.toHaveBeenCalled();
+        expect(screen.getByTestId('compare-upsell-popover')).toBeInTheDocument();
+        expect(screen.queryByTestId('auth-required-popover')).not.toBeInTheDocument();
+    });
+
+    it('shows the sign-in prompt, never the paid upsell, while the session is unresolved', () => {
+        // Never ask for money before knowing whether someone is signed in.
+        mockGuard.value = { canCompare: false, isLoading: false };
+        mockReadCachedAuthMe.mockReturnValue(null);
+        render(
+            <CompareModeToggle
+                locale="es"
+                isAuthenticated={true}
+            />
+        );
+        fireEvent.click(screen.getByRole('button'));
         expect(screen.getByTestId('auth-required-popover')).toBeInTheDocument();
         expect(screen.queryByTestId('compare-upsell-popover')).not.toBeInTheDocument();
     });
 
     it('closes the auth-required popover via its onClose callback', () => {
         mockGuard.value = { canCompare: false, isLoading: false };
-        render(
-            <CompareModeToggle
-                locale="es"
-                isAuthenticated={false}
-            />
-        );
+        render(<CompareModeToggle locale="es" />);
         fireEvent.click(screen.getByRole('button'));
         expect(screen.getByTestId('auth-required-popover')).toBeInTheDocument();
         fireEvent.click(screen.getByText('Cerrar'));
@@ -291,12 +277,8 @@ describe('CompareModeToggle — entitlement gate (post-review fix)', () => {
 
     it('opens the upsell popover on an authenticated click without the entitlement and does not toggle the mode', () => {
         mockGuard.value = { canCompare: false, isLoading: false };
-        render(
-            <CompareModeToggle
-                locale="es"
-                isAuthenticated={true}
-            />
-        );
+        mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
+        render(<CompareModeToggle locale="es" />);
         fireEvent.click(screen.getByRole('button'));
         expect(mockToggleCompareMode).not.toHaveBeenCalled();
         expect(screen.getByTestId('compare-upsell-popover')).toBeInTheDocument();
@@ -305,12 +287,8 @@ describe('CompareModeToggle — entitlement gate (post-review fix)', () => {
 
     it('closes the upsell popover via its onClose callback', () => {
         mockGuard.value = { canCompare: false, isLoading: false };
-        render(
-            <CompareModeToggle
-                locale="es"
-                isAuthenticated={true}
-            />
-        );
+        mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
+        render(<CompareModeToggle locale="es" />);
         fireEvent.click(screen.getByRole('button'));
         expect(screen.getByTestId('compare-upsell-popover')).toBeInTheDocument();
         fireEvent.click(screen.getByText('Cerrar'));
@@ -319,12 +297,7 @@ describe('CompareModeToggle — entitlement gate (post-review fix)', () => {
 
     it('keeps the button enabled while entitlements are loading (never permanently disabled)', () => {
         mockGuard.value = { canCompare: false, isLoading: true };
-        render(
-            <CompareModeToggle
-                locale="es"
-                isAuthenticated={true}
-            />
-        );
+        render(<CompareModeToggle locale="es" />);
         // A stuck isLoading must never disable this primary control.
         expect(screen.getByRole('button')).toBeEnabled();
         expect(screen.getByRole('button')).toHaveAttribute('aria-busy', 'true');
@@ -332,12 +305,7 @@ describe('CompareModeToggle — entitlement gate (post-review fix)', () => {
 
     it('activates compare mode optimistically on click while entitlements are loading (per-card guard still gates)', () => {
         mockGuard.value = { canCompare: false, isLoading: true };
-        render(
-            <CompareModeToggle
-                locale="es"
-                isAuthenticated={true}
-            />
-        );
+        render(<CompareModeToggle locale="es" />);
         fireEvent.click(screen.getByRole('button'));
         // Optimistic activation instead of a no-op; the CompareCardSelect guard
         // still gates actual selection, so no gate popover flashes here.

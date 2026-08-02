@@ -19,6 +19,7 @@
 
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
+import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { translateApiError } from '@/lib/api-errors';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -40,8 +41,13 @@ interface GastronomyReviewFormProps {
     readonly locale: SupportedLocale;
     /** Absolute API base URL (web app and API live on different hosts). */
     readonly apiUrl: string;
-    /** Whether the current visitor is authenticated. */
-    readonly isAuthenticated: boolean;
+    /**
+     * @deprecated Ignored since HOS-369 WB0-4 — the session is resolved
+     * client-side via `useAccountPermissions`, so a signed-in visitor gets the
+     * review form rather than the sign-in card on cached anonymous HTML.
+     * Callers stop passing it in WB0-5.
+     */
+    readonly isAuthenticated?: boolean;
     /** Sign-in URL (with return path) shown to anonymous visitors. */
     readonly signInHref: string;
 }
@@ -61,10 +67,15 @@ export function GastronomyReviewForm({
     gastronomyName,
     locale,
     apiUrl,
-    isAuthenticated,
     signInHref
 }: GastronomyReviewFormProps) {
     const { t } = createTranslations(locale);
+
+    // Session resolved client-side (HOS-369 WB0-4). Until it resolves the card
+    // shows the sign-in variant — the same thing the server renders, so there
+    // is no hydration mismatch and a guest sees no flicker.
+    const { user } = useAccountPermissions();
+    const isAuthenticated = user !== null;
     const dialogRef = useRef<HTMLDialogElement>(null);
 
     const [open, setOpen] = useState<boolean>(false);

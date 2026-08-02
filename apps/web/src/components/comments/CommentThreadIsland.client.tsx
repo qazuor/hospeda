@@ -12,6 +12,7 @@ import { COMMENT_CONTENT_MAX_LENGTH, CreateCommentBodySchema } from '@repo/schem
 import { type FormEvent, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
+import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { getApiUrl } from '@/lib/env';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -47,14 +48,19 @@ export interface CommentThreadIslandProps {
     readonly initialComments: readonly CommentItem[];
     /** Active UI locale for i18n. */
     readonly locale: SupportedLocale;
-    /** Whether the requesting user has an active session. Passed from SSR — islands cannot read Astro.locals. */
-    readonly isAuthenticated: boolean;
+    /**
+     * @deprecated Ignored since HOS-369 WB0-4 — the session is resolved
+     * client-side via `useAccountPermissions`, so a signed-in visitor gets the
+     * comment form rather than the login CTA on cached anonymous HTML.
+     * Callers stop passing it in WB0-5.
+     */
+    readonly isAuthenticated?: boolean;
     /** Full sign-in URL with returnUrl already appended (built server-side). */
     readonly signinUrl: string;
     /**
-     * Display name of the current user. Used as the author of an optimistically
-     * appended comment (the create endpoint does not echo the author), so the new
-     * row shows the real name instead of a blank until the next SSR load.
+     * @deprecated Ignored since HOS-369 WB0-4 — the display name comes from the
+     * client-resolved session instead. It is the visitor's own name, so baking
+     * it into the HTML would hand it to whoever the cache serves next.
      */
     readonly currentUserName?: string | null;
 }
@@ -107,11 +113,16 @@ export function CommentThreadIsland({
     entityId,
     initialComments,
     locale,
-    isAuthenticated,
-    signinUrl,
-    currentUserName
+    signinUrl
 }: CommentThreadIslandProps) {
     const { t } = createTranslations(locale);
+
+    // Session resolved client-side (HOS-369 WB0-4). The comment list is public
+    // and stays server-rendered; only the form-vs-CTA branch and the optimistic
+    // author name depend on who is reading.
+    const { user } = useAccountPermissions();
+    const isAuthenticated = user !== null;
+    const currentUserName = user?.name ?? null;
     const { fieldErrors, validate, clearError } = useZodForm({
         schema: CreateCommentBodySchema,
         t

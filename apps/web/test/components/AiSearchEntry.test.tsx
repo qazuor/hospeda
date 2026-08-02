@@ -13,6 +13,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AiSearchEntry } from '../../src/components/ai-search/AiSearchEntry.client';
+import { buildAuthSnapshot } from '../helpers/auth-session';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
@@ -36,13 +37,33 @@ vi.mock('../../src/components/ai-search/AiSearchEntry.module.css', () => ({
     })
 }));
 
+// HOS-369 WB0-4: the inner panel resolves the session client-side via
+// `useAccountPermissions`, which reads `auth-cache`. See test/helpers/auth-session.ts.
+const mockReadCachedAuthMe = vi.fn();
+
+vi.mock('@/lib/auth-cache', () => ({
+    readCachedAuthMe: () => mockReadCachedAuthMe(),
+    fetchAuthMe: () => new Promise(() => undefined),
+    writeCachedAuthMe: () => undefined,
+    resetInFlightAuthMe: () => undefined
+}));
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function renderEntry(overrides: Partial<Parameters<typeof AiSearchEntry>[0]> = {}) {
+/**
+ * Render the entry point for a signed-in visitor by default. `isAuthenticated`
+ * is no longer a prop — it arranges the session the inner panel resolves.
+ */
+function renderEntry({
+    isAuthenticated = true,
+    ...overrides
+}: Partial<Parameters<typeof AiSearchEntry>[0]> & {
+    readonly isAuthenticated?: boolean;
+} = {}) {
+    mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated }));
     const props = {
         locale: 'es' as const,
         apiUrl: 'http://localhost:3001',
-        isAuthenticated: true,
         currentUrl: 'http://localhost:4321/es/alojamientos/',
         ...overrides
     };
