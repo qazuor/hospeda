@@ -564,14 +564,33 @@ are inert until a nav consumes them.
   id, and a single `editor-price` nav entry is what the user should see either
   way. The accommodation editor has no analogue, so there is no precedent to
   follow.
-- **OQ-2 — Sticky nav scope.** `EditorSectionNav.client.tsx` (153 lines) was
-  verified genuinely generic: it takes `sections: {id,label}[]`, uses `locale`
-  only for the nav's `aria-label`, and drives an `IntersectionObserver` scrollspy
-  with `aria-current`. It has exactly one caller today. Wiring it into commerce is
-  small once anchors exist. In this spec as PR 3, or a separate Linear issue?
-  *Recommendation: PR 3 here* — the anchors ship in PR 2 and are dead weight until
-  something consumes them, and the nav is the visible payoff that justifies the
-  refactor to the owner.
+- **OQ-2 — Sticky nav scope.** ~~In this spec as PR 3, or a separate Linear
+  issue?~~ **RESOLVED, and the premise was wrong: the nav is blocked on HOS-371.**
+
+  `EditorSectionNav.client.tsx` is indeed generic and wiring it took one commit
+  (`refactor/hos-258-editor-section-nav`, `fd8393cb1` — pushed, deliberately
+  without a PR). But the nav **cannot stick**, and no amount of nav-side work
+  fixes it.
+
+  Measured in the browser, not inferred: `position: sticky` and `top: 110px`
+  both resolve correctly on the nav slot, but an ancestor kills them —
+  `apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar.astro`
+  wraps the whole editor in `<AccountSectionCard>`, whose
+  `AccountSection.module.css:20` sets `overflow: hidden` (it clips the branded
+  gradient bar). **An `overflow: hidden` ancestor voids `position: sticky`** —
+  it creates a scroll container with no scrollable extent, so the element has
+  zero range and scrolls away.
+
+  The accommodation editor escapes this because it is NOT wrapped in a card: it
+  renders one card **per section** (`.card { composes: card from
+  AccountSection.module.css }`) with the nav outside all of them. Reusing its
+  CSS was never going to be enough — the difference is where the card lives,
+  not how the nav is styled.
+
+  The unblock is exactly HOS-371's scope (cards per section). The anchors ship
+  in PR 2 and the nav branch is ready to rebase on top of it. A nav visible only
+  at the very top of the page reads as a broken control, so it is not worth
+  shipping standalone — recorded on HOS-371 rather than merged here.
 - **OQ-3 — `editor-fields.module.css` naming and location.** It introduces a
   third CSS pattern (§6.3). Should it live in `commerce/editor/`, or be promoted
   to a shared location so the accommodation editor can eventually adopt it too
