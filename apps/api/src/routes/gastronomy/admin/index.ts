@@ -1,5 +1,5 @@
 /**
- * Admin gastronomy routes (SPEC-239 T-045 / T-046).
+ * Admin gastronomy routes (SPEC-239 T-045 / T-046 / HOS-372).
  * Routes that require admin-level access.
  *
  * IMPORTANT: Route ordering matters — more-specific paths MUST be registered
@@ -9,23 +9,30 @@
  *   - /reviews       registered before /{id}
  *   - /options       registered before /{id}
  *   - /{id}/faqs/reorder  registered before /{id}/faqs/{faqId}
+ *   - /{id}/media/reorder  registered before /{id}/media/{mediaId}
+ *   - /{id}/media/{mediaId}/featured  registered before /{id}/media/{mediaId}
  */
 import { createRouter } from '../../../utils/create-app';
 import { adminGastronomyReviewRoutes } from '../reviews/admin/index.js';
 import { adminAddGastronomyFaqRoute } from './addFaq';
+import { adminAddGastronomyMediaRoute } from './addMedia';
 import { adminAssignGastronomyOwnerRoute } from './assignOwner';
 import { adminBatchGastronomiesRoute } from './batch';
 import { adminCreateGastronomyRoute } from './create';
 import { adminDeleteGastronomyRoute } from './delete';
 import { adminGetGastronomyByIdRoute } from './getById';
 import { adminGetGastronomyFaqsRoute } from './getFaqs';
+import { adminGetGastronomyMediaRoute } from './getMedia';
 import { adminHardDeleteGastronomyRoute } from './hardDelete';
 import { adminListGastronomiesRoute } from './list';
 import { adminGastronomyOptionsRoute } from './options';
 import { adminPatchGastronomyRoute } from './patch';
 import { adminRemoveGastronomyFaqRoute } from './removeFaq';
+import { adminRemoveGastronomyMediaRoute } from './removeMedia';
 import { adminReorderGastronomyFaqsRoute } from './reorderFaqs';
+import { adminReorderGastronomyMediaRoute } from './reorderMedia';
 import { adminRestoreGastronomyRoute } from './restore';
+import { adminSetFeaturedGastronomyMediaRoute } from './setFeaturedMedia';
 import { adminUpdateGastronomyRoute } from './update';
 import { adminUpdateGastronomyFaqRoute } from './updateFaq';
 
@@ -85,5 +92,24 @@ app.route('/', adminUpdateGastronomyFaqRoute);
 
 // DELETE /:id/faqs/:faqId - Remove FAQ from a listing
 app.route('/', adminRemoveGastronomyFaqRoute);
+
+// Media management (HOS-372) - gated on COMMERCE_EDIT_ALL
+
+// PATCH /:id/media/reorder - Reorder gallery photos
+// Registered before /:id/media/:mediaId to prevent "reorder" matching as a mediaId param
+app.route('/', adminReorderGastronomyMediaRoute);
+
+// GET /:id/media - List gallery photos
+app.route('/', adminGetGastronomyMediaRoute);
+
+// POST /:id/media - Add photo to gallery
+app.route('/', adminAddGastronomyMediaRoute);
+
+// PUT /:id/media/:mediaId/featured - Set featured photo
+// Registered before /:id/media/:mediaId to prevent "featured" suffix ambiguity
+app.route('/', adminSetFeaturedGastronomyMediaRoute);
+
+// DELETE /:id/media/:mediaId - Remove photo from gallery
+app.route('/', adminRemoveGastronomyMediaRoute);
 
 export { app as adminGastronomyRoutes };
