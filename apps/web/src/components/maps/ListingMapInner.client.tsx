@@ -293,13 +293,11 @@ const FLOATING_CARD_GAP_ABOVE_MARKER = 18;
 function AccommodationCardPopup({
     item,
     viewDetailsLabel,
-    isAuthenticated,
     locale,
     onClose
 }: {
     readonly item: AccommodationListingItem;
     readonly viewDetailsLabel?: string;
-    readonly isAuthenticated: boolean;
     readonly locale: SupportedLocale;
     readonly onClose: () => void;
 }) {
@@ -366,7 +364,6 @@ function AccommodationCardPopup({
             <AccommodationPopupContent
                 item={item}
                 viewDetailsLabel={viewDetailsLabel}
-                isAuthenticated={isAuthenticated}
                 locale={locale}
             />
         </div>,
@@ -391,7 +388,6 @@ export function ListingMapInner(props: ListingMapProps) {
         onMarkerClick,
         ariaLabel,
         i18nStrings,
-        isAuthenticated = false,
         locale = 'es'
     } = props;
 
@@ -483,8 +479,6 @@ export function ListingMapInner(props: ListingMapProps) {
                     item.reviewsCount ?? '',
                     item.reviewsLabel ?? '',
                     item.detailHref ?? '',
-                    item.isFavorited ? '1' : '0',
-                    item.favoriteBookmarkId ?? '',
                     item.bookmarkCount ?? ''
                 ].join('|');
 
@@ -633,7 +627,7 @@ export function ListingMapInner(props: ListingMapProps) {
     useEffect(() => {
         accommodationCacheRef.current.clear();
         destinationCacheRef.current.clear();
-    }, [isAccommodationMode, onMarkerClick, i18nStrings, isAuthenticated, locale]);
+    }, [isAccommodationMode, onMarkerClick, i18nStrings, locale]);
 
     // The accommodation whose floating card is open (if any). Resolved from the
     // live item list, so if a viewport refetch drops it the card just closes.
@@ -701,7 +695,6 @@ export function ListingMapInner(props: ListingMapProps) {
                         key={openAccommodationItem.id}
                         item={openAccommodationItem}
                         viewDetailsLabel={i18nStrings.viewDetails}
-                        isAuthenticated={isAuthenticated}
                         locale={locale}
                         onClose={() => setOpenCardId(null)}
                     />
@@ -723,12 +716,10 @@ export function ListingMapInner(props: ListingMapProps) {
 function AccommodationPopupContent({
     item,
     viewDetailsLabel,
-    isAuthenticated,
     locale
 }: {
     readonly item: AccommodationListingItem;
     readonly viewDetailsLabel?: string;
-    readonly isAuthenticated: boolean;
     readonly locale: SupportedLocale;
 }) {
     const hasRating =
@@ -763,12 +754,9 @@ function AccommodationPopupContent({
                         <FavoriteButton
                             entityId={item.id}
                             entityType="ACCOMMODATION"
-                            initialIsFavorited={item.isFavorited}
-                            initialBookmarkId={item.favoriteBookmarkId ?? null}
                             count={item.bookmarkCount}
                             variant="compact"
                             locale={locale}
-                            isAuthenticated={isAuthenticated}
                         />
                     </div>
                 ) : null}

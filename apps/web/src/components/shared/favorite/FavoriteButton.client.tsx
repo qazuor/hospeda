@@ -80,17 +80,6 @@ export interface FavoriteButtonProps {
      */
     readonly entityType: FavoriteEntityType;
     /**
-     * @deprecated Ignored since HOS-369 WB0-3 — favorite state is resolved
-     * client-side by `favorites-store`. A server-rendered favorited flag cannot
-     * survive an edge cache: the same HTML is served to every visitor. Callers
-     * stop passing it in WB0-5, when the pages drop their SSR bulk check.
-     */
-    readonly initialIsFavorited?: boolean;
-    /**
-     * @deprecated Ignored since HOS-369 WB0-3 — see {@link initialIsFavorited}.
-     */
-    readonly initialBookmarkId?: string | null;
-    /**
      * Visual variant:
      * - `standalone` (default): icon-only circular button.
      * - `pill`: with a count-badge slot.
@@ -101,14 +90,6 @@ export interface FavoriteButtonProps {
     readonly locale?: SupportedLocale;
     /** Additional CSS classes forwarded to the root button element. */
     readonly className?: string;
-    /**
-     * @deprecated Ignored since HOS-369 WB0-3 — the session is resolved
-     * client-side via `useAccountPermissions`. As an SSR gate this was wrong in
-     * both directions: a cached page hands every visitor whatever the first one
-     * had, and a session that expired after render kept the button enabled.
-     * Callers stop passing it in WB0-5.
-     */
-    readonly isAuthenticated?: boolean;
     /**
      * Optional callback invoked after a state change.
      * Used by parent listing components to sync local state without re-fetching.

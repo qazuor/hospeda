@@ -39,13 +39,6 @@ export interface ExperienceReviewsProps {
     readonly averageRating: number;
     /** Active locale for i18n. */
     readonly locale: SupportedLocale;
-    /**
-     * @deprecated Ignored since HOS-369 WB0-4 — the session is resolved
-     * client-side via `useAccountPermissions`, so the "leave a review" CTA
-     * appears for a signed-in visitor even on cached anonymous HTML. Callers
-     * stop passing it in WB0-5.
-     */
-    readonly isAuthenticated?: boolean;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

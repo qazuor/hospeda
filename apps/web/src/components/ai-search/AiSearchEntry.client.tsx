@@ -81,11 +81,6 @@ const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : us
 export interface AiSearchEntryProps {
     readonly locale: SupportedLocale;
     readonly apiUrl: string;
-    /**
-     * @deprecated Ignored since HOS-369 WB0-4 — `SearchChatPanel` resolves the
-     * session itself. Callers stop passing it in WB0-5.
-     */
-    readonly isAuthenticated?: boolean;
     readonly currentUrl: string;
     readonly destinations?: Readonly<Record<string, string>>;
     readonly pageType?: string;

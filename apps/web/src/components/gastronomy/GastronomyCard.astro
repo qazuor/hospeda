@@ -21,12 +21,6 @@ interface Props {
     readonly data: GastronomyCardData;
     readonly locale: SupportedLocale;
     /**
-     * Whether the current user is authenticated.
-     * Forwarded to FavoriteButton to decide between toggle-favorite or
-     * auth-required popover. Defaults to false (guest user).
-     */
-    readonly isAuthenticated?: boolean;
-    /**
      * When true the card image renders with `loading="eager"` and
      * `fetchpriority="high"` — set this on cards in the first visible row
      * so the browser treats them as LCP candidates. Defaults to false.
@@ -34,7 +28,7 @@ interface Props {
     readonly eager?: boolean;
 }
 
-const { data, locale, isAuthenticated = false, eager = false } = Astro.props;
+const { data, locale, eager = false } = Astro.props;
 const { t } = createTranslations(locale);
 
 const detailUrl = buildUrl({ locale, path: `gastronomia/${data.slug}/` });
@@ -129,13 +123,10 @@ const closedNowLabel = t('gastronomy.card.closedNow', 'Cerrado ahora');
                     client:visible
                     entityId={data.id}
                     entityType="GASTRONOMY"
-                    initialIsFavorited={data.isFavorited}
-                    initialBookmarkId={data.favoriteBookmarkId ?? null}
                     count={data.bookmarkCount}
                     variant="standalone"
                     showCount={true}
                     locale={locale}
-                    isAuthenticated={isAuthenticated}
                 />
             </div>
 

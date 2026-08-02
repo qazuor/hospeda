@@ -16,7 +16,6 @@ import { type ReactElement, useCallback, useEffect, useState } from 'react';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { ErrorBoundary } from '@/components/shared/ui/ErrorBoundary';
 import type { DestinationCardData } from '@/data/types';
-import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -34,13 +33,6 @@ interface DestinationsIslandProps {
     readonly destinations: readonly DestinationCardData[];
     /** Active locale used to build destination URLs and resolve translations. */
     readonly locale: SupportedLocale;
-    /**
-     * Whether the current user is authenticated.
-     * Forwarded to FavoriteButton on each carousel card to decide between
-     * toggle-favorite or showing the auth-required popover.
-     * Defaults to false (guest user).
-     */
-    readonly isAuthenticated?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -85,7 +77,7 @@ function renderStars(rating: number): ReactElement[] {
  *
  * @example
  * ```astro
- * <DestinationsIsland destinations={destinations} locale={locale} isAuthenticated={!!user} client:visible />
+ * <DestinationsIsland destinations={destinations} locale={locale} client:visible />
  * ```
  */
 export function DestinationsIsland(props: DestinationsIslandProps) {
@@ -96,59 +88,10 @@ export function DestinationsIsland(props: DestinationsIslandProps) {
     );
 }
 
-function DestinationsIslandInner({
-    destinations,
-    locale,
-    isAuthenticated = false
-}: DestinationsIslandProps) {
+function DestinationsIslandInner({ destinations, locale }: DestinationsIslandProps) {
     const { t } = createTranslations(locale);
 
     const [activeIndex, setActiveIndex] = useState(0);
-
-    // --- Bulk favorite check (replaces N per-card checkStatus calls on mount) --
-    // Single /check-bulk fired once when the user is authenticated and destinations
-    // are available. Result keyed by destination id; fed into FavoriteButton as
-    // `initialIsFavorited` so the button skips its own hydration request.
-    type FavoriteCheckEntry = {
-        readonly isBookmarked: boolean;
-        readonly bookmarkId: string | null;
-    };
-    const [favoriteChecks, setFavoriteChecks] = useState<
-        Readonly<Record<string, FavoriteCheckEntry>>
-    >({});
-
-    // Gates the per-card FavoriteButton render for authenticated users until the
-    // single bulk check resolves. CRITICAL: React runs child effects BEFORE parent
-    // effects, so if we rendered the buttons immediately they would mount with
-    // initialIsFavorited=undefined and each fire its OWN checkStatus before this
-    // parent effect runs — re-introducing the exact N+1 we are removing (N self
-    // checks + 1 bulk). By withholding the buttons until the bulk result is in,
-    // each mounts already-hydrated (initialIsFavorited is a real boolean → no self
-    // check). Guests are never gated (they never fetch).
-    const [bulkResolved, setBulkResolved] = useState(false);
-
-    // destinations is intentionally omitted from the dep list: the list is static
-    // for the island's lifetime; we only re-run when auth state changes.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional single-shot on auth change
-    useEffect(() => {
-        if (!isAuthenticated || destinations.length === 0) return;
-        const runBulkCheck = async () => {
-            try {
-                const result = await userBookmarksApi.checkBulk({
-                    entityType: 'DESTINATION',
-                    entityIds: destinations.map((d) => d.id)
-                });
-                if (result.ok) {
-                    setFavoriteChecks(result.data.checks);
-                }
-            } catch {
-                // Silent fallback: buttons still render once resolved, defaulting to not-favorited.
-            } finally {
-                setBulkResolved(true);
-            }
-        };
-        void runBulkCheck();
-    }, [isAuthenticated]);
     const total = destinations.length;
 
     // Embla setup — centered alignment to show peek cards on both sides
@@ -420,28 +363,12 @@ function DestinationsIslandInner({
 
                                         {/* FavoriteButton — outside the <a> to avoid nested interactive elements */}
                                         <div className={styles.cardActions}>
-                                            {(!isAuthenticated || bulkResolved) && (
-                                                <FavoriteButton
-                                                    entityId={destination.id}
-                                                    entityType="DESTINATION"
-                                                    isAuthenticated={isAuthenticated}
-                                                    // Authenticated: pass a real boolean so the button
-                                                    // mounts hydrated and skips its own checkStatus.
-                                                    // Guest: leave undefined (guest path never fetches).
-                                                    initialIsFavorited={
-                                                        isAuthenticated
-                                                            ? (favoriteChecks[destination.id]
-                                                                  ?.isBookmarked ?? false)
-                                                            : undefined
-                                                    }
-                                                    initialBookmarkId={
-                                                        favoriteChecks[destination.id]
-                                                            ?.bookmarkId ?? null
-                                                    }
-                                                    locale={locale}
-                                                    variant="compact"
-                                                />
-                                            )}
+                                            <FavoriteButton
+                                                entityId={destination.id}
+                                                entityType="DESTINATION"
+                                                locale={locale}
+                                                variant="compact"
+                                            />
                                         </div>
                                     </article>
                                 );

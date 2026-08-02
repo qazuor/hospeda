@@ -70,7 +70,7 @@ export interface MapSidebarCardData {
     readonly amenities?: ReadonlyArray<MapSidebarAmenity>;
     readonly extraAmenitiesCount?: number;
     readonly amenitiesLabel?: string;
-    /** Favorite button hydration state — passed straight through. */
+    /** Favorite state fields — no longer forwarded to FavoriteButton (HOS-369 WB0-5), kept on the type per data-type-preservation policy. */
     readonly isFavorited?: boolean;
     readonly favoriteBookmarkId?: string | null;
     readonly bookmarkCount?: number;
@@ -92,8 +92,6 @@ interface MapCardsSidebarProps {
      * render aria labels / popovers in the right language.
      */
     readonly locale?: SupportedLocale;
-    /** Whether the visitor is signed-in — drives FavoriteButton behavior. */
-    readonly isAuthenticated?: boolean;
     /**
      * A1 (SPEC-228): true while `useViewportSearch` is fetching new results for
      * the current viewport. Shows a loading overlay over the (stale) card list.
@@ -180,7 +178,6 @@ export function MapCardsSidebar({
     onCardHover,
     onCardSelect,
     locale = 'es',
-    isAuthenticated = false,
     isFetching = false,
     i18n
 }: MapCardsSidebarProps) {
@@ -309,13 +306,10 @@ export function MapCardsSidebar({
                                         <FavoriteButton
                                             entityId={item.id}
                                             entityType="ACCOMMODATION"
-                                            initialIsFavorited={item.isFavorited}
-                                            initialBookmarkId={item.favoriteBookmarkId ?? null}
                                             count={item.bookmarkCount}
                                             variant="standalone"
                                             showCount={true}
                                             locale={locale}
-                                            isAuthenticated={isAuthenticated}
                                         />
                                         {photos > 0 && item.photosLabel ? (
                                             <div

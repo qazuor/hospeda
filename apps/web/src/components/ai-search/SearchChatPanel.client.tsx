@@ -48,9 +48,6 @@ import { useSearchChat } from './useSearchChat';
  * @property locale - Active locale for translations and detail links.
  * @property apiUrl - Base URL of the API server (e.g. `http://localhost:3001`).
  *   Passed by the Astro host from `import.meta.env.PUBLIC_API_URL`.
- * @property isAuthenticated - Deprecated and ignored since HOS-369 WB0-4; the
- *   session is resolved client-side. Whether the chat UI or the login CTA (W14)
- *   renders is decided after that resolution.
  * @property currentUrl - Full URL of the current page, used to build the
  *   post-login redirect href. Pass `Astro.url.href` from the host page.
  * @property destinations - Catalog of city destinations for chip label
@@ -66,8 +63,6 @@ import { useSearchChat } from './useSearchChat';
 export interface SearchChatPanelProps {
     readonly locale: SupportedLocale;
     readonly apiUrl: string;
-    /** @deprecated Ignored since HOS-369 WB0-4 — resolved client-side. */
-    readonly isAuthenticated?: boolean;
     readonly currentUrl: string;
     readonly destinations?: Readonly<Record<string, string>>;
     readonly pageType?: string;
