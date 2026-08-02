@@ -33,6 +33,7 @@ import {
 } from '@repo/schemas';
 import { type JSX, useCallback, useState } from 'react';
 import type { DestinationOption } from '@/components/gastronomy/CommerceLead.client';
+import { RichTextEditor } from '@/components/host/editor/RichTextEditor.client';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { apiClient } from '@/lib/api/client';
 import type { AmenityData } from '@/lib/api/types';
@@ -43,6 +44,7 @@ import { createTranslations } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
 import { AmenitiesFeaturesField } from './AmenitiesFeaturesField';
 import styles from './CommerceListingEditor.module.css';
+import { CommercePhoneField } from './CommercePhoneField';
 import {
     type CommerceI18nValues,
     CommerceTranslationPanel,
@@ -699,20 +701,34 @@ export function CommerceListingEditor({
                 />
             </section>
 
+            {/* HOS-371: TipTap instead of the bare textarea this field used to
+                be. `richDescription` is already rendered as Markdown on the
+                public pages (`GastronomyDescription.astro` / `ExperienceInfo.astro`
+                both run it through `renderContent`), and RichTextEditor persists
+                Markdown — so the stored shape is unchanged, the owner just stops
+                having to hand-write it.
+
+                Deliberately NOT behind a `PlanEntitlementGate`: that gate reads
+                the ACCOMMODATION entitlement set (`loadEntitlements` filters to
+                `product_domain = 'accommodation'`), so gating a commerce field on
+                it would deny the field to every commerce owner. Commerce billing
+                is a separate domain — see the root CLAUDE.md, SPEC-239. */}
             <section className={styles.section}>
-                <label
-                    className={styles.label}
-                    htmlFor="ce-richDescription"
-                >
+                <span className={styles.label}>
                     {t('commerce.owner.editor.sections.richDescription', 'Descripción ampliada')}
-                </label>
-                <textarea
-                    id="ce-richDescription"
-                    className={styles.textarea}
+                </span>
+                <RichTextEditor
                     value={richDescription}
-                    rows={6}
-                    onChange={(event) => {
-                        setRichDescription(event.target.value);
+                    ariaLabel={t(
+                        'commerce.owner.editor.sections.richDescription',
+                        'Descripción ampliada'
+                    )}
+                    placeholder={t(
+                        'commerce.owner.editor.richDescriptionPlaceholder',
+                        'Contá la historia de tu comercio con detalle...'
+                    )}
+                    onChange={(value) => {
+                        setRichDescription(value);
                         markDirty('richDescription');
                     }}
                 />
@@ -723,23 +739,17 @@ export function CommerceListingEditor({
                 <legend className={styles.label}>
                     {t('commerce.owner.editor.sections.contactInfo', 'Información de contacto')}
                 </legend>
-                <input
-                    className={styles.input}
-                    type="tel"
-                    aria-label={t('commerce.owner.editor.contactField.mobilePhone', 'Teléfono')}
+                {/* HOS-371: searchable country-code combobox + local number,
+                    replacing the bare `type="tel"` with a static "+54..."
+                    placeholder. Recomposes into the same single `mobilePhone`
+                    string, so dirty tracking and the payload are unchanged. */}
+                <CommercePhoneField
+                    locale={locale}
                     value={contact.mobilePhone}
-                    placeholder="+54..."
-                    aria-invalid={fieldErrors['contactInfo.mobilePhone'] ? 'true' : 'false'}
-                    aria-describedby={
-                        fieldErrors['contactInfo.mobilePhone']
-                            ? fieldErrorId('contactInfo.mobilePhone')
-                            : undefined
-                    }
-                    onChange={(event) => updateContact({ mobilePhone: event.target.value })}
-                />
-                <FieldError
-                    id={fieldErrorId('contactInfo.mobilePhone')}
-                    message={fieldErrors['contactInfo.mobilePhone']}
+                    onChange={(value) => updateContact({ mobilePhone: value })}
+                    error={fieldErrors['contactInfo.mobilePhone']}
+                    t={t}
+                    classes={styles}
                 />
                 <input
                     className={styles.input}
@@ -823,12 +833,16 @@ export function CommerceListingEditor({
                 />
             </section>
 
-            {/* T-023: i18n editing panel */}
-            <CommerceTranslationPanel
-                locale={locale}
-                initialValues={i18nValues}
-                onChange={handleI18nChange}
-            />
+            {/* T-023: i18n editing panel. Wrapped (HOS-371) so it reads as one
+                more section card like every sibling — the panel's own root is a
+                bare `<fieldset>`, not a card. */}
+            <section className={styles.section}>
+                <CommerceTranslationPanel
+                    locale={locale}
+                    initialValues={i18nValues}
+                    onChange={handleI18nChange}
+                />
+            </section>
 
             {(amenities.length > 0 || features.length > 0) && (
                 <section className={styles.section}>

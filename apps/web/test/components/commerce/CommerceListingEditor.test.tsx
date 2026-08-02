@@ -61,6 +61,32 @@ vi.mock('../../../src/lib/i18n', () => ({
     })
 }));
 
+// HOS-371: `richDescription` is a TipTap editor now, not a `<textarea>`. Booting
+// the real editor in every render here would make this suite an order of
+// magnitude slower for zero added signal — what these tests care about is the
+// dirty-tracking/payload wiring, which only needs the controlled-value contract.
+// The shim keeps the same accessible name so the existing assertions still
+// target the same field. The REAL editor is exercised in
+// `CommerceListingEditor.rich-description.test.tsx` (mount must not dirty the
+// form) and `host/editor/RichTextEditor.controlled-emit.test.tsx`.
+vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
+    RichTextEditor: ({
+        value,
+        onChange,
+        ariaLabel
+    }: {
+        value: string;
+        onChange: (value: string) => void;
+        ariaLabel?: string;
+    }) => (
+        <textarea
+            aria-label={ariaLabel}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+        />
+    )
+}));
+
 vi.mock('../../../src/lib/api/client', () => ({
     apiClient: { patch: vi.fn() }
 }));
@@ -217,8 +243,11 @@ describe('CommerceListingEditor', () => {
         });
         renderEditor('gastronomy');
 
-        fireEvent.change(screen.getByLabelText('Teléfono'), {
-            target: { value: '+5491100000000' }
+        // HOS-371: the phone is a country-code combobox + local number pair now,
+        // so the editable control is the "Número" input; the dial code comes
+        // from the combobox and is recomposed into the stored string.
+        fireEvent.change(screen.getByLabelText('Número'), {
+            target: { value: '9 11 1234 5678' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
@@ -267,8 +296,12 @@ describe('CommerceListingEditor', () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
         renderEditor('gastronomy');
 
-        fireEvent.change(screen.getByLabelText('Teléfono'), {
-            target: { value: '+5491100000000' }
+        // HOS-371: the local number is recomposed with the combobox's dial code
+        // (defaulting to Argentina) into the single `mobilePhone` string the
+        // backend stores — the same `<dialCode> <number>` shape the
+        // accommodation editor writes and `InternationalPhoneRegex` validates.
+        fireEvent.change(screen.getByLabelText('Número'), {
+            target: { value: '9 11 1234 5678' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
@@ -277,12 +310,32 @@ describe('CommerceListingEditor', () => {
             path: '/api/v1/protected/gastronomies/abc',
             body: {
                 contactInfo: {
-                    mobilePhone: '+5491100000000',
+                    mobilePhone: '+54 9 11 1234 5678',
                     workEmail: undefined,
                     website: undefined
                 }
             }
         });
+    });
+
+    it('lets the owner pick a different country code and recomposes the stored phone (HOS-371)', async () => {
+        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+        renderEditor('gastronomy');
+
+        // The combobox trigger leads with the field name, then the selection.
+        fireEvent.click(screen.getByRole('button', { name: /País: Argentina/ }));
+        fireEvent.mouseDown(screen.getByRole('option', { name: /Brasil|Brazil/ }));
+
+        fireEvent.change(screen.getByLabelText('Número'), {
+            target: { value: '11 91234 5678' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+        const body = mockPatch.mock.calls[0]?.[0]?.body as {
+            contactInfo?: { mobilePhone?: string };
+        };
+        expect(body.contactInfo?.mobilePhone).toBe('+55 11 91234 5678');
     });
 
     it('shows the price-on-request toggle for the experience vertical (no price select)', () => {
@@ -422,6 +475,103 @@ describe('CommerceListingEditor', () => {
         };
         expect(body.amenityIds).toEqual([AMENITY_A1, AMENITY_A2]);
         expect(body.featureIds).toEqual([FEATURE_F1]);
+    });
+
+    describe('amenity category accordions — HOS-371', () => {
+        const WIFI = '11111111-1111-4111-8111-111111111111';
+        const TV = '22222222-2222-4222-8222-222222222222';
+        const TERRAZA = '33333333-3333-4333-8333-333333333333';
+        const UNCATEGORIZED = '44444444-4444-4444-8444-444444444444';
+
+        /** Renders the editor with amenities spanning three category buckets. */
+        function renderWithCategorizedAmenities(selected: readonly string[] = []) {
+            return render(
+                <CommerceListingEditor
+                    vertical="gastronomy"
+                    listingId="abc"
+                    locale="es"
+                    initialData={
+                        {
+                            id: 'abc',
+                            ownerId: 'owner-1',
+                            name: 'La Parrilla',
+                            slug: 'la-parrilla',
+                            amenityIds: selected
+                        } as unknown as CommerceListingDetail
+                    }
+                    amenities={[
+                        { id: TV, slug: 'tv', category: 'ENTERTAINMENT' },
+                        { id: WIFI, slug: 'wifi', category: 'CONNECTIVITY' },
+                        { id: TERRAZA, slug: 'terraza', category: 'OUTDOORS' },
+                        { id: UNCATEGORIZED, slug: 'algo', category: null }
+                    ]}
+                    features={[]}
+                />
+            );
+        }
+
+        it('groups amenities into one collapsible <details> per category', () => {
+            const { container } = renderWithCategorizedAmenities();
+
+            const summaries = Array.from(container.querySelectorAll('details > summary')).map(
+                (el) => el.textContent
+            );
+
+            // One accordion per non-empty bucket, plus the "Otros" catch-all for
+            // the null-category amenity — four buckets, not one flat list.
+            expect(summaries).toHaveLength(4);
+            expect(summaries.some((s) => s?.includes('Conectividad'))).toBe(true);
+            expect(summaries.some((s) => s?.includes('Entretenimiento'))).toBe(true);
+            expect(summaries.some((s) => s?.includes('Exteriores'))).toBe(true);
+            expect(summaries.some((s) => s?.includes('Otros'))).toBe(true);
+        });
+
+        it('renders categories in the canonical order, not catalog order', () => {
+            const { container } = renderWithCategorizedAmenities();
+
+            const summaries = Array.from(container.querySelectorAll('details > summary')).map(
+                (el) => el.textContent ?? ''
+            );
+
+            // The catalog above deliberately lists ENTERTAINMENT before
+            // CONNECTIVITY; AMENITY_CATEGORY_ORDER puts CONNECTIVITY first and
+            // the "Otros" bucket always last.
+            const positions = ['Conectividad', 'Entretenimiento', 'Exteriores', 'Otros'].map(
+                (label) => summaries.findIndex((s) => s.includes(label))
+            );
+            expect(positions).toEqual([...positions].sort((a, b) => a - b));
+            expect(positions.at(-1)).toBe(summaries.length - 1);
+        });
+
+        it('opens the first group and any group holding a selection, and badges the count', () => {
+            const { container } = renderWithCategorizedAmenities([TERRAZA]);
+
+            const groups = Array.from(container.querySelectorAll('details'));
+            const byLabel = (label: string) =>
+                groups.find((el) => el.querySelector('summary')?.textContent?.includes(label));
+
+            // First group is open so the section never reads as empty...
+            expect(byLabel('Conectividad')?.open).toBe(true);
+            // ...and a selected amenity is never hidden behind a closed summary.
+            expect(byLabel('Exteriores')?.open).toBe(true);
+            expect(byLabel('Exteriores')?.querySelector('summary')?.textContent).toContain('1');
+            // A group with neither property stays collapsed.
+            expect(byLabel('Entretenimiento')?.open).toBe(false);
+        });
+
+        it('still toggles amenities through to the payload from inside an accordion', async () => {
+            mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+            renderWithCategorizedAmenities();
+
+            // "Terraza" lives in a collapsed group; <details> keeps its contents
+            // in the DOM, so the checkbox is reachable either way.
+            fireEvent.click(screen.getByLabelText('Terraza'));
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+            await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+            const body = mockPatch.mock.calls[0]?.[0]?.body as { amenityIds?: string[] };
+            expect(body.amenityIds).toEqual([TERRAZA]);
+        });
     });
 
     describe('D-1 identity fields (name/destinationId/description) — HOS-166', () => {

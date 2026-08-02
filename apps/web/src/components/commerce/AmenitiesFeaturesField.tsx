@@ -13,7 +13,15 @@ import type { AmenityData } from '@/lib/api/types';
  *   - Amenities: `accommodations.amenityNames.<slug>`
  *   - Features:  `accommodations.featureNames.<slug>`
  * The slug falls through as raw fallback when no i18n key is found.
+ *
+ * HOS-371: amenities are grouped into collapsible `<details>` accordions by
+ * category, matching the accommodation editor's `AmenitiesSection` (BETA-133) —
+ * a flat list dumped every option on screen at once. The grouping itself is the
+ * shared `groupAmenitiesByCategory` in `lib/catalog-categories.ts`. Features
+ * carry no category in the catalog (see `transformAmenityList` in
+ * `lib/api/transforms.ts`), so they stay a single flat grid.
  */
+import { groupAmenitiesByCategory } from '@/lib/catalog-categories';
 import { translateAmenityName } from '@/lib/catalog-names';
 
 /** Translator function shape (matches the editor's `createTranslations().t`). */
@@ -39,9 +47,9 @@ interface AmenitiesFeaturesFieldProps {
 }
 
 /**
- * Amenity + feature multi-select. Two independent checkbox groups; each toggle
- * flows up to the parent so the editor can persist `amenityIds` / `featureIds`
- * as separate dirty field groups.
+ * Amenity + feature multi-select. Two independent groups; each toggle flows up
+ * to the parent so the editor can persist `amenityIds` / `featureIds` as
+ * separate dirty field groups.
  */
 export function AmenitiesFeaturesField({
     amenities,
@@ -53,27 +61,57 @@ export function AmenitiesFeaturesField({
     t,
     classes
 }: AmenitiesFeaturesFieldProps): JSX.Element {
+    const amenityGroups = groupAmenitiesByCategory({ amenities, t });
+
     return (
         <div className={classes.catalog}>
-            {amenities.length > 0 && (
+            {amenityGroups.length > 0 && (
                 <fieldset className={classes.catalogGroup}>
                     <legend className={classes.label}>
                         {t('commerce.owner.editor.sections.amenities', 'Servicios')}
                     </legend>
-                    <div className={classes.catalogGrid}>
-                        {amenities.map((amenity) => (
-                            <label
-                                key={amenity.id}
-                                className={classes.checkbox}
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={selectedAmenityIds.has(amenity.id)}
-                                    onChange={() => onToggleAmenity(amenity.id)}
-                                />
-                                {translateAmenityName({ t, name: amenity.slug })}
-                            </label>
-                        ))}
+                    <div className={classes.categoryList}>
+                        {amenityGroups.map((group, index) => {
+                            const selectedCount = group.items.filter((item) =>
+                                selectedAmenityIds.has(item.id)
+                            ).length;
+                            // Open the first group so the section never reads as
+                            // empty, plus any group holding a current selection
+                            // (which would otherwise be hidden behind a summary).
+                            const isFirstGroup = index === 0;
+
+                            return (
+                                <details
+                                    key={group.key}
+                                    className={classes.categoryGroup}
+                                    open={selectedCount > 0 || isFirstGroup}
+                                >
+                                    <summary className={classes.categorySummary}>
+                                        <span className={classes.categoryLabel}>{group.label}</span>
+                                        {selectedCount > 0 && (
+                                            <span className={classes.categoryBadge}>
+                                                {selectedCount}
+                                            </span>
+                                        )}
+                                    </summary>
+                                    <div className={classes.catalogGrid}>
+                                        {group.items.map((amenity) => (
+                                            <label
+                                                key={amenity.id}
+                                                className={classes.checkbox}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedAmenityIds.has(amenity.id)}
+                                                    onChange={() => onToggleAmenity(amenity.id)}
+                                                />
+                                                {translateAmenityName({ t, name: amenity.slug })}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </details>
+                            );
+                        })}
                     </div>
                 </fieldset>
             )}
