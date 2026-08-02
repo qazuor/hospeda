@@ -257,9 +257,14 @@ test.describe('COMMERCE-03: owner edits type + i18n fields — persist on public
             waitUntil: 'load'
         });
 
-        // Wait for the translation panel to be visible. The panel renders a
-        // fieldset with legend 'Traducciones'. The active locale tab is 'es'
-        // by default (matches the page locale 'es').
+        // Wait for real island hydration first (HOS-371): everything asserted
+        // below — the panel fieldset, the textarea being visible and editable —
+        // is server-rendered and therefore true before React attaches, so none
+        // of it gates the `setReactInputValue` call further down.
+        await waitForCommerceEditorHydration({ page });
+
+        // The panel renders a fieldset with legend 'Traducciones'. The active
+        // locale tab is 'es' by default (matches the page locale 'es').
         const translationPanelLegend = page.getByRole('group').filter({ hasText: /traducciones/i });
         await expect(translationPanelLegend).toBeVisible({ timeout: 15_000 });
 

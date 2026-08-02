@@ -23,8 +23,18 @@
 
 import { expect, type Locator, type Page } from '@playwright/test';
 
-/** Accessible name of the rich description field, as rendered in Spanish. */
-const RICH_DESCRIPTION_LABEL = 'Descripción ampliada';
+/**
+ * TipTap's editable surface.
+ *
+ * Deliberately NOT `getByRole('textbox', { name: 'Descripción ampliada' })`:
+ * `CommerceTranslationPanel` renders a per-locale textarea carrying that exact
+ * same visible label (as it does for Nombre / Resumen / Descripción), so the
+ * accessible name is ambiguous and Playwright's strict mode rejects it. That
+ * collision predates HOS-371 — the unit suite already stubs the panel out for
+ * the same reason — and is reported separately rather than fixed here.
+ * `.ProseMirror` is unique: the panel uses plain textareas, not TipTap.
+ */
+const RICH_DESCRIPTION_SELECTOR = '.ProseMirror';
 
 /**
  * Waits until the commerce editor island has actually hydrated.
@@ -59,7 +69,7 @@ export async function waitForCommerceEditorHydration({
  * @param params.page - The Playwright page sitting on the editor route
  */
 export function richDescriptionEditor({ page }: { readonly page: Page }): Locator {
-    return page.getByRole('textbox', { name: RICH_DESCRIPTION_LABEL });
+    return page.locator(RICH_DESCRIPTION_SELECTOR).first();
 }
 
 /**
