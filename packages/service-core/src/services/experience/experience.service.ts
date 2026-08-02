@@ -30,7 +30,9 @@
 
 import {
     AmenityModel,
+    type ExperienceMediaModel,
     type ExperienceModel,
+    experienceMediaModel,
     experienceModel,
     FeatureModel,
     rExperienceAmenityModel,
@@ -67,6 +69,10 @@ import type {
     CommerceJunctionModel
 } from '../commerce/base-commerce-listing.service';
 import { BaseCommerceListingService } from '../commerce/base-commerce-listing.service';
+import {
+    attachComposedExperienceMedia,
+    attachComposedExperienceMediaList
+} from './experience.media-read';
 import {
     checkExperienceCanAdminList,
     checkExperienceCanCreate,
@@ -137,9 +143,16 @@ export class ExperienceService extends BaseCommerceListingService<
     /** @internal Overrideable in unit tests. */
     private _featureJunctionModelInstance: CommerceJunctionModel<Record<string, unknown>>;
 
-    constructor(config: ServiceConfig) {
+    /**
+     * Relational media model used by the read-composition hooks (HOS-372).
+     * @internal Overrideable in unit tests.
+     */
+    private _experienceMediaModelInstance: ExperienceMediaModel;
+
+    constructor(config: ServiceConfig, mediaModel?: ExperienceMediaModel) {
         super(config, ExperienceService.ENTITY_NAME);
         this.model = experienceModel;
+        this._experienceMediaModelInstance = mediaModel ?? experienceMediaModel;
         this.adminSearchSchema = ExperienceAdminSearchSchema;
         this._amenityModelInstance = new AmenityModel();
         this._featureModelInstance = new FeatureModel();
@@ -181,6 +194,68 @@ export class ExperienceService extends BaseCommerceListingService<
     /** Feature catalog model — validates supplied feature IDs before sync. */
     protected override get _featureModel(): CommerceCatalogModel {
         return this._featureModelInstance;
+    }
+
+    /** Relational media model backing the read-composition hooks (HOS-372). */
+    protected get _experienceMediaModel(): ExperienceMediaModel {
+        return this._experienceMediaModelInstance;
+    }
+
+    // -----------------------------------------------------------------------
+    // Media composition (HOS-372)
+    // -----------------------------------------------------------------------
+    //
+    // Photos live in the relational `experience_media` table, not in a JSONB
+    // blob, so every read path has to rebuild the `media` shape consumers
+    // expect. These three hooks are the standard chokepoints
+    // (getById/getBySlug/adminGetById go through `_afterGetByField`; `list()`
+    // and `search()` through their own).
+    //
+    // WITHOUT this wiring the relational rows are written but never read: the
+    // owner persists photos successfully and they appear nowhere. Any new
+    // commerce vertical must wire the same three hooks.
+    //
+    // Composition is batched (`findByExperiences`, one IN query) so a list page
+    // does not go N+1.
+
+    protected override async _afterGetByField(
+        entity: Experience | null,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<Experience | null> {
+        return attachComposedExperienceMedia({
+            entity,
+            mediaModel: this._experienceMediaModel,
+            tx: ctx?.tx
+        });
+    }
+
+    protected override async _afterList(
+        result: PaginatedListOutput<Experience>,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<PaginatedListOutput<Experience>> {
+        if (!result?.items) return result;
+        const items = await attachComposedExperienceMediaList({
+            items: result.items,
+            mediaModel: this._experienceMediaModel,
+            tx: ctx?.tx
+        });
+        return { ...result, items };
+    }
+
+    protected override async _afterSearch(
+        result: PaginatedListOutput<Experience>,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<PaginatedListOutput<Experience>> {
+        if (!result?.items) return result;
+        const items = await attachComposedExperienceMediaList({
+            items: result.items,
+            mediaModel: this._experienceMediaModel,
+            tx: ctx?.tx
+        });
+        return { ...result, items };
     }
 
     // -----------------------------------------------------------------------
