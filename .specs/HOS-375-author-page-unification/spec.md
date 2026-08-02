@@ -188,6 +188,44 @@ status code.
 - The web app's own edge-cache policy (`apps/web/src/lib/cache/listing-cache.ts`) is
   currently applied only to `/alojamientos/`; the author page sets no `Cache-Control`.
 
+### 5.9 Who the authors actually are (measured 2026-08-02)
+
+Queried against the worktree DB (cloned from `hospeda_dev` → `hospeda_template`), then
+spot-checked against production. Every author below has both `profile.bio` and
+`profile.avatar`, so **all 13 pass the §6.5 indexability gate as written**.
+
+| slug | display name | posts | events |
+|---|---|---:|---:|
+| `super-admin-user` | Super Admin User | 0 | **52** |
+| `admin-user` | Admin User | 5 | 12 |
+| `user-76eb2960` | Equipo Hospeda | 22 | 0 |
+| `carlos-martínez` | Carlos Martínez | 0 | 6 |
+| `laura-vega` | Laura Vega | 2 | 5 |
+| 8 more | — | 1-2 each | 0 |
+
+Production spot-check (live, 2026-08-02):
+
+- `GET /es/publicaciones/autor/super-admin-user/` → **200**. Its `og:title` is
+  `"Super Admin - Publicaciones y Blog | Hospeda"` and the avatar `alt` is
+  `"Super Admin"`. The page is only invisible because it is `noindex` today.
+- `GET /es/publicaciones/autor/admin-user/` → 200.
+- `GET /es/publicaciones/autor/laura-vega/` → 200.
+- `user-76eb2960` → 404 (local-only seed artifact; not in production).
+
+Two consequences, both material:
+
+1. **The 12-item cap in §6.3 is wrong** (OQ-1).
+2. **The real editorial content is attributed to staff and system accounts.** The three
+   highest-volume authors are the super-admin account, the admin account, and an
+   "Equipo Hospeda" account. Making the page indexable as specified would publish
+   `/autores/super-admin-user/` — titled "Super Admin", listing 52 events — into
+   Google and the sitemap. That is the opposite of editor recognition, and it exposes
+   the site's root administrative account as a public author profile. See **OQ-5**.
+
+The root cause is sequencing: the reward surface (this spec) is arriving before the
+editors exist. HOS-374 — the flow that lets an editor load posts and events from the
+web — is what will produce real, non-staff `authorId` values.
+
 ## 6. Proposed design
 
 ### 6.1 Route move
@@ -195,7 +233,9 @@ status code.
 New pages, mirroring the current pair:
 
 - `apps/web/src/pages/[lang]/autores/[slug]/index.astro`
-- `apps/web/src/pages/[lang]/autores/[slug]/page/[page].astro`
+- `apps/web/src/pages/[lang]/autores/[slug]/page/[page].astro` (posts pagination)
+- `apps/web/src/pages/[lang]/autores/[slug]/eventos/page/[page].astro` (events
+  pagination — new, no counterpart in the old scheme)
 
 The old pair is **deleted**, not left as a shim — the middleware redirect (§6.4) is the
 only compatibility surface. Both new files route their URL construction through
@@ -226,10 +266,24 @@ Two stacked blocks, posts first, each reverse-chronological, both rendered on pa
 
 1. **Publicaciones** — keeps the existing path pagination at
    `/{locale}/autores/<slug>/page/<n>/`, same `pageSize` as today.
-2. **Eventos** — the latest `EVENTS_BLOCK_SIZE` (12), no pagination.
+2. **Eventos** — paginated, **not capped**. Measured data (§5.9) shows the top author
+   has 52 events; a fixed cap would hide 40 of them, which is the failure this spec
+   exists to fix.
 
-Pages `2..n` render the posts block only. Rendering the events block again on every
-paginated page would duplicate the same markup across indexable URLs.
+Two independently paginated blocks need two pagination surfaces, and neither may become
+a query parameter (the repo already guards against indexable facets — see §5.6). The
+scheme keeps the **posts** tail byte-identical to today's so the redirect in §6.4 stays
+a pure splice, and gives events a new sub-route with no legacy equivalent:
+
+- `/{locale}/autores/<slug>/` — page 1 of both blocks.
+- `/{locale}/autores/<slug>/page/<n>/` — posts, page n. Same shape as the current
+  `/publicaciones/autor/<slug>/page/<n>/`. Events block omitted.
+- `/{locale}/autores/<slug>/eventos/page/<n>/` — events, page n. New; nothing redirects
+  here. Posts block omitted.
+
+Rendering both blocks again on every paginated page would duplicate the same markup
+across indexable URLs, so pages `2..n` show only the block being paginated. All
+paginated pages are `noindex` per §6.5.
 
 Empty-state rules (using the top-level `@/components/EmptyState.astro` — **not**
 `shared/feedback/EmptyState.astro`, which has a different prop shape):
@@ -463,10 +517,22 @@ No DB migration, no seed data-migration: nothing in `packages/seed/src/data/**` 
 
 ## 11. Open questions
 
-- **OQ-1** — Prolific authors: the events block is capped at 12 with no pagination
-  (§6.3). Needs a look at real data — if some author already has more than ~12 events,
-  decide between paginating the events block independently or linking out to a filtered
-  events listing (which does not exist today).
+- ~~**OQ-1** — Prolific authors: is the 12-cap on the events block enough?~~
+  **Resolved 2026-08-02: no, by a wide margin.** Measured author distribution (§5.9):
+  the top author has **52 events**, the second has 12. A 12-item cap would hide 40
+  events from the single most prolific author — the exact failure this spec exists to
+  fix. **§6.3 must paginate the events block**, not cap it. See OQ-5 first: the
+  attribution finding may change who these blocks belong to.
+- **OQ-5 — BLOCKING, owner decision.** Every high-volume author today is a staff or
+  system account (§5.9). `bio` + `avatar` is not a sufficient indexability gate,
+  because those accounts pass it. Needs a call on how staff/system accounts are kept
+  out of the public author surface — an explicit exclusion, a role condition on the
+  gate, re-attributing the existing content to real people, or shipping G-3
+  (indexability + sitemap) only after HOS-374 puts real editors in `authorId`. Until
+  this is answered, **G-3 must not ship**; the rest of the spec (URL move, events
+  block, redirect, JSON-LD) is unaffected and can proceed behind the existing
+  `noindex`.
+
 - **OQ-2** — "Profile complete" is defined as `bio` **AND** `avatar` (§6.5). Loosening it
   to `bio` OR `avatar` would index more authors at the cost of thinner pages. Decided as
   AND; revisit if the sitemap ends up nearly empty.
@@ -488,10 +554,17 @@ No DB migration, no seed data-migration: nothing in `packages/seed/src/data/**` 
   pass `category`/`q`/`sortBy` expecting them to work (NG-2).
 - The events-by-author route is cache-covered only by the `/api/v1/public/events`
   prefix, not by an explicit entry. Moving its mount point would silently drop caching.
-- `users.profile.bio` / `profile.avatar` (JSONB) are **different fields** from the
-  top-level `bio` / `avatar` columns that `by-slug` actually projects. The indexability
-  predicate must read the same source the response does, or the gate and the rendered
-  page will disagree.
+- **`users` has no `bio` and no `avatar` column.** Verified against the live schema:
+  the public profile's `avatar` and `bio` both come from the `profile` JSONB —
+  `user.profile?.avatar` / `user.profile?.bio` in
+  `UserService.getPublicProfileBySlug` (`packages/service-core/src/services/user/user.service.ts:317-323`).
+  The indexability predicate (§6.5) and the `listPublicAuthors` query (§6.6) must
+  therefore filter on `profile->>'avatar'` and `profile->>'bio'`, not on columns that
+  do not exist.
+- There **is** a top-level `users.image` column (plus `image_public_id`,
+  `image_moderation_state`, `image_caption`). The public author profile does **not**
+  use it. Do not reach for `image` as "the avatar" — the two are different fields and
+  only `profile.avatar` is what the page renders today.
 
 ## 13. Linear
 
