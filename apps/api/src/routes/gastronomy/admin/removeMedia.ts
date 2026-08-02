@@ -4,11 +4,16 @@
  *
  * Soft-deletes the `gastronomy_media` row identified by `mediaId` and
  * resequences the remaining visible rows to a dense 0-based `sortOrder`.
+ *
+ * Deletes the Cloudinary binary as well (HOS-372): the provider is passed down
+ * so the asset is removed BEFORE the row, aborting the whole operation if
+ * storage fails rather than leaving a permanently-billed orphan.
  */
 import { PermissionEnum, SuccessSchema } from '@repo/schemas';
 import { GastronomyService, removeGastronomyMedia, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -42,10 +47,15 @@ export const adminRemoveGastronomyMediaRoute = createAdminRoute({
         const model = (
             gastronomyService as unknown as { model: Parameters<typeof removeGastronomyMedia>[0] }
         ).model;
-        const result = await removeGastronomyMedia(model, actor, {
-            gastronomyId: params.id as string,
-            mediaId: params.mediaId as string
-        });
+        const result = await removeGastronomyMedia(
+            model,
+            actor,
+            {
+                gastronomyId: params.id as string,
+                mediaId: params.mediaId as string
+            },
+            getMediaProvider()
+        );
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
