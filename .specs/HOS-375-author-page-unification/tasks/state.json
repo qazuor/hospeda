@@ -60,29 +60,30 @@
             "id": "T-003",
             "title": "Add isSystemAccount to UserSchema in @repo/schemas",
             "description": "Add `isSystemAccount: z.boolean().default(false)` to packages/schemas/src/entities/user/user.schema.ts. Additive and defaulted, so it satisfies the package's additive-only compat policy. Do NOT add it to UserAuthorPublicResponseSchema — it must never reach the public payload. Tests: extend the existing user schema test to assert a stored object without the key still parses (the compat invariant) and that the default is false.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-004", "T-011", "T-017"],
             "subtasks": [
-                { "title": "Add the field to UserSchema", "completed": false },
+                { "title": "Add the field to UserSchema", "completed": true },
                 {
                     "title": "Confirm it is absent from every public/read projection",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add compat test: object without the key parses, default false",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "validation"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-02T18:20:00.000Z",
+                "completed": "2026-08-02T18:45:00.000Z"
+            },
+            "notes": "Commit ff556c785. Declared `.default(false)` WITHOUT `.optional()`, deviating from the three sibling flags (profileCompleted/setPasswordPrompted/serviceSuspended): the column is NOT NULL DEFAULT false, and `.optional()` would only widen the output type to `boolean | undefined` for a case the DB cannot produce, forcing `?? false` on every predicate consumer. It also would NOT deliver the task's 'default is false' requirement — `z.boolean().default(false).optional()` is ZodOptional<ZodDefault<>>, which short-circuits on an absent key and yields `undefined`, never the default. Cost of the stricter type: three object literals had to declare the field (user.http.schema.ts's httpToDomainUserCreate, apps/api's admin create route, and 3 test factories). SCOPE ADDITION the task did not list: `isSystemAccount` must also be OMITTED from UserUpdateInputSchema. Zod 4's `.partial()` keeps `.default()` and BaseCrudService.update re-parses through that schema (SPEC-217 precedent, documented in the file's own JSDoc), so leaving it settable means any unrelated profile save re-injects `false` and clears the flag — turning a staff account back into an indexable author page, i.e. the AC-16/R-9 bug arriving through a different door. Verified absent from every public projection: UserPublicSchema, UserListItemSchema, UserSummarySchema and the route-local UserAuthorPublicResponseSchema are all explicit allow-lists (`.pick()` or hand-written z.object), so the only `.omit()`-based derivations are the create/update inputs. Repo-wide typecheck 41/41, schemas 7201/7201, service-core 7479/7479, api admin-create-restore 16/16, lint 0 errors, type-cast guard green."
         },
         {
             "id": "T-004",

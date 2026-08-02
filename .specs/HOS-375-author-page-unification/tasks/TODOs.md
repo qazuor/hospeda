@@ -1,6 +1,6 @@
 # HOS-375: Author page — move to `/autores/<slug>/` and unify posts + events
 
-## Progress: 4/38 tasks (11%)
+## Progress: 5/38 tasks (13%)
 
 **Average Complexity:** 1.9/3 (max)
 **Critical Path:** T-002 → T-003 → T-017 → T-020 → T-021 → T-029 → T-032 (7 steps)
@@ -36,7 +36,8 @@
   - **Done.** The three are flagged; the stale list is gone. Scope grew with owner approval: the fall-through made the prod day-1 ledger step create the seeded `superadmin@hospeda.com` account that `--exclude=users` exists to avoid, so `runMigrations` now refuses to bootstrap one and the step moved after the admin promotion. Integration 59/59, unit 1322/1322.
   - Blocked by: T-037 · Blocks: T-035
 
-- [ ] **T-003** (complexity: 2) — Add `isSystemAccount` to `UserSchema`
+- [x] **T-003** (complexity: 2) — Add `isSystemAccount` to `UserSchema`
+  - **Done.** `.default(false)` without `.optional()` (the sibling flags' shape would yield `undefined`, not the default). Also omitted from `UserUpdateInputSchema` — not in the task, but without it any unrelated profile save re-injects `false` and clears the flag. Repo typecheck 41/41.
   - Blocked by: T-002 · Blocks: T-004, T-011, T-017
 
 - [ ] **T-004** (complexity: 1) — Set `isSystemAccount: true` in the required user seed fixtures
