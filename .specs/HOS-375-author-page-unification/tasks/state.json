@@ -8,29 +8,30 @@
             "id": "T-001",
             "title": "Verify baseline-stamp mechanics for content-only seed data-migrations",
             "description": "Research task, no production code. Spec §6.10.2 flags that content-only migrations are baseline-stamped on a fresh build instead of being run, so the 'edit the baseline too' half of the dual-write rule may resolve differently than for a catalog fixture. Read docs/guides/seed-data-migrations.md, packages/seed/src/data-migrations/baselineStamp.ts and prodGate.ts, and 0025-seed-real-blog-posts.ts as the worked precedent. Write the conclusion into .specs/HOS-375-author-page-unification/docs/seed-migration-mechanics.md: for each of the three data-migrations in T-005/T-006/T-007, state exactly what must change in the baseline (if anything) so a fresh pnpm db:fresh-dev ends in the same state as a migrated production DB (AC-15). BLOCKS all data-migration work — do not guess these mechanics.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
-            "blocks": ["T-005", "T-006", "T-007"],
+            "blocks": ["T-005", "T-006", "T-007", "T-037"],
             "subtasks": [
                 {
                     "title": "Read seed-data-migrations.md + baselineStamp.ts + prodGate.ts",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Trace how 0025 behaves on fresh vs migrated DB", "completed": false },
+                { "title": "Trace how 0025 behaves on fresh vs migrated DB", "completed": true },
                 {
                     "title": "Write docs/seed-migration-mechanics.md with a per-migration verdict",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["research", "seed", "database"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "n/a", "typecheck": "n/a", "tests": "n/a" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-02T14:20:00.000Z",
+                "completed": "2026-08-02T14:32:00.000Z"
+            },
+            "notes": "Delivered docs/seed-migration-mechanics.md (354 lines). It INVALIDATED a spec premise: baseline-stamping is content-blind (cli.ts:256-265 early-returns, baselineStamp.ts:101-124 never calls up()), so a fresh db:fresh-dev has no editorial account, no real posts and no Entre Rios events, and AC-15 as originally worded was unreachable. Verified empirically against the worktree DB: seed_migrations shows result='ok' with real durations for 0025/0027/0028, i.e. that template was built with a genuine db:seed:migrate, which is why the gap is invisible locally. Owner decided (2026-08-02) to fix it inside this spec via a meta.contentOnly flag rather than defer it — see spec §6.11, tasks T-037/T-038."
         },
         {
             "id": "T-002",
@@ -825,10 +826,10 @@
         {
             "id": "T-035",
             "title": "Verify fresh-build and migrated-DB parity (AC-15)",
-            "description": "The acceptance test for the whole seed strategy. Run pnpm db:fresh-dev on a clean worktree DB and assert it ends in the SAME state as a database that received migrations T-005/T-006/T-007: the editorial account has slug equipo-hospeda, both staff accounts have is_system_account true, and no event remains attributed to the super-admin with created_by_id NULL. If they diverge, the baseline half of the dual-write rule is incomplete — fix the fixtures, do not adjust the assertion. Record the verified procedure in the spec's docs/ folder.",
+            "description": "The acceptance test for the whole seed strategy (AC-15 + AC-18). Run pnpm db:fresh-dev on a clean worktree DB — ONE command, no manual re-run step — and assert three facts: the editorial account's slug is equipo-hospeda; both staff accounts have is_system_account = true; zero events remain attributed to the super-admin with created_by_id IS NULL. Then assert AC-18 on the ledger: contentOnly migrations show result='ok', non-contentOnly ones show result='baseline-stamp'. CORRECTED PREMISE (T-001): the original wording of this task said 'fix the fixtures, do not adjust the assertion'. That was wrong for M-B/M-C — there is no fixture, because the rows they act on do not exist on a fresh build at all. A failure here means the contentOnly wiring from T-037/T-038 is wrong, NOT that a fixture is missing. Do not go looking for one. Record the verified procedure in the spec's docs/ folder.",
             "status": "pending",
             "complexity": 2,
-            "blockedBy": ["T-004", "T-005", "T-006", "T-007"],
+            "blockedBy": ["T-004", "T-005", "T-006", "T-007", "T-037", "T-038"],
             "blocks": [],
             "subtasks": [
                 {
@@ -870,13 +871,64 @@
                 "started": null,
                 "completed": null
             }
+        },
+        {
+            "id": "T-037",
+            "title": "Add meta.contentOnly and make baseline-stamp fall through to a real run",
+            "description": "Spec §6.11 (G-10). Add `readonly contentOnly?: boolean` to `SeedMigrationMeta` (packages/seed/src/data-migrations/types.ts:39-62), mirroring the existing `destructive?: boolean` precedent, documented as: this migration's rows have NO fixture baseline, the migration file IS the only source of that content, so baseline-stamping must not skip it. Then change `handleDataMigrate` (packages/seed/src/cli.ts:256-265) so a `--baseline-stamp` invocation (a) stamps every pending migration EXCEPT those flagged `contentOnly`, and (b) falls through to `runMigrations()` for exactly those — instead of the current early return. `baselineStamp()` (baselineStamp.ts:101-124) filters them out of its loop. One flag, one command, no hardcoded migration list: a list is precisely how the current bug stayed invisible (first-time-setup.md:810-827 is already stale). Tests: a fresh-build simulation where a contentOnly migration ends with ledger `result='ok'` and a normal one ends with `result='baseline-stamp'`; an already-ledgered migration is not re-run in either case.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-038", "T-035"],
+            "subtasks": [
+                { "title": "Add contentOnly to SeedMigrationMeta with JSDoc", "completed": false },
+                { "title": "Filter contentOnly out of baselineStamp's loop", "completed": false },
+                {
+                    "title": "Replace handleDataMigrate's early return with fall-through",
+                    "completed": false
+                },
+                {
+                    "title": "Tests: ok vs baseline-stamp per flag, ledger still respected",
+                    "completed": false
+                }
+            ],
+            "tags": ["seed", "infrastructure"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-02T14:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Flag the existing content-only migrations and retire the stale re-run list",
+            "description": "Spec §6.11 backfill. Set `contentOnly: true` on `0025-seed-real-blog-posts.ts`, `0027-add-confirmed-events-entre-rios-2026.ts` and `0028-add-estimated-events-entre-rios.ts`. Do NOT flag M-A (T-005) — it has a real fixture baseline. M-B (T-006) and M-C (T-007) are authored with the flag from the start. Then correct `docs/deployment/first-time-setup.md:810-827`: its manual re-run list names only 0025 while 0027/0028 have the identical gap, which means the DOCUMENTED production day-1 bootstrap ships zero Entre Rios events today. The flag makes the list unnecessary — remove it and point at the mechanism instead. NOTE: editing an existing migration's own code does not trip scripts/check-seed-dual-write.sh (its GUARDED_DATA_ROOT_PATTERN only watches packages/seed/src/data/), so this passes the guard trivially — that is a fact about the guard, not permission to skip thinking about the change. Also state plainly in the PR that this only affects FUTURE fresh builds: an environment where these are already ledgered stays as it is, by design.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-037"],
+            "blocks": ["T-035"],
+            "subtasks": [
+                { "title": "Flag 0025, 0027 and 0028 as contentOnly", "completed": false },
+                { "title": "Correct/remove the stale list in first-time-setup.md", "completed": false },
+                { "title": "Document the non-retroactive scope in the PR body", "completed": false }
+            ],
+            "tags": ["seed", "docs"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-02T14:35:00.000Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
-        "total": 36,
-        "pending": 34,
-        "inProgress": 1,
-        "completed": 1,
+        "total": 38,
+        "pending": 36,
+        "inProgress": 0,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 1.9
     }

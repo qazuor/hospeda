@@ -1,10 +1,16 @@
 # HOS-375: Author page — move to `/autores/<slug>/` and unify posts + events
 
-## Progress: 0/36 tasks (0%)
+## Progress: 2/38 tasks (5%)
 
 **Average Complexity:** 1.9/3 (max)
 **Critical Path:** T-002 → T-003 → T-017 → T-020 → T-021 → T-029 → T-032 (7 steps)
 **Parallel Tracks:** 4 identified (db/seed · api · web pages · seo/integration)
+
+> **Scope grew on 2026-08-02.** T-001's research found that content-only seed
+> data-migrations are silently stamped instead of run on a fresh build, which made AC-15
+> unreachable as originally written. The owner chose to fix that inside this spec rather
+> than defer it — hence T-037/T-038 and goal G-10. See spec §6.11 and
+> [`../docs/seed-migration-mechanics.md`](../docs/seed-migration-mechanics.md).
 
 > Read [`../spec.md`](../spec.md) before starting anything. Several tasks below exist
 > because a claim in the original Linear issue turned out to be false — the spec records
@@ -12,14 +18,23 @@
 
 ---
 
-### Setup Phase — 8 tasks (avg complexity 1.9)
+### Setup Phase — 10 tasks (avg complexity 1.9)
 
-- [ ] **T-001** (complexity: 1) — Verify baseline-stamp mechanics for content-only seed data-migrations
-  - Research only. Answers whether the baseline half of the dual-write rule applies to T-005/T-006/T-007.
-  - Blocked by: none · Blocks: T-005, T-006, T-007
+- [x] **T-001** (complexity: 1) — Verify baseline-stamp mechanics for content-only seed data-migrations
+  - **Done.** Invalidated a spec premise: baseline-stamping is content-blind, so a fresh build has no editorial account, no real posts and no events. Delivered `../docs/seed-migration-mechanics.md`.
+  - Blocked by: none · Blocks: T-005, T-006, T-007, T-037
 
-- [ ] **T-002** (complexity: 2) — Add `users.is_system_account` column to the Drizzle schema
+- [x] **T-002** (complexity: 2) — Add `users.is_system_account` column to the Drizzle schema
+  - **Done.** Migration `0070_spotty_dazzler.sql`, single `ALTER TABLE ... DEFAULT false NOT NULL`. Drift guard green.
   - Blocked by: none · Blocks: T-003, T-005, T-011, T-036
+
+- [ ] **T-037** (complexity: 3) — Add `meta.contentOnly` and make baseline-stamp fall through to a real run
+  - The G-10 fix. A declared flag rather than a hardcoded list, because a list is exactly how the current bug stayed invisible.
+  - Blocked by: T-001 · Blocks: T-035, T-038
+
+- [ ] **T-038** (complexity: 2) — Flag the existing content-only migrations and retire the stale re-run list
+  - `0025`/`0027`/`0028` get the flag; `first-time-setup.md`'s list is already stale and becomes unnecessary.
+  - Blocked by: T-037 · Blocks: T-035
 
 - [ ] **T-003** (complexity: 2) — Add `isSystemAccount` to `UserSchema`
   - Blocked by: T-002 · Blocks: T-004, T-011, T-017
@@ -132,8 +147,9 @@
 - [ ] **T-034** (complexity: 2) — Add the actor-blind response test for by-slug (AC-6)
   - Blocked by: T-010 · Blocks: none
 
-- [ ] **T-035** (complexity: 2) — Verify fresh-build and migrated-DB parity (AC-15)
-  - Blocked by: T-004, T-005, T-006, T-007 · Blocks: none
+- [ ] **T-035** (complexity: 2) — Verify fresh-build and migrated-DB parity (AC-15 + AC-18)
+  - Premise corrected by T-001: a failure here means the `contentOnly` wiring is wrong, **not** that a fixture is missing. There is no fixture.
+  - Blocked by: T-004, T-005, T-006, T-007, T-037, T-038 · Blocks: none
 
 ### Docs Phase — 1 task (avg complexity 1.0)
 
@@ -146,8 +162,8 @@
 
 ```
 Level 0: T-001, T-002, T-008, T-014, T-016, T-018, T-019, T-023
-Level 1: T-003, T-005, T-006, T-009, T-015, T-028, T-033, T-036
-Level 2: T-004, T-007, T-010, T-011, T-017
+Level 1: T-003, T-005, T-006, T-009, T-015, T-028, T-033, T-036, T-037
+Level 2: T-004, T-007, T-010, T-011, T-017, T-038
 Level 3: T-012, T-020, T-031, T-034, T-035
 Level 4: T-013, T-021, T-022, T-024, T-025, T-026, T-027
 Level 5: T-029, T-030
@@ -162,10 +178,12 @@ production.** Until the attribution work lands, making the page indexable would 
 dependency graph cannot express "must be deployed before", so this is enforced by review,
 not by tooling. See spec §6.10.
 
-## Suggested Start
+## Suggested Next
 
-Begin with **T-001** (complexity: 1) — it has no dependencies and unblocks the entire
-seed/data track. It is deliberately a research task: the three data-migrations behind it
-touch live production content, and the spec explicitly refuses to guess their mechanics.
+T-001 and T-002 are done. The next unblocked work, in rough priority order:
 
-**T-002** (complexity: 2) can run in parallel and unblocks the schema/service track.
+- **T-037** (complexity: 3) — the G-10 fix. Everything on the seed/data track now depends
+  on it, and T-005/T-006/T-007 should be authored knowing the flag exists.
+- **T-003** (complexity: 2) — unblocks the schema/service track (T-011, T-017).
+- **T-008**, **T-014**, **T-016**, **T-018**, **T-019**, **T-023** — all at level 0, no
+  dependencies, safe to pick up in any order or in parallel.

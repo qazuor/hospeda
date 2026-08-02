@@ -53,6 +53,10 @@ search engines cannot see is not recognition.
 - **G-9** — The editorial account is reachable at a real, human-readable, environment-
   independent URL (`/autores/equipo-hospeda/`), not at the auto-generated slug it
   carries today (§6.10.2).
+- **G-10** — A content-only seed data-migration actually **runs** on a fresh build
+  instead of being silently stamped as applied, so a fresh dev database and a migrated
+  production database converge (§6.11). This closes a pre-existing gap that this spec
+  did not create but cannot ship correctly around.
 
 ## 4. Non-goals
 
@@ -537,18 +541,89 @@ NULL`. Anything a human actually created keeps its author.
 each needs a numbered migration via `pnpm db:seed:make <slug>` in
 `packages/seed/src/data-migrations/`, per the seed dual-write rule.
 
-> **Verify before writing them**: these are *content-only* migrations, and this repo
-> baseline-stamps such migrations on a fresh build rather than running them, so the
-> "edit the baseline too" half of the dual-write rule may resolve differently here than
-> for a catalog fixture. Confirm the exact mechanics against
-> [`docs/guides/seed-data-migrations.md`](../../docs/guides/seed-data-migrations.md) and
-> `baselineStamp.ts` before authoring, and make sure a fresh `pnpm db:fresh-dev` ends up
-> with the same attribution and slug as a migrated production DB. Do not assume.
+> **Mechanics verified (T-001, 2026-08-02)** — full analysis in
+> [`docs/seed-migration-mechanics.md`](docs/seed-migration-mechanics.md).
+>
+> The dual-write rule splits differently here than first assumed:
+>
+> - **M-A has a real baseline** — the `required` user fixtures. Ordinary dual-write.
+> - **M-B and M-C have no baseline to edit at all.** The rows they act on do not exist
+>   on a fresh build, because the migrations that create them (`0025`, `0027`, `0028`)
+>   are themselves content-only and get their own `up()` skipped. No edit under
+>   `packages/seed/src/data/**` can fix that — the content lives only inside those
+>   migration files, deliberately (`0025`'s docstring: keep production content cleanly
+>   separate from the demo `example` posts).
+>
+> This is resolved by §6.11, not by chasing a fixture that does not exist.
 
 **Result in production**: one indexable author page, `/es/autores/equipo-hospeda/`,
 with 22 posts and 44 events — both blocks populated, which is precisely the page this
 spec set out to build. Real editors arriving via HOS-374 join the surface with no
 further work.
+
+### 6.11 Content-only migrations must run on a fresh build (G-10)
+
+**The pre-existing gap.** `pnpm db:fresh-dev` (`package.json:58`) ends with
+`seed --data-migrate --baseline-stamp`. In `packages/seed/src/cli.ts:256-265`,
+`handleDataMigrate` **early-returns** when `baselineStamp` is set, so `runMigrations`
+never executes. `baselineStamp()`
+(`packages/seed/src/data-migrations/baselineStamp.ts:101-124`) then walks every pending
+migration and calls `recordApplied({ result: 'baseline-stamp' })` **without ever calling
+`up()`** — it is entirely content-blind and does not consult `meta.group`.
+
+That is correct for a migration whose end state is already baked into a fixture. It is
+wrong for a migration that *is* the only source of its content. Today the consequence is
+that a fresh `db:fresh-dev` database has **no editorial account, no real blog posts and
+no Entre Ríos events**, and because the ledger now marks them applied they can never run
+later without manual intervention.
+
+Verified empirically: in the worktree database (cloned from `hospeda_template`),
+`seed_migrations` shows `result = 'ok'` with real durations for `0025`/`0027`/`0028` —
+that template was built with a genuine `db:seed:migrate`, which is why the content is
+present locally and the gap is invisible at a glance.
+
+**The fix.** A new optional field on `SeedMigrationMeta`
+(`packages/seed/src/data-migrations/types.ts:39-62`), mirroring the existing
+`destructive?: boolean` precedent:
+
+```ts
+/**
+ * Marks a migration whose rows have NO fixture baseline — the migration file
+ * itself is the only source of that content. Baseline-stamping must not skip
+ * it: on a fresh build it has to actually run, or the content never exists.
+ *
+ * @default false
+ */
+readonly contentOnly?: boolean;
+```
+
+Behavior change in `handleDataMigrate` when `--baseline-stamp` is passed:
+
+1. `baselineStamp()` stamps every pending migration **except** those with
+   `contentOnly: true`, which it leaves pending.
+2. It then falls through to `runMigrations()`, which runs exactly those.
+
+One command, one flag, no hardcoded list. That last point is the whole reason for
+choosing a declared flag over extending the npm script with a list of migration names:
+`docs/deployment/first-time-setup.md:810-827` already carries such a list and it is
+**already stale** — it names only `0025`, while `0027` and `0028` have the identical gap.
+A mechanism that drifts is how the current bug stayed invisible; the flag cannot drift
+because it lives on the migration it describes.
+
+**Backfill.** `0025-seed-real-blog-posts.ts`, `0027-add-confirmed-events-entre-rios-2026.ts`
+and `0028-add-estimated-events-entre-rios.ts` are marked `contentOnly: true`, as are this
+spec's own M-B and M-C. M-A is **not** — it has a real fixture baseline.
+
+**Scope boundary — read this before assuming the fix is retroactive.** This only changes
+**future** fresh builds. An environment where those migrations are already ledgered
+(stamped or applied) is unaffected, by design: the ledger is respected. A dev database
+that was previously built with `db:fresh-dev` and therefore has them stamped-but-not-run
+stays broken until it is rebuilt. Say so in the PR — it is not a silent condition.
+
+**Follow-up, out of scope here**: `first-time-setup.md`'s re-run list is stale
+independently of this spec, meaning the documented production day-1 bootstrap ships zero
+Entre Ríos events today. The flag makes that list unnecessary; removing or correcting it
+is part of T-038.
 
 ## 7. Data model / contracts
 
@@ -624,7 +699,15 @@ production — see the verification caveat in §6.10.2 before authoring them.
   with both blocks populated (22 posts, 44 events), and no event remains attributed to
   the super-admin account with `created_by_id IS NULL`.
 - **AC-15** — A fresh `pnpm db:fresh-dev` produces the same editorial slug and the same
-  event attribution as a migrated production database.
+  event attribution as a migrated production database — **without any manual step**.
+  Concretely, on a database built by that single command: the editorial account's slug is
+  `equipo-hospeda`, both staff accounts have `is_system_account = true`, and zero events
+  remain attributed to the super-admin with `created_by_id IS NULL`. This is only
+  reachable via G-10 (§6.11); it was structurally impossible before that change, so a
+  failure here means the `contentOnly` wiring is wrong, not that a fixture is missing.
+- **AC-18** — `seed_migrations` rows for `contentOnly` migrations show
+  `result = 'ok'` (actually ran), not `result = 'baseline-stamp'`, after a fresh
+  `db:fresh-dev`. Non-`contentOnly` migrations still show `baseline-stamp`.
 - **AC-12** — Full `pnpm typecheck` + `pnpm lint` + the web and api test suites are green.
 
 ## 10. Risks
