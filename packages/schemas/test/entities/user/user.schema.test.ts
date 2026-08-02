@@ -243,6 +243,34 @@ describe('UserSchema', () => {
                 }
             });
         });
+
+        describe('isSystemAccount field (HOS-375)', () => {
+            it('parses a stored object that predates the field, defaulting to false', () => {
+                // The additive-only compat invariant: every user row and cached
+                // payload written before this field existed omits the key, and
+                // must keep parsing. Defaulting to `false` is also the safe
+                // direction — an unknown account is treated as a person, not as
+                // a system account silently hidden from the public site.
+                const { isSystemAccount: _omitted, ...legacy } = createValidUser();
+                expect(Object.hasOwn(legacy, 'isSystemAccount')).toBe(false);
+
+                const parsed = UserSchema.parse(legacy);
+
+                expect(parsed.isSystemAccount).toBe(false);
+            });
+
+            it('round-trips an explicit true', () => {
+                const data = { ...createValidUser(), isSystemAccount: true };
+
+                expect(UserSchema.parse(data).isSystemAccount).toBe(true);
+            });
+
+            it('rejects a non-boolean', () => {
+                const data = { ...createValidUser(), isSystemAccount: 'yes' };
+
+                expect(() => UserSchema.parse(data)).toThrow(ZodError);
+            });
+        });
     });
 
     describe('Nested Objects', () => {

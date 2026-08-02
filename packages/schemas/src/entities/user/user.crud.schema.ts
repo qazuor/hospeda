@@ -70,6 +70,12 @@ export const UserCreateOutputSchema = UserReadSchema;
  * `setOwnerServiceSuspension` (`serviceSuspended`), and `PermissionService`
  * (`permissions`, which has no column on `users` anyway).
  *
+ * `isSystemAccount` (HOS-375) joins the list for the same reason and with a
+ * concrete failure of its own: it is written by the required user fixtures and
+ * a one-off data-migration, never by a user edit, so leaving it settable here
+ * would let an unrelated profile save re-inject `false` and quietly turn a
+ * staff account back into a publicly indexable author page.
+ *
  * `role` is not in this list because it is no longer on `UserSchema` at all
  * (HOS-296 G-8). It used to be explicitly KEPT here so the admin PUT/PATCH
  * routes could change it; role changes now go through the dedicated
@@ -96,6 +102,7 @@ export const UserUpdateInputSchema = z
                 profileCompleted: true,
                 setPasswordPrompted: true,
                 serviceSuspended: true,
+                isSystemAccount: true,
                 permissions: true,
                 banned: true,
                 banReason: true,

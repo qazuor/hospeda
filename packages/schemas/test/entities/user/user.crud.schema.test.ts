@@ -108,6 +108,7 @@ describe('User CRUD Schemas', () => {
                 'profileCompleted',
                 'setPasswordPrompted',
                 'serviceSuspended',
+                'isSystemAccount',
                 'permissions',
                 'banned',
                 'banReason',
@@ -126,7 +127,8 @@ describe('User CRUD Schemas', () => {
                 emailVerified: true,
                 profileCompleted: true,
                 banned: true,
-                serviceSuspended: true
+                serviceSuspended: true,
+                isSystemAccount: false
             }) as Record<string, unknown>;
 
             expect(parsed.firstName).toBe('Jane');
@@ -134,6 +136,10 @@ describe('User CRUD Schemas', () => {
             expect(Object.hasOwn(parsed, 'profileCompleted')).toBe(false);
             expect(Object.hasOwn(parsed, 'banned')).toBe(false);
             expect(Object.hasOwn(parsed, 'serviceSuspended')).toBe(false);
+            // HOS-375: a generic user edit must not be able to clear the
+            // system-account flag. If it could, an unrelated profile save on a
+            // staff account would turn it back into an indexable author page.
+            expect(Object.hasOwn(parsed, 'isSystemAccount')).toBe(false);
         });
 
         it('no longer carries a scalar `role` (HOS-296)', () => {

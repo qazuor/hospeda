@@ -72,7 +72,12 @@ export const adminCreateUserRoute = createAdminRoute({
                     permissions: [],
                     slug: userData.slug || '', // Use provided slug or let the service auto-generate
                     lifecycleState: userData.lifecycleState ?? LifecycleStatusEnum.ACTIVE,
-                    visibility: userData.visibility ?? VisibilityEnum.PUBLIC
+                    visibility: userData.visibility ?? VisibilityEnum.PUBLIC,
+                    // HOS-375: an admin creating an account through the panel is
+                    // creating a person. System accounts come from the required
+                    // seed fixtures and a data-migration, never from this route,
+                    // so this is not exposed as an admin-settable field.
+                    isSystemAccount: false
                 },
                 txCtx
             );

@@ -30,7 +30,9 @@ const baseUser: User = {
     deletedById: undefined,
     adminInfo: { favorite: false },
     lifecycleState: LifecycleStatusEnum.ACTIVE,
-    visibility: VisibilityEnum.PUBLIC
+    visibility: VisibilityEnum.PUBLIC,
+    // HOS-375: the base test user is a person, not a platform account.
+    isSystemAccount: false
 };
 
 /**
