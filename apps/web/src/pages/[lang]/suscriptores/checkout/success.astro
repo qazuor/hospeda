@@ -40,9 +40,6 @@ export const prerender = false;
 const locale = Astro.locals.locale;
 const { t } = createTranslations(locale);
 
-// HOS-209: the per-request CSP nonce for the inline URL-scrubbing script below.
-const cspNonce = Astro.locals.cspNonce ?? '';
-
 const collectionStatus = Astro.url.searchParams.get('collection_status');
 
 // PlanPurchaseButton appends `?effect=comp` to this in-app success sentinel URL.
@@ -96,7 +93,7 @@ const promoIgnoredNote = promoIgnored
 	   the feedback nav bootstrap records the URL, and before any cross-origin
 	   subresource sends a Referer. The CheckoutStatusPoller island already has the id
 	   via its SSR prop, so removing it from the client URL never breaks linking. */}
-	<StripCheckoutReturnParams slot="head-early" cspNonce={cspNonce} />
+	<StripCheckoutReturnParams slot="head-early" />
 	{
 		isImmediateSuccess ? (
 			<CheckoutResult

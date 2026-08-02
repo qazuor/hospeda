@@ -34,7 +34,6 @@ const {
 } = Astro.props;
 
 const { t } = createTranslations(locale);
-const cspNonce = Astro.locals.cspNonce ?? '';
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
 
 const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
@@ -62,9 +61,9 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<link rel="manifest" href="/site.webmanifest" />
 
 		<!-- Google Fonts (non-blocking) -->
-		<FontsLoader cspNonce={cspNonce} />
+		<FontsLoader />
 
-		<ThemeFoucScript cspNonce={cspNonce} />
+		<ThemeFoucScript />
 
 		<ClientRouter />
 
@@ -76,7 +75,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 			noindex={noindex}
 		/>
 
-		<style is:inline nonce={cspNonce}>
+		<style is:inline>
 			/* ErrorLayout: body — flex column so the footer sits at the bottom
 			   while the main fills the remaining viewport height. Same shape as
 			   AuthLayout so status pages render identically across both. */

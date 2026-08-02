@@ -31,13 +31,6 @@
  * wrapper around `window.posthog?.capture(...)`.
  */
 
-interface Props {
-    /** The per-request CSP nonce (so the inline script passes strict-dynamic). */
-    readonly cspNonce: string;
-}
-
-const { cspNonce } = Astro.props;
-
 // Read env vars at template time. `import.meta.env.PUBLIC_*` is baked in at
 // build time by Astro, so each Coolify resource (staging vs prod) gets its
 // own project key from Coolify's env panel.
@@ -145,6 +138,6 @@ if (!window.__hospeda_posthog_initialized) {
 
 {
     shouldRender && (
-        <script is:inline nonce={cspNonce} set:html={snippetBody} />
+        <script is:inline set:html={snippetBody} />
     )
 }

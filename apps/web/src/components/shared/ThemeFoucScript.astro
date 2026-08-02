@@ -14,24 +14,21 @@
  *   `ThemeToggle` island or by selecting `'system'` in account preferences).
  *
  * Used by BaseLayout, AuthLayout, and ErrorLayout — a single source of
- * truth for the theme bootstrap contract. The CSP nonce is forwarded so
- * the inline script passes the strict CSP defined in `middleware.ts`.
+ * truth for the theme bootstrap contract. The inline script carries no CSP
+ * attribute: `middleware.ts` hashes its content and allows it by `sha256`
+ * (HOS-369 WB0-1). Do NOT add a `nonce` attribute back — a nonce that reaches
+ * the Cloudflare cache is a public token for the whole TTL, which is exactly
+ * what that migration removed (guarded by
+ * `scripts/check-no-inline-nonce.sh`).
  *
  * Usage:
  * ```astro
- * <ThemeFoucScript cspNonce={cspNonce} />
+ * <ThemeFoucScript />
  * ```
  */
-
-interface Props {
-    /** CSP nonce forwarded from the layout. Required for inline scripts. */
-    readonly cspNonce: string;
-}
-
-const { cspNonce } = Astro.props;
 ---
 
-<script is:inline nonce={cspNonce}>
+<script is:inline>
     (function () {
         function applyStoredTheme() {
             var stored = localStorage.getItem('theme');

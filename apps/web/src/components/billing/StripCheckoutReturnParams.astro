@@ -12,19 +12,14 @@
  * during parse ahead of every URL-capturing path. See
  * `strip-checkout-return-params.snippet.ts` for the full timing rationale.
  *
- * The emitted `<script>` is inline and carries the per-request CSP nonce so it
- * passes the site's `strict-dynamic` policy (mirrors `PostHogScript.astro`).
- * When the nonce is empty (local dev without CSP) it still renders harmlessly.
+ * The emitted `<script>` is inline and carries no CSP attribute: `middleware.ts`
+ * hashes its content and allows it by `sha256` (HOS-369 WB0-1, mirrors
+ * `PostHogScript.astro`). Do NOT add a `nonce` attribute back — guarded by
+ * `scripts/check-no-inline-nonce.sh`.
  */
 
 import { STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET } from './strip-checkout-return-params.snippet';
 
-interface Props {
-	/** The per-request CSP nonce (so the inline script passes strict-dynamic). */
-	readonly cspNonce: string;
-}
-
-const { cspNonce } = Astro.props;
 ---
 
-<script is:inline nonce={cspNonce} set:html={STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET} />
+<script is:inline set:html={STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET} />

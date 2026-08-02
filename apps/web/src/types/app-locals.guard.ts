@@ -5,9 +5,8 @@
  * ambient `.d.ts`). TypeScript's `include` globs (`src/**​/*.ts`) do NOT pull an
  * unreferenced ambient `.d.ts` into the program, so `env.d.ts` is listed in
  * `apps/web/tsconfig.json` under `"files"`. If that entry is ever removed, the
- * augmentation silently stops loading and `Astro.locals.locale` / `.user` /
- * `.cspNonce` revert to errors across ~117 sites — exactly the failure SPEC-218
- * fixed.
+ * augmentation silently stops loading and `Astro.locals.locale` / `.user`
+ * revert to errors across ~117 sites — exactly the failure SPEC-218 fixed.
  *
  * This guard reads each augmented field, so it FAILS TO COMPILE (and breaks the
  * typecheck gate) the moment the augmentation is no longer loaded. It has no
@@ -20,5 +19,4 @@ export const assertAppLocalsAugmented = (locals: App.Locals): void => {
     // "files": ["src/env.d.ts"] in apps/web/tsconfig.json. See SPEC-218.
     void locals.locale;
     void locals.user;
-    void locals.cspNonce;
 };

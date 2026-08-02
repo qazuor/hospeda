@@ -237,7 +237,7 @@ graph TB
 
 ## Security Headers Baseline
 
-All three deployed apps (`api`, `web`, `admin`) ship a consistent set of security response headers. Static headers are configured at the Vercel edge via each app's `vercel.json`. Dynamic policies (CSP with nonces, per-request origin checks) are set in the framework middleware.
+All three deployed apps (`api`, `web`, `admin`) ship a consistent set of security response headers. Static headers are configured at the Vercel edge via each app's `vercel.json`. Dynamic policies (CSP with per-response content hashes, per-request origin checks) are set in the framework middleware.
 
 | Header | API | Web | Admin |
 |---|---|---|---|
@@ -247,12 +247,12 @@ All three deployed apps (`api`, `web`, `admin`) ship a consistent set of securit
 | `Referrer-Policy: strict-origin-when-cross-origin` | `vercel.json` + Hono `secureHeaders` | `vercel.json` | `vercel.json` |
 | `Permissions-Policy` (camera, mic, geolocation, payment, usb, etc. all `()`) | `vercel.json` + Hono `secureHeaders` | `vercel.json` | `vercel.json` |
 | `Cross-Origin-Opener-Policy: same-origin` | Hono `secureHeaders` | `vercel.json` | `vercel.json` |
-| `Content-Security-Policy` | Hono `secureHeaders` (strict for JSON, permissive for `/docs`) | Astro middleware (Report-Only, with per-request nonce) | `vercel.json` (Report-Only) |
+| `Content-Security-Policy` | Hono `secureHeaders` (strict for JSON, permissive for `/docs`) | Astro middleware (enforce, with per-response content hashes) | `vercel.json` (Report-Only) |
 
 Notes:
 
 - HSTS is set with `max-age=31536000; includeSubDomains` (1 year). The `preload` directive is intentionally omitted because the domain is not yet registered on the [HSTS preload list](https://hstspreload.org/).
-- Web's CSP is dynamic (nonce-based) and lives in `apps/web/src/middleware.ts` using `buildCspHeader()`. It is the single source of truth for the web CSP and is currently in Report-Only mode (Phase 1).
+- Web's CSP is dynamic and lives in `apps/web/src/middleware.ts` using `buildCspHeader()`. It is the single source of truth for the web CSP. Since HOS-369 WB0-1 it allows inline `<script>`/`<style>` by the `sha256` of their content (computed per response by `apps/web/integrations/csp-hash-collector`) instead of a per-request nonce: a nonce cached at the Cloudflare edge is a publicly readable token for the whole TTL. That migration also removed `'strict-dynamic'` — a content hash cannot vouch for an external `<script src>`, so same-origin bundles rely on `'self'` (see `buildCspHeader`'s JSDoc).
 - Admin's CSP is static and lives in `apps/admin/vercel.json`, also in Report-Only mode. Graduate to `Content-Security-Policy` (enforce) once violation reports are clean.
 - API's CSP is set per-route by the Hono `secureHeaders` middleware in `apps/api/src/middlewares/security.ts`: strict CSP for JSON endpoints, a permissive CSP for `/docs` so Swagger/Scalar UI loads. Edge-level vercel.json headers act as a fallback for the static path.
 - `frame-ancestors 'none'` (in admin CSP) and `X-Frame-Options: DENY` (all apps) both block clickjacking. Browsers prefer `frame-ancestors` when present, `X-Frame-Options` is the legacy fallback.

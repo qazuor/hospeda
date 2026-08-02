@@ -7,8 +7,9 @@
     <style>:where(html){font-family:var(--font-sans)}</style>
     <!-- Vite dev-id style block (dev mode flavor) -->
     <style data-vite-dev-id="/src/components/Header.astro?astro&type=style&index=0&lang.css">.header{display:flex}</style>
-    <!-- Pre-stamped style (e.g. someone manually added a nonce) — must survive -->
-    <style nonce="pre-existing-nonce">body{margin:0}</style>
+    <!-- Duplicate of the first style: two instances of one component. The two
+         must collapse to a SINGLE hash source in the policy. -->
+    <style>:where(html){font-family:var(--font-sans)}</style>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geologica">
 </head>
 <body>
@@ -21,25 +22,34 @@
         document.documentElement.setAttribute('data-theme', theme);
     </script>
 
-    <!-- External script (Astro bundles) -->
+    <!-- External script (Astro bundles). Covered by 'self', NOT by a hash:
+         CSP can only hash-match an external script that carries `integrity`. -->
     <script src="/_astro/client.hash.js" type="module"></script>
 
     <!-- Astro ClientRouter view-transitions script -->
     <script type="module" src="/_astro/ClientRouter.astro_astro_type_script_index_0_lang.hash.js"></script>
 
-    <!-- Pre-stamped script (e.g. legacy injection) — must survive -->
-    <script nonce="pre-existing-nonce">console.log('keep my nonce')</script>
+    <!-- Non-executable data block (I18nClientData ships one of these). Hashed
+         anyway — see collect-csp-hashes.ts for why. -->
+    <script id="hospeda-i18n" type="application/json">{"locale":"es","m":{"a":"b"}}</script>
+
+    <!-- A tag still carrying a stray nonce attribute. The hash is computed over
+         CONTENT only, so the attribute must not change the digest. -->
+    <script nonce="stray-nonce">console.log('attributes do not affect the hash')</script>
 
     <!-- Script with a body that CONTAINS a literal <style>...</style> string —
-         parse5 must not be tricked into stamping the inner literal -->
+         parse5 must not be tricked into hashing the inner literal as a style -->
     <script>
         const banner = "<style>this is text inside a script body</style>";
     </script>
 
-    <!-- noscript: nothing inside here may receive a nonce -->
+    <!-- Empty script: nothing to execute, nothing to hash -->
+    <script></script>
+
+    <!-- noscript: nothing inside here may be hashed -->
     <noscript>
         <style>.no-js .hide{display:none}</style>
-        <script>this content runs only when JS is disabled — should NOT be stamped</script>
+        <script>this content runs only when JS is disabled — should NOT be hashed</script>
     </noscript>
 
     <!-- Another plain script at the bottom -->

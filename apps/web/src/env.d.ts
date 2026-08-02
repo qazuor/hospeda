@@ -54,10 +54,10 @@ declare namespace App {
             readonly image: string | null;
         } | null;
 
-        /**
-         * Cryptographic nonce for Content Security Policy.
-         * Generated per-request by middleware. Applied to inline scripts/styles in BaseLayout.
-         */
-        cspNonce: string;
+        // NOTE (HOS-369 WB0-1): there is deliberately no `cspNonce` here
+        // anymore. Inline scripts/styles are allowed by the sha256 of their own
+        // content, computed per response in middleware — a nonce that reaches
+        // the Cloudflare cache is a publicly readable token for the whole TTL
+        // (spec §5.13 / D-9). Do not reintroduce it.
     }
 }
