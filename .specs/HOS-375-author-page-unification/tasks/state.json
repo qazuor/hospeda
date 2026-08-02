@@ -876,30 +876,31 @@
             "id": "T-037",
             "title": "Add meta.contentOnly and make baseline-stamp fall through to a real run",
             "description": "Spec §6.11 (G-10). Add `readonly contentOnly?: boolean` to `SeedMigrationMeta` (packages/seed/src/data-migrations/types.ts:39-62), mirroring the existing `destructive?: boolean` precedent, documented as: this migration's rows have NO fixture baseline, the migration file IS the only source of that content, so baseline-stamping must not skip it. Then change `handleDataMigrate` (packages/seed/src/cli.ts:256-265) so a `--baseline-stamp` invocation (a) stamps every pending migration EXCEPT those flagged `contentOnly`, and (b) falls through to `runMigrations()` for exactly those — instead of the current early return. `baselineStamp()` (baselineStamp.ts:101-124) filters them out of its loop. One flag, one command, no hardcoded migration list: a list is precisely how the current bug stayed invisible (first-time-setup.md:810-827 is already stale). Tests: a fresh-build simulation where a contentOnly migration ends with ledger `result='ok'` and a normal one ends with `result='baseline-stamp'`; an already-ledgered migration is not re-run in either case.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-038", "T-035"],
             "subtasks": [
-                { "title": "Add contentOnly to SeedMigrationMeta with JSDoc", "completed": false },
-                { "title": "Filter contentOnly out of baselineStamp's loop", "completed": false },
+                { "title": "Add contentOnly to SeedMigrationMeta with JSDoc", "completed": true },
+                { "title": "Filter contentOnly out of baselineStamp's loop", "completed": true },
                 {
                     "title": "Replace handleDataMigrate's early return with fall-through",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests: ok vs baseline-stamp per flag, ledger still respected",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "infrastructure"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:35:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-02T14:40:00.000Z",
+                "completed": "2026-08-02T14:52:00.000Z"
+            },
+            "notes": "Commit 3c852fc26 (code+tests) + 6f8b7c5ea (docs). `BaselineStampResult` gained a `deferred` field so the caller can report and act on what was left pending; `handleDataMigrate` logs the deferral count and then falls through. Coverage: 4 new tests in test/data-migrations/contentOnly.integration.test.ts (real DB, fixtures under __fixtures__/content-only/) asserting deferral, the 'ok' vs 'baseline-stamp' ledger split, no re-run on a second sequence, and that group scoping still wins over the flag; plus 3 rewritten/added unit tests in cli-data-migrations.test.ts for the fall-through (the old test asserted runMigrations was NOT called — that assertion was the bug). Integration suite 11/11 green (contentOnly + baselineStamp + lifecycle), unit 23/23, typecheck clean, `pnpm --filter @repo/seed lint` 0 errors, seed-dual-write and type-cast guards green. Also documented in docs/guides/seed-data-migrations.md and packages/seed/CLAUDE.md — the flag only works if a future migration author knows to set it."
         },
         {
             "id": "T-038",
@@ -911,7 +912,10 @@
             "blocks": ["T-035"],
             "subtasks": [
                 { "title": "Flag 0025, 0027 and 0028 as contentOnly", "completed": false },
-                { "title": "Correct/remove the stale list in first-time-setup.md", "completed": false },
+                {
+                    "title": "Correct/remove the stale list in first-time-setup.md",
+                    "completed": false
+                },
                 { "title": "Document the non-retroactive scope in the PR body", "completed": false }
             ],
             "tags": ["seed", "docs"],

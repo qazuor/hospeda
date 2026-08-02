@@ -1,6 +1,6 @@
 # HOS-375: Author page — move to `/autores/<slug>/` and unify posts + events
 
-## Progress: 2/38 tasks (5%)
+## Progress: 3/38 tasks (8%)
 
 **Average Complexity:** 1.9/3 (max)
 **Critical Path:** T-002 → T-003 → T-017 → T-020 → T-021 → T-029 → T-032 (7 steps)
@@ -11,7 +11,7 @@
 > unreachable as originally written. The owner chose to fix that inside this spec rather
 > than defer it — hence T-037/T-038 and goal G-10. See spec §6.11 and
 > [`../docs/seed-migration-mechanics.md`](../docs/seed-migration-mechanics.md).
-
+>
 > Read [`../spec.md`](../spec.md) before starting anything. Several tasks below exist
 > because a claim in the original Linear issue turned out to be false — the spec records
 > which, and why.
@@ -28,8 +28,8 @@
   - **Done.** Migration `0070_spotty_dazzler.sql`, single `ALTER TABLE ... DEFAULT false NOT NULL`. Drift guard green.
   - Blocked by: none · Blocks: T-003, T-005, T-011, T-036
 
-- [ ] **T-037** (complexity: 3) — Add `meta.contentOnly` and make baseline-stamp fall through to a real run
-  - The G-10 fix. A declared flag rather than a hardcoded list, because a list is exactly how the current bug stayed invisible.
+- [x] **T-037** (complexity: 3) — Add `meta.contentOnly` and make baseline-stamp fall through to a real run
+  - **Done.** `baselineStamp()` skips content-only migrations and reports them as `deferred`; `handleDataMigrate` no longer early-returns and applies exactly those. Ledger reads `'ok'` vs `'baseline-stamp'`. Integration 11/11, unit 23/23.
   - Blocked by: T-001 · Blocks: T-035, T-038
 
 - [ ] **T-038** (complexity: 2) — Flag the existing content-only migrations and retire the stale re-run list
