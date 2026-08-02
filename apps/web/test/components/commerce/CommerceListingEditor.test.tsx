@@ -66,7 +66,17 @@ vi.mock('../../../src/lib/api/client', () => ({
 }));
 
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
-    protectedMediaApi: { deleteMedia: vi.fn().mockResolvedValue({ ok: true, data: {} }) }
+    protectedMediaApi: { deleteMedia: vi.fn().mockResolvedValue({ ok: true, data: {} }) },
+    // HOS-372: MediaField is now self-contained and hydrates/persists through
+    // `commerceMediaApi` directly (no longer via the parent's `onChange` +
+    // PATCH). `listMedia` must resolve so the child effect does not throw;
+    // the other ops default to empty successes and are overridden per-test.
+    commerceMediaApi: {
+        listMedia: vi.fn().mockResolvedValue({ ok: true, data: { media: [] } }),
+        addMedia: vi.fn().mockResolvedValue({ ok: true, data: { media: {} } }),
+        removeMedia: vi.fn().mockResolvedValue({ ok: true, data: {} }),
+        setFeaturedMedia: vi.fn().mockResolvedValue({ ok: true, data: { media: {} } })
+    }
 }));
 
 vi.mock('../../../src/lib/env', () => ({ getApiUrl: () => 'http://api.test' }));
@@ -74,10 +84,13 @@ vi.mock('../../../src/lib/env', () => ({ getApiUrl: () => 'http://api.test' }));
 vi.mock('../../../src/lib/logger', () => ({ webLogger: { warn: vi.fn() } }));
 
 import { apiClient } from '../../../src/lib/api/client';
-import { protectedMediaApi } from '../../../src/lib/api/endpoints-protected';
+import { commerceMediaApi, protectedMediaApi } from '../../../src/lib/api/endpoints-protected';
 
 const mockPatch = vi.mocked(apiClient.patch);
 const mockDeleteMedia = vi.mocked(protectedMediaApi.deleteMedia);
+const mockListMedia = vi.mocked(commerceMediaApi.listMedia);
+const mockAddMedia = vi.mocked(commerceMediaApi.addMedia);
+const mockSetFeaturedMedia = vi.mocked(commerceMediaApi.setFeaturedMedia);
 
 /** A Cloudinary-shaped image (ImageSchema-compatible) for media tests. */
 const galleryImage = {
@@ -129,6 +142,10 @@ describe('CommerceListingEditor', () => {
     beforeEach(() => {
         mockPatch.mockReset();
         mockDeleteMedia.mockClear();
+        mockListMedia.mockClear();
+        mockListMedia.mockResolvedValue({ ok: true, data: { media: [] } });
+        mockAddMedia.mockClear();
+        mockSetFeaturedMedia.mockClear();
     });
 
     it('keeps the save button disabled until a field changes', () => {
@@ -329,7 +346,13 @@ describe('CommerceListingEditor', () => {
         expect(call.body.openingHours?.days?.mon?.closed).toBe(true);
     });
 
-    it('uploads a featured image and PATCHes the media group on save', async () => {
+    it('HOS-372: uploading a featured image persists immediately via commerceMediaApi, NOT deferred to Save', async () => {
+        // The bug this migration fixes: uploading used to hit Cloudinary right
+        // away but the DB association waited for the parent's PATCH, so an
+        // owner who uploaded and navigated away without pressing "Guardar"
+        // lost the association. MediaField is now self-contained — the add +
+        // set-featured calls must fire as soon as the upload settles, well
+        // before (and independent of) any click on the Save button.
         const uploaded = {
             url: 'http://cdn.test/featured.jpg',
             publicId: 'commerce/featured',
@@ -342,9 +365,37 @@ describe('CommerceListingEditor', () => {
             json: async () => ({ success: true, data: uploaded })
         });
         vi.stubGlobal('fetch', fetchMock);
-        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+        mockAddMedia.mockResolvedValueOnce({
+            ok: true,
+            data: {
+                media: {
+                    id: 'media-new',
+                    url: uploaded.url,
+                    publicId: uploaded.publicId,
+                    isFeatured: false,
+                    sortOrder: 0,
+                    state: 'visible',
+                    moderationState: 'APPROVED'
+                }
+            }
+        });
+        mockSetFeaturedMedia.mockResolvedValueOnce({
+            ok: true,
+            data: {
+                media: {
+                    id: 'media-new',
+                    url: uploaded.url,
+                    publicId: uploaded.publicId,
+                    isFeatured: true,
+                    sortOrder: 0,
+                    state: 'visible',
+                    moderationState: 'APPROVED'
+                }
+            }
+        });
 
         renderEditor('gastronomy');
+        await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
 
         const file = new File(['x'], 'featured.png', { type: 'image/png' });
         fireEvent.change(screen.getByLabelText('Imagen principal'), {
@@ -356,13 +407,95 @@ describe('CommerceListingEditor', () => {
             'http://api.test/api/v1/protected/media/upload-entity'
         );
 
+        // The DB association already happened — no Save click yet.
+        await waitFor(() => {
+            expect(mockAddMedia).toHaveBeenCalledWith({
+                vertical: 'gastronomy',
+                id: 'abc',
+                body: expect.objectContaining({ url: uploaded.url, publicId: uploaded.publicId })
+            });
+            expect(mockSetFeaturedMedia).toHaveBeenCalledWith({
+                vertical: 'gastronomy',
+                id: 'abc',
+                mediaId: 'media-new'
+            });
+        });
+        expect(mockPatch).not.toHaveBeenCalled();
+
+        vi.unstubAllGlobals();
+    });
+
+    it('HOS-372 regression guard: the PATCH payload never contains a `media` key, even after an upload', async () => {
+        // This is the actual regression guard for HOS-372: reverting
+        // `buildPayload` to re-include `payload.media` would overwrite the
+        // relational state MediaField just wrote with stale buffered values.
+        // Verified by temporarily reintroducing that line locally — this test
+        // fails as expected when it's present.
+        const uploaded = {
+            url: 'http://cdn.test/featured.jpg',
+            publicId: 'commerce/featured',
+            width: 1024,
+            height: 768,
+            moderationState: 'APPROVED'
+        };
+        vi.stubGlobal(
+            'fetch',
+            vi.fn().mockResolvedValue({
+                ok: true,
+                json: async () => ({ success: true, data: uploaded })
+            })
+        );
+        mockAddMedia.mockResolvedValueOnce({
+            ok: true,
+            data: {
+                media: {
+                    id: 'media-new',
+                    url: uploaded.url,
+                    publicId: uploaded.publicId,
+                    isFeatured: false,
+                    sortOrder: 0,
+                    state: 'visible',
+                    moderationState: 'APPROVED'
+                }
+            }
+        });
+        mockSetFeaturedMedia.mockResolvedValueOnce({
+            ok: true,
+            data: {
+                media: {
+                    id: 'media-new',
+                    url: uploaded.url,
+                    publicId: uploaded.publicId,
+                    isFeatured: true,
+                    sortOrder: 0,
+                    state: 'visible',
+                    moderationState: 'APPROVED'
+                }
+            }
+        });
+        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+
+        renderEditor('gastronomy');
+        await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+        // Upload a featured photo through the child (proves it does NOT
+        // funnel back into this editor's dirty state).
+        fireEvent.change(screen.getByLabelText('Imagen principal'), {
+            target: { files: [new File(['x'], 'featured.png', { type: 'image/png' })] }
+        });
+        await waitFor(() => expect(mockSetFeaturedMedia).toHaveBeenCalled());
+
+        // Change an unrelated field and save — the only way this editor's
+        // PATCH ever fires.
+        fireEvent.change(screen.getByLabelText('Descripción ampliada'), {
+            target: { value: 'unrelated change' }
+        });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
-        expect(mockPatch).toHaveBeenCalledWith({
-            path: '/api/v1/protected/gastronomies/abc',
-            body: { media: { featuredImage: uploaded, gallery: [] } }
-        });
+        const body = mockPatch.mock.calls[0]?.[0]?.body as Record<string, unknown>;
+        expect(body).not.toHaveProperty('media');
+        expect(body).toEqual({ richDescription: 'unrelated change' });
 
         vi.unstubAllGlobals();
     });
@@ -583,8 +716,25 @@ describe('CommerceListingEditor', () => {
         });
     });
 
-    it('removes a gallery image (best-effort delete) and PATCHes the trimmed gallery', async () => {
-        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+    it('HOS-372: removes a gallery image via commerceMediaApi immediately, with no Save click and no media in any PATCH', async () => {
+        mockListMedia.mockResolvedValueOnce({
+            ok: true,
+            data: {
+                media: [
+                    {
+                        id: 'g1',
+                        url: galleryImage.url,
+                        publicId: galleryImage.publicId,
+                        isFeatured: false,
+                        sortOrder: 0,
+                        state: 'visible',
+                        moderationState: 'APPROVED'
+                    }
+                ]
+            }
+        });
+        const mockRemoveMedia = vi.mocked(commerceMediaApi.removeMedia);
+        mockRemoveMedia.mockResolvedValueOnce({ ok: true, data: {} });
 
         render(
             <CommerceListingEditor
@@ -603,18 +753,25 @@ describe('CommerceListingEditor', () => {
             />
         );
 
+        await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+        await waitFor(() => expect(screen.getByRole('button', { name: 'Eliminar' })).toBeEnabled());
+
         fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
 
+        await waitFor(() => {
+            expect(mockRemoveMedia).toHaveBeenCalledWith({
+                vertical: 'gastronomy',
+                id: 'abc',
+                mediaId: 'g1'
+            });
+        });
         await waitFor(() =>
-            expect(mockDeleteMedia).toHaveBeenCalledWith({ publicId: 'commerce/g1' })
+            expect(mockDeleteMedia).toHaveBeenCalledWith({ publicId: galleryImage.publicId })
         );
 
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
-
-        await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
-        expect(mockPatch).toHaveBeenCalledWith({
-            path: '/api/v1/protected/gastronomies/abc',
-            body: { media: { gallery: [] } }
-        });
+        // No Save click occurred, and nothing in this editor was ever marked
+        // dirty by the removal — the Save button must stay disabled.
+        expect(mockPatch).not.toHaveBeenCalled();
+        expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeDisabled();
     });
 });

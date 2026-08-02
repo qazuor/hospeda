@@ -231,25 +231,14 @@ export function CommerceListingEditor({
         typeof data.priceFrom === 'number' ? data.priceFrom : null
     );
     const [priceUnit, setPriceUnit] = useState<string>(strField(data, 'priceUnit'));
-    const [featuredImage, setFeaturedImage] = useState<Image | null>(
-        (initialMedia.featuredImage as Image | undefined) ?? null
-    );
-    const [gallery, setGallery] = useState<readonly Image[]>(
-        (initialMedia.gallery as Image[] | undefined) ?? []
-    );
-    // Media JSONB is REPLACED wholesale on save (gastronomy/experience do not
-    // merge it), so preserve the owner-unmanaged sub-fields (videos,
-    // archivedGallery) and re-send them with every media patch.
-    const [preservedMedia] = useState<Record<string, unknown>>(() => {
-        const preserved: Record<string, unknown> = {};
-        if (Array.isArray(initialMedia.videos)) {
-            preserved.videos = initialMedia.videos;
-        }
-        if (Array.isArray(initialMedia.archivedGallery)) {
-            preserved.archivedGallery = initialMedia.archivedGallery;
-        }
-        return preserved;
-    });
+    // HOS-372: media is no longer buffered in this editor's state. MediaField
+    // is now self-contained (per-operation persistence against the relational
+    // gastronomy_media / experience_media endpoints — see its file header) and
+    // hydrates its own state from the API. These two consts only feed its
+    // first-paint SSR placeholders (from the legacy `media` JSONB); they are
+    // read once and never written back.
+    const initialFeaturedImage = (initialMedia.featuredImage as Image | undefined) ?? null;
+    const initialGallery = (initialMedia.gallery as Image[] | undefined) ?? [];
     const [amenityIds, setAmenityIds] = useState<ReadonlySet<string>>(
         () => new Set((data.amenityIds as string[] | undefined) ?? [])
     );
@@ -286,15 +275,6 @@ export function CommerceListingEditor({
         (key: keyof SocialValues, val: string) => {
             setSocial((prev) => ({ ...prev, [key]: val }));
             markDirty('socialNetworks');
-        },
-        [markDirty]
-    );
-
-    const updateMedia = useCallback(
-        (next: { readonly featuredImage: Image | null; readonly gallery: readonly Image[] }) => {
-            setFeaturedImage(next.featuredImage);
-            setGallery(next.gallery);
-            markDirty('media');
         },
         [markDirty]
     );
@@ -387,13 +367,10 @@ export function CommerceListingEditor({
         if (dirty.has('openingHours')) {
             payload.openingHours = openingHours;
         }
-        if (dirty.has('media')) {
-            payload.media = {
-                ...preservedMedia,
-                ...(featuredImage ? { featuredImage } : {}),
-                gallery
-            };
-        }
+        // HOS-372: media is no longer sent in this PATCH. MediaField persists
+        // add/remove/set-featured immediately against the relational media
+        // endpoints — including `media` here would overwrite that relational
+        // state with stale buffered values (the whole bug this migration fixes).
         if (dirty.has('amenityIds')) {
             payload.amenityIds = [...amenityIds];
         }
@@ -439,9 +416,6 @@ export function CommerceListingEditor({
         isPriceOnRequest,
         priceFrom,
         priceUnit,
-        featuredImage,
-        gallery,
-        preservedMedia,
         amenityIds,
         featureIds
     ]);
@@ -815,9 +789,8 @@ export function CommerceListingEditor({
                 <MediaField
                     vertical={vertical}
                     listingId={listingId}
-                    featuredImage={featuredImage}
-                    gallery={gallery}
-                    onChange={updateMedia}
+                    initialFeaturedImage={initialFeaturedImage}
+                    initialGallery={initialGallery}
                     t={t}
                     classes={styles}
                 />
