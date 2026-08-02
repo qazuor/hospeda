@@ -9,10 +9,11 @@
  *   vs gallery.
  * - Adding a gallery photo calls `addMedia` immediately (NOT deferred to a
  *   parent Save) and shows it in the grid.
- * - Removing a gallery photo calls `removeMedia` immediately AND fires the
- *   best-effort Cloudinary cleanup (`protectedMediaApi.deleteMedia`) —
- *   commerce `removeMedia` does not touch Cloudinary server-side, unlike the
- *   accommodation endpoint.
+ * - Removing a gallery photo calls `removeMedia` immediately and fires NO
+ *   client-side Cloudinary delete: since HOS-372 the server deletes the binary
+ *   inside `removeMedia`, before dropping the row. The client-side call this
+ *   replaced was unreachable anyway — `media/protected/delete-entity` rejects
+ *   `gastronomy` and `experience` with HTTP 400.
  * - Setting a new featured image calls upload → addMedia → setFeaturedMedia
  *   immediately, and the previous featured moves to the gallery.
  * - A failed operation surfaces an inline error + toast and does NOT mutate
@@ -288,7 +289,7 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
     // ── Removing a gallery photo ───────────────────────────────────────
 
     describe('removing a gallery photo', () => {
-        it('calls removeMedia immediately and ALSO fires the Cloudinary cleanup (commerce does not delete server-side)', async () => {
+        it('calls removeMedia immediately and does NOT fire a client-side Cloudinary delete (the server does it)', async () => {
             mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1, GALLERY_ROW_2]));
             mockRemoveMedia.mockReturnValue(makeRemoveOk());
 
@@ -307,14 +308,16 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
             });
 
             await waitFor(() => {
-                expect(mockDeleteMedia).toHaveBeenCalledWith({ publicId: GALLERY_ROW_1.publicId });
-            });
-
-            await waitFor(() => {
                 const imgs = screen.getAllByRole('img');
                 expect(imgs).toHaveLength(1);
                 expect(imgs[0]).toHaveAttribute('src', GALLERY_ROW_2.url);
             });
+
+            // HOS-372: the binary is deleted server-side, inside removeMedia,
+            // BEFORE the row is dropped. The old client-side call this replaced
+            // could never have succeeded — `media/protected/delete-entity`
+            // rejects `gastronomy`/`experience` with HTTP 400.
+            expect(mockDeleteMedia).not.toHaveBeenCalled();
         });
 
         it('does NOT remove the item from state when removeMedia fails, and never calls the Cloudinary cleanup', async () => {
@@ -432,7 +435,7 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
             });
         });
 
-        it('removing the featured image calls removeMedia and the Cloudinary cleanup', async () => {
+        it('removing the featured image calls removeMedia and no client-side Cloudinary delete', async () => {
             mockListMedia.mockReturnValue(makeListOk([FEATURED_ROW]));
             mockRemoveMedia.mockReturnValue(makeRemoveOk());
 
@@ -451,11 +454,11 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
                 });
             });
             await waitFor(() => {
-                expect(mockDeleteMedia).toHaveBeenCalledWith({ publicId: FEATURED_ROW.publicId });
-            });
-            await waitFor(() => {
                 expect(screen.queryByAltText('Imagen principal')).not.toBeInTheDocument();
             });
+            // HOS-372: deletion of the binary moved server-side (see the gallery
+            // removal test above for the full rationale).
+            expect(mockDeleteMedia).not.toHaveBeenCalled();
         });
     });
 

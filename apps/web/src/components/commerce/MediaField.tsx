@@ -22,27 +22,23 @@
  * `commerceMediaApi.addMedia` (and, for the featured slot,
  * `commerceMediaApi.setFeaturedMedia`) so the row is persisted immediately.
  *
- * Cloudinary cleanup: NO `removeMedia` endpoint deletes the binary — neither
- * this one nor the accommodation one, both of which state "does not touch
- * Cloudinary, deleting the binary is a separate concern". So this component
- * keeps its pre-HOS-372 best-effort `protectedMediaApi.deleteMedia({ publicId })`
- * call after a successful DB removal, which is the only cleanup that happens on
- * either vertical today. It is deliberately best-effort: a failed cleanup must
- * never block the removal the user asked for.
+ * Cloudinary cleanup is now SERVER-SIDE and this component does not participate
+ * in it. `commerceMediaApi.removeMedia` deletes the binary before dropping the
+ * row (HOS-372), so a successful response already means the asset is gone.
  *
- * That leaves a known gap, tracked separately: PhotoSection (accommodations)
- * makes no such call, so deleting an accommodation photo always orphans its
- * Cloudinary asset, and the orphan-cleanup cron is a no-op in production.
+ * This replaced a client-side best-effort call to
+ * `protectedMediaApi.deleteMedia({ publicId })` that could never have worked:
+ * `media/protected/delete-entity` only accepts accommodation / destination /
+ * event / post, and rejected `gastronomy` and `experience` with HTTP 400 — even
+ * though `media/upload-entity` accepts both. Uploads went in through a door that
+ * existed; deletes went out through one that returned 400, so every commerce
+ * photo removal orphaned its asset regardless of this call.
  */
 
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { getGalleryCap, type Image } from '@repo/schemas';
 import { type JSX, useCallback, useEffect, useRef, useState } from 'react';
-import {
-    type CommerceMediaRow,
-    commerceMediaApi,
-    protectedMediaApi
-} from '@/lib/api/endpoints-protected';
+import { type CommerceMediaRow, commerceMediaApi } from '@/lib/api/endpoints-protected';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { getApiUrl } from '@/lib/env';
 import { webLogger } from '@/lib/logger';
@@ -244,20 +240,6 @@ function describeUploadError(err: unknown, t: Translate): string {
     return err instanceof Error
         ? err.message
         : t('commerce.owner.editor.media.uploadFailed', 'Error al subir la imagen');
-}
-
-/**
- * Best-effort Cloudinary cleanup after a successful DB removal.
- * `commerceMediaApi.removeMedia` intentionally does NOT touch Cloudinary
- * (unlike the accommodation endpoint) — this is the caller-side counterpart.
- */
-function cleanupCloudinaryAsset(publicId: string | undefined): void {
-    if (!publicId) {
-        return;
-    }
-    protectedMediaApi.deleteMedia({ publicId }).catch((err: unknown) => {
-        webLogger.warn('[MediaField] Cloudinary delete failed:', err);
-    });
 }
 
 /**
@@ -471,7 +453,6 @@ export function MediaField({
         });
 
         if (result.ok) {
-            cleanupCloudinaryAsset(featuredItem.publicId);
             setFeaturedItem(null);
         } else {
             reportError(
@@ -577,7 +558,6 @@ export function MediaField({
             });
 
             if (result.ok) {
-                cleanupCloudinaryAsset(item.publicId);
                 setGalleryItems((prev) => prev.filter((g) => g.id !== item.id));
             } else {
                 reportError(
