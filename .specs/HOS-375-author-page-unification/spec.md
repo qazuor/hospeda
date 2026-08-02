@@ -320,10 +320,21 @@ so no separate rule is needed for the paginated tail.
 
 A page is indexable **iff all** of:
 
-1. the author has at least one published post or event, **and**
-2. `bio` is non-empty, **and**
-3. `avatar` is non-empty, **and**
-4. it is page 1 (paginated pages are always `noindex`).
+1. the author's role is **not** `SUPER_ADMIN` and **not** `ADMIN` (§6.10), **and**
+2. the author has at least one published post or event, **and**
+3. `profile.bio` is non-empty, **and**
+4. `profile.avatar` is non-empty, **and**
+5. it is page 1 (paginated pages are always `noindex`).
+
+Condition 1 is a **content-curation rule, not an authorization check**, so the repo's
+"never check roles directly, use `PermissionEnum`" convention does not apply — there is
+no permission that means "deserves a public author profile". It must carry a comment
+saying so, or a future reader will «fix» it into a permission check.
+
+Note the exclusion is a safety floor, not the primary mechanism: after the
+re-attribution in §6.10 the super-admin account has zero published items, so
+condition 2 already excludes it. Condition 1 is what keeps it excluded if anyone
+attributes content to a staff account again.
 
 `ListingLayout`'s `noindex` prop becomes `noindex={!isIndexable}` instead of the
 hardcoded `true`. The same predicate decides sitemap inclusion (§6.6), so the two can
@@ -349,9 +360,13 @@ GET /api/v1/public/authors?page=&pageSize=
 ```
 
 Backed by a new `listPublicAuthors` service in `packages/service-core/src/services/user/`,
-querying users that have ≥1 published post or event and non-empty `bio` and `avatar`.
-`sitemap-dynamic.xml.ts` gains a block for it, following the existing
-`buildEntriesForEntity` pattern.
+applying the §6.5 predicate in full: role not in (`SUPER_ADMIN`, `ADMIN`), ≥1 published
+post or event, and non-empty `profile->>'bio'` and `profile->>'avatar'` (JSONB paths —
+there are no such columns, see §12). `sitemap-dynamic.xml.ts` gains a block for it,
+following the existing `buildEntriesForEntity` pattern.
+
+The predicate lives in exactly one place and is shared with the page (§6.5), so the
+sitemap can never advertise a URL the page then serves as `noindex`.
 
 ### 6.7 Social networks opt-in
 
@@ -440,6 +455,60 @@ noise.
   - The payload stays **actor-blind**, so `/api/v1/public/events`'s shared caching is
     unaffected.
 
+### 6.10 Content attribution (OQ-5 resolution)
+
+Owner decision, 2026-08-02, on the measured state in §5.9. Three coordinated changes,
+all of which must land before G-3 (indexability + sitemap) ships.
+
+**1. System accounts never get a public author surface.** `SUPER_ADMIN` and `ADMIN` are
+excluded from the indexability predicate and the sitemap (§6.5 condition 1). Their pages
+still render — bylines must never 404 — but stay `noindex`.
+
+**2. The editorial account gets a real slug.** `0025-seed-real-blog-posts.ts:156-171`
+creates the editorial author (`role: RoleEnum.EDITOR`, `displayName: 'Equipo Hospeda'`)
+**without setting a slug**, so it auto-generates from the row id and is therefore
+**different in every environment**: `user-95c2cd4b` in production, `user-76eb2960`
+locally. Indexing that as the permanent URL of the site's main editorial voice is not
+acceptable, and it cannot be fixed later for free once Google has it.
+
+The account is assigned the slug `equipo-hospeda`.
+
+> **This is the single most important implementation constraint in this spec.** The
+> migration must resolve the account **by `EDITORIAL_EMAIL`**, exactly as
+> `ensureEditorialAuthor` already does (`findOne({ email: EDITORIAL_EMAIL })`). Never by
+> slug and never by id — both differ per environment, so a hardcoded value silently
+> targets the wrong row (or no row) outside the machine it was written on.
+
+No redirect is owed from the old auto-slug: that page is `noindex` today, so there is
+nothing indexed to preserve.
+
+**3. The imported events are re-attributed to the editorial account.** The 44 production
+events (52 locally) carry `author_id` = super-admin and `created_by_id` = `NULL` — the
+signature of `0027`/`0028`'s bulk import, not of a human using the UI. Attributing
+platform-curated editorial content to the editorial team account is the accurate
+description of who curated it; the super-admin attribution is an artifact of the import
+running under the super-admin actor.
+
+Scope the update precisely: `author_id = <super-admin id>` **AND** `created_by_id IS
+NULL`. Anything a human actually created keeps its author.
+
+**Delivery** — items 2 and 3 are content changes to data already live in production, so
+each needs a numbered migration via `pnpm db:seed:make <slug>` in
+`packages/seed/src/data-migrations/`, per the seed dual-write rule.
+
+> **Verify before writing them**: these are *content-only* migrations, and this repo
+> baseline-stamps such migrations on a fresh build rather than running them, so the
+> "edit the baseline too" half of the dual-write rule may resolve differently here than
+> for a catalog fixture. Confirm the exact mechanics against
+> [`docs/guides/seed-data-migrations.md`](../../docs/guides/seed-data-migrations.md) and
+> `baselineStamp.ts` before authoring, and make sure a fresh `pnpm db:fresh-dev` ends up
+> with the same attribution and slug as a migrated production DB. Do not assume.
+
+**Result in production**: one indexable author page, `/es/autores/equipo-hospeda/`,
+with 22 posts and 44 events — both blocks populated, which is precisely the page this
+spec set out to build. Real editors arriving via HOS-374 join the surface with no
+further work.
+
 ## 7. Data model / contracts
 
 | Change | Where | Migration |
@@ -452,7 +521,15 @@ noise.
 | `eventsApi.getByAuthor` | `apps/web/src/lib/api/endpoints.ts` | none |
 | `author?: UserAuthorPublic` (nullish relation) | `EventPublicSchema` + event service detail read | none — additive |
 
-No DB migration, no seed data-migration: nothing in `packages/seed/src/data/**` changes.
+No **schema** migration. Two **seed data-migrations** are required by §6.10:
+
+| Migration | What | Resolve by |
+|---|---|---|
+| `NNNN-editorial-author-slug` | set the editorial account's slug to `equipo-hospeda` | `EDITORIAL_EMAIL` — never slug or id |
+| `NNNN-reattribute-imported-events` | move events with `author_id = <super-admin>` **and** `created_by_id IS NULL` to the editorial account | the same email lookup |
+
+Both are content changes to live production data. See the verification caveat in §6.10
+before authoring them.
 
 ## 8. UX / UI behavior
 
@@ -490,6 +567,13 @@ No DB migration, no seed data-migration: nothing in `packages/seed/src/data/**` 
 - **AC-10** — Event detail pages link to their author's page.
 - **AC-11** — `facet-noindex.test.ts` passes with the author page removed from the
   unconditional list, and new tests cover the predicate in both directions.
+- **AC-13** — A `SUPER_ADMIN` or `ADMIN` account is `noindex` and absent from the
+  sitemap even when it has published items, bio and avatar.
+- **AC-14** — After the migrations, production resolves `/es/autores/equipo-hospeda/`
+  with both blocks populated (22 posts, 44 events), and no event remains attributed to
+  the super-admin account with `created_by_id IS NULL`.
+- **AC-15** — A fresh `pnpm db:fresh-dev` produces the same editorial slug and the same
+  event attribution as a migrated production database.
 - **AC-12** — Full `pnpm typecheck` + `pnpm lint` + the web and api test suites are green.
 
 ## 10. Risks
@@ -514,6 +598,19 @@ No DB migration, no seed data-migration: nothing in `packages/seed/src/data/**` 
   risk if the pattern is narrowed during implementation.
 - **R-8 — Consent copy is load-bearing.** The toggle without the explanatory copy still
   publishes data the user never knew was publishable; the copy is not polish.
+- **R-9 — Promoting an editor to ADMIN silently unpublishes their author page.** The
+  §6.5 role exclusion is evaluated live, so a real editor who is later granted `ADMIN`
+  drops out of the sitemap and goes `noindex`. Given Hospeda's size this is plausible.
+  Accepted for now because the failure is safe (a page disappears; nothing leaks), but
+  if it happens the fix is an explicit per-account flag rather than loosening the role
+  rule.
+- **R-10 — The editorial slug is environment-dependent.** It is `user-95c2cd4b` in
+  production and `user-76eb2960` locally because `0025` never sets one. Any migration,
+  test fixture, or hardcoded reference keyed on that slug or on the row id works on one
+  machine and silently no-ops everywhere else. Resolve by `EDITORIAL_EMAIL` only (§6.10).
+- **R-11 — Re-attribution is a production content change.** It rewrites `author_id` on
+  44 live rows. Scope it to `created_by_id IS NULL` so nothing a human authored is
+  touched, and verify the affected count before and after.
 
 ## 11. Open questions
 
@@ -523,15 +620,10 @@ No DB migration, no seed data-migration: nothing in `packages/seed/src/data/**` 
   events from the single most prolific author — the exact failure this spec exists to
   fix. **§6.3 must paginate the events block**, not cap it. See OQ-5 first: the
   attribution finding may change who these blocks belong to.
-- **OQ-5 — BLOCKING, owner decision.** Every high-volume author today is a staff or
-  system account (§5.9). `bio` + `avatar` is not a sufficient indexability gate,
-  because those accounts pass it. Needs a call on how staff/system accounts are kept
-  out of the public author surface — an explicit exclusion, a role condition on the
-  gate, re-attributing the existing content to real people, or shipping G-3
-  (indexability + sitemap) only after HOS-374 puts real editors in `authorId`. Until
-  this is answered, **G-3 must not ship**; the rest of the spec (URL move, events
-  block, redirect, JSON-LD) is unaffected and can proceed behind the existing
-  `noindex`.
+- ~~**OQ-5** — how are staff/system accounts kept out of the public author surface?~~
+  **Resolved 2026-08-02 by the owner**: exclude system roles from the gate, give the
+  editorial account a real slug, and re-attribute the imported events to it. Fully
+  specified in §6.10.
 
 - **OQ-2** — "Profile complete" is defined as `bio` **AND** `avatar` (§6.5). Loosening it
   to `bio` OR `avatar` would index more authors at the cost of thinner pages. Decided as
