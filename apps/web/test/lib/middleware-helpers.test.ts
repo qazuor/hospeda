@@ -721,10 +721,32 @@ describe('isSessionOptionalRoute', () => {
         expect(isSessionOptionalRoute({ path: '/es/publicar-otra-cosa/' })).toBe(false);
     });
 
-    it('returns true for the pre-existing session-optional segments', () => {
-        expect(isSessionOptionalRoute({ path: '/es/alojamientos/' })).toBe(true);
-        expect(isSessionOptionalRoute({ path: '/es/gastronomia/' })).toBe(true);
+    it('returns true for the segments that still need the session', () => {
         expect(isSessionOptionalRoute({ path: '/es/feedback/' })).toBe(true);
+        expect(isSessionOptionalRoute({ path: '/es/guest/' })).toBe(true);
+    });
+
+    it('returns FALSE for the cacheable catalog families (HOS-369 W1-2a)', () => {
+        // Inverted: these six used to be session-optional because their pages
+        // needed the visitor. Wave B0 moved all of that into the browser, and
+        // they were removed — because parsing the session here is what lets the
+        // SHELL (Header/Footer/BaseLayout) bake the visitor's name and e-mail
+        // into island props, i.e. into the HTML an edge cache would then hand
+        // to the next visitor. See
+        // test/lib/cacheable-routes-parse-no-session.guard.test.ts.
+        for (const family of [
+            'alojamientos',
+            'destinos',
+            'eventos',
+            'publicaciones',
+            'gastronomia',
+            'experiencias'
+        ]) {
+            expect(
+                isSessionOptionalRoute({ path: `/es/${family}/` }),
+                `${family} must not parse the session — it is edge-cacheable`
+            ).toBe(false);
+        }
     });
 
     it('returns false for fully public routes', () => {

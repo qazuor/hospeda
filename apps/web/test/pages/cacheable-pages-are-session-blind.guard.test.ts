@@ -1,6 +1,6 @@
 /**
  * @file cacheable-pages-are-session-blind.guard.test.ts
- * @description Static guard for HOS-369 WB0-6.
+ * @description Static guard for HOS-369 WB0-6, extended by WB0-7.
  *
  * Wave B0 de-personalized the public catalog pages so their HTML is identical
  * for every visitor, which is what makes them safe to share from a Cloudflare
@@ -42,6 +42,10 @@
  *    the visitor is the correct behaviour.
  * 4. **The Cloudflare side.** Cache eligibility, cache keys, and the
  *    session-cookie bypass live in a Cache Rule, not in this repo (W1-2).
+ * 5. **The shell.** A page can be perfectly session-blind and still ship the
+ *    visitor's name in the header its layout renders, and this sweep cannot see
+ *    that. Covered by a SEPARATE guard on a different invariant — see the note
+ *    above the non-vacuity block below.
  *
  * A companion assertion proves the guard is non-vacuous: it runs the same
  * detectors over synthetic sources and requires them to flag the violation, so
@@ -110,15 +114,15 @@ const SESSION_AWARE_PREFIXES: ReadonlyArray<{
 ];
 
 /**
- * The two pages Wave B0 deliberately left personalized, to be de-personalized
- * in WB0-7. They are listed individually — not by prefix — so the exemption
- * cannot silently widen to their siblings, and so this list visibly shrinks to
- * empty when WB0-7 lands.
+ * Pages Wave B0 deliberately left personalized, to be de-personalized in WB0-7.
+ *
+ * WB0-7 landed and this list is now EMPTY, which is the point: the two detail
+ * pages moved into the guarded set rather than into a permanent exemption. It
+ * is kept (rather than deleted along with its last entry) so that the assertion
+ * below — "this list is empty" — keeps failing if anyone reaches for it as a
+ * convenient way to unblock a future personalized page.
  */
-const PENDING_WB0_7: ReadonlyArray<string> = [
-    '[lang]/alojamientos/[slug].astro',
-    '[lang]/destinos/[...path].astro'
-];
+const PENDING_WB0_7: ReadonlyArray<string> = [];
 
 /** Read every `.astro` page, keyed by its path relative to `src/pages`. */
 function readPages(): ReadonlyArray<{ readonly path: string; readonly source: string }> {
@@ -158,9 +162,16 @@ function stripComments(source: string): string {
 /**
  * Session reads a guarded page must not contain.
  *
- * Both forms of the `Astro.locals` read are matched: the direct property access
- * and the destructuring one, because writing `const { user } = Astro.locals`
- * is the obvious way to sidestep a predicate that only looked for the former.
+ * Three forms of the `Astro.locals` read are matched, because each is a way to
+ * sidestep a predicate that only knew about the previous one:
+ * - the direct property access, `Astro.locals.user`;
+ * - the destructuring one, `const { user } = Astro.locals`;
+ * - the ALIASED one, `const locals = Astro.locals as { user?: … }`, which
+ *   `Footer.astro` used to work around an incomplete `App.Locals` type and
+ *   which the first two predicates were blind to (found while extending this
+ *   guard to the shell in WB0-7). The pattern requires the WHOLE `Astro.locals`
+ *   object to be captured — `Astro.locals.locale as SupportedLocale` is a
+ *   property cast every page does and is deliberately not matched.
  */
 function findSessionReads(rawSource: string): ReadonlyArray<string> {
     const source = stripComments(rawSource);
@@ -168,6 +179,9 @@ function findSessionReads(rawSource: string): ReadonlyArray<string> {
     if (/Astro\.locals\.user/.test(source)) hits.push('Astro.locals.user');
     if (/const\s*\{[^}]*\buser\b[^}]*\}\s*=\s*Astro\.locals/.test(source)) {
         hits.push('destructured user from Astro.locals');
+    }
+    if (/=\s*Astro\.locals\s*(?:as\b|;)/.test(source)) {
+        hits.push('aliased Astro.locals');
     }
     return hits;
 }
@@ -245,16 +259,27 @@ describe('HOS-369 WB0-6 — cacheable pages are session-blind', () => {
         expect(violations).toEqual([]);
     });
 
-    it('keeps the WB0-7 exemption honest', () => {
-        // Every pending entry must still exist. When WB0-7 lands, these two
-        // files stop reading the session and the entries are deleted — this
-        // assertion is what makes leaving a stale exemption behind visible.
-        const paths = pages.map((page) => page.path);
-        for (const pending of PENDING_WB0_7) {
-            expect(paths).toContain(pending);
-            const page = pages.find((candidate) => candidate.path === pending);
+    it('has no page left pending WB0-7', () => {
+        // Inverted from Wave B0's version, which asserted the two detail pages
+        // STILL read the session. They no longer do, so the assertion that
+        // matters now is that nothing was quietly added back to the list.
+        expect(PENDING_WB0_7).toEqual([]);
+    });
+
+    it('guards the two detail pages WB0-7 de-personalized', () => {
+        // The pages the pending list used to hold. Named explicitly: dropping
+        // them from the list only helps if they actually entered the guarded
+        // set, and a rename would otherwise take them out of both silently.
+        const formerlyPending = [
+            '[lang]/alojamientos/[slug].astro',
+            '[lang]/destinos/[...path].astro'
+        ];
+        for (const path of formerlyPending) {
+            const page = pages.find((candidate) => candidate.path === path);
             expect(page).toBeDefined();
-            expect(findSessionReads(page?.source ?? '').length).toBeGreaterThan(0);
+            expect(isGuarded(path)).toBe(true);
+            expect(findSessionReads(page?.source ?? '')).toEqual([]);
+            expect(findPersonalizedFetches(page?.source ?? '')).toEqual([]);
         }
     });
 
@@ -273,24 +298,18 @@ describe('HOS-369 WB0-6 — cacheable pages are session-blind', () => {
  * Server-rendered `.astro` components that may still resolve the visitor,
  * because they only ever appear on a page that is itself exempt. Listed
  * individually so the exemption cannot widen silently.
+ *
+ * Empty since WB0-7. Its three Wave B0 entries turned out never to have
+ * violated either detector — they took favorite state as PROPS from the two
+ * detail pages rather than resolving it themselves — so the list was granting
+ * an exemption nothing needed, which is the shape a fail-open hides in. The
+ * honesty assertion below was tightened to require that an exempt component
+ * actually violates, so a future inert entry fails instead of accumulating.
  */
 const SESSION_AWARE_COMPONENTS: ReadonlyArray<{
     readonly path: string;
     readonly reason: string;
-}> = [
-    {
-        path: 'accommodation/DetailHeader.astro',
-        reason: 'Rendered only by alojamientos/[slug].astro, which WB0-7 owns.'
-    },
-    {
-        path: 'destination/DestinationDetailHeader.astro',
-        reason: 'Rendered only by destinos/[...path].astro, which WB0-7 owns.'
-    },
-    {
-        path: 'destination/DestinationNearbySection.astro',
-        reason: 'Rendered only by destinos/[...path].astro, which WB0-7 owns.'
-    }
-];
+}> = [];
 
 describe('HOS-369 WB0-6 — server-rendered components are session-blind', () => {
     /** Every `.astro` component, keyed by path relative to `src/components`. */
@@ -325,19 +344,59 @@ describe('HOS-369 WB0-6 — server-rendered components are session-blind', () =>
     });
 
     it('keeps the component exemptions honest', () => {
-        const paths = components.map((component) => component.path);
+        const byPath = new Map(components.map((component) => [component.path, component.source]));
         for (const entry of SESSION_AWARE_COMPONENTS) {
-            expect(paths).toContain(entry.path);
+            expect(byPath.has(entry.path)).toBe(true);
             expect(entry.reason.length).toBeGreaterThan(20);
+            // An exemption for a component that does not actually violate is
+            // worse than no exemption: it reads as "this one is allowed to"
+            // while protecting nothing, and it survives every refactor that
+            // makes it obsolete. Require the escape hatch to be load-bearing.
+            const hits = [
+                ...findSessionReads(byPath.get(entry.path) ?? ''),
+                ...findPersonalizedFetches(byPath.get(entry.path) ?? '')
+            ];
+            expect(hits.length).toBeGreaterThan(0);
         }
     });
 });
+
+/**
+ * The shell — `BaseLayout`, `Header`, `Footer` — reads the visitor too, and
+ * this guard cannot see it: it sweeps `src/pages` and `src/components`, and a
+ * layout wraps every page regardless of what the page itself does.
+ *
+ * That is deliberate, and the fix is NOT to extend this sweep to `src/layouts`.
+ * The shell MUST read the visitor on `/mi-cuenta` and `/auth`; the layouts are
+ * not the defect. What matters is whether `Astro.locals.user` is POPULATED on a
+ * cacheable route at all, which is decided upstream by
+ * `SESSION_OPTIONAL_SEGMENTS` — a set membership question, not a source-text
+ * one. It is asserted in
+ * `test/lib/cacheable-routes-parse-no-session.guard.test.ts` (HOS-369 W1-2a).
+ *
+ * Recorded here because the two guards are only meaningful together: this one
+ * proves a page bakes nothing, that one proves there was nothing to bake.
+ */
 
 describe('HOS-369 WB0-6 — the guard is non-vacuous', () => {
     it('flags a direct Astro.locals.user read', () => {
         expect(findSessionReads('const isAuthenticated = Boolean(Astro.locals.user);')).toEqual([
             'Astro.locals.user'
         ]);
+    });
+
+    it('flags an aliased Astro.locals read', () => {
+        // The form Footer.astro used, invisible to both other predicates.
+        expect(
+            findSessionReads('const locals = Astro.locals as { user?: { id: string } | null };')
+        ).toContain('aliased Astro.locals');
+    });
+
+    it('does not flag a property-level cast as an aliased read', () => {
+        // Every page writes this; matching it would make the detector useless.
+        expect(findSessionReads('const locale = Astro.locals.locale as SupportedLocale;')).toEqual(
+            []
+        );
     });
 
     it('flags a destructured session read', () => {
