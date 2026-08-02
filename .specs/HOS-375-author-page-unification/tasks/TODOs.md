@@ -1,6 +1,6 @@
 # HOS-375: Author page — move to `/autores/<slug>/` and unify posts + events
 
-## Progress: 5/38 tasks (13%)
+## Progress: 7/38 tasks (18%)
 
 **Average Complexity:** 1.9/3 (max)
 **Critical Path:** T-002 → T-003 → T-017 → T-020 → T-021 → T-029 → T-032 (7 steps)
@@ -40,10 +40,12 @@
   - **Done.** `.default(false)` without `.optional()` (the sibling flags' shape would yield `undefined`, not the default). Also omitted from `UserUpdateInputSchema` — not in the task, but without it any unrelated profile save re-injects `false` and clears the flag. Repo typecheck 41/41.
   - Blocked by: T-002 · Blocks: T-004, T-011, T-017
 
-- [ ] **T-004** (complexity: 1) — Set `isSystemAccount: true` in the required user seed fixtures
+- [x] **T-004** (complexity: 1) — Set `isSystemAccount: true` in the required user seed fixtures
+  - **Done.** Guard test also asserts the key survives `UserCreateInputSchema` — a fixture-value assertion alone would not catch the `role` failure mode `users.seed.ts` documents (key present in JSON, silently stripped, never landed).
   - Blocked by: T-003 · Blocks: T-035
 
-- [ ] **T-005** (complexity: 2) — Data-migration: flip `is_system_account` on the two staff accounts
+- [x] **T-005** (complexity: 2) — Data-migration: flip `is_system_account` on the two staff accounts
+  - **Done.** `0034-system-account-flag-staff.ts`, resolved by email, idempotent, silent no-op where the accounts are absent. Verified the dual-write guard non-vacuously: committed T-004 alone first and watched it fail.
   - Blocked by: T-001, T-002 · Blocks: T-035
 
 - [ ] **T-006** (complexity: 2) — Data-migration: set the editorial account slug to `equipo-hospeda`

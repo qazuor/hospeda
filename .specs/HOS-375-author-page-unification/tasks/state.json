@@ -89,44 +89,46 @@
             "id": "T-004",
             "title": "Set isSystemAccount true in the required user seed fixtures",
             "description": "Baseline half of the dual-write rule for T-005. Add `\"isSystemAccount\": true` to packages/seed/src/data/user/required/admin-user.json and super-admin-user.json so a fresh DB is built correct without running any migration. Tests: add an assertion in the seed test suite that both required staff fixtures carry the flag, so a future fixture edit cannot silently drop it.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-003"],
             "blocks": ["T-035"],
             "subtasks": [
-                { "title": "Edit both required user fixtures", "completed": false },
-                { "title": "Add a seed test asserting the flag on both", "completed": false }
+                { "title": "Edit both required user fixtures", "completed": true },
+                { "title": "Add a seed test asserting the flag on both", "completed": true }
             ],
             "tags": ["seed", "fixtures"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-02T18:48:00.000Z",
+                "completed": "2026-08-02T18:56:00.000Z"
+            },
+            "notes": "Commit 6f6f77804. Guard test at packages/seed/test/required-staff-system-account.test.ts (4 tests) asserts MORE than the two fixture values: it also asserts the key SURVIVES UserCreateInputSchema, the schema UserService.create parses through. That extra assertion exists because users.seed.ts's own JSDoc records a fixture key that silently stopped working — `role` stayed in the JSON long after the column was dropped, and nothing failed because Zod strips unknown keys and Drizzle's .values() iterates table columns, not object keys. A fixture-value assertion alone would not catch a repeat. Third test pins the complement: a fixture WITHOUT the key parses to false, so a forgetful author gets an ordinary account (visible), never an accidentally hidden one."
         },
         {
             "id": "T-005",
             "title": "Data-migration: flip is_system_account on the two staff accounts",
             "description": "Live-environment half of the dual-write rule for T-004. Scaffold with `pnpm db:seed:make system-account-flag-staff`. Resolve BOTH accounts by email (superadmin@hospeda.com, admin@hospeda.com) — never by slug or id, per spec §6.10.2. Idempotent: re-running must be a no-op. Follow the verdict from T-001 for whether a baseline edit is additionally required. Tests: assert the migration sets exactly two rows and that a second run changes nothing.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-002"],
             "blocks": ["T-035"],
             "subtasks": [
-                { "title": "Scaffold via pnpm db:seed:make", "completed": false },
-                { "title": "Resolve accounts by email, set the flag", "completed": false },
-                { "title": "Test: two rows affected, second run idempotent", "completed": false }
+                { "title": "Scaffold via pnpm db:seed:make", "completed": true },
+                { "title": "Resolve accounts by email, set the flag", "completed": true },
+                { "title": "Test: two rows affected, second run idempotent", "completed": true }
             ],
             "tags": ["seed", "data-migration"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-02T18:56:00.000Z",
+                "completed": "2026-08-02T19:10:00.000Z"
+            },
+            "notes": "Commit 252585a21 (0034-system-account-flag-staff.ts). NOT contentOnly — T-038's rule applies: this migration's rows exist on a fresh build because T-004's fixture produces them. Predicate is `email IN (2) AND is_system_account = false`, so a second run flags 0 and an operator-flagged row is never rewritten. An environment missing the accounts (a prod bootstrap with --required --exclude=users never creates them) is a silent skip, NOT a throw — a throw aborts the whole batch (HOS-25 G-5) for a legitimate condition. Tested against the real integration DB with rollback isolation rather than a stubbed ctx.db, because this migration IS its WHERE clause and a stub would only assert that a fluent chain was written. 4 tests: two flagged + a staff-role PERSON left alone (the point of a stored flag over a live role check), idempotent second run, absent-accounts no-op, already-flagged row not rewritten. Trap noted in the test: 'superadmin@hospeda.com'.includes('admin@hospeda.com') is TRUE, so a bare toContain(ADMIN_EMAIL) would pass even when the wrong row was flagged — the negative assertion is what pins it. DUAL-WRITE GUARD VERIFIED NON-VACUOUSLY: committed T-004 alone first and confirmed scripts/check-seed-dual-write.sh FAILS naming both fixtures, then this commit made it pass."
         },
         {
             "id": "T-006",
