@@ -23,6 +23,7 @@ import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { useAccommodationConversation } from '@/store/accommodation-conversation-store';
 import styles from './ContactHost.module.css';
 
 /**
@@ -61,23 +62,6 @@ interface ContactHostUser {
 
 interface ContactHostProps {
     readonly accommodation: ContactHostAccommodation;
-    /**
-     * @deprecated Ignored since HOS-369 WB0-4 — the visitor is resolved
-     * client-side via `useAccountPermissions`. Their name and e-mail are
-     * personal data; baking them into the HTML would hand them to whoever an
-     * edge cache serves that page to next. Callers stop passing it in WB0-5.
-     */
-    readonly currentUser?: ContactHostUser | null;
-    /**
-     * Id of an existing conversation between this visitor and this host, when
-     * the page resolved one server-side. Still SSR-provided: it is a per-visitor
-     * lookup that WB0-7 moves to the client along with the rest of the
-     * accommodation detail page's session-dependent data. On a cached page it
-     * is absent, and the form is rendered instead of the "view thread" link —
-     * a duplicate send is answered with `CONVERSATION_DUPLICATE`, which this
-     * component already handles.
-     */
-    readonly existingConversationId: string | null;
     readonly locale: SupportedLocale;
     /**
      * Optional pre-filled text for the message textarea. Used when the visitor
@@ -168,12 +152,7 @@ function resolveInitiateFailureMessage({
 /**
  * ContactHost island — renders a contact form or link depending on auth state.
  */
-export function ContactHost({
-    accommodation,
-    existingConversationId,
-    locale,
-    initialMessage
-}: ContactHostProps) {
+export function ContactHost({ accommodation, locale, initialMessage }: ContactHostProps) {
     const { t } = createTranslations(locale);
 
     // Session resolved client-side (HOS-369 WB0-4). Until it resolves the form
@@ -181,6 +160,16 @@ export function ContactHost({
     // fields collapse once a session is confirmed. Hooks must run before the
     // early return below, so this call stays above it.
     const { user } = useAccountPermissions();
+
+    // Existing-conversation lookup, also client-side since WB0-7. Shares one
+    // request with ReviewSidebarCard (see the store's JSDoc). Until it settles
+    // — and whenever it fails — `conversationId` is null and the form is
+    // rendered instead of the "view thread" link. That degradation is safe: the
+    // protected `initiate` route is idempotent, so a send from this state
+    // returns the existing conversation rather than creating a second one.
+    const { conversationId: existingConversationId } = useAccommodationConversation({
+        accommodationId: accommodation.id
+    });
 
     // Only render for active, non-deleted accommodations
     if (accommodation.lifecycleState !== 'ACTIVE' || accommodation.deletedAt) {

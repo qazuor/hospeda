@@ -5,24 +5,34 @@
  * to PricingSidebar + OwnerCard. Replaces the previous inline form on the
  * main column — the inline form was too tall and dominated the page.
  *
- * Two states:
- * - canLeaveReview = true  → "Dejá tu reseña" card with a CTA that opens
- *                            the dialog.
- * - canLeaveReview = false → Compact note explaining the contact-first
- *                            requirement. No CTA.
+ * Auth and review eligibility are resolved CLIENT-SIDE (HOS-369 WB0-7). The
+ * page used to mount this card only for a signed-in visitor and hand it a
+ * server-computed `canLeaveReview`, which baked the visitor into HTML that must
+ * be edge-cacheable. Now the page always mounts it and passes the anonymous
+ * variant as slot children.
+ *
+ * Three states:
+ * - no session (or not yet resolved) → the sign-in CTA passed as `children`.
+ *   Per D-11 this is what the server renders and what the edge caches.
+ * - signed in, no conversation with the host → compact note explaining the
+ *   contact-first requirement. No CTA.
+ * - signed in, has a conversation → "Dejá tu reseña" card with a CTA that
+ *   opens the dialog.
  *
  * The dialog uses the native <dialog> element so focus management,
  * Escape-to-close, and overlay backdrop come for free.
  */
 
-import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { type FormEvent, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
+import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { translateApiError } from '@/lib/api-errors';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { useAccommodationConversation } from '@/store/accommodation-conversation-store';
 import styles from './ReviewSidebarCard.module.css';
 
 const RATING_KEYS = [
@@ -62,9 +72,15 @@ const DEFAULT_RATING_LABELS: Record<RatingKey, string> = {
 interface ReviewSidebarCardProps {
     readonly accommodationId: string;
     readonly accommodationName: string;
-    readonly canLeaveReview: boolean;
     readonly locale: SupportedLocale;
     readonly apiUrl: string;
+    /**
+     * Anonymous fallback, supplied by the page as the island's slot children
+     * (a `SignInCtaCard`). This is what the server renders and what the edge
+     * caches; it is replaced only once a session resolves in the browser.
+     * Sized to match this card so the swap costs no layout shift.
+     */
+    readonly children?: ReactNode;
 }
 
 function joinApi(apiUrl: string, path: string): string {
@@ -74,11 +90,17 @@ function joinApi(apiUrl: string, path: string): string {
 export function ReviewSidebarCard({
     accommodationId,
     accommodationName,
-    canLeaveReview,
     locale,
-    apiUrl
+    apiUrl,
+    children
 }: ReviewSidebarCardProps) {
     const { t } = createTranslations(locale);
+    // Simple mode (no `initialUser`): `user` starts null, so the anonymous
+    // branch is what renders on the server and on first paint.
+    const { user } = useAccountPermissions();
+    // Review eligibility: only a visitor who already contacted the host may
+    // review. Shares one request with ContactHost (see the store's JSDoc).
+    const { hasConversation } = useAccommodationConversation({ accommodationId });
     const dialogRef = useRef<HTMLDialogElement>(null);
 
     const [open, setOpen] = useState<boolean>(false);
@@ -210,6 +232,11 @@ export function ReviewSidebarCard({
         ]
     );
 
+    // Every hook above runs unconditionally (Rules of Hooks); the gate is the
+    // first thing after them. `user === null` covers both a real guest and the
+    // not-yet-resolved window, and both must show the anonymous variant.
+    if (!user) return <>{children}</>;
+
     return (
         <>
             <aside
@@ -241,7 +268,7 @@ export function ReviewSidebarCard({
                     </h3>
                 </div>
 
-                {canLeaveReview ? (
+                {hasConversation ? (
                     <>
                         <p className={styles.cardText}>
                             {t(
