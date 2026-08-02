@@ -99,6 +99,17 @@ export const meta = {
 /** Unique identity of the shared editorial author created by this migration. */
 const EDITORIAL_EMAIL = 'editorial@hospeda.com.ar';
 
+/**
+ * Curated public slug for the editorial author (HOS-375 §6.10.2, G-9). Set
+ * explicitly at creation so a new environment never generates the random
+ * `user-<8 hex>` auto-slug that `users.slug.$defaultFn` would otherwise
+ * produce — that slug became a public, indexable URL under HOS-375, and it
+ * differed per environment. `0035-editorial-author-slug` is the migration half
+ * of this dual-write, renaming the account in environments seeded before the
+ * slug was set here; keep both sides in sync.
+ */
+const EDITORIAL_SLUG = 'equipo-hospeda';
+
 const EDITORIAL_BIO =
     'Somos el equipo editorial de Hospeda. Recorremos la costa del rio Uruguay y todo el Litoral ' +
     'entrerriano para contarte que visitar, donde comer y como aprovechar cada escapada. Turismo ' +
@@ -168,6 +179,7 @@ async function ensureEditorialAuthor(ctx: SeedMigrationCtx): Promise<User> {
     await userModel.create(
         {
             email: EDITORIAL_EMAIL,
+            slug: EDITORIAL_SLUG,
             emailVerified: true,
             role: RoleEnum.EDITOR,
             displayName: 'Equipo Hospeda',
