@@ -19,7 +19,7 @@
  */
 
 import { defineMiddleware } from 'astro:middleware';
-import { injectNonce } from '../integrations/csp-nonce-injector';
+import { collectCspHashes } from '../integrations/csp-hash-collector';
 import {
     getInternalApiUrl,
     getInternalRequestSecret,
@@ -36,7 +36,6 @@ import {
     buildProfileCompletionRedirect,
     buildSetPasswordRedirect,
     extractLocaleFromPath,
-    generateCspNonce,
     IMAGE_ENDPOINT_CACHE_CONTROL,
     isAdminBypassUser,
     isAuthRoute,
@@ -120,10 +119,6 @@ if (import.meta.env.SSR) {
  */
 export const onRequest = defineMiddleware(async (context, next) => {
     const path = context.url.pathname;
-
-    // Generate a CSP nonce for this request (used by BaseLayout for inline scripts/styles)
-    const cspNonce = generateCspNonce();
-    (context.locals as { cspNonce: string }).cspNonce = cspNonce;
 
     // Step 1: Skip static assets and API routes — no middleware processing needed.
     if (isStaticAssetRoute({ path })) {
@@ -381,10 +376,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
 
     // Step 9: Attach a Content-Security-Policy header (enforce mode, HOS-30 Phase 2,
-    // T-020) to all HTML responses AND stamp the per-request nonce on every inline
-    // <style>/<script> Astro emitted without one (so they match the policy below).
-    // The CSP header is the single source of truth; the body rewrite makes the
-    // policy actually enforceable for inline emissions Astro doesn't tag itself.
+    // T-020) to all HTML responses. The policy allows every inline <style>/<script>
+    // by the sha256 of its own content, computed from the rendered body below.
+    // The body is NOT modified — it is only read (HOS-369 WB0-1). The previous
+    // implementation stamped a per-request nonce instead, which Cloudflare would
+    // cache alongside the body and turn into a publicly readable token for the
+    // whole TTL (spec §5.13 / D-9). A content hash cannot desynchronize from the
+    // body it describes, cached or not.
     //
     // NOTE (HOS-74): this middleware runs per-request ONLY for SSR routes. A route
     // with `export const prerender = true` runs middleware just once — at build
@@ -408,8 +406,37 @@ export const onRequest = defineMiddleware(async (context, next) => {
             | undefined;
         const sentryReportUri = resolveSentryReportUri({ sentryDsn, dedicatedCspReportUri });
 
+        // Hash sources for this exact response. They stay empty on the
+        // defensive prerendered branch (HOS-74: no page currently opts into
+        // `prerender`, so it is unreachable for a served response — prerendered
+        // files bypass this middleware entirely at request time). Reading the
+        // body there would consume the static file's stream, and a build-time
+        // hash could not describe a body served straight off disk anyway.
+        let scriptHashes: readonly string[] = [];
+        let styleHashes: readonly string[] = [];
+
+        if (!context.isPrerendered) {
+            // SSR pages: read the rendered body, hash its inline blocks, and
+            // hand back a Response over the SAME body — the HTML is never
+            // modified. Content-Length is dropped defensively (re-encoding a
+            // decoded string is byte-identical for valid UTF-8, but Node
+            // recomputes it on send, so a stale value can never ship).
+            const originalBody = await response.text();
+            const collected = await collectCspHashes({ html: originalBody });
+            scriptHashes = collected.scriptHashes;
+            styleHashes = collected.styleHashes;
+
+            const newHeaders = new Headers(response.headers);
+            newHeaders.delete('content-length');
+            response = new Response(originalBody, {
+                status: response.status,
+                headers: newHeaders
+            });
+        }
+
         const directives = buildCspHeader({
-            nonce: cspNonce,
+            scriptHashes,
+            styleHashes,
             apiUrl: (import.meta.env.PUBLIC_API_URL as string | undefined) ?? undefined,
             sentryReportUri,
             // Drop the external *.sentry.io connect-src when the first-party
@@ -421,29 +448,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
             // same-origin iframe it uses to prepare `client:only` islands.
             isDev: isDevelopment()
         });
-
-        if (!context.isPrerendered) {
-            // SSR pages: rewrite body to stamp nonces on inline <style>/<script>
-            // tags before setting the header. Content-Length is dropped because the
-            // rewrite changes body size; Node will recompute it on send.
-            const originalBody = await response.text();
-            const { html: rewrittenBody } = injectNonce({
-                html: originalBody,
-                nonce: cspNonce
-            });
-            const newHeaders = new Headers(response.headers);
-            newHeaders.delete('content-length');
-            response = new Response(rewrittenBody, {
-                status: response.status,
-                headers: newHeaders
-            });
-        }
-        // Defensive branch (HOS-74: no page currently opts into `prerender`, so
-        // this is unreachable for a served response — prerendered files bypass
-        // this middleware entirely at request time). Historically, prerendered
-        // pages skipped the body rewrite because nonces cannot be embedded at
-        // build time — any un-nonced inline <style>/<script> was dropped under
-        // enforce mode. Kept as a guard.
 
         response.headers.set(CSP_HEADER_NAME, directives);
     }

@@ -69,9 +69,10 @@ risk, not a present defect.
 
 ## Why prerender is blocked (HOS-74 / CSP)
 
-The CSP header is built per-request in `src/middleware.ts` (Step 9) with a
-per-request nonce, and the response body is rewritten to stamp that nonce onto
-inline `<style>`/`<script>` tags. A prerendered page bypasses middleware at
+The CSP header is built per-response in `src/middleware.ts` (Step 9): the walker
+in `integrations/csp-hash-collector` reads the rendered body and the policy
+allows each inline `<style>`/`<script>` by the `sha256` of its own content (the
+body itself is never modified). A prerendered page bypasses middleware at
 request time — `@astrojs/node` standalone serves the static file straight off
 disk — so it would ship **with no CSP header at all**. HOS-74 deliberately moved
 every content page off `prerender` onto the SSR path for exactly this reason.
@@ -91,20 +92,23 @@ it is **not viable** (see below).
    already carry the middleware CSP, which is cached with the HTML. Requires two
    sign-offs: (a) personalization — cache only anonymous responses / `Vary` on
    the auth cookie, to avoid the CDN cache-poisoning class of bug seen in HOS-115;
-   (b) the middleware's per-request CSP nonce is shared across users for the cache
-   TTL, which weakens (does not break) the nonce guarantee — acceptable for
-   short-TTL read-only catalog pages, or move those to a hash-based inline
-   strategy. Also makes the pricing pages' existing (currently dead) `s-maxage`
-   effective.
+   (b) ~~the middleware's per-request CSP nonce is shared across users for the
+   cache TTL~~ **RESOLVED (HOS-369 WB0-1)**: the middleware no longer emits a
+   nonce. Inline blocks are allowed by content hash, which cannot desynchronize
+   from the body it describes and is not a reusable token when cached. Also
+   makes the pricing pages' existing (currently dead) `s-maxage` effective.
 2. **Migrate hand-built CSP → Astro native `security.csp` — NOT viable (HOS-124,
    canceled).** Would be the prerequisite for prerendering static pages, but
    Astro's native `security.csp` does **not** support `<ClientRouter />` / view
    transitions, which this app uses in `BaseLayout` (every page). Astro added and
    then **removed** that support (commit `76c5480` / #13914, June 2025 — view
    transitions had to become async, which broke users); it "might" return with no
-   timeline. Native CSP is also hash-based (not per-request nonces), incompatible
-   with `unsafe-inline`, and drops Shiki. Migrating would first require moving the
-   whole app off `<ClientRouter />` — a large navigation-architecture change.
+   timeline. Native CSP is also incompatible with `unsafe-inline` and drops
+   Shiki. Migrating would first require moving the whole app off
+   `<ClientRouter />` — a large navigation-architecture change. Note that
+   HOS-369 WB0-1 moved OUR OWN middleware policy to content hashes; that is
+   unrelated to enabling `security.csp`, which stays rejected for the reasons
+   above.
    Revisit only if Astro re-adds `<ClientRouter />` + CSP, or the app migrates off
    `<ClientRouter />` independently.
 3. **Prerender truly-static pages** (legal, `/funcionalidades`) — blocked on (2),

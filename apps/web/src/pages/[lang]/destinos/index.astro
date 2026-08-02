@@ -231,7 +231,6 @@ const itemListEntries = sortedCards.map((card) => ({
 	name: card.name,
 }));
 
-const cspNonce = Astro.locals.cspNonce ?? '';
 ---
 
 <ListingLayout
@@ -678,7 +677,7 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 	}
 </style>
 
-<script is:inline nonce={cspNonce}>
+<script is:inline>
 	/**
 	 * Client-side attractions filter for /destinos.
 	 *

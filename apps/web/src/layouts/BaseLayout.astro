@@ -64,7 +64,6 @@ const {
 	description = 'Descubrí alojamientos en el Litoral Entrerriano',
 } = Astro.props;
 
-const cspNonce = Astro.locals.cspNonce ?? '';
 const cookiesPolicyUrl = buildUrl({ locale, path: 'legal/cookies' });
 
 const feedbackEnabled = isFeedbackEnabled();
@@ -127,9 +126,9 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<link rel="manifest" href="/site.webmanifest" />
 
 		<!-- Google Fonts: Geologica, Roboto, Caveat (non-blocking with preload + swap) -->
-		<FontsLoader cspNonce={cspNonce} />
+		<FontsLoader />
 
-		<ThemeFoucScript cspNonce={cspNonce} />
+		<ThemeFoucScript />
 
 		<!-- SPEC-157 REQ-10: the full-page opacity:0 font gate was removed.
 		     Fonts load with font-display: swap (see FontsLoader), which prevents
@@ -140,7 +139,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<ClientRouter />
 
 		{feedbackEnabled && (
-			<script is:inline nonce={cspNonce}>{`
+			<script is:inline>{`
 				/* Feedback nav-history bootstrap (Opción A).
 				   Captures navigation BEFORE the FAB island hydrates with
 				   client:idle, persists to sessionStorage so the FAB picks
@@ -197,7 +196,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		  calls trackEvent(). Renders nothing in dev mode or when the project
 		  key is unset (e.g. locally-built previews without the secret).
 		-->
-		<PostHogScript cspNonce={cspNonce} />
+		<PostHogScript />
 
 		<!-- Named slot for page-specific head content (SEOHead, JSON-LD, etc.) -->
 		<slot name="head" />
@@ -219,12 +218,14 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 
 		<!--
 		  Cloudflare Web Analytics (manual snippet).
-		  We use the manual setup (NOT the auto-inject) so this <script> tag
-		  receives the per-request CSP nonce via our middleware-driven walker
-		  (SPEC-046 T-002). `strict-dynamic` in script-src then propagates
-		  trust to the loaded beacon.min.js. The beacon POSTs Core Web Vitals
-		  telemetry to https://cloudflareinsights.com — that host must be
-		  present in `connect-src` (added in buildCspHeader, SPEC-046 follow-up).
+		  We use the manual setup (NOT the auto-inject) so the tag is part of our
+		  own SSR HTML and its CSP story is explicit. It is an EXTERNAL script,
+		  so no content hash can cover it (HOS-369 WB0-1 dropped 'strict-dynamic'
+		  along with the nonce): https://static.cloudflareinsights.com is
+		  allowlisted in `script-src` for exactly this tag. The beacon then POSTs
+		  Core Web Vitals telemetry to https://cloudflareinsights.com — a
+		  DIFFERENT host, present in `connect-src`. Both live in buildCspHeader;
+		  dropping either one kills the beacon silently.
 
 		  Only emitted in production builds: in local dev the beacon's POST to
 		  cloudflareinsights.com is rejected by CORS (origin localhost), spamming

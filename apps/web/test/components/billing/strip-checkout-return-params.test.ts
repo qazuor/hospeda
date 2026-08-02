@@ -107,10 +107,13 @@ describe('StripCheckoutReturnParams.astro', () => {
         'utf8'
     );
 
-    it('renders an inline, nonce-guarded script that embeds the snippet', () => {
+    it('renders an inline script that embeds the snippet, with no nonce attribute', () => {
         expect(src).toContain('is:inline');
-        expect(src).toContain('nonce={cspNonce}');
         expect(src).toContain('set:html={STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET}');
+        // HOS-369 WB0-1: the CSP allows this block by the sha256 of its own
+        // content. A nonce here would be cached at the edge and become a
+        // public token for the whole TTL (spec §5.13 / D-9).
+        expect(src).not.toContain('nonce=');
     });
 });
 
@@ -120,11 +123,12 @@ describe('checkout success.astro wiring', () => {
         'utf8'
     );
 
-    it('mounts the scrubber first in the head via the head-early slot with the CSP nonce', () => {
+    it('mounts the scrubber first in the head via the head-early slot', () => {
         expect(src).toContain('StripCheckoutReturnParams');
         expect(src).toContain('slot="head-early"');
-        expect(src).toContain('cspNonce={cspNonce}');
-        expect(src).toContain('Astro.locals.cspNonce');
+        // No CSP plumbing to pass down since HOS-369 WB0-1 — the middleware
+        // hashes whatever the component emits.
+        expect(src).not.toContain('cspNonce');
     });
 });
 

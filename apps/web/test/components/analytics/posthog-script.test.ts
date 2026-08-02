@@ -29,7 +29,7 @@
  * fully self-contained body through a SINGLE `set:html`, with NO `define:vars`:
  *
  *   const snippetBody = `!function(t,e){...}; window.posthog.init(${JSON.stringify(posthogKey)}, {...})`;
- *   <script is:inline nonce={cspNonce} set:html={snippetBody} />
+ *   <script is:inline set:html={snippetBody} />
  *
  * We cannot render `.astro` files in Vitest (no Astro runtime here), so these
  * assertions are on the source string. The definitive check that the built
