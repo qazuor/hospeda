@@ -23,7 +23,7 @@ import {
 } from '@repo/icons';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Markdown } from 'tiptap-markdown';
 import styles from './RichTextEditor.module.css';
 
@@ -79,6 +79,16 @@ export interface RichTextEditorProps {
     readonly hasError?: boolean;
     /** Error message to display */
     readonly errorMessage?: string;
+    /**
+     * Accessible name for the editing surface (HOS-371).
+     *
+     * The editable region is a contenteditable `<div role="textbox">`, NOT a
+     * form control, so an external `<label htmlFor>` cannot name it — a label
+     * sitting above this editor is decorative to assistive tech. Callers that
+     * replace a labelled `<textarea>` with this component MUST pass this, or
+     * the field silently loses its accessible name.
+     */
+    readonly ariaLabel?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -105,8 +115,20 @@ export function RichTextEditor({
     placeholder,
     disabled = false,
     hasError = false,
-    errorMessage
+    errorMessage,
+    ariaLabel
 }: RichTextEditorProps) {
+    /**
+     * Latest controlled `value`, read inside `onUpdate` (HOS-371).
+     *
+     * A ref rather than the prop directly: `useEditor`'s `onUpdate` closure is
+     * created once, so reading `value` from it would pin the mount-time string
+     * forever and the guard below would compare against a stale baseline after
+     * the first keystroke.
+     */
+    const valueRef = useRef(value);
+    valueRef.current = value;
+
     const editor = useEditor({
         immediatelyRender: false,
         editable: !disabled,
@@ -117,11 +139,26 @@ export function RichTextEditor({
                 role: 'textbox',
                 'aria-multiline': 'true',
                 'aria-invalid': hasError ? 'true' : 'false',
+                ...(ariaLabel ? { 'aria-label': ariaLabel } : {}),
                 class: styles.editorContent
             }
         },
         onUpdate({ editor: ed }) {
             const md = readMarkdown(ed);
+            // TipTap emits an update transaction when the deferred editor
+            // (`immediatelyRender: false`) first parses `content`, so a freshly
+            // mounted editor fires `onUpdate` with the value it was just GIVEN,
+            // before the user has touched anything. A controlled component must
+            // not report a change it did not receive: the accommodation editor
+            // sends its whole form and so absorbed the no-op, but any parent
+            // that dirty-tracks per field (the commerce owner editor, HOS-371)
+            // would flag the field dirty on load — enabling Save with no edits
+            // and re-serializing the stored Markdown through TipTap on every
+            // unrelated save. Skipping the emit when nothing actually changed
+            // fixes it for every consumer, not just the one that hit it.
+            if (md === (valueRef.current ?? '')) {
+                return;
+            }
             onChange(md);
         }
     });
