@@ -8,7 +8,7 @@
             "id": "T-001",
             "title": "Verify baseline-stamp mechanics for content-only seed data-migrations",
             "description": "Research task, no production code. Spec §6.10.2 flags that content-only migrations are baseline-stamped on a fresh build instead of being run, so the 'edit the baseline too' half of the dual-write rule may resolve differently than for a catalog fixture. Read docs/guides/seed-data-migrations.md, packages/seed/src/data-migrations/baselineStamp.ts and prodGate.ts, and 0025-seed-real-blog-posts.ts as the worked precedent. Write the conclusion into .specs/HOS-375-author-page-unification/docs/seed-migration-mechanics.md: for each of the three data-migrations in T-005/T-006/T-007, state exactly what must change in the baseline (if anything) so a fresh pnpm db:fresh-dev ends in the same state as a migrated production DB (AC-15). BLOCKS all data-migration work — do not guess these mechanics.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-005", "T-006", "T-007"],
@@ -36,23 +36,24 @@
             "id": "T-002",
             "title": "Add users.is_system_account column to the Drizzle schema",
             "description": "Spec §6.10.1 (G-8). Add `isSystemAccount: boolean('is_system_account').notNull().default(false)` to packages/db/src/schemas/user/user.dbschema.ts, with a JSDoc stating it marks platform/service accounts (not people) and that it is deliberately NOT derived from the role, because the role is mutable and this property is not. Run `pnpm db:generate` and commit the produced migration file — the CI drift guard blocks a schema change without one. Tests: none of its own; typecheck must pass and the generated SQL must be reviewed for `DEFAULT false NOT NULL`.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-003", "T-005", "T-011", "T-036"],
             "subtasks": [
-                { "title": "Add the column with JSDoc to user.dbschema.ts", "completed": false },
-                { "title": "Run pnpm db:generate and review the SQL", "completed": false },
-                { "title": "Commit the migration file", "completed": false }
+                { "title": "Add the column with JSDoc to user.dbschema.ts", "completed": true },
+                { "title": "Run pnpm db:generate and review the SQL", "completed": true },
+                { "title": "Commit the migration file", "completed": true }
             ],
             "tags": ["database", "schema", "migration"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "n/a" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-02T14:20:00.000Z",
+                "completed": "2026-08-02T14:26:00.000Z"
+            },
+            "notes": "Column added at packages/db/src/schemas/user/user.dbschema.ts after mustChangePassword. Generated migration: src/migrations/0070_spotty_dazzler.sql — a single ALTER TABLE ... ADD COLUMN \"is_system_account\" boolean DEFAULT false NOT NULL, no collateral drift. The JSDoc records why this is a stored column and not a role check, and that it is not an authorization check, so a future reader does not convert it into a PermissionEnum gate."
         },
         {
             "id": "T-003",
@@ -873,9 +874,9 @@
     ],
     "summary": {
         "total": 36,
-        "pending": 36,
-        "inProgress": 0,
-        "completed": 0,
+        "pending": 34,
+        "inProgress": 1,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 1.9
     }
