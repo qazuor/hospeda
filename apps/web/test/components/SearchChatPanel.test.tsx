@@ -110,17 +110,39 @@ vi.mock('../../src/components/ai-search/useSearchChat', () => ({
     }
 }));
 
+// HOS-369 WB0-4: the panel resolves the session client-side via
+// `useAccountPermissions`, which reads `auth-cache`. See test/helpers/auth-session.ts.
+const mockReadCachedAuthMe = vi.fn();
+
+vi.mock('@/lib/auth-cache', () => ({
+    readCachedAuthMe: () => mockReadCachedAuthMe(),
+    fetchAuthMe: () => new Promise(() => undefined),
+    writeCachedAuthMe: () => undefined,
+    resetInFlightAuthMe: () => undefined
+}));
+
 // Import after mocks are set up.
 import { useSearchChat } from '../../src/components/ai-search/useSearchChat';
+import { buildAuthSnapshot } from '../helpers/auth-session';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function renderPanel(props: Partial<SearchChatPanelProps> = {}) {
+/**
+ * Render the panel for a signed-in visitor by default.
+ *
+ * `isAuthenticated` is no longer a prop — it arranges the session the panel
+ * resolves. An authenticated snapshot is applied synchronously inside the
+ * hook's mount effect, so callers can assert immediately after rendering.
+ */
+function renderPanel({
+    isAuthenticated = true,
+    ...props
+}: Partial<SearchChatPanelProps> & { readonly isAuthenticated?: boolean } = {}) {
+    mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated }));
     return render(
         <SearchChatPanel
             locale="es"
             apiUrl="http://localhost:3001"
-            isAuthenticated={true}
             currentUrl="http://localhost:4321/es/alojamientos"
             {...props}
         />
@@ -732,6 +754,22 @@ describe('SearchChatPanel', () => {
 
         it('renders the chat composer when authenticated', () => {
             renderPanel({ isAuthenticated: true });
+            expect(screen.getByRole('textbox')).toBeInTheDocument();
+        });
+
+        it('renders the chat for a signed-in visitor even when the SSR prop says guest', () => {
+            // HOS-369 WB0-4: cached anonymous HTML served to a reader who has a
+            // session. Before this, AI search silently disappeared for them.
+            mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
+            render(
+                <SearchChatPanel
+                    locale="es"
+                    apiUrl="http://localhost:3001"
+                    currentUrl="http://localhost:4321/es/alojamientos"
+                    isAuthenticated={false}
+                />
+            );
+
             expect(screen.getByRole('textbox')).toBeInTheDocument();
         });
     });

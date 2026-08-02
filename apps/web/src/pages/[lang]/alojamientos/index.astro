@@ -22,9 +22,7 @@ import { AccommodationTypeEnum } from '@repo/schemas';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import { buildAccommodationsFilterGroups } from '@/lib/filters/accommodations-filter-groups';
 import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
-import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
-import { webLogger } from '@/lib/logger';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -265,50 +263,11 @@ const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 // Transform items for cards
 const baseCards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 
-// SPEC-098 T-041 — Pre-hydrate FavoriteButton state for authenticated users.
-// We issue a single bulk-check request for all the entity IDs on the current
-// page instead of one /check per card. Guests skip this call entirely; their
-// FavoriteButton renders in guest mode (auth-required popover on click).
-//
-// On any failure (network error, 5xx, etc.) we silently degrade — each
-// FavoriteButton can still hydrate itself via its own /check fallback so the
-// page render is never blocked.
-const isAuthenticated = Boolean(Astro.locals.user);
-type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
-let favoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
-if (isAuthenticated && baseCards.length > 0) {
-    try {
-        const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-        const bulkResult = await userBookmarksApi.checkBulk({
-            entityType: 'ACCOMMODATION',
-            entityIds: baseCards.map((card) => card.id),
-            cookieHeader
-        });
-        if (bulkResult.ok) {
-            favoriteChecks = bulkResult.data.checks;
-        } else {
-            webLogger.warn(
-                'Bulk bookmark check failed; falling back to per-card hydration',
-                { error: bulkResult.error }
-            );
-        }
-    } catch (error) {
-        webLogger.warn(
-            'Bulk bookmark check threw; falling back to per-card hydration',
-            { error: error instanceof Error ? error.message : String(error) }
-        );
-    }
-}
-
-const cards = baseCards.map((card) => {
-    const entry = favoriteChecks[card.id];
-    if (!entry) return card;
-    return {
-        ...card,
-        isFavorited: entry.isBookmarked,
-        favoriteBookmarkId: entry.bookmarkId
-    };
-});
+// HOS-369 WB0-5: favourite state is no longer resolved here. It is per-user, so
+// baking it into the HTML is exactly what kept this page out of the edge cache.
+// The hearts now resolve it themselves after hydration — once per page load for
+// the whole grid, via `store/favorites-store` (WB0-2/WB0-3), not once per card.
+const cards = baseCards;
 
 // --- Natural language filter summary ---
 // Build catalogs from the fetched data for the summary builder.
@@ -513,18 +472,19 @@ const canonicalPath = page > 1 ? `${canonicalBaseUrl}page/${page}/` : canonicalB
 // HOS-218 — Cloudflare edge cache. This SSR page re-fetches the near-static
 // catalog (accommodations + amenities + features + destinations) on every
 // render; served `cf-cache-status: DYNAMIC` in prod, so anonymous/bot traffic
-// hammered origin. Emit a shareable `Cache-Control` only for an anonymous,
-// indexable, unfiltered view (base listing / single-type landing + bounded
-// sort/pagination variants) so Cloudflare edge-caches it; personalised,
-// `noindex`, or filtered responses stay `private`. The origin gate ensures a
-// favourite-baked response is never MARKED shareable; the Cloudflare Cache Rule
-// that this header enables must also bypass on the session cookie (see
-// `@/lib/cache/listing-cache`).
+// hammered origin. Emit a shareable `Cache-Control` for an indexable, unfiltered
+// view (base listing / single-type landing + bounded sort/pagination variants)
+// so Cloudflare edge-caches it; `noindex` or filtered responses stay `private`.
+//
+// HOS-369 WB0-5 removed the `!isAuthenticated` term: this response no longer
+// varies by visitor, so there is no personalised variant to withhold from the
+// cache. That is the point — the gate existed because the HTML used to differ,
+// and D-8 replaces "the origin promises not to mark it shareable" with "there
+// is nothing personal in it to begin with".
 Astro.response.headers.set(
 	'Cache-Control',
 	resolveListingCacheControl({
 		cacheable:
-			!isAuthenticated &&
 			!facetSeoDecision.noindex &&
 			!hasActiveAccommodationListingFilters({ searchParams: url.searchParams })
 	})
@@ -794,7 +754,7 @@ const emptyStateSuggestions = [
 		title={t('accommodations.title', 'Alojamientos')}
 	/>
 
-	<CompareModeControls slot="page-header" locale={locale} isAuthenticated={isAuthenticated} />
+	<CompareModeControls slot="page-header" locale={locale} />
 
 	<FilterSidebar
 		slot="filters"
@@ -854,7 +814,6 @@ const emptyStateSuggestions = [
 					client:load
 					locale={locale}
 					apiUrl={getApiUrl()}
-					isAuthenticated={isAuthenticated}
 					currentUrl={Astro.url.href}
 					destinations={Object.fromEntries(destinations.map((d) => [d.id, d.name]))}
 					pageType={typesArray[0]}
@@ -888,7 +847,6 @@ const emptyStateSuggestions = [
 						<AccommodationCard
 							data={card}
 							locale={locale}
-							isAuthenticated={isAuthenticated}
 							linkQuery={contextQuery}
 							eager={i < 3}
 						/>
