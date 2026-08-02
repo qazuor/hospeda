@@ -552,16 +552,26 @@ describe('HOS-360 static guard — @repo/billing never enters the web client gra
         // 168 raw occurrences), excluded only by luck — the `[^<]*$` guard
         // tripping on the `<` of `<!--` — rather than by design.
         //
-        // Exactly one survives, and it is the documented out-of-scope surface:
-        // a `/* … */` comment INSIDE an inline `<script is:inline>` template
-        // literal in BaseLayout, describing when the feedback FAB hydrates. It
-        // is correctly unattributed — the nearest preceding tag is the
-        // lowercase `<script>` — and inline scripts are a separate client
-        // graph this guard never claims to walk.
+        // Until 2026-08-02 exactly one survived: a `/* … */` comment INSIDE an
+        // inline `<script is:inline>` template literal in BaseLayout, describing
+        // when the feedback FAB hydrates. `blankMarkupComments` blanks `<!-- -->`
+        // and `{/* */}` spans, but that comment was inside a template literal in
+        // raw script children, so neither form matched and it stayed visible to
+        // the directive sweep.
+        //
+        // That template literal is gone: it was the vehicle of a real bug (Astro
+        // emits `is:inline` script children as RAW TEXT, so the `{\`…\`}` wrapper
+        // shipped verbatim and the bootstrap never executed — fixed by moving the
+        // source to `lib/feedback/feedback-nav-bootstrap.snippet.ts` and passing
+        // it through `set:html`). The prose moved to a real Astro `{/* … */}`
+        // comment, which IS blanked, so the count is now zero.
+        //
+        // Zero is the STRICTER expectation, not a relaxation: any newly
+        // unattributed directive now fails here instead of hiding behind a
+        // documented exception. If a legitimate one appears, list it — do not
+        // widen this back to a length check.
         expect(scan.skippedFiles).toEqual([]);
-        expect(scan.unattributed).toEqual([
-            'layouts/BaseLayout.astro: …Captures navigation BEFORE the FAB island hydrates with'
-        ]);
+        expect(scan.unattributed).toEqual([]);
     });
 
     it('actually walks past the entrypoints into their imports', () => {
