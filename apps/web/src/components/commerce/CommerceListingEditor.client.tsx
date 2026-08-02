@@ -23,14 +23,7 @@
  */
 
 import type { Image, OpeningHours } from '@repo/schemas';
-import {
-    ExperienceOwnerUpdateInputSchema,
-    ExperiencePriceUnitEnum,
-    ExperienceTypeEnum,
-    GastronomyOwnerUpdateInputSchema,
-    GastronomyTypeEnum,
-    PriceRangeEnum
-} from '@repo/schemas';
+import { ExperienceOwnerUpdateInputSchema, GastronomyOwnerUpdateInputSchema } from '@repo/schemas';
 import { type JSX, useCallback, useMemo, useState } from 'react';
 import type { DestinationOption } from '@/components/gastronomy/CommerceLead.client';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
@@ -48,6 +41,16 @@ import {
     CommerceTranslationPanel,
     parseCommerceI18nValues
 } from './CommerceTranslationPanel.client';
+import { BasicInfoSection } from './editor/BasicInfoSection.client';
+import { ContactSection } from './editor/ContactSection.client';
+import {
+    type CommerceEditData,
+    type ContactValues,
+    SOCIAL_KEYS,
+    type SocialValues
+} from './editor/commerce-edit-data';
+import { PriceSection } from './editor/PriceSection.client';
+import { SocialNetworksSection } from './editor/SocialNetworksSection.client';
 import { MediaField } from './MediaField';
 import { OpeningHoursField } from './OpeningHoursField';
 
@@ -87,44 +90,6 @@ type SaveStatus =
     | { readonly kind: 'success' }
     | { readonly kind: 'error' };
 
-/**
- * Subset of the contact JSONB block the owner edits in this surface.
- * NOTE: `website` is intentionally absent per SPEC-253 AC-4 — it is not
- * exposed in the owner editor UI even though it exists in ContactInfoSchema.
- */
-interface ContactValues {
-    mobilePhone: string;
-    workEmail: string;
-}
-
-/** Social URLs the owner edits (subset of SocialNetwork, includes linkedIn per AC-4). */
-interface SocialValues {
-    facebook: string;
-    instagram: string;
-    twitter: string;
-    tiktok: string;
-    youtube: string;
-    linkedIn: string;
-}
-
-const SOCIAL_KEYS: ReadonlyArray<keyof SocialValues> = [
-    'facebook',
-    'instagram',
-    'twitter',
-    'tiktok',
-    'youtube',
-    'linkedIn'
-];
-
-/** Gastronomy type options in display order. */
-const GASTRONOMY_TYPE_OPTIONS = Object.values(GastronomyTypeEnum);
-
-/** Experience type options in display order. */
-const EXPERIENCE_TYPE_OPTIONS = Object.values(ExperienceTypeEnum);
-
-/** Experience price unit options. */
-const PRICE_UNIT_OPTIONS = Object.values(ExperiencePriceUnitEnum);
-
 /** Resolve the owner PATCH endpoint for the given vertical. */
 function patchPathFor({
     vertical,
@@ -147,39 +112,6 @@ function strField(source: Record<string, unknown>, key: string): string {
 /** Drop empty-string entries, mapping them to undefined for the payload. */
 function nonEmpty(value: string): string | undefined {
     return value || undefined;
-}
-
-/**
- * All owner-editable form state, held as ONE object (HOS-258 PR 1).
- *
- * Mirrors `AccommodationEditData` in the host editor: the orchestrator owns this
- * object plus a `baseline` snapshot, and the PATCH body is the diff between the
- * two. It replaces the 18 independent `useState` slots + manual `dirty` Set this
- * editor used to carry, which made per-section extraction impossible.
- *
- * `preservedMedia` is deliberately NOT part of this type — it is never editable,
- * never diffed, and only rides along on a media patch (see `buildPatchPayload`).
- */
-interface CommerceEditData {
-    readonly name: string;
-    readonly destinationId: string;
-    readonly description: string;
-    readonly listingType: string;
-    readonly summary: string;
-    readonly richDescription: string;
-    readonly contact: ContactValues;
-    readonly social: SocialValues;
-    readonly openingHours: OpeningHours | null;
-    readonly priceRange: string;
-    readonly menuUrl: string;
-    readonly isPriceOnRequest: boolean;
-    readonly priceFrom: number | null;
-    readonly priceUnit: string;
-    readonly featuredImage: Image | null;
-    readonly gallery: readonly Image[];
-    readonly amenityIds: ReadonlySet<string>;
-    readonly featureIds: ReadonlySet<string>;
-    readonly i18nValues: CommerceI18nValues;
 }
 
 /**
@@ -430,29 +362,9 @@ export function CommerceListingEditor({
     // the change without a full page reload.
     const [baseline, setBaseline] = useState<CommerceEditData>(buildInitialEditData);
 
-    // Destructured so every value READ in the JSX below is untouched by the
-    // HOS-258 state consolidation — only the change handlers moved.
-    const {
-        name,
-        destinationId,
-        description,
-        listingType,
-        summary,
-        richDescription,
-        contact,
-        social,
-        openingHours,
-        priceRange,
-        menuUrl,
-        isPriceOnRequest,
-        priceFrom,
-        priceUnit,
-        featuredImage,
-        gallery,
-        amenityIds,
-        featureIds,
-        i18nValues
-    } = formData;
+    // Only the values still read by the orchestrator's own JSX. Everything else
+    // reaches its section component through the `data` prop (HOS-258 PR 2).
+    const { openingHours, featuredImage, gallery, amenityIds, featureIds, i18nValues } = formData;
 
     const [status, setStatus] = useState<SaveStatus>({ kind: 'idle' });
 
@@ -590,9 +502,6 @@ export function CommerceListingEditor({
     // again — the accommodation editor behaves the same way.
     const canSave = Object.keys(patchPayload).length > 0 && !isSaving;
 
-    const typeOptions =
-        vertical === 'gastronomy' ? GASTRONOMY_TYPE_OPTIONS : EXPERIENCE_TYPE_OPTIONS;
-
     return (
         <form
             className={styles.editor}
@@ -600,284 +509,29 @@ export function CommerceListingEditor({
             aria-busy={isSaving}
             noValidate
         >
-            {/* HOS-166 D-1: name — identity field, now owner-editable */}
-            <section className={styles.section}>
-                <label
-                    className={styles.label}
-                    htmlFor="ce-name"
-                >
-                    {t('commerce.owner.editor.sections.name', 'Nombre del comercio')}
-                </label>
-                <input
-                    id="ce-name"
-                    className={styles.input}
-                    type="text"
-                    value={name}
-                    aria-invalid={fieldErrors.name ? 'true' : 'false'}
-                    aria-describedby={fieldErrors.name ? fieldErrorId('name') : undefined}
-                    onChange={(event) => {
-                        onFieldChange('name', event.target.value);
-                    }}
-                />
-                <FieldError
-                    id={fieldErrorId('name')}
-                    message={fieldErrors.name}
-                />
-            </section>
+            <BasicInfoSection
+                locale={locale}
+                vertical={vertical}
+                data={formData}
+                destinations={destinations}
+                destinationsLoadFailed={destinationsLoadFailed}
+                errors={fieldErrors}
+                onFieldChange={onFieldChange}
+            />
 
-            {/* HOS-166 D-1: destinationId — identity field, now owner-editable.
-                `destinationsLoadFailed` (judgment-day fix) surfaces a failed SSR
-                catalog fetch explicitly instead of silently omitting a REQUIRED
-                field (completeness needs `destinationId`) — see the prop's doc. */}
-            {destinationsLoadFailed ? (
-                <section className={styles.section}>
-                    <p
-                        className={styles.error}
-                        role="alert"
-                    >
-                        {t(
-                            'commerce.owner.editor.sections.destinationLoadError',
-                            'No pudimos cargar el listado de ciudades / destinos. Recargá la página para reintentar.'
-                        )}
-                    </p>
-                </section>
-            ) : destinations.length > 0 ? (
-                <section className={styles.section}>
-                    <label
-                        className={styles.label}
-                        htmlFor="ce-destinationId"
-                    >
-                        {t('commerce.owner.editor.sections.destination', 'Ciudad / Destino')}
-                    </label>
-                    <select
-                        id="ce-destinationId"
-                        className={styles.input}
-                        value={destinationId}
-                        aria-invalid={fieldErrors.destinationId ? 'true' : 'false'}
-                        aria-describedby={
-                            fieldErrors.destinationId ? fieldErrorId('destinationId') : undefined
-                        }
-                        onChange={(event) => {
-                            onFieldChange('destinationId', event.target.value);
-                        }}
-                    >
-                        <option value="">—</option>
-                        {destinations.map((d) => (
-                            <option
-                                key={d.id}
-                                value={d.id}
-                            >
-                                {d.name}
-                            </option>
-                        ))}
-                    </select>
-                    <FieldError
-                        id={fieldErrorId('destinationId')}
-                        message={fieldErrors.destinationId}
-                    />
-                </section>
-            ) : (
-                // HOS-260: catalog fetch SUCCEEDED but returned zero rows. The old
-                // `destinations.length > 0` gate silently omitted the field here
-                // too, leaving `destinationId` (required for completeness)
-                // unfillable with no indication why. Distinct from the
-                // `destinationsLoadFailed` branch above (fetch failure).
-                <section className={styles.section}>
-                    <p
-                        className={styles.error}
-                        role="alert"
-                    >
-                        {t(
-                            'commerce.owner.editor.sections.destinationEmpty',
-                            'Todavía no hay ciudades / destinos cargados. Contactanos para poder completar este campo.'
-                        )}
-                    </p>
-                </section>
-            )}
+            <ContactSection
+                locale={locale}
+                contact={formData.contact}
+                errors={fieldErrors}
+                onContactChange={updateContact}
+            />
 
-            {/* T-020: type select */}
-            <section className={styles.section}>
-                <label
-                    className={styles.label}
-                    htmlFor="ce-type"
-                >
-                    {t('commerce.owner.editor.sections.type', 'Categoría')}
-                </label>
-                <select
-                    id="ce-type"
-                    className={styles.input}
-                    value={listingType}
-                    onChange={(event) => {
-                        onFieldChange('listingType', event.target.value);
-                    }}
-                >
-                    <option value="">—</option>
-                    {typeOptions.map((opt) => (
-                        <option
-                            key={opt}
-                            value={opt}
-                        >
-                            {t(`commerce.owner.editor.typeOption.${opt}`, opt)}
-                        </option>
-                    ))}
-                </select>
-            </section>
-
-            {/* T-020: summary textarea (min 10 / max 300) */}
-            <section className={styles.section}>
-                <label
-                    className={styles.label}
-                    htmlFor="ce-summary"
-                >
-                    {t('commerce.owner.editor.sections.summary', 'Resumen')}
-                </label>
-                <textarea
-                    id="ce-summary"
-                    className={styles.textarea}
-                    value={summary}
-                    rows={3}
-                    minLength={10}
-                    maxLength={300}
-                    aria-invalid={fieldErrors.summary ? 'true' : 'false'}
-                    aria-describedby={
-                        fieldErrors.summary ? fieldErrorId('summary') : 'ce-summary-hint'
-                    }
-                    onChange={(event) => {
-                        onFieldChange('summary', event.target.value);
-                    }}
-                />
-                <span
-                    id="ce-summary-hint"
-                    className={styles.hint}
-                    aria-live="polite"
-                >
-                    {t('commerce.owner.editor.validation.summaryHint', '{{count}}/300', {
-                        count: summary.length
-                    })}
-                </span>
-                <FieldError
-                    id={fieldErrorId('summary')}
-                    message={fieldErrors.summary}
-                />
-            </section>
-
-            {/* HOS-166 judgment-day W2: description — identity field, already
-                owner-editable server-side (D-1) but never exposed here. */}
-            <section className={styles.section}>
-                <label
-                    className={styles.label}
-                    htmlFor="ce-description"
-                >
-                    {t('commerce.owner.editor.sections.description', 'Descripción')}
-                </label>
-                <textarea
-                    id="ce-description"
-                    className={styles.textarea}
-                    value={description}
-                    rows={5}
-                    aria-invalid={fieldErrors.description ? 'true' : 'false'}
-                    aria-describedby={
-                        fieldErrors.description ? fieldErrorId('description') : undefined
-                    }
-                    onChange={(event) => {
-                        onFieldChange('description', event.target.value);
-                    }}
-                />
-                <FieldError
-                    id={fieldErrorId('description')}
-                    message={fieldErrors.description}
-                />
-            </section>
-
-            <section className={styles.section}>
-                <label
-                    className={styles.label}
-                    htmlFor="ce-richDescription"
-                >
-                    {t('commerce.owner.editor.sections.richDescription', 'Descripción ampliada')}
-                </label>
-                <textarea
-                    id="ce-richDescription"
-                    className={styles.textarea}
-                    value={richDescription}
-                    rows={6}
-                    onChange={(event) => {
-                        onFieldChange('richDescription', event.target.value);
-                    }}
-                />
-            </section>
-
-            {/* Contact: mobilePhone + workEmail only (no website per AC-4) */}
-            <fieldset className={styles.section}>
-                <legend className={styles.label}>
-                    {t('commerce.owner.editor.sections.contactInfo', 'Información de contacto')}
-                </legend>
-                <input
-                    className={styles.input}
-                    type="tel"
-                    aria-label={t('commerce.owner.editor.contactField.mobilePhone', 'Teléfono')}
-                    value={contact.mobilePhone}
-                    placeholder="+54..."
-                    aria-invalid={fieldErrors['contactInfo.mobilePhone'] ? 'true' : 'false'}
-                    aria-describedby={
-                        fieldErrors['contactInfo.mobilePhone']
-                            ? fieldErrorId('contactInfo.mobilePhone')
-                            : undefined
-                    }
-                    onChange={(event) => updateContact({ mobilePhone: event.target.value })}
-                />
-                <FieldError
-                    id={fieldErrorId('contactInfo.mobilePhone')}
-                    message={fieldErrors['contactInfo.mobilePhone']}
-                />
-                <input
-                    className={styles.input}
-                    type="email"
-                    aria-label={t('commerce.owner.editor.contactField.workEmail', 'Email')}
-                    value={contact.workEmail}
-                    aria-invalid={fieldErrors['contactInfo.workEmail'] ? 'true' : 'false'}
-                    aria-describedby={
-                        fieldErrors['contactInfo.workEmail']
-                            ? fieldErrorId('contactInfo.workEmail')
-                            : undefined
-                    }
-                    onChange={(event) => updateContact({ workEmail: event.target.value })}
-                />
-                <FieldError
-                    id={fieldErrorId('contactInfo.workEmail')}
-                    message={fieldErrors['contactInfo.workEmail']}
-                />
-            </fieldset>
-
-            {/* Social: facebook/instagram/twitter/tiktok/youtube + linkedIn (AC-4) */}
-            <fieldset className={styles.section}>
-                <legend className={styles.label}>
-                    {t('commerce.owner.editor.sections.socialNetworks', 'Redes sociales')}
-                </legend>
-                {SOCIAL_KEYS.map((key) => {
-                    const errorKey = `socialNetworks.${key}`;
-                    return (
-                        <div key={key}>
-                            <input
-                                className={styles.input}
-                                type="url"
-                                aria-label={key}
-                                value={social[key]}
-                                placeholder={`https://${key === 'linkedIn' ? 'linkedin' : key}.com/...`}
-                                aria-invalid={fieldErrors[errorKey] ? 'true' : 'false'}
-                                aria-describedby={
-                                    fieldErrors[errorKey] ? fieldErrorId(errorKey) : undefined
-                                }
-                                onChange={(event) => updateSocial(key, event.target.value)}
-                            />
-                            <FieldError
-                                id={fieldErrorId(errorKey)}
-                                message={fieldErrors[errorKey]}
-                            />
-                        </div>
-                    );
-                })}
-            </fieldset>
+            <SocialNetworksSection
+                locale={locale}
+                social={formData.social}
+                errors={fieldErrors}
+                onSocialChange={updateSocial}
+            />
 
             <section className={styles.section}>
                 <span className={styles.label}>
@@ -933,136 +587,13 @@ export function CommerceListingEditor({
                 </section>
             )}
 
-            {vertical === 'gastronomy' ? (
-                <section className={styles.section}>
-                    <label
-                        className={styles.label}
-                        htmlFor="ce-priceRange"
-                    >
-                        {t('commerce.owner.editor.sections.priceRange', 'Rango de precios')}
-                    </label>
-                    <select
-                        id="ce-priceRange"
-                        className={styles.input}
-                        value={priceRange}
-                        onChange={(event) => {
-                            onFieldChange('priceRange', event.target.value);
-                        }}
-                    >
-                        <option value="">—</option>
-                        {Object.values(PriceRangeEnum).map((tier) => (
-                            <option
-                                key={tier}
-                                value={tier}
-                            >
-                                {tier}
-                            </option>
-                        ))}
-                    </select>
-
-                    <label
-                        className={styles.label}
-                        htmlFor="ce-menuUrl"
-                    >
-                        {t('commerce.owner.editor.sections.menuUrl', 'Enlace al menú')}
-                    </label>
-                    <input
-                        id="ce-menuUrl"
-                        className={styles.input}
-                        type="url"
-                        value={menuUrl}
-                        placeholder="https://..."
-                        aria-invalid={fieldErrors.menuUrl ? 'true' : 'false'}
-                        aria-describedby={fieldErrors.menuUrl ? fieldErrorId('menuUrl') : undefined}
-                        onChange={(event) => {
-                            onFieldChange('menuUrl', event.target.value);
-                        }}
-                    />
-                    <FieldError
-                        id={fieldErrorId('menuUrl')}
-                        message={fieldErrors.menuUrl}
-                    />
-                </section>
-            ) : (
-                <section className={styles.section}>
-                    {/* isPriceOnRequest toggle */}
-                    <label className={styles.checkbox}>
-                        <input
-                            type="checkbox"
-                            checked={isPriceOnRequest}
-                            onChange={(event) => {
-                                onFieldChange('isPriceOnRequest', event.target.checked);
-                            }}
-                        />
-                        {t('commerce.owner.editor.sections.isPriceOnRequest', 'Precio a consultar')}
-                    </label>
-
-                    {/* T-021: priceFrom — disabled when isPriceOnRequest */}
-                    <label
-                        className={styles.label}
-                        htmlFor="ce-priceFrom"
-                    >
-                        {t('commerce.owner.editor.sections.priceFrom', 'Precio desde (centavos)')}
-                    </label>
-                    <input
-                        id="ce-priceFrom"
-                        className={styles.input}
-                        type="number"
-                        min={0}
-                        step={1}
-                        disabled={isPriceOnRequest}
-                        value={priceFrom ?? ''}
-                        aria-invalid={fieldErrors.priceFrom ? 'true' : 'false'}
-                        aria-describedby={
-                            fieldErrors.priceFrom ? fieldErrorId('priceFrom') : undefined
-                        }
-                        onChange={(event) => {
-                            const raw = event.target.value;
-                            const parsed = raw === '' ? null : Math.floor(Number(raw));
-                            onFieldChange('priceFrom', parsed);
-                        }}
-                    />
-                    <FieldError
-                        id={fieldErrorId('priceFrom')}
-                        message={fieldErrors.priceFrom}
-                    />
-
-                    {/* T-021: priceUnit select — disabled when isPriceOnRequest */}
-                    <label
-                        className={styles.label}
-                        htmlFor="ce-priceUnit"
-                    >
-                        {t('commerce.owner.editor.sections.priceUnit', 'Unidad de precio')}
-                    </label>
-                    <select
-                        id="ce-priceUnit"
-                        className={styles.input}
-                        value={priceUnit}
-                        disabled={isPriceOnRequest}
-                        aria-invalid={fieldErrors.priceUnit ? 'true' : 'false'}
-                        aria-describedby={
-                            fieldErrors.priceUnit ? fieldErrorId('priceUnit') : undefined
-                        }
-                        onChange={(event) => {
-                            onFieldChange('priceUnit', event.target.value);
-                        }}
-                    >
-                        <option value="">—</option>
-                        {PRICE_UNIT_OPTIONS.map((unit) => (
-                            <option
-                                key={unit}
-                                value={unit}
-                            >
-                                {t(`commerce.owner.editor.priceUnitOption.${unit}`, unit)}
-                            </option>
-                        ))}
-                    </select>
-                    <FieldError
-                        id={fieldErrorId('priceUnit')}
-                        message={fieldErrors.priceUnit}
-                    />
-                </section>
-            )}
+            <PriceSection
+                locale={locale}
+                vertical={vertical}
+                data={formData}
+                errors={fieldErrors}
+                onFieldChange={onFieldChange}
+            />
 
             {formError && (
                 <p

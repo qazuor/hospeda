@@ -1,0 +1,112 @@
+/**
+ * Field primitives shared by every commerce editor section (HOS-258).
+ *
+ * The accommodation host editor gives each section its own `.module.css` with no
+ * shared layer, which duplicates these seven rules across every section file and
+ * makes a single field-level tweak an N-file edit. Commerce keeps the primitives
+ * here and leaves only genuinely section-specific rules (the opening-hours grid,
+ * the media thumbnails, the amenity chips grid) in per-section modules.
+ *
+ * Extracted verbatim from `CommerceListingEditor.module.css`; the orchestrator
+ * keeps only its own chrome (`.editor`, `.actions`, `.save`, `.cancel`).
+ */
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+/* Section title — heading with a bottom divider, matching the host editor. */
+.label {
+    margin: 0 0 var(--space-1);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-heading, var(--font-sans));
+    font-size: var(--text-body, 1rem);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.textarea,
+.input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 0.625rem);
+    background: var(--core-card, var(--core-background));
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    transition:
+        border-color 150ms ease,
+        box-shadow 150ms ease;
+}
+
+.textarea {
+    padding: var(--space-3);
+    resize: vertical;
+    min-height: 7rem;
+}
+
+.input {
+    padding: var(--space-2) var(--space-3);
+}
+
+.textarea:focus-visible,
+.input:focus-visible {
+    outline: 2px solid var(--brand-primary, var(--core-foreground));
+    outline-offset: 2px;
+    border-color: var(--brand-primary, var(--core-foreground));
+    box-shadow: 0 0 0 3px var(--brand-primary-a15, rgba(99, 102, 241, 0.18));
+}
+
+/* Amenity / feature chips, the opening-hours "closed" toggle, and the
+   price-on-request toggle all share this bordered, card-filled shape. */
+.checkbox {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 0.625rem);
+    background: var(--core-card, var(--core-background));
+    font-size: var(--text-body-sm, 0.9375rem);
+    color: var(--core-foreground);
+    cursor: pointer;
+    transition:
+        border-color 150ms ease,
+        background-color 150ms ease;
+}
+
+.checkbox:hover {
+    border-color: var(--brand-primary, var(--core-foreground));
+    background: var(--surface-warm, var(--core-card, var(--core-background)));
+}
+
+.checkbox input {
+    accent-color: var(--brand-primary, var(--core-foreground));
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+}
+
+/* Banner-style feedback (full-width, colored background). */
+.error {
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md, 0.625rem);
+    border: 1px solid transparent;
+    font-size: var(--text-body-sm, 0.9375rem);
+    background: var(--destructive-a15, rgba(185, 28, 28, 0.12));
+    border-color: var(--destructive-a35, rgba(185, 28, 28, 0.28));
+    color: var(--destructive, #b91c1c);
+}
+
+.hint {
+    margin: 0;
+    color: var(--core-muted-foreground);
+    font-size: var(--text-body-xs, 0.8125rem);
+}
