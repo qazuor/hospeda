@@ -477,6 +477,42 @@ describe('CommerceListingEditor', () => {
         expect(body.featureIds).toEqual([FEATURE_F1]);
     });
 
+    describe('contact email accessibility', () => {
+        it('labels the email input with a real <label>, not just an aria-label', () => {
+            const { container } = renderEditor('gastronomy');
+
+            // An `aria-label` alone leaves a sighted user staring at an
+            // anonymous empty box (WCAG 3.3.2). `getByLabelText` matches both
+            // mechanisms, so assert the <label> element exists and points at
+            // the input — that is what distinguishes the two.
+            const label = [...container.querySelectorAll('label')].find(
+                (el) => el.textContent?.trim() === 'Email'
+            );
+            expect(label).toBeDefined();
+            expect(label?.getAttribute('for')).toBe('ce-workEmail');
+
+            const input = container.querySelector('#ce-workEmail');
+            expect(input).toBeInstanceOf(HTMLInputElement);
+            expect((input as HTMLInputElement).type).toBe('email');
+        });
+
+        it('still PATCHes the contactInfo group from the labelled email input', async () => {
+            mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+            renderEditor('gastronomy');
+
+            fireEvent.change(screen.getByLabelText('Email'), {
+                target: { value: 'hola@laparrilla.test' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+            await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+            const body = mockPatch.mock.calls[0]?.[0]?.body as {
+                contactInfo?: { workEmail?: string };
+            };
+            expect(body.contactInfo?.workEmail).toBe('hola@laparrilla.test');
+        });
+    });
+
     describe('amenity category accordions — HOS-371', () => {
         const WIFI = '11111111-1111-4111-8111-111111111111';
         const TV = '22222222-2222-4222-8222-222222222222';

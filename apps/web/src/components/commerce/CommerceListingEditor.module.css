@@ -426,7 +426,8 @@
 /* ── Phone country-code + number pair (HOS-371) ───────────────────────────
    Same layout tokens as `host/editor/ContactInfoSection.module.css`. */
 
-.phoneField {
+.phoneField,
+.emailField {
     display: flex;
     flex-direction: column;
     gap: var(--space-1);

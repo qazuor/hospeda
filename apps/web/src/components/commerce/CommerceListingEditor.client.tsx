@@ -751,23 +751,37 @@ export function CommerceListingEditor({
                     t={t}
                     classes={styles}
                 />
-                <input
-                    className={styles.input}
-                    type="email"
-                    aria-label={t('commerce.owner.editor.contactField.workEmail', 'Email')}
-                    value={contact.workEmail}
-                    aria-invalid={fieldErrors['contactInfo.workEmail'] ? 'true' : 'false'}
-                    aria-describedby={
-                        fieldErrors['contactInfo.workEmail']
-                            ? fieldErrorId('contactInfo.workEmail')
-                            : undefined
-                    }
-                    onChange={(event) => updateContact({ workEmail: event.target.value })}
-                />
-                <FieldError
-                    id={fieldErrorId('contactInfo.workEmail')}
-                    message={fieldErrors['contactInfo.workEmail']}
-                />
+                {/* Visible <label>, not just an aria-label: an empty input with
+                    no visible text next to it reads as an anonymous box to a
+                    sighted user, which the per-section cards made more obvious.
+                    A visible label also satisfies WCAG 3.3.2 (Labels or
+                    Instructions), which an aria-label alone does not. */}
+                <div className={styles.emailField}>
+                    <label
+                        className={styles.fieldLabel}
+                        htmlFor="ce-workEmail"
+                    >
+                        {t('commerce.owner.editor.contactField.workEmail', 'Email')}
+                    </label>
+                    <input
+                        id="ce-workEmail"
+                        className={styles.input}
+                        type="email"
+                        value={contact.workEmail}
+                        placeholder="contacto@ejemplo.com"
+                        aria-invalid={fieldErrors['contactInfo.workEmail'] ? 'true' : 'false'}
+                        aria-describedby={
+                            fieldErrors['contactInfo.workEmail']
+                                ? fieldErrorId('contactInfo.workEmail')
+                                : undefined
+                        }
+                        onChange={(event) => updateContact({ workEmail: event.target.value })}
+                    />
+                    <FieldError
+                        id={fieldErrorId('contactInfo.workEmail')}
+                        message={fieldErrors['contactInfo.workEmail']}
+                    />
+                </div>
             </fieldset>
 
             {/* Social: facebook/instagram/twitter/tiktok/youtube + linkedIn (AC-4) */}
