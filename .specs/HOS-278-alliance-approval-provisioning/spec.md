@@ -111,8 +111,12 @@ página nunca podría mostrar "aprobado"**. Esa config también hay que tocarla.
   `loadEntitlements` la trata como activa.
 - **Pago único**: el camino de addons (`apps/api/src/routes/billing/addons.ts`), ya
   usado por `visibility-boost`.
-- **Revisión editorial**: `posts` y `events` tienen `moderationState`
-  (`PENDING` / `APPROVED` / `REJECTED`).
+- **Revisión editorial — la columna existe, el gate NO.** `posts` y `events` tienen
+  `moderationState` (`PENDING` / `APPROVED` / `REJECTED`), pero **hoy no bloquea
+  nada**: los schemas HTTP de creación hardcodean `visibility: PUBLIC`
+  (`event.http.schema.ts:316` y su par en post), y ningún servicio filtra lecturas
+  públicas por `moderationState`. Un contenido creado en `PENDING` es público al
+  instante. Cerrar ese gate es trabajo obligatorio de HOS-374, no algo que ya esté.
 - **Autoría de eventos**: `events.authorId` existe, con índice propio.
 - **El molde completo**: commerce (`approve-and-provision` → crea usuario, manda
   credenciales, vincula `provisionedUserId` → `GET /protected/commerce/leads/mine` →
