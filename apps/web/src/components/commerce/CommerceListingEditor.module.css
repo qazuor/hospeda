@@ -2,18 +2,22 @@
  * Commerce owner listing editor styles.
  *
  * Mirrors the visual language of the accommodation host editor
- * (`components/host/editor/*`): a centered reading column, section titles with a
+ * (`components/host/editor/*`): one card per section, section titles with a
  * bottom divider, card-elevated inputs with a focus ring, amenity chips, a
  * sticky-feeling action bar with a pill primary button, and banner-style
  * success/error feedback. Kept as plain CSS modules per web conventions.
  */
 
+/* The form fills its account-layout column. It used to be a 720px column
+   centered inside a single full-width AccountSectionCard, which read fine
+   while the card was the outer frame. Since HOS-371 made every SECTION a card,
+   keeping that width would have shrunk the cards themselves: they would sit
+   inset from the page header above and from the full-width FAQ card directly
+   below, on the same page, at two visibly different widths. */
 .editor {
     display: flex;
     flex-direction: column;
     gap: var(--space-6);
-    max-width: 720px;
-    margin: 0 auto;
 }
 
 /* Section card (HOS-371) — every top-level section of the editor is now the
@@ -37,6 +41,22 @@
     flex-direction: column;
     gap: var(--space-3);
     margin: 0;
+}
+
+/* Two of the section cards are <fieldset>s, and a UA renders a <legend> ON the
+   fieldset's top border, outside its padding box. That was invisible while the
+   fieldset had no border and no padding; against a real card it made the title
+   escape the card entirely and slice the brand accent bar in half.
+   `float` opts the legend out of "rendered legend" placement and back into
+   normal flow; `width: 100%` keeps it full-bleed and the sibling clear stops
+   the following field from wrapping alongside it. */
+.section > legend {
+    float: left;
+    width: 100%;
+}
+
+.section > legend + * {
+    clear: both;
 }
 
 /* Section title — heading with a bottom divider, matching the host editor. */
