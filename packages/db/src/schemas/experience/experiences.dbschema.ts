@@ -4,7 +4,8 @@ import type {
     I18nText,
     Media,
     Seo,
-    SocialNetwork
+    SocialNetwork,
+    Video
 } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import {
@@ -89,6 +90,18 @@ export const experiences = pgTable(
          */
         openingHours: jsonb('opening_hours').$type<Record<string, unknown>>(),
         media: jsonb('media').$type<Media>(),
+        /**
+         * Embedded videos for the listing (HOS-372).
+         *
+         * Deliberately its OWN column rather than rows in `experience_media`: a video is
+         * an external YouTube/Vimeo URL pasted into a form, not an uploaded asset. It
+         * cannot be orphaned in Cloudinary and has no per-operation persistence problem,
+         * so a relational row would only add dead columns (`public_id`, `is_featured`,
+         * file moderation) without solving anything.
+         *
+         * Photos live in `experience_media`; the `media` column above is being retired.
+         */
+        videos: jsonb('videos').$type<Video[]>(),
         seo: jsonb('seo').$type<Seo>(),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
         // FK relations
