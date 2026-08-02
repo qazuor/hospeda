@@ -4,8 +4,16 @@
  * change it did not receive.
  *
  * Deliberately runs against the REAL TipTap, unlike `RichTextEditor.test.tsx`
- * which mocks `useEditor` wholesale — the bug lives entirely inside TipTap's
- * own mount-time update transaction, so a mocked editor cannot reproduce it.
+ * which mocks `useEditor` wholesale — the bug lives in TipTap's own emit
+ * behaviour, so a mocked editor cannot reproduce it.
+ *
+ * The stored values below are NOT decorative. `setEditable`'s default emit
+ * carried TipTap's NORMALIZED serialization, so the defect only showed for
+ * content that is not already in TipTap's canonical form. A single-line string
+ * like `"old text"` round-trips byte-identical and passes even with the bug
+ * present — the first cut of this guard used only such strings and reported
+ * the fix as complete while every realistic stored value still broke. Every
+ * shape in `NON_CANONICAL_VALUES` was verified to FAIL before the fix.
  */
 
 import { render, waitFor } from '@testing-library/react';
@@ -36,7 +44,118 @@ function getEditable(): EditableElement {
     return el as EditableElement;
 }
 
+/**
+ * Stored Markdown shapes that TipTap does NOT serialize back byte-identically.
+ * Each one reproduced the defect before the fix; a single-line string does not.
+ */
+const NON_CANONICAL_VALUES: Readonly<Record<string, string>> = {
+    'a trailing newline (stripped on serialize)': 'trailing newline test\n',
+    'single newlines (collapsed into spaces)': 'line one\nline two',
+    'runs of blank lines (collapsed to one)': 'multiple\n\n\n\nblank lines',
+    'trailing whitespace (trimmed)': 'texto con espacio final ',
+    'a list with a trailing newline': '- uno\n- dos\n',
+    'well-formed Markdown with a trailing newline': '## T\n\nUn parrafo.\n\n- a\n- b\n'
+};
+
 describe('RichTextEditor — controlled emit contract', () => {
+    describe.each(Object.entries(NON_CANONICAL_VALUES))('stored value with %s', (_label, value) => {
+        it('does not fire onChange on mount', async () => {
+            // Arrange
+            const onChange = vi.fn();
+
+            // Act
+            render(
+                <RichTextEditor
+                    value={value}
+                    onChange={onChange}
+                />
+            );
+            await waitForEditorMount();
+
+            // Assert — before the fix, `setEditable`'s default emit fired
+            // here with TipTap's normalized serialization, which differs
+            // from this stored string, so the equality guard let it through
+            // and the field went dirty on load.
+            expect(onChange).not.toHaveBeenCalled();
+        });
+
+        it('still fires onChange for a real edit', async () => {
+            // Arrange
+            const onChange = vi.fn();
+            render(
+                <RichTextEditor
+                    value={value}
+                    onChange={onChange}
+                />
+            );
+            await waitForEditorMount();
+
+            // Act
+            getEditable().editor.commands.insertContent(' AGREGADO');
+
+            // Assert — the guards must suppress only non-edits.
+            await waitFor(() => expect(onChange).toHaveBeenCalled());
+            expect(onChange.mock.calls.at(-1)?.[0]).toContain('AGREGADO');
+        });
+    });
+
+    it('syncs an external value change into the editor without reporting it as an edit', async () => {
+        // Arrange — the accommodation editor's AiTextImprovePanel writes an
+        // accepted suggestion straight to the parent's field, so this sync path
+        // is load-bearing and must not be "fixed" by removing it.
+        const onChange = vi.fn();
+        const { rerender } = render(
+            <RichTextEditor
+                value={'line one\nline two'}
+                onChange={onChange}
+            />
+        );
+        await waitForEditorMount();
+
+        // Act
+        rerender(
+            <RichTextEditor
+                value="contenido totalmente distinto"
+                onChange={onChange}
+            />
+        );
+        await waitFor(() =>
+            expect(getEditable().textContent).toBe('contenido totalmente distinto')
+        );
+
+        // Assert — the editor shows the new value, and the parent was never
+        // told the user changed anything.
+        expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it('applies a disabled toggle without reporting it as an edit', async () => {
+        // Arrange — `setEditable` is what emitted the phantom edit; assert the
+        // fix kept the flag working rather than just silencing the call.
+        const onChange = vi.fn();
+        const { rerender } = render(
+            <RichTextEditor
+                value={'line one\nline two'}
+                onChange={onChange}
+                disabled={false}
+            />
+        );
+        await waitForEditorMount();
+        expect(getEditable().getAttribute('contenteditable')).toBe('true');
+
+        // Act
+        rerender(
+            <RichTextEditor
+                value={'line one\nline two'}
+                onChange={onChange}
+                disabled={true}
+            />
+        );
+        await waitFor(() => expect(getEditable().getAttribute('contenteditable')).toBe('false'));
+
+        // Assert
+        expect(onChange).not.toHaveBeenCalled();
+    });
+
     it('does not fire onChange on mount when seeded with an existing value', async () => {
         // Arrange
         const onChange = vi.fn();

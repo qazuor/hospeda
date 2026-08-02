@@ -145,17 +145,12 @@ export function RichTextEditor({
         },
         onUpdate({ editor: ed }) {
             const md = readMarkdown(ed);
-            // TipTap emits an update transaction when the deferred editor
-            // (`immediatelyRender: false`) first parses `content`, so a freshly
-            // mounted editor fires `onUpdate` with the value it was just GIVEN,
-            // before the user has touched anything. A controlled component must
-            // not report a change it did not receive: the accommodation editor
-            // sends its whole form and so absorbed the no-op, but any parent
-            // that dirty-tracks per field (the commerce owner editor, HOS-371)
-            // would flag the field dirty on load — enabling Save with no edits
-            // and re-serializing the stored Markdown through TipTap on every
-            // unrelated save. Skipping the emit when nothing actually changed
-            // fixes it for every consumer, not just the one that hit it.
+            // Defence in depth: a controlled component must not report a change
+            // it did not receive. The `setEditable` fix below removes the one
+            // source that actually fired this on mount, but any future emit
+            // that serializes back to the value we already hold is equally not
+            // an edit, and a parent that dirty-tracks per field (the commerce
+            // owner editor, HOS-371) would flag the field dirty from it.
             if (md === (valueRef.current ?? '')) {
                 return;
             }
@@ -164,6 +159,9 @@ export function RichTextEditor({
     });
 
     // Keep the editor in sync when the controlled `value` changes externally
+    // (e.g. the owner accepts an AiTextImprovePanel suggestion, which writes
+    // straight to the parent's field). `emitUpdate: false` is honoured here —
+    // this does NOT report back as an edit.
     useEffect(() => {
         if (!editor) return;
         const currentMd: string = readMarkdown(editor);
@@ -172,10 +170,23 @@ export function RichTextEditor({
         }
     }, [editor, value]);
 
-    // Toggle editor.editable when `disabled` flips after mount
+    // Toggle editor.editable when `disabled` flips after mount.
+    //
+    // The second argument is `emitUpdate` and defaults to TRUE, so the bare
+    // `setEditable(!disabled)` this used to be fired a full content `onUpdate`
+    // on every mount — for a change that touches only the editable flag and
+    // never the document. That was the real source of the phantom edit: the
+    // emit carried TipTap's NORMALIZED serialization of the stored Markdown,
+    // which differs from the raw stored string whenever that string is not
+    // already in TipTap's canonical form (`"a\nb"` serializes back as `"a b"`,
+    // a trailing newline is stripped, runs of blank lines collapse). So the
+    // equality guard in `onUpdate` did not catch it, and any parent that
+    // dirty-tracks per field (the commerce owner editor, HOS-371) saw the field
+    // go dirty on load — Save enabled with zero edits, and the stored Markdown
+    // silently re-flowed on the next save of an unrelated field.
     useEffect(() => {
         if (!editor) return;
-        editor.setEditable(!disabled);
+        editor.setEditable(!disabled, false);
     }, [editor, disabled]);
 
     // Loading placeholder while editor initializes
