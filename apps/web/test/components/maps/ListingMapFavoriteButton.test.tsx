@@ -130,10 +130,10 @@ vi.mock('leaflet/dist/images/marker-icon-2x.png', () => ({ default: 'icon-retina
 vi.mock('leaflet/dist/images/marker-icon.png', () => ({ default: 'icon.png' }));
 vi.mock('leaflet/dist/images/marker-shadow.png', () => ({ default: 'shadow.png' }));
 
-// Stub the API endpoint used by FavoriteButton's single-check hydration.
+// Stub the API endpoints used by FavoriteButton's client-side resolution.
 vi.mock('@/lib/api/endpoints-protected', () => ({
     userBookmarksApi: {
-        checkStatus: vi.fn().mockResolvedValue({ ok: false, error: { status: 401 } }),
+        checkBulk: vi.fn().mockResolvedValue({ ok: false, error: { status: 401 } }),
         toggle: vi.fn().mockResolvedValue({ ok: false, error: { status: 401 } })
     }
 }));
@@ -151,7 +151,7 @@ vi.mock('@repo/icons', () => ({
 // Stub toast store to avoid side effects.
 vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ListingMap } from '../../../src/components/maps/ListingMap.client';
 
 // Pre-warm the lazy inner chunk (React.lazy, SPEC-269) so it resolves within the
@@ -272,7 +272,7 @@ describe('ListingMap — FavoriteButton in popup (T-044)', () => {
         expect(btn).toHaveAttribute('aria-pressed', 'false');
     });
 
-    it('renders FavoriteButton with aria-pressed=true when item is pre-hydrated as favorited', async () => {
+    it("ignores the item's SSR isFavorited hint — the store owns that state", async () => {
         render(
             <ListingMap
                 mode="accommodation-list"
@@ -290,7 +290,12 @@ describe('ListingMap — FavoriteButton in popup (T-044)', () => {
         const [marker] = await screen.findAllByTestId('marker');
         fireEvent.click(marker);
 
+        // HOS-369 WB0-3: a server-rendered favorited flag belongs to whoever the
+        // page was rendered for, so the heart never trusts it. Here the bulk
+        // check 401s, which settles the entity as un-favorited.
         const btn = await screen.findByRole('button', { name: /favorito/i });
-        expect(btn).toHaveAttribute('aria-pressed', 'true');
+        await waitFor(() => {
+            expect(btn).toHaveAttribute('aria-pressed', 'false');
+        });
     });
 });
