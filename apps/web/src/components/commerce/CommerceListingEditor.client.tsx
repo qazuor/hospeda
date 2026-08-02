@@ -26,7 +26,6 @@ import type { Image, OpeningHours } from '@repo/schemas';
 import { ExperienceOwnerUpdateInputSchema, GastronomyOwnerUpdateInputSchema } from '@repo/schemas';
 import { type JSX, useCallback, useMemo, useState } from 'react';
 import type { DestinationOption } from '@/components/gastronomy/CommerceLead.client';
-import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { apiClient } from '@/lib/api/client';
 import type { AmenityData } from '@/lib/api/types';
 import type { CommerceListingDetail, CommerceVertical } from '@/lib/commerce/owner-listings';
@@ -34,13 +33,13 @@ import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
-import { AmenitiesFeaturesField } from './AmenitiesFeaturesField';
 import styles from './CommerceListingEditor.module.css';
 import {
     type CommerceI18nValues,
     CommerceTranslationPanel,
     parseCommerceI18nValues
 } from './CommerceTranslationPanel.client';
+import { AmenitiesSection } from './editor/AmenitiesSection.client';
 import { BasicInfoSection } from './editor/BasicInfoSection.client';
 import { ContactSection } from './editor/ContactSection.client';
 import {
@@ -49,10 +48,10 @@ import {
     SOCIAL_KEYS,
     type SocialValues
 } from './editor/commerce-edit-data';
+import { MediaSection } from './editor/MediaSection.client';
+import { OpeningHoursSection } from './editor/OpeningHoursSection.client';
 import { PriceSection } from './editor/PriceSection.client';
 import { SocialNetworksSection } from './editor/SocialNetworksSection.client';
-import { MediaField } from './MediaField';
-import { OpeningHoursField } from './OpeningHoursField';
 
 export interface CommerceListingEditorProps {
     /** Which vertical this listing belongs to (drives the PATCH endpoint + price group). */
@@ -533,37 +532,23 @@ export function CommerceListingEditor({
                 onSocialChange={updateSocial}
             />
 
-            <section className={styles.section}>
-                <span className={styles.label}>
-                    {t('commerce.owner.editor.sections.openingHours', 'Horarios de atención')}
-                </span>
-                <OpeningHoursField
-                    value={openingHours}
-                    classes={styles}
-                    onChange={(next) => {
-                        onFieldChange('openingHours', next);
-                    }}
-                />
-                <FieldError
-                    id={fieldErrorId('openingHours')}
-                    message={fieldErrors.openingHours}
-                />
-            </section>
+            <OpeningHoursSection
+                locale={locale}
+                value={openingHours}
+                error={fieldErrors.openingHours}
+                onChange={(next) => {
+                    onFieldChange('openingHours', next);
+                }}
+            />
 
-            <section className={styles.section}>
-                <span className={styles.label}>
-                    {t('commerce.owner.editor.sections.media', 'Galería de fotos')}
-                </span>
-                <MediaField
-                    vertical={vertical}
-                    listingId={listingId}
-                    featuredImage={featuredImage}
-                    gallery={gallery}
-                    onChange={updateMedia}
-                    t={t}
-                    classes={styles}
-                />
-            </section>
+            <MediaSection
+                locale={locale}
+                vertical={vertical}
+                listingId={listingId}
+                featuredImage={featuredImage}
+                gallery={gallery}
+                onChange={updateMedia}
+            />
 
             {/* T-023: i18n editing panel */}
             <CommerceTranslationPanel
@@ -572,20 +557,15 @@ export function CommerceListingEditor({
                 onChange={handleI18nChange}
             />
 
-            {(amenities.length > 0 || features.length > 0) && (
-                <section className={styles.section}>
-                    <AmenitiesFeaturesField
-                        amenities={amenities}
-                        features={features}
-                        selectedAmenityIds={amenityIds}
-                        selectedFeatureIds={featureIds}
-                        onToggleAmenity={toggleAmenity}
-                        onToggleFeature={toggleFeature}
-                        t={t}
-                        classes={styles}
-                    />
-                </section>
-            )}
+            <AmenitiesSection
+                locale={locale}
+                amenities={amenities}
+                features={features}
+                selectedAmenityIds={amenityIds}
+                selectedFeatureIds={featureIds}
+                onToggleAmenity={toggleAmenity}
+                onToggleFeature={toggleFeature}
+            />
 
             <PriceSection
                 locale={locale}
