@@ -245,9 +245,11 @@ hub de descubrimiento. Requiere tocar `ACCOUNT_DISCOVERY_DOORS` (§5.4).
 | `alliance_leads` | `+ claim_token` / `claim_expires_at` | Para la confirmación del titular (§6.2). Forma exacta a definir. |
 | `host_trade` | `+ owner_user_id` (uuid, null, FK `users.id`) | Nullable: las fichas existentes no tienen dueño. |
 | `host_trade` | beneficio estructurado: `benefit_type`, `benefit_value` | El `benefit` de texto actual pasa a ser la letra chica. |
+| `partner` | `+ owner_user_id` (uuid, null, FK `users.id`) | OQ-2 cerrada. Con FK real, como `sponsorship.sponsorUserId`. |
 
-`partner`: a confirmar si necesita columna de dueño propia o se deriva de la
-suscripción vía `partner_subscription` (§11 OQ-2).
+`partner` lleva su propia columna de dueño (OQ-2 cerrada): un partner aprobado que
+todavía no contrató no tiene suscripción de la cual derivarlo, y es justo el tramo en
+el que necesita entrar a pagar.
 
 ### Endpoints nuevos
 
@@ -321,17 +323,32 @@ Toda copy nueva va por i18n en es/en/pt, traducida.
 
 ## 11. Open questions
 
-- **OQ-1** — ¿El provisioning es automático al aprobar, o un botón explícito
-  "Aprobar y provisionar" por tipo? Commerce usa botón explícito, lo que permite
-  aprobar sin provisionar todavía.
-- **OQ-2** — ¿Cómo se vincula el partner a su usuario: columna en `partner` o vía
-  `partner_subscription`?
-- **OQ-3** — ¿El solicitante ve el `adminNote` al ser rechazado? Exponerlo cambia
-  cómo lo escribe el admin.
-- **OQ-4** — Un proveedor que además es anfitrión con plan: ¿ve su ficha por las dos
-  vías sin que se pisen?
-- **OQ-5** — Forma exacta del token de confirmación de titularidad: vencimiento,
-  reenvío, y qué pasa si nunca se confirma.
+- ~~OQ-1~~ **CERRADA** (owner, 2026-08-02): **botón explícito "Aprobar y
+  provisionar", separado de aprobar.** Mismo patrón que commerce. Se puede aprobar un
+  lead sin provisionarlo todavía. Pesa más ahora que antes: provisionar dispara un
+  email, crea una cuenta y habilita un cobro — es difícil de deshacer, así que no
+  puede colgar del mismo clic que cambia un estado.
+- ~~OQ-2~~ **CERRADA** (owner, 2026-08-02): **columna `owner_user_id` en `partner`**,
+  con FK real, igual que `sponsorship.sponsorUserId`. No se deriva de
+  `partner_subscription`: un partner aprobado que todavía no contrató no tiene
+  suscripción, y es justo el tramo donde necesita entrar a ver "te aprobamos, ahora
+  pagá". Desbloquea además HOS-377, que hoy no puede notificar a nadie.
+
+  **La tabla tampoco tiene columna de contacto.** Definir si el email sale del
+  usuario vinculado o si `partner` lleva el suyo propio (el contacto comercial puede
+  no ser el de la cuenta).
+- ~~OQ-3~~ **CERRADA** (owner, 2026-08-02): **`adminNote` queda interno.** Si se le
+  quiere dar un motivo al solicitante, va en un campo aparte pensado para leerse
+  desde afuera. Exponer el interno cambiaría cómo se escribe — una nota franca no es
+  algo que se le mande al rechazado.
+- ~~OQ-4~~ **CERRADA** (owner, 2026-08-02): **dos secciones separadas en
+  `/mi-cuenta`.** Su ficha de proveedor y sus propiedades de anfitrión no se mezclan:
+  son dos relaciones distintas con Hospeda que casualmente tiene la misma persona.
+  Evita además que el gate de un rol filtre datos del otro.
+- ~~OQ-5~~ **CERRADA** (owner, 2026-08-02): el token **vence**, **se puede
+  reenviar**, y **una postulación sin confirmar simplemente queda sin vincular** — no
+  se pierde, el admin la ve, pero no se cuelga de ninguna cuenta. No confirmar nunca
+  tiene que ser inofensivo. Falta definir el plazo exacto.
 
 ## 12. Implementation notes
 
