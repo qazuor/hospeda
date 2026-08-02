@@ -29,7 +29,7 @@ const asMock = <T>(fn: T) => fn as unknown as Mock;
 // ---------------------------------------------------------------------------
 
 const SYSTEM_ACTOR = createActor({
-    role: RoleEnum.SUPER_ADMIN,
+    roles: [RoleEnum.SUPER_ADMIN],
     permissions: [
         PermissionEnum.CONVERSATION_VIEW_ANY,
         PermissionEnum.CONVERSATION_REPLY_ANY,
@@ -39,12 +39,12 @@ const SYSTEM_ACTOR = createActor({
 });
 
 const USER_ACTOR = createActor({
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: [PermissionEnum.CONVERSATION_REPLY_OWN]
 });
 
 const FORBIDDEN_ACTOR = createActor({
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: []
 });
 

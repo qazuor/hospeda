@@ -268,3 +268,85 @@ describe('JSON-LD coverage across pages (SPEC-096 REQ-096-37)', () => {
         });
     });
 });
+
+/**
+ * Depth of each `slot="head-extra"` contributor in a page's template, where
+ * depth 0 means "a plain sibling" and depth > 0 means "nested inside a `{…}`
+ * expression". Braces balance out for ordinary attributes (`items={x}`),
+ * template literals and `{/* … *\/}` comments, so an unclosed brace is a real
+ * expression wrapper.
+ */
+function headExtraContributorDepths(src: string): number[] {
+    // Skip the frontmatter — only the template region can contribute to a slot.
+    const templateStart = src.indexOf('---', src.indexOf('---') + 3) + 3;
+    const template = src.slice(templateStart);
+
+    const depths: number[] = [];
+    let depth = 0;
+    for (let i = 0; i < template.length; i++) {
+        const ch = template[i];
+        if (ch === '{') depth++;
+        else if (ch === '}') depth--;
+        else if (template.startsWith('slot="head-extra"', i)) {
+            depths.push(depth);
+        }
+    }
+    return depths;
+}
+
+describe('named-slot contributor ordering', () => {
+    // Regression: `publicaciones/[slug].astro` wrapped its FIRST `head-extra`
+    // contributor in a `{cond ? … : …}` ternary. Astro then dropped the plain
+    // <BreadcrumbJsonLd/> sibling that followed it, so post detail pages shipped
+    // with NO BreadcrumbList for as long as that ternary existed. The coverage
+    // suite above did not catch it because it asserts the component appears in
+    // the SOURCE, which it always did.
+
+    it('detects the broken shape (guard is not vacuous)', () => {
+        const broken = `---
+const x = 1;
+---
+{cond ? (
+    <ArticleJsonLd slot="head-extra" a={1} />
+) : (
+    <ArticleJsonLd slot="head-extra" a={2} />
+)}
+<BreadcrumbJsonLd slot="head-extra" items={items} />`;
+
+        const depths = headExtraContributorDepths(broken);
+        expect(depths).toHaveLength(3);
+        // First two are nested in the ternary, the third is a plain sibling.
+        expect(depths[0]).toBeGreaterThan(0);
+        expect(depths[2]).toBe(0);
+    });
+
+    it('accepts the fixed shape', () => {
+        const fixed = `---
+const x = 1;
+---
+<ArticleJsonLd slot="head-extra" a={1} />
+<BreadcrumbJsonLd slot="head-extra" items={items} />
+{faq.length > 0 && <FAQPageJsonLd slot="head-extra" sections={faq} />}`;
+
+        const depths = headExtraContributorDepths(fixed);
+        expect(depths[0]).toBe(0);
+        expect(depths[1]).toBe(0);
+        // A trailing expression-wrapped contributor is fine: nothing follows it.
+        expect(depths[2]).toBeGreaterThan(0);
+    });
+
+    for (const page of DETAIL_PAGES) {
+        it(`${page.name}: no plain head-extra contributor follows an expression-wrapped one`, () => {
+            const depths = headExtraContributorDepths(readPage(page.file));
+            expect(depths.length).toBeGreaterThan(1);
+
+            const firstNestedAt = depths.findIndex((d) => d > 0);
+            if (firstNestedAt === -1) return;
+
+            // Everything after the first nested contributor must also be nested,
+            // otherwise Astro silently drops it.
+            const after = depths.slice(firstNestedAt + 1);
+            expect(after.filter((d) => d === 0)).toEqual([]);
+        });
+    }
+});

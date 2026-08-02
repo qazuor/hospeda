@@ -12,7 +12,11 @@ import { StrongPasswordSchema } from '../common/password.schema.js';
  */
 export const ActorSchema = z.object({
     id: z.string().describe('Actor unique identifier'),
-    role: z.string().describe('Actor role (USER, ADMIN, GUEST, etc.)'),
+    roles: z
+        .array(z.string())
+        .describe(
+            'Every role the actor holds (USER, ADMIN, HOST, COMMERCE_OWNER, ...). HOS-296 replaced the single `role` scalar with this set: one account can wear several hats at once, and effective permissions are the union over them. There is no compatibility shim — consumers must read the array.'
+        ),
     permissions: z.array(z.string()).describe('Array of permission strings'),
     name: z
         .string()
@@ -29,6 +33,12 @@ export const ActorSchema = z.object({
         .optional()
         .describe(
             'Actor avatar URL (mirrors users.image — Better Auth auto-populates this from the Google `picture` claim or the Facebook profile photo on OAuth signin). Absent for users without an uploaded avatar, guests, and system actors. Added in SPEC-113 follow-up so /auth/me can keep the navbar avatar in sync after profile mutations, matching the existing actor.name/email semantics.'
+        ),
+    mustChangePassword: z
+        .boolean()
+        .optional()
+        .describe(
+            'Whether the account must rotate a server-generated password before using protected routes (SPEC-239 commerce-owner provisioning). Mirrors `users.must_change_password`. Distinct from `AuthMeResponse.passwordChangeRequired`, which is the admin-panel-only `adminInfo` flag and is computed for a different audience. Carried on the actor since HOS-296 so consumers do not need a second Better Auth `get-session` round-trip to read it.'
         ),
     _isSystemActor: z
         .boolean()

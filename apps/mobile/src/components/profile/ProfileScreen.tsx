@@ -3,7 +3,7 @@
  * @description Shared profile screen used by both host and tourist roles (SPEC-243 T-050/T-051/T-052/T-054).
  *
  * Responsibilities:
- * - Show avatar (read-only), email (read-only), role (read-only)
+ * - Show avatar (read-only), email (read-only), every held role (read-only)
  * - Editable: firstName, lastName, phone (→ contactInfo.mobilePhone), city, province, country
  * - Save via `usePatchUser` → PATCH /api/v1/protected/users/:id
  * - Notification channel toggles (enabled, allowPush, allowEmails, allowSms)
@@ -37,6 +37,7 @@ import { theme } from '../../design';
 import type { UserPatchBody } from '../../lib/api/hooks/use-patch-user';
 import { UserPatchBodySchema, usePatchUser } from '../../lib/api/hooks/use-patch-user';
 import { useSelfProfile } from '../../lib/api/hooks/use-self-profile';
+import { useActorRoles } from '../../lib/auth/use-actor-roles';
 import { signOut, useSession } from '../../lib/auth-client';
 import { getTranslation } from '../../lib/i18n';
 import { useLocale } from '../../lib/locale-context';
@@ -107,6 +108,12 @@ export function ProfileScreen() {
 
     const { data: profile, isLoading, error: loadError } = useSelfProfile(userId);
     const mutation = usePatchUser();
+
+    // HOS-296: the session no longer carries a scalar `role` — an account holds
+    // a SET of roles, read from the actor on `/auth/me`. Shares the cache entry
+    // the navigation gate already populated at launch, so this costs no extra
+    // request.
+    const { roles: actorRoles } = useActorRoles({ userId: userId || undefined });
 
     // ---------------------------------------------------------------------------
     // Form state
@@ -288,7 +295,9 @@ export function ProfileScreen() {
     // ---------------------------------------------------------------------------
 
     const userEmail = (session?.user as { email?: string } | undefined)?.email ?? '';
-    const userRole = (session?.user as { role?: string } | undefined)?.role ?? '';
+    // Every held role, not a single one. Rendered raw (uppercase enum values),
+    // matching what the pre-HOS-296 single-role label did.
+    const userRolesLabel = actorRoles.join(' · ');
 
     return (
         <KeyboardAvoidingView
@@ -314,7 +323,9 @@ export function ProfileScreen() {
                     </View>
                     <View style={styles.identityText}>
                         <Text style={styles.identityEmail}>{userEmail}</Text>
-                        {userRole ? <Text style={styles.identityRole}>{userRole}</Text> : null}
+                        {userRolesLabel ? (
+                            <Text style={styles.identityRole}>{userRolesLabel}</Text>
+                        ) : null}
                     </View>
                 </View>
 

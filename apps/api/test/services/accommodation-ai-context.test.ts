@@ -157,7 +157,7 @@ import {
 const ACCOMMODATION_ID = '00000000-0000-4000-8000-000000000000';
 const ACTOR = {
     id: 'user-1',
-    role: 'tourist',
+    roles: ['tourist'],
     permissions: [],
     isAuthenticated: true
 };

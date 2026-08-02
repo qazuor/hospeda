@@ -26,23 +26,30 @@ declare namespace App {
             /** User's email address */
             readonly email: string;
             /**
-             * User role from the Better Auth session (USER, HOST, ADMIN,
-             * SUPER_ADMIN, CLIENT_MANAGER, EDITOR). Populated by middleware
-             * from the `role` additional field configured in
-             * `apps/api/src/lib/auth.ts`. `null` only when the role was
-             * unexpectedly absent from the session payload — treat that
-             * defensively as the lowest-privilege case (USER).
+             * Every role the user holds (USER, HOST, COMMERCE_OWNER, ADMIN,
+             * SUPER_ADMIN, CLIENT_MANAGER, EDITOR, SPONSOR).
+             *
+             * HOS-296 replaced the former single `role` scalar with this set:
+             * one account can wear several hats at once and there is
+             * deliberately no derived "primary role" — every gate must ask
+             * "does the user hold role X", never "is the user's role X".
+             * Populated by middleware from `GET /api/v1/public/auth/me`
+             * (`data.actor.roles`); Better Auth's `get-session` no longer
+             * carries any role at all.
+             *
+             * Empty only when the payload was unexpectedly malformed — treat
+             * that defensively as the lowest-privilege case.
              *
              * Used by AccountLayout to gate "Mis propiedades" in the
              * sidebar to host-tier roles (SPEC-143 Finding #12 — parity
              * with the top-right UserMenu predicate).
              */
-            readonly role: string | null;
+            readonly roles: readonly string[];
             /**
-             * Avatar URL from the Better Auth session (`users.image`), or null
-             * when the user has no avatar. Forwarded by middleware so SSR
-             * surfaces (header, account dashboard) can render the avatar
-             * instead of falling back to initials (BETA-32).
+             * Avatar URL from the actor (`users.image`), or null when the user
+             * has no avatar. Forwarded by middleware so SSR surfaces (header,
+             * account dashboard) can render the avatar instead of falling back
+             * to initials (BETA-32).
              */
             readonly image: string | null;
         } | null;

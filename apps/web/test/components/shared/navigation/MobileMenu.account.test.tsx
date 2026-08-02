@@ -62,9 +62,8 @@ vi.mock('../../../../src/components/ui/IconButtonReact', () => ({
 
 vi.mock('../../../../src/lib/auth-client', () => ({
     signOut: vi.fn().mockResolvedValue(undefined),
-    // HOS-217: MobileMenu now also calls useMyEntitlements (host-mode CTA
-    // entitlement refinement), which reads Better Auth's useSession directly.
-    // Perpetually-pending — irrelevant to this file's account-block assertions.
+    // Kept so the module mock stays shape-complete; perpetually-pending and
+    // irrelevant to this file's account-block assertions.
     useSession: vi.fn(() => ({ data: null, isPending: true }))
 }));
 
@@ -85,7 +84,7 @@ const DEFAULT_PROPS = {
         name: 'Ana García',
         email: 'ana@example.com'
     },
-    initialRole: null as string | null
+    initialRoles: [] as readonly string[]
 };
 
 function renderMenu(overrides: Partial<typeof DEFAULT_PROPS> = {}) {
@@ -178,6 +177,7 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
                 isAuthenticated: true,
                 user: { id: 'u1', name: 'Ana García', email: 'ana@example.com' },
                 permissions: ['accommodation.create'],
+                roles: ['USER', 'HOST'],
                 cachedAt: Date.now()
             })
         );
@@ -202,6 +202,7 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
                 isAuthenticated: true,
                 user: { id: 'u1', name: 'Ana García', email: 'ana@example.com' },
                 permissions: ['commerce.editOwn'],
+                roles: ['USER', 'COMMERCE_OWNER'],
                 cachedAt: Date.now()
             })
         );
@@ -225,6 +226,7 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
                 isAuthenticated: true,
                 user: { id: 'u1', name: 'Ana García', email: 'ana@example.com' },
                 permissions: ['accommodation.create', 'commerce.editOwn'],
+                roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
                 cachedAt: Date.now()
             })
         );
@@ -289,7 +291,7 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
                 isAuthenticated: false,
                 user: null,
                 permissions: [],
-                role: null,
+                roles: [],
                 cachedAt: Date.now()
             })
         );

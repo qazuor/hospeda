@@ -94,6 +94,24 @@
     flex-shrink: 0;
 }
 
+/* Per-field note under the locale badges: run state, or why a field has
+   nothing to translate (HOS-317). */
+.fieldNote {
+    margin: 0.5rem 0 0;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    line-height: 1.35;
+    color: var(--muted-foreground, oklch(0.55 0.01 260));
+}
+
+.fieldNoteSuccess {
+    color: var(--success, oklch(0.55 0.18 155));
+}
+
+.fieldNoteError {
+    color: oklch(0.45 0.2 25);
+}
+
 /* Generate button */
 .generateButton {
     display: inline-flex;
@@ -115,16 +133,49 @@
         background-color 150ms ease-out;
 }
 
-.generateButton:hover:not(:disabled) {
+.generateButton:hover:not([aria-disabled="true"]) {
     opacity: 0.88;
 }
 
-.generateButton:disabled {
+/* `aria-disabled`, not `:disabled` — the button stays focusable during a run so
+   the host does not lose focus the moment they activate it. The styling has to
+   follow the attribute the component actually sets. */
+.generateButton[aria-disabled="true"] {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
 .generateButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* Offered after any run that wrote something — a fully clean one included, since
+   the auto-reload was removed (it discarded unsaved editor edits). The reload it
+   triggers is deliberate and host-initiated (HOS-317). */
+.refreshButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    margin-top: var(--space-3, 1rem);
+    padding: 0.5rem 1.25rem;
+    border: 1px solid var(--brand-primary);
+    border-radius: var(--radius-pill, 9999px);
+    background-color: transparent;
+    color: var(--brand-primary);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    cursor: pointer;
+    transition: opacity 150ms ease-out;
+}
+
+.refreshButton:hover {
+    opacity: 0.88;
+}
+
+.refreshButton:focus-visible {
     outline: 2px solid var(--brand-primary);
     outline-offset: 2px;
 }

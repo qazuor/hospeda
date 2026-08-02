@@ -106,7 +106,7 @@ function createMockContext() {
         id: OWNER_ID,
         email: 'owner@example.com',
         name: 'Owner',
-        role: 'COMMERCE_OWNER',
+        roles: ['COMMERCE_OWNER'],
         permissions: []
     };
     const store = new Map<string, unknown>([['actor', actor]]);

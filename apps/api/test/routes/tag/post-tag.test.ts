@@ -177,7 +177,7 @@ const ALL_ASSIGNMENT_PERMISSIONS: PermissionEnum[] = [
 function buildAdminActor(postTagPermissions: PermissionEnum[]): Actor {
     return {
         id: 'test-admin-uuid-aaaa-aaaa-aaaaaaaaaaaaa'.slice(0, 36),
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [
             PermissionEnum.ACCESS_PANEL_ADMIN,
             PermissionEnum.ACCESS_API_ADMIN,
@@ -196,7 +196,7 @@ function actorHeaders(actor: Actor, extra: Record<string, string> = {}): Record<
         'user-agent': 'vitest',
         accept: 'application/json',
         'x-mock-actor-id': actor.id,
-        'x-mock-actor-role': actor.role,
+        'x-mock-actor-role': actor.roles.join(','),
         'x-mock-actor-permissions': JSON.stringify(actor.permissions),
         ...extra
     };

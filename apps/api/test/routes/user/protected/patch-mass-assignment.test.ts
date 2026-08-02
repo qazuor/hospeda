@@ -51,7 +51,7 @@ const validUuid = 'b3f1d2c4-5e6a-4b7c-8d9e-0f1a2b3c4d5e';
 
 const selfActor = {
     id: validUuid,
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: [PermissionEnum.ACCESS_API_PUBLIC, PermissionEnum.ACCESS_API_PRIVATE]
 };
 
@@ -77,14 +77,14 @@ const SYSTEM_FLAGS = [
 
 function makeHeaders(actor: {
     id: string;
-    role: string;
+    roles: readonly string[];
     permissions: string[];
 }): Record<string, string> {
     return {
         'content-type': 'application/json',
         'user-agent': 'vitest',
         'x-mock-actor-id': actor.id,
-        'x-mock-actor-role': actor.role,
+        'x-mock-actor-role': actor.roles.join(','),
         'x-mock-actor-permissions': JSON.stringify(actor.permissions)
     };
 }
@@ -134,7 +134,7 @@ describe('PATCH /protected/users/:id — system-flag mass-assignment guard', () 
                 profileCompleted: false,
                 banned: true,
                 serviceSuspended: true,
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [PermissionEnum.ACCESS_PANEL_ADMIN]
             })
         });

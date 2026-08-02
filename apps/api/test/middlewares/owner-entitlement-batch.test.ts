@@ -32,16 +32,18 @@ vi.mock('../../src/middlewares/billing', () => ({
     getQZPayBilling: vi.fn()
 }));
 
-// Mock the DB module. The batch resolver uses:
-//   db.select({ id: users.id, role: users.role })
-//     .from(users)
-//     .where(inArray(users.id, missing))
+// Mock the DB module. HOS-296: the batch resolver reads the hats from
+// `user_role`, one row per (owner, hat) pair:
+//   db.select({ id: userRole.userId, role: userRole.role })
+//     .from(userRole)
+//     .where(inArray(userRole.userId, missing))
 // No `.limit()` — the chain ends at `.where()` which returns a promise.
 const mockSelect = vi.fn();
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(() => ({ select: mockSelect })),
     accommodations: { id: 'accommodations.id', ownerId: 'accommodations.ownerId' },
-    users: { id: 'users.id', role: 'users.role' }
+    users: { id: 'users.id' },
+    userRole: { userId: 'user_role.user_id', role: 'user_role.role' }
 }));
 
 // Mock PlanService (used by resolveOwnerLimitsForOwnerId, which is in the same

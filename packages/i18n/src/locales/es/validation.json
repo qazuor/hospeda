@@ -2293,7 +2293,11 @@
             "invalid": "El refund status no es válido"
         },
         "role": {
-            "invalid": "El rol no es válido"
+            "invalid": "El rol no es válido",
+            "notAssignable": "Ese rol no se puede asignar a una cuenta"
+        },
+        "roleGrantAction": {
+            "invalid": "La acción sobre el rol no es válida"
         },
         "serviceErrorCode": {
             "invalid": "El service error code no es válido"

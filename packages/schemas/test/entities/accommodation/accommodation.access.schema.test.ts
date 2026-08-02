@@ -10,6 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     AccommodationAdminSchema,
+    AccommodationProtectedCardSchema,
     AccommodationProtectedSchema,
     AccommodationPublicSchema
 } from '../../../src/entities/accommodation/accommodation.access.schema.js';
@@ -412,7 +413,11 @@ describe('Accommodation read⊇write (HOS-190)', () => {
 // omitted them, so stripWithSchema deleted the DB auto-translations and the
 // panel showed "—" for en/pt even when the DB had them. name/summary/description
 // I18n are the SAME translations the public schema already exposes ungated;
-// richDescriptionI18n stays out (premium, protected route lacks the strip).
+// BETA-199 then added the premium pair (richDescription + richDescriptionI18n),
+// which had stayed out precisely because the protected route ran no entitlement
+// strip. It runs one now, so the schema declares the pair and `getById` gates it
+// on the OWNING host's plan. The schema itself gates nothing — see the tests
+// below for the two halves of the contract that keeps that safe.
 // ---------------------------------------------------------------------------
 
 describe('AccommodationProtectedSchema — i18n translation fields for the editor (BETA-186)', () => {
@@ -439,11 +444,53 @@ describe('AccommodationProtectedSchema — i18n translation fields for the edito
         }
     });
 
-    it('does NOT expose richDescriptionI18n (premium; protected route lacks the entitlement strip)', () => {
+    it('declares the premium pair, so the owner editor can show its status (BETA-199)', () => {
+        // The inverse of what this asserted before BETA-199. The pair was kept
+        // out because `protected/getById` ran no entitlement strip, so declaring
+        // it would have handed premium content to a non-entitled owner. That
+        // route resolves the OWNING host's entitlements now, and drops both
+        // fields when the plan lacks CAN_USE_RICH_DESCRIPTION.
+        const result = AccommodationProtectedSchema.safeParse({
+            ...i18nPayload,
+            richDescription: '<p>Rico</p>'
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            const data = result.data as Record<string, unknown>;
+            expect(data.richDescriptionI18n).toEqual({ es: 'Rico', en: 'Rich', pt: 'Rico' });
+            expect(data.richDescription).toBe('<p>Rico</p>');
+        }
+    });
+
+    it('is not itself a gate — parsing keeps whatever the route hands it', () => {
+        // Worth stating outright, because the pair being declared here is what
+        // makes every consumer's own strip load-bearing. `stripWithSchema` only
+        // removes UNDECLARED keys, so from this point on the schema protects
+        // nothing: `getById` gates, and every other consumer drops the pair.
         const result = AccommodationProtectedSchema.safeParse(i18nPayload);
         expect(result.success).toBe(true);
         if (result.success) {
-            expect((result.data as Record<string, unknown>).richDescriptionI18n).toBeUndefined();
+            expect((result.data as Record<string, unknown>).richDescriptionI18n).toBeDefined();
+        }
+    });
+
+    it('the nested CARD variant omits the pair, so embeds are fail-closed', () => {
+        // The surface that made declaring the pair dangerous: this schema is
+        // embedded as a relation by owner-promotion, post and accommodationReview,
+        // and no data-level strip ever reaches an accommodation nested inside
+        // another entity's payload. Those embeds use the card variant, which
+        // cannot carry the pair at all.
+        const result = AccommodationProtectedCardSchema.safeParse({
+            ...i18nPayload,
+            richDescription: '<p>Rico</p>'
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            const data = result.data as Record<string, unknown>;
+            expect(data).not.toHaveProperty('richDescriptionI18n');
+            expect(data).not.toHaveProperty('richDescription');
+            // Still a usable accommodation — an omission, not a truncation.
+            expect(data.nameI18n).toEqual({ es: 'Hotel', en: 'Hotel', pt: 'Hotel' });
         }
     });
 

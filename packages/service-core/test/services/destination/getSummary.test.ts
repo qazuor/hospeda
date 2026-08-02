@@ -51,7 +51,7 @@ describe('DestinationService.getSummary', () => {
             })
             .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationSummaryInput = { destinationId: destination.id };
 
         // Act
@@ -79,7 +79,7 @@ describe('DestinationService.getSummary', () => {
     it('should return NOT_FOUND if destination does not exist', async () => {
         // Arrange
         asMock(modelMock.findById).mockResolvedValue(null);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationSummaryInput = {
             destinationId: getMockId('destination') as any
         };
@@ -100,7 +100,7 @@ describe('DestinationService.getSummary', () => {
             })
             .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationSummaryInput = { destinationId: destination.id };
 
         // Act
@@ -113,7 +113,7 @@ describe('DestinationService.getSummary', () => {
     it('should return INTERNAL_ERROR if model throws', async () => {
         // Arrange
         asMock(modelMock.findById).mockRejectedValue(new Error('DB error'));
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationSummaryInput = {
             destinationId: getMockId('destination') as any
         };
@@ -127,7 +127,7 @@ describe('DestinationService.getSummary', () => {
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
         // Arrange
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params = { destinationId: '' as any };
 
         // Act
@@ -143,7 +143,7 @@ describe('DestinationService.getSummary', () => {
             .with({ visibility: VisibilityEnum.PRIVATE })
             .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
-        const actor = { id: 'user-1', role: RoleEnum.USER, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.USER], permissions: [] };
         const params: GetDestinationSummaryInput = { destinationId: destination.id };
 
         // Act

@@ -78,7 +78,7 @@ app.route('/', createAccommodationRoute);   // Protected
 ### Authentication & Authorization
 
 - Use **Actor system**: `getActorFromContext(c)` in routes
-- Permission checks: `actor.role`, `actor.permissions.includes()`
+- Permission checks: `actor.permissions.includes()` — NEVER check `actor.roles` directly (an actor can hold several roles at once, HOS-296)
 - Routes support `skipAuth: true` option for public endpoints
 
 ### Error Handling

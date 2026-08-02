@@ -26,8 +26,8 @@ import { getMockId } from '../../factories/utilsFactory';
 const createActor = (
     permissions: PermissionEnum[] = [],
     id = 'actor-id',
-    role: RoleEnum = RoleEnum.ADMIN
-) => ({ id, role, permissions });
+    roles: readonly RoleEnum[] = [RoleEnum.ADMIN]
+) => ({ id, roles, permissions });
 
 const withOwner = (
     ownerId: UserIdType,

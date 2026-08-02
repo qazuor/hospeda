@@ -35,7 +35,8 @@ const mockTag1: UserTagWithOwner = {
     ownerId: '00000000-0000-0000-0000-000000000001',
     ownerDisplayName: 'Ana García',
     ownerEmail: 'ana@example.com',
-    ownerRole: 'USER',
+    // HOS-296: the API emits every hat the owner holds.
+    ownerRoles: ['USER', 'HOST'],
     usageCount: 3,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
@@ -54,7 +55,7 @@ const mockTag2: UserTagWithOwner = {
     ownerId: '00000000-0000-0000-0000-000000000002',
     ownerDisplayName: 'Carlos Rodríguez',
     ownerEmail: 'carlos@example.com',
-    ownerRole: 'USER',
+    ownerRoles: ['USER'],
     usageCount: 0,
     createdAt: new Date('2024-02-01'),
     updatedAt: new Date('2024-02-01'),
@@ -85,9 +86,13 @@ describe('UserTagModerationTable', () => {
     });
 
     /**
-     * AC-008-01: Owner role is visible as secondary info.
+     * AC-008-01: Owner roles are visible as secondary info.
+     *
+     * HOS-296: the FULL held set is rendered. Asserting on the joined string
+     * is what makes this test fail if the column silently regresses to a single
+     * value (or to the removed `ownerRole` field, which rendered nothing).
      */
-    it('displays the owner role as secondary info under display name', () => {
+    it('displays every role the owner holds as secondary info under display name', () => {
         render(
             <UserTagModerationTable
                 tags={[mockTag1]}
@@ -97,7 +102,7 @@ describe('UserTagModerationTable', () => {
             />
         );
 
-        expect(screen.getByText('USER')).toBeInTheDocument();
+        expect(screen.getByText('USER, HOST')).toBeInTheDocument();
     });
 
     /**

@@ -1,8 +1,8 @@
 import type { z } from 'zod';
 import {
     AccommodationAdminSchema,
-    AccommodationProtectedSchema,
-    AccommodationPublicSchema
+    AccommodationProtectedCardSchema,
+    AccommodationPublicCardSchema
 } from '../accommodation/accommodation.access.schema.js';
 import {
     UserAdminSchema,
@@ -48,8 +48,13 @@ export const OwnerPromotionPublicSchema = OwnerPromotionSchema.pick({
      * record. Nullable because a promotion can target ALL of the owner's
      * accommodations (`accommodationId` is null), in which case the relation
      * loader returns `null` — `.optional()` alone rejects null and 500s the list.
+     *
+     * CARD tier, not `AccommodationPublicSchema`: the public `getById` route eager-loads
+     * this relation (default relations) with no column allowlist, and the premium
+     * rich-description gate never runs on a nested accommodation — so the full schema
+     * here served ungated premium markdown.
      */
-    accommodation: AccommodationPublicSchema.nullable().optional()
+    accommodation: AccommodationPublicCardSchema.nullable().optional()
 });
 
 export type OwnerPromotionPublic = z.infer<typeof OwnerPromotionPublicSchema>;
@@ -99,7 +104,7 @@ export const OwnerPromotionProtectedSchema = OwnerPromotionSchema.pick({
      * loader returns `null` — `.optional()` alone rejects null and 500s the list
      * (the same fix the admin tier already carries).
      */
-    accommodation: AccommodationProtectedSchema.nullable().optional()
+    accommodation: AccommodationProtectedCardSchema.nullable().optional()
 });
 
 export type OwnerPromotionProtected = z.infer<typeof OwnerPromotionProtectedSchema>;

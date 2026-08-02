@@ -43,17 +43,25 @@ export function useHasPermission(permission: string): boolean {
 }
 
 /**
- * Hook for checking if user has role
+ * Hook for checking if the current user holds the given role.
+ *
+ * HOS-296: the user can hold multiple roles at once — this checks
+ * membership in the set (`user.roles`), not equality against a single value.
  */
 export function useHasRole(role: string): boolean {
     const { user } = useAuthContext();
-    return user?.role === role;
+    return user?.roles.includes(role) ?? false;
 }
 
 /**
- * Hook for checking if user has any of the specified roles
+ * Hook for checking if the current user holds ANY of the specified roles.
+ *
+ * HOS-296: both sides are sets now — this checks whether the two sets
+ * intersect (the user holds at least one of the listed roles), not whether
+ * a single scalar role appears in the list.
  */
 export function useHasAnyRole(roles: string[]): boolean {
     const { user } = useAuthContext();
-    return roles.includes(user?.role ?? '');
+    const userRoles = user?.roles ?? [];
+    return roles.some((r) => userRoles.includes(r));
 }

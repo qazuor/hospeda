@@ -8,7 +8,7 @@ import {
     normalizeViewInput
 } from '../../../src/services/attraction/attraction.normalizers';
 
-const testActor = { id: 'test', role: RoleEnum.ADMIN, permissions: [] };
+const testActor = { id: 'test', roles: [RoleEnum.ADMIN], permissions: [] };
 
 describe('Attraction Normalizers', () => {
     it('normalizeCreateInput normalizes adminInfo y deja campos extra intactos', () => {

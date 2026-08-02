@@ -6,7 +6,7 @@
  *
  * `AccountLayout.astro` no longer hardcodes per-item labels/sections — it
  * renders `getNavForSurface({ surface: 'sidebar' })` gated server-side by
- * `isVisibleByRole` (HOS-131 D-4). Behavior coverage below (which
+ * `isVisibleByRoles` (HOS-131 D-4). Behavior coverage below (which
  * groups/items a given role sees) exercises those same engine functions the
  * layout calls, instead of string-matching literal labels that no longer
  * live in the Astro source.
@@ -18,7 +18,7 @@ import { RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 
 import { getNavForSurface, type NavGroup } from '../../src/config/navigation';
-import { isVisibleByRole } from '../../src/lib/nav-gating';
+import { isVisibleByRoles } from '../../src/lib/nav-gating';
 
 const source = readFileSync(resolve(__dirname, '../../src/layouts/AccountLayout.astro'), 'utf8');
 
@@ -26,7 +26,7 @@ const source = readFileSync(resolve(__dirname, '../../src/layouts/AccountLayout.
 function sidebarGroupsForRole(role: string | null): readonly NavGroup[] {
     return getNavForSurface({
         surface: 'sidebar',
-        visibility: (node) => isVisibleByRole(node, role)
+        visibility: (node) => isVisibleByRoles(node, role === null ? null : [role])
     }).groups;
 }
 
@@ -36,9 +36,9 @@ describe('AccountLayout — sidebar wiring (HOS-131 T-007)', () => {
         expect(source).toContain("surface: 'sidebar'");
     });
 
-    it('gates server-side via isVisibleByRole (HOS-131 D-4), not the scattered role helpers', () => {
+    it('gates server-side via isVisibleByRoles (HOS-131 D-4), not the scattered role helpers', () => {
         expect(source).toContain(
-            "import { isDoorVisible, isVisibleByRole, resolveDoorLabelKey } from '@/lib/nav-gating';"
+            "import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';"
         );
         expect(source).not.toContain('isHostRole');
         expect(source).not.toContain('isCommerceOwnerRole');

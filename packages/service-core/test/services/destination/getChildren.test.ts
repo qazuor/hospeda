@@ -57,7 +57,7 @@ describe('DestinationService.getChildren', () => {
             })
             .build();
         asMock(modelMock.findChildren).mockResolvedValue([child1, child2]);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationChildrenInput = { destinationId: parentId };
 
         // Act
@@ -75,7 +75,7 @@ describe('DestinationService.getChildren', () => {
         // Arrange
         const parentId = getMockId('destination', 'no-children');
         asMock(modelMock.findChildren).mockResolvedValue([]);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationChildrenInput = { destinationId: parentId };
 
         // Act
@@ -88,7 +88,7 @@ describe('DestinationService.getChildren', () => {
 
     it('should return VALIDATION_ERROR for invalid destinationId', async () => {
         // Arrange
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params = { destinationId: 'not-a-uuid' } as unknown as GetDestinationChildrenInput;
 
         // Act
@@ -102,7 +102,7 @@ describe('DestinationService.getChildren', () => {
         // Arrange
         const parentId = getMockId('destination', 'error-parent');
         asMock(modelMock.findChildren).mockRejectedValue(new Error('DB connection lost'));
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationChildrenInput = { destinationId: parentId };
 
         // Act

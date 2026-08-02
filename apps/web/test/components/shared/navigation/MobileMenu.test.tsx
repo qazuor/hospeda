@@ -92,9 +92,8 @@ vi.mock('@repo/icons', async (importOriginal) => {
 const mockSignOut = vi.fn();
 vi.mock('../../../../src/lib/auth-client', () => ({
     signOut: () => mockSignOut(),
-    // HOS-217: MobileMenu now also calls useMyEntitlements (host-mode CTA
-    // entitlement refinement), which reads Better Auth's useSession directly.
-    // Perpetually-pending — irrelevant to this file's sign-out assertions.
+    // Kept so the module mock stays shape-complete; perpetually-pending and
+    // irrelevant to this file's sign-out assertions.
     useSession: vi.fn(() => ({ data: null, isPending: true }))
 }));
 
@@ -119,7 +118,7 @@ const DEFAULT_PROPS = {
         name: 'Ana García',
         email: 'ana@example.com'
     },
-    initialRole: null as string | null
+    initialRoles: [] as readonly string[]
 };
 
 function renderMenu(overrides: Partial<typeof DEFAULT_PROPS> = {}) {
@@ -161,7 +160,7 @@ describe('MobileMenu — sign-out loading state (SPEC-228 T-022)', () => {
                 isAuthenticated: true,
                 user: DEFAULT_PROPS.initialUser,
                 permissions: [],
-                role: null,
+                roles: [],
                 cachedAt: Date.now()
             })
         );
@@ -287,5 +286,14 @@ describe('MobileMenu — bottom search CTA (removed)', () => {
     it('does not reference the CTA styles that were dropped from the module', () => {
         expect(componentSrc).not.toContain('styles.searchLink');
         expect(componentSrc).not.toContain('styles.searchLabel');
+    });
+
+    it('does not use the shared dialog history hook directly', () => {
+        expect(componentSrc).not.toContain('useDialogHistoryBack');
+    });
+
+    it('uses the dedicated mobile-menu history manager', () => {
+        expect(componentSrc).toContain('acquireDialogHistoryEntry');
+        expect(componentSrc).toContain('handleLinkClick');
     });
 });

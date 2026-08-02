@@ -30,9 +30,18 @@ import type { CronJobContext } from '../../src/cron/types';
 // Mock: @repo/service-core — getRevalidationService singleton getter
 // ---------------------------------------------------------------------------
 const mockRevalidateByEntityType = vi.fn();
+/**
+ * HOS-297: the job now COLLECTS due entity types and dispatches them through
+ * `revalidateEntityTypesBatch`, at most once per trigger, instead of calling
+ * `revalidateByEntityType` once per type. Every call ends in a whole-zone purge,
+ * so the old shape fired one zone purge per entity type per run — and that burst
+ * from a single egress IP is what the edge WAF answers with 403.
+ */
+const mockRevalidateEntityTypesBatch = vi.fn();
 const mockGetLogRetentionDays = vi.fn().mockReturnValue(30);
 const mockRevalidationService = {
     revalidateByEntityType: mockRevalidateByEntityType,
+    revalidateEntityTypesBatch: mockRevalidateEntityTypesBatch,
     getLogRetentionDays: mockGetLogRetentionDays
 };
 
@@ -131,6 +140,16 @@ describe('Page Revalidation Cron Job', () => {
         mockFindLastCronEntry.mockResolvedValue(undefined);
         mockDeleteOlderThan.mockResolvedValue(0);
         mockRevalidateByEntityType.mockResolvedValue(undefined);
+        // Default: mirror the real contract — one successful entry per requested
+        // entity type. The job derives its counters from this, so returning []
+        // would silently report every run as having revalidated nothing.
+        mockRevalidateEntityTypesBatch.mockImplementation(
+            async (params: { entityTypes: string[] }) =>
+                params.entityTypes.map((entityType) => ({
+                    entityType,
+                    results: [{ path: `/${entityType}/`, success: true, durationMs: 5 }]
+                }))
+        );
     });
 
     // -------------------------------------------------------------------------
@@ -165,7 +184,7 @@ describe('Page Revalidation Cron Job', () => {
             // DB methods must not be called
             expect(mockFindAllEnabled).not.toHaveBeenCalled();
             expect(mockFindLastCronEntry).not.toHaveBeenCalled();
-            expect(mockRevalidateByEntityType).not.toHaveBeenCalled();
+            expect(mockRevalidateEntityTypesBatch).not.toHaveBeenCalled();
         });
     });
 
@@ -186,7 +205,7 @@ describe('Page Revalidation Cron Job', () => {
 
             // Assert
             expect(result.success).toBe(true);
-            expect(mockRevalidateByEntityType).not.toHaveBeenCalled();
+            expect(mockRevalidateEntityTypesBatch).not.toHaveBeenCalled();
             expect(result.details?.revalidated).toBe(0);
         });
 
@@ -205,9 +224,9 @@ describe('Page Revalidation Cron Job', () => {
 
             // Assert
             expect(result.success).toBe(true);
-            expect(mockRevalidateByEntityType).toHaveBeenCalledOnce();
-            expect(mockRevalidateByEntityType).toHaveBeenCalledWith({
-                entityType: 'accommodation',
+            expect(mockRevalidateEntityTypesBatch).toHaveBeenCalledOnce();
+            expect(mockRevalidateEntityTypesBatch).toHaveBeenCalledWith({
+                entityTypes: ['accommodation'],
                 trigger: 'cron'
             });
             expect(result.details?.revalidated).toBe(1);
@@ -227,9 +246,9 @@ describe('Page Revalidation Cron Job', () => {
 
             // Assert
             expect(result.success).toBe(true);
-            expect(mockRevalidateByEntityType).toHaveBeenCalledOnce();
-            expect(mockRevalidateByEntityType).toHaveBeenCalledWith({
-                entityType: 'destination',
+            expect(mockRevalidateEntityTypesBatch).toHaveBeenCalledOnce();
+            expect(mockRevalidateEntityTypesBatch).toHaveBeenCalledWith({
+                entityTypes: ['destination'],
                 trigger: 'cron'
             });
             expect(result.details?.revalidated).toBe(1);
@@ -256,17 +275,11 @@ describe('Page Revalidation Cron Job', () => {
 
             // Assert -- all entity types should be revalidated on first run
             expect(result.success).toBe(true);
-            expect(mockRevalidateByEntityType).toHaveBeenCalledTimes(3);
-            expect(mockRevalidateByEntityType).toHaveBeenCalledWith({
-                entityType: 'accommodation',
-                trigger: 'cron'
-            });
-            expect(mockRevalidateByEntityType).toHaveBeenCalledWith({
-                entityType: 'destination',
-                trigger: 'cron'
-            });
-            expect(mockRevalidateByEntityType).toHaveBeenCalledWith({
-                entityType: 'event',
+            // HOS-297 REGRESSION GUARD: three due entity types must produce ONE
+            // batched call — i.e. one zone purge — not one call per type.
+            expect(mockRevalidateEntityTypesBatch).toHaveBeenCalledOnce();
+            expect(mockRevalidateEntityTypesBatch).toHaveBeenCalledWith({
+                entityTypes: ['accommodation', 'destination', 'event'],
                 trigger: 'cron'
             });
             expect(result.details?.revalidated).toBe(3);
@@ -292,9 +305,9 @@ describe('Page Revalidation Cron Job', () => {
 
             // Assert
             expect(result.success).toBe(true);
-            expect(mockRevalidateByEntityType).toHaveBeenCalledOnce();
-            expect(mockRevalidateByEntityType).toHaveBeenCalledWith({
-                entityType: 'accommodation',
+            expect(mockRevalidateEntityTypesBatch).toHaveBeenCalledOnce();
+            expect(mockRevalidateEntityTypesBatch).toHaveBeenCalledWith({
+                entityTypes: ['accommodation'],
                 trigger: 'cron'
             });
             expect(result.details?.revalidated).toBe(1);
@@ -325,7 +338,7 @@ describe('Page Revalidation Cron Job', () => {
 
             // Assert — staleRevalidated should be 1
             expect(result.success).toBe(true);
-            expect(mockRevalidateByEntityType).toHaveBeenCalled();
+            expect(mockRevalidateEntityTypesBatch).toHaveBeenCalled();
             expect(result.details?.staleRevalidated).toBe(1);
         });
 
@@ -386,7 +399,7 @@ describe('Page Revalidation Cron Job', () => {
             // Assert — no stale revalidation
             expect(result.success).toBe(true);
             expect(result.details?.staleRevalidated).toBe(0);
-            expect(mockRevalidateByEntityType).not.toHaveBeenCalled();
+            expect(mockRevalidateEntityTypesBatch).not.toHaveBeenCalled();
         });
     });
 
@@ -450,7 +463,7 @@ describe('Page Revalidation Cron Job', () => {
             const result = await pageRevalidationJob.handler(ctx);
 
             // Assert — revalidation service must NOT be called
-            expect(mockRevalidateByEntityType).not.toHaveBeenCalled();
+            expect(mockRevalidateEntityTypesBatch).not.toHaveBeenCalled();
             // Result still reflects what would have been done
             expect(result.success).toBe(true);
             expect(result.details?.dryRun).toBe(true);
@@ -484,7 +497,7 @@ describe('Page Revalidation Cron Job', () => {
             // Assert — counters incremented, but service not called
             expect(result.success).toBe(true);
             expect(result.details?.revalidated).toBeGreaterThanOrEqual(1);
-            expect(mockRevalidateByEntityType).not.toHaveBeenCalled();
+            expect(mockRevalidateEntityTypesBatch).not.toHaveBeenCalled();
         });
     });
 
@@ -497,10 +510,12 @@ describe('Page Revalidation Cron Job', () => {
             const configB = makeConfig('destination', 60);
 
             mockFindAllEnabled.mockResolvedValue([configA, configB]);
-            mockFindLastCronEntry.mockResolvedValue(makeLogEntry(twoHoursAgo));
-            mockRevalidateByEntityType
-                .mockRejectedValueOnce(new Error('Revalidation failed for accommodation'))
-                .mockResolvedValueOnce(undefined);
+            // The per-config try/catch now guards the log lookup; the purge itself
+            // moved below both passes (HOS-297), so this is where a per-entity
+            // failure originates.
+            mockFindLastCronEntry
+                .mockRejectedValueOnce(new Error('Log lookup failed for accommodation'))
+                .mockResolvedValueOnce(makeLogEntry(twoHoursAgo));
 
             const ctx = createMockContext();
 
@@ -510,8 +525,99 @@ describe('Page Revalidation Cron Job', () => {
             // Assert — job returns success=true (partial failure), errors counted
             expect(result.success).toBe(true);
             expect(result.errors).toBeGreaterThan(0);
-            // Second entity should still have been attempted
-            expect(mockRevalidateByEntityType).toHaveBeenCalledTimes(2);
+            // The surviving entity is still dispatched, in a batch of its own.
+            expect(mockRevalidateEntityTypesBatch).toHaveBeenCalledOnce();
+            expect(mockRevalidateEntityTypesBatch).toHaveBeenCalledWith({
+                entityTypes: ['destination'],
+                trigger: 'cron'
+            });
+        });
+
+        it('does not report a failed purge as revalidated', async () => {
+            // Counters used to be incremented at queue time, so a run whose purge
+            // returned 403 still reported `processed: N` and "Revalidated N entity
+            // types" — a total failure read as a full success by anything consuming
+            // the cron result.
+            const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+            mockFindAllEnabled.mockResolvedValue([
+                makeConfig('accommodation', 60),
+                makeConfig('destination', 60)
+            ]);
+            mockFindLastCronEntry.mockResolvedValue(makeLogEntry(twoHoursAgo));
+            mockRevalidateEntityTypesBatch.mockResolvedValue([
+                {
+                    entityType: 'accommodation',
+                    results: [
+                        { path: '/alojamientos/', success: false, durationMs: 9, error: 'HTTP 403' }
+                    ]
+                },
+                {
+                    entityType: 'destination',
+                    results: [
+                        { path: '/destinos/', success: false, durationMs: 9, error: 'HTTP 403' }
+                    ]
+                }
+            ]);
+
+            const result = await pageRevalidationJob.handler(createMockContext());
+
+            expect(result.details?.revalidated).toBe(0);
+            expect(result.processed).toBe(0);
+            expect(result.errors).toBeGreaterThan(0);
+        });
+
+        it('counts a failed purge reported in the batch results without aborting the job', async () => {
+            // The batch reports purge failures in its results rather than throwing,
+            // so a failed purge would look like a clean run if the job did not
+            // inspect them.
+            const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+            mockFindAllEnabled.mockResolvedValue([makeConfig('accommodation', 60)]);
+            mockFindLastCronEntry.mockResolvedValue(makeLogEntry(twoHoursAgo));
+            mockRevalidateEntityTypesBatch.mockResolvedValue([
+                {
+                    entityType: 'accommodation',
+                    results: [
+                        {
+                            path: '/alojamientos/',
+                            success: false,
+                            durationMs: 12,
+                            error: 'HTTP 403'
+                        }
+                    ]
+                }
+            ]);
+
+            const result = await pageRevalidationJob.handler(createMockContext());
+
+            expect(result.success).toBe(true);
+            expect(result.errors).toBeGreaterThan(0);
+        });
+
+        it('keeps running the stale batch when the cron batch throws', async () => {
+            // The two batches are wrapped separately so one failing trigger cannot
+            // swallow the other, nor abort the log cleanup.
+            const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000);
+            mockFindAllEnabled.mockResolvedValue([
+                makeConfig('accommodation', 60),
+                makeConfig('destination', 10080, true)
+            ]);
+            mockFindLastCronEntry
+                .mockResolvedValueOnce(makeLogEntry(seventyTwoHoursAgo)) // accommodation interval: due
+                .mockResolvedValueOnce(makeLogEntry(new Date())) // destination interval: not due
+                .mockResolvedValueOnce(makeLogEntry(seventyTwoHoursAgo)); // destination stale: stale
+            mockRevalidateEntityTypesBatch
+                .mockRejectedValueOnce(new Error('purge exploded'))
+                .mockResolvedValueOnce([]);
+
+            const result = await pageRevalidationJob.handler(createMockContext());
+
+            expect(result.success).toBe(true);
+            expect(result.errors).toBeGreaterThan(0);
+            expect(mockRevalidateEntityTypesBatch).toHaveBeenCalledTimes(2);
+            expect(mockRevalidateEntityTypesBatch).toHaveBeenLastCalledWith({
+                entityTypes: ['destination'],
+                trigger: 'stale'
+            });
         });
 
         it('should return success=false and capture error message when findAllEnabled throws', async () => {

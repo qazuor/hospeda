@@ -121,6 +121,22 @@ const HOST_PERMISSION = 'accommodation.create' as const;
  */
 const COMMERCE_OWNER_PERMISSION = 'commerce.editOwn' as const;
 
+function resolveAnalyticsUserType(input: {
+    readonly permissions: readonly string[] | null;
+}): 'staff' | 'owner' | 'tourist' {
+    const { permissions } = input;
+    if (permissions?.includes(STAFF_DISCRIMINATOR_PERMISSION)) {
+        return 'staff';
+    }
+    if (
+        permissions?.includes(HOST_PERMISSION) ||
+        permissions?.includes(COMMERCE_OWNER_PERMISSION)
+    ) {
+        return 'owner';
+    }
+    return 'tourist';
+}
+
 /**
  * Re-exported from `@/lib/auth-cache` so existing importers of
  * `AUTH_ME_CACHE_KEY` from this module keep working without churn.
@@ -162,7 +178,7 @@ export function UserMenu({
 
     // SSR-reconciling mode (see the hook's JSDoc) — this is the component
     // responsible for the `data-user-authenticated` attribute.
-    const { user, permissions, role } = useAccountPermissions({ initialUser });
+    const { user, permissions, roles } = useAccountPermissions({ initialUser });
 
     // ── PostHog identify ─────────────────────────────────────────────────
     // Fires whenever `user` resolves to a known, authenticated id (from the
@@ -174,26 +190,45 @@ export function UserMenu({
     // `handleSignOut` below, not here, so a guest page load never resets an
     // anonymous visitor's distinct id.
     //
-    // Person properties (role + segment flags) are attached once `permissions`
+    // Person properties (roles + segment flags) are attached once `permissions`
     // resolve. On first mount `permissions` is null (SSR gave us the user id
     // but not the permission set), so the initial identify carries the id
     // alone; a second identify with the enriched props fires when /auth/me (or
     // the cache) lands. PostHog merges person properties across identify calls,
     // so segmenting funnels by is_host / is_commerce_owner / is_staff works
     // without re-sending the id-only call.
+    //
+    // HOS-296 — the `role` scalar person-property became the `roles` ARRAY.
+    // Deliberately NOT a derived "primary role" and NOT a joined string:
+    //   - the spec forbids inventing a primary role (an account genuinely
+    //     wears several hats, and picking one would silently mis-segment the
+    //     exact users this change exists for);
+    //   - PostHog supports array person properties natively and filters them
+    //     with `contains`, so `roles contains 'HOST'` replaces the old
+    //     `role = 'HOST'` breakdown one-for-one;
+    //   - the real segmentation levers here are already the permission-derived
+    //     `is_host` / `is_commerce_owner` / `is_staff` booleans below, which
+    //     are unchanged and keep working for a multi-hat user (a HOST +
+    //     COMMERCE_OWNER now correctly reports BOTH as true instead of
+    //     whichever single role happened to win).
+    // Sorted so the property value is stable across identify calls and PostHog
+    // does not record a person-property change on every page load.
+    const rolesKey = [...roles].sort().join(',');
+    // biome-ignore lint/correctness/useExhaustiveDependencies: `rolesKey` is the stable, order-independent projection of `roles`; depending on the array itself would re-fire on every render since it is a new reference each time.
     useEffect(() => {
         if (!user) return;
         const props =
             permissions === null
                 ? undefined
                 : {
-                      role,
+                      user_type: resolveAnalyticsUserType({ permissions }),
+                      roles: rolesKey.length > 0 ? rolesKey.split(',') : [],
                       is_host: permissions.includes(HOST_PERMISSION),
                       is_commerce_owner: permissions.includes(COMMERCE_OWNER_PERMISSION),
                       is_staff: permissions.includes(STAFF_DISCRIMINATOR_PERMISSION)
                   };
         identifyUser(user.id, props);
-    }, [user, permissions, role]);
+    }, [user, permissions, rolesKey]);
 
     // ── PostHog plan/tier person property ────────────────────────────────
     // Resolved from the PROTECTED entitlements endpoint (NOT /auth/me, which

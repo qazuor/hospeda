@@ -117,13 +117,13 @@ const asMock = <T>(fn: T) => fn as unknown as Mock;
 
 const ACTOR = createActor({
     id: crypto.randomUUID(),
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: [PermissionEnum.CONVERSATION_REPLY_OWN]
 });
 
 const ADMIN_ACTOR = createActor({
     id: crypto.randomUUID(),
-    role: RoleEnum.SUPER_ADMIN,
+    roles: [RoleEnum.SUPER_ADMIN],
     permissions: [
         PermissionEnum.CONVERSATION_VIEW_ALL,
         PermissionEnum.CONVERSATION_VIEW_ANY,
@@ -136,7 +136,7 @@ const ADMIN_ACTOR = createActor({
 
 const HOST_ACTOR = createActor({
     id: crypto.randomUUID(),
-    role: RoleEnum.HOST,
+    roles: [RoleEnum.HOST],
     permissions: [
         PermissionEnum.CONVERSATION_VIEW_OWN,
         PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
@@ -146,7 +146,7 @@ const HOST_ACTOR = createActor({
 
 const FORBIDDEN_ACTOR = createActor({
     id: crypto.randomUUID(),
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: []
 });
 

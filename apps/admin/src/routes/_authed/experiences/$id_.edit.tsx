@@ -9,12 +9,14 @@
 
 import { ExperienceUpdateInputSchema, PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { FaqManager } from '@/components/faqs/FaqManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
 import { useExperiencePage } from '@/features/experience';
+import { createUploadHandler, useMediaUpload } from '@/hooks/use-media-upload';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
@@ -35,6 +37,32 @@ function ExperienceEditPage() {
     const { id } = Route.useParams();
     const { t } = useTranslations();
     const entityData = useExperiencePage(id);
+    const { uploadEntityImage, deleteImage } = useMediaUpload();
+
+    const mediaFieldHandlers = useMemo(
+        () => ({
+            'media.featuredImage': {
+                onUpload: createUploadHandler({
+                    entityType: 'experience',
+                    entityId: id,
+                    role: 'featured',
+                    onUpload: (input) => uploadEntityImage.mutateAsync(input)
+                })
+            },
+            'media.gallery': {
+                onUpload: createUploadHandler({
+                    entityType: 'experience',
+                    entityId: id,
+                    role: 'gallery',
+                    onUpload: (input) => uploadEntityImage.mutateAsync(input)
+                }),
+                onDelete: async (publicId: string) => {
+                    await deleteImage.mutateAsync({ publicId });
+                }
+            }
+        }),
+        [id, uploadEntityImage, deleteImage]
+    );
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.COMMERCE_EDIT_ALL]}>
@@ -62,6 +90,7 @@ function ExperienceEditPage() {
                         >
                             <EntityEditContent
                                 entityType="experience"
+                                fieldHandlers={mediaFieldHandlers}
                                 flat
                             />
                         </TabsContent>

@@ -71,7 +71,7 @@ export const createContactMediaConsolidatedSection = (): ConsolidatedSectionConf
             id: 'media.featuredImage',
             type: FieldTypeEnum.IMAGE,
             required: false,
-            modes: ['view', 'edit', 'create'],
+            modes: ['view', 'edit'],
             label: 'Imagen Principal',
             description: 'Imagen destacada del evento',
             permissions: {

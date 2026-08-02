@@ -420,7 +420,7 @@ export async function ensureHostAccommodation(params: {
 
     const actor: Actor = {
         id: userId,
-        role: RoleEnum.SUPER_ADMIN,
+        roles: [RoleEnum.SUPER_ADMIN],
         permissions: HOST_ACCOMMODATION_ACTOR_PERMISSIONS
     };
 

@@ -25,10 +25,19 @@ import { PermissionEnum } from '@repo/schemas';
 import type { AppMiddleware } from '../types';
 import { apiLogger } from '../utils/logger';
 
-/** Actor shape extracted from context (subset of full Actor type) */
+/**
+ * Actor shape extracted from context (subset of the full `Actor` type).
+ *
+ * HOS-296: `role?: string` became `roles?: readonly string[]`. Kept as a local
+ * structural subset rather than importing `Actor` because this guard only
+ * needs the identity and the permission list — but note that a hand-written
+ * mirror like this one is exactly the class of drift the spec warns about, so
+ * it must be updated in lockstep with the shared type. It is only used for
+ * logging here; the actual gate reads `permissions`.
+ */
 interface BillingActor {
     readonly id: string;
-    readonly role?: string;
+    readonly roles?: readonly string[];
     readonly permissions?: readonly string[];
 }
 
@@ -183,7 +192,7 @@ export function billingAdminGuardMiddleware(): AppMiddleware {
         apiLogger.warn(
             {
                 actorId: actor?.id,
-                actorRole: actor?.role,
+                actorRoles: actor?.roles,
                 method,
                 path: c.req.path
             },

@@ -19,16 +19,16 @@ const bookmarkId = 'bookmark-uuid' as string;
 const entityId = 'entity-uuid' as string;
 const otherUserId = 'other-uuid' as string;
 
-type MockActor = { id: string; role: RoleEnum; permissions: PermissionEnum[] };
+type MockActor = { id: string; roles: readonly RoleEnum[]; permissions: PermissionEnum[] };
 
 const owner: MockActor = {
     id: userId,
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: [PermissionEnum.USER_VIEW_PROFILE]
 };
 const other: MockActor = {
     id: otherUserId,
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: [PermissionEnum.USER_VIEW_PROFILE]
 };
 

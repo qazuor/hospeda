@@ -63,7 +63,7 @@ vi.mock('../../../../src/middlewares/authorization', () => ({
     adminAuthMiddleware:
         () =>
         async (c: { set: (key: string, value: unknown) => void }, next: () => Promise<void>) => {
-            c.set('actor', { id: 'admin-test-id', role: 'SUPER_ADMIN', permissions: [] });
+            c.set('actor', { id: 'admin-test-id', roles: ['SUPER_ADMIN'], permissions: [] });
             await next();
         }
 }));

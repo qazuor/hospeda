@@ -26,7 +26,7 @@ import { createAuthenticatedRequest, createMockAdminActor } from '../../helpers/
 
 const makeActor = (permissions: PermissionEnum[], id = crypto.randomUUID()): Actor => ({
     id,
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions
 });
 

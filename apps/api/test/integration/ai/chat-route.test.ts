@@ -326,14 +326,18 @@ function buildTestApp(): OpenAPIHono<AppBindings> {
 }
 
 function makeMockActorHeaders(
-    overrides: { actorId?: string; role?: RoleEnum; permissions?: PermissionEnum[] } = {}
+    overrides: {
+        actorId?: string;
+        roles?: readonly RoleEnum[];
+        permissions?: PermissionEnum[];
+    } = {}
 ): Record<string, string> {
     return {
         'content-type': 'application/json',
         accept: 'text/event-stream',
         'user-agent': 'vitest-integration',
         'x-mock-actor-id': overrides.actorId ?? UNIQUE_USER_ID,
-        'x-mock-actor-role': overrides.role ?? RoleEnum.USER,
+        'x-mock-actor-role': (overrides.roles ?? [RoleEnum.USER]).join(','),
         'x-mock-actor-permissions': JSON.stringify(overrides.permissions ?? [])
     };
 }
@@ -342,7 +346,7 @@ function makeMockActorHeaders(
 function makeAiAdminHeaders(overrides: { actorId?: string } = {}): Record<string, string> {
     return makeMockActorHeaders({
         actorId: overrides.actorId,
-        role: RoleEnum.SUPER_ADMIN,
+        roles: [RoleEnum.SUPER_ADMIN],
         permissions: [PermissionEnum.AI_SETTINGS_MANAGE]
     });
 }
@@ -572,7 +576,7 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
         // Tourist actor: RoleEnum.USER, empty permissions array — no AI_SETTINGS_MANAGE.
         const res = await app.request(STREAM_PATH, {
             method: 'POST',
-            headers: makeMockActorHeaders({ role: RoleEnum.USER, permissions: [] }),
+            headers: makeMockActorHeaders({ roles: [RoleEnum.USER], permissions: [] }),
             body: JSON.stringify({
                 accommodationId: ACCOMMODATION_ID,
                 messages: makeMessages(1)

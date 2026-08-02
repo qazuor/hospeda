@@ -103,7 +103,7 @@ const MOVED_ENTITY_NAME = 'users' as const;
 
 function makeAdminCtx(): ResolverContext {
     return {
-        role: 'ADMIN',
+        roles: ['ADMIN'],
         userId: 'usr_parity_test_001',
         permissions: [
             'ACCOMMODATION_VIEW_ALL',

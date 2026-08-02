@@ -3,6 +3,20 @@
  *
  * Unit tests for CommerceOwnerProvisioningService (SPEC-239 T-040).
  * Better Auth interactions are mocked via the CreateUserPort.
+ *
+ * ## HOS-296 rewrite (§12)
+ *
+ * The port is now resolve-or-create, not create: an email that already belongs
+ * to an account is GRANTED the commerce hat instead of colliding on signup and
+ * leaving the lead permanently stuck (G-4 / AC-4). That turned
+ * `CreateUserPortResult.alreadyExisted` into part of the contract, and it
+ * changes what this service does downstream — the credential email is skipped
+ * and `temporaryPassword` comes back `null`, because the pre-existing account
+ * kept its own password and was never given the generated one.
+ *
+ * The old suite could not express any of that: every case implicitly assumed
+ * "a new account was created", and `temporaryPassword` was asserted as always
+ * present.
  */
 
 import type { CommerceLead } from '@repo/schemas';
@@ -22,6 +36,7 @@ import * as permissionUtils from '../../../src/utils/permission';
 
 const LEAD_ID = '00000000-0000-4000-a000-000000000003';
 const USER_ID = 'user-provisioned-001';
+const EXISTING_USER_ID = 'user-already-registered-001';
 
 const mockLead: CommerceLead = {
     id: LEAD_ID,
@@ -46,13 +61,13 @@ const mockLead: CommerceLead = {
 
 const adminActor: Actor = {
     id: 'admin-001',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.COMMERCE_EDIT_ALL]
 };
 
 const guestActor: Actor = {
     id: 'guest-001',
-    role: RoleEnum.GUEST,
+    roles: [RoleEnum.GUEST],
     permissions: []
 };
 
@@ -60,10 +75,26 @@ const guestActor: Actor = {
 // Port factories
 // ---------------------------------------------------------------------------
 
+/** Port stub for the "email was free, account created" path. */
 function makeCreateUserPort(
-    result = { id: USER_ID, email: mockLead.email, name: mockLead.contactName }
+    result = {
+        id: USER_ID,
+        email: mockLead.email,
+        name: mockLead.contactName,
+        alreadyExisted: false
+    }
 ): CreateUserPort {
     return vi.fn().mockResolvedValue(result) as unknown as CreateUserPort;
+}
+
+/** Port stub for the "email already belonged to an account" path (AC-4). */
+function makeExistingUserPort(): CreateUserPort {
+    return makeCreateUserPort({
+        id: EXISTING_USER_ID,
+        email: mockLead.email,
+        name: 'Juana Existente',
+        alreadyExisted: true
+    });
 }
 
 function makeNotificationPort(): ProvisioningNotificationPort {
@@ -124,7 +155,7 @@ describe('CommerceOwnerProvisioningService', () => {
             );
         });
 
-        it('should include temporaryPassword in the result', async () => {
+        it('should include temporaryPassword in the result when the account was created', async () => {
             const service = makeService();
 
             const result = await service.provisionCommerceOwner(adminActor, { lead: mockLead });
@@ -191,6 +222,32 @@ describe('CommerceOwnerProvisioningService', () => {
 
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
             expect(result.error?.message).toContain('Auth service unavailable');
+        });
+
+        it('returns the existing user and skips the credential email when the email is already registered', async () => {
+            // AC-4: this is the case that used to blow up with a duplicate-email
+            // INTERNAL_ERROR and leave the lead pending with no way out.
+            const notifier = makeNotificationPort();
+            const service = makeService(makeExistingUserPort(), notifier);
+
+            const result = await service.provisionCommerceOwner(adminActor, { lead: mockLead });
+
+            expect(result.error).toBeUndefined();
+            expect(result.data?.userId).toBe(EXISTING_USER_ID);
+            expect(result.data?.alreadyExisted).toBe(true);
+
+            // The generated password was never applied to that account, so
+            // mailing it would hand the owner credentials that do not work.
+            expect(result.data?.temporaryPassword).toBeNull();
+            expect(notifier.notifyOwnerCredentials).not.toHaveBeenCalled();
+        });
+
+        it('reports alreadyExisted=false when it created the account', async () => {
+            const service = makeService();
+
+            const result = await service.provisionCommerceOwner(adminActor, { lead: mockLead });
+
+            expect(result.data?.alreadyExisted).toBe(false);
         });
 
         it('should generate a different temporary password on each call', async () => {

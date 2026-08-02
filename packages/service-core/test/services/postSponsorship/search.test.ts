@@ -123,7 +123,7 @@ describe('PostSponsorshipService.search', () => {
 
     it('should search as super admin', async () => {
         actor = createActor({
-            role: RoleEnum.SUPER_ADMIN,
+            roles: [RoleEnum.SUPER_ADMIN],
             permissions: Object.values(PermissionEnum)
         });
         const items = [createMockPostSponsorship({ id: getMockPostSponsorshipId('mock-id-1') })];

@@ -342,7 +342,7 @@ function createBillingHeaders({
     permissions
 }: {
     actorId: string;
-    role: string;
+    role: RoleEnum;
     billingCustomerId?: string;
     permissions?: PermissionEnum[];
 }): Record<string, string> {
@@ -350,7 +350,7 @@ function createBillingHeaders({
         role === RoleEnum.ADMIN || role === RoleEnum.SUPER_ADMIN
             ? createMockAdminActor({
                   id: actorId,
-                  role,
+                  roles: [role],
                   permissions: permissions ?? [
                       PermissionEnum.ACCESS_API_ADMIN,
                       PermissionEnum.ACCESS_PANEL_ADMIN

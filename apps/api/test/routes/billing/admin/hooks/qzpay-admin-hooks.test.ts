@@ -133,7 +133,7 @@ vi.mock('../../../../../src/middlewares/actor', () => ({
     getActorFromContext: vi.fn().mockReturnValue({
         id: 'admin-user-001',
         isAuthenticated: true,
-        role: 'admin',
+        roles: ['admin'],
         permissions: ['manage:subscriptions']
     })
 }));

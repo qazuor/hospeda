@@ -337,7 +337,46 @@
         "usageUnlimited": "Ilimitado",
         "usageWarning": "Você está perto do limite",
         "usageAtLimit": "Limite atingido",
-        "usageOf": "{{current}} de {{max}}"
+        "usageOf": "{{current}} de {{max}}",
+        "usage": {
+            "title": "Uso do seu plano",
+            "subtitle": "Quanto você já usou de cada limite incluído no seu plano.",
+            "loading": "Carregando o uso do seu plano...",
+            "unlimited": "Ilimitado",
+            "ofMax": "{{current}} de {{max}}",
+            "unlimitedUsage": "{{current}} em uso",
+            "addonBonus": "Inclui {{bonus}} a mais por complementos",
+            "thresholdWarning": "Perto do limite",
+            "thresholdCritical": "Quase sem margem",
+            "thresholdReached": "Você chegou ao limite",
+            "thresholdExceeded": "Limite ultrapassado",
+            "audienceHost": "Como anfitrião",
+            "audienceTraveler": "Como viajante",
+            "monthlyNote": "Reinicia no começo de cada mês.",
+            "capOnly": "Até {{max}}",
+            "perAccommodationEmpty": "Você ainda não publicou nenhuma hospedagem.",
+            "upgradePlan": "Melhorar meu plano",
+            "buyAddon": "Ampliar com um complemento",
+            "limits": {
+                "max_accommodations": "Hospedagens publicadas",
+                "max_photos_per_accommodation": "Fotos por hospedagem",
+                "max_active_promotions": "Promoções ativas",
+                "max_favorites": "Favoritos salvos",
+                "max_properties": "Propriedades do complexo",
+                "max_staff_accounts": "Contas da equipe",
+                "max_active_alerts": "Alertas de preço ativos",
+                "max_compare_items": "Hospedagens em comparação",
+                "max_ai_text_improve_per_month": "Melhorias de texto com IA (por mês)",
+                "max_ai_chat_per_month": "Perguntas de IA respondidas nos seus anúncios (por mês)",
+                "max_ai_chat_consumer_per_month": "Perguntas ao assistente de IA (por mês)",
+                "max_ai_search_per_month": "Buscas com IA (por mês)",
+                "max_ai_support_per_month": "Perguntas ao suporte com IA (por mês)",
+                "max_ai_translate_per_month": "Traduções com IA (por mês)",
+                "max_ai_accommodation_import_per_month": "Importações de hospedagem com IA (por mês)",
+                "max_search_history_entries": "Buscas guardadas no histórico",
+                "max_collections": "Coleções de favoritos"
+            }
+        }
     },
     "favorites": {
         "tabs": {

@@ -17,10 +17,10 @@ const baseBookmark = {
 };
 
 const userId = 'user-uuid' as string;
-type MockActor = { id: string; role: RoleEnum; permissions: PermissionEnum[] };
+type MockActor = { id: string; roles: readonly RoleEnum[]; permissions: PermissionEnum[] };
 const actor: MockActor = {
     id: userId,
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: [PermissionEnum.USER_VIEW_PROFILE]
 };
 

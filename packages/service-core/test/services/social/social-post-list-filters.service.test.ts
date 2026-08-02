@@ -35,7 +35,7 @@ const BATCH_ID = '00000000-0000-4000-8000-000000000032';
 function buildActor(hasView: boolean): Actor {
     return {
         id: ACTOR_ID,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: hasView ? [PermissionEnum.SOCIAL_POST_VIEW] : []
     };
 }

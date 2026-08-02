@@ -54,7 +54,7 @@ vi.mock('@tanstack/react-router', () => ({
 
 vi.mock('@/hooks/use-auth-context', () => ({
     useAuthContext: () => ({
-        user: mockState.role ? { id: 'user_1', role: mockState.role } : null,
+        user: mockState.role ? { id: 'user_1', roles: [mockState.role] } : null,
         isLoading: false,
         isAuthenticated: Boolean(mockState.role)
     })

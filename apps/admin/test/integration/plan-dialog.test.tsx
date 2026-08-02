@@ -53,91 +53,29 @@ vi.mock('@repo/icons', () => {
  * @repo/config, @repo/logger). We provide the exact enum values and metadata
  * that PlanDialog and plan-entitlement-groups consume.
  */
-vi.mock('@repo/billing', () => {
-    const EntitlementKey = {
-        PUBLISH_ACCOMMODATIONS: 'publish_accommodations',
-        EDIT_ACCOMMODATION_INFO: 'edit_accommodation_info',
-        VIEW_BASIC_STATS: 'view_basic_stats',
-        VIEW_ADVANCED_STATS: 'view_advanced_stats',
-        RESPOND_REVIEWS: 'respond_reviews',
-        PRIORITY_SUPPORT: 'priority_support',
-        FEATURED_LISTING: 'featured_listing',
-        CUSTOM_BRANDING: 'custom_branding',
-        CREATE_PROMOTIONS: 'create_promotions',
-        CAN_USE_RICH_DESCRIPTION: 'can_use_rich_description',
-        CAN_EMBED_VIDEO: 'can_embed_video',
-        CAN_USE_CALENDAR: 'can_use_calendar',
-        CAN_SYNC_EXTERNAL_CALENDAR: 'can_sync_external_calendar',
-        CAN_CONTACT_WHATSAPP_DISPLAY: 'can_contact_whatsapp_display',
-        CAN_CONTACT_WHATSAPP_DIRECT: 'can_contact_whatsapp_direct',
-        HAS_VERIFICATION_BADGE: 'has_verification_badge',
-        MULTI_PROPERTY_MANAGEMENT: 'multi_property_management',
-        CONSOLIDATED_ANALYTICS: 'consolidated_analytics',
-        CENTRALIZED_BOOKING: 'centralized_booking',
-        STAFF_MANAGEMENT: 'staff_management',
-        SAVE_FAVORITES: 'save_favorites',
-        WRITE_REVIEWS: 'write_reviews',
-        READ_REVIEWS: 'read_reviews',
-        PRICE_ALERTS: 'price_alerts',
-        EXCLUSIVE_DEALS: 'exclusive_deals',
-        VIP_SUPPORT: 'vip_support',
-        VIP_VISIBILITY_ACCESS: 'vip_visibility_access',
-        VIP_PROMOTIONS_ACCESS: 'vip_promotions_access'
-    } as const;
+vi.mock('@repo/billing', async () => {
+    // Import the REAL enum and metadata from the side-effect-free modules
+    // instead of restating them. The hand-written copies had drifted: they were
+    // missing the AI suite and five tourist entitlements, so every key added to
+    // `ENTITLEMENT_GROUP_KEYS` resolved to `undefined` here and the dialog threw
+    // on `key.replace(...)`. A mock that duplicates the thing it mocks is the
+    // same defect this branch spent its time removing from marketing copy.
+    //
+    // `@repo/billing`'s barrel is what pulls in the MercadoPago adapter,
+    // `@repo/config` and `@repo/logger`; these three modules import nothing but
+    // each other, so reaching them directly keeps the mock cheap.
+    const { EntitlementKey } = await import(
+        '../../../../packages/billing/src/types/entitlement.types.js'
+    );
+    const { LimitKey } = await import('../../../../packages/billing/src/types/plan.types.js');
+    const { ENTITLEMENT_DEFINITIONS } = await import(
+        '../../../../packages/billing/src/config/entitlements.config.js'
+    );
+    const { LIMIT_METADATA } = await import(
+        '../../../../packages/billing/src/config/limits.config.js'
+    );
 
-    const LimitKey = {
-        MAX_ACCOMMODATIONS: 'max_accommodations',
-        MAX_PHOTOS_PER_ACCOMMODATION: 'max_photos_per_accommodation',
-        MAX_ACTIVE_PROMOTIONS: 'max_active_promotions',
-        MAX_FAVORITES: 'max_favorites',
-        MAX_PROPERTIES: 'max_properties',
-        MAX_STAFF_ACCOUNTS: 'max_staff_accounts'
-    } as const;
-
-    const LIMIT_METADATA: Record<string, { name: string; description: string }> = {
-        max_accommodations: { name: 'Maximum accommodations', description: 'Max published' },
-        max_photos_per_accommodation: {
-            name: 'Photos per accommodation',
-            description: 'Max photos'
-        },
-        max_active_promotions: { name: 'Active promotions', description: 'Max simultaneous' },
-        max_favorites: { name: 'Favorites', description: 'Max saved favorites' },
-        max_properties: { name: 'Properties', description: 'Max in complex' },
-        max_staff_accounts: { name: 'Staff accounts', description: 'Max per complex' }
-    };
-
-    const ENTITLEMENT_DEFINITIONS = [
-        { key: 'publish_accommodations', name: 'Publish accommodations', description: '' },
-        { key: 'edit_accommodation_info', name: 'Edit accommodation info', description: '' },
-        { key: 'view_basic_stats', name: 'Basic statistics', description: '' },
-        { key: 'view_advanced_stats', name: 'Advanced statistics', description: '' },
-        { key: 'respond_reviews', name: 'Respond to reviews', description: '' },
-        { key: 'priority_support', name: 'Priority support', description: '' },
-        { key: 'featured_listing', name: 'Featured listing', description: '' },
-        { key: 'custom_branding', name: 'Custom branding', description: '' },
-        { key: 'create_promotions', name: 'Create promotions', description: '' },
-        { key: 'can_use_rich_description', name: 'Rich description', description: '' },
-        { key: 'can_embed_video', name: 'Embed video', description: '' },
-        { key: 'can_use_calendar', name: 'Availability calendar', description: '' },
-        { key: 'can_sync_external_calendar', name: 'External calendar sync', description: '' },
-        { key: 'can_contact_whatsapp_display', name: 'Display WhatsApp', description: '' },
-        { key: 'can_contact_whatsapp_direct', name: 'Direct WhatsApp contact', description: '' },
-        { key: 'has_verification_badge', name: 'Verification badge', description: '' },
-        { key: 'multi_property_management', name: 'Multi-property management', description: '' },
-        { key: 'consolidated_analytics', name: 'Consolidated analytics', description: '' },
-        { key: 'centralized_booking', name: 'Centralized booking', description: '' },
-        { key: 'staff_management', name: 'Staff management', description: '' },
-        { key: 'save_favorites', name: 'Save favorites', description: '' },
-        { key: 'write_reviews', name: 'Write reviews', description: '' },
-        { key: 'read_reviews', name: 'Read reviews', description: '' },
-        { key: 'price_alerts', name: 'Price alerts', description: '' },
-        { key: 'exclusive_deals', name: 'Exclusive deals', description: '' },
-        { key: 'vip_support', name: 'VIP support', description: '' },
-        { key: 'vip_visibility_access', name: 'VIP visibility access', description: '' },
-        { key: 'vip_promotions_access', name: 'VIP promotions access', description: '' }
-    ];
-
-    return { EntitlementKey, LimitKey, LIMIT_METADATA, ENTITLEMENT_DEFINITIONS };
+    return { EntitlementKey, LimitKey, ENTITLEMENT_DEFINITIONS, LIMIT_METADATA };
 });
 
 import { PlanDialog } from '@/features/billing-plans/components/PlanDialog';

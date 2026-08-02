@@ -315,7 +315,18 @@ export function MultiMarkerMapInner(props: Extract<LocationMapProps, { mode: 'mu
                             title={marker.label}
                         >
                             <Popup>
-                                <strong className={styles.poiPopupTitle}>{marker.label}</strong>
+                                <strong className={styles.poiPopupTitle}>
+                                    {marker.detailUrl ? (
+                                        <a
+                                            className={styles.poiPopupLink}
+                                            href={marker.detailUrl}
+                                        >
+                                            {marker.label}
+                                        </a>
+                                    ) : (
+                                        marker.label
+                                    )}
+                                </strong>
                                 <br />
                                 <span className={styles.poiPopupType}>{marker.typeLabel}</span>
                             </Popup>

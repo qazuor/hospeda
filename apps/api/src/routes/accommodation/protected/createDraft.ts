@@ -22,6 +22,7 @@ import type { Context } from 'hono';
 import { requireEntitlement } from '../../../middlewares/entitlement';
 import { enforceAccommodationLimit } from '../../../middlewares/limit-enforcement';
 import { getActorFromContext } from '../../../utils/actor';
+import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -57,7 +58,15 @@ export const protectedCreateAccommodationDraftRoute = createProtectedRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        return result.data;
+        // BETA-199: `AccommodationProtectedSchema` declares the premium
+        // rich-description pair so the owner's editor GET can show translation
+        // status for it. That GET gates the pair on the owner's plan; EVERY other
+        // route on this schema — including this one — drops it unconditionally.
+        // This response echoes a mutated entity and has no use for rich text, so
+        // an unconditional drop keeps the payload identical to what it was before
+        // the pair was declared, with no entitlement lookup and no gate to
+        // get wrong. See the schema comment for the full contract.
+        return stripRichDescriptionFields(result.data);
     },
     options: {
         // SPEC-145 T-004: entitlement gate BEFORE limit check — host must have the

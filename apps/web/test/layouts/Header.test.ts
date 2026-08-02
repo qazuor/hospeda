@@ -180,9 +180,9 @@ describe('Header.astro — mobile hamburger', () => {
         expect(islandTag).not.toContain('server:defer');
     });
 
-    it('passes the SSR auth hint (initialUser/initialRole) to MobileMenuIsland', () => {
+    it('passes the SSR auth hint (initialUser/initialRoles) to MobileMenuIsland', () => {
         expect(src).toContain('initialUser={initialUserMenuUser}');
-        expect(src).toContain('initialRole={serverUser?.role ?? null}');
+        expect(src).toContain('initialRoles={serverUserRoles}');
     });
 
     it('passes adminPanelUrl to MobileMenuIsland', () => {

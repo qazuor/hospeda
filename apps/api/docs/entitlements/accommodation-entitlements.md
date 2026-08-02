@@ -4,11 +4,16 @@ This document describes how to apply accommodation entitlement middlewares to re
 
 ## Overview
 
-The accommodation entitlement system gates premium features based on user subscription plans:
+The accommodation entitlement system gates premium features based on the owner's
+subscription plan (`owner-basico` / `owner-pro` / `owner-premium`). There is no
+free owner tier — Basic is the entry paid plan (with a 14-day trial):
 
-- **Free Plan**: Basic accommodation listing
-- **Pro Plan**: Rich descriptions, calendar, WhatsApp display, review responses, promotions
-- **Premium Plan**: All Pro features + video embeds, external calendar sync, WhatsApp direct links, verification badge, highlighted review responses
+- **Basic (`owner-basico`)**: Publish/edit accommodations, calendar access,
+  WhatsApp contact (display + direct link — see the note on `gateWhatsAppDisplay()`
+  / `gateWhatsAppDirect()` below), review responses, promotions.
+- **Pro (`owner-pro`)**: All Basic features + rich descriptions, video embeds,
+  external calendar sync, advanced stats, priority support, featured listing.
+- **Premium (`owner-premium`)**: All Pro features + custom branding, verification badge.
 
 ## Available Middlewares
 
@@ -24,7 +29,7 @@ The accommodation entitlement system gates premium features based on user subscr
 
 ### 2. `gateVideoEmbed()`
 
-**Entitlement**: `CAN_EMBED_VIDEO` (Premium)
+**Entitlement**: `CAN_EMBED_VIDEO` (Pro+)
 **Behavior**: Strips video URLs from description and media if user lacks entitlement
 **Apply to**:
 
@@ -34,7 +39,7 @@ The accommodation entitlement system gates premium features based on user subscr
 
 ### 3. `gateCalendarAccess()`
 
-**Entitlement**: `CAN_USE_CALENDAR` (Pro+)
+**Entitlement**: `CAN_USE_CALENDAR` (all owner tiers, including Basic)
 **Behavior**: Returns 403 if user lacks entitlement
 **Apply to**:
 
@@ -44,7 +49,7 @@ The accommodation entitlement system gates premium features based on user subscr
 
 ### 4. `gateExternalCalendarSync()`
 
-**Entitlement**: `CAN_SYNC_EXTERNAL_CALENDAR` (Premium)
+**Entitlement**: `CAN_SYNC_EXTERNAL_CALENDAR` (Pro+)
 **Behavior**: Returns 403 if user lacks entitlement
 **Apply to**:
 
@@ -54,7 +59,13 @@ The accommodation entitlement system gates premium features based on user subscr
 
 ### 5. `gateWhatsAppDisplay()`
 
-**Entitlement**: `CAN_CONTACT_WHATSAPP_DISPLAY` (Pro+)
+**Entitlement**: `CAN_CONTACT_WHATSAPP_DISPLAY`
+**Audience/tier**: This is a **tourist**-tier entitlement (granted starting at
+`tourist-plus`), not an owner-plan feature — it is not gated by owner tier at
+all. Every owner/complex plan also carries it, including Basic, because every
+owner/complex plan spreads the full tourist-VIP entitlement set (SPEC-216: an
+owner is also a full tourist). In practice this gate passes for every
+owner-tier host today.
 **Behavior**: Returns 403 if user tries to add WhatsApp number
 **Apply to**:
 
@@ -64,7 +75,12 @@ The accommodation entitlement system gates premium features based on user subscr
 
 ### 6. `gateWhatsAppDirect()`
 
-**Entitlement**: `CAN_CONTACT_WHATSAPP_DIRECT` (Premium)
+**Entitlement**: `CAN_CONTACT_WHATSAPP_DIRECT`
+**Audience/tier**: Also a **tourist**-tier entitlement, granted only at
+`tourist-vip` among tourist plans — again not an owner-plan feature. Every
+owner/complex plan inherits it via the same tourist-VIP spread as
+`CAN_CONTACT_WHATSAPP_DISPLAY` above, so it currently passes for every
+owner-tier host, including Basic.
 **Behavior**: Returns 403 if user tries to enable direct WhatsApp link
 **Apply to**:
 
@@ -74,7 +90,7 @@ The accommodation entitlement system gates premium features based on user subscr
 
 ### 7. `gateReviewResponse()`
 
-**Entitlement**: `RESPOND_REVIEWS` (Pro+)
+**Entitlement**: `RESPOND_REVIEWS` (all owner tiers, including Basic)
 **Behavior**: Returns 403 if user lacks entitlement
 **Apply to**:
 
@@ -314,13 +330,13 @@ export const getAccommodationRoute = createOpenApiRoute({
 - [ ] `POST /accommodations/:id/calendar/availability` - Add gateCalendarAccess
 - [ ] `PUT /accommodations/:id/calendar/availability/:dateId` - Add gateCalendarAccess
 
-### External Calendar Sync Routes (Premium Only)
+### External Calendar Sync Routes (Pro+ Only)
 
 - [ ] `POST /accommodations/:id/calendar/sync` - Add gateExternalCalendarSync
 - [ ] `GET /accommodations/:id/calendar/sync/status` - Add gateExternalCalendarSync
 - [ ] `DELETE /accommodations/:id/calendar/sync` - Add gateExternalCalendarSync
 
-### Review Response Routes (Pro+ Only)
+### Review Response Routes (All Owner Tiers)
 
 - [ ] `POST /accommodations/:id/reviews/:reviewId/response` - Add gateReviewResponse
 - [ ] `PUT /accommodations/:id/reviews/:reviewId/response` - Add gateReviewResponse
@@ -337,35 +353,35 @@ export const getAccommodationRoute = createOpenApiRoute({
 
 ### Test Scenarios
 
-1. **Free Plan User**:
+1. **Basic (`owner-basico`) host**:
    - Cannot use rich description (markdown stripped)
    - Cannot embed videos (video content removed)
-   - Cannot access calendar features (403)
-   - Cannot add WhatsApp number (403)
-   - Cannot respond to reviews (403)
-
-2. **Pro Plan User**:
-   - Can use rich description
-   - Cannot embed videos (video content removed)
    - Can access calendar features
-   - Can add WhatsApp number (display only)
+   - Cannot sync external calendars (403)
+   - Can add WhatsApp number, including the direct link (tourist-tier
+     entitlement inherited by every owner tier — see `gateWhatsAppDisplay()` /
+     `gateWhatsAppDirect()` above)
    - Can respond to reviews
 
-3. **Premium Plan User**:
+2. **Pro (`owner-pro`) host**:
    - Can use rich description
    - Can embed videos
    - Can access calendar features
    - Can sync external calendars
-   - Can add WhatsApp number with direct link
-   - Can respond to reviews with highlighting
+   - Can add WhatsApp number, including the direct link
+   - Can respond to reviews
+
+3. **Premium (`owner-premium`) host**:
+   - All Pro capabilities, plus:
+   - Custom branding
    - Has verification badge
 
 ### Example Test
 
 ```typescript
 describe('Accommodation Entitlement Gating', () => {
-  it('should strip markdown for Free plan users', async () => {
-    const freeUser = createMockActor({ plan: 'free' });
+  it('should strip markdown for Basic-tier users', async () => {
+    const basicoUser = createMockActor({ plan: 'owner-basico' });
 
     const response = await app.request('/accommodations', {
       method: 'POST',
@@ -373,7 +389,7 @@ describe('Accommodation Entitlement Gating', () => {
         name: 'Test Hotel',
         description: '**Bold text** and *italic* with [link](url)'
       }),
-      headers: { Authorization: `Bearer ${freeUser.token}` }
+      headers: { Authorization: `Bearer ${basicoUser.token}` }
     });
 
     const data = await response.json();
@@ -381,7 +397,7 @@ describe('Accommodation Entitlement Gating', () => {
   });
 
   it('should allow calendar access for Pro plan users', async () => {
-    const proUser = createMockActor({ plan: 'pro' });
+    const proUser = createMockActor({ plan: 'owner-pro' });
 
     const response = await app.request('/accommodations/123/calendar', {
       method: 'GET',
@@ -391,13 +407,13 @@ describe('Accommodation Entitlement Gating', () => {
     expect(response.status).toBe(200);
   });
 
-  it('should block external calendar sync for non-Premium users', async () => {
-    const proUser = createMockActor({ plan: 'pro' });
+  it('should block external calendar sync for Basic-tier users', async () => {
+    const basicoUser = createMockActor({ plan: 'owner-basico' });
 
     const response = await app.request('/accommodations/123/calendar/sync', {
       method: 'POST',
       body: JSON.stringify({ provider: 'google' }),
-      headers: { Authorization: `Bearer ${proUser.token}` }
+      headers: { Authorization: `Bearer ${basicoUser.token}` }
     });
 
     expect(response.status).toBe(403);

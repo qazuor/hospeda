@@ -766,6 +766,75 @@ describe('applyUpgradeRestorations', () => {
             );
         });
 
+        it('still schedules the batch when the slug lookup throws', async () => {
+            // Regression: the lookup and scheduleRevalidationBatch used to share one
+            // try/catch, so a throw in the lookup deleted the whole revalidation and
+            // left only a warn behind. That is how a malformed `where` disabled every
+            // plan-change revalidation unnoticed. A lookup failure must DEGRADE the
+            // events, not remove them.
+            const revalSvc = makeRevalidationService();
+            vi.mocked(getRevalidationService).mockReturnValue(revalSvc as never);
+
+            vi.mocked(restoreAccommodations).mockResolvedValue({ affectedIds: ['acc-1'] });
+
+            const deps = makeDeps({
+                getRestrictedAccommodations: vi
+                    .fn()
+                    .mockResolvedValue([makeRestrictedAcc('acc-1')]),
+                getActiveAccommodationCount: vi.fn().mockResolvedValue(0),
+                fetchAccommodationSlugs: vi.fn().mockRejectedValue(new Error('db exploded'))
+            });
+
+            await applyUpgradeRestorations({
+                userId: USER_ID,
+                customerId: CUSTOMER_ID,
+                newPlanId: NEW_PLAN_ID,
+                deps
+            });
+
+            expect(revalSvc.scheduleRevalidationBatch).toHaveBeenCalledTimes(1);
+            const { events } = vi.mocked(revalSvc.scheduleRevalidationBatch).mock.calls[0]![0]! as {
+                events: Array<{ entityType: string; id?: string; slug?: string }>;
+            };
+            expect(events).toEqual([{ entityType: 'accommodation', id: 'acc-1' }]);
+            // `toEqual` ignores undefined-valued keys, so this is what actually
+            // pins the ABSENCE of `slug` against a regression to `slug: undefined`.
+            expect(events[0]).not.toHaveProperty('slug');
+        });
+
+        it('emits the slug-less variant instead of substituting the id when a slug is missing', async () => {
+            // Regression: the caller used `slug: slugMap[id] ?? id`, fabricating a slug
+            // from a UUID — purging three bogus /alojamientos/<uuid>/ paths AND skipping
+            // the real detail page, while revalidation_log recorded success.
+            // EntityChangeData has a deliberate slug-less accommodation variant.
+            const revalSvc = makeRevalidationService();
+            vi.mocked(getRevalidationService).mockReturnValue(revalSvc as never);
+
+            vi.mocked(restoreAccommodations).mockResolvedValue({ affectedIds: ['acc-1'] });
+
+            const deps = makeDeps({
+                getRestrictedAccommodations: vi
+                    .fn()
+                    .mockResolvedValue([makeRestrictedAcc('acc-1')]),
+                getActiveAccommodationCount: vi.fn().mockResolvedValue(0),
+                // Lookup succeeds but resolves no slug for acc-1.
+                fetchAccommodationSlugs: vi.fn().mockResolvedValue({})
+            });
+
+            await applyUpgradeRestorations({
+                userId: USER_ID,
+                customerId: CUSTOMER_ID,
+                newPlanId: NEW_PLAN_ID,
+                deps
+            });
+
+            const { events } = vi.mocked(revalSvc.scheduleRevalidationBatch).mock.calls[0]![0]! as {
+                events: Array<{ entityType: string; id?: string; slug?: string }>;
+            };
+            expect(events).toEqual([{ entityType: 'accommodation', id: 'acc-1' }]);
+            expect(events[0]).not.toHaveProperty('slug');
+        });
+
         it('does NOT call scheduleRevalidationBatch when nothing was restored', async () => {
             const revalSvc = makeRevalidationService();
             vi.mocked(getRevalidationService).mockReturnValue(revalSvc as never);

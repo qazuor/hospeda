@@ -21,10 +21,13 @@ import { getMediaUrl } from '@repo/media';
 import { useLocation, useRouter } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import type { TourRole } from '@/config/ia/tour.schema';
 import { useTour } from '@/contexts/tour-context';
 import { useAuthContext } from '@/hooks/use-auth-context';
-import { useContextualTourForRoute, useWelcomeTourForRole } from '@/hooks/use-tours';
+import {
+    resolvePrimaryTourRole,
+    useContextualTourForRoute,
+    useWelcomeTourForRole
+} from '@/hooks/use-tours';
 import { useTranslations } from '@/hooks/use-translations';
 import { signOut } from '@/lib/auth-client';
 import { getInitialsFromName } from '@/lib/avatar-utils';
@@ -41,8 +44,10 @@ export function HeaderUser() {
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
-    // Tour selectors (SPEC-174 T-014, §7.8)
-    const role = (user?.role as TourRole | null | undefined) ?? null;
+    // Tour selectors (SPEC-174 T-014, §7.8). HOS-296: the user holds a SET of
+    // roles; resolve the single tour-eligible role via the documented
+    // multi-hat tie-break (see resolvePrimaryTourRole).
+    const role = resolvePrimaryTourRole(user?.roles);
     const welcomeTour = useWelcomeTourForRole({ role });
     const contextualTour = useContextualTourForRoute({ pathname });
 

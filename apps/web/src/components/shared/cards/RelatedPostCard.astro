@@ -9,6 +9,7 @@ import Badge from '@/components/shared/ui/Badge.astro';
 import { getWarmColorScheme } from '@/lib/colors';
 import { buildUrl } from '@/lib/urls';
 import type { SupportedLocale } from '@/lib/i18n';
+import { getPostCategoryIconComponent } from './utils/postCategoryIcon';
 
 interface Props {
   readonly id: string;
@@ -16,12 +17,20 @@ interface Props {
   readonly title: string;
   readonly summary: string;
   readonly featuredImage?: string | null;
+  /** Post category, used to pick the placeholder icon when there is no cover. */
+  readonly category?: string | null;
   readonly destinationName?: string | null;
   readonly publishedAt?: string | null;
   readonly lang: string;
 }
 
-const { slug, title, summary, featuredImage, destinationName, publishedAt, lang } = Astro.props;
+const { slug, title, summary, featuredImage, category, destinationName, publishedAt, lang } =
+  Astro.props;
+
+// A local `placeholder-*.svg` path is the API transform's "no photo" sentinel,
+// not a real cover.
+const hasImage = Boolean(featuredImage) && !featuredImage?.includes('placeholder');
+const CategoryIcon = getPostCategoryIconComponent(category);
 
 const detailUrl = buildUrl({ locale: lang as SupportedLocale, path: `publicaciones/${slug}` });
 
@@ -39,7 +48,7 @@ const warmColorScheme = getWarmColorScheme();
 <article class="related-post-card">
   <a href={detailUrl} class="related-post-card__link">
     <div class="related-post-card__image-wrapper">
-      {featuredImage ? (
+      {hasImage ? (
         <img
           src={featuredImage}
           alt=""
@@ -48,7 +57,9 @@ const warmColorScheme = getWarmColorScheme();
           decoding="async"
         />
       ) : (
-        <div class="related-post-card__placeholder" aria-hidden="true" />
+        <div class="related-post-card__placeholder" aria-hidden="true">
+          <CategoryIcon size={64} weight="duotone" aria-hidden="true" />
+        </div>
       )}
     </div>
     <div class="related-post-card__content">
@@ -105,6 +116,9 @@ const warmColorScheme = getWarmColorScheme();
   .related-post-card__placeholder {
     width: 100%;
     height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: linear-gradient(135deg, var(--surface-warm) 0%, var(--core-card) 100%);
   }
   .related-post-card__content {

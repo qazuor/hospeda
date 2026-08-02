@@ -434,6 +434,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
             string,
             Array<{
                 readonly id: string;
+                readonly slug: string;
                 readonly name: string;
                 readonly icon: string | null;
                 readonly displayWeight: number;
@@ -447,6 +448,10 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                 .select({
                     destinationId: rDestinationAttraction.destinationId,
                     id: attractions.id,
+                    // `slug` is what lets a destination page link each attraction
+                    // to its `/destinos/atraccion/{slug}/` landing. It rides the
+                    // existing join, so it costs one more column, not a query.
+                    slug: attractions.slug,
                     name: attractions.name,
                     icon: attractions.icon,
                     displayWeight: attractions.displayWeight
@@ -460,6 +465,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                 string,
                 Array<{
                     readonly id: string;
+                    readonly slug: string;
                     readonly name: string;
                     readonly icon: string | null;
                     readonly displayWeight: number;
@@ -469,6 +475,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                 const existing = map.get(row.destinationId) ?? [];
                 existing.push({
                     id: row.id,
+                    slug: row.slug,
                     name: row.name,
                     icon: row.icon,
                     displayWeight: row.displayWeight

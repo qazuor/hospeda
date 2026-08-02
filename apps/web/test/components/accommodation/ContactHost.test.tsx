@@ -43,6 +43,12 @@ vi.mock('../../../src/components/shared/feedback/LoadingButton.module.css', () =
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
+const trackEventSpy = vi.fn();
+
+vi.mock('../../../src/lib/analytics/posthog-client', () => ({
+    trackEvent: (...args: unknown[]) => trackEventSpy(...args)
+}));
+
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
@@ -824,24 +830,15 @@ describe('ContactHost', () => {
     // -------------------------------------------------------------------------
 
     describe('booking_request_sent analytics event', () => {
-        let captureSpy: ReturnType<typeof vi.fn>;
-
         beforeEach(() => {
-            captureSpy = vi.fn();
-            (window as unknown as { posthog: { capture: typeof captureSpy } }).posthog = {
-                capture: captureSpy
-            };
+            trackEventSpy.mockClear();
             // JSDOM blocks direct assignment to window.location.href — stub it
             // so Mode B's redirect on success doesn't throw.
             Object.defineProperty(window, 'location', {
-                value: { href: '' },
+                value: { href: '', hostname: 'localhost' },
                 writable: true,
                 configurable: true
             });
-        });
-
-        afterEach(() => {
-            (window as unknown as { posthog?: unknown }).posthog = undefined;
         });
 
         it('Mode A: fires booking_request_sent on successful anonymous send', async () => {
@@ -880,23 +877,23 @@ describe('ContactHost', () => {
 
             await waitFor(() => {
                 expect(
-                    captureSpy.mock.calls.some((call) => call[0] === 'booking_request_sent')
+                    trackEventSpy.mock.calls.some((call) => call[0] === 'contact_owner_completed')
                 ).toBe(true);
             });
-            const bookingRequestCall = captureSpy.mock.calls.find(
-                (call) => call[0] === 'booking_request_sent'
+            const bookingRequestCall = trackEventSpy.mock.calls.find(
+                (call) => call[0] === 'contact_owner_completed'
             );
-            expect(bookingRequestCall?.[1]).toEqual({
-                accommodation_id: ACTIVE_ACCOMMODATION.id,
-                accommodation_type: 'CABIN',
-                destination_id: 'dest-colon',
-                destination_name: 'Colón',
-                price: 12000,
-                currency: 'ARS',
-                owner_id: 'owner-9',
-                is_authenticated: false,
-                locale: LOCALE
-            });
+            expect(bookingRequestCall?.[1]).toEqual(
+                expect.objectContaining({
+                    accommodation_id: ACTIVE_ACCOMMODATION.id,
+                    destination_id: 'dest-colon',
+                    owner_id: 'owner-9',
+                    contact_method: 'platform_message',
+                    conversation_flow: 'anonymous',
+                    is_authenticated: false,
+                    locale: LOCALE
+                })
+            );
         });
 
         it('Mode B: fires booking_request_sent when an authenticated conversation is created', async () => {
@@ -929,23 +926,23 @@ describe('ContactHost', () => {
 
             await waitFor(() => {
                 expect(
-                    captureSpy.mock.calls.some((call) => call[0] === 'booking_request_sent')
+                    trackEventSpy.mock.calls.some((call) => call[0] === 'contact_owner_completed')
                 ).toBe(true);
             });
-            const bookingRequestCall = captureSpy.mock.calls.find(
-                (call) => call[0] === 'booking_request_sent'
+            const bookingRequestCall = trackEventSpy.mock.calls.find(
+                (call) => call[0] === 'contact_owner_completed'
             );
-            expect(bookingRequestCall?.[1]).toEqual({
-                accommodation_id: ACTIVE_ACCOMMODATION.id,
-                accommodation_type: 'CABIN',
-                destination_id: 'dest-colon',
-                destination_name: 'Colón',
-                price: 12000,
-                currency: 'ARS',
-                owner_id: 'owner-9',
-                is_authenticated: true,
-                locale: LOCALE
-            });
+            expect(bookingRequestCall?.[1]).toEqual(
+                expect.objectContaining({
+                    accommodation_id: ACTIVE_ACCOMMODATION.id,
+                    destination_id: 'dest-colon',
+                    owner_id: 'owner-9',
+                    contact_method: 'platform_message',
+                    conversation_flow: 'authenticated',
+                    is_authenticated: true,
+                    locale: LOCALE
+                })
+            );
         });
 
         it('does NOT fire booking_request_sent on a 409 duplicate response', async () => {
@@ -986,25 +983,25 @@ describe('ContactHost', () => {
                 expect(screen.getByRole('alert')).toBeInTheDocument();
             });
 
-            expect(captureSpy.mock.calls.some((call) => call[0] === 'booking_request_sent')).toBe(
-                false
-            );
+            expect(
+                trackEventSpy.mock.calls.some((call) => call[0] === 'contact_owner_completed')
+            ).toBe(false);
 
-            // Instead it fires conversation_duplicate with the enriched props.
-            const duplicateCall = captureSpy.mock.calls.find(
-                (call) => call[0] === 'conversation_duplicate'
+            // Instead it fires contact_owner_failed with the enriched props.
+            const duplicateCall = trackEventSpy.mock.calls.find(
+                (call) => call[0] === 'contact_owner_failed'
             );
-            expect(duplicateCall?.[1]).toEqual({
-                accommodation_id: ACTIVE_ACCOMMODATION.id,
-                accommodation_type: 'CABIN',
-                destination_id: 'dest-colon',
-                destination_name: 'Colón',
-                price: 12000,
-                currency: 'ARS',
-                owner_id: 'owner-9',
-                is_authenticated: false,
-                locale: LOCALE
-            });
+            expect(duplicateCall?.[1]).toEqual(
+                expect.objectContaining({
+                    accommodation_id: ACTIVE_ACCOMMODATION.id,
+                    destination_id: 'dest-colon',
+                    owner_id: 'owner-9',
+                    contact_method: 'platform_message',
+                    failure_reason: 'conversation_duplicate',
+                    is_authenticated: false,
+                    locale: LOCALE
+                })
+            );
         });
 
         it('fires conversation_rate_limited on a 429 response with retry_after', async () => {
@@ -1043,27 +1040,26 @@ describe('ContactHost', () => {
 
             await waitFor(() => {
                 expect(
-                    captureSpy.mock.calls.some((call) => call[0] === 'conversation_rate_limited')
+                    trackEventSpy.mock.calls.some((call) => call[0] === 'contact_owner_failed')
                 ).toBe(true);
             });
-            const rateLimitedCall = captureSpy.mock.calls.find(
-                (call) => call[0] === 'conversation_rate_limited'
+            const rateLimitedCall = trackEventSpy.mock.calls.find(
+                (call) => call[0] === 'contact_owner_failed'
             );
-            expect(rateLimitedCall?.[1]).toEqual({
-                accommodation_id: ACTIVE_ACCOMMODATION.id,
-                accommodation_type: 'CABIN',
-                destination_id: 'dest-colon',
-                destination_name: 'Colón',
-                price: 12000,
-                currency: 'ARS',
-                owner_id: 'owner-9',
-                is_authenticated: false,
-                retry_after: 90,
-                locale: LOCALE
-            });
-            expect(captureSpy.mock.calls.some((call) => call[0] === 'booking_request_sent')).toBe(
-                false
+            expect(rateLimitedCall?.[1]).toEqual(
+                expect.objectContaining({
+                    accommodation_id: ACTIVE_ACCOMMODATION.id,
+                    destination_id: 'dest-colon',
+                    owner_id: 'owner-9',
+                    is_authenticated: false,
+                    contact_method: 'platform_message',
+                    failure_reason: 'rate_limited:90',
+                    locale: LOCALE
+                })
             );
+            expect(
+                trackEventSpy.mock.calls.some((call) => call[0] === 'contact_owner_completed')
+            ).toBe(false);
         });
     });
 });

@@ -138,6 +138,12 @@ export function getDb(): DrizzleClient {
  *   transaction callback see their error wrapped in `DbError` and the
  *   response degrades to 500. Matched by `name` to avoid a circular
  *   dependency between `@repo/db` and the API framework layer.
+ * - Service-layer errors (any error whose `name` is `ServiceError` — the
+ *   `@repo/service-core` class, which sets it explicitly) are re-thrown as-is
+ *   so their `ServiceErrorCode` survives and the API keeps mapping them to the
+ *   intended 400/403/404. Wrapping them would turn every deliberate service
+ *   rejection raised inside a transaction into a 500. Matched by `name` for
+ *   the same dependency-direction reason as above.
  * - Unknown errors are wrapped in a new `DbError`.
  *
  * @param callback - Function to execute within the transaction
@@ -193,6 +199,20 @@ export async function withTransaction<T>(
             typeof (error as { getResponse?: unknown }).getResponse === 'function' &&
             typeof (error as { status?: unknown }).status === 'number'
         ) {
+            throw error;
+        }
+        // Preserve service-layer errors for the same reason and by the same
+        // means. `ServiceError` (`@repo/service-core`) carries the
+        // `ServiceErrorCode` the API maps onto an HTTP status, so wrapping it
+        // in a `DbError` erases that code and a deliberate `VALIDATION_ERROR`
+        // (400) or `NOT_FOUND` (404) reaches the client as a 500.
+        //
+        // Duck-typed rather than `instanceof` because `@repo/db` must NOT
+        // depend on `@repo/service-core` — that is the wrong direction and
+        // would make the DB layer import the business-logic layer. Unlike
+        // Hono's `HTTPException`, `ServiceError` sets `this.name` explicitly
+        // in its constructor, so the name IS a reliable discriminator here.
+        if (error instanceof Error && error.name === 'ServiceError') {
             throw error;
         }
         const cause = error instanceof Error ? error : new Error(String(error));

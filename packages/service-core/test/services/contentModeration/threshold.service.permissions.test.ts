@@ -108,7 +108,7 @@ describe('ContentModerationThresholdService — permission methods', () => {
     describe('_canUpdate — FORBIDDEN when actor lacks MODERATION_THRESHOLD_UPDATE', () => {
         it('should return FORBIDDEN when actor has no relevant permissions', async () => {
             // Arrange — actor with no permissions
-            const actor = createActor({ role: RoleEnum.USER, permissions: [] });
+            const actor = createActor({ roles: [RoleEnum.USER], permissions: [] });
 
             // Act — `update` calls `_canUpdate` via the base class
             const result = await service.update(actor, THRESHOLD_ID, { pending: 0.2 });
@@ -126,7 +126,7 @@ describe('ContentModerationThresholdService — permission methods', () => {
         it('should return NOT_IMPLEMENTED when create is called', async () => {
             // Arrange — even an admin cannot create thresholds
             const actor = createActor({
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: Object.values(PermissionEnum)
             });
 
@@ -146,7 +146,7 @@ describe('ContentModerationThresholdService — permission methods', () => {
         it('should return NOT_IMPLEMENTED when softDelete is called', async () => {
             // Arrange — super-admin actor
             const actor = createActor({
-                role: RoleEnum.SUPER_ADMIN,
+                roles: [RoleEnum.SUPER_ADMIN],
                 permissions: Object.values(PermissionEnum)
             });
 
@@ -167,7 +167,7 @@ describe('ContentModerationThresholdService — permission methods', () => {
         it('should return FORBIDDEN from getById when actor has no view permission', async () => {
             // Arrange — model.findOne must return the entity so _canView is reached.
             // getByField calls model.findOne (not findById), then calls _canView after.
-            const actor = createActor({ role: RoleEnum.USER, permissions: [] });
+            const actor = createActor({ roles: [RoleEnum.USER], permissions: [] });
             // Override findOne to return a real entity so execution reaches _canView
             model.findOne.mockResolvedValue({ ...STORED });
 
@@ -186,7 +186,7 @@ describe('ContentModerationThresholdService — permission methods', () => {
     describe('_canList — FORBIDDEN when actor lacks MODERATION_THRESHOLD_VIEW', () => {
         it('should return FORBIDDEN from list when actor has no view permission', async () => {
             // Arrange
-            const actor = createActor({ role: RoleEnum.USER, permissions: [] });
+            const actor = createActor({ roles: [RoleEnum.USER], permissions: [] });
 
             // Act
             const result = await service.list(actor);
@@ -203,7 +203,7 @@ describe('ContentModerationThresholdService — permission methods', () => {
     describe('_canSearch — FORBIDDEN when actor lacks MODERATION_THRESHOLD_VIEW', () => {
         it('should return FORBIDDEN from search when actor has no view permission', async () => {
             // Arrange
-            const actor = createActor({ role: RoleEnum.USER, permissions: [] });
+            const actor = createActor({ roles: [RoleEnum.USER], permissions: [] });
 
             // Act
             const result = await service.search(actor, VALID_SEARCH_PARAMS);
@@ -220,7 +220,7 @@ describe('ContentModerationThresholdService — permission methods', () => {
     describe('_canCount — FORBIDDEN when actor lacks MODERATION_THRESHOLD_VIEW', () => {
         it('should return FORBIDDEN from count when actor has no view permission', async () => {
             // Arrange
-            const actor = createActor({ role: RoleEnum.USER, permissions: [] });
+            const actor = createActor({ roles: [RoleEnum.USER], permissions: [] });
 
             // Act
             const result = await service.count(actor, VALID_SEARCH_PARAMS);
@@ -238,7 +238,7 @@ describe('ContentModerationThresholdService — permission methods', () => {
         it('should return FORBIDDEN from hardDelete when actor has no hard-delete permission', async () => {
             // Arrange — actor with VIEW but not HARD_DELETE
             const actor = createActor({
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [PermissionEnum.MODERATION_THRESHOLD_VIEW]
             });
 
@@ -258,7 +258,7 @@ describe('ContentModerationThresholdService — permission methods', () => {
     describe('_canRestore — FORBIDDEN when actor lacks MODERATION_THRESHOLD_RESTORE', () => {
         it('should return FORBIDDEN from restore when actor has no restore permission', async () => {
             // Arrange
-            const actor = createActor({ role: RoleEnum.USER, permissions: [] });
+            const actor = createActor({ roles: [RoleEnum.USER], permissions: [] });
 
             // Act
             const result = await service.restore(actor, THRESHOLD_ID);
@@ -277,7 +277,7 @@ describe('ContentModerationThresholdService — permission methods', () => {
         it('should return FORBIDDEN from updateVisibility when actor has no update permission', async () => {
             // Arrange — actor has no update permission; model.findById returns entity
             // so execution reaches _canUpdateVisibility before failing
-            const actor = createActor({ role: RoleEnum.USER, permissions: [] });
+            const actor = createActor({ roles: [RoleEnum.USER], permissions: [] });
 
             // Act
             const result = await service.updateVisibility(
@@ -315,7 +315,7 @@ describe('ContentModerationThresholdService — _afterHardDelete and _afterResto
             model = buildModel({ findById: vi.fn().mockResolvedValue(activeEntity) });
             service = new ContentModerationThresholdService({ logger: undefined }, model as never);
             const actor = createActor({
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE]
             });
 
@@ -339,7 +339,7 @@ describe('ContentModerationThresholdService — _afterHardDelete and _afterResto
             model = buildModel({ findById: vi.fn().mockResolvedValue(deletedEntity) });
             service = new ContentModerationThresholdService({ logger: undefined }, model as never);
             const actor = createActor({
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [PermissionEnum.MODERATION_THRESHOLD_RESTORE]
             });
 
@@ -371,7 +371,7 @@ describe('ContentModerationThresholdService — _executeSearch and _executeCount
         it('should return items from model.findAll when actor has view permission', async () => {
             // Arrange
             const actor = createActor({
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [PermissionEnum.MODERATION_THRESHOLD_VIEW]
             });
 
@@ -391,7 +391,7 @@ describe('ContentModerationThresholdService — _executeSearch and _executeCount
         it('should use context filter when provided', async () => {
             // Arrange
             const actor = createActor({
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [PermissionEnum.MODERATION_THRESHOLD_VIEW]
             });
 
@@ -411,7 +411,7 @@ describe('ContentModerationThresholdService — _executeSearch and _executeCount
         it('should return the count from model.count when actor has view permission', async () => {
             // Arrange
             const actor = createActor({
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [PermissionEnum.MODERATION_THRESHOLD_VIEW]
             });
             model.count.mockResolvedValue(5);

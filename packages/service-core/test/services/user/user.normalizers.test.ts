@@ -17,7 +17,7 @@ const baseUser = {
     slug: undefined
 } as unknown as User;
 
-const actor = { id: 'actor-id', role: RoleEnum.ADMIN, permissions: [] };
+const actor = { id: 'actor-id', roles: [RoleEnum.ADMIN], permissions: [] };
 
 describe('user normalizers', () => {
     it('normalizeCreateInput trims displayName', () => {

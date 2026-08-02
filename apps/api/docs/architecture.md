@@ -237,10 +237,10 @@ options: {
 **Creates Actor with:**
 
 - `isAuthenticated: boolean`
-- `userId: string`
+- `id: string`
 - `email: string`
-- `role: string`
-- `permissions: string[]`
+- `roles: readonly RoleEnum[]` — every role the actor holds (HOS-296); a user can hold several at once
+- `permissions: readonly PermissionEnum[]`
 
 ### 8. Validation
 
@@ -439,10 +439,10 @@ Created by `actorMiddleware` from Better Auth session:
 ```typescript
 interface Actor {
   isAuthenticated: boolean
-  userId: string
+  id: string
   email: string
-  role: string // 'admin', 'user', 'guest'
-  permissions: string[] // ['accommodation:write', ...]
+  roles: readonly RoleEnum[] // every role the actor holds (HOS-296) — e.g. [RoleEnum.HOST, RoleEnum.COMMERCE_OWNER]
+  permissions: readonly PermissionEnum[]
 }
 ```
 
@@ -450,6 +450,7 @@ interface Actor {
 
 ```typescript
 import { getActorFromContext } from '@/middlewares/actor'
+import { PermissionEnum } from '@repo/schemas'
 
 const handler = async (c: Context) => {
   const actor = getActorFromContext(c)
@@ -459,13 +460,10 @@ const handler = async (c: Context) => {
     return c.json({ error: 'Unauthorized' }, 401)
   }
 
-  // Check role
-  if (actor.role !== 'admin') {
-    return c.json({ error: 'Forbidden' }, 403)
-  }
-
-  // Check permissions
-  if (!actor.permissions.includes('accommodation:write')) {
+  // Check permissions — NEVER check roles directly (`actor.roles`), even
+  // for what looks like an admin-only route. Always gate on the specific
+  // PermissionEnum value the operation requires.
+  if (!actor.permissions.includes(PermissionEnum.ACCOMMODATION_UPDATE_ANY)) {
     return c.json({ error: 'Insufficient permissions' }, 403)
   }
 

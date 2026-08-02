@@ -87,7 +87,7 @@ describe('whats-new.recent dashboard source', () => {
 
     it('is registered for HOST role context', () => {
         const ctx: ResolverContext = {
-            role: 'HOST',
+            roles: ['HOST'],
             userId: 'u-host',
             permissions: [],
             scope: 'all'
@@ -98,7 +98,7 @@ describe('whats-new.recent dashboard source', () => {
 
     it('is registered for EDITOR role context', () => {
         const ctx: ResolverContext = {
-            role: 'EDITOR',
+            roles: ['EDITOR'],
             userId: 'u-editor',
             permissions: [],
             scope: 'all'
@@ -109,7 +109,7 @@ describe('whats-new.recent dashboard source', () => {
 
     it('is registered for ADMIN role context', () => {
         const ctx: ResolverContext = {
-            role: 'ADMIN',
+            roles: ['ADMIN'],
             userId: 'u-admin',
             permissions: [],
             scope: 'all'
@@ -120,7 +120,7 @@ describe('whats-new.recent dashboard source', () => {
 
     it('is registered for SUPER_ADMIN role context', () => {
         const ctx: ResolverContext = {
-            role: 'SUPER_ADMIN',
+            roles: ['SUPER_ADMIN'],
             userId: 'u-super',
             permissions: [],
             scope: 'all'
@@ -133,7 +133,7 @@ describe('whats-new.recent dashboard source', () => {
 
     it('calls GET /api/v1/protected/whats-new', async () => {
         const ctx: ResolverContext = {
-            role: 'ADMIN',
+            roles: ['ADMIN'],
             userId: 'u-admin',
             permissions: [],
             scope: 'all'
@@ -151,7 +151,7 @@ describe('whats-new.recent dashboard source', () => {
 
     it('maps unseen items to statusBadge { label: "Nuevo", variant: "success" }', async () => {
         const ctx: ResolverContext = {
-            role: 'HOST',
+            roles: ['HOST'],
             userId: 'u-host',
             permissions: [],
             scope: 'all'
@@ -173,7 +173,7 @@ describe('whats-new.recent dashboard source', () => {
 
     it('maps seen items to no statusBadge (undefined)', async () => {
         const ctx: ResolverContext = {
-            role: 'HOST',
+            roles: ['HOST'],
             userId: 'u-host',
             permissions: [],
             scope: 'all'
@@ -188,7 +188,7 @@ describe('whats-new.recent dashboard source', () => {
 
     it('correctly maps both seen and unseen items in a mixed response', async () => {
         const ctx: ResolverContext = {
-            role: 'ADMIN',
+            roles: ['ADMIN'],
             userId: 'u-admin',
             permissions: [],
             scope: 'all'
@@ -208,7 +208,7 @@ describe('whats-new.recent dashboard source', () => {
 
     it('returns an empty array when the catalog is empty', async () => {
         const ctx: ResolverContext = {
-            role: 'HOST',
+            roles: ['HOST'],
             userId: 'u-host',
             permissions: [],
             scope: 'all'
@@ -224,7 +224,7 @@ describe('whats-new.recent dashboard source', () => {
 
     it('maps id, title → label, and formatted publishedAt → meta', async () => {
         const ctx: ResolverContext = {
-            role: 'ADMIN',
+            roles: ['ADMIN'],
             userId: 'u-admin',
             permissions: [],
             scope: 'all'
@@ -245,7 +245,7 @@ describe('whats-new.recent dashboard source', () => {
 
     it('returns the full item list without slicing (slicing is done by the widget renderer)', async () => {
         const ctx: ResolverContext = {
-            role: 'HOST',
+            roles: ['HOST'],
             userId: 'u-host',
             permissions: [],
             scope: 'all'

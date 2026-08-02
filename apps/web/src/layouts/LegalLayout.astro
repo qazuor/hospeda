@@ -10,7 +10,7 @@
 import { getSiteUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 
@@ -53,18 +53,7 @@ const resolvedDescription = description ?? 'Información legal de Hospeda';
 	<!-- Page header -->
 	<div class="legal-header">
 		<div class="legal-header__container">
-			<nav class="legal-breadcrumbs" aria-label="Breadcrumb">
-				<ol class="legal-breadcrumbs__list">
-					<li class="legal-breadcrumbs__item">
-						<a href={buildUrl({ locale })} class="legal-breadcrumbs__link">
-							{t('nav.home', 'Inicio')}
-						</a>
-					</li>
-					<li class="legal-breadcrumbs__item legal-breadcrumbs__item--current" aria-current="page">
-						{resolvedTitle}
-					</li>
-				</ol>
-			</nav>
+			<Breadcrumbs class="legal-breadcrumbs" locale={locale} items={[{ label: resolvedTitle }]} />
 			<h1 class="legal-header__title">{resolvedTitle}</h1>
 			{lastUpdated && (
 				<p class="legal-header__date">
@@ -109,36 +98,13 @@ const resolvedDescription = description ?? 'Información legal de Hospeda';
 		padding: 0 var(--space-container-x);
 	}
 
-	.legal-breadcrumbs__list {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		list-style: none;
-		padding: 0;
-		margin: 0 0 var(--space-3) 0;
-		font-size: var(--text-body-sm);
-		color: var(--core-muted-foreground);
-	}
-
-	.legal-breadcrumbs__item:not(:last-child)::after {
-		content: '›';
-		margin-left: 0.5rem;
-		color: var(--core-muted-foreground);
-	}
-
-	.legal-breadcrumbs__link {
-		color: var(--core-muted-foreground);
-		text-decoration: none;
-	}
-
-	.legal-breadcrumbs__link:hover {
-		color: var(--core-foreground);
-		text-decoration: underline;
-	}
-
-	.legal-breadcrumbs__item--current {
-		color: var(--core-foreground);
-		font-weight: 500;
+	/*
+	 * Spacing only — the trail itself is styled by the shared Breadcrumbs
+	 * component. `:global` is required because the <nav> is rendered by that
+	 * component and therefore carries ITS scope hash, not this layout's.
+	 */
+	.legal-header__container :global(.legal-breadcrumbs) {
+		margin-bottom: var(--space-3);
 	}
 
 	.legal-header__title {

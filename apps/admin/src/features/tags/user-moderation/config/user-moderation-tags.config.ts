@@ -20,7 +20,8 @@ import { createUserModerationTagsColumns } from './user-moderation-tags.columns'
 const UserTagWithOwnerSchema = TagSchema.extend({
     ownerDisplayName: z.string().optional(),
     ownerEmail: z.string().optional(),
-    ownerRole: z.string().optional(),
+    // HOS-296: the API emits the owner's FULL role set, not one scalar.
+    ownerRoles: z.array(z.string()).optional(),
     usageCount: z.number().int().min(0).optional()
 });
 
@@ -112,7 +113,7 @@ export const userModerationTagsConfig: EntityConfig<UserTagWithOwner> = {
         { accessorKey: 'name', labelKey: 'admin-entities.columns.name' },
         { accessorKey: 'ownerDisplayName', labelKey: 'admin-entities.columns.owner' },
         { accessorKey: 'ownerEmail', labelKey: 'admin-entities.columns.email' },
-        { accessorKey: 'ownerRole', labelKey: 'admin-entities.columns.type' },
+        { accessorKey: 'ownerRoles', labelKey: 'admin-entities.columns.type' },
         { accessorKey: 'color', labelKey: 'admin-entities.columns.type' },
         {
             accessorKey: 'lifecycleState',

@@ -18,6 +18,7 @@
             "network": "Não foi possível conectar ao servidor.",
             "forbidden": "Você não tem permissão para importar de uma URL. Verifique se seu plano inclui isso.",
             "rateLimit": "Você fez muitas importações seguidas. Aguarde um momento e tente novamente.",
+            "entitlementCta": "Ver planos",
             "failure": {
                 "invalidUrl": "Verifique se a URL é válida e corresponde a uma acomodação.",
                 "sourceBlocked": "A fonte está temporariamente indisponível. Aguarde alguns minutos e tente novamente, ou preencha os dados manualmente.",
@@ -125,17 +126,6 @@
                 "loading": "[TODO]",
                 "empty": "[TODO]"
             },
-            "fotos": {
-                "title": "[TODO]",
-                "description": "[TODO]",
-                "uploadPrompt": "[TODO]",
-                "uploadButton": "[TODO]",
-                "uploading": "[TODO]",
-                "maxReached": "[TODO]",
-                "removeAria": "[TODO]",
-                "errorPerFile": "[TODO]",
-                "requiresSaveFirst": "[TODO]"
-            },
             "precio": {
                 "title": "[TODO]",
                 "description": "[TODO]",
@@ -192,8 +182,8 @@
     },
     "properties": {
         "list": {
-            "title": "[TODO]",
-            "subtitle": "[TODO]",
+            "title": "Minhas propriedades",
+            "subtitle": "Gerencie suas publicações",
             "publishAnother": "Publicar outra",
             "needsPlanBanner": {
                 "title": "Você é um anfitrião em preparação",
@@ -208,16 +198,16 @@
         },
         "card": {
             "status": {
-                "DRAFT": "[TODO]",
-                "PUBLISHED": "[TODO]",
-                "SUSPENDED": "[TODO]",
+                "DRAFT": "Rascunho",
+                "PUBLISHED": "Publicada",
+                "SUSPENDED": "Suspensa",
                 "INACTIVE": "Pausada"
             },
             "actions": {
                 "edit": "Editar",
-                "publish": "[TODO]",
-                "unpublish": "[TODO]",
-                "viewOnSite": "[TODO]",
+                "publish": "Publicar",
+                "unpublish": "Despublicar",
+                "viewOnSite": "Ver no site",
                 "unpublishConfirm": "Despublicar este imóvel? Ele não aparecerá mais no site.",
                 "confirmYes": "Sim, despublicar",
                 "confirmNo": "Cancelar",
@@ -228,12 +218,12 @@
                 "publishConfirmNote": "Vai aparecer no site, visível para os turistas.",
                 "publishYes": "Sim, publicar"
             },
-            "pricePerNight": "[TODO]",
+            "pricePerNight": "por noite",
             "unpublishSuccess": "Imóvel despublicado",
             "unpublishError": "Não foi possível despublicar. Tente novamente.",
             "deleteError": "Não foi possível excluir. Tente novamente.",
             "publishError": "Não foi possível publicar. Tente novamente.",
-            "publishSubscriptionRequiredMessage": "Você precisa de um plano ativo para publicar. Se for sua primeira vez, começa com 14 dias grátis.",
+            "publishSubscriptionRequiredMessage": "Você precisa de um plano ativo para publicar. Se for sua primeira assinatura, começa com {{trialDays}} dias grátis.",
             "publishSubscriptionRequiredCta": "Ver planos",
             "publishIncompleteCapacityMessage": "Faltam dados de capacidade (hóspedes, quartos ou banheiros). Complete-os no editor antes de publicar.",
             "publishIncompleteCapacityCta": "Completar no editor",
@@ -383,13 +373,23 @@
             },
             "translation": {
                 "sectionTitle": "Traduções",
-                "sectionDescription": "Status de tradução dos campos principais do seu imóvel. As traduções ausentes são geradas automaticamente por IA a partir do idioma que você está usando.",
+                "sectionDescription": "Status de tradução dos campos principais do seu imóvel. As traduções ausentes são geradas automaticamente por IA a partir do conteúdo em espanhol.",
                 "fieldRichDescription": "Descrição enriquecida",
                 "generateButton": "Gerar traduções ausentes",
                 "generating": "Gerando traduções...",
-                "successMessage": "Traduções geradas. Recarregando...",
+                "successMessage": "Traduções geradas.",
                 "errorGeneric": "Não foi possível gerar as traduções. Tente novamente.",
-                "errorNetwork": "Erro de conexão ao tentar gerar as traduções."
+                "errorNetwork": "Erro de conexão ao tentar gerar as traduções.",
+                "fieldPending": "Gerando...",
+                "fieldTranslated": "Traduzido",
+                "fieldFailed": "Não foi possível traduzir para {{locales}}",
+                "fieldFailedUnknown": "Não foi possível traduzir este campo",
+                "fieldUntouched": "Sem alterações",
+                "fieldNoSource": "Sem conteúdo para traduzir",
+                "nothingGenerated": "Não havia traduções pendentes para gerar.",
+                "allFailed": "Não foi possível gerar nenhuma tradução. Revise o detalhe por campo e tente novamente.",
+                "partialFailure": "Algumas traduções não foram geradas. Revise o detalhe por campo.",
+                "refresh": "Atualizar a página"
             },
             "featuredToggle": {
                 "label": "[PT] Destacar mi alojamiento",
@@ -492,15 +492,16 @@
             }
         },
         "empty": {
-            "title": "[TODO]",
-            "cta": "[TODO]"
+            "title": "Você ainda não publicou nenhuma propriedade",
+            "cta": "Publicar agora"
         }
     },
     "landing": {
-        "heroHeadline": "[TODO]",
-        "heroSubheadline": "[TODO]",
-        "primaryCta": "[TODO]",
-        "secondaryCta": "[TODO]"
+        "heroHeadline": "Transforme sua propriedade em renda",
+        "heroSubheadline": "Publique em minutos e comece a receber hóspedes",
+        "primaryCta": "Publicar sua propriedade",
+        "secondaryCta": "Ver minhas propriedades",
+        "trialCallout": "Experimente o Hospeda gratis por {{trialDays}} dias na sua primeira assinatura. Você escolhe seu plano, cadastra seu cartão e nada é cobrado até o teste terminar."
     },
     "fromAdminBanner": {
         "eyebrow": "Trouxemos você do painel — você precisa publicar uma propriedade primeiro para gerenciar suas acomodações."
@@ -703,6 +704,14 @@
             "promotions": "Promoções",
             "messages": "Mensagens",
             "subscription": "Assinatura"
+        }
+    },
+    "pages": {
+        "nueva": {
+            "trialCalloutTitle": "{{trialDays}} dias gratis na sua primeira assinatura",
+            "trialCalloutTitleIneligible": "Monte sua propriedade",
+            "trialNote": "Você pode montar sua propriedade agora. O teste gratuito de {{trialDays}} dias começa quando você escolhe seu plano: cadastra seu cartão e nada é cobrado até terminar. Vale só para a sua primeira assinatura.",
+            "trialNoteIneligible": "Voce pode criar e editar seu rascunho agora. Para publica-lo e ficar visivel vai precisar de um plano de anfitriao ativo."
         }
     }
 }

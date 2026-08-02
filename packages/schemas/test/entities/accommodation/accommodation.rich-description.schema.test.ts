@@ -169,11 +169,20 @@ describe('AccommodationProtectedSchema — richDescription (SPEC-187)', () => {
 
         const result = AccommodationProtectedSchema.safeParse(payload);
 
-        // Note: AccommodationProtectedSchema uses .pick() without richDescription,
-        // so the field is NOT in its output by design (protected consumers get only
-        // the plain description). This test documents the current intentional
-        // behaviour — if the product decision changes, update accordingly.
+        // BETA-199 inverted this. The note that used to sit here said the field was
+        // "NOT in its output by design", which was true while `protected/getById`
+        // ran no entitlement strip — declaring it would have handed premium content
+        // to a non-entitled owner. That route resolves the OWNING host's
+        // entitlements now, so the schema declares the field and the ROUTE gates it.
+        //
+        // Asserting the value, not just `success`: the previous version asserted
+        // only that parsing succeeded, so it stayed green through the whole
+        // inversion while its comment documented the opposite of the shipped
+        // behaviour — which is how it survived the first sweep of this change.
         expect(result.success).toBe(true);
+        if (result.success) {
+            expect((result.data as Record<string, unknown>).richDescription).toBe(RICH_MD);
+        }
     });
 });
 

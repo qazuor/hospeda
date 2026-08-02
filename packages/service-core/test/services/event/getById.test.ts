@@ -2,8 +2,8 @@ import { EventModel } from '@repo/db';
 import { PermissionEnum, VisibilityEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
+import { createActor } from '../../factories/actorFactory';
 import { createMockEvent, getMockEventId } from '../../factories/eventFactory';
-import { createUser } from '../../factories/userFactory';
 import {
     expectForbiddenError,
     expectInternalError,
@@ -19,8 +19,8 @@ describe('EventService.getById', () => {
     let service: EventService;
     let modelMock: EventModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
-    const actor = createUser();
-    const actorWithPrivate = createUser({ permissions: [PermissionEnum.EVENT_VIEW_PRIVATE] });
+    const actor = createActor();
+    const actorWithPrivate = createActor({ permissions: [PermissionEnum.EVENT_VIEW_PRIVATE] });
     const eventId = getMockEventId('event-1');
 
     beforeEach(() => {

@@ -41,5 +41,5 @@ const description = t(door.subtitleI18nKey);
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="publica">
     <AccountPageHeader title={title} />
-    <DiscoveryDoorHub locale={locale} door={door} role={user.role} adminUrl={getAdminUrl()} />
+    <DiscoveryDoorHub locale={locale} door={door} roles={user.roles} adminUrl={getAdminUrl()} />
 </AccountLayout>

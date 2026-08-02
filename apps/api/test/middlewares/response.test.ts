@@ -829,4 +829,275 @@ describe('Response Middleware', () => {
             errorSpy.mockRestore();
         });
     });
+    // HOS-283: a 402 from the trial/entitlement middleware used to fall into the
+    // `else` branch of the HTTPException mapping and surface as INTERNAL_ERROR
+    // ("Algo salió mal del lado nuestro"), blaming the platform for what is a
+    // business gate. The status stayed 402 but the code — which is what
+    // `translateApiError` resolves the user-facing copy from — was wrong.
+    describe('HTTPException(402) → entitlement gate (HOS-283)', () => {
+        it('maps a 402 to ENTITLEMENT_REQUIRED, not INTERNAL_ERROR', async () => {
+            // Arrange
+            const { HTTPException } = await import('hono/http-exception');
+            app.get('/trial-expired', () => {
+                throw new HTTPException(402, {
+                    message: 'Your trial has expired.',
+                    cause: { code: 'TRIAL_EXPIRED', upgradeAudience: 'host' }
+                });
+            });
+
+            // Act
+            const res = await app.request('/trial-expired');
+
+            // Assert
+            expect(res.status).toBe(402);
+            const data = await res.json();
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
+            expect(data.error.code).not.toBe('INTERNAL_ERROR');
+        });
+
+        it('forwards the cause code as `reason` so the UI can pick specific copy', async () => {
+            // Arrange
+            const { HTTPException } = await import('hono/http-exception');
+            app.get('/trial-expired', () => {
+                throw new HTTPException(402, {
+                    message: 'Your trial has expired.',
+                    cause: { code: 'TRIAL_EXPIRED', upgradeAudience: 'host' }
+                });
+            });
+
+            // Act
+            const res = await app.request('/trial-expired');
+
+            // Assert
+            const data = await res.json();
+            expect(data.error.reason).toBe('TRIAL_EXPIRED');
+        });
+
+        it('forwards upgradeAudience in details so the CTA can target the right plans page', async () => {
+            // Arrange
+            const { HTTPException } = await import('hono/http-exception');
+            app.get('/no-sub', () => {
+                throw new HTTPException(402, {
+                    message: 'No active subscription found.',
+                    cause: { code: 'NO_ACTIVE_SUBSCRIPTION', upgradeAudience: 'host' }
+                });
+            });
+
+            // Act
+            const res = await app.request('/no-sub');
+
+            // Assert
+            const data = await res.json();
+            expect(data.error.reason).toBe('NO_ACTIVE_SUBSCRIPTION');
+            expect(data.error.details).toEqual({ upgradeAudience: 'host' });
+        });
+
+        it('does NOT leak unknown cause fields into the response', async () => {
+            // Arrange — the middleware also puts a whole `trialStatus` object on
+            // the cause; only a known whitelist may reach the client.
+            const { HTTPException } = await import('hono/http-exception');
+            app.get('/leaky', () => {
+                throw new HTTPException(402, {
+                    message: 'Your trial has expired.',
+                    cause: {
+                        code: 'TRIAL_EXPIRED',
+                        upgradeAudience: 'host',
+                        trialStatus: { customerId: 'cus_secret', internalNote: 'do not ship' }
+                    }
+                });
+            });
+
+            // Act
+            const res = await app.request('/leaky');
+
+            // Assert
+            const data = await res.json();
+            expect(JSON.stringify(data)).not.toContain('cus_secret');
+            expect(JSON.stringify(data)).not.toContain('internalNote');
+        });
+
+        it('maps the past-due gate to its own reason and forwards daysOverdue', async () => {
+            // Arrange — the SECOND 402 producer mounted on /protected/*. Its
+            // remedy differs from an expired trial (update the card, do not buy
+            // a plan), so the UI needs to tell them apart.
+            const { HTTPException } = await import('hono/http-exception');
+            app.get('/past-due', () => {
+                throw new HTTPException(402, {
+                    message: 'Your grace period has expired.',
+                    cause: { code: 'GRACE_PERIOD_EXPIRED', daysOverdue: 3 }
+                });
+            });
+
+            // Act
+            const res = await app.request('/past-due');
+
+            // Assert
+            expect(res.status).toBe(402);
+            const data = await res.json();
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
+            expect(data.error.reason).toBe('GRACE_PERIOD_EXPIRED');
+            expect(data.error.details).toEqual({ daysOverdue: 3 });
+        });
+
+        it('drops a non-numeric daysOverdue', async () => {
+            // Arrange
+            const { HTTPException } = await import('hono/http-exception');
+            app.get('/bad-days', () => {
+                throw new HTTPException(402, {
+                    message: 'Your grace period has expired.',
+                    cause: { code: 'GRACE_PERIOD_EXPIRED', daysOverdue: 'three' }
+                });
+            });
+
+            // Act
+            const res = await app.request('/bad-days');
+
+            // Assert
+            const data = await res.json();
+            expect(data.error.reason).toBe('GRACE_PERIOD_EXPIRED');
+            expect(data.error.details).toBeUndefined();
+        });
+
+        it('logs a 402 at warn, not at error — it is a gate, not a fault', async () => {
+            // Arrange — without this the ERROR stream fills with a stack trace
+            // for every blocked write of every lapsed host, and the middleware
+            // already emits its own warn for the same event.
+            const { HTTPException } = await import('hono/http-exception');
+            const { apiLogger } = await import('../../src/utils/logger');
+            const warnSpy = vi.spyOn(apiLogger, 'warn').mockImplementation(() => undefined);
+            const errorSpy = vi.spyOn(apiLogger, 'error').mockImplementation(() => undefined);
+
+            app.get('/gate', () => {
+                throw new HTTPException(402, {
+                    message: 'Your trial has expired.',
+                    cause: { code: 'TRIAL_EXPIRED', upgradeAudience: 'host' }
+                });
+            });
+
+            // Act
+            const res = await app.request('/gate');
+
+            // Assert
+            expect(res.status).toBe(402);
+            expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Caught error'));
+            expect(errorSpy).not.toHaveBeenCalled();
+
+            warnSpy.mockRestore();
+            errorSpy.mockRestore();
+        });
+
+        it('masks `reason` on a 5xx in production, like message and details', async () => {
+            // Arrange — `reason` names an internal failure mode
+            // (BULLMQ_NOT_CONFIGURED, ...), so leaking it past the 5xx redaction
+            // would hand back exactly what that redaction hides.
+            const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
+            const originalNodeEnv = env.NODE_ENV;
+            const originalDebug = env.HOSPEDA_API_DEBUG_ERRORS;
+            (env as { NODE_ENV: string }).NODE_ENV = 'production';
+            (env as { HOSPEDA_API_DEBUG_ERRORS?: boolean }).HOSPEDA_API_DEBUG_ERRORS = false;
+
+            app.get('/boom', () => {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'pg pool timeout',
+                    undefined,
+                    'BULLMQ_NOT_CONFIGURED'
+                );
+            });
+
+            try {
+                // Act
+                const res = await app.request('/boom');
+
+                // Assert
+                expect(res.status).toBe(500);
+                const data = await res.json();
+                expect(data.error.reason).toBeUndefined();
+                expect(JSON.stringify(data)).not.toContain('BULLMQ_NOT_CONFIGURED');
+            } finally {
+                (env as { NODE_ENV: string }).NODE_ENV = originalNodeEnv;
+                (env as { HOSPEDA_API_DEBUG_ERRORS?: boolean }).HOSPEDA_API_DEBUG_ERRORS =
+                    originalDebug;
+            }
+        });
+
+        it('drops a cause code that is NOT in the whitelist', async () => {
+            // Arrange — the whitelist is the security control: without a
+            // rejected-input case, dropping it entirely keeps every other test
+            // green. Only the three vocabularies the middlewares emit may reach
+            // the browser.
+            const { HTTPException } = await import('hono/http-exception');
+            app.get('/unknown-cause', () => {
+                throw new HTTPException(402, {
+                    message: 'Payment required.',
+                    cause: { code: 'SOME_INTERNAL_STATE', upgradeAudience: 'host' }
+                });
+            });
+
+            // Act
+            const res = await app.request('/unknown-cause');
+
+            // Assert
+            const data = await res.json();
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
+            expect(data.error.reason).toBeUndefined();
+            // A cause we do not recognise is not one of our gates, so nothing it
+            // carries is forwarded — not even an otherwise well-formed audience.
+            expect(data.error.details).toBeUndefined();
+            expect(JSON.stringify(data)).not.toContain('SOME_INTERNAL_STATE');
+        });
+
+        it('drops an upgradeAudience outside the known vocabulary', async () => {
+            // Arrange
+            const { HTTPException } = await import('hono/http-exception');
+            app.get('/odd-audience', () => {
+                throw new HTTPException(402, {
+                    message: 'Payment required.',
+                    cause: { code: 'TRIAL_EXPIRED', upgradeAudience: 'admin' }
+                });
+            });
+
+            // Act
+            const res = await app.request('/odd-audience');
+
+            // Assert — the reason survives, the unknown audience does not
+            const data = await res.json();
+            expect(data.error.reason).toBe('TRIAL_EXPIRED');
+            expect(data.error.details).toBeUndefined();
+        });
+
+        it('still answers a 402 with no cause at all', async () => {
+            // Arrange
+            const { HTTPException } = await import('hono/http-exception');
+            app.get('/bare', () => {
+                throw new HTTPException(402, { message: 'Payment required.' });
+            });
+
+            // Act
+            const res = await app.request('/bare');
+
+            // Assert
+            expect(res.status).toBe(402);
+            const data = await res.json();
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
+            expect(data.error.reason).toBeUndefined();
+        });
+
+        it('does not emit `reason` on error shapes that have none', async () => {
+            // Arrange
+            const { HTTPException } = await import('hono/http-exception');
+            app.get('/plain-403', () => {
+                throw new HTTPException(403, { message: 'Insufficient permissions' });
+            });
+
+            // Act
+            const res = await app.request('/plain-403');
+
+            // Assert
+            const data = await res.json();
+            expect(data.error.code).toBe('FORBIDDEN');
+            expect('reason' in data.error).toBe(false);
+        });
+    });
 });

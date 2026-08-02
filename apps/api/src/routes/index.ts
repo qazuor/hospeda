@@ -12,7 +12,7 @@ import { pastDueGraceMiddleware } from '../middlewares/past-due-grace.middleware
 import { createSlidingWindowPerUserRateLimit } from '../middlewares/rate-limit';
 import { socialFeatureTagMiddleware } from '../middlewares/social-feature-tag';
 import type { AppOpenAPI } from '../types';
-import { env } from '../utils/env';
+import { env, getRateLimitConfig } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 import { createSimpleRoute } from '../utils/route-factory';
 // ─── Entity route imports (from entity barrels) ───────────────────────────────
@@ -237,6 +237,52 @@ export const setupRoutes = (app: AppOpenAPI) => {
     // Media provider auth check — public, unauthenticated, returns 503 when
     // Cloudinary credentials are missing or invalid (SPEC-078-GAPS GAP-078-232).
     app.route('/api/v1/public/health', mediaHealthRoutes);
+
+    // Per-user rate limit on ALL admin routes (HOS-325).
+    //
+    // `/api/v1/admin/*` was the only broad authenticated path tier with NO
+    // per-user governor: a single IP-keyed bucket (200 req / 10 min) was the whole
+    // control. One operator working normally in the admin panel exhausted it and
+    // the API answered 429, and two operators behind one office egress IP shared
+    // that one budget. (It was not the API's tightest tier in absolute terms —
+    // billing POSTs and `/public/auth/*` are tighter — but it was the only one
+    // governing broad authenticated traffic with nothing keyed to the user.)
+    //
+    // Raising the IP number alone would have removed the only control there was.
+    // This mirrors what HOS-186 did for `/api/v1/protected/*`: a per-USER limiter
+    // is the real governor, and the IP-keyed `admin` tier stays as an anti-abuse
+    // guard only. An IP-keyed limit on authenticated traffic is hostile to CGNAT
+    // at any value.
+    //
+    // 300 req / 60 s sits above what an admin screen costs on load (tables +
+    // facets + counts + permission probes, heavier than the 200/60 s that governs
+    // web browsing) while still throttling a runaway client. The IP tier was
+    // re-cut to 3000/60 s so it stays strictly above this budget times the number
+    // of operators plausibly sharing one egress IP — see the calibration note in
+    // env-config-helpers.ts for why that arithmetic is load-bearing.
+    //
+    // Gated on the same `API_RATE_LIMIT_ADMIN_ENABLED` switch as the IP tier, so
+    // `API_RATE_LIMIT_*_ENABLED=''` still disables admin rate limiting completely
+    // — the e2e harness relies on that and runs a production build, so a limiter
+    // that ignored the flag would silently throttle parallel e2e workers, which
+    // all share the loopback IP.
+    //
+    // Mounted HERE, before the first `/api/v1/admin/*` route is registered,
+    // because Hono runs middleware in registration order: mounted lower it would
+    // silently skip every admin route declared above it. The actor is already on
+    // the context (authMiddleware + actorMiddleware run globally before route
+    // setup).
+    if (getRateLimitConfig().adminEnabled) {
+        app.use(
+            '/api/v1/admin/*',
+            createSlidingWindowPerUserRateLimit({
+                windowMs: 60_000,
+                max: 300,
+                keyPrefix: 'admin:user'
+            })
+        );
+    }
+
     app.route('/api/v1/admin/metrics', metricsRoutes);
 
     // ─── Auth routes ──────────────────────────────────────────────────────────

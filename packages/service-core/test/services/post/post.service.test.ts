@@ -52,7 +52,7 @@ describe('PostService - Relations Support', () => {
         mockActor = {
             id: 'test-user',
             type: 'user',
-            role: RoleEnum.USER,
+            roles: [RoleEnum.USER],
             permissions: []
         } as Actor;
 
@@ -141,7 +141,7 @@ describe('PostService - tags filter via r_entity_tag (HOS-109 regression)', () =
         mockActor = {
             id: 'test-user',
             type: 'user',
-            role: RoleEnum.USER,
+            roles: [RoleEnum.USER],
             permissions: []
         } as Actor;
 

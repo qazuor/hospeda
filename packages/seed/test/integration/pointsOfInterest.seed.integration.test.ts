@@ -26,9 +26,9 @@ import {
     initializeDb,
     PointOfInterestModel,
     RDestinationPointOfInterestModel,
-    resetDb,
-    users
+    resetDb
 } from '@repo/db';
+import { users } from '@repo/db/schemas';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { type Actor, PointOfInterestService } from '@repo/service-core';
 import { config as loadDotenv } from 'dotenv';

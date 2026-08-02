@@ -7,7 +7,7 @@
  * component with a different `door` from `ACCOUNT_DISCOVERY_DOORS` — the
  * per-option state (acquired / unacquired / coming soon) is resolved here,
  * server-side, the same way `AccountLayout.astro`'s sidebar approximates
- * gating: via `isVisibleByRole` against `Astro.locals.user.role` (HOS-131
+ * gating: via `isVisibleByRoles` against `Astro.locals.user.roles` (HOS-131
  * D-4 — no effective-permissions round-trip on SSR).
  *
  * Per option:
@@ -22,7 +22,7 @@ import type { DiscoveryDoor } from '@/config/discovery-doors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { GatedNavNode } from '@/lib/nav-gating';
-import { isVisibleByRole, resolveDoorOptionState } from '@/lib/nav-gating';
+import { isVisibleByRoles, resolveDoorOptionState } from '@/lib/nav-gating';
 import { buildUrl } from '@/lib/urls';
 import { CheckCircleIcon } from '@repo/icons';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
@@ -30,7 +30,12 @@ import GradientButton from '@/components/shared/ui/GradientButton.astro';
 interface Props {
     readonly locale: SupportedLocale;
     readonly door: DiscoveryDoor;
-    readonly role: string | null;
+    /**
+     * Every role the visitor holds (`Astro.locals.user.roles`), or `null`
+     * for guests. HOS-296: a door option counts as acquired when ANY held
+     * role grants its permission.
+     */
+    readonly roles: readonly string[] | null;
     /**
      * Admin panel base URL (`getAdminUrl()`), used for `managesInAdminPanel`
      * acquired options (HOS-134). `undefined` when the env var isn't
@@ -40,10 +45,10 @@ interface Props {
     readonly adminUrl?: string;
 }
 
-const { locale, door, role, adminUrl } = Astro.props;
+const { locale, door, roles, adminUrl } = Astro.props;
 const { t } = createTranslations(locale);
 
-const visibility = (node: GatedNavNode) => isVisibleByRole(node, role);
+const visibility = (node: GatedNavNode) => isVisibleByRoles(node, roles);
 
 const optionRows = door.options.map((option) => {
     const state = resolveDoorOptionState({ option, visibility });

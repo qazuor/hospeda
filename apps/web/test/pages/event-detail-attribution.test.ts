@@ -46,19 +46,30 @@ describe('Event detail page - Stock image attribution (SPEC-274)', () => {
         });
 
         it('should only render for non-placeholder images', () => {
-            // Attribution is inside the {!featuredIsPlaceholder ? ...} block
-            const attributionBlock = eventDetailPage
-                .substring(eventDetailPage.indexOf('{!featuredIsPlaceholder ? ('))
-                .split(') : (')[0];
+            // Attribution lives inside the `!featuredIsPlaceholder ? (` branch,
+            // which ends at the `) : null}` that drops the hero entirely.
+            const branchStart = eventDetailPage.indexOf('!featuredIsPlaceholder ? (');
+            expect(branchStart).toBeGreaterThan(-1);
+
+            const attributionBlock = eventDetailPage.substring(branchStart).split(') : null}')[0];
 
             expect(attributionBlock).toContain('ImageAttribution');
         });
     });
 
     describe('Conditional rendering structure', () => {
-        it('should wrap attribution in fragment with Image component', () => {
-            expect(eventDetailPage).toContain('<>');
-            expect(eventDetailPage).toContain('</>');
+        it('should render nothing when the featured image is a placeholder', () => {
+            // No gallery and no real image must leave no hero markup at all —
+            // neither a placeholder <img> nor a space-reserving wrapper.
+            const branchStart = eventDetailPage.indexOf('!featuredIsPlaceholder ? (');
+            expect(branchStart).toBeGreaterThan(-1);
+
+            const heroBranch = eventDetailPage.substring(branchStart).split(') : null}')[0];
+
+            expect(heroBranch).toContain('event-detail__hero');
+            expect(heroBranch).not.toContain('placeholder');
+            // The falsy arm renders nothing at all.
+            expect(eventDetailPage).toContain(') : null}');
         });
 
         it('should be positioned after Image component', () => {

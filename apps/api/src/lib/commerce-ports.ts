@@ -18,8 +18,9 @@
 
 import { getDb, users } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
-import { RoleEnum } from '@repo/schemas';
+import { RoleEnum, RoleGrantReason } from '@repo/schemas';
 import type { CreateUserPort, ProvisioningNotificationPort } from '@repo/service-core';
+import { grantRole } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';
@@ -36,14 +37,33 @@ import { getAuth } from './auth';
  * same origin / cookie context as the enclosing request (required by some
  * Better Auth plugins).
  *
+ * ## Resolve-or-create, not create (HOS-296 G-4 / AC-4)
+ *
+ * This port used to call `auth.api.signUpEmail` with **no prior lookup** and
+ * then overwrite `users.role`. Both halves were bugs:
+ *
+ * - When the email already belonged to an account, Better Auth's duplicate
+ *   check rejected the signup, `CommerceOwnerProvisioningService` turned that
+ *   into an `INTERNAL_ERROR`, and `approveAndProvision` threw **before**
+ *   marking the lead approved. The lead was then stuck forever: the admin
+ *   cannot edit a lead's email (`CommerceLeadAdminUpdateInputSchema` does not
+ *   expose it) and no endpoint links a lead to an existing user. The only exit
+ *   was rejecting the lead.
+ * - The role overwrite destroyed whatever hat the account already wore.
+ *
+ * A registered host adding their restaurant is the ordinary case, not the edge
+ * case — and it has to work on the SAME email, because the MercadoPago payout
+ * account is keyed by it.
+ *
  * ## Steps performed
- * 1. Sign up via `auth.api.signUpEmail` (creates the user row with the
- *    Better Auth default role of `USER`).
- * 2. Update the user row to set the target role, `emailVerified = true`, and
- *    `mustChangePassword = true` so the SPEC-239 password-gate fires on first
- *    login.
- * 3. If the UPDATE fails, delete the freshly created user (orphan prevention)
- *    and throw so the provisioning service can surface a clean error.
+ * 1. Look the email up in `users`.
+ * 2. **Found** → grant the target role additively and return
+ *    `alreadyExisted: true`. The account keeps its own password, its
+ *    `mustChangePassword` flag and its other hats; nothing is overwritten.
+ * 3. **Not found** → sign up via `auth.api.signUpEmail`, set `emailVerified`
+ *    and `mustChangePassword`, then grant the role. If either step fails, the
+ *    freshly created user is deleted (orphan prevention) and the error is
+ *    rethrown so the provisioning service surfaces it.
  *
  * @param headers - Raw request headers forwarded to Better Auth.
  * @returns A {@link CreateUserPort} implementation.
@@ -59,9 +79,49 @@ import { getAuth } from './auth';
  */
 export function createCommerceOwnerCreateUserPort(headers: Headers): CreateUserPort {
     return async ({ email, password, name, role, mustChangePassword }) => {
-        const auth = getAuth();
+        const db = getDb();
 
-        // 1. Create user via Better Auth (role defaults to USER at this point)
+        // 1. Resolve the email first. Soft-deleted accounts are deliberately
+        //    INCLUDED: the unique constraint on `users.email` still covers
+        //    them, so treating one as "not found" would just push the same
+        //    duplicate-email failure one step further down.
+        const existing = await db
+            .select({ id: users.id, email: users.email, displayName: users.displayName })
+            .from(users)
+            .where(eq(users.email, email))
+            .limit(1);
+
+        const existingUser = existing[0];
+        if (existingUser) {
+            // 2. Additive grant — the account keeps every hat it already wears.
+            const granted = await grantRole({
+                userId: existingUser.id,
+                role,
+                grantedBy: null,
+                reason: RoleGrantReason.COMMERCE_LEAD_APPROVED
+            });
+            if (granted.error) {
+                throw new Error(
+                    `Failed to grant role ${role} to existing user ${existingUser.id}: ${granted.error.message}`
+                );
+            }
+
+            apiLogger.info(
+                { userId: existingUser.id, grantedRole: role },
+                'commerce-ports: email already registered — granted the commerce hat to the existing account'
+            );
+
+            return {
+                id: existingUser.id,
+                email: existingUser.email,
+                name: existingUser.displayName ?? name,
+                alreadyExisted: true
+            };
+        }
+
+        // 3. Create user via Better Auth (which grants the baseline USER hat
+        //    from its own `user.create.after` database hook).
+        const auth = getAuth();
         const signUpResult = await auth.api.signUpEmail({
             body: { email, password, name },
             headers,
@@ -77,26 +137,34 @@ export function createCommerceOwnerCreateUserPort(headers: Headers): CreateUserP
         }
 
         const newUserId = signUpResult.user.id;
-        const db = getDb();
 
         try {
-            // 2. Set role, emailVerified and mustChangePassword in one UPDATE.
-            //    `emailVerified = true` prevents the Better Auth email-verification
-            //    gate from blocking a staff-provisioned account on first login.
+            // `emailVerified = true` prevents the Better Auth email-verification
+            // gate from blocking a staff-provisioned account on first login.
             await db
                 .update(users)
-                .set({ role, emailVerified: true, mustChangePassword })
+                .set({ emailVerified: true, mustChangePassword })
                 .where(eq(users.id, newUserId));
-        } catch (updateError) {
-            // 3. Best-effort cleanup: delete the orphan user row so the DB
-            //    does not accumulate users stuck on role=USER.
+
+            const granted = await grantRole({
+                userId: newUserId,
+                role,
+                grantedBy: null,
+                reason: RoleGrantReason.COMMERCE_LEAD_APPROVED
+            });
+            if (granted.error) {
+                throw granted.error;
+            }
+        } catch (setupError) {
+            // Best-effort cleanup: delete the orphan user row so the DB does
+            // not accumulate accounts that never received the commerce hat.
             apiLogger.error(
                 {
-                    err: updateError instanceof Error ? updateError.message : String(updateError),
+                    err: setupError instanceof Error ? setupError.message : String(setupError),
                     userId: newUserId,
                     targetRole: role
                 },
-                'commerce-ports: role/mustChangePassword UPDATE failed — deleting orphan user'
+                'commerce-ports: role grant / mustChangePassword UPDATE failed — deleting orphan user'
             );
 
             try {
@@ -115,14 +183,15 @@ export function createCommerceOwnerCreateUserPort(headers: Headers): CreateUserP
             }
 
             throw new Error(
-                `Failed to assign role ${role} to new user ${newUserId}: ${updateError instanceof Error ? updateError.message : String(updateError)}`
+                `Failed to assign role ${role} to new user ${newUserId}: ${setupError instanceof Error ? setupError.message : String(setupError)}`
             );
         }
 
         return {
             id: newUserId,
             email: signUpResult.user.email,
-            name: signUpResult.user.name ?? name
+            name: signUpResult.user.name ?? name,
+            alreadyExisted: false
         };
     };
 }

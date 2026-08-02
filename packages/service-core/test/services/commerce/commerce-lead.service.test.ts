@@ -22,13 +22,13 @@ const GUEST_ID = '00000000-0000-4000-a000-000000000011';
 
 const adminActor: Actor = {
     id: ACTOR_ID,
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.COMMERCE_VIEW_ALL, PermissionEnum.COMMERCE_EDIT_ALL]
 };
 
 const guestActor: Actor = {
     id: GUEST_ID,
-    role: RoleEnum.GUEST,
+    roles: [RoleEnum.GUEST],
     permissions: []
 };
 
@@ -254,7 +254,7 @@ describe('CommerceLeadService', () => {
 
         const ownerActor: Actor = {
             id: OWNER_ACTOR_ID,
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: []
         };
 

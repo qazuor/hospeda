@@ -73,7 +73,7 @@ describe('DestinationService.getPointsOfInterest', () => {
         asMock((modelMock as any).getPointsOfInterestMap).mockResolvedValue(
             new Map([[destination.id, [primaryPoi, nearbyPoi]]])
         );
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationPointsOfInterestInput = {
             destinationId: destination.id
         } as GetDestinationPointsOfInterestInput;
@@ -103,7 +103,7 @@ describe('DestinationService.getPointsOfInterest', () => {
         asMock((modelMock as any).getPointsOfInterestMap).mockResolvedValue(
             new Map([[destination.id, [primaryPoi]]])
         );
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationPointsOfInterestInput = {
             destinationId: destination.id,
             relation: PointOfInterestDestinationRelationEnum.PRIMARY
@@ -132,7 +132,7 @@ describe('DestinationService.getPointsOfInterest', () => {
         asMock((modelMock as any).getPointsOfInterestMap).mockResolvedValue(
             new Map([[destination.id, [nearbyPoi]]])
         );
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationPointsOfInterestInput = {
             destinationId: destination.id,
             relation: PointOfInterestDestinationRelationEnum.NEARBY
@@ -158,7 +158,7 @@ describe('DestinationService.getPointsOfInterest', () => {
             .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
         asMock((modelMock as any).getPointsOfInterestMap).mockResolvedValue(new Map());
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationPointsOfInterestInput = {
             destinationId: destination.id
         } as GetDestinationPointsOfInterestInput;
@@ -187,7 +187,7 @@ describe('DestinationService.getPointsOfInterest', () => {
         asMock((modelMock as any).getPointsOfInterestMap).mockResolvedValue(
             new Map([[destination.id, [poiWithCategory]]])
         );
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationPointsOfInterestInput = {
             destinationId: destination.id
         } as GetDestinationPointsOfInterestInput;
@@ -213,7 +213,7 @@ describe('DestinationService.getPointsOfInterest', () => {
         asMock((modelMock as any).getPointsOfInterestMap).mockResolvedValue(
             new Map([[destination.id, [poiWithoutCategory]]])
         );
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationPointsOfInterestInput = {
             destinationId: destination.id
         } as GetDestinationPointsOfInterestInput;
@@ -242,7 +242,7 @@ describe('DestinationService.getPointsOfInterest', () => {
         asMock((modelMock as any).getPointsOfInterestMap).mockResolvedValue(
             new Map([[destination.id, [poiWithCategories]]])
         );
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationPointsOfInterestInput = {
             destinationId: destination.id
         } as GetDestinationPointsOfInterestInput;
@@ -268,7 +268,7 @@ describe('DestinationService.getPointsOfInterest', () => {
         asMock((modelMock as any).getPointsOfInterestMap).mockResolvedValue(
             new Map([[destination.id, [poiNoCategories]]])
         );
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationPointsOfInterestInput = {
             destinationId: destination.id
         } as GetDestinationPointsOfInterestInput;
@@ -284,7 +284,7 @@ describe('DestinationService.getPointsOfInterest', () => {
     it('should return NOT_FOUND if destination does not exist', async () => {
         // Arrange
         asMock(modelMock.findById).mockResolvedValue(null);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationPointsOfInterestInput = {
             destinationId: getMockId('destination')
         } as GetDestinationPointsOfInterestInput;
@@ -302,7 +302,7 @@ describe('DestinationService.getPointsOfInterest', () => {
             .with({ visibility: VisibilityEnum.PRIVATE })
             .build();
         asMock(modelMock.findById).mockResolvedValue(destination);
-        const actor = { id: 'user-1', role: RoleEnum.USER, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.USER], permissions: [] };
         const params: GetDestinationPointsOfInterestInput = {
             destinationId: destination.id
         } as GetDestinationPointsOfInterestInput;
@@ -317,7 +317,7 @@ describe('DestinationService.getPointsOfInterest', () => {
     it('should return INTERNAL_ERROR if the model throws', async () => {
         // Arrange
         asMock(modelMock.findById).mockRejectedValue(new Error('DB error'));
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationPointsOfInterestInput = {
             destinationId: getMockId('destination')
         } as GetDestinationPointsOfInterestInput;

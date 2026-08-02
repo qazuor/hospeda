@@ -3,7 +3,7 @@
  * @description Unit tests for middleware helper functions.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ALLOWED_REMOTE_HOSTS } from '../../src/lib/media';
 import {
     buildAdminLoginRedirect,
@@ -16,6 +16,7 @@ import {
     extractLocaleFromPath,
     generateCspNonce,
     IMAGE_ENDPOINT_CACHE_CONTROL,
+    isAdminBypassUser,
     isAuthRoute,
     isChangePasswordRoute,
     isImageEndpointRoute,
@@ -24,6 +25,7 @@ import {
     isProfileCompletionRoute,
     isProtectedRoute,
     isServerIslandRoute,
+    isSessionOptionalRoute,
     isSetPasswordRoute,
     isStaticAssetRoute,
     parseSessionUser,
@@ -652,7 +654,63 @@ describe('isSetPasswordRoute', () => {
     });
 });
 
+describe('isSessionOptionalRoute', () => {
+    // HOS-295 regression: the commerce lead pages ("Sumá tu negocio") mount an
+    // island that pre-fills the signed-in visitor's name and email. That data
+    // reaches the island as a prop read from `Astro.locals.user`, which the
+    // middleware only populates for protected, auth and session-optional
+    // routes. Before this fix neither segment was listed, so `locals.user` was
+    // null on both pages even with a live session and the prefill silently
+    // never happened.
+    it('returns true for the commerce lead pages', () => {
+        expect(isSessionOptionalRoute({ path: '/es/publicar-restaurante/' })).toBe(true);
+        expect(isSessionOptionalRoute({ path: '/es/publicar-experiencia/' })).toBe(true);
+    });
+
+    it('returns true for the commerce lead pages across locales', () => {
+        expect(isSessionOptionalRoute({ path: '/en/publicar-restaurante/' })).toBe(true);
+        expect(isSessionOptionalRoute({ path: '/pt/publicar-experiencia/' })).toBe(true);
+    });
+
+    it('does not treat `publicar` as a prefix match for the lead pages', () => {
+        // The check is an exact segment comparison, so `publicar` alone must
+        // never stand in for `publicar-restaurante`. Both have to be listed.
+        expect(isSessionOptionalRoute({ path: '/es/publicar/' })).toBe(true);
+        expect(isSessionOptionalRoute({ path: '/es/publicar-otra-cosa/' })).toBe(false);
+    });
+
+    it('returns true for the pre-existing session-optional segments', () => {
+        expect(isSessionOptionalRoute({ path: '/es/alojamientos/' })).toBe(true);
+        expect(isSessionOptionalRoute({ path: '/es/gastronomia/' })).toBe(true);
+        expect(isSessionOptionalRoute({ path: '/es/feedback/' })).toBe(true);
+    });
+
+    it('returns false for fully public routes', () => {
+        expect(isSessionOptionalRoute({ path: '/es/' })).toBe(false);
+        expect(isSessionOptionalRoute({ path: '/es/contacto/' })).toBe(false);
+        expect(isSessionOptionalRoute({ path: '/' })).toBe(false);
+    });
+
+    it('returns false for empty path', () => {
+        expect(isSessionOptionalRoute({ path: '' })).toBe(false);
+    });
+});
+
 describe('isProfileCompletionRequiredSessionOptionalRoute', () => {
+    // HOS-295 decision: the commerce lead pages are deliberately NOT added to
+    // `PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS`. They are a
+    // top-of-funnel capture form that works fully anonymously; bouncing a
+    // signed-in visitor with an incomplete profile away from it would leave
+    // them strictly worse off than a logged-out one, who can just submit.
+    it('returns false for the commerce lead pages', () => {
+        expect(
+            isProfileCompletionRequiredSessionOptionalRoute({ path: '/es/publicar-restaurante/' })
+        ).toBe(false);
+        expect(
+            isProfileCompletionRequiredSessionOptionalRoute({ path: '/es/publicar-experiencia/' })
+        ).toBe(false);
+    });
+
     it('returns true for /es/publicar/', () => {
         expect(isProfileCompletionRequiredSessionOptionalRoute({ path: '/es/publicar/' })).toBe(
             true
@@ -701,27 +759,41 @@ describe('isProfileCompletionRequiredSessionOptionalRoute', () => {
 
 describe('isProfileCompletionBypassRole', () => {
     it('should return true for admin role', () => {
-        expect(isProfileCompletionBypassRole({ role: 'admin' })).toBe(true);
+        expect(isProfileCompletionBypassRole({ roles: ['admin'] })).toBe(true);
     });
 
     it('should return true for super_admin role', () => {
-        expect(isProfileCompletionBypassRole({ role: 'super_admin' })).toBe(true);
+        expect(isProfileCompletionBypassRole({ roles: ['super_admin'] })).toBe(true);
     });
 
     it('should return false for regular user role', () => {
-        expect(isProfileCompletionBypassRole({ role: 'user' })).toBe(false);
+        expect(isProfileCompletionBypassRole({ roles: ['user'] })).toBe(false);
     });
 
     it('should return false for host role', () => {
-        expect(isProfileCompletionBypassRole({ role: 'host' })).toBe(false);
+        expect(isProfileCompletionBypassRole({ roles: ['host'] })).toBe(false);
     });
 
-    it('should return false for empty role string', () => {
-        expect(isProfileCompletionBypassRole({ role: '' })).toBe(false);
+    it('should return false for an empty role set', () => {
+        expect(isProfileCompletionBypassRole({ roles: [] })).toBe(false);
+        expect(isProfileCompletionBypassRole({ roles: [''] })).toBe(false);
     });
 
     it('should be case-sensitive (Admin with capital A is not a bypass)', () => {
-        expect(isProfileCompletionBypassRole({ role: 'Admin' })).toBe(false);
+        expect(isProfileCompletionBypassRole({ roles: ['Admin'] })).toBe(false);
+    });
+
+    // HOS-296: the predicate takes the whole role SET and matches on "holds a
+    // bypass role", so a bypass hat still wins when it arrives alongside
+    // several non-bypass hats.
+    it('returns true when a bypass role is one of several held roles', () => {
+        expect(isProfileCompletionBypassRole({ roles: ['user', 'host', 'admin'] })).toBe(true);
+    });
+
+    it('returns false when no held role is a bypass role', () => {
+        expect(isProfileCompletionBypassRole({ roles: ['user', 'host', 'commerce_owner'] })).toBe(
+            false
+        );
     });
 });
 
@@ -922,5 +994,303 @@ describe('parseSessionUser — API URL config drift (HOS-254)', () => {
         await expect(
             parseSessionUser({ cookieHeader: 'better-auth.session_token=abc' })
         ).resolves.toBeNull();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-296 — parseSessionUser reads /auth/me and its role SET
+// ---------------------------------------------------------------------------
+
+/**
+ * `parseSessionUser` was repointed from Better Auth's `/api/auth/get-session`
+ * to `GET /api/v1/public/auth/me`, because `users.role` was dropped and the
+ * native session response carries no role at all any more (spec §7.1, OQ-4).
+ *
+ * The load-bearing detail is that `/auth/me` declares `options: { skipAuth:
+ * true }`: an absent, expired, or invalid session answers **200 with a guest
+ * actor**, never 401. Gating on `response.ok` would therefore admit every
+ * anonymous visitor as a signed-in user — the payload's `isAuthenticated` flag
+ * is the only trustworthy signal, and these tests pin exactly that.
+ */
+describe('parseSessionUser — /auth/me (HOS-296)', () => {
+    const COOKIE = 'better-auth.session_token=abc';
+    const savedApiUrl = process.env.HOSPEDA_API_URL;
+
+    beforeEach(() => {
+        process.env.HOSPEDA_API_URL = 'https://api.test';
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        if (savedApiUrl === undefined) {
+            delete process.env.HOSPEDA_API_URL;
+        } else {
+            process.env.HOSPEDA_API_URL = savedApiUrl;
+        }
+    });
+
+    function mockAuthMe(body: unknown, ok = true) {
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValue({ ok, status: ok ? 200 : 500, json: async () => body });
+        global.fetch = fetchMock as unknown as typeof fetch;
+        return fetchMock;
+    }
+
+    it('calls /api/v1/public/auth/me, not /api/auth/get-session', async () => {
+        const fetchMock = mockAuthMe({
+            data: { actor: { id: 'u1', email: 'u@test', roles: ['USER'] }, isAuthenticated: true }
+        });
+
+        await parseSessionUser({ cookieHeader: COOKIE });
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.test/api/v1/public/auth/me');
+    });
+
+    it('forwards the cookie header so the API can resolve the session', async () => {
+        const fetchMock = mockAuthMe({
+            data: { actor: { id: 'u1', email: 'u@test', roles: ['USER'] }, isAuthenticated: true }
+        });
+
+        await parseSessionUser({ cookieHeader: COOKIE });
+
+        expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ headers: { cookie: COOKIE } });
+    });
+
+    it('maps the actor onto the session user, including the FULL role set', async () => {
+        mockAuthMe({
+            data: {
+                actor: {
+                    id: 'u1',
+                    name: 'Multi Hat',
+                    email: 'multi@test',
+                    image: 'https://img.test/a.png',
+                    roles: ['USER', 'HOST', 'COMMERCE_OWNER']
+                },
+                isAuthenticated: true
+            }
+        });
+
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toEqual({
+            id: 'u1',
+            name: 'Multi Hat',
+            email: 'multi@test',
+            roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
+            image: 'https://img.test/a.png',
+            mustChangePassword: false
+        });
+    });
+
+    // ---- The guest-actor trap -------------------------------------------
+    it('returns null for a 200 response carrying a GUEST actor (isAuthenticated false)', async () => {
+        // The exact shape /auth/me answers with for an anonymous visitor:
+        // HTTP 200 (skipAuth), a guest actor, `isAuthenticated: false`.
+        // Trusting `response.ok` here would sign every visitor in.
+        mockAuthMe({
+            data: {
+                actor: { id: 'guest', roles: [], permissions: [] },
+                isAuthenticated: false
+            }
+        });
+
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toBeNull();
+    });
+
+    it('returns null when isAuthenticated is absent altogether', async () => {
+        mockAuthMe({ data: { actor: { id: 'u1', email: 'u@test', roles: ['USER'] } } });
+
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toBeNull();
+    });
+
+    it('returns null when isAuthenticated is truthy-but-not-true', async () => {
+        // Strict `!== true`: no coercion games decide who is signed in.
+        mockAuthMe({
+            data: { actor: { id: 'u1', email: 'u@test', roles: ['USER'] }, isAuthenticated: 'yes' }
+        });
+
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toBeNull();
+    });
+
+    it('returns null when the actor has no id even though isAuthenticated is true', async () => {
+        mockAuthMe({ data: { actor: { roles: ['USER'] }, isAuthenticated: true } });
+
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toBeNull();
+    });
+
+    it('returns null without fetching when there is no cookie header', async () => {
+        const fetchMock = mockAuthMe({});
+
+        await expect(parseSessionUser({ cookieHeader: null })).resolves.toBeNull();
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('returns null on a non-ok response', async () => {
+        mockAuthMe({}, false);
+
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toBeNull();
+    });
+
+    it('returns null (never throws) when the transport fails', async () => {
+        global.fetch = vi
+            .fn()
+            .mockRejectedValue(new Error('ECONNREFUSED')) as unknown as typeof fetch;
+
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toBeNull();
+    });
+
+    // ---- Degradation, not explosion -------------------------------------
+    it('degrades to an EMPTY role set (lowest privilege) when roles are missing or malformed', async () => {
+        mockAuthMe({ data: { actor: { id: 'u1', email: 'u@test' }, isAuthenticated: true } });
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toMatchObject({
+            roles: []
+        });
+
+        mockAuthMe({
+            data: { actor: { id: 'u1', email: 'u@test', roles: 'HOST' }, isAuthenticated: true }
+        });
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toMatchObject({
+            roles: []
+        });
+    });
+
+    it('drops non-string entries from the role array', async () => {
+        mockAuthMe({
+            data: {
+                actor: { id: 'u1', email: 'u@test', roles: ['HOST', null, 7, 'ADMIN'] },
+                isAuthenticated: true
+            }
+        });
+
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toMatchObject({
+            roles: ['HOST', 'ADMIN']
+        });
+    });
+
+    // ---- mustChangePassword (SPEC-239 / HOS-296) ------------------------
+    it('reads mustChangePassword off the actor, in the SAME single request', async () => {
+        // HOS-296: the flag used to require an opt-in second `get-session`
+        // round-trip because it was a Better Auth `additionalField` and the
+        // actor did not carry it. `actorMiddleware` now forwards it, so
+        // `/mi-cuenta/*` is back to exactly ONE request.
+        const fetchMock = mockAuthMe({
+            data: {
+                actor: {
+                    id: 'u1',
+                    email: 'u@test',
+                    roles: ['COMMERCE_OWNER'],
+                    mustChangePassword: true
+                },
+                isAuthenticated: true
+            }
+        });
+
+        const user = await parseSessionUser({ cookieHeader: COOKIE });
+
+        expect(user?.mustChangePassword).toBe(true);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+            'https://api.test/api/v1/public/auth/me'
+        ]);
+    });
+
+    it('NEVER calls Better Auth get-session', async () => {
+        const fetchMock = mockAuthMe({
+            data: { actor: { id: 'u1', email: 'u@test', roles: ['USER'] }, isAuthenticated: true }
+        });
+
+        await parseSessionUser({ cookieHeader: COOKIE });
+
+        expect(
+            fetchMock.mock.calls.some((call) => String(call[0]).includes('/api/auth/get-session'))
+        ).toBe(false);
+    });
+
+    it('fails open (false) when the actor omits the flag entirely', async () => {
+        mockAuthMe({
+            data: { actor: { id: 'u1', email: 'u@test', roles: ['USER'] }, isAuthenticated: true }
+        });
+
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toMatchObject({
+            mustChangePassword: false
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-296 — isAdminBypassUser reads the role SET (sweep-inventory site #5)
+// ---------------------------------------------------------------------------
+
+/**
+ * `isAdminBypassUser` hand-cast the `/auth/me` payload to a LOCAL
+ * `{ actor?: { role?: string } }` shape. That cast type-checks against
+ * nothing, so dropping the `role` scalar would have left it permanently
+ * `undefined` — no compile error, no runtime error, just every admin losing
+ * the profile-completion bypass.
+ */
+describe('isAdminBypassUser — role set (HOS-296)', () => {
+    const COOKIE = 'better-auth.session_token=abc';
+    const savedApiUrl = process.env.HOSPEDA_API_URL;
+
+    beforeEach(() => {
+        process.env.HOSPEDA_API_URL = 'https://api.test';
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        if (savedApiUrl === undefined) {
+            delete process.env.HOSPEDA_API_URL;
+        } else {
+            process.env.HOSPEDA_API_URL = savedApiUrl;
+        }
+    });
+
+    function mockAuthMe(body: unknown, ok = true) {
+        global.fetch = vi.fn().mockResolvedValue({
+            ok,
+            status: ok ? 200 : 500,
+            json: async () => body
+        }) as unknown as typeof fetch;
+    }
+
+    it('reads data.actor.roles (array), not a role scalar', async () => {
+        // `PROFILE_COMPLETION_BYPASS_ROLES` is lowercase (a pre-existing bug
+        // tracked separately — see the helper's JSDoc), so the lowercase value
+        // is what this predicate actually matches today. The point asserted
+        // here is the SHAPE: the array field is read, and a stray `role`
+        // scalar is ignored.
+        mockAuthMe({ data: { actor: { roles: ['admin'] }, isAuthenticated: true } });
+        await expect(isAdminBypassUser({ cookieHeader: COOKIE })).resolves.toBe(true);
+
+        mockAuthMe({ data: { actor: { role: 'admin' }, isAuthenticated: true } });
+        await expect(isAdminBypassUser({ cookieHeader: COOKIE })).resolves.toBe(false);
+    });
+
+    it('matches a bypass role held alongside other hats', async () => {
+        mockAuthMe({
+            data: { actor: { roles: ['user', 'host', 'admin'] }, isAuthenticated: true }
+        });
+
+        await expect(isAdminBypassUser({ cookieHeader: COOKIE })).resolves.toBe(true);
+    });
+
+    it('returns false for a 200 guest response (skipAuth trap)', async () => {
+        mockAuthMe({ data: { actor: { roles: [] }, isAuthenticated: false } });
+
+        await expect(isAdminBypassUser({ cookieHeader: COOKIE })).resolves.toBe(false);
+    });
+
+    it('returns false without fetching when there is no cookie header', async () => {
+        const fetchMock = vi.fn();
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        await expect(isAdminBypassUser({ cookieHeader: null })).resolves.toBe(false);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('fails closed (false) when the request throws', async () => {
+        global.fetch = vi.fn().mockRejectedValue(new Error('boom')) as unknown as typeof fetch;
+
+        await expect(isAdminBypassUser({ cookieHeader: COOKIE })).resolves.toBe(false);
     });
 });

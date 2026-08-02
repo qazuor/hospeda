@@ -12,14 +12,15 @@ import { describe, expect, it } from 'vitest';
 import { WebEvents } from '@/lib/analytics/events';
 
 describe('WebEvents catalog (SPEC-140 acceptance)', () => {
-    it('should include the SPEC-140, SPEC-191 contribution, SPEC-159 entity-view, SPEC-258 import, and business-instrumentation (booking-sent / favorite / review) events', () => {
+    it('should expose the shared business-event aliases used by the web app', () => {
         // Assert
         expect(WebEvents).toEqual({
-            AccommodationSearched: 'accommodation_searched',
+            DestinationViewed: 'destination_viewed',
+            AccommodationSearched: 'search_performed',
             AccommodationViewed: 'accommodation_viewed',
-            SignupCompleted: 'signup_completed',
-            BookingInitiated: 'booking_initiated',
-            BookingRequestSent: 'booking_request_sent',
+            SignupCompleted: 'sign_up_completed',
+            BookingInitiated: 'contact_owner_started',
+            BookingRequestSent: 'contact_owner_completed',
             NewsletterSubscribed: 'newsletter_subscribed',
             ContributionBannerClicked: 'contribution_banner_clicked',
             ContributionReportSubmitted: 'contribution_report_submitted',
@@ -27,17 +28,18 @@ describe('WebEvents catalog (SPEC-140 acceptance)', () => {
             ContributionEditorSubmitted: 'contribution_editor_submitted',
             PostViewed: 'post_viewed',
             EventViewed: 'event_viewed',
-            AiSearchSubmitted: 'ai_search_submitted',
+            AiSearchSubmitted: 'ai_search_performed',
             AiSearchIntentApplied: 'ai_search_intent_applied',
             AiSearchFallbackKeyword: 'ai_search_fallback_keyword',
             AiSearchLoginPrompted: 'ai_search_login_prompted',
-            PropertyImportAttempted: 'property_import_attempted',
-            PropertyImportSucceeded: 'property_import_succeeded',
-            PropertyImportFailed: 'property_import_failed',
-            FavoriteToggled: 'favorite_toggled',
+            PropertyImportAttempted: 'accommodation_import_started',
+            PropertyImportSucceeded: 'accommodation_import_completed',
+            PropertyImportFailed: 'accommodation_import_failed',
+            FavoriteToggledAdd: 'favorite_added',
+            FavoriteToggledRemove: 'favorite_removed',
             ReviewSubmitted: 'review_submitted',
-            ConversationDuplicate: 'conversation_duplicate',
-            ConversationRateLimited: 'conversation_rate_limited'
+            ConversationDuplicate: 'contact_owner_failed',
+            ConversationRateLimited: 'contact_owner_failed'
         });
     });
 
@@ -51,12 +53,9 @@ describe('WebEvents catalog (SPEC-140 acceptance)', () => {
         }
     });
 
-    it('event names should be unique across the catalog', () => {
-        // Arrange
-        const values = Object.values(WebEvents);
-        const unique = new Set(values);
-
-        // Assert
-        expect(unique.size).toBe(values.length);
+    it('every alias should point at a non-empty shared event name', () => {
+        for (const [alias, value] of Object.entries(WebEvents)) {
+            expect(value, `${alias} should map to a shared analytics event`).not.toHaveLength(0);
+        }
     });
 });

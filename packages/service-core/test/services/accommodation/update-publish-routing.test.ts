@@ -26,6 +26,19 @@ import { createMockBaseModel } from '../../factories/baseServiceFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
 
+// HOS-296: `_afterUpdate` grants the owner the HOST hat when a listing becomes
+// ACTIVE, and the grant is no longer best-effort — a failure fails the update.
+// These suites mock every other DB touchpoint, so the primitive is stubbed here
+// too; the grant's own behaviour is covered by `roleAssignment.test.ts`.
+vi.mock('../../../src/services/user-role/user-role.service.js', () => ({
+    grantRole: vi.fn().mockResolvedValue({ data: undefined }),
+    // HOS-296: the module also exports the read primitive, and the
+    // billing-exempt-owner branch calls it. A module mock that omits it turns
+    // that branch into "getUserRoles is not a function" — an INTERNAL_ERROR
+    // that looks nothing like a role problem.
+    getUserRoles: vi.fn().mockResolvedValue([])
+}));
+
 vi.mock('../../../src/utils/transaction.js', () => ({
     withServiceTransaction: vi.fn(async (cb: (txCtx: unknown) => Promise<unknown>) => {
         return cb({ tx: {} as unknown, hookState: {} });
@@ -249,7 +262,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217, scoped t
         // actor IS the owner — userModel.findById should NOT be called (perf path)
         const actor = createActor({
             id: 'user-host-a',
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
         });
 
@@ -282,7 +295,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217, scoped t
         });
         const actor = createActor({
             id: 'user-host-a2',
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
         });
 
@@ -316,7 +329,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217, scoped t
         });
         const actor = createActor({
             id: 'user-host-a3',
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
         });
 
@@ -349,7 +362,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217, scoped t
         });
         const actor = createActor({
             id: 'user-host-a4',
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
         });
 
@@ -381,7 +394,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217, scoped t
         });
         const actor = createActor({
             id: 'user-host-b',
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
         });
 
@@ -412,7 +425,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217, scoped t
         });
         const actor = createActor({
             id: 'user-host-b2',
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
         });
 
@@ -442,7 +455,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217, scoped t
         });
         const actor = createActor({
             id: 'user-host-c',
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
         });
 
@@ -530,7 +543,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217, scoped t
         });
         const actor = createActor({
             id: 'user-host-f',
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
         });
 
@@ -559,7 +572,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217, scoped t
         });
         const actor = createActor({
             id: 'user-host-g',
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
         });
 
@@ -572,11 +585,13 @@ describe('AccommodationService.update — billing write-gate (SPEC-217, scoped t
         expect(checkEligibility).toHaveBeenCalledOnce();
         expect((checkEligibility as Mock).mock.calls[0]?.[0]).toBe('user-host-g');
         // The perf optimisation: userModel.findById must NOT be called for the
-        // write-gate's billing-exempt role check when actor.id === ownerId — the
-        // single call observed here comes from the unrelated `_assignHostRoleIfNeeded`
-        // afterUpdate hook, which fires on any ACTIVE-state update regardless of the
-        // write-gate. If the perf optimisation regressed, the gate would add a SECOND
-        // call, so exactly-once (not zero) is the correct assertion on an ACTIVE fixture.
-        expect(userModel.findById).toHaveBeenCalledTimes(1);
+        // write-gate's billing-exempt role check when actor.id === ownerId.
+        //
+        // This used to assert exactly-ONE call, because `_assignHostRoleIfNeeded`
+        // pre-read the owner on every ACTIVE-state update and that read was
+        // indistinguishable from a regressed gate. HOS-296 removed that pre-read
+        // (the grant is idempotent on its primary key), so the invariant can now
+        // be stated directly: zero lookups.
+        expect(userModel.findById).not.toHaveBeenCalled();
     });
 });

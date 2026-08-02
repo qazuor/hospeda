@@ -78,11 +78,11 @@ const INITIAL_FIELDS: FormFields = {
 };
 
 /** Maps each contribution type to its typed submit-success event (FR-9). */
-const SUBMIT_EVENT_BY_TYPE: Record<ContributionType, string> = {
+const SUBMIT_EVENT_BY_TYPE = {
     report_destination_info: WebEvents.ContributionReportSubmitted,
     photo_submission: WebEvents.ContributionPhotoSubmitted,
     editor_application: WebEvents.ContributionEditorSubmitted
-};
+} as const satisfies Record<ContributionType, string>;
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -204,7 +204,9 @@ export function ContributionForm({ presetType, locale, children }: ContributionF
             // Typed submit-success analytics (FR-9). The report event carries
             // the structured destino slug when present.
             trackEvent(SUBMIT_EVENT_BY_TYPE[presetType], {
-                ...(presetType === 'report_destination_info' && destino ? { destino } : {}),
+                ...(presetType === 'report_destination_info' && destino
+                    ? { destination_slug: destino }
+                    : {}),
                 locale
             });
 

@@ -24,7 +24,6 @@ import { destinations } from '../destination/destination.dbschema.ts';
 import {
     LifecycleStatusPgEnum,
     ModerationStatusPgEnum,
-    RolePgEnum,
     VisibilityPgEnum
 } from '../enums.dbschema.ts';
 import { events } from '../event/event.dbschema.ts';
@@ -95,7 +94,9 @@ export const users = pgTable(
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
         location: jsonb('location').$type<UserLocationType>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
-        role: RolePgEnum('role').notNull().default('USER'),
+        // HOS-296: the `role` column was DROPPED here. A user's hats now live
+        // in the `user_role` table (many-to-many) — see r_user_role.dbschema.ts.
+        // There is deliberately no derived scalar and no compatibility shim.
         profile: jsonb('profile').$type<UserProfile>(),
         settings: jsonb('settings')
             .$type<UserSettings>()
@@ -161,8 +162,9 @@ export const users = pgTable(
             table.authProvider,
             table.authProviderUserId
         ),
-        /** Index on role for filtering users by role */
-        users_role_idx: index('users_role_idx').on(table.role),
+        // HOS-296: `users_role_idx` and `users_role_deletedAt_idx` were dropped
+        // alongside the `role` column. The equivalent lookup is now
+        // `user_role_role_idx` joined to `users` to exclude soft-deleted rows.
         /** Index on lifecycleState for filtering users by state */
         users_lifecycleState_idx: index('users_lifecycleState_idx').on(table.lifecycleState),
         /** Index on visibility for filtering users by visibility */
@@ -171,8 +173,6 @@ export const users = pgTable(
         users_deletedAt_idx: index('users_deletedAt_idx').on(table.deletedAt),
         /** Index on createdAt for sorting by creation date */
         users_createdAt_idx: index('users_createdAt_idx').on(table.createdAt),
-        /** Composite index for listing active users by role */
-        users_role_deletedAt_idx: index('users_role_deletedAt_idx').on(table.role, table.deletedAt),
         /** Composite index for listing active users by lifecycle state */
         users_lifecycleState_deletedAt_idx: index('users_lifecycleState_deletedAt_idx').on(
             table.lifecycleState,

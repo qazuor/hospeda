@@ -47,7 +47,7 @@ const INVALID_UUID = 'not-a-uuid';
  */
 const adminActor = {
     id: crypto.randomUUID(),
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [
         PermissionEnum.ACCESS_PANEL_ADMIN,
         PermissionEnum.ACCESS_API_ADMIN,
@@ -57,7 +57,7 @@ const adminActor = {
 };
 
 function makeHeaders(
-    actor: { id: string; role: string; permissions: string[] },
+    actor: { id: string; roles: readonly string[]; permissions: string[] },
     extra: Record<string, string> = {}
 ): Record<string, string> {
     return {
@@ -65,7 +65,7 @@ function makeHeaders(
         'user-agent': 'vitest',
         accept: 'application/json',
         'x-mock-actor-id': actor.id,
-        'x-mock-actor-role': actor.role,
+        'x-mock-actor-role': actor.roles.join(','),
         'x-mock-actor-permissions': JSON.stringify(actor.permissions),
         ...extra
     };
@@ -156,8 +156,8 @@ describe('Admin destination FAQ routes (SPEC-177 T-028)', () => {
         const ts = Date.now();
 
         // Create owner user
-        const owner = await createTestUser({ role: RoleEnum.HOST });
-        const other = await createTestUser({ role: RoleEnum.HOST });
+        const owner = await createTestUser({});
+        const other = await createTestUser({});
 
         // Seed a destination first (accommodation needs destinationId)
         const destRows = await db
@@ -552,7 +552,7 @@ describe('Admin destination FAQ routes (SPEC-177 T-028)', () => {
 
             const ownerHostActor = {
                 id: seeded.ownerHostId,
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [
                     PermissionEnum.ACCESS_PANEL_ADMIN,
                     PermissionEnum.ACCOMMODATION_UPDATE_OWN,
@@ -577,7 +577,7 @@ describe('Admin destination FAQ routes (SPEC-177 T-028)', () => {
             // otherHostId is NOT the owner of the accommodation
             const nonOwnerHostActor = {
                 id: seeded.otherHostId,
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [
                     PermissionEnum.ACCESS_PANEL_ADMIN,
                     PermissionEnum.ACCOMMODATION_UPDATE_OWN,
@@ -602,7 +602,7 @@ describe('Admin destination FAQ routes (SPEC-177 T-028)', () => {
 
             const ownerHostActor = {
                 id: seeded.ownerHostId,
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [
                     PermissionEnum.ACCESS_PANEL_ADMIN,
                     PermissionEnum.ACCOMMODATION_UPDATE_OWN,
@@ -630,7 +630,7 @@ describe('Admin destination FAQ routes (SPEC-177 T-028)', () => {
 
             const ownerHostActor = {
                 id: seeded.ownerHostId,
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: [
                     PermissionEnum.ACCESS_PANEL_ADMIN,
                     PermissionEnum.ACCOMMODATION_UPDATE_OWN,
@@ -652,7 +652,7 @@ describe('Admin destination FAQ routes (SPEC-177 T-028)', () => {
                 method: 'PATCH',
                 headers: makeHeaders({
                     id: crypto.randomUUID(),
-                    role: RoleEnum.ADMIN,
+                    roles: [RoleEnum.ADMIN],
                     permissions: [
                         PermissionEnum.ACCESS_PANEL_ADMIN,
                         PermissionEnum.ACCOMMODATION_UPDATE_ANY

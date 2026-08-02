@@ -16,7 +16,7 @@ describe('PostService.count', () => {
         vi.clearAllMocks();
         modelMock = createTypedModelMock(PostModel, ['count']);
         service = createServiceTestInstance(PostService, modelMock);
-        actor = createActor({ permissions: [], id: 'actor-id', role: RoleEnum.USER });
+        actor = createActor({ permissions: [], id: 'actor-id', roles: [RoleEnum.USER] });
     });
 
     it('should return the count of posts if actor is authenticated', async () => {
@@ -30,7 +30,7 @@ describe('PostService.count', () => {
         const invalidActor = createActor({
             permissions: [],
             id: undefined,
-            role: RoleEnum.GUEST
+            roles: [RoleEnum.GUEST]
         });
         const result = await service.count(invalidActor, { page: 1, pageSize: 10 });
         expect(result.error).toBeDefined();

@@ -46,13 +46,17 @@ import { UserSchema, type User } from '@repo/schemas';
 | `lastName` | `string` | No | Last name | 2-50 chars |
 | `birthDate` | `Date` | No | Birth date | Valid date |
 | `phone` | `string` | No | Phone number | International format |
-| `role` | `RoleEnum` | Yes | User role | 'user', 'moderator', 'admin' |
 | `permissions` | `string[]` | Yes | Granted permissions | Array, default `[]` |
 | `authProvider` | `string` | No | Auth provider | 'better_auth', 'google', 'facebook' |
 | `authProviderUserId` | `string` | No | Provider user ID | Min 1 char |
 | `createdAt` | `Date` | Yes | Creation timestamp | Auto-generated |
 | `updatedAt` | `Date` | Yes | Last update timestamp | Auto-updated |
 | `deletedAt` | `Date` | No | Soft delete timestamp | Nullable |
+
+> **No `role` field (HOS-296).** The `users.role` scalar column was dropped;
+> a user now holds a SET of roles in the separate `user_role` table, read via
+> `getUserRoles()` and surfaced on the runtime `Actor` as `Actor.roles` —
+> never on the `User` entity itself.
 
 **Base fields included:**
 
@@ -70,11 +74,12 @@ import { UserSchema, type User } from '@repo/schemas';
 import { UserCreateInputSchema, type UserCreateInput } from '@repo/schemas';
 
 // Omits: id, createdAt, updatedAt, deletedAt, createdBy, updatedBy
+// No `role` field (HOS-296) — it is not on `UserSchema` at all. Grant the
+// user's initial role afterwards via the dedicated `grantRole` endpoint.
 const createData: UserCreateInput = {
   slug: 'john-doe',
   email: 'john@example.com',
   displayName: 'John Doe',
-  role: 'user',
   lifecycleState: 'draft'
 };
 ```
@@ -644,8 +649,21 @@ type LifecycleStateEnum = 'draft' | 'published' | 'archived';
 import { RoleEnumSchema, type RoleEnum } from '@repo/schemas';
 
 // Values
-type RoleEnum = 'user' | 'moderator' | 'admin' | 'super_admin';
+type RoleEnum =
+  | 'SUPER_ADMIN'
+  | 'ADMIN'
+  | 'CLIENT_MANAGER'
+  | 'EDITOR'
+  | 'HOST'
+  | 'COMMERCE_OWNER'
+  | 'SPONSOR'
+  | 'USER'
+  | 'GUEST'
+  | 'SYSTEM';
 ```
+
+A user holds a SET of roles at once (`user_role` table, HOS-296), not a
+single value — there is no `role` field on the `User` entity.
 
 ### Visibility
 

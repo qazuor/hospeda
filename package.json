@@ -71,6 +71,7 @@
         "pgadmin:start": "docker compose --env-file docker/.env up -d pgadmin",
         "pgadmin:stop": "docker compose --env-file docker/.env stop pgadmin",
         "telemetry:report": "tsx .claude/scripts/telemetry-report.ts",
+        "posthog:setup": "tsx scripts/posthog/setup.ts",
         "lint:md:docs": "markdownlint-cli2 \"docs/**/*.md\" \"apps/**/docs/**/*.md\" \"packages/**/docs/**/*.md\"",
         "docs:check-links": "tsx scripts/check-links.ts",
         "docs:validate-examples": "tsx scripts/validate-examples.ts",

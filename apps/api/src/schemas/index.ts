@@ -58,6 +58,9 @@ export {
     NotificationLogResponseSchema,
     NotificationLogsListResponseSchema
 } from './notification.schema';
+export type { ProductDomainQuery, ProductDomainScope } from './product-domain-query.schema';
+// Product-domain scoping for routes that resolve one of a customer's subscriptions
+export { ProductDomainQuerySchema } from './product-domain-query.schema';
 export type { ApiResponse, PaginationData } from './response-schemas';
 // Response schemas (Zod schemas for OpenAPI)
 // NOTE: For runtime response helpers, import from '../utils/response-helpers'

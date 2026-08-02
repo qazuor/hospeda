@@ -667,6 +667,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
                     title={String(item.title || '')}
                     summary={String(item.summary || item.description || '')}
                     featuredImage={item.featuredImage ? String(item.featuredImage) : null}
+                    category={item.category ? String(item.category) : null}
                     destinationName={accommodation.destination.name}
                     publishedAt={item.publishedAt ? String(item.publishedAt) : null}
                     lang={locale}
@@ -690,10 +691,6 @@ const faqSections = accommodation.faqs.map((faq) => ({
         accommodationType={accommodation.type}
         isFeatured={accommodation.isFeatured}
         destinationId={accommodation.destination.id}
-        destinationName={accommodation.destination.name}
-        price={accommodation.price?.price ?? null}
-        currency={accommodation.price?.currency ?? null}
-        ownerId={accommodation.owner.id}
     />
 
     <!-- AI chat widget (SPEC-200) — only for authenticated users -->

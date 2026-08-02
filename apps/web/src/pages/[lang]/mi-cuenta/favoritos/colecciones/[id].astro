@@ -16,6 +16,7 @@
 import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import { CollectionBookmarkRemoveBtn } from '@/components/account/CollectionBookmarkRemoveBtn.client';
 import { CollectionDetailActions } from '@/components/account/CollectionDetailActions.client';
 import { EditableNote } from '@/components/account/EditableNote';
@@ -216,28 +217,18 @@ const apiBase = getApiUrl();
 	<!-- ------------------------------------------------------------------ -->
 	<!-- Breadcrumb                                                           -->
 	<!-- ------------------------------------------------------------------ -->
-	<nav class="coleccion-breadcrumb" aria-label="Breadcrumb">
-		<ol class="coleccion-breadcrumb__list">
-			<li class="coleccion-breadcrumb__item">
-				<a href={buildUrl({ locale, path: '' })} class="coleccion-breadcrumb__link">
-					{t('nav.home', 'Inicio')}
-				</a>
-			</li>
-			<li class="coleccion-breadcrumb__separator" aria-hidden="true">›</li>
-			<li class="coleccion-breadcrumb__item">
-				<a
-					href={buildUrl({ locale, path: 'mi-cuenta/favoritos' })}
-					class="coleccion-breadcrumb__link"
-				>
-					{t('account.nav.favorites', 'Favoritos')}
-				</a>
-			</li>
-			<li class="coleccion-breadcrumb__separator" aria-hidden="true">›</li>
-			<li class="coleccion-breadcrumb__item coleccion-breadcrumb__item--current" aria-current="page">
-				{collection ? collection.name : t('account.favorites.collections.title', 'Colección')}
-			</li>
-		</ol>
-	</nav>
+	<Breadcrumbs
+		class="coleccion-breadcrumb"
+		locale={locale}
+		items={[
+			{ label: t('account.nav.favorites', 'Favoritos'), path: 'mi-cuenta/favoritos' },
+			{
+				label: collection
+					? collection.name
+					: t('account.favorites.collections.title', 'Colección')
+			}
+		]}
+	/>
 
 	<AccountSectionCard>
 	<!-- ------------------------------------------------------------------ -->
@@ -521,43 +512,13 @@ const apiBase = getApiUrl();
 	/* ------------------------------------------------------------------ */
 	/* Breadcrumb                                                           */
 	/* ------------------------------------------------------------------ */
-	.coleccion-breadcrumb {
+	/*
+	 * Spacing only — the trail itself is styled by the shared Breadcrumbs
+	 * component. `:global` is required because the <nav> is rendered by that
+	 * component and therefore carries ITS scope hash, not this page's.
+	 */
+	:global(.coleccion-breadcrumb) {
 		margin-bottom: var(--space-5);
-	}
-
-	.coleccion-breadcrumb__list {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		display: flex;
-		align-items: center;
-		flex-wrap: wrap;
-		gap: var(--space-1);
-	}
-
-	.coleccion-breadcrumb__link {
-		font-family: var(--font-sans);
-		font-size: 0.875rem;
-		color: var(--core-muted-foreground);
-		text-decoration: none;
-		transition: color var(--duration-fast) ease;
-	}
-
-	.coleccion-breadcrumb__link:hover {
-		color: var(--core-foreground);
-	}
-
-	.coleccion-breadcrumb__separator {
-		font-size: 0.875rem;
-		color: var(--core-muted-foreground);
-		user-select: none;
-	}
-
-	.coleccion-breadcrumb__item--current {
-		font-family: var(--font-sans);
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: var(--core-foreground);
 	}
 
 	/* ------------------------------------------------------------------ */

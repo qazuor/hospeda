@@ -816,7 +816,7 @@ export function createTestAccommodation(
 export function createAdminActor(): Actor {
   return {
     id: 'admin-1',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.ACCOMMODATION_CREATE, PermissionEnum.ACCOMMODATION_UPDATE]
   };
 }

@@ -14,7 +14,7 @@ and the **client identifier** (see §2).
 | Endpoint type | Matches | Default window | Default max |
 |---------------|---------|----------------|-------------|
 | `auth`        | `/api/auth/*`, `/api/v1/auth/*`, `/api/v1/public/auth/*`, `/api/v1/protected/auth/*` | 5 min | 50 |
-| `admin`       | `/api/v1/admin/*` | 10 min | 200 |
+| `admin`       | `/api/v1/admin/*` | 1 min | 3000 |
 | `public`      | `/api/v1/public/*` (non-auth, non-webhook) | 1 h | 1000 |
 | `billing`     | any `/billing/*` path with method `POST` | 15 min | 10 |
 | `webhook`     | any path containing `/webhooks/` or `/webhook/` | 1 min | 100 |
@@ -22,6 +22,17 @@ and the **client identifier** (see §2).
 
 Selection order matters: webhook → billing → auth → admin → public → general.
 A `POST /api/v1/admin/billing/...` lands in `billing`, not `admin`.
+
+> **The `admin` numbers above are a ceiling, not the governing limit** (HOS-325).
+> Admin traffic is really governed by the per-user `admin:user` sliding window
+> documented in §4; this IP tier exists only to catch gross abuse. It was re-cut
+> from 200/10 min to 3000/1 min because a fixed 10-minute window made 200 requests
+> mean 20/min — tighter than any other broad tier and enough to 429 a single
+> operator working normally. When tuning it, keep
+> `max / (windowMs / 60000) ≥ perUserMax × operators-sharing-one-egress-IP`,
+> or the IP tier silently becomes the binding constraint again and collapses
+> everyone behind one NAT/CGNAT address into a single budget.
+> A guard test asserts this relation: `apps/api/test/routes/admin-per-user-rate-limit.test.ts`.
 
 The Redis key is `rl:<endpoint-type>:<client-id>`. Example:
 `rl:public:203.0.113.10`.
@@ -107,6 +118,32 @@ same store but partition independently:
 
 All four mechanisms call `getClientIp({ c })` when they fall back to
 IP, so the trust chain applies uniformly.
+
+### Tier-wide per-user governors
+
+Two of these are mounted across a whole path tier in `apps/api/src/routes/index.ts`,
+and they — not the IP tiers in §1 — are what actually governs authenticated
+traffic. Look here first when an authenticated user reports a 429:
+
+| Key prefix | Path | Budget | Added by |
+|---|---|---|---|
+| `prot:user`  | `/api/v1/protected/*` | 200 / 60 s | HOS-186 |
+| `admin:user` | `/api/v1/admin/*`     | 300 / 60 s | HOS-325 |
+
+Both are gated on their tier's `API_RATE_LIMIT_<TIER>_ENABLED` flag, so
+`API_RATE_LIMIT_*_ENABLED=''` disables them along with the IP tiers (the e2e
+harness relies on this).
+
+> **Backend caveat**: `HOSPEDA_RATE_LIMIT_BACKEND` defaults to `memory`. In that
+> mode these governors are process-local — the budget resets on every restart and
+> multiplies by replica count, unlike the IP tiers, which require Redis in
+> production. Set `HOSPEDA_RATE_LIMIT_BACKEND=redis` wherever the API runs more
+> than one replica or you want the limit to survive a redeploy.
+
+Two admin AI endpoints carry their own tighter per-user guards
+(`admin:ai:post-generate`, `admin:ai:translate`, 20 / 60 s each): they drive paid
+LLM calls and, unlike `/api/v1/protected/ai/*`, have no AI quota middleware, so
+the IP tier used to be their only cost control.
 
 ## 5. Monitoring & runbook
 

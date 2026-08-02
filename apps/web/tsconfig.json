@@ -9,6 +9,7 @@
             "@repo/icons": ["../../packages/icons/src"],
             "@repo/db": ["../../packages/db/src"],
             "@repo/utils": ["../../packages/utils/src"],
+            "@repo/utils/*": ["../../packages/utils/src/*"],
             "@repo/logger": ["../../packages/logger/src"],
             "@repo/i18n": ["../../packages/i18n/src"],
             "@repo/schemas": ["../../packages/schemas/src"],

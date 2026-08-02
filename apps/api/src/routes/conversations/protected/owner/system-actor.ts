@@ -3,7 +3,9 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
 /** System-level actor with full conversation permissions. */
 export const SYSTEM_ACTOR = {
     id: '00000000-0000-0000-0000-000000000001',
-    role: RoleEnum.ADMIN,
+    // HOS-296: the actor carries a SET of hats. This synthetic system actor
+    // wears exactly one, ADMIN, which is all the conversation service checks.
+    roles: [RoleEnum.ADMIN],
     permissions: [
         PermissionEnum.CONVERSATION_VIEW_OWN,
         PermissionEnum.CONVERSATION_VIEW_ANY,

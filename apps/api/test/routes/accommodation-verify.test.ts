@@ -54,7 +54,7 @@ const { mockActorRef } = vi.hoisted(() => ({
     mockActorRef: {
         value: {
             id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
-            role: 'SUPER_ADMIN',
+            roles: ['SUPER_ADMIN'],
             permissions: ['access.panelAdmin', 'accommodation.verify']
         }
     }
@@ -63,8 +63,8 @@ const { mockActorRef } = vi.hoisted(() => ({
 vi.mock('../../src/utils/actor.js', () => ({
     getActorFromContext: () => mockActorRef.value,
     // authorization.ts imports isGuestActor — mirror the real logic here
-    isGuestActor: (actor: { role: string }) => actor.role === 'GUEST',
-    createGuestActor: () => ({ id: 'guest', role: 'GUEST', permissions: [] })
+    isGuestActor: (actor: { roles: readonly string[] }) => actor.roles.includes('GUEST'),
+    createGuestActor: () => ({ id: 'guest', roles: ['GUEST'], permissions: [] })
 }));
 
 vi.mock('../../src/utils/logger.js', () => ({
@@ -103,7 +103,7 @@ const BASE_URL = `/${ACCOMMODATION_ID}/verify`;
 
 const ADMIN_ACTOR = {
     id: ACTOR_ID,
-    role: 'SUPER_ADMIN',
+    roles: ['SUPER_ADMIN'],
     permissions: ['access.panelAdmin', 'accommodation.verify']
 };
 
@@ -157,7 +157,7 @@ describe('POST /:id/verify — adminVerifyAccommodationRoute (SPEC-291 Phase 3a)
 
     describe('Authentication', () => {
         it('returns 401 when the actor is a guest (unauthenticated)', async () => {
-            mockActorRef.value = { id: 'guest', role: 'GUEST', permissions: [] };
+            mockActorRef.value = { id: 'guest', roles: ['GUEST'], permissions: [] };
 
             const res = await app.request(BASE_URL, {
                 method: 'POST',
@@ -175,7 +175,7 @@ describe('POST /:id/verify — adminVerifyAccommodationRoute (SPEC-291 Phase 3a)
         it('returns 403 when actor lacks ACCOMMODATION_VERIFY permission', async () => {
             mockActorRef.value = {
                 id: ACTOR_ID,
-                role: 'SUPER_ADMIN',
+                roles: ['SUPER_ADMIN'],
                 // access.panelAdmin present but accommodation.verify is absent
                 permissions: ['access.panelAdmin']
             };
@@ -221,7 +221,7 @@ describe('POST /:id/verify — adminVerifyAccommodationRoute (SPEC-291 Phase 3a)
                 string,
                 boolean
             ];
-            expect(calledActor).toMatchObject({ id: ACTOR_ID, role: 'SUPER_ADMIN' });
+            expect(calledActor).toMatchObject({ id: ACTOR_ID, roles: ['SUPER_ADMIN'] });
             expect(calledId).toBe(ACCOMMODATION_ID);
             expect(calledFlag).toBe(true);
         });

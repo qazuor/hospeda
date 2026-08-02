@@ -8,7 +8,7 @@ import { UserLocationFields, UserLocationReadSchema } from '../../common/locatio
 import { SocialNetworkFields, SocialNetworkReadSchema } from '../../common/social.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { AuthProviderEnumSchema } from '../../enums/auth-provider.schema.js';
-import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
+import { PermissionEnumSchema } from '../../enums/index.js';
 import { ModerationStatusEnumSchema } from '../../enums/moderation-status.schema.js';
 import { UserBookmarkSchema } from '../userBookmark/userBookmark.schema.js';
 import { UserProfileReadSchema, UserProfileSchema } from './user.profile.schema.js';
@@ -140,8 +140,18 @@ export const UserSchema = z.object({
     // Social networks
     ...SocialNetworkFields,
 
-    // Role and permissions
-    role: RoleEnumSchema,
+    // Permissions.
+    //
+    // There is deliberately NO `role` field here (HOS-296 G-8). The scalar
+    // `users.role` column was dropped in the same migration that introduced
+    // `user_role`, and a user now holds a SET of roles read through
+    // `getUserRoles()` / `Actor.roles` — never off a `User` entity.
+    //
+    // This is load-bearing, not tidiness: `BaseModelImpl<User>` is generic over
+    // the Zod-inferred type and is never derived from the Drizzle table, so a
+    // `role` left declared here would keep compiling everywhere while being
+    // `undefined` at runtime for every user (see the HOS-296 sweep inventory
+    // §6 — Zod↔Drizzle drift is invisible to `tsc` in both directions).
     permissions: z.array(PermissionEnumSchema).default([]),
 
     // SPEC-113: post-signup onboarding flags. Mirror the

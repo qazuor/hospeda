@@ -16,7 +16,7 @@ import { apiLogger } from './logger';
  */
 export const createGuestActor = (): Actor => ({
     id: '00000000-0000-4000-8000-000000000000', // Valid UUID v4 for guest actor
-    role: RoleEnum.GUEST,
+    roles: [RoleEnum.GUEST],
     permissions: [PermissionEnum.ACCESS_API_PUBLIC]
 });
 
@@ -32,7 +32,7 @@ export const createGuestActor = (): Actor => ({
  */
 export const createSystemActor = (): Actor => ({
     id: '00000000-0000-4000-8000-000000000001', // Valid UUID v4 for system actor
-    role: RoleEnum.SUPER_ADMIN,
+    roles: [RoleEnum.SUPER_ADMIN],
     permissions: Object.values(PermissionEnum),
     _isSystemActor: true
 });
@@ -43,7 +43,9 @@ export const createSystemActor = (): Actor => ({
  * @returns {boolean} True if the actor is a guest user
  */
 export const isGuestActor = (actor: Actor): boolean => {
-    return actor.id === '00000000-0000-4000-8000-000000000000' || actor.role === RoleEnum.GUEST;
+    return (
+        actor.id === '00000000-0000-4000-8000-000000000000' || actor.roles.includes(RoleEnum.GUEST)
+    );
 };
 
 /**

@@ -160,7 +160,7 @@ function buildApp(
     attachTestErrorHandler(app);
 
     app.use((c, next) => {
-        c.set('actor', { id: MOCK_USER_ID, role, permissions });
+        c.set('actor', { id: MOCK_USER_ID, roles: [role], permissions });
         return next();
     });
 

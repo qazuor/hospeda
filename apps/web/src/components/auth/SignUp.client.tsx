@@ -11,10 +11,12 @@
  * structured firstName + lastName instead of a single free-text name.
  */
 
+import { AnalyticsEvents } from '@repo/analytics';
 import { StrongPasswordSchema } from '@repo/schemas';
 import { useEffect, useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
+import { trackEvent } from '@/lib/analytics/posthog-client';
 import { translateApiError } from '@/lib/api-errors';
 import { signIn, signUp } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
@@ -162,6 +164,11 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
         }
 
         setIsLoading(true);
+        trackEvent(AnalyticsEvents.signUpStarted, {
+            auth_method: 'email',
+            locale,
+            source_page: 'sign_up'
+        });
 
         try {
             // Sign up WITHOUT a `name` field — Better Auth's required `name`
@@ -218,6 +225,11 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
     async function handleOauth(provider: 'google' | 'facebook'): Promise<void> {
         setError(null);
         setOauthLoading(provider);
+        trackEvent(AnalyticsEvents.signUpStarted, {
+            auth_method: provider,
+            locale,
+            source_page: 'sign_up'
+        });
 
         try {
             // Build the absolute callbackURL on the client so the host

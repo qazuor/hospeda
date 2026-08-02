@@ -216,6 +216,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
         (isProtectedRoute({ path }) || isAuthRoute({ path }) || isSessionOptionalRoute({ path }));
 
     if (needsSession) {
+        // HOS-296: `parseSessionUser` reads `/api/v1/public/auth/me` — the only
+        // endpoint carrying the role SET — in exactly ONE request. The step-7.2
+        // `mustChangePassword` gate below is served from the same payload
+        // (`actor.mustChangePassword`), so no route pays a second round-trip.
         const user = await parseSessionUser({
             cookieHeader: context.request.headers.get('cookie')
         });
@@ -273,17 +277,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
             // profileStatus may be null on API errors — fail-open (allow through).
             if (profileStatus) {
-                // Determine the actor's role.  The session returned by
-                // parseSessionUser does not include the role, so we rely on the
-                // profile status to carry it indirectly.  Instead, we need to
-                // get the role from the actor at runtime.  Since the /profile/status
-                // endpoint is already called and we trust the session, the simplest
-                // approach is: if the user is authenticated and the endpoint
-                // succeeded, we have the flags. We don't have the role here.
-                //
-                // Role bypass approach: we fetch it lazily from /api/v1/public/auth/me
-                // only when required (i.e. when a redirect would otherwise occur).
-                // This avoids an extra HTTP call on every request where flags pass.
+                // Role bypass approach: the admin/super_admin bypass roles are
+                // resolved lazily from /api/v1/public/auth/me, only when a
+                // redirect would otherwise occur. This avoids an extra HTTP
+                // call on every request where the flags already pass.
+                // (`user.roles` is available here since HOS-296, but keeping
+                // the lazy fetch preserves the existing call pattern and its
+                // fail-closed error handling.)
 
                 const needsProfileCompletion =
                     !profileStatus.profileCompleted &&
@@ -399,7 +399,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
             // Drop the external *.sentry.io connect-src when the first-party
             // Sentry tunnel is active (SPEC-181 follow-up).
             sentryTunnelEnabled: Boolean(import.meta.env.PUBLIC_SENTRY_TUNNEL),
-            // HOS-91: relax style-src in dev only (see buildCspHeader JSDoc).
+            // Dev-only CSP relaxations, both caused by Astro's ClientRouter
+            // behaving differently under `astro dev` (see buildCspHeader JSDoc):
+            // HOS-91's style-src, plus frame-src 'self' for the hidden
+            // same-origin iframe it uses to prepare `client:only` islands.
             isDev: isDevelopment()
         });
 

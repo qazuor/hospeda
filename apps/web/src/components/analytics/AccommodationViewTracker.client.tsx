@@ -29,14 +29,6 @@ interface AccommodationViewTrackerProps {
     readonly isFeatured: boolean;
     /** Destination id the accommodation belongs to. */
     readonly destinationId: string;
-    /** Destination display name (denormalized for readable PostHog breakdowns). */
-    readonly destinationName: string;
-    /** Nightly base price in the smallest currency unit, or null when unpriced. */
-    readonly price: number | null;
-    /** ISO currency code for `price`, or null when unpriced. */
-    readonly currency: string | null;
-    /** Owner (host) id — an event dimension and PostHog group association. */
-    readonly ownerId: string;
 }
 
 /**
@@ -70,11 +62,7 @@ export function AccommodationViewTracker({
     locale,
     accommodationType,
     isFeatured,
-    destinationId,
-    destinationName,
-    price,
-    currency,
-    ownerId
+    destinationId
 }: AccommodationViewTrackerProps): null {
     useEffect(() => {
         // Associate subsequent events on this page with the accommodation group
@@ -82,19 +70,16 @@ export function AccommodationViewTracker({
         // group type is configured in the PostHog project (ops/plan-dependent).
         associateGroup('accommodation', accommodationId);
 
-        // PostHog event — enriched with type/featured/destination/price/owner so
-        // funnels can segment views without a join (SPEC-140 base props kept).
+        // PostHog event — explicit domain view, distinct from `$pageview`, so
+        // funnels can segment by accommodation metadata without URL parsing.
         trackEvent(WebEvents.AccommodationViewed, {
-            slug,
             accommodation_id: accommodationId,
+            accommodation_slug: slug,
             locale,
             accommodation_type: accommodationType,
             is_featured: isFeatured,
             destination_id: destinationId,
-            destination_name: destinationName,
-            price,
-            currency,
-            owner_id: ownerId
+            source_page: 'accommodation_detail'
         });
 
         // View beacon to the server-side view capture endpoint (SPEC-159).
@@ -107,18 +92,7 @@ export function AccommodationViewTracker({
         return () => {
             resetGroups();
         };
-    }, [
-        slug,
-        accommodationId,
-        locale,
-        accommodationType,
-        isFeatured,
-        destinationId,
-        destinationName,
-        price,
-        currency,
-        ownerId
-    ]);
+    }, [slug, accommodationId, locale, accommodationType, isFeatured, destinationId]);
 
     return null;
 }

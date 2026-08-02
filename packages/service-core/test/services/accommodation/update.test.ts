@@ -14,6 +14,19 @@ import { createActor, createAdminActor } from '../../factories/actorFactory';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
 import { createLoggerMock } from '../../utils/modelMockFactory';
 
+// HOS-296: `_afterUpdate` grants the owner the HOST hat when a listing becomes
+// ACTIVE, and the grant is no longer best-effort — a failure fails the update.
+// These suites mock every other DB touchpoint, so the primitive is stubbed here
+// too; the grant's own behaviour is covered by `roleAssignment.test.ts`.
+vi.mock('../../../src/services/user-role/user-role.service.js', () => ({
+    grantRole: vi.fn().mockResolvedValue({ data: undefined }),
+    // HOS-296: the module also exports the read primitive, and the
+    // billing-exempt-owner branch calls it. A module mock that omits it turns
+    // that branch into "getUserRoles is not a function" — an INTERNAL_ERROR
+    // that looks nothing like a role problem.
+    getUserRoles: vi.fn().mockResolvedValue([])
+}));
+
 // Mocks
 const mockLogger = createLoggerMock();
 

@@ -43,7 +43,7 @@ describe('OwnerPromotionService — AC-005-01 lifecycle enforcement', () => {
         actor = {
             id: 'test-actor',
             type: 'user',
-            role: RoleEnum.USER,
+            roles: [RoleEnum.USER],
             permissions: []
         } as Actor;
         service = new OwnerPromotionService({

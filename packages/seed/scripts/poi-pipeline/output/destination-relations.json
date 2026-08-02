@@ -3257,7 +3257,7 @@
     {
         "destinationSlug": "colon",
         "poiSlug": "molino_forclaz",
-        "relation": "NEARBY"
+        "relation": "PRIMARY"
     },
     {
         "destinationSlug": "liebig",

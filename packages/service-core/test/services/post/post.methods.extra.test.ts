@@ -24,7 +24,7 @@ describe('PostService — extra method coverage', () => {
     const actor = createActor({ id: getMockId('user') });
     const adminActor = createActor({
         id: getMockId('user', 'admin'),
-        role: RoleEnum.SUPER_ADMIN,
+        roles: [RoleEnum.SUPER_ADMIN],
         permissions: Object.values(PermissionEnum)
     });
 
@@ -69,7 +69,7 @@ describe('PostService — extra method coverage', () => {
 
         it('should return an error when actor has no id (unauthenticated)', async () => {
             // Arrange — guest actor with no id
-            const guestActor = createActor({ id: '', role: RoleEnum.GUEST, permissions: [] });
+            const guestActor = createActor({ id: '', roles: [RoleEnum.GUEST], permissions: [] });
             const postId = getMockId('post');
 
             // Act

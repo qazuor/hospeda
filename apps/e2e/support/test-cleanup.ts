@@ -30,6 +30,15 @@ import type { Pool } from 'pg';
  * onDelete='cascade' on user FK in the schema, so deleting from `users`
  * actually cascades to the rest — but we list them explicitly to match
  * what an operator might inspect during a partial-failure cleanup.
+ *
+ * Listing them explicitly is not merely documentation here: this helper runs
+ * with `session_replication_role = 'replica'`, which disables FK triggers, so
+ * the `ON DELETE CASCADE` does NOT actually fire. Anything omitted from this
+ * list survives as an orphan row pointing at a deleted user — which is exactly
+ * why `user_role` (HOS-296) has to be on it.
+ *
+ * `user_role_audit` is deliberately NOT listed: its `user_id` FK is
+ * `ON DELETE SET NULL` precisely so the trail outlives a hard-deleted account.
  */
 const CLEANUP_TABLES = [
     'accommodation_reviews',
@@ -41,6 +50,7 @@ const CLEANUP_TABLES = [
     'billing_subscriptions',
     'billing_customers',
     'accommodations',
+    'user_role',
     'users'
 ] as const;
 

@@ -131,7 +131,7 @@ vi.mock('../../../src/middlewares/actor', async (importOriginal) => {
         ...actual,
         getActorFromContext: () => ({
             id: '00000000-0000-4000-8000-000000000099',
-            role: 'HOST',
+            roles: ['HOST'],
             permissions: [],
             email: 'host@test.com',
             name: 'Test Host'

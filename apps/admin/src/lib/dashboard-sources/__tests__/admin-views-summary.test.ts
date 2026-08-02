@@ -26,7 +26,7 @@ import { dashboards } from '@/config/ia/dashboards';
 const mockFetchApi = vi.mocked(fetchApi);
 
 const ctx: ResolverContext = {
-    role: 'ADMIN',
+    roles: ['ADMIN'],
     userId: 'u-admin-1',
     permissions: ['ANALYTICS_VIEW'],
     scope: 'all'

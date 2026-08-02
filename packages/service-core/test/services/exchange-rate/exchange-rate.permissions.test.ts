@@ -10,7 +10,7 @@ import {
 } from '../../../src/services/exchange-rate/exchange-rate.permissions';
 import { ServiceError } from '../../../src/types';
 
-const baseActor = { id: 'actor-id', role: RoleEnum.ADMIN, permissions: [] };
+const baseActor = { id: 'actor-id', roles: [RoleEnum.ADMIN], permissions: [] };
 
 describe('exchange-rate.permissions', () => {
     it('checkCanViewExchangeRate allows with EXCHANGE_RATE_VIEW', () => {

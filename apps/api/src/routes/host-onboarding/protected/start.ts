@@ -20,6 +20,7 @@
  * flow so they can access host surfaces immediately. The billing trial still
  * starts later, on the first DRAFT -> ACTIVE publish.
  */
+import { AnalyticsEvents } from '@repo/analytics';
 import {
     AccommodationCreateDraftHttpSchema,
     AccommodationIdSchema,
@@ -28,6 +29,7 @@ import {
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { captureServerAnalyticsEvent } from '../../../lib/posthog';
 import { getQZPayBilling } from '../../../middlewares/billing';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { enforceAccommodationLimit } from '../../../middlewares/limit-enforcement';
@@ -86,6 +88,25 @@ export const protectedHostOnboardingStartRoute = createProtectedRoute({
                 'createForOnboarding returned no data and no error'
             );
         }
+
+        captureServerAnalyticsEvent({
+            distinctId: actor.id,
+            name: AnalyticsEvents.onboardingStarted,
+            properties: {
+                onboarding_type: 'host_accommodation',
+                draft_source: 'manual'
+            }
+        });
+
+        captureServerAnalyticsEvent({
+            distinctId: actor.id,
+            name: AnalyticsEvents.accommodationDraftSaved,
+            properties: {
+                accommodation_id: data.accommodation.id,
+                creation_source: 'manual'
+            }
+        });
+
         // SPEC-143 Block 1: ensure a billing_customer row exists for the newly
         // promoted host. This is idempotent — if the customer already exists
         // (e.g. resumed path), the call is a no-op. We call it AFTER the

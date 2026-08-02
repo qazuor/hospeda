@@ -62,7 +62,7 @@ vi.mock('../../src/utils/logger', () => ({
 const AUTHENTICATED_SERVER_STATE = {
     userId: 'staff-1',
     isAuthenticated: true,
-    role: 'ADMIN',
+    roles: ['ADMIN'],
     permissions: ['some.permission'],
     passwordChangeRequired: false,
     displayName: 'Staff Member',
@@ -116,7 +116,7 @@ describe('AuthProvider — Sentry user context wiring', () => {
         renderWithProvider(<Consumer />, {
             userId: 'user-123',
             isAuthenticated: true,
-            role: 'admin',
+            roles: ['admin'],
             permissions: [],
             passwordChangeRequired: false,
             displayName: 'Jane Doe',
@@ -148,7 +148,7 @@ describe('AuthProvider — Sentry user context wiring', () => {
         renderWithProvider(<Consumer />, {
             userId: 'user-123',
             isAuthenticated: true,
-            role: 'admin',
+            roles: ['admin'],
             permissions: [],
             passwordChangeRequired: false,
             displayName: 'Jane Doe',
@@ -191,7 +191,7 @@ describe('AuthProvider — PostHog identify/reset wiring', () => {
         vi.restoreAllMocks();
     });
 
-    it('calls identifyUser with the staff id, role, and email domain once resolved', async () => {
+    it('calls identifyUser with the staff id, roles, and email domain once resolved', async () => {
         render(
             <AuthProvider initialAuthState={AUTHENTICATED_SERVER_STATE}>
                 <div />
@@ -200,7 +200,7 @@ describe('AuthProvider — PostHog identify/reset wiring', () => {
 
         await waitFor(() => {
             expect(mockIdentifyUser).toHaveBeenCalledWith('staff-1', {
-                role: 'ADMIN',
+                roles: ['ADMIN'],
                 emailDomain: 'hospeda.com.ar'
             });
         });

@@ -551,3 +551,72 @@ describe('DestinationPOIMap', () => {
         window.history.pushState({}, '', '/');
     });
 });
+
+// The SSR card grid filters NEARBY POIs out, so for a landmark that is NEARBY
+// to the city a visitor is browsing (Palacio San José sits 28 km from
+// Concepción del Uruguay) the map popup is the ONLY route to its detail page.
+// A regression here silently re-orphans that page for the biggest destination.
+describe('DestinationPOIMap — detail-page links on markers', () => {
+    beforeEach(() => {
+        receivedProps.length = 0;
+        mockGetPointsOfInterest.mockReset();
+        mockGetPointsOfInterest.mockResolvedValue({ ok: true, data: [] });
+    });
+
+    it('gives a curated POI a locale-prefixed detailUrl', () => {
+        render(
+            <DestinationPOIMap
+                pointsOfInterest={[poi({ id: 'a', slug: 'palacio_san_jose', hasOwnPage: true })]}
+                destinationId={DEST_ID}
+                locale="es"
+            />
+        );
+
+        expect(lastMultiProps().markers[0]?.detailUrl).toBe('/es/destinos/lugar/palacio_san_jose/');
+    });
+
+    it('leaves detailUrl null for a POI without a page, so no popup links to a 404', () => {
+        render(
+            <DestinationPOIMap
+                pointsOfInterest={[poi({ id: 'b', slug: 'hospital_paranacito' })]}
+                destinationId={DEST_ID}
+                locale="es"
+            />
+        );
+
+        expect(lastMultiProps().markers[0]?.detailUrl).toBeNull();
+    });
+
+    it('links a NEARBY curated POI too — the grid hides it, the map must not', () => {
+        render(
+            <DestinationPOIMap
+                pointsOfInterest={[
+                    poi({
+                        id: 'c',
+                        slug: 'palacio_san_jose',
+                        hasOwnPage: true,
+                        relation: 'NEARBY'
+                    })
+                ]}
+                destinationId={DEST_ID}
+                locale="es"
+            />
+        );
+
+        const marker = lastMultiProps().markers[0];
+        expect(marker?.relation).toBe('NEARBY');
+        expect(marker?.detailUrl).toBe('/es/destinos/lugar/palacio_san_jose/');
+    });
+
+    it('honours the active locale in the link', () => {
+        render(
+            <DestinationPOIMap
+                pointsOfInterest={[poi({ id: 'd', slug: 'molino_forclaz', hasOwnPage: true })]}
+                destinationId={DEST_ID}
+                locale="pt"
+            />
+        );
+
+        expect(lastMultiProps().markers[0]?.detailUrl).toBe('/pt/destinos/lugar/molino_forclaz/');
+    });
+});

@@ -10,10 +10,10 @@ import type { Actor } from '../../../src/types';
 
 const actorWithPerm: Actor = {
     id: '1',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.EVENT_ORGANIZER_MANAGE]
 };
-const actorWithoutPerm: Actor = { id: '2', role: RoleEnum.ADMIN, permissions: [] };
+const actorWithoutPerm: Actor = { id: '2', roles: [RoleEnum.ADMIN], permissions: [] };
 
 describe('eventOrganizer permissions', () => {
     it('allows create if actor has permission', () => {
@@ -35,13 +35,13 @@ describe('eventOrganizer permissions', () => {
         expect(() => checkCanDeleteEventOrganizer(actorWithoutPerm)).toThrow();
     });
     it('throws if actor is USER without permission', () => {
-        const user: Actor = { id: '3', role: RoleEnum.USER, permissions: [] };
+        const user: Actor = { id: '3', roles: [RoleEnum.USER], permissions: [] };
         expect(() => checkCanCreateEventOrganizer(user)).toThrow();
         expect(() => checkCanUpdateEventOrganizer(user)).toThrow();
         expect(() => checkCanDeleteEventOrganizer(user)).toThrow();
     });
     it('throws if actor is GUEST', () => {
-        const guest: Actor = { id: '4', role: RoleEnum.GUEST, permissions: [] };
+        const guest: Actor = { id: '4', roles: [RoleEnum.GUEST], permissions: [] };
         expect(() => checkCanCreateEventOrganizer(guest)).toThrow();
         expect(() => checkCanUpdateEventOrganizer(guest)).toThrow();
         expect(() => checkCanDeleteEventOrganizer(guest)).toThrow();
@@ -49,7 +49,7 @@ describe('eventOrganizer permissions', () => {
     it('allows SUPER_ADMIN with permission', () => {
         const superAdmin: Actor = {
             id: '5',
-            role: RoleEnum.SUPER_ADMIN,
+            roles: [RoleEnum.SUPER_ADMIN],
             permissions: [PermissionEnum.EVENT_ORGANIZER_MANAGE]
         };
         expect(() => checkCanCreateEventOrganizer(superAdmin)).not.toThrow();
@@ -59,7 +59,7 @@ describe('eventOrganizer permissions', () => {
     it('throws if actor has irrelevant permissions', () => {
         const actor: Actor = {
             id: '6',
-            role: RoleEnum.ADMIN,
+            roles: [RoleEnum.ADMIN],
             permissions: [PermissionEnum.TAG_SYSTEM_VIEW]
         };
         expect(() => checkCanCreateEventOrganizer(actor)).toThrow();
@@ -69,7 +69,7 @@ describe('eventOrganizer permissions', () => {
     it('allows if actor has multiple permissions including required', () => {
         const actor: Actor = {
             id: '7',
-            role: RoleEnum.ADMIN,
+            roles: [RoleEnum.ADMIN],
             permissions: [PermissionEnum.TAG_SYSTEM_VIEW, PermissionEnum.EVENT_ORGANIZER_MANAGE]
         };
         expect(() => checkCanCreateEventOrganizer(actor)).not.toThrow();
@@ -85,7 +85,7 @@ describe('eventOrganizer permissions', () => {
         it('should allow actor with EVENT_ORGANIZER_VIEW permission', () => {
             const actor: Actor = {
                 id: 'eo-admin',
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: [PermissionEnum.EVENT_ORGANIZER_VIEW]
             };
             expect(() => checkCanAdminList(actor)).not.toThrow();

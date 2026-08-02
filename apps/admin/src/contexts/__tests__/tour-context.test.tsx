@@ -28,6 +28,7 @@
  * @see SPEC-174 §7.4
  */
 
+import { AnalyticsEvents } from '@repo/analytics';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -80,7 +81,11 @@ vi.mock('@/hooks/use-translations', () => ({
 
 vi.mock('@/hooks/use-auth-context', () => ({
     useAuthContext: () => ({
-        user: { id: 'user_1', role: 'HOST' },
+        // HOS-296: a user holds a SET of roles. Leaving the old scalar here
+        // made `user?.roles ?? []` resolve to an empty set, so the analytics
+        // assertions below were reading a fabricated value rather than the
+        // mocked one.
+        user: { id: 'user_1', roles: ['HOST'] },
         isLoading: false,
         isAuthenticated: true,
         error: null,
@@ -269,9 +274,9 @@ describe('TourProvider / useTour', () => {
             });
 
             // Assert
-            expect(mockedTrackEvent).toHaveBeenCalledWith('admin.tour.shown', {
-                tourId: 'host.misAlojamientos',
-                role: 'HOST',
+            expect(mockedTrackEvent).toHaveBeenCalledWith(AnalyticsEvents.adminTourShown, {
+                tour_id: 'host.misAlojamientos',
+                roles: ['HOST'],
                 source: 'auto'
             });
         });
@@ -342,9 +347,9 @@ describe('TourProvider / useTour', () => {
             // Assert
             expect(mockMarkSeen).toHaveBeenCalledWith({ tourId: 'host.welcome', version: 1 });
             expect(mockedTrackEvent).toHaveBeenCalledWith(
-                'admin.tour.skipped',
+                'admin_tour_skipped',
                 expect.objectContaining({
-                    tourId: 'host.welcome'
+                    tour_id: 'host.welcome'
                 })
             );
             expect(mockDriverFactory).not.toHaveBeenCalled();
@@ -412,9 +417,9 @@ describe('TourProvider / useTour', () => {
                 version: 1
             });
             expect(mockedTrackEvent).toHaveBeenCalledWith(
-                'admin.tour.completed',
+                'admin_tour_completed',
                 expect.objectContaining({
-                    tourId: 'host.misAlojamientos'
+                    tour_id: 'host.misAlojamientos'
                 })
             );
         });

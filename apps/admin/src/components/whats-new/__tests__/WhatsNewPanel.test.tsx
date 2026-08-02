@@ -239,7 +239,7 @@ describe('WhatsNewPanel', () => {
     // -------------------------------------------------------------------------
 
     describe('analytics', () => {
-        it('fires admin.whats_new.panel.opened when panel opens', async () => {
+        it('fires admin_whats_new_panel_opened when panel opens', async () => {
             setupHook([UNSEEN_ENTRY], 1);
 
             render(
@@ -251,8 +251,8 @@ describe('WhatsNewPanel', () => {
 
             await waitFor(() => {
                 expect(mockTrackEvent).toHaveBeenCalledWith(
-                    'admin.whats_new.panel.opened',
-                    expect.objectContaining({ unseenCount: 1 })
+                    'admin_whats_new_panel_opened',
+                    expect.objectContaining({ unseen_count: 1 })
                 );
             });
         });

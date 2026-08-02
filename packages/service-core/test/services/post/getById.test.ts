@@ -30,12 +30,12 @@ describe('PostService.getById', () => {
         actor = createActor({
             id: getMockId('user'),
             permissions: [PermissionEnum.POST_VIEW_PRIVATE],
-            role: RoleEnum.USER
+            roles: [RoleEnum.USER]
         });
         forbiddenActor = createActor({
             id: getMockId('post'),
             permissions: [],
-            role: RoleEnum.USER
+            roles: [RoleEnum.USER]
         });
     });
 

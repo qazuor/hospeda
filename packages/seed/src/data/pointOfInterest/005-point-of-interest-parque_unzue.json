@@ -49,7 +49,7 @@
     "icon": "park",
     "isBuiltin": true,
     "isFeatured": false,
-    "displayWeight": 60,
+    "displayWeight": 70,
     "lifecycleState": "ACTIVE",
     "verified": false,
     "verifiedAt": null,

@@ -108,7 +108,7 @@ describe('apiKeyMiddleware', () => {
             expect(body.actor).toBeDefined();
             expect(body.actor.id).toBe('gpt-action');
             expect(body.actor.name).toBe('Custom GPT Social Action');
-            expect(body.actor.role).toBe(RoleEnum.SYSTEM);
+            expect(body.actor.roles).toEqual([RoleEnum.SYSTEM]);
             expect(body.actor.permissions).toEqual([]);
             expect(body.actor._isSystemActor).toBe(false);
         });

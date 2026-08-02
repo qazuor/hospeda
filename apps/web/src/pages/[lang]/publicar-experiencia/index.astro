@@ -32,6 +32,21 @@ const subtitle = t('commerce.lead.experience.subtitle');
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
+// --- Auth (HOS-295) ---
+// The page stays public — an anonymous visitor is the primary case. When there
+// IS a session, hand the visitor down to the island so it can pre-fill the
+// contact fields; islands cannot read `Astro.locals` themselves. This is only
+// populated because `publicar-experiencia` is listed in
+// `SESSION_OPTIONAL_SEGMENTS` (see `@/lib/routes`).
+// Only the two fields the form seeds — island props are serialized into the
+// rendered HTML, so the user id has no business being here.
+const currentUser = Astro.locals.user
+    ? {
+          name: Astro.locals.user.name ?? null,
+          email: Astro.locals.user.email ?? null
+      }
+    : null;
+
 const destinationsResult = await destinationsApi.list({
     destinationType: 'CITY',
     pageSize: 100
@@ -69,6 +84,7 @@ const destinations: ReadonlyArray<DestinationOption> = destinationsResult.ok
                 locale={locale}
                 destinations={destinations}
                 domain="experience"
+                currentUser={currentUser}
             />
         </div>
     </section>

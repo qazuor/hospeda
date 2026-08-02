@@ -63,5 +63,10 @@
     "comingSoon": {
         "analytics": "Connect an analytics provider to view traffic data",
         "auditLog": "Activity feed will be available once the audit log system is implemented"
+    },
+    "widgets": {
+        "usersByRole": {
+            "multiRoleNote": "A user can hold several roles, so the bars add up to more than the total number of users."
+        }
     }
 }

@@ -96,6 +96,36 @@ export type NewItem = typeof items.$inferInsert;
 
 ## Query Patterns
 
+### `where` value shapes accepted by `buildWhereClause`
+
+Hospeda's models funnel their `where` record through `buildWhereClause`
+(`packages/db/src/utils/drizzle-helpers.ts`). It accepts three value shapes and
+**throws `DbError` on anything else** — notably on a plain object:
+
+| Value | Result |
+|---|---|
+| scalar (`'x'`, `3`, `true`, `Date`) | `eq(col, value)` |
+| `null` | `isNull(col)` |
+| array on a **scalar** column | `inArray(col, value)` — this IS the membership syntax |
+| array on an **array-typed** column (`text[]`) | `eq(col, value)`, full-array equality |
+| plain object (`{ in: [...] }`, `{ gte: 1 }`, …) | **throws `DbError`** |
+
+```ts
+// ✅ membership filter
+await model.findAll({ id: ids });          // → id IN ($1, $2, …)
+
+// ❌ throws DbError: 'value for key "id" is a plain object'
+await model.findAll({ id: { in: ids } });
+```
+
+There is no `{ in: … }` operator. For anything the table cannot express (ilike,
+ranges, OR groups, array containment) build the SQL condition yourself and pass
+it via `additionalConditions`.
+
+This has bitten three separate call sites. The throw is easy to miss because
+callers commonly wrap such a read in a `try/catch` that only warns — which then
+swallows whatever side effect shared that block.
+
 ### Basic CRUD
 
 ```typescript

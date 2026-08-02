@@ -44,9 +44,23 @@ vi.mock(
     })
 );
 
-vi.mock('../../src/lib/posthog', () => ({
-    getPostHogClient: () => ({ capture: vi.fn() })
-}));
+vi.mock('../../src/lib/posthog', () => {
+    const mockCapture = vi.fn();
+    return {
+        getPostHogClient: () => ({ capture: mockCapture }),
+        captureServerAnalyticsEvent: ({
+            distinctId,
+            name,
+            properties
+        }: {
+            distinctId: string;
+            name: string;
+            properties: Record<string, unknown>;
+        }) => {
+            mockCapture({ distinctId, event: name, properties });
+        }
+    };
+});
 
 import { PermissionEnum } from '@repo/schemas';
 import { safeExternalFetch } from '@repo/utils/safe-fetch';

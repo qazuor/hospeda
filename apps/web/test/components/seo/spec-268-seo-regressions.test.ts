@@ -25,7 +25,7 @@ const photosPage = readFileSync(
     resolve(ROOT, 'pages/[lang]/alojamientos/[slug]/fotos.astro'),
     'utf8'
 );
-const attractionDetail = readFileSync(
+const attractionLanding = readFileSync(
     resolve(ROOT, 'pages/[lang]/destinos/atraccion/[slug]/index.astro'),
     'utf8'
 );
@@ -53,10 +53,16 @@ describe('SPEC-268 SEO regressions', () => {
         expect(photosPage).toContain('canonicalPath={backUrl}');
     });
 
-    it('attraction detail emits TouristAttraction JSON-LD on its canonical path', () => {
-        expect(attractionDetail).toContain('TouristAttractionJsonLd');
-        expect(attractionDetail).toContain('canonicalPath={canonicalPath}');
-        expect(attractionDetail).toContain('url={canonicalPath}');
+    it('attraction landing anchors its structured data on its canonical path', () => {
+        // This used to assert `TouristAttractionJsonLd`. That page is no longer
+        // an attraction DETAIL page: it now answers "which destinations offer
+        // this?" and renders a list of destination cards, so BreadcrumbList +
+        // ItemList are its correct schema and TouristAttraction would misdescribe
+        // it. Its own shape is covered by `destinos-atraccion-landing.test.ts`;
+        // what SPEC-268 still owns here is that the structured data points at
+        // the page's canonical URL rather than at the request URL.
+        expect(attractionLanding).toContain('const canonicalPath = buildUrl(');
+        expect(attractionLanding).toContain('${siteOrigin}${canonicalPath}');
     });
 
     it('robots disallows reset-password and verify-email routes', () => {

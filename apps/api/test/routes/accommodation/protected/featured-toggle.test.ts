@@ -96,7 +96,7 @@ function attachTestErrorHandler(app: Hono<AppBindings>): void {
 
 type ActorOptions = {
     id: string;
-    role: RoleEnum;
+    roles: readonly RoleEnum[];
     permissions: PermissionEnum[];
 };
 
@@ -121,13 +121,13 @@ function buildApp(
 
 const ownerActor: ActorOptions = {
     id: OWNER_ID,
-    role: RoleEnum.HOST,
+    roles: [RoleEnum.HOST],
     permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
 };
 
 const guestActor: ActorOptions = {
     id: GUEST_ID,
-    role: RoleEnum.GUEST,
+    roles: [RoleEnum.GUEST],
     permissions: []
 };
 

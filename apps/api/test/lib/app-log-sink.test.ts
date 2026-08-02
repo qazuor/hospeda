@@ -119,7 +119,7 @@ describe('createAppLogSinkHandler', () => {
                     path: '/api/v1/protected/bookmarks'
                 },
                 fn: async () => {
-                    setRequestContextActor({ userId: 'user-uuid-456', role: 'host' });
+                    setRequestContextActor({ userId: 'user-uuid-456', roles: ['host'] });
                     handler(makeEntry({ level: 'WARN', message: 'context enriched' }));
                 }
             });

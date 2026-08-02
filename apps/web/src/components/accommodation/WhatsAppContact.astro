@@ -20,6 +20,7 @@
  */
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 
 interface Props {
     /** The WhatsApp number, or null when the viewer is not entitled to it. */
@@ -44,18 +45,15 @@ if (!showUpsell && !number) return;
 const title = t('accommodations.detail.whatsapp.title', 'Contacto por WhatsApp');
 
 // --- wa.me deep link (direct tier only) ---
-// Sanitize the phone: strip everything except a leading '+' and digits, as
-// wa.me expects an E.164-like number without spaces or separators.
+// Built by the shared helper so the phone is sanitized the one way wa.me
+// accepts (bare digits, no leading '+') — see `@/lib/whatsapp`.
 let waUrl: string | null = null;
 if (number && direct) {
-    const phone = number.startsWith('+')
-        ? `+${number.slice(1).replace(/\D/g, '')}`
-        : number.replace(/\D/g, '');
     const message = t(
         'accommodations.detail.whatsapp.messageTemplate',
         'Hola, me interesa obtener más información sobre {{name}}'
     ).replace('{{name}}', accommodationName);
-    waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    waUrl = buildWhatsAppLink({ phone: number, message }).url;
 }
 
 const ctaLabel = t('accommodations.detail.whatsapp.cta', 'Consultar por WhatsApp');
@@ -137,18 +135,25 @@ const upsellCta = t('accommodations.detail.whatsapp.upsellCta', 'Ver planes');
         gap: 10px;
         padding: 12px 24px;
         border-radius: var(--radius-button, 8px);
-        background-color: #25d366;
-        color: white;
+        /* HOS-314: the WhatsApp brand green with DARK ink on top (9.12:1).
+           White on this green is 1.98:1 — below WCAG AA for both normal (4.5)
+           and large (3) text. The fill keeps the brand color; only the ink was
+           inverted. Both values are theme-invariant on purpose — see
+           packages/design-tokens/src/tokens/colors.ts. */
+        background-color: var(--channel-whatsapp);
+        color: var(--channel-whatsapp-foreground);
         font-family: var(--font-sans);
         font-weight: 600;
         font-size: 1rem;
         text-decoration: none;
-        transition: opacity 200ms ease-out;
+        transition: background-color 200ms ease-out;
         width: fit-content;
     }
 
+    /* An explicit darker green, not `opacity`: fading the button dims the ink
+       and the fill together, so it cannot preserve the contrast ratio. */
     .acc-whatsapp__btn:hover {
-        opacity: 0.85;
+        background-color: var(--channel-whatsapp-hover);
     }
 
     .acc-whatsapp__btn:focus-visible {
@@ -164,7 +169,10 @@ const upsellCta = t('accommodations.detail.whatsapp.upsellCta', 'Ver planes');
         font-family: var(--font-sans);
         font-weight: 600;
         font-size: 1rem;
-        color: #128c7e;
+        /* HOS-314: WhatsApp's own teal (#128c7e) reads 3.57:1 on
+           --surface-warm in light and 3.82:1 in dark — it fails AA in BOTH.
+           This token is the theme-aware step, since --surface-warm inverts. */
+        color: var(--channel-whatsapp-text);
         user-select: text;
     }
 
@@ -188,17 +196,56 @@ const upsellCta = t('accommodations.detail.whatsapp.upsellCta', 'Ver planes');
         padding: 10px 20px;
         border-radius: var(--radius-button, 8px);
         background-color: var(--brand-primary);
-        color: white;
+        /* HOS-314: was a hard-coded `white`, which measures 2.93:1 on the dark
+           brand blue — below even the 3:1 large-text floor, on the branch every
+           anonymous visitor sees. The repo's primary-button ink token inverts to
+           near-black in dark and reads 7.05:1 there, so the design system
+           already had the fix and this rule had opted out of it.
+           The trade, stated plainly: in light the token is `oklch(0.99 0 0)`,
+           so this goes 3.56 -> 3.47 — both fail AA 4.5, because light
+           `--brand-primary` + near-white is a REPO-WIDE pair that every primary
+           CTA shares and that is out of scope here (tracked in HOS-367).
+           Consuming the token costs 0.09 in a state that already fails and
+           gains 4.12 in one that failed worse, and it puts this rule inside
+           that systemic fix instead of permanently outside it. */
+        color: var(--primary-foreground);
         font-family: var(--font-sans);
         font-weight: 600;
         font-size: 0.95rem;
         text-decoration: none;
         width: fit-content;
-        transition: opacity 200ms ease-out;
+        transition: background-color 200ms ease-out;
     }
 
+    /* Same reason as the WhatsApp button: `opacity` composites ink and fill
+       toward the surface together, which took this rule to 2.72:1 on hover.
+       Ink on this fill: 4.26:1 light, 5.78:1 dark.
+
+       The token is `--brand-primary-lm05`, NOT `--primary-hover`, and the
+       difference is load-bearing: `--primary-hover` is emitted at `:root` as a
+       bare `oklch(from …)` relative color with no sRGB fallback and no
+       `@supports` gate, so below Chrome 119 / Safari 16.4 / Firefox 128 the
+       whole declaration is invalid at computed-value time and the fill falls
+       back to transparent — leaving this near-white ink on `--surface-warm` at
+       1.13:1. That is the BETA-44 incident global.css warns about, and
+       `check-css-relative-colors.cjs` cannot catch it here because the invalid
+       syntax lives in the token, not in this file (the remaining consumers of
+       such tokens are tracked in HOS-368). `-lm05` ships a solid `:root`
+       fallback plus an `@supports` oklch override, and is what the repo's other
+       primary hovers already use.
+
+       Identical math in LIGHT, not in dark. `--primary-hover` is `calc(l - 0.05)`
+       in light — byte-identical to `-lm05`, so the light ratio is unchanged at
+       4.26 on any browser that supports relative colors, and the light gain is
+       1.13 -> 4.26 only on the browsers that do not. In DARK it is
+       `calc(l + 0.07)`, i.e. it brightens, while `-lm05` darkens in both themes:
+       there the measured trade is 9.25 -> 5.78. Taking that loss is deliberate —
+       a hover that reads 5.78:1 everywhere beats one that reads 9.25:1 on new
+       browsers and paints nothing on old ones — and 5.78 clears AA comfortably.
+       If dark wants its brightening back it needs a `-lp07` variant token with
+       the same fallback pair, not `--primary-hover`. */
     .acc-whatsapp__upsell-cta:hover {
-        opacity: 0.85;
+        background-color: var(--brand-primary-lm05);
     }
 
     .acc-whatsapp__upsell-cta:focus-visible {

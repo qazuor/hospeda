@@ -157,23 +157,34 @@ All routes **except** the following are blocked:
 
 ### Error Response
 
-When access is blocked due to expired trial:
+When access is blocked due to an expired trial:
 
 ```json
 {
-  "error": "Your trial has expired. Please upgrade your subscription to continue using this feature.",
-  "code": "TRIAL_EXPIRED",
-  "trialStatus": {
-    "isOnTrial": true,
-    "isExpired": true,
-    "expiresAt": "2024-01-15T00:00:00.000Z",
-    "daysRemaining": 0
-  },
-  "upgradeAudience": "host"
+  "success": false,
+  "error": {
+    "code": "ENTITLEMENT_REQUIRED",
+    "message": "Your trial has expired. Please upgrade your subscription to continue using this feature.",
+    "reason": "TRIAL_EXPIRED",
+    "details": { "upgradeAudience": "host" }
+  }
 }
 ```
 
 **HTTP Status**: 402 Payment Required
+
+This is what the **client** receives. The middleware throws
+`HTTPException(402, { cause: { code, trialStatus, upgradeAudience } })`, and the
+global error handler (`middlewares/response.ts`) reduces that cause to the
+whitelisted `reason` + `details` above — `trialStatus` is internal and never
+leaves the server. Earlier revisions of this document showed the raw cause
+object, which was never the wire format (HOS-283).
+
+`reason` is the finer-grained discriminator: the web client's `translateApiError`
+prefers it over `code`, so each cause can carry its own copy while sharing a
+single code. Adding a cause means adding it to `ENTITLEMENT_CAUSE_REASONS` in
+`response.ts` **and** adding a `common.apiError.<REASON>` key in every locale —
+an unmapped reason renders the raw dotted key to the user in production.
 
 ## Usage Examples
 

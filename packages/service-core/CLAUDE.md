@@ -90,7 +90,7 @@ export class AccommodationService extends BaseCrudService<
 ```ts
 export interface ServiceContext {
   userId?: string;
-  role?: string;
+  roles?: RoleEnum[]; // an actor can hold several roles at once (HOS-296)
   permissions?: string[];
   requestId?: string;
 }
@@ -136,7 +136,7 @@ import { AccommodationService } from '@repo/service-core';
 
 const service = new AccommodationService({
   userId: 'user-123',
-  role: 'admin',
+  roles: [RoleEnum.ADMIN],
 });
 
 // Create
@@ -363,7 +363,7 @@ describe('AccommodationService', () => {
   beforeEach(() => {
     service = createServiceTestInstance(AccommodationService, {
       userId: 'test-user',
-      role: 'admin',
+      roles: [RoleEnum.ADMIN],
     });
   });
 
@@ -516,7 +516,7 @@ export function checkCanCreate(actor: Actor, _data: unknown): void {
 ```ts
 // ❌ WRONG - Checks role instead of permissions
 export function checkCanCreate(actor: Actor, _data: unknown): void {
-    if (!actor || !actor.id || actor.role !== RoleEnum.ADMIN) {
+    if (!actor || !actor.id || !actor.roles.includes(RoleEnum.ADMIN)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to create entity'
@@ -529,7 +529,7 @@ export function checkCanCreate(actor: Actor, _data: unknown): void {
     if (
         !actor ||
         !actor.id ||
-        (actor.role !== RoleEnum.ADMIN &&
+        (!actor.roles.includes(RoleEnum.ADMIN) &&
             !actor.permissions.includes(PermissionEnum.ENTITY_CREATE))
     ) {
         throw new ServiceError(

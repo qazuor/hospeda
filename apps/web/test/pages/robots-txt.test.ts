@@ -17,6 +17,7 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
+import { FACET_QUERY_PARAM_KEYS } from '../../src/lib/filters/facet-crawl-policy';
 import { SITEMAP_EXCLUDED_PATHS } from '../../src/lib/seo-config';
 
 // ---------------------------------------------------------------------------
@@ -45,6 +46,57 @@ function makeRequest(host: string): Request {
     return new Request('http://localhost/robots.txt', {
         headers: { host }
     });
+}
+
+/**
+ * Fetch the permissive robots.txt body for an indexable host.
+ */
+async function getPermissiveBody(): Promise<string> {
+    const { getSiteUrl } = await import('@/lib/env');
+    vi.mocked(getSiteUrl).mockReturnValue('https://hospeda.test');
+    const { GET } = await import('../../src/pages/robots.txt.js');
+    const response = await GET({ request: makeRequest('hospeda.com.ar') } as never);
+    return await response.text();
+}
+
+/**
+ * Compile one robots.txt path pattern into a regex, per RFC 9309: `*` matches
+ * any sequence of characters and `$` (only at the end) anchors the match to the
+ * end of the URL path+query. Everything else is literal.
+ */
+function compileRobotsPattern(pattern: string): RegExp {
+    const endAnchored = pattern.endsWith('$');
+    const body = endAnchored ? pattern.slice(0, -1) : pattern;
+    const escaped = body.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+    return new RegExp(`^${escaped}${endAnchored ? '$' : ''}`);
+}
+
+/**
+ * Evaluate whether `pathAndQuery` is blocked by the `Disallow` rules of the
+ * `User-agent: *` group in `body`.
+ *
+ * The group's only `Allow` is the bare `Allow: /`, which under RFC 9309's
+ * most-specific-rule-wins tie-break is shorter than (and therefore loses to)
+ * every `Disallow` pattern emitted here. So "any Disallow matches" is a
+ * faithful verdict for this specific robots.txt, and the test does not need a
+ * full RFC 9309 engine.
+ */
+function isDisallowedForAllAgents({
+    body,
+    pathAndQuery
+}: {
+    readonly body: string;
+    readonly pathAndQuery: string;
+}): boolean {
+    const starBlock = body.split('\n\n').find((block) => block.startsWith('User-agent: *'));
+    if (!starBlock) throw new Error('no `User-agent: *` block found in robots.txt');
+
+    return starBlock
+        .split('\n')
+        .filter((line) => line.startsWith('Disallow: '))
+        .map((line) => line.slice('Disallow: '.length).trim())
+        .filter((pattern) => pattern.length > 0)
+        .some((pattern) => compileRobotsPattern(pattern).test(pathAndQuery));
 }
 
 // ---------------------------------------------------------------------------
@@ -267,57 +319,80 @@ describe('robots.txt — GET handler', () => {
     // AEO: explicit AI crawler allow blocks
     // -----------------------------------------------------------------------
 
-    describe('AI crawler blocks (AEO)', () => {
-        const AI_BOTS = [
-            'GPTBot',
+    describe('AI crawler policy (AEO, HOS-369 WA-4)', () => {
+        /**
+         * Agents that produce CITATIONS — the visibility Hospeda actually wants.
+         * Each is verified against its vendor's own documentation; see the
+         * rationale block in `robots.txt.ts`.
+         */
+        const CITATION_BOTS = [
             'OAI-SearchBot',
             'ChatGPT-User',
-            'ClaudeBot',
-            'anthropic-ai',
+            'Claude-User',
+            'Claude-SearchBot',
             'PerplexityBot',
-            'Google-Extended',
-            'CCBot'
+            'Google-Extended'
         ];
 
-        it('emits an explicit User-agent block for every AI crawler', async () => {
-            const { getSiteUrl } = await import('@/lib/env');
-            vi.mocked(getSiteUrl).mockReturnValue('https://hospeda.test');
+        /** Training-only crawlers + the list Cloudflare's managed block used to own. */
+        const BLOCKED_BOTS = [
+            'GPTBot',
+            'ClaudeBot',
+            'anthropic-ai',
+            'CCBot',
+            'Applebot-Extended',
+            'Amazonbot',
+            'Bytespider',
+            'meta-externalagent',
+            'CloudflareBrowserRenderingCrawler'
+        ];
 
-            const { GET } = await import('../../src/pages/robots.txt.js');
-            const response = await GET({ request: makeRequest('hospeda.com.ar') } as never);
-            const body = await response.text();
+        it('emits an explicit User-agent block for every agent it has an opinion about', async () => {
+            const body = await getPermissiveBody();
 
-            for (const bot of AI_BOTS) {
-                expect(body).toContain(`User-agent: ${bot}`);
+            for (const bot of [...CITATION_BOTS, ...BLOCKED_BOTS]) {
+                expect(body, `missing block for ${bot}`).toContain(`User-agent: ${bot}`);
             }
         });
 
-        it('each AI crawler block carries Allow: / so they may crawl public pages', async () => {
-            const { getSiteUrl } = await import('@/lib/env');
-            vi.mocked(getSiteUrl).mockReturnValue('https://hospeda.test');
+        it('each citation agent carries Allow: / so it may crawl public pages', async () => {
+            const body = await getPermissiveBody();
 
-            const { GET } = await import('../../src/pages/robots.txt.js');
-            const response = await GET({ request: makeRequest('hospeda.com.ar') } as never);
-            const body = await response.text();
-
-            // Each AI bot block must be immediately followed by an Allow: / line.
-            for (const bot of AI_BOTS) {
+            for (const bot of CITATION_BOTS) {
                 const block = body.slice(body.indexOf(`User-agent: ${bot}`));
                 const firstLines = block.split('\n').slice(0, 2).join('\n');
-                expect(firstLines).toContain('Allow: /');
+                expect(firstLines, `${bot} is not allowed`).toContain('Allow: /');
             }
         });
 
-        it('each AI crawler block repeats the same Disallow rules as the * block (no privileged paths leak)', async () => {
-            const { getSiteUrl } = await import('@/lib/env');
-            vi.mocked(getSiteUrl).mockReturnValue('https://hospeda.test');
+        it('each blocked agent carries a bare Disallow: / and nothing else', async () => {
+            const body = await getPermissiveBody();
+            const blocks = body.split('\n\n');
 
-            const { GET } = await import('../../src/pages/robots.txt.js');
-            const response = await GET({ request: makeRequest('hospeda.com.ar') } as never);
-            const body = await response.text();
+            for (const bot of BLOCKED_BOTS) {
+                const block = blocks.find((b) => b.includes(`User-agent: ${bot}`));
+                expect(block, `block for ${bot}`).toBeDefined();
+                // A bare `Disallow: /` already covers everything. An `Allow: /`
+                // here would defeat the block outright.
+                expect(block).toBe(`User-agent: ${bot}\nDisallow: /`);
+            }
+        });
+
+        it('keeps Applebot itself ALLOWED (D-1: real Siri/Spotlight visibility)', async () => {
+            const body = await getPermissiveBody();
+            const blocks = body.split('\n\n');
+
+            // `Applebot-Extended` (the training opt-out token) IS blocked, but
+            // the fetching crawler must not be caught by a prefix mistake.
+            const applebotBlock = blocks.find((b) => b.startsWith('User-agent: Applebot\n'));
+            expect(applebotBlock, 'Applebot must have no block of its own').toBeUndefined();
+        });
+
+        it('each citation-agent block repeats the same Disallow rules as the * block (no privileged paths leak)', async () => {
+            const body = await getPermissiveBody();
 
             // Split into per-agent blocks (blank line delimited) and verify each
-            // AI-bot block contains the privileged-path disallows + every
+            // citation block contains the privileged-path disallows + every
             // SITEMAP_EXCLUDED_PATHS entry. A named block does NOT inherit the
             // `*` rules in the robots.txt spec, so they must be repeated.
             const blocks = body.split('\n\n');
@@ -331,13 +406,90 @@ describe('robots.txt — GET handler', () => {
                 ...SITEMAP_EXCLUDED_PATHS.map((p) => `Disallow: ${p}`)
             ];
 
-            for (const bot of AI_BOTS) {
+            for (const bot of CITATION_BOTS) {
                 const block = blocks.find((b) => b.includes(`User-agent: ${bot}`));
                 expect(block, `block for ${bot}`).toBeDefined();
                 for (const line of requiredDisallows) {
                     expect(block, `${bot} block missing "${line}"`).toContain(line);
                 }
             }
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-369 WA-1 / AC-A2: facet query params are blocked, path-based facet
+    // landings stay crawlable. BOTH directions are asserted — the second half is
+    // what stops an over-broad `Disallow: /*?*` from silently de-indexing real
+    // SEO surface (spec R-8).
+    // -----------------------------------------------------------------------
+
+    describe('AC-A2 — facet query params disallowed', () => {
+        it('emits a Disallow directive for every facet query param key', async () => {
+            const body = await getPermissiveBody();
+
+            for (const key of FACET_QUERY_PARAM_KEYS) {
+                expect(body, `missing Disallow for "${key}"`).toContain(`Disallow: /*?*${key}=`);
+            }
+        });
+
+        it('repeats the facet Disallow rules in every named allow block', async () => {
+            // A named `User-agent` block does NOT inherit the `*` rules, so a
+            // facet rule present only in `*` would leave every allowed agent free
+            // to walk the combinatorial tree. (Blocked agents need no facet rule
+            // — their bare `Disallow: /` already covers it.)
+            const body = await getPermissiveBody();
+            const blocks = body.split('\n\n');
+
+            for (const bot of [
+                'OAI-SearchBot',
+                'ChatGPT-User',
+                'Claude-SearchBot',
+                'PerplexityBot'
+            ]) {
+                const block = blocks.find((b) => b.includes(`User-agent: ${bot}`));
+                expect(block, `block for ${bot}`).toBeDefined();
+                expect(block, `${bot} missing facet rules`).toContain('Disallow: /*?*categories=');
+                expect(block).toContain('Disallow: /*?*types=');
+            }
+        });
+
+        it.each([
+            ['/es/alojamientos/?types=HOTEL', 'accommodation type facet'],
+            ['/es/alojamientos/?types=HOTEL%2CCABIN%2CHOSTEL', 'multi-value accumulation'],
+            ['/es/eventos/?categories=MUSIC', 'event category facet'],
+            ['/pt/destinos/concepcion-del-uruguay/?categories=termas', 'the POI crawl trap'],
+            ['/es/destinos/?attractions=a,b', 'destinos attractions facet'],
+            ['/es/eventos/?sortBy=date&categories=MUSIC', 'facet key in 2nd position'],
+            ['/es/alojamientos/?checkIn=2026-08-01&checkOut=2026-08-05', 'date/occupancy'],
+            ['/es/alojamientos/?adults=2&children=1', 'occupancy']
+        ])('blocks %s (%s)', async (pathAndQuery) => {
+            const body = await getPermissiveBody();
+            expect(isDisallowedForAllAgents({ body, pathAndQuery })).toBe(true);
+        });
+    });
+
+    describe('AC-A2 / R-8 — path-based facet landings stay crawlable', () => {
+        it.each([
+            ['/es/alojamientos/tipo/hotel/', 'HOS-96 accommodation type landing'],
+            ['/es/alojamientos/tipo/cabana/', 'HOS-96 accommodation type landing'],
+            ['/es/eventos/categoria/music/', 'SPEC-306 event category landing'],
+            ['/es/publicaciones/categoria/guias/', 'post category landing'],
+            ['/es/destinos/atraccion/termas/', 'destination attraction landing'],
+            ['/es/alojamientos/', 'clean listing'],
+            ['/es/alojamientos/page/2/', 'path-based pagination'],
+            ['/pt/destinos/concepcion-del-uruguay/', 'destination detail'],
+            ['/es/gastronomia/', 'clean commerce listing']
+        ])('does not block %s (%s)', async (pathAndQuery) => {
+            const body = await getPermissiveBody();
+            expect(isDisallowedForAllAgents({ body, pathAndQuery })).toBe(false);
+        });
+
+        it('contains no blanket query-string Disallow', async () => {
+            const body = await getPermissiveBody();
+
+            expect(body).not.toContain('Disallow: /*?*\n');
+            expect(body).not.toContain('Disallow: /*?\n');
+            expect(body).not.toMatch(/^Disallow: \/\*\?\*?$/m);
         });
     });
 

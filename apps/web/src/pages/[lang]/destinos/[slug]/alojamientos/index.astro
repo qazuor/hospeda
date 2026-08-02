@@ -7,6 +7,7 @@
  */
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import CompareModeControls from '@/components/shared/compare/CompareModeControls.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
@@ -56,9 +57,21 @@ const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 
 const baseUrl = buildUrl({ locale, path: `destinos/${slug}/alojamientos` });
+
+// --- Breadcrumb JSON-LD ---
+// Mirrors the visible trail below PLUS the current page: the visible component
+// drops the leaf (it is already the H1), but BreadcrumbList must stay complete.
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const breadcrumbItems = [
+	{ name: t('nav.home', 'Inicio'), url: `${siteOrigin}${buildUrl({ locale, path: '' })}` },
+	{ name: t('destinations.title', 'Destinos'), url: `${siteOrigin}${buildUrl({ locale, path: 'destinos' })}` },
+	{ name: destName, url: `${siteOrigin}${buildUrl({ locale, path: `destinos/${slug}` })}` },
+	{ name: t('accommodations.title', 'Alojamientos'), url: `${siteOrigin}${Astro.url.pathname}` }
+];
 ---
 
 <ListingLayout locale={locale} title={heading} showFilters={false} totalCount={total}>
+	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('destinations.title', 'Destinos'), path: 'destinos' }, { label: destName, path: `destinos/${slug}` }, { label: t('accommodations.title', 'Alojamientos') }]} />
 	<ListingPageHeader slot="page-header" locale={locale} tagline={t('accommodations.tagline', 'Encontrá tu lugar ideal')} title={heading} />
 	<CompareModeControls slot="page-header" locale={locale} isAuthenticated={isAuthenticated} />

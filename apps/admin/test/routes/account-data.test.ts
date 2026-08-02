@@ -26,6 +26,9 @@ describe('account/data.tsx (T-017)', () => {
     });
 
     it('exposes a working mailto link to support', () => {
+        // biome-ignore lint/suspicious/noTemplateCurlyInString: asserting on the
+        // literal source text, which contains a template placeholder — the `${}`
+        // is the thing under test, not an unintended interpolation.
         expect(dataSrc).toContain('mailto:${supportEmail}');
         expect(dataSrc).toContain("t('admin-pages.data.supportContact.email')");
     });

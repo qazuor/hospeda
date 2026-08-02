@@ -73,7 +73,7 @@
                 },
                 "favorites": {
                     "question": "Posso salvar hospedagens como favoritas?",
-                    "answer": "Sim. Com uma conta gratuita você pode salvar hospedagens, organizá-las em coleções (por exemplo \"Fim de semana de março\" ou \"Viagem com as crianças\") e acessá-las de qualquer dispositivo."
+                    "answer": "Sim. Com uma conta gratuita você pode salvar hospedagens e acessá-las de qualquer dispositivo. Organizá-las em coleções (por exemplo \"Fim de semana de março\" ou \"Viagem com as crianças\") vem com os planos Plus e VIP."
                 },
                 "issue": {
                     "question": "O que faço se tiver um problema com uma hospedagem?",
@@ -105,7 +105,7 @@
                 },
                 "cost": {
                     "question": "Quanto custa publicar?",
-                    "answer": "Temos um plano gratuito com funcionalidades básicas e planos pagos com mais visibilidade, fotos, destaques e ferramentas de gestão. Veja os detalhes na página de Planos para anfitriões."
+                    "answer": "Publicar sua hospedagem exige um plano de anfitrião. Se for sua primeira assinatura, todos incluem {{trialDays}} dias de teste grátis: você cadastra seu cartão no início e nada é cobrado até o teste terminar. Não cobramos comissão por reserva, então a assinatura é o único custo. Veja o preço de cada plano na página de Planos para anfitriões."
                 },
                 "commission": {
                     "question": "Vocês cobram comissão por reserva?",
@@ -133,7 +133,7 @@
                 },
                 "support": {
                     "question": "Vocês oferecem suporte para anfitriões?",
-                    "answer": "Sim. Atendemos por WhatsApp, e-mail e telefone em horário comercial. Os planos pagos têm prioridade de resposta e os planos premium incluem suporte dedicado."
+                    "answer": "Sim. Atendemos por WhatsApp, e-mail e telefone em horário comercial. Os planos Profissional e Premium têm prioridade de resposta."
                 }
             }
         },

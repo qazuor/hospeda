@@ -34,7 +34,7 @@ import {
 
 function makeEditorCtx(): ResolverContext {
     return {
-        role: 'EDITOR',
+        roles: ['EDITOR'],
         userId: 'usr_editor_001',
         permissions: [
             'POST_VIEW_ALL',
@@ -159,7 +159,7 @@ describe('EDITOR source queryKey structure', () => {
     it('different roles for same source produce different queryKeys', () => {
         const editorKey = buildDashboardQueryKey('editor.posts.stats', makeEditorCtx());
         const adminCtx: ResolverContext = {
-            role: 'ADMIN',
+            roles: ['ADMIN'],
             userId: 'usr_admin_001',
             permissions: [],
             scope: 'all'

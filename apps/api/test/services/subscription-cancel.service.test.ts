@@ -173,6 +173,16 @@ const PLAN_ID = 'plan-standard-uuid';
 const CURRENT_PERIOD_END = new Date('2026-07-15T23:59:59.000Z');
 const CANCELED_AT = new Date('2026-06-09T10:00:00.000Z');
 
+/**
+ * A trial end that is genuinely in the future whenever the suite runs.
+ *
+ * `softCancelSubscription` compares `trialEnd` against the real clock, so a
+ * hardcoded literal is a time bomb: the previous `2026-08-01T00:00:00Z` stopped
+ * being "future" on that date and the trial-aware assertions started failing on
+ * an untouched file. Derive it instead of dating it.
+ */
+const FUTURE_TRIAL_END = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
 interface SubRow {
     id: string;
     customerId: string;
@@ -601,12 +611,13 @@ describe('softCancelSubscription', () => {
 
     describe('HOS-215 — trial-aware accessUntil', () => {
         it('uses trialEnd (not currentPeriodEnd) when trialing with a future trialEnd', async () => {
-            const FUTURE_TRIAL_END = new Date('2026-08-01T00:00:00.000Z');
             // currentPeriodEnd deliberately differs from trialEnd so the test
-            // fails if the service ever falls back to the wrong column.
+            // fails if the service ever falls back to the wrong column. It must
+            // also stay LATER than the derived trialEnd, or the two branches
+            // become indistinguishable.
             const row = buildSubRow({
                 status: 'trialing',
-                currentPeriodEnd: new Date('2026-12-31T23:59:59.000Z'),
+                currentPeriodEnd: new Date(FUTURE_TRIAL_END.getTime() + 60 * 24 * 60 * 60 * 1000),
                 trialEnd: FUTURE_TRIAL_END
             });
             setupDbSelectRow(row);
@@ -659,12 +670,15 @@ describe('softCancelSubscription', () => {
         });
 
         it('regression: non-trialing status always uses currentPeriodEnd, even with a trialEnd set', async () => {
-            // A resolved subscription can still carry a historical trialEnd —
-            // it must NOT be used once status is no longer 'trialing'.
+            // A resolved subscription can still carry a trialEnd — it must NOT
+            // be used once status is no longer 'trialing'. The date has to be
+            // in the FUTURE for this to prove anything: a past trialEnd would
+            // also be skipped by the "trialEnd already elapsed" branch, so the
+            // test would pass without exercising the status check at all.
             const row = buildSubRow({
                 status: 'active',
                 currentPeriodEnd: CURRENT_PERIOD_END,
-                trialEnd: new Date('2026-08-01T00:00:00.000Z')
+                trialEnd: FUTURE_TRIAL_END
             });
             setupDbSelectRow(row);
             billing = buildBillingMock({ ...row, canceledAt: CANCELED_AT });

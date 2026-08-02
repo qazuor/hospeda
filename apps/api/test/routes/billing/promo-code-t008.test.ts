@@ -260,7 +260,7 @@ import { validateApiEnv } from '../../../src/utils/env';
  */
 function makeHeaders(actor: {
     readonly id: string;
-    readonly role: string;
+    readonly roles: readonly string[];
     readonly permissions: readonly string[];
 }): Record<string, string> {
     return {
@@ -268,7 +268,7 @@ function makeHeaders(actor: {
         'user-agent': 'vitest',
         accept: 'application/json',
         'x-mock-actor-id': actor.id,
-        'x-mock-actor-role': actor.role,
+        'x-mock-actor-role': actor.roles.join(','),
         'x-mock-actor-permissions': JSON.stringify(actor.permissions)
     };
 }
@@ -277,7 +277,7 @@ function makeHeaders(actor: {
 function makeAdminActor(id = randomUUID()) {
     return {
         id,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [
             PermissionEnum.ACCESS_API_PUBLIC,
             PermissionEnum.ACCESS_API_PRIVATE,
@@ -467,7 +467,7 @@ describe('POST /api/v1/admin/billing/promo-codes', () => {
         // Arrange — admin-tier actor WITHOUT the specific manage permission
         const restrictedActor = {
             id: randomUUID(),
-            role: RoleEnum.ADMIN,
+            roles: [RoleEnum.ADMIN],
             permissions: [
                 PermissionEnum.ACCESS_API_PUBLIC,
                 PermissionEnum.ACCESS_API_PRIVATE,
@@ -509,7 +509,7 @@ describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
     function makeHostActor(id = randomUUID()) {
         return {
             id,
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: [
                 PermissionEnum.ACCESS_API_PUBLIC,
                 PermissionEnum.ACCESS_API_PRIVATE,

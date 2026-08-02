@@ -14,9 +14,22 @@
             "destination": "City / Destination (optional)",
             "message": "Tell us about your business (optional)"
         },
+        "prefillNotice": "We filled in your name and email from your account. Feel free to edit them if the business contact is different — that is the address we will reply to.",
+        "process": {
+            "title": "What happens after you submit",
+            "step1": "You submit the form with your business details.",
+            "step2": "Our team reviews and approves it. This usually takes 24 to 48 business hours.",
+            "step3": "We email you once it is ready, with the steps to get in.",
+            "step4": "You complete the listing and choose your plan."
+        },
         "submit": "Submit request",
         "submitting": "Submitting...",
-        "success": "Thank you! We received your request and will be in touch shortly.",
+        "successDetail": {
+            "title": "Done! We received your request.",
+            "sentTo": "We will write to you at {{email}}.",
+            "processTitle": "What happens now",
+            "closing": "If you have any questions, or a few days go by with no news, get in touch and we will look into it."
+        },
         "error": "An error occurred while submitting the request. Please try again.",
         "rateLimited": "Too many attempts. Please wait a few minutes before trying again.",
         "validation": {

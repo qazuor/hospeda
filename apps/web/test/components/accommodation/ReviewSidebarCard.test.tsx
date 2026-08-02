@@ -35,6 +35,12 @@ vi.mock('@/lib/cn', () => ({
     cn: (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ')
 }));
 
+const trackEventSpy = vi.fn();
+
+vi.mock('@/lib/analytics/posthog-client', () => ({
+    trackEvent: (...args: unknown[]) => trackEventSpy(...args)
+}));
+
 vi.mock('@/components/accommodation/ReviewSidebarCard.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
@@ -157,8 +163,6 @@ describe('ReviewSidebarCard — content min-length gate (HOS-190)', () => {
 });
 
 describe('ReviewSidebarCard — review_submitted analytics event', () => {
-    let captureSpy: ReturnType<typeof vi.fn>;
-
     beforeEach(() => {
         setupDialogMocks();
         // Stub window.location.reload — the success branch schedules a reload
@@ -166,18 +170,14 @@ describe('ReviewSidebarCard — review_submitted analytics event', () => {
         // that fires, but stubbing avoids jsdom's "not implemented: reload"
         // console noise if it fires during teardown.
         Object.defineProperty(window, 'location', {
-            value: { reload: vi.fn() },
+            value: { reload: vi.fn(), hostname: 'localhost' },
             writable: true,
             configurable: true
         });
-        captureSpy = vi.fn();
-        (window as unknown as { posthog: { capture: typeof captureSpy } }).posthog = {
-            capture: captureSpy
-        };
+        trackEventSpy.mockClear();
     });
 
     afterEach(() => {
-        (window as unknown as { posthog?: unknown }).posthog = undefined;
         vi.restoreAllMocks();
     });
 
@@ -204,7 +204,7 @@ describe('ReviewSidebarCard — review_submitted analytics event', () => {
 
         // Assert
         await waitFor(() => {
-            expect(captureSpy).toHaveBeenCalledWith('review_submitted', {
+            expect(trackEventSpy).toHaveBeenCalledWith('review_submitted', {
                 accommodation_id: 'acc-123',
                 average_rating: 5,
                 has_title: true,
@@ -234,7 +234,7 @@ describe('ReviewSidebarCard — review_submitted analytics event', () => {
         await waitFor(() => {
             expect(screen.queryByRole('alert')).toBeInTheDocument();
         });
-        expect(captureSpy).not.toHaveBeenCalled();
+        expect(trackEventSpy).not.toHaveBeenCalled();
     });
 
     it('does NOT fire review_submitted on a network error', async () => {
@@ -252,6 +252,6 @@ describe('ReviewSidebarCard — review_submitted analytics event', () => {
         await waitFor(() => {
             expect(screen.queryByRole('alert')).toBeInTheDocument();
         });
-        expect(captureSpy).not.toHaveBeenCalled();
+        expect(trackEventSpy).not.toHaveBeenCalled();
     });
 });

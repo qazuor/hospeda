@@ -39,14 +39,14 @@ const UUID_ACC_2 = '33333333-3333-4333-8333-333333333333';
 /** Host actor with ACCOMMODATION_VIEW_OWN. */
 const hostActor = createActor({
     id: UUID_OWNER,
-    role: RoleEnum.HOST,
+    roles: [RoleEnum.HOST],
     permissions: [PermissionEnum.ACCOMMODATION_VIEW_OWN]
 });
 
 /** Actor without any permissions. */
 const noPermActor = createActor({
     id: UUID_OWNER,
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: []
 });
 

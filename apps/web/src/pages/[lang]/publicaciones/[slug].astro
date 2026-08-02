@@ -23,7 +23,6 @@ import { ImageGallery } from '@/components/ImageGallery.client';
 import CommentThread from '@/components/comments/CommentThread.astro';
 import { ReadingProgressBar } from '@/components/post/ReadingProgressBar.client';
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
-import ImageAttribution from '@/components/shared/ImageAttribution.astro';
 import { buildUrl } from '@/lib/urls';
 import { postsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
@@ -273,6 +272,8 @@ const articleAuthorName =
 	authorForCard?.displayName ||
 	[authorForCard?.firstName, authorForCard?.lastName].filter(Boolean).join(' ') ||
 	'';
+/** Byline for the Article JSON-LD, falling back to the site itself. */
+const articleAuthor = { name: articleAuthorName || 'Hospeda' } as const;
 
 // Speakable selectors (AEO / voice): the article headline and lead/summary
 // rendered by PostDetailHeader.astro. Class names are the stable BEM-lite
@@ -304,33 +305,24 @@ const breadcrumbItems = [
 	showBreadcrumbs={true}
 	showSidebar={true}
 >
-	{articleAuthorName ? (
-		<ArticleJsonLd
-			slot="head-extra"
-			headline={title}
-			description={seoDescription}
-			url={`${siteBase}${Astro.url.pathname}`}
-			image={featuredImage !== '/assets/images/placeholder-blog.svg' ? featuredImage : undefined}
-			datePublished={publishedAt}
-			dateModified={updatedAt && updatedAt > publishedAt ? updatedAt : undefined}
-			author={{ name: articleAuthorName }}
-			articleType="BlogPosting"
-			speakableCssSelectors={speakableSelectors}
-		/>
-	) : (
-		<ArticleJsonLd
-			slot="head-extra"
-			headline={title}
-			description={seoDescription}
-			url={`${siteBase}${Astro.url.pathname}`}
-			image={featuredImage !== '/assets/images/placeholder-blog.svg' ? featuredImage : undefined}
-			datePublished={publishedAt}
-			dateModified={updatedAt && updatedAt > publishedAt ? updatedAt : undefined}
-			author={{ name: 'Hospeda' }}
-			articleType="BlogPosting"
-			speakableCssSelectors={speakableSelectors}
-		/>
-	)}
+	{/*
+	  These two must stay PLAIN siblings, never wrapped in a `{cond ? … : …}`
+	  expression: when the first contributor to a named slot comes from an
+	  expression, Astro drops the plain siblings that follow it — which is how
+	  this page silently shipped without its BreadcrumbList for so long.
+	*/}
+	<ArticleJsonLd
+		slot="head-extra"
+		headline={title}
+		description={seoDescription}
+		url={`${siteBase}${Astro.url.pathname}`}
+		image={featuredImage !== '/assets/images/placeholder-blog.svg' ? featuredImage : undefined}
+		datePublished={publishedAt}
+		dateModified={updatedAt && updatedAt > publishedAt ? updatedAt : undefined}
+		author={articleAuthor}
+		articleType="BlogPosting"
+		speakableCssSelectors={speakableSelectors}
+	/>
 	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
 
 	<ReadingProgressBar client:idle />
@@ -393,8 +385,9 @@ const breadcrumbItems = [
 	)}
 
 	<article class="post-detail">
-		<!-- Cover + gallery -->
-		{hasRealFeatured && galleryImages.length > 0 ? (
+		<!-- Cover + gallery. A post with no real imagery renders nothing here:
+		     no placeholder and no reserved space. -->
+		{galleryImages.length > 0 && (
 			<div class="post-detail__gallery">
 				<ImageGallery
 					images={galleryImages}
@@ -402,24 +395,6 @@ const breadcrumbItems = [
 					locale={locale}
 					client:visible
 				/>
-			</div>
-		) : (
-			<div class="post-detail__cover">
-				<img
-					src={featuredImage}
-					alt=""
-					loading="eager"
-					class="post-detail__cover-img"
-					width="1200"
-					height="675"
-				/>
-				{mediaObj?.featuredImage?.attribution && (
-					<ImageAttribution
-						attribution={mediaObj.featuredImage.attribution}
-						locale={locale}
-						variant="overlay"
-					/>
-				)}
 			</div>
 		)}
 
@@ -515,6 +490,7 @@ const breadcrumbItems = [
 								(p.media as { featuredImage?: { url?: string } } | null | undefined)
 									?.featuredImage?.url ?? null
 							}
+							category={p.category ? String(p.category) : null}
 							publishedAt={p.publishedAt ? String(p.publishedAt) : null}
 							lang={locale}
 						/>
@@ -559,18 +535,6 @@ const breadcrumbItems = [
 
 	.post-detail {
 		min-width: 0;
-	}
-
-	.post-detail__cover {
-		margin-bottom: var(--space-6, 1.5rem);
-		border-radius: var(--radius-card);
-		overflow: hidden;
-	}
-
-	.post-detail__cover-img {
-		width: 100%;
-		aspect-ratio: 16 / 9;
-		object-fit: cover;
 	}
 
 	.post-detail__gallery {

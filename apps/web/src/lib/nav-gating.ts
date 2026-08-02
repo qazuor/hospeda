@@ -12,16 +12,22 @@
  *   (`(role ∪ grants) \ denies`, SPEC-170) — evaluate exactly with
  *   `isVisibleByPermissions`.
  * - **Server SSR** (the `/mi-cuenta/*` sidebar, `AccountLayout.astro`) only
- *   has `Astro.locals.user.role` — no effective-permissions round-trip is
+ *   has `Astro.locals.user.roles` — no effective-permissions round-trip is
  *   available without an uncached `/auth/me` call per render (rejected by
- *   D-4 on cost grounds). It approximates via `isVisibleByRole`, which
+ *   D-4 on cost grounds). It approximates via `isVisibleByRoles`, which
  *   consults the centralized `PERMISSION_ROLE_MAP` below.
  *
  * `PERMISSION_ROLE_MAP` is the ONLY place that maps a permission to the
- * roles that grant it for account-nav gating purposes — it replaces the
- * scattered `isHostRole` / `isCommerceOwnerRole` predicates in
- * `account-roles.ts` (kept for now; existing consumers migrate in a later
- * HOS-131 task).
+ * roles that grant it for account-nav gating purposes. HOS-296 completed the
+ * migration HOS-131 deferred: the scattered `isHostRole` /
+ * `isCommerceOwnerRole` predicates are gone and every `/mi-cuenta` page gate
+ * now evaluates through {@link hasAccommodationsNavAccess} /
+ * {@link hasCommerceNavAccess}, so `apps/web` has ONE gating mechanism.
+ *
+ * HOS-296: the SSR evaluator takes the actor's whole role SET, not a scalar.
+ * A node is visible when ANY held role grants the permission — that is what
+ * makes a user who is both HOST and COMMERCE_OWNER see both nav groups
+ * (AC-1).
  */
 
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
@@ -37,7 +43,7 @@ export interface GatedNavNode {
 
 /**
  * Centralized `permission -> roles` approximation map, used ONLY by the
- * server-side SSR evaluator (`isVisibleByRole`). Client surfaces never
+ * server-side SSR evaluator (`isVisibleByRoles`). Client surfaces never
  * consult this map — they evaluate exact permission strings instead.
  *
  * Derived from `apps/web/src/lib/account-roles.ts`:
@@ -54,7 +60,7 @@ export interface GatedNavNode {
  * the "exhaustive coverage" regression test in `navigation.test.ts`, which
  * walks every `requiredPermission` actually declared in `ACCOUNT_NAV_GROUPS`
  * and fails if this map is missing an entry for one of them. A missing entry
- * here makes `isVisibleByRole` silently return `false` for EVERY role
+ * here makes `isVisibleByRoles` silently return `false` for EVERY role
  * (including admin) on that node — `Partial` only guards against typos in
  * the *keys we do write*; it cannot by itself guarantee every permission the
  * config declares has a matching entry, which is exactly what that test is for.
@@ -112,28 +118,80 @@ export function isVisibleByPermissions(
 
 /**
  * Approximate server-side (SSR) gating evaluator. Use on the `/mi-cuenta/*`
- * sidebar, which only has `Astro.locals.user.role` — no effective-permissions
+ * sidebar, which only has `Astro.locals.user.roles` — no effective-permissions
  * round-trip (HOS-131 D-4). Consults `PERMISSION_ROLE_MAP` to approximate
- * "does this role plausibly carry this permission".
+ * "does any held role plausibly carry this permission".
+ *
+ * HOS-296: the second argument is the actor's whole role SET. Visibility is a
+ * union — a node is visible as soon as ONE held role grants the permission, so
+ * accumulating hats can only ever ADD nav, never remove it. A user holding
+ * both `HOST` and `COMMERCE_OWNER` therefore sees both groups (AC-1).
  *
  * @param node - A `NavGroup` or `NavItem` (or any object shaped like one).
- * @param role - The user's role string from `Astro.locals.user.role`, or
- *   `null` for unauthenticated visitors. Accepts any string (not just
- *   `RoleEnum` members) so an unrecognized/legacy role value fails closed
- *   (returns `false`) instead of erroring — see the "unknown role" test.
- * @returns `true` if `node` has no `requiredPermission`; `false` for `null`
- *   role, an unmapped `requiredPermission`, or a `role` absent from the
- *   mapped role set.
+ * @param roles - Every role the user holds, from `Astro.locals.user.roles`.
+ *   Pass `null` (or an empty array) for unauthenticated visitors. Accepts any
+ *   strings (not just `RoleEnum` members) so an unrecognized/legacy role value
+ *   fails closed instead of erroring — see the "unknown role" test.
+ * @returns `true` if `node` has no `requiredPermission`; `false` for a
+ *   `null`/empty role set, an unmapped `requiredPermission`, or a role set
+ *   that shares no member with the mapped role set.
  */
-export function isVisibleByRole(node: GatedNavNode, role: string | null): boolean {
+export function isVisibleByRoles(node: GatedNavNode, roles: readonly string[] | null): boolean {
     if (!node.requiredPermission) {
         return true;
     }
-    if (role === null) {
+    if (roles === null || roles.length === 0) {
         return false;
     }
     const rolesForPermission = PERMISSION_ROLE_MAP[node.requiredPermission];
-    return rolesForPermission?.has(role as RoleEnum) ?? false;
+    if (!rolesForPermission) {
+        return false;
+    }
+    return roles.some((role) => rolesForPermission.has(role as RoleEnum));
+}
+
+/**
+ * Does the user hold a role that grants the accommodation/host navigation
+ * (sidebar "Mis propiedades", host dashboard, owner inbox, property pages)?
+ *
+ * Thin, named wrapper over {@link isVisibleByRoles} keyed on
+ * `ACCOMMODATION_CREATE` — the permission `PERMISSION_ROLE_MAP` already uses
+ * to approximate host-tier access for the sidebar. HOS-296 §6.5 routed the
+ * page-level guards through it so the sidebar and the pages it links to can
+ * never disagree about who is a host.
+ *
+ * @param params - `{ roles }` (RO-RO): every role the user holds, or `null`
+ *   for unauthenticated visitors.
+ * @returns `true` when at least one held role carries host-tier access.
+ */
+export function hasAccommodationsNavAccess({
+    roles
+}: {
+    readonly roles: readonly string[] | null;
+}): boolean {
+    return isVisibleByRoles({ requiredPermission: PermissionEnum.ACCOMMODATION_CREATE }, roles);
+}
+
+/**
+ * Does the user hold a role that grants the commerce-owner self-service area
+ * (`/mi-cuenta/comercio/*`)?
+ *
+ * Companion to {@link hasAccommodationsNavAccess}, keyed on
+ * `COMMERCE_EDIT_OWN`. The two sets are deliberately distinct: a plain
+ * accommodation HOST does not get the commerce area, and a plain
+ * COMMERCE_OWNER does not get the host nav. A user holding BOTH hats gets
+ * both — which is the whole point of HOS-296.
+ *
+ * @param params - `{ roles }` (RO-RO): every role the user holds, or `null`
+ *   for unauthenticated visitors.
+ * @returns `true` when at least one held role carries commerce-owner access.
+ */
+export function hasCommerceNavAccess({
+    roles
+}: {
+    readonly roles: readonly string[] | null;
+}): boolean {
+    return isVisibleByRoles({ requiredPermission: PermissionEnum.COMMERCE_EDIT_OWN }, roles);
 }
 
 // -----------------------------------------------------------------------------
@@ -159,7 +217,7 @@ export type DoorOptionState = 'acquired' | 'unacquired' | 'comingSoon';
  * Resolves a single discovery-door option's state (HOS-131 §6.3), using the
  * SAME visibility predicate as the two nav evaluators above — pass
  * `(node) => isVisibleByPermissions(node, permissions)` on client surfaces or
- * `(node) => isVisibleByRole(node, role)` on the server-rendered sidebar/hub
+ * `(node) => isVisibleByRoles(node, roles)` on the server-rendered sidebar/hub
  * pages.
  *
  * An option with no `acquiredPermission` (the sponsor/service-provider

@@ -104,7 +104,7 @@ function injectActorAndEntitlements(
     app.use((c, next) => {
         c.set('actor', {
             id: actorId,
-            role: RoleEnum.USER,
+            roles: [RoleEnum.USER],
             permissions: [PermissionEnum.DESTINATION_REVIEW_CREATE]
         });
         c.set('userEntitlements', new Set(keys));

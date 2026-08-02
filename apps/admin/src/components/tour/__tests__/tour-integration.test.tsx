@@ -234,7 +234,7 @@ vi.mock('@/hooks/use-auth-context', () => ({
     useAuthContext: () => ({
         user: {
             id: authState.userId,
-            role: authState.role,
+            roles: [authState.role],
             displayName: 'Host User',
             email: 'host@test.com'
         },

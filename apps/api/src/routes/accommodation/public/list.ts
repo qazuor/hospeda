@@ -41,33 +41,16 @@ import {
     resolveOwnerEntitlementsForOwnerIds
 } from '../../../middlewares/owner-entitlement';
 import type { AppBindings } from '../../../types';
-import { getActorFromContext, isGuestActor } from '../../../utils/actor';
+import { createGuestActor, getActorFromContext, isGuestActor } from '../../../utils/actor';
 import type { AccommodationData } from '../../../utils/entitlement-filter';
-import { filterAccommodationListByOwnerEntitlements } from '../../../utils/entitlement-filter';
+import {
+    filterAccommodationListByOwnerEntitlements,
+    stripRichDescriptionFields
+} from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
 import { resolveQuickAmenityFlags } from './quick-amenity-resolver';
-
-/**
- * Strips richDescription from an accommodation object before it reaches the
- * public list response payload.
- *
- * richDescription is a PREMIUM field gated per-owner by the entitlement system.
- * The public list endpoint is a card listing that never renders rich text, so
- * the field must be absent from the payload regardless of the owner's plan.
- * This omission is applied at the DATA level so it is fail-closed and
- * independent of any Zod schema change. (SPEC-187 data-exposure fix.)
- *
- * @param item - Raw accommodation object from the service layer.
- * @returns The accommodation object with richDescription removed.
- */
-function stripRichDescription<T extends { richDescription?: unknown }>(
-    item: T
-): Omit<T, 'richDescription'> {
-    const { richDescription: _dropped, ...rest } = item;
-    return rest;
-}
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 const searchHistoryService = new SearchHistoryService({ logger: apiLogger });
@@ -225,7 +208,22 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         // on internal or sensitive columns.
         const safeSortBy = sanitizeSortBy(domainParams.sortBy);
 
-        const result = await accommodationService.search(actor, {
+        // HOS-353: resolve visibility against a GUEST actor, never the caller.
+        //
+        // `_executeSearch` derives `excludeRestricted` / `excludeOwnerSuspended` /
+        // `excludePlanRestricted` / `activeOnly` from the actor, so a VIP or a
+        // holder of ACCOMMODATION_VIEW_ALL gets RESTRICTED, DRAFT, owner-suspended
+        // and plan-restricted rows. This route is the first entry of
+        // PUBLIC_CACHE_ENDPOINTS and its cache key carries no actor, so that widened
+        // response is then replayed to every anonymous visitor for the TTL. The
+        // service behavior is correct and stays as it is — it is load-bearing for
+        // the protected and admin tiers; what must not vary is what a SHARED-cached
+        // handler asks for. Same shape as `getByDestination` and
+        // `getTopRatedByDestination`, which already resolve against a guest actor.
+        //
+        // The real `actor` is still used below for the search-history side effect:
+        // that is a per-caller WRITE, not part of the cached payload.
+        const result = await accommodationService.search(createGuestActor(), {
             ...domainParams,
             ...(quickAmenityGroups.length > 0 ? { anyAmenityGroups: quickAmenityGroups } : {}),
             page,
@@ -292,10 +290,11 @@ export const publicListAccommodationsRoute = createPublicListRoute({
                 });
         }
 
-        // SPEC-187 data-level omission: richDescription is a PREMIUM field gated
-        // per-owner by the entitlement system. This card-listing endpoint never
-        // renders it, so the field is stripped here before reaching the response
-        // payload — fail-closed and independent of any schema change.
+        // SPEC-187 / SPEC-212 data-level omission: richDescription and its i18n
+        // sibling are PREMIUM fields gated per-owner by the entitlement system.
+        // This card-listing endpoint never renders them, so BOTH are stripped
+        // before reaching the response payload — fail-closed and independent of
+        // any schema change.
         const rawItems = result.data?.items || [];
 
         // Deduplicate ownerIds for this page — shared by the AI_CHAT badge (F1)
@@ -334,7 +333,7 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         const rawMappedItems = rawItems.map((item) => {
             const ownerId = (item as { ownerId?: string }).ownerId;
             return {
-                ...stripRichDescription(item),
+                ...stripRichDescriptionFields(item),
                 hasAiChat: ownerId ? (aiChatByOwner.get(ownerId) ?? false) : false
             };
         });
