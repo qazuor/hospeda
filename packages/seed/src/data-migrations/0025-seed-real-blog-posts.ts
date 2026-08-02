@@ -40,17 +40,28 @@
  * `false` — every operation is an INSERT-if-missing. Nothing is deleted or
  * overwritten.
  *
- * ## Baseline-stamp gap (content-only migration)
+ * ## `contentOnly` flag decision
  *
- * The 9 articles live ONLY here, not in the baseline seed (`src/data/**`), to
- * keep this production content cleanly separate from the demo `example` posts.
- * The trade-off: a from-scratch build (prod day-1, local `db:fresh-dev`)
- * baseline-stamps every pending migration WITHOUT running `up()`, so on a fresh
- * DB this content is NOT created. It lands correctly on already-live
- * environments (the normal deploy path, where `pnpm db:seed:migrate` runs the
- * migration for real). After a fresh/DR rebuild, this migration must be re-run
- * for real — see `docs/deployment/first-time-setup.md` (step 4, "Content-only
- * migrations must be re-run for real after a from-scratch build").
+ * `true`. The 9 articles live ONLY here, not in the baseline seed
+ * (`src/data/**`), to keep this production content cleanly separate from the
+ * demo `example` posts. That makes this file the sole source of its own rows,
+ * so baseline-stamping must not skip it: `--baseline-stamp` leaves it pending
+ * and then runs it for real, and a from-scratch build (prod day-1, local
+ * `db:fresh-dev`) gets the articles like any live environment does.
+ *
+ * Before HOS-375 this was a genuine gap — every fresh build stamped the
+ * migration applied with the content never created, and the ledger then
+ * blocked it from ever running. The documented workaround was a manual re-run
+ * listed in `docs/deployment/first-time-setup.md`; that list was already stale
+ * (it named this migration but not `0027`/`0028`, which had the identical
+ * gap), which is exactly why the fix is a flag on the migration rather than a
+ * list somewhere else. See `data-migrations/types.ts`
+ * (`SeedMigrationMeta.contentOnly`) and
+ * `docs/guides/seed-data-migrations.md`.
+ *
+ * Not retroactive: an environment where this migration is already ledgered —
+ * including a dev DB stamped by an older `db:fresh-dev` — is unaffected and
+ * still needs a rebuild to pick the content up.
  *
  * ## No imagery (revised)
  *
@@ -81,7 +92,8 @@ import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from 
 export const meta = {
     name: '0025-seed-real-blog-posts',
     group: 'required',
-    destructive: false
+    destructive: false,
+    contentOnly: true
 } as const satisfies SeedMigrationModule['meta'];
 
 /** Unique identity of the shared editorial author created by this migration. */
