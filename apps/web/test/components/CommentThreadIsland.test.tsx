@@ -18,6 +18,7 @@ import {
     type CommentItem,
     CommentThreadIsland
 } from '../../src/components/comments/CommentThreadIsland.client';
+import { buildAuthSnapshot } from '../helpers/auth-session';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
@@ -43,6 +44,18 @@ vi.mock('../../src/components/shared/feedback/Spinner.module.css', () => ({
     })
 }));
 
+// HOS-369 WB0-4: the session is resolved client-side via `useAccountPermissions`,
+// which reads `auth-cache`. Mocking that module is how these tests choose
+// between a guest and a signed-in visitor. See test/helpers/auth-session.ts.
+const mockReadCachedAuthMe = vi.fn();
+
+vi.mock('../../src/lib/auth-cache', () => ({
+    readCachedAuthMe: () => mockReadCachedAuthMe(),
+    fetchAuthMe: () => new Promise(() => undefined),
+    writeCachedAuthMe: () => undefined,
+    resetInFlightAuthMe: () => undefined
+}));
+
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const COMMENT_A: CommentItem = {
@@ -63,16 +76,28 @@ const BASE_PROPS = {
     entityType: 'POST' as const,
     entityId: 'post-uuid-1',
     locale: 'es' as const,
-    isAuthenticated: false,
     signinUrl: '/es/auth/signin/?returnUrl=%2Fes%2Fpublicaciones%2Ftest%2F'
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+/**
+ * Render the island for a guest or a signed-in visitor.
+ *
+ * `isAuthenticated` is no longer a prop — it arranges the session the island
+ * will resolve. An authenticated snapshot is applied synchronously inside the
+ * hook's mount effect, so callers can assert immediately after rendering.
+ */
 function renderIsland(
-    overrides: Partial<Parameters<typeof CommentThreadIsland>[0]> = {},
+    {
+        isAuthenticated = false,
+        ...overrides
+    }: Partial<Parameters<typeof CommentThreadIsland>[0]> & {
+        readonly isAuthenticated?: boolean;
+    } = {},
     comments: readonly CommentItem[] = []
 ) {
+    mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated }));
     return render(
         <CommentThreadIsland
             {...BASE_PROPS}
@@ -209,6 +234,26 @@ describe('CommentThreadIsland', () => {
         });
     });
 
+    // ── Cached anonymous HTML (HOS-369 WB0-4) ────────────────────────────────
+
+    describe('client-side session resolution', () => {
+        it('renders the form for a signed-in visitor even when the SSR prop says guest', () => {
+            // The page was rendered for an anonymous visitor — which is what an
+            // edge-cached page always is — but this reader has a session.
+            mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
+            render(
+                <CommentThreadIsland
+                    {...BASE_PROPS}
+                    initialComments={[]}
+                    isAuthenticated={false}
+                />
+            );
+
+            expect(screen.getByRole('textbox')).toBeInTheDocument();
+            expect(screen.queryByText('Iniciá sesión para comentar')).not.toBeInTheDocument();
+        });
+    });
+
     // ── Submit success (optimistic append) ────────────────────────────────────
 
     describe('Submit success', () => {
@@ -267,9 +312,12 @@ describe('CommentThreadIsland', () => {
             });
         });
 
-        it('uses currentUserName as the appended comment author when the API omits it', async () => {
+        it('uses the resolved session name as the appended comment author when the API omits it', async () => {
             // The create endpoint does not echo the author, so the island must fall
             // back to the current user's name instead of rendering a blank author.
+            // Since HOS-369 WB0-4 that name comes from the client-resolved
+            // session, not from an SSR prop — it is the visitor's own data and
+            // must never be baked into cacheable HTML.
             vi.mocked(global.fetch).mockResolvedValueOnce({
                 ok: true,
                 status: 201,
@@ -283,7 +331,15 @@ describe('CommentThreadIsland', () => {
                 })
             } as Response);
 
-            renderIsland({ isAuthenticated: true, currentUserName: 'Carla' });
+            mockReadCachedAuthMe.mockReturnValue(
+                buildAuthSnapshot({ isAuthenticated: true, name: 'Carla' })
+            );
+            render(
+                <CommentThreadIsland
+                    {...BASE_PROPS}
+                    initialComments={[]}
+                />
+            );
             fireEvent.change(screen.getByRole('textbox'), {
                 target: { value: 'Mi comentario' }
             });

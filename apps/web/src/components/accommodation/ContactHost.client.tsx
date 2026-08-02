@@ -14,6 +14,7 @@ import { CreateConversationAnonSchema } from '@repo/schemas';
 import { useEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
+import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import type { ApiErrorShape } from '@/lib/api-errors';
@@ -60,7 +61,22 @@ interface ContactHostUser {
 
 interface ContactHostProps {
     readonly accommodation: ContactHostAccommodation;
-    readonly currentUser: ContactHostUser | null;
+    /**
+     * @deprecated Ignored since HOS-369 WB0-4 — the visitor is resolved
+     * client-side via `useAccountPermissions`. Their name and e-mail are
+     * personal data; baking them into the HTML would hand them to whoever an
+     * edge cache serves that page to next. Callers stop passing it in WB0-5.
+     */
+    readonly currentUser?: ContactHostUser | null;
+    /**
+     * Id of an existing conversation between this visitor and this host, when
+     * the page resolved one server-side. Still SSR-provided: it is a per-visitor
+     * lookup that WB0-7 moves to the client along with the rest of the
+     * accommodation detail page's session-dependent data. On a cached page it
+     * is absent, and the form is rendered instead of the "view thread" link —
+     * a duplicate send is answered with `CONVERSATION_DUPLICATE`, which this
+     * component already handles.
+     */
     readonly existingConversationId: string | null;
     readonly locale: SupportedLocale;
     /**
@@ -154,12 +170,17 @@ function resolveInitiateFailureMessage({
  */
 export function ContactHost({
     accommodation,
-    currentUser,
     existingConversationId,
     locale,
     initialMessage
 }: ContactHostProps) {
     const { t } = createTranslations(locale);
+
+    // Session resolved client-side (HOS-369 WB0-4). Until it resolves the form
+    // renders in its anonymous mode — name and e-mail fields visible — and the
+    // fields collapse once a session is confirmed. Hooks must run before the
+    // early return below, so this call stays above it.
+    const { user } = useAccountPermissions();
 
     // Only render for active, non-deleted accommodations
     if (accommodation.lifecycleState !== 'ACTIVE' || accommodation.deletedAt) {
@@ -167,7 +188,7 @@ export function ContactHost({
     }
 
     // --- Mode C: authenticated user with an existing conversation ---
-    if (currentUser && existingConversationId) {
+    if (user && existingConversationId) {
         const threadUrl = buildUrl({
             locale,
             path: `mi-cuenta/consultas/${existingConversationId}`
@@ -188,7 +209,7 @@ export function ContactHost({
     return (
         <ContactForm
             accommodation={accommodation}
-            currentUser={currentUser}
+            currentUser={user}
             locale={locale}
             t={t}
             initialMessage={initialMessage}

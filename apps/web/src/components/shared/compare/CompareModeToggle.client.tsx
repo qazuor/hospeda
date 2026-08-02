@@ -40,6 +40,7 @@
 import { ColumnIcon } from '@repo/icons';
 import { type FC, useEffect, useRef, useState } from 'react';
 import { AuthRequiredPopover } from '@/components/auth/AuthRequiredPopover.client';
+import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { useCompareGuard } from '@/hooks/useCompareGuard';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -55,14 +56,13 @@ import { CompareUpsellPopover } from './CompareUpsellPopover.client';
 /** Props for the compare-mode toggle island. */
 export interface CompareModeToggleProps {
     /**
-     * Whether the current user is authenticated. Determines which gate
-     * popover opens when a click is blocked: {@link AuthRequiredPopover} for
-     * guests, {@link CompareUpsellPopover} for authenticated users on a plan
-     * without the comparison entitlement. Islands cannot read `Astro.locals`
-     * directly, so pages pass `Astro.locals.user` down (same pattern as
-     * `FavoriteButton`'s `isAuthenticated` prop).
+     * @deprecated Ignored since HOS-369 WB0-4 — the session is resolved
+     * client-side via `useAccountPermissions`. A page that carries this flag
+     * cannot be shared by an edge cache, and on cached anonymous HTML it would
+     * send every subscriber to the sign-in prompt instead of their comparison.
+     * Callers stop passing it in WB0-5.
      */
-    readonly isAuthenticated: boolean;
+    readonly isAuthenticated?: boolean;
     /** Locale for labels. Defaults to `es`. */
     readonly locale?: SupportedLocale;
     /** Additional CSS classes forwarded to the root button element. */
@@ -95,14 +95,16 @@ export interface CompareModeToggleProps {
  * <CompareModeToggle locale={locale} client:load />
  * ```
  */
-export const CompareModeToggle: FC<CompareModeToggleProps> = ({
-    isAuthenticated,
-    locale = 'es',
-    className
-}) => {
+export const CompareModeToggle: FC<CompareModeToggleProps> = ({ locale = 'es', className }) => {
     const t = createT(locale);
     const mode = useCompareMode();
     const { canCompare, isLoading } = useCompareGuard();
+
+    // Session resolved client-side (HOS-369 WB0-4), cache-first. `user === null`
+    // covers both "guest" and "not resolved yet"; the click handler below is
+    // what distinguishes them, because only one of the two popovers is safe to
+    // show under uncertainty.
+    const { user } = useAccountPermissions();
 
     /** Whether the guest auth-required popover is currently visible. */
     const [isAuthPopoverOpen, setIsAuthPopoverOpen] = useState(false);
@@ -158,7 +160,13 @@ export const CompareModeToggle: FC<CompareModeToggleProps> = ({
             return;
         }
 
-        if (!isAuthenticated) {
+        // Authenticated and entitled is already handled above, so reaching here
+        // means the entitlement is missing. Only a CONFIRMED session gets the
+        // upsell: never ask someone to pay for a plan before knowing whether
+        // they are signed in. Everyone else — guests, and the brief window
+        // before the session resolves — gets the sign-in prompt, which is
+        // recoverable in a way a payment CTA is not.
+        if (user === null) {
             setIsAuthPopoverOpen(true);
             return;
         }
