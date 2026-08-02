@@ -16,9 +16,10 @@
  *   favorites store, not from SSR props
  *   - One bulk request shared by every heart on the page; none at all for a guest
  *   - Busy + disabled while resolving; degrades to un-favorited when it fails
- *   - The deprecated SSR props are ignored in BOTH directions: a signed-in
- *     visitor can toggle on HTML rendered for a guest, and a guest is prompted
- *     to sign in on HTML rendered for a signed-in visitor
+ *   - `initialIsFavorited` / `initialBookmarkId` / `isAuthenticated` were
+ *     removed from `FavoriteButtonProps` entirely (HOS-369 WB0-5) — a
+ *     `@ts-expect-error` pair proves the type no longer accepts them, and the
+ *     toggle/prompt behavior is shown to come only from the resolved session
  * - Pill variant count badge: visible when count >= 3, hidden when count < 3 or undefined
  * - Locale number formatting: count=1234 with locale='es' → "1.234"
  *
@@ -865,19 +866,38 @@ describe('FavoriteButton — client-side resolution (WB0-3)', () => {
         expect(mockAddToast).not.toHaveBeenCalled();
     });
 
-    it('ignores the deprecated initialIsFavorited prop', async () => {
-        // Arrange — SSR claims favorited; the real bulk check says otherwise.
-        const { button } = await renderButton(arrangeUser({ initialIsFavorited: true }));
-
-        // Assert — a cached page's favorited flag belongs to whoever it was
-        // rendered for, so it is never trusted.
-        expect(button).toHaveAttribute('aria-pressed', 'false');
+    it('no longer accepts initialIsFavorited/initialBookmarkId — removed from FavoriteButtonProps (HOS-369 WB0-5)', () => {
+        // Assert — this line only typechecks if the props are gone. If a
+        // future change resurrects either field, `@ts-expect-error` starts
+        // reporting an unused-directive error and typecheck fails.
+        // @ts-expect-error — initialIsFavorited/initialBookmarkId were removed; SSR can no longer seed favorite state.
+        const props: FavoriteButtonProps = {
+            entityId: 'entity-uuid-1',
+            entityType: 'ACCOMMODATION',
+            locale: 'es',
+            initialIsFavorited: true,
+            initialBookmarkId: 'bookmark-1'
+        };
+        expect(props.entityId).toBe('entity-uuid-1');
     });
 
-    it('toggles for a signed-in visitor even when the SSR prop says guest', async () => {
-        // Arrange — exactly the cached-page case: the HTML was rendered for an
-        // anonymous visitor, but this visitor has a session.
-        const { button } = await renderButton(arrangeUser({ isAuthenticated: false }));
+    it('no longer accepts isAuthenticated — removed from FavoriteButtonProps (HOS-369 WB0-5)', () => {
+        // Assert — same guarantee as above for the session flag: there is no
+        // prop left that can override the client-resolved session.
+        // @ts-expect-error — isAuthenticated was removed; session is resolved client-side via useAccountPermissions.
+        const props: FavoriteButtonProps = {
+            entityId: 'entity-uuid-1',
+            entityType: 'ACCOMMODATION',
+            locale: 'es',
+            isAuthenticated: false
+        };
+        expect(props.entityId).toBe('entity-uuid-1');
+    });
+
+    it('toggles for a signed-in visitor — state comes only from the session, never a prop', async () => {
+        // Arrange — a real session is the only thing that can make this happen;
+        // there is no SSR flag left to disagree with it.
+        const { button } = await renderButton(arrangeUser());
 
         // Act
         fireEvent.click(button);
@@ -889,9 +909,9 @@ describe('FavoriteButton — client-side resolution (WB0-3)', () => {
         expect(screen.queryByTestId('auth-required-popover')).not.toBeInTheDocument();
     });
 
-    it('prompts for auth for a guest even when the SSR prop says authenticated', async () => {
-        // Arrange — the other direction: stale SSR flag, no real session.
-        const { button } = await renderButton(arrangeGuest({ isAuthenticated: true }));
+    it('prompts for auth for a guest — state comes only from the session, never a prop', async () => {
+        // Arrange — no real session, and no prop left that could fake one.
+        const { button } = await renderButton(arrangeGuest());
 
         // Act
         fireEvent.click(button);

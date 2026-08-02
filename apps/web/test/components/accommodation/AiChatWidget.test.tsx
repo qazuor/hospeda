@@ -2,6 +2,11 @@
  * @file AiChatWidget.test.tsx
  * @description Component tests for the AI chat widget (SPEC-200 REQ-200-5, REQ-200-9).
  *
+ * Since HOS-369 WB0-7 the widget resolves its own session instead of the page
+ * wrapping its mount in `{isAuthenticated && …}`, so the session is a MOCK
+ * (`@/lib/auth-cache`) that every suite here arranges as signed-in. The gate
+ * itself — nothing rendered until a session resolves — has its own suite.
+ *
  * Tests FAB rendering, panel open/close, a11y attributes, ESC close,
  * focus-return-to-FAB (FIX-2), expand/collapse aria-labels (FIX-4),
  * conditional send-button aria-label during streaming (FIX-4),
@@ -11,7 +16,7 @@
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AiChatWidget } from '../../../src/components/accommodation/AiChatWidget';
+import { buildAuthSnapshot } from '../../helpers/auth-session';
 
 // --- Mocks ---
 
@@ -67,6 +72,21 @@ vi.mock('@/hooks/useAccommodationChat', () => ({
     useAccommodationChat: (...args: unknown[]) => mockUseAccommodationChat(...args)
 }));
 
+const mockReadCachedAuthMe = vi.fn();
+
+vi.mock('@/lib/auth-cache', () => ({
+    readCachedAuthMe: () => mockReadCachedAuthMe(),
+    // A cached AUTHENTICATED snapshot resolves synchronously inside the hook's
+    // mount effect. Anything else falls through to this deliberately pending
+    // fetch, which is the unresolved state a guest must also see.
+    fetchAuthMe: () => new Promise(() => undefined),
+    writeCachedAuthMe: () => undefined,
+    resetInFlightAuthMe: () => undefined
+}));
+
+// Imported after the mocks so the module graph picks them up.
+import { AiChatWidget } from '../../../src/components/accommodation/AiChatWidget';
+
 /** Default idle state returned by most tests. */
 const idleChatState = {
     state: {
@@ -95,6 +115,34 @@ describe('AiChatWidget', () => {
 
     beforeEach(() => {
         mockUseAccommodationChat.mockReturnValue(idleChatState);
+        // Signed in by default: every suite here is about the chat UI, which
+        // only exists for a signed-in visitor. The gate has its own suite below.
+        mockReadCachedAuthMe.mockReset();
+        mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
+    });
+
+    describe('session gate (HOS-369 WB0-7)', () => {
+        it('renders nothing while the session is unresolved', () => {
+            // The SSR / edge-cached output. Nothing at all is correct here: the
+            // FAB and panel are position:fixed, so appearing after hydration
+            // costs no layout shift and needs no reserved space.
+            mockReadCachedAuthMe.mockReturnValue(null);
+            const { container } = render(<AiChatWidget {...defaultProps} />);
+            expect(container).toBeEmptyDOMElement();
+        });
+
+        it('renders nothing for a confirmed guest', () => {
+            mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: false }));
+            const { container } = render(<AiChatWidget {...defaultProps} />);
+            expect(container).toBeEmptyDOMElement();
+        });
+
+        it('renders the FAB once a session resolves', () => {
+            render(<AiChatWidget {...defaultProps} />);
+            expect(
+                screen.getByRole('button', { name: 'Ask AI about this accommodation' })
+            ).toBeInTheDocument();
+        });
     });
 
     it('renders the FAB button with correct aria-label', () => {

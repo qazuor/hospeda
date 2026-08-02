@@ -8,7 +8,7 @@
  *
  * Coverage:
  * - Imports and mounts `CompareModeToggle` with `client:idle`.
- * - Receives and forwards the `locale` and `isAuthenticated` props.
+ * - Receives and forwards the `locale` prop; forwards nothing about the visitor.
  * - Does NOT mount `CompareModeBanner` (removed post-review — HOS-85 fix: the
  *   toggle itself now communicates the active state instead of a banner).
  */

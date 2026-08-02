@@ -101,6 +101,20 @@ vi.mock('@/lib/auth-cache', () => ({
     resetInFlightAuthMe: () => undefined
 }));
 
+// HOS-369 WB0-7: `existingConversationId` stopped being an SSR prop too — it is
+// the same per-visitor lookup, now shared with ReviewSidebarCard through the
+// store. Default: no conversation, which is the guest and fail-closed answer.
+const mockConversation = vi.fn(() => ({
+    conversationId: null as string | null,
+    hasConversation: false,
+    isResolving: false
+}));
+
+vi.mock('@/store/accommodation-conversation-store', () => ({
+    useAccommodationConversation: (params: { readonly accommodationId: string }) =>
+        mockConversation(params)
+}));
+
 /** Arrange the session the island will resolve. */
 function arrangeSession(isAuthenticated: boolean): void {
     mockReadCachedAuthMe.mockReturnValue(
@@ -113,6 +127,22 @@ function arrangeSession(isAuthenticated: boolean): void {
     );
 }
 
+/**
+ * Arrange the visitor's existing conversation with this accommodation.
+ *
+ * HOS-369 WB0-7: this used to be the SSR `existingConversationId` prop. It is
+ * now resolved client-side and shared with `ReviewSidebarCard` through the
+ * store, so tests control it by mocking the store rather than passing a prop.
+ * Defaults to "none", which is both the guest answer and the fail-closed one.
+ */
+function arrangeConversation(conversationId: string | null = null): void {
+    mockConversation.mockReturnValue({
+        conversationId,
+        hasConversation: conversationId !== null,
+        isResolving: false
+    });
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -122,6 +152,10 @@ describe('ContactHost', () => {
         // Default: an anonymous visitor — the variant a cached page must render.
         // Tests covering the signed-in modes call `arrangeSession(true)`.
         arrangeSession(false);
+        // Reset explicitly: `mockReturnValue` persists across tests, so without
+        // this the one Mode C case would put its conversation id into every
+        // later test and silently turn Mode B assertions into Mode C ones.
+        arrangeConversation(null);
     });
 
     afterEach(() => {
@@ -137,7 +171,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -147,12 +180,11 @@ describe('ContactHost', () => {
             expect(screen.getByRole('textbox', { name: /message/i })).toBeInTheDocument();
         });
 
-        it('Mode B: renders only message field when currentUser set and no existingConversationId', () => {
+        it('Mode B: renders only the message field for a signed-in visitor with no conversation', () => {
             arrangeSession(true);
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -163,12 +195,12 @@ describe('ContactHost', () => {
             expect(screen.getByRole('textbox')).toBeInTheDocument();
         });
 
-        it('Mode C: renders view-existing link when existingConversationId is set', () => {
+        it('Mode C: renders the view-existing link when the store resolves a conversation', () => {
             arrangeSession(true);
+            arrangeConversation('conv-999');
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId="conv-999"
                     locale={LOCALE}
                 />
             );
@@ -181,7 +213,6 @@ describe('ContactHost', () => {
             const { container } = render(
                 <ContactHost
                     accommodation={INACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -192,7 +223,6 @@ describe('ContactHost', () => {
             const { container } = render(
                 <ContactHost
                     accommodation={DELETED_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -209,7 +239,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -222,7 +251,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -238,7 +266,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -278,7 +305,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -322,7 +348,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -367,7 +392,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -420,7 +444,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -462,7 +485,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -496,7 +518,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -527,7 +548,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -567,7 +587,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -597,7 +616,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -638,7 +656,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -667,7 +684,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -699,7 +715,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -743,7 +758,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -796,7 +810,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                     initialMessage={prefilled}
                 />
@@ -813,7 +826,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                     initialMessage={prefilled}
                 />
@@ -826,7 +838,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -867,7 +878,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -922,7 +932,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -970,7 +979,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -1028,7 +1036,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );

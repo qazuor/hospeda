@@ -183,7 +183,6 @@ describe('ListingMap — FavoriteButton in popup (T-044)', () => {
                 items={[baseItem]}
                 ariaLabel="map"
                 i18nStrings={i18n}
-                isAuthenticated={false}
                 locale="es"
             />
         );
@@ -208,7 +207,6 @@ describe('ListingMap — FavoriteButton in popup (T-044)', () => {
                 items={[baseItem]}
                 ariaLabel="map"
                 i18nStrings={i18n}
-                isAuthenticated={false}
                 locale="es"
             />
         );
@@ -238,7 +236,6 @@ describe('ListingMap — FavoriteButton in popup (T-044)', () => {
                 ]}
                 ariaLabel="map"
                 i18nStrings={i18n}
-                isAuthenticated={false}
                 locale="es"
             />
         );
@@ -258,7 +255,6 @@ describe('ListingMap — FavoriteButton in popup (T-044)', () => {
                 items={[{ ...baseItem, isFavorited: false }]}
                 ariaLabel="map"
                 i18nStrings={i18n}
-                isAuthenticated={true}
                 locale="es"
             />
         );
@@ -280,7 +276,6 @@ describe('ListingMap — FavoriteButton in popup (T-044)', () => {
                 items={[{ ...baseItem, isFavorited: true, favoriteBookmarkId: 'bk-99' }]}
                 ariaLabel="map"
                 i18nStrings={i18n}
-                isAuthenticated={true}
                 locale="es"
             />
         );
