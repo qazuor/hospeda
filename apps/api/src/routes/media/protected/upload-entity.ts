@@ -46,6 +46,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createErrorResponse } from '../../../utils/response-helpers';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { resolveVisibleGalleryCount } from '../gallery-count';
 
 /** Reusable Zod validator for actor.id UUID format. */
 const ActorIdSchema = z.string().uuid();
@@ -256,8 +257,14 @@ export const protectedUploadEntityRoute = createProtectedRoute({
 
         // ── 3d. Enforce gallery cap ───────────────────────────────────────────
         if (role === 'gallery') {
-            const entityMedia = (entityResult.data as { media?: { gallery?: unknown[] } }).media;
-            const currentGalleryCount = entityMedia?.gallery?.length ?? 0;
+            // Counted via the shared resolver so this path and the admin upload
+            // path can never disagree about where an entity type's photos live —
+            // see routes/media/gallery-count.ts.
+            const currentGalleryCount = await resolveVisibleGalleryCount({
+                entityType,
+                entityId,
+                entity: entityResult.data
+            });
             const galleryLimit = getGalleryCap(entityType);
             if (currentGalleryCount >= galleryLimit) {
                 return createErrorResponse(

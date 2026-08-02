@@ -57,6 +57,7 @@ import { calculateThreshold, calculateUsagePercent, checkLimit } from '../../../
 import { apiLogger } from '../../../utils/logger';
 import { createErrorResponse } from '../../../utils/response-helpers';
 import { createAdminRoute } from '../../../utils/route-factory';
+import { resolveVisibleGalleryCount } from '../gallery-count';
 import { type MediaEntityType, validateEntityMediaPermission } from './permissions';
 
 /**
@@ -489,21 +490,14 @@ export const adminUploadMediaRoute = createAdminRoute({
         // upper bound applied to non-accommodation entities and to admin
         // uploads where the plan limit is bypassed.
         if (role === 'gallery') {
-            // SPEC-204: for accommodations, count from the relational table.
-            // For other entity types (destination, event, post), the JSONB blob
-            // is still the source of truth.
-            let currentGalleryCount: number;
-            if (entityType === 'accommodation') {
-                const { total } = await accommodationMediaModel.findByAccommodation({
-                    accommodationId: entityId,
-                    state: 'visible'
-                });
-                currentGalleryCount = total;
-            } else {
-                const entityMedia = (entityResult.data as { media?: { gallery?: unknown[] } })
-                    .media;
-                currentGalleryCount = entityMedia?.gallery?.length ?? 0;
-            }
+            // Counted via the shared resolver so this path and the protected
+            // upload path can never disagree about where an entity type's photos
+            // live — see routes/media/gallery-count.ts.
+            const currentGalleryCount = await resolveVisibleGalleryCount({
+                entityType,
+                entityId,
+                entity: entityResult.data
+            });
             const galleryLimit = getGalleryCap(entityType);
             if (currentGalleryCount >= galleryLimit) {
                 return createErrorResponse(
