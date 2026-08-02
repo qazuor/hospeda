@@ -1,15 +1,18 @@
 /**
- * @file MediaField.tsx
- * @description Controlled media editor for a commerce listing's featured image
- * and photo gallery (SPEC-249 T-015c). Uploads go to the protected
- * `media/upload-entity` endpoint (which already accepts the `gastronomy` and
- * `experience` entity types, T-015a/b); removals call the protected
- * `delete-entity` endpoint best-effort for Cloudinary cleanup.
+ * @file MediaSection.client.tsx
+ * @description Featured image + photo gallery section of the commerce owner
+ * editor (SPEC-249 T-015c, extracted in HOS-258).
+ *
+ * Uploads go to the protected `media/upload-entity` endpoint (which already
+ * accepts the `gastronomy` and `experience` entity types, T-015a/b); removals
+ * call the protected `delete-entity` endpoint best-effort for Cloudinary
+ * cleanup.
  *
  * Fully controlled: every edit produces a complete `{ featuredImage, gallery }`
- * value passed to `onChange` (the parent owns dirty tracking and persists the
+ * value passed to `onChange`. The orchestrator owns the state and persists the
  * full `media` object — gastronomy/experience do NOT merge the media JSONB, so
- * the parent always sends the complete media state on save).
+ * the complete media state (including the owner-invisible `videos` /
+ * `archivedGallery` passthrough) always travels on save.
  */
 
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
@@ -18,8 +21,12 @@ import { type JSX, useCallback, useRef, useState } from 'react';
 import { protectedMediaApi } from '@/lib/api/endpoints-protected';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { getApiUrl } from '@/lib/env';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { resolveUploadTimeoutMs } from '@/lib/media/upload-entity';
+import fieldStyles from './editor-fields.module.css';
+import styles from './MediaSection.module.css';
 
 /** Translator function shape (matches the editor's `createTranslations().t`). */
 type Translate = (
@@ -28,7 +35,8 @@ type Translate = (
     params?: Record<string, string | number>
 ) => string;
 
-interface MediaFieldProps {
+export interface MediaSectionProps {
+    readonly locale: SupportedLocale;
     /** Vertical of the listing (drives the upload entityType + gallery cap). */
     readonly vertical: CommerceVertical;
     /** UUID of the listing being edited (upload entityId). */
@@ -42,10 +50,6 @@ interface MediaFieldProps {
         readonly featuredImage: Image | null;
         readonly gallery: readonly Image[];
     }) => void;
-    /** Active editor translator. */
-    readonly t: Translate;
-    /** Shared CSS-module classes from the hosting editor. */
-    readonly classes: Readonly<Record<string, string>>;
 }
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -159,19 +163,15 @@ function describeUploadError(err: unknown, t: Translate): string {
         : t('commerce.owner.editor.media.uploadFailed', 'Error al subir la imagen');
 }
 
-/**
- * Featured-image + gallery editor. Self-contained upload/validation/error UI;
- * delegates state ownership to the parent through `onChange`.
- */
-export function MediaField({
+export function MediaSection({
+    locale,
     vertical,
     listingId,
     featuredImage,
     gallery,
-    onChange,
-    t,
-    classes
-}: MediaFieldProps): JSX.Element {
+    onChange
+}: MediaSectionProps): JSX.Element {
+    const { t } = createTranslations(locale);
     const featuredInputRef = useRef<HTMLInputElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -240,7 +240,7 @@ export function MediaField({
         onChange({ featuredImage: null, gallery });
         if (removed?.publicId) {
             protectedMediaApi.deleteMedia({ publicId: removed.publicId }).catch((err: unknown) => {
-                webLogger.warn('[MediaField] featured image delete failed:', err);
+                webLogger.warn('[MediaSection] featured image delete failed:', err);
             });
         }
     }, [featuredImage, gallery, onChange]);
@@ -308,7 +308,7 @@ export function MediaField({
                 protectedMediaApi
                     .deleteMedia({ publicId: removed.publicId })
                     .catch((err: unknown) => {
-                        webLogger.warn('[MediaField] gallery image delete failed:', err);
+                        webLogger.warn('[MediaSection] gallery image delete failed:', err);
                     });
             }
         },
@@ -316,109 +316,120 @@ export function MediaField({
     );
 
     return (
-        <div className={classes.media}>
-            <div className={classes.mediaGroup}>
-                <span className={classes.label}>
-                    {t('commerce.owner.editor.media.featured', 'Imagen principal')}
-                </span>
-                {featuredImage ? (
-                    <div className={classes.mediaThumb}>
-                        <img
-                            src={featuredImage.url}
-                            alt={t('commerce.owner.editor.media.featured', 'Imagen principal')}
-                            className={classes.mediaImage}
-                        />
-                        <button
-                            type="button"
-                            className={classes.mediaRemove}
-                            aria-label={t('commerce.owner.editor.media.remove', 'Eliminar')}
-                            onClick={handleFeaturedRemove}
-                        >
-                            ×
-                        </button>
-                    </div>
-                ) : (
-                    <button
-                        type="button"
-                        className={classes.mediaAdd}
-                        disabled={isUploading}
-                        onClick={() => featuredInputRef.current?.click()}
-                    >
-                        {t('commerce.owner.editor.media.add', 'Agregar foto')}
-                    </button>
-                )}
-                <input
-                    ref={featuredInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    aria-label={t('commerce.owner.editor.media.featured', 'Imagen principal')}
-                    className={classes.mediaFileInput}
-                    onChange={handleFeaturedSelect}
-                />
-            </div>
-
-            <div className={classes.mediaGroup}>
-                <span className={classes.label}>
-                    {t('commerce.owner.editor.media.gallery', 'Galería de fotos')}
-                </span>
-                <div className={classes.mediaGallery}>
-                    {gallery.map((image, index) => (
-                        <div
-                            key={image.publicId ?? image.url}
-                            className={classes.mediaThumb}
-                        >
+        <section
+            className={fieldStyles.section}
+            id="editor-media"
+        >
+            <span className={fieldStyles.label}>
+                {t('commerce.owner.editor.sections.media', 'Galería de fotos')}
+            </span>
+            <div className={styles.media}>
+                <div className={styles.mediaGroup}>
+                    <span className={fieldStyles.label}>
+                        {t('commerce.owner.editor.media.featured', 'Imagen principal')}
+                    </span>
+                    {featuredImage ? (
+                        <div className={styles.mediaThumb}>
                             <img
-                                src={image.url}
-                                alt={t('commerce.owner.editor.media.gallery', 'Galería de fotos')}
-                                className={classes.mediaImage}
+                                src={featuredImage.url}
+                                alt={t('commerce.owner.editor.media.featured', 'Imagen principal')}
+                                className={styles.mediaImage}
                             />
                             <button
                                 type="button"
-                                className={classes.mediaRemove}
+                                className={styles.mediaRemove}
                                 aria-label={t('commerce.owner.editor.media.remove', 'Eliminar')}
-                                onClick={() => handleGalleryRemove(index)}
+                                onClick={handleFeaturedRemove}
                             >
                                 ×
                             </button>
                         </div>
-                    ))}
-                    {!isGalleryFull && (
+                    ) : (
                         <button
                             type="button"
-                            className={classes.mediaAdd}
+                            className={styles.mediaAdd}
                             disabled={isUploading}
-                            aria-label={t('commerce.owner.editor.media.add', 'Agregar foto')}
-                            onClick={() => galleryInputRef.current?.click()}
+                            onClick={() => featuredInputRef.current?.click()}
                         >
-                            +
+                            {t('commerce.owner.editor.media.add', 'Agregar foto')}
                         </button>
                     )}
+                    <input
+                        ref={featuredInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        aria-label={t('commerce.owner.editor.media.featured', 'Imagen principal')}
+                        className={styles.mediaFileInput}
+                        onChange={handleFeaturedSelect}
+                    />
                 </div>
-                <input
-                    ref={galleryInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    aria-label={t('commerce.owner.editor.media.gallery', 'Galería de fotos')}
-                    className={classes.mediaFileInput}
-                    onChange={handleGallerySelect}
-                />
-                <span className={classes.mediaHint}>
-                    {t(
-                        'commerce.owner.editor.media.uploadHint',
-                        'JPG, PNG o WebP — máx. {{maxSize}}MB',
-                        { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
-                    )}
-                </span>
-            </div>
 
-            {error && (
-                <p
-                    className={classes.error}
-                    role="alert"
-                >
-                    {error}
-                </p>
-            )}
-        </div>
+                <div className={styles.mediaGroup}>
+                    <span className={fieldStyles.label}>
+                        {t('commerce.owner.editor.media.gallery', 'Galería de fotos')}
+                    </span>
+                    <div className={styles.mediaGallery}>
+                        {gallery.map((image, index) => (
+                            <div
+                                key={image.publicId ?? image.url}
+                                className={styles.mediaThumb}
+                            >
+                                <img
+                                    src={image.url}
+                                    alt={t(
+                                        'commerce.owner.editor.media.gallery',
+                                        'Galería de fotos'
+                                    )}
+                                    className={styles.mediaImage}
+                                />
+                                <button
+                                    type="button"
+                                    className={styles.mediaRemove}
+                                    aria-label={t('commerce.owner.editor.media.remove', 'Eliminar')}
+                                    onClick={() => handleGalleryRemove(index)}
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        ))}
+                        {!isGalleryFull && (
+                            <button
+                                type="button"
+                                className={styles.mediaAdd}
+                                disabled={isUploading}
+                                aria-label={t('commerce.owner.editor.media.add', 'Agregar foto')}
+                                onClick={() => galleryInputRef.current?.click()}
+                            >
+                                +
+                            </button>
+                        )}
+                    </div>
+                    <input
+                        ref={galleryInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        aria-label={t('commerce.owner.editor.media.gallery', 'Galería de fotos')}
+                        className={styles.mediaFileInput}
+                        onChange={handleGallerySelect}
+                    />
+                    <span className={styles.mediaHint}>
+                        {t(
+                            'commerce.owner.editor.media.uploadHint',
+                            'JPG, PNG o WebP — máx. {{maxSize}}MB',
+                            { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
+                        )}
+                    </span>
+                </div>
+
+                {error && (
+                    <p
+                        className={fieldStyles.error}
+                        role="alert"
+                    >
+                        {error}
+                    </p>
+                )}
+            </div>
+        </section>
     );
 }

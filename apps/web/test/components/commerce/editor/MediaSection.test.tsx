@@ -1,5 +1,5 @@
 /**
- * @file MediaField.test.tsx
+ * @file MediaSection.test.tsx
  * @description Size-limit coverage for the commerce media editor (HOS-322).
  *
  * The commerce editor posts to the same `/media/upload-entity` endpoint as the
@@ -8,48 +8,52 @@
  * the canonical cap in `@repo/media`, and these tests are what keep them there
  * — the review that caught the drift found the hint had no test at all.
  *
- * @module test/components/commerce/MediaField
+ * HOS-258: carried over verbatim from `commerce/MediaField.test.tsx` when the
+ * widget was folded into `editor/MediaSection.client.tsx`. The only changes are
+ * the import path and the props: the component now takes `locale` and builds
+ * its own translator instead of receiving `t` and a `classes` bag.
+ *
+ * @module test/components/commerce/editor/MediaSection
  */
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { MediaField } from '../../../src/components/commerce/MediaField';
+import { MediaSection } from '../../../../src/components/commerce/editor/MediaSection.client';
 
-vi.mock('../../../src/lib/env', () => ({
+vi.mock('../../../../src/lib/env', () => ({
     getApiUrl: () => 'http://api.test'
 }));
 
-vi.mock('../../../src/lib/logger', () => ({
+vi.mock('../../../../src/lib/logger', () => ({
     webLogger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() }
 }));
 
-vi.mock('../../../src/lib/api/endpoints-protected', () => ({
+vi.mock('../../../../src/lib/api/endpoints-protected', () => ({
     protectedMediaApi: { deleteMedia: vi.fn().mockResolvedValue({ ok: true }) }
 }));
 
-/** Interpolating translator, matching the real `createTranslations().t`. */
-const t = (key: string, fallback?: string, params?: Record<string, string | number>): string => {
-    const raw = fallback ?? key;
-    return params
-        ? Object.entries(params).reduce(
-              (acc, [name, value]) => acc.replaceAll(`{{${name}}}`, String(value)),
-              raw
-          )
-        : raw;
-};
-
-const classes = new Proxy({} as Record<string, string>, {
-    get: (_target, prop) => String(prop)
-});
+vi.mock('../../../../src/lib/i18n', () => ({
+    // Interpolating translator, matching the real `createTranslations().t`.
+    createTranslations: () => ({
+        t: (key: string, fallback?: string, params?: Record<string, string | number>): string => {
+            const raw = fallback ?? key;
+            return params
+                ? Object.entries(params).reduce(
+                      (acc, [name, value]) => acc.replaceAll(`{{${name}}}`, String(value)),
+                      raw
+                  )
+                : raw;
+        }
+    })
+}));
 
 const defaultProps = {
+    locale: 'es' as const,
     vertical: 'gastronomy' as const,
     listingId: '00000000-0000-4000-8000-0000000000aa',
     featuredImage: null,
     gallery: [],
-    onChange: vi.fn(),
-    t,
-    classes
+    onChange: vi.fn()
 };
 
 /** A file of an exact byte length. */
@@ -61,14 +65,14 @@ const selectFeaturedFile = (file: File): void => {
     fireEvent.change(input, { target: { files: [file] } });
 };
 
-describe('MediaField — size limit (HOS-322)', () => {
+describe('MediaSection — size limit (HOS-322)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         global.fetch = vi.fn();
     });
 
     it('states the real cap in the upload hint', () => {
-        render(<MediaField {...defaultProps} />);
+        render(<MediaSection {...defaultProps} />);
 
         const hint = screen.getByText((content) => content.includes('máx.'));
         expect(hint.textContent).toContain(String(DEFAULT_ENTITY_MAX_FILE_SIZE_MB));
@@ -84,14 +88,14 @@ describe('MediaField — size limit (HOS-322)', () => {
             })
         } as Response);
 
-        render(<MediaField {...defaultProps} />);
+        render(<MediaSection {...defaultProps} />);
         selectFeaturedFile(fileOfBytes(mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB) - mbToBytes(1)));
 
         await waitFor(() => expect(global.fetch).toHaveBeenCalled());
     });
 
     it('refuses a photo over the cap without calling the API, naming the cap', async () => {
-        render(<MediaField {...defaultProps} />);
+        render(<MediaSection {...defaultProps} />);
         selectFeaturedFile(fileOfBytes(mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB) + 1));
 
         await waitFor(() => {
@@ -115,7 +119,7 @@ describe('MediaField — size limit (HOS-322)', () => {
             })
         } as Response);
 
-        render(<MediaField {...defaultProps} />);
+        render(<MediaSection {...defaultProps} />);
         selectFeaturedFile(fileOfBytes(1024));
 
         await waitFor(() => expect(global.fetch).toHaveBeenCalled());
