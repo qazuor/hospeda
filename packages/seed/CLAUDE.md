@@ -42,7 +42,8 @@ is a package-level quick reference only.
 `src/data-migrations/NNNN-slug.ts` — one file per migration, numbered like Drizzle's own
 `NNNN_name.sql`, applied once each and tracked in the `seed_migrations` ledger table
 (`packages/db/src/schemas/seed-migrations/`, preserved across `--reset`). Every module
-exports a `meta` object (`name`, `group: 'required' | 'example'`, optional `destructive`) and
+exports a `meta` object (`name`, `group: 'required' | 'example'`, optional `destructive`,
+optional `contentOnly`) and
 an `up(ctx)` function receiving `ctx.db` (transaction-scoped), `ctx.models`, `ctx.services`,
 `ctx.actor`, and `ctx.helpers.safeDelete` (FK-guarded, operator-edit-aware hard delete — never
 issue a raw `DELETE` from a migration).
@@ -57,8 +58,18 @@ pnpm db:seed:migrate:status       # Print applied/pending status per migration
 
 `pnpm db:fresh` / `pnpm db:fresh-dev` already chain
 `pnpm --filter @repo/seed seed --data-migrate --baseline-stamp` after the main seed, so a
-fresh local DB never re-runs a migration's `up()` for real — it is stamped applied directly,
-since the baseline fixtures already reflect the post-migration end state.
+fresh local DB does not re-run a migration's `up()` for real — it is stamped applied
+directly, since the baseline fixtures already reflect the post-migration end state.
+
+**Exception — `meta.contentOnly: true` (HOS-375 G-10).** A migration whose rows have NO
+fixture baseline (real blog posts, imported event batches: the migration file IS the only
+source of that content) is NOT stamped. `--baseline-stamp` leaves it pending and then falls
+through to a real `runMigrations()` for exactly those — otherwise a fresh build would ledger
+it applied with its content never created, and the ledger would block it forever. Ledger
+result reads `'ok'` for content-only migrations and `'baseline-stamp'` for the rest. Set the
+flag on any migration you write whose content no fixture reproduces; it is declared on the
+migration precisely so no external list of names has to be kept in sync. Full explanation in
+the [author guide](../../docs/guides/seed-data-migrations.md#the-contentonly-flag-migrations-with-no-fixture-baseline).
 
 ### The dual-write rule (MANDATORY)
 

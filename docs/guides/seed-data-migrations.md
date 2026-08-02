@@ -25,9 +25,13 @@ Versioned seed data migrations fix this with a dedicated carril:
   it is the migration history, not seedable content.
 - Migration modules live in `packages/seed/src/data-migrations/NNNN-slug.ts`, numbered like
   Drizzle's own `NNNN_name.sql` files, and are applied once, in order, never re-run.
-- A fresh database (local dev, CI, a brand-new staging/prod DB) never needs to run these
-  modules for real — the baseline seed already produces the target end state directly. It
-  gets **baseline-stamped** instead (see [below](#baseline-stamp-marking-a-fresh-db-caught-up)).
+- A fresh database (local dev, CI, a brand-new staging/prod DB) mostly does not need to run
+  these modules for real — the baseline seed already produces the target end state directly.
+  It gets **baseline-stamped** instead (see
+  [below](#baseline-stamp-marking-a-fresh-db-caught-up)). The exception is a migration whose
+  rows no fixture reproduces, flagged
+  [`contentOnly`](#the-contentonly-flag-migrations-with-no-fixture-baseline): a fresh build
+  runs that one for real.
 - An already-seeded environment that predates a given migration runs it for real, exactly
   once, the next time `pnpm db:seed:migrate` executes there.
 
@@ -41,7 +45,7 @@ Versioned seed data migrations fix this with a dedicated carril:
 | `pnpm db:seed:migrate` | Run every pending migration (all groups) |
 | `pnpm db:seed:migrate --required` / `--example` | Scope a run to one group |
 | `pnpm db:seed:migrate:status` | Print applied/pending status for every migration |
-| `pnpm --filter @repo/seed seed --data-migrate --baseline-stamp` | Mark every pending migration applied WITHOUT running `up()` |
+| `pnpm --filter @repo/seed seed --data-migrate --baseline-stamp` | Mark every pending migration applied WITHOUT running `up()`, then run the `contentOnly` ones for real |
 
 These are thin root aliases over the `@repo/seed` CLI's `--data-migrate*` flags (see
 `packages/seed/src/cli.ts`). `pnpm db:fresh` and `pnpm db:fresh-dev` already chain the
@@ -116,7 +120,8 @@ Every migration file exports exactly two things, validated against
 export const meta = {
     name: '0004-remove-legacy-feature', // MUST equal the filename stem
     group: 'required',                  // 'required' | 'example'
-    destructive: false                  // see "destructive flag" below
+    destructive: false,                 // see "destructive flag" below
+    contentOnly: false                  // see "contentOnly flag" below
 } as const satisfies SeedMigrationModule['meta'];
 
 export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
@@ -406,11 +411,13 @@ friction in dev/staging. See `packages/seed/src/data-migrations/prodGate.ts`
 ## Baseline-stamp: marking a fresh DB caught up
 
 Right after a full baseline seed (`--reset --required --example`) builds a database from
-scratch, every currently-known migration is already satisfied by construction — the baseline
-fixtures already reflect the post-migration end state directly, so running each migration's
-`up()` for real would be redundant at best and actively wrong at worst (a migration written
-against pre-migration state could fail against data that was never in that state to begin
-with).
+scratch, almost every currently-known migration is already satisfied by construction — the
+baseline fixtures already reflect the post-migration end state directly, so running each
+migration's `up()` for real would be redundant at best and actively wrong at worst (a
+migration written against pre-migration state could fail against data that was never in that
+state to begin with). The exception is a migration flagged
+[`contentOnly`](#the-contentonly-flag-migrations-with-no-fixture-baseline), which is run for
+real instead of stamped.
 
 `pnpm --filter @repo/seed seed --data-migrate --baseline-stamp` records a `seed_migrations`
 ledger row for every currently pending migration **without ever calling its `up()`** — mirroring
@@ -421,6 +428,42 @@ migration.
 `pnpm db:fresh` and `pnpm db:fresh-dev` already chain this automatically after the main seed
 step — you do not need to run it by hand for local dev. It is idempotent: calling it again
 after everything is already stamped does nothing (no duplicate rows, no error).
+
+---
+
+## The `contentOnly` flag: migrations with no fixture baseline
+
+Set `meta.contentOnly: true` when the migration file **is** the only source of the rows it
+writes — nothing under `packages/seed/src/data/**` reproduces them. Real blog posts and
+imported event batches are the canonical examples: there is no fixture to fall back on, so a
+fresh baseline seed produces none of that content.
+
+For such a migration the baseline-stamp premise above is simply false. Stamping it would
+record it applied while its content never existed, and the ledger would then stop it from
+ever running. So `--baseline-stamp` **skips** content-only migrations and then runs them for
+real:
+
+1. `baselineStamp()` stamps every pending migration except the content-only ones, reporting
+   those under `deferred`.
+2. `handleDataMigrate` falls through to `runMigrations()`, which — finding everything else
+   already ledgered — applies exactly the deferred ones.
+
+One command, one flag. The ledger ends up with `result = 'baseline-stamp'` for the ordinary
+migrations and `result = 'ok'` for the content-only ones, which is how you tell after the
+fact which path a row took (`pnpm db:seed:migrate:status`).
+
+The flag lives on the migration it describes on purpose. The alternative — a list of
+migration names kept in a script or a runbook — drifts away from the set it names, and that
+is exactly how this gap stayed invisible: `first-time-setup.md`'s manual re-run list named
+one of the three affected migrations.
+
+**Not retroactive.** The ledger is still respected, so an environment where these migrations
+are already recorded (stamped or applied) is unaffected. A dev database built by an older
+`db:fresh-dev` — which stamped them without running them — stays missing that content until
+it is rebuilt.
+
+See `packages/seed/src/data-migrations/baselineStamp.ts` and
+[`.specs/HOS-375-author-page-unification/spec.md`](../../.specs/HOS-375-author-page-unification/spec.md) §6.11.
 
 ---
 
@@ -466,6 +509,7 @@ baseline-stamping.
 | Wrote a Drizzle-invisible DB object (trigger/matview/CHECK) into `data-migrations/` | Wrong carril — not re-applied the way `extras/` objects are | Move it to `packages/db/src/migrations/extras/` |
 | Deleted rows with a raw `DELETE` inside `up()` | Bypasses the FK-reference and operator-edit guards, can cascade | Use `ctx.helpers.safeDelete` |
 | Forgot `destructive: true` on a migration that deletes/irreversibly mutates data | Gate never protects it in production | Set `meta.destructive: true` when scaffolding (`--destructive`) or by hand |
+| Forgot `contentOnly: true` on a migration whose rows have no fixture baseline | Every fresh build stamps it applied with its content never created, and the ledger then blocks it forever | Set `meta.contentOnly: true` — see [above](#the-contentonly-flag-migrations-with-no-fixture-baseline) |
 | Assumed `pnpm db:fresh`'s auto-baseline-stamp covers the prod day-1 seed | Migrations silently run "for real" against curated prod data (or `db:seed:migrate:status` shows a surprising pending count) | Baseline-stamp manually after the day-1 `--required --exclude=users` seed — see [above](#production-day-1-manual-baseline-stamp-is-still-required-open-item) |
 
 ---
