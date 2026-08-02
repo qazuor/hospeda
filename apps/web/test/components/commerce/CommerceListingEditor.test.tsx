@@ -234,13 +234,28 @@ describe('CommerceListingEditor', () => {
         // sending an explicit `null` the domain schema rejects. There was no
         // client-side validation to catch this before submit, so the PATCH
         // always fired and only failed against the real API. The fix sends
-        // `undefined` (omit the key = "no change") instead, so a clear
-        // still marks the field dirty but the PATCH now succeeds.
+        // `undefined` (omit the key = "no change") instead.
+        //
+        // HOS-258: `priceFrom` is now SEEDED from `initialData` and then
+        // cleared, instead of being typed in and cleared within the same
+        // session. Since PR 1 the payload is a diff against the last persisted
+        // snapshot, so typing 500 and deleting it again returns the field to
+        // its original value and produces no change at all — that setup
+        // exercised the old dirty-Set mechanism, not the null-vs-undefined
+        // contract this test is about. The assertion below is unchanged.
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
-        renderEditor('experience');
+        render(
+            <CommerceListingEditor
+                vertical="experience"
+                listingId="abc"
+                locale="es"
+                initialData={{ ...baseData, priceFrom: 500 } as unknown as CommerceListingDetail}
+                destinations={destinationOptions}
+            />
+        );
 
         const priceFromInput = screen.getByLabelText(/Precio desde/);
-        fireEvent.change(priceFromInput, { target: { value: '500' } });
+        expect(priceFromInput).toHaveValue(500);
         fireEvent.change(priceFromInput, { target: { value: '' } });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 

@@ -428,6 +428,64 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         });
     });
 
+    describe('baseline diffing (HOS-258 PR 1 behaviour change)', () => {
+        it('drops a field that was edited and then reverted by hand', async () => {
+            const { container } = renderEditor('gastronomy');
+
+            const input = screen.getByLabelText('Nombre del comercio');
+            fireEvent.change(input, { target: { value: 'Otro nombre' } });
+            expect(saveButton()).toBeEnabled();
+
+            fireEvent.change(input, { target: { value: 'La Parrilla' } });
+
+            // Under the old dirty-Set model the field stayed "dirty" and shipped
+            // a no-op write. Diffing against the baseline makes the form clean
+            // again, so the save button goes back to disabled.
+            expect(saveButton()).toBeDisabled();
+
+            fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+            await Promise.resolve();
+            expect(mockPatch).not.toHaveBeenCalled();
+        });
+
+        it('sends only the still-changed field when another was reverted', async () => {
+            renderEditor('gastronomy');
+
+            const nameInput = screen.getByLabelText('Nombre del comercio');
+            fireEvent.change(nameInput, { target: { value: 'Otro nombre' } });
+            fireEvent.change(nameInput, { target: { value: 'La Parrilla' } });
+            fireEvent.change(screen.getByLabelText('Resumen'), {
+                target: { value: 'Un resumen suficientemente largo para validar.' }
+            });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toEqual({ summary: 'Un resumen suficientemente largo para validar.' });
+        });
+
+        it('lets the owner undo a just-saved field without reloading (HOS-190 F6)', async () => {
+            renderEditor('gastronomy');
+
+            const input = screen.getByLabelText('Nombre del comercio');
+            fireEvent.change(input, { target: { value: 'La Nueva Parrilla' } });
+            fireEvent.click(saveButton());
+
+            await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+            expect(mockPatch.mock.calls[0]?.[0]?.body).toEqual({ name: 'La Nueva Parrilla' });
+
+            // The baseline must have been resynced to the persisted value. If it
+            // still pointed at the load-time `initialData`, restoring the
+            // original name would diff to nothing and the owner could not undo
+            // their own save without a full page reload.
+            await waitFor(() => expect(saveButton()).toBeDisabled());
+            fireEvent.change(input, { target: { value: 'La Parrilla' } });
+            fireEvent.click(saveButton());
+
+            await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(2));
+            expect(mockPatch.mock.calls[1]?.[0]?.body).toEqual({ name: 'La Parrilla' });
+        });
+    });
+
     describe('submit gating', () => {
         it('does not PATCH at all when nothing changed', async () => {
             const { container } = renderEditor('gastronomy');
