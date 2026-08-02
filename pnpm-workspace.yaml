@@ -27,7 +27,9 @@ overrides:
   vitest: "4.1.10"
   "@vitest/coverage-v8": "4.1.10"
   "@vitest/ui": "4.1.9"
-  fast-uri: "3.1.2"
+  # 3.1.2 is vulnerable to both host-confusion advisories (failed IDN
+  # canonicalization and literal backslash). 3.1.4 patches both.
+  fast-uri: "3.1.4"
   devalue: ">=5.8.1"
   seroval: ">=1.4.1"
   tar: ">=7.5.11"
@@ -52,6 +54,18 @@ overrides:
   serialize-javascript: ">=7.0.3"
   prismjs: ">=1.30.0"
   "js-yaml@<4.1.1": "^4.1.1"
+  # The 5.x line is a separate advisory track from the <4.1.1 pin above: 5.2.0 is
+  # installed and is hit by both the flow-collection and the !!omap DoS.
+  "js-yaml@>=5.0.0": ">=5.2.2"
+  # 0.0.33 and 0.1.0 both reach the arbitrary-write and path-traversal
+  # advisories. Only reachable through external-editor (CLI prompt tooling).
+  tmp: ">=0.2.6"
+  # 2.7.1 is installed alongside an already-patched 2.9.0; scope the bump to the
+  # 2.x line so a hypothetical 1.x consumer is not force-upgraded across a major.
+  "yaml@>=2.0.0 <2.8.3": ">=2.8.3"
+  # 1.20.5 -> 1.20.6 is a patch within the 1.x line. Bounded below 2 so an
+  # express 5 consumer keeps resolving its own 2.x.
+  "body-parser@<2": ">=1.20.6 <2"
   undici: ">=8.7.0 <9"
   "vite@^6.0.0": ">=8.0.16 <9"
   "vite@^7.0.0": ">=8.0.16 <9"
