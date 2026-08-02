@@ -444,6 +444,11 @@ It must be covered by explicit tests rather than discovered in production:
   (this is the HOS-190 F6 baseline-resync behavior, and it is the reason the
   baseline must be mutable state rather than the `initialData` prop)
 
+A second, user-visible consequence: the save button is now derived from the diff,
+so reverting an edit by hand disables it again. The accommodation editor already
+behaves this way. It is the reason the pre-existing `priceFrom` test needed a new
+fixture (see the AC-4 amendment).
+
 ## 8. UX / UI behavior
 
 None. Both PRs are structural.
@@ -467,8 +472,23 @@ are inert until a nav consumes them.
   diffing `formData` against `baseline`.
 - **AC-3** — `baseline` is resynced to the saved values after every successful
   save.
-- **AC-4** — `CommerceListingEditor.test.tsx` (22 tests) passes **with zero
-  modifications**.
+- **AC-4** — `CommerceListingEditor.test.tsx` (22 tests) passes with **no change
+  to any assertion**. Exactly one test's *fixture* may change, and only where the
+  test's setup depended on the dirty-Set mechanism rather than on the behavior it
+  claims to cover — see the amendment note below. Any test whose **assertion**
+  has to change means the refactor altered observable behavior and is wrong until
+  proven otherwise.
+
+  > **Amended during implementation.** The original wording ("passes with zero
+  > modifications") was too strong by exactly one test. `sends priceFrom as
+  > undefined (not null) when cleared` typed `500` into an empty field and then
+  > deleted it again — under baseline diffing that returns the field to its
+  > original value and produces no change at all, so no PATCH fires. Its
+  > *intent* (the T-021 null-vs-undefined contract) is untouched; only its
+  > fixture moved to seeding `priceFrom` from `initialData`, which is what a
+  > real owner clearing a persisted price actually does. 21 of 22 tests passed
+  > byte-identical. The remaining 21 are the regression net the AC was written
+  > for, and that net held.
 - **AC-5** — Every row of the §7.1 table has a test asserting the exact payload
   shape for that field group, for both verticals where applicable. In particular:
   `priceFrom` / `priceUnit` cleared → key **omitted**; `priceRange` / `menuUrl`
