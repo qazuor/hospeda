@@ -267,18 +267,14 @@ export async function removeGastronomyMedia(
  * 4. Batch-update each row's `sortOrder` to its index in `orderedIds`.
  *    All updates run in a single transaction.
  *
- * NOTE on duplicate detection: a naive set-difference check (comparing
- * `existingIds` against `new Set(orderedIds)`) does NOT catch a duplicate id
- * that displaces a different missing id from the deduplicated set — e.g.
- * `orderedIds = [A, A, B]` against `existingIds = {A, B, C}` would dedupe to
- * `{A, B}` and silently miss `C`, which the missing-id check WOULD catch; but
- * `orderedIds = [A, A]` against `existingIds = {A, B}` dedupes to `{A}`, still
- * catching the missing `B`. The one case the set-difference check alone misses
- * is when `orderedIds.length` already equals `existingIds.size` yet contains a
- * duplicate (impossible without an accompanying miss under pure set semantics,
- * but only if the raw array length is compared too) — this function guards it
- * explicitly via an array-length-vs-set-size check so a duplicate can never
- * silently overwrite `sortOrder` values.
+ * NOTE on duplicate detection: comparing SETS cannot see a duplicate. With
+ * `orderedIds = [A, A, B]` against `existingIds = {A, B}`, the input dedupes to
+ * `{A, B}` — nothing missing, nothing extra — so a set-only check passes. The
+ * loop would then write A at index 0 and again at index 1, leaving no row at
+ * `sortOrder` 0, and the response maps over `orderedIds` so the same photo is
+ * returned twice. The payload schema does not guard it either (`orderedIds` is
+ * `array(uuid).min(1)`), so this function compares the raw array length against
+ * the deduplicated set size first.
  *
  * @param model - GastronomyModel instance.
  * @param actor - The actor performing the action.

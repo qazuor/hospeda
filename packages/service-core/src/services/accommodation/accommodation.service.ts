@@ -3840,6 +3840,26 @@ export class AccommodationService extends BaseCrudService<
 
                 // Validate set equality: orderedIds must match existingIds exactly.
                 const inputIds = new Set(validated.orderedIds);
+
+                // Duplicates first: comparing SETS cannot see them. [A, A, B] against
+                // {A, B} dedupes to {A, B}, so nothing is missing and nothing is extra
+                // and the checks below pass — then the loop writes A at index 0 and
+                // again at index 1, leaving no row at sortOrder 0, and the response maps
+                // over orderedIds so the same photo comes back twice. The payload schema
+                // does not guard this either (orderedIds is array(uuid).min(1)).
+                // Duplicates first: comparing SETS cannot see them. [A, A, B] against
+                // {A, B} dedupes to {A, B}, so nothing is missing and nothing is extra
+                // and the checks below pass — then the loop writes A at index 0 and
+                // again at index 1, leaving no row at sortOrder 0, and the response maps
+                // over orderedIds so the same photo comes back twice. The payload schema
+                // does not guard this either (orderedIds is array(uuid).min(1)).
+                if (validated.orderedIds.length !== inputIds.size) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'orderedIds contains duplicate media ids'
+                    );
+                }
+
                 const missingIds = [...existingIds].filter((id) => !inputIds.has(id));
                 const extraIds = [...inputIds].filter((id) => !existingIds.has(id));
 
