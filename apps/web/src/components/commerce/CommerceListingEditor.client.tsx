@@ -26,6 +26,8 @@ import type { Image, OpeningHours } from '@repo/schemas';
 import { ExperienceOwnerUpdateInputSchema, GastronomyOwnerUpdateInputSchema } from '@repo/schemas';
 import { type JSX, useCallback, useMemo, useState } from 'react';
 import type { DestinationOption } from '@/components/gastronomy/CommerceLead.client';
+import type { EditorSectionNavItem } from '@/components/host/editor/EditorSectionNav.client';
+import { EditorSectionNav } from '@/components/host/editor/EditorSectionNav.client';
 import { apiClient } from '@/lib/api/client';
 import type { AmenityData } from '@/lib/api/types';
 import type { CommerceListingDetail, CommerceVertical } from '@/lib/commerce/owner-listings';
@@ -501,6 +503,48 @@ export function CommerceListingEditor({
     // again — the accommodation editor behaves the same way.
     const canSave = Object.keys(patchPayload).length > 0 && !isSaving;
 
+    // The amenities section renders nothing when both catalogs are empty, so
+    // its nav entry has to disappear with it — a link to a section that is not
+    // on the page scrolls nowhere and reads as a broken control.
+    const hasCatalogs = amenities.length > 0 || features.length > 0;
+
+    const navSections = useMemo<EditorSectionNavItem[]>(() => {
+        const sections: EditorSectionNavItem[] = [
+            {
+                id: 'editor-basicInfo',
+                label: t('commerce.owner.editor.sectionNav.basicInfo', 'Información básica')
+            },
+            {
+                id: 'editor-contact',
+                label: t('commerce.owner.editor.sectionNav.contactInfo', 'Contacto')
+            },
+            {
+                id: 'editor-socialNetworks',
+                label: t('commerce.owner.editor.sectionNav.socialNetworks', 'Redes sociales')
+            },
+            {
+                id: 'editor-openingHours',
+                label: t('commerce.owner.editor.sectionNav.openingHours', 'Horarios')
+            },
+            { id: 'editor-media', label: t('commerce.owner.editor.sectionNav.media', 'Fotos') },
+            {
+                id: 'editor-translations',
+                label: t('commerce.owner.editor.sectionNav.translations', 'Traducciones')
+            }
+        ];
+        if (hasCatalogs) {
+            sections.push({
+                id: 'editor-amenities',
+                label: t('commerce.owner.editor.sectionNav.amenities', 'Servicios')
+            });
+        }
+        sections.push({
+            id: 'editor-price',
+            label: t('commerce.owner.editor.sectionNav.price', 'Precio')
+        });
+        return sections;
+    }, [t, hasCatalogs]);
+
     return (
         <form
             className={styles.editor}
@@ -508,98 +552,112 @@ export function CommerceListingEditor({
             aria-busy={isSaving}
             noValidate
         >
-            <BasicInfoSection
-                locale={locale}
-                vertical={vertical}
-                data={formData}
-                destinations={destinations}
-                destinationsLoadFailed={destinationsLoadFailed}
-                errors={fieldErrors}
-                onFieldChange={onFieldChange}
-            />
+            <div className={styles.layout}>
+                <div className={styles.navSlot}>
+                    <EditorSectionNav
+                        locale={locale}
+                        sections={navSections}
+                    />
+                </div>
 
-            <ContactSection
-                locale={locale}
-                contact={formData.contact}
-                errors={fieldErrors}
-                onContactChange={updateContact}
-            />
+                <div className={styles.sectionsColumn}>
+                    <BasicInfoSection
+                        locale={locale}
+                        vertical={vertical}
+                        data={formData}
+                        destinations={destinations}
+                        destinationsLoadFailed={destinationsLoadFailed}
+                        errors={fieldErrors}
+                        onFieldChange={onFieldChange}
+                    />
 
-            <SocialNetworksSection
-                locale={locale}
-                social={formData.social}
-                errors={fieldErrors}
-                onSocialChange={updateSocial}
-            />
+                    <ContactSection
+                        locale={locale}
+                        contact={formData.contact}
+                        errors={fieldErrors}
+                        onContactChange={updateContact}
+                    />
 
-            <OpeningHoursSection
-                locale={locale}
-                value={openingHours}
-                error={fieldErrors.openingHours}
-                onChange={(next) => {
-                    onFieldChange('openingHours', next);
-                }}
-            />
+                    <SocialNetworksSection
+                        locale={locale}
+                        social={formData.social}
+                        errors={fieldErrors}
+                        onSocialChange={updateSocial}
+                    />
 
-            <MediaSection
-                locale={locale}
-                vertical={vertical}
-                listingId={listingId}
-                featuredImage={featuredImage}
-                gallery={gallery}
-                onChange={updateMedia}
-            />
+                    <OpeningHoursSection
+                        locale={locale}
+                        value={openingHours}
+                        error={fieldErrors.openingHours}
+                        onChange={(next) => {
+                            onFieldChange('openingHours', next);
+                        }}
+                    />
 
-            {/* T-023: i18n editing panel */}
-            <CommerceTranslationPanel
-                locale={locale}
-                initialValues={i18nValues}
-                onChange={handleI18nChange}
-            />
+                    <MediaSection
+                        locale={locale}
+                        vertical={vertical}
+                        listingId={listingId}
+                        featuredImage={featuredImage}
+                        gallery={gallery}
+                        onChange={updateMedia}
+                    />
 
-            <AmenitiesSection
-                locale={locale}
-                amenities={amenities}
-                features={features}
-                selectedAmenityIds={amenityIds}
-                selectedFeatureIds={featureIds}
-                onToggleAmenity={toggleAmenity}
-                onToggleFeature={toggleFeature}
-            />
+                    {/* T-023: i18n editing panel. Wrapped only to carry the nav anchor —
+                the panel is shared and renders its own bare `<fieldset>`. */}
+                    <div id="editor-translations">
+                        <CommerceTranslationPanel
+                            locale={locale}
+                            initialValues={i18nValues}
+                            onChange={handleI18nChange}
+                        />
+                    </div>
 
-            <PriceSection
-                locale={locale}
-                vertical={vertical}
-                data={formData}
-                errors={fieldErrors}
-                onFieldChange={onFieldChange}
-            />
+                    <AmenitiesSection
+                        locale={locale}
+                        amenities={amenities}
+                        features={features}
+                        selectedAmenityIds={amenityIds}
+                        selectedFeatureIds={featureIds}
+                        onToggleAmenity={toggleAmenity}
+                        onToggleFeature={toggleFeature}
+                    />
 
-            {formError && (
-                <p
-                    className={styles.error}
-                    role="alert"
-                >
-                    {formError}
-                </p>
-            )}
+                    <PriceSection
+                        locale={locale}
+                        vertical={vertical}
+                        data={formData}
+                        errors={fieldErrors}
+                        onFieldChange={onFieldChange}
+                    />
 
-            <div className={styles.actions}>
-                <a
-                    className={styles.cancel}
-                    href={`/${locale}/mi-cuenta/comercio/`}
-                >
-                    {t('commerce.owner.editor.cancel', 'Cancelar')}
-                </a>
-                <button
-                    type="submit"
-                    className={styles.save}
-                    disabled={!canSave}
-                >
-                    {isSaving
-                        ? t('commerce.owner.editor.saving', 'Guardando...')
-                        : t('commerce.owner.editor.save', 'Guardar cambios')}
-                </button>
+                    {formError && (
+                        <p
+                            className={styles.error}
+                            role="alert"
+                        >
+                            {formError}
+                        </p>
+                    )}
+
+                    <div className={styles.actions}>
+                        <a
+                            className={styles.cancel}
+                            href={`/${locale}/mi-cuenta/comercio/`}
+                        >
+                            {t('commerce.owner.editor.cancel', 'Cancelar')}
+                        </a>
+                        <button
+                            type="submit"
+                            className={styles.save}
+                            disabled={!canSave}
+                        >
+                            {isSaving
+                                ? t('commerce.owner.editor.saving', 'Guardando...')
+                                : t('commerce.owner.editor.save', 'Guardar cambios')}
+                        </button>
+                    </div>
+                </div>
             </div>
         </form>
     );

@@ -83,6 +83,16 @@
             }
         },
         "editor": {
+            "sectionNav": {
+                "basicInfo": "Informações básicas",
+                "contactInfo": "Contato",
+                "socialNetworks": "Redes sociais",
+                "openingHours": "Horários",
+                "media": "Fotos",
+                "translations": "Traduções",
+                "amenities": "Serviços",
+                "price": "Preço"
+            },
             "sections": {
                 "type": "Categoria",
                 "summary": "Resumo",

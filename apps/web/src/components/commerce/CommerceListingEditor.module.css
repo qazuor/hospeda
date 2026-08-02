@@ -13,11 +13,48 @@
  */
 
 .editor {
+    width: 100%;
+}
+
+/* ── Two-column layout (section nav + sections) ──────────────────────────
+   Mirrors the accommodation editor, including its BETA-138 decision: no nav
+   at all below the breakpoint, just natural scroll. A sticky rail on a
+   narrow viewport costs more vertical room than it saves. */
+
+.layout {
+    display: block;
+}
+
+.navSlot {
+    display: none;
+}
+
+.sectionsColumn {
     display: flex;
     flex-direction: column;
     gap: var(--space-6);
     max-width: 720px;
     margin: 0 auto;
+}
+
+@media (min-width: 1100px) {
+    .layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: var(--space-8, 32px);
+        align-items: start;
+    }
+
+    .navSlot {
+        display: block;
+        position: sticky;
+        top: 110px;
+    }
+
+    .sectionsColumn {
+        max-width: none;
+        margin: 0;
+    }
 }
 
 /* Action bar — top divider, right-aligned, pill buttons. */
