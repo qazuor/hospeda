@@ -345,10 +345,13 @@ Toda copy nueva va por i18n en es/en/pt, traducida.
   `/mi-cuenta`.** Su ficha de proveedor y sus propiedades de anfitrión no se mezclan:
   son dos relaciones distintas con Hospeda que casualmente tiene la misma persona.
   Evita además que el gate de un rol filtre datos del otro.
-- ~~OQ-5~~ **CERRADA** (owner, 2026-08-02): el token **vence**, **se puede
-  reenviar**, y **una postulación sin confirmar simplemente queda sin vincular** — no
-  se pierde, el admin la ve, pero no se cuelga de ninguna cuenta. No confirmar nunca
-  tiene que ser inofensivo. Falta definir el plazo exacto.
+- ~~OQ-5~~ **CERRADA** (owner, 2026-08-02): el token **vence a los 7 días**, **se
+  puede reenviar**, y **una postulación sin confirmar simplemente queda sin
+  vincular** — no se pierde, el admin la ve, pero no se cuelga de ninguna cuenta. No
+  confirmar nunca tiene que ser inofensivo.
+
+  Siete días es margen para quien no mira el correo a diario, sin dejar un link que
+  vincula una relación comercial vivo por tiempo indefinido en una casilla.
 
 ## 12. Implementation notes
 
