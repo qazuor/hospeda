@@ -1,6 +1,6 @@
 # HOS-375: Author page — move to `/autores/<slug>/` and unify posts + events
 
-## Progress: 7/38 tasks (18%)
+## Progress: 9/38 tasks (24%)
 
 **Average Complexity:** 1.9/3 (max)
 **Critical Path:** T-002 → T-003 → T-017 → T-020 → T-021 → T-029 → T-032 (7 steps)
@@ -48,12 +48,12 @@
   - **Done.** `0034-system-account-flag-staff.ts`, resolved by email, idempotent, silent no-op where the accounts are absent. Verified the dual-write guard non-vacuously: committed T-004 alone first and watched it fail.
   - Blocked by: T-001, T-002 · Blocks: T-035
 
-- [ ] **T-006** (complexity: 2) — Data-migration: set the editorial account slug to `equipo-hospeda`
-  - Resolve by `EDITORIAL_EMAIL`. The current slug differs per environment.
+- [x] **T-006** (complexity: 2) — Data-migration: set the editorial account slug to `equipo-hospeda`
+  - **Done.** `0035-editorial-author-slug.ts` (`contentOnly`), plus the baseline half: `0025`'s `ensureEditorialAuthor` now sets the slug at creation. Resolved by `EDITORIAL_EMAIL`; a third auto-slug value is fed in the tests to prove nothing is hardcoded. A different account already holding the slug is a hard throw, not a skip — skipping would publish the random auto-slug.
   - Blocked by: T-001 · Blocks: T-007, T-035
 
-- [ ] **T-007** (complexity: 3) — Data-migration: re-attribute imported events to the editorial account
-  - Scoped to `created_by_id IS NULL`. Rewrites 44 live production rows.
+- [x] **T-007** (complexity: 3) — Data-migration: re-attribute imported events to the editorial account
+  - **Done.** `0036-reattribute-imported-events.ts` (`contentOnly`), scoped to `created_by_id IS NULL`. The source account resolves by `superadmin@hospeda.com` and **falls back to `ctx.actor.id`** when absent: the documented prod bootstrap never seeds that account, so `0027`/`0028` attribute the imports to the real promoted admin and an email-only lookup would leave them on a human's public author page. See the T-007 note in `state.json`.
   - Blocked by: T-001, T-006 · Blocks: T-035
 
 - [ ] **T-008** (complexity: 2) — Add `publicProfileShowSocialNetworks` to the user settings schema
