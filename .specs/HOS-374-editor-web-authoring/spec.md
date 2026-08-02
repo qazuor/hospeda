@@ -533,6 +533,28 @@ No hace falta agregar `authorId` a `posts`/`events` — ya existe en ambas, con
 
 ## 11. Open questions
 
+> **Decisiones del owner — 2026-08-02**
+>
+> **`authorId` se fuerza a `actor.id` server-side y deja de aceptarse en el body.**
+> No es "ignorar el campo si viene": sale del schema de creación. Un editor no puede
+> firmar como otro, ni por error ni a propósito.
+>
+> **El acceso al panel de admin queda en `SUPER_ADMIN` y `ADMIN`, nada más.** Se le
+> quita `ACCESS_PANEL_ADMIN` / `ACCESS_API_ADMIN` a `EDITOR` **y también a
+> `CLIENT_MANAGER`** — este último hoy no lo usa nadie (el propio seed dice *"the
+> role is currently unused"*), así que sacarlo ahora no rompe nada y evita dejar un
+> permiso vivo en un rol sin dueño. Si se activa más adelante y necesita el panel, se
+> le devuelve entonces, con el contexto de para qué.
+>
+> **Se quita en la MISMA entrega que habilita la carga desde `/mi-cuenta`**, no antes.
+> Si se adelanta, un editor activo se queda sin ninguna herramienta hasta que esta
+> spec esté implementada. Es criterio de aceptación, no una nota al pie.
+>
+> **Ojo con la regla de dual-write del repo**: cambiar el seed sólo arregla bases
+> nuevas. Sacar estos permisos en staging y prod necesita además una data-migration
+> numerada, como la que hizo HOS-152
+> (`0010-remove-panel-admin-from-host-commerce-owner.ts`) para el caso equivalente.
+
 - **OQ-1** — Subconjunto exacto de permisos que conserva `EDITOR` una vez que
   pierde `ACCESS_PANEL_ADMIN`/`ACCESS_API_ADMIN`: ¿se queda con `TAG_*`,
   `NEWSLETTER_*`, `USER_*` (hoy los tiene, pero sin acceso al admin no está claro

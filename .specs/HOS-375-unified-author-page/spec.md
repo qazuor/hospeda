@@ -473,19 +473,22 @@ requires no `pnpm db:generate` migration.
 
 ## 11. Open questions
 
-- OQ-1: Single chronological list (Option A) or two tabs (Option B) for
-  combining posts and events? See tradeoffs in §6.3. Blocks implementation
-  of the core page layout.
+- ~~OQ-1~~ **CERRADA** (owner, 2026-08-02): **dos bloques separados, cada uno en
+  orden cronológico** — publicaciones por un lado, eventos por el otro. No es una
+  lista única mezclada ni pestañas: los dos bloques se ven a la vez, sin que el
+  visitante tenga que elegir cuál mirar. Lo que ese autor hizo se lee de un vistazo.
 - OQ-2: Redirect status code — 301 (SEO link-equity precedent, per
   `legacyBlogMatch`/REQ-19) vs. 308 (deep-link-tail-preserving shape,
   per `legacyMessagesMatch`)? §5.5 recommends 301 with the tail-preserving
   regex shape, but this wasn't an owner decision yet.
-- OQ-3: Does the new page become indexable (flip from today's `noindex`),
-  and is it added to the sitemap + given `Person`/`ProfilePage` JSON-LD? §6.5
-  proposes yes-to-all as the default, given the owner's "real reward"
-  framing, but this is a genuine SEO/product decision, not inferred from
-  existing code (there is no precedent to defer to — this page has always
-  been `noindex`).
+- ~~OQ-3~~ **CERRADA** (owner, 2026-08-02): **se saca el `noindex`.** La página pasa
+  a ser indexable y entra al sitemap. Es coherente con que el reconocimiento sea la
+  recompensa del editor: una página que los buscadores no ven no es reconocimiento.
+
+  Implica trabajo que hoy no existe: el componente de JSON-LD para persona **no está**
+  en `apps/web/src/components/seo/` (ver OQ-4 para el tipo de schema), y hay que
+  verificar que una página de autor sin bio ni avatar no quede indexada como página
+  pobre.
 - OQ-4: If indexable, what schema.org type — `Person`, or `ProfilePage`
   wrapping a `Person`? No existing component to copy (§5.7); pick during
   implementation once OQ-3 is settled.
