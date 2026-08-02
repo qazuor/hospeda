@@ -47,6 +47,12 @@ search engines cannot see is not recognition.
   default-off opt-in, with profile-editor copy that states the page is public.
 - **G-6** — The page emits `ProfilePage` JSON-LD with a `Person` as `mainEntity`.
 - **G-7** — Event detail pages link to their author's page (they link to nothing today).
+- **G-8** — System/service accounts are excluded from the public author surface by a
+  **stable marker on the account**, never by a live role check — so changing someone's
+  role can never publish or unpublish their author page (§6.10.1).
+- **G-9** — The editorial account is reachable at a real, human-readable, environment-
+  independent URL (`/autores/equipo-hospeda/`), not at the auto-generated slug it
+  carries today (§6.10.2).
 
 ## 4. Non-goals
 
@@ -59,7 +65,9 @@ search engines cannot see is not recognition.
 - **NG-4** — Per-locale translation of the `autores` segment. `buildUrl` does not
   translate segments for anything (`publicaciones`, `destinos`), and this stays
   consistent with that.
-- **NG-5** — Any DB migration. The opt-in is additive inside an existing JSONB column.
+- **NG-5** — Broad schema work. Exactly **one** additive column is introduced
+  (`users.is_system_account`, §6.10.1); the social opt-in is additive inside the existing
+  `settings` JSONB and needs no migration.
 
 ## 5. Current baseline
 
@@ -320,7 +328,7 @@ so no separate rule is needed for the paginated tail.
 
 A page is indexable **iff all** of:
 
-1. the author's role is **not** `SUPER_ADMIN` and **not** `ADMIN` (§6.10), **and**
+1. `users.isSystemAccount` is `false` (§6.10.1), **and**
 2. the author has at least one published post or event, **and**
 3. `profile.bio` is non-empty, **and**
 4. `profile.avatar` is non-empty, **and**
@@ -331,10 +339,7 @@ Condition 1 is a **content-curation rule, not an authorization check**, so the r
 no permission that means "deserves a public author profile". It must carry a comment
 saying so, or a future reader will «fix» it into a permission check.
 
-Note the exclusion is a safety floor, not the primary mechanism: after the
-re-attribution in §6.10 the super-admin account has zero published items, so
-condition 2 already excludes it. Condition 1 is what keeps it excluded if anyone
-attributes content to a staff account again.
+It is also deliberately **not** a role check. See §6.10.1 for why.
 
 `ListingLayout`'s `noindex` prop becomes `noindex={!isIndexable}` instead of the
 hardcoded `true`. The same predicate decides sitemap inclusion (§6.6), so the two can
@@ -360,9 +365,9 @@ GET /api/v1/public/authors?page=&pageSize=
 ```
 
 Backed by a new `listPublicAuthors` service in `packages/service-core/src/services/user/`,
-applying the §6.5 predicate in full: role not in (`SUPER_ADMIN`, `ADMIN`), ≥1 published
-post or event, and non-empty `profile->>'bio'` and `profile->>'avatar'` (JSONB paths —
-there are no such columns, see §12). `sitemap-dynamic.xml.ts` gains a block for it,
+applying the §6.5 predicate in full: `is_system_account = false`, ≥1 published post or
+event, and non-empty `profile->>'bio'` and `profile->>'avatar'` (JSONB paths — there are
+no such columns, see §12). `sitemap-dynamic.xml.ts` gains a block for it,
 following the existing `buildEntriesForEntity` pattern.
 
 The predicate lives in exactly one place and is shared with the page (§6.5), so the
@@ -460,11 +465,46 @@ noise.
 Owner decision, 2026-08-02, on the measured state in §5.9. Three coordinated changes,
 all of which must land before G-3 (indexability + sitemap) ships.
 
-**1. System accounts never get a public author surface.** `SUPER_ADMIN` and `ADMIN` are
-excluded from the indexability predicate and the sitemap (§6.5 condition 1). Their pages
-still render — bylines must never 404 — but stay `noindex`.
+#### 6.10.1 System accounts never get a public author surface (G-8)
 
-**2. The editorial account gets a real slug.** `0025-seed-real-blog-posts.ts:156-171`
+New column: **`users.is_system_account boolean NOT NULL DEFAULT false`**.
+
+`true` for accounts that represent the platform rather than a person — today the two
+required-seed accounts, `superadmin@hospeda.com` and `admin@hospeda.com`. Excluded from
+the indexability predicate and the sitemap (§6.5 condition 1). Their pages still render
+— bylines must never 404 — but stay `noindex`.
+
+**Why a column and not the role.** The first draft of this spec excluded
+`SUPER_ADMIN`/`ADMIN` by role, and that was wrong for a reason worth stating plainly:
+**the role is mutable and the property is not.** Evaluating it live means promoting a
+real editor to `ADMIN` silently unpublishes their author page and drops it from the
+sitemap — an indexed URL disappearing as a side effect of a permissions change nobody
+connected to SEO. The inverse is worse: demoting a staff account would publish it.
+
+Being a service account is a stable fact about what the account *is*, so it is stored as
+one. Role is consulted exactly **once**, at backfill time, to decide the initial value —
+never at read time.
+
+This also gets the human case right: a real person who happens to hold `ADMIN` and
+writes posts keeps their author page, because they are not a system account.
+
+**Delivery** — this is a `required`-seed-adjacent change to data that exists in
+production, so the seed dual-write rule applies in full:
+
+- schema migration for the column (`pnpm db:generate` + `pnpm db:migrate`);
+- the `required` user fixtures (`packages/seed/src/data/user/required/admin-user.json`,
+  `super-admin-user.json`) set `isSystemAccount: true`, so a fresh DB is built correct;
+- **and** a numbered data-migration flips the flag on the two accounts in already-seeded
+  environments, resolved **by email**, matching the constraint in §6.10.2.
+
+Any future service account (importers, bots, integration users) must set this flag at
+creation. Note the residual gap: the default is `false`, so a service account created
+without setting it would be eligible. That is acceptable because eligibility still
+requires published content plus a bio plus an avatar, which a bot account will not have
+— but it is why the flag is set in the fixtures rather than left to a runtime rule.
+
+#### 6.10.2 The editorial account gets a real slug (G-9) `0025-seed-real-blog-posts.ts:156-171`
+
 creates the editorial author (`role: RoleEnum.EDITOR`, `displayName: 'Equipo Hospeda'`)
 **without setting a slug**, so it auto-generates from the row id and is therefore
 **different in every environment**: `user-95c2cd4b` in production, `user-76eb2960`
@@ -482,7 +522,8 @@ The account is assigned the slug `equipo-hospeda`.
 No redirect is owed from the old auto-slug: that page is `noindex` today, so there is
 nothing indexed to preserve.
 
-**3. The imported events are re-attributed to the editorial account.** The 44 production
+#### 6.10.3 The imported events are re-attributed to the editorial account The 44 production
+
 events (52 locally) carry `author_id` = super-admin and `created_by_id` = `NULL` — the
 signature of `0027`/`0028`'s bulk import, not of a human using the UI. Attributing
 platform-curated editorial content to the editorial team account is the accurate
@@ -521,15 +562,18 @@ further work.
 | `eventsApi.getByAuthor` | `apps/web/src/lib/api/endpoints.ts` | none |
 | `author?: UserAuthorPublic` (nullish relation) | `EventPublicSchema` + event service detail read | none — additive |
 
-No **schema** migration. Two **seed data-migrations** are required by §6.10:
+One **schema** migration and three **seed data-migrations**:
 
-| Migration | What | Resolve by |
-|---|---|---|
-| `NNNN-editorial-author-slug` | set the editorial account's slug to `equipo-hospeda` | `EDITORIAL_EMAIL` — never slug or id |
-| `NNNN-reattribute-imported-events` | move events with `author_id = <super-admin>` **and** `created_by_id IS NULL` to the editorial account | the same email lookup |
+| # | Kind | What | Resolve by |
+|---|---|---|---|
+| 1 | schema | `users.is_system_account boolean NOT NULL DEFAULT false` (§6.10.1) | — |
+| 2 | data | flip `is_system_account = true` on the two required-seed staff accounts | email |
+| 3 | data | set the editorial account's slug to `equipo-hospeda` (§6.10.2) | `EDITORIAL_EMAIL` — never slug or id |
+| 4 | data | move events with `author_id = <super-admin>` **and** `created_by_id IS NULL` to the editorial account (§6.10.3) | the same email lookup |
 
-Both are content changes to live production data. See the verification caveat in §6.10
-before authoring them.
+Migration 1 also requires the `required` user fixtures to carry `isSystemAccount: true`
+(the baseline half of the dual-write rule). Migrations 2-4 change data already live in
+production — see the verification caveat in §6.10.2 before authoring them.
 
 ## 8. UX / UI behavior
 
@@ -567,8 +611,15 @@ before authoring them.
 - **AC-10** — Event detail pages link to their author's page.
 - **AC-11** — `facet-noindex.test.ts` passes with the author page removed from the
   unconditional list, and new tests cover the predicate in both directions.
-- **AC-13** — A `SUPER_ADMIN` or `ADMIN` account is `noindex` and absent from the
-  sitemap even when it has published items, bio and avatar.
+- **AC-13** — An account with `is_system_account = true` is `noindex` and absent from
+  the sitemap even when it has published items, bio and avatar.
+- **AC-16** — Changing an account's role does not change its indexability. Concretely:
+  an eligible author promoted to `ADMIN` stays indexable and stays in the sitemap, and a
+  system account demoted to `EDITOR` stays excluded. This is the regression test for
+  the R-9 class of bug and must assert both directions.
+- **AC-17** — `/es/autores/equipo-hospeda/` resolves in every environment, and the
+  editorial account is never referenced by its auto-generated slug or row id anywhere in
+  code, fixtures, or migrations.
 - **AC-14** — After the migrations, production resolves `/es/autores/equipo-hospeda/`
   with both blocks populated (22 posts, 44 events), and no event remains attributed to
   the super-admin account with `created_by_id IS NULL`.
@@ -598,12 +649,15 @@ before authoring them.
   risk if the pattern is narrowed during implementation.
 - **R-8 — Consent copy is load-bearing.** The toggle without the explanatory copy still
   publishes data the user never knew was publishable; the copy is not polish.
-- **R-9 — Promoting an editor to ADMIN silently unpublishes their author page.** The
-  §6.5 role exclusion is evaluated live, so a real editor who is later granted `ADMIN`
-  drops out of the sitemap and goes `noindex`. Given Hospeda's size this is plausible.
-  Accepted for now because the failure is safe (a page disappears; nothing leaks), but
-  if it happens the fix is an explicit per-account flag rather than loosening the role
-  rule.
+- ~~**R-9** — Promoting an editor to ADMIN silently unpublishes their author page.~~
+  **Designed out, not accepted.** The gate no longer reads the role at request time; it
+  reads `users.is_system_account`, which does not change when a role changes (§6.10.1,
+  G-8). The residual risk moved to R-12.
+- **R-12 — A future service account created without setting `is_system_account`
+  defaults to eligible.** The column defaults to `false`, so a new bot/importer account
+  is only kept out by the content/bio/avatar conditions. Mitigated by setting the flag in
+  the `required` fixtures and documenting it, but any code path that creates service
+  accounts must set it explicitly.
 - **R-10 — The editorial slug is environment-dependent.** It is `user-95c2cd4b` in
   production and `user-76eb2960` locally because `0025` never sets one. Any migration,
   test fixture, or hardcoded reference keyed on that slug or on the row id works on one
