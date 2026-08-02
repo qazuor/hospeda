@@ -46,7 +46,6 @@ import { AccommodationTypeEnum } from '@repo/schemas';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { type: typeSlug } = Astro.params;
-const isAuthenticated = Boolean(Astro.locals.user);
 
 // Derived from the canonical enum so any new type added to AccommodationTypeEnum
 // is automatically accepted here without code changes (Bug B10 fix).
@@ -86,7 +85,7 @@ const pageSize = 9;
 Astro.response.headers.set(
 	'Cache-Control',
 	resolveListingCacheControl({
-		cacheable: !isAuthenticated && !hasActiveAccommodationListingFilters({ searchParams: url.searchParams })
+		cacheable: !hasActiveAccommodationListingFilters({ searchParams: url.searchParams })
 	})
 );
 
@@ -436,7 +435,7 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 		title={typeName}
 	/>
 
-	<CompareModeControls slot="page-header" locale={locale} isAuthenticated={isAuthenticated} />
+	<CompareModeControls slot="page-header" locale={locale} />
 
 	<FilterSidebar
 		slot="filters"
@@ -454,7 +453,6 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 				client:load
 				locale={locale}
 				apiUrl={getApiUrl()}
-				isAuthenticated={isAuthenticated}
 				currentUrl={Astro.url.href}
 				destinations={Object.fromEntries(destinations.map((d) => [d.id, d.name]))}
 				pageType={typeEnum}

@@ -49,7 +49,6 @@ const NEARBY_LIMIT = 6;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
-const isAuthenticated = Boolean(Astro.locals.user);
 const { slug } = Astro.params;
 if (!slug) return new Response(null, { status: 404 });
 
@@ -248,7 +247,6 @@ const breadcrumbItems = [
 					<AccommodationCard
 						data={card}
 						locale={locale}
-						isAuthenticated={isAuthenticated}
 					/>
 				))}
 			</div>
