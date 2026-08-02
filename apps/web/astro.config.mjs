@@ -2,13 +2,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import node from '@astrojs/node';
 import react from '@astrojs/react';
-import sitemap from '@astrojs/sitemap';
 import sentry from '@sentry/astro';
 import { defineConfig } from 'astro/config';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { validateWebEnv } from './src/env.ts';
 import { ALLOWED_REMOTE_HOSTS } from './src/lib/media.ts';
-import { buildSitemapAlternateLinks, isExcludedSitemapPage } from './src/lib/seo-config.ts';
 import {
     resolveSentrySourcemapsOption,
     resolveSourcemapSetting
@@ -151,40 +149,15 @@ export default defineConfig({
                 authToken: process.env.SENTRY_AUTH_TOKEN
             })
         }),
-        react(),
-        sitemap({
-            // Exclude private/redirecting pages. The bare root `/` 301-redirects
-            // to `/es/` (listed separately), so it is excluded here too — keeping
-            // redirecting URLs out of the sitemap preserves crawl budget/trust
-            // (same rationale as the dynamic sitemap, SPEC-157 REQ-2).
-            filter: (page) => !isExcludedSitemapPage(new URL(page).pathname),
-            // Inject hreflang alternates for each entry so search engines know
-            // the three locales (es/en/pt) are translations of the same page.
-            // Improves international SEO for the Argentina-Litoral market.
-            // Skips XML paths (e.g. customPages-injected sitemap-of-sitemaps)
-            // since hreflang on a sitemap file is not meaningful. The alternate
-            // set is built by a tested pure helper that mirrors the dynamic
-            // sitemap strategy (es carries /es, x-default -> /es, no doubled
-            // prefixes). SPEC-157 REQ-2/REQ-12.
-            serialize(item) {
-                const url = new URL(item.url);
-                if (url.pathname.endsWith('.xml')) {
-                    return item;
-                }
-                const isHomePage = /^\/(es|en|pt)\/$/.test(url.pathname);
-                return {
-                    ...item,
-                    ...(isHomePage ? { priority: 1.0, changefreq: 'daily' } : {}),
-                    links: buildSitemapAlternateLinks({
-                        pathname: url.pathname,
-                        siteUrl: HOSPEDA_SITE_URL
-                    })
-                };
-            },
-            // Include the dynamic sitemap (published entities × 3 locales) so
-            // sitemap-index.xml lists it alongside the statically-generated sitemap.
-            customPages: [`${HOSPEDA_SITE_URL.replace(/\/$/, '')}/sitemap-dynamic.xml`]
-        })
+        react()
+        // NO `@astrojs/sitemap` here, deliberately. It only enumerates routes
+        // rendered to static HTML at build time, and this app prerenders none
+        // (zero `prerender = true` pages), so it emitted a `<urlset>` with no
+        // pages in it. Its `customPages` option could not fix that either: it
+        // appends to the `<urlset>`, so `/sitemap-dynamic.xml` was advertised
+        // as a crawlable page instead of being registered as a sitemap, and the
+        // entity URLs were never submitted. All three sitemaps are SSR
+        // endpoints under `src/pages` now — see `src/lib/seo/sitemap-xml.ts`.
     ],
     vite: {
         plugins: [
@@ -260,10 +233,54 @@ export default defineConfig({
         // browser bundles free of the Cloudinary SDK. Web source must not
         // import `@repo/media/server` (enforced by Biome `noRestrictedImports`).
         optimizeDeps: {
-            exclude: ['cloudinary', 'image-size']
+            exclude: ['cloudinary', 'image-size'],
+            // Workspace packages are linked and resolved (via the aliases above)
+            // to their `src/`, i.e. OUTSIDE node_modules. Vite treats linked
+            // packages as source and does NOT pre-bundle them, so in dev it
+            // serves every file of these barrels as its own HTTP request —
+            // measured at 1360 (schemas) + 926 (icons) + 324 (i18n) of 3128
+            // requests for a single listing → detail soft-navigation, because
+            // the ClientRouter's client:only iframe walks the tree once and the
+            // swapped document walks it again. Forcing them into the pre-bundle
+            // collapses each barrel into a handful of cached chunks.
+            //
+            // Dev-only by construction: pre-bundling is a dev-server concern
+            // (`vite build` runs Rollup over the real module graph and
+            // tree-shakes these barrels away — verified against the deployed
+            // prod chunk, which contains no schemas/zod code at all). Adding a
+            // package here can only change how dev serves it, never what ships.
+            // `@repo/i18n/web` is listed by its SUBPATH, not as `@repo/i18n`:
+            // the web app imports only that entry point, and an include entry
+            // matches the specifier as written, so the bare package name leaves
+            // every `/web` import unbundled (measured: it stayed at ~485
+            // requests until the subpath was listed here).
+            include: ['@repo/schemas', '@repo/icons', '@repo/i18n/web']
         },
         ssr: {
-            noExternal: [],
+            // `sanitize-html` is CommonJS but depends on `htmlparser2@12`, which is
+            // ESM-only (`type: module`, no CommonJS build). Left external, its
+            // `require('htmlparser2')` falls into Node's `require(esm)` path
+            // (`loadESMFromCJS`), which must link the whole ESM graph
+            // synchronously — htmlparser2 -> `entities/decode` -> `decode-codepoint.js`.
+            // Under concurrent warm-up traffic that synchronous link races against
+            // an `import()` of the same graph from another route chunk and throws
+            // `request for './decode-codepoint.js' is from a module not been linked`.
+            // Node then caches the rejected chunk, so the losing route serves 500s
+            // until the process restarts (HOS-370: destination detail pages were
+            // down for ~1h in production after a deploy).
+            //
+            // Bundling it resolves the CommonJS -> ESM interop at build time, so no
+            // `require(esm)` exists at runtime and the race cannot happen.
+            // `test/integration/cjs-esm-bridges.test.ts` fails if a new
+            // CommonJS -> ESM-only dependency edge appears without being handled here.
+            // `recharts` is the same shape: CommonJS, and it pulls `victory-vendor`
+            // (also CommonJS), whose `d3-*` subpath modules each `require()` an
+            // ESM-only `d3-*` package. It is imported from a lazily-loaded server
+            // chunk (the host dashboard), so it is linked mid-traffic exactly like
+            // sanitize-html was. Bundling is preferred over warming it at boot
+            // because `victory-vendor` exposes no root entry point — warming it
+            // would mean importing every `d3-*` subpath by hand.
+            noExternal: ['sanitize-html', 'recharts'],
             external: ['cloudinary', 'image-size']
         },
         define: {

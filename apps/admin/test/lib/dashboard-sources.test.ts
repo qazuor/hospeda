@@ -32,7 +32,7 @@ import {
 
 function makeCtx(overrides: Partial<ResolverContext> = {}): ResolverContext {
     return {
-        role: 'ADMIN',
+        roles: ['ADMIN'],
         userId: 'usr_test_001',
         permissions: ['ACCOMMODATION_VIEW_ALL'],
         scope: 'all',
@@ -95,7 +95,7 @@ describe('buildDashboardQueryKey', () => {
     });
 
     it('appends userId for own-scoped ctx', () => {
-        const ctx = makeCtx({ scope: 'own', userId: 'usr_host_001', role: 'HOST' });
+        const ctx = makeCtx({ scope: 'own', userId: 'usr_host_001', roles: ['HOST'] });
         const key = buildDashboardQueryKey('host.accommodations.count', ctx);
         expect(key).toEqual([
             DASHBOARD_QUERY_KEY_ROOT,
@@ -125,16 +125,16 @@ describe('buildDashboardQueryKey', () => {
     });
 
     it('cache keys differ between roles for the same sourceId', () => {
-        const adminCtx = makeCtx({ role: 'ADMIN', scope: 'all' });
-        const superCtx = makeCtx({ role: 'SUPER_ADMIN', scope: 'all' });
+        const adminCtx = makeCtx({ roles: ['ADMIN'], scope: 'all' });
+        const superCtx = makeCtx({ roles: ['SUPER_ADMIN'], scope: 'all' });
         const k1 = buildDashboardQueryKey('admin.users.stats', adminCtx);
         const k2 = buildDashboardQueryKey('admin.users.stats', superCtx);
         expect(k1).not.toEqual(k2);
     });
 
     it('cache keys differ between users for own-scoped sources', () => {
-        const hostA = makeCtx({ role: 'HOST', scope: 'own', userId: 'u1' });
-        const hostB = makeCtx({ role: 'HOST', scope: 'own', userId: 'u2' });
+        const hostA = makeCtx({ roles: ['HOST'], scope: 'own', userId: 'u1' });
+        const hostB = makeCtx({ roles: ['HOST'], scope: 'own', userId: 'u2' });
         const k1 = buildDashboardQueryKey('host.accommodations.count', hostA);
         const k2 = buildDashboardQueryKey('host.accommodations.count', hostB);
         expect(k1).not.toEqual(k2);
@@ -176,11 +176,11 @@ describe('registerDataSource / resolveDataSource', () => {
 
         const adminResult = resolveDataSource(
             'test.source.role',
-            makeCtx({ role: 'ADMIN', scope: 'all' })
+            makeCtx({ roles: ['ADMIN'], scope: 'all' })
         );
         const superResult = resolveDataSource(
             'test.source.role',
-            makeCtx({ role: 'SUPER_ADMIN', scope: 'all' })
+            makeCtx({ roles: ['SUPER_ADMIN'], scope: 'all' })
         );
 
         expect(adminResult.options.queryKey[2]).toBe('ADMIN');
@@ -194,7 +194,7 @@ describe('registerDataSource / resolveDataSource', () => {
             staleTime: DASHBOARD_STALE_TIME_MS
         }));
 
-        const ctx = makeCtx({ scope: 'own', userId: 'usr_host_42', role: 'HOST' });
+        const ctx = makeCtx({ scope: 'own', userId: 'usr_host_42', roles: ['HOST'] });
         const result = resolveDataSource('test.source.own', ctx);
 
         expect(result.found).toBe(true);
@@ -241,7 +241,7 @@ describe('registerDataSource / resolveDataSource', () => {
     });
 
     it('noop queryKey includes __noop__ marker for easy identification', () => {
-        const result = resolveDataSource('unknown.source', makeCtx({ role: 'HOST' }));
+        const result = resolveDataSource('unknown.source', makeCtx({ roles: ['HOST'] }));
 
         expect(result.found).toBe(false);
         expect(result.options.queryKey).toContain('__noop__');
@@ -319,7 +319,7 @@ describe('built-in example sources', () => {
     });
 
     it('admin.entities.counts resolver returns correct queryKey structure', () => {
-        const ctx = makeCtx({ role: 'ADMIN', scope: 'all' });
+        const ctx = makeCtx({ roles: ['ADMIN'], scope: 'all' });
         const result = resolveDataSource('admin.entities.counts', ctx);
 
         expect(result.found).toBe(true);
@@ -329,7 +329,7 @@ describe('built-in example sources', () => {
     });
 
     it('admin.users.stats resolver returns correct staleTime', () => {
-        const ctx = makeCtx({ role: 'SUPER_ADMIN', scope: 'all' });
+        const ctx = makeCtx({ roles: ['SUPER_ADMIN'], scope: 'all' });
         const result = resolveDataSource('admin.users.stats', ctx);
 
         expect(result.found).toBe(true);

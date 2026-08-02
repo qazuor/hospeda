@@ -7,6 +7,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { findBareInkDeclarations } from '../../static-guards/ink-literals';
+
 const src = readFileSync(
     resolve(__dirname, '../../../src/components/experience/ExperienceContactCTA.astro'),
     'utf8'
@@ -21,17 +23,21 @@ describe('ExperienceContactCTA.astro', () => {
     });
 
     describe('WhatsApp deep link', () => {
-        it('builds the wa.me URL with phone and encoded message', () => {
-            expect(src).toContain('wa.me/');
-            expect(src).toContain('encodeURIComponent');
+        it('builds the wa.me URL through the shared builder', () => {
+            expect(src).toContain("import { buildWhatsAppLink } from '@/lib/whatsapp'");
+            expect(src).toContain('buildWhatsAppLink({ phone: contactInfo.whatsapp');
         });
 
-        it('sanitizes the phone number to strip non-digit characters', () => {
-            expect(src).toContain('replace(/\\D/g,');
+        it('does not hand-roll phone sanitizing (HOS-289)', () => {
+            // This replaces two tests that asserted `replace(/\D/g,` and
+            // `startsWith('+')` — the second pinned the defect, since wa.me
+            // rejects a leading `+`. URL shape lives in test/lib/whatsapp.test.ts.
+            expect(src).not.toContain('replace(/\\D/g,');
+            expect(src).not.toContain('wa.me/${');
         });
 
-        it('preserves a leading + in international format', () => {
-            expect(src).toContain("startsWith('+')");
+        it('renders nothing when the stored number has no digits to dial', () => {
+            expect(src).toContain('if (!waUrl) return;');
         });
 
         it('opens in a new tab with noopener', () => {
@@ -42,7 +48,14 @@ describe('ExperienceContactCTA.astro', () => {
 
     describe('i18n', () => {
         it('uses experience.detail.whatsapp key for the CTA label', () => {
-            expect(src).toContain('experience.detail.whatsapp');
+            expect(src).toContain("t('experience.detail.whatsapp',");
+        });
+
+        it('uses a message key distinct from the button label (HOS-289)', () => {
+            // Both used to read `experience.detail.whatsapp`, so the prefilled
+            // chat message the visitor sent was literally "Consultar por
+            // WhatsApp" and the {{name}} interpolation was a no-op.
+            expect(src).toContain("'experience.detail.whatsappMessage'");
         });
 
         it('injects the experience name into the WhatsApp message template', () => {
@@ -72,8 +85,33 @@ describe('ExperienceContactCTA.astro', () => {
     });
 
     describe('CSS tokens', () => {
-        it('uses #25d366 green for WhatsApp brand color', () => {
-            expect(src).toContain('#25d366');
+        // Was `toContain('#25d366')` before HOS-314. This block is dormant
+        // (HOS-363) but stays in lockstep with the accommodation button on
+        // purpose: the divergence this issue fixed started with one surface
+        // being left behind.
+        it('takes the WhatsApp brand colors from the channel tokens (HOS-314)', () => {
+            expect(src).toContain('background-color: var(--channel-whatsapp)');
+            expect(src).toContain('color: var(--channel-whatsapp-foreground)');
+            expect(src).toContain('background-color: var(--channel-whatsapp-hover)');
+        });
+
+        it('takes EVERY text colour from a token, wherever it is declared', () => {
+            // Same whole-file invariant as the accommodation button, via the same
+            // shared helper — this surface had NO ink-literal assertion at all
+            // until round 3 pointed out that "kept in lockstep" was a claim its
+            // tests did not back. Three copies of an invariant is how the original
+            // divergence happened, so it is one helper, not three regexes.
+            expect(findBareInkDeclarations(src)).toEqual([]);
+        });
+
+        it('does not fade the CTA on hover (opacity dims ink and fill alike)', () => {
+            // The static guard deliberately does not inspect hover states, so
+            // without this the button could regress to `opacity: 0.85` with the
+            // whole suite green — the sibling accommodation button has the same
+            // assertion.
+            const match = /\.exp-contact-cta__whatsapp-btn:hover\s*\{([^}]*)\}/.exec(src);
+            expect(match, 'no :hover rule found for the WhatsApp button').not.toBeNull();
+            expect(match?.[1] ?? '').not.toContain('opacity');
         });
 
         it('does not use Tailwind utility classes', () => {

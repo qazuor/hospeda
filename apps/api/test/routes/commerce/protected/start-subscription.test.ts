@@ -191,7 +191,7 @@ function createMockContext(opts: ContextOptions = {}) {
                 id: actorId,
                 email: actorEmail,
                 name: 'Owner',
-                role: 'COMMERCE_OWNER',
+                roles: ['COMMERCE_OWNER'],
                 permissions: []
             }
         ]

@@ -8,6 +8,7 @@ import { UserModel } from '@repo/db';
 import { RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
+import { createActor } from '../../factories/actorFactory';
 import { createUser } from '../../factories/userFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import {
@@ -19,7 +20,17 @@ import {
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 
-const getActor = (role: RoleEnum = RoleEnum.SUPER_ADMIN, id?: string) => createUser({ role, id });
+// HOS-296: a `User` fixture is NOT an `Actor` any more — `Actor.roles` has no
+// counterpart on the entity now that hats live in `user_role`. Actors come from
+// the actor factory; the user row carries identity only.
+const getActor = (role: RoleEnum = RoleEnum.SUPER_ADMIN, id?: string) =>
+    createActor({
+        ...(id === undefined ? {} : { id }),
+        roles: [role],
+        // Permissions stay EMPTY, exactly as the pre-HOS-296 `User` fixture was:
+        // these suites gate on self-ownership, not on a permission grant.
+        permissions: []
+    });
 const getUser = (overrides = {}) => createUser({ ...overrides });
 const asMock = <T>(fn: T) => fn as unknown as Mock;
 

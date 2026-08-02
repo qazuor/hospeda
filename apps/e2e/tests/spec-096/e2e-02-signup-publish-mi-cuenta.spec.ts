@@ -71,14 +71,17 @@ test.describe('E2E-2: signup → onboarding → /mi-cuenta visible @p0 @host @on
         expect(result.status).toBe('created');
         expect(result.accommodationId).not.toBeNull();
 
-        // Better Auth caches the session for up to 300s. After startHostOnboarding
-        // promotes USER → HOST in the DB, the old session still reflects USER.
-        // Refresh to get a cookie with the current role.
+        // Since HOS-296 the hats are resolved per request from `user_role`, so
+        // the ORIGINAL cookie would already see the HOST grant — Better Auth's
+        // 300s session cache no longer carries a role at all. The refresh is
+        // kept because the rest of this leg drives the web app with this cookie
+        // and a freshly minted session is the state a real post-onboarding user
+        // is in; it is no longer what makes the role visible.
         const hostSessionCookie = await refreshSession(user, { apiBaseUrl: API_URL });
 
-        // /me reflects HOST role.
+        // /me exposes the HOST hat.
         const me = await getMe(hostSessionCookie, { apiBaseUrl: API_URL });
-        expect(me?.role).toBe('HOST');
+        expect(me?.roles).toContain('HOST');
 
         // Protected list — the endpoint /mi-cuenta/propiedades drives —
         // includes the new accommodation.

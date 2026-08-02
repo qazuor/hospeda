@@ -21,6 +21,7 @@ import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import { PlanChangeFlow } from './PlanChangeFlow.client';
+import { PlanUsageSection } from './PlanUsageSection.client';
 import styles from './SubscriptionDashboard.module.css';
 
 // ---------------------------------------------------------------------------
@@ -36,6 +37,10 @@ import styles from './SubscriptionDashboard.module.css';
  * CLIENT_MANAGER, EDITOR, HOST, SPONSOR — is bounced to `/auth/forbidden`), so
  * the link is shown to SUPER_ADMIN exclusively to match who can actually load
  * the route.
+ *
+ * HOS-296: a one-member set, checked as "does the user HOLD SUPER_ADMIN" —
+ * there is nothing to reconcile with the other staff sets in the codebase,
+ * because this gate mirrors a single permission (`BILLING_READ_ALL`).
  */
 const BILLING_ADMIN_ROLES = new Set(['SUPER_ADMIN']);
 
@@ -52,14 +57,15 @@ type SubscriptionStatus =
 /** User shape passed from the Astro page */
 export interface SubscriptionDashboardUser {
     readonly id: string;
-    readonly role: string;
+    /** Every role the user holds (HOS-296) — never a single scalar. */
+    readonly roles: readonly string[];
 }
 
 /** Props for the SubscriptionDashboard island */
 export interface SubscriptionDashboardProps {
     /** Active locale for UI strings and date formatting */
     readonly locale: SupportedLocale;
-    /** Authenticated user — id is used for subscription fetches, role for escalation */
+    /** Authenticated user — id is used for subscription fetches, roles for escalation */
     readonly user: SubscriptionDashboardUser;
     /**
      * Available billing plans passed from the Astro page (fetched server-side).
@@ -184,9 +190,15 @@ function ErrorState({
 }
 
 /** Empty state when the user has no subscription. */
-function EmptyState({ locale, role }: { readonly locale: SupportedLocale; readonly role: string }) {
+function EmptyState({
+    locale,
+    roles
+}: {
+    readonly locale: SupportedLocale;
+    readonly roles: readonly string[];
+}) {
     const { t } = createTranslations(locale);
-    const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPath({ role }) });
+    const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPath({ roles }) });
 
     return (
         <div className={styles.emptyContainer}>
@@ -594,7 +606,7 @@ export function SubscriptionDashboard({
     const [isUncancelling, setIsUncancelling] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
 
-    const isBillingAdmin = BILLING_ADMIN_ROLES.has(user.role);
+    const isBillingAdmin = user.roles.some((role) => BILLING_ADMIN_ROLES.has(role));
 
     // ── Fetch ──────────────────────────────────────────────────────────────
 
@@ -795,7 +807,7 @@ export function SubscriptionDashboard({
         return (
             <EmptyState
                 locale={locale}
-                role={user.role}
+                roles={user.roles}
             />
         );
     }
@@ -868,7 +880,10 @@ export function SubscriptionDashboard({
         t('account.pages.subscription.paymentMercadoPago', 'MercadoPago')
     );
 
-    const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPath({ role: user.role }) });
+    const plansHref = buildUrl({
+        locale,
+        path: resolveSubscriptionPlansPath({ roles: user.roles })
+    });
 
     let adminUrl = '';
     try {
@@ -1056,6 +1071,13 @@ export function SubscriptionDashboard({
 
             {/* ── Features card — rendered only when plan features are available ── */}
             {/* TODO: fetch plan features from public /api/v1/public/plans and render here */}
+
+            {/* ── Plan usage ── Renders itself as null when there is nothing to show. */}
+            <PlanUsageSection
+                locale={locale}
+                roles={user.roles}
+                productDomain={productDomain}
+            />
 
             {/* ── Actions card ── */}
             <section

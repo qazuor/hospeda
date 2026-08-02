@@ -10,38 +10,26 @@
  * A non-existent user ID returns an empty list (HTTP 200) rather than
  * 404 to avoid user-enumeration. This matches the spec acceptance criteria.
  *
- * SPEC-187: richDescription is stripped from every item before the response
- * is sent. This is a card-listing endpoint that never renders rich text;
- * the field must be absent regardless of the owner's plan. Stripping at the
- * DATA level is fail-closed and independent of any schema change.
+ * SPEC-187 / SPEC-212: `richDescription` AND its i18n sibling
+ * `richDescriptionI18n` are stripped from every item before the response is
+ * sent. This is a card-listing endpoint that never renders rich text; both
+ * fields must be absent regardless of the owner's plan. Stripping at the DATA
+ * level is fail-closed and independent of any schema change.
  */
 import { AccommodationPublicSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
 import { getActorFromContext } from '../../../utils/actor';
+import type { AccommodationData } from '../../../utils/entitlement-filter';
+import {
+    filterAccommodationListByOwnerEntitlements,
+    stripRichDescriptionFields
+} from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
-
-/**
- * Strips richDescription from an accommodation object before it reaches the
- * public owner-list response payload.
- *
- * richDescription is a PREMIUM field gated per-owner by the entitlement system.
- * This card-listing endpoint never renders rich text, so the field must be absent
- * from the payload regardless of the owner's current plan. Omission at the DATA
- * level is fail-closed and independent of any Zod schema change. (SPEC-187 fix.)
- *
- * @param item - Raw accommodation object from the service layer.
- * @returns The accommodation object with richDescription removed.
- */
-function stripRichDescription<T extends { richDescription?: unknown }>(
-    item: T
-): Omit<T, 'richDescription'> {
-    const { richDescription: _dropped, ...rest } = item;
-    return rest;
-}
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
@@ -95,12 +83,37 @@ export const publicGetUserAccommodationsRoute = createPublicListRoute({
             };
         }
 
-        // SPEC-187 data-level omission: richDescription is a PREMIUM field gated
-        // per-owner by the entitlement system. This card-listing endpoint never
-        // renders it, so the field is stripped before reaching the response payload
-        // — fail-closed and independent of any schema change.
+        // SPEC-187 / SPEC-212 data-level omission: richDescription and its i18n
+        // sibling are PREMIUM fields gated per-owner by the entitlement system.
+        // This card-listing endpoint never renders them, so BOTH are stripped
+        // before reaching the response payload — fail-closed and independent of
+        // any schema change.
         const rawItems = result.data?.items ?? [];
-        const items = rawItems.map(stripRichDescription);
+        const strippedItems = rawItems.map(stripRichDescriptionFields);
+
+        // SPEC-291 Phase 3b / HOS-341: gate `isVerified` by the OWNER's billing
+        // entitlement. At most ONE batched role query — for the cache-cold ownerIds
+        // only, none at all when every owner is warm in the resolver's cache — then
+        // parallel billing lookups for those same cold owners, then a synchronous
+        // gate pass. Every row here belongs to the path-param owner, so that batch
+        // resolves a single id; the ids are still collected from the items rather
+        // than taken from the path so the call matches the four sibling listings
+        // verbatim and an empty page resolves an empty id list.
+        //
+        // Fail-closed: an owner absent from the map keeps no badge. The gate depends
+        // on the owner of the row, never on the reader (HOS-288).
+        const uniqueOwnerIds = [
+            ...new Set(
+                strippedItems
+                    .map((item) => (item as { ownerId?: string }).ownerId)
+                    .filter((id): id is string => typeof id === 'string' && id.length > 0)
+            )
+        ];
+        const ownerEntitlementsMap = await resolveOwnerEntitlementsForOwnerIds(uniqueOwnerIds);
+        const items = filterAccommodationListByOwnerEntitlements(
+            strippedItems as AccommodationData[],
+            ownerEntitlementsMap
+        );
 
         return {
             items,

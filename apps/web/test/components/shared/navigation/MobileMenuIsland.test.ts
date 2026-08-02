@@ -49,17 +49,17 @@ describe('MobileMenuIsland.astro — thin wrapper (no server:defer)', () => {
         expect(src).not.toContain('ctaHref');
     });
 
-    it('forwards initialUser and initialRole SSR hints to MobileMenu', () => {
+    it('forwards initialUser and initialRoles SSR hints to MobileMenu', () => {
         expect(src).toContain('initialUser={initialUser}');
-        expect(src).toContain('initialRole={initialRole}');
+        expect(src).toContain('initialRoles={initialRoles}');
     });
 
     it('forwards adminPanelUrl to MobileMenu', () => {
         expect(src).toContain('adminPanelUrl={adminPanelUrl}');
     });
 
-    it('declares initialUser and initialRole in Props', () => {
+    it('declares initialUser and initialRoles in Props', () => {
         expect(src).toContain('readonly initialUser: AuthMeUser | null');
-        expect(src).toContain('readonly initialRole: string | null');
+        expect(src).toContain('readonly initialRoles: readonly string[]');
     });
 });

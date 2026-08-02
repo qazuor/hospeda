@@ -3,8 +3,8 @@ import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas'
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
+import { createActor } from '../../factories/actorFactory';
 import { createMockEvent } from '../../factories/eventFactory';
-import { createUser } from '../../factories/userFactory';
 import {
     expectForbiddenError,
     expectInternalError,
@@ -20,8 +20,8 @@ describe('EventService.getSummary', () => {
     let service: EventService;
     let modelMock: EventModel;
     let loggerMock: ServiceLogger;
-    const actorWithPerm = createUser({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
-    const actorNoPerm = createUser();
+    const actorWithPerm = createActor({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
+    const actorNoPerm = createActor();
     const event = createMockEvent({ visibility: VisibilityEnum.PUBLIC });
 
     beforeEach(() => {

@@ -20,6 +20,7 @@
  * @module test/integration/grace-period-flow
  */
 
+import { HTTPException } from 'hono/http-exception';
 import type { MockedFunction } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getQZPayBilling } from '../../src/middlewares/billing';
@@ -295,21 +296,21 @@ describe('Past-Due Grace Period Middleware Flow', () => {
 
             const middleware = pastDueGraceMiddleware();
 
-            // Act
-            await middleware(ctx as any, next);
+            // Act — the gate signals a block by THROWING (HOS-283) so the shared
+            // error formatter builds the body; it no longer calls `c.json`.
+            const thrown = await middleware(ctx as any, next).catch((e: unknown) => e);
 
             // Assert: request is blocked
             expect(next).not.toHaveBeenCalled();
-            expect(ctx.json).toHaveBeenCalledOnce();
-
-            const jsonCallArgs = ctx.json.mock.calls[0] as [Record<string, unknown>, number];
-            const [body, status] = jsonCallArgs;
-            expect(status).toBe(402);
-            expect(body?.error).toBe('GRACE_PERIOD_EXPIRED');
-            expect(typeof body?.daysOverdue).toBe('number');
+            expect(ctx.json).not.toHaveBeenCalled();
+            expect(thrown).toBeInstanceOf(HTTPException);
+            expect((thrown as HTTPException).status).toBe(402);
+            expect((thrown as HTTPException).cause).toMatchObject({
+                code: 'GRACE_PERIOD_EXPIRED'
+            });
         });
 
-        it('should include the daysOverdue count in the error response body', async () => {
+        it('should carry the daysOverdue count on the thrown cause', async () => {
             // Arrange: 5 days overdue
             const pastDueSub = buildPastDueSubscription(-5);
             mockBilling.subscriptions.getByCustomerId.mockResolvedValue([pastDueSub]);
@@ -320,12 +321,16 @@ describe('Past-Due Grace Period Middleware Flow', () => {
             const middleware = pastDueGraceMiddleware();
 
             // Act
-            await middleware(ctx as any, next);
+            const thrown = await middleware(ctx as any, next).catch((e: unknown) => e);
 
-            // Assert
-            const jsonCallArgs = ctx.json.mock.calls[0] as [Record<string, unknown>, number];
-            const [body] = jsonCallArgs;
-            expect(body?.daysOverdue).toBe(5);
+            // Assert — `daysOverdue` is derived from `currentPeriodEnd`, which
+            // this fixture does not set, so it floors at 0. The assertion that
+            // matters here is that the field travels on the cause at all; the
+            // arithmetic is covered in past-due-grace.middleware.test.ts.
+            expect(thrown).toBeInstanceOf(HTTPException);
+            expect((thrown as HTTPException).cause).toMatchObject({
+                daysOverdue: expect.any(Number)
+            });
         });
     });
 

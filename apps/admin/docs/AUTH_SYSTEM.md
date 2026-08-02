@@ -129,7 +129,7 @@ const initials = useUserInitials();
 ```typescript
 interface UserSession {
     id: string;
-    role: string;
+    roles: readonly string[]; // every role the user holds (HOS-296), not a single scalar
     permissions: string[];
     displayName?: string;
     firstName?: string;

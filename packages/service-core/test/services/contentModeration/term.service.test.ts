@@ -25,7 +25,7 @@ vi.mock('../../../src/utils/transaction', () => ({
 
 describe('ContentModerationTermService', () => {
     const actor = createActor({
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [PermissionEnum.MODERATION_TERM_CREATE, PermissionEnum.MODERATION_TERM_VIEW]
     });
 

@@ -36,8 +36,12 @@ import {
 import {
     AccommodationService,
     DestinationService,
+    EventOrganizerService,
     EventService,
+    ExperienceService,
+    GastronomyService,
     PostService,
+    PostSponsorService,
     ServiceError
 } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -93,7 +97,16 @@ const ActorIdSchema = z.string().uuid();
  */
 const resolveEntityService = (
     entityType: string
-): AccommodationService | DestinationService | EventService | PostService | null => {
+):
+    | AccommodationService
+    | DestinationService
+    | EventService
+    | PostService
+    | GastronomyService
+    | ExperienceService
+    | PostSponsorService
+    | EventOrganizerService
+    | null => {
     switch (entityType) {
         case 'accommodation':
             return new AccommodationService({ logger: apiLogger });
@@ -103,6 +116,14 @@ const resolveEntityService = (
             return new EventService({ logger: apiLogger });
         case 'post':
             return new PostService({ logger: apiLogger });
+        case 'gastronomy':
+            return new GastronomyService({ logger: apiLogger });
+        case 'experience':
+            return new ExperienceService({ logger: apiLogger });
+        case 'postSponsor':
+            return new PostSponsorService({ logger: apiLogger });
+        case 'eventOrganizer':
+            return new EventOrganizerService({ logger: apiLogger });
         default:
             return null;
     }
@@ -298,13 +319,15 @@ export const adminUploadMediaRoute = createAdminRoute({
             );
         }
 
-        // This route currently only wires up the four CRUD content entities
-        // (accommodation, destination, event, post) with the `featured` and
-        // `gallery` role variants. The discriminated union accepts avatar /
-        // sponsorLogo / organizerLogo variants too (single source of truth for
-        // the upload contract), but those flow through dedicated routes. Guard
-        // the handler so unsupported variants fail cleanly.
-        if (parseResult.data.role !== 'featured' && parseResult.data.role !== 'gallery') {
+        // This route accepts the entityId-addressed admin upload variants only.
+        // Avatar uploads remain on their dedicated path because they use `userId`
+        // rather than the generic `entityId` contract.
+        if (
+            parseResult.data.role !== 'featured' &&
+            parseResult.data.role !== 'gallery' &&
+            parseResult.data.role !== 'sponsorLogo' &&
+            parseResult.data.role !== 'organizerLogo'
+        ) {
             return createErrorResponse(
                 {
                     code: 'VALIDATION_ERROR',
@@ -555,7 +578,12 @@ export const adminUploadMediaRoute = createAdminRoute({
         // (`featured` or `gallery/{nanoid}`) is appended by the provider.
         const environment = resolveEnvironment();
         const folder = ENTITY_FOLDER_MAP[entityType]({ environment, entityId });
-        const publicId = role === 'featured' ? 'featured' : `gallery/${generateGalleryId()}`;
+        const publicId =
+            role === 'featured'
+                ? 'featured'
+                : role === 'gallery'
+                  ? `gallery/${generateGalleryId()}`
+                  : 'logo';
 
         // ── 6b. Re-verify session right before provider call (GAP-078-114).
         // Defense-in-depth: even though we performed the same check at step

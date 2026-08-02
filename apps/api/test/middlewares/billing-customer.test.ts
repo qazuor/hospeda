@@ -34,7 +34,7 @@ describe('billingCustomerMiddleware', () => {
 
     const mockActor: Actor = {
         id: 'user_123',
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: []
     };
 
@@ -206,7 +206,7 @@ describe('billingCustomerMiddleware', () => {
     describe('Guest Actor Scenarios (SPEC-116)', () => {
         const guestActor: Actor = {
             id: '00000000-0000-4000-8000-000000000000',
-            role: RoleEnum.GUEST,
+            roles: [RoleEnum.GUEST],
             permissions: []
         };
 
@@ -238,7 +238,7 @@ describe('billingCustomerMiddleware', () => {
             mockContext.get = vi.fn((key: string) => {
                 if (key === 'billingEnabled') return true;
                 if (key === 'actor')
-                    return { id: 'some-other-id', role: RoleEnum.GUEST, permissions: [] };
+                    return { id: 'some-other-id', roles: [RoleEnum.GUEST], permissions: [] };
                 return undefined;
             });
 
@@ -590,7 +590,7 @@ describe('billingCustomerMiddleware', () => {
             // Arrange
             const hostActor: Actor = {
                 id: 'host_789',
-                role: RoleEnum.HOST,
+                roles: [RoleEnum.HOST],
                 permissions: []
             };
 
@@ -625,7 +625,7 @@ describe('billingCustomerMiddleware', () => {
             // Arrange
             const adminActor: Actor = {
                 id: 'admin_999',
-                role: RoleEnum.ADMIN,
+                roles: [RoleEnum.ADMIN],
                 permissions: []
             };
 

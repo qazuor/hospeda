@@ -7,6 +7,7 @@ import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
+import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createProtectedListRoute } from '../../../utils/route-factory';
@@ -76,7 +77,15 @@ export const protectedListOwnAccommodationsRoute = createProtectedListRoute({
         }
 
         return {
-            items: result.data?.items ?? [],
+            // BETA-199: `AccommodationProtectedSchema` declares the premium
+            // rich-description pair so the owner's editor GET can show translation
+            // status for it. That GET gates the pair on the owner's plan; EVERY
+            // other route on this schema — including this one — drops it
+            // unconditionally. These are listing cards: they never render rich
+            // text, so the drop keeps the payload identical to what it was before
+            // the pair was declared, with no per-row entitlement lookup and no
+            // gate to get wrong. See the schema comment for the full contract.
+            items: (result.data?.items ?? []).map(stripRichDescriptionFields),
             pagination: getPaginationResponse(result.data?.total ?? 0, { page, pageSize })
         };
     }

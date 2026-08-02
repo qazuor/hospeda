@@ -232,7 +232,20 @@ const { paddingTop = 'listing', class: className } = Astro.props;
     padding-top: var(--wave-header-padding-top, 3rem);
     padding-bottom: 0.75rem;
     overflow: hidden;
-    max-height: 80px;
+    /* Animation ceiling, NOT a design clamp: the only reason this property is
+       set at all is to give the compact collapse (`max-height: 0`) something
+       to interpolate from. It must therefore stay comfortably ABOVE the tallest
+       real breadcrumb, or it silently truncates one — and because a breadcrumb
+       trail is plain wrapped text with no line-clamp, truncation slices the
+       last row through the middle of its glyphs. The old `80px` (5em) was
+       under the 7.19em a long title needs once it wraps at 320-375px wide,
+       cutting 35px off every narrow viewport.
+
+       Do not over-shoot it either: the collapse interpolates from THIS value,
+       so every em above the real content height is animation time in which
+       nothing visibly moves. 10em clears the measured 7.19em worst case by
+       ~39% while keeping that dead lead-in under a tenth of a second. */
+    max-height: 10em;
     background-color: var(--surface-header);
     /* NOTE: no `opacity` transition. The bar wrapper has no background of its
        own, so fading the breadcrumbs would expose the page behind it during

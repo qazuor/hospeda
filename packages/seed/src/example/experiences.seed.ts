@@ -371,8 +371,16 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
         // ------------------------------------------------------------------
         // 1. Resolve actor (super admin)
         // ------------------------------------------------------------------
+        // HOS-296: `users.role` is gone — a user holds a SET of hats in
+        // `user_role`, so "the super admin" is a semi-join, not a column
+        // filter. This lives in a raw SQL string, which is why neither the
+        // compiler nor the `.role`/`.values()` sweeps caught it: only the e2e
+        // seed run did, with `column "role" does not exist`.
         const { rows: adminRows } = await pool.query<DbRow>(
-            "SELECT id, email FROM users WHERE role = 'SUPER_ADMIN' LIMIT 1"
+            `SELECT u.id, u.email FROM users u
+             JOIN user_role r ON r.user_id = u.id
+             WHERE r.role = 'SUPER_ADMIN' AND u.deleted_at IS NULL
+             LIMIT 1`
         );
         const superAdminId = adminRows[0]?.id;
         if (!superAdminId) {

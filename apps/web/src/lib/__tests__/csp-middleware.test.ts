@@ -45,7 +45,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { buildCspHeader, generateCspNonce } from '../middleware-helpers';
+import { buildCspHeader } from '../middleware-helpers';
 
 const MIDDLEWARE_SRC = readFileSync(resolve(__dirname, '../../middleware.ts'), 'utf8');
 const PAGES_DIR = resolve(__dirname, '../../pages');
@@ -87,17 +87,36 @@ describe('middleware.ts — prerendered CSP emission guard (SPEC-142 T-004)', ()
         );
     });
 
-    it('skips body rewrite for prerendered pages to avoid consuming the static response body', () => {
+    it('skips reading the body for prerendered pages to avoid consuming the static response stream', () => {
         expect(MIDDLEWARE_SRC).toContain('!context.isPrerendered');
     });
 
-    it('sets CSP header outside the body-rewrite block so both SSR and prerendered pages receive it', () => {
-        // The CSP_HEADER_NAME set() call must appear AFTER the body-rewrite block,
+    it('sets CSP header outside the body-read block so both SSR and prerendered pages receive it', () => {
+        // The CSP_HEADER_NAME set() call must appear AFTER the body-read block,
         // not inside the `if (!context.isPrerendered)` branch.
-        const bodyRewriteIdx = MIDDLEWARE_SRC.indexOf('!context.isPrerendered');
+        const bodyReadIdx = MIDDLEWARE_SRC.indexOf('!context.isPrerendered');
         const cspSetIdx = MIDDLEWARE_SRC.indexOf('response.headers.set(CSP_HEADER_NAME');
-        expect(bodyRewriteIdx).toBeGreaterThan(0);
-        expect(cspSetIdx).toBeGreaterThan(bodyRewriteIdx);
+        expect(bodyReadIdx).toBeGreaterThan(0);
+        expect(cspSetIdx).toBeGreaterThan(bodyReadIdx);
+    });
+
+    it('builds the header AFTER collecting the hashes — the policy depends on the body', () => {
+        // HOS-369 WB0-1 inverted the old order: the nonce was known up front,
+        // a content hash is not. Building the header before the walker runs
+        // would ship a policy with no hash sources and block every inline
+        // script on the page.
+        const collectIdx = MIDDLEWARE_SRC.indexOf('await collectCspHashes(');
+        const buildIdx = MIDDLEWARE_SRC.indexOf('buildCspHeader({');
+        expect(collectIdx).toBeGreaterThan(0);
+        expect(buildIdx).toBeGreaterThan(collectIdx);
+    });
+
+    it('never modifies the response body — the collector only reads it', () => {
+        // The nonce era rewrote the HTML through parse5 serialization. Nothing
+        // may reintroduce a body rewrite: the Response must be reconstructed
+        // over the SAME string the walker read.
+        expect(MIDDLEWARE_SRC).toContain('new Response(originalBody');
+        expect(MIDDLEWARE_SRC).not.toContain('rewrittenBody');
     });
 });
 
@@ -170,34 +189,39 @@ describe('apps/web pages — no route re-introduces prerender except the allowli
 // buildCspHeader — Phase-1 invariants (header-only path, no body context)
 // ---------------------------------------------------------------------------
 
+/** A response with no inline blocks — most invariants below are hash-independent. */
+const NO_HASHES = { scriptHashes: [] as readonly string[], styleHashes: [] as readonly string[] };
+
 describe('buildCspHeader — prerendered-page header-only invocation', () => {
     it('produces a non-empty CSP header string for a prerendered page request', () => {
-        const nonce = generateCspNonce();
-        const header = buildCspHeader({ nonce });
+        const header = buildCspHeader(NO_HASHES);
         expect(typeof header).toBe('string');
         expect(header.length).toBeGreaterThan(0);
     });
 
-    it('includes the per-request nonce in script-src and style-src', () => {
-        const nonce = 'prerendered-page-nonce-xyz';
-        const header = buildCspHeader({ nonce });
-        expect(header).toContain(`'nonce-${nonce}'`);
+    it('emits the response hash sources in script-src and style-src', () => {
+        const header = buildCspHeader({
+            scriptHashes: ['sha256-scripthash'],
+            styleHashes: ['sha256-stylehash']
+        });
+        expect(header).toContain("'sha256-scripthash'");
+        expect(header).toContain("'sha256-stylehash'");
     });
 
     it('includes default-src self and upgrade-insecure-requests', () => {
-        const header = buildCspHeader({ nonce: 'x' });
+        const header = buildCspHeader(NO_HASHES);
         expect(header).toContain("default-src 'self'");
         expect(header).toContain('upgrade-insecure-requests');
     });
 
-    it('does NOT include unsafe-inline in script-src (nonce-based policy)', () => {
-        const header = buildCspHeader({ nonce: 'x' });
+    it('does NOT include unsafe-inline in script-src (hash-based policy)', () => {
+        const header = buildCspHeader(NO_HASHES);
         const scriptSrc = header.split('; ').find((d) => d.startsWith('script-src ')) ?? '';
         expect(scriptSrc).not.toContain("'unsafe-inline'");
     });
 
-    it('frame-src allowlists only the Cloudflare Turnstile host (SPEC-301 feedback widget iframe; MercadoPago checkout is a redirect, not an embedded Brick — HOS-30 2.B)', () => {
-        const header = buildCspHeader({ nonce: 'x' });
+    it('frame-src allowlists only the Cloudflare Turnstile host in prod (SPEC-301 feedback widget iframe; MercadoPago checkout is a redirect, not an embedded Brick — HOS-30 2.B)', () => {
+        const header = buildCspHeader(NO_HASHES);
         const frameSrc = header.split('; ').find((d) => d.startsWith('frame-src '));
         expect(frameSrc).toBe('frame-src https://challenges.cloudflare.com');
     });
@@ -216,52 +240,103 @@ const findStyleSrcDirective = (header: string): string =>
     header.split('; ').find((d) => /^style-src /.test(d)) ?? '';
 
 describe('buildCspHeader — HOS-91 dev-only style-src relaxation', () => {
-    it('keeps the strict nonce-based style-src in prod (isDev: false)', () => {
-        const nonce = 'prod-nonce-abc';
-
-        const header = buildCspHeader({ nonce, isDev: false });
+    it('keeps the strict hash-based style-src in prod (isDev: false)', () => {
+        const header = buildCspHeader({
+            scriptHashes: [],
+            styleHashes: ['sha256-prod-style'],
+            isDev: false
+        });
 
         const styleSrc = findStyleSrcDirective(header);
-        expect(styleSrc).toContain(`'nonce-${nonce}'`);
+        expect(styleSrc).toContain("'sha256-prod-style'");
         expect(styleSrc).not.toContain("'unsafe-inline'");
     });
 
-    it('keeps the strict nonce-based style-src by default (isDev omitted)', () => {
-        const nonce = 'default-nonce-abc';
-
-        const header = buildCspHeader({ nonce });
+    it('keeps the strict hash-based style-src by default (isDev omitted)', () => {
+        const header = buildCspHeader({ scriptHashes: [], styleHashes: ['sha256-default-style'] });
 
         const styleSrc = findStyleSrcDirective(header);
-        expect(styleSrc).toContain(`'nonce-${nonce}'`);
+        expect(styleSrc).toContain("'sha256-default-style'");
         expect(styleSrc).not.toContain("'unsafe-inline'");
     });
 
-    it('relaxes style-src to unsafe-inline with no nonce/hash in dev (isDev: true)', () => {
-        const nonce = 'dev-nonce-abc';
-
-        const header = buildCspHeader({ nonce, isDev: true });
+    it('relaxes style-src to unsafe-inline with no hash source in dev (isDev: true)', () => {
+        // CSP3: a hash source in the SAME directive makes 'unsafe-inline'
+        // inert, so the dev variant must drop the hashes entirely rather than
+        // append 'unsafe-inline' next to them.
+        const header = buildCspHeader({
+            scriptHashes: [],
+            styleHashes: ['sha256-dev-style'],
+            isDev: true
+        });
 
         const styleSrc = findStyleSrcDirective(header);
         expect(styleSrc).toContain("'unsafe-inline'");
         expect(styleSrc).not.toContain("'nonce-");
-        expect(styleSrc).not.toContain("'sha256-");
+        expect(styleSrc).not.toContain("'sha256-dev-style'");
     });
 });
 
 // ---------------------------------------------------------------------------
-// generateCspNonce — per-request randomness
+// buildCspHeader — dev-only frame-src 'self' (ClientRouter client:only iframe)
 // ---------------------------------------------------------------------------
 
-describe('generateCspNonce', () => {
-    it('returns a non-empty base64 string', () => {
-        const nonce = generateCspNonce();
-        expect(nonce.length).toBeGreaterThan(0);
-        expect(/^[A-Za-z0-9+/]+=*$/.test(nonce)).toBe(true);
+/** Isolates the `frame-src` directive (`frame-ancestors` is a distinct one). */
+const findFrameSrcDirective = (header: string): string =>
+    header.split('; ').find((d) => /^frame-src /.test(d)) ?? '';
+
+describe("buildCspHeader — dev-only frame-src 'self'", () => {
+    it("does NOT grant 'self' in prod (isDev: false)", () => {
+        const header = buildCspHeader({ ...NO_HASHES, isDev: false });
+
+        expect(findFrameSrcDirective(header)).toBe('frame-src https://challenges.cloudflare.com');
     });
 
-    it('generates a unique nonce for each request', () => {
-        const n1 = generateCspNonce();
-        const n2 = generateCspNonce();
-        expect(n1).not.toBe(n2);
+    it("does NOT grant 'self' by default (isDev omitted)", () => {
+        const header = buildCspHeader(NO_HASHES);
+
+        expect(findFrameSrcDirective(header)).toBe('frame-src https://challenges.cloudflare.com');
+    });
+
+    it("grants 'self' in dev so the ClientRouter client:only iframe is not blocked", () => {
+        const header = buildCspHeader({ ...NO_HASHES, isDev: true });
+
+        expect(findFrameSrcDirective(header)).toBe(
+            "frame-src 'self' https://challenges.cloudflare.com"
+        );
+    });
+
+    it('keeps the Turnstile host allowlisted in dev (SPEC-301 widget must still mount)', () => {
+        const header = buildCspHeader({ ...NO_HASHES, isDev: true });
+
+        expect(findFrameSrcDirective(header)).toContain('https://challenges.cloudflare.com');
+    });
+
+    it("keeps frame-ancestors 'none' in prod, so nobody can embed us", () => {
+        const header = buildCspHeader({ ...NO_HASHES, isDev: false });
+
+        expect(header).toContain("frame-ancestors 'none'");
+        expect(header).not.toContain("frame-ancestors 'self'");
+    });
+
+    it("widens frame-ancestors to 'self' in dev — relaxing frame-src alone still blocks the iframe", () => {
+        // Both directives are required: `frame-src` authorises the parent to
+        // embed, `frame-ancestors` (on the iframe's own response) authorises the
+        // child to be embedded. With only `frame-src` relaxed the browser blocks
+        // on `frame-ancestors 'none'` instead and the soft-nav still hangs.
+        const header = buildCspHeader({ ...NO_HASHES, isDev: true });
+
+        expect(header).toContain("frame-ancestors 'self'");
+        expect(header).not.toContain("frame-ancestors 'none'");
+    });
+
+    it("never widens frame-ancestors beyond 'self' — no wildcard in either mode", () => {
+        for (const isDev of [true, false]) {
+            const header = buildCspHeader({ ...NO_HASHES, isDev });
+            const frameAncestors =
+                header.split('; ').find((d) => /^frame-ancestors /.test(d)) ?? '';
+            expect(frameAncestors).not.toContain('*');
+            expect(frameAncestors).not.toContain('http:');
+        }
     });
 });

@@ -70,14 +70,14 @@ function makeExperienceEntity(overrides: Partial<Record<string, unknown>> = {}):
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    role: RoleEnum.COMMERCE_OWNER,
+    roles: [RoleEnum.COMMERCE_OWNER],
     // SPEC-253 D2=b: single COMMERCE_EDIT_OWN replaces 10 per-section perms
     permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
 };
 
 const staffActor: Actor = {
     id: 'staff-uuid-1',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [
         PermissionEnum.COMMERCE_CREATE,
         PermissionEnum.COMMERCE_EDIT_ALL,
@@ -88,7 +88,7 @@ const staffActor: Actor = {
 
 const otherUserActor: Actor = {
     id: OTHER_USER,
-    role: RoleEnum.COMMERCE_OWNER,
+    roles: [RoleEnum.COMMERCE_OWNER],
     // SPEC-253 D2=b: COMMERCE_EDIT_OWN gives owner rights but entity.ownerId != OTHER_USER
     permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
 };
@@ -230,7 +230,7 @@ describe('ExperienceService.updateOwn — single COMMERCE_EDIT_OWN gate (SPEC-25
         const service = makeService(entity);
         const actorNoPerm: Actor = {
             id: OWNER_ID,
-            role: RoleEnum.COMMERCE_OWNER,
+            roles: [RoleEnum.COMMERCE_OWNER],
             permissions: [] // no permissions at all
         };
         const result = await service.updateOwn(ENTITY_ID, { isPriceOnRequest: true }, actorNoPerm);
@@ -669,7 +669,7 @@ describe('ExperienceService._canView', () => {
             expect.objectContaining({ code: ServiceErrorCode.GONE })
         );
         // Non-owner, non-staff also gets GONE
-        const nonOwner: Actor = { id: OTHER_USER, role: RoleEnum.USER, permissions: [] };
+        const nonOwner: Actor = { id: OTHER_USER, roles: [RoleEnum.USER], permissions: [] };
         expect(() => (service as AnyService)._canView(nonOwner, entity)).toThrow(
             expect.objectContaining({ code: ServiceErrorCode.GONE })
         );
@@ -684,7 +684,7 @@ describe('ExperienceService._canView', () => {
             deletedAt: new Date()
         });
         const service = makeService(entity);
-        const nonOwner: Actor = { id: OTHER_USER, role: RoleEnum.USER, permissions: [] };
+        const nonOwner: Actor = { id: OTHER_USER, roles: [RoleEnum.USER], permissions: [] };
         expect(() => (service as AnyService)._canView(nonOwner, entity)).toThrow(
             expect.objectContaining({ code: ServiceErrorCode.NOT_FOUND })
         );
@@ -705,7 +705,7 @@ describe('ExperienceService._canView', () => {
     it('should throw NOT_FOUND for PRIVATE listing when actor is not owner or staff', () => {
         const entity = makeExperienceEntity({ visibility: VisibilityEnum.PRIVATE });
         const service = makeService(entity);
-        const publicActor: Actor = { id: OTHER_USER, role: RoleEnum.USER, permissions: [] };
+        const publicActor: Actor = { id: OTHER_USER, roles: [RoleEnum.USER], permissions: [] };
         expect(() => (service as AnyService)._canView(publicActor, entity)).toThrow();
     });
 

@@ -45,7 +45,9 @@ afterEach(() => {
 describe('trackEvent (SPEC-140 — fix B)', () => {
     it('should no-op when window.posthog is undefined', () => {
         // Arrange — no posthog stub on window. Act / Assert (no throw).
-        expect(() => trackEvent('test_event', { foo: 'bar' })).not.toThrow();
+        expect(() =>
+            trackEvent('search_performed', { search_type: 'accommodation' })
+        ).not.toThrow();
     });
 
     it('should call window.posthog.capture(name, props) when stub is present', () => {
@@ -56,12 +58,19 @@ describe('trackEvent (SPEC-140 — fix B)', () => {
         };
 
         // Act
-        trackEvent('accommodation_viewed', { slug: 'mi-cabaña' });
+        trackEvent('accommodation_viewed', {
+            accommodation_id: 'acc-1',
+            accommodation_slug: 'mi-cabana'
+        });
 
         // Assert
         expect(captureSpy).toHaveBeenCalledTimes(1);
         expect(captureSpy).toHaveBeenCalledWith('accommodation_viewed', {
-            slug: 'mi-cabaña'
+            accommodation_id: 'acc-1',
+            accommodation_slug: 'mi-cabana',
+            app: 'web',
+            app_version: 'unknown',
+            environment: 'development'
         });
     });
 
@@ -73,10 +82,14 @@ describe('trackEvent (SPEC-140 — fix B)', () => {
         };
 
         // Act
-        trackEvent('newsletter_subscribed');
+        trackEvent('newsletter_subscribed', {});
 
         // Assert
-        expect(captureSpy).toHaveBeenCalledWith('newsletter_subscribed', undefined);
+        expect(captureSpy).toHaveBeenCalledWith('newsletter_subscribed', {
+            app: 'web',
+            app_version: 'unknown',
+            environment: 'development'
+        });
     });
 });
 
@@ -219,7 +232,7 @@ describe('associateGroup (consent-gated)', () => {
 
         associateGroup('accommodation', 'acc-1');
 
-        expect(groupSpy).toHaveBeenCalledWith('accommodation', 'acc-1');
+        expect(groupSpy).toHaveBeenCalledWith('accommodation', 'acc-1', undefined);
     });
 
     it('does NOT associate when consent is absent (privacy gate)', () => {
@@ -246,7 +259,7 @@ describe('associateGroup (consent-gated)', () => {
             new CustomEvent('cookie-consent:changed', { detail: { analytics: true } })
         );
 
-        expect(groupSpy).toHaveBeenCalledWith('accommodation', 'acc-1');
+        expect(groupSpy).toHaveBeenCalledWith('accommodation', 'acc-1', undefined);
     });
 });
 

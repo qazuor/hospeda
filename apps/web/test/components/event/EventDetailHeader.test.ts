@@ -22,12 +22,42 @@ describe('EventDetailHeader.astro — HOS-280 month-only precision', () => {
     });
 
     it('delegates date-range formatting to formatEventDetailDateRange', () => {
-        expect(componentSrc).toContain(
-            "import { formatEventDetailDateRange } from '@/lib/format-utils';"
+        // Matched by symbol rather than by the whole import line: the component
+        // legitimately imports more than one formatter from this module, and a
+        // literal-line assertion breaks on every added import without the
+        // delegation itself having changed.
+        expect(componentSrc).toMatch(
+            /import \{[^}]*\bformatEventDetailDateRange\b[^}]*\} from '@\/lib\/format-utils';/
         );
         expect(componentSrc).toContain(
             'formatEventDetailDateRange({ startDate, endDate, precision, locale })'
         );
+    });
+
+    it('also renders a compact date variant for narrow viewports', () => {
+        expect(componentSrc).toMatch(
+            /import \{[^}]*\bformatEventDetailDateRangeCompact\b[^}]*\} from '@\/lib\/format-utils';/
+        );
+        expect(componentSrc).toContain('formatEventDetailDateRangeCompact({');
+        expect(componentSrc).toContain('dateRangeCompact.label');
+    });
+
+    it('ships both date variants and swaps them with CSS, never with JS', () => {
+        // The server cannot know the viewport, so both variants must exist in
+        // the SSR HTML. Picking one at runtime would leave crawlers and the
+        // pre-hydration frame with whichever was the default.
+        expect(componentSrc).toContain('event-header__date--long');
+        expect(componentSrc).toContain('event-header__date--compact');
+        expect(componentSrc).toMatch(/@media \(max-width: 640px\)/);
+    });
+
+    it('hides the inactive date variant with display:none so it leaves the a11y tree', () => {
+        // `visibility: hidden` or clipping would keep the hidden variant
+        // announced by screen readers, so the date would be read twice.
+        const compactRule = componentSrc.slice(
+            componentSrc.indexOf('.event-header__date--compact {')
+        );
+        expect(compactRule).toMatch(/^\.event-header__date--compact \{\s*display: none;/);
     });
 
     it('renders the EXACT date branch using startLabel/endLabel (unchanged shape)', () => {

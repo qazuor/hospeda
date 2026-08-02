@@ -47,7 +47,7 @@ describe('EventService — SPEC-212 AC-5: translation diff on update', () => {
 
     const actor = createAdminActor({
         permissions: [PermissionEnum.EVENT_UPDATE],
-        role: RoleEnum.ADMIN
+        roles: [RoleEnum.ADMIN]
     });
 
     beforeEach(() => {

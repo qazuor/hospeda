@@ -299,26 +299,42 @@ export interface SessionUser {
     readonly name: string;
     readonly email: string;
     /**
-     * User role from the Better Auth session (USER, HOST, ADMIN, etc.).
-     * Populated from the `role` additional field configured in
-     * `apps/api/src/lib/auth.ts`. `null` only when unexpectedly missing;
-     * consumers should treat that as the lowest-privilege case.
+     * Every role the user holds (USER, HOST, COMMERCE_OWNER, ADMIN, ...).
+     *
+     * HOS-296 replaced the former single `role` scalar with this set: one
+     * account can wear several hats at once and there is deliberately NO
+     * derived "primary role". Resolved per request by `actorMiddleware` and
+     * read from `GET /api/v1/public/auth/me` (`data.actor.roles`) — Better
+     * Auth's `get-session` no longer carries any role at all, because
+     * `users.role` was dropped and `additionalFields` is a plain column
+     * mapping (spec §7.1, OQ-4).
+     *
+     * Empty only when the payload was unexpectedly malformed; consumers must
+     * treat that as the lowest-privilege case (no host/commerce access).
      */
-    readonly role: string | null;
+    readonly roles: readonly string[];
     /**
-     * Avatar URL from the Better Auth session (`users.image`). `null` when the
-     * user has no avatar. Without this, server-rendered surfaces (header,
-     * account dashboard) cannot show the avatar and fall back to initials
-     * forever (BETA-32).
+     * Avatar URL from the actor (`users.image`, mirrored onto `Actor.image`
+     * by `actorMiddleware`). `null` when the user has no avatar. Without this,
+     * server-rendered surfaces (header, account dashboard) cannot show the
+     * avatar and fall back to initials forever (BETA-32).
      */
     readonly image: string | null;
     /**
      * SPEC-239 T-041: Force-password-change flag.
      * `true` when the user was provisioned with a server-generated password
      * (commerce owner accounts) and must rotate it before using protected
-     * routes. Set as a Better Auth `additionalField` (`mustChangePassword`)
-     * on the user record and forwarded here via `get-session`.
-     * `false` (default) once the new password is saved.
+     * routes. Mirrors `users.mustChangePassword`.
+     *
+     * HOS-296: read from `data.actor.mustChangePassword` on the SAME
+     * `/auth/me` response as everything else. It briefly required a second,
+     * parallel `get-session` request — the flag was a Better Auth
+     * `additionalField` and nothing else exposed it — until `actorMiddleware`
+     * started forwarding it onto the actor. Note the `/auth/me` payload ALSO
+     * carries a top-level `passwordChangeRequired`; that is a DIFFERENT flag
+     * (`adminInfo`-scoped, computed only for actors with `ACCESS_PANEL_ADMIN`)
+     * and is NOT a substitute — it is always false for the commerce owners
+     * this gate exists for.
      */
     readonly mustChangePassword: boolean;
 }
@@ -354,19 +370,33 @@ function getMiddlewareApiUrl(): string {
 }
 
 /**
- * Validates a session by calling the Better Auth API's get-session endpoint.
- * Returns the parsed user if the session is valid, or null otherwise.
+ * Validates a session by calling `GET /api/v1/public/auth/me` and returns the
+ * parsed user, or `null` when the visitor is not authenticated.
  *
- * The cookie header is forwarded as-is to the auth API so Better Auth can
- * identify the session from its own session cookie.
+ * The cookie header is forwarded as-is so the API's auth + actor middleware
+ * can resolve the session from Better Auth's own session cookie.
  *
- * @param params - Object with the raw Cookie request header value (or null)
- * @returns Parsed user data, or null if the session is missing or invalid
+ * **HOS-296 — why `/auth/me` and not `get-session`.** `users.role` was
+ * dropped, so Better Auth's `additionalFields` (a plain column mapping) has
+ * no role to expose and `get-session` carries none at all. The role SET is
+ * resolved per request by `actorMiddleware` and served on the actor, exactly
+ * like billing entitlements (spec §7.1, OQ-4 actor-only). This SUBSTITUTES
+ * the previous per-request `get-session` call — it does not add one.
+ *
+ * **The 200-with-a-guest-actor trap.** `/auth/me` is declared
+ * `options: { skipAuth: true }`, so an absent/expired/invalid session gets a
+ * **200 response carrying a guest actor**, never a 401. `response.ok` is
+ * therefore NOT an authentication signal: the payload's `isAuthenticated`
+ * flag is. Gating on `ok` alone would let every anonymous visitor through as
+ * a signed-in user.
+ *
+ * @param params.cookieHeader - Raw `Cookie` request header value (or null).
+ * @returns Parsed user data, or null if the session is missing or invalid.
  */
 export async function parseSessionUser({
     cookieHeader
 }: {
-    cookieHeader: string | null;
+    readonly cookieHeader: string | null;
 }): Promise<SessionUser | null> {
     if (!cookieHeader) {
         return null;
@@ -390,8 +420,8 @@ export async function parseSessionUser({
         return null;
     }
 
-    // Instrument the Better Auth round-trip so we can measure p50/p95 in
-    // Sentry and decide whether server-side session caching (SPEC-111 §4.3
+    // Instrument the session round-trip so we can measure p50/p95 in Sentry
+    // and decide whether server-side session caching (SPEC-111 §4.3
     // candidate) is worth the architectural cost. Span is a no-op when
     // Sentry is not initialized (PUBLIC_SENTRY_DSN unset).
     return Sentry.startSpan(
@@ -399,13 +429,13 @@ export async function parseSessionUser({
             name: 'web.middleware.parseSessionUser',
             op: 'http.client',
             attributes: {
-                'http.url': `${apiUrl}/api/auth/get-session`,
+                'http.url': `${apiUrl}/api/v1/public/auth/me`,
                 'http.method': 'GET'
             }
         },
         async (span) => {
             try {
-                const response = await fetch(`${apiUrl}/api/auth/get-session`, {
+                const response = await fetch(`${apiUrl}/api/v1/public/auth/me`, {
                     headers: {
                         cookie: cookieHeader
                     }
@@ -417,45 +447,56 @@ export async function parseSessionUser({
                     return null;
                 }
 
+                // Shape of `GET /api/v1/public/auth/me` — see
+                // `apps/api/src/routes/auth/me.ts` and `AuthMeResponseSchema`
+                // in `@repo/schemas`. Declared locally (rather than imported)
+                // to keep the middleware bundle free of the schema package;
+                // every field is optional so a shape change degrades to the
+                // lowest-privilege case instead of throwing.
                 const data = (await response.json()) as {
-                    user?: {
-                        id?: string;
-                        name?: string;
-                        email?: string;
-                        // `role` is an additional field configured in
-                        // apps/api/src/lib/auth.ts (Better Auth
-                        // `user.additionalFields`). It is returned by
-                        // `/api/auth/get-session` whenever the session has a
-                        // user. Used by AccountLayout to gate the sidebar
-                        // "Mis propiedades" link (SPEC-143 Finding #12).
-                        role?: string;
-                        // Avatar URL (`users.image`), forwarded so SSR surfaces
-                        // can render the avatar instead of initials (BETA-32).
-                        image?: string;
-                        // SPEC-239 T-041: force-password-change flag.
-                        // Declared as a Better Auth `additionalField`
-                        // (`mustChangePassword`) in apps/api/src/lib/auth.ts.
-                        // Forwarded here so the web middleware can gate all
-                        // protected routes until the flag is cleared.
-                        mustChangePassword?: boolean;
+                    data?: {
+                        actor?: {
+                            id?: string;
+                            name?: string;
+                            email?: string;
+                            image?: string;
+                            // HOS-296: the role SET, resolved per request by
+                            // `actorMiddleware` from `user_role`. Replaces the
+                            // former `role` scalar, which no longer exists in
+                            // any payload.
+                            roles?: readonly string[];
+                            // SPEC-239 commerce-owner password gate. Lives on
+                            // the actor since HOS-296 — see `SessionUser`.
+                            mustChangePassword?: boolean;
+                        };
+                        isAuthenticated?: boolean;
                     };
                 };
 
-                if (!data?.user?.id || !data?.user?.email) {
+                // `/auth/me` is `skipAuth`, so an invalid session yields
+                // 200 + a guest actor. `isAuthenticated` is the ONLY reliable
+                // signal — see this function's JSDoc.
+                const actor = data?.data?.actor;
+                if (data?.data?.isAuthenticated !== true || !actor?.id) {
                     return null;
                 }
 
                 return {
-                    id: data.user.id,
-                    name: data.user.name || '',
-                    email: data.user.email,
-                    role: data.user.role ?? null,
-                    image: typeof data.user.image === 'string' ? data.user.image : null,
-                    mustChangePassword: data.user.mustChangePassword === true
+                    id: actor.id,
+                    name: actor.name || '',
+                    email: actor.email || '',
+                    roles: Array.isArray(actor.roles)
+                        ? actor.roles.filter((role): role is string => typeof role === 'string')
+                        : [],
+                    image: typeof actor.image === 'string' ? actor.image : null,
+                    // Fail-open on anything but an explicit `true`, matching
+                    // the gate's own "if the flag is missing/false, pass
+                    // through" semantics.
+                    mustChangePassword: actor.mustChangePassword === true
                 };
             } catch {
                 span?.setStatus({ code: 2, message: 'internal_error' });
-                webLogger.warn('[middleware] Failed to validate session against Better Auth API');
+                webLogger.warn('[middleware] Failed to validate session against the auth API');
 
                 return null;
             }
@@ -517,51 +558,71 @@ export function requestHasSessionCookie(cookieHeader: string | null): boolean {
 }
 
 /**
- * Generates a cryptographic nonce for Content Security Policy.
- * Produces a base64-encoded string from 16 random bytes.
- *
- * @returns A unique base64-encoded nonce string
- */
-export function generateCspNonce(): string {
-    const bytes = crypto.getRandomValues(new Uint8Array(16));
-    return btoa(String.fromCharCode(...bytes));
-}
-
-/**
- * Builds a Content-Security-Policy header value using nonce-based script/style policy.
+ * Builds a Content-Security-Policy header value using content-hash-based
+ * script/style policy.
  *
  * SPEC-047: `script-src` and `style-src` deliberately omit `'unsafe-inline'`.
- * Every inline `<script>` / `<style>` in the web app must carry a
- * `nonce={cspNonce}` attribute (enforced by `scripts/check-inline-nonce.sh`)
- * so it participates in CSP integrity. `'strict-dynamic'` on `script-src`
- * grants nonce-loaded scripts the right to load further scripts they
- * legitimately need, without falling back to host allowlists.
+ * Every inline `<script>` / `<style>` the app emits is allowed by the `sha256`
+ * of its own content, computed per response by `collectCspHashes()` and passed
+ * in here. `scripts/check-no-inline-nonce.sh` guards the other half of the
+ * contract: no `.astro` source may reintroduce a `nonce` attribute.
  *
- * HOS-91: in `astro dev`, Vite injects component CSS as nonce-less `<style>`
+ * HOS-369 WB0-1 (spec §5.13 / D-9) replaced the previous per-request nonce.
+ * Cloudflare caches headers with the body, so a nonce survives into the cache
+ * and becomes a static, publicly readable token for the whole TTL — anyone can
+ * `GET` the page, read it and reuse it. A hash is derived from the content, so
+ * header and body cannot desynchronize, cached or not.
+ *
+ * That migration also forced `'strict-dynamic'` OUT of `script-src`. With
+ * `'strict-dynamic'` present browsers ignore `'self'` and every host source,
+ * allowing ONLY nonce/hash-tagged scripts — and a hash cannot match an external
+ * `<script src>` unless the tag carries an `integrity` attribute (CSP3
+ * external-hash matching), which Astro does not emit. Without it, every
+ * `/_astro/*.js` island bundle would be blocked. Externals are therefore
+ * covered by `'self'`, which is what Astro's own hash-based CSP does too.
+ * Net posture: STRONGER against injected inline scripts (an attacker cannot
+ * forge the hash of their own payload, whereas a cached nonce can simply be
+ * read and reused), weaker only against an injected external script served
+ * from our own origin.
+ *
+ * HOS-91: in `astro dev`, Vite injects component CSS as unhashed `<style>`
  * tags client-side, and Astro 7's ClientRouter re-injects them on every
- * soft-navigation. The enforcing, nonce-based `style-src` blocks all of them
- * (confirmed: 20/20 soft-nav `<style>` tags had `.sheet === null`), so pages
- * render unstyled after any client-side nav until a full reload. `isDev`
- * relaxes `style-src` to a plain `'unsafe-inline'` policy in dev ONLY;
- * build/prod keeps the strict nonce+hash policy unchanged.
+ * soft-navigation. The enforcing `style-src` blocks all of them (confirmed:
+ * 20/20 soft-nav `<style>` tags had `.sheet === null`), so pages render
+ * unstyled after any client-side nav until a full reload. `isDev` relaxes
+ * `style-src` to a plain `'unsafe-inline'` policy in dev ONLY; build/prod
+ * keeps the strict hash policy unchanged.
  *
- * @param params - Object with nonce, optional API URL, optional Sentry report URI, and dev-mode flag
+ * @param params - Object with the response's inline script/style hash sources,
+ *   optional API URL, optional Sentry report URI, and dev-mode flag
  * @returns Formatted CSP directive string
  */
 export function buildCspHeader({
-    nonce,
+    scriptHashes,
+    styleHashes,
     apiUrl,
     sentryReportUri,
     sentryTunnelEnabled = false,
     isDev = false
 }: {
-    readonly nonce: string;
+    /** `sha256-…` tokens (unquoted) for every inline `<script>` in the response. */
+    readonly scriptHashes: readonly string[];
+    /** `sha256-…` tokens (unquoted) for every inline `<style>` in the response. */
+    readonly styleHashes: readonly string[];
     readonly apiUrl?: string;
     readonly sentryReportUri?: string | null;
     readonly sentryTunnelEnabled?: boolean;
     readonly isDev?: boolean;
 }): string {
     const validApiUrl = apiUrl && apiUrl.trim().length > 0 ? apiUrl.trim() : null;
+
+    // Hash sources are emitted quoted, space-separated, and only when present —
+    // an empty response (or the vestigial prerendered path) must not leave a
+    // dangling separator in the directive.
+    const toSourceList = (hashes: readonly string[]): string =>
+        hashes.length > 0 ? ` ${hashes.map((hash) => `'${hash}'`).join(' ')}` : '';
+    const scriptHashSources = toSourceList(scriptHashes);
+    const styleHashSources = toSourceList(styleHashes);
 
     // Remote image hosts mirror `ALLOWED_REMOTE_HOSTS` (single source of truth
     // shared with `astro.config.mjs` `image.remotePatterns` and the SSRF guard
@@ -590,8 +651,9 @@ export function buildCspHeader({
     // (SPEC-140 added them when the SDK talked to PostHog directly; removed here).
     // COUPLING: the Worker must be live and `PUBLIC_POSTHOG_HOST` set to the proxy
     // origin BEFORE this CSP is enforced, or PostHog breaks silently (deploy order
-    // in the Worker README). `script-src` keeps 'strict-dynamic' (the nonce-tagged
-    // bootstrapper loads the SDK).
+    // in the Worker README). The PostHog bootstrapper injects the SDK `<script
+    // src>` at runtime pointing at that same-origin relay path, so `'self'`
+    // covers it now that 'strict-dynamic' is gone (see the JSDoc above).
     //
     // SPEC-181 follow-up: Sentry has its OWN first-party tunnel under `/api/event`
     // (a separate Cloudflare Worker — infra/cloudflare/sentry-tunnel/). When the
@@ -608,42 +670,52 @@ export function buildCspHeader({
     // HOS-91: CSP3 rule — a `style-src` directive that carries a nonce or a
     // hash source causes browsers to IGNORE `'unsafe-inline'` in that SAME
     // directive (nonces/hashes and 'unsafe-inline' are mutually exclusive per
-    // spec, precisely so an attacker who can't guess the nonce can't fall
-    // back to unsafe-inline). So the dev variant below must DROP the nonce
-    // and the hash entirely rather than append 'unsafe-inline' next to them —
-    // appending it alongside the nonce would be inert and the dev bug would
-    // persist. Dev-only: build/prod keeps the strict nonce+hash policy.
+    // spec, precisely so an attacker who can't forge a hash can't fall back to
+    // unsafe-inline). So the dev variant below must DROP every hash entirely
+    // rather than append 'unsafe-inline' next to them — appending it alongside
+    // a hash would be inert and the dev bug would persist. Dev-only:
+    // build/prod keeps the strict hash policy.
     const styleSrc = isDev
         ? "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'"
-        : `style-src 'self' https://fonts.googleapis.com 'nonce-${nonce}' 'sha256-vv9IoKo7BSLbWcUHr3tNmfNVmm5L/9Cfn2H6LMk7/ow='`;
+        : `style-src 'self' https://fonts.googleapis.com${styleHashSources} 'sha256-vv9IoKo7BSLbWcUHr3tNmfNVmm5L/9Cfn2H6LMk7/ow='`;
 
     const directives = [
         "default-src 'self'",
-        // Cloudflare Turnstile (invisible bot-detection on the feedback form,
-        // SPEC-301) loads its widget script from https://challenges.cloudflare.com.
-        // With 'strict-dynamic' a compliant browser already trusts the script the
-        // nonce-tagged island injects, but the explicit host is the fallback for
-        // browsers that ignore 'strict-dynamic'. Adding it is harmless to the
-        // strict policy (host-source allowlists are ignored when strict-dynamic
-        // is honored).
-        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://challenges.cloudflare.com`,
+        // `'self'` covers every same-origin `<script src>`: the `/_astro/*.js`
+        // island bundles Astro emits, and the PostHog SDK the bootstrapper
+        // injects from the first-party relay. It is load-bearing since HOS-369
+        // dropped 'strict-dynamic' (see the JSDoc above) — do NOT reintroduce
+        // 'strict-dynamic' without also solving external-script trust, or every
+        // island bundle stops executing.
+        //
+        // Two cross-origin hosts `'self'` does not cover stay allowlisted:
+        //   - challenges.cloudflare.com — the Turnstile widget script
+        //     (invisible bot-detection on the feedback form, SPEC-301).
+        //   - static.cloudflareinsights.com — the Cloudflare Web Analytics
+        //     beacon, emitted as an external <script src> by BaseLayout in prod
+        //     builds only. It used to ride on 'strict-dynamic' via the nonce the
+        //     injector stamped on external tags; with that gone it needs the
+        //     explicit host or the beacon is blocked and CWV telemetry dies
+        //     silently. (`connect-src` separately allows cloudflareinsights.com,
+        //     where the beacon POSTs — the two hosts are different.)
+        `script-src 'self'${scriptHashSources} https://challenges.cloudflare.com https://static.cloudflareinsights.com`,
         // The Astro client runtime injects an inline <style> at hydration time
         // with the fixed content `astro-island,astro-slot,astro-static-slot{display:contents}`.
-        // Because the injection happens via JS AFTER the middleware response
-        // rewrite, `injectNonce` (which only walks the initial SSR HTML) can't
-        // stamp a nonce on it, and the browser blocks/reports it. The CSS
-        // content is hardcoded in Astro's runtime so its SHA-256 is stable —
-        // hash-allow it explicitly to keep `style-src` strict otherwise.
+        // Because the injection happens via JS AFTER the response was sent,
+        // `collectCspHashes` (which only walks the initial SSR HTML) never sees
+        // it, and the browser blocks/reports it. The CSS content is hardcoded
+        // in Astro's runtime so its SHA-256 is stable — hash-allow it
+        // explicitly to keep `style-src` strict otherwise.
         // See `styleSrc` above for the HOS-91 dev-only relaxation.
         styleSrc,
         // `style-src` (above) defaults to gating BOTH `<style>` elements and
-        // inline `style="..."` attributes. Nonces cannot be applied to style
-        // attributes by spec, so a strict nonce-based `style-src` blocks every
+        // inline `style="..."` attributes. Hashes cannot be applied to style
+        // attributes by spec, so a strict hash-based `style-src` blocks every
         // inline color/transition style we set on cards, badges, and the
         // `data-reveal` stagger pattern (see apps/web/src/lib/colors.ts and
         // STYLE_GUIDE.md). Override only the `-attr` variant with
         // `'unsafe-inline'` so:
-        //   - `<style>` blocks still require the nonce (the high-XSS-impact path)
+        //   - `<style>` blocks still require a hash (the high-XSS-impact path)
         //   - `style="..."` attributes are allowed (low-XSS-impact patterns
         //     used for tokenized inline colors and per-card transition delays)
         "style-src-attr 'unsafe-inline'",
@@ -661,8 +733,34 @@ export function buildCspHeader({
         // mount and no token is produced (SPEC-301 feedback form). Every other
         // embed origin stays blocked; frame-ancestors 'none' still stops others
         // from embedding us.
-        'frame-src https://challenges.cloudflare.com',
-        "frame-ancestors 'none'",
+        //
+        // `'self'` in dev ONLY: Astro's ClientRouter runs a dev-only code path,
+        // `prepareForClientOnlyComponents()`, which appends a hidden same-origin
+        // iframe pointing at the destination URL to collect the Vite-injected
+        // styles of `client:only` islands, then `await hydrationDone(iframe)`.
+        // A `frame-src` without 'self' blocks that iframe, the await never
+        // settles, and the navigation hangs forever between
+        // `astro:before-preparation` and `astro:before-swap` — the DOM is never
+        // swapped and NavigationProgress' overlay (removed only on
+        // `astro:after-swap`) stays pinned over the previous page. It reproduces
+        // on every soft-nav to a page holding a `client:only` island, which here
+        // means every page with a map (accommodation/destination/event detail,
+        // contacto, comparar, */mapa). The production build never emits that
+        // iframe, so prod keeps the stricter policy. Sibling of the HOS-91
+        // dev-only `style-src` relaxation above, same root cause: dev-only
+        // ClientRouter behaviour meeting an enforcing CSP.
+        isDev
+            ? "frame-src 'self' https://challenges.cloudflare.com"
+            : 'frame-src https://challenges.cloudflare.com',
+        // The same dev-only iframe needs BOTH sides of the embed relationship:
+        // `frame-src` authorises the PARENT to embed, `frame-ancestors` (sent on
+        // the iframe's own response, since it loads one of our pages) authorises
+        // the CHILD to be embedded. Relaxing only `frame-src` just moves the
+        // block to `frame-ancestors 'none'` and the navigation still hangs
+        // (verified in the browser — the CSP violation simply changes name).
+        // Dev widens it to 'self', so only our own origin may frame us; prod
+        // keeps 'none' and stays unembeddable by anyone, ourselves included.
+        isDev ? "frame-ancestors 'self'" : "frame-ancestors 'none'",
         "media-src 'self'",
         'upgrade-insecure-requests',
         sentryReportUri ? `report-uri ${sentryReportUri}` : null
@@ -757,14 +855,32 @@ export function isSetPasswordRoute({ path }: { path: string }): boolean {
 }
 
 /**
- * Checks if the given role should bypass the profile completion + set-password
- * guard per spec §3.5 (admin and super_admin roles skip the flow).
+ * Checks whether any of the user's held roles bypasses the profile completion
+ * + set-password guard per spec §3.5 (admin and super_admin skip the flow).
  *
- * @param params - Object with the role string
- * @returns True when the role is exempt from profile completion checks
+ * HOS-296: takes the whole role SET and matches on "holds a bypass role",
+ * so a user who is both, say, HOST and ADMIN still gets the bypass.
+ *
+ * KNOWN PRE-EXISTING BUG (NOT introduced here, deliberately NOT fixed here):
+ * `PROFILE_COMPLETION_BYPASS_ROLES` is `['admin', 'super_admin']` — lowercase
+ * — while every real role value is UPPERCASE (`RoleEnum.ADMIN === 'ADMIN'`).
+ * The comparison has therefore never matched a real actor, so the bypass is
+ * already dead in production. Fixing the casing is a behavior change that
+ * would let admins skip profile completion for the first time; it needs its
+ * own issue rather than riding along with the multi-role cut, so this
+ * function preserves the existing (case-sensitive) comparison exactly.
+ *
+ * @param params - `{ roles }` (RO-RO): every role the user holds.
+ * @returns True when at least one held role is exempt from profile completion.
  */
-export function isProfileCompletionBypassRole({ role }: { role: string }): boolean {
-    return (PROFILE_COMPLETION_BYPASS_ROLES as readonly string[]).includes(role);
+export function isProfileCompletionBypassRole({
+    roles
+}: {
+    readonly roles: readonly string[];
+}): boolean {
+    return roles.some((role) =>
+        (PROFILE_COMPLETION_BYPASS_ROLES as readonly string[]).includes(role)
+    );
 }
 
 /**
@@ -791,15 +907,21 @@ export function buildSetPasswordRedirect({ locale }: { locale: SupportedLocale }
  * Checks whether the currently authenticated user holds an admin or super_admin
  * role that grants them a bypass of the profile completion guard (spec §3.5).
  *
- * Calls GET /api/v1/public/auth/me to obtain the actor's role.  Only called
+ * Calls GET /api/v1/public/auth/me to obtain the actor's role SET. Only called
  * when a redirect would otherwise be issued, so the extra HTTP call is rare.
+ *
+ * HOS-296: reads `data.actor.roles` (array). The previous implementation
+ * hand-cast the payload to a LOCAL `{ actor?: { role?: string } }` type — a
+ * cast the compiler cannot check against the real response, so dropping the
+ * `role` scalar would have left it silently `undefined` here with no build
+ * error (spec §7.2, sweep-inventory site #5).
  *
  * Returns false on any error so we default to requiring profile completion
  * (safer: an admin getting the completion form once is a better outcome than
  * a regular user never being redirected).
  *
  * @param params - Object with the raw Cookie request header value (or null)
- * @returns True if the user's role grants a bypass of the completion flow
+ * @returns True if one of the user's roles grants a bypass of the completion flow
  */
 export async function isAdminBypassUser({
     cookieHeader
@@ -824,13 +946,22 @@ export async function isAdminBypassUser({
         }
 
         const data = (await response.json()) as {
-            data?: { actor?: { role?: string } };
+            data?: { actor?: { roles?: readonly string[] }; isAuthenticated?: boolean };
         };
 
-        const role = data?.data?.actor?.role ?? '';
-        return isProfileCompletionBypassRole({ role });
+        // `/auth/me` is `skipAuth`: an invalid session answers 200 with a
+        // guest actor, so `response.ok` proves nothing about authentication.
+        if (data?.data?.isAuthenticated !== true) {
+            return false;
+        }
+
+        const rawRoles = data.data.actor?.roles;
+        const roles = Array.isArray(rawRoles)
+            ? rawRoles.filter((role): role is string => typeof role === 'string')
+            : [];
+        return isProfileCompletionBypassRole({ roles });
     } catch {
-        webLogger.warn('[middleware] Failed to fetch actor role from /auth/me for bypass check');
+        webLogger.warn('[middleware] Failed to fetch actor roles from /auth/me for bypass check');
         return false;
     }
 }

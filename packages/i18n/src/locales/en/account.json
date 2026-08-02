@@ -337,7 +337,46 @@
         "usageUnlimited": "Unlimited",
         "usageWarning": "You're approaching the limit",
         "usageAtLimit": "Limit reached",
-        "usageOf": "{{current}} of {{max}}"
+        "usageOf": "{{current}} of {{max}}",
+        "usage": {
+            "title": "Your plan usage",
+            "subtitle": "How much of each limit included in your plan you have used.",
+            "loading": "Loading your plan usage...",
+            "unlimited": "Unlimited",
+            "ofMax": "{{current}} of {{max}}",
+            "unlimitedUsage": "{{current}} in use",
+            "addonBonus": "Includes {{bonus}} extra from add-ons",
+            "thresholdWarning": "Close to the limit",
+            "thresholdCritical": "Almost no room left",
+            "thresholdReached": "You have reached the limit",
+            "thresholdExceeded": "Limit exceeded",
+            "audienceHost": "As a host",
+            "audienceTraveler": "As a traveller",
+            "monthlyNote": "Resets at the start of each month.",
+            "capOnly": "Up to {{max}}",
+            "perAccommodationEmpty": "You have not published any accommodation yet.",
+            "upgradePlan": "Upgrade my plan",
+            "buyAddon": "Extend it with an add-on",
+            "limits": {
+                "max_accommodations": "Published accommodations",
+                "max_photos_per_accommodation": "Photos per accommodation",
+                "max_active_promotions": "Active promotions",
+                "max_favorites": "Saved favourites",
+                "max_properties": "Properties in the complex",
+                "max_staff_accounts": "Staff accounts",
+                "max_active_alerts": "Active price alerts",
+                "max_compare_items": "Accommodations being compared",
+                "max_ai_text_improve_per_month": "AI text improvements (per month)",
+                "max_ai_chat_per_month": "AI questions answered on your listings (per month)",
+                "max_ai_chat_consumer_per_month": "Questions to the AI assistant (per month)",
+                "max_ai_search_per_month": "AI searches (per month)",
+                "max_ai_support_per_month": "AI support questions (per month)",
+                "max_ai_translate_per_month": "AI translations (per month)",
+                "max_ai_accommodation_import_per_month": "AI accommodation imports (per month)",
+                "max_search_history_entries": "Searches kept in your history",
+                "max_collections": "Favourite collections"
+            }
+        }
     },
     "favorites": {
         "tabs": {

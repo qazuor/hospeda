@@ -117,10 +117,13 @@ vi.mock('@/store/toast-store', () => ({
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
-const USER_ROLE: SubscriptionDashboardUser = { id: 'user-1', role: 'USER' };
-const HOST_ROLE: SubscriptionDashboardUser = { id: 'user-2', role: 'HOST' };
-const ADMIN_ROLE: SubscriptionDashboardUser = { id: 'user-3', role: 'ADMIN' };
-const SUPER_ADMIN_ROLE: SubscriptionDashboardUser = { id: 'user-4', role: 'SUPER_ADMIN' };
+const USER_ROLE: SubscriptionDashboardUser = { id: 'user-1', roles: ['USER'] };
+const HOST_ROLE: SubscriptionDashboardUser = { id: 'user-2', roles: ['USER', 'HOST'] };
+const ADMIN_ROLE: SubscriptionDashboardUser = { id: 'user-3', roles: ['USER', 'ADMIN'] };
+const SUPER_ADMIN_ROLE: SubscriptionDashboardUser = {
+    id: 'user-4',
+    roles: ['USER', 'SUPER_ADMIN']
+};
 
 const ACTIVE_SUBSCRIPTION = {
     id: 'sub-uuid-1',

@@ -26,7 +26,7 @@ describe('EventService - getAdminInfo', () => {
         loggerMock = createLoggerMock();
         service = new EventService({ model: modelMock, logger: loggerMock });
         superAdmin = createActor({
-            role: RoleEnum.SUPER_ADMIN,
+            roles: [RoleEnum.SUPER_ADMIN],
             permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.EVENT_UPDATE]
         });
         asMock(modelMock.findById).mockResolvedValue(
@@ -39,7 +39,7 @@ describe('EventService - getAdminInfo', () => {
         const forbiddenEvent = getMockEvent({ id: getMockEventId('event-entity-id') });
         const forbiddenActor = createActor({
             id: getMockId('user', 'actor-id-different'),
-            role: RoleEnum.USER,
+            roles: [RoleEnum.USER],
             permissions: []
         });
         asMock(modelMock.findById).mockResolvedValue(forbiddenEvent);

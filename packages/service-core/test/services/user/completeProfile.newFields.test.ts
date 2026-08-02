@@ -60,7 +60,7 @@ describe('UserService.completeProfile — new fields (SPEC-113 polish round)', (
     let userModelMock: UserModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     const userId = getMockId('user', 'user-polish') as string;
-    const actor = createActor({ id: userId, role: RoleEnum.USER, permissions: [] });
+    const actor = createActor({ id: userId, roles: [RoleEnum.USER], permissions: [] });
 
     beforeEach(() => {
         vi.clearAllMocks();

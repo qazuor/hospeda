@@ -29,6 +29,7 @@
     "detail": {
         "contact": "Contact",
         "whatsapp": "Enquire via WhatsApp",
+        "whatsappMessage": "Hi, I'm interested in more information about {{name}}",
         "hours": "Opening hours",
         "openingHours": {
             "title": "Opening hours",

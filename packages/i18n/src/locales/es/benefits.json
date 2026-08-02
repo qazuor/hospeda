@@ -1,6 +1,6 @@
 {
     "title": "Beneficios",
-    "description": "Descubre todos los beneficios de usar Hospeda para tus viajes. Ofertas exclusivas, soporte 24/7 y más.",
+    "description": "Descubre todos los beneficios de usar Hospeda para tus viajes. Ofertas exclusivas, alertas de precio y soporte por WhatsApp, mail y teléfono en horario de oficina.",
     "heading": "Beneficios Exclusivos",
     "subheading": "Disfruta de ventajas únicas al elegir Hospeda para tus viajes",
     "benefits": {
@@ -9,8 +9,8 @@
             "description": "Garantizamos los mejores precios del mercado. Si encuentras una tarifa más baja, igualamos el precio y te damos un 5% adicional de descuento."
         },
         "support247": {
-            "title": "Soporte 24/7",
-            "description": "Nuestro equipo de soporte está disponible las 24 horas del día, los 7 días de la semana para ayudarte con cualquier consulta o emergencia durante tu viaje."
+            "title": "Soporte cuando lo necesitás",
+            "description": "Nuestro equipo de soporte te ayuda por WhatsApp, mail y teléfono en horario de oficina con cualquier consulta durante tu viaje."
         },
         "freeCancellation": {
             "title": "Cancelación Gratuita",
@@ -55,7 +55,7 @@
             "subtitle": "15+ reservas",
             "features": {
                 "allSilver": "Todo lo de Plata",
-                "vipSupport": "Soporte VIP 24/7",
+                "vipSupport": "Soporte VIP prioritario",
                 "points": "2 puntos por $1 gastado",
                 "discount": "10% descuento adicional",
                 "exclusiveAccess": "Acceso a ofertas exclusivas"
@@ -94,7 +94,7 @@
         },
         "customerSupport": {
             "title": "Soporte al Cliente",
-            "description": "Equipo de soporte dedicado para ayudarte antes, durante y después de tu estadía. Estamos aquí para ti."
+            "description": "Equipo de soporte para ayudarte antes, durante y después de tu estadía. Estamos aquí para ti."
         }
     },
     "owners": {

@@ -246,7 +246,9 @@ export const UserListItemSchema = UserReadSchema.pick({
     firstName: true,
     lastName: true,
     authProvider: true,
-    role: true,
+    // HOS-296: `role` is gone from `UserSchema`. A list row that needs to show
+    // the user's hats must join `user_role` and carry a `roles` array; it is
+    // NOT projectable off the user entity any more.
     lifecycleState: true,
     visibility: true,
     contactInfo: true,
@@ -268,7 +270,7 @@ export const UserSummarySchema = UserReadSchema.pick({
     firstName: true,
     lastName: true,
     profile: true,
-    role: true,
+    // HOS-296: see `UserListItemSchema` above — no scalar role to project.
     lifecycleState: true,
     createdAt: true
 });
@@ -296,10 +298,13 @@ export const UserSearchOutputSchema = UserSearchResultSchema;
 // Additional missing legacy exports
 export const UserListItemWithCountsSchema = UserListItemSchema.extend({
     accommodationsCount: z.number().int().min(0).default(0),
+    gastronomiesCount: z.number().int().min(0).default(0),
+    experiencesCount: z.number().int().min(0).default(0),
     reviewsCount: z.number().int().min(0).default(0),
     bookingsCount: z.number().int().min(0).default(0),
     eventsCount: z.number().int().min(0).default(0),
-    postsCount: z.number().int().min(0).default(0)
+    postsCount: z.number().int().min(0).default(0),
+    currentPlanSlug: z.string().nullable().optional()
 });
 
 export const UserListWithCountsOutputSchema = PaginationResultSchema(UserListItemWithCountsSchema);

@@ -13,7 +13,8 @@ import {
     sql,
     users
 } from '@repo/db';
-import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, RoleEnum, RoleGrantReason, VisibilityEnum } from '@repo/schemas';
+import { grantRole } from '@repo/service-core';
 import { hash } from 'bcryptjs';
 import exampleManifest from '../manifest-example.json';
 import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
@@ -440,6 +441,21 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             await db.execute(
                 sql`UPDATE users SET profile_completed = true WHERE id = ${realUserId} AND profile_completed = false`
             );
+            // Heal: re-grant the hats. Idempotent, and required for databases
+            // seeded before HOS-296 whose owners have no `user_role` rows yet.
+            for (const role of [RoleEnum.USER, RoleEnum.COMMERCE_OWNER]) {
+                const healed = await grantRole({
+                    userId: realUserId,
+                    role,
+                    grantedBy: null,
+                    reason: RoleGrantReason.SEED
+                });
+                if (healed.error) {
+                    throw new Error(
+                        `Failed to grant ${role} to ${owner.email}: ${healed.error.message}`
+                    );
+                }
+            }
         } else {
             const insertedUsers = await db
                 .insert(users)
@@ -450,7 +466,6 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                     firstName: owner.firstName,
                     lastName: owner.lastName,
                     slug: owner.slug,
-                    role: RoleEnum.COMMERCE_OWNER as (typeof users.$inferInsert)['role'],
                     mustChangePassword: false,
                     profileCompleted: true,
                     lifecycleState:
@@ -464,6 +479,29 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                 throw new Error(`Insert into users returned no row for email=${owner.email}`);
             }
             realUserId = insertedUserRow.id;
+
+            // HOS-296: hats are rows in `user_role`, not a column on `users`.
+            // AC-11's `commerce-02-access-control` and `commerce-04-permission-gate`
+            // e2e specs sign in as exactly this fixture, so the grant here is
+            // what makes those suites pass — sweeping raw SQL in `apps/e2e`
+            // does not cover it.
+            //
+            // `USER` is granted alongside `COMMERCE_OWNER` because that is what
+            // a real signup produces (Better Auth's create hook grants the
+            // baseline, everything else is layered on top).
+            for (const role of [RoleEnum.USER, RoleEnum.COMMERCE_OWNER]) {
+                const granted = await grantRole({
+                    userId: realUserId,
+                    role,
+                    grantedBy: null,
+                    reason: RoleGrantReason.SEED
+                });
+                if (granted.error) {
+                    throw new Error(
+                        `Failed to grant ${role} to ${owner.email}: ${granted.error.message}`
+                    );
+                }
+            }
 
             // Create Better Auth account row (email + password credential provider)
             await db.insert(accounts).values({
@@ -515,6 +553,18 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             await db.execute(
                 sql`UPDATE users SET profile_completed = true WHERE id = ${existingTouristRow.id} AND profile_completed = false`
             );
+            // Heal: idempotent USER grant for pre-HOS-296 databases.
+            const healedTourist = await grantRole({
+                userId: existingTouristRow.id,
+                role: RoleEnum.USER,
+                grantedBy: null,
+                reason: RoleGrantReason.SEED
+            });
+            if (healedTourist.error) {
+                throw new Error(
+                    `Failed to grant USER to ${E2E_TOURIST.email}: ${healedTourist.error.message}`
+                );
+            }
         } else {
             const insertedTourists = await db
                 .insert(users)
@@ -525,7 +575,6 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                     firstName: E2E_TOURIST.firstName,
                     lastName: E2E_TOURIST.lastName,
                     slug: E2E_TOURIST.slug,
-                    role: RoleEnum.USER as (typeof users.$inferInsert)['role'],
                     mustChangePassword: false,
                     profileCompleted: true,
                     lifecycleState:
@@ -537,6 +586,22 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             const insertedTouristRow = insertedTourists[0];
             if (!insertedTouristRow) {
                 throw new Error(`Insert into users returned no row for email=${E2E_TOURIST.email}`);
+            }
+
+            // HOS-296: the tourist fixture's single `USER` hat, as a row.
+            // `commerce-02` case 1 asserts that this account is REDIRECTED away
+            // from `/mi-cuenta/comercio/`, so the absence of COMMERCE_OWNER is
+            // as load-bearing as the presence of USER.
+            const grantedTourist = await grantRole({
+                userId: insertedTouristRow.id,
+                role: RoleEnum.USER,
+                grantedBy: null,
+                reason: RoleGrantReason.SEED
+            });
+            if (grantedTourist.error) {
+                throw new Error(
+                    `Failed to grant USER to ${E2E_TOURIST.email}: ${grantedTourist.error.message}`
+                );
             }
 
             // Create Better Auth account row (email + password credential provider).

@@ -28,7 +28,7 @@ const cookieHeader = Astro.request.headers.get('cookie');
 const sessionUser = requestHasSessionCookie(cookieHeader)
 	? await parseSessionUser({ cookieHeader })
 	: null;
-const plansPath = resolveSubscriptionPlansPath({ role: sessionUser?.role ?? null });
+const plansPath = resolveSubscriptionPlansPath({ roles: sessionUser?.roles ?? null });
 
 // The redirect target is per-visitor (role-variant) and the bare URL carries no
 // differentiator, so it must never be shared from a CDN edge cache. Return an

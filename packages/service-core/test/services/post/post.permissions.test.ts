@@ -16,7 +16,7 @@ import { createActor, createGuestActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';
 import { getMockId } from '../../factories/utilsFactory';
 
-const baseActor = { id: '1', permissions: [], role: RoleEnum.USER };
+const baseActor = { id: '1', permissions: [], roles: [RoleEnum.USER] };
 const authorId = getMockId('user', 'author-1') as UserIdType;
 const post = createMockPost({
     id: getMockId('post', 'p1') as PostIdType,
@@ -40,9 +40,9 @@ describe('checkCanUpdatePost', () => {
         expect(() => checkCanUpdatePost(actor, post)).not.toThrow();
     });
     it('should allow author with USER or EDITOR role', () => {
-        const actorUser = createActor({ id: authorId, role: RoleEnum.USER });
+        const actorUser = createActor({ id: authorId, roles: [RoleEnum.USER] });
         expect(() => checkCanUpdatePost(actorUser, post)).not.toThrow();
-        const actorEditor = createActor({ id: authorId, role: RoleEnum.EDITOR });
+        const actorEditor = createActor({ id: authorId, roles: [RoleEnum.EDITOR] });
         expect(() => checkCanUpdatePost(actorEditor, post)).not.toThrow();
     });
     it('should throw ServiceError if not author and lacks permission', () => {
@@ -60,9 +60,9 @@ describe('checkCanDeletePost', () => {
         expect(() => checkCanDeletePost(actor, post)).not.toThrow();
     });
     it('should allow author with USER or EDITOR role', () => {
-        const actorUser = createActor({ id: authorId, role: RoleEnum.USER });
+        const actorUser = createActor({ id: authorId, roles: [RoleEnum.USER] });
         expect(() => checkCanDeletePost(actorUser, post)).not.toThrow();
-        const actorEditor = createActor({ id: authorId, role: RoleEnum.EDITOR });
+        const actorEditor = createActor({ id: authorId, roles: [RoleEnum.EDITOR] });
         expect(() => checkCanDeletePost(actorEditor, post)).not.toThrow();
     });
     it('should throw ServiceError if not author and lacks permission', () => {
@@ -100,7 +100,7 @@ describe('checkCanViewPost', () => {
     });
     it('should allow author to view private post', () => {
         const privatePost = createMockPost({ ...post, visibility: VisibilityEnum.PRIVATE });
-        const actor = createActor({ id: authorId, role: RoleEnum.USER });
+        const actor = createActor({ id: authorId, roles: [RoleEnum.USER] });
         expect(() => checkCanViewPost(actor, privatePost)).not.toThrow();
     });
     it('should throw ServiceError if not author and lacks permission for private', () => {
@@ -167,7 +167,7 @@ describe('checkCanViewPost', () => {
             visibility: VisibilityEnum.PUBLIC,
             deletedAt: new Date()
         });
-        const authorActor = createActor({ id: authorId, role: RoleEnum.USER });
+        const authorActor = createActor({ id: authorId, roles: [RoleEnum.USER] });
         expect(() => checkCanViewPost(authorActor, deletedPost)).not.toThrow();
     });
 

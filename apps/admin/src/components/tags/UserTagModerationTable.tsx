@@ -104,9 +104,10 @@ export function UserTagModerationTable({
                                         <span className="font-medium">
                                             {tag.ownerDisplayName ?? tag.ownerId ?? '—'}
                                         </span>
-                                        {tag.ownerRole && (
+                                        {/* HOS-296: the owner holds a SET of hats. */}
+                                        {tag.ownerRoles && tag.ownerRoles.length > 0 && (
                                             <span className="text-muted-foreground text-xs">
-                                                {tag.ownerRole}
+                                                {tag.ownerRoles.join(', ')}
                                             </span>
                                         )}
                                         {tag.ownerEmail && (

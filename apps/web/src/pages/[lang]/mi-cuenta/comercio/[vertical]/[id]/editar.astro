@@ -19,7 +19,7 @@ import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { transformAmenityList } from '@/lib/api/transforms';
-import { isCommerceOwnerRole } from '@/lib/account-roles';
+import { hasCommerceNavAccess } from '@/lib/nav-gating';
 import {
     type CommerceVertical,
     fetchOwnerListingDetail
@@ -38,7 +38,9 @@ const user = Astro.locals.user;
 if (!user) {
     return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
 }
-if (!isCommerceOwnerRole(user.role)) {
+// HOS-296: gate through the shared `nav-gating` predicate over the role SET,
+// so a COMMERCE_OWNER who is ALSO a HOST keeps commerce access (AC-1).
+if (!hasCommerceNavAccess({ roles: user.roles })) {
     return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
 }
 
@@ -56,7 +58,9 @@ const detail = await fetchOwnerListingDetail({ vertical, id, cookieHeader });
 // Defensive UX gate: the protected getById does not enforce ownership, so a
 // non-owner (and non-staff) is bounced back to their listing index. The write
 // path (updateOwn) is the hard gate.
-const isStaff = user.role === 'ADMIN' || user.role === 'SUPER_ADMIN';
+// HOS-296: staff check over the role SET — an admin who also holds
+// COMMERCE_OWNER is still staff here.
+const isStaff = user.roles.includes('ADMIN') || user.roles.includes('SUPER_ADMIN');
 const ownsListing = detail !== null && detail.ownerId === user.id;
 if (!detail || (!ownsListing && !isStaff)) {
     return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/comercio' }));

@@ -14,6 +14,7 @@ import type {
     ApiSuccessResponse,
     PaginationData
 } from '../schemas/response-schemas';
+import { readEntitlementCause } from '../utils/entitlement-cause';
 import { env, getResponseConfig } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
@@ -80,14 +81,21 @@ const formatSuccessResponse = <T>(
 };
 
 /**
- * Formats an error response with consistent structure
+ * Formats an error response with consistent structure.
+ *
+ * `reason` is the finer-grained, machine-readable discriminator that sits
+ * alongside `code` — e.g. `code: 'ENTITLEMENT_REQUIRED'` + `reason:
+ * 'TRIAL_EXPIRED'`. The web client prefers it over `code` when resolving the
+ * localized copy (`translateApiError`'s reason → code → status chain), so a
+ * single code can render cause-specific messages. Emitted only when present.
  */
 const formatErrorResponse = (
     code: string,
     message: string,
     _status = 500,
     details?: unknown,
-    requestId?: string
+    requestId?: string,
+    reason?: string
 ): ApiResponse => {
     const responseConfig = getResponseConfig();
     const response: ApiResponse = {
@@ -95,6 +103,7 @@ const formatErrorResponse = (
         error: {
             code,
             message,
+            ...(reason ? { reason } : {}),
             ...(details ? { details: details } : {})
         }
     };
@@ -303,6 +312,11 @@ const resolveHttpStatusLogLevel = (status: number): ErrorLogLevel => {
         case 401:
         case 404:
             return 'info';
+        case 402:
+        // An entitlement gate is a business outcome, not a fault: logging it at
+        // `error` with a stack trace floods the ERROR stream with every blocked
+        // write of every lapsed host, and the middleware already emits its own
+        // `warn` for the same event (HOS-283).
         case 403:
             return 'warn';
         default:
@@ -353,6 +367,7 @@ export const createErrorHandler = () => {
         let errorMessage: string;
         let statusCode: number;
         let errorDetails: unknown;
+        let errorReason: string | undefined;
 
         // Priority 1: ServiceError from service layer (preferred)
         // Use instanceof for type-safe error detection
@@ -361,6 +376,14 @@ export const createErrorHandler = () => {
             errorMessage = error.message;
             statusCode = getHttpStatusFromErrorCode(error.code);
             errorDetails = error.details;
+            // `ServiceError`'s 4th constructor arg is documented as "emitted
+            // unconditionally in API error responses", and ~113 call sites pass
+            // it — but only `handleRouteError` (utils/response-helpers.ts, the
+            // formatter every route-factory route lands in) actually emitted it.
+            // Errors that reach THIS handler instead — thrown from middleware or
+            // a hand-rolled route — silently dropped it. Forwarding it here makes
+            // the contract hold on both paths (HOS-283).
+            errorReason = error.reason;
         }
         // Priority 2: Hono HTTPException
         else if (error instanceof HTTPException) {
@@ -378,6 +401,16 @@ export const createErrorHandler = () => {
                 errorCode = ServiceErrorCode.NOT_FOUND;
             } else if (statusCode === 409) {
                 errorCode = ServiceErrorCode.ALREADY_EXISTS;
+            } else if (statusCode === 402) {
+                // A 402 is a business gate (expired trial, no active plan, no
+                // billing account), NOT a server fault. Falling through to
+                // INTERNAL_ERROR made every gated write read as "something broke
+                // on our side", which sends the user to retry instead of to the
+                // plans page (HOS-283).
+                errorCode = ServiceErrorCode.ENTITLEMENT_REQUIRED;
+                const cause = readEntitlementCause(error);
+                errorReason = cause.reason;
+                errorDetails = cause.details;
             } else {
                 errorCode = ServiceErrorCode.INTERNAL_ERROR;
             }
@@ -435,6 +468,10 @@ export const createErrorHandler = () => {
         const hideDetails = isProduction && !debugErrors && statusCode >= 500;
         const safeDetails = hideDetails ? undefined : errorDetails;
         const safeMessage = hideDetails ? responseConfig.errorMessage : errorMessage;
+        // `reason` is masked on the same terms as `message`/`details`: it names
+        // an internal failure mode (`BULLMQ_NOT_CONFIGURED`, ...), so leaving it
+        // on a masked 5xx would hand back exactly what the masking hides.
+        const safeReason = hideDetails ? undefined : errorReason;
 
         const requestId = c.get('requestId');
         const formattedError = formatErrorResponse(
@@ -442,7 +479,8 @@ export const createErrorHandler = () => {
             safeMessage,
             statusCode,
             safeDetails,
-            requestId
+            requestId,
+            safeReason
         );
 
         // Add response headers (includes preserved CORS headers)

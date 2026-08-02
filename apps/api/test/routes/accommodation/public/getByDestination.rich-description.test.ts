@@ -28,6 +28,12 @@ const ACCOMMODATION_WITH_RICH = {
     summary: 'A very nice lodge',
     description: 'Plain description text',
     richDescription: '## Premium\n\nThis must NOT appear in the public response.',
+    // SPEC-212 i18n sibling — must be stripped TOGETHER with the plain field.
+    richDescriptionI18n: {
+        es: '## Premium ES\n\nEsto NO debe aparecer en la respuesta publica.',
+        en: '## Premium EN\n\nThis must NOT appear in the public response.',
+        pt: '## Premium PT\n\nIsto NAO deve aparecer na resposta publica.'
+    },
     type: 'CABIN',
     isFeatured: false,
     averageRating: 4.5,
@@ -72,7 +78,7 @@ vi.mock('../../../../src/utils/actor', async (importOriginal) => {
         ...actual,
         createGuestActor: vi.fn(() => ({
             id: '00000000-0000-4000-8000-000000000000',
-            role: 'GUEST',
+            roles: ['GUEST'],
             permissions: []
         }))
     };
@@ -141,6 +147,7 @@ describe('getByDestinationRoute — SPEC-187 richDescription must be absent', ()
 
         for (const item of wrapper.accommodations) {
             expect(item).not.toHaveProperty('richDescription');
+            expect(item).not.toHaveProperty('richDescriptionI18n');
         }
     });
 
@@ -163,6 +170,7 @@ describe('getByDestinationRoute — SPEC-187 richDescription must be absent', ()
         expect(item).toHaveProperty('name');
         expect(item).toHaveProperty('description');
         expect(item).not.toHaveProperty('richDescription');
+        expect(item).not.toHaveProperty('richDescriptionI18n');
     });
 
     it('returns empty accommodations array when the service returns none', async () => {

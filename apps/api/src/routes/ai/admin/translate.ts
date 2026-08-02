@@ -15,6 +15,7 @@
 import { PermissionEnum } from '@repo/schemas';
 import { z } from 'zod';
 import { adminAuthMiddleware } from '../../../middlewares/authorization';
+import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import {
     applyManualOverride,
     batchTranslate,
@@ -64,6 +65,24 @@ export const adminAiTranslateRoute = createRouter();
 
 // Auth middleware for all routes
 adminAiTranslateRoute.use('*', adminAuthMiddleware([PermissionEnum.AI_SETTINGS_MANAGE]));
+
+// Per-user cost guard (HOS-325).
+//
+// This route drives a PAID LLM call and, unlike every `/api/v1/protected/ai/*`
+// route, carries no AI quota or per-feature rate-limit middleware — its only
+// throttle was the IP-keyed admin tier. HOS-325 relaxed that tier by design (it
+// was strangling operators), which would otherwise have multiplied the provider
+// spend a runaway client or a single compromised admin session can burn before
+// anything stops it. This keeps a tight, user-keyed ceiling on exactly the
+// endpoint where a request costs real money.
+adminAiTranslateRoute.use(
+    '*',
+    createSlidingWindowPerUserRateLimit({
+        windowMs: 60_000,
+        max: 20,
+        keyPrefix: 'admin:ai:translate'
+    })
+);
 
 // ---------------------------------------------------------------------------
 // POST / — translate a single entity's fields (admin "Translate now")

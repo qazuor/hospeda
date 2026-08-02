@@ -505,16 +505,6 @@ export interface PaymentItem {
     readonly status: string;
 }
 
-/** Usage summary for plan limits */
-export interface UsageSummary {
-    readonly limits: ReadonlyArray<{
-        readonly key: string;
-        readonly label: string;
-        readonly current: number;
-        readonly max: number | null;
-    }>;
-}
-
 /**
  * User addon item — the authenticated user's own purchased add-on.
  *
@@ -537,6 +527,86 @@ export interface UserAddon {
     readonly affectsLimitKey: string | null;
     readonly limitIncrease: number | null;
     readonly grantsEntitlement: string | null;
+}
+
+/**
+ * How close a single limit is to being hit, as classified server-side.
+ *
+ * Replaces an earlier hand-written `UsageSummary` whose fields
+ * (`key`/`label`/`current`/`max`) never matched what
+ * `GET /protected/billing/usage` actually returns. It had no consumer, so
+ * nothing surfaced the drift — the same failure mode HOS-224 found in
+ * `UserAddon`.
+ * `exceeded` is reachable: an addon expiring or a downgrade can leave a user
+ * above a limit they already consumed.
+ */
+export type UsageThresholdLevel = 'ok' | 'warning' | 'critical' | 'exceeded';
+
+/**
+ * One limit of the user's plan and what they have consumed of it.
+ *
+ * Mirrors `limitUsageSchema` in `apps/api/src/routes/billing/usage.ts`.
+ *
+ * `maxAllowed` carries two sentinel values that are NOT quantities:
+ * - `-1` — unlimited (staff bypass grants this across every key).
+ * - `0` — the plan does not grant this limit at all; not a limit of zero.
+ */
+export interface LimitUsage {
+    readonly limitKey: string;
+    /** English label from `LIMIT_METADATA`; translate by `limitKey` instead of showing this. */
+    readonly displayName: string;
+    readonly currentUsage: number;
+    readonly maxAllowed: number;
+    readonly usagePercentage: number;
+    readonly threshold: UsageThresholdLevel;
+    readonly planBaseLimit: number;
+    readonly addonBonusLimit: number;
+    /**
+     * Whether `currentUsage` is a real measurement. A limit with no counter
+     * reports a hardcoded `0` that is indistinguishable from a genuine zero.
+     * Never display a row with `isMeasured: false` as consumption — it would
+     * tell the user they have used nothing when they have.
+     */
+    readonly isMeasured: boolean;
+    /**
+     * How this limit's consumption behaves, which decides how to render it.
+     * See `UsageKind` in `apps/api/src/services/usage-tracking.service.ts`.
+     */
+    readonly usageKind: UsageKind;
+    /**
+     * Photo consumption per accommodation, fullest-first. Present only when
+     * `usageKind` is `'per_accommodation'`.
+     */
+    readonly perAccommodation?: readonly AccommodationPhotoUsage[];
+}
+
+/**
+ * How a limit's consumption behaves.
+ *
+ * - `stock` — a quantity the account holds now; counted, never resets.
+ * - `monthly` — calls used this calendar month; counted, resets on the 1st.
+ * - `per_accommodation` — capped per accommodation; the real numbers are in
+ *   `perAccommodation` and `currentUsage` is meaningless.
+ * - `per_operation` — bounds a single request (how many items you may compare
+ *   at once); nothing is stored, so there is no consumption.
+ * - `unbuilt` — granted by the plan but the feature does not exist yet.
+ */
+export type UsageKind = 'stock' | 'monthly' | 'per_accommodation' | 'per_operation' | 'unbuilt';
+
+/** Photo consumption of one accommodation, for a `per_accommodation` limit. */
+export interface AccommodationPhotoUsage {
+    readonly accommodationId: string;
+    readonly name: string;
+    readonly slug: string | null;
+    readonly currentUsage: number;
+}
+
+/** The full usage picture for one subscription. */
+export interface UsageSummary {
+    readonly customerId: string;
+    readonly limits: readonly LimitUsage[];
+    readonly overallThreshold: UsageThresholdLevel;
+    readonly upgradeUrl: string;
 }
 
 /** Plan item for plan listing and selection */
@@ -966,6 +1036,44 @@ export const billingApi = {
     }): Promise<ApiResult<readonly UserAddon[]>> {
         return apiClient.getProtected({
             path: `${PROTECTED}/billing/addons/my`,
+            cookieHeader: params?.cookieHeader
+        });
+    },
+
+    /**
+     * Get the authenticated user's consumption against every limit of their
+     * current plan.
+     *
+     * `GET /protected/billing/usage`. The response covers EVERY `LimitKey`,
+     * including keys the plan does not grant (those come back as
+     * `maxAllowed: 0`) — callers are expected to filter before display, or
+     * the user sees a wall of "0 of 0" rows.
+     *
+     * Two states are expected rather than exceptional, and both surface as a
+     * failed `ApiResult` the caller should degrade on rather than treat as an
+     * error worth showing:
+     * - `404` — no active subscription in the requested domain (free user).
+     * - `503` — billing is not configured in this environment.
+     *
+     * @param params - Product domain to scope to (defaults server-side to
+     *   `'accommodation'`) plus the optional SSR cookie header.
+     * @returns The usage summary for the resolved subscription.
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.getUsage({ productDomain: 'commerce' });
+     * if (result.ok) {
+     *   const shown = result.data.limits.filter((l) => l.maxAllowed !== 0);
+     * }
+     * ```
+     */
+    getUsage(params?: {
+        readonly productDomain?: 'accommodation' | 'commerce';
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<UsageSummary>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing/usage`,
+            params: { productDomain: params?.productDomain },
             cookieHeader: params?.cookieHeader
         });
     },
@@ -2422,8 +2530,12 @@ export const accommodationEditApi = {
     },
 
     /**
-     * Publish an accommodation (DRAFT → ACTIVE), starting the no-card 14-day
-     * trial for first-time publishers.
+     * Publish an accommodation (DRAFT → ACTIVE).
+     *
+     * Publishing does NOT start a trial. Since card-first (HOS-171) the trial
+     * is a MercadoPago preapproval created at checkout, so an owner without an
+     * active subscription is rejected with `subscription_required` and sent to
+     * the plans page — where the card is collected and the trial begins.
      *
      * Calls the dedicated `/publish` endpoint (HOS-110) instead of the
      * generic `update()` PATCH — the general update schema strips

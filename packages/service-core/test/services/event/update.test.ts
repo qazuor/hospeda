@@ -9,8 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vite
 import * as helpers from '../../../src/services/event/event.helpers';
 import { EventService } from '../../../src/services/event/event.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
+import { createActor } from '../../factories/actorFactory';
 import { createEventUpdateInput, createMockEvent } from '../../factories/eventFactory';
-import { createUser } from '../../factories/userFactory';
 import {
     expectForbiddenError,
     expectInternalError,
@@ -24,8 +24,8 @@ describe('EventService.update', () => {
     let service: EventService;
     let modelMock: EventModel;
     let loggerMock: ServiceLogger;
-    const actorWithPerm = createUser({ permissions: [PermissionEnum.EVENT_UPDATE] });
-    const actorNoPerm = createUser();
+    const actorWithPerm = createActor({ permissions: [PermissionEnum.EVENT_UPDATE] });
+    const actorNoPerm = createActor();
     const existingEvent = createMockEvent({ visibility: VisibilityEnum.PUBLIC });
     const eventId = existingEvent.id;
     const updateInput = createEventUpdateInput({ visibility: VisibilityEnum.PUBLIC });

@@ -119,13 +119,13 @@ const mockGetActorFromContext = vi.mocked(getActorFromContext);
 
 const ADMIN_ACTOR: Actor = {
     id: 'admin-actor-id',
-    role: 'ADMIN',
+    roles: ['ADMIN'],
     permissions: [PermissionEnum.POI_CATEGORY_VIEW]
 } as Actor;
 
 const UNAUTHORIZED_ACTOR: Actor = {
     id: 'no-permission-actor-id',
-    role: 'USER',
+    roles: ['USER'],
     permissions: []
 } as Actor;
 

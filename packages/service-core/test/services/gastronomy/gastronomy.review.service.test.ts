@@ -61,7 +61,7 @@ function makeReview(overrides: Partial<Record<string, unknown>> = {}): Gastronom
 
 const staffActor: Actor = {
     id: STAFF_ID,
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [
         PermissionEnum.COMMERCE_EDIT_ALL,
         PermissionEnum.COMMERCE_MODERATE_REVIEW,
@@ -71,13 +71,13 @@ const staffActor: Actor = {
 
 const reviewerActor: Actor = {
     id: REVIEWER_ID,
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: []
 };
 
 const unauthActor: Actor = {
     id: '',
-    role: RoleEnum.GUEST,
+    roles: [RoleEnum.GUEST],
     permissions: []
 };
 
@@ -359,7 +359,7 @@ describe('GastronomyReviewService permission hooks', () => {
     it('_canSoftDelete should throw FORBIDDEN for non-author without COMMERCE_EDIT_ALL', () => {
         const review = makeReview();
         const service = makeService(review);
-        const stranger: Actor = { id: OTHER_USER, role: RoleEnum.USER, permissions: [] };
+        const stranger: Actor = { id: OTHER_USER, roles: [RoleEnum.USER], permissions: [] };
         expect(() => (service as AnyService)._canSoftDelete(stranger, review)).toThrow();
     });
 

@@ -29,7 +29,7 @@ const mockApiLogger = vi.mocked(apiLogger);
 // Helper to create actors
 const createUserActor = (id = 'user-123', permissions: PermissionEnum[] = []): Actor => ({
     id,
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: [PermissionEnum.ACCESS_API_PUBLIC, ...permissions]
 });
 

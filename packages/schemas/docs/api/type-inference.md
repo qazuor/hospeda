@@ -500,10 +500,15 @@ type Role = z.infer<typeof roleSchema>;
 import { RoleEnumSchema, type RoleEnum } from '@repo/schemas';
 
 // RoleEnum is:
-// 'user' | 'moderator' | 'admin' | 'super_admin'
+// 'SUPER_ADMIN' | 'ADMIN' | 'CLIENT_MANAGER' | 'EDITOR' | 'HOST' |
+// 'COMMERCE_OWNER' | 'SPONSOR' | 'USER' | 'GUEST' | 'SYSTEM'
 
-function hasAdminAccess(role: RoleEnum): boolean {
-  return role === 'admin' || role === 'super_admin';
+// An actor holds a SET of roles at once (HOS-296), never a single scalar —
+// and access is always decided by `actor.permissions`, never by role. This
+// helper only illustrates how a `RoleEnum` value narrows; it is NOT the
+// real authorization pattern (see the Permissions guide).
+function actorHoldsRole(roles: readonly RoleEnum[], target: RoleEnum): boolean {
+  return roles.includes(target);
 }
 ```
 

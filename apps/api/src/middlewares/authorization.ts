@@ -91,7 +91,7 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
             auditLog({
                 auditEvent: AuditEventType.ACCESS_DENIED,
                 actorId: actor.id,
-                actorRole: actor.role,
+                actorRole: actor.roles.join(','),
                 resource: c.req.path,
                 method: c.req.method,
                 statusCode: 403,
@@ -101,7 +101,7 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
         }
 
         apiLogger.debug(
-            `Authorization check: level=${level}, actorId=${actor.id}, role=${actor.role}, isGuest=${isGuestActor(actor)}`
+            `Authorization check: level=${level}, actorId=${actor.id}, roles=${actor.roles.join(',')}, isGuest=${isGuestActor(actor)}`
         );
 
         // PUBLIC level: Allow everyone (guests and authenticated users)
@@ -137,7 +137,7 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
                     auditLog({
                         auditEvent: AuditEventType.ACCESS_DENIED,
                         actorId: actor.id,
-                        actorRole: actor.role,
+                        actorRole: actor.roles.join(','),
                         resource: c.req.path,
                         method: c.req.method,
                         statusCode: 403,
@@ -179,7 +179,7 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
                 auditLog({
                     auditEvent: AuditEventType.ACCESS_DENIED,
                     actorId: actor.id,
-                    actorRole: actor.role,
+                    actorRole: actor.roles.join(','),
                     resource: c.req.path,
                     method: c.req.method,
                     statusCode: 403,
@@ -198,7 +198,7 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
                     auditLog({
                         auditEvent: AuditEventType.ACCESS_DENIED,
                         actorId: actor.id,
-                        actorRole: actor.role,
+                        actorRole: actor.roles.join(','),
                         resource: c.req.path,
                         method: c.req.method,
                         statusCode: 403,

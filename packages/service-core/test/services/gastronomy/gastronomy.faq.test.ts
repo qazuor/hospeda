@@ -82,20 +82,20 @@ function makeFaq(overrides: Partial<GastronomyFaq> = {}): GastronomyFaq {
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    role: RoleEnum.COMMERCE_OWNER,
+    roles: [RoleEnum.COMMERCE_OWNER],
     // SPEC-253 D2=b: single COMMERCE_EDIT_OWN replaces COMMERCE_FAQS_EDIT_OWN
     permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
 };
 
 const _staffActor: Actor = {
     id: 'staff-id',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.COMMERCE_EDIT_ALL, PermissionEnum.COMMERCE_VIEW_ALL]
 };
 
 const touristActor: Actor = {
     id: 'tourist-id',
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: []
 };
 

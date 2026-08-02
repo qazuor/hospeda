@@ -35,7 +35,7 @@ import {
 
 function makeAdminCtx(): ResolverContext {
     return {
-        role: 'ADMIN',
+        roles: ['ADMIN'],
         userId: 'usr_admin_001',
         permissions: [
             'ACCOMMODATION_VIEW_ALL',
@@ -180,7 +180,7 @@ describe('ADMIN source queryKey structure', () => {
     it('ADMIN and SUPER_ADMIN produce different queryKeys for the same source', () => {
         const adminKey = buildDashboardQueryKey('admin.crons.list', makeAdminCtx());
         const superKey = buildDashboardQueryKey('admin.crons.list', {
-            role: 'SUPER_ADMIN',
+            roles: ['SUPER_ADMIN'],
             userId: 'usr_super_001',
             permissions: ['*'],
             scope: 'all'

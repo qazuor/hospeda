@@ -15,7 +15,7 @@
  * the hint on hydration, so the same Header works on SSR and SSG pages alike.
  * `MobileMenuIsland` (mounted below, no longer `server:defer` — see its file
  * doc) is given the SAME `Astro.locals.user`-derived hint
- * (`initialUserMenuUser`/`serverUser.role`) and refines it the same way.
+ * (`initialUserMenuUser`/`serverUser.roles`) and refines it the same way.
  *
  * The standalone language/theme controls and the settings dropdown stay
  * hidden when `<html data-user-authenticated="true">` so authenticated
@@ -134,13 +134,17 @@ const adminPanelUrl = getAdminUrl();
  * HOST with no plan yet, see `loadEntitlements` HOS-217) before hiding the
  * CTA. This is an SSR-only server-side fetch to the already-existing
  * `/protected/users/me/entitlements` endpoint (same pattern as
- * `pages/[lang]/publicar/nueva.astro`), gated on `role === 'HOST'` so the
+ * `pages/[lang]/publicar/nueva.astro`), gated on holding the HOST hat so the
  * vast majority of page views (guests, tourists, staff) never pay for the
  * extra request. Fails open on any error (falls back to the plain
  * role check) so a transient API issue never regresses an existing host.
  */
+// HOS-296: ask whether the actor HOLDS the hat, never whether a scalar role
+// equals it — a user who is both HOST and COMMERCE_OWNER must still be
+// recognised as a host here, which the old `=== 'HOST'` equality dropped.
+const serverUserRoles = serverUser?.roles ?? [];
 let hostHasEntitlement = true;
-if (serverUser?.role === 'HOST') {
+if (serverUserRoles.includes('HOST')) {
     try {
         const cookieHeader = Astro.request.headers.get('cookie');
         if (cookieHeader) {
@@ -168,10 +172,10 @@ if (serverUser?.role === 'HOST') {
 }
 
 const isAlreadyHost =
-    (serverUser?.role === 'HOST' && hostHasEntitlement) ||
-    serverUser?.role === 'ADMIN' ||
-    serverUser?.role === 'CLIENT_MANAGER' ||
-    serverUser?.role === 'SUPER_ADMIN';
+    (serverUserRoles.includes('HOST') && hostHasEntitlement) ||
+    serverUserRoles.includes('ADMIN') ||
+    serverUserRoles.includes('CLIENT_MANAGER') ||
+    serverUserRoles.includes('SUPER_ADMIN');
 ---
 
 <header data-header class:list={['header', { 'header--hero': isHero }]} role="banner">
@@ -289,7 +293,7 @@ const isAlreadyHost =
     logoSrc={mobileLogoSrc}
     homeHref={buildUrl({ locale, path: "/" })}
     initialUser={initialUserMenuUser}
-    initialRole={serverUser?.role ?? null}
+    initialRoles={serverUserRoles}
     adminPanelUrl={adminPanelUrl}
 />
 

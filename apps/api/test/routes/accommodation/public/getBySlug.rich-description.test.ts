@@ -85,7 +85,7 @@ vi.mock('../../../../src/utils/actor', async (importOriginal) => {
         ...actual,
         getActorFromContext: vi.fn(() => ({
             id: '00000000-0000-4000-8000-000000000000',
-            role: 'GUEST',
+            roles: ['GUEST'],
             permissions: []
         }))
     };
@@ -165,6 +165,11 @@ describe('publicGetAccommodationBySlugRoute — richDescription gate', () => {
                 ownerId: 'owner-001',
                 description: 'Plain description',
                 richDescription: '## Premium\n\n**luxury**',
+                richDescriptionI18n: {
+                    es: '## Premium ES\n\n**lujo**',
+                    en: '## Premium EN\n\n**luxury**',
+                    pt: '## Premium PT\n\n**luxo**'
+                },
                 createdAt: new Date('2026-01-01T00:00:00.000Z')
             }
         });
@@ -176,6 +181,12 @@ describe('publicGetAccommodationBySlugRoute — richDescription gate', () => {
 
         expect(res.status).toBe(200);
         expect(body.data.richDescription).toBe('## Premium\n\n**luxury**');
+        // The i18n sibling rides the SAME gate — an entitled owner keeps both.
+        expect(body.data.richDescriptionI18n).toEqual({
+            es: '## Premium ES\n\n**lujo**',
+            en: '## Premium EN\n\n**luxury**',
+            pt: '## Premium PT\n\n**luxo**'
+        });
     });
 
     it('omits richDescription when the owning host is not entitled', async () => {
@@ -186,6 +197,11 @@ describe('publicGetAccommodationBySlugRoute — richDescription gate', () => {
                 ownerId: 'owner-001',
                 description: 'Plain description',
                 richDescription: '## Premium\n\n**luxury**',
+                richDescriptionI18n: {
+                    es: '## Premium ES\n\n**lujo**',
+                    en: '## Premium EN\n\n**luxury**',
+                    pt: '## Premium PT\n\n**luxo**'
+                },
                 createdAt: new Date('2026-01-01T00:00:00.000Z')
             }
         });
@@ -197,6 +213,9 @@ describe('publicGetAccommodationBySlugRoute — richDescription gate', () => {
 
         expect(res.status).toBe(200);
         expect(body.data.richDescription).toBeUndefined();
+        // Gating only the plain field would leave this one behind and the web
+        // would still render the premium markdown — both must be gone.
+        expect(body.data.richDescriptionI18n).toBeUndefined();
         expect(body.data.description).toBe('Plain description');
     });
 });

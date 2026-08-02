@@ -30,12 +30,16 @@ const otherUserId = 'other-uuid' as string;
 const bookmarkId = 'bookmark-uuid' as string;
 const entityId = 'entity-uuid' as string;
 
-type MockActor = { id: string; role: RoleEnum; permissions: PermissionEnum[] };
+type MockActor = { id: string; roles: readonly RoleEnum[]; permissions: PermissionEnum[] };
 
 describe('userBookmark.normalizers', () => {
     it('normalizeCreateInput trims name and description', () => {
         const input = { ...baseBookmark };
-        const result = normalizeCreateInput(input, { id: 'user-uuid', role: 'USER' } as MockActor);
+        const result = normalizeCreateInput(input, {
+            id: 'user-uuid',
+            roles: [RoleEnum.USER],
+            permissions: []
+        } as MockActor);
         expect(result.name).toBe('My Bookmark');
         expect(result.description).toBe('Some description');
         expect(result.entityType).toBe(EntityTypeEnum.ACCOMMODATION);
@@ -51,7 +55,7 @@ describe('userBookmark.normalizers', () => {
         };
         const actor: MockActor = {
             id: userId,
-            role: RoleEnum.USER,
+            roles: [RoleEnum.USER],
             permissions: [PermissionEnum.USER_VIEW_PROFILE]
         };
         const result = normalizeUpdateInput(input, actor);
@@ -78,12 +82,12 @@ describe('userBookmark.permissions', () => {
     };
     const owner: MockActor = {
         id: userId,
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: [PermissionEnum.USER_VIEW_PROFILE]
     };
     const other: MockActor = {
         id: otherUserId,
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: [PermissionEnum.USER_VIEW_PROFILE]
     };
 

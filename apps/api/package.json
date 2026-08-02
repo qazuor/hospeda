@@ -26,7 +26,7 @@
         "test:e2e:single": "NODE_OPTIONS=--max-old-space-size=8192 vitest run --config vitest.config.e2e.ts",
         "test:sandbox": "vitest run --config test/e2e/sandbox/vitest.config.sandbox.ts",
         "test:sandbox:watch": "vitest --config test/e2e/sandbox/vitest.config.sandbox.ts",
-        "build:deps": "turbo run build --filter=@repo/db --filter=@repo/service-core --filter=@repo/schemas --filter=@repo/logger --filter=@repo/config --filter=@repo/billing --filter=@repo/notifications --filter=@repo/utils --filter=@repo/email --filter=@repo/ai-core --filter=@repo/feedback --filter=@repo/content-moderation"
+        "build:deps": "turbo run build --filter=@repo/db --filter=@repo/service-core --filter=@repo/schemas --filter=@repo/logger --filter=@repo/config --filter=@repo/billing --filter=@repo/notifications --filter=@repo/utils --filter=@repo/email --filter=@repo/ai-core --filter=@repo/analytics --filter=@repo/feedback --filter=@repo/content-moderation"
     },
     "dependencies": {
         "@ai-sdk/gateway": "4.0.19",
@@ -41,6 +41,7 @@
         "@react-email/components": "^1.0.12",
         "@react-email/render": "^2.1.0",
         "@repo/ai-core": "workspace:*",
+        "@repo/analytics": "workspace:*",
         "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",

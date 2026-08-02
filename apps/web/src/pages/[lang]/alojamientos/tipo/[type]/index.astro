@@ -34,7 +34,7 @@ import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import { buildAccommodationsFilterGroups } from '@/lib/filters/accommodations-filter-groups';
 import { AiSearchEntry } from '@/components/ai-search/AiSearchEntry.client';
-import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi } from '@/lib/api/endpoints';
+import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -163,13 +163,13 @@ const guestCount = (adults ?? 0) + (childrenCount ?? 0);
 const minGuests = guestCount > 0 ? guestCount : undefined;
 
 // Fetch destinations (CITY only) for the location + geo-radius groups.
-const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 });
+const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100, cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS });
 const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 
 // Fetch amenities/features for the "Tipo y características" section.
-const amenitiesResult = await amenitiesApi.list({ pageSize: 100, isActive: true, sortBy: 'name', sortOrder: 'asc' });
+const amenitiesResult = await amenitiesApi.list({ pageSize: 100, isActive: true, sortBy: 'name', sortOrder: 'asc', cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS });
 const amenities = amenitiesResult.ok ? amenitiesResult.data.items : [];
-const featuresResult = await featuresApi.list({ pageSize: 100, sortBy: 'displayWeight', sortOrder: 'desc' });
+const featuresResult = await featuresApi.list({ pageSize: 100, sortBy: 'displayWeight', sortOrder: 'desc', cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS });
 const features = featuresResult.ok ? featuresResult.data.items : [];
 
 const result = await accommodationsApi.list({

@@ -67,7 +67,7 @@ const USER_ID = '44444444-4444-4444-8444-444444444444';
 function buildAdminActor(permissions: PermissionEnum[]): Actor {
     return {
         id: USER_ID,
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [
             PermissionEnum.ACCESS_PANEL_ADMIN,
             PermissionEnum.ACCESS_API_ADMIN,
@@ -83,7 +83,7 @@ function actorHeaders(actor: Actor): Record<string, string> {
         'user-agent': 'vitest',
         accept: 'application/json',
         'x-mock-actor-id': actor.id,
-        'x-mock-actor-role': actor.role,
+        'x-mock-actor-role': actor.roles.join(','),
         'x-mock-actor-permissions': JSON.stringify(actor.permissions)
     };
 }

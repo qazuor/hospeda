@@ -40,7 +40,7 @@ import {
     signupUser,
     startHostOnboarding
 } from '../../fixtures/api-helpers.ts';
-import { demoteHostToUser, execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { demoteHostToUser, execSQL, getDbPool, getUserRoles } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
@@ -118,11 +118,7 @@ test.describe('HOST-07a: onboarding create-always + re-promotion @p0 @host @onbo
         expect(first.accommodationId).not.toBeNull();
         const firstAccommodationId = first.accommodationId;
 
-        const usersAfter1 = await execSQL<{ role: string }>(
-            'SELECT role FROM users WHERE id = $1',
-            [user.id]
-        );
-        expect(usersAfter1[0]?.role).toBe('HOST');
+        expect(await getUserRoles(user.id), 'call 1 grants the HOST hat').toContain('HOST');
 
         const accsAfter1 = await execSQL<{ id: string }>(
             'SELECT id FROM accommodations WHERE owner_id = $1',
@@ -178,11 +174,9 @@ test.describe('HOST-07a: onboarding create-always + re-promotion @p0 @host @onbo
         // ── Demote + Call 3: created, re-promoted ──────────────────────────
         await demoteHostToUser(user.id);
 
-        const usersDemoted = await execSQL<{ role: string }>(
-            'SELECT role FROM users WHERE id = $1',
-            [user.id]
-        );
-        expect(usersDemoted[0]?.role).toBe('USER');
+        const rolesDemoted = await getUserRoles(user.id);
+        expect(rolesDemoted, 'demotion takes the HOST hat off').not.toContain('HOST');
+        expect(rolesDemoted, 'demotion never strands the account with zero hats').toContain('USER');
 
         let thirdCallRateLimited = false;
         let third: { status: string; accommodationId: string | null } | null = null;
@@ -212,14 +206,10 @@ test.describe('HOST-07a: onboarding create-always + re-promotion @p0 @host @onbo
         // The endpoint must re-promote to HOST as defense-in-depth.
         // Only assertable if Call 3 actually reached the handler.
         if (!thirdCallRateLimited) {
-            const usersAfter3 = await execSQL<{ role: string }>(
-                'SELECT role FROM users WHERE id = $1',
-                [user.id]
-            );
             expect(
-                usersAfter3[0]?.role,
-                'role must be re-promoted USER → HOST on the create call'
-            ).toBe('HOST');
+                await getUserRoles(user.id),
+                'the HOST hat must be re-granted on the create call'
+            ).toContain('HOST');
         }
 
         // A successful Call 3 inserts a third draft on top of whatever existed.

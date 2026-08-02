@@ -6,8 +6,9 @@
  *
  * The primary CTA is auth-aware: authenticated users are linked directly to the
  * new-property form (/publicar/nueva/), unauthenticated users go to sign-in first.
- * This is implemented via a small React island (HostLandingCta) with client:load
- * so the swap happens on first paint without any server-side session check.
+ * This is implemented via a small React island (HostLandingCta) with
+ * client:only="react", so the swap happens client-side once Better Auth's
+ * session resolves, without any server-side session check.
  *
  * Marketing prose (benefits, steps, FAQ) is deliberately kept in sync with
  * /suscriptores/propietarios/ via shared i18n keys (owners.*) — no copy duplication.
@@ -25,7 +26,9 @@ import JsonLd from '@/components/seo/JsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { getAdminUrl, getApiUrl } from '@/lib/env';
+import { OWNER_TRIAL_DAYS } from '@repo/billing';
+import { OWNER_FAQ_ITEMS, buildOwnerFaqParams } from '@/lib/owner-faq';
+import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import {
 	InfoIcon,
@@ -143,12 +146,12 @@ const steps = [
 	{ num: '04', titleKey: 'owners.steps.4.title', titleFb: 'Crecé', descKey: 'owners.steps.4.desc', descFb: 'Accedé a estadísticas, destacá tu publicación y llegá a más viajeros.' },
 ] as const;
 
-const faqs = [
-	{ qKey: 'owners.faq.1.q', qFb: '¿Cuánto cuesta publicar mi alojamiento?', aKey: 'owners.faq.1.a', aFb: 'Ofrecemos planes desde gratuitos hasta premium. El plan básico te permite publicar sin costo.' },
-	{ qKey: 'owners.faq.2.q', qFb: '¿Cómo recibo las reservas?', aKey: 'owners.faq.2.a', aFb: 'Los viajeros te contactan directamente por WhatsApp, email o teléfono. Vos manejás todo.' },
-	{ qKey: 'owners.faq.3.q', qFb: '¿Puedo publicar más de una propiedad?', aKey: 'owners.faq.3.a', aFb: 'Sí, podés publicar todas las propiedades que quieras desde una misma cuenta.' },
-	{ qKey: 'owners.faq.4.q', qFb: '¿Qué tipo de alojamientos puedo publicar?', aKey: 'owners.faq.4.a', aFb: 'Casas quintas, cabañas, departamentos, hoteles, apart hotels, campings y más.' },
-] as const;
+// Shared with /suscriptores/propietarios, which renders the same keys. This page
+// used to keep its own copy, so it still promised a free basic plan long after
+// the other page was corrected, and it rendered `{{trialDays}}` verbatim once
+// the answer stopped hardcoding the number (HOS-331).
+const faqs = OWNER_FAQ_ITEMS;
+const faqParams = buildOwnerFaqParams();
 
 const faqJsonLd = {
 	'@context': 'https://schema.org',
@@ -158,7 +161,7 @@ const faqJsonLd = {
 		name: t(faq.qKey, faq.qFb),
 		acceptedAnswer: {
 			'@type': 'Answer',
-			text: t(faq.aKey, faq.aFb),
+			text: t(faq.aKey, faq.aFb, faqParams),
 		},
 	})),
 };
@@ -231,22 +234,20 @@ const faqJsonLd = {
 					<div class="publicar-hero__trial-callout" role="note">
 						<span class="publicar-hero__trial-callout-icon" aria-hidden="true">✨</span>
 						<p class="publicar-hero__trial-callout-text">
-							{t('host.landing.trialCallout', 'Probá Hospeda gratis por 14 días. Tu trial empieza cuando publicás tu primera propiedad. No pagás nada hasta el día 14, sin compromiso.')}
+							{t('host.landing.trialCallout', 'Probá Hospeda gratis por {{trialDays}} días en tu primera suscripción. Elegís tu plan, cargás tu tarjeta y no se cobra nada hasta que termina la prueba.', { trialDays: OWNER_TRIAL_DAYS })}
 						</p>
 					</div>
 				)}
 
 				<!-- Auth-aware CTA island: authenticated → /publicar/nueva/, else → sign in -->
 				<!--
-					client:only is required (not client:load) because Better Auth's
-					useSession() reaches into request context internally and triggers
-					Astro 6's "Astro.request.headers was used on prerendered page"
-					false-positive warning during SSR. client:only skips SSR entirely
-					and hydrates on the browser, which is the right model for an
-					auth-aware CTA anyway (the unauth fallback href is the safe SSG
-					default, and useSession only needs to resolve client-side).
+					client:only (not client:load): the island has no meaningful SSR
+					output — its destination depends on the client-resolved /auth/me
+					snapshot (`useAccountPermissions`), which only settles in the
+					browser. Skipping SSR is the right model for an auth-aware CTA:
+					the unauthenticated href is the safe first-paint default.
 				-->
-				<HostLandingCta client:only="react" locale={locale} adminUrl={getAdminUrl()} />
+				<HostLandingCta client:only="react" locale={locale} />
 			</div>
 			<aside class="publicar-hero__visual" aria-hidden="true" data-reveal="right">
 				<div class="publicar-hero__blob"></div>
@@ -322,7 +323,7 @@ const faqJsonLd = {
 				{faqs.map((faq) => (
 					<details class="publicar-faq__item">
 						<summary class="publicar-faq__question">{t(faq.qKey, faq.qFb)}</summary>
-						<p class="publicar-faq__answer">{t(faq.aKey, faq.aFb)}</p>
+						<p class="publicar-faq__answer">{t(faq.aKey, faq.aFb, faqParams)}</p>
 					</details>
 				))}
 			</div>

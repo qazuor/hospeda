@@ -247,7 +247,7 @@ const ACCOMMODATION_ID = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 function buildGuestHeaders(actorId: string): Record<string, string> {
     const actor = createMockUserActor({
         id: actorId,
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: [PermissionEnum.CONVERSATION_VIEW_OWN, PermissionEnum.CONVERSATION_REPLY_OWN]
     });
     const req = createAuthenticatedRequest(actor, {

@@ -33,37 +33,38 @@ const name =
 	'';
 const authorImageAlt = name ? `Foto de ${name}` : t('blog.detail.aboutAuthor', 'Sobre el autor');
 
+// The author profile page lists exactly this author's posts, so it is also the
+// target of the "more from this author" CTA. The CTA used to point at
+// `publicaciones/?authorId=<uuid>`, a filter the listing page never read.
+// Without a slug there is no author page, and no other surface filters by
+// author — the CTA is dropped rather than pointed at the unfiltered listing,
+// which would promise more articles from this author and deliver everyone's.
 const profileUrl = author.slug
 	? buildUrl({ locale, path: `publicaciones/autor/${author.slug}` })
 	: null;
-
-const morePostsUrl = buildUrl({
-	locale,
-	path: `publicaciones`,
-});
 ---
 
 <div class="post-author-card">
 	<p class="post-author-card__heading">{t('blog.detail.aboutAuthor', 'Sobre el autor')}</p>
 
 	<div class="post-author-card__body">
-		{author.profilePicture ? (
-			<img
-				src={author.profilePicture}
-				alt={authorImageAlt}
-				class="post-author-card__avatar"
-				width={56}
-				height={56}
-				loading="lazy"
-				decoding="async"
-			/>
-		) : (
-			<div class="post-author-card__avatar-placeholder" aria-hidden="true">
-				{name.charAt(0).toUpperCase()}
-			</div>
-		)}
+		<div class="post-author-card__identity">
+			{author.profilePicture ? (
+				<img
+					src={author.profilePicture}
+					alt={authorImageAlt}
+					class="post-author-card__avatar"
+					width={56}
+					height={56}
+					loading="lazy"
+					decoding="async"
+				/>
+			) : (
+				<div class="post-author-card__avatar-placeholder" aria-hidden="true">
+					{name.charAt(0).toUpperCase()}
+				</div>
+			)}
 
-		<div class="post-author-card__info">
 			{profileUrl ? (
 				<a href={profileUrl} class="post-author-card__name post-author-card__name--link">
 					{name}
@@ -71,32 +72,31 @@ const morePostsUrl = buildUrl({
 			) : (
 				<span class="post-author-card__name">{name}</span>
 			)}
-
-			{author.bio && (
-				author.bio.length > 150 ? (
-					<div class="post-author-card__bio-wrapper">
-						<p class="post-author-card__bio post-author-card__bio--clamped">{author.bio}</p>
-						<details class="post-author-card__bio-details">
-							<summary class="post-author-card__bio-toggle">
-								<span class="post-author-card__bio-show">{t('blog.detail.viewMore', 'Ver más')}</span>
-								<span class="post-author-card__bio-hide">{t('blog.detail.viewLess', 'Ver menos')}</span>
-							</summary>
-							<p class="post-author-card__bio post-author-card__bio--full">{author.bio}</p>
-						</details>
-					</div>
-				) : (
-					<p class="post-author-card__bio">{author.bio}</p>
-				)
-			)}
 		</div>
+
+		{author.bio && (
+			author.bio.length > 150 ? (
+				<div class="post-author-card__bio-wrapper">
+					<p class="post-author-card__bio post-author-card__bio--clamped">{author.bio}</p>
+					<details class="post-author-card__bio-details">
+						<summary class="post-author-card__bio-toggle">
+							<span class="post-author-card__bio-show">{t('blog.detail.viewMore', 'Ver más')}</span>
+							<span class="post-author-card__bio-hide">{t('blog.detail.viewLess', 'Ver menos')}</span>
+						</summary>
+						<p class="post-author-card__bio post-author-card__bio--full">{author.bio}</p>
+					</details>
+				</div>
+			) : (
+				<p class="post-author-card__bio">{author.bio}</p>
+			)
+		)}
 	</div>
 
-	<a
-		href={`${morePostsUrl}?authorId=${author.id}`}
-		class="post-author-card__cta"
-	>
-		{t('blog.detail.moreFromAuthor', 'Más artículos del autor')} →
-	</a>
+	{profileUrl && (
+		<a href={profileUrl} class="post-author-card__cta">
+			{t('blog.detail.moreFromAuthor', 'Más artículos del autor')} →
+		</a>
+	)}
 </div>
 
 <style>
@@ -120,9 +120,28 @@ const morePostsUrl = buildUrl({
 		letter-spacing: 0.05em;
 	}
 
+	/*
+	 * Two stacked rows, not one avatar-beside-a-column row.
+	 *
+	 * The name and the bio used to share a column next to the avatar, anchored
+	 * with `align-items: flex-start`, so the name sat flush with the top of the
+	 * 56px avatar instead of its middle. Switching that to `center` only moves
+	 * the problem: it centres the WHOLE column, so a long bio pushes the name
+	 * above the avatar's top edge.
+	 *
+	 * Pairing the name with the avatar in its own row centres it against the
+	 * avatar for every bio length, and lets the bio use the card's full width
+	 * below — which matters in a narrow sidebar.
+	 */
 	.post-author-card__body {
 		display: flex;
-		align-items: flex-start;
+		flex-direction: column;
+		gap: 0.55rem;
+	}
+
+	.post-author-card__identity {
+		display: flex;
+		align-items: center;
 		gap: 0.875rem;
 	}
 
@@ -149,15 +168,11 @@ const morePostsUrl = buildUrl({
 		flex-shrink: 0;
 	}
 
-	.post-author-card__info {
+	/* `min-width: 0` keeps a long single-word name from forcing the row wider
+	 * than the card instead of wrapping. */
+	.post-author-card__name {
 		flex: 1;
 		min-width: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.3rem;
-	}
-
-	.post-author-card__name {
 		font-family: var(--font-heading);
 		font-size: 1rem;
 		font-weight: 600;

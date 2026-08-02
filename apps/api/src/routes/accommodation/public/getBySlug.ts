@@ -17,7 +17,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { resolveOwnerEntitlementsForOwnerId } from '../../../middlewares/owner-entitlement';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { filterAccommodationByEntitlements } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
@@ -172,8 +172,16 @@ export const publicGetAccommodationBySlugRoute = createPublicRoute({
     },
     responseSchema: AccommodationPublicSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
-        const actor = getActorFromContext(ctx);
-        const result = await accommodationService.getBySlug(actor, params.slug as string);
+        // HOS-353: resolve visibility against a GUEST actor, never the caller.
+        // Same reasoning as the sibling `getById` route — `checkCanView` is
+        // actor-aware by design, and this response is stored under a public cache
+        // key that carries no actor, so a privileged reader's 200 would be replayed
+        // to every anonymous visitor. Privileged reads live on the protected and
+        // admin tiers, which are not shared-cached.
+        const result = await accommodationService.getBySlug(
+            createGuestActor(),
+            params.slug as string
+        );
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

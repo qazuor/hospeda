@@ -215,7 +215,7 @@ import {
 
 const MOCK_ACTOR = {
     id: 'actor-uuid-0001',
-    role: 'SUPER_ADMIN' as const,
+    roles: ['SUPER_ADMIN'] as const,
     permissions: [] as never[]
 } as Parameters<typeof createAiProviderCredential>[0]['actor'];
 

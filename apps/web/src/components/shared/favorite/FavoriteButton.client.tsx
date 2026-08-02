@@ -8,13 +8,20 @@
  * T-038b: Auth detection + AuthRequiredPopover wiring for guest users.
  * T-039a: API wiring — optimistic toggle via userBookmarksApi.toggle, rollback on
  * error, toast notifications, and isPending guard against double-click.
- * T-039b: Single-check fallback — when initialIsFavorited is undefined and the
- * user is authenticated, fires a lightweight check on mount to hydrate the state.
+ *
+ * HOS-369 WB0-3: the button no longer trusts SSR for anything user-specific.
+ * Favorite state comes from the shared `favorites-store` (one bulk request per
+ * page load, shared across every heart) and the session is resolved
+ * client-side via `useAccountPermissions`. The SSR props that used to carry
+ * both survive only as deprecated no-ops until the pages stop computing them
+ * (WB0-5). This is what lets a listing's HTML be identical for every visitor,
+ * and therefore edge-cacheable.
  */
 
 import { FavoriteIcon } from '@repo/icons';
-import { type FC, type MouseEvent, useEffect, useRef, useState } from 'react';
+import { type FC, type MouseEvent, useRef, useState } from 'react';
 import { AuthRequiredPopover } from '@/components/auth/AuthRequiredPopover.client';
+import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
@@ -23,6 +30,7 @@ import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
+import { setFavoriteStatus, useFavoriteStatus } from '@/store/favorites-store';
 import { addToast } from '@/store/toast-store';
 import { CollectionPickerPopover } from './CollectionPickerPopover';
 import styles from './FavoriteButton.module.css';
@@ -71,11 +79,15 @@ export interface FavoriteButtonProps {
      * ATTRACTION is included for forward-compatibility but is not yet in active use.
      */
     readonly entityType: FavoriteEntityType;
-    /** Initial favorited state, typically hydrated from a bulk-check API call. */
+    /**
+     * @deprecated Ignored since HOS-369 WB0-3 — favorite state is resolved
+     * client-side by `favorites-store`. A server-rendered favorited flag cannot
+     * survive an edge cache: the same HTML is served to every visitor. Callers
+     * stop passing it in WB0-5, when the pages drop their SSR bulk check.
+     */
     readonly initialIsFavorited?: boolean;
     /**
-     * Bookmark id when the entity is already favorited on mount.
-     * Required for explicit DELETE flows in some API call patterns.
+     * @deprecated Ignored since HOS-369 WB0-3 — see {@link initialIsFavorited}.
      */
     readonly initialBookmarkId?: string | null;
     /**
@@ -90,11 +102,13 @@ export interface FavoriteButtonProps {
     /** Additional CSS classes forwarded to the root button element. */
     readonly className?: string;
     /**
-     * Whether the current user is authenticated.
-     * When false, click will trigger AuthRequiredPopover.
-     * When true, click will toggle the favorite via API.
+     * @deprecated Ignored since HOS-369 WB0-3 — the session is resolved
+     * client-side via `useAccountPermissions`. As an SSR gate this was wrong in
+     * both directions: a cached page hands every visitor whatever the first one
+     * had, and a session that expired after render kept the button enabled.
+     * Callers stop passing it in WB0-5.
      */
-    readonly isAuthenticated: boolean;
+    readonly isAuthenticated?: boolean;
     /**
      * Optional callback invoked after a state change.
      * Used by parent listing components to sync local state without re-fetching.
@@ -122,23 +136,26 @@ export interface FavoriteButtonProps {
  * Renders a circular button with a heart icon. The filled/outlined heart
  * communicates the current favorited state via `aria-pressed` and CSS.
  *
- * **T-038b behavior:** Unauthenticated clicks open the AuthRequiredPopover.
+ * **Rendering.** The server always renders the anonymous variant: an unfilled,
+ * un-busy heart (HOS-369 D-11). That is what a crawler must see, what a visitor
+ * gets if JS never runs, and the only variant that can be cached. The real
+ * state arrives from `favorites-store` shortly after hydration.
  *
- * **T-039a behavior:** Authenticated clicks apply an optimistic state update
- * immediately, call `userBookmarksApi.toggle`, then:
- * - On success: confirm the optimistic state and update the bookmarkId from the response.
- * - On 401: rollback optimistic state and reopen the AuthRequiredPopover (session expired race).
- * - On 403 + LIMIT_REACHED: rollback optimistic state and show a limit-reached toast.
- * - On any other error: rollback optimistic state and show a generic error toast.
+ * **Session.** Resolved client-side by `useAccountPermissions`, cache-first.
+ * A resolved guest gets the AuthRequiredPopover immediately; a resolved session
+ * toggles. While the session is still unknown the click is *attempted* rather
+ * than guessed — a 401 opens the popover, which is also the backstop for a
+ * session that expired after the page was rendered.
  *
- * A `isPending` guard prevents double-click while the request is in-flight.
+ * **Toggle.** Authenticated clicks apply an optimistic update through the store
+ * (so every heart showing this entity moves together), call
+ * `userBookmarksApi.toggle`, then:
+ * - On success: confirm the optimistic state and publish the returned bookmarkId.
+ * - On 401: rollback and open the AuthRequiredPopover (session expired race).
+ * - On 403 + LIMIT_REACHED: rollback and show a limit-reached toast.
+ * - On any other error: rollback and show a generic error toast.
  *
- * **T-039b behavior:** When `initialIsFavorited` is `undefined` and the user is
- * authenticated, fires a single `userBookmarksApi.checkStatus` call on mount to
- * hydrate the local state. During the check, `isHydrating` is true and clicks are
- * blocked. On error, silently defaults to `isFavorited = false`. Uses AbortController
- * to cancel the request on unmount. The check is skipped if `initialIsFavorited` is
- * provided (even as `false`) — the parent's hydration is trusted.
+ * An `isPending` guard prevents double-click while the request is in-flight.
  *
  * @param props - {@link FavoriteButtonProps}
  * @returns A positioned wrapper containing the button and (conditionally) the popover.
@@ -148,8 +165,6 @@ export interface FavoriteButtonProps {
  * <FavoriteButton
  *   entityId={accommodation.id}
  *   entityType="ACCOMMODATION"
- *   initialIsFavorited={userHasFavorited}
- *   isAuthenticated={!!user}
  *   locale={locale}
  *   client:visible
  * />
@@ -158,12 +173,9 @@ export interface FavoriteButtonProps {
 export const FavoriteButton: FC<FavoriteButtonProps> = ({
     entityId,
     entityType,
-    initialIsFavorited,
-    initialBookmarkId = null,
     variant = 'standalone',
     locale = 'es',
     className,
-    isAuthenticated,
     onChange,
     count,
     showCount = false
@@ -171,15 +183,19 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
     const t = createT(locale);
 
     /**
-     * Whether the initial state needs to be fetched from the API.
-     * True only when the parent did not provide initialIsFavorited at all (undefined).
+     * Favorite state, resolved on the client and shared with every other heart
+     * on the page: one bulk request per page load instead of one per card.
+     * `isResolving` covers the window from mount until the session and the bulk
+     * check have both settled.
      */
-    const needsHydration = initialIsFavorited === undefined;
+    const { isFavorited, bookmarkId, isResolving } = useFavoriteStatus({ entityType, entityId });
 
-    const [isFavorited, setIsFavorited] = useState<boolean>(initialIsFavorited ?? false);
-
-    // bookmarkId tracks the server-side id returned by the API.
-    const [bookmarkId, setBookmarkId] = useState<string | null>(initialBookmarkId);
+    /**
+     * Session, resolved cache-first from `/auth/me`. `permissions === null` is
+     * the hook's "still resolving" signal; `user` is `null` for a guest.
+     */
+    const { user, permissions } = useAccountPermissions();
+    const isSessionResolved = permissions !== null;
 
     /** Whether a toggle request is currently in-flight. */
     const [isPending, setIsPending] = useState<boolean>(false);
@@ -205,72 +221,30 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
      */
     const assignedCollectionRef = useRef<string | null>(null);
 
-    /**
-     * Whether the component is currently performing the initial check call.
-     * Blocks clicks and shows a subtle loading affordance.
-     * Only ever true when needsHydration === true and isAuthenticated === true.
-     */
-    const [isHydrating, setIsHydrating] = useState<boolean>(needsHydration && isAuthenticated);
-
-    // SPEC-228 T-018: No visual spinner added during `isHydrating`.
-    // Reasoning: `isHydrating` flips via an async network call (checkStatus) — delay is
-    // potentially perceptible (~50–300ms). However, the button is already `disabled`,
-    // carries `aria-busy={true}`, and its `aria-label` reads "Verificando favorito…".
-    // Adding a Spinner would overlay the heart icon in a tiny (<22px) space, degrading the
-    // compact card UX. The existing disabled + aria-busy + aria-label contract satisfies
-    // WCAG AA (AT announces the busy state) without a visual disruption. Skipped.
+    // SPEC-228 T-018: No visual spinner added while the state resolves.
+    // Reasoning: the delay is potentially perceptible (~50–300ms), but the button
+    // is already `disabled`, carries `aria-busy={true}`, and its `aria-label` reads
+    // "Verificando favorito…". Adding a Spinner would overlay the heart icon in a
+    // tiny (<22px) space, degrading the compact card UX. The existing disabled +
+    // aria-busy + aria-label contract satisfies WCAG AA (AT announces the busy
+    // state) without a visual disruption. Skipped.
 
     /**
-     * Guard ref to ensure the check fires exactly once on mount.
-     * useEffect with an empty dep array already guarantees single-shot, but
-     * the ref protects against Strict-Mode double-invocation in development.
+     * Publish a state change to the shared store and notify the parent.
+     *
+     * The store is the single source of truth: writing through it keeps every
+     * heart rendering this entity — a listing card and its map popup, say — in
+     * agreement, which per-component state could not do.
      */
-    const hydrationFiredRef = useRef<boolean>(false);
+    const publish = (next: {
+        readonly isFavorited: boolean;
+        readonly bookmarkId: string | null;
+    }) => {
+        setFavoriteStatus({ entityType, entityId, ...next });
+        onChange?.(next);
+    };
 
-    // Single-shot hydration: fire the check when parent did not pre-hydrate the state.
-    // Deps are intentionally omitted: this effect must run exactly once on mount.
-    // entityId, entityType, isAuthenticated, onChange are captured via closure at mount time.
-    // The hydrationFiredRef guard prevents a second run if Strict-Mode double-invokes.
-    // biome-ignore lint/correctness/useExhaustiveDependencies: intentional single-shot mount effect
-    useEffect(() => {
-        if (!needsHydration || !isAuthenticated || hydrationFiredRef.current) return;
-
-        hydrationFiredRef.current = true;
-        const controller = new AbortController();
-
-        const runCheck = async (): Promise<void> => {
-            setIsHydrating(true);
-            try {
-                const result = await userBookmarksApi.checkStatus({ entityId, entityType });
-                // Bail out silently if the component unmounted before the response arrived.
-                if (controller.signal.aborted) return;
-
-                if (result.ok) {
-                    setIsFavorited(result.data.isFavorited);
-                    setBookmarkId(result.data.bookmarkId);
-                    onChange?.({
-                        isFavorited: result.data.isFavorited,
-                        bookmarkId: result.data.bookmarkId
-                    });
-                }
-                // On non-ok result: silently default to false (already the initial state).
-            } catch {
-                // Network error or abort — silently default to false.
-            } finally {
-                if (!controller.signal.aborted) {
-                    setIsHydrating(false);
-                }
-            }
-        };
-
-        void runCheck();
-
-        return () => {
-            controller.abort();
-        };
-    }, []); // intentionally empty — single-shot on mount only
-
-    const ariaLabel = isHydrating
+    const ariaLabel = isResolving
         ? t('ui.favorite.loading', 'Verificando favorito...')
         : isFavorited
           ? t('ui.favorite.remove', 'Quitar de favoritos')
@@ -319,11 +293,8 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
         // When toggling off, the bookmarkId becomes null.
         const optimisticBookmarkId = nextFavorited ? prevBookmarkId : null;
 
-        setIsFavorited(nextFavorited);
-        setBookmarkId(optimisticBookmarkId);
         setIsPending(true);
-
-        onChange?.({ isFavorited: nextFavorited, bookmarkId: optimisticBookmarkId });
+        publish({ isFavorited: nextFavorited, bookmarkId: optimisticBookmarkId });
 
         try {
             const result = await userBookmarksApi.toggle({
@@ -336,16 +307,14 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                 const errorCode = result.error.code;
 
                 if (status === 401) {
-                    // Session expired between page load and click — rollback and prompt auth.
-                    setIsFavorited(prevFavorited);
-                    setBookmarkId(prevBookmarkId);
-                    onChange?.({ isFavorited: prevFavorited, bookmarkId: prevBookmarkId });
+                    // No session after all — either a guest whose click was
+                    // attempted before the session resolved, or a session that
+                    // expired after the page rendered. Rollback and prompt auth.
+                    publish({ isFavorited: prevFavorited, bookmarkId: prevBookmarkId });
                     setIsPopoverOpen(true);
                 } else if (status === 403 && errorCode === 'LIMIT_REACHED') {
                     // User hit their plan's limit — rollback and show localized toast with upgrade CTA.
-                    setIsFavorited(prevFavorited);
-                    setBookmarkId(prevBookmarkId);
-                    onChange?.({ isFavorited: prevFavorited, bookmarkId: prevBookmarkId });
+                    publish({ isFavorited: prevFavorited, bookmarkId: prevBookmarkId });
                     const limitPayload = buildLimitReachedPayloadFromDetails({
                         details: result.error.details,
                         locale
@@ -357,9 +326,7 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                     });
                 } else {
                     // Any other API error — rollback and show generic toast.
-                    setIsFavorited(prevFavorited);
-                    setBookmarkId(prevBookmarkId);
-                    onChange?.({ isFavorited: prevFavorited, bookmarkId: prevBookmarkId });
+                    publish({ isFavorited: prevFavorited, bookmarkId: prevBookmarkId });
                     addToast({
                         type: 'error',
                         message: t(
@@ -372,12 +339,9 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                 return;
             }
 
-            // Success: confirm the optimistic state and update bookmarkId from the response.
+            // Success: confirm the optimistic state and publish the server's bookmarkId.
             const confirmedBookmarkId = result.data.bookmark?.id ?? null;
-            setBookmarkId(confirmedBookmarkId);
-
-            // Notify parent with the confirmed bookmarkId.
-            onChange?.({ isFavorited: nextFavorited, bookmarkId: confirmedBookmarkId });
+            publish({ isFavorited: nextFavorited, bookmarkId: confirmedBookmarkId });
 
             if (nextFavorited) {
                 // Add: surface a toast with a "Ver favoritos" link. Auto-routes
@@ -396,10 +360,9 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                         href: favoritesHref
                     }
                 });
-                trackEvent(WebEvents.FavoriteToggled, {
+                trackEvent(WebEvents.FavoriteToggledAdd, {
                     entity_type: entityType,
                     entity_id: entityId,
-                    action: 'add',
                     assigned_collection: Boolean(assignedCollectionId)
                 });
 
@@ -413,10 +376,9 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                     type: 'success',
                     message: t('account.favorites.toast.removed', 'Eliminado de favoritos')
                 });
-                trackEvent(WebEvents.FavoriteToggled, {
+                trackEvent(WebEvents.FavoriteToggledRemove, {
                     entity_type: entityType,
                     entity_id: entityId,
-                    action: 'remove',
                     assigned_collection: false
                 });
             }
@@ -424,9 +386,7 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
             assignedCollectionRef.current = null;
         } catch {
             // Network failure or unexpected throw — rollback and show generic toast.
-            setIsFavorited(prevFavorited);
-            setBookmarkId(prevBookmarkId);
-            onChange?.({ isFavorited: prevFavorited, bookmarkId: prevBookmarkId });
+            publish({ isFavorited: prevFavorited, bookmarkId: prevBookmarkId });
             addToast({
                 type: 'error',
                 message: t(
@@ -464,16 +424,22 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
         event.stopPropagation();
         event.preventDefault();
 
-        // Block interaction while the initial hydration check is in-flight.
-        if (isHydrating) return;
+        // Block interaction until the favorite state is known — toggling from an
+        // unknown base would flip the wrong way.
+        if (isResolving) return;
 
-        if (!isAuthenticated) {
-            // Open the auth-required popover so the guest can sign in.
+        if (isSessionResolved && user === null) {
+            // Known guest: open the auth-required popover immediately, without
+            // spending a doomed request first.
             setIsPopoverOpen(true);
             return;
         }
 
+        // Session known-authenticated, or not resolved yet. In the second case we
+        // attempt rather than guess: guessing "guest" would show the sign-in
+        // prompt to a signed-in user. A 401 opens the popover anyway.
         // Fire-and-forget: errors are handled inside handleAuthenticatedClick.
+
         void handleAuthenticatedClick();
     };
 
@@ -490,15 +456,15 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                 type="button"
                 aria-pressed={isFavorited}
                 aria-label={ariaLabel}
-                aria-busy={isPending || isHydrating}
+                aria-busy={isPending || isResolving}
                 data-variant={variant}
                 data-entity-type={entityType}
                 data-pending={isPending ? 'true' : undefined}
-                data-hydrating={isHydrating ? 'true' : undefined}
+                data-hydrating={isResolving ? 'true' : undefined}
                 data-show-count={showCountPill ? 'true' : undefined}
                 className={cn(styles.button, className)}
                 onClick={handleClick}
-                disabled={isPending || isHydrating}
+                disabled={isPending || isResolving}
             >
                 <span
                     className={styles.iconStack}

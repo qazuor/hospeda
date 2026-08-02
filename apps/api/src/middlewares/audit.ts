@@ -46,7 +46,13 @@ function resolveActorIdentity(actor: Actor | undefined): {
     if (!actor || isGuestActor(actor)) {
         return { actorId: 'anonymous', actorRole: 'guest' };
     }
-    return { actorId: actor.id, actorRole: actor.role };
+    // HOS-296: the audit row records EVERY hat the actor wore when the action
+    // happened, comma-joined. Picking one would misattribute an action taken
+    // by a user who is both a host and staff, and the audit trail is the one
+    // place where losing that context is unrecoverable. It stays a single
+    // string because `audit_logs.actor_role` is a scalar column — widening it
+    // is a migration, and the joined form is both greppable and lossless.
+    return { actorId: actor.id, actorRole: actor.roles.join(',') };
 }
 
 /**

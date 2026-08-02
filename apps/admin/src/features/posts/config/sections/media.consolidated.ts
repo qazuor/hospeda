@@ -21,7 +21,7 @@ export const createMediaConsolidatedSection = (): ConsolidatedSectionConfig => (
             id: 'media.featuredImage',
             type: FieldTypeEnum.IMAGE,
             required: false,
-            modes: ['view', 'edit', 'create'],
+            modes: ['view', 'edit'],
             label: 'Imagen Destacada',
             description: 'Imagen principal del artículo',
             permissions: {

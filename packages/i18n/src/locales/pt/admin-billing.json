@@ -191,12 +191,12 @@
         "descriptions": {
             "owner-basico": "Plano básico para proprietários individuais. Ideal para começar.",
             "owner-pro": "Plano profissional com análises avançadas e suporte prioritário.",
-            "owner-premium": "Plano premium com todas as funcionalidades, gerente dedicado e acesso à API.",
+            "owner-premium": "Plano premium com todas as funcionalidades, identidade visual personalizada e promoções ilimitadas.",
             "complex-basico": "Plano básico para complexos e hotéis. Gestão multi-propriedade.",
             "complex-pro": "Plano profissional para complexos com análises consolidadas.",
             "complex-premium": "Plano premium para grandes complexos com todas as funcionalidades.",
             "tourist-free": "Plano gratuito para turistas. Funcionalidades básicas incluídas.",
-            "tourist-plus": "Plano Plus para turistas frequentes. Experiência sem anúncios e alertas de preço.",
+            "tourist-plus": "Plano Plus para turistas frequentes. Comparador, histórico de buscas e alertas de preço.",
             "tourist-vip": "Plano VIP para turistas exigentes. Todas as funcionalidades premium incluídas."
         },
         "statusActive": "Ativo",
@@ -263,7 +263,8 @@
                 "owner": "Proprietário",
                 "accommodation": "Acomodação",
                 "complex": "Complexo",
-                "tourist": "Turista"
+                "tourist": "Turista",
+                "ai": "Inteligência artificial"
             },
             "cancelButton": "Cancelar",
             "saveButton": "Salvar alterações",
@@ -1104,7 +1105,9 @@
             "prorationCreditToAccount": "na conta",
             "prorationNone": "Sem cobrança adicional",
             "nextCharge": "A próxima cobrança completa será em",
-            "confirmButton": "Mudar plano"
+            "confirmButton": "Mudar plano",
+            "noDestinationPlans": "Não há outros planos ativos nesta categoria, então não é possível mudar de plano.",
+            "planNotInCatalog": "Este plano não está no catálogo da aplicação, então não é possível calcular uma mudança de plano."
         },
         "extendTrialDialog": {
             "title": "Estender período de teste",

@@ -55,7 +55,8 @@ function AccommodationCreatePage() {
     const entityName = t('admin-entities.entities.accommodation.singular');
     const entityNamePlural = t('admin-entities.entities.accommodation.plural');
 
-    const bypassesPlanLimit = PLAN_LIMIT_BYPASS_ROLES.includes(user?.role as RoleEnum);
+    const userRoles = user?.roles ?? [];
+    const bypassesPlanLimit = PLAN_LIMIT_BYPASS_ROLES.some((r) => userRoles.includes(r));
     // Owner picker is staff-only — hosts implicitly create their own drafts.
     const includeOwnerField = bypassesPlanLimit;
 

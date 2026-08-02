@@ -366,69 +366,6 @@
     "island": {
         "loadingAria": "Loading billing..."
     },
-    "pricing": {
-        "breadcrumb": "Pricing",
-        "tourist": {
-            "title": "Tourist Pricing",
-            "description": "Discover our subscription plans for tourists. From free to VIP with concierge service.",
-            "hero": {
-                "title": "Tourist Plans",
-                "description": "Find the perfect plan for your adventures in the Argentine Litoral. From basic browsing to VIP service with personalized concierge."
-            },
-            "faq": {
-                "heading": "Frequently Asked Questions",
-                "items": {
-                    "0": {
-                        "question": "Can I change my plan at any time?",
-                        "answer": "Yes, you can upgrade or change your plan at any time from your account. Changes will be applied in the next billing cycle."
-                    },
-                    "1": {
-                        "question": "What payment methods do you accept?",
-                        "answer": "We accept all payment methods through MercadoPago, including credit cards, debit cards, and bank transfers."
-                    },
-                    "2": {
-                        "question": "Is there a trial period?",
-                        "answer": "The Free plan requires no credit card. Plus and VIP plans offer a 7-day free trial."
-                    }
-                }
-            },
-            "cta": {
-                "title": "Ready to start your adventure?",
-                "description": "Sign up for free and start exploring the best accommodations in the Argentine Litoral.",
-                "button": "Sign Up Free"
-            }
-        },
-        "owner": {
-            "title": "Owner Pricing",
-            "description": "Discover our subscription plans for accommodation owners. From basic to premium with dedicated account manager.",
-            "hero": {
-                "title": "Owner Plans",
-                "description": "Choose the ideal plan to manage and promote your accommodations. From basic listing to professional tools with dedicated account manager."
-            },
-            "faq": {
-                "heading": "Frequently Asked Questions",
-                "items": {
-                    "0": {
-                        "question": "What is included in the free trial?",
-                        "answer": "The 14-day free trial includes full access to all features of the selected plan, with no credit card required."
-                    },
-                    "1": {
-                        "question": "Can I change my plan later?",
-                        "answer": "Yes, you can upgrade or change your plan at any time. Changes are reflected immediately and billing is adjusted proportionally."
-                    },
-                    "2": {
-                        "question": "Are there additional costs per booking?",
-                        "answer": "We do not charge booking commissions. The plan price covers all functionalities. Guest payments are processed via MercadoPago with their standard fees."
-                    }
-                }
-            },
-            "cta": {
-                "title": "Ready to grow your business?",
-                "description": "Start your 14-day free trial and discover how Hospeda can help you increase your bookings.",
-                "button": "Start Free Trial"
-            }
-        }
-    },
     "plan": {
         "owner-basico": {
             "name": "Basic",
@@ -440,7 +377,7 @@
         },
         "owner-premium": {
             "name": "Premium",
-            "description": "Everything in Professional, plus custom branding, API access, and a dedicated manager."
+            "description": "Everything in Professional, plus custom branding, a verification badge, and unlimited promotions."
         },
         "tourist-free": {
             "name": "Free",
@@ -448,11 +385,11 @@
         },
         "tourist-plus": {
             "name": "Plus",
-            "description": "Ad-free browsing, price alerts, exclusive deals, and early access to events."
+            "description": "Price alerts, exclusive deals, accommodation comparison, and search history."
         },
         "tourist-vip": {
             "name": "VIP",
-            "description": "VIP support, concierge, airport transfers, and exclusive promotions."
+            "description": "VIP support, exclusive promotions, and direct WhatsApp contact with hosts."
         }
     },
     "entitlement": {
@@ -525,6 +462,7 @@
             "basicStats": "Basic statistics",
             "advancedStats": "Advanced statistics",
             "calendar": "Availability calendar",
+            "calendarSync": "Sync external calendars",
             "richDescription": "Rich description",
             "video": "Video in your listing",
             "promotions": "Active promotions",
@@ -557,6 +495,7 @@
             "basicStats": "See essential visit counts and performance metrics for your listing.",
             "advancedStats": "In-depth performance, conversion, and trend reports for your listing.",
             "calendar": "Mark which days your accommodation is open for bookings.",
+            "calendarSync": "Connect Google Calendar, Airbnb or Booking.com and booked dates block themselves.",
             "richDescription": "Write a rich, formatted description to present your space effectively.",
             "video": "Add a video to your listing to give guests a fuller look.",
             "promotions": "Number of promotions you can run on your listing simultaneously.",
@@ -574,7 +513,8 @@
             "aiSearch": "For registered users",
             "aiChatTourist": "Available in accommodations that enabled it",
             "aiChatOwner": "You enable it for your guests",
-            "aiSupportAddon": "Available as an add-on"
+            "aiSupportAddon": "Available as an add-on",
+            "featuredAddon": "Also available as an add-on on any plan"
         },
         "limitLabel": {
             "max_accommodations": "Published accommodations",

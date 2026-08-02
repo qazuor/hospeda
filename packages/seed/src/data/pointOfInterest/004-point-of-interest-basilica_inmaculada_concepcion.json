@@ -49,7 +49,7 @@
     "icon": "church",
     "isBuiltin": true,
     "isFeatured": true,
-    "displayWeight": 75,
+    "displayWeight": 100,
     "lifecycleState": "ACTIVE",
     "verified": false,
     "verifiedAt": null,

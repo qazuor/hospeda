@@ -3,7 +3,9 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { queryClient } from '../src/lib/api/query-client';
+import type { SessionStatus } from '../src/lib/auth/roles';
 import { resolveAuthGroup } from '../src/lib/auth/roles';
+import { useActorRoles } from '../src/lib/auth/use-actor-roles';
 import { useSession } from '../src/lib/auth-client';
 import { validateEnv } from '../src/lib/env';
 import { LocaleProvider } from '../src/lib/locale-context';
@@ -15,39 +17,25 @@ import { usePushRegistration } from '../src/lib/push/use-push-registration';
  * Expo Router requires a default export for the root `_layout.tsx`.
  *
  * ## Responsibilities
- * 1. Wraps all routes in `QueryClientProvider` (TanStack Query singleton).
- * 2. Holds the splash screen until the Better Auth session is resolved.
- * 3. Implements the role-gated navigation gate (T-005):
- *    - While `isPending` → render nothing (splash stays visible).
- *    - No session → redirect to `(auth)/sign-in`.
- *    - Authenticated + host role → redirect to `(host)`.
- *    - Authenticated + any other role → redirect to `(tourist)`.
+ * 1. Wraps all routes in `QueryClientProvider` (TanStack Query singleton) and
+ *    `LocaleProvider`.
+ * 2. Renders {@link RootNavigationGate}, which holds the splash screen until
+ *    BOTH the Better Auth session and the actor's role set have resolved, then
+ *    redirects to the right group.
  *
- * ## Session restore / redirect logic
+ * ## Why the providers wrap the gate (HOS-296)
  *
- * The gate uses the effect-based pattern with `useSegments` + `router.replace()`
- * (canonical expo-router auth pattern). This fires on BOTH cold launch (session
- * restored from SecureStore by Better Auth) AND post-sign-in / post-sign-out
- * transitions (useSession re-renders when `data` changes).
- *
- * ### Cold launch
- * 1. App starts → `isPending = true` → return null (splash stays).
- * 2. Better Auth reads SecureStore → resolves session.
- * 3. `isPending` → false → effect fires → splash hidden → redirect to correct group.
- *
- * ### Post-sign-in
- * 1. User submits sign-in form → Better Auth calls the API.
- * 2. On success → `useSession().data` updates → this effect re-fires.
- * 3. User is now in `(auth)` group → effect redirects to `(host)` or `(tourist)`.
- *
- * ### Post-sign-out
- * 1. User presses Sign out → Better Auth clears the session.
- * 2. `useSession().data` → null → effect fires → redirect to `(auth)/sign-in`.
+ * The gate now needs the role set, which comes from `GET /api/v1/public/auth/me`
+ * through TanStack Query (see `useActorRoles`). A hook cannot consume a
+ * provider its own component renders, so the gate had to move one level down.
+ * That is the only structural change here; the redirect semantics are described
+ * on the gate itself.
  *
  * ## SplashScreen
  * `preventAutoHideAsync()` is called at module scope (outside any component)
  * so Expo holds the splash before the first render. `hideAsync()` is called
- * only after `isPending === false` to avoid a flash of blank screen.
+ * only once the target group is known, to avoid a flash of blank screen — and,
+ * more importantly, a flash of the WRONG shell.
  *
  * @module _layout
  */
@@ -58,77 +46,109 @@ validateEnv();
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+    return (
+        <LocaleProvider>
+            <QueryClientProvider client={queryClient}>
+                <RootNavigationGate />
+            </QueryClientProvider>
+        </LocaleProvider>
+    );
+}
+
+/**
+ * Role-gated navigation gate (SPEC-243 T-005, reworked for HOS-296).
+ *
+ * ## Session + roles resolution
+ *
+ * Two independent async sources have to settle before a destination exists:
+ *
+ * 1. The Better Auth session, restored from SecureStore by `useSession()`.
+ * 2. The actor's ROLE SET, fetched from `/auth/me` by `useActorRoles()`.
+ *    Before HOS-296 this was a scalar `role` riding along on the session, so
+ *    there was only ever one thing to wait for. `users.role` no longer exists
+ *    and Better Auth's `additionalFields` cannot carry a related table, so the
+ *    set arrives out of band.
+ *
+ * `resolveAuthGroup` returns `null` while either is unsettled. `null` means
+ * "navigate nowhere and keep the splash up" — NOT "assume tourist". Falling
+ * through to `(tourist)` during the load is the same defect as reading an
+ * `undefined` role: a host would be shown the tourist shell.
+ *
+ * ## Redirect rule
+ *
+ * Redirect whenever the current top-level group differs from the target. The
+ * pre-HOS-296 gate only redirected out of `(auth)` and the root index, which
+ * was sufficient while the role was known synchronously and could never change
+ * mid-session. It is not sufficient now: an actor placed in `(tourist)` by the
+ * `/auth/me` failure fallback must be promoted to `(host)` when a later
+ * refetch succeeds (TanStack Query refetches on reconnect). A user already
+ * deep inside the correct group — e.g. `(host)/accommodations/[id]` — matches
+ * on `segments[0]` and is left alone.
+ *
+ * ### Cold launch
+ * 1. App starts → session `loading` → group `null` → render nothing (splash stays).
+ * 2. Session resolves → `/auth/me` fires → roles `loading` → still `null`.
+ * 3. Roles resolve → group known → splash hidden → redirect to the right group.
+ *
+ * ### Post-sign-in / post-sign-out
+ * `useSession()` re-renders on both; `useActorRoles` is keyed by user id and
+ * drops its cache when the id disappears, so the next sign-in always re-reads
+ * the set instead of serving the previous one.
+ */
+function RootNavigationGate() {
     const { data, isPending } = useSession();
     const segments = useSegments();
     const router = useRouter();
 
+    const sessionStatus: SessionStatus = isPending
+        ? 'loading'
+        : data !== null && data !== undefined
+          ? 'authenticated'
+          : 'unauthenticated';
+
+    const userId = sessionStatus === 'authenticated' ? data?.user.id : undefined;
+
     // Register push token once the session is resolved and a user is present.
     // Runs in the background — never blocks navigation or rendering.
-    const hasSession = !isPending && data !== null && data !== undefined;
-    usePushRegistration(hasSession);
+    usePushRegistration(sessionStatus === 'authenticated');
+
+    const { roles, status: rolesStatus } = useActorRoles({ userId });
+    const { group } = resolveAuthGroup({ sessionStatus, rolesStatus, roles });
 
     useEffect(() => {
-        // Do nothing while session is still being restored from SecureStore.
-        if (isPending) return;
+        // Undecided: session and/or roles still in flight. Hold the splash and
+        // navigate nowhere.
+        if (group === null) return;
 
-        // Session resolved — hide the splash screen.
+        // Destination known — hide the splash screen.
         SplashScreen.hideAsync();
 
-        const hasSession = data !== null && data !== undefined;
-
-        // Determine which group the user currently occupies.
-        // segments[0] is the top-level route group, e.g. '(auth)', '(host)', '(tourist)', 'index'.
+        // segments[0] is the top-level route group, e.g. '(auth)', '(host)',
+        // '(tourist)', or undefined at the bare '/' route.
         const currentGroup = segments[0] as string | undefined;
+        if (currentGroup === group) return;
 
-        if (!hasSession) {
-            // Unauthenticated: ensure user is in (auth) group.
-            if (currentGroup !== '(auth)') {
-                router.replace('/(auth)/sign-in');
-            }
+        if (group === '(auth)') {
+            router.replace('/(auth)/sign-in');
             return;
         }
+        router.replace(`/${group}` as `/${typeof group}`);
+    }, [group, segments, router]);
 
-        // Authenticated: compute the target group.
-        // `data.user` comes from Better Auth's `useSession()`. The server is
-        // configured with `additionalFields: { role: { type: 'string' } }` but
-        // the Better Auth React client type does not expose additional fields in
-        // its inferred shape. We access `role` via an index signature cast — this
-        // is safe because the field is always populated by the server (default
-        // `USER` on sign-up), and our `resolveAuthGroup` handles null/undefined
-        // gracefully.
-        const userWithRole = data.user as typeof data.user & { role?: string };
-        const targetGroup = resolveAuthGroup(userWithRole.role, true);
-
-        // Only redirect if the user is currently in (auth) or at the root index
-        // (segments[0] === undefined covers the bare '/' / 'index' route).
-        // This guards against redirect loops when the user is already in the
-        // correct group.
-        const isInAuthGroup = currentGroup === '(auth)';
-        const isAtRootIndex = currentGroup === undefined || currentGroup === 'index';
-
-        if (isInAuthGroup || isAtRootIndex) {
-            router.replace(`/${targetGroup}` as `/${typeof targetGroup}`);
-        }
-    }, [isPending, data, segments, router]);
-
-    // While the session is pending, render nothing — the splash screen stays
-    // visible (held by preventAutoHideAsync).
-    if (isPending) return null;
+    // While the destination is undecided, render nothing — the splash screen
+    // stays visible (held by preventAutoHideAsync).
+    if (group === null) return null;
 
     return (
-        <LocaleProvider>
-            <QueryClientProvider client={queryClient}>
-                <Stack screenOptions={{ headerShown: false }}>
-                    {/* Loading gate — root effect redirects away immediately */}
-                    <Stack.Screen name="index" />
-                    {/* Auth group: sign-in + sign-up */}
-                    <Stack.Screen name="(auth)" />
-                    {/* Tourist shell: logged-in users that are not host/admin */}
-                    <Stack.Screen name="(tourist)" />
-                    {/* Host shell: HOST, ADMIN, SUPER_ADMIN */}
-                    <Stack.Screen name="(host)" />
-                </Stack>
-            </QueryClientProvider>
-        </LocaleProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+            {/* Loading gate — root effect redirects away immediately */}
+            <Stack.Screen name="index" />
+            {/* Auth group: sign-in + sign-up */}
+            <Stack.Screen name="(auth)" />
+            {/* Tourist shell: logged-in users holding no host role */}
+            <Stack.Screen name="(tourist)" />
+            {/* Host shell: actors holding HOST, ADMIN or SUPER_ADMIN */}
+            <Stack.Screen name="(host)" />
+        </Stack>
     );
 }

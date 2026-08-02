@@ -13,7 +13,24 @@ const { mockPostHogCapture, mockGetPostHogClient } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../src/lib/posthog', () => ({
-    getPostHogClient: mockGetPostHogClient
+    getPostHogClient: mockGetPostHogClient,
+    captureServerAnalyticsEvent: ({
+        distinctId,
+        name,
+        properties
+    }: {
+        distinctId: string;
+        name: string;
+        properties: Record<string, unknown>;
+    }) => {
+        const client = mockGetPostHogClient();
+        if (client) {
+            client.capture({ distinctId, event: name, properties });
+        }
+    },
+    isPostHogEnabled: () => true,
+    shutdownPostHog: vi.fn(),
+    _resetPostHogClientForTests: vi.fn()
 }));
 
 vi.mock('@repo/logger', () => ({
@@ -53,7 +70,7 @@ describe('captureSignupCompleted', () => {
         vi.clearAllMocks();
     });
 
-    it('captures signup_completed keyed on the user id with the derived provider', () => {
+    it('captures sign_up_completed keyed on the user id with the derived auth_method', () => {
         captureSignupCompleted({
             userId: 'user-1',
             context: { path: '/callback/:id', params: { id: 'google' } }
@@ -61,18 +78,26 @@ describe('captureSignupCompleted', () => {
 
         expect(mockPostHogCapture).toHaveBeenCalledWith({
             distinctId: 'user-1',
-            event: 'signup_completed',
-            properties: { provider: 'google' }
+            event: 'sign_up_completed',
+            properties: {
+                auth_method: 'google',
+                role: 'USER',
+                user_type: 'tourist'
+            }
         });
     });
 
-    it('captures provider "email" for an email signup', () => {
+    it('captures auth_method "email" for an email signup', () => {
         captureSignupCompleted({ userId: 'user-1', context: { path: '/sign-up/email' } });
 
         expect(mockPostHogCapture).toHaveBeenCalledWith({
             distinctId: 'user-1',
-            event: 'signup_completed',
-            properties: { provider: 'email' }
+            event: 'sign_up_completed',
+            properties: {
+                auth_method: 'email',
+                role: 'USER',
+                user_type: 'tourist'
+            }
         });
     });
 

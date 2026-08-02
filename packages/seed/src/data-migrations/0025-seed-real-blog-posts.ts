@@ -51,6 +51,19 @@
  * migration for real). After a fresh/DR rebuild, this migration must be re-run
  * for real — see `docs/deployment/first-time-setup.md` (step 4, "Content-only
  * migrations must be re-run for real after a from-scratch build").
+ *
+ * ## No imagery (revised)
+ *
+ * This migration originally stamped every post with a fake `placehold.co`
+ * cover and gave the editorial author a matching fake avatar, on the
+ * assumption an operator would swap them for real assets later. Nothing
+ * distinguished them from a genuine upload — the public site rendered a flat
+ * green rectangle and the admin editor showed a populated image slot for a
+ * post that had no photo. Both are gone: posts are created with no `media` at
+ * all, and the author with no `avatar`. The web renders nothing for a
+ * cover-less post and the author card falls back to its initial-letter avatar.
+ * `0030-clear-placeholder-blog-media` removes the ones already written to live
+ * environments.
  */
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -73,15 +86,6 @@ export const meta = {
 
 /** Unique identity of the shared editorial author created by this migration. */
 const EDITORIAL_EMAIL = 'editorial@hospeda.com.ar';
-
-/**
- * Placeholder image URLs. The operator swaps these for real assets from the
- * admin panel after the content lands (decided with the content owner). They
- * are valid, resolvable URLs so `MediaSchema`/`UserProfileSchema` `.url()`
- * validation passes, and obviously placeholder so they are easy to spot.
- */
-const PLACEHOLDER_FEATURED_IMAGE_URL = 'https://placehold.co/1200x630/1b6b4c/ffffff?text=Hospeda';
-const EDITORIAL_AVATAR_URL = 'https://placehold.co/400x400/1b6b4c/ffffff?text=Hospeda';
 
 const EDITORIAL_BIO =
     'Somos el equipo editorial de Hospeda. Recorremos la costa del rio Uruguay y todo el Litoral ' +
@@ -111,6 +115,12 @@ interface RealPostFixture {
     readonly publishedAt: string;
     readonly isFeatured: boolean;
     readonly isFeaturedInWebsite: boolean;
+    /**
+     * Caption/alt authored for the cover photo that should eventually be shot
+     * for this article. Deliberately unused: the migration no longer writes a
+     * cover (see "No imagery" above). They stay in the fixtures so whoever
+     * wires real image URLs has the copy ready.
+     */
     readonly featuredImageCaption: string;
     readonly featuredImageAlt: string;
 }
@@ -151,7 +161,7 @@ async function ensureEditorialAuthor(ctx: SeedMigrationCtx): Promise<User> {
             displayName: 'Equipo Hospeda',
             firstName: 'Equipo',
             lastName: 'Hospeda',
-            profile: { avatar: EDITORIAL_AVATAR_URL, bio: EDITORIAL_BIO },
+            profile: { bio: EDITORIAL_BIO },
             visibility: VisibilityEnum.PUBLIC,
             lifecycleState: LifecycleStatusEnum.ACTIVE,
             createdById: ctx.actor.id,
@@ -210,14 +220,6 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
                 title: fixture.title,
                 summary: fixture.summary,
                 content: fixture.content,
-                media: {
-                    featuredImage: {
-                        url: PLACEHOLDER_FEATURED_IMAGE_URL,
-                        caption: fixture.featuredImageCaption,
-                        alt: fixture.featuredImageAlt,
-                        moderationState: ModerationStatusEnum.APPROVED
-                    }
-                },
                 authorId: author.id,
                 relatedDestinationId,
                 visibility: VisibilityEnum.PUBLIC,

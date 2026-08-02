@@ -73,7 +73,16 @@ const { mockPostHogCapture, mockGetPostHogClient } = vi.hoisted(() => {
     };
 });
 vi.mock('../../src/lib/posthog', () => ({
-    getPostHogClient: mockGetPostHogClient
+    getPostHogClient: mockGetPostHogClient,
+    captureServerAnalyticsEvent: vi.fn(
+        (input: { distinctId: string; name: string; properties: Record<string, unknown> }) => {
+            mockPostHogCapture({
+                distinctId: input.distinctId,
+                event: input.name,
+                properties: input.properties
+            });
+        }
+    )
 }));
 
 vi.mock('../../src/utils/create-app', () => ({
@@ -686,16 +695,16 @@ describe('handleStartPaidSubscription — checkout_started analytics', () => {
         // `checkout_started` specifically to keep this assertion about the
         // event this describe block actually covers.
         const checkoutStartedCalls = mockPostHogCapture.mock.calls.filter(
-            ([arg]) => (arg as { event?: string }).event === 'checkout_started'
+            ([arg]) => (arg as { event?: string }).event === 'subscription_checkout_started'
         );
         expect(checkoutStartedCalls).toHaveLength(1);
         expect(mockPostHogCapture).toHaveBeenCalledWith({
             distinctId: 'user-1',
-            event: 'checkout_started',
+            event: 'subscription_checkout_started',
             properties: {
-                planSlug: 'owner-premium',
-                billingInterval: 'monthly',
-                promoCode: null,
+                plan_slug: 'owner-premium',
+                billing_period: 'monthly',
+                promotion_code: null,
                 // 500_000 centavos → 5_000 major units (ARS pesos), matching the
                 // unit used by payment_failed / subscription_payment_succeeded.
                 amount: 5_000,
@@ -716,11 +725,11 @@ describe('handleStartPaidSubscription — checkout_started analytics', () => {
         });
 
         const call = mockPostHogCapture.mock.calls.find(
-            ([arg]) => (arg as { event?: string }).event === 'checkout_started'
+            ([arg]) => (arg as { event?: string }).event === 'subscription_checkout_started'
         );
-        expect((call?.[0] as { properties: { promoCode: string } }).properties.promoCode).toBe(
-            'FREEMONTH'
-        );
+        expect(
+            (call?.[0] as { properties: { promotion_code: string } }).properties.promotion_code
+        ).toBe('FREEMONTH');
     });
 
     it('does not break the checkout when PostHog capture throws (defensive)', async () => {
@@ -1494,15 +1503,15 @@ describe('handleStartPaidSubscription — checkout_started analytics on the ANNU
         // call count is 2. Filter to `checkout_started` specifically — this
         // describe block only pins that event's (unchanged) shape.
         const checkoutStartedCalls = mockPostHogCapture.mock.calls.filter(
-            ([arg]) => (arg as { event?: string }).event === 'checkout_started'
+            ([arg]) => (arg as { event?: string }).event === 'subscription_checkout_started'
         );
         expect(checkoutStartedCalls).toHaveLength(1);
         const call = mockPostHogCapture.mock.calls.find(
-            ([arg]) => (arg as { event?: string }).event === 'checkout_started'
+            ([arg]) => (arg as { event?: string }).event === 'subscription_checkout_started'
         );
         expect(call).toBeDefined();
         const properties = (call?.[0] as { properties: Record<string, unknown> }).properties;
-        expect(properties.billingInterval).toBe('annual');
+        expect(properties.billing_period).toBe('annual');
 
         // FINDING (HOS-115 gap vs spec.md AC-10 / OQ-2): `checkout_started` is
         // captured in start-paid.ts BEFORE `initiatePaidAnnualSubscription` is
@@ -1630,10 +1639,10 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
         // the analytics contract this AC pins survives, only its carrier moved.
         expect(result.trialGranted).toBe(true);
         expect(result.appliedEffect).toBeUndefined();
-        const completed = findCapturedEvent('checkout_completed');
+        const completed = findCapturedEvent('subscription_created');
         expect(completed).toBeDefined();
-        expect(completed?.properties.billingInterval).toBe('annual');
-        expect(completed?.properties.outcome).toBe('trial');
+        expect(completed?.properties.billing_period).toBe('annual');
+        expect(completed?.properties.checkout_outcome).toBe('trial');
     });
 
     it('AC-2: a plain paid ANNUAL checkout (not trial-eligible, no promo) emits checkout_completed with outcome="paid", never absent', async () => {
@@ -1651,11 +1660,11 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
 
         // ASSERT
         expect(result.appliedEffect).toBeUndefined();
-        const completed = findCapturedEvent('checkout_completed');
+        const completed = findCapturedEvent('subscription_created');
         expect(completed).toBeDefined();
-        expect(completed?.properties.billingInterval).toBe('annual');
-        expect(completed?.properties).toHaveProperty('outcome');
-        expect(completed?.properties.outcome).toBe('paid');
+        expect(completed?.properties.billing_period).toBe('annual');
+        expect(completed?.properties).toHaveProperty('checkout_outcome');
+        expect(completed?.properties.checkout_outcome).toBe('paid');
     });
 
     it('AC-3: a plain paid MONTHLY checkout emits checkout_completed with billingInterval="monthly" and outcome="paid" (mirrors AC-2)', async () => {
@@ -1672,10 +1681,10 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
 
         // ASSERT
         expect(result.appliedEffect).toBeUndefined();
-        const completed = findCapturedEvent('checkout_completed');
+        const completed = findCapturedEvent('subscription_created');
         expect(completed).toBeDefined();
-        expect(completed?.properties.billingInterval).toBe('monthly');
-        expect(completed?.properties.outcome).toBe('paid');
+        expect(completed?.properties.billing_period).toBe('monthly');
+        expect(completed?.properties.checkout_outcome).toBe('paid');
     });
 
     it('AC-3: a trial-eligible MONTHLY checkout emits checkout_completed with billingInterval="monthly" and outcome="trial" (mirrors AC-1)', async () => {
@@ -1697,10 +1706,10 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
         // the analytics contract this AC pins survives, only its carrier moved.
         expect(result.trialGranted).toBe(true);
         expect(result.appliedEffect).toBeUndefined();
-        const completed = findCapturedEvent('checkout_completed');
+        const completed = findCapturedEvent('subscription_created');
         expect(completed).toBeDefined();
-        expect(completed?.properties.billingInterval).toBe('monthly');
-        expect(completed?.properties.outcome).toBe('trial');
+        expect(completed?.properties.billing_period).toBe('monthly');
+        expect(completed?.properties.checkout_outcome).toBe('trial');
     });
 
     it('AC-4: a comp promo checkout emits checkout_completed with outcome="comp"', async () => {
@@ -1729,10 +1738,10 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
 
         // ASSERT
         expect(result.appliedEffect).toBe('comp');
-        const completed = findCapturedEvent('checkout_completed');
+        const completed = findCapturedEvent('subscription_created');
         expect(completed).toBeDefined();
-        expect(completed?.properties.outcome).toBe('comp');
-        expect(completed?.properties.localSubscriptionId).toBe('comp-sub-hos122-1');
+        expect(completed?.properties.checkout_outcome).toBe('comp');
+        expect(completed?.properties.subscription_id).toBe('comp-sub-hos122-1');
     });
 
     it('AC-4: a signup-discount checkout emits checkout_completed with outcome="discount"', async () => {
@@ -1759,9 +1768,9 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
 
         // ASSERT
         expect(result.appliedEffect).toBe('discount');
-        const completed = findCapturedEvent('checkout_completed');
+        const completed = findCapturedEvent('subscription_created');
         expect(completed).toBeDefined();
-        expect(completed?.properties.outcome).toBe('discount');
+        expect(completed?.properties.checkout_outcome).toBe('discount');
     });
 
     it('AC-4: a trial checkout that ALSO gets a discount keeps both, and the event reports both', async () => {
@@ -1803,14 +1812,14 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
         expect(result.appliedEffect).toBe('discount');
         expect(result.promoCodeIgnored).toBeUndefined();
 
-        const completed = findCapturedEvent('checkout_completed');
+        const completed = findCapturedEvent('subscription_created');
         expect(completed).toBeDefined();
-        // `outcome` is a scalar and reports what the money did. The trial is not
+        // `checkout_outcome` is a scalar and reports what the money did. The trial is not
         // lost with it — it rides its own dimension, which is the whole reason
-        // `trialGranted` exists on the event.
-        expect(completed?.properties.outcome).toBe('discount');
-        expect(completed?.properties.trialGranted).toBe(true);
-        expect(completed?.properties.promoCodeIgnored).toBe(false);
+        // `trial_granted` exists on the event.
+        expect(completed?.properties.checkout_outcome).toBe('discount');
+        expect(completed?.properties.trial_granted).toBe(true);
+        expect(completed?.properties.promotion_code_ignored).toBe(false);
     });
 
     it('AC-5: checkout_started stays without appliedEffect/outcome once checkout_completed also fires', async () => {
@@ -1829,7 +1838,7 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
         });
 
         // ASSERT
-        const started = findCapturedEvent('checkout_started');
+        const started = findCapturedEvent('subscription_checkout_started');
         expect(started).toBeDefined();
         expect(started?.properties).not.toHaveProperty('appliedEffect');
         expect(started?.properties).not.toHaveProperty('outcome');
@@ -1848,15 +1857,15 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
         });
 
         // ASSERT
-        const started = findCapturedEvent('checkout_started');
-        const completed = findCapturedEvent('checkout_completed');
+        const started = findCapturedEvent('subscription_checkout_started');
+        const completed = findCapturedEvent('subscription_created');
         expect(started).toBeDefined();
         expect(completed).toBeDefined();
         expect(started?.distinctId).toBe('user-1');
         expect(completed?.distinctId).toBe('user-1');
-        expect(started?.properties.billingInterval).toBe('annual');
-        expect(completed?.properties.billingInterval).toBe('annual');
-        expect(completed?.properties.localSubscriptionId).toBe(result.localSubscriptionId);
+        expect(started?.properties.billing_period).toBe('annual');
+        expect(completed?.properties.billing_period).toBe('annual');
+        expect(completed?.properties.subscription_id).toBe(result.localSubscriptionId);
     });
 
     it('AC-7: checkout still succeeds and no error propagates when the checkout_completed PostHog capture throws', async () => {
@@ -1899,11 +1908,11 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
 
         // ASSERT — checkout_started still fires (attempt signal survives the
         // error)...
-        const started = findCapturedEvent('checkout_started');
+        const started = findCapturedEvent('subscription_checkout_started');
         expect(started).toBeDefined();
         // ...but checkout_completed must NOT be captured: `result` never
         // resolved, so the route never reaches the post-decision try block.
-        const completed = findCapturedEvent('checkout_completed');
+        const completed = findCapturedEvent('subscription_created');
         expect(completed).toBeUndefined();
     });
 
@@ -1921,7 +1930,7 @@ describe('handleStartPaidSubscription — checkout_completed outcome analytics (
         });
 
         // ASSERT
-        const completed = findCapturedEvent('checkout_completed');
+        const completed = findCapturedEvent('subscription_created');
         expect(completed).toBeDefined();
         expect(completed?.properties.$set).toEqual({ last_checkout_outcome: 'trial' });
     });

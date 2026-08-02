@@ -9,7 +9,7 @@ import { NearbyPoiQuerySchema, NearbyPoiSchema } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -41,19 +41,24 @@ export const publicGetAccommodationNearbyPoisRoute = createPublicRoute({
         items: z.array(NearbyPoiSchema)
     }),
     handler: async (
-        ctx: Context,
+        _ctx: Context,
         params: Record<string, unknown>,
         _body: unknown,
         query?: Record<string, unknown>
     ) => {
-        const actor = getActorFromContext(ctx);
         // TYPE-WORKAROUND: the route factory types `query` as Record<string, unknown>;
         // NearbyPoiQuerySchema already validated and coerced radius/limit to numbers upstream.
         const { radius, limit } = query as unknown as { radius: number; limit: number };
 
+        // HOS-353: resolve visibility against a GUEST actor, never the caller.
+        // `getNearbyPois` routes the actor into `_canView`, so for a hidden listing the
+        // reader decided between a populated list and an empty one — and this route sits
+        // under the `/api/v1/public/accommodations` prefix, whose cache key carries no
+        // actor. That made the cached response an existence oracle for unpublished
+        // listings. Privileged reads live on the protected and admin tiers.
         const result = await accommodationService.getNearbyPois(
             { slug: params.slug as string, radiusKm: radius, limit },
-            actor
+            createGuestActor()
         );
 
         if (result.error) {

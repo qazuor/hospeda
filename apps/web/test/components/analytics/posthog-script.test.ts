@@ -29,7 +29,7 @@
  * fully self-contained body through a SINGLE `set:html`, with NO `define:vars`:
  *
  *   const snippetBody = `!function(t,e){...}; window.posthog.init(${JSON.stringify(posthogKey)}, {...})`;
- *   <script is:inline nonce={cspNonce} set:html={snippetBody} />
+ *   <script is:inline set:html={snippetBody} />
  *
  * We cannot render `.astro` files in Vitest (no Astro runtime here), so these
  * assertions are on the source string. The definitive check that the built
@@ -89,9 +89,18 @@ describe('PostHogScript.astro — snippet rendering pattern', () => {
         expect(source).toContain('api_host: ${JSON.stringify(posthogHost)},');
     });
 
-    it('enables pageleave and web vitals capture for Web Analytics health', () => {
-        expect(source).toContain('capture_pageleave: true');
+    it('uses history-change pageviews and web vitals capture for Astro soft navigation', () => {
+        expect(source).toContain("capture_pageview: 'history_change'");
+        expect(source).toContain('capture_pageleave: false');
         expect(source).toContain('capture_performance: { web_vitals: true }');
+    });
+
+    it('disables interaction autocapture and starts in cookieless memory mode before consent', () => {
+        expect(source).toContain('autocapture: false');
+        expect(source).toContain(
+            "persistence: readAnalyticsConsent() ? 'localStorage+cookie' : 'memory'"
+        );
+        expect(source).toContain('window.__hospeda_posthog_initialized = true;');
     });
 
     it('must gate rendering on dev mode and key presence', () => {
@@ -101,6 +110,6 @@ describe('PostHogScript.astro — snippet rendering pattern', () => {
 
     it('registers app_version as a super property on load (interpolated)', () => {
         expect(source).toContain('const appVersion = import.meta.env.PUBLIC_VERSION');
-        expect(source).toContain('ph.register({ app_version: ${JSON.stringify(appVersion)} });');
+        expect(source).toContain('app_version: ${JSON.stringify(appVersion)}');
     });
 });

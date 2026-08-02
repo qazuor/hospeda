@@ -3,7 +3,7 @@
  * @description Source-level + engine-integration tests for the discovery-door
  * CTA entries in the `/mi-cuenta` sidebar (HOS-131 §6.2/§6.3). Doors render
  * ONLY on this surface (the sidebar), below the nav groups, gated
- * server-side by `isDoorVisible` + `isVisibleByRole` (HOS-131 D-4).
+ * server-side by `isDoorVisible` + `isVisibleByRoles` (HOS-131 D-4).
  */
 
 import { readFileSync } from 'node:fs';
@@ -12,14 +12,17 @@ import { RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 
 import { ACCOUNT_DISCOVERY_DOORS, type DiscoveryDoor } from '../../src/config/discovery-doors';
-import { isDoorVisible, isVisibleByRole } from '../../src/lib/nav-gating';
+import { isDoorVisible, isVisibleByRoles } from '../../src/lib/nav-gating';
 
 const source = readFileSync(resolve(__dirname, '../../src/layouts/AccountLayout.astro'), 'utf8');
 
 /** Computes the doors visible in the sidebar exactly as `AccountLayout.astro` does for a given role. */
 function visibleDoorsForRole(role: string | null): readonly DiscoveryDoor[] {
     return ACCOUNT_DISCOVERY_DOORS.filter((door) =>
-        isDoorVisible({ door, visibility: (node) => isVisibleByRole(node, role) })
+        isDoorVisible({
+            door,
+            visibility: (node) => isVisibleByRoles(node, role === null ? null : [role])
+        })
     );
 }
 
@@ -29,10 +32,10 @@ describe('AccountLayout — discovery-door wiring (HOS-131 §6.2/§6.3)', () => 
             "import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';"
         );
         expect(source).toContain(
-            "import { isDoorVisible, isVisibleByRole, resolveDoorLabelKey } from '@/lib/nav-gating';"
+            "import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';"
         );
         expect(source).toContain(
-            'isDoorVisible({ door, visibility: (node) => isVisibleByRole(node, userRole) })'
+            'isDoorVisible({ door, visibility: (node) => isVisibleByRoles(node, userRoles) })'
         );
     });
 
@@ -63,11 +66,11 @@ describe('AccountLayout — discovery-door wiring (HOS-131 §6.2/§6.3)', () => 
 
     it('renders the door CTA label via resolveDoorLabelKey (HOS-134 stateful label), not a bare t(door.i18nKey)', () => {
         expect(source).toContain(
-            "import { isDoorVisible, isVisibleByRole, resolveDoorLabelKey } from '@/lib/nav-gating';"
+            "import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';"
         );
         expect(source).toContain('resolveDoorLabelKey({');
         expect(source).toContain('door,');
-        expect(source).toContain('visibility: (node) => isVisibleByRole(node, userRole),');
+        expect(source).toContain('visibility: (node) => isVisibleByRoles(node, userRoles),');
         expect(source).not.toContain('{t(door.i18nKey)}');
     });
 });

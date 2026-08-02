@@ -6,10 +6,12 @@
 |----------|-------|-------------|
 | `OWNER_TRIAL_DAYS` | `14` | Trial period in days for owner plans |
 | `COMPLEX_TRIAL_DAYS` | `14` | Trial period in days for complex plans |
-| `PAYMENT_GRACE_PERIOD_DAYS` | `3` | Days after payment failure before dunning starts |
+| `TOURIST_TRIAL_DAYS` | `14` | Trial period in days for self-service tourist plans (tourist-plus / tourist-vip). Aliased to `OWNER_TRIAL_DAYS` so it can never drift from the owner tier |
+| `PAYMENT_GRACE_PERIOD_DAYS` | `3` | Reference constant for the initial-payment grace window; NOT enforced at runtime (qzpay-core uses `DUNNING_GRACE_PERIOD_DAYS` for both) |
 | `DUNNING_GRACE_PERIOD_DAYS` | `7` | Days of dunning process before subscription cancellation |
 | `DUNNING_RETRY_INTERVALS` | `[1, 3, 5, 7]` | Days after failure when retry attempts occur |
 | `MAX_PAYMENT_RETRY_ATTEMPTS` | `3` | Max retry attempts for initial payment flow |
+| `BILLING_CRON_LAG_GRACE_HOURS` | `6` | Lag window in hours the renewal cron tolerates before raising a Sentry alert for an unrenewed subscription |
 
 ## Cache Constants
 
@@ -54,10 +56,11 @@
 
 ## EntitlementKey Enum
 
-All 36 entitlement keys organized by category. Keys pruned in SPEC-216
+All 39 entitlement keys organized by category. Keys pruned in SPEC-216
 (`API_ACCESS`, `DEDICATED_MANAGER`, `SOCIAL_MEDIA_INTEGRATION`, `WHITE_LABEL`,
 `MULTI_CHANNEL_INTEGRATION`, `EARLY_ACCESS_EVENTS`, `CONCIERGE_SERVICE`,
-`AIRPORT_TRANSFERS`) are no longer valid enum values and must not be referenced.
+`AIRPORT_TRANSFERS`) plus `AD_FREE` (pruned separately in HOS-16) are no longer
+valid enum values and must not be referenced.
 
 ### Owner Entitlements
 
@@ -103,15 +106,16 @@ Owner and complex plans inherit all tourist-VIP entitlements (SPEC-216).
 | `SAVE_FAVORITES` | `'save_favorites'` |
 | `WRITE_REVIEWS` | `'write_reviews'` |
 | `READ_REVIEWS` | `'read_reviews'` |
-| `AD_FREE` | `'ad_free'` |
 | `PRICE_ALERTS` | `'price_alerts'` |
 | `EXCLUSIVE_DEALS` | `'exclusive_deals'` |
 | `VIP_SUPPORT` | `'vip_support'` |
+| `VIP_VISIBILITY_ACCESS` | `'vip_visibility_access'` |
 | `VIP_PROMOTIONS_ACCESS` | `'vip_promotions_access'` |
 | `CAN_COMPARE_ACCOMMODATIONS` | `'can_compare_accommodations'` |
 | `CAN_ATTACH_REVIEW_PHOTOS` | `'can_attach_review_photos'` |
 | `CAN_VIEW_SEARCH_HISTORY` | `'can_view_search_history'` |
 | `CAN_VIEW_RECOMMENDATIONS` | `'can_view_recommendations'` |
+| `CAN_USE_COLLECTIONS` | `'can_use_collections'` |
 
 ### AI Feature Entitlements (SPEC-173)
 
@@ -121,6 +125,8 @@ Owner and complex plans inherit all tourist-VIP entitlements (SPEC-216).
 | `AI_CHAT` | `'ai_chat'` |
 | `AI_SEARCH` | `'ai_search'` |
 | `AI_SUPPORT` | `'ai_support'` |
+| `AI_TRANSLATE` | `'ai_translate'` |
+| `AI_ACCOMMODATION_IMPORT` | `'ai_accommodation_import'` |
 
 ## LimitKey Enum
 
@@ -132,6 +138,17 @@ Owner and complex plans inherit all tourist-VIP entitlements (SPEC-216).
 | `MAX_FAVORITES` | `'max_favorites'` | Tourist |
 | `MAX_PROPERTIES` | `'max_properties'` | Complex |
 | `MAX_STAFF_ACCOUNTS` | `'max_staff_accounts'` | Complex |
+| `MAX_ACTIVE_ALERTS` | `'max_active_alerts'` | Tourist |
+| `MAX_COMPARE_ITEMS` | `'max_compare_items'` | Tourist |
+| `MAX_AI_TEXT_IMPROVE_PER_MONTH` | `'max_ai_text_improve_per_month'` | Owner, Complex |
+| `MAX_AI_CHAT_PER_MONTH` | `'max_ai_chat_per_month'` | Owner, Complex (owner-side cost cap) |
+| `MAX_AI_CHAT_CONSUMER_PER_MONTH` | `'max_ai_chat_consumer_per_month'` | Tourist, Owner, Complex (consumer-side quota) |
+| `MAX_AI_SEARCH_PER_MONTH` | `'max_ai_search_per_month'` | Tourist, Owner, Complex (consumer-side quota) |
+| `MAX_AI_SUPPORT_PER_MONTH` | `'max_ai_support_per_month'` | Owner, Complex (via `ai-support-monthly` add-on, currently inactive) |
+| `MAX_AI_TRANSLATE_PER_MONTH` | `'max_ai_translate_per_month'` | Owner, Complex |
+| `MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH` | `'max_ai_accommodation_import_per_month'` | Owner, Complex |
+| `MAX_SEARCH_HISTORY_ENTRIES` | `'max_search_history_entries'` | Tourist (Plus+; free has no entitlement) |
+| `MAX_COLLECTIONS` | `'max_collections'` | Tourist (Plus+; free has no entitlement) |
 
 A limit value of `-1` means unlimited.
 
@@ -144,6 +161,7 @@ A limit value of `-1` means unlimited.
 | `extra-photos-20` | `EXTRA_PHOTOS_ADDON` | Recurring |
 | `extra-accommodations-5` | `EXTRA_ACCOMMODATIONS_ADDON` | Recurring |
 | `extra-properties-5` | `EXTRA_PROPERTIES_ADDON` | Recurring |
+| `ai-support-monthly` | `AI_SUPPORT_ADDON` | Recurring (currently `isActive: false` — pending pricing/quota confirmation, not purchasable yet) |
 
 ## Collection Exports
 
@@ -151,10 +169,10 @@ A limit value of `-1` means unlimited.
 |--------|------|-------------|
 | `ALL_PLANS` | `PlanDefinition[]` | All 9 plans |
 | `PLANS_BY_CATEGORY` | `Record<PlanCategory, PlanDefinition[]>` | Plans grouped by category |
-| `ALL_ADDONS` | `AddonDefinition[]` | All 5 add-ons |
+| `ALL_ADDONS` | `AddonDefinition[]` | All 6 add-ons |
 | `ENTITLEMENT_DEFINITIONS` | `EntitlementDefinition[]` | All entitlement metadata |
 | `LIMIT_METADATA` | `Record<LimitKey, {...}>` | Limit names and descriptions |
-| `DEFAULT_PROMO_CODES` | `PromoCodeDefinition[]` | All 3 default promo codes |
+| `DEFAULT_PROMO_CODES` | `PromoCodeDefinition[]` | All 4 default promo codes |
 
 ## Utility Functions
 

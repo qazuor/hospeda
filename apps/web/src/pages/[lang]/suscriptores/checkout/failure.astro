@@ -58,7 +58,7 @@ const sessionUser = requestHasSessionCookie(cookieHeader)
 	: null;
 const planesUrl = buildUrl({
 	locale,
-	path: resolveSubscriptionPlansPath({ role: sessionUser?.role ?? null })
+	path: resolveSubscriptionPlansPath({ roles: sessionUser?.roles ?? null })
 });
 const supportUrl = buildUrl({ locale, path: 'contacto' });
 

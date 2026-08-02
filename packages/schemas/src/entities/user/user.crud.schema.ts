@@ -1,10 +1,11 @@
 import { z } from 'zod';
 import { UserIdSchema } from '../../common/id.schema.js';
 import { StrongPasswordSchema } from '../../common/password.schema.js';
-import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
+import { PermissionEnumSchema } from '../../enums/index.js';
 import { ModerationStatusEnumSchema } from '../../enums/moderation-status.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 import { UserReadSchema, UserSchema } from './user.schema.js';
+import { AssignableRoleEnumSchema } from './user-role.schema.js';
 
 /**
  * User CRUD Schemas
@@ -67,9 +68,14 @@ export const UserCreateOutputSchema = UserReadSchema;
  * `banExpires`), `UserService.completeProfile` (`profileCompleted`),
  * `UserService.skip/markSetPassword` (`setPasswordPrompted`),
  * `setOwnerServiceSuspension` (`serviceSuspended`), and `PermissionService`
- * (`permissions`, which has no column on `users` anyway). `role` is kept: it
- * has no default (so it is never re-injected) and the admin PUT/PATCH routes
- * legitimately change it through this schema.
+ * (`permissions`, which has no column on `users` anyway).
+ *
+ * `role` is not in this list because it is no longer on `UserSchema` at all
+ * (HOS-296 G-8). It used to be explicitly KEPT here so the admin PUT/PATCH
+ * routes could change it; role changes now go through the dedicated
+ * grant/revoke endpoints, which are additive and audited. A scalar `role` on a
+ * generic update is exactly the "replace the hat" write the multi-role model
+ * exists to remove.
  */
 export const UserUpdateInputSchema = z
     .object(
@@ -317,10 +323,17 @@ export type UserUpdateAvatarOutput = z.infer<typeof UserUpdateAvatarOutputSchema
 /**
  * Schema for assigning role to user input
  * Requires user ID and new role
+ *
+ * HOS-296: `role` is an {@link AssignableRoleEnumSchema}, so `SYSTEM` and
+ * `GUEST` are rejected — this is an HTTP-shaped input feeding
+ * `UserService.assignRole`, which delegates straight to `grantRole`. The
+ * primitive itself stays unrestricted because the seed needs to grant `SYSTEM`
+ * to the reserved account, but it calls `grantRole` directly and never comes
+ * through here.
  */
 export const UserAssignRoleInputSchema = z.object({
     userId: UserIdSchema,
-    role: RoleEnumSchema
+    role: AssignableRoleEnumSchema
 });
 
 /**

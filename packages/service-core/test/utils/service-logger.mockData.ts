@@ -7,6 +7,6 @@
 export const mockPermissionParams = {
     permission: 'TEST_PERMISSION',
     userId: 'user-1',
-    role: 'USER',
+    roles: ['USER'],
     extraData: { foo: 'bar' }
 };

@@ -149,7 +149,7 @@ describe('Authentication Integration Tests', () => {
             const actor = data.data.actor;
             expect(actor).toMatchObject({
                 id: expect.any(String),
-                role: expect.any(String),
+                roles: [expect.any(String)],
                 permissions: expect.any(Array)
             });
         });

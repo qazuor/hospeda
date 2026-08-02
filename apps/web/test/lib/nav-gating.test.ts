@@ -6,9 +6,11 @@ import {
     ROLES_WITH_COMMERCE_NAV
 } from '../../src/lib/account-roles';
 import {
+    hasAccommodationsNavAccess,
+    hasCommerceNavAccess,
     isDoorVisible,
     isVisibleByPermissions,
-    isVisibleByRole,
+    isVisibleByRoles,
     PERMISSION_ROLE_MAP,
     resolveDoorLabelKey,
     resolveDoorOptionState
@@ -72,51 +74,99 @@ describe('isVisibleByPermissions (client, exact evaluation)', () => {
     });
 });
 
-describe('isVisibleByRole (server SSR, approximate evaluation)', () => {
+describe('isVisibleByRoles (server SSR, approximate evaluation)', () => {
     it('is always visible when the node declares no requiredPermission, even for an anonymous visitor', () => {
-        expect(isVisibleByRole({}, null)).toBe(true);
+        expect(isVisibleByRoles({}, null)).toBe(true);
     });
 
     it('is hidden for an anonymous visitor (role = null) on a gated node', () => {
         const node = { requiredPermission: PermissionEnum.ACCOMMODATION_CREATE };
-        expect(isVisibleByRole(node, null)).toBe(false);
+        expect(isVisibleByRoles(node, null)).toBe(false);
     });
 
     it('is visible for HOST on an ACCOMMODATION_CREATE node', () => {
         const node = { requiredPermission: PermissionEnum.ACCOMMODATION_CREATE };
-        expect(isVisibleByRole(node, RoleEnum.HOST)).toBe(true);
+        expect(isVisibleByRoles(node, [RoleEnum.HOST])).toBe(true);
     });
 
     it('is hidden for a plain USER on an ACCOMMODATION_CREATE node', () => {
         const node = { requiredPermission: PermissionEnum.ACCOMMODATION_CREATE };
-        expect(isVisibleByRole(node, RoleEnum.USER)).toBe(false);
+        expect(isVisibleByRoles(node, [RoleEnum.USER])).toBe(false);
     });
 
     it('fails closed (hidden) for a role string absent from every PERMISSION_ROLE_MAP set', () => {
         const gatedNode = { requiredPermission: PermissionEnum.ACCOMMODATION_CREATE };
-        expect(isVisibleByRole(gatedNode, 'BOGUS_ROLE')).toBe(false);
+        expect(isVisibleByRoles(gatedNode, ['BOGUS_ROLE'])).toBe(false);
     });
 
     it('is visible for COMMERCE_OWNER on a COMMERCE_EDIT_OWN node, but not for HOST', () => {
         const node = { requiredPermission: PermissionEnum.COMMERCE_EDIT_OWN };
-        expect(isVisibleByRole(node, RoleEnum.COMMERCE_OWNER)).toBe(true);
-        expect(isVisibleByRole(node, RoleEnum.HOST)).toBe(false);
+        expect(isVisibleByRoles(node, [RoleEnum.COMMERCE_OWNER])).toBe(true);
+        expect(isVisibleByRoles(node, [RoleEnum.HOST])).toBe(false);
     });
 
     it('is visible for platform staff (ADMIN, SUPER_ADMIN) on both gated permissions', () => {
         const hostNode = { requiredPermission: PermissionEnum.ACCOMMODATION_CREATE };
         const commerceNode = { requiredPermission: PermissionEnum.COMMERCE_EDIT_OWN };
-        expect(isVisibleByRole(hostNode, RoleEnum.ADMIN)).toBe(true);
-        expect(isVisibleByRole(commerceNode, RoleEnum.ADMIN)).toBe(true);
-        expect(isVisibleByRole(hostNode, RoleEnum.SUPER_ADMIN)).toBe(true);
-        expect(isVisibleByRole(commerceNode, RoleEnum.SUPER_ADMIN)).toBe(true);
+        expect(isVisibleByRoles(hostNode, [RoleEnum.ADMIN])).toBe(true);
+        expect(isVisibleByRoles(commerceNode, [RoleEnum.ADMIN])).toBe(true);
+        expect(isVisibleByRoles(hostNode, [RoleEnum.SUPER_ADMIN])).toBe(true);
+        expect(isVisibleByRoles(commerceNode, [RoleEnum.SUPER_ADMIN])).toBe(true);
+    });
+
+    it('is hidden for an empty role set (guest / unresolved) on a gated node', () => {
+        const node = { requiredPermission: PermissionEnum.ACCOMMODATION_CREATE };
+        expect(isVisibleByRoles(node, [])).toBe(false);
+    });
+
+    it('is hidden when NO held role grants the permission, even with several hats', () => {
+        const node = { requiredPermission: PermissionEnum.ACCOMMODATION_CREATE };
+        expect(isVisibleByRoles(node, [RoleEnum.USER, RoleEnum.COMMERCE_OWNER])).toBe(false);
+    });
+});
+
+describe('AC-1 — HOST + COMMERCE_OWNER sees BOTH nav groups (HOS-296)', () => {
+    // The core acceptance criterion of the multi-role cut. Under the previous
+    // scalar `role` these two assertions were mutually exclusive by
+    // construction: whichever hat the column happened to hold won, and the
+    // other group vanished from the sidebar entirely.
+    const hostNode = { requiredPermission: PermissionEnum.ACCOMMODATION_CREATE };
+    const commerceNode = { requiredPermission: PermissionEnum.COMMERCE_EDIT_OWN };
+    const multiHatRoles = [RoleEnum.USER, RoleEnum.HOST, RoleEnum.COMMERCE_OWNER];
+
+    it('shows the accommodations/host group', () => {
+        expect(isVisibleByRoles(hostNode, multiHatRoles)).toBe(true);
+    });
+
+    it('shows the commerce group', () => {
+        expect(isVisibleByRoles(commerceNode, multiHatRoles)).toBe(true);
+    });
+
+    it('shows both regardless of the order the roles arrive in', () => {
+        const reversed = [...multiHatRoles].reverse();
+        expect(isVisibleByRoles(hostNode, reversed)).toBe(true);
+        expect(isVisibleByRoles(commerceNode, reversed)).toBe(true);
+    });
+
+    it('still hides a group neither hat grants (POST_CREATE stays editor-only)', () => {
+        const editorNode = { requiredPermission: PermissionEnum.POST_CREATE };
+        expect(isVisibleByRoles(editorNode, multiHatRoles)).toBe(false);
+        // …and appears as soon as the editor hat is added to the same account.
+        expect(isVisibleByRoles(editorNode, [...multiHatRoles, RoleEnum.EDITOR])).toBe(true);
+    });
+
+    it('exposes the same verdict through the named page-gate wrappers', () => {
+        // The `/mi-cuenta/*` page guards call these, so they must agree with
+        // the sidebar evaluator above (HOS-296 §6.5: one gating mechanism).
+        expect(hasAccommodationsNavAccess({ roles: multiHatRoles })).toBe(true);
+        expect(hasCommerceNavAccess({ roles: multiHatRoles })).toBe(true);
     });
 });
 
 describe('resolveDoorOptionState (HOS-131 §6.3, OQ-3: acquired signal = permissions)', () => {
     const byRole =
         (role: string | null) => (node: { readonly requiredPermission?: PermissionEnum }) =>
-            isVisibleByRole(node, role);
+            isVisibleByRoles(node, role === null ? null : [role]);
 
     it('resolves an acquirable option to "acquired" when the role/permission is present', () => {
         const option = { acquiredPermission: PermissionEnum.ACCOMMODATION_CREATE };
@@ -151,7 +201,7 @@ describe('resolveDoorOptionState (HOS-131 §6.3, OQ-3: acquired signal = permiss
 describe('isDoorVisible (HOS-131 §6.3 door lifecycle)', () => {
     const byRole =
         (role: string | null) => (node: { readonly requiredPermission?: PermissionEnum }) =>
-            isVisibleByRole(node, role);
+            isVisibleByRoles(node, role === null ? null : [role]);
     const byPermissions =
         (permissions: readonly string[]) =>
         (node: { readonly requiredPermission?: PermissionEnum }) =>
@@ -213,7 +263,7 @@ describe('isDoorVisible (HOS-131 §6.3 door lifecycle)', () => {
 describe('resolveDoorLabelKey (HOS-134 §5.4 stateful partner-door label)', () => {
     const byRole =
         (role: string | null) => (node: { readonly requiredPermission?: PermissionEnum }) =>
-            isVisibleByRole(node, role);
+            isVisibleByRoles(node, role === null ? null : [role]);
 
     const statefulDoor = {
         i18nKey: 'account.doors.partner.title',

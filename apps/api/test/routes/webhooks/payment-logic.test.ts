@@ -27,7 +27,24 @@ const { mockPostHogCapture, mockGetPostHogClient } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../src/lib/posthog', () => ({
-    getPostHogClient: mockGetPostHogClient
+    getPostHogClient: mockGetPostHogClient,
+    captureServerAnalyticsEvent: ({
+        distinctId,
+        name,
+        properties
+    }: {
+        distinctId: string;
+        name: string;
+        properties: Record<string, unknown>;
+    }) => {
+        const client = mockGetPostHogClient();
+        if (client) {
+            client.capture({ distinctId, event: name, properties });
+        }
+    },
+    isPostHogEnabled: () => true,
+    shutdownPostHog: vi.fn(),
+    _resetPostHogClientForTests: vi.fn()
 }));
 
 vi.mock('../../../src/routes/webhooks/mercadopago/notifications', () => ({
@@ -394,8 +411,9 @@ describe('processPaymentUpdated', () => {
                 properties: {
                     amount: 1000,
                     currency: 'ARS',
-                    paymentMethod: 'credit_card',
-                    kind: 'subscription_renewal',
+                    payment_provider: 'mercadopago',
+                    payment_method: 'credit_card',
+                    payment_kind: 'subscription_renewal',
                     source: 'webhook',
                     $set: { plan_status: 'active' }
                 }
@@ -444,6 +462,32 @@ describe('processPaymentUpdated', () => {
                 expect.objectContaining({
                     distinctId: 'cust-1',
                     event: 'subscription_payment_succeeded'
+                })
+            );
+        });
+
+        it('never throws out of the webhook when resolveOwnerUserId rejects (falls back to customerId)', async () => {
+            vi.mocked(resolveOwnerUserId).mockRejectedValueOnce(new Error('DB connection lost'));
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: 500,
+                currency: 'ARS',
+                status: 'rejected',
+                statusDetail: 'cc_rejected_other_reason',
+                paymentMethod: 'credit_card'
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customerId: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            // Webhook resolves normally and the event is still captured, keyed on
+            // the customerId fallback.
+            expect(result.success).toBe(true);
+            expect(mockPostHogCapture).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    distinctId: 'cust-1',
+                    event: 'subscription_payment_failed'
                 })
             );
         });
@@ -519,12 +563,13 @@ describe('processPaymentUpdated', () => {
             // distinctId is the resolved owner user id (see approved-branch note).
             expect(mockPostHogCapture).toHaveBeenCalledWith({
                 distinctId: 'usr-resolved-1',
-                event: 'payment_failed',
+                event: 'subscription_payment_failed',
                 properties: {
                     amount: 500,
                     currency: 'ARS',
-                    status: 'rejected',
-                    failureReason: 'cc_rejected_insufficient_amount',
+                    payment_provider: 'mercadopago',
+                    failure_reason: 'cc_rejected_insufficient_amount',
+                    failure_category: 'rejected',
                     source: 'webhook'
                 }
             });
@@ -546,7 +591,10 @@ describe('processPaymentUpdated', () => {
             });
 
             expect(mockPostHogCapture).toHaveBeenCalledWith(
-                expect.objectContaining({ distinctId: 'cust-1', event: 'payment_failed' })
+                expect.objectContaining({
+                    distinctId: 'cust-1',
+                    event: 'subscription_payment_failed'
+                })
             );
         });
 
@@ -569,7 +617,10 @@ describe('processPaymentUpdated', () => {
             // the customerId fallback.
             expect(result.success).toBe(true);
             expect(mockPostHogCapture).toHaveBeenCalledWith(
-                expect.objectContaining({ distinctId: 'cust-1', event: 'payment_failed' })
+                expect.objectContaining({
+                    distinctId: 'cust-1',
+                    event: 'subscription_payment_failed'
+                })
             );
         });
 
@@ -588,10 +639,10 @@ describe('processPaymentUpdated', () => {
             });
 
             const call = mockPostHogCapture.mock.calls.find(
-                ([arg]) => (arg as { event?: string }).event === 'payment_failed'
+                ([arg]) => (arg as { event?: string }).event === 'subscription_payment_failed'
             );
             expect(
-                (call?.[0] as { properties: { failureReason: string } }).properties.failureReason
+                (call?.[0] as { properties: { failure_reason: string } }).properties.failure_reason
             ).toBe('cancelled');
         });
 
@@ -610,7 +661,7 @@ describe('processPaymentUpdated', () => {
             });
 
             expect(mockPostHogCapture).not.toHaveBeenCalledWith(
-                expect.objectContaining({ event: 'payment_failed' })
+                expect.objectContaining({ event: 'subscription_payment_failed' })
             );
         });
 

@@ -1,11 +1,22 @@
 /**
  * @file post-detail-attribution.test.ts
- * @description Integration tests for stock image attribution in post detail page (SPEC-274).
+ * @description Tests for stock image attribution on the post detail page (SPEC-274).
  *
- * Tests verify:
- * - ImageAttribution component is imported in post detail page
- * - Attribution renders when media.featuredImage.attribution exists
- * - Overlay variant is used for cover image
+ * IMPORTANT — current state of the attribution render path:
+ *
+ * The original suite asserted that `<ImageAttribution>` rendered inside a
+ * `.post-detail__cover` block. That block was only reachable when
+ * `hasRealFeatured` was `false` (i.e. `media.featuredImage.url` was absent) —
+ * and in that case `media.featuredImage.attribution` is absent too, so the
+ * attribution never actually rendered. Whenever a post DID have a cover, the
+ * page took the `ImageGallery` branch, and `ImageGallery` has no attribution
+ * support at all.
+ *
+ * The unreachable cover block was removed so a post with no imagery renders
+ * nothing instead of a placeholder. These tests now assert what is actually
+ * true: the media type still carries `attribution`, and no placeholder cover
+ * markup remains. Rendering attribution for post covers requires wiring it
+ * through `ImageGallery` and is NOT implemented.
  */
 
 import { readFileSync } from 'node:fs';
@@ -17,15 +28,12 @@ const postDetailPage = readFileSync(
     'utf8'
 );
 
-describe('Post detail page - Stock image attribution (SPEC-274)', () => {
-    describe('Component import', () => {
-        it('should import ImageAttribution component', () => {
-            expect(postDetailPage).toContain(
-                "import ImageAttribution from '@/components/shared/ImageAttribution.astro'"
-            );
-        });
-    });
+const imageGallerySrc = readFileSync(
+    resolve(__dirname, '../../src/components/ImageGallery.client.tsx'),
+    'utf8'
+);
 
+describe('Post detail page - Stock image attribution (SPEC-274)', () => {
     describe('Type definition', () => {
         it('should extend RawMediaImage with attribution field', () => {
             expect(postDetailPage).toContain('interface RawMediaImage {');
@@ -37,46 +45,24 @@ describe('Post detail page - Stock image attribution (SPEC-274)', () => {
         });
     });
 
-    describe('Attribution rendering', () => {
-        it('should render ImageAttribution when attribution exists', () => {
-            expect(postDetailPage).toContain('{mediaObj?.featuredImage?.attribution && (');
-            expect(postDetailPage).toContain('<ImageAttribution');
+    describe('Cover rendering', () => {
+        it('should not render a placeholder cover block', () => {
+            // The removed block was the only consumer of ImageAttribution here,
+            // and it was unreachable: it required a featuredImage with no url.
+            expect(postDetailPage).not.toContain('post-detail__cover');
+            expect(postDetailPage).not.toContain('<ImageAttribution');
         });
 
-        it('should pass attribution prop from media object', () => {
-            expect(postDetailPage).toContain('attribution={mediaObj.featuredImage.attribution}');
-        });
-
-        it('should pass locale prop', () => {
-            expect(postDetailPage).toContain('locale={locale}');
-        });
-
-        it('should use overlay variant for cover image', () => {
-            expect(postDetailPage).toContain('variant="overlay"');
-        });
-
-        it('should be inside post-detail__cover div', () => {
-            // Find the cover section where ImageAttribution renders
-            const coverSectionStart = postDetailPage.indexOf('class="post-detail__cover"');
-            const coverSectionEnd = postDetailPage.indexOf('</div>', coverSectionStart + 50);
-            // Find the usage of ImageAttribution component (not the import)
-            const attributionIndex = postDetailPage.indexOf('<ImageAttribution', coverSectionStart);
-
-            expect(coverSectionStart).toBeGreaterThan(-1);
-            expect(attributionIndex).toBeGreaterThan(coverSectionStart);
-            expect(attributionIndex).toBeLessThan(coverSectionEnd);
+        it('should gate all image markup on there being at least one real image', () => {
+            expect(postDetailPage).toMatch(/\{galleryImages\.length > 0 && \(/);
         });
     });
-});
 
-describe('Post detail page - Media extraction', () => {
-    it('should extract attribution from media object', () => {
-        // Verify the page accesses mediaObj?.featuredImage?.attribution
-        expect(postDetailPage).toContain('mediaObj?.featuredImage?.attribution');
-    });
-
-    it('should handle optional chaining for safe access', () => {
-        // Optional chaining prevents errors when media or featuredImage is null
-        expect(postDetailPage).toContain('mediaObj?.featuredImage?.attribution');
+    describe('Known gap', () => {
+        it('documents that ImageGallery cannot display attribution yet', () => {
+            // Guard: if someone adds attribution support to ImageGallery, this
+            // test fails and the post cover attribution should be wired up.
+            expect(imageGallerySrc).not.toContain('attribution');
+        });
     });
 });

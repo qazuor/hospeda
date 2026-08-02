@@ -133,7 +133,7 @@ function injectHostActor(app: Hono<AppBindings>): void {
     app.use((c, next) => {
         c.set('actor', {
             id: '00000000-0000-0000-0000-000000000010',
-            role: RoleEnum.HOST,
+            roles: [RoleEnum.HOST],
             permissions: []
         });
         return next();

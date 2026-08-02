@@ -22,7 +22,7 @@ const loggerCtx = { logger: createLoggerMock() };
 
 const validActor: Actor = {
     id: 'actor-1',
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: []
 };
 

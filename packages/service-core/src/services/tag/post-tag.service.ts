@@ -433,7 +433,7 @@ export class PostTagService extends BaseService {
             // runWithLoggingAndValidation validates the actor shape but public endpoints
             // don't need real permissions. We pass a minimal valid actor.
             input: {
-                actor: { id: 'public', role: 'SYSTEM' as never, permissions: [] },
+                actor: { id: 'public', roles: ['SYSTEM'] as never, permissions: [] },
                 withCounts
             },
             schema: ListPublicSchema,

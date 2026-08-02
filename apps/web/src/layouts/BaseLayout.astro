@@ -18,6 +18,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { getApiUrl, getDeployVersion, getTurnstileSiteKey, isFeedbackEnabled } from '@/lib/env';
 import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
+import { FEEDBACK_NAV_BOOTSTRAP_SNIPPET } from '@/lib/feedback/feedback-nav-bootstrap.snippet';
 import { ClientRouter } from 'astro:transitions';
 import Header from './Header.astro';
 import Footer from './Footer.astro';
@@ -64,7 +65,6 @@ const {
 	description = 'Descubrí alojamientos en el Litoral Entrerriano',
 } = Astro.props;
 
-const cspNonce = Astro.locals.cspNonce ?? '';
 const cookiesPolicyUrl = buildUrl({ locale, path: 'legal/cookies' });
 
 const feedbackEnabled = isFeedbackEnabled();
@@ -127,9 +127,9 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<link rel="manifest" href="/site.webmanifest" />
 
 		<!-- Google Fonts: Geologica, Roboto, Caveat (non-blocking with preload + swap) -->
-		<FontsLoader cspNonce={cspNonce} />
+		<FontsLoader />
 
-		<ThemeFoucScript cspNonce={cspNonce} />
+		<ThemeFoucScript />
 
 		<!-- SPEC-157 REQ-10: the full-page opacity:0 font gate was removed.
 		     Fonts load with font-display: swap (see FontsLoader), which prevents
@@ -139,56 +139,20 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 
 		<ClientRouter />
 
+		{/*
+		  Feedback nav-history bootstrap (Opción A). Captures navigation BEFORE
+		  the FAB island hydrates with client:idle, persists to sessionStorage
+		  so the FAB picks it up on hydration and across full-page reloads.
+
+		  The source MUST come through `set:html` from a constant. Astro treats
+		  the children of an `is:inline` script as raw text, so writing the JS
+		  directly here (wrapped in a template literal to survive this expression
+		  container) emitted the wrapper verbatim and the browser parsed a block
+		  statement around a template literal — valid JS, zero effect. The
+		  bootstrap silently never ran. See the snippet file's JSDoc.
+		*/}
 		{feedbackEnabled && (
-			<script is:inline nonce={cspNonce}>{`
-				/* Feedback nav-history bootstrap (Opción A).
-				   Captures navigation BEFORE the FAB island hydrates with
-				   client:idle, persists to sessionStorage so the FAB picks
-				   it up on hydration and across full-page reloads. */
-				(function () {
-					if (window.__hospedaFeedbackBootstrapped) return;
-					window.__hospedaFeedbackBootstrapped = true;
-					var SS_KEY = '__hospeda_feedback_nav__';
-					var MAX = 10;
-					function read() {
-						try {
-							var raw = sessionStorage.getItem(SS_KEY);
-							var parsed = raw ? JSON.parse(raw) : [];
-							return Array.isArray(parsed) ? parsed : [];
-						} catch (e) { return []; }
-					}
-					function write(nav) {
-						try { sessionStorage.setItem(SS_KEY, JSON.stringify(nav)); } catch (e) {}
-					}
-					function push(url) {
-						if (!url) return;
-						var nav = read();
-						if (nav[nav.length - 1] === url) return;
-						nav.push(url);
-						if (nav.length > MAX) nav = nav.slice(-MAX);
-						write(nav);
-					}
-					function current() {
-						try { return location.pathname + location.search; }
-						catch (e) { return ''; }
-					}
-					push(current());
-					var origPush = history.pushState;
-					var origReplace = history.replaceState;
-					history.pushState = function () {
-						var r = origPush.apply(this, arguments);
-						push(current());
-						return r;
-					};
-					history.replaceState = function () {
-						var r = origReplace.apply(this, arguments);
-						push(current());
-						return r;
-					};
-					window.addEventListener('popstate', function () { push(current()); });
-					document.addEventListener('astro:after-swap', function () { push(current()); });
-				})();
-			`}</script>
+			<script is:inline set:html={FEEDBACK_NAV_BOOTSTRAP_SNIPPET} />
 		)}
 
 		<!--
@@ -197,7 +161,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		  calls trackEvent(). Renders nothing in dev mode or when the project
 		  key is unset (e.g. locally-built previews without the secret).
 		-->
-		<PostHogScript cspNonce={cspNonce} />
+		<PostHogScript />
 
 		<!-- Named slot for page-specific head content (SEOHead, JSON-LD, etc.) -->
 		<slot name="head" />
@@ -219,12 +183,14 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 
 		<!--
 		  Cloudflare Web Analytics (manual snippet).
-		  We use the manual setup (NOT the auto-inject) so this <script> tag
-		  receives the per-request CSP nonce via our middleware-driven walker
-		  (SPEC-046 T-002). `strict-dynamic` in script-src then propagates
-		  trust to the loaded beacon.min.js. The beacon POSTs Core Web Vitals
-		  telemetry to https://cloudflareinsights.com — that host must be
-		  present in `connect-src` (added in buildCspHeader, SPEC-046 follow-up).
+		  We use the manual setup (NOT the auto-inject) so the tag is part of our
+		  own SSR HTML and its CSP story is explicit. It is an EXTERNAL script,
+		  so no content hash can cover it (HOS-369 WB0-1 dropped 'strict-dynamic'
+		  along with the nonce): https://static.cloudflareinsights.com is
+		  allowlisted in `script-src` for exactly this tag. The beacon then POSTs
+		  Core Web Vitals telemetry to https://cloudflareinsights.com — a
+		  DIFFERENT host, present in `connect-src`. Both live in buildCspHeader;
+		  dropping either one kills the beacon silently.
 
 		  Only emitted in production builds: in local dev the beacon's POST to
 		  cloudflareinsights.com is rejected by CORS (origin localhost), spamming

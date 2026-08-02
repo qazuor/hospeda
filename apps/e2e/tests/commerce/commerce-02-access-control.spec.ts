@@ -4,11 +4,14 @@
  * Validates that the role gate and ownership gate on the commerce self-service
  * area reject actors who must not reach those pages:
  *
- *   1. TOURIST BLOCKED — a plain USER (no COMMERCE_OWNER role) is redirected
- *      away from /es/mi-cuenta/comercio/ to /es/mi-cuenta/ (the generic
- *      account dashboard). The gate lives in:
- *        apps/web/src/pages/[lang]/mi-cuenta/comercio/index.astro (L32-34)
- *        `if (!isCommerceOwnerRole(user.role)) → redirect('mi-cuenta')`
+ *   1. TOURIST BLOCKED — a plain USER (holding no COMMERCE_OWNER hat) is
+ *      redirected away from /es/mi-cuenta/comercio/ to /es/mi-cuenta/ (the
+ *      generic account dashboard). The gate lives in:
+ *        apps/web/src/pages/[lang]/mi-cuenta/comercio/index.astro
+ *        `if (!hasCommerceNavAccess({ roles: user.roles })) → redirect('mi-cuenta')`
+ *      (HOS-296 replaced the `isCommerceOwnerRole(user.role)` scalar check with
+ *      a predicate over the role SET, so a commerce owner who is ALSO a host
+ *      keeps access.)
  *
  *   2. CROSS-OWNER BLOCKED — a logged-in COMMERCE_OWNER (Julieta) navigating
  *      to another owner's (Rodrigo's) gastronomy editor is redirected back to

@@ -151,8 +151,11 @@ describe('UserModel', () => {
                 {
                     user: { id: 'u1', displayName: 'Alice' },
                     accommodationsCount: 2,
+                    gastronomiesCount: 1,
+                    experiencesCount: 4,
                     eventsCount: 1,
-                    postsCount: 3
+                    postsCount: 3,
+                    currentPlanSlug: 'owner-pro'
                 }
             ];
             // findAllWithCounts paginated path: baseQuery.$dynamic().limit(n).offset(n) -> rows
@@ -188,6 +191,14 @@ describe('UserModel', () => {
             // Assert
             expect(result).toHaveProperty('items');
             expect(result).toHaveProperty('total');
+            expect(result.items[0]).toMatchObject({
+                accommodationsCount: 2,
+                gastronomiesCount: 1,
+                experiencesCount: 4,
+                eventsCount: 1,
+                postsCount: 3,
+                currentPlanSlug: 'owner-pro'
+            });
         });
 
         it('should return items without pagination (safety limit path)', async () => {
@@ -196,8 +207,11 @@ describe('UserModel', () => {
                 {
                     user: { id: 'u1', displayName: 'Alice' },
                     accommodationsCount: 0,
+                    gastronomiesCount: 0,
+                    experiencesCount: 0,
                     eventsCount: 0,
-                    postsCount: 0
+                    postsCount: 0,
+                    currentPlanSlug: null
                 }
             ];
             const mockSelectResult = {

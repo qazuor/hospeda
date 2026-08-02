@@ -94,7 +94,7 @@ const dbAvailable = isServiceTestDbAvailable();
 function createCommerceOwnerActor(userId: string): Actor {
     return {
         id: userId,
-        role: RoleEnum.COMMERCE_OWNER,
+        roles: [RoleEnum.COMMERCE_OWNER],
         // SPEC-253 D2=b: single COMMERCE_EDIT_OWN replaces 10 per-section perms
         permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
     };
@@ -109,7 +109,7 @@ function createCommerceOwnerActor(userId: string): Actor {
 function createTouristActor(userId: string): Actor {
     return {
         id: userId,
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: []
     };
 }
@@ -171,7 +171,7 @@ describe('SPEC-239 — Gastronomy commerce admin-sells lifecycle (integration)',
 
         adminActor = {
             id: seededAdminId,
-            role: RoleEnum.SUPER_ADMIN,
+            roles: [RoleEnum.SUPER_ADMIN],
             permissions: Object.values(PermissionEnum)
         };
     });
@@ -253,7 +253,7 @@ describe('SPEC-239 — Gastronomy commerce admin-sells lifecycle (integration)',
                 // FK constraint is satisfied when the gastronomy listing later
                 // references this userId.
                 const provisionedUserId = crypto.randomUUID();
-                const { users } = await import('@repo/db');
+                const { users, userRole } = await import('@repo/db');
 
                 const createUserPortStub = vi.fn(
                     async (input: {
@@ -264,19 +264,27 @@ describe('SPEC-239 — Gastronomy commerce admin-sells lifecycle (integration)',
                         mustChangePassword: boolean;
                     }): Promise<CreateUserPortResult> => {
                         // Actually insert the row so FK on gastronomies.owner_id works.
+                        // HOS-296: no `role` column any more; the hat is a
+                        // `user_role` row, which the real port grants. This stub
+                        // only needs the FK target to exist.
                         await tx.insert(users).values({
                             id: provisionedUserId,
                             email: input.email,
                             displayName: input.name,
                             emailVerified: false,
                             lifecycleState: 'ACTIVE',
-                            mustChangePassword: input.mustChangePassword,
-                            role: input.role
+                            mustChangePassword: input.mustChangePassword
                         } as typeof users.$inferInsert);
+                        await tx.insert(userRole).values({
+                            userId: provisionedUserId,
+                            role: input.role,
+                            grantReason: 'commerce_lead_approved'
+                        });
                         return {
                             id: provisionedUserId,
                             email: input.email,
-                            name: input.name
+                            name: input.name,
+                            alreadyExisted: false
                         };
                     }
                 );
@@ -324,8 +332,11 @@ describe('SPEC-239 — Gastronomy commerce admin-sells lifecycle (integration)',
                 expect(result.data.userId).toBe(provisionedUserId);
                 expect(result.data.email).toBe(email);
                 expect(result.data.name).toBe(contactName);
+                // A freshly created account keeps its generated password;
+                // `alreadyExisted` accounts get `null` (HOS-296 AC-4).
+                expect(result.data.alreadyExisted).toBe(false);
                 expect(result.data.temporaryPassword).toBeTruthy();
-                expect(result.data.temporaryPassword.length).toBeGreaterThanOrEqual(20);
+                expect(result.data.temporaryPassword?.length).toBeGreaterThanOrEqual(20);
 
                 // Assert the user row exists and has mustChangePassword=true
                 const { eq } = await import('@repo/db');

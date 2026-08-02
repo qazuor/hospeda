@@ -93,8 +93,8 @@ const variantClass = variant === 'editors' ? styles.editors : styles.photos;
                 link.addEventListener('click', () => {
                     const banner = link.closest<HTMLElement>('[data-contribution-banner]');
                     trackEvent(WebEvents.ContributionBannerClicked, {
-                        source: banner?.dataset.source ?? 'unknown',
-                        variant: banner?.dataset.variant ?? 'unknown'
+                        source_page: banner?.dataset.source ?? 'unknown',
+                        contribution_variant: banner?.dataset.variant ?? 'unknown'
                     });
                 });
             });

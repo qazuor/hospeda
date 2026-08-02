@@ -5,6 +5,7 @@
 import { createRouter } from '../../../utils/create-app';
 import { publicGetAttractionByIdRoute } from './getById';
 import { publicGetAttractionBySlugRoute } from './getBySlug';
+import { publicGetAttractionDestinationsRoute } from './getDestinations';
 import { publicListAttractionsRoute } from './list';
 
 const publicRouter = createRouter();
@@ -13,5 +14,6 @@ const publicRouter = createRouter();
 publicRouter.route('/', publicListAttractionsRoute);
 publicRouter.route('/', publicGetAttractionByIdRoute);
 publicRouter.route('/', publicGetAttractionBySlugRoute);
+publicRouter.route('/', publicGetAttractionDestinationsRoute);
 
 export { publicRouter as publicAttractionRoutes };

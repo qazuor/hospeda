@@ -24,7 +24,7 @@ describe('FeatureService.getAccommodationsByFeature', () => {
     const actorWithPerms = createActor({
         permissions: [PermissionEnum.ACCOMMODATION_FEATURES_EDIT]
     });
-    const actorNoPerms = createActor({ role: RoleEnum.GUEST, permissions: [] });
+    const actorNoPerms = createActor({ roles: [RoleEnum.GUEST], permissions: [] });
     const feature = FeatureFactoryBuilder.create({ id: featureId });
     const accommodation = new AccommodationFactoryBuilder()
         .with({ id: getMockAccommodationId('acc-1') })
@@ -44,10 +44,15 @@ describe('FeatureService.getAccommodationsByFeature', () => {
             model as unknown as AccommodationModel
         );
         (model.findOne as Mock).mockResolvedValueOnce(feature);
-        (model.findAllWithRelations as Mock).mockResolvedValueOnce({
-            items: [{ accommodationId: accommodation.id, accommodation }],
-            total: 1
-        });
+        // HOS-288: the read is now two steps — junction ids first, then the
+        // accommodations through AccommodationModel (both are the same shared
+        // `model` mock here, so `findAll` is called twice).
+        (model.findAll as Mock)
+            .mockResolvedValueOnce({
+                items: [{ featureId, accommodationId: accommodation.id }],
+                total: 1
+            })
+            .mockResolvedValueOnce({ items: [accommodation], total: 1 });
 
         const result = await service.getAccommodationsByFeature(actorWithPerms, {
             featureId
@@ -67,7 +72,8 @@ describe('FeatureService.getAccommodationsByFeature', () => {
             model as unknown as AccommodationModel
         );
         (model.findOne as Mock).mockResolvedValueOnce(feature);
-        (model.findAllWithRelations as Mock).mockResolvedValueOnce({
+        // HOS-288: no junction rows → short-circuit, no accommodation query.
+        (model.findAll as Mock).mockResolvedValueOnce({
             items: [],
             total: 0
         });
@@ -159,7 +165,8 @@ describe('FeatureService.getAccommodationsByFeature', () => {
             model as unknown as AccommodationModel
         );
         (model.findOne as Mock).mockResolvedValueOnce(feature);
-        (model.findAllWithRelations as Mock).mockResolvedValueOnce({
+        // HOS-288: junction query first (empty → short-circuit).
+        (model.findAll as Mock).mockResolvedValueOnce({
             items: [],
             total: 0
         });

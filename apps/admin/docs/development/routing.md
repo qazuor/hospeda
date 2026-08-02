@@ -589,11 +589,13 @@ export const Route = createFileRoute('/_authenticated')({
 - Can throw redirect to another route
 - Runs on server and client
 
-### Role-Based Protection
+### Permission-Based Protection
 
-Check user roles in `beforeLoad`:
+Check the actor's permissions in `beforeLoad` — never gate on roles directly:
 
 ```tsx
+import { PermissionEnum } from '@repo/schemas';
+
 export const Route = createFileRoute('/_authenticated/_admin')({
   beforeLoad: async ({ context }) => {
     const { auth } = context;
@@ -602,7 +604,8 @@ export const Route = createFileRoute('/_authenticated/_admin')({
       throw redirect({ to: '/login' });
     }
 
-    if (auth.user.role !== 'admin') {
+    // Never gate on `auth.user.roles` — always check the specific permission
+    if (!auth.user.permissions.includes(PermissionEnum.ACCESS_PANEL_ADMIN)) {
       throw redirect({
         to: '/dashboard',
         search: {

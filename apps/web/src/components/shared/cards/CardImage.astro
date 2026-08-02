@@ -2,11 +2,16 @@
 /**
  * @file CardImage.astro
  * @description Reusable card image with aspect-ratio container, placeholder fallback,
- * and two named slots for overlay badges (top-left) and actions (top-right).
+ * and three named slots: overlay badges (top-left), actions (top-right), and the
+ * placeholder shown when the entity has no photo.
+ *
+ * A `src` pointing at one of the local `placeholder-*.svg` assets does NOT count
+ * as an image — it is the API transform's "no photo" sentinel, and rendering it
+ * would cover the category-icon placeholder with a grey box.
  */
 
 interface Props {
-    /** Image source URL. Falls back to placeholder SVG when empty or on error. */
+    /** Image source URL. Empty, or a local `placeholder-*.svg` path, means "no photo". */
     readonly src: string;
     /** Accessible alt text for the image. */
     readonly alt: string;
@@ -18,21 +23,11 @@ interface Props {
     readonly width?: number;
     /** Intrinsic height hint. Calculated from aspectRatio when omitted. */
     readonly height?: number;
-    /** Optional emoji or text to render in the placeholder (e.g. category emoji). */
-    readonly placeholderContent?: string;
 }
 
-const {
-    src,
-    alt,
-    aspectRatio = '16:9',
-    loading = 'lazy',
-    width = 400,
-    height,
-    placeholderContent,
-} = Astro.props;
+const { src, alt, aspectRatio = '16:9', loading = 'lazy', width = 400, height } = Astro.props;
 
-const hasImage = Boolean(src);
+const hasImage = Boolean(src) && !src.includes('placeholder');
 
 const RATIO_MAP: Record<string, number> = {
     '16:9': 9 / 16,
@@ -51,9 +46,9 @@ const RATIO_CLASS: Record<string, string> = {
 
 <div class:list={['card-image', RATIO_CLASS[aspectRatio]]}>
     <div class="card-image__placeholder" aria-hidden="true">
-        {placeholderContent && (
-            <span class="card-image__placeholder-content">{placeholderContent}</span>
-        )}
+        <span class="card-image__placeholder-content">
+            <slot name="placeholder" />
+        </span>
     </div>
 
     {hasImage && (
@@ -100,9 +95,10 @@ const RATIO_CLASS: Record<string, string> = {
     }
 
     .card-image__placeholder-content {
-        font-size: 3rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         line-height: 1;
-        filter: grayscale(0.15);
         transition: transform var(--duration-normal) ease;
     }
 

@@ -16,6 +16,10 @@
         "./safe-fetch": {
             "types": "./dist/safe-fetch.d.ts",
             "import": "./dist/safe-fetch.js"
+        },
+        "./validation": {
+            "types": "./dist/validation.d.ts",
+            "import": "./dist/validation.js"
         }
     },
     "license": "MIT",

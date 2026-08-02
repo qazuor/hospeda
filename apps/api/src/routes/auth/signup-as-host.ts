@@ -1,7 +1,8 @@
 /**
  * @file signup-as-host.ts
  * @description Authenticated, permission-gated staff action that creates a new
- * user with `role=HOST` instead of the Better Auth default `role=USER`.
+ * user and grants it the `HOST` hat on top of the baseline `USER` one Better
+ * Auth assigns at signup (HOS-296: the grant is additive, not a replacement).
  *
  * Why this exists:
  *   - Better Auth has one server instance shared by `apps/web` and
@@ -30,7 +31,8 @@
  */
 
 import { getDb, users } from '@repo/db';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, RoleGrantReason } from '@repo/schemas';
+import { grantRole } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { getAuth } from '../../lib/auth';
@@ -52,6 +54,12 @@ const SignupAsHostResponseSchema = z.object({
     user: z.object({
         id: z.string(),
         email: z.string(),
+        /**
+         * The hat this endpoint granted. Still a literal (not a read of the
+         * user's set) and therefore still accurate — the account also holds
+         * the baseline `USER` role. Surfacing the full set is an admin-panel
+         * concern, not this endpoint's.
+         */
         role: z.literal(RoleEnum.HOST)
     })
 });
@@ -61,7 +69,7 @@ export const signupAsHostRoute = createAdminRoute({
     path: '/signup-as-host',
     summary: 'Create a new HOST account (staff action)',
     description:
-        'Creates a user via Better Auth and immediately sets their role to HOST. Authenticated staff action gated by the USER_CREATE permission.',
+        'Creates a user via Better Auth and immediately grants them the HOST role. Authenticated staff action gated by the USER_CREATE permission.',
     tags: ['Auth'],
     requiredPermissions: [PermissionEnum.USER_CREATE],
     requestBody: SignupAsHostBodySchema,
@@ -112,21 +120,30 @@ export const signupAsHostRoute = createAdminRoute({
             // where a real email key is configured, the gate would otherwise
             // leave the new host unable to log in until they click the
             // verification link — contradicting the temp-password UX).
-            await db
-                .update(users)
-                .set({ role: RoleEnum.HOST, emailVerified: true })
-                .where(eq(users.id, newUserId));
+            await db.update(users).set({ emailVerified: true }).where(eq(users.id, newUserId));
+
+            // HOS-296: additive grant instead of the old
+            // `set({ role: RoleEnum.HOST })`. The account keeps the baseline
+            // USER hat Better Auth's create hook gave it and gains HOST on top.
+            const granted = await grantRole({
+                userId: newUserId,
+                role: RoleEnum.HOST,
+                grantedBy: actor.id,
+                reason: RoleGrantReason.SIGNUP_AS_HOST
+            });
+            if (granted.error) {
+                throw granted.error;
+            }
         } catch (error) {
-            // Best-effort cleanup so we don't leave an orphan user stuck on
-            // role=USER (the Better Auth default) — that would be worse than
-            // a clean failure because the host would later need a SUPER_ADMIN
-            // to fix it by hand.
+            // Best-effort cleanup so we don't leave an orphan user that never
+            // received the HOST hat — that would be worse than a clean failure
+            // because the host would later need a SUPER_ADMIN to fix it by hand.
             apiLogger.error(
                 {
                     err: error instanceof Error ? error.message : String(error),
                     userId: newUserId
                 },
-                'signup-as-host: role UPDATE failed, deleting the freshly created user'
+                'signup-as-host: HOST grant failed, deleting the freshly created user'
             );
             try {
                 await db.delete(users).where(eq(users.id, newUserId));

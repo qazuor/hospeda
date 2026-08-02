@@ -41,7 +41,13 @@ import { createAiQuotaMiddleware } from '../../../middlewares/ai-quota';
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit';
 import { entitlementMiddleware } from '../../../middlewares/entitlement';
 import { createConfiguredAiService } from '../../../services/ai-service.factory';
-import { createProtectedStreamingRoute } from '../../../utils/streaming-route-factory';
+import { getActorFromContext } from '../../../utils/actor';
+import { meterAiUsage } from '../../../utils/ai-usage-metering';
+import { apiLogger } from '../../../utils/logger';
+import {
+    createProtectedStreamingRoute,
+    type StreamTextChunk
+} from '../../../utils/streaming-route-factory';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -138,6 +144,9 @@ export const protectedAiTextImproveRoute = createProtectedStreamingRoute({
         ]
     },
     streamHandler: async ({ c }) => {
+        const handlerStartMs = Date.now();
+        const actor = getActorFromContext(c);
+
         // The factory validated the body above (AiTextImproveRequestSchema).
         // We re-read here because the factory does not pass the parsed body
         // into the handler — Hono caches c.req.json() so this is a free lookup.
@@ -147,10 +156,128 @@ export const protectedAiTextImproveRoute = createProtectedStreamingRoute({
         const prompt = buildTextImprovePrompt(body);
         const aiService = await createConfiguredAiService();
 
-        const { stream, meta } = await aiService.streamText({
+        const { stream: rawStream, meta: rawMeta } = await aiService.streamText({
             feature: FEATURE,
             prompt,
             locale: locale ?? DEFAULT_LOCALE
+        });
+
+        // -------------------------------------------------------------------
+        // Usage metering (HOS-328). See `utils/ai-usage-metering` for why the
+        // row exists at all and why the billing unit is the request.
+        //
+        // This route makes exactly one provider call, so the row's tokens are
+        // that call's tokens.
+        //
+        // Two details drive the shape below:
+        //
+        // 1. `streamDrainedCleanly` — the engine forwards the same `meta`
+        //    promise through its output-moderation wrapper, which throws AFTER
+        //    the last token. So `meta` also resolves on requests where the
+        //    client received an SSE `error` frame and no reply. Recording those
+        //    as 'success' would charge a quota unit for nothing, so the
+        //    wrapping generator below reports whether the stream actually
+        //    completed. It is a promise rather than a boolean on purpose:
+        //    reading a flag would depend on microtask ordering between the
+        //    generator and `meta`, which is not guaranteed. The factory always
+        //    drains the stream before awaiting `meta`, so awaiting this cannot
+        //    deadlock, and the `finally` settles it on throw and early-return
+        //    alike.
+        //
+        // 2. The resolved metadata is returned UNCHANGED — the factory
+        //    serialises it verbatim as the SSE `done` frame, so reshaping it
+        //    here would be a breaking client-facing change. `meterAiUsage` is
+        //    time-bounded precisely because it sits in front of that frame.
+        //
+        // NOTE: a `.then` fires eagerly the moment its source settles, whether
+        // or not anyone awaits the derived promise. So on a post-drain
+        // moderation throw — where the factory emits `error` and never awaits
+        // `meta` — the row IS still written, with status 'error'. That is what
+        // `streamDrainedCleanly` is for.
+        //
+        // `meta` can also REJECT rather than resolve: the adapter builds it as
+        // `Promise.all([usage, finishReason])`, so a mid-stream provider failure
+        // rejects it. That is the ordinary provider-5xx path, and tokens have
+        // usually already been generated and billed by then, so it gets its own
+        // side-channel below rather than being left unmetered.
+        //
+        // KNOWN LIMITATION: a client that disconnects mid-stream never settles
+        // `meta` at all and stays unmetered. That matches the pre-existing
+        // contract of the sibling `chat` route and is tracked separately.
+        // -------------------------------------------------------------------
+        let markStreamSettled: (drainedCleanly: boolean) => void = () => {};
+        const streamDrainedCleanly = new Promise<boolean>((resolve) => {
+            markStreamSettled = resolve;
+        });
+
+        const stream: AsyncIterable<StreamTextChunk> = (async function* () {
+            let drainedCleanly = false;
+            try {
+                for await (const chunk of rawStream) {
+                    yield chunk;
+                }
+                drainedCleanly = true;
+            } finally {
+                markStreamSettled(drainedCleanly);
+            }
+        })();
+
+        // Side-channel for the rejection case. Deliberately a SEPARATE branch off
+        // `rawMeta` rather than a rejection arm on the chain below: `meta` must
+        // keep rejecting exactly as it did before, or the factory would emit a
+        // `done` frame for a stream that failed.
+        rawMeta.catch(() =>
+            meterAiUsage({
+                userId: actor.id,
+                feature: FEATURE,
+                provider: 'none',
+                model: 'none',
+                // The adapter rejects `meta` without ever reporting usage, so the
+                // real token count of a failed stream is unknowable here. The row
+                // still carries the error signal.
+                promptTokens: 0,
+                completionTokens: 0,
+                latencyMs: Date.now() - handlerStartMs,
+                status: 'error',
+                logContext: { fieldType: body.fieldType }
+            })
+        );
+
+        const meta = rawMeta.then(async (resolvedMeta) => {
+            // Read the drain flag in its own statement: object-literal properties
+            // evaluate in source order, so awaiting inline would compute
+            // `latencyMs` at a different instant than the sibling routes do.
+            const drainedCleanly = await streamDrainedCleanly;
+
+            // Guarded here as well as inside `meterAiUsage`: the argument object
+            // is built OUTSIDE the helper, so a malformed `usage` would reject
+            // `meta` and turn an already-delivered reply into an SSE `error`.
+            try {
+                await meterAiUsage({
+                    userId: actor.id,
+                    feature: FEATURE,
+                    provider: resolvedMeta.provider,
+                    model: resolvedMeta.model,
+                    promptTokens: resolvedMeta.usage?.promptTokens ?? 0,
+                    completionTokens: resolvedMeta.usage?.completionTokens ?? 0,
+                    latencyMs: Date.now() - handlerStartMs,
+                    status: drainedCleanly ? 'success' : 'error',
+                    logContext: { fieldType: body.fieldType }
+                });
+            } catch (meteringError) {
+                apiLogger.warn(
+                    {
+                        fieldType: body.fieldType,
+                        error:
+                            meteringError instanceof Error
+                                ? meteringError.message
+                                : String(meteringError)
+                    },
+                    'text-improve: usage metering threw (non-fatal — the reply was already delivered)'
+                );
+            }
+
+            return resolvedMeta;
         });
 
         return { stream, meta };

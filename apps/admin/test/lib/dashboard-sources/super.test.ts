@@ -33,7 +33,7 @@ import {
 
 function makeSuperCtx(): ResolverContext {
     return {
-        role: 'SUPER_ADMIN',
+        roles: ['SUPER_ADMIN'],
         userId: 'usr_super_001',
         permissions: ['*'],
         scope: 'all'
@@ -134,7 +134,7 @@ describe('SUPER_ADMIN source queryKey structure', () => {
     it('SUPER_ADMIN and ADMIN produce different queryKeys for super.billing.stats', () => {
         const superKey = buildDashboardQueryKey('super.billing.stats', makeSuperCtx());
         const adminKey = buildDashboardQueryKey('super.billing.stats', {
-            role: 'ADMIN',
+            roles: ['ADMIN'],
             userId: 'usr_admin_001',
             permissions: [],
             scope: 'all'

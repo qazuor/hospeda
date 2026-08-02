@@ -2,52 +2,53 @@
 /**
  * @file Breadcrumbs.astro
  * @description Visual breadcrumb trail for navigation context.
- * Renders a semantic nav with ordered list of links.
+ * Renders a semantic nav with an ordered list of ancestor links.
  * Separate from BreadcrumbJsonLd (which handles structured data).
+ *
+ * Callers pass the FULL trail (last item = current page) because the
+ * `BreadcrumbList` JSON-LD needs it complete. The visible trail deliberately
+ * stops at the parent — see `buildBreadcrumbTrail` for both rules and why.
  */
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
-
-interface BreadcrumbItem {
-	/** Display label for the breadcrumb link. */
-	readonly label: string;
-	/** URL path (without locale prefix). Empty string for current page. */
-	readonly path?: string;
-}
+import type { BreadcrumbInputItem } from '@/lib/navigation/breadcrumb-trail';
+import { buildBreadcrumbTrail } from '@/lib/navigation/breadcrumb-trail';
 
 interface Props {
 	readonly locale: SupportedLocale;
-	readonly items: readonly BreadcrumbItem[];
+	/** Full trail excluding home. The last item must be the current page. */
+	readonly items: readonly BreadcrumbInputItem[];
 	readonly class?: string;
 }
 
 const { locale, items, class: className } = Astro.props;
 const t = createT(locale);
 
-const homeItem: BreadcrumbItem = { label: t('nav.home', 'Inicio'), path: '' };
-const allItems = [homeItem, ...items];
+const { entries } = buildBreadcrumbTrail({
+	items,
+	locale,
+	homeLabel: t('nav.home', 'Inicio')
+});
 ---
 
-<nav class:list={['breadcrumbs', className]} aria-label="Breadcrumb">
-	<ol class="breadcrumbs__list">
-		{allItems.map((item, index) => {
-			const isLast = index === allItems.length - 1;
-			return (
-				<li class:list={['breadcrumbs__item', { 'breadcrumbs__item--current': isLast }]}>
-					{isLast ? (
-						<span aria-current="page">{item.label}</span>
-					) : (
-						<a href={buildUrl({ locale, path: item.path ?? '' })} class="breadcrumbs__link">
-							{item.label}
+{entries.length > 0 && (
+	<nav class:list={['breadcrumbs', className]} aria-label="Breadcrumb">
+		<ol class="breadcrumbs__list">
+			{entries.map((entry) => (
+				<li class="breadcrumbs__item">
+					{entry.href ? (
+						<a href={entry.href} class="breadcrumbs__label breadcrumbs__link" title={entry.label}>
+							{entry.label}
 						</a>
+					) : (
+						<span class="breadcrumbs__label" title={entry.label}>{entry.label}</span>
 					)}
 				</li>
-			);
-		})}
-	</ol>
-</nav>
+			))}
+		</ol>
+	</nav>
+)}
 
 <style>
 	.breadcrumbs__list {
@@ -62,14 +63,34 @@ const allItems = [homeItem, ...items];
 		font-size: var(--text-body-sm);
 	}
 
+	.breadcrumbs__item {
+		display: flex;
+		align-items: center;
+		min-width: 0;
+	}
+
 	.breadcrumbs__item:not(:last-child)::after {
 		content: '›';
 		margin-left: 0.25rem;
 		color: var(--core-muted-foreground);
+		flex-shrink: 0;
+	}
+
+	/*
+	 * Cap each level so one long label (a destination or accommodation name)
+	 * cannot stretch the trail across the viewport. The full text stays
+	 * reachable through the title attribute.
+	 */
+	.breadcrumbs__label {
+		display: block;
+		max-width: 30ch;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		color: var(--core-muted-foreground);
 	}
 
 	.breadcrumbs__link {
-		color: var(--core-muted-foreground);
 		text-decoration: none;
 		transition: color var(--duration-fast) ease;
 	}
@@ -79,8 +100,15 @@ const allItems = [homeItem, ...items];
 		text-decoration: underline;
 	}
 
-	.breadcrumbs__item--current {
-		color: var(--core-foreground);
-		font-weight: 500;
+	.breadcrumbs__link:focus-visible {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: 2px;
+		border-radius: 2px;
+	}
+
+	@media (max-width: 639px) {
+		.breadcrumbs__label {
+			max-width: 20ch;
+		}
 	}
 </style>

@@ -37,7 +37,7 @@ const mockBuildDestinationHint = vi.mocked(buildDestinationHint);
 
 const fakeActor: Actor = {
     id: '00000000-0000-0000-0000-000000000001',
-    role: 'HOST',
+    roles: ['HOST'],
     permissions: []
 } as unknown as Actor;
 
@@ -63,7 +63,7 @@ describe('finalizeImportDraft', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockResolveAmenities.mockResolvedValue({ amenityIds: [], unresolved: [] });
-        mockBuildDestinationHint.mockResolvedValue({ candidates: [] });
+        mockBuildDestinationHint.mockResolvedValue({ candidates: [], confident: false });
     });
 
     it('maps a rich RawExtraction into a populated draft with methodsUsed and mediaHints', async () => {
@@ -81,7 +81,8 @@ describe('finalizeImportDraft', () => {
         });
         mockBuildDestinationHint.mockResolvedValue({
             scrapedLocality: 'Concepción del Uruguay',
-            candidates: [{ id: UUID_DEST_001, name: 'Concepción del Uruguay' }]
+            candidates: [{ id: UUID_DEST_001, name: 'Concepción del Uruguay' }],
+            confident: true
         });
 
         const result = await finalizeImportDraft(raw, makeCtx('generic'));
@@ -96,7 +97,8 @@ describe('finalizeImportDraft', () => {
         expect(result.resolvedAmenityIds).toEqual([UUID_AMENITY_WIFI]);
         expect(result.destinationHint).toEqual({
             scrapedLocality: 'Concepción del Uruguay',
-            candidates: [{ id: UUID_DEST_001, name: 'Concepción del Uruguay' }]
+            candidates: [{ id: UUID_DEST_001, name: 'Concepción del Uruguay' }],
+            confident: true
         });
         expect(result.failureCode).toBeUndefined();
     });
@@ -147,6 +149,32 @@ describe('finalizeImportDraft', () => {
         expect(result.resolvedAmenityIds).toBeUndefined();
         expect(result.unresolvedAmenities).toBeUndefined();
         expect(result.failureCode).toBeUndefined();
+    });
+
+    it('carries confident:false through to the response (HOS-286)', async () => {
+        // Every other test here pairs `confident: false` with an EMPTY candidate
+        // list, which makes `finalizeImportDraft` omit the whole hint — so the
+        // flag is never actually observed, and hardcoding `confident: true`
+        // would keep the suite green. This pins the losing direction: a
+        // heuristic single match must reach the client marked NOT confident.
+        mockBuildDestinationHint.mockResolvedValue({
+            scrapedLocality: 'San José de Feliciano',
+            candidates: [{ id: UUID_DEST_001, name: 'San José' }],
+            confident: false
+        });
+        const raw: RawExtraction = {
+            sourcePlatform: 'generic',
+            name: { value: 'Casa Sol', source: 'jsonld' },
+            scrapedLocality: 'San José de Feliciano'
+        };
+
+        const result = await finalizeImportDraft(raw, makeCtx('generic'));
+
+        expect(result.destinationHint).toEqual({
+            scrapedLocality: 'San José de Feliciano',
+            candidates: [{ id: UUID_DEST_001, name: 'San José' }],
+            confident: false
+        });
     });
 
     it('omits destinationHint when buildDestinationHint throws', async () => {

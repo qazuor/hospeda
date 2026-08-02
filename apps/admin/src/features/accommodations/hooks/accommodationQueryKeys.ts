@@ -94,17 +94,17 @@ export const accommodationQueryKeys = {
  */
 export interface AccommodationListFilters {
     /** Filter by accommodation type */
-    type?: string[];
+    type?: string | string[];
     /** Filter by destination */
-    destinationId?: string[];
+    destinationId?: string | string[];
     /** Filter by owner */
-    ownerId?: string[];
+    ownerId?: string | string[];
     /** Filter by lifecycle status */
-    lifecycleState?: string[];
+    lifecycleState?: string | string[];
     /** Filter by moderation status */
-    moderationState?: string[];
+    moderationState?: string | string[];
     /** Filter by visibility */
-    visibility?: string[];
+    visibility?: string | string[];
     /** Filter by featured status */
     featured?: boolean;
     /** Filter by date range */
@@ -120,6 +120,8 @@ export interface AccommodationListFilters {
     /** Pagination */
     page?: number;
     pageSize?: number;
+    /** Admin list sort string (`field:asc|desc`) */
+    sort?: string;
     /** Sorting */
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';

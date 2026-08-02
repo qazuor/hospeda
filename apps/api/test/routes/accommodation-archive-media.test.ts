@@ -40,7 +40,7 @@ vi.mock('@repo/service-core', async () => {
 
 const mockActor = {
     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-    role: 'SUPER_ADMIN',
+    roles: ['SUPER_ADMIN'],
     permissions: ['accommodation.update.any', 'access.panelAdmin']
 };
 vi.mock('../../src/utils/actor.js', () => ({

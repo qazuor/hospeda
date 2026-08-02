@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import {
     AccommodationAdminSchema,
-    AccommodationProtectedSchema,
-    AccommodationPublicSchema
+    AccommodationProtectedCardSchema,
+    AccommodationPublicCardSchema
 } from '../accommodation/accommodation.access.schema.js';
 import {
     DestinationAdminSchema,
@@ -151,8 +151,17 @@ export const PostPublicSchema = PostSchema.pick({
 }).extend({
     /** Full author data when JOIN is performed — public-tier fields only. */
     author: UserPublicSchema.nullish(),
-    /** Full related accommodation when JOIN is performed — public-tier fields only. */
-    relatedAccommodation: AccommodationPublicSchema.nullish(),
+    /**
+     * Related accommodation when JOIN is performed — public CARD tier.
+     *
+     * Deliberately NOT `AccommodationPublicSchema`: that schema re-exposes the premium
+     * `richDescription`/`richDescriptionI18n`, and the entitlement helpers that gate them
+     * only ever run on a flat, top-level accommodation — never on one nested inside a
+     * post. `PostService` eager-loads this relation by default with no column allowlist,
+     * so the full schema here served ungated premium markdown on a shared-cached public
+     * endpoint. The card tier omits both by construction.
+     */
+    relatedAccommodation: AccommodationPublicCardSchema.nullish(),
     /** Full related destination when JOIN is performed — public-tier fields only. */
     relatedDestination: DestinationPublicSchema.nullish(),
     /** Full related event when JOIN is performed — public-tier fields only. */
@@ -219,7 +228,7 @@ export const PostProtectedSchema = PostSchema.pick({
     /** Full author data when JOIN is performed — protected-tier fields only. */
     author: UserProtectedSchema.nullish(),
     /** Full related accommodation when JOIN is performed — protected-tier fields only. */
-    relatedAccommodation: AccommodationProtectedSchema.nullish(),
+    relatedAccommodation: AccommodationProtectedCardSchema.nullish(),
     /** Full related destination when JOIN is performed — protected-tier fields only. */
     relatedDestination: DestinationProtectedSchema.nullish(),
     /** Full related event when JOIN is performed — protected-tier fields only. */

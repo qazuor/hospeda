@@ -52,8 +52,8 @@ Defaults (per --target):
 Examples:
   hops psql 'SELECT count(*) FROM users;'
   hops psql -x 'SELECT * FROM users LIMIT 3'
-  hops psql --csv 'SELECT email, role FROM users' > users.csv
-  hops psql --json 'SELECT email, role FROM users' | jq '.[] | .email'
+  hops psql --csv 'SELECT u.email, r.role FROM users u JOIN user_role r ON r.user_id = u.id' > users.csv
+  hops psql --json 'SELECT email FROM users' | jq '.[] | .email'
   hops psql --limit 50 'SELECT * FROM accommodations'
   hops psql -t 'SELECT email FROM users' | xargs -n1 echo found:
   hops psql -f scripts/db/cleanup-test-users.sql

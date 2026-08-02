@@ -86,6 +86,33 @@ export function isValidPassword(
 }
 
 /**
+ * The all-zero UUID (RFC 9562 "Nil UUID"). Syntactically a valid UUID, so
+ * `z.string().uuid()` accepts it, but it can never identify a real row.
+ */
+export const NIL_UUID = '00000000-0000-0000-0000-000000000000';
+
+/**
+ * Check whether a value is a usable entity id: a non-blank string that is not
+ * the {@link NIL_UUID}.
+ *
+ * Exists because "passes UUID validation" and "can identify a row" are not the
+ * same thing. An LLM asked for an id it does not have will happily answer with
+ * the nil UUID as a placeholder, and a schema built on `z.string().uuid()` will
+ * wave it through — the filter then matches nothing and the user gets zero
+ * results for a constraint they never expressed (HOS-298).
+ *
+ * Takes `unknown` rather than `string | undefined` so it can also guard values
+ * coming out of loosely-typed bags (a `Record<string, unknown>` of applied query
+ * params, a parsed JSON body); as a type guard it narrows to `string` either way.
+ *
+ * @param value - Candidate id.
+ * @returns Whether the id can be used as a real filter value.
+ */
+export function isUsableEntityId(value: unknown): value is string {
+    return typeof value === 'string' && value.trim().length > 0 && value !== NIL_UUID;
+}
+
+/**
  * Check if a value is a number
  * @param value - Value to check
  * @returns Whether the value is a number

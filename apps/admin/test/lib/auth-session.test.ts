@@ -45,7 +45,6 @@ describe('resolveAuthSession (BETA-71 parallel fetch)', () => {
                 HttpResponse.json({
                     user: {
                         id: 'u1',
-                        role: 'ADMIN',
                         name: 'Ada',
                         email: 'ada@x.test',
                         emailVerified: true
@@ -56,7 +55,7 @@ describe('resolveAuthSession (BETA-71 parallel fetch)', () => {
                 HttpResponse.json({
                     success: true,
                     data: {
-                        actor: { permissions: ['ACCESS_PANEL_ADMIN'] },
+                        actor: { roles: ['ADMIN'], permissions: ['ACCESS_PANEL_ADMIN'] },
                         passwordChangeRequired: false
                     }
                 })
@@ -69,7 +68,7 @@ describe('resolveAuthSession (BETA-71 parallel fetch)', () => {
         // Assert
         expect(result.isAuthenticated).toBe(true);
         expect(result.userId).toBe('u1');
-        expect(result.role).toBe('ADMIN');
+        expect(result.roles).toEqual(['ADMIN']);
         expect(result.permissions).toEqual(['ACCESS_PANEL_ADMIN']);
         expect(result.emailVerified).toBe(true);
     });

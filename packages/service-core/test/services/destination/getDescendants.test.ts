@@ -55,7 +55,7 @@ describe('DestinationService.getDescendants', () => {
             })
             .build();
         asMock(modelMock.findDescendants).mockResolvedValue([region, province]);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationDescendantsInput = { destinationId: parentId };
 
         // Act
@@ -81,7 +81,7 @@ describe('DestinationService.getDescendants', () => {
             })
             .build();
         asMock(modelMock.findDescendants).mockResolvedValue([region]);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationDescendantsInput = {
             destinationId: parentId,
             maxDepth: 1
@@ -109,7 +109,7 @@ describe('DestinationService.getDescendants', () => {
             })
             .build();
         asMock(modelMock.findDescendants).mockResolvedValue([city]);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationDescendantsInput = {
             destinationId: parentId,
             destinationType: DestinationTypeEnum.CITY
@@ -131,7 +131,7 @@ describe('DestinationService.getDescendants', () => {
         // Arrange
         const parentId = getMockId('destination', 'leaf');
         asMock(modelMock.findDescendants).mockResolvedValue([]);
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationDescendantsInput = { destinationId: parentId };
 
         // Act
@@ -144,7 +144,7 @@ describe('DestinationService.getDescendants', () => {
 
     it('should return VALIDATION_ERROR for invalid destinationId', async () => {
         // Arrange
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params = {
             destinationId: 'bad-id'
         } as unknown as GetDestinationDescendantsInput;
@@ -158,7 +158,7 @@ describe('DestinationService.getDescendants', () => {
 
     it('should return VALIDATION_ERROR for maxDepth out of range', async () => {
         // Arrange
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params = {
             destinationId: getMockId('destination', 'depth-err'),
             maxDepth: 0
@@ -175,7 +175,7 @@ describe('DestinationService.getDescendants', () => {
         // Arrange
         const parentId = getMockId('destination', 'error');
         asMock(modelMock.findDescendants).mockRejectedValue(new Error('DB error'));
-        const actor = { id: 'user-1', role: RoleEnum.ADMIN, permissions: [] };
+        const actor = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
         const params: GetDestinationDescendantsInput = { destinationId: parentId };
 
         // Act

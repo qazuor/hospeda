@@ -22,12 +22,13 @@ const parseSessionUserMock = vi.fn().mockResolvedValue({
     id: 'u1',
     name: 'Test User',
     email: 'test@example.com',
-    role: 'USER',
-    image: null
+    roles: ['USER'],
+    image: null,
+    mustChangePassword: false
 });
 
 // Mock only `parseSessionUser` from middleware-helpers — every other export
-// (isServerIslandRoute, isStaticAssetRoute, generateCspNonce, ...) runs for
+// (isServerIslandRoute, isStaticAssetRoute, buildCspHeader, ...) runs for
 // real, exactly as `test/lib/middleware-helpers.test.ts` already exercises
 // them safely (pure functions; Sentry.startSpan no-ops without a DSN).
 vi.mock('../src/lib/middleware-helpers', async (importOriginal) => {

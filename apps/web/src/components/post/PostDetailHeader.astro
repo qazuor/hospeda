@@ -307,9 +307,20 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 		line-height: 1.55;
 		color: var(--core-muted-foreground);
 		margin: 0.15rem 0 0;
-		max-width: 70ch;
+		/* No max-width: the summary spans the same measure as the H1 above it,
+		   which is what the header's own width already constrains. */
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
 		overflow: hidden;
-		max-height: 4em;
+		/* MUST stay an exact multiple of `line-height` (3 x 1.55). Any other
+		   value slices the last row through the middle of its glyphs instead
+		   of cutting between rows — the previous `4em` resolved to 2.58 rows
+		   and visibly cut the third line in half. Kept alongside the
+		   line-clamp because `wh-compact-hide` animates THIS property to 0
+		   for the compact collapse (contract in WaveHeader.astro). */
+		max-height: 4.65em;
 		opacity: 1;
 		transition:
 			max-height 0.3s ease,
@@ -323,7 +334,15 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 		gap: 0.5rem;
 		flex-wrap: wrap;
 		overflow: hidden;
-		max-height: 6em;
+		/* Animation ceiling, NOT a design clamp — see the summary above. This
+		   row is `flex-wrap`, so its height is however many rows the chips
+		   happen to form; `line-clamp` cannot apply and a short ceiling just
+		   halves the last row. The old `6em` was under the 8.69em the six
+		   items need once they wrap at 320-375px wide. 12em clears that by
+		   ~38% without leaving a long dead lead-in on the collapse (the
+		   transition interpolates from this value, so anything far above the
+		   real height animates with nothing visibly moving). */
+		max-height: 12em;
 		opacity: 1;
 		transition:
 			max-height 0.3s ease,

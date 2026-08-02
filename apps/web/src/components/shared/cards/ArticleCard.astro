@@ -22,10 +22,10 @@ import { StarIcon } from '@repo/icons';
 import {
     getPostCategoryColor,
     getPostCategoryLabel,
-    getPostCategoryEmoji,
     getBadgeStatusColor,
     getMutedColorScheme,
 } from '@/lib/colors';
+import { getPostCategoryIconComponent } from './utils/postCategoryIcon';
 import CardImage from './CardImage.astro';
 import CardMeta from './CardMeta.astro';
 import { getExpiryStatus } from '@/lib/format-expires';
@@ -64,7 +64,7 @@ const expiryLabel =
 const articleUrl = buildUrl({ locale, path: `/publicaciones/${data.slug}/` });
 const categoryColor = getPostCategoryColor({ category: data.category });
 const categoryLabel = getPostCategoryLabel({ category: data.category, t });
-const categoryEmoji = getPostCategoryEmoji({ category: data.category });
+const CategoryIcon = getPostCategoryIconComponent(data.category);
 const trendingColors = getBadgeStatusColor({ status: 'trending' });
 const mutedColorScheme = getMutedColorScheme();
 
@@ -89,8 +89,10 @@ const readingTimeSuffix = t('blog.detail.readingTime', 'min de lectura');
         <CardImage
             src={data.featuredImage?.url ?? ''}
             alt={data.featuredImage?.caption ?? data.title}
-            placeholderContent={categoryEmoji}
         >
+            <Fragment slot="placeholder">
+                <CategoryIcon size={96} weight="duotone" aria-hidden="true" />
+            </Fragment>
             <Fragment slot="badges">
                 {isTrending && (
                     <span

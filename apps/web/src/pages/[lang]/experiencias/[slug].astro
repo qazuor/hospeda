@@ -238,7 +238,10 @@ const breadcrumbItems = [
         <!-- Description, opening hours, social networks -->
         <ExperienceInfo experience={experience} locale={locale} />
 
-        <!-- WhatsApp contact CTA -->
+        <!-- WhatsApp contact CTA — DORMANT: `contactInfo` is not in
+             ExperiencePublicSchema's pick(), so this prop is always null
+             (`normalizeExperienceContactInfo` returns null for an absent
+             payload) and the block early-returns. See HOS-363. -->
         <ExperienceContactCTA
             contactInfo={experience.contactInfo}
             experienceName={experience.name}

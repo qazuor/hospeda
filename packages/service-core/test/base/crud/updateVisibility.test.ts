@@ -73,7 +73,7 @@ describe('BaseService: updateVisibility', () => {
     });
 
     it('should return a forbidden error if actor lacks permission', async () => {
-        const nonAdminActor: Actor = { id: 'non-admin', role: RoleEnum.USER, permissions: [] };
+        const nonAdminActor: Actor = { id: 'non-admin', roles: [RoleEnum.USER], permissions: [] };
         const result = await service.updateVisibility(
             nonAdminActor,
             MOCK_ENTITY_ID,

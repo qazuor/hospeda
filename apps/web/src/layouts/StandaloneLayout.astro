@@ -54,7 +54,6 @@ interface Props {
 }
 
 const { locale } = Astro.props;
-const cspNonce = Astro.locals.cspNonce ?? '';
 ---
 
 <!doctype html>
@@ -77,10 +76,10 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 		<link rel="manifest" href="/site.webmanifest" />
 
 		<!-- Google Fonts: Geologica, Roboto, Caveat (non-blocking with preload + swap) -->
-		<FontsLoader cspNonce={cspNonce} />
+		<FontsLoader />
 
 		<!-- Applies the saved theme before first paint (dark-mode FOUC guard) -->
-		<ThemeFoucScript cspNonce={cspNonce} />
+		<ThemeFoucScript />
 
 		<!-- Named slot for page-specific head content: SEOHead + JSON-LD.
 		     This layout does NOT render SEOHead itself — the page supplies it. -->

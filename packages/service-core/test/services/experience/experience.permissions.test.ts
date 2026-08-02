@@ -37,7 +37,7 @@ const OWNER_ID = '00000000-0000-4000-a000-000000000001';
 
 const staffActor: Actor = {
     id: 'staff-uuid',
-    role: RoleEnum.ADMIN,
+    roles: [RoleEnum.ADMIN],
     permissions: [
         PermissionEnum.COMMERCE_CREATE,
         PermissionEnum.COMMERCE_EDIT_ALL,
@@ -49,14 +49,14 @@ const staffActor: Actor = {
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    role: RoleEnum.COMMERCE_OWNER,
+    roles: [RoleEnum.COMMERCE_OWNER],
     // SPEC-253 D2=b: single COMMERCE_EDIT_OWN replaces the per-section perms
     permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
 };
 
 const noPermActor: Actor = {
     id: 'no-perm-user',
-    role: RoleEnum.USER,
+    roles: [RoleEnum.USER],
     permissions: []
 };
 

@@ -407,8 +407,17 @@ export const amenitiesApi = {
         isFeatured?: boolean;
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
+        /**
+         * HOS-103: opt in to the short-TTL SSR cache. Pass
+         * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites. HOS-299 added
+         * the accommodations listing surfaces, whose catalog reads are fixed and
+         * identical on every render — NOT the listing query itself, which is
+         * high-cardinality (see the note on `accommodationsApi.list`).
+         */
+        cacheTtlMs?: number;
     }): Promise<ApiResult<PaginatedResponse<AmenityPublic>>> {
-        return apiClient.getList({ path: `${BASE}/amenities`, params });
+        const { cacheTtlMs, ...query } = params ?? {};
+        return apiClient.getList({ path: `${BASE}/amenities`, params: query, cacheTtlMs });
     }
 };
 
@@ -423,8 +432,17 @@ export const featuresApi = {
         isFeatured?: boolean;
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
+        /**
+         * HOS-103: opt in to the short-TTL SSR cache. Pass
+         * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites. HOS-299 added
+         * the accommodations listing surfaces, whose catalog reads are fixed and
+         * identical on every render — NOT the listing query itself, which is
+         * high-cardinality (see the note on `accommodationsApi.list`).
+         */
+        cacheTtlMs?: number;
     }): Promise<ApiResult<PaginatedResponse<FeaturePublic>>> {
-        return apiClient.getList({ path: `${BASE}/features`, params });
+        const { cacheTtlMs, ...query } = params ?? {};
+        return apiClient.getList({ path: `${BASE}/features`, params: query, cacheTtlMs });
     }
 };
 
@@ -432,9 +450,30 @@ export const featuresApi = {
 
 /** Public attraction API endpoints */
 export const attractionsApi = {
-    /** Get attraction by slug */
+    /**
+     * Get attraction by slug.
+     *
+     * The path segment is `slug`, not `by-slug`: the API registers
+     * `/attractions/slug/{slug}`. The mismatch made every attraction detail page
+     * 404 with a "Route not found" that masked a second bug behind it.
+     */
     getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<Record<string, unknown>>> {
-        return apiClient.get({ path: `${BASE}/attractions/by-slug/${slug}` });
+        return apiClient.get({ path: `${BASE}/attractions/slug/${slug}` });
+    },
+
+    /**
+     * List the destinations that offer a given attraction.
+     *
+     * Backs the `/destinos/atraccion/{slug}/` landing: an attraction is a
+     * taxonomy term, so its page lists the destinations that have it rather
+     * than describing the term.
+     */
+    getDestinations({
+        id
+    }: {
+        readonly id: string;
+    }): Promise<ApiResult<ReadonlyArray<Record<string, unknown>>>> {
+        return apiClient.get({ path: `${BASE}/attractions/${id}/destinations` });
     }
 };
 
@@ -477,6 +516,22 @@ export const pointOfInterestApi = {
         readonly slug: string;
     }): Promise<ApiResult<PointOfInterestPublic | null>> {
         return apiClient.get({ path: `${BASE}/points-of-interest/slug/${slug}` });
+    },
+
+    /**
+     * Get the destinations that reference a point of interest.
+     *
+     * Backs the "Está en" block of the POI detail page. A POI is many-to-many
+     * with destinations (the Molino Forclaz belongs to four), so there is no
+     * single parent to read off the POI payload — the whole set has to be
+     * fetched. Unpaginated by design: the largest real set is a handful.
+     */
+    getDestinations({
+        id
+    }: {
+        readonly id: string;
+    }): Promise<ApiResult<ReadonlyArray<Record<string, unknown>>>> {
+        return apiClient.get({ path: `${BASE}/points-of-interest/${id}/destinations` });
     }
 };
 

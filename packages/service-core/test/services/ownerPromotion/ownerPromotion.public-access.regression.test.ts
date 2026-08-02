@@ -29,7 +29,7 @@ import { getMockId } from '../../factories/utilsFactory';
 /** Guest actor: only ACCESS_API_PUBLIC, no view permissions. */
 const guestActor = {
     id: getMockId('user', 'guest'),
-    role: RoleEnum.GUEST,
+    roles: [RoleEnum.GUEST],
     permissions: [PermissionEnum.ACCESS_API_PUBLIC] as readonly PermissionEnum[]
 };
 

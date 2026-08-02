@@ -39,7 +39,7 @@ vi.mock('@repo/service-core', async () => {
 // Actor: HOST owner with UPDATE_OWN permission (passes service _canUpdate gate).
 const mockActor = {
     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-    role: 'HOST',
+    roles: ['HOST'],
     permissions: ['accommodation.update.own', 'access.panelProtected']
 };
 vi.mock('../../src/utils/actor.js', () => ({

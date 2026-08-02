@@ -1,95 +1,155 @@
 ---
 /**
  * @file destinos/atraccion/[slug]/index.astro
- * @description Attraction detail page.
+ * @description Destinations that offer a given attraction.
  * @route /{lang}/destinos/atraccion/{slug}/
  * @rendering SSR + ISR 24h
+ *
+ * An attraction is a taxonomy term ("Termas", "Playa Fluvial"), not a place:
+ * the whole catalog is `isBuiltin`, and its `description` defines the category
+ * rather than describing somewhere ("Anfiteatro al aire libre para
+ * espectáculos", 59 chars at the median). So this page answers "which
+ * destinations have this?" — the intent people actually search — instead of
+ * explaining the term. Same shape as the accommodation type/amenity landings.
+ *
+ * It deliberately does NOT try to be a place page: named places live in the
+ * points-of-interest catalog, which is rendered on each destination's own page.
  */
-import DetailLayout from '@/layouts/DetailLayout.astro';
+import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import DestinationCard from '@/components/shared/cards/DestinationCard.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
-import TouristAttractionJsonLd from '@/components/seo/TouristAttractionJsonLd.astro';
 import { attractionsApi } from '@/lib/api/endpoints';
+import { toDestinationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { getMediaUrl } from '@repo/media';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+const isAuthenticated = Boolean(Astro.locals.user);
 const { slug } = Astro.params;
 if (!slug) return new Response(null, { status: 404 });
 
 const result = await attractionsApi.getBySlug({ slug });
-if (!result.ok) return new Response(null, { status: 404 });
+if (!result.ok) return new Response(null, { status: result.error.status === 410 ? 410 : 404 });
+
 const attraction = result.data as Record<string, unknown>;
+const attractionId = String(attraction.id || '');
 const name = String(attraction.name || '');
 const description = String(attraction.description || '');
-const rawFeaturedImage = String(attraction.featuredImage || '/assets/images/placeholder-destination.svg');
-const featuredImage = getMediaUrl(rawFeaturedImage, { preset: 'hero' });
-const destObj = attraction.destination as Record<string, unknown> | undefined;
-const destName = String(destObj?.name || '');
-const destSlug = String(destObj?.slug || '');
-const canonicalPath = buildUrl({ locale, path: `destinos/atraccion/${slug}/` });
+
+const destinationsResult = await attractionsApi.getDestinations({ id: attractionId });
+const hasError = !destinationsResult.ok;
+const destinations = destinationsResult.ok ? destinationsResult.data : [];
+const cards = destinations.map((item) =>
+	toDestinationCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
+
+const heading = t('destinations.byAttraction.heading', 'Destinos con {{attraction}}', {
+	attraction: name
+});
+const seoDescription = description
+	? `${description}. ${t('destinations.byAttraction.seoSuffix', 'Descubrí los destinos del Litoral que lo ofrecen.')}`
+	: heading;
+
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const canonicalPath = buildUrl({ locale, path: `destinos/atraccion/${slug}` });
+
+// Mirrors the visible trail below PLUS the current page: the visible component
+// drops the leaf (it is already the H1), but BreadcrumbList must stay complete.
+const breadcrumbItems = [
+	{ name: t('nav.home', 'Inicio'), url: `${siteOrigin}${buildUrl({ locale, path: '' })}` },
+	{
+		name: t('destinations.title', 'Destinos'),
+		url: `${siteOrigin}${buildUrl({ locale, path: 'destinos' })}`
+	},
+	{ name, url: `${siteOrigin}${canonicalPath}` }
+];
+
+const itemListItems = cards.map((card) => ({
+	name: card.name,
+	url: `${siteOrigin}${buildUrl({ locale, path: `destinos/${card.slug}` })}`
+}));
 ---
 
-<DetailLayout locale={locale} title={name} description={description} canonicalPath={canonicalPath} showBreadcrumbs={true} showSidebar={true}>
-	<TouristAttractionJsonLd
-		slot="head-extra"
-		name={name}
-		description={description || undefined}
-		url={canonicalPath}
-		image={featuredImage}
+<ListingLayout
+	locale={locale}
+	title={heading}
+	description={seoDescription}
+	showFilters={false}
+	totalCount={cards.length}
+>
+	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
+	{itemListItems.length > 0 && (
+		<ItemListJsonLd slot="head-extra" name={heading} items={itemListItems} />
+	)}
+
+	<Breadcrumbs
+		slot="breadcrumbs"
+		locale={locale}
+		items={[
+			{ label: t('destinations.title', 'Destinos'), path: 'destinos' },
+			{ label: name }
+		]}
 	/>
-	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[
-		{ label: t('destinations.title', 'Destinos'), path: 'destinos' },
-		...(destSlug ? [{ label: destName, path: `destinos/${destSlug}` }] : []),
-		{ label: name },
-	]} />
 
-	<Fragment slot="page-header">
-		<h1 class="attraction-detail__title">{name}</h1>
-		{destName && (
-			<span class="attraction-detail__dest">
-				{destName}
-			</span>
-		)}
-	</Fragment>
+	<ListingPageHeader
+		slot="page-header"
+		locale={locale}
+		tagline={t('destinations.byAttraction.tagline', 'Atracción')}
+		title={heading}
+		subtitle={description || undefined}
+	/>
 
-	<div class="attraction-detail">
-		<div class="attraction-detail__hero">
-			<img
-				src={featuredImage}
-				alt=""
-				class="attraction-detail__hero-img"
-				width="1200"
-				height="600"
-				loading="eager"
-				fetchpriority="high"
-				decoding="async"
-			/>
+	{hasError && !destinationsResult.ok && (
+		<ErrorBanner locale={locale} error={destinationsResult.error} entityName="destinos" />
+	)}
+
+	{!hasError && cards.length === 0 && (
+		<EmptyState
+			locale={locale}
+			variant="empty"
+			actionUrl={buildUrl({ locale, path: 'destinos' })}
+		/>
+	)}
+
+	{!hasError && cards.length > 0 && (
+		<div class="dest-grid">
+			{cards.map((card, i) => (
+				<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
+					<DestinationCard
+						destination={card}
+						locale={locale}
+						variant="grid"
+						isAuthenticated={isAuthenticated}
+					/>
+				</div>
+			))}
 		</div>
-		<div class="attraction-detail__description" set:html={String(attraction.contentHtml || description)} />
-	</div>
-
-	<div slot="sidebar" class="attraction-sidebar">
-		{destName && (
-			<div class="attraction-sidebar__card">
-				<h3 class="attraction-sidebar__title">{t('destinations.detail.parentDestination', 'Destino')}</h3>
-				<a href={buildUrl({ locale, path: `destinos/${destSlug}` })} class="attraction-sidebar__link">{destName}</a>
-			</div>
-		)}
-	</div>
-</DetailLayout>
+	)}
+</ListingLayout>
 
 <style>
-	.attraction-detail__hero { margin-bottom: var(--space-6); border-radius: var(--radius-card); overflow: hidden; }
-	.attraction-detail__hero-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
-	.attraction-detail__title { font-family: var(--font-heading); font-weight: 700; font-size: clamp(1.5rem, 3vw, 2.25rem); color: var(--core-foreground); margin: 0 0 var(--space-6); }
-	.attraction-detail__description { font-family: var(--font-sans); line-height: 1.7; color: var(--core-foreground); }
-	.attraction-detail__description :global(p) { margin-bottom: var(--space-4); }
-	.attraction-sidebar__card { background-color: var(--core-card); border-radius: var(--radius-card); padding: var(--space-6); box-shadow: var(--shadow-card); }
-	.attraction-sidebar__title { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-lg); margin: 0 0 var(--space-2); }
-	.attraction-sidebar__link { color: var(--brand-accent); text-decoration: none; font-family: var(--font-sans); }
-	.attraction-sidebar__link:hover { text-decoration: underline; }
+	.dest-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-card-gap);
+	}
+
+	@media (max-width: 1024px) {
+		.dest-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (max-width: 640px) {
+		.dest-grid {
+			grid-template-columns: 1fr;
+		}
+	}
 </style>

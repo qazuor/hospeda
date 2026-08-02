@@ -13,7 +13,7 @@ function createPerfAuthHeaders(actor: Actor): Record<string, string> {
         'user-agent': 'vitest-perf',
         accept: 'application/json',
         'x-mock-actor-id': actor.id,
-        'x-mock-actor-role': actor.role,
+        'x-mock-actor-role': actor.roles.join(','),
         'x-mock-actor-permissions': JSON.stringify(actor.permissions)
     };
 }

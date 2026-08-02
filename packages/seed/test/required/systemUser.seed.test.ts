@@ -36,6 +36,13 @@ vi.mock('../../src/utils/summaryTracker.js', () => ({
     }
 }));
 
+// HOS-296: the seed now grants the SYSTEM hat into `user_role` instead of
+// writing a (deleted) `users.role` column. `grantRole` opens a real
+// transaction, so it is INJECTED here rather than module-mocked — these tests
+// deliberately run without a database, and `vi.mock` of a workspace package
+// does not reliably intercept in this package.
+const grantRoleMock = vi.fn(async () => ({}));
+
 // ---------------------------------------------------------------------------
 // In-memory stub that satisfies UserModelPort — no real DB required.
 // ---------------------------------------------------------------------------
@@ -104,7 +111,7 @@ describe('seedSystemUser (SPEC-086 R-1)', () => {
             findOneReturnValue = null;
 
             // Act
-            await seedSystemUser(model);
+            await seedSystemUser(model, grantRoleMock);
 
             // Assert: create was called exactly once with the correct id
             expect(createCallCount).toBe(1);
@@ -114,23 +121,46 @@ describe('seedSystemUser (SPEC-086 R-1)', () => {
         it('should insert a user row with email equal to SYSTEM_USER_EMAIL', async () => {
             findOneReturnValue = null;
 
-            await seedSystemUser(model);
+            await seedSystemUser(model, grantRoleMock);
 
             expect(capturedCreateArg?.email).toBe(SYSTEM_USER_EMAIL);
         });
 
-        it('should insert a user row with role SYSTEM', async () => {
+        it('should grant the SYSTEM hat via user_role, not a users column', async () => {
             findOneReturnValue = null;
 
-            await seedSystemUser(model);
+            await seedSystemUser(model, grantRoleMock);
 
-            expect(capturedCreateArg?.role).toBe(RoleEnum.SYSTEM);
+            // The insert must NOT carry a `role` key: Drizzle silently drops an
+            // unknown key, so writing one here would look right and persist
+            // nothing (HOS-296).
+            expect(capturedCreateArg).not.toHaveProperty('role');
+            expect(grantRoleMock).toHaveBeenCalledWith(
+                expect.objectContaining({ userId: SYSTEM_USER_ID, role: RoleEnum.SYSTEM })
+            );
+        });
+
+        it('should grant the reserved account exactly {SYSTEM} — never the baseline USER hat', async () => {
+            findOneReturnValue = null;
+
+            await seedSystemUser(model, grantRoleMock);
+
+            // Convergence with migration 0069, whose baseline statement excludes
+            // `role = SYSTEM` for the same reason. A migrated database at
+            // `{SYSTEM, USER}` and a fresh one at `{SYSTEM}` behave DIFFERENTLY:
+            // `revokeRole` only refuses an account's LAST hat, so the extra hat
+            // would make `DELETE /admin/users/{SYSTEM_USER_ID}/roles/SYSTEM`
+            // succeed on one environment and be refused on the other.
+            expect(grantRoleMock).toHaveBeenCalledTimes(1);
+            expect(grantRoleMock).not.toHaveBeenCalledWith(
+                expect.objectContaining({ role: RoleEnum.USER })
+            );
         });
 
         it('should set emailVerified to false (non-loginable account)', async () => {
             findOneReturnValue = null;
 
-            await seedSystemUser(model);
+            await seedSystemUser(model, grantRoleMock);
 
             expect(capturedCreateArg?.emailVerified).toBe(false);
         });
@@ -138,7 +168,7 @@ describe('seedSystemUser (SPEC-086 R-1)', () => {
         it('should set banned to true (extra non-loginable safeguard)', async () => {
             findOneReturnValue = null;
 
-            await seedSystemUser(model);
+            await seedSystemUser(model, grantRoleMock);
 
             expect(capturedCreateArg?.banned).toBe(true);
         });
@@ -146,7 +176,7 @@ describe('seedSystemUser (SPEC-086 R-1)', () => {
         it('should set visibility to PRIVATE', async () => {
             findOneReturnValue = null;
 
-            await seedSystemUser(model);
+            await seedSystemUser(model, grantRoleMock);
 
             expect(capturedCreateArg?.visibility).toBe('PRIVATE');
         });
@@ -154,7 +184,7 @@ describe('seedSystemUser (SPEC-086 R-1)', () => {
         it('should set lifecycleState to ACTIVE so FK references remain valid', async () => {
             findOneReturnValue = null;
 
-            await seedSystemUser(model);
+            await seedSystemUser(model, grantRoleMock);
 
             expect(capturedCreateArg?.lifecycleState).toBe('ACTIVE');
         });
@@ -166,7 +196,7 @@ describe('seedSystemUser (SPEC-086 R-1)', () => {
             findOneReturnValue = { id: SYSTEM_USER_ID, email: SYSTEM_USER_EMAIL };
 
             // Act
-            await seedSystemUser(model);
+            await seedSystemUser(model, grantRoleMock);
 
             // Assert: no insert occurred
             expect(createCallCount).toBe(0);
@@ -182,12 +212,12 @@ describe('seedSystemUser (SPEC-086 R-1)', () => {
         it('should remain idempotent across multiple invocations', async () => {
             // First call — user does not exist, will create
             findOneReturnValue = null;
-            await seedSystemUser(model);
+            await seedSystemUser(model, grantRoleMock);
             expect(createCallCount).toBe(1);
 
             // Second call — user now exists
             findOneReturnValue = { id: SYSTEM_USER_ID, email: SYSTEM_USER_EMAIL };
-            await seedSystemUser(model);
+            await seedSystemUser(model, grantRoleMock);
 
             // create must not have been called again
             expect(createCallCount).toBe(1);

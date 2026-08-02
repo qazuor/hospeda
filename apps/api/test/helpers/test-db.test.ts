@@ -77,7 +77,7 @@ describe.skipIf(!dbAvailable)('Test Database Helpers', () => {
             expect(user).toBeDefined();
             expect(user.id).toBeDefined();
             expect(user.slug).toBeDefined();
-            expect(user.role).toBe(RoleEnum.USER);
+            expect(user.roles).toEqual([]);
             expect(user.displayName).toBe('Test User');
 
             expect(customer).toBeDefined();
@@ -147,7 +147,7 @@ describe.skipIf(!dbAvailable)('Test Database Helpers', () => {
             // Assert
             expect(adminUser).toBeDefined();
             expect(adminUser.id).toBeDefined();
-            expect(adminUser.role).toBe(RoleEnum.ADMIN);
+            expect(adminUser.roles).toEqual([RoleEnum.ADMIN]);
             expect(adminUser.slug).toBeDefined();
         });
 

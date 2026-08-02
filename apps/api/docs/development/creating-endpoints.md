@@ -626,7 +626,7 @@ Routes go through middleware in this order:
 requirePermission(PermissionEnum.ACCOMMODATION_CREATE)
 
 // WRONG - never do this
-if (user.role === 'ADMIN') { ... }
+if (actor.roles.includes(RoleEnum.ADMIN)) { ... }
 ```
 
 ---

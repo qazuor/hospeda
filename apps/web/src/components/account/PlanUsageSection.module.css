@@ -1,0 +1,196 @@
+/* PlanUsageSection.module.css */
+/* Scoped styles for the PlanUsageSection React island. */
+/* ALL values use CSS custom properties from global.css. */
+
+/* ── Card ──────────────────────────────────────────────────────────────────── */
+
+.root {
+    background-color: var(--core-card);
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-card, 24px);
+    padding: var(--space-6, 24px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+}
+
+.title {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.subtitle {
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+.loading {
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+/* ── Audience group ────────────────────────────────────────────────────────── */
+
+.group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+    margin-top: var(--space-4, 16px);
+}
+
+.groupTitle {
+    font-family: var(--font-sans);
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+.groupNote {
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+/* ── Limit list ────────────────────────────────────────────────────────────── */
+
+.list {
+    list-style: none;
+    margin: var(--space-2, 8px) 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+}
+
+.item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+}
+
+.itemHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-2, 8px);
+}
+
+.itemLabel {
+    font-family: var(--font-sans);
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--core-foreground);
+}
+
+.itemValue {
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--core-muted-foreground);
+    white-space: nowrap;
+}
+
+.itemNotice,
+.itemHint {
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    margin: 0;
+}
+
+.itemNotice {
+    color: var(--brand-accent);
+    font-weight: 500;
+}
+
+.itemHint {
+    color: var(--core-muted-foreground);
+}
+
+/* ── Per-accommodation breakdown ───────────────────────────────────────────── */
+
+.subList {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 var(--space-4, 16px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+    border-left: 2px solid var(--core-muted-foreground-a12);
+}
+
+.subItem {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.subLabel {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ── Upgrade actions ───────────────────────────────────────────────────────── */
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 12px);
+    margin: 0;
+}
+
+.actionLink {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--brand-primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.actionLink:hover {
+    color: var(--brand-accent);
+}
+
+/* ── Progress bar ──────────────────────────────────────────────────────────── */
+
+.bar {
+    height: 8px;
+    width: 100%;
+    border-radius: var(--radius-pill, 9999px);
+    background-color: var(--core-muted-foreground-a12);
+    overflow: hidden;
+}
+
+.barFill {
+    height: 100%;
+    border-radius: var(--radius-pill, 9999px);
+    background-color: var(--brand-primary);
+    transition: width var(--duration-normal, 0.4s) ease-in-out;
+}
+
+.barFillWarning {
+    background-color: var(--brand-accent);
+}
+
+.barFillCritical {
+    background-color: var(--destructive, oklch(0.55 0.22 25));
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .barFill {
+        transition: none;
+    }
+}

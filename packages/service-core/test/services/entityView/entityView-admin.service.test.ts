@@ -44,7 +44,7 @@ const UUID_3 = '33333333-3333-4333-8333-333333333333';
 function makeAnalyticsActor() {
     return createActor({
         id: 'admin-analytics-user',
-        role: RoleEnum.ADMIN,
+        roles: [RoleEnum.ADMIN],
         permissions: [PermissionEnum.ANALYTICS_VIEW]
     });
 }
@@ -55,7 +55,7 @@ function makeAnalyticsActor() {
 function makeNoPermActor() {
     return createActor({
         id: 'no-perm-user',
-        role: RoleEnum.USER,
+        roles: [RoleEnum.USER],
         permissions: []
     });
 }

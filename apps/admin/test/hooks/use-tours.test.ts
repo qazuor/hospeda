@@ -162,7 +162,7 @@ let mockTourStateLoading = false;
 let mockHasSeenResult = false;
 
 vi.mock('@/hooks/use-auth-context', () => ({
-    useAuthContext: () => ({ user: mockAuthRole ? { id: 'u1', role: mockAuthRole } : null })
+    useAuthContext: () => ({ user: mockAuthRole ? { id: 'u1', roles: [mockAuthRole] } : null })
 }));
 
 vi.mock('@/hooks/use-admin-tour-state', () => ({

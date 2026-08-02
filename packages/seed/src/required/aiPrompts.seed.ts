@@ -19,10 +19,10 @@
  */
 
 import { DEFAULT_PROMPTS, DEFAULT_RULES } from '@repo/ai-core';
-import { aiPromptVersions, getDb, users } from '@repo/db';
+import { aiPromptVersions, getDb, userRole, users } from '@repo/db';
 import type { AiFeature } from '@repo/schemas';
 import { AiFeatureSchema } from '@repo/schemas';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -38,11 +38,15 @@ export async function seedAiPrompts(): Promise<void> {
 
     const db = getDb();
 
-    // Use the super admin as the creator
+    // Use the super admin as the creator.
+    // HOS-296: `users.role` is gone — "who is a super admin" is now a join to
+    // `user_role`, and it must stay a JOIN rather than a `user_role`-only
+    // lookup so a soft-deleted account can never be picked as the creator.
     const [admin] = await db
         .select({ id: users.id })
-        .from(users)
-        .where(eq(users.role, 'SUPER_ADMIN'))
+        .from(userRole)
+        .innerJoin(users, eq(users.id, userRole.userId))
+        .where(and(eq(userRole.role, 'SUPER_ADMIN'), isNull(users.deletedAt)))
         .limit(1);
 
     if (!admin) {

@@ -82,3 +82,28 @@ export function getStatusLabel(
 export function getPlanBySlug(slug: string): PlanDefinition | undefined {
     return ALL_PLANS.find((plan) => plan.slug === slug);
 }
+
+/**
+ * The plans an operator may move a subscription TO, given the plan it is on.
+ *
+ * A destination plan must be (1) in the same category — a tourist subscription
+ * cannot become an owner one — (2) different from the current plan, and (3)
+ * **active**. The `isActive` filter is the part that was missing (HOS-331): the
+ * three `complex-*` plans are switched off, so a complex subscription used to
+ * offer nothing but retired plans as its change targets.
+ *
+ * Reads the static `ALL_PLANS` catalog for the same reason `getPlanBySlug`
+ * does (see its CONFIG-FALLBACK note): the admin subscription API carries no
+ * plan display data, and plumbing it is a separate cutover.
+ */
+export function getChangePlanOptions(input: {
+    readonly currentPlan: PlanDefinition | undefined;
+    readonly currentSlug: string;
+}): PlanDefinition[] {
+    const { currentPlan, currentSlug } = input;
+    if (!currentPlan) return [];
+    return ALL_PLANS.filter(
+        (plan) =>
+            plan.category === currentPlan.category && plan.slug !== currentSlug && plan.isActive
+    );
+}

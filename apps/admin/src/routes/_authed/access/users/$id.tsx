@@ -12,6 +12,8 @@ import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { PageTabs, userTabs } from '@/components/layout/PageTabs';
 import { ImpersonateButton } from '@/features/users/components/ImpersonateButton';
+import { UserAccommodationsCard } from '@/features/users/components/UserAccommodationsCard';
+import { UserPublicationsCard } from '@/features/users/components/UserPublicationsCard';
 import { useUserHeaderProps } from '@/features/users/hooks/useUserHeaderProps';
 import { useUserPage } from '@/features/users/hooks/useUserPage';
 import { useDeleteUserMutation } from '@/features/users/hooks/useUserQuery';
@@ -35,7 +37,8 @@ function UserViewPage() {
     const displayName = userEntity?.displayName || userEntity?.slug || id;
 
     const headerProps = useUserHeaderProps({
-        entity: entityData.entity as Record<string, unknown> | undefined
+        entity: entityData.entity as Record<string, unknown> | undefined,
+        userId: id
     });
 
     const headerExtraActions = (
@@ -76,13 +79,20 @@ function UserViewPage() {
             headerExtraActions={headerExtraActions}
             headerTabs={headerTabs}
         >
-            <EntityViewContent
-                entityType="user"
-                entityId={id}
-                sections={entityData.sections}
-                entity={entityData.entity || {}}
-                userPermissions={entityData.userPermissions}
-            />
+            <div className="space-y-4">
+                <EntityViewContent
+                    entityType="user"
+                    entityId={id}
+                    sections={entityData.sections}
+                    entity={entityData.entity || {}}
+                    userPermissions={entityData.userPermissions}
+                />
+                <UserAccommodationsCard userId={id} />
+                <UserPublicationsCard
+                    userId={id}
+                    permissions={entityData.userPermissions}
+                />
+            </div>
         </EntityPageBase>
     );
 }

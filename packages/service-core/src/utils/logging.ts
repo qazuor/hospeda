@@ -67,7 +67,7 @@ export const setLogger = (logger: typeof defaultLogger) => {
  * remains available through the permissions API when required.
  *
  * @param actor - The actor to project.
- * @returns A JSON string with `id`, `role`, and `permissionsCount` only.
+ * @returns A JSON string with `id`, `roles`, and `permissionsCount` only.
  */
 const formatActor = (actor: Actor | null | undefined): string => {
     // These helpers run BEFORE the actor/permission check in every service
@@ -79,7 +79,7 @@ const formatActor = (actor: Actor | null | undefined): string => {
     }
     return JSON.stringify({
         id: actor.id,
-        role: actor.role,
+        roles: actor.roles,
         permissionsCount: actor.permissions?.length ?? 0
     });
 };
@@ -144,7 +144,7 @@ export const logPermission = (
     _logger.permission({
         permission,
         userId: actor.id,
-        role: actor.role,
+        roles: actor.roles,
         extraData: { input, error }
     });
 };

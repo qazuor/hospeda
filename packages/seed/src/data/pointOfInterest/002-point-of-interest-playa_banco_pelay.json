@@ -49,6 +49,6 @@
     "icon": "beach_access",
     "isBuiltin": true,
     "isFeatured": true,
-    "displayWeight": 85,
+    "displayWeight": 100,
     "lifecycleState": "ACTIVE"
 }

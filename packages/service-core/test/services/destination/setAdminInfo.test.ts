@@ -30,7 +30,7 @@ describe('DestinationService - setAdminInfo', () => {
         loggerMock = createLoggerMock();
         service = new DestinationService({ logger: loggerMock }, modelMock);
         superAdmin = createActor({
-            role: RoleEnum.SUPER_ADMIN,
+            roles: [RoleEnum.SUPER_ADMIN],
             permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.DESTINATION_UPDATE]
         });
         entity = createDestination() as any;
@@ -44,7 +44,7 @@ describe('DestinationService - setAdminInfo', () => {
         });
         const forbiddenActor = createActor({
             id: getMockId('user', 'actor-id-different'),
-            role: RoleEnum.USER,
+            roles: [RoleEnum.USER],
             permissions: []
         });
         asMock(modelMock.findById).mockResolvedValue(forbiddenDestination);

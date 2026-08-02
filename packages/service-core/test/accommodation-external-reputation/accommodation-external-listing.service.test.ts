@@ -67,7 +67,7 @@ function makeListing(
 function makeOwnerActor(overrides: Partial<Actor> = {}): Actor {
     return {
         id: OWNER_ID,
-        role: 'HOST' as never,
+        roles: ['HOST'] as never,
         permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN],
         ...overrides
     };
@@ -76,7 +76,7 @@ function makeOwnerActor(overrides: Partial<Actor> = {}): Actor {
 function makeAdminActor(overrides: Partial<Actor> = {}): Actor {
     return {
         id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
-        role: 'ADMIN' as never,
+        roles: ['ADMIN'] as never,
         permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY],
         ...overrides
     };
@@ -85,7 +85,7 @@ function makeAdminActor(overrides: Partial<Actor> = {}): Actor {
 function makeNonOwnerActor(): Actor {
     return {
         id: NON_OWNER_ID,
-        role: 'HOST' as never,
+        roles: ['HOST'] as never,
         permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
     };
 }

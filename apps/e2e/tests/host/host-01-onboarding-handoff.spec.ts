@@ -43,7 +43,7 @@ import {
     startHostOnboarding
 } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
-import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { execSQL, getDbPool, getUserRoles } from '../../fixtures/db-helpers.ts';
 import { extractFirstLink, waitForEmail } from '../../fixtures/mailpit-client.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -103,11 +103,11 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         await forceVerifyEmail(user.id); // Defense-in-depth: ensure verified state
 
         // DB invariants BEFORE the mini-form (step 4 of spec)
-        const usersBefore = await execSQL<{ role: string; email_verified: boolean | null }>(
-            'SELECT role, COALESCE(email_verified, true) AS email_verified FROM users WHERE id = $1',
-            [user.id]
-        );
-        expect(usersBefore[0]?.role).toBe('USER');
+        // Signup grants only the baseline hat — the onboarding call below is
+        // what adds HOST (HOS-296: hats live in `user_role`, not `users.role`).
+        // The `email_verified` column was read alongside the old scalar here but
+        // never asserted; `forceVerifyEmail` above already guarantees it.
+        expect(await getUserRoles(user.id)).toEqual(['USER']);
 
         const subsBefore = await execSQL(
             `SELECT id FROM billing_subscriptions
@@ -153,10 +153,12 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         expect(accsAfter[0]?.lifecycle_state).toBe('DRAFT');
         expect(accsAfter[0]?.owner_id).toBe(user.id);
 
-        const usersAfter = await execSQL<{ role: string }>('SELECT role FROM users WHERE id = $1', [
-            user.id
-        ]);
-        expect(usersAfter[0]?.role, 'role must be promoted USER → HOST atomically').toBe('HOST');
+        // Promotion is now additive: the HOST hat is granted on top of the
+        // baseline USER one, never in place of it.
+        expect(
+            await getUserRoles(user.id),
+            'HOST hat must be granted USER → {USER, HOST} atomically'
+        ).toEqual(['HOST', 'USER']);
 
         // No subscription row yet (trial is created later, at publish time)
         const subsAfter = await execSQL(
@@ -291,10 +293,10 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         expect(subsPublished).toHaveLength(1);
         expect(subsPublished[0]?.status).toBe('active');
 
-        const usersFinal = await execSQL<{ role: string }>('SELECT role FROM users WHERE id = $1', [
-            user.id
-        ]);
-        expect(usersFinal[0]?.role, 'no double-promotion').toBe('HOST');
+        // No double-promotion: publishing re-runs the grant, and `grantRole` is
+        // idempotent on the `(user_id, role)` primary key, so the set is
+        // unchanged — no duplicate row, no extra hat picked up on the way.
+        expect(await getUserRoles(user.id), 'no double-promotion').toEqual(['HOST', 'USER']);
 
         // ───────────────────────────────────────────────────────────────────
         // Public visibility (step 14)
@@ -405,6 +407,6 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         // ───────────────────────────────────────────────────────────────────
 
         const me = await getMe(hostSessionCookie, { apiBaseUrl: API_URL });
-        expect(me?.role).toBe('HOST');
+        expect(me?.roles, 'the actor must expose the HOST hat through /auth/me').toContain('HOST');
     });
 });

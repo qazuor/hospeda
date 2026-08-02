@@ -48,7 +48,28 @@ export const UserPublicSchema = z.object({
     // consumers; the service may project either. Both nullable.
     avatarUrl: z.string().url().nullish(),
     image: z.string().url().nullish(),
-    role: RoleEnumSchema
+    /**
+     * Every role the user holds (HOS-296).
+     *
+     * Replaces the former required `role: RoleEnumSchema` scalar. That field
+     * became unsatisfiable the moment `users.role` was dropped: these access
+     * schemas are RESPONSE contracts parsed by `stripWithSchema`, which
+     * FAIL-CLOSES to HTTP 500, so a required field with no column behind it
+     * turned every payload embedding a user (`owner`, `author`, the admin user
+     * list, the batch endpoint) into a 500.
+     *
+     * `.default([])` is deliberate, not laziness. A user's hats now live in
+     * `user_role`, one row per hat, so they are only available to a projection
+     * that explicitly resolves them — there is no column to read for free on a
+     * relation join. Projections that DO resolve them pass the real set
+     * through; the rest emit `[]`. An empty array therefore means "this
+     * projection did not resolve the user's hats", NOT "this user has no
+     * hats" — every account holds at least the baseline `USER` hat (granted at
+     * signup, and `revokeRole` refuses to remove the last one, AC-5). Do not
+     * gate anything on this field being empty; ask the API for the actor's own
+     * roles via `GET /api/v1/public/auth/me` instead.
+     */
+    roles: RoleEnumSchema.array().default([])
 });
 
 /**
@@ -148,7 +169,15 @@ export const UserAdminSchema = UserProtectedSchema.extend({
 
     // Admin fields
     notes: z.string().optional(),
-    internalTags: z.array(z.string()).default([])
+    internalTags: z.array(z.string()).default([]),
+
+    // Admin list computed fields
+    accommodationsCount: z.number().int().min(0).optional(),
+    gastronomiesCount: z.number().int().min(0).optional(),
+    experiencesCount: z.number().int().min(0).optional(),
+    eventsCount: z.number().int().min(0).optional(),
+    postsCount: z.number().int().min(0).optional(),
+    currentPlanSlug: z.string().nullable().optional()
 });
 
 /**

@@ -40,7 +40,6 @@ const {
 
 const { t } = createTranslations(locale);
 
-const cspNonce = Astro.locals.cspNonce ?? '';
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
 
 const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
@@ -68,9 +67,9 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<link rel="manifest" href="/site.webmanifest" />
 
 		<!-- Google Fonts (non-blocking) -->
-		<FontsLoader cspNonce={cspNonce} />
+		<FontsLoader />
 
-		<ThemeFoucScript cspNonce={cspNonce} />
+		<ThemeFoucScript />
 
 		<ClientRouter />
 
