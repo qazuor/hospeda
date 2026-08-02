@@ -906,26 +906,27 @@
             "id": "T-038",
             "title": "Flag the existing content-only migrations and retire the stale re-run list",
             "description": "Spec §6.11 backfill. Set `contentOnly: true` on `0025-seed-real-blog-posts.ts`, `0027-add-confirmed-events-entre-rios-2026.ts` and `0028-add-estimated-events-entre-rios.ts`. Do NOT flag M-A (T-005) — it has a real fixture baseline. M-B (T-006) and M-C (T-007) are authored with the flag from the start. Then correct `docs/deployment/first-time-setup.md:810-827`: its manual re-run list names only 0025 while 0027/0028 have the identical gap, which means the DOCUMENTED production day-1 bootstrap ships zero Entre Rios events today. The flag makes the list unnecessary — remove it and point at the mechanism instead. NOTE: editing an existing migration's own code does not trip scripts/check-seed-dual-write.sh (its GUARDED_DATA_ROOT_PATTERN only watches packages/seed/src/data/), so this passes the guard trivially — that is a fact about the guard, not permission to skip thinking about the change. Also state plainly in the PR that this only affects FUTURE fresh builds: an environment where these are already ledgered stays as it is, by design.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-037"],
             "blocks": ["T-035"],
             "subtasks": [
-                { "title": "Flag 0025, 0027 and 0028 as contentOnly", "completed": false },
+                { "title": "Flag 0025, 0027 and 0028 as contentOnly", "completed": true },
                 {
                     "title": "Correct/remove the stale list in first-time-setup.md",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Document the non-retroactive scope in the PR body", "completed": false }
+                { "title": "Document the non-retroactive scope in the PR body", "completed": true }
             ],
             "tags": ["seed", "docs"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:35:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-02T14:58:00.000Z",
+                "completed": "2026-08-02T15:20:00.000Z"
+            },
+            "notes": "Commits 103ad6f17 (flags), 57bee735c (super-admin guard), f422866ac (docs). SCOPE GREW mid-task, with owner approval: T-037's fall-through means `--baseline-stamp` now really runs migrations, and `runMigrations` resolved its actor via `loadSuperAdminAndGetActor()`, which CREATES the seeded superadmin@hospeda.com account (plus credential row) when none exists. On the prod day-1 path — seeded `--required --exclude=users` precisely to keep that predictable credential off the box, with the ledger step documented BEFORE the real admin is created — the fall-through would have silently undone the exclusion. The pre-existing manual workaround had the same hole, but opt-in. Owner chose doc reorder + code guard: new `findSuperAdminActor()` in superAdminLoader.ts looks up without creating, `requireSuperAdminActor()` in runner.ts throws a message naming the fix, and the ledger step moved from step 4 into its own step 6 after the admin promotion. The lookup takes the run's Drizzle client explicitly — reading `getDb()` failed in the integration suite with 'Database not initialized' (the documented dist-vs-src double-instance), so threading the client is correctness, not test convenience. Coverage: 1 new integration test asserting the refusal AND that zero users exist afterwards. Full data-migrations integration suite 59/59, seed unit suite 1322/1322, typecheck clean, lint 0 errors, seed-dual-write guard green (data-migrations/ is outside GUARDED_DATA_ROOT_PATTERN, as the task description predicted)."
         }
     ],
     "summary": {

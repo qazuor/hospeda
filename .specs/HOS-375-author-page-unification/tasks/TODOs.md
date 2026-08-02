@@ -1,6 +1,6 @@
 # HOS-375: Author page — move to `/autores/<slug>/` and unify posts + events
 
-## Progress: 3/38 tasks (8%)
+## Progress: 4/38 tasks (11%)
 
 **Average Complexity:** 1.9/3 (max)
 **Critical Path:** T-002 → T-003 → T-017 → T-020 → T-021 → T-029 → T-032 (7 steps)
@@ -32,8 +32,8 @@
   - **Done.** `baselineStamp()` skips content-only migrations and reports them as `deferred`; `handleDataMigrate` no longer early-returns and applies exactly those. Ledger reads `'ok'` vs `'baseline-stamp'`. Integration 11/11, unit 23/23.
   - Blocked by: T-001 · Blocks: T-035, T-038
 
-- [ ] **T-038** (complexity: 2) — Flag the existing content-only migrations and retire the stale re-run list
-  - `0025`/`0027`/`0028` get the flag; `first-time-setup.md`'s list is already stale and becomes unnecessary.
+- [x] **T-038** (complexity: 2) — Flag the existing content-only migrations and retire the stale re-run list
+  - **Done.** The three are flagged; the stale list is gone. Scope grew with owner approval: the fall-through made the prod day-1 ledger step create the seeded `superadmin@hospeda.com` account that `--exclude=users` exists to avoid, so `runMigrations` now refuses to bootstrap one and the step moved after the admin promotion. Integration 59/59, unit 1322/1322.
   - Blocked by: T-037 · Blocks: T-035
 
 - [ ] **T-003** (complexity: 2) — Add `isSystemAccount` to `UserSchema`
