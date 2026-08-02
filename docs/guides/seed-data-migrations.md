@@ -483,20 +483,29 @@ with an automatic baseline-stamp. Nothing currently baseline-stamps the migratio
 after this curated prod seed runs.
 
 **Until this is automated, an operator running the production day-1 bootstrap must run the
-baseline-stamp manually, right after step 4 of Phase 4 completes**:
+baseline-stamp manually** — but **after** the real admin account exists (Phase 4 step 5), not
+immediately after the seed:
 
 ```bash
 pnpm --filter @repo/seed seed --data-migrate --baseline-stamp
 ```
 
-Caveat, current as of the `0001`-`0003` migrations: this is safe **only because none of the
-currently-shipped `required`-group migrations depend on the excluded `users` step** — they
-all target `billing_plans` rows, which the curated seed already creates. If a future required
-migration is added that depends on data the `--exclude=users` step would otherwise seed (or on
-any other step a curated prod run might exclude), this assumption must be re-verified before
-baseline-stamping blindly. When in doubt, run `pnpm db:seed:migrate:status` first and read
-which migrations would actually apply before choosing between running them for real vs.
-baseline-stamping.
+**Why the ordering matters.** Since the `contentOnly` flag landed, this command is not pure
+bookkeeping: it also runs the content-only migrations for real, and those stamp
+`createdById`/`updatedById` with the acting user. The runner resolves that user by looking up
+an existing `SUPER_ADMIN` and **refuses to create one** — falling back to the seeded
+`superadmin@hospeda.com` account would hand production exactly the predictable admin
+credential that `--exclude=users` exists to keep off the box. Run it too early and it aborts
+with `no SUPER_ADMIN account`; that is the guard, not a bug. See
+`requireSuperAdminActor` in `packages/seed/src/data-migrations/runner.ts`.
+
+Caveat, current as of the `0001`-`0033` migrations: apart from the ordering above, this is
+safe **only because no currently-shipped `required`-group migration depends on data the
+excluded `users` step would have seeded** — they target `billing_plans` rows the curated seed
+already creates, or content they insert themselves. If a future required migration is added
+that depends on an excluded step, re-verify this before baseline-stamping blindly. When in
+doubt, run `pnpm db:seed:migrate:status` first and read which migrations would actually
+apply.
 
 ---
 
