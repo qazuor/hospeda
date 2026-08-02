@@ -169,10 +169,10 @@ describe('RichTextEditor — controlled emit contract', () => {
         );
         await waitForEditorMount();
 
-        // Assert — TipTap emits an update when it first parses `content`. Before
-        // the fix this surfaced as onChange('old text'): identical content, but
-        // enough to mark the field dirty in any parent that dirty-tracks per
-        // field (CommerceListingEditor), enabling Save with zero user edits.
+        // Assert — NOTE this case passes with the bug present: a single-line
+        // string round-trips byte-identical, so the equality guard catches
+        // `setEditable`'s emit. Kept as a boundary case, but the cases in
+        // `NON_CANONICAL_VALUES` are what actually guard the regression.
         expect(onChange).not.toHaveBeenCalled();
     });
 
@@ -189,8 +189,9 @@ describe('RichTextEditor — controlled emit contract', () => {
         );
         await waitForEditorMount();
 
-        // Assert — the empty case emitted onChange('') before the fix, which is
-        // the same false-dirty signal for a listing that has no rich text yet.
+        // Assert — like the single-line case above, an empty document also
+        // serializes back identically, so this too survives the bug. Both are
+        // kept as boundary cases; `NON_CANONICAL_VALUES` carries the regression.
         expect(onChange).not.toHaveBeenCalled();
     });
 

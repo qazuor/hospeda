@@ -37,6 +37,7 @@
 import { expect, test } from '@playwright/test';
 import { signInExistingUser } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
+import { waitForCommerceEditorHydration } from '../../fixtures/commerce-editor-helpers.ts';
 import { execSQL } from '../../fixtures/db-helpers.ts';
 import { setReactInputValue, setReactSelectValue } from '../../fixtures/react19-input-helpers.ts';
 
@@ -185,9 +186,15 @@ test.describe('COMMERCE-03: owner edits type + i18n fields — persist on public
             waitUntil: 'load'
         });
 
-        // Wait for React island hydration: the type select must be visible and
-        // enabled. 'load' fires after deferred scripts execute; hydration is
-        // synchronous after that so the select is ready.
+        // Wait for React island hydration.
+        //
+        // HOS-371: #ce-type is server-rendered, so "visible and enabled" is true
+        // before React attaches anything — hydration is NOT synchronous after
+        // 'load' as the old comment claimed, and the island now ships TipTap.
+        // `setReactSelectValue` below needs React actually listening, otherwise
+        // the form never goes dirty and Save stays disabled.
+        await waitForCommerceEditorHydration({ page });
+
         const typeSelect = page.locator('#ce-type');
         await expect(typeSelect).toBeVisible({ timeout: 15_000 });
         await expect(typeSelect).toBeEnabled({ timeout: 10_000 });
@@ -317,7 +324,9 @@ test.describe('COMMERCE-03: owner edits type + i18n fields — persist on public
             waitUntil: 'load'
         });
 
-        // Wait for type select hydration.
+        // Wait for real island hydration (see the HOS-371 note above).
+        await waitForCommerceEditorHydration({ page });
+
         const typeSelect = page.locator('#ce-type');
         await expect(typeSelect).toBeVisible({ timeout: 15_000 });
         await expect(typeSelect).toBeEnabled({ timeout: 10_000 });
