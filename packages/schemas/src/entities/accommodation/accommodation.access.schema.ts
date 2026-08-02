@@ -220,6 +220,7 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
 
     // Media (public safe)
     media: true,
+    videos: true,
 
     // Location (nested object with state, country, coordinates)
     location: true,
@@ -508,6 +509,7 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     isFeatured: true,
     destinationId: true,
     media: true,
+    videos: true,
     location: true,
     averageRating: true,
     reviewsCount: true,

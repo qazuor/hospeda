@@ -20,33 +20,16 @@
  * Fail-hard contract: a DB error from `findByGastronomies` propagates (no catch,
  * no JSONB fallback) — the relational table is the read source of truth.
  *
- * ## Known gap (documented, not fixed here)
- *
- * `GastronomySchema` (`@repo/schemas`) does not yet expose a top-level `videos`
- * field even though the `gastronomies.videos` DB column exists (HOS-372). The
- * generic type parameter `T` below is therefore constrained structurally
- * (`EntityWithCommerceMedia`, an OPTIONAL `videos` property) rather than to the
- * `Gastronomy` type directly — this lets the module compile today and will pick
- * up the real column value once a future task adds `videos` to the entity schema
- * (at which point `entity.videos` here already reads the right thing structurally;
- * no change needed in this file).
+ * Videos come from the entity's own `videos` column, NOT from the media rows:
+ * a video is an external YouTube/Vimeo URL rather than an uploaded asset, so it
+ * was never migrated to the relational table (HOS-372).
  *
  * @module gastronomy.media-read
  */
 
 import type { DrizzleClient, GastronomyMediaModel } from '@repo/db';
-import type { GastronomyMedia, Media, Video } from '@repo/schemas';
+import type { Gastronomy, GastronomyMedia } from '@repo/schemas';
 import { composeCommerceMedia } from '../commerce/commerce-media-compose';
-
-/**
- * Structural shape required of any entity passed to the attach helpers below.
- * See the module-level "Known gap" note for why this is not `Gastronomy` directly.
- */
-interface EntityWithCommerceMedia {
-    readonly id: string;
-    readonly media?: Media | null;
-    readonly videos?: readonly Video[] | null;
-}
 
 // ---------------------------------------------------------------------------
 // Private helper
@@ -56,7 +39,7 @@ interface EntityWithCommerceMedia {
  * Returns the entity with its `media` rebuilt from the supplied rows, preserving
  * the original `media` value when there is nothing to compose (see module note).
  */
-function withComposedGastronomyMedia<T extends EntityWithCommerceMedia>(
+function withComposedGastronomyMedia<T extends Gastronomy>(
     entity: T,
     rows: readonly GastronomyMedia[]
 ): T {
@@ -77,7 +60,7 @@ function withComposedGastronomyMedia<T extends EntityWithCommerceMedia>(
  * @param input.mediaModel - The `gastronomy_media` model.
  * @param input.tx         - Optional active transaction client.
  */
-export async function attachComposedGastronomyMedia<T extends EntityWithCommerceMedia>(input: {
+export async function attachComposedGastronomyMedia<T extends Gastronomy>(input: {
     entity: T | null;
     mediaModel: GastronomyMediaModel;
     tx?: DrizzleClient;
@@ -96,7 +79,7 @@ export async function attachComposedGastronomyMedia<T extends EntityWithCommerce
  * @param input.mediaModel - The `gastronomy_media` model.
  * @param input.tx         - Optional active transaction client.
  */
-export async function attachComposedGastronomyMediaList<T extends EntityWithCommerceMedia>(input: {
+export async function attachComposedGastronomyMediaList<T extends Gastronomy>(input: {
     items: readonly T[];
     mediaModel: GastronomyMediaModel;
     tx?: DrizzleClient;

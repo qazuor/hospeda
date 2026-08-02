@@ -19,33 +19,16 @@
  * Fail-hard contract: a DB error from `findByExperiences` propagates (no catch,
  * no JSONB fallback) — the relational table is the read source of truth.
  *
- * ## Known gap (documented, not fixed here)
- *
- * `ExperienceSchema` (`@repo/schemas`) does not yet expose a top-level `videos`
- * field even though the `experiences.videos` DB column exists (HOS-372). The
- * generic type parameter `T` below is therefore constrained structurally
- * (`EntityWithCommerceMedia`, an OPTIONAL `videos` property) rather than to the
- * `Experience` type directly — this lets the module compile today and will pick
- * up the real column value once a future task adds `videos` to the entity schema
- * (at which point `entity.videos` here already reads the right thing structurally;
- * no change needed in this file).
+ * Videos come from the entity's own `videos` column, NOT from the media rows:
+ * a video is an external YouTube/Vimeo URL rather than an uploaded asset, so it
+ * was never migrated to the relational table (HOS-372).
  *
  * @module experience.media-read
  */
 
 import type { DrizzleClient, ExperienceMediaModel } from '@repo/db';
-import type { ExperienceMedia, Media, Video } from '@repo/schemas';
+import type { Experience, ExperienceMedia } from '@repo/schemas';
 import { composeCommerceMedia } from '../commerce/commerce-media-compose';
-
-/**
- * Structural shape required of any entity passed to the attach helpers below.
- * See the module-level "Known gap" note for why this is not `Experience` directly.
- */
-interface EntityWithCommerceMedia {
-    readonly id: string;
-    readonly media?: Media | null;
-    readonly videos?: readonly Video[] | null;
-}
 
 // ---------------------------------------------------------------------------
 // Private helper
@@ -55,7 +38,7 @@ interface EntityWithCommerceMedia {
  * Returns the entity with its `media` rebuilt from the supplied rows, preserving
  * the original `media` value when there is nothing to compose (see module note).
  */
-function withComposedExperienceMedia<T extends EntityWithCommerceMedia>(
+function withComposedExperienceMedia<T extends Experience>(
     entity: T,
     rows: readonly ExperienceMedia[]
 ): T {
@@ -76,7 +59,7 @@ function withComposedExperienceMedia<T extends EntityWithCommerceMedia>(
  * @param input.mediaModel - The `experience_media` model.
  * @param input.tx         - Optional active transaction client.
  */
-export async function attachComposedExperienceMedia<T extends EntityWithCommerceMedia>(input: {
+export async function attachComposedExperienceMedia<T extends Experience>(input: {
     entity: T | null;
     mediaModel: ExperienceMediaModel;
     tx?: DrizzleClient;
@@ -95,7 +78,7 @@ export async function attachComposedExperienceMedia<T extends EntityWithCommerce
  * @param input.mediaModel - The `experience_media` model.
  * @param input.tx         - Optional active transaction client.
  */
-export async function attachComposedExperienceMediaList<T extends EntityWithCommerceMedia>(input: {
+export async function attachComposedExperienceMediaList<T extends Experience>(input: {
     items: readonly T[];
     mediaModel: ExperienceMediaModel;
     tx?: DrizzleClient;
