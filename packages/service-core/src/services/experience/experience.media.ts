@@ -32,6 +32,7 @@ import {
     type ExperienceModel,
     withTransaction
 } from '@repo/db';
+import type { ImageProvider } from '@repo/media/server';
 import {
     type ExperienceMediaAddInput,
     ExperienceMediaAddInputSchema,
@@ -50,6 +51,7 @@ import {
 } from '@repo/schemas';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
 import { checkExperienceCanEditMedia } from './experience.permissions';
 
 // ---------------------------------------------------------------------------
@@ -173,12 +175,17 @@ export async function addExperienceMedia(
  * 4. Resequence the remaining visible rows to a dense 0-based `sortOrder`
  *    (preserves their relative order). Both steps run in a single transaction.
  *
- * Does NOT touch Cloudinary — deleting the binary is a separate concern
- * orchestrated by the caller. Only the DB row is affected.
+ * Deletes the Cloudinary binary too, when a `mediaProvider` is supplied (HOS-372).
+ * That step runs after authorization and row resolution but BEFORE the DB
+ * transaction: a storage failure aborts the removal with the row intact, so the
+ * user can retry and an orphaned asset becomes impossible rather than merely
+ * unlikely. Callers that omit the provider get the previous DB-only behavior.
+ * See `services/media/delete-media-asset.ts` for the full ordering rationale.
  *
  * @param model - ExperienceModel instance.
  * @param actor - The actor performing the action.
  * @param data - Validated remove-media input.
+ * @param mediaProvider - Optional ImageProvider used to delete the binary.
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<{ success: true }>` on success.
  */
@@ -186,6 +193,7 @@ export async function removeExperienceMedia(
     model: ExperienceModel,
     actor: Actor,
     data: ExperienceMediaRemoveInput,
+    mediaProvider?: ImageProvider | null,
     ctx?: ServiceContext
 ): Promise<ServiceOutput<{ success: true }>> {
     try {
@@ -214,6 +222,11 @@ export async function removeExperienceMedia(
                 'Media not found for this experience listing'
             );
         }
+
+        // Binary first, row second. Runs outside the transaction on purpose —
+        // an external call cannot be rolled back, so it must fail before the DB
+        // is touched rather than after (see delete-media-asset.ts).
+        await deleteMediaAssetOrThrow({ provider: mediaProvider ?? null, row: mediaRow });
 
         // Soft-delete + resequence in a single transaction.
         const doRemove = async (tx: DrizzleClient): Promise<void> => {

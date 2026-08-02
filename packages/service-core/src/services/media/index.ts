@@ -1,3 +1,5 @@
+export type { DeletableMediaRow, DeleteMediaAssetOutcome } from './delete-media-asset';
+export { deleteMediaAssetOrThrow, resolveDeletablePublicId } from './delete-media-asset';
 export type {
     ImageImportServiceConfig,
     ImportStockImageInput,

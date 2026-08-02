@@ -123,6 +123,7 @@ import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
 import { DestinationService } from '../destination/destination.service';
+import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
 import { PointOfInterestService } from '../point-of-interest/point-of-interest.service';
 import { getUserRoles, grantRole } from '../user-role/user-role.service.js';
 import {
@@ -3728,8 +3729,12 @@ export class AccommodationService extends BaseCrudService<
      * 4. Resequence the remaining visible rows to a dense 0-based `sortOrder`
      *    (preserves their relative order). Both steps run in a single transaction.
      *
-     * Does NOT touch Cloudinary — deleting the binary is a separate concern
-     * orchestrated by the caller. Only the DB row is affected.
+     * Deletes the Cloudinary binary too, when the service was constructed with a
+     * `mediaProvider` (HOS-372). That step runs after authorization and row
+     * resolution but BEFORE the DB transaction: a storage failure aborts the
+     * removal with the row intact, so the user can retry and an orphaned asset
+     * becomes impossible rather than merely unlikely. See
+     * `services/media/delete-media-asset.ts` for the full ordering rationale.
      *
      * @param actor - The actor performing the action.
      * @param data  - Input containing accommodationId and mediaId.
@@ -3760,6 +3765,16 @@ export class AccommodationService extends BaseCrudService<
                         'Media not found for this accommodation'
                     );
                 }
+
+                // Binary first, row second. Runs outside the transaction on
+                // purpose — an external call cannot be rolled back, so it must
+                // fail before the DB is touched rather than after (see
+                // services/media/delete-media-asset.ts).
+                await deleteMediaAssetOrThrow({
+                    provider: this.mediaProvider,
+                    row: mediaRow,
+                    logger: this.logger
+                });
 
                 // Soft-delete + resequence in a single transaction.
                 const doRemove = async (tx: DrizzleClient): Promise<void> => {

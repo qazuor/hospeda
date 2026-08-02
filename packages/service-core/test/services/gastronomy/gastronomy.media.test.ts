@@ -618,3 +618,139 @@ describe('getGastronomyMedia', () => {
         );
     });
 });
+
+// ---------------------------------------------------------------------------
+// removeGastronomyMedia — Cloudinary asset deletion (HOS-372)
+// ---------------------------------------------------------------------------
+
+/**
+ * Regression coverage for the orphaned-asset bug: before HOS-372, removing a
+ * photo deleted only the DB row, so the Cloudinary binary stayed billed forever
+ * with nothing referencing it and no cron sweeping it.
+ *
+ * The contract these tests pin down is ORDERING, not merely "delete was called":
+ * the binary must go first, so that a storage failure leaves the row intact and
+ * the user can retry. Asserting only that both happened would still pass if the
+ * row were dropped first, which is the exact failure mode being prevented.
+ */
+describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
+    /** A row whose binary IS ours to delete (carries a Cloudinary public id). */
+    const cloudinaryRow = () =>
+        makeMediaRow({
+            url: 'https://res.cloudinary.com/demo/image/upload/v1/hospeda/dev/gastronomies/g1/photo.jpg',
+            publicId: 'hospeda/dev/gastronomies/g1/photo'
+        } as Partial<GastronomyMedia>);
+
+    it('should delete the Cloudinary binary BEFORE soft-deleting the row', async () => {
+        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        mockMediaModel.findById.mockResolvedValue(cloudinaryRow());
+        mockMediaModel.findByGastronomy.mockResolvedValue({ items: [], total: 0 });
+
+        // Record the interleaving of both side effects in a single ordered log.
+        const callOrder: string[] = [];
+        const provider = {
+            delete: vi.fn(async () => {
+                callOrder.push('cloudinary');
+                return { wasPresent: true };
+            })
+        };
+        mockMediaModel.softDelete.mockImplementation(async () => {
+            callOrder.push('db');
+            return 1;
+        });
+
+        const result = await removeGastronomyMedia(
+            model as unknown as Parameters<typeof removeGastronomyMedia>[0],
+            ownerActor,
+            { gastronomyId: GASTRONOMY_ID, mediaId: MEDIA_ID },
+            provider as unknown as Parameters<typeof removeGastronomyMedia>[3]
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(provider.delete).toHaveBeenCalledWith({
+            publicId: 'hospeda/dev/gastronomies/g1/photo'
+        });
+        expect(callOrder).toEqual(['cloudinary', 'db']);
+    });
+
+    it('should NOT delete the row when Cloudinary deletion fails', async () => {
+        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        mockMediaModel.findById.mockResolvedValue(cloudinaryRow());
+
+        const provider = {
+            delete: vi.fn(async () => {
+                throw new Error('cloudinary is down');
+            })
+        };
+
+        const result = await removeGastronomyMedia(
+            model as unknown as Parameters<typeof removeGastronomyMedia>[0],
+            ownerActor,
+            { gastronomyId: GASTRONOMY_ID, mediaId: MEDIA_ID },
+            provider as unknown as Parameters<typeof removeGastronomyMedia>[3]
+        );
+
+        // The whole operation aborts: the user retries, nothing is orphaned.
+        expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+        expect(mockMediaModel.softDelete).not.toHaveBeenCalled();
+    });
+
+    it('should treat an already-absent asset as success', async () => {
+        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        mockMediaModel.findById.mockResolvedValue(cloudinaryRow());
+        mockMediaModel.findByGastronomy.mockResolvedValue({ items: [], total: 0 });
+
+        // `wasPresent: false` means the binary was already gone — the goal is
+        // "the asset does not exist", and it already does not.
+        const provider = { delete: vi.fn(async () => ({ wasPresent: false })) };
+
+        const result = await removeGastronomyMedia(
+            model as unknown as Parameters<typeof removeGastronomyMedia>[0],
+            ownerActor,
+            { gastronomyId: GASTRONOMY_ID, mediaId: MEDIA_ID },
+            provider as unknown as Parameters<typeof removeGastronomyMedia>[3]
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(mockMediaModel.softDelete).toHaveBeenCalledWith({ id: MEDIA_ID }, {});
+    });
+
+    it('should still remove the row when no media provider is configured', async () => {
+        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        mockMediaModel.findById.mockResolvedValue(cloudinaryRow());
+        mockMediaModel.findByGastronomy.mockResolvedValue({ items: [], total: 0 });
+
+        // Local dev and CI run without Cloudinary credentials; removing a photo
+        // must not become impossible there.
+        const result = await removeGastronomyMedia(
+            model as unknown as Parameters<typeof removeGastronomyMedia>[0],
+            ownerActor,
+            { gastronomyId: GASTRONOMY_ID, mediaId: MEDIA_ID },
+            null
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(mockMediaModel.softDelete).toHaveBeenCalledWith({ id: MEDIA_ID }, {});
+    });
+
+    it('should not call the provider for a row hosted outside Cloudinary', async () => {
+        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        // Seed fixtures point at external CDNs — there is no binary of ours to
+        // delete, and that must not block the removal.
+        mockMediaModel.findById.mockResolvedValue(makeMediaRow());
+        mockMediaModel.findByGastronomy.mockResolvedValue({ items: [], total: 0 });
+
+        const provider = { delete: vi.fn(async () => ({ wasPresent: true })) };
+
+        const result = await removeGastronomyMedia(
+            model as unknown as Parameters<typeof removeGastronomyMedia>[0],
+            ownerActor,
+            { gastronomyId: GASTRONOMY_ID, mediaId: MEDIA_ID },
+            provider as unknown as Parameters<typeof removeGastronomyMedia>[3]
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(provider.delete).not.toHaveBeenCalled();
+        expect(mockMediaModel.softDelete).toHaveBeenCalledWith({ id: MEDIA_ID }, {});
+    });
+});
