@@ -366,9 +366,25 @@ noise.
 - `ArticleJsonLd`'s `author.url` is populated on the post detail page
   (`publicaciones/[slug].astro:275-276`), which it never was.
 - **New**: an author byline linking to `/autores/<slug>/` on the event detail page.
-  This does not exist today. **Verify first** that `EventPublicSchema` actually carries
-  the author on the detail payload — if it does not, exposing it is a payload change
-  that must be scoped into this spec's task list before the UI work starts.
+  This requires a **payload change**, not just markup. Verified: `EventPublicSchema`
+  (`packages/schemas/src/entities/event/event.access.schema.ts:23-66`) picks
+  `organizerId` and extends with `organizer` + `location`, but carries **neither
+  `authorId` nor an `author` relation**. The event public payload has no author at all.
+
+  The fix is additive and therefore allowed by the package's additive-only compat
+  policy: extend `EventPublicSchema` with `author: UserAuthorPublicSchema.nullish()`,
+  matching the `organizer`/`location` nullish-relation convention already used there
+  (nullish covers both "relation not loaded" and "FK null on the row"). The event
+  service must load the relation for the detail read path.
+
+  Two consequences to keep in view:
+
+  - This widens every public event response, including the cached list routes, with
+    the author's `displayName`/`slug`/`avatar`. That is the same data the author page
+    publishes by decision §6.5, so it exposes nothing new — but it must reuse the
+    existing public projection, never a fuller user shape.
+  - The payload stays **actor-blind**, so `/api/v1/public/events`'s shared caching is
+    unaffected.
 
 ## 7. Data model / contracts
 
@@ -380,6 +396,7 @@ noise.
 | `GET /api/v1/public/authors` | new route + `listPublicAuthors` service | none |
 | `/api/v1/public/authors` added | `PUBLIC_CACHE_ENDPOINTS` | none |
 | `eventsApi.getByAuthor` | `apps/web/src/lib/api/endpoints.ts` | none |
+| `author?: UserAuthorPublic` (nullish relation) | `EventPublicSchema` + event service detail read | none — additive |
 
 No DB migration, no seed data-migration: nothing in `packages/seed/src/data/**` changes.
 
@@ -456,8 +473,9 @@ No DB migration, no seed data-migration: nothing in `packages/seed/src/data/**` 
 - **OQ-3** — Whether `/autores/` (an index of all authors) is worth building later. Out
   of scope here (NG-1), but the `listPublicAuthors` service built for the sitemap is
   most of what it would need.
-- **OQ-4** — Does `EventPublicSchema` carry the author on the detail payload? Blocks
-  G-7; must be answered before the event-byline task starts (§6.9).
+- ~~**OQ-4** — Does `EventPublicSchema` carry the author on the detail payload?~~
+  **Resolved 2026-08-02: no.** It carries neither `authorId` nor an `author` relation.
+  G-7 therefore includes an additive schema + service change, specified in §6.9.
 
 ## 12. Implementation notes
 
