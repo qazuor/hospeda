@@ -17,6 +17,7 @@
 
 import { useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
+import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import type { ExperienceReviewPublicItem } from '@/lib/api/endpoints';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -38,8 +39,13 @@ export interface ExperienceReviewsProps {
     readonly averageRating: number;
     /** Active locale for i18n. */
     readonly locale: SupportedLocale;
-    /** Whether the current user is authenticated (controls submit button visibility). */
-    readonly isAuthenticated: boolean;
+    /**
+     * @deprecated Ignored since HOS-369 WB0-4 — the session is resolved
+     * client-side via `useAccountPermissions`, so the "leave a review" CTA
+     * appears for a signed-in visitor even on cached anonymous HTML. Callers
+     * stop passing it in WB0-5.
+     */
+    readonly isAuthenticated?: boolean;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -90,10 +96,14 @@ export function ExperienceReviews({
     initialReviews,
     totalReviews,
     averageRating,
-    locale,
-    isAuthenticated
+    locale
 }: ExperienceReviewsProps) {
     const { t } = createTranslations(locale);
+
+    // Session resolved client-side (HOS-369 WB0-4). The reviews themselves are
+    // public and stay server-rendered; only the CTA depends on the visitor.
+    const { user } = useAccountPermissions();
+    const isAuthenticated = user !== null;
 
     const [reviews, setReviews] = useState<readonly ExperienceReviewPublicItem[]>(initialReviews);
     const [page, setPage] = useState(1);
