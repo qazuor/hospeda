@@ -25,7 +25,6 @@ import { ReadingProgressBar } from '@/components/post/ReadingProgressBar.client'
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
 import { buildUrl } from '@/lib/urls';
 import { postsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
-import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { pickLocalizedSeo } from '@/lib/seo';
@@ -146,13 +145,9 @@ const authorForCard = authorObj
 	: null;
 
 // --- Auth ---
-const userId = Astro.locals.user?.id ?? null;
-const isAuthenticated = userId !== null;
 
 // --- Bookmark count + favorite status (graceful degradation) ---
 let bookmarkCount: number | undefined;
-let initialIsFavorited: boolean | undefined;
-let initialBookmarkId: string | null = null;
 
 if (postId) {
 	try {
@@ -160,20 +155,6 @@ if (postId) {
 		if (countResult.ok) bookmarkCount = countResult.data.count;
 	} catch { /* graceful */ }
 
-	if (isAuthenticated) {
-		try {
-			const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-			const statusResult = await userBookmarksApi.checkStatus({
-				entityId: postId,
-				entityType: 'POST',
-				cookieHeader
-			});
-			if (statusResult.ok) {
-				initialIsFavorited = statusResult.data.isFavorited;
-				initialBookmarkId = statusResult.data.bookmarkId;
-			}
-		} catch { /* graceful */ }
-	}
 }
 
 // --- Expiry ---
@@ -359,9 +340,6 @@ const breadcrumbItems = [
 			bookmarkCount={bookmarkCount}
 			postId={postId}
 			locale={locale}
-			isAuthenticated={isAuthenticated}
-			initialIsFavorited={initialIsFavorited}
-			initialBookmarkId={initialBookmarkId}
 			author={authorForCard ? {
 				id: authorForCard.id,
 				name: authorForCard.displayName || [authorForCard.firstName, authorForCard.lastName].filter(Boolean).join(' ') || '',
@@ -406,9 +384,7 @@ const breadcrumbItems = [
 			entityType="POST"
 			entityId={postId}
 			locale={locale}
-			isAuthenticated={isAuthenticated}
 			currentUrl={Astro.url.href}
-			currentUserName={Astro.locals.user?.name ?? null}
 		/>
 
 		<!-- Videos (if any) -->

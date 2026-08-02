@@ -252,9 +252,18 @@ export function CommerceTranslationPanel({
                                 className={styles.textarea}
                                 rows={isRich ? 5 : 3}
                                 value={values[field][activeLocale]}
+                                // The locale name MUST travel as an interpolation
+                                // param, not baked into the fallback: the key
+                                // EXISTS in the catalog ("Ingresá el texto en
+                                // {{locale}}..."), so the resolver returns the
+                                // catalog value and discards the fallback
+                                // entirely — the owner saw a literal
+                                // "{{locale}}". Same failure mode as BETA-124's
+                                // summary counter.
                                 placeholder={t(
                                     'commerce.owner.editor.translationPanel.localePlaceholder',
-                                    `Ingresá el texto en ${LOCALE_LABELS[activeLocale]}...`
+                                    `Ingresá el texto en ${LOCALE_LABELS[activeLocale]}...`,
+                                    { locale: LOCALE_LABELS[activeLocale] }
                                 )}
                                 onChange={(event) =>
                                     handleFieldChange(field, activeLocale, event.target.value)

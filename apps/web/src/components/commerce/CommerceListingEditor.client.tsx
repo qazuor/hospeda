@@ -31,7 +31,7 @@ import {
     GastronomyTypeEnum,
     PriceRangeEnum
 } from '@repo/schemas';
-import { type JSX, useCallback, useState } from 'react';
+import { type JSX, useCallback, useMemo, useState } from 'react';
 import type { DestinationOption } from '@/components/gastronomy/CommerceLead.client';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { apiClient } from '@/lib/api/client';
@@ -150,6 +150,178 @@ function nonEmpty(value: string): string | undefined {
 }
 
 /**
+ * All owner-editable form state, held as ONE object (HOS-258 PR 1).
+ *
+ * Mirrors `AccommodationEditData` in the host editor: the orchestrator owns this
+ * object plus a `baseline` snapshot, and the PATCH body is the diff between the
+ * two. It replaces the 18 independent `useState` slots + manual `dirty` Set this
+ * editor used to carry, which made per-section extraction impossible.
+ *
+ * `preservedMedia` is deliberately NOT part of this type — it is never editable,
+ * never diffed, and only rides along on a media patch (see `buildPatchPayload`).
+ */
+interface CommerceEditData {
+    readonly name: string;
+    readonly destinationId: string;
+    readonly description: string;
+    readonly listingType: string;
+    readonly summary: string;
+    readonly richDescription: string;
+    readonly contact: ContactValues;
+    readonly social: SocialValues;
+    readonly openingHours: OpeningHours | null;
+    readonly priceRange: string;
+    readonly menuUrl: string;
+    readonly isPriceOnRequest: boolean;
+    readonly priceFrom: number | null;
+    readonly priceUnit: string;
+    readonly featuredImage: Image | null;
+    readonly gallery: readonly Image[];
+    readonly amenityIds: ReadonlySet<string>;
+    readonly featureIds: ReadonlySet<string>;
+    readonly i18nValues: CommerceI18nValues;
+}
+
+/**
+ * Structural comparison for the nested values (openingHours, media, i18n).
+ *
+ * A serialization compare is key-order sensitive, so it can report a change
+ * where none exists. That direction is harmless: a false positive sends a
+ * redundant-but-correct value in the PATCH. The dangerous direction — reporting
+ * "unchanged" for a real edit, which would silently drop the owner's work —
+ * cannot be produced by key reordering, only by equal content. Every value
+ * compared here is rebuilt by spreading the previous object, so ordering is
+ * stable in practice anyway.
+ */
+function sameValue(a: unknown, b: unknown): boolean {
+    return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+}
+
+/** Set equality by membership (order-independent). */
+function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
+    return a.size === b.size && [...a].every((id) => b.has(id));
+}
+
+/**
+ * Build the PATCH body as the diff between the edited form and the last
+ * persisted snapshot.
+ *
+ * This is NOT a uniform per-leaf diff, and the asymmetries are load-bearing:
+ *
+ *  - `contactInfo` / `socialNetworks` / `media` are JSONB blocks the API
+ *    REPLACES rather than merges, so the whole block ships whenever any member
+ *    changed — sending only the changed leaf would wipe the others.
+ *  - The four i18n fields travel together, as the translation panel edits them
+ *    as one unit.
+ *  - Gastronomy's `priceRange`/`menuUrl` are `.nullish()` on the domain schema
+ *    and clear to an explicit `null`; experience's `priceFrom`/`priceUnit` are
+ *    NOT nullable and must omit the key instead (T-021 — sending `null` there
+ *    fails validation whenever the owner clears the field).
+ *  - `preservedMedia` (videos / archivedGallery) is re-sent with every media
+ *    patch because the owner never edits it and the block is replaced wholesale.
+ */
+function buildPatchPayload({
+    current,
+    baseline,
+    vertical,
+    preservedMedia
+}: {
+    current: CommerceEditData;
+    baseline: CommerceEditData;
+    vertical: CommerceVertical;
+    preservedMedia: Record<string, unknown>;
+}): Record<string, unknown> {
+    const payload: Record<string, unknown> = {};
+
+    if (current.name !== baseline.name) {
+        payload.name = current.name;
+    }
+    if (current.destinationId !== baseline.destinationId) {
+        payload.destinationId = current.destinationId || undefined;
+    }
+    if (current.listingType !== baseline.listingType) {
+        payload.type = current.listingType || undefined;
+    }
+    if (current.summary !== baseline.summary) {
+        payload.summary = current.summary || undefined;
+    }
+    if (current.description !== baseline.description) {
+        payload.description = current.description || undefined;
+    }
+    if (current.richDescription !== baseline.richDescription) {
+        payload.richDescription = current.richDescription;
+    }
+
+    if (!sameValue(current.i18nValues, baseline.i18nValues)) {
+        payload.nameI18n = current.i18nValues.nameI18n;
+        payload.summaryI18n = current.i18nValues.summaryI18n;
+        payload.descriptionI18n = current.i18nValues.descriptionI18n;
+        payload.richDescriptionI18n = current.i18nValues.richDescriptionI18n;
+    }
+
+    if (!sameValue(current.contact, baseline.contact)) {
+        payload.contactInfo = {
+            mobilePhone: nonEmpty(current.contact.mobilePhone),
+            workEmail: nonEmpty(current.contact.workEmail)
+        };
+    }
+
+    if (SOCIAL_KEYS.some((key) => current.social[key] !== baseline.social[key])) {
+        payload.socialNetworks = {
+            facebook: nonEmpty(current.social.facebook),
+            instagram: nonEmpty(current.social.instagram),
+            twitter: nonEmpty(current.social.twitter),
+            tiktok: nonEmpty(current.social.tiktok),
+            youtube: nonEmpty(current.social.youtube),
+            linkedIn: nonEmpty(current.social.linkedIn)
+        };
+    }
+
+    if (!sameValue(current.openingHours, baseline.openingHours)) {
+        payload.openingHours = current.openingHours;
+    }
+
+    if (
+        !sameValue(current.featuredImage, baseline.featuredImage) ||
+        !sameValue(current.gallery, baseline.gallery)
+    ) {
+        payload.media = {
+            ...preservedMedia,
+            ...(current.featuredImage ? { featuredImage: current.featuredImage } : {}),
+            gallery: current.gallery
+        };
+    }
+
+    if (!sameSet(current.amenityIds, baseline.amenityIds)) {
+        payload.amenityIds = [...current.amenityIds];
+    }
+    if (!sameSet(current.featureIds, baseline.featureIds)) {
+        payload.featureIds = [...current.featureIds];
+    }
+
+    if (vertical === 'gastronomy') {
+        if (current.priceRange !== baseline.priceRange) {
+            payload.priceRange = current.priceRange || null;
+        }
+        if (current.menuUrl !== baseline.menuUrl) {
+            payload.menuUrl = current.menuUrl || null;
+        }
+    } else {
+        if (current.isPriceOnRequest !== baseline.isPriceOnRequest) {
+            payload.isPriceOnRequest = current.isPriceOnRequest;
+        }
+        if (current.priceFrom !== baseline.priceFrom) {
+            payload.priceFrom = current.priceFrom ?? undefined;
+        }
+        if (current.priceUnit !== baseline.priceUnit) {
+            payload.priceUnit = current.priceUnit || undefined;
+        }
+    }
+
+    return payload;
+}
+
+/**
  * Owner operational editor. Tracks which field groups changed and PATCHes ONLY
  * the dirty subset, so an owner who edits one section never re-submits the rest.
  */
@@ -190,56 +362,10 @@ export function CommerceListingEditor({
     // the schema — see `GastronomyOwnerUpdateInputSchema`/
     // `ExperienceOwnerUpdateInputSchema` — but the FORM never exposed it,
     // leaving it settable only at create, contradicting AC-19).
-    const [name, setName] = useState<string>(strField(data, 'name'));
-    const [destinationId, setDestinationId] = useState<string>(strField(data, 'destinationId'));
-    const [description, setDescription] = useState<string>(strField(data, 'description'));
-
-    // T-020: type select state (per-vertical enum value)
-    const [listingType, setListingType] = useState<string>(strField(data, 'type'));
-
-    // T-020: summary textarea state (min 10 / max 300) — validated by `schema`
-    // via `fieldErrors.summary` now (see `handleSubmit`); no local ad hoc check.
-    const [summary, setSummary] = useState<string>(strField(data, 'summary'));
-
-    const [richDescription, setRichDescription] = useState<string>(
-        strField(data, 'richDescription')
-    );
-    // T-020: website removed from contact per AC-4; mobilePhone + workEmail only
-    const [contact, setContact] = useState<ContactValues>({
-        mobilePhone: strField(initialContact, 'mobilePhone'),
-        workEmail: strField(initialContact, 'workEmail')
-    });
-    // T-020: added linkedIn to social per AC-4
-    const [social, setSocial] = useState<SocialValues>({
-        facebook: strField(initialSocial, 'facebook'),
-        instagram: strField(initialSocial, 'instagram'),
-        twitter: strField(initialSocial, 'twitter'),
-        tiktok: strField(initialSocial, 'tiktok'),
-        youtube: strField(initialSocial, 'youtube'),
-        linkedIn: strField(initialSocial, 'linkedIn')
-    });
-    const [openingHours, setOpeningHours] = useState<OpeningHours | null>(
-        (data.openingHours as OpeningHours | null | undefined) ?? null
-    );
-    const [priceRange, setPriceRange] = useState<string>(strField(data, 'priceRange'));
-    const [menuUrl, setMenuUrl] = useState<string>(strField(data, 'menuUrl'));
-    const [isPriceOnRequest, setIsPriceOnRequest] = useState<boolean>(
-        data.isPriceOnRequest === true
-    );
-    // T-021: experience-only pricing fields
-    const [priceFrom, setPriceFrom] = useState<number | null>(
-        typeof data.priceFrom === 'number' ? data.priceFrom : null
-    );
-    const [priceUnit, setPriceUnit] = useState<string>(strField(data, 'priceUnit'));
-    const [featuredImage, setFeaturedImage] = useState<Image | null>(
-        (initialMedia.featuredImage as Image | undefined) ?? null
-    );
-    const [gallery, setGallery] = useState<readonly Image[]>(
-        (initialMedia.gallery as Image[] | undefined) ?? []
-    );
     // Media JSONB is REPLACED wholesale on save (gastronomy/experience do not
     // merge it), so preserve the owner-unmanaged sub-fields (videos,
-    // archivedGallery) and re-send them with every media patch.
+    // archivedGallery) and re-send them with every media patch. Deliberately
+    // outside `formData`: never editable, never diffed.
     const [preservedMedia] = useState<Record<string, unknown>>(() => {
         const preserved: Record<string, unknown> = {};
         if (Array.isArray(initialMedia.videos)) {
@@ -250,186 +376,68 @@ export function CommerceListingEditor({
         }
         return preserved;
     });
-    const [amenityIds, setAmenityIds] = useState<ReadonlySet<string>>(
-        () => new Set((data.amenityIds as string[] | undefined) ?? [])
-    );
-    const [featureIds, setFeatureIds] = useState<ReadonlySet<string>>(
-        () => new Set((data.featureIds as string[] | undefined) ?? [])
-    );
 
-    // T-023: i18n fields state (nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n)
-    const [i18nValues, setI18nValues] = useState<CommerceI18nValues>(() =>
-        parseCommerceI18nValues(data)
-    );
-
-    const [dirty, setDirty] = useState<ReadonlySet<string>>(new Set());
-    const [status, setStatus] = useState<SaveStatus>({ kind: 'idle' });
-
-    const markDirty = useCallback((field: string) => {
-        setDirty((prev) => {
-            const next = new Set(prev);
-            next.add(field);
-            return next;
-        });
-        setStatus({ kind: 'idle' });
-    }, []);
-
-    const updateContact = useCallback(
-        (patch: Partial<ContactValues>) => {
-            setContact((prev) => ({ ...prev, ...patch }));
-            markDirty('contactInfo');
+    // HOS-166 D-1: name + destinationId + description are identity fields the
+    // owner may edit (description was widened alongside name/destinationId on
+    // the schema — see `GastronomyOwnerUpdateInputSchema`/
+    // `ExperienceOwnerUpdateInputSchema` — but the FORM never exposed it,
+    // leaving it settable only at create, contradicting AC-19).
+    const buildInitialEditData = (): CommerceEditData => ({
+        name: strField(data, 'name'),
+        destinationId: strField(data, 'destinationId'),
+        description: strField(data, 'description'),
+        // T-020: type select state (per-vertical enum value)
+        listingType: strField(data, 'type'),
+        // T-020: summary (min 10 / max 300) — validated by `schema` through
+        // `fieldErrors.summary`; no local ad hoc check.
+        summary: strField(data, 'summary'),
+        richDescription: strField(data, 'richDescription'),
+        // T-020: website removed from contact per AC-4; mobilePhone + workEmail only
+        contact: {
+            mobilePhone: strField(initialContact, 'mobilePhone'),
+            workEmail: strField(initialContact, 'workEmail')
         },
-        [markDirty]
-    );
-
-    const updateSocial = useCallback(
-        (key: keyof SocialValues, val: string) => {
-            setSocial((prev) => ({ ...prev, [key]: val }));
-            markDirty('socialNetworks');
+        // T-020: added linkedIn to social per AC-4
+        social: {
+            facebook: strField(initialSocial, 'facebook'),
+            instagram: strField(initialSocial, 'instagram'),
+            twitter: strField(initialSocial, 'twitter'),
+            tiktok: strField(initialSocial, 'tiktok'),
+            youtube: strField(initialSocial, 'youtube'),
+            linkedIn: strField(initialSocial, 'linkedIn')
         },
-        [markDirty]
-    );
+        openingHours: (data.openingHours as OpeningHours | null | undefined) ?? null,
+        priceRange: strField(data, 'priceRange'),
+        menuUrl: strField(data, 'menuUrl'),
+        isPriceOnRequest: data.isPriceOnRequest === true,
+        // T-021: experience-only pricing fields
+        priceFrom: typeof data.priceFrom === 'number' ? data.priceFrom : null,
+        priceUnit: strField(data, 'priceUnit'),
+        featuredImage: (initialMedia.featuredImage as Image | undefined) ?? null,
+        gallery: (initialMedia.gallery as Image[] | undefined) ?? [],
+        amenityIds: new Set((data.amenityIds as string[] | undefined) ?? []),
+        featureIds: new Set((data.featureIds as string[] | undefined) ?? []),
+        // T-023: i18n fields (nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n)
+        i18nValues: parseCommerceI18nValues(data)
+    });
 
-    const updateMedia = useCallback(
-        (next: { readonly featuredImage: Image | null; readonly gallery: readonly Image[] }) => {
-            setFeaturedImage(next.featuredImage);
-            setGallery(next.gallery);
-            markDirty('media');
-        },
-        [markDirty]
-    );
+    const [formData, setFormData] = useState<CommerceEditData>(buildInitialEditData);
+    // The PATCH diff is computed against this MUTABLE baseline, resynced to the
+    // persisted values after every successful save — mirroring the accommodation
+    // editor (HOS-190 F6). Diffing against the load-time `initialData` prop
+    // instead would make reverting a just-saved field produce an empty diff
+    // while the DB still held the new value, leaving the owner unable to undo
+    // the change without a full page reload.
+    const [baseline, setBaseline] = useState<CommerceEditData>(buildInitialEditData);
 
-    const toggleAmenity = useCallback(
-        (id: string) => {
-            setAmenityIds((prev) => {
-                const next = new Set(prev);
-                if (next.has(id)) {
-                    next.delete(id);
-                } else {
-                    next.add(id);
-                }
-                return next;
-            });
-            markDirty('amenityIds');
-        },
-        [markDirty]
-    );
-
-    const toggleFeature = useCallback(
-        (id: string) => {
-            setFeatureIds((prev) => {
-                const next = new Set(prev);
-                if (next.has(id)) {
-                    next.delete(id);
-                } else {
-                    next.add(id);
-                }
-                return next;
-            });
-            markDirty('featureIds');
-        },
-        [markDirty]
-    );
-
-    /** Handle i18n panel changes — marks all four i18n fields dirty at once. */
-    const handleI18nChange = useCallback(
-        (updated: CommerceI18nValues) => {
-            setI18nValues(updated);
-            markDirty('i18n');
-        },
-        [markDirty]
-    );
-
-    /** Build the PATCH payload from the dirty field groups only. */
-    const buildPayload = useCallback((): Record<string, unknown> => {
-        const payload: Record<string, unknown> = {};
-        if (dirty.has('name')) {
-            payload.name = name;
-        }
-        if (dirty.has('destinationId')) {
-            payload.destinationId = destinationId || undefined;
-        }
-        if (dirty.has('type')) {
-            payload.type = listingType || undefined;
-        }
-        if (dirty.has('summary')) {
-            payload.summary = summary || undefined;
-        }
-        if (dirty.has('description')) {
-            payload.description = description || undefined;
-        }
-        // T-023: include i18n fields when any locale was edited
-        if (dirty.has('i18n')) {
-            payload.nameI18n = i18nValues.nameI18n;
-            payload.summaryI18n = i18nValues.summaryI18n;
-            payload.descriptionI18n = i18nValues.descriptionI18n;
-            payload.richDescriptionI18n = i18nValues.richDescriptionI18n;
-        }
-        if (dirty.has('richDescription')) {
-            payload.richDescription = richDescription;
-        }
-        if (dirty.has('contactInfo')) {
-            payload.contactInfo = {
-                mobilePhone: nonEmpty(contact.mobilePhone),
-                workEmail: nonEmpty(contact.workEmail)
-            };
-        }
-        if (dirty.has('socialNetworks')) {
-            payload.socialNetworks = {
-                facebook: nonEmpty(social.facebook),
-                instagram: nonEmpty(social.instagram),
-                twitter: nonEmpty(social.twitter),
-                tiktok: nonEmpty(social.tiktok),
-                youtube: nonEmpty(social.youtube),
-                linkedIn: nonEmpty(social.linkedIn)
-            };
-        }
-        if (dirty.has('openingHours')) {
-            payload.openingHours = openingHours;
-        }
-        if (dirty.has('media')) {
-            payload.media = {
-                ...preservedMedia,
-                ...(featuredImage ? { featuredImage } : {}),
-                gallery
-            };
-        }
-        if (dirty.has('amenityIds')) {
-            payload.amenityIds = [...amenityIds];
-        }
-        if (dirty.has('featureIds')) {
-            payload.featureIds = [...featureIds];
-        }
-        if (dirty.has('priceRange')) {
-            payload.priceRange = priceRange || null;
-        }
-        if (dirty.has('menuUrl')) {
-            payload.menuUrl = menuUrl || null;
-        }
-        if (dirty.has('isPriceOnRequest')) {
-            payload.isPriceOnRequest = isPriceOnRequest;
-        }
-        // T-021: experience-only. `priceFrom`/`priceUnit` on `ExperienceSchema`
-        // (`z.number().int().nonnegative()` / a native-enum schema) do NOT
-        // accept `null` — unlike gastronomy's `priceRange`/`menuUrl` above,
-        // which ARE `.nullish()` on the domain schema. Sending `null` here used
-        // to fail validation whenever the owner cleared the field; send
-        // `undefined` (omit the key = "no change") instead.
-        if (dirty.has('priceFrom')) {
-            payload.priceFrom = priceFrom ?? undefined;
-        }
-        if (dirty.has('priceUnit')) {
-            payload.priceUnit = priceUnit || undefined;
-        }
-        return payload;
-    }, [
-        dirty,
+    // Destructured so every value READ in the JSX below is untouched by the
+    // HOS-258 state consolidation — only the change handlers moved.
+    const {
         name,
         destinationId,
+        description,
         listingType,
         summary,
-        description,
-        i18nValues,
         richDescription,
         contact,
         social,
@@ -441,23 +449,108 @@ export function CommerceListingEditor({
         priceUnit,
         featuredImage,
         gallery,
-        preservedMedia,
         amenityIds,
-        featureIds
-    ]);
+        featureIds,
+        i18nValues
+    } = formData;
+
+    const [status, setStatus] = useState<SaveStatus>({ kind: 'idle' });
+
+    /**
+     * Generic single-field change, shared by every scalar input in the form —
+     * the commerce counterpart of the accommodation editor's
+     * `handleTextFieldChange`. Resets any stale save status, exactly as the
+     * former `markDirty` did.
+     */
+    const onFieldChange = useCallback(
+        <K extends keyof CommerceEditData>(field: K, value: CommerceEditData[K]) => {
+            setFormData((prev) => ({ ...prev, [field]: value }));
+            setStatus({ kind: 'idle' });
+        },
+        []
+    );
+
+    const updateContact = useCallback((patch: Partial<ContactValues>) => {
+        setFormData((prev) => ({ ...prev, contact: { ...prev.contact, ...patch } }));
+        setStatus({ kind: 'idle' });
+    }, []);
+
+    const updateSocial = useCallback((key: keyof SocialValues, val: string) => {
+        setFormData((prev) => ({ ...prev, social: { ...prev.social, [key]: val } }));
+        setStatus({ kind: 'idle' });
+    }, []);
+
+    const updateMedia = useCallback(
+        (next: { readonly featuredImage: Image | null; readonly gallery: readonly Image[] }) => {
+            setFormData((prev) => ({
+                ...prev,
+                featuredImage: next.featuredImage,
+                gallery: next.gallery
+            }));
+            setStatus({ kind: 'idle' });
+        },
+        []
+    );
+
+    const toggleAmenity = useCallback((id: string) => {
+        setFormData((prev) => {
+            const next = new Set(prev.amenityIds);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+            return { ...prev, amenityIds: next };
+        });
+        setStatus({ kind: 'idle' });
+    }, []);
+
+    const toggleFeature = useCallback((id: string) => {
+        setFormData((prev) => {
+            const next = new Set(prev.featureIds);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+            return { ...prev, featureIds: next };
+        });
+        setStatus({ kind: 'idle' });
+    }, []);
+
+    /** Handle i18n panel changes — the four i18n fields travel as one unit. */
+    const handleI18nChange = useCallback((updated: CommerceI18nValues) => {
+        setFormData((prev) => ({ ...prev, i18nValues: updated }));
+        setStatus({ kind: 'idle' });
+    }, []);
+
+    /**
+     * The PATCH body: the diff between the edited form and the last persisted
+     * snapshot (see `buildPatchPayload` for the per-field contract). Memoized so
+     * `canSave` can be derived from it without rebuilding the payload on every
+     * render.
+     */
+    const patchPayload = useMemo(
+        () => buildPatchPayload({ current: formData, baseline, vertical, preservedMedia }),
+        [formData, baseline, vertical, preservedMedia]
+    );
 
     const handleSubmit = useCallback(
         async (event: React.FormEvent<HTMLFormElement>) => {
             event.preventDefault();
-            if (dirty.size === 0) {
+            if (Object.keys(patchPayload).length === 0) {
                 return;
             }
 
-            const payload = buildPayload();
+            const payload = patchPayload;
+            // Snapshot the values this request persists, so the baseline resync
+            // below records exactly what was saved even if the owner keeps
+            // typing while the request is in flight.
+            const persisted = formData;
 
-            // Full dirty-payload validation against the real per-vertical
-            // owner-update schema (see `schema` above) — replaces the two ad
-            // hoc summary/priceFrom checks this editor previously ran by hand.
+            // Full payload validation against the real per-vertical owner-update
+            // schema (see `schema` above) — replaces the two ad hoc
+            // summary/priceFrom checks this editor previously ran by hand.
             const parsed = validate(payload);
             if (!parsed.success) {
                 return;
@@ -471,7 +564,7 @@ export function CommerceListingEditor({
             });
 
             if (result.ok) {
-                setDirty(new Set());
+                setBaseline(persisted);
                 setStatus({ kind: 'idle' });
                 addToast({
                     type: 'success',
@@ -489,11 +582,13 @@ export function CommerceListingEditor({
                 setStatus({ kind: 'error' });
             }
         },
-        [dirty, vertical, listingId, buildPayload, validate, handleApiError, t]
+        [patchPayload, formData, vertical, listingId, validate, handleApiError, t]
     );
 
     const isSaving = status.kind === 'saving';
-    const canSave = dirty.size > 0 && !isSaving;
+    // Derived from the diff, so reverting an edit by hand disables the button
+    // again — the accommodation editor behaves the same way.
+    const canSave = Object.keys(patchPayload).length > 0 && !isSaving;
 
     const typeOptions =
         vertical === 'gastronomy' ? GASTRONOMY_TYPE_OPTIONS : EXPERIENCE_TYPE_OPTIONS;
@@ -521,8 +616,7 @@ export function CommerceListingEditor({
                     aria-invalid={fieldErrors.name ? 'true' : 'false'}
                     aria-describedby={fieldErrors.name ? fieldErrorId('name') : undefined}
                     onChange={(event) => {
-                        setName(event.target.value);
-                        markDirty('name');
+                        onFieldChange('name', event.target.value);
                     }}
                 />
                 <FieldError
@@ -564,8 +658,7 @@ export function CommerceListingEditor({
                             fieldErrors.destinationId ? fieldErrorId('destinationId') : undefined
                         }
                         onChange={(event) => {
-                            setDestinationId(event.target.value);
-                            markDirty('destinationId');
+                            onFieldChange('destinationId', event.target.value);
                         }}
                     >
                         <option value="">—</option>
@@ -615,8 +708,7 @@ export function CommerceListingEditor({
                     className={styles.input}
                     value={listingType}
                     onChange={(event) => {
-                        setListingType(event.target.value);
-                        markDirty('type');
+                        onFieldChange('listingType', event.target.value);
                     }}
                 >
                     <option value="">—</option>
@@ -651,8 +743,7 @@ export function CommerceListingEditor({
                         fieldErrors.summary ? fieldErrorId('summary') : 'ce-summary-hint'
                     }
                     onChange={(event) => {
-                        setSummary(event.target.value);
-                        markDirty('summary');
+                        onFieldChange('summary', event.target.value);
                     }}
                 />
                 <span
@@ -689,8 +780,7 @@ export function CommerceListingEditor({
                         fieldErrors.description ? fieldErrorId('description') : undefined
                     }
                     onChange={(event) => {
-                        setDescription(event.target.value);
-                        markDirty('description');
+                        onFieldChange('description', event.target.value);
                     }}
                 />
                 <FieldError
@@ -712,8 +802,7 @@ export function CommerceListingEditor({
                     value={richDescription}
                     rows={6}
                     onChange={(event) => {
-                        setRichDescription(event.target.value);
-                        markDirty('richDescription');
+                        onFieldChange('richDescription', event.target.value);
                     }}
                 />
             </section>
@@ -798,8 +887,7 @@ export function CommerceListingEditor({
                     value={openingHours}
                     classes={styles}
                     onChange={(next) => {
-                        setOpeningHours(next);
-                        markDirty('openingHours');
+                        onFieldChange('openingHours', next);
                     }}
                 />
                 <FieldError
@@ -858,8 +946,7 @@ export function CommerceListingEditor({
                         className={styles.input}
                         value={priceRange}
                         onChange={(event) => {
-                            setPriceRange(event.target.value);
-                            markDirty('priceRange');
+                            onFieldChange('priceRange', event.target.value);
                         }}
                     >
                         <option value="">—</option>
@@ -888,8 +975,7 @@ export function CommerceListingEditor({
                         aria-invalid={fieldErrors.menuUrl ? 'true' : 'false'}
                         aria-describedby={fieldErrors.menuUrl ? fieldErrorId('menuUrl') : undefined}
                         onChange={(event) => {
-                            setMenuUrl(event.target.value);
-                            markDirty('menuUrl');
+                            onFieldChange('menuUrl', event.target.value);
                         }}
                     />
                     <FieldError
@@ -905,8 +991,7 @@ export function CommerceListingEditor({
                             type="checkbox"
                             checked={isPriceOnRequest}
                             onChange={(event) => {
-                                setIsPriceOnRequest(event.target.checked);
-                                markDirty('isPriceOnRequest');
+                                onFieldChange('isPriceOnRequest', event.target.checked);
                             }}
                         />
                         {t('commerce.owner.editor.sections.isPriceOnRequest', 'Precio a consultar')}
@@ -934,8 +1019,7 @@ export function CommerceListingEditor({
                         onChange={(event) => {
                             const raw = event.target.value;
                             const parsed = raw === '' ? null : Math.floor(Number(raw));
-                            setPriceFrom(parsed);
-                            markDirty('priceFrom');
+                            onFieldChange('priceFrom', parsed);
                         }}
                     />
                     <FieldError
@@ -960,8 +1044,7 @@ export function CommerceListingEditor({
                             fieldErrors.priceUnit ? fieldErrorId('priceUnit') : undefined
                         }
                         onChange={(event) => {
-                            setPriceUnit(event.target.value);
-                            markDirty('priceUnit');
+                            onFieldChange('priceUnit', event.target.value);
                         }}
                     >
                         <option value="">—</option>

@@ -19,9 +19,7 @@ import { AccommodationsListingMap } from '@/components/maps/AccommodationsListin
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
 import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
-import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
-import { webLogger } from '@/lib/logger';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -41,7 +39,6 @@ const { t: tPt } = createTranslations('pt');
 
 // SPEC-098 T-044: Pass authentication state to AccommodationsListingMap so
 // the popup FavoriteButton can behave correctly for guests vs. signed-in users.
-const isAuthenticated = !!Astro.locals.user;
 
 // Map view fetches up to MAP_FETCH_CAP items in the current viewport bbox.
 // No traditional pagination — clusters keep rendering manageable.
@@ -67,7 +64,6 @@ Astro.response.headers.set(
 	'Cache-Control',
 	resolveListingCacheControl({
 		cacheable:
-			!isAuthenticated &&
 			!url.searchParams.has('types') &&
 			!hasActiveAccommodationListingFilters({ searchParams: url.searchParams })
 	})
@@ -194,41 +190,11 @@ const baseCards = items.map((item) => toAccommodationCardProps({ item: item as u
 //
 // On any failure we degrade silently: each FavoriteButton can still hydrate
 // itself via its own /check fallback, so the page render is never blocked.
-type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
-let favoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
-if (isAuthenticated && baseCards.length > 0) {
-	try {
-		const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-		const bulkResult = await userBookmarksApi.checkBulk({
-			entityType: 'ACCOMMODATION',
-			entityIds: baseCards.map((card) => card.id),
-			cookieHeader
-		});
-		if (bulkResult.ok) {
-			favoriteChecks = bulkResult.data.checks;
-		} else {
-			webLogger.warn(
-				'Bulk bookmark check failed; falling back to per-card hydration',
-				{ error: bulkResult.error }
-			);
-		}
-	} catch (error) {
-		webLogger.warn(
-			'Bulk bookmark check threw; falling back to per-card hydration',
-			{ error: error instanceof Error ? error.message : String(error) }
-		);
-	}
-}
 
-const cards = baseCards.map((card) => {
-	const entry = favoriteChecks[card.id];
-	if (!entry) return card;
-	return {
-		...card,
-		isFavorited: entry.isBookmarked,
-		favoriteBookmarkId: entry.bookmarkId
-	};
-});
+// HOS-369 WB0-5: favourite state is per-user, so it is no longer resolved
+// here — the hearts resolve it themselves after hydration, once per page load
+// for the whole grid (`store/favorites-store`).
+const cards = baseCards;
 
 const LITORAL_CENTER: [number, number] = [-31.8, -58.5];
 const LITORAL_ZOOM = 8;
@@ -489,7 +455,7 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		title={t('accommodations.title', 'Alojamientos')}
 	/>
 
-	<CompareModeControls slot="page-header" locale={locale} isAuthenticated={isAuthenticated} />
+	<CompareModeControls slot="page-header" locale={locale} />
 
 	<FilterSidebar
 		slot="filters"
@@ -556,7 +522,6 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 				ctaLabel={`${t('common.readMore', 'Ver más')} →`}
 				amenitiesLabel={t('home.accommodations.amenities.label', 'Amenidades')}
 				showSidebar={true}
-				isAuthenticated={isAuthenticated}
 				locale={locale}
 				sidebarI18n={{
 					resultsHeading: t('maps.sidebar.resultsHeading', 'Resultados en el mapa'),

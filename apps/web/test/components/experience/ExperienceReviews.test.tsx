@@ -15,6 +15,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExperienceReviews } from '@/components/experience/ExperienceReviews.client';
 import type { ExperienceReviewPublicItem } from '../../../src/lib/api/endpoints';
+import { buildAuthSnapshot } from '../../helpers/auth-session';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
@@ -51,16 +52,34 @@ const REVIEW_2: ExperienceReviewPublicItem = {
     user: { name: 'Bob', image: null }
 };
 
+// HOS-369 WB0-4: the component resolves the session client-side via
+// `useAccountPermissions`, which reads `auth-cache`. See test/helpers/auth-session.ts.
+const mockReadCachedAuthMe = vi.fn();
+
+vi.mock('@/lib/auth-cache', () => ({
+    readCachedAuthMe: () => mockReadCachedAuthMe(),
+    fetchAuthMe: () => new Promise(() => undefined),
+    writeCachedAuthMe: () => undefined,
+    resetInFlightAuthMe: () => undefined
+}));
+
 const DEFAULT_PROPS = {
     experienceId: 'exp-abc',
     initialReviews: [REVIEW_1] as readonly ExperienceReviewPublicItem[],
     totalReviews: 6,
     averageRating: 4.5,
-    locale: 'es' as const,
-    isAuthenticated: false
+    locale: 'es' as const
 };
 
-function renderReviews(overrides: Partial<typeof DEFAULT_PROPS> = {}) {
+/**
+ * Render the section for a guest by default. `isAuthenticated` is no longer a
+ * prop — it arranges the session the component resolves.
+ */
+function renderReviews({
+    isAuthenticated = false,
+    ...overrides
+}: Partial<typeof DEFAULT_PROPS> & { readonly isAuthenticated?: boolean } = {}) {
+    mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated }));
     return render(
         <ExperienceReviews
             {...DEFAULT_PROPS}
@@ -100,6 +119,26 @@ describe('ExperienceReviews', () => {
         it('hides "load more" when total matches initial count', () => {
             renderReviews({ totalReviews: 1 });
             expect(screen.queryByRole('button', { name: /más reseñas/i })).not.toBeInTheDocument();
+        });
+    });
+
+    describe('client-side session resolution (HOS-369 WB0-4)', () => {
+        it('hides the review CTA for a guest', () => {
+            renderReviews({ isAuthenticated: false });
+            expect(screen.queryByText('Dejar reseña')).not.toBeInTheDocument();
+        });
+
+        it('shows the review CTA for a signed-in visitor even when the SSR prop says guest', () => {
+            // Cached anonymous HTML served to a reader who has a session.
+            mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
+            render(
+                <ExperienceReviews
+                    {...DEFAULT_PROPS}
+                    isAuthenticated={false}
+                />
+            );
+
+            expect(screen.getByText('Dejar reseña')).toBeInTheDocument();
         });
     });
 
