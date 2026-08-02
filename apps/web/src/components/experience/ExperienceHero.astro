@@ -36,11 +36,8 @@ interface Props {
     readonly experience: ExperienceDetailData;
     readonly locale: SupportedLocale;
     /** Whether the current user is authenticated (forwarded to FavoriteButton). */
-    readonly isAuthenticated?: boolean;
     /** SSR-resolved initial favorite state for the current user. */
-    readonly initialIsFavorited?: boolean;
     /** SSR-resolved bookmark id for toggling off without a re-check. */
-    readonly initialBookmarkId?: string | null;
     /** Total bookmark count from the public API. */
     readonly bookmarkCount?: number;
 }
@@ -48,9 +45,6 @@ interface Props {
 const {
     experience,
     locale,
-    isAuthenticated = false,
-    initialIsFavorited,
-    initialBookmarkId = null,
     bookmarkCount,
 } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
@@ -144,13 +138,10 @@ const isNew = experience.createdAt
                 client:load
                 entityId={experience.id}
                 entityType="EXPERIENCE"
-                initialIsFavorited={initialIsFavorited}
-                initialBookmarkId={initialBookmarkId}
                 count={bookmarkCount}
                 variant="standalone"
                 showCount={true}
                 locale={locale}
-                isAuthenticated={isAuthenticated}
             />
         </div>
     </div>

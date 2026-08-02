@@ -27,10 +27,8 @@ describe('CompareModeControls.astro (HOS-85 T-005)', () => {
         expect(src).toContain("import { CompareModeToggle } from './CompareModeToggle.client'");
     });
 
-    it('mounts CompareModeToggle with client:idle, the locale prop, and the isAuthenticated prop', () => {
-        expect(src).toMatch(
-            /<CompareModeToggle\s+client:idle\s+locale=\{locale\}\s+isAuthenticated=\{isAuthenticated\}\s*\/>/
-        );
+    it('mounts CompareModeToggle with client:idle and the locale prop', () => {
+        expect(src).toMatch(/<CompareModeToggle\s+client:idle\s+locale=\{locale\}\s*\/>/);
     });
 
     it('does not import or mount CompareModeBanner (removed post-review)', () => {
@@ -45,11 +43,11 @@ describe('CompareModeControls.astro (HOS-85 T-005)', () => {
         expect(src).toContain('readonly locale: SupportedLocale');
     });
 
-    it('declares a readonly isAuthenticated prop', () => {
-        expect(src).toContain('readonly isAuthenticated: boolean');
-    });
-
-    it('destructures isAuthenticated from Astro.props', () => {
-        expect(src).toContain('const { locale, isAuthenticated } = Astro.props;');
+    it('forwards nothing about the visitor (HOS-369 WB0-4)', () => {
+        // The toggle resolves the session client-side. A wrapper that took an
+        // `isAuthenticated` prop would force every page mounting it to compute
+        // the session, which is what kept the listings out of the edge cache.
+        expect(src).not.toContain('isAuthenticated');
+        expect(src).toContain('const { locale } = Astro.props;');
     });
 });

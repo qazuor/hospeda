@@ -23,7 +23,6 @@ import { buildUrl } from '@/lib/urls';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { category: catSlug } = Astro.params;
-const isAuthenticated = Boolean(Astro.locals.user);
 
 // Normalize the slug to lowercase so uppercase inbound URLs (e.g. /CULTURE/)
 // resolve cleanly. The helper is case-insensitive internally.
@@ -52,7 +51,7 @@ const baseUrl = buildUrl({ locale, path: `publicaciones/categoria/${catSlugLower
 	{!hasError && cards.length === 0 && <EmptyState locale={locale} variant="no-results" actionUrl={buildUrl({ locale, path: 'publicaciones' })} />}
 	{!hasError && cards.length > 0 && (
 		<div class="grid">
-			{cards.map((card, i) => (<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100"><ArticleCard data={card} locale={locale} isAuthenticated={isAuthenticated} /></div>))}
+			{cards.map((card, i) => (<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100"><ArticleCard data={card} locale={locale} /></div>))}
 		</div>
 	)}
 	{totalPages > 1 && <Pagination slot="pagination" currentPage={page} totalPages={totalPages} baseUrl={baseUrl.slice(0, -1)} locale={locale} />}
