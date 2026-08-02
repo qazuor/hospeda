@@ -26,13 +26,13 @@ import { expect, type Locator, type Page } from '@playwright/test';
 /**
  * TipTap's editable surface.
  *
- * Deliberately NOT `getByRole('textbox', { name: 'Descripción ampliada' })`:
- * `CommerceTranslationPanel` renders a per-locale textarea carrying that exact
- * same visible label (as it does for Nombre / Resumen / Descripción), so the
- * accessible name is ambiguous and Playwright's strict mode rejects it. That
- * collision predates HOS-371 — the unit suite already stubs the panel out for
- * the same reason — and is reported separately rather than fixed here.
- * `.ProseMirror` is unique: the panel uses plain textareas, not TipTap.
+ * Deliberately NOT `getByRole('textbox', { name: 'Descripción ampliada' })`.
+ * That name WAS ambiguous — `CommerceTranslationPanel` rendered a per-locale
+ * textarea with the same visible label — and although the panel now qualifies
+ * its labels with the active locale ("Descripción ampliada (ES)"), tying this
+ * locator to display copy would make the suite break on the next wording or
+ * i18n change. `.ProseMirror` is structural and unique: the panel uses plain
+ * textareas, not TipTap.
  */
 const RICH_DESCRIPTION_SELECTOR = '.ProseMirror';
 
