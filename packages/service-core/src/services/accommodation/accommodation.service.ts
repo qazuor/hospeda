@@ -691,10 +691,18 @@ export class AccommodationService extends BaseCrudService<
 
         if (!result?.items) return result;
 
-        return {
-            ...result,
-            items: projectAccommodationCityDestinationList(result.items)
-        };
+        // SPEC-204 T-024: `adminList` returns `_executeAdminSearch` output verbatim —
+        // unlike `list()`/`search()`, it never routes through `_afterList`/`_afterSearch`,
+        // so the relational media read has to happen here. Without it the admin list
+        // ships the raw `accommodations.media` JSONB, whose photo keys were stripped by
+        // the `021-accommodation-media-strip-blob-photos` data migration.
+        const items = await attachComposedMediaList({
+            items: projectAccommodationCityDestinationList(result.items),
+            mediaModel: this._accommodationMediaModel,
+            tx: params.ctx?.tx
+        });
+
+        return { ...result, items };
     }
 
     /**
