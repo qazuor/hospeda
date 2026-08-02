@@ -138,19 +138,23 @@ const initialFaqs: CommerceFaq[] = Array.isArray(rawFaqs)
         </p>
     </div>
 
-    <AccountSectionCard>
-        <CommerceListingEditor
-            client:load
-            vertical={vertical}
-            listingId={id}
-            locale={locale}
-            initialData={detail}
-            amenities={amenities}
-            features={features}
-            destinations={destinations}
-            destinationsLoadFailed={destinationsLoadFailed}
-        />
-    </AccountSectionCard>
+    {/*
+        HOS-371: deliberately NOT wrapped in an AccountSectionCard. The editor
+        now renders one card PER section internally (same as the accommodation
+        editor), so an outer card would nest cards — double border, double
+        padding, and two stacked brand accent bars.
+    */}
+    <CommerceListingEditor
+        client:load
+        vertical={vertical}
+        listingId={id}
+        locale={locale}
+        initialData={detail}
+        amenities={amenities}
+        features={features}
+        destinations={destinations}
+        destinationsLoadFailed={destinationsLoadFailed}
+    />
 
     <div class="ce-faq-gap">
         <AccountSectionCard>

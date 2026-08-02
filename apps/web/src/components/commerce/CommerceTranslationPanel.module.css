@@ -1,11 +1,14 @@
 /* CommerceTranslationPanel.module.css — SPEC-253 T-022
    Visual language mirrors TranslationPanel.module.css (SPEC-212) for consistency. */
 
-/* Section card — matches the fieldset pattern used by other editor sections */
+/* Bare fieldset — the hosting editor wraps this in its own section card and
+   owns the spacing between sections via the form's flex `gap` (HOS-371). The
+   old `margin-bottom: var(--space-5)` here would render as dead space INSIDE
+   that card. */
 .section {
     border: none;
     padding: 0;
-    margin: 0 0 var(--space-5, 2rem);
+    margin: 0;
 }
 
 .sectionTitle {
