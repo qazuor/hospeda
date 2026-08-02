@@ -966,12 +966,46 @@ reconciliation is re-gated on an SSR prop. Non-negotiable: the audit found
 survive three months. Must be non-vacuous — prove it fails when the guarded
 property is removed, per the HOS-370 precedent.
 
-**WB0-7 — The two hard files.** `alojamientos/[slug].astro` and
+**WB0-7 — The two hard files. DONE.** `alojamientos/[slug].astro` and
 `destinos/[...path].astro` (§5.12.1, §5.4). Five class-C instances plus the
 accommodation detail's conversations / price alerts / entitlements / WhatsApp
-lookups. Runs **after** WB0-1..6 and after the first Cache Rule is proven on the
-listings; it is the only part of Wave B0 that needs design rather than pattern
+lookups. It was the only part of Wave B0 that needed design rather than pattern
 application. Rendering rule in D-11.
+
+How each class-C instance was resolved, all three following one shape — the
+island is always mounted, the ANONYMOUS variant is passed to it as slot
+children, and the island swaps itself in only after resolving a session:
+
+- **`destinos` (2 swap sites).** `DestinationReviewSidebarCard` now takes
+  `children` and renders them until `useAccountPermissions` resolves a user;
+  the page passes `DestinationReviewSignInCta`, which is what the server emits.
+- **`alojamientos` sidebar (2 additive sites).** `PriceAlertButton` and
+  `ReviewSidebarCard` do the same, with a new shared `SignInCtaCard.astro` as
+  the anonymous variant. D-11 asked for "a correctly-sized placeholder"; an
+  equally-sized sign-in CTA is strictly better, because a placeholder that
+  COLLAPSES for a guest costs a layout shift on ~100% of cached traffic, which
+  is the metric this spec exists to improve (**owner decision**, and the
+  pattern `destinos` already shipped).
+- **`AiChatWidget` (1 additive site).** No placeholder: the FAB and panel are
+  both `position: fixed`, so appearing after hydration moves nothing.
+
+Two per-visitor lookups moved to the browser rather than being dropped:
+`priceAlertsApi.list` + `billingApi.getEntitlements`
+(`use-price-alert-gate-state.ts`), and the conversations lookup that feeds BOTH
+`ContactHost.existingConversationId` and `ReviewSidebarCard.canLeaveReview`. The
+latter got its own store (`accommodation-conversation-store.ts`) for the reason
+the SSR version was collapsed into one call in the first place: the two islands
+hydrate in different ticks, so a result-only cache would still issue two
+requests. Caching the in-flight **promise** keeps it at one.
+
+**Not in the original scope, found here: the WhatsApp number.** §5.4 listed the
+"WhatsApp lookups" as page state to move, which undersold it. The SSR lookup put
+a specific viewer's *entitled phone number* in the page body — on a page destined
+for a shared cache, meaning it would have been served to every subsequent
+visitor, entitled or not, for the whole TTL. `WhatsAppContact` therefore became
+an island (`.astro` → `.client.tsx` + CSS module, HOS-314's contrast rationale
+carried over verbatim) that renders the upsell on the server and only ever shows
+a number the protected endpoint returned to that viewer personally.
 
 ### 6.4 Wave B — turn on the edge
 
@@ -1008,10 +1042,66 @@ at a time** as WB0-5 proves each one auth-blind. Requirements, in order:
    edge cache key must reflect it too. Once a path is genuinely auth-blind the
    bypass becomes redundant — but it is removed only after that path is
    verified, never before.
+   W1-2a (below) removed the shell's dependency on the session for the six
+   cacheable families, so for those the bypass is now a belt-and-braces measure
+   rather than the only thing standing between visitors. Drop it per path only
+   after that path is verified by measurement (W1-3), never on this note alone.
 4. Bypass on any query string carrying filters, to avoid fragmenting the cache
    across thousands of variants.
 5. Turn **Sort query string** on — the only cache-key normalization available at
    this tier (§5.11.2).
+
+**W1-2a — De-personalize the shell. DONE (landed with WB0-7).**
+Discovered while extending the WB0-6 guard to `src/layouts` during WB0-7: the
+guard only ever swept `src/pages` and `src/components`, so it certified 25 pages
+as session-blind while the LAYOUT wrapping every one of them was not. On every
+session-optional segment (which was every cacheable content path —
+`alojamientos`, `destinos`, `eventos`, `publicaciones`, `gastronomia`,
+`experiencias`), the shell baked:
+
+- `BaseLayout.astro` — `<html data-user-authenticated>`, plus the visitor's id,
+  e-mail and name forwarded to `FeedbackHeadlessHost`.
+- `Header.astro` — the visitor's id, name, e-mail and avatar URL, as `UserMenu`'s
+  SSR props.
+- `Footer.astro` — the visitor's e-mail, as `NewsletterForm`'s SSR props. This
+  one was invisible to the guard for a second reason: it reads
+  `const locals = Astro.locals as { user?: … }`, an ALIASED read that neither the
+  direct nor the destructured detector matched. A third detector was added.
+
+Astro serializes island props into the document, so all of that was literal
+text in the HTML — worse than anything Wave B0 removed, since it is PII rather
+than UI state. Nor was the harm only at the far end: the first paint of a
+cached page would show one visitor's name in another's header until
+`useAccountPermissions` corrected it.
+
+**The fix was structural, not per-component.** The obvious move — rewrite the
+three layouts to render an anonymous shell — was rejected: `UserMenu` and
+`MobileMenu` run the hook in *SSR-reconciling* mode, whose whole contract is
+that the SSR snapshot is trustworthy, so the change would have cascaded into a
+redesign of how those two resolve the session. But `Astro.locals.user` is only
+populated at all on the segments listed in `SESSION_OPTIONAL_SEGMENTS`, and the
+six catalog families were on that list for ONE reason: their pages needed the
+visitor. Wave B0 removed every such read. So the six were removed from the list
+instead, and the shell now gets `null` there by construction — no layout
+change, no hook change.
+
+Two consequences, both intended:
+
+- The shell renders its guest variant on those routes; a signed-in visitor sees
+  it for one frame until `UserMenu` resolves `/auth/me`. This is the behaviour
+  that already applied on SSG/public routes and that `BaseLayout` and
+  `MobileMenuIsland` both already documented. A cached page cannot know who you
+  are — it is the cost of the cache, not a defect.
+- Those six families stop issuing a `get-session` call per page view, on the
+  highest-traffic paths in the app. The fix is also a measurable win.
+
+The invariant is guarded by set intersection rather than source text, in
+`test/lib/cacheable-routes-parse-no-session.guard.test.ts`: no cacheable route
+family may appear in `SESSION_OPTIONAL_SEGMENTS`. That form was chosen because
+the `Footer` read had escaped the text-matching guard for a whole wave — it
+aliased the whole locals object (`const locals = Astro.locals as { user?: … }`)
+rather than reading `Astro.locals.user`. A membership check cannot be defeated
+by a spelling, and it covers every future consumer, not just the three layouts.
 
 **W1-3 — Verify by measurement, not by assumption.**
 Re-run the §5.1 probes. Acceptance is in §9; a rule that is created but not
