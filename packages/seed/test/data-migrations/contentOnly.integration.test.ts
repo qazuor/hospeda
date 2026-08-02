@@ -199,6 +199,31 @@ describe('HOS-375 T-037: meta.contentOnly on a fresh build (integration)', () =>
         expect(ledger.size).toBe(2);
     });
 
+    it('refuses to run without an actor rather than bootstrapping a seeded super admin', async () => {
+        // The fall-through means a `--baseline-stamp` invocation now really
+        // runs migrations, including on the production day-1 path that seeds
+        // with `--required --exclude=users` precisely to keep the well-known
+        // superadmin@hospeda.com credential off the box. The runner must fail
+        // loudly there instead of manufacturing that account.
+        //
+        // The integration database has no users at all (globalSetup seeds only
+        // billing plans), so omitting `actor` exercises exactly that path.
+        await baselineStamp({ db: getDb(), dir: FIXTURES_DIR });
+
+        await expect(runMigrations({ db: getDb(), dir: FIXTURES_DIR })).rejects.toThrow(
+            /no SUPER_ADMIN account/
+        );
+
+        // Nothing was applied and, critically, no user was created as a
+        // side effect of trying.
+        expect(await readScratchNames()).toEqual([]);
+
+        const userCount = await getDb().execute<{ count: string }>(
+            sql`SELECT COUNT(*)::text AS count FROM users`
+        );
+        expect(userCount.rows[0]?.count).toBe('0');
+    });
+
     it('stamps normally when the group filter excludes the contentOnly migration', async () => {
         // Both fixtures are group 'required'; scoping to 'example' must
         // produce an empty batch rather than misreporting the content-only
