@@ -61,6 +61,32 @@ vi.mock('../../../src/lib/i18n', () => ({
     })
 }));
 
+// HOS-371: `richDescription` is a TipTap editor now, not a `<textarea>`. Booting
+// the real editor in every render here would make this suite an order of
+// magnitude slower for zero added signal — what these tests care about is the
+// dirty-tracking/payload wiring, which only needs the controlled-value contract.
+// The shim keeps the same accessible name so the existing assertions still
+// target the same field. The REAL editor is exercised in
+// `CommerceListingEditor.rich-description.test.tsx` (mount must not dirty the
+// form) and `host/editor/RichTextEditor.controlled-emit.test.tsx`.
+vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
+    RichTextEditor: ({
+        value,
+        onChange,
+        ariaLabel
+    }: {
+        value: string;
+        onChange: (value: string) => void;
+        ariaLabel?: string;
+    }) => (
+        <textarea
+            aria-label={ariaLabel}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+        />
+    )
+}));
+
 vi.mock('../../../src/lib/api/client', () => ({
     apiClient: { patch: vi.fn() }
 }));
@@ -217,8 +243,11 @@ describe('CommerceListingEditor', () => {
         });
         renderEditor('gastronomy');
 
-        fireEvent.change(screen.getByLabelText('Teléfono'), {
-            target: { value: '+5491100000000' }
+        // HOS-371: the phone is a country-code combobox + local number pair now,
+        // so the editable control is the "Número" input; the dial code comes
+        // from the combobox and is recomposed into the stored string.
+        fireEvent.change(screen.getByLabelText('Número'), {
+            target: { value: '9 11 1234 5678' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
@@ -282,8 +311,12 @@ describe('CommerceListingEditor', () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
         renderEditor('gastronomy');
 
-        fireEvent.change(screen.getByLabelText('Teléfono'), {
-            target: { value: '+5491100000000' }
+        // HOS-371: the local number is recomposed with the combobox's dial code
+        // (defaulting to Argentina) into the single `mobilePhone` string the
+        // backend stores — the same `<dialCode> <number>` shape the
+        // accommodation editor writes and `InternationalPhoneRegex` validates.
+        fireEvent.change(screen.getByLabelText('Número'), {
+            target: { value: '9 11 1234 5678' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
@@ -292,11 +325,67 @@ describe('CommerceListingEditor', () => {
             path: '/api/v1/protected/gastronomies/abc',
             body: {
                 contactInfo: {
-                    mobilePhone: '+5491100000000',
+                    mobilePhone: '+54 9 11 1234 5678',
                     workEmail: undefined,
                     website: undefined
                 }
             }
+        });
+    });
+
+    it('lets the owner pick a different country code and recomposes the stored phone (HOS-371)', async () => {
+        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+        renderEditor('gastronomy');
+
+        // The combobox trigger leads with the field name, then the selection.
+        fireEvent.click(screen.getByRole('button', { name: /País: Argentina/ }));
+        fireEvent.mouseDown(screen.getByRole('option', { name: /Brasil|Brazil/ }));
+
+        fireEvent.change(screen.getByLabelText('Número'), {
+            target: { value: '11 91234 5678' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+        const body = mockPatch.mock.calls[0]?.[0]?.body as {
+            contactInfo?: { mobilePhone?: string };
+        };
+        expect(body.contactInfo?.mobilePhone).toBe('+55 11 91234 5678');
+    });
+
+    describe('contact email accessibility (HOS-371)', () => {
+        it('labels the email input with a real <label>, not just an aria-label', () => {
+            const { container } = renderEditor('gastronomy');
+
+            // An `aria-label` alone leaves a sighted user staring at an
+            // anonymous empty box (WCAG 3.3.2). `getByLabelText` matches both
+            // mechanisms, so assert the <label> element exists and points at
+            // the input — that is what distinguishes the two.
+            const label = [...container.querySelectorAll('label')].find(
+                (el) => el.textContent?.trim() === 'Email'
+            );
+            expect(label).toBeDefined();
+            expect(label?.getAttribute('for')).toBe('ce-workEmail');
+
+            const input = container.querySelector('#ce-workEmail');
+            expect(input).toBeInstanceOf(HTMLInputElement);
+            expect((input as HTMLInputElement).type).toBe('email');
+        });
+
+        it('still PATCHes the contactInfo group from the labelled email input', async () => {
+            mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+            renderEditor('gastronomy');
+
+            fireEvent.change(screen.getByLabelText('Email'), {
+                target: { value: 'hola@laparrilla.test' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+            await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+            const body = mockPatch.mock.calls[0]?.[0]?.body as {
+                contactInfo?: { workEmail?: string };
+            };
+            expect(body.contactInfo?.workEmail).toBe('hola@laparrilla.test');
         });
     });
 

@@ -13,6 +13,7 @@
 import { ExperienceTypeEnum, GastronomyTypeEnum } from '@repo/schemas';
 import type { JSX } from 'react';
 import type { DestinationOption } from '@/components/gastronomy/CommerceLead.client';
+import { RichTextEditor } from '@/components/host/editor/RichTextEditor.client';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -244,20 +245,38 @@ export function BasicInfoSection({
                 />
             </section>
 
+            {/* HOS-371: TipTap instead of the bare textarea this field used to
+                be. `richDescription` is already rendered as Markdown on the
+                public pages (`GastronomyDescription.astro` / `ExperienceInfo.astro`
+                both run it through `renderContent`), and RichTextEditor persists
+                Markdown — so the stored shape is unchanged, the owner just stops
+                having to hand-write it.
+
+                Deliberately NOT behind a `PlanEntitlementGate`: that gate reads
+                the ACCOMMODATION entitlement set (`loadEntitlements` filters to
+                `product_domain = 'accommodation'`), so gating a commerce field on
+                it would deny the field to every commerce owner. Commerce billing
+                is a separate domain — see the root CLAUDE.md, SPEC-239.
+
+                The title is a <span>, not a <label htmlFor>: the editing surface
+                is a contenteditable `role="textbox"`, which a <label> cannot
+                name. The accessible name comes from `ariaLabel` instead. */}
             <section className={styles.section}>
-                <label
-                    className={styles.label}
-                    htmlFor="ce-richDescription"
-                >
+                <span className={styles.label}>
                     {t('commerce.owner.editor.sections.richDescription', 'Descripción ampliada')}
-                </label>
-                <textarea
-                    id="ce-richDescription"
-                    className={styles.textarea}
+                </span>
+                <RichTextEditor
                     value={data.richDescription}
-                    rows={6}
-                    onChange={(event) => {
-                        onFieldChange('richDescription', event.target.value);
+                    ariaLabel={t(
+                        'commerce.owner.editor.sections.richDescription',
+                        'Descripción ampliada'
+                    )}
+                    placeholder={t(
+                        'commerce.owner.editor.richDescriptionPlaceholder',
+                        'Contá la historia de tu comercio con detalle...'
+                    )}
+                    onChange={(value) => {
+                        onFieldChange('richDescription', value);
                     }}
                 />
             </section>

@@ -1,6 +1,13 @@
 /**
  * @file ContactSection.test.tsx
- * @description Unit coverage for the commerce editor's contact section (HOS-258).
+ * @description Unit coverage for the commerce editor's contact section (HOS-258,
+ * extended in HOS-371).
+ *
+ * HOS-371 changed both fields' shape: the phone is a country-code combobox plus
+ * a local-number input recomposed into one stored string, and the email carries
+ * a real `<label>` instead of a bare `aria-label`. The section's contract to the
+ * orchestrator is unchanged — every edit is still reported as a PARTIAL
+ * `contactInfo` patch.
  *
  * @module test/components/commerce/editor/ContactSection
  */
@@ -33,23 +40,55 @@ function renderSection(overrides: Partial<React.ComponentProps<typeof ContactSec
 describe('ContactSection', () => {
     it('seeds both fields from the contact prop', () => {
         renderSection({
-            contact: { mobilePhone: '+5491100000000', workEmail: 'dueno@test.com' }
+            contact: { mobilePhone: '+54 9 11 0000 0000', workEmail: 'dueno@test.com' }
         });
 
-        expect(screen.getByLabelText('Teléfono')).toHaveValue('+5491100000000');
+        // The stored string is SPLIT across the two controls: the dial code
+        // selects the country, the remainder fills the number input.
+        expect(screen.getByRole('button', { name: /País: Argentina/ })).toBeInTheDocument();
+        expect(screen.getByLabelText('Número')).toHaveValue('9 11 0000 0000');
         expect(screen.getByLabelText('Email')).toHaveValue('dueno@test.com');
     });
 
-    it('reports a phone edit as a partial contact patch', () => {
+    it('keeps an unrecognized stored value intact instead of dropping it', () => {
+        // `parsePhoneValue` falls back to the default country and keeps the FULL
+        // raw value as the number, so a legacy/odd value is never silently lost.
+        renderSection({ contact: { mobilePhone: '011 4444-5555', workEmail: '' } });
+
+        expect(screen.getByLabelText('Número')).toHaveValue('011 4444-5555');
+    });
+
+    it('reports a phone edit as a partial contact patch, recomposed with the dial code', () => {
         const { onContactChange } = renderSection();
 
-        fireEvent.change(screen.getByLabelText('Teléfono'), {
-            target: { value: '+5491199999999' }
+        fireEvent.change(screen.getByLabelText('Número'), {
+            target: { value: '9 11 9999 9999' }
         });
 
         // A PARTIAL patch, not the whole object: the orchestrator merges it into
         // the current contact so the untouched member survives the PATCH.
-        expect(onContactChange).toHaveBeenCalledWith({ mobilePhone: '+5491199999999' });
+        expect(onContactChange).toHaveBeenCalledWith({ mobilePhone: '+54 9 11 9999 9999' });
+    });
+
+    it('recomposes the stored phone when only the country changes', () => {
+        const { onContactChange } = renderSection({
+            contact: { mobilePhone: '+54 9 11 0000 0000', workEmail: '' }
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: /País: Argentina/ }));
+        fireEvent.mouseDown(screen.getByRole('option', { name: /Brasil/ }));
+
+        expect(onContactChange).toHaveBeenCalledWith({ mobilePhone: '+55 9 11 0000 0000' });
+    });
+
+    it('clears the stored phone entirely rather than saving a bare dial code', () => {
+        const { onContactChange } = renderSection({
+            contact: { mobilePhone: '+54 9 11 0000 0000', workEmail: '' }
+        });
+
+        fireEvent.change(screen.getByLabelText('Número'), { target: { value: '' } });
+
+        expect(onContactChange).toHaveBeenCalledWith({ mobilePhone: '' });
     });
 
     it('reports an email edit as a partial contact patch', () => {
@@ -62,11 +101,34 @@ describe('ContactSection', () => {
         expect(onContactChange).toHaveBeenCalledWith({ workEmail: 'nuevo@test.com' });
     });
 
+    it('names the email input with a real <label>, not just an aria-label (HOS-371)', () => {
+        const { container } = render(
+            <ContactSection
+                locale="es"
+                contact={{ mobilePhone: '', workEmail: '' }}
+                errors={{}}
+                onContactChange={vi.fn()}
+            />
+        );
+
+        // `getByLabelText` matches an aria-label too, so it cannot tell the two
+        // mechanisms apart — assert the <label> element itself. An aria-label
+        // alone leaves a sighted user staring at an anonymous box (WCAG 3.3.2).
+        const label = [...container.querySelectorAll('label')].find(
+            (el) => el.textContent?.trim() === 'Email'
+        );
+        expect(label).toBeDefined();
+        expect(label?.getAttribute('for')).toBe('ce-workEmail');
+        expect(container.querySelector('#ce-workEmail')).toBeInstanceOf(HTMLInputElement);
+    });
+
     it('does NOT expose a website field (SPEC-253 AC-4)', () => {
         renderSection();
 
         // `website` exists on ContactInfoSchema but is deliberately absent from
-        // this owner surface. Two text-ish inputs, no more.
+        // this owner surface. Two text-ish inputs (number + email), no more —
+        // the country control is a <button>, and its search box only exists
+        // while the popover is open.
         expect(screen.queryByLabelText(/web/i)).toBeNull();
         expect(document.querySelectorAll('input')).toHaveLength(2);
     });
@@ -81,15 +143,15 @@ describe('ContactSection', () => {
 
         expect(screen.getByText('Teléfono inválido')).toBeInTheDocument();
         expect(screen.getByText('Email inválido')).toBeInTheDocument();
-        expect(screen.getByLabelText('Teléfono')).toHaveAttribute('aria-invalid', 'true');
+        expect(screen.getByLabelText('Número')).toHaveAttribute('aria-invalid', 'true');
         expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'true');
     });
 
     it('leaves fields valid when there are no errors', () => {
         renderSection();
 
-        expect(screen.getByLabelText('Teléfono')).toHaveAttribute('aria-invalid', 'false');
-        expect(screen.getByLabelText('Teléfono')).not.toHaveAttribute('aria-describedby');
+        expect(screen.getByLabelText('Número')).toHaveAttribute('aria-invalid', 'false');
+        expect(screen.getByLabelText('Número')).not.toHaveAttribute('aria-describedby');
     });
 
     it('renders the scrollspy anchor the section nav will target', () => {

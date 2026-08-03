@@ -110,6 +110,7 @@
                 "mobilePhone": "Phone",
                 "workEmail": "Email"
             },
+            "richDescriptionPlaceholder": "Tell your business story in detail...",
             "validation": {
                 "summaryMin": "Minimum 10 characters.",
                 "summaryMax": "Maximum 300 characters.",
