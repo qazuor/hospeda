@@ -1633,51 +1633,25 @@ export class AccommodationService extends BaseCrudService<
             }
         }
 
-        // SPEC-204 DIRECT CUTOVER — media blob on update carries ONLY videos.
+        // HOS-372 — `media` is READ-ONLY on this entity. The relational
+        // `accommodation_media` table owns the photos and the `videos` column owns the
+        // videos; the JSONB `media` column itself was dropped, and `media` on the way
+        // OUT is composed from those two sources by `accommodation.media-read.ts`.
         //
-        // The relational `accommodation_media` table is the sole source of truth for
-        // photos (gallery, featuredImage, archivedGallery). Sending photo fields from
-        // a bulk update would overwrite the blob's photo-related keys and create a
-        // divergence with the table. We therefore strip those fields from any incoming
-        // `media` object before passing it to `super.update()`.
+        // `AccommodationUpdateInputSchema` therefore omits `media` entirely. A legacy
+        // client that still sends it gets the key stripped here rather than forwarded:
+        // writing it would target a column that no longer exists.
         //
-        // B-2 (videos preservation): videos remain in the JSONB blob. The web editor
-        // sends only featuredImage+gallery, so `videos` is typically absent from
-        // client payloads. Without the guard the existing videos array would be wiped
-        // by the shallow JSONB merge. We carry it forward from the current DB row
-        // whenever the payload omits the `videos` key entirely.
-        //   - Absent `videos` key in payload → carry forward from existing row.
-        //   - Explicit `videos: []` in payload → respected (clears the list).
-        //
-        // Fetch only when needed: if `data.media` is undefined the DB write won't
-        // touch the media column at all, so no action is required.
-        let normalizedData = data;
-        if (data.media !== undefined) {
-            // Strip photo fields — they are managed exclusively via media endpoints.
-            const {
-                gallery: _gallery,
-                featuredImage: _featuredImage,
-                archivedGallery: _archivedGallery,
-                ...videosOnlyMedia
-            } = data.media as Record<string, unknown>;
-            // Carry forward existing videos when the payload omits the `videos` key.
-            const existingVideos = (await this.model.findById(id, resolvedCtx?.tx))?.media?.videos;
-            const shouldCarryVideos =
-                existingVideos !== undefined &&
-                !('videos' in (data.media as Record<string, unknown>));
-            normalizedData = {
-                ...data,
-                media: {
-                    ...videosOnlyMedia,
-                    ...(shouldCarryVideos ? { videos: existingVideos } : {})
-                }
-            } as AccommodationUpdateInput;
-        }
+        // Videos need no preservation logic anymore. `videos` is a plain top-level
+        // column, so an absent key never reaches the SET clause and the stored array
+        // survives on its own — the old B-2 carry-forward guard existed only because
+        // the blob write was a wholesale replace.
+        const { media: _legacyMedia, ...normalizedData } = data as AccommodationUpdateInput & {
+            media?: unknown;
+        };
 
         // SPEC-172: if junction sync fields are present and no external tx exists,
         // open a transaction so the accommodation update + junction sync are atomic.
-        // Media no longer needs a tx here: the JSONB write goes through model.update()
-        // directly and is atomic by itself.
         const { amenityIds, featureIds } = normalizedData as {
             amenityIds?: readonly string[];
             featureIds?: readonly string[];
