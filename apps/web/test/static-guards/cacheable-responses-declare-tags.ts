@@ -44,6 +44,7 @@ const CACHE_CONTROL_WRITE =
 const TAG_PRODUCERS: ReadonlyArray<RegExp> = [
     /\bapplyCacheHeaders\s*\(/,
     /\bdeclareCacheTags\s*\(/,
+    /\bbuildStaticCacheHeaders\s*\(/,
     /\bserializeCacheTags\s*\(/,
     /['"]Cache-Tag['"]/,
     /\bCACHE_TAG_HEADER_NAME\b/

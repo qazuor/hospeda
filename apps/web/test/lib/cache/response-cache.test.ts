@@ -7,15 +7,23 @@
  * response always carries something that can purge it". Once selective purge
  * replaces `purge_everything`, an untagged cacheable response is content no
  * write can invalidate — stale for the whole TTL, with nothing reporting it.
+ *
+ * Every expected tag below carries the `test:` namespace (HOS-369 W1-2): under
+ * vitest `NODE_ENV=test`, so `resolveCacheTagEnvironment` yields `test`. The
+ * prefix is asserted literally rather than derived from the same helper the
+ * code under test uses — a test that recomputes the value cannot fail when the
+ * value changes.
  */
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { _resetCacheTagEnvironment } from '../../../src/lib/cache/cache-tag-environment';
 import {
     LISTING_CACHEABLE_CONTROL,
     LISTING_PRIVATE_CONTROL
 } from '../../../src/lib/cache/listing-cache';
 import {
     applyCacheHeaders,
+    buildStaticCacheHeaders,
     declareCacheTags,
     isEdgeCacheableControl
 } from '../../../src/lib/cache/response-cache';
@@ -25,14 +33,19 @@ function makeLocals(): App.Locals {
     return { cacheTags: new Set<string>() } as unknown as App.Locals;
 }
 
+afterEach(() => {
+    vi.unstubAllEnvs();
+    _resetCacheTagEnvironment();
+});
+
 describe('declareCacheTags', () => {
-    it('registers tags on the request-scoped collector', () => {
+    it('registers tags on the request-scoped collector, namespaced by deployment', () => {
         const locals = makeLocals();
 
         const result = declareCacheTags({ locals, tags: ['list-accom', 'home'] });
 
         expect(result.tagCount).toBe(2);
-        expect([...locals.cacheTags]).toEqual(['list-accom', 'home']);
+        expect([...locals.cacheTags]).toEqual(['test:list-accom', 'test:home']);
     });
 
     it('normalizes case, matching Cloudflare case-insensitive purge semantics', () => {
@@ -40,7 +53,7 @@ describe('declareCacheTags', () => {
 
         declareCacheTags({ locals, tags: ['List-Accom'] });
 
-        expect([...locals.cacheTags]).toEqual(['list-accom']);
+        expect([...locals.cacheTags]).toEqual(['test:list-accom']);
     });
 
     it('drops tags Cloudflare would reject instead of registering them', () => {
@@ -49,7 +62,7 @@ describe('declareCacheTags', () => {
         const result = declareCacheTags({ locals, tags: ['ok-tag', 'has space', 'has,comma'] });
 
         expect(result.tagCount).toBe(1);
-        expect([...locals.cacheTags]).toEqual(['ok-tag']);
+        expect([...locals.cacheTags]).toEqual(['test:ok-tag']);
     });
 
     it('counts only the tags it was given, not the accumulated set', () => {
@@ -63,6 +76,84 @@ describe('declareCacheTags', () => {
 
         expect(result.tagCount).toBe(0);
         expect(locals.cacheTags.size).toBe(1);
+    });
+
+    it('follows HOSPEDA_DEPLOY_ENV, so staging never emits production tags', () => {
+        vi.stubEnv('HOSPEDA_DEPLOY_ENV', 'preview');
+        _resetCacheTagEnvironment();
+        const locals = makeLocals();
+
+        declareCacheTags({ locals, tags: ['list-accom'] });
+
+        expect([...locals.cacheTags]).toEqual(['preview:list-accom']);
+    });
+
+    it('registers NOTHING when the deployment namespace cannot be resolved', () => {
+        // The measured staging-web configuration before this change: NODE_ENV
+        // production, HOSPEDA_DEPLOY_ENV unset. Emitting bare (or guessed
+        // `prod:`) tags there would let staging evict production, so nothing is
+        // emitted at all and every caller demotes.
+        vi.stubEnv('HOSPEDA_DEPLOY_ENV', '');
+        vi.stubEnv('NODE_ENV', 'production');
+        _resetCacheTagEnvironment();
+        const locals = makeLocals();
+
+        const result = declareCacheTags({ locals, tags: ['list-accom'] });
+
+        expect(result.tagCount).toBe(0);
+        expect(locals.cacheTags.size).toBe(0);
+    });
+});
+
+describe('buildStaticCacheHeaders', () => {
+    it('pairs the requested Cache-Control with a namespaced Cache-Tag', () => {
+        expect(
+            buildStaticCacheHeaders({
+                cacheControl: 'public, max-age=3600',
+                tags: ['site-config']
+            })
+        ).toEqual({
+            'Cache-Control': 'public, max-age=3600',
+            'Cache-Tag': 'test:site-config'
+        });
+    });
+
+    it('serializes several tags into one comma-separated header', () => {
+        expect(
+            buildStaticCacheHeaders({
+                cacheControl: 'public, max-age=86400',
+                tags: ['list-post', 'list-event']
+            })['Cache-Tag']
+        ).toBe('test:list-post,test:list-event');
+    });
+
+    it('deduplicates repeated tags', () => {
+        expect(
+            buildStaticCacheHeaders({
+                cacheControl: 'public, max-age=86400',
+                tags: ['list-post', 'list-post']
+            })['Cache-Tag']
+        ).toBe('test:list-post');
+    });
+
+    it('DEMOTES to private and emits NO Cache-Tag when the namespace is unresolved', () => {
+        vi.stubEnv('HOSPEDA_DEPLOY_ENV', '');
+        vi.stubEnv('NODE_ENV', 'production');
+        _resetCacheTagEnvironment();
+
+        const headers = buildStaticCacheHeaders({
+            cacheControl: 'public, max-age=3600',
+            tags: ['site-config']
+        });
+
+        expect(headers).toEqual({ 'Cache-Control': LISTING_PRIVATE_CONTROL });
+        expect(headers['Cache-Tag']).toBeUndefined();
+    });
+
+    it('DEMOTES to private when no supplied tag survives (fail-closed)', () => {
+        expect(
+            buildStaticCacheHeaders({ cacheControl: 'public, max-age=3600', tags: ['bad tag'] })
+        ).toEqual({ 'Cache-Control': LISTING_PRIVATE_CONTROL });
     });
 });
 
@@ -84,7 +175,29 @@ describe('applyCacheHeaders', () => {
             cacheable: true,
             tagCount: 1
         });
-        expect([...locals.cacheTags]).toEqual(['list-accom']);
+        expect([...locals.cacheTags]).toEqual(['test:list-accom']);
+    });
+
+    it('DEMOTES to private when the deployment namespace is unresolved (fail-closed)', () => {
+        // Without a namespace there is no tag that could purge this response,
+        // so it must not be offered to the shared cache — the same rule as an
+        // empty tag list, reached by a different route (HOS-369 W1-2).
+        vi.stubEnv('HOSPEDA_DEPLOY_ENV', '');
+        vi.stubEnv('NODE_ENV', 'production');
+        _resetCacheTagEnvironment();
+        const locals = makeLocals();
+        const headers = new Headers();
+
+        const result = applyCacheHeaders({
+            locals,
+            headers,
+            cacheable: true,
+            tags: ['list-accom']
+        });
+
+        expect(headers.get('Cache-Control')).toBe(LISTING_PRIVATE_CONTROL);
+        expect(result.cacheable).toBe(false);
+        expect(locals.cacheTags.size).toBe(0);
     });
 
     it('marks a non-cacheable response private and registers nothing', () => {

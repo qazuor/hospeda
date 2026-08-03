@@ -22,7 +22,7 @@ import { getSiteUrl } from '../lib/env';
 import {
     buildLocalizedUrlEntries,
     buildUrlsetDocument,
-    SITEMAP_RESPONSE_HEADERS
+    getSitemapResponseHeaders
 } from '../lib/seo/sitemap-xml';
 import { STATIC_SITEMAP_PAGES } from '../lib/seo/static-sitemap-pages';
 
@@ -50,6 +50,6 @@ export const GET: APIRoute = async () => {
     // distrust the field. Omitting it is the honest signal.
     return new Response(buildUrlsetDocument(entries), {
         status: 200,
-        headers: SITEMAP_RESPONSE_HEADERS
+        headers: getSitemapResponseHeaders()
     });
 };

@@ -71,10 +71,31 @@ function createSpyAdapter() {
     return { adapter, revalidateSpy, revalidateManySpy, purgeEverythingSpy };
 }
 
+/**
+ * The deployment namespace this suite pins the service to.
+ *
+ * Every tag the service purges is qualified by it (HOS-369), so the assertions
+ * below compare against {@link ns}-qualified tags rather than bare vocabulary.
+ * Passing it explicitly is not optional: with the environment unresolved the
+ * service drops the purge entirely and the adapter is never called — which is
+ * the correct production behaviour, but as a test fixture it would only prove
+ * that an unconfigured service does nothing.
+ */
+const TEST_CACHE_TAG_ENVIRONMENT = 'test';
+
+/** Qualify a bare vocabulary tag the way the service does before purging. */
+function ns(tag: string): string {
+    return `${TEST_CACHE_TAG_ENVIRONMENT}:${tag}`;
+}
+
 /** A service wired to a spy adapter, with debounce disabled. */
 function createService() {
     const spies = createSpyAdapter();
-    const service = new RevalidationService({ adapter: spies.adapter, debounceMs: 0 });
+    const service = new RevalidationService({
+        adapter: spies.adapter,
+        debounceMs: 0,
+        cacheTagEnvironment: TEST_CACHE_TAG_ENVIRONMENT
+    });
     return { ...spies, service };
 }
 
@@ -141,7 +162,7 @@ describe('Manual Revalidation Flow — Integration Smoke Test', () => {
             await service.revalidateTags({ tags });
 
             expect(revalidateManySpy).toHaveBeenCalledOnce();
-            expect(firstCallTags(revalidateManySpy)).toEqual(expect.arrayContaining(tags));
+            expect(firstCallTags(revalidateManySpy)).toEqual(expect.arrayContaining(tags.map(ns)));
         });
 
         it('should return without throwing when all adapter calls succeed', async () => {
@@ -185,7 +206,7 @@ describe('Manual Revalidation Flow — Integration Smoke Test', () => {
             await service.revalidateByEntityType({ entityType: 'accommodation' });
 
             expect(revalidateManySpy).toHaveBeenCalledOnce();
-            expect(firstCallTags(revalidateManySpy)).toContain('list-accom');
+            expect(firstCallTags(revalidateManySpy)).toContain(ns('list-accom'));
         });
 
         it('should NOT enumerate per-entity tags for a type', async () => {
@@ -199,7 +220,10 @@ describe('Manual Revalidation Flow — Integration Smoke Test', () => {
             await service.revalidateByEntityType({ entityType: 'accommodation' });
 
             const tags = firstCallTags(revalidateManySpy);
-            expect(tags.every((tag) => !tag.startsWith('accom-'))).toBe(true);
+            // Match the QUALIFIED per-entity prefix. Checking for a bare
+            // `accom-` here would be vacuously true now that every tag is
+            // namespaced, so the assertion would pass without testing anything.
+            expect(tags.every((tag) => !tag.startsWith(ns('accom-')))).toBe(true);
             expect(tags.length).toBeLessThan(5);
         });
 

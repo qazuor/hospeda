@@ -83,7 +83,21 @@ export const MAX_CACHE_TAG_LENGTH = 1024;
 /** Maximum number of tags one response may carry (Cloudflare limit). */
 export const MAX_CACHE_TAGS_PER_RESPONSE = 1000;
 
-/** Maximum size in bytes of the aggregate `Cache-Tag` header (Cloudflare limit). */
+/**
+ * Maximum size in bytes of the aggregate `Cache-Tag` header (Cloudflare limit).
+ *
+ * Every tag on the wire is namespaced (`namespace.ts`), so each one costs an
+ * extra `len(environment) + 1` bytes — 5 for `prod:`, 8 for `preview:`. The
+ * accounting in {@link serializeCacheTags} needs no adjustment for this: it
+ * measures the strings it is actually given, and it is given the namespaced
+ * form. Tags are validated as printable ASCII, so `String.length` and byte
+ * length coincide and the budget below is exact rather than approximate.
+ *
+ * What the prefix does change is HOW MUCH fits: at 1000 tags the worst-case
+ * prefix overhead is 8 KB, half of this budget. Real responses carry a handful
+ * of tags, and truncation keeps the head of the list (entity tags before broad
+ * collection tags), so the surviving set stays the specific one.
+ */
 export const MAX_CACHE_TAG_HEADER_BYTES = 16 * 1024;
 
 /** The `Cache-Tag` response header name. Cloudflare strips it before the client. */

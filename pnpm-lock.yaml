@@ -636,6 +636,9 @@ importers:
 
   apps/e2e:
     dependencies:
+      '@repo/cache-tags':
+        specifier: workspace:*
+        version: link:../../packages/cache-tags
       '@repo/config':
         specifier: workspace:*
         version: link:../../packages/config

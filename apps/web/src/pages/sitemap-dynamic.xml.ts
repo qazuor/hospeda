@@ -24,7 +24,7 @@ import { getApiUrl, getSiteUrl } from '../lib/env';
 import {
     buildLocalizedUrlEntries,
     buildUrlsetDocument,
-    SITEMAP_RESPONSE_HEADERS
+    getSitemapResponseHeaders
 } from '../lib/seo/sitemap-xml';
 import {
     type DestinationListItem,
@@ -483,6 +483,6 @@ export const GET: APIRoute = async () => {
 
     return new Response(buildUrlsetDocument(entries), {
         status: 200,
-        headers: SITEMAP_RESPONSE_HEADERS
+        headers: getSitemapResponseHeaders()
     });
 };

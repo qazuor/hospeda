@@ -1,4 +1,6 @@
 import { setTimeout as sleep } from 'node:timers/promises';
+import { namespaceCacheTag, resolveCacheTagEnvironment } from '@repo/cache-tags';
+import { WHOLE_ZONE_TARGET } from '@repo/service-core';
 import { execSQL } from './db-helpers.ts';
 
 /**
@@ -10,9 +12,20 @@ import { execSQL } from './db-helpers.ts';
  * SPEC-034). The helpers here query that table to assert which targets the
  * system tried to revalidate during a test action.
  *
- * `target` holds a Cloudflare cache tag (e.g. `accom-hotel-test`) since
- * HOS-369 W1-1 turned purge from URL paths into cache tags — see the
- * `revalidation_log.target` column doc for the rename rationale.
+ * `target` holds a Cloudflare cache tag since HOS-369 W1-1 turned purge from
+ * URL paths into cache tags — see the `revalidation_log.target` column doc for
+ * the rename rationale. Those tags are NAMESPACED by deployment environment
+ * (`dev:accom-hotel-test`), because staging and production share one Cloudflare
+ * zone and an unqualified tag would let either evict the other's cache.
+ *
+ * Specs still express expectations in the BARE vocabulary (`accom-hotel-test`)
+ * and this fixture qualifies them, mirroring what the emitter does to the tags
+ * it writes. That is deliberate on both counts: specs stay readable and free of
+ * a hardcoded environment, and the qualification runs through the SAME
+ * `resolveCacheTagEnvironment` the API used when it wrote the row. So if the
+ * Playwright runner and the API ever resolve different environments, the
+ * assertion fails — which is correct, since that mismatch is exactly the
+ * silent-purge bug the namespace exists to prevent.
  *
  * The expected adapter for E2E is `NoOpRevalidationAdapter` so that
  * "scheduled but no Cloudflare HTTP" is the success criterion. The log is
@@ -104,10 +117,12 @@ export interface AssertRevalidationOptions {
     /** Filter to a specific entity type (e.g. 'accommodation'). */
     readonly entityType?: string;
     /**
-     * Targets (cache tags, or `*` for a whole-zone purge) that MUST be
-     * revalidated. The assertion passes when every target listed here
-     * appears in the log (extras are allowed). When omitted, the assertion
-     * only checks that AT LEAST ONE entry exists for the filter.
+     * Targets that MUST be revalidated, given as BARE vocabulary cache tags
+     * (`accom-my-slug`, `list-accom`, `home`) or `*` for a whole-zone purge.
+     * The deployment namespace is applied here, not by the caller — see the
+     * file docblock. The assertion passes when every target listed appears in
+     * the log (extras are allowed). When omitted, the assertion only checks
+     * that AT LEAST ONE entry exists for the filter.
      */
     readonly targets?: ReadonlyArray<string>;
     /**
@@ -168,12 +183,48 @@ export async function assertRevalidationTriggered(
                 entityId: options.entityId
             })}\n` +
             `Expected targets: ${
-                options.targets ? JSON.stringify(options.targets) : '(any entry, none required)'
+                options.targets
+                    ? `${JSON.stringify(toLoggedTargets(options.targets))} (namespaced from ${JSON.stringify(options.targets)})`
+                    : '(any entry, none required)'
             }\n` +
             `Logged entries (${lastEntries.length}): ${JSON.stringify(
                 lastEntries.map((entry) => ({ target: entry.target, status: entry.status }))
             )}`
     );
+}
+
+/**
+ * Qualify a spec's bare expected targets the same way the emitter qualified the
+ * tags it logged.
+ *
+ * `WHOLE_ZONE_TARGET` (`*`) passes through untouched: a whole-zone flush is not
+ * a cache tag, and `RevalidationService.purgeEverything` writes it to the log
+ * without namespacing it for exactly that reason.
+ *
+ * @param targets - Bare vocabulary tags, or `*`.
+ * @returns The targets as they appear in `revalidation_log.target`.
+ * @throws {Error} When the environment cannot be resolved, naming the variable
+ *   to set — silently comparing bare tags would make every assertion fail with
+ *   a misleading "no revalidation happened".
+ */
+function toLoggedTargets(targets: ReadonlyArray<string>): ReadonlyArray<string> {
+    const environment = resolveCacheTagEnvironment({
+        deployEnv: process.env.HOSPEDA_DEPLOY_ENV,
+        nodeEnv: process.env.NODE_ENV
+    });
+
+    return targets.map((target) => {
+        if (target === WHOLE_ZONE_TARGET) return target;
+        const namespaced = namespaceCacheTag({ environment, tag: target });
+        if (namespaced === null) {
+            throw new Error(
+                `Expected revalidation target "${target}" cannot be namespaced for environment ` +
+                    `"${environment}". Pass the BARE vocabulary tag (e.g. "accom-my-slug"), not an ` +
+                    'already-qualified one.'
+            );
+        }
+        return namespaced;
+    });
 }
 
 function matchesExpectation(
@@ -183,7 +234,7 @@ function matchesExpectation(
     if (entries.length === 0) return false;
     if (expectedTargets === undefined || expectedTargets.length === 0) return true;
     const loggedTargets = new Set(entries.map((entry) => entry.target));
-    return expectedTargets.every((target) => loggedTargets.has(target));
+    return toLoggedTargets(expectedTargets).every((target) => loggedTargets.has(target));
 }
 
 /**

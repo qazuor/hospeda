@@ -8,6 +8,18 @@
  * Keep it that way.
  */
 
+export type { CacheTagEnvironment } from './namespace.js';
+export {
+    buildCacheTagNamespace,
+    CACHE_TAG_ENVIRONMENTS,
+    CACHE_TAG_NAMESPACE_SEPARATOR,
+    isCacheTagEnvironment,
+    namespaceCacheTag,
+    namespaceCacheTags,
+    parseNamespacedCacheTag,
+    resolveCacheTagEnvironment,
+    toCacheTagEnvironment
+} from './namespace.js';
 export type { CacheTagEntity, SerializedCacheTags } from './vocabulary.js';
 export {
     buildEntityCacheTag,

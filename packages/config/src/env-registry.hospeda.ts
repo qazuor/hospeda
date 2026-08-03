@@ -2264,20 +2264,20 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_DEPLOY_ENV',
         description:
-            'Explicit deploy-environment identifier consumed by @repo/media server-side environment resolution to pick the media provider config. Optional — when unset, the environment is inferred from NODE_ENV (production→prod, test→test, otherwise dev).',
+            'Explicit deploy-environment identifier with TWO consumers: @repo/media server-side environment resolution (Cloudinary folder isolation), and the Cloudflare cache-tag namespace (HOS-369) prefixed to every tag the web app emits and the API purges (prod:list-accom, preview:home). Staging and production share ONE Cloudflare zone, so the API and the web app of the same deployment MUST carry the identical value — a mismatch makes every purge match nothing while reporting success. Only inferable for local runs (NODE_ENV=test→test, development/unset→dev); on any deployment running NODE_ENV=production (staging AND production both do) it is required, because guessing prod would make staging evict production.',
         descriptionEs:
-            'Identificador explícito del entorno de deploy que usa la resolución de entorno server-side de @repo/media para elegir la config del proveedor de medios. Opcional — si no se setea, el entorno se infiere de NODE_ENV (production→prod, test→test, si no dev).',
+            'Identificador explícito del entorno de deploy con DOS consumidores: la resolución de entorno server-side de @repo/media (aislamiento de carpetas en Cloudinary) y el namespace de cache-tags de Cloudflare (HOS-369) que prefija cada tag que emite la web y que purga la API (prod:list-accom, preview:home). Staging y producción comparten UNA zona de Cloudflare, así que la API y la web del mismo deploy DEBEN tener el mismo valor — si no coinciden, cada purga no matchea nada pero reporta éxito. Solo se infiere en local (NODE_ENV=test→test, development/sin setear→dev); en cualquier deploy con NODE_ENV=production (staging Y producción lo usan) es obligatoria, porque adivinar prod haría que staging borre el cache de producción.',
         type: 'enum',
         required: false,
         secret: false,
         enumValues: ['dev', 'test', 'preview', 'prod'],
         exampleValue: 'dev',
-        apps: ['api'],
+        apps: ['api', 'web'],
         category: 'core',
         howToObtain:
-            'Set per deployment target when NODE_ENV alone cannot distinguish the media environment (e.g. a preview build). Valid values: dev, test, preview, prod.',
+            'Set on EVERY deployment, and set the SAME value on that deployment\'s API and web resources: "prod" on hospeda-api-prod + hospeda-web-prod, "preview" on hospeda-api-staging + hospeda-web-staging. Valid values: dev, test, preview, prod.',
         howToObtainEs:
-            'Setear por target de deploy cuando NODE_ENV por sí solo no alcanza para distinguir el entorno de medios (ej. un build de preview). Valores válidos: dev, test, preview, prod.'
+            'Setear en TODOS los deploys, y con el MISMO valor en los recursos API y web de ese deploy: "prod" en hospeda-api-prod + hospeda-web-prod, "preview" en hospeda-api-staging + hospeda-web-staging. Valores válidos: dev, test, preview, prod.'
     },
     {
         name: 'HOSPEDA_QZPAY_TEST_CONTROL_ENABLED',

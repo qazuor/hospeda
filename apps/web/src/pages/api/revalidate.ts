@@ -14,9 +14,21 @@
  *
  * Two modes, deliberately distinct in the body rather than one flag:
  *
- *   `{ "tags": ["accom-x", "list-accom"] }`  — selective, the normal path.
- *   `{ "purgeEverything": true }`            — whole-zone flush, the deploy
- *                                              escape hatch (spec §7.3).
+ *   `{ "tags": ["prod:accom-x", "prod:list-accom"] }` — selective, the normal path.
+ *   `{ "purgeEverything": true }`                     — whole-zone flush, the
+ *                                                       deploy escape hatch
+ *                                                       (spec §7.3).
+ *
+ * Every tag must carry THIS deployment's namespace (HOS-369 W1-2). Staging and
+ * production share one Cloudflare zone, so a tag from the other environment is
+ * refused with HTTP 400 rather than forwarded — see the check in
+ * {@link parseInstruction}, which is the system's only runtime observation of
+ * emitter/purger namespace divergence.
+ *
+ * `purgeEverything` is deliberately NOT namespaced: Cloudflare has no scoped
+ * form of it. It flushes the shared zone, and therefore BOTH environments. That
+ * is accepted for the deploy-time escape hatch it exists to be, and is another
+ * reason it is a separate, explicit mode rather than a fallback.
  *
  * Authenticated via the shared secret `HOSPEDA_REVALIDATION_SECRET`
  * passed as a `?secret=...` query parameter (same contract the API uses
@@ -24,6 +36,8 @@
  *
  * Required env vars:
  *   - HOSPEDA_REVALIDATION_SECRET — shared with the API caller
+ *   - HOSPEDA_DEPLOY_ENV          — this deployment's identity; must match the
+ *                                   value on the API that posts here
  *   - CLOUDFLARE_ZONE_ID          — Cloudflare zone for hospeda.com.ar
  *   - CLOUDFLARE_API_TOKEN        — token with `Cache Purge` permission
  *                                   scoped to the same zone
@@ -31,8 +45,14 @@
  * @route POST /api/revalidate?secret=<HOSPEDA_REVALIDATION_SECRET>
  */
 
-import { isValidCacheTag, MAX_CACHE_TAGS_PER_RESPONSE } from '@repo/cache-tags';
+import type { CacheTagEnvironment } from '@repo/cache-tags';
+import {
+    isValidCacheTag,
+    MAX_CACHE_TAGS_PER_RESPONSE,
+    parseNamespacedCacheTag
+} from '@repo/cache-tags';
 import type { APIRoute } from 'astro';
+import { getCacheTagEnvironment } from '@/lib/cache/cache-tag-environment';
 
 const CLOUDFLARE_PURGE_ENDPOINT = (zoneId: string) =>
     `https://api.cloudflare.com/client/v4/zones/${zoneId}/purge_cache`;
@@ -65,7 +85,10 @@ type PurgeInstruction =
  * default would make every malformed caller flush the zone — the exact
  * behaviour this change exists to remove, reachable by accident.
  */
-function parseInstruction(body: unknown): PurgeInstruction | { readonly error: string } {
+function parseInstruction(
+    body: unknown,
+    environment: CacheTagEnvironment
+): PurgeInstruction | { readonly error: string } {
     if (typeof body !== 'object' || body === null) {
         return { error: 'body must be a JSON object with `tags` or `purgeEverything`' };
     }
@@ -102,6 +125,34 @@ function parseInstruction(body: unknown): PurgeInstruction | { readonly error: s
         if (typeof candidate !== 'string' || !isValidCacheTag({ tag: candidate })) {
             return { error: `invalid cache tag: ${JSON.stringify(candidate)}` };
         }
+
+        // THE divergence detector (HOS-369 W1-2).
+        //
+        // This endpoint is the only place in the system where a namespace
+        // derived by the API process meets a namespace derived by the web
+        // process. Everything else — the shared resolver, the startup
+        // logging — reduces the CHANCE that the two disagree; this is the only
+        // thing that OBSERVES it, at the exact moment the disagreement would do
+        // damage, on a zone both environments share.
+        //
+        // A mismatch is refused rather than forwarded. Forwarding `prod:*` from
+        // staging would evict production's cache and Cloudflare would report
+        // success, which is the specific silent failure this whole change
+        // exists to make impossible. A 400 instead lands in the API's
+        // `revalidation_log` as a failed purge on every write, naming both
+        // namespaces.
+        const parsed = parseNamespacedCacheTag({ tag: candidate });
+        if (parsed === null) {
+            return {
+                error: `cache tag ${JSON.stringify(candidate)} carries no deployment namespace; expected a "${environment}:" prefix`
+            };
+        }
+        if (parsed.environment !== environment) {
+            return {
+                error: `cache tag ${JSON.stringify(candidate)} belongs to the "${parsed.environment}" deployment but this one is "${environment}". Refusing to purge another environment's cache from a shared Cloudflare zone — check HOSPEDA_DEPLOY_ENV on both the API and the web app.`
+            };
+        }
+
         tags.push(candidate);
     }
 
@@ -142,7 +193,21 @@ export const POST: APIRoute = async ({ request }) => {
         return jsonError({ error: 'invalid_json' }, 400);
     }
 
-    const instruction = parseInstruction(rawBody);
+    // Resolved BEFORE the body is inspected: without a namespace of its own
+    // this endpoint cannot tell a legitimate purge from a cross-environment
+    // one, and "cannot tell" must never resolve to "forward it".
+    const environment = getCacheTagEnvironment();
+    if (environment === null) {
+        return jsonError(
+            {
+                error: 'cache_tag_namespace_unresolved',
+                detail: 'HOSPEDA_DEPLOY_ENV is not set (or not one of prod|preview|dev|test) on the web app, so incoming tags cannot be checked against this deployment'
+            },
+            503
+        );
+    }
+
+    const instruction = parseInstruction(rawBody, environment);
     if ('error' in instruction) {
         return jsonError({ error: 'invalid_request', detail: instruction.error }, 400);
     }

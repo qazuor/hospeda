@@ -25,9 +25,25 @@
  * rather than writing is what lets a layout or a nested component contribute a
  * tag: their frontmatter runs after the page's, when the header would otherwise
  * already be decided.
+ *
+ * Since HOS-369 W1-2 the tags are namespaced by deployment environment
+ * (`prod:list-accom`) at COLLECTION time, not at header-write time. Both
+ * staging and production live in one Cloudflare zone, so an unqualified tag
+ * lets either environment evict the other's cache. Namespacing here rather than
+ * in middleware keeps `applyCacheHeaders`'s fail-closed check honest: a tag that
+ * only becomes unusable once the prefix is added (over Cloudflare's 1024-char
+ * ceiling, or already carrying a foreign namespace) is rejected while there is
+ * still a chance to demote the response, instead of quietly vanishing from a
+ * header written after the decision was made.
  */
 
-import { isValidCacheTag } from '@repo/cache-tags';
+import {
+    CACHE_TAG_HEADER_NAME,
+    namespaceCacheTag,
+    namespaceCacheTags,
+    serializeCacheTags
+} from '@repo/cache-tags';
+import { getCacheTagEnvironment } from './cache-tag-environment.js';
 import { LISTING_CACHEABLE_CONTROL, LISTING_PRIVATE_CONTROL } from './listing-cache.js';
 
 /**
@@ -50,12 +66,20 @@ export interface AppliedCacheHeaders {
 
 /**
  * Register cache tags for the current response without touching
- * `Cache-Control` — for endpoints that build their own `Response` and set the
- * header in its constructor (`robots.txt`, `llms.txt`, the sitemap, the feeds,
- * the OG image endpoint).
+ * `Cache-Control` — for a page or component that has already decided its
+ * cacheability elsewhere and only needs to contribute what purges it.
+ *
+ * Endpoints that construct their own `Response` do NOT use this: they never
+ * reach the middleware collector these tags accumulate into, so they take
+ * {@link buildStaticCacheHeaders} instead.
+ *
+ * Callers pass BARE vocabulary tags (`list-accom`); the deployment namespace is
+ * added here. When the namespace cannot be resolved NOTHING is accepted, which
+ * demotes the response at every call site rather than shipping a cacheable
+ * response no purge can reach.
  *
  * @param params.locals - `Astro.locals` for the current request.
- * @param params.tags - Tags that must purge this response.
+ * @param params.tags - Bare tags that must purge this response.
  * @returns How many of the SUPPLIED tags were usable. Deliberately not the size
  *   of the accumulated set: {@link applyCacheHeaders} decides whether to demote
  *   a response from this number, and a tag some other component contributed does
@@ -68,14 +92,56 @@ export function declareCacheTags({
     readonly locals: App.Locals;
     readonly tags: CacheTagList;
 }): { readonly tagCount: number } {
+    const environment = getCacheTagEnvironment();
+    if (environment === null) return { tagCount: 0 };
+
     let accepted = 0;
     for (const tag of tags) {
-        const normalized = tag.trim().toLowerCase();
-        if (!isValidCacheTag({ tag: normalized })) continue;
-        locals.cacheTags.add(normalized);
+        const namespaced = namespaceCacheTag({ environment, tag });
+        if (namespaced === null) continue;
+        locals.cacheTags.add(namespaced);
         accepted++;
     }
     return { tagCount: accepted };
+}
+
+/**
+ * Headers for an endpoint that builds its own `Response` and therefore never
+ * reaches the middleware collector: `robots.txt`, `llms.txt`, the sitemaps and
+ * the RSS feeds all short-circuit `isStaticAssetRoute` on their `.txt`/`.xml`
+ * extension.
+ *
+ * These are the easiest sites in the app to get wrong, because nothing about
+ * them looks like caching code — the `Cache-Control` is one entry in a headers
+ * literal. This function keeps the same fail-closed rule as
+ * {@link applyCacheHeaders}: no usable namespaced tag means the response is not
+ * offered to the shared cache at all.
+ *
+ * `/api/og` is deliberately NOT a caller. It is content-addressed by its query
+ * string, so it has no entity to purge by and nothing to tag.
+ *
+ * @param params.cacheControl - The `Cache-Control` this endpoint wants when it
+ *   is taggable (e.g. `public, max-age=3600`).
+ * @param params.tags - Bare tags that must purge this response.
+ * @returns The exact header pairs to set: both headers when tagging succeeded,
+ *   or a lone demoted `Cache-Control` when it did not.
+ */
+export function buildStaticCacheHeaders({
+    cacheControl,
+    tags
+}: {
+    readonly cacheControl: string;
+    readonly tags: CacheTagList;
+}): Readonly<Record<string, string>> {
+    const environment = getCacheTagEnvironment();
+    if (environment === null) return { 'Cache-Control': LISTING_PRIVATE_CONTROL };
+
+    const { header } = serializeCacheTags({
+        tags: namespaceCacheTags({ environment, tags })
+    });
+    if (header === null) return { 'Cache-Control': LISTING_PRIVATE_CONTROL };
+
+    return { 'Cache-Control': cacheControl, [CACHE_TAG_HEADER_NAME]: header };
 }
 
 /**
@@ -87,8 +153,9 @@ export function declareCacheTags({
  * would serve stale content for the full TTL with nothing able to evict it —
  * strictly worse than a cache miss, and invisible. The tuple type on
  * {@link CacheTagList} makes the empty case unreachable from well-typed code;
- * this branch covers the case where every supplied tag is an empty string built
- * from missing data at runtime.
+ * this branch covers the two runtime cases it cannot: every supplied tag being
+ * an empty string built from missing data, and the deployment namespace being
+ * unresolvable (HOS-369 W1-2), which disables tagging process-wide.
  *
  * @param params.locals - `Astro.locals` for the current request.
  * @param params.headers - `Astro.response.headers`.
