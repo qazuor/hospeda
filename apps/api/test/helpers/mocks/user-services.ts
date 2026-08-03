@@ -28,6 +28,26 @@ export class UserService {
     async adminList(_actor: unknown, _query?: Record<string, unknown>) {
         return { data: { items: [], total: 0 } };
     }
+
+    /**
+     * HOS-375 T-012 — backs `GET /api/v1/public/authors`. Shape copied
+     * field-for-field from the real `UserService.listPublicAuthors` return
+     * statement (`packages/service-core/src/services/user/user.service.ts`):
+     * `{ items, pagination: { page, pageSize, total, totalPages } }`. A mock
+     * shaped differently from the real service is exactly how the sibling
+     * `events/author/:id` route stayed broken for months — see
+     * `apps/api/test/routes/event/public/getByAuthor.test.ts`.
+     */
+    async listPublicAuthors(_actor: unknown, params: { page?: number; pageSize?: number } = {}) {
+        const page = params.page ?? 1;
+        const pageSize = params.pageSize ?? 50;
+        return {
+            data: {
+                items: [],
+                pagination: { page, pageSize, total: 0, totalPages: 0 }
+            }
+        };
+    }
 }
 
 /**
