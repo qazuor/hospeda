@@ -95,9 +95,10 @@ const showUpdated = (() => {
 })();
 const formattedUpdated = showUpdated ? formatDate({ date: String(updatedAt), locale }) : null;
 
-const authorHref = author?.slug
-	? buildUrl({ locale, path: `publicaciones/autor/${author.slug}` })
-	: null;
+// `/autores/` since HOS-375 — the page carries the author's events as well as
+// their posts now. Linked directly, not via the middleware redirect: an
+// internal link should never spend a hop it can avoid.
+const authorHref = author?.slug ? buildUrl({ locale, path: `autores/${author.slug}` }) : null;
 
 const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 ---

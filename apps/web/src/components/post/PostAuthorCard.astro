@@ -39,9 +39,11 @@ const authorImageAlt = name ? `Foto de ${name}` : t('blog.detail.aboutAuthor', '
 // Without a slug there is no author page, and no other surface filters by
 // author — the CTA is dropped rather than pointed at the unfiltered listing,
 // which would promise more articles from this author and deliver everyone's.
-const profileUrl = author.slug
-	? buildUrl({ locale, path: `publicaciones/autor/${author.slug}` })
-	: null;
+//
+// The page moved to `/autores/` in HOS-375 because it now carries the author's
+// events too. Linking straight there rather than leaning on the middleware
+// redirect: an internal link should never spend a hop it can avoid.
+const profileUrl = author.slug ? buildUrl({ locale, path: `autores/${author.slug}` }) : null;
 ---
 
 <div class="post-author-card">

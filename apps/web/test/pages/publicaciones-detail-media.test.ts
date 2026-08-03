@@ -144,7 +144,10 @@ describe('publicaciones/[slug].astro — media + content enrichment', () => {
 
         it('renders an author byline linking to the author profile when a slug exists', () => {
             expect(headerSrc).toContain('post-header__byline');
-            expect(headerSrc).toContain('publicaciones/autor/');
+            // HOS-375 moved the author page to `/autores/`. Linked directly, so
+            // this must NOT fall back to the old path and lean on the redirect.
+            expect(headerSrc).toContain('autores/${author.slug}');
+            expect(headerSrc).not.toContain('publicaciones/autor/');
         });
 
         it('renders an "updated on" indicator when updatedAt is meaningfully later than publishedAt', () => {
