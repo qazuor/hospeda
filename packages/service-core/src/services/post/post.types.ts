@@ -6,9 +6,9 @@ export interface PostHookState extends Record<string, unknown> {
     /** ID being updated.. set in update() override, read in _beforeUpdate. */
     updateId?: string;
     /** Post data captured before soft-delete for post-delete side effects. */
-    deletedPost?: { slug: string; tagSlugs?: string[] };
+    deletedPost?: { slug: string };
     /** Post data captured before restore for post-restore side effects. */
-    restoredPost?: { slug: string; tagSlugs?: string[] };
+    restoredPost?: { slug: string };
     /** ID of the entity being hard-deleted, used for Cloudinary media cleanup. */
     deletedEntityId?: string;
     /**

@@ -1650,6 +1650,9 @@ importers:
       '@faker-js/faker':
         specifier: ^10.5.0
         version: 10.5.0
+      '@repo/cache-tags':
+        specifier: workspace:*
+        version: link:../cache-tags
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -1750,6 +1753,9 @@ importers:
       '@repo/billing':
         specifier: workspace:*
         version: link:../billing
+      '@repo/cache-tags':
+        specifier: workspace:*
+        version: link:../cache-tags
       '@repo/content-moderation':
         specifier: workspace:*
         version: link:../content-moderation

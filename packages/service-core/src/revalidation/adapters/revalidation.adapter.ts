@@ -1,20 +1,28 @@
 /**
  * @fileoverview
- * Adapter interface for ISR revalidation backends.
- * Implementations receive connection config in the constructor and expose
- * a simple `revalidate(path)` / `revalidateMany(paths)` API.
+ * Adapter interface for CDN cache invalidation backends.
  *
- * Adapters MUST never throw — errors are captured in the result object.
+ * Implementations receive connection config in the constructor and expose an
+ * invalidate-by-tag API. Adapters MUST never throw — errors are captured in the
+ * result object, because every caller is a fire-and-forget hook running
+ * alongside a content write that must not fail because a purge did.
+ *
+ * HOS-369 W1-1 turned this interface from paths to tags. The old shape was
+ * already fiction for the production adapter: it accepted paths and then purged
+ * the entire zone, discarding them. Now the argument is what is actually sent.
  */
 
 /**
- * Result of a single path revalidation attempt.
- * Always returned — never thrown.
+ * Result of invalidating one target.
+ *
+ * "Target" rather than "path" or "tag" because the two invalidation modes name
+ * different things: a tag purge targets a tag, a whole-zone flush targets
+ * everything. The `revalidation_log.target` column is named to match.
  */
-export interface RevalidatePathResult {
-    /** The path that was revalidated (echoed from the input) */
-    readonly path: string;
-    /** Whether the revalidation request succeeded */
+export interface RevalidateTargetResult {
+    /** What was invalidated — a cache tag, or `*` for a whole-zone flush. */
+    readonly target: string;
+    /** Whether the invalidation request succeeded */
     readonly success: boolean;
     /** Error message if success is false */
     readonly error?: string;
@@ -22,51 +30,53 @@ export interface RevalidatePathResult {
     readonly durationMs: number;
 }
 
+/** The target recorded for a whole-zone flush. */
+export const WHOLE_ZONE_TARGET = '*';
+
 /**
- * Adapter interface for ISR page revalidation.
+ * Adapter interface for CDN cache invalidation.
  *
- * Implementations receive all connection configuration in their constructor,
- * so individual `revalidate` / `revalidateMany` calls only need the target path.
- *
- * Implementations MUST never throw — errors are captured in the result.
- *
- * @example
- * ```ts
- * const adapter: RevalidationAdapter = new CloudflareRevalidationAdapter({
- *   secret: process.env.HOSPEDA_REVALIDATION_SECRET,
- *   siteUrl: process.env.HOSPEDA_SITE_URL,
- * });
- *
- * const result = await adapter.revalidate({ path: '/alojamientos/hotel-paradise/' });
- * if (!result.success) {
- *   logger.error('Revalidation failed', { path: result.path, error: result.error });
- * }
- * ```
+ * Implementations must be safe to call concurrently and must never throw.
  */
 export interface RevalidationAdapter {
     /** Human-readable adapter name for logging and diagnostics */
     readonly name: string;
 
     /**
-     * Revalidate a single page path.
+     * Invalidate every response carrying a single cache tag.
      * Must never throw — errors are captured in the result.
      *
-     * @param params - Object containing the URL path to revalidate
-     * @param params.path - The URL path to revalidate (e.g. '/alojamientos/hotel-paradise/')
+     * @param params.tag - The cache tag to purge (e.g. `accom-hotel-paradise`)
      * @returns Result with success flag, duration, and optional error message
      */
-    revalidate(params: { readonly path: string }): Promise<RevalidatePathResult>;
+    revalidate(params: { readonly tag: string }): Promise<RevalidateTargetResult>;
 
     /**
-     * Revalidate multiple page paths concurrently.
-     * Uses `Promise.allSettled` internally — a failure on one path does not abort others.
-     * Must never throw.
+     * Invalidate every response carrying any of the given cache tags.
      *
-     * @param params - Object containing the array of URL paths to revalidate
-     * @param params.paths - Array of URL paths to revalidate
-     * @returns Array of results, one per path, in the same order as input
+     * Implementations are free to satisfy this with a single upstream request —
+     * Cloudflare's purge API takes up to 100 tags at once — and to report the
+     * same outcome for each input tag. Callers must not assume one network
+     * round-trip per tag.
+     *
+     * @param params.tags - Cache tags to purge
+     * @returns One result per input tag, in input order
      */
     revalidateMany(params: {
-        readonly paths: ReadonlyArray<string>;
-    }): Promise<ReadonlyArray<RevalidatePathResult>>;
+        readonly tags: ReadonlyArray<string>;
+    }): Promise<ReadonlyArray<RevalidateTargetResult>>;
+
+    /**
+     * Flush the entire zone.
+     *
+     * The deliberate escape hatch (spec §7.3), kept for deploys — when every
+     * asset hash changes at once, enumerating tags is both pointless and
+     * slower. It is a separate method rather than a flag on the others so that
+     * "purge everything" can never be reached by accident from a content
+     * write: reading a call site tells you which one it is.
+     *
+     * @param params.reason - Human-readable justification, recorded in the log
+     * @returns Result targeting {@link WHOLE_ZONE_TARGET}
+     */
+    purgeEverything(params: { readonly reason?: string }): Promise<RevalidateTargetResult>;
 }

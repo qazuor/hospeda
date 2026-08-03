@@ -9,9 +9,9 @@ export interface EventHookState extends Record<string, unknown> {
      */
     updateId?: string;
     /** Entity data captured before soft-delete for post-delete side effects. */
-    deletedEvent?: { slug: string; category?: string };
+    deletedEvent?: { slug: string };
     /** Entity data captured before restore for post-restore side effects. */
-    restoredEvent?: { slug: string; category?: string };
+    restoredEvent?: { slug: string };
     /** ID of the entity being hard-deleted, used for Cloudinary media cleanup. */
     deletedEntityId?: string;
     /**

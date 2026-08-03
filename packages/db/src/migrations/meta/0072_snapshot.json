@@ -1,6 +1,6 @@
 {
-  "id": "2ad727f4-7a83-4e61-b74e-7056f126c532",
-  "prevId": "f75761c6-5a84-4a7d-a7d9-e1db092c6399",
+  "id": "7b581f82-931c-4b54-8ca7-c888ee8cc2dd",
+  "prevId": "2ad727f4-7a83-4e61-b74e-7056f126c532",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -103,12 +103,6 @@
         },
         "location": {
           "name": "location",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "media": {
-          "name": "media",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
@@ -12510,12 +12504,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "media": {
-          "name": "media",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
         "videos": {
           "name": "videos",
           "type": "jsonb",
@@ -13355,12 +13343,6 @@
         },
         "opening_hours": {
           "name": "opening_hours",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "media": {
-          "name": "media",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false

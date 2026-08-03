@@ -114,7 +114,8 @@ export function useUpdateRevalidationConfig() {
 }
 
 /**
- * Mutation hook for triggering a manual revalidation of specific URL paths.
+ * Mutation hook for triggering a manual revalidation of specific cache tags,
+ * or (via an explicit `purgeEverything: true` opt-in) a whole-zone purge.
  * Automatically invalidates logs and stats queries on success.
  *
  * @returns TanStack Query mutation for `manualRevalidate`
@@ -131,7 +132,7 @@ export function useManualRevalidate() {
 }
 
 /**
- * Mutation hook for revalidating all paths for an entire entity type.
+ * Mutation hook for revalidating the collection cache tag for an entire entity type.
  * Automatically invalidates logs and stats queries on success.
  *
  * @returns TanStack Query mutation for `revalidateByType`
@@ -148,7 +149,7 @@ export function useRevalidateByType() {
 }
 
 /**
- * Mutation hook for revalidating all paths associated with a specific entity instance.
+ * Mutation hook for revalidating all cache tags associated with a specific entity instance.
  * Automatically invalidates the logs query on success.
  *
  * @returns TanStack Query mutation for `revalidateEntity`

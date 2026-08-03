@@ -1,3 +1,4 @@
+import { isValidCacheTag } from '@repo/cache-tags';
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import {
@@ -13,29 +14,25 @@ import {
 // ---------------------------------------------------------------------------
 
 describe('ManualRevalidateRequestSchema', () => {
-    describe('Valid data', () => {
-        it('should validate a request with a single path', () => {
-            const data = { paths: ['/en/accommodations/hotel-palace'] };
+    describe('Valid data — tags branch', () => {
+        it('should validate a request with a single tag', () => {
+            const data = { tags: ['accom-hotel-palace'] };
             const result = ManualRevalidateRequestSchema.parse(data);
-            expect(result.paths).toHaveLength(1);
-            expect(result.paths[0]).toBe('/en/accommodations/hotel-palace');
+            expect('tags' in result && result.tags).toHaveLength(1);
+            expect('tags' in result && result.tags[0]).toBe('accom-hotel-palace');
         });
 
-        it('should validate a request with multiple paths', () => {
+        it('should validate a request with multiple tags', () => {
             const data = {
-                paths: [
-                    '/en/accommodations/hotel-palace',
-                    '/es/alojamientos/hotel-palace',
-                    '/pt/acomodacoes/hotel-palace'
-                ]
+                tags: ['accom-hotel-palace', 'list-accom', 'home']
             };
             const result = ManualRevalidateRequestSchema.parse(data);
-            expect(result.paths).toHaveLength(3);
+            expect('tags' in result && result.tags).toHaveLength(3);
         });
 
         it('should validate a request with an optional reason', () => {
             const data = {
-                paths: ['/en/destinations/litoral'],
+                tags: ['dest-litoral'],
                 reason: 'Content updated by editor'
             };
             const result = ManualRevalidateRequestSchema.parse(data);
@@ -43,7 +40,7 @@ describe('ManualRevalidateRequestSchema', () => {
         });
 
         it('should validate a request without reason (optional)', () => {
-            const data = { paths: ['/en/events/festival-2024'] };
+            const data = { tags: ['event-festival-2024'] };
             const result = ManualRevalidateRequestSchema.safeParse(data);
             expect(result.success).toBe(true);
             if (result.success) {
@@ -51,55 +48,105 @@ describe('ManualRevalidateRequestSchema', () => {
             }
         });
 
-        it('should accept exactly 100 paths (maximum boundary)', () => {
-            const paths = Array.from({ length: 100 }, (_, i) => `/path-${i}`);
-            const result = ManualRevalidateRequestSchema.safeParse({ paths });
+        it('should accept exactly 100 tags (maximum boundary)', () => {
+            const tags = Array.from({ length: 100 }, (_, i) => `tag-${i}`);
+            const result = ManualRevalidateRequestSchema.safeParse({ tags });
             expect(result.success).toBe(true);
         });
 
         it('should accept reason up to 500 characters (maximum boundary)', () => {
             const data = {
-                paths: ['/en/test'],
+                tags: ['accom-test'],
                 reason: 'A'.repeat(500)
             };
             expect(ManualRevalidateRequestSchema.safeParse(data).success).toBe(true);
         });
     });
 
-    describe('Invalid data', () => {
-        it('should reject empty paths array', () => {
-            const data = { paths: [] };
+    describe('Invalid data — tags branch', () => {
+        it('should reject empty tags array', () => {
+            const data = { tags: [] };
             const result = ManualRevalidateRequestSchema.safeParse(data);
             expect(result.success).toBe(false);
         });
 
-        it('should reject more than 100 paths', () => {
-            const paths = Array.from({ length: 101 }, (_, i) => `/path-${i}`);
-            const result = ManualRevalidateRequestSchema.safeParse({ paths });
+        it('should reject more than 100 tags', () => {
+            const tags = Array.from({ length: 101 }, (_, i) => `tag-${i}`);
+            const result = ManualRevalidateRequestSchema.safeParse({ tags });
             expect(result.success).toBe(false);
         });
 
-        it('should reject paths containing empty strings', () => {
-            const data = { paths: [''] };
+        it('should reject tags containing empty strings', () => {
+            const data = { tags: [''] };
             const result = ManualRevalidateRequestSchema.safeParse(data);
             expect(result.success).toBe(false);
+        });
+
+        it('should reject a tag containing a comma (the Cache-Tag list separator)', () => {
+            const data = { tags: ['bad,tag'] };
+            expect(ManualRevalidateRequestSchema.safeParse(data).success).toBe(false);
+        });
+
+        it('should reject a tag containing a space', () => {
+            const data = { tags: ['bad tag'] };
+            expect(ManualRevalidateRequestSchema.safeParse(data).success).toBe(false);
         });
 
         it('should reject reason exceeding 500 characters', () => {
             const data = {
-                paths: ['/en/test'],
+                tags: ['accom-test'],
                 reason: 'A'.repeat(501)
             };
             expect(ManualRevalidateRequestSchema.safeParse(data).success).toBe(false);
         });
 
-        it('should reject missing paths field', () => {
+        it('should reject a body with neither tags nor purgeEverything', () => {
             const result = ManualRevalidateRequestSchema.safeParse({});
             expect(result.success).toBe(false);
         });
 
         it('should throw ZodError when using .parse() with invalid input', () => {
-            expect(() => ManualRevalidateRequestSchema.parse({ paths: [] })).toThrow(ZodError);
+            expect(() => ManualRevalidateRequestSchema.parse({ tags: [] })).toThrow(ZodError);
+        });
+    });
+
+    describe('Valid data — purgeEverything branch', () => {
+        it('should validate a bare whole-zone purge request', () => {
+            const data = { purgeEverything: true as const };
+            const result = ManualRevalidateRequestSchema.parse(data);
+            expect('purgeEverything' in result && result.purgeEverything).toBe(true);
+        });
+
+        it('should validate a whole-zone purge request with a reason', () => {
+            const data = { purgeEverything: true as const, reason: 'Deploy changed every asset' };
+            const result = ManualRevalidateRequestSchema.parse(data);
+            expect(result.reason).toBe('Deploy changed every asset');
+        });
+    });
+
+    describe('Invalid data — purgeEverything branch', () => {
+        it('should reject purgeEverything: false (not the literal true)', () => {
+            const data = { purgeEverything: false };
+            expect(ManualRevalidateRequestSchema.safeParse(data).success).toBe(false);
+        });
+
+        it('should reject a body carrying BOTH tags and purgeEverything', () => {
+            // Both branches are `.strict()`, which is what makes them mutually
+            // exclusive. A plain `z.union` of non-strict objects would match this
+            // against the FIRST branch and drop the flag silently: the operator
+            // asks for a whole-zone flush, the request succeeds, and they get a
+            // tag purge. On an endpoint whose contract is that the destructive
+            // path is only reachable deliberately, an ambiguous body has to be
+            // rejected rather than resolved in the caller's favour.
+            const data = { tags: ['accom-test'], purgeEverything: true as const };
+            expect(ManualRevalidateRequestSchema.safeParse(data).success).toBe(false);
+        });
+
+        it('should reject an unknown key rather than ignoring it', () => {
+            // Non-vacuity for `.strict()`: without it this passes, and so does
+            // the mixed-key body above.
+            const data = { tags: ['accom-test'], purgeEverythingg: true };
+            expect(ManualRevalidateRequestSchema.safeParse(data).success).toBe(false);
         });
     });
 });
@@ -441,5 +488,61 @@ describe('RevalidationStatsSchema', () => {
             expect(typeof result.byEntityType).toBe('object');
             expect(typeof result.byTrigger).toBe('object');
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Drift guard for the duplicated cache-tag rule
+// ---------------------------------------------------------------------------
+
+/**
+ * `CacheTagSchema` in `revalidation.http.schema.ts` re-states the tag validity
+ * rule instead of importing `isValidCacheTag`, because `@repo/schemas` is
+ * consumed from SOURCE by apps that would then all need `@repo/cache-tags`
+ * declared themselves (importing it broke `apps/admin`'s test run).
+ *
+ * A duplicated rule that nothing compares is a rule that drifts. This asserts
+ * the two agree on the same corpus — which is why `@repo/cache-tags` is a
+ * devDependency here, and only a devDependency.
+ */
+describe('cache-tag validation stays in sync with @repo/cache-tags', () => {
+    const CASES: ReadonlyArray<string> = [
+        'accom-cabana-del-rio',
+        'list-accom',
+        'home',
+        'pricing',
+        'site-config',
+        'accom-3f1a2b4c-0000-4000-8000-000000000001',
+        'a',
+        'UPPER-CASE',
+        'with.dots-and_underscores~tilde',
+        '!#$%&()*+',
+        '',
+        ' leading-space',
+        'trailing-space ',
+        'has space',
+        'has,comma',
+        'concepción',
+        'emoji-🙂',
+        'tab\there',
+        'newline\nhere',
+        'a'.repeat(1024),
+        'a'.repeat(1025)
+    ];
+
+    it('accepts and rejects exactly the same tags as isValidCacheTag', () => {
+        const disagreements = CASES.filter((tag) => {
+            const bySchema = ManualRevalidateRequestSchema.safeParse({ tags: [tag] }).success;
+            const byPackage = isValidCacheTag({ tag });
+            return bySchema !== byPackage;
+        });
+
+        expect(disagreements).toEqual([]);
+    });
+
+    it('is non-vacuous — the corpus contains both accepted and rejected tags', () => {
+        const accepted = CASES.filter((tag) => isValidCacheTag({ tag }));
+        expect(accepted.length).toBeGreaterThan(5);
+        expect(CASES.length - accepted.length).toBeGreaterThan(5);
     });
 });

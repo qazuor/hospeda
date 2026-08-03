@@ -1,5 +1,5 @@
 {
-  "id": "2ad727f4-7a83-4e61-b74e-7056f126c532",
+  "id": "f75761c6-5a84-4a7d-a7d9-e1db092c6399",
   "prevId": "7466f38d-fc72-4f30-82b0-8ffcde3df2e6",
   "version": "7",
   "dialect": "postgresql",
@@ -109,12 +109,6 @@
         },
         "media": {
           "name": "media",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "videos": {
-          "name": "videos",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
@@ -11849,225 +11843,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.experience_media": {
-      "name": "experience_media",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "experience_id": {
-          "name": "experience_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "url": {
-          "name": "url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "caption": {
-          "name": "caption",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "alt": {
-          "name": "alt",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "public_id": {
-          "name": "public_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "attribution": {
-          "name": "attribution",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "moderation_state": {
-          "name": "moderation_state",
-          "type": "moderation_status_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'PENDING'"
-        },
-        "state": {
-          "name": "state",
-          "type": "experience_media_state_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'visible'"
-        },
-        "is_featured": {
-          "name": "is_featured",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "sort_order": {
-          "name": "sort_order",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "archived_at": {
-          "name": "archived_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "experienceMedia_experienceId_idx": {
-          "name": "experienceMedia_experienceId_idx",
-          "columns": [
-            {
-              "expression": "experience_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "experienceMedia_state_idx": {
-          "name": "experienceMedia_state_idx",
-          "columns": [
-            {
-              "expression": "state",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "experienceMedia_isFeatured_idx": {
-          "name": "experienceMedia_isFeatured_idx",
-          "columns": [
-            {
-              "expression": "is_featured",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "experienceMedia_experienceId_state_sortOrder_idx": {
-          "name": "experienceMedia_experienceId_state_sortOrder_idx",
-          "columns": [
-            {
-              "expression": "experience_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "state",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "sort_order",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "experienceMedia_deletedAt_idx": {
-          "name": "experienceMedia_deletedAt_idx",
-          "columns": [
-            {
-              "expression": "deleted_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "experience_media_experience_id_experiences_id_fk": {
-          "name": "experience_media_experience_id_experiences_id_fk",
-          "tableFrom": "experience_media",
-          "tableTo": "experiences",
-          "columnsFrom": [
-            "experience_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.experience_reviews": {
       "name": "experience_reviews",
       "schema": "",
@@ -12512,12 +12287,6 @@
         },
         "media": {
           "name": "media",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "videos": {
-          "name": "videos",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
@@ -13365,12 +13134,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "videos": {
-          "name": "videos",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
         "seo": {
           "name": "seo",
           "type": "jsonb",
@@ -13904,225 +13667,6 @@
             "id"
           ],
           "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.gastronomy_media": {
-      "name": "gastronomy_media",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "gastronomy_id": {
-          "name": "gastronomy_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "url": {
-          "name": "url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "caption": {
-          "name": "caption",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "alt": {
-          "name": "alt",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "public_id": {
-          "name": "public_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "attribution": {
-          "name": "attribution",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "moderation_state": {
-          "name": "moderation_state",
-          "type": "moderation_status_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'PENDING'"
-        },
-        "state": {
-          "name": "state",
-          "type": "gastronomy_media_state_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'visible'"
-        },
-        "is_featured": {
-          "name": "is_featured",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "sort_order": {
-          "name": "sort_order",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "archived_at": {
-          "name": "archived_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "gastronomyMedia_gastronomyId_idx": {
-          "name": "gastronomyMedia_gastronomyId_idx",
-          "columns": [
-            {
-              "expression": "gastronomy_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "gastronomyMedia_state_idx": {
-          "name": "gastronomyMedia_state_idx",
-          "columns": [
-            {
-              "expression": "state",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "gastronomyMedia_isFeatured_idx": {
-          "name": "gastronomyMedia_isFeatured_idx",
-          "columns": [
-            {
-              "expression": "is_featured",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "gastronomyMedia_gastronomyId_state_sortOrder_idx": {
-          "name": "gastronomyMedia_gastronomyId_state_sortOrder_idx",
-          "columns": [
-            {
-              "expression": "gastronomy_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "state",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "sort_order",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "gastronomyMedia_deletedAt_idx": {
-          "name": "gastronomyMedia_deletedAt_idx",
-          "columns": [
-            {
-              "expression": "deleted_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "gastronomy_media_gastronomy_id_gastronomies_id_fk": {
-          "name": "gastronomy_media_gastronomy_id_gastronomies_id_fk",
-          "tableFrom": "gastronomy_media",
-          "tableTo": "gastronomies",
-          "columnsFrom": [
-            "gastronomy_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -17407,8 +16951,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "path": {
-          "name": "path",
+        "target": {
+          "name": "target",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -17516,11 +17060,11 @@
           "method": "btree",
           "with": {}
         },
-        "revalidation_log_path_idx": {
-          "name": "revalidation_log_path_idx",
+        "revalidation_log_target_idx": {
+          "name": "revalidation_log_target_idx",
           "columns": [
             {
-              "expression": "path",
+              "expression": "target",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -31186,22 +30730,6 @@
     },
     "public.accommodation_media_state_enum": {
       "name": "accommodation_media_state_enum",
-      "schema": "public",
-      "values": [
-        "visible",
-        "archived"
-      ]
-    },
-    "public.experience_media_state_enum": {
-      "name": "experience_media_state_enum",
-      "schema": "public",
-      "values": [
-        "visible",
-        "archived"
-      ]
-    },
-    "public.gastronomy_media_state_enum": {
-      "name": "gastronomy_media_state_enum",
       "schema": "public",
       "values": [
         "visible",

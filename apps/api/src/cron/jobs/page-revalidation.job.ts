@@ -198,7 +198,7 @@ export const pageRevalidationJob: CronJobDefinition = {
                         });
 
                         // The batch reports purge failures in its results rather than
-                        // throwing (same contract as revalidatePaths), so they have to
+                        // throwing (same contract as revalidateTags), so they have to
                         // be counted here or a failed purge would look like success.
                         const failed = batchResults.filter(({ results }) =>
                             results.some((result) => !result.success)

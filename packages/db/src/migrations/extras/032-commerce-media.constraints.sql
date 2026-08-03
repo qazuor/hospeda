@@ -5,7 +5,7 @@
 -- Drizzle cannot emit a partial unique index nor a cross-column CHECK, so they
 -- live in extras/ and are re-applied by `pnpm db:apply-extras` after every
 -- `pnpm db:migrate`. Both tables are created by the structural migration
--- 0070_nervous_rogue.sql (carril 1).
+-- 0071_nervous_rogue.sql (carril 1).
 --
 -- Mirrors 018-accommodation-media.constraints.sql exactly, one block pair per
 -- vertical. The verticals are separate tables (not one polymorphic table) so
