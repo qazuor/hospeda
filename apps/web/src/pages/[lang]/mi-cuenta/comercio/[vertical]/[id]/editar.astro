@@ -170,8 +170,12 @@ const initialFaqs: CommerceFaq[] = Array.isArray(rawFaqs)
 </AccountLayout>
 
 <style>
-    /* Stacked-card spacing: two AccountSectionCard blocks in a row need an
-       explicit gap since the card recipe carries no outer margin. */
+    /* Stacked-card spacing: the card recipe carries no outer margin, so the FAQ
+       card needs an explicit gap from whatever sits above it. Since HOS-371 that
+       is the editor's LAST section card, not an AccountSectionCard — the value
+       matches `.editor`'s own `gap: var(--space-6)` so the FAQ card is spaced
+       from the editor exactly like the editor's cards are spaced from each
+       other. */
     .ce-faq-gap {
         margin-top: var(--space-6);
     }

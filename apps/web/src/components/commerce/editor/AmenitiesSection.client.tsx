@@ -3,7 +3,7 @@
  * @description Amenity + feature multi-select section of the commerce owner
  * editor (SPEC-249 T-016, extracted in HOS-258).
  *
- * Two independent checkbox groups; each toggle flows up to the orchestrator so
+ * Two independent groups; each toggle flows up to the orchestrator so
  * `amenityIds` / `featureIds` stay separate entries in the PATCH diff.
  *
  * SPEC-266: the `name` column was removed from the catalog. Display labels are

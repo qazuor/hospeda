@@ -528,6 +528,56 @@ describe('CommerceListingEditor', () => {
         expect(body.featureIds).toEqual([FEATURE_F1]);
     });
 
+    it('carries an amenity toggled inside a COLLAPSED accordion through to the payload (HOS-371)', async () => {
+        // The test above uses `category: null` amenities, which all land in the
+        // single "Otros" bucket — and that bucket is first, therefore open. So
+        // it proves "toggle → payload" but never "toggle from behind a closed
+        // summary → payload", which is what the accordions actually introduced.
+        //
+        // <details> keeps its children in the DOM whether open or not, so the
+        // checkbox is reachable either way. That is precisely the property worth
+        // pinning: swapping <details> for conditional rendering would unmount it
+        // and break the write path with no other test noticing.
+        const WIFI = '11111111-1111-4111-8111-111111111111';
+        const TERRAZA = '33333333-3333-4333-8333-333333333333';
+
+        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+        const { container } = render(
+            <CommerceListingEditor
+                vertical="gastronomy"
+                listingId="abc"
+                locale="es"
+                initialData={
+                    {
+                        id: 'abc',
+                        ownerId: 'owner-1',
+                        name: 'La Parrilla',
+                        slug: 'la-parrilla'
+                    } as unknown as CommerceListingDetail
+                }
+                amenities={[
+                    { id: WIFI, slug: 'wifi', category: 'CONNECTIVITY' },
+                    { id: TERRAZA, slug: 'terraza', category: 'OUTDOORS' }
+                ]}
+                features={[]}
+            />
+        );
+
+        // Assert the group really IS collapsed before clicking — otherwise this
+        // silently degrades into a duplicate of the test above.
+        const outdoors = Array.from(container.querySelectorAll('details')).find((el) =>
+            el.querySelector('summary')?.textContent?.includes('Exteriores')
+        );
+        expect(outdoors?.open).toBe(false);
+
+        fireEvent.click(screen.getByLabelText('Terraza'));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+        const collapsedBody = mockPatch.mock.calls[0]?.[0]?.body as { amenityIds?: string[] };
+        expect(collapsedBody.amenityIds).toEqual([TERRAZA]);
+    });
+
     describe('D-1 identity fields (name/destinationId/description) — HOS-166', () => {
         it('renders name, destinationId, and description seeded from initialData', () => {
             render(

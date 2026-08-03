@@ -18,9 +18,11 @@ import type { CommerceListingDetail } from '../../../src/lib/commerce/owner-list
 
 vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 
-vi.mock('../../../src/components/commerce/CommerceListingEditor.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
-}));
+// No CSS-module stubs here on purpose. Since HOS-258 the fields live in the
+// section components and pull `editor/*.module.css`, so stubbing only the
+// orchestrator's module (as the sibling suites do) would cover a fraction of
+// them and read as if it still mattered. Nothing in this file asserts on class
+// names, and the `.ProseMirror` gate comes from ProseMirror core, not a module.
 
 vi.mock('../../../src/components/commerce/CommerceTranslationPanel.client', () => ({
     CommerceTranslationPanel: () => null,

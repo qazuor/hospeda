@@ -27,17 +27,34 @@ const editorPage = read(
     resolve(__dirname, '../../../src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar.astro')
 );
 
-/** Every section component the orchestrator composes the form out of (HOS-258). */
-const SECTION_FILES = readdirSync(EDITOR_DIR).filter((name) => name.endsWith('Section.client.tsx'));
+/**
+ * Every client component under `editor/` — not just `*Section.client.tsx`.
+ *
+ * Discovering by suffix would leave anything the sections compose (today
+ * `CommercePhoneField.tsx`, tomorrow any `*Field`/`*Block`) unscanned, and a
+ * `<section>` added there would be just as uncarded.
+ */
+const EDITOR_COMPONENTS = readdirSync(EDITOR_DIR).filter((name) => name.endsWith('.tsx'));
+
+/** The subset that renders a top-level form section, i.e. must own a card. */
+const SECTION_FILES = EDITOR_COMPONENTS.filter((name) => name.endsWith('Section.client.tsx'));
 
 /** Strips comments so this file's own prose about `<fieldset>` is not scanned. */
 function stripComments(source: string): string {
     return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 }
 
-/** Reads the body of the first `.section { ... }` rule in a CSS module. */
+/**
+ * Concatenates EVERY `.section { ... }` rule in a CSS module, not just the
+ * first.
+ *
+ * A second `.section` block appended later in the same file would otherwise
+ * slip a `padding: 0` past the assertions below — and by source order that
+ * later block WINS, which is exactly the "cancels the card, no-op on screen,
+ * tests still green" failure this guard exists to catch.
+ */
 function sectionRule(css: string): string {
-    return css.match(/\.section\s*\{[^}]*\}/)?.[0] ?? '';
+    return [...css.matchAll(/\.section\s*\{[^}]*\}/g)].map((match) => match[0]).join('\n');
 }
 
 describe('CommerceListingEditor — per-section cards (HOS-371)', () => {
@@ -73,14 +90,16 @@ describe('CommerceListingEditor — per-section cards (HOS-371)', () => {
         expect(editorRule).not.toMatch(/max-width/);
     });
 
-    it('gives every top-level section element of every section component a card', () => {
-        // Anything rendered as a top-level <section> without the section class is
-        // the one block that would be missing its card. Nested <fieldset>s that
-        // are deliberately NOT cards (the amenity catalog groups, the phone pair)
-        // are allowed — they are never <section> elements.
+    it('gives every <section> element under editor/ a card', () => {
+        // A top-level `<section>` without the card class is the one block that
+        // would be missing its card. `<fieldset>` is deliberately NOT asserted
+        // the same way: two of them (the amenity catalog groups, the phone pair)
+        // are legitimately nested non-cards, and an allowlist of "the fieldsets
+        // that may skip the card" is precisely the escape hatch a fail-open
+        // hides in. The next assertion covers the fieldset-rooted sections.
         let carded = 0;
 
-        for (const file of SECTION_FILES) {
+        for (const file of EDITOR_COMPONENTS) {
             const code = stripComments(read(resolve(EDITOR_DIR, file)));
 
             for (const tag of code.match(/<section\b[^>]*>/g) ?? []) {
@@ -89,21 +108,42 @@ describe('CommerceListingEditor — per-section cards (HOS-371)', () => {
                 );
                 carded += 1;
             }
-
-            // The component's ROOT element must be a card too — a section whose
-            // root is a <fieldset> (contact, social networks) is still a card.
-            const firstTag = code.match(/<(section|fieldset)\b[^>]*>/)?.[0] ?? '';
-            expect(firstTag, `${file}: root element is not a card`).toMatch(
-                /(styles|fieldStyles)\.section/
-            );
-            if (firstTag.startsWith('<fieldset')) {
-                carded += 1;
-            }
         }
 
         // Non-vacuity: the guard must actually have inspected the real form.
-        expect(SECTION_FILES.length).toBeGreaterThanOrEqual(7);
+        expect(EDITOR_COMPONENTS.length).toBeGreaterThanOrEqual(8);
         expect(carded).toBeGreaterThan(10);
+    });
+
+    it('makes every section component own at least one card', () => {
+        // Catches a whole section shipping uncarded — including the two whose
+        // card is a <fieldset> (contact, social networks), which the <section>
+        // sweep above cannot see.
+        //
+        // Deliberately NOT phrased as "the ROOT element is a card": a regex over
+        // source cannot identify the returned root (a component may open with a
+        // wrapper <div>, or return a Fragment of siblings as BasicInfoSection
+        // does), and an assertion whose message claims more than its predicate
+        // checks is worse than none — a reviewer trusts the message.
+        for (const file of SECTION_FILES) {
+            const code = stripComments(read(resolve(EDITOR_DIR, file)));
+
+            expect(code, `${file}: renders no card at all`).toMatch(
+                /<(section|fieldset)\b[^>]*(styles|fieldStyles)\.section/
+            );
+        }
+
+        expect(SECTION_FILES.length).toBeGreaterThanOrEqual(7);
+    });
+
+    it('keeps the orchestrator free of raw sections that would bypass the sweep', () => {
+        // The orchestrator composes section COMPONENTS; it renders no
+        // <section>/<fieldset> of its own. Stating that here is what keeps the
+        // per-file sweep above a complete picture of the form — otherwise a
+        // block added straight into the <form> is guarded by nothing.
+        const code = stripComments(read(resolve(COMMERCE_DIR, 'CommerceListingEditor.client.tsx')));
+
+        expect(code.match(/<(section|fieldset)\b/g) ?? []).toHaveLength(0);
     });
 
     it('makes the translation panel its own card instead of a bare fieldset', () => {
@@ -113,7 +153,13 @@ describe('CommerceListingEditor — per-section cards (HOS-371)', () => {
         expect(sectionRule(translationPanelCss)).toMatch(
             /composes:\s*card from ["']\.\.\/account\/AccountSection\.module\.css["']/
         );
+        // BOTH rules, symmetrically with `editor-fields.module.css` above:
+        // dropping the sibling `clear` alone lets the panel's description
+        // paragraph wrap alongside the floated legend.
         expect(translationPanelCss).toMatch(/\.section\s*>\s*legend\s*\{[^}]*float:\s*left/);
+        expect(translationPanelCss).toMatch(
+            /\.section\s*>\s*legend\s*\+\s*\*\s*\{[^}]*clear:\s*both/
+        );
     });
 
     it('drops the translation panel resets and margin that would cancel or hollow the card', () => {
