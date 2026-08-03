@@ -311,6 +311,7 @@
                 "saveFailed": "Erro ao salvar",
                 "network": "Erro de conexão"
             },
+            "unsavedChanges": "Você tem alterações não salvas. Se sair agora, elas serão perdidas. Deseja sair mesmo assim?",
             "toast": {
                 "saveSuccess": "Alterações salvas",
                 "saveError": "Não pudemos salvar suas alterações. Tente novamente.",

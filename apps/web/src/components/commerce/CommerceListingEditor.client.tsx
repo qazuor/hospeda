@@ -29,6 +29,7 @@ import type { DestinationOption } from '@/components/gastronomy/CommerceLead.cli
 import { apiClient } from '@/lib/api/client';
 import type { AmenityData } from '@/lib/api/types';
 import type { CommerceListingDetail, CommerceVertical } from '@/lib/commerce/owner-listings';
+import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -500,6 +501,16 @@ export function CommerceListingEditor({
     // Derived from the diff, so reverting an edit by hand disables the button
     // again — the accommodation editor behaves the same way.
     const canSave = Object.keys(patchPayload).length > 0 && !isSaving;
+
+    // HOS-373: warns before leaving with unsaved edits. Reuses the same diff as
+    // `canSave`, so the guard goes quiet the moment a save resyncs the baseline.
+    useUnsavedChangesGuard({
+        isDirty: Object.keys(patchPayload).length > 0,
+        message: t(
+            'commerce.owner.editor.unsavedChanges',
+            'Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?'
+        )
+    });
 
     return (
         <form
