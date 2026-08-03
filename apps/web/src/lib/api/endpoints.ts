@@ -912,6 +912,44 @@ export const eventsApi = {
      */
     getSummary({ id }: { readonly id: string }): Promise<ApiResult<EventSummary>> {
         return apiClient.get({ path: `${BASE}/events/${id}/summary` });
+    },
+
+    /**
+     * Get a single author's events, newest first, for the author page
+     * (HOS-375 §6.2).
+     *
+     * Takes the author's **UUID**, not their slug — the route is
+     * `GET /events/author/{authorId}`. The author page resolves the slug to an
+     * id through the public author profile before calling this.
+     *
+     * ONLY pagination is sent, deliberately. The server's
+     * `EventByAuthorHttpSchema` also declares `category`, `isFeatured`,
+     * `isVirtual`, `q`, `sortBy` and `sortOrder`, but the handler
+     * (`apps/api/src/routes/event/public/getByAuthor.ts`) destructures just
+     * `page` and `pageSize` and silently discards the rest (HOS-375 NG-2).
+     * Accepting them here would advertise filtering this endpoint does not do.
+     *
+     * @param params - Author UUID and optional pagination
+     * @returns A paginated page of that author's events
+     *
+     * @example
+     * ```ts
+     * const result = await eventsApi.getByAuthor({ authorId, page: 2, pageSize: 12 });
+     * ```
+     */
+    getByAuthor({
+        authorId,
+        page,
+        pageSize
+    }: {
+        readonly authorId: string;
+        readonly page?: number;
+        readonly pageSize?: number;
+    }): Promise<ApiResult<PaginatedResponse<EventPublic>>> {
+        return apiClient.getList({
+            path: `${BASE}/events/author/${authorId}`,
+            params: { page, pageSize }
+        });
     }
 };
 
