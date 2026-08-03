@@ -340,23 +340,24 @@
             "id": "T-014",
             "title": "Add the author relation to EventPublicSchema",
             "description": "Spec §6.9 (G-7). Extend EventPublicSchema in packages/schemas/src/entities/event/event.access.schema.ts:61-66 with `author: UserAuthorPublicSchema.nullish()`, matching the existing organizer/location nullish-relation convention (nullish covers both 'relation not loaded' and 'FK null'). Additive, so allowed by the additive-only compat policy. Reuse the existing public user projection — never a fuller user shape. Tests: historic event fixtures must still safeParse; assert the field is optional.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-015"],
             "subtasks": [
-                { "title": "Extend the schema with the nullish relation", "completed": false },
-                { "title": "Confirm reuse of the public user projection", "completed": false },
-                { "title": "Tests: historic fixtures still parse", "completed": false }
+                { "title": "Extend the schema with the nullish relation", "completed": true },
+                { "title": "Confirm reuse of the public user projection", "completed": true },
+                { "title": "Tests: historic fixtures still parse", "completed": true }
             ],
             "tags": ["schemas", "events"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-03T23:00:00.000Z",
+                "completed": "2026-08-03T23:10:00.000Z"
+            },
+            "notes": "NAMING: the task and spec §6.9 both call for `UserAuthorPublicSchema`, which does not exist in @repo/schemas — the only thing by that name is `UserAuthorPublicResponseSchema`, a route-local schema in apps/api/src/routes/user/public/getBySlug.ts:62 that a package in packages/ cannot import. The existing public user projection the spec's wording points at is `UserPublicSchema` (user.access.schema.ts), which is exactly what `PostPublicSchema.author` already uses — so the event relation now mirrors the post one field-for-field instead of inventing a second author shape. NO SERVICE CHANGE WAS NEEDED and none was made: EventService.getDefaultListRelations() already returns `{ author: true, ... }`, and getDefaultGetByIdRelations() inherits it, so getBySlug/getById were ALREADY fetching the full users row — stripWithSchema was throwing it away because the response schema did not declare the key. This addition costs zero extra queries and zero JOINs; it only stops discarding what was already loaded. Consequence worth knowing: EventPublicSchema is embedded as `PostPublicSchema.relatedEvent`, so post payloads widen too (additive, harmless). Tests: 4 new cases in event.access.schema.test.ts. Had to drop the fixture's `location` key first — `createValidEvent()` ships a plain coordinates blob there, not an EventLocation row, so the plain fixture never parsed against EventPublicSchema at all (the pre-existing admin/protected tests only pass because they overwrite that key). MUTATIONS VALIDATED: deleting the `author` field reddens exactly 3 of the 4 and leaves the historic-payload one green (correct — that one proves ADDITIVITY, so it must pass with and without the field); swapping UserPublicSchema for UserProtectedSchema reddens only the private-column leak guard, which is the assertion that matters."
         },
         {
             "id": "T-015",
