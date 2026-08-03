@@ -50,6 +50,34 @@ export interface UserPublicProfile {
 }
 
 /**
+ * One entry of the public authors list — everything a sitemap URL needs.
+ *
+ * `updatedAt` becomes the entry's `<lastmod>`: the author page renders the
+ * profile plus two content lists, so a profile edit really is a change to that
+ * URL.
+ */
+export interface PublicAuthorListItem {
+    /** The author's slug — the `/autores/<slug>/` segment. */
+    readonly slug: string;
+    /** When the author's user row last changed. */
+    readonly updatedAt: Date;
+}
+
+/** Paginated result of {@link UserService.listPublicAuthors}. */
+export interface PublicAuthorListOutput {
+    /** The qualifying authors on this page, newest-changed first. */
+    readonly items: readonly PublicAuthorListItem[];
+    /** Pagination envelope, so the sitemap builder knows when to stop. */
+    readonly pagination: {
+        readonly page: number;
+        readonly pageSize: number;
+        /** Total qualifying authors across all pages, not just this one. */
+        readonly total: number;
+        readonly totalPages: number;
+    };
+}
+
+/**
  * Per-request hook state for UserService lifecycle hooks.
  * Replaces mutable instance fields with request-scoped context.
  */

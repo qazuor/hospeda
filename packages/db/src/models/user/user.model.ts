@@ -1,10 +1,23 @@
 import type { User, UserAdminStats } from '@repo/schemas';
-import { and, count, eq, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { userRole } from '../../schemas/user/r_user_role.dbschema.ts';
 import { users } from '../../schemas/user/user.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { buildOrderByClause, buildWhereClause, safeIlike } from '../../utils/drizzle-helpers.ts';
+
+/**
+ * One row of {@link UserModel.listPublicAuthors} — everything a sitemap entry
+ * needs and nothing else.
+ *
+ * `updatedAt` becomes the entry's `<lastmod>`. It is the user row's timestamp,
+ * not the newest post's: what the URL renders is the profile plus two lists, so
+ * a profile edit is a real change to that page.
+ */
+export type PublicAuthorListItem = {
+    readonly slug: string;
+    readonly updatedAt: Date;
+};
 
 export type UserWithCounts = User & {
     accommodationsCount: number;
@@ -393,6 +406,117 @@ export class UserModel extends BaseModelImpl<User> {
         }));
 
         return { byRole, newUsersTrend };
+    }
+
+    /**
+     * Lists the users who qualify for a PUBLIC, INDEXABLE author page.
+     *
+     * Backs `GET /api/v1/public/authors`, which exists to feed the dynamic
+     * sitemap (HOS-375 §6.6). It is a deliberately narrow projection —
+     * `{ slug, updatedAt }`, exactly what a sitemap entry needs — and it must
+     * never be widened into "list all users": it is a public, unauthenticated
+     * surface, and the only thing that keeps it from being a user-enumeration
+     * endpoint is that every row it returns is already published to Google.
+     *
+     * The predicate mirrors the four row-level conditions of §6.5, in the same
+     * order the web helper `evaluateAuthorIndexability` evaluates them:
+     *
+     * 1. **Not a system account.** `is_system_account = false`. This is content
+     *    curation, NOT authorization — there is no permission meaning "deserves
+     *    a public author page", so the repo's "always use `PermissionEnum`" rule
+     *    does not apply. Do not convert it into a permission check, and do not
+     *    "improve" it into a live role check: role is mutable, this is not, and
+     *    reading the role here would make an indexed URL appear or vanish as a
+     *    side effect of a permissions change (§6.10.1, R-9).
+     * 2. **At least one published post or event**, as an `EXISTS` per table so
+     *    Postgres can stop at the first hit instead of counting every row.
+     * 3. **Non-empty `bio`** and 4. **non-empty `avatar`** — read as JSONB paths
+     *    off `profile`. There are no `bio`/`avatar` columns on `users` (§12), and
+     *    `users.image` is a DIFFERENT field the author page does not render.
+     *
+     * "Published" here means `visibility = 'PUBLIC' AND lifecycle_state =
+     * 'ACTIVE' AND deleted_at IS NULL`. That is deliberately CONSERVATIVE: the
+     * public post list currently applies no visibility filter of its own, so the
+     * page can count content this query does not. The divergence is one-way by
+     * design — a page may be indexable without being listed in the sitemap, but
+     * the sitemap can never advertise a URL the page then serves as `noindex`,
+     * which is the failure §6.6 exists to prevent.
+     *
+     * Ordering is `updated_at DESC, slug ASC`. The slug tiebreak is not
+     * cosmetic: `updated_at` is not unique, and without it a row could appear on
+     * two pages of a paginated crawl, or on none.
+     *
+     * @param options - `page` and `pageSize` (1-based page).
+     * @param tx - Optional transaction client.
+     * @returns The page of qualifying authors and the total across all pages.
+     */
+    async listPublicAuthors(
+        options: { page: number; pageSize: number },
+        tx?: DrizzleClient
+    ): Promise<{ items: PublicAuthorListItem[]; total: number }> {
+        const db = this.getClient(tx);
+        const { page, pageSize } = options;
+
+        const outerUserId = sql.raw('"users"."id"');
+
+        // EXISTS rather than a count: the question is "any?", and Postgres can
+        // short-circuit on the first matching row.
+        const hasPublishedPost = sql`EXISTS (
+            SELECT 1
+            FROM "posts" AS p
+            WHERE p."author_id" = ${outerUserId}
+              AND p."deleted_at" IS NULL
+              AND p."visibility" = 'PUBLIC'
+              AND p."lifecycle_state" = 'ACTIVE'
+        )`;
+
+        const hasPublishedEvent = sql`EXISTS (
+            SELECT 1
+            FROM "events" AS e
+            WHERE e."author_id" = ${outerUserId}
+              AND e."deleted_at" IS NULL
+              AND e."visibility" = 'PUBLIC'
+              AND e."lifecycle_state" = 'ACTIVE'
+        )`;
+
+        // `trim(coalesce(...))` collapses the three ways a profile field can be
+        // absent — key missing, SQL NULL, whitespace only — into one test, so a
+        // profile holding `{"bio": "   "}` is treated as empty, exactly as the
+        // web predicate treats it.
+        const hasBio = sql`trim(coalesce(${users.profile}->>'bio', '')) <> ''`;
+        const hasAvatar = sql`trim(coalesce(${users.profile}->>'avatar', '')) <> ''`;
+
+        // ONE condition list, used by both the page query and the count query.
+        // Building them separately is how a `total` silently stops matching the
+        // rows it is supposed to count.
+        const whereClause = and(
+            isNull(users.deletedAt),
+            eq(users.isSystemAccount, false),
+            hasBio,
+            hasAvatar,
+            or(hasPublishedPost, hasPublishedEvent)
+        );
+
+        const offset = (page - 1) * pageSize;
+
+        const [rows, countResult] = await Promise.all([
+            db
+                .select({ slug: users.slug, updatedAt: users.updatedAt })
+                .from(users)
+                .where(whereClause)
+                .orderBy(desc(users.updatedAt), asc(users.slug))
+                .limit(pageSize)
+                .offset(offset),
+            db
+                .select({ count: count(users.id) })
+                .from(users)
+                .where(whereClause)
+        ]);
+
+        return {
+            items: rows.map((row) => ({ slug: row.slug, updatedAt: row.updatedAt })),
+            total: countResult[0]?.count ?? 0
+        };
     }
 }
 

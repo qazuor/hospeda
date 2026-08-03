@@ -77,7 +77,7 @@ import {
     normalizeViewInput
 } from './user.normalizers';
 import { canAssignRole, checkCanAdminList } from './user.permissions';
-import type { UserHookState, UserPublicProfile } from './user.types';
+import type { PublicAuthorListOutput, UserHookState, UserPublicProfile } from './user.types';
 
 /** Entity-specific filter fields for user admin search. */
 type UserEntityFilters = EntityFilters<typeof UserAdminSearchSchema>;
@@ -343,6 +343,69 @@ export class UserService extends BaseCrudService<
                     ...(showSocialNetworks && user.socialNetworks
                         ? { socialNetworks: user.socialNetworks }
                         : {})
+                };
+            }
+        });
+    }
+
+    /**
+     * Lists the authors that have a public, INDEXABLE author page.
+     *
+     * Feeds `GET /api/v1/public/authors`, whose only consumer is the dynamic
+     * sitemap (HOS-375 §6.6). The row predicate lives in
+     * {@link UserModel.listPublicAuthors} — read its docstring before changing
+     * anything about who is included; it mirrors the web helper
+     * `evaluateAuthorIndexability`, and the whole point of the pairing is that
+     * the sitemap can never advertise a URL the page then serves as `noindex`.
+     *
+     * Like {@link UserService.getPublicProfileBySlug}, this method runs NO
+     * permission check. That is safe for the same reason: it never returns a
+     * user row, only `{ slug, updatedAt }` for people whose author page is
+     * already public and indexed. `actor` is accepted for logging and is never
+     * branched on, so the response is identical for every caller and the route
+     * stays safe to cache at the edge.
+     *
+     * It is NOT a user directory and must never be widened into one. Every row
+     * here is already discoverable through the sitemap it exists to build; a
+     * looser predicate would turn it into a user-enumeration surface (R-1).
+     *
+     * @param actor - The requesting actor. Used for logging only; a guest actor
+     *   is expected and valid.
+     * @param params - `{ page, pageSize }`. Both are optional and defaulted.
+     * @param ctx - Optional service context (transaction).
+     * @returns A `ServiceOutput` with the page of authors and its pagination.
+     */
+    public async listPublicAuthors(
+        actor: Actor,
+        params: { page?: number; pageSize?: number } = {},
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<PublicAuthorListOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listPublicAuthors',
+            input: { actor, ...params },
+            schema: z.object({
+                page: z.coerce.number().int().min(1).default(1),
+                // Capped so a crafted `?pageSize=100000` cannot ask the database
+                // for every qualifying author in one request.
+                pageSize: z.coerce.number().int().min(1).max(100).default(50)
+            }),
+            ctx,
+            execute: async (validatedInput, _validatedActor, execCtx) => {
+                const { page, pageSize } = validatedInput;
+
+                const { items, total } = await this.model.listPublicAuthors(
+                    { page, pageSize },
+                    execCtx?.tx
+                );
+
+                return {
+                    items,
+                    pagination: {
+                        page,
+                        pageSize,
+                        total,
+                        totalPages: Math.ceil(total / pageSize)
+                    }
                 };
             }
         });
