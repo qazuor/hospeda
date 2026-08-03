@@ -513,49 +513,51 @@
             "id": "T-021",
             "title": "Create the posts pagination page /autores/[slug]/page/[page]/",
             "description": "Spec §6.3. New apps/web/src/pages/[lang]/autores/[slug]/page/[page].astro rendering ONLY the posts block. Its URL shape is deliberately byte-identical to the current /publicaciones/autor/<slug>/page/<n>/ so the T-023 redirect stays a pure tail splice. Build every URL through buildUrl — the page it replaces bypassed buildUrl with two raw template literals, and that is not carried over. Always noindex (spec §6.5 condition 5). Tests: page 2 renders posts only, no events block, and carries noindex.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-020"],
             "blocks": ["T-029"],
             "subtasks": [
-                { "title": "Create the page rendering only posts", "completed": false },
-                { "title": "All URLs through buildUrl", "completed": false },
-                { "title": "Always noindex", "completed": false },
-                { "title": "Tests: posts only + noindex", "completed": false }
+                { "title": "Create the page rendering only posts", "completed": true },
+                { "title": "All URLs through buildUrl", "completed": true },
+                { "title": "Always noindex", "completed": true },
+                { "title": "Tests: posts only + noindex", "completed": true }
             ],
             "tags": ["web", "pages", "astro"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-03T12:35:00.000Z",
+                "completed": "2026-08-03T13:20:00.000Z"
+            },
+            "notes": "Implemented as a PURE REWRITE route, per the pagination contract T-020 documented in the parent page's docblock: it validates the page number, 301s page 1 to the profile, and Astro.rewrite()s to autores/[slug]/index.astro with ?page=<n>. The parent is the single file that renders an author, so 'renders posts only' and 'noindex' are satisfied there rather than duplicated here — the parent drops the events block when ?page>1 and feeds paginatedPage to evaluateAuthorIndexability. A noindex literal in this file would have been a second, drifting source of the same decision; a test asserts the file contains none. Both URLs go through buildUrl/buildUrlWithParams (the old page hand-concatenated /${Astro.params.lang}/ twice). BROWSER-VERIFIED against the worktree dev env with equipo-hospeda (22 posts, 52 events): /page/1/ 301s to the profile, /page/2/ renders the posts block with ZERO event cards, /page/0/ and /page/abc/ 404. laura-vega gives the noindex contrast the paginated-only author cannot: her /autores/laura-vega/ is index,follow with one ProfilePage JSON-LD, while /page/2/ is noindex,follow with none and canonical back to the profile."
         },
         {
             "id": "T-022",
             "title": "Create the events pagination page /autores/[slug]/eventos/page/[page]/",
             "description": "Spec §6.3, resolution of OQ-1. New apps/web/src/pages/[lang]/autores/[slug]/eventos/page/[page].astro rendering ONLY the events block. This route is new and nothing redirects to it. It exists because the measured top author has 52 events (44 public in production) — a fixed cap would hide 40 of them from exactly the person this spec is meant to reward. Always noindex. Tests: page 2 renders events only, no posts block, noindex present, and an author with more than one page of events is fully reachable.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-020", "T-016"],
             "blocks": ["T-029"],
             "subtasks": [
-                { "title": "Create the page rendering only events", "completed": false },
-                { "title": "Always noindex", "completed": false },
+                { "title": "Create the page rendering only events", "completed": true },
+                { "title": "Always noindex", "completed": true },
                 {
                     "title": "Tests: events only + full reachability past page 1",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "pages", "astro"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-03T13:20:00.000Z",
+                "completed": "2026-08-03T14:05:00.000Z"
+            },
+            "notes": "Same pure-rewrite shape as T-021 but writing ?eventsPage=<n>, so the two blocks' tails cannot collide. SHIPPED AS TWO FILES, not one — T-020 flagged that the events Pagination base (/autores/<slug>/eventos) is never emitted from the index page, but it IS emitted from page 2+: the component renders page 1 as the bare base, so BOTH the 'Anterior' control and the '1' button on /eventos/page/2/ point at it. Verified in the shipped markup (two hrefs to /es/autores/equipo-hospeda/eventos/). Without a route there it is a 404 for every author with more than one page of events, so eventos/index.astro was added as a 301 to the profile — a redirect rather than a copy, since a second URL rendering the same content is a duplicate for Google to reconcile, and page 1 of the events block IS the profile. /eventos/page/1/ 301s to the profile too, not to /eventos/, so the two entry points agree and neither costs a second hop. BROWSER-VERIFIED with equipo-hospeda (52 public events = 6 pages at PAGE_SIZE 9): /eventos/page/2/ renders the events block with zero article cards, /eventos/page/6/ renders the last 7, /eventos/ and /eventos/page/1/ both 301 to the profile, /eventos/page/-3/ 404s, and clicking 'Anterior' from page 2 in a real browser lands on the profile with BOTH blocks rendered. Coverage: 25 tests in apps/web/test/pages/author-pagination-routes.test.ts, validated non-vacuous by mutation — swapping the events route to the posts query key, deleting eventos/index.astro, and downgrading the 301 to a 302 each redden the assertion that names the defect. The suite reads eventos/index.astro tolerantly (existsSync) so deleting it fails the assertion about it rather than throwing at import time and burying the signal in a stack trace. NOTE for reviewers: astro check emits ts(6133)/ts(6192) 'declared but never read' warnings on all three files. They are a known pre-existing artifact of frontmatter-only pages whose last statement is a top-level return (suscriptores/checkout/index.astro and publicar/nueva.astro carry the identical warnings on staging today), NOT dead code — every route was exercised live. astro check reports 0 errors."
         },
         {
             "id": "T-023",
