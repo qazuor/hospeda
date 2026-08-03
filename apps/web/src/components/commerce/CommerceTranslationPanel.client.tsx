@@ -164,17 +164,21 @@ export function CommerceTranslationPanel({
         [onChange]
     );
 
+    // Each label carries the active locale (HOS-371).
+    //
+    // Without it these four read exactly like the editor's OWN name / summary /
+    // description / rich-description fields, which sit on the same page: a
+    // screen reader announced "Descripción ampliada" twice with nothing to tell
+    // them apart, and `getByRole('textbox', { name })` matched both. The locale
+    // also has to be in the NAME, not just the active tab, because the tab is a
+    // separate control — someone landing on the field never hears which
+    // language they are typing in.
+    const localeSuffix = ` (${LOCALE_LABELS[activeLocale]})`;
     const fieldLabels: Record<TranslatableField, string> = {
-        nameI18n: t('commerce.owner.editor.translationPanel.fieldName', 'Nombre'),
-        summaryI18n: t('commerce.owner.editor.translationPanel.fieldSummary', 'Resumen'),
-        descriptionI18n: t(
-            'commerce.owner.editor.translationPanel.fieldDescription',
-            'Descripción'
-        ),
-        richDescriptionI18n: t(
-            'commerce.owner.editor.translationPanel.fieldRichDescription',
-            'Descripción ampliada'
-        )
+        nameI18n: `${t('commerce.owner.editor.translationPanel.fieldName', 'Nombre')}${localeSuffix}`,
+        summaryI18n: `${t('commerce.owner.editor.translationPanel.fieldSummary', 'Resumen')}${localeSuffix}`,
+        descriptionI18n: `${t('commerce.owner.editor.translationPanel.fieldDescription', 'Descripción')}${localeSuffix}`,
+        richDescriptionI18n: `${t('commerce.owner.editor.translationPanel.fieldRichDescription', 'Descripción ampliada')}${localeSuffix}`
     };
 
     return (

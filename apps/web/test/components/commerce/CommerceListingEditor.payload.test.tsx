@@ -70,6 +70,28 @@ vi.mock('../../../src/components/commerce/CommerceTranslationPanel.client', () =
     parseCommerceI18nValues: () => I18N_INITIAL
 }));
 
+// HOS-371: `richDescription` is a TipTap editor now. This suite pins PATCH body
+// shapes, so booting a real editor per render would only add runtime — the
+// controlled-value contract is all these tests need. The real editor is covered
+// in `CommerceListingEditor.rich-description.test.tsx`.
+vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
+    RichTextEditor: ({
+        value,
+        onChange,
+        ariaLabel
+    }: {
+        value: string;
+        onChange: (value: string) => void;
+        ariaLabel?: string;
+    }) => (
+        <textarea
+            aria-label={ariaLabel}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+        />
+    )
+}));
+
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
@@ -317,8 +339,12 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
                 })
             );
 
-            fireEvent.change(screen.getByLabelText('Teléfono'), {
-                target: { value: '+5491199999999' }
+            // HOS-371: the editable control is the local-number input; the
+            // combobox contributes the dial code, and the stored string is
+            // recomposed as `"<dialCode> <number>"`. The seeded
+            // `+5491100000000` parses back to (+54, "91100000000").
+            fireEvent.change(screen.getByLabelText('Número'), {
+                target: { value: '91199999999' }
             });
             fireEvent.click(saveButton());
 
@@ -326,7 +352,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             // The server REPLACES the contactInfo JSONB block. Sending only the
             // changed leaf would wipe workEmail.
             expect(body.contactInfo).toEqual({
-                mobilePhone: '+5491199999999',
+                mobilePhone: '+54 91199999999',
                 workEmail: 'dueno@test.com'
             });
         });
@@ -506,8 +532,8 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
                 target: { value: 'La Nueva Parrilla' }
             });
-            fireEvent.change(screen.getByLabelText('Teléfono'), {
-                target: { value: '+5491100000000' }
+            fireEvent.change(screen.getByLabelText('Número'), {
+                target: { value: '91100000000' }
             });
             fireEvent.change(screen.getByLabelText('Rango de precios'), {
                 target: { value: '' }
@@ -517,7 +543,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             const body = await wireBody();
             expect(body).toEqual({
                 name: 'La Nueva Parrilla',
-                contactInfo: { mobilePhone: '+5491100000000' },
+                contactInfo: { mobilePhone: '+54 91100000000' },
                 priceRange: null
             });
         });

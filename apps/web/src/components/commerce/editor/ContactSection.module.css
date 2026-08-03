@@ -1,0 +1,59 @@
+/**
+ * Contact-section layout for the commerce owner editor (HOS-371).
+ *
+ * Only the genuinely section-specific rules live here, per the HOS-258 split:
+ * the country-code + local-number phone pair and the labelled email field. The
+ * input/label/error primitives stay in `editor-fields.module.css`.
+ *
+ * Layout tokens mirror `host/editor/ContactInfoSection.module.css`, so the same
+ * phone pair reads identically in both owner editors.
+ */
+
+.phoneField,
+.emailField {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+/* The phone pair is its own <fieldset> INSIDE the section card, so it must not
+   paint a second border/padding of its own. */
+.phoneFieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+}
+
+.fieldLabel {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: var(--text-body-sm, 0.875rem);
+    color: var(--core-foreground);
+    margin-bottom: var(--space-1);
+}
+
+.fieldSubLabel {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-size: var(--text-body-xs, 0.75rem);
+    color: var(--core-muted-foreground);
+    margin-bottom: var(--space-1);
+}
+
+.phoneRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.phoneCountryField {
+    flex: 1 1 160px;
+    min-width: 140px;
+}
+
+.phoneNumberField {
+    flex: 2 1 220px;
+    min-width: 180px;
+}

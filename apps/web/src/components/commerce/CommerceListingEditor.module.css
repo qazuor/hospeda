@@ -2,9 +2,9 @@
  * Commerce owner listing editor — orchestrator chrome only.
  *
  * Mirrors the visual language of the accommodation host editor
- * (`components/host/editor/*`): a centered reading column, a sticky-feeling
- * action bar with a pill primary button, and banner-style feedback. Kept as
- * plain CSS modules per web conventions.
+ * (`components/host/editor/*`): one card per section, a sticky-feeling action
+ * bar with a pill primary button, and banner-style feedback. Kept as plain CSS
+ * modules per web conventions.
  *
  * HOS-258: the field primitives moved to `editor/editor-fields.module.css` and
  * the section-specific rules to the matching `editor/*Section.module.css`. What
@@ -12,12 +12,17 @@
  * action bar, and the form-level error banner.
  */
 
+/* The form fills its account-layout column. It used to be a 720px column
+   centered inside a single full-width AccountSectionCard, which read fine
+   while the card was the outer frame. Since HOS-371 made every SECTION a card
+   (see `.section` in `editor/editor-fields.module.css`), keeping that width
+   would have shrunk the cards themselves: they would sit inset from the page
+   header above and from the full-width FAQ card directly below, on the same
+   page, at two visibly different widths. */
 .editor {
     display: flex;
     flex-direction: column;
     gap: var(--space-6);
-    max-width: 720px;
-    margin: 0 auto;
 }
 
 /* Action bar — top divider, right-aligned, pill buttons. */
