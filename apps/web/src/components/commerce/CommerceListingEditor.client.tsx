@@ -276,11 +276,6 @@ export function CommerceListingEditor({
     const initialSocial = (data.socialNetworks ?? {}) as Record<string, unknown>;
     const initialMedia = (data.media ?? {}) as Record<string, unknown>;
 
-    // HOS-166 D-1: name + destinationId + description — identity fields now
-    // owner-editable (description was widened alongside name/destinationId on
-    // the schema — see `GastronomyOwnerUpdateInputSchema`/
-    // `ExperienceOwnerUpdateInputSchema` — but the FORM never exposed it,
-    // leaving it settable only at create, contradicting AC-19).
     // HOS-372: media is no longer buffered in this editor's state. MediaSection
     // is now self-contained (per-operation persistence against the relational
     // gastronomy_media / experience_media endpoints — see its file header) and
@@ -289,20 +284,6 @@ export function CommerceListingEditor({
     // read once and never written back, so they stay outside `formData`.
     const initialFeaturedImage = (initialMedia.featuredImage as Image | undefined) ?? null;
     const initialGallery = (initialMedia.gallery as Image[] | undefined) ?? [];
-    // Media JSONB is REPLACED wholesale on save (gastronomy/experience do not
-    // merge it), so preserve the owner-unmanaged sub-fields (videos,
-    // archivedGallery) and re-send them with every media patch. Deliberately
-    // outside `formData`: never editable, never diffed.
-    const [preservedMedia] = useState<Record<string, unknown>>(() => {
-        const preserved: Record<string, unknown> = {};
-        if (Array.isArray(initialMedia.videos)) {
-            preserved.videos = initialMedia.videos;
-        }
-        if (Array.isArray(initialMedia.archivedGallery)) {
-            preserved.archivedGallery = initialMedia.archivedGallery;
-        }
-        return preserved;
-    });
 
     // HOS-166 D-1: name + destinationId + description are identity fields the
     // owner may edit (description was widened alongside name/destinationId on

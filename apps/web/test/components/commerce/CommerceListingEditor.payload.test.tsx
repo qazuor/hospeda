@@ -436,10 +436,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('never fires the client-side Cloudinary delete', async () => {
-            renderEditor(
-                'gastronomy',
-                buildListing({ media: { gallery: [galleryImage] } })
-            );
+            renderEditor('gastronomy', buildListing({ media: { gallery: [galleryImage] } }));
 
             await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
             // Removal goes through `commerceMediaApi.removeMedia`, which deletes
