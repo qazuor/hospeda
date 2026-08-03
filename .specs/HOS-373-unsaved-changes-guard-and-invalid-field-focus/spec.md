@@ -89,7 +89,8 @@ where to look.
 - **NG-6** Guarding **back/forward navigation** (OQ-1, resolved). It needs a
   history trap; see P1-4. A user who presses back still loses unsaved edits after
   this spec ships. Stated here so the limitation is explicit rather than implied
-  by "covers soft navigation".
+  by "covers soft navigation". Tracked as
+  [HOS-381](https://linear.app/hospeda-beta/issue/HOS-381).
 
 ## 5. Current baseline
 
@@ -527,6 +528,37 @@ Proposed: `editor.unsavedChanges.confirm`.
 - **OQ-4 — Does Phase 1 cover the other nine `useZodForm` forms?** NG-2 says no.
   Confirm that is acceptable: `ProfileEditForm` and `CommerceCreateForm` can also
   lose typed work.
+
+## 11.1 Phase 1 verification record (2026-08-03)
+
+Run against the worktree dev server as `host-pro@local.test`, on the
+**accommodation** editor. Each check asserts the `window` marker survived, not
+the URL — per AC-2.
+
+| Check | Result |
+|---|---|
+| Dirty + internal link → dialog appears | PASS |
+| …cancel → stays put, marker identical, edit preserved | PASS (no reload) |
+| …confirm → URL and title change, marker **survives** | PASS (soft nav, not `location.href`) |
+| Clean form → no prompt | PASS |
+| Dirty + hard exit → `beforeunload` dialog | PASS (observed incidentally — it blocked the automation) |
+| Editor's own section nav (`#editor-*`) not intercepted | PASS |
+
+**NOT verified in a browser:** the **commerce** editor. It uses the same hook
+with an identical six-line wiring and is covered by unit tests, but the seeded
+`gastro-owner-*` users' listings did not appear under `/mi-cuenta/comercio/`
+(likely gated on an active commerce subscription), so the editor could not be
+reached. Worth one manual pass before this ships.
+
+Two environment traps worth knowing, both of which made a working guard look
+broken:
+
+1. Editing files with the dev server running leaves Vite serving stale
+   optimized deps (`504 Outdated Optimize Dep`). The island then does not
+   hydrate, so the guard's effect never registers and clicks navigate freely.
+   Reloading is not enough — restart the server. Diagnostic: the
+   `<astro-island>` still carries the `ssr` attribute.
+2. `wt:up` reassigns ports between restarts (web 4433 → 4431). Do not hardcode.
 
 ## 12. Implementation notes
 
