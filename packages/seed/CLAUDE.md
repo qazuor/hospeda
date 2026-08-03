@@ -178,6 +178,39 @@ pnpm db:seed:ready-user <email>     # e.g. pnpm db:seed:ready-user host-basico@l
 
 > Note: the web **cookie-consent** banner is NOT covered here — it is a pure browser cookie with no user-row state, so the seed cannot touch it. In manual local browsing it is a one-time click (persists ~1 year); for e2e it is pre-seeded via `apps/e2e/fixtures/browser-helpers.ts` (`seedCookieConsent`).
 
+## System accounts: `isSystemAccount` in user fixtures (HOS-375)
+
+Any user fixture — or any seeder, script, or data-migration — that creates an account
+representing the **platform** rather than a person MUST set `isSystemAccount: true`.
+Today that is `src/data/user/required/admin-user.json` and `super-admin-user.json`;
+tomorrow it is any importer, bot, or integration identity someone adds.
+
+`users.is_system_account` is `NOT NULL DEFAULT false`, so **forgetting the key is silent**:
+the account is created and treated as a person. What it gates is the public author surface
+— the web author page (`/autores/<slug>/`) excludes system accounts from its indexability
+predicate and from the sitemap. A forgotten flag on a staff-shaped account can publish
+`/es/autores/super-admin-user/`, titled "Super Admin", to Google.
+
+Two things to know before touching this:
+
+- **It is a stored flag, never a live role check.** Roles are mutable and this property is
+  not: evaluating `SUPER_ADMIN`/`ADMIN` at read time would unpublish a real editor's author
+  page the moment they are promoted, and publish a staff account the moment one is demoted.
+  Role decides the value exactly once, at backfill time
+  (`src/data-migrations/0034-system-account-flag-staff.ts`), resolved **by email**.
+- **The fixture key is guarded.** `test/required-staff-system-account.test.ts` asserts more
+  than the two fixture values: it asserts the key survives `UserCreateInputSchema`, the
+  schema `UserService.create` parses through. That extra assertion exists because a fixture
+  key CAN silently stop working — `users.seed.ts`'s own JSDoc records `role` staying in the
+  JSON long after the column was dropped, with nothing failing, because Zod strips unknown
+  keys and Drizzle's `.values()` iterates table columns rather than object keys.
+
+The editorial author (`editorial@hospeda.com.ar`, created by
+`0025-seed-real-blog-posts`) is deliberately **not** a system account: it is a real
+editorial voice with a public author page at `/autores/equipo-hospeda/`.
+
+Column-side detail in [packages/db/CLAUDE.md](../db/CLAUDE.md); full rationale in HOS-375 §6.10.1.
+
 ## Role Permission Gotchas
 
 ### Why HOST has `TAG_SYSTEM_VIEW`
