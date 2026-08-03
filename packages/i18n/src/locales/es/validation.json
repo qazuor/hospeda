@@ -100,6 +100,7 @@
             }
         },
         "media": {
+            "photosNotUpdatable": "Las fotos no se actualizan por esta vía: usá los endpoints de medios del alojamiento",
             "reorder": {
                 "orderedIds": {
                     "invalid": "La lista ordenada debe ser un arreglo de UUIDs válidos",

@@ -546,27 +546,78 @@ describe('AccommodationUpdateHttpSchema — summary, amenityIds, featureIds, med
         expect(result.success).toBe(true);
     });
 
-    it('should accept media with featuredImage and gallery in update schema', () => {
+    // ── HOS-372: photos are rejected on update, not silently discarded ──
+    //
+    // These previously asserted `success: true`. The payload parsed, the route
+    // answered 200, and `AccommodationService.update` stripped every photo
+    // field before writing — so the API reported success for work it never did.
+    // Photos belong to `accommodation_media` and are managed through the
+    // granular media endpoints.
+
+    it('should reject media.featuredImage in update schema', () => {
         const result = AccommodationUpdateHttpSchema.safeParse({
             media: {
-                featuredImage: { url: 'https://example.com/img.jpg' },
+                featuredImage: { url: 'https://example.com/img.jpg' }
+            }
+        });
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0]?.message).toBe(
+            'zodError.accommodation.media.photosNotUpdatable'
+        );
+    });
+
+    it('should reject media.gallery in update schema', () => {
+        const result = AccommodationUpdateHttpSchema.safeParse({
+            media: {
                 gallery: [
                     { url: 'https://example.com/g1.jpg' },
                     { url: 'https://example.com/g2.jpg', moderationState: 'APPROVED' }
                 ]
             }
         });
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0]?.message).toBe(
+            'zodError.accommodation.media.photosNotUpdatable'
+        );
+    });
+
+    it('should reject media.archivedGallery in update schema', () => {
+        // Never declared on the HTTP schema, but the service strips it too —
+        // `.strict()` is what stops it from arriving unnoticed.
+        const result = AccommodationUpdateHttpSchema.safeParse({
+            media: { archivedGallery: [{ url: 'https://example.com/a1.jpg' }] }
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('should still accept media.videos in update schema', () => {
+        // Videos are NOT relational (HOS-372 decision): they are external
+        // YouTube/Vimeo URLs, so the bulk update path remains their write path.
+        const result = AccommodationUpdateHttpSchema.safeParse({
+            media: { videos: [{ url: 'https://youtube.com/watch?v=abc' }] }
+        });
         expect(result.success).toBe(true);
     });
 
-    it('should accept media without moderationState on images', () => {
-        // Client sends images without moderationState — converter supplies APPROVED default
+    it('should accept an update payload with no media key at all', () => {
         const result = AccommodationUpdateHttpSchema.safeParse({
-            media: {
-                featuredImage: { url: 'https://example.com/img.jpg' }
-            }
+            summary: 'A short but valid summary here'
         });
         expect(result.success).toBe(true);
+    });
+
+    it('should still reject photos after .partial(), as the PATCH route applies it', () => {
+        // `protected/patch.ts` registers `AccommodationUpdateHttpSchema.partial()`.
+        // `.partial()` only wraps the OUTER object's members in optional, so the
+        // inner refinement must survive — if it did not, PATCH would keep the
+        // silent-discard behavior PUT just lost.
+        const result = AccommodationUpdateHttpSchema.partial().safeParse({
+            media: { gallery: [{ url: 'https://example.com/g1.jpg' }] }
+        });
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0]?.message).toBe(
+            'zodError.accommodation.media.photosNotUpdatable'
+        );
     });
 });
 
