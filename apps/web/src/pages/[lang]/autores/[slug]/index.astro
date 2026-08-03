@@ -49,6 +49,7 @@ import { resolveAuthorSocialLinks } from '@/lib/authors/author-social-links';
 import { getSiteUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { webLogger } from '@/lib/logger';
 import { evaluateAuthorIndexability } from '@/lib/seo/author-indexable';
 import { buildUrl } from '@/lib/urls';
 import {
@@ -104,6 +105,18 @@ const [postsResult, eventsResult] = await Promise.all([
 		? eventsApi.getByAuthor({ authorId: author.id, page: eventsPage, pageSize: PAGE_SIZE })
 		: null,
 ]);
+
+// A failed fetch and a genuinely empty list both render as "no block", which
+// is the right USER-facing behaviour — a broken events API should degrade to a
+// posts-only page, not to an error page. But degrading silently is how a 500 on
+// the events endpoint stayed invisible while this page shipped no events block
+// for an author who had 52 of them. Log the difference the markup cannot show.
+if (wantsPosts && !postsResult?.ok) {
+	webLogger.warn('[autores] posts fetch failed — the block will be omitted', { slug });
+}
+if (wantsEvents && !eventsResult?.ok) {
+	webLogger.warn('[autores] events fetch failed — the block will be omitted', { slug });
+}
 
 const postItems = postsResult?.ok ? postsResult.data.items : [];
 const postsPagination = postsResult?.ok ? postsResult.data.pagination : null;

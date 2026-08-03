@@ -118,6 +118,15 @@ describe('author page — the two content blocks (§6.3)', () => {
         expect(src).toContain('eventsApi.getByAuthor');
         expect(src).toContain('postsApi.list');
     });
+
+    it('logs a failed fetch instead of degrading silently', () => {
+        // A broken endpoint and an empty list render identically — correctly so,
+        // for the visitor. But that identity is exactly how a 500 on the events
+        // endpoint hid while this page shipped no events block for an author who
+        // had 52. The log is the only signal the markup cannot carry.
+        expect(src).toContain("webLogger.warn('[autores] posts fetch failed");
+        expect(src).toContain("webLogger.warn('[autores] events fetch failed");
+    });
 });
 
 describe('author page — empty profile stays empty (§8)', () => {
