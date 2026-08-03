@@ -563,6 +563,26 @@ broken:
    `<astro-island>` still carries the `ssr` attribute.
 2. `wt:up` reassigns ports between restarts (web 4433 → 4431). Do not hardcode.
 
+## 11.2 Phase 2 verification record (2026-08-03)
+
+Same setup as §11.1 (accommodation editor, `host-pro@local.test`). Focus was
+parked on an unrelated field before each submit, so a pass cannot be an artifact
+of focus never having moved.
+
+| Check | Result |
+|---|---|
+| Invalid `name` (top) + `website` (lower) → focus | `acc-name` — the earlier one in the DOM |
+| Invalid `email` (contact) + `youtube` (socials) → focus | `acc-email` — again the earlier one |
+| …and the page scrolled to it | `scrollY` 0 → 2257 |
+| Rich-text branch carries `acc-description` | Confirmed: element exists, `tagName === 'DIV'` |
+
+The two-invalid-fields cases are the ones that matter: they show the helper
+picks by document order, not by the order Zod happens to report issues.
+
+**NOT verified in a browser:** the commerce editor (same reason as §11.1), and
+the `openingHours` / social dynamic ids — the static guard covers their
+existence, and one social attempt did not produce a validation error to focus.
+
 ## 12. Implementation notes
 
 - **Verify claims against code, not against this issue's history.** The Linear
