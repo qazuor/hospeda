@@ -292,47 +292,49 @@
             "id": "T-012",
             "title": "Add the GET /api/v1/public/authors route",
             "description": "Spec §6.6. New public route backed by listPublicAuthors. MOUNT IT AT /api/v1/public/authors, NOT under /api/v1/public/users/... — the latter prefix is in PRIVATE_CACHE_ENDPOINTS and the matcher uses path.startsWith, so mounting there would silently classify the route as browser-private and lose shared caching. Use createPublicListRoute for the standard paginated envelope. Tests: route returns 200 with the paginated envelope for an anonymous actor, and excluded authors never appear.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-011"],
             "blocks": ["T-013", "T-027"],
             "subtasks": [
                 {
                     "title": "Create the route file at the /authors mount point",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Register it in the public router", "completed": false },
-                { "title": "Tests: anonymous 200 + exclusions respected", "completed": false }
+                { "title": "Register it in the public router", "completed": true },
+                { "title": "Tests: anonymous 200 + exclusions respected", "completed": true }
             ],
             "tags": ["api", "routes"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-03T16:45:00.000Z",
+                "completed": "2026-08-03T17:15:00.000Z"
+            },
+            "notes": "apps/api/src/routes/author/public/list.ts + its barrel, mounted in routes/index.ts at /api/v1/public/authors. Delegated to a sub-agent with the mount-point and envelope constraints stated up front; verified independently afterwards. The handler forwards the service output as-is — listPublicAuthors already returns exactly the { items, pagination } shape createPublicListRoute requires — so there is no reshaping and NO cast, unlike the events/author/:id sibling that answered 500 for months behind an `as never`. The response schema is declared locally rather than imported from @repo/schemas: that departs from the app's usual rule but follows the precedent set in this same spec by user/public/getBySlug.ts:62 (UserAuthorPublicResponseSchema), an exported-for-tests local schema. TEST-INFRA FIX NOT IN THE TASK: apps/api mocks @repo/service-core globally via test/helpers/mocks/*, and the mocked UserService had no listPublicAuthors at all, so every route test would have 500'd. Added to both user-services.ts and db-mock.ts with the shape copied field-for-field from the real service. Also had to clearCache() between tests because the response cache is a module-level singleton and a later test was replaying an earlier one's cached body. VERIFIED LIVE against the worktree DB, not only against mocks: anonymous GET returns 200 with { items, pagination } and 10 real authors. Crucially the SITEMAP/PAGE PAIRING holds end to end — equipo-hospeda and admin-user are absent from the list and their pages serve noindex, while laura-vega and carmen-silva are present and their pages serve index,follow. That pairing is the whole point of §6.6 and no unit test covers it. Mutations: wrong envelope reddens 3 tests, mounting under /users reddens 5, an extra injected item reddens exactly the exclusion test. 25 tests, plus 2704 green in the surrounding api suites."
         },
         {
             "id": "T-013",
             "title": "Add /api/v1/public/authors to PUBLIC_CACHE_ENDPOINTS",
             "description": "Spec §6.6 / §5.8. Add the prefix to apps/api/src/middlewares/cache.constants.ts so the new route gets shared caching rather than falling through to the private default. Tests: extend the existing cache-classification test to assert the new prefix resolves to the public bucket.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-012"],
             "blocks": [],
             "subtasks": [
-                { "title": "Add the prefix to the constant", "completed": false },
-                { "title": "Test the classification", "completed": false }
+                { "title": "Add the prefix to the constant", "completed": true },
+                { "title": "Test the classification", "completed": true }
             ],
             "tags": ["api", "cache"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-03T16:45:00.000Z",
+                "completed": "2026-08-03T17:15:00.000Z"
+            },
+            "notes": "One line in apps/api/src/middlewares/cache.constants.ts plus an extension of the EXISTING cache-classification test in test/middlewares/cache.test.ts (MISS then HIT). Removing the prefix reddens that test. NOTE for anyone verifying by curl: the live dev server emits NO X-Cache or Cache-Control header for this route — but neither does an already-cached public peer like /api/v1/public/amenities, because the worktree runs with CACHE_ENABLED=false and createCacheMiddleware short-circuits the entire middleware ('Cache middleware disabled via configuration' in the api log). The classification is therefore only observable in the test harness, where caching is on. Absence of the header in dev is NOT evidence the prefix failed to register."
         },
         {
             "id": "T-014",
@@ -777,27 +779,28 @@
             "id": "T-032",
             "title": "Update the tests that reference the old author path",
             "description": "Spec §5.2. Update apps/web/test/pages/publicaciones-autor.test.ts (lines 20, 22, 102 — likely rename the file too), breadcrumbs-coverage.test.ts (lines 135-137, and the trail becomes Inicio -> displayName since there is no /autores/ index per NG-1), share-buttons-in-detail-pages.test.ts:108, and publicaciones-detail-media.test.ts:147. These are path-coupled assertions, not behavior changes — verify each still tests what it was written to test after the update, rather than being edited into passing.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-029"],
             "blocks": [],
             "subtasks": [
-                { "title": "Update/rename publicaciones-autor.test.ts", "completed": false },
+                { "title": "Update/rename publicaciones-autor.test.ts", "completed": true },
                 {
                     "title": "Update breadcrumbs-coverage.test.ts for the new trail",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Update share-buttons and detail-media tests", "completed": false },
-                { "title": "Confirm each still asserts its original intent", "completed": false }
+                { "title": "Update share-buttons and detail-media tests", "completed": true },
+                { "title": "Confirm each still asserts its original intent", "completed": true }
             ],
             "tags": ["testing", "web"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-03T16:45:00.000Z",
+                "completed": "2026-08-03T17:15:00.000Z"
+            },
+            "notes": "Already satisfied by the time it came up, distributed across three earlier tasks — recorded here so it is not re-done. publicaciones-autor.test.ts was DELETED in T-029 rather than renamed (the page it covered no longer exists; author-page.test.ts and author-pagination-routes.test.ts are its replacements, written in T-020/T-021/T-022). breadcrumbs-coverage.test.ts was updated in T-020 for the Inicio -> displayName trail and now contains no author reference at all. share-buttons-in-detail-pages.test.ts:108 and publicaciones-detail-media.test.ts:147 were updated in T-024. Per the task's own instruction to confirm intent rather than edit into passing: both of the latter now assert the NEW path AND not.toContain the old one, so they still test what they were written to test and a revert cannot satisfy them by falling back to the middleware redirect. Audited the remaining `publicaciones/autor` hits across apps/web/test — every one is either a deliberate not.toContain, a comment, or the middleware redirect suite that legitimately exercises the old path as an INPUT."
         },
         {
             "id": "T-033",
