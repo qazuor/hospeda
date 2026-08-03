@@ -115,6 +115,29 @@ const EDITORIAL_BIO =
     'entrerriano para contarte que visitar, donde comer y como aprovechar cada escapada. Turismo ' +
     'local, contado por quienes lo conocen de cerca.';
 
+/**
+ * The Hospeda isotype, used as the editorial account's avatar (HOS-375).
+ *
+ * An avatar is one of the five conditions of §6.5, so without one this account
+ * — the site's main editorial voice, and its richest author page by far — was
+ * the ONLY author excluded from the index while accounts with a single post
+ * qualified. The condition itself is unchanged; the account was simply missing
+ * the data.
+ *
+ * The transformation segment is deliberate, not decoration. The page renders
+ * the avatar in a 96px circle, so `w_192,h_192` serves it at 2x for retina and
+ * nothing larger; `c_fill` matches the element's own `object-fit: cover`, so
+ * the CDN and the browser crop identically instead of fighting; `f_auto` and
+ * `q_auto` cut the payload from 28.7 KB of PNG to ~8 KB of WebP. The source
+ * asset is already square (192x192), so `c_fill` crops nothing today.
+ *
+ * `0037-editorial-author-avatar` is the migration half of this dual-write, for
+ * environments seeded before this field existed; keep both sides in sync.
+ */
+const EDITORIAL_AVATAR =
+    'https://res.cloudinary.com/djqdu6u93/image/upload/f_auto,q_auto,w_192,h_192,c_fill/' +
+    'v1783526697/hospeda/prod/avatars/5748fbbd-7b13-4c65-b545-5510e106b0a5.png';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.resolve(__dirname, 'data', 'real-blog-posts');
 
@@ -185,7 +208,7 @@ async function ensureEditorialAuthor(ctx: SeedMigrationCtx): Promise<User> {
             displayName: 'Equipo Hospeda',
             firstName: 'Equipo',
             lastName: 'Hospeda',
-            profile: { bio: EDITORIAL_BIO },
+            profile: { bio: EDITORIAL_BIO, avatar: EDITORIAL_AVATAR },
             visibility: VisibilityEnum.PUBLIC,
             lifecycleState: LifecycleStatusEnum.ACTIVE,
             createdById: ctx.actor.id,
