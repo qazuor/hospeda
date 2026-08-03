@@ -35,8 +35,14 @@ const FACET_PAGES = [
     // 'eventos/categoria/[category]/index.astro' promoted to a first-class,
     // indexable landing (SPEC-306) — see PROMOTED_FACET_LANDINGS below.
     'publicaciones/categoria/[category]/index.astro',
-    'publicaciones/etiqueta/[tag]/index.astro',
-    'publicaciones/autor/[slug]/index.astro'
+    'publicaciones/etiqueta/[tag]/index.astro'
+    // `publicaciones/autor/[slug]/index.astro` was deleted by HOS-375: the
+    // author page moved to `autores/[slug]/` and stopped being a facet of the
+    // blog — it carries the author's events too. It is deliberately NOT listed
+    // here, because its `noindex` is no longer unconditional: it is decided by
+    // `evaluateAuthorIndexability`. That page's own guard lives in
+    // `test/pages/author-page.test.ts`, which asserts the decision is wired
+    // from the predicate and is never a hardcoded literal either way.
 ] as const;
 
 /**
