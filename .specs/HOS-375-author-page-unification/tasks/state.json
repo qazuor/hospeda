@@ -585,23 +585,24 @@
             "id": "T-024",
             "title": "Point the post byline components at the new author URL",
             "description": "Spec §6.9. Update apps/web/src/components/post/PostAuthorCard.astro:43 and PostDetailHeader.astro:99 to build `autores/${author.slug}` via buildUrl. Tests: both components render a link to /es/autores/<slug>/.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-020"],
             "blocks": ["T-029"],
             "subtasks": [
-                { "title": "Update PostAuthorCard", "completed": false },
-                { "title": "Update PostDetailHeader", "completed": false },
-                { "title": "Tests: both emit the new URL", "completed": false }
+                { "title": "Update PostAuthorCard", "completed": true },
+                { "title": "Update PostDetailHeader", "completed": true },
+                { "title": "Tests: both emit the new URL", "completed": true }
             ],
             "tags": ["web", "components"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-03T16:20:00.000Z",
+                "completed": "2026-08-03T16:40:00.000Z"
+            },
+            "notes": "apps/web/src/components/post/PostAuthorCard.astro and PostDetailHeader.astro now build `autores/${author.slug}` via buildUrl. Linked DIRECTLY rather than through the T-023 middleware redirect: an internal link should never spend a hop it can avoid, and a byline that relies on the redirect would make the redirect load-bearing for first-party traffic instead of only for inbound links. NOT LISTED IN THE TASK but mandatory: two existing tests asserted the OLD path and would have gone red — publicaciones-detail-media.test.ts:147 and share-buttons-in-detail-pages.test.ts:108. Both now assert the new path AND `not.toContain('publicaciones/autor/')`, so a revert cannot pass by silently falling back to the redirect."
         },
         {
             "id": "T-025",
@@ -698,22 +699,23 @@
             "id": "T-029",
             "title": "Delete the old author pages under /publicaciones/autor/",
             "description": "Spec §6.1. Remove apps/web/src/pages/[lang]/publicaciones/autor/[slug]/index.astro and .../page/[page].astro. No shim is left behind — the middleware redirect from T-023 is the only compatibility surface. Do this only after the redirect and all inbound links are updated, or deep links break in the gap. Verification: `grep -rn \"publicaciones/autor\" apps/web/src` must return zero hits (AC-9).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-021", "T-022", "T-023", "T-024"],
             "blocks": ["T-032"],
             "subtasks": [
-                { "title": "Delete both old page files", "completed": false },
-                { "title": "grep for residual references in src", "completed": false }
+                { "title": "Delete both old page files", "completed": true },
+                { "title": "grep for residual references in src", "completed": true }
             ],
             "tags": ["web", "cleanup"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-03T16:20:00.000Z",
+                "completed": "2026-08-03T16:40:00.000Z"
+            },
+            "notes": "Deleted apps/web/src/pages/[lang]/publicaciones/autor/ (both files) plus its own source test apps/web/test/pages/publicaciones-autor.test.ts. Also removed the entry from FACET_PAGES in test/components/seo/facet-noindex.test.ts, which would otherwise fail reading a deleted file — the page is deliberately NOT relisted under the new path because its noindex stopped being unconditional (it is decided by evaluateAuthorIndexability; author-page.test.ts guards that wiring). AC-9 AS WRITTEN IS UNSATISFIABLE and should be read as intent, not literally: `grep publicaciones/autor apps/web/src` cannot reach zero, because the middleware's own redirect rule must name the old path to redirect it. Four hits remain — the T-023 regex plus three comments explaining the move — and none treats the old path as a destination. TWO FINDINGS OUTSIDE THIS TASK, reported not acted on: (1) packages/service-core/src/revalidation/entity-path-mapper.ts:396 still purges /publicaciones/autor/<slug>/ on post changes, so the new page would never be invalidated — NOT fixed here because that whole file was DELETED on origin/staging by HOS-369, which migrated revalidation from paths to cache tags; editing it here would be dead work and a merge conflict. Whether the tag-based scheme covers the author page needs checking after this branch catches up to staging (merge-base is currently 7e1108af2). (2) The deleted page showed a '<n> publicaciones' count under the bio that the new page does not; with two content blocks a posts-only count no longer makes sense, but dropping it is a product call, left to the owner. Verified live after deletion: the old URLs still 301 and the chain still lands on 200 in one hop, with the redirect now the ONLY compatibility surface."
         },
         {
             "id": "T-030",
