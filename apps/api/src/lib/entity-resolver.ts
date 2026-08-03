@@ -50,38 +50,6 @@ const MAX_ENTITIES_PER_TYPE = 1000;
  */
 export function createEntityResolver(): EntityResolver {
     return {
-        resolveByType: async ({ entityType }) => {
-            try {
-                switch (entityType) {
-                    case 'accommodation':
-                        return await resolveAccommodations();
-                    case 'destination':
-                        return await resolveDestinations();
-                    case 'event':
-                        return await resolveEvents();
-                    case 'post':
-                        return await resolvePosts();
-                    case 'accommodation_review':
-                    case 'destination_review':
-                    case 'tag':
-                    case 'amenity':
-                        // These types don't have individual detail pages
-                        // Return empty so the service falls back to generic listing paths
-                        return [];
-                    default:
-                        logger.warn(
-                            `[EntityResolver] Unknown entity type in resolveByType: "${entityType as string}"`
-                        );
-                        return [];
-                }
-            } catch (error) {
-                logger.error(
-                    `[EntityResolver] Failed to resolve entities for type "${entityType}": ${error instanceof Error ? error.message : String(error)}`
-                );
-                throw error;
-            }
-        },
-
         resolveById: async ({ entityType, entityId }) => {
             try {
                 switch (entityType) {

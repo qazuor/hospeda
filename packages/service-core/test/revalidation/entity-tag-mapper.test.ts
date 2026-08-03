@@ -37,8 +37,10 @@ describe('getAffectedCacheTags', () => {
         it('yields only the collection and home tags when no identifiers are supplied', () => {
             const tags = getAffectedCacheTags({ entityType: 'accommodation' });
 
-            expect(tags).toEqual(expect.arrayContaining(['list-accom', 'home']));
-            expect(tags).not.toContain(undefined);
+            // `toEqual`, not `arrayContaining`: the claim is "ONLY these", and
+            // `arrayContaining` is satisfied by any superset — it would pass even
+            // if a malformed `accom-undefined` were emitted alongside them.
+            expect(tags).toEqual(['list-accom', 'home']);
         });
 
         it('deduplicates when slug and id are equal-valued strings', () => {

@@ -535,16 +535,24 @@ export const revalidationHealthRoute = createAdminRoute({
             };
         }
 
+        // Deliberately does NOT fire a real purge (HOS-369 W1-1). It used to,
+        // which was free when every purge flushed the whole zone anyway. Under
+        // purge-by-tag it is not: Cloudflare's Free-plan ceiling is 5 tag-purge
+        // requests per MINUTE, so any monitor polling this endpoint would eat
+        // the budget content invalidation needs and starve real purges. The
+        // check reports what it can observe without spending one — that the
+        // singleton is up and which adapter it holds. Whether the upstream
+        // credentials actually work is answered by the outcome of real purges
+        // in `revalidation_log`, which is a better signal anyway because it
+        // reflects production traffic rather than a synthetic tag.
         const start = Date.now();
         try {
-            await service.revalidateTags({
-                tags: ['health-probe'],
-                trigger: 'manual',
-                entityType: 'manual'
-            });
             return {
                 status: 'operational' as const,
-                adapter: 'active' as const,
+                adapter:
+                    service.getAdapterName() === 'NoOpRevalidationAdapter'
+                        ? ('none' as const)
+                        : ('active' as const),
                 latencyMs: Date.now() - start
             };
         } catch (error) {

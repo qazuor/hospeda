@@ -166,6 +166,28 @@ export const POST: APIRoute = async ({ request }) => {
         return jsonError({ error: 'cloudflare_purge_failed', status: purgeRes.status, detail }, 502);
     }
 
+    // A 2xx is not proof the purge happened. Cloudflare's v4 API answers with an
+    // envelope — `{ success, errors[], result }` — and uses `success: false` on
+    // a 200 for several validation and entitlement failures. Trusting the status
+    // line alone would report a purge that evicted nothing as a success, log it
+    // as a success, and leave the content stale for its whole TTL: exactly the
+    // silent failure mode this wave exists to remove (spec §5.11.3, §5.11.5).
+    const envelope = (await purgeRes.json().catch(() => null)) as {
+        success?: unknown;
+        errors?: unknown;
+    } | null;
+
+    if (envelope === null || envelope.success !== true) {
+        return jsonError(
+            {
+                error: 'cloudflare_purge_rejected',
+                status: purgeRes.status,
+                detail: envelope?.errors ?? '<unparseable response body>'
+            },
+            502
+        );
+    }
+
     return new Response(
         JSON.stringify(
             instruction.kind === 'everything'

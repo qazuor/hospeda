@@ -1069,7 +1069,17 @@ cache. What landed, and the four things that differ from the plan below:
   entity purges its own tag from its own write hook. This is a deliberate
   narrowing of the cron backstop, not an oversight.
 
-**An undocumented gate remains before W1-2** (see §5.11.5).
+**Two gates remain before W1-2:**
+
+1. **§5.11.5** — verify empirically that Free honors an origin-emitted
+   `Cache-Tag` header. The failure mode is silent.
+2. **Audit the live `revalidation_config` rows.** Any row with `enabled = false`
+   or `autoRevalidateOnChange = false` now means that entity type invalidates
+   **nothing at all** on write. `tag` and `amenity` are seeded that way. Under
+   `purge_everything` this was harmless — the next write of any type flushed the
+   zone and corrected them within minutes. Under selective purge, an amenity
+   rename waits for the next accommodation write or up to 24 h. The gate is
+   worth checking against the live 8 rows, not the seed.
 
 The original plan, for the record:
 

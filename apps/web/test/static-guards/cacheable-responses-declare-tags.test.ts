@@ -28,6 +28,12 @@
  *     the second while the first is simply never examined.
  *   - It reads source text, so a `Cache-Control` assembled at runtime from
  *     pieces that never appear next to the header name is invisible to it.
+ *   - It matches on the header NAME being adjacent to its value, so a response
+ *     built as `new Response(body, { headers: SOME_SHARED_CONST })` matches
+ *     nothing and is classified as harmless. That is not hypothetical: it is
+ *     the shape of `SITEMAP_RESPONSE_HEADERS` (`src/lib/seo/sitemap-xml.ts`),
+ *     which carries a tag today only because it was found and fixed by hand. A
+ *     future copy of that pattern without one would be invisible here.
  *
  * @module test/static-guards/cacheable-responses-declare-tags
  */

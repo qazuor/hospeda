@@ -132,6 +132,31 @@ describe('POST /api/revalidate — selective purge', () => {
             status: 429
         });
     });
+
+    it('rejects a 200 whose envelope says success:false', async () => {
+        // The v4 API answers with `{ success, errors[] }` and uses success:false
+        // on a 200 for several validation/entitlement failures. Trusting the
+        // status line would report a purge that evicted nothing as a success —
+        // the silent failure this whole wave exists to remove.
+        fetchMock.mockResolvedValueOnce(
+            new Response(JSON.stringify({ success: false, errors: [{ code: 10000 }] }), {
+                status: 200
+            })
+        );
+
+        const response = await POST(makeContext({ body: { tags: ['home'] } }));
+
+        expect(response.status).toBe(502);
+        expect(await response.json()).toMatchObject({ error: 'cloudflare_purge_rejected' });
+    });
+
+    it('rejects a 200 whose body is not parseable as the envelope', async () => {
+        fetchMock.mockResolvedValueOnce(new Response('<html>proxy error</html>', { status: 200 }));
+
+        const response = await POST(makeContext({ body: { tags: ['home'] } }));
+
+        expect(response.status).toBe(502);
+    });
 });
 
 describe('POST /api/revalidate — whole-zone flush is reachable ONLY explicitly', () => {
@@ -145,7 +170,10 @@ describe('POST /api/revalidate — whole-zone flush is reachable ONLY explicitly
 
     it.each([
         ['an empty body', {}],
-        ['a null body', null],
+        // The literal string, not `null`: the helper does `JSON.stringify(body ?? {})`,
+        // so passing `null` would send `{}` and silently duplicate the row above
+        // instead of exercising the `body === null` branch.
+        ['a JSON null body', 'null'],
         ['tags of the wrong type', { tags: 'home' }],
         ['an empty tag list', { tags: [] }],
         ['purgeEverything set to a truthy non-true value', { purgeEverything: 'yes' }],

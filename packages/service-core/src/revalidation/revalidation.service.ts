@@ -39,17 +39,6 @@ import { getAffectedCacheTags } from './entity-tag-mapper.js';
  */
 export interface EntityResolver {
     /**
-     * Returns {@link EntityChangeData} for all published/active entities
-     * of the given type.
-     *
-     * @param params - Object containing the entity type to resolve
-     * @returns Array of entity change data objects, one per published entity
-     */
-    readonly resolveByType: (params: {
-        readonly entityType: EntityChangeData['entityType'];
-    }) => Promise<ReadonlyArray<EntityChangeData>>;
-
-    /**
      * Returns {@link EntityChangeData} for a single entity by type and ID.
      * Used by the `/revalidate/entity` endpoint to look up a specific entity
      * before revalidating its tags.
@@ -136,6 +125,30 @@ const CONFIG_CACHE_TTL_MS = 60_000; // 60 seconds
  */
 const PURGE_COALESCE_MS = 50;
 
+/**
+ * Minimum spacing between two coalesced purge requests, in milliseconds.
+ *
+ * Cloudflare's tag-purge ceiling on the Free plan is 5 requests per minute
+ * (spec §5.11.2), i.e. one per 12 s. The 50 ms window above absorbs scheduler
+ * skew between siblings enqueued in the same tick; it does nothing for writes
+ * that arrive SECONDS apart, which is the normal case — each entity has its own
+ * debounce bucket (`accommodation` is seeded at 5 s), so six hosts saving six
+ * listings over fifteen seconds produced six separate purge requests.
+ *
+ * Under `purge_everything` exceeding the limit was self-correcting: a dropped
+ * flush was repaired by the next successful one, because every flush covered
+ * everything. With tags it is not — the tags of a rejected request are disjoint
+ * from the next request's, so whatever it carried stays cached until its TTL.
+ * That is why this exists, and why it DELAYS rather than drops: pending groups
+ * keep accumulating in `pendingPurgeGroups` and go out together on the next
+ * permitted flush.
+ *
+ * Cost: under sustained write pressure a purge can wait up to 12 s beyond its
+ * debounce. That is strictly better than the alternative, which is a purge that
+ * returns 429 and evicts nothing.
+ */
+const MIN_PURGE_INTERVAL_MS = 12_000;
+
 /** One entity's worth of cache tags awaiting the next shared purge. */
 interface PendingPurgeGroup {
     readonly entityType: string;
@@ -174,6 +187,12 @@ export class RevalidationService {
      * "one purge at a time", and concurrency is the whole thing being fixed.
      */
     private purgeInFlight: Promise<unknown> = Promise.resolve();
+    /**
+     * When the last coalesced purge started, used to keep requests at least
+     * {@link MIN_PURGE_INTERVAL_MS} apart. Zero means "none yet", which makes
+     * the first purge of the process fire on the plain coalescing window.
+     */
+    private lastPurgeStartedAt = 0;
     private readonly configCache = new Map<string, ConfigCacheEntry>();
     private readonly logModel: RevalidationLogModel;
     private readonly configModel: RevalidationConfigModel;
@@ -193,6 +212,20 @@ export class RevalidationService {
      */
     getLogRetentionDays(): number {
         return this.logRetentionDaysConfig;
+    }
+
+    /**
+     * Name of the adapter this service is wired to.
+     *
+     * Exposed for the admin health check, which reports what it can observe
+     * WITHOUT spending one of Cloudflare's 5 tag-purge requests per minute
+     * (HOS-369 W1-1). A `NoOpRevalidationAdapter` here means invalidation is
+     * silently disabled — the missing-secret fallback in `adapter-factory.ts`.
+     *
+     * @returns The adapter's `name`.
+     */
+    getAdapterName(): string {
+        return this.adapter.name;
     }
 
     /**
@@ -385,6 +418,14 @@ export class RevalidationService {
 
         if (this.purgeFlushTimer !== undefined) return;
 
+        // Wait out whatever remains of the rate-limit interval since the last
+        // flush, but never less than the coalescing window. At low write volume
+        // the remainder is already negative and this is the plain 50 ms hop;
+        // under pressure the extra wait is what turns a burst that would be
+        // rejected into one request that is accepted (see MIN_PURGE_INTERVAL_MS).
+        const sinceLastPurge = Date.now() - this.lastPurgeStartedAt;
+        const delay = Math.max(PURGE_COALESCE_MS, MIN_PURGE_INTERVAL_MS - sinceLastPurge);
+
         this.purgeFlushTimer = setTimeout(() => {
             this.purgeFlushTimer = undefined;
 
@@ -395,6 +436,7 @@ export class RevalidationService {
                 .then(() => {
                     const groups = this.pendingPurgeGroups.splice(0);
                     if (groups.length === 0) return undefined;
+                    this.lastPurgeStartedAt = Date.now();
                     return this.purgeGroupsOnce({ groups, trigger: 'hook' });
                 })
                 .catch((error: unknown) => {
@@ -403,7 +445,7 @@ export class RevalidationService {
                     );
                     return undefined;
                 });
-        }, PURGE_COALESCE_MS);
+        }, delay);
 
         // NOT unref'd, deliberately. The debounce timer that precedes this one is
         // ref'd, so the process already paid up to `debounceSeconds` of liveness
@@ -695,12 +737,15 @@ export class RevalidationService {
     private extractEntityId(event: EntityChangeData): string | undefined {
         switch (event.entityType) {
             case 'accommodation':
-                // Prefer the canonical UUID; falls back to undefined if not supplied.
-                // Slug is intentionally NOT used here to avoid mixing identifiers.
-                return event.id;
             case 'destination':
             case 'event':
             case 'post':
+                // The canonical UUID when the call site had one; undefined
+                // otherwise. The slug is deliberately NOT used as a fallback —
+                // mixing UUIDs and slugs in one column makes `entity_id`
+                // unqueryable. All four content types carry `id` on
+                // EntityChangeData since HOS-369 W1-1.
+                return event.id;
             case 'accommodation_review':
             case 'destination_review':
                 // These hooks don't yet forward a canonical UUID — addressed as

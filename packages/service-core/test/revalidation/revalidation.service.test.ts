@@ -1486,6 +1486,61 @@ describe('RevalidationService -- coalesced purge window', () => {
      * include `accommodation.sync-featured-by-entitlement`, which maps over every
      * accommodation an owner has.
      */
+    /**
+     * THE REGRESSION GUARD for the rate-limit hole HOS-369 W1-1 introduced.
+     *
+     * Cloudflare's Free-plan ceiling is 5 tag-purge requests per MINUTE. The
+     * 50 ms coalescing window above only merges siblings enqueued in the same
+     * tick; writes arriving seconds apart each got their own request, and six
+     * hosts saving six listings over fifteen seconds blew straight past the
+     * limit. Under `purge_everything` that was self-correcting — any later
+     * flush covered what the rejected one carried. Under tags it is not: the
+     * rejected request's tags are disjoint from the next one's, so its content
+     * stays cached for the full TTL with nothing able to evict it.
+     *
+     * The fix DELAYS rather than drops, which is what these two assert.
+     */
+    it('spaces consecutive purges by the Cloudflare rate-limit interval', async () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'primera' });
+        await vi.runAllTimersAsync();
+        expect(adapter.revalidateMany).toHaveBeenCalledTimes(1);
+
+        // A second write moments later must NOT produce a second request yet.
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'segunda' });
+        await vi.advanceTimersByTimeAsync(2_000);
+        expect(adapter.revalidateMany).toHaveBeenCalledTimes(1);
+
+        // ...but it must go out once the interval has elapsed.
+        await vi.advanceTimersByTimeAsync(12_000);
+        expect(adapter.revalidateMany).toHaveBeenCalledTimes(2);
+    });
+
+    it('DELAYS the held-back tags rather than dropping them', async () => {
+        // The load-bearing half. Spacing requests would be worthless — worse
+        // than the 429, even — if the tags waiting behind the interval were
+        // discarded instead of accumulated.
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'primera' });
+        await vi.runAllTimersAsync();
+
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'segunda' });
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'tercera' });
+        await vi.advanceTimersByTimeAsync(15_000);
+
+        const secondCall = adapter.revalidateMany.mock.calls[1] as
+            | [{ tags: readonly string[] }]
+            | undefined;
+        expect(secondCall).toBeDefined();
+        expect(secondCall?.[0].tags).toEqual(
+            expect.arrayContaining(['accom-segunda', 'accom-tercera'])
+        );
+    });
+
     it('fires ONE purge for a batch of many entities, not one per entity', async () => {
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
