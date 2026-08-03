@@ -16,10 +16,14 @@
  * 8b. Rewrite 410 (Gone) responses to the same styled page, forcing the 410 status
  * 9. Set Content-Security-Policy header (enforce mode, HOS-30 Phase 2) on HTML responses
  * 10. Set X-Robots-Tag noindex on hosts in HOSPEDA_NOINDEX_HOSTS (e.g. staging)
+ * 11. Serialize the collected cache tags into the Cache-Tag header on
+ *     edge-cacheable responses (HOS-369 W1-1)
  */
 
 import { defineMiddleware } from 'astro:middleware';
+import { CACHE_TAG_HEADER_NAME, serializeCacheTags } from '@repo/cache-tags';
 import { collectCspHashes } from '../integrations/csp-hash-collector';
+import { isEdgeCacheableControl } from './lib/cache/response-cache';
 import {
     getInternalApiUrl,
     getInternalRequestSecret,
@@ -119,6 +123,12 @@ if (import.meta.env.SSR) {
  */
 export const onRequest = defineMiddleware(async (context, next) => {
     const path = context.url.pathname;
+
+    // Step 0: Open the cache-tag collector for this request. Created before any
+    // branch returns so `Astro.locals.cacheTags` is never undefined for a
+    // downstream caller, whatever path the request takes. Serialized into the
+    // `Cache-Tag` header at Step 11 (HOS-369 W1-1).
+    context.locals.cacheTags = new Set<string>();
 
     // Step 1: Skip static assets and API routes — no middleware processing needed.
     if (isStaticAssetRoute({ path })) {
@@ -460,6 +470,35 @@ export const onRequest = defineMiddleware(async (context, next) => {
         const requestHost = context.url.hostname.toLowerCase();
         if (NOINDEX_HOSTS.includes(requestHost)) {
             response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+        }
+    }
+
+    // Step 11: Emit the `Cache-Tag` header so this response can be purged
+    // selectively instead of by flushing the whole zone (HOS-369 W1-1, §5.5).
+    //
+    // Written here, after the render, rather than by the page that decided the
+    // caching: layouts and nested components run their frontmatter after the
+    // page's, so a header written in page frontmatter could not include what
+    // they contribute. It is also written after the CSP branch above, which
+    // REPLACES `response` with a new object — setting the header before that
+    // point would drop it on the floor for every SSR HTML page.
+    //
+    // Only tagged, shared-cacheable responses get the header. An untagged
+    // cacheable response is prevented upstream: `applyCacheHeaders` cannot
+    // declare one (see `lib/cache/response-cache.ts`), and the static guard
+    // `test/static-guards/cacheable-responses-declare-tags.guard.test.ts` fails
+    // the build if any source file sets a public `Cache-Control` on its own.
+    //
+    // Cloudflare consumes and strips `Cache-Tag` before the response reaches the
+    // visitor, so the entity slugs and ids inside it are never exposed and cost
+    // the client nothing.
+    if (context.locals.cacheTags.size > 0) {
+        const cacheControl = response.headers.get('Cache-Control');
+        if (isEdgeCacheableControl({ cacheControl })) {
+            const { header } = serializeCacheTags({ tags: context.locals.cacheTags });
+            if (header !== null) {
+                response.headers.set(CACHE_TAG_HEADER_NAME, header);
+            }
         }
     }
 
