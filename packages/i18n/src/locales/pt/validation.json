@@ -1398,6 +1398,32 @@
         "checkOut": {
             "invalidDate": "[PT] El check-out debe ser una fecha válida"
         },
+        "commerceMedia": {
+            "alt": {
+                "max": "O texto alternativo não pode ultrapassar {{max}} caracteres",
+                "min": "O texto alternativo deve ter ao menos {{min}} caracteres"
+            },
+            "caption": {
+                "max": "A legenda não pode ultrapassar {{max}} caracteres",
+                "min": "A legenda deve ter ao menos {{min}} caracteres"
+            },
+            "description": {
+                "max": "A descrição não pode ultrapassar {{max}} caracteres",
+                "min": "A descrição deve ter ao menos {{min}} caracteres"
+            },
+            "publicId": {
+                "min": "O public id deve ter ao menos {{min}} caracteres"
+            },
+            "sortOrder": {
+                "int": "A ordem de exibição deve ser um número inteiro"
+            },
+            "state": {
+                "invalid": "O estado da mídia deve ser 'visible' ou 'archived'"
+            },
+            "url": {
+                "invalid": "A URL não é válida"
+            }
+        },
         "commerceRating": {
             "ambiance": {
                 "max": "[PT] El puntaje de ambiente no puede superar los {{max}}",
@@ -2695,6 +2721,14 @@
         "featureIds": {
             "invalidUuid": "[PT] El ID de característica debe ser un UUID válido"
         },
+        "media": {
+            "reorder": {
+                "orderedIds": {
+                    "invalid": "A lista ordenada deve ser um arranjo de UUIDs válidos",
+                    "min": "A lista ordenada deve conter ao menos {{min}} item"
+                }
+            }
+        },
         "priceFrom": {
             "nonnegative": "[PT] El precio debe ser mayor o igual a 0"
         },
@@ -2933,6 +2967,14 @@
         },
         "featureIds": {
             "invalidUuid": "[PT] El ID de característica debe ser un UUID válido"
+        },
+        "media": {
+            "reorder": {
+                "orderedIds": {
+                    "invalid": "A lista ordenada deve ser um arranjo de UUIDs válidos",
+                    "min": "A lista ordenada deve conter ao menos {{min}} item"
+                }
+            }
         },
         "menuUrl": {
             "httpsRequired": "[PT] La URL del menú debe usar HTTPS",
