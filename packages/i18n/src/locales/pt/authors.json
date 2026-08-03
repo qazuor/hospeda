@@ -1,0 +1,28 @@
+{
+    "meta": {
+        "title": "{{name}} - Autor",
+        "description": "Artigos e eventos publicados por {{name}} na Hospeda."
+    },
+    "tagline": "Autor",
+    "posts": {
+        "heading": "Publicações",
+        "empty": "Este autor ainda não publicou artigos."
+    },
+    "events": {
+        "heading": "Eventos",
+        "empty": "Este autor ainda não publicou eventos."
+    },
+    "empty": {
+        "title": "Sem conteúdo publicado",
+        "description": "Este autor ainda não tem artigos nem eventos publicados. Volte em breve."
+    },
+    "socialNetworks": {
+        "regionLabel": "Redes sociais de {{name}}"
+    },
+    "pagination": {
+        "label": "Paginação de publicações",
+        "previous": "Anterior",
+        "next": "Próxima",
+        "page": "Página {{page}} de {{total}}"
+    }
+}

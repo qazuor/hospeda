@@ -1,0 +1,28 @@
+{
+    "meta": {
+        "title": "{{name}} - Author",
+        "description": "Articles and events published by {{name}} on Hospeda."
+    },
+    "tagline": "Author",
+    "posts": {
+        "heading": "Articles",
+        "empty": "This author has not published any articles yet."
+    },
+    "events": {
+        "heading": "Events",
+        "empty": "This author has not published any events yet."
+    },
+    "empty": {
+        "title": "No published content",
+        "description": "This author has no articles or events published yet. Check back soon."
+    },
+    "socialNetworks": {
+        "regionLabel": "{{name}}'s social networks"
+    },
+    "pagination": {
+        "label": "Article pagination",
+        "previous": "Previous",
+        "next": "Next",
+        "page": "Page {{page}} of {{total}}"
+    }
+}

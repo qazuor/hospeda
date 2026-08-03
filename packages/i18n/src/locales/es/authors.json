@@ -1,0 +1,28 @@
+{
+    "meta": {
+        "title": "{{name}} - Autor",
+        "description": "Notas y eventos publicados por {{name}} en Hospeda."
+    },
+    "tagline": "Autor",
+    "posts": {
+        "heading": "Publicaciones",
+        "empty": "Este autor todavía no publicó notas."
+    },
+    "events": {
+        "heading": "Eventos",
+        "empty": "Este autor todavía no publicó eventos."
+    },
+    "empty": {
+        "title": "Sin contenido publicado",
+        "description": "Este autor todavía no tiene notas ni eventos publicados. Volvé pronto."
+    },
+    "socialNetworks": {
+        "regionLabel": "Redes de {{name}}"
+    },
+    "pagination": {
+        "label": "Paginación de publicaciones",
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "page": "Página {{page}} de {{total}}"
+    }
+}
