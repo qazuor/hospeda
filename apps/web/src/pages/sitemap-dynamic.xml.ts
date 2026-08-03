@@ -2,10 +2,14 @@
  * @fileoverview
  * Dynamic sitemap endpoint emitting XML for all published entities.
  *
- * Fetches accommodations, destinations, events, and posts in parallel.
+ * Fetches accommodations, destinations, events, posts and authors in parallel.
  * Generates one <url> entry per entity per supported locale (es, en, pt).
  * Partial results are returned if one or more fetches fail — the whole
  * sitemap is never blocked by a single failing entity type.
+ *
+ * Author entries (HOS-375 §6.6) carry no filtering of their own: the
+ * indexability predicate lives behind `/api/v1/public/authors`, shared with the
+ * page itself, so the sitemap cannot advertise a URL the page serves noindex.
  *
  * Also emits static entries for the two facet-landing families promoted to
  * indexable pages by SPEC-306 §4/§7.2-3: event category (9 enum values) and
@@ -298,7 +302,8 @@ export const GET: APIRoute = async () => {
         gastronomy,
         experiences,
         attractions,
-        pointsOfInterest
+        pointsOfInterest,
+        authors
     ] = await Promise.allSettled([
         fetchAllEntities(apiUrl, `${base}/accommodations`),
         fetchAllEntities(apiUrl, `${base}/destinations`, { includeEventCount: 'true' }),
@@ -307,7 +312,12 @@ export const GET: APIRoute = async () => {
         fetchAllEntities(apiUrl, `${base}/gastronomies`),
         fetchAllEntities(apiUrl, `${base}/experiences`),
         fetchAllEntities(apiUrl, `${base}/attractions`),
-        fetchAllEntities(apiUrl, `${base}/points-of-interest`)
+        fetchAllEntities(apiUrl, `${base}/points-of-interest`),
+        // Authors is APPENDED, never inserted mid-array: the tests in
+        // `test/pages/sitemap-dynamic.test.ts` stub `fetch` positionally with
+        // `mockImplementationOnce`, so a new fetch anywhere above would shift
+        // every later entity onto the wrong stub.
+        fetchAllEntities(apiUrl, `${base}/authors`)
     ]);
 
     const resolvedAccommodations =
@@ -320,6 +330,7 @@ export const GET: APIRoute = async () => {
     const resolvedAttractions = attractions.status === 'fulfilled' ? attractions.value : [];
     const resolvedPointsOfInterest =
         pointsOfInterest.status === 'fulfilled' ? pointsOfInterest.value : [];
+    const resolvedAuthors = authors.status === 'fulfilled' ? authors.value : [];
 
     const entries: string[] = [];
 
@@ -443,6 +454,28 @@ export const GET: APIRoute = async () => {
             siteUrl,
             pathFn: (slug) => `/destinos/lugar/${slug}/`,
             changefreq: 'monthly',
+            priority: 0.6
+        })
+    );
+
+    // Authors: /autores/{slug}/ — NO filter here, deliberately. Every other
+    // entity block decides indexability in this file, but the author predicate
+    // (HOS-375 §6.5: not a system account, at least one published item, a bio,
+    // an avatar) is already applied by `GET /api/v1/public/authors`, which
+    // shares it with the page through `evaluateAuthorIndexability`. Re-deciding
+    // it here would create the second source of truth §6.6 exists to prevent —
+    // the failure it guards against is the sitemap advertising a URL the page
+    // then serves as `noindex`.
+    //
+    // `lastmod` is the author row's own `updatedAt`, which the endpoint returns
+    // for exactly this purpose: the page renders a profile plus two content
+    // lists, so a profile edit really is a change to this URL.
+    entries.push(
+        ...buildEntriesForEntity({
+            items: resolvedAuthors,
+            siteUrl,
+            pathFn: (slug) => `/autores/${slug}/`,
+            changefreq: 'weekly',
             priority: 0.6
         })
     );
