@@ -1,6 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
-import { useGeocodingReverse, useGeocodingSearch } from '@/hooks/useGeocoding';
 /**
  * @file LocationPicker.client.tsx
  * @description Location picker with Leaflet map and address autocomplete (SPEC-208, Phase C PR2).
@@ -14,6 +13,8 @@ import { useGeocodingReverse, useGeocodingSearch } from '@/hooks/useGeocoding';
  * Controlled via `value`/`onChange` (RO-RO). The host can edit lat/lng manually too.
  * Uses `client:only="react"` for SSR safety (Leaflet touches window at init).
  */
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
+import { useGeocodingReverse, useGeocodingSearch } from '@/hooks/useGeocoding';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './LocationPicker.module.css';
@@ -321,17 +322,15 @@ export function LocationPicker({
                         onChange={(e) => handleLatChange(e.target.value)}
                         disabled={disabled}
                         aria-invalid={Boolean(errors?.latitude)}
-                        aria-describedby={errors?.latitude ? 'acc-latitude-error' : undefined}
+                        aria-describedby={
+                            errors?.latitude ? fieldErrorId('acc-latitude') : undefined
+                        }
                     />
-                    {errors?.latitude && (
-                        <span
-                            id="acc-latitude-error"
-                            className={styles.fieldError}
-                            role="alert"
-                        >
-                            {errors.latitude}
-                        </span>
-                    )}
+                    <FieldError
+                        id={fieldErrorId('acc-latitude')}
+                        message={errors?.latitude}
+                        className={styles.fieldErrorSpacing}
+                    />
                 </div>
 
                 <div className={styles.field}>
@@ -352,17 +351,15 @@ export function LocationPicker({
                         onChange={(e) => handleLngChange(e.target.value)}
                         disabled={disabled}
                         aria-invalid={Boolean(errors?.longitude)}
-                        aria-describedby={errors?.longitude ? 'acc-longitude-error' : undefined}
+                        aria-describedby={
+                            errors?.longitude ? fieldErrorId('acc-longitude') : undefined
+                        }
                     />
-                    {errors?.longitude && (
-                        <span
-                            id="acc-longitude-error"
-                            className={styles.fieldError}
-                            role="alert"
-                        >
-                            {errors.longitude}
-                        </span>
-                    )}
+                    <FieldError
+                        id={fieldErrorId('acc-longitude')}
+                        message={errors?.longitude}
+                        className={styles.fieldErrorSpacing}
+                    />
                 </div>
             </div>
         </fieldset>
