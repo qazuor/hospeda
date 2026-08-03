@@ -55,9 +55,9 @@ export interface UseUnsavedChangesGuardOptions {
 
 /**
  * Returns true when a click should be left alone: anything the router itself
- * would ignore, plus in-page hash links. Mirrors the bail-out conditions in
- * `ClientRouter.astro` so the guard never intercepts a navigation the router
- * was not going to handle either.
+ * would ignore, plus any link that stays on the current document. Mirrors the
+ * bail-out conditions in `ClientRouter.astro` so the guard never intercepts a
+ * navigation the router was not going to handle either.
  */
 function shouldIgnoreClick(event: MouseEvent, anchor: HTMLAnchorElement): boolean {
     if (event.defaultPrevented) return true;
@@ -82,12 +82,13 @@ function shouldIgnoreClick(event: MouseEvent, anchor: HTMLAnchorElement): boolea
     // Another origin leaves the app entirely — `beforeunload` covers that one.
     if (target.origin !== window.location.origin) return true;
 
-    // A pure hash change stays on the same page, so nothing is lost.
-    if (
-        target.pathname === window.location.pathname &&
-        target.search === window.location.search &&
-        target.hash !== window.location.hash
-    ) {
+    // Same document: an in-page anchor, or a link back to the page we are
+    // already on. Nothing is discarded either way, so never prompt. Deliberately
+    // does NOT require the hash to differ — the editors' own section nav
+    // preventDefaults its clicks and scrolls without writing the hash, so a
+    // second click on the already-active section would otherwise compare equal
+    // hashes and pop a confirm in the middle of editing.
+    if (target.pathname === window.location.pathname && target.search === window.location.search) {
         return true;
     }
 

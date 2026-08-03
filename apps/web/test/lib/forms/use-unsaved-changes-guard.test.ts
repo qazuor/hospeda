@@ -187,6 +187,20 @@ describe('useUnsavedChangesGuard', () => {
             expect(confirmSpy).not.toHaveBeenCalled();
         });
 
+        it('should ignore a same-document link even when the hash does not change', () => {
+            // The editors' section nav preventDefaults its own clicks and
+            // scrolls without writing the hash, so clicking the already-active
+            // section produces target.hash === location.hash. Comparing hashes
+            // for inequality would pop a confirm mid-edit.
+            renderHook(() => useUnsavedChangesGuard({ isDirty: true, message: MESSAGE }));
+            const anchor = addAnchor({ href: window.location.pathname });
+
+            const event = clickAnchor(anchor);
+
+            expect(event.defaultPrevented).toBe(false);
+            expect(confirmSpy).not.toHaveBeenCalled();
+        });
+
         it('should ignore a click already prevented by an earlier capture listener', () => {
             // Must be on `document` in the capture phase and registered first:
             // the guard itself listens there, so a listener on the anchor would
