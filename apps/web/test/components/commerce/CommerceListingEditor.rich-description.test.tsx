@@ -102,7 +102,11 @@ describe('CommerceListingEditor — richDescription as a rich text editor', () =
         expect(screen.getByRole('toolbar', { name: 'Formato' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /negrita/i })).toBeInTheDocument();
         // The old bare `<textarea id="ce-richDescription">` is gone for good.
-        expect(container.querySelector('#ce-richDescription')).toBeNull();
+        // Since HOS-373 the id itself lives on again — on the contenteditable,
+        // so the focus-on-error contract can target this field — so what must
+        // stay absent is a TEXTAREA carrying it, not the id.
+        expect(container.querySelector('textarea#ce-richDescription')).toBeNull();
+        expect(container.querySelector('#ce-richDescription')).not.toBeNull();
     });
 
     it('exposes the field with an accessible name (the label cannot reach a contenteditable)', async () => {
