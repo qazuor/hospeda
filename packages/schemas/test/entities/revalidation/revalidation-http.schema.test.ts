@@ -513,6 +513,20 @@ describe('cache-tag validation stays in sync with @repo/cache-tags', () => {
         'pricing',
         'site-config',
         'accom-3f1a2b4c-0000-4000-8000-000000000001',
+        // Namespaced forms (HOS-369 W1-2) — the shape actually sent to
+        // Cloudflare now. The colon is 0x3A, inside the pattern's \x2D-\x7E
+        // range, so these must pass on BOTH sides; the degenerate colon cases
+        // below pin down that the two also agree on the edges of that claim.
+        'prod:accom-cabana-del-rio',
+        'prod:list-accom',
+        'preview:home',
+        'dev:site-config',
+        'test:pricing',
+        'prod:',
+        ':home',
+        'prod::home',
+        'prod:has space',
+        `prod:${'a'.repeat(1024)}`,
         'a',
         'UPPER-CASE',
         'with.dots-and_underscores~tilde',

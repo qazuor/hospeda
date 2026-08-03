@@ -12,6 +12,8 @@
  * @module revalidation/revalidation.service
  */
 
+import type { CacheTagEnvironment } from '@repo/cache-tags';
+import { namespaceCacheTags } from '@repo/cache-tags';
 import type { RevalidationConfigRecord } from '@repo/db';
 import { RevalidationConfigModel, RevalidationLogModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
@@ -78,6 +80,22 @@ export interface RevalidationServiceConfig {
      * backstop (see {@link EntityResolver}).
      */
     readonly entityResolver?: EntityResolver;
+    /**
+     * Deployment environment every purged tag is namespaced by (HOS-369 W1-2).
+     *
+     * `staging.hospeda.com.ar` and `hospeda.com.ar` are ONE Cloudflare zone, so
+     * an unqualified `list-accom` purge from staging evicts production's cache.
+     * The value MUST be derived from `HOSPEDA_DEPLOY_ENV` through
+     * `resolveCacheTagEnvironment` — the same function the web app calls — or
+     * the purge will address tags nothing ever emitted and report success.
+     *
+     * `undefined` means the environment could not be resolved at startup. In
+     * that state NO tag is purgeable and every purge is a no-op: purging
+     * unnamespaced tags would hit nothing, and guessing a namespace could hit
+     * the wrong environment. `initializeRevalidationService` pairs this state
+     * with a no-op adapter and an error log; it is never a normal condition.
+     */
+    readonly cacheTagEnvironment?: CacheTagEnvironment;
 }
 
 /** Trigger source for revalidation log entries */
@@ -173,6 +191,7 @@ const LOG_WRITE_CONCURRENCY = 20;
  */
 export class RevalidationService {
     private readonly adapter: RevalidationAdapter;
+    private readonly cacheTagEnvironment: CacheTagEnvironment | undefined;
     private readonly logRetentionDaysConfig: number;
     private readonly entityResolverInstance: EntityResolver | undefined;
     private readonly pendingTimers = new Map<string, PendingEntityDebounce>();
@@ -200,6 +219,7 @@ export class RevalidationService {
 
     constructor(config: RevalidationServiceConfig) {
         this.adapter = config.adapter;
+        this.cacheTagEnvironment = config.cacheTagEnvironment;
         this.logRetentionDaysConfig = config.logRetentionDays ?? DEFAULT_LOG_RETENTION_DAYS;
         this.entityResolverInstance = config.entityResolver;
         this.logModel = new RevalidationLogModel();
@@ -327,7 +347,39 @@ export class RevalidationService {
         readonly entityType: EntityChangeData['entityType'];
     }): readonly string[] {
         const { entityType } = params;
-        return getAffectedCacheTags({ entityType } as EntityChangeData);
+        return this.toNamespacedTags(getAffectedCacheTags({ entityType } as EntityChangeData));
+    }
+
+    /**
+     * Qualify bare vocabulary tags with this deployment's namespace.
+     *
+     * Applied at every point where tags ENTER the service, not at the point
+     * where they leave for the adapter. That choice makes the namespaced form
+     * the only one that exists downstream, so `purgeGroupsOnce`'s
+     * result-matching, the `revalidation_log.target` rows and the adapter all
+     * speak about the same string — the audit trail records what was actually
+     * purged rather than what was asked for. `namespaceCacheTag` is idempotent
+     * for its own environment, which is what makes it safe for the entry points
+     * to overlap (`revalidateByEntityType` → `revalidateTags`).
+     *
+     * When the environment is unresolved this returns nothing, so no purge is
+     * attempted at all. Purging the bare tags instead would evict nothing (the
+     * emitter never wrote them) while logging success; purging a guessed
+     * namespace could evict the other environment.
+     *
+     * @param tags - Bare cache tags from the entity mapper or from a caller.
+     * @returns Namespaced tags, deduplicated, in input order.
+     */
+    private toNamespacedTags(tags: ReadonlyArray<string>): readonly string[] {
+        if (this.cacheTagEnvironment === undefined) {
+            if (tags.length > 0) {
+                this.logger.error(
+                    '[RevalidationService] Dropping cache-tag purge: the deployment namespace is unresolved (set HOSPEDA_DEPLOY_ENV to prod | preview | dev | test)'
+                );
+            }
+            return [];
+        }
+        return namespaceCacheTags({ environment: this.cacheTagEnvironment, tags });
     }
 
     /**
@@ -571,7 +623,11 @@ export class RevalidationService {
      * Writes one log entry per tag after completion.
      *
      * @param params - Object containing tags and optional metadata for logging
-     * @param params.tags - Array of cache tags to purge
+     * @param params.tags - Cache tags to purge. Bare vocabulary tags are
+     *   namespaced by this deployment's environment before they reach the
+     *   adapter; tags already carrying THIS namespace pass through unchanged,
+     *   and tags carrying another environment's namespace are dropped rather
+     *   than rewritten (HOS-369 W1-2).
      * @param params.triggeredBy - User ID or 'system' for log attribution
      * @param params.reason - Optional human-readable reason (stored in log metadata)
      * @param params.trigger - Trigger source for the log entry (defaults to 'hook')
@@ -590,7 +646,7 @@ export class RevalidationService {
         readonly entityId?: string;
     }): Promise<ReadonlyArray<RevalidateTargetResult>> {
         const {
-            tags,
+            tags: rawTags,
             triggeredBy,
             reason,
             trigger = 'hook',
@@ -598,6 +654,7 @@ export class RevalidationService {
             entityId
         } = params;
 
+        const tags = this.toNamespacedTags(rawTags);
         if (tags.length === 0) return [];
 
         const results = await this.adapter.revalidateMany({ tags });
@@ -694,7 +751,7 @@ export class RevalidationService {
             if (!config.autoRevalidateOnChange) return; // Auto-revalidation turned off
 
             const effectiveDebounceMs = config.debounceSeconds * 1000;
-            const tags = getAffectedCacheTags(event);
+            const tags = this.toNamespacedTags(getAffectedCacheTags(event));
 
             // Two distinct identifiers, deliberately decoupled:
             // - debounceKeyId: per-entity bucket key (slug) so edits to different

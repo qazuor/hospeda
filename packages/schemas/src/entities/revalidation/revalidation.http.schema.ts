@@ -26,7 +26,17 @@ const MAX_CACHE_TAG_LENGTH = 1024;
  */
 const CACHE_TAG_PATTERN = /^[\x21-\x2B\x2D-\x7E]+$/;
 
-/** A single Cloudflare cache tag. */
+/**
+ * A single Cloudflare cache tag.
+ *
+ * Since HOS-369 W1-2 every tag on the wire is namespaced by deployment
+ * environment (`prod:list-accom`, `preview:home`). The colon that separates
+ * them is 0x3A, already inside {@link CACHE_TAG_PATTERN}'s `\x2D-\x7E` range,
+ * so the namespace needed no widening of the rule on either side of the
+ * duplication — which is the reason `:` was chosen over a character that would
+ * have. The drift guard's corpus includes namespaced tags precisely so that
+ * "it happens to still pass" is asserted rather than assumed.
+ */
 const CacheTagSchema = z.string().min(1).max(MAX_CACHE_TAG_LENGTH).regex(CACHE_TAG_PATTERN, {
     message:
         'Cache tag must be printable ASCII (0x21-0x7E) excluding commas, 1-1024 characters long'

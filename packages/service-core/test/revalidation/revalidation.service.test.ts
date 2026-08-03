@@ -129,9 +129,23 @@ function makeEnabledConfig(entityType: string, debounceSeconds = 1) {
     };
 }
 
+/**
+ * Namespace the tests run under (HOS-369 W1-2).
+ *
+ * A literal, not a call into `resolveCacheTagEnvironment`: deriving the
+ * expected prefix from the same code that produces it would make every
+ * assertion below pass by construction.
+ */
+const NS = 'test:';
+
+/** Prefix bare vocabulary tags with the namespace the service purges under. */
+function ns(...tags: readonly string[]): string[] {
+    return tags.map((tag) => `${NS}${tag}`);
+}
+
 /** Creates a RevalidationService with test defaults */
 function createTestService(adapter: RevalidationAdapter) {
-    return new RevalidationService({ adapter });
+    return new RevalidationService({ adapter, cacheTagEnvironment: 'test' });
 }
 
 // ---------------------------------------------------------------------------
@@ -236,9 +250,9 @@ describe('RevalidationService.scheduleRevalidation -- fire-and-forget', () => {
         );
 
         // 'tag' events fold into the shared accommodation-collection tag.
-        expect(tags).toContain('list-accom');
+        expect(tags).toContain(`${NS}list-accom`);
         // 'destination' events carry their own entity tag.
-        expect(tags).toContain('dest-my-dest');
+        expect(tags).toContain(`${NS}dest-my-dest`);
     });
 
     it('uses entity-level debounce key (entityType:entityId) for slug-bearing events', async () => {
@@ -266,8 +280,8 @@ describe('RevalidationService.scheduleRevalidation -- fire-and-forget', () => {
             (args: unknown[]) => (args[0] as { tag: string }).tag
         );
 
-        expect(tags).toContain('accom-hotel-a');
-        expect(tags).toContain('accom-hotel-b');
+        expect(tags).toContain(`${NS}accom-hotel-a`);
+        expect(tags).toContain(`${NS}accom-hotel-b`);
     });
 
     it('debounces distinct destinations on independent timers (no shared bucket)', async () => {
@@ -305,9 +319,9 @@ describe('RevalidationService.scheduleRevalidation -- fire-and-forget', () => {
         );
 
         // dest-a must have already fired on its own timer (t=1000), independent of dest-b.
-        expect(firedTags).toContain('dest-dest-a');
+        expect(firedTags).toContain(`${NS}dest-dest-a`);
         // dest-b must NOT have fired yet (its window ends at t=1600).
-        expect(firedTags).not.toContain('dest-dest-b');
+        expect(firedTags).not.toContain(`${NS}dest-dest-b`);
     });
 });
 
@@ -571,7 +585,7 @@ describe('RevalidationService.revalidateByEntityType', () => {
         // 'tag' entities have no page of their own -- they fold into list-accom
         expect(adapter.revalidateMany).toHaveBeenCalledOnce();
         const [params] = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls[0]!;
-        expect((params as { tags: string[] }).tags).toEqual(['list-accom']);
+        expect((params as { tags: string[] }).tags).toEqual(ns('list-accom'));
     });
 
     it('passes entityType to log entries', async () => {
@@ -647,8 +661,61 @@ describe('RevalidationService.revalidateTags', () => {
         expect(adapter.revalidateMany).toHaveBeenCalledOnce();
         const [params] = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls[0]!;
         expect((params as { tags: readonly string[] }).tags).toEqual(
-            expect.arrayContaining([...tags])
+            expect.arrayContaining(ns(...tags))
         );
+    });
+
+    it('namespaces caller-supplied tags before they reach the adapter', async () => {
+        // The manual admin endpoint hands this method whatever an operator
+        // typed. It must arrive at Cloudflare carrying THIS deployment's
+        // namespace, or it purges a tag nothing ever emitted (HOS-369 W1-2).
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        await service.revalidateTags({ tags: ['list-accom'] });
+
+        const [params] = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls[0]!;
+        expect((params as { tags: readonly string[] }).tags).toEqual([`${NS}list-accom`]);
+    });
+
+    it('is idempotent for a tag that already carries this namespace', async () => {
+        // `revalidateByEntityType` namespaces on the way in and then delegates
+        // here, so the two entry points overlap by design. Double-prefixing
+        // would produce `test:test:list-accom`, which matches nothing.
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        await service.revalidateTags({ tags: [`${NS}list-accom`] });
+
+        const [params] = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls[0]!;
+        expect((params as { tags: readonly string[] }).tags).toEqual([`${NS}list-accom`]);
+    });
+
+    it('DROPS a tag belonging to another deployment instead of rewriting it', async () => {
+        // Rewriting `prod:home` into `test:prod:home` would silently purge
+        // nothing; forwarding it unchanged would purge production's cache from
+        // a shared Cloudflare zone. Neither is acceptable, so it is dropped —
+        // and with nothing left, no purge is attempted at all.
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        const results = await service.revalidateTags({ tags: ['prod:home'] });
+
+        expect(results).toEqual([]);
+        expect(adapter.revalidateMany).not.toHaveBeenCalled();
+    });
+
+    it('purges NOTHING when the deployment namespace is unresolved', async () => {
+        // Fail-closed: purging the bare tags would evict nothing (the emitter
+        // never wrote them) while logging success, and guessing a namespace
+        // could evict the other environment.
+        const adapter = makeMockAdapter();
+        const service = new RevalidationService({ adapter });
+
+        const results = await service.revalidateTags({ tags: ['list-accom'] });
+
+        expect(results).toEqual([]);
+        expect(adapter.revalidateMany).not.toHaveBeenCalled();
     });
 
     it('handles empty array gracefully without calling adapter', async () => {
@@ -927,6 +994,53 @@ describe('singleton management', () => {
         expect(service).toBeInstanceOf(RevalidationService);
     });
 
+    it('derives the purge namespace from HOSPEDA_DEPLOY_ENV, not from NODE_ENV', async () => {
+        // The purger half of the invariant: the value the API forwards here is
+        // the SAME variable the web app reads, resolved by the SAME function.
+        // `nodeEnv: 'production'` is what both staging and production run, so
+        // if this ever fell back to NODE_ENV both would purge `prod:*`.
+        const fetchMock = vi.fn().mockResolvedValue(new Response('{"ok":true}', { status: 200 }));
+        vi.stubGlobal('fetch', fetchMock);
+
+        const service = initializeRevalidationService({
+            nodeEnv: 'production',
+            deployEnv: 'preview',
+            revalidationSecret: 'x'.repeat(32),
+            siteUrl: 'https://staging.example.com'
+        });
+
+        await service.revalidateTags({ tags: ['list-accom'] });
+
+        // Asserted on the OUTGOING REQUEST, not on an internal call: these are
+        // the exact bytes the API puts on the wire for the web app to check.
+        const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+        expect(JSON.parse(String(init.body))).toEqual({ tags: ['preview:list-accom'] });
+
+        vi.unstubAllGlobals();
+    });
+
+    it('DISABLES purging when the namespace cannot be resolved, rather than guessing prod', async () => {
+        // NODE_ENV=production with no HOSPEDA_DEPLOY_ENV — the measured
+        // pre-change configuration. Guessing `prod` here would make a staging
+        // deployment purge production's cache from the shared zone.
+        const fetchMock = vi.fn();
+        vi.stubGlobal('fetch', fetchMock);
+
+        const service = initializeRevalidationService({
+            nodeEnv: 'production',
+            revalidationSecret: 'x'.repeat(32),
+            siteUrl: 'https://example.com'
+        });
+
+        // The secret IS present, so without the namespace check this would have
+        // been a live Cloudflare adapter.
+        expect(service.getAdapterName()).toBe('NoOpRevalidationAdapter');
+        await expect(service.revalidateTags({ tags: ['list-accom'] })).resolves.toEqual([]);
+        expect(fetchMock).not.toHaveBeenCalled();
+
+        vi.unstubAllGlobals();
+    });
+
     it('getRevalidationService returns the same instance after initialization', () => {
         const initialized = initializeRevalidationService({
             nodeEnv: 'test',
@@ -1082,9 +1196,9 @@ describe('RevalidationService.scheduleRevalidationBatch', () => {
             (args: unknown[]) => (args[0] as { tag: string }).tag
         );
 
-        expect(tags).toContain('accom-hotel-a');
-        expect(tags).toContain('accom-hotel-b');
-        expect(tags).toContain('accom-hotel-c');
+        expect(tags).toContain(`${NS}accom-hotel-a`);
+        expect(tags).toContain(`${NS}accom-hotel-b`);
+        expect(tags).toContain(`${NS}accom-hotel-c`);
     });
 
     it('deduplicate within batch: same entity twice merges into single debounce entry', async () => {
@@ -1537,7 +1651,7 @@ describe('RevalidationService -- coalesced purge window', () => {
             | undefined;
         expect(secondCall).toBeDefined();
         expect(secondCall?.[0].tags).toEqual(
-            expect.arrayContaining(['accom-segunda', 'accom-tercera'])
+            expect.arrayContaining(ns('accom-segunda', 'accom-tercera'))
         );
     });
 

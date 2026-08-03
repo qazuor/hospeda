@@ -10,14 +10,32 @@
  * That fallback is what the whole wave exists to remove, and it would be
  * invisible in production: the purge would report success and the cache would
  * simply keep emptying itself.
+ *
+ * Since HOS-369 W1-2 this endpoint is also THE divergence detector: it is the
+ * only place in the system where a namespace derived by the API process meets a
+ * namespace derived by the web process, so it is the only thing that can
+ * OBSERVE the two disagreeing rather than merely make it less likely. The
+ * `--- namespace ---` block below is that check, and it is the reason the
+ * fixtures here carry a `test:` prefix.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { _resetCacheTagEnvironment } from '../../../src/lib/cache/cache-tag-environment';
 import { POST } from '../../../src/pages/api/revalidate';
 
 const SECRET = 'test-revalidation-secret';
 const ZONE = 'test-zone-id';
 const TOKEN = 'test-api-token';
+
+/**
+ * The namespace this deployment resolves to under vitest (`NODE_ENV=test`).
+ *
+ * Written as a literal, not derived from `resolveCacheTagEnvironment`: a
+ * fixture that recomputes itself with the code under test cannot fail when that
+ * code changes, which is exactly the failure this file must be able to catch.
+ */
+const NS = 'test:';
+const NS_HOME = `${NS}home`;
 
 /** Build the APIContext shape the route actually destructures. */
 function makeContext({
@@ -62,19 +80,21 @@ beforeEach(() => {
 
 afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
+    _resetCacheTagEnvironment();
 });
 
 describe('POST /api/revalidate — auth', () => {
     it('rejects a missing secret', async () => {
-        const response = await POST(makeContext({ secret: null, body: { tags: ['home'] } }));
+        const response = await POST(makeContext({ secret: null, body: { tags: [NS_HOME] } }));
 
         expect(response.status).toBe(401);
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it('rejects a wrong secret', async () => {
-        const response = await POST(makeContext({ secret: 'nope', body: { tags: ['home'] } }));
+        const response = await POST(makeContext({ secret: 'nope', body: { tags: [NS_HOME] } }));
 
         expect(response.status).toBe(401);
         expect(fetchMock).not.toHaveBeenCalled();
@@ -85,7 +105,7 @@ describe('POST /api/revalidate — auth', () => {
         // stores the literal string "undefined", which would pass the check.
         process.env.HOSPEDA_REVALIDATION_SECRET = '';
 
-        const response = await POST(makeContext({ body: { tags: ['home'] } }));
+        const response = await POST(makeContext({ body: { tags: [NS_HOME] } }));
 
         expect(response.status).toBe(401);
         expect(fetchMock).not.toHaveBeenCalled();
@@ -94,7 +114,7 @@ describe('POST /api/revalidate — auth', () => {
     it('500s when the Cloudflare credentials are missing', async () => {
         process.env.CLOUDFLARE_API_TOKEN = '';
 
-        const response = await POST(makeContext({ body: { tags: ['home'] } }));
+        const response = await POST(makeContext({ body: { tags: [NS_HOME] } }));
 
         expect(response.status).toBe(500);
         expect(fetchMock).not.toHaveBeenCalled();
@@ -104,18 +124,18 @@ describe('POST /api/revalidate — auth', () => {
 describe('POST /api/revalidate — selective purge', () => {
     it('forwards the tags to Cloudflare', async () => {
         const response = await POST(
-            makeContext({ body: { tags: ['accom-cabana-del-rio', 'list-accom'] } })
+            makeContext({ body: { tags: [`${NS}accom-cabana-del-rio`, `${NS}list-accom`] } })
         );
 
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual({ ok: true, purged: 2 });
         expect(lastPurgeBody(fetchMock)).toEqual({
-            tags: ['accom-cabana-del-rio', 'list-accom']
+            tags: [`${NS}accom-cabana-del-rio`, `${NS}list-accom`]
         });
     });
 
     it('sends the bearer token and hits the zone purge endpoint', async () => {
-        await POST(makeContext({ body: { tags: ['home'] } }));
+        await POST(makeContext({ body: { tags: [NS_HOME] } }));
 
         const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
         expect(url).toBe(`https://api.cloudflare.com/client/v4/zones/${ZONE}/purge_cache`);
@@ -125,7 +145,7 @@ describe('POST /api/revalidate — selective purge', () => {
     it('surfaces a Cloudflare failure as 502 rather than a silent success', async () => {
         fetchMock.mockResolvedValueOnce(new Response('rate limited', { status: 429 }));
 
-        const response = await POST(makeContext({ body: { tags: ['home'] } }));
+        const response = await POST(makeContext({ body: { tags: [NS_HOME] } }));
 
         expect(response.status).toBe(502);
         expect(await response.json()).toMatchObject({
@@ -145,7 +165,7 @@ describe('POST /api/revalidate — selective purge', () => {
             })
         );
 
-        const response = await POST(makeContext({ body: { tags: ['home'] } }));
+        const response = await POST(makeContext({ body: { tags: [NS_HOME] } }));
 
         expect(response.status).toBe(502);
         expect(await response.json()).toMatchObject({ error: 'cloudflare_purge_rejected' });
@@ -154,7 +174,7 @@ describe('POST /api/revalidate — selective purge', () => {
     it('rejects a 200 whose body is not parseable as the envelope', async () => {
         fetchMock.mockResolvedValueOnce(new Response('<html>proxy error</html>', { status: 200 }));
 
-        const response = await POST(makeContext({ body: { tags: ['home'] } }));
+        const response = await POST(makeContext({ body: { tags: [NS_HOME] } }));
 
         expect(response.status).toBe(502);
     });
@@ -188,7 +208,7 @@ describe('POST /api/revalidate — whole-zone flush is reachable ONLY explicitly
 
     it('400s when both modes are supplied, instead of silently picking one', async () => {
         const response = await POST(
-            makeContext({ body: { tags: ['home'], purgeEverything: true } })
+            makeContext({ body: { tags: [NS_HOME], purgeEverything: true } })
         );
 
         expect(response.status).toBe(400);
@@ -227,7 +247,7 @@ describe('POST /api/revalidate — tag validation', () => {
     it('rejects more tags than Cloudflare accepts per request, rather than truncating', async () => {
         // Truncating would drop the tail silently — those entities would stay
         // cached with nothing able to evict them.
-        const tags = Array.from({ length: 101 }, (_, i) => `t-${i}`);
+        const tags = Array.from({ length: 101 }, (_, i) => `${NS}t-${i}`);
 
         const response = await POST(makeContext({ body: { tags } }));
 
@@ -236,11 +256,95 @@ describe('POST /api/revalidate — tag validation', () => {
     });
 
     it('accepts exactly the per-request limit', async () => {
-        const tags = Array.from({ length: 100 }, (_, i) => `t-${i}`);
+        const tags = Array.from({ length: 100 }, (_, i) => `${NS}t-${i}`);
 
         const response = await POST(makeContext({ body: { tags } }));
 
         expect(response.status).toBe(200);
         expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// --- namespace --- the emitter/purger divergence detector (HOS-369 W1-2)
+// ---------------------------------------------------------------------------
+
+describe('POST /api/revalidate — cross-environment purges are refused', () => {
+    it('forwards a tag whose namespace matches this deployment', async () => {
+        const response = await POST(makeContext({ body: { tags: [`${NS}list-accom`] } }));
+
+        expect(response.status).toBe(200);
+        expect(lastPurgeBody(fetchMock)).toEqual({ tags: [`${NS}list-accom`] });
+    });
+
+    it('REFUSES a tag namespaced for another deployment, and purges nothing', async () => {
+        // The failure this endpoint exists to catch: staging's API resolving
+        // `prod` (or production's resolving `preview`) and posting here. The two
+        // environments share one Cloudflare zone, so forwarding this would evict
+        // the OTHER environment's cache and Cloudflare would report success.
+        const response = await POST(makeContext({ body: { tags: ['prod:list-accom'] } }));
+
+        expect(response.status).toBe(400);
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(await response.json()).toMatchObject({ error: 'invalid_request' });
+    });
+
+    it('names BOTH namespaces in the error, so the misconfigured side is identifiable', async () => {
+        const response = await POST(makeContext({ body: { tags: ['preview:home'] } }));
+        const body = (await response.json()) as { detail: string };
+
+        expect(body.detail).toContain('preview');
+        expect(body.detail).toContain('test');
+        expect(body.detail).toContain('HOSPEDA_DEPLOY_ENV');
+    });
+
+    it('refuses the WHOLE request when a single tag is foreign, not just that tag', async () => {
+        // Partial acceptance would let a mismatched deployment keep purging the
+        // tags that happened to agree, hiding the misconfiguration behind a 200.
+        const response = await POST(
+            makeContext({ body: { tags: [`${NS}home`, 'prod:home', `${NS}list-accom`] } })
+        );
+
+        expect(response.status).toBe(400);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('refuses a BARE, un-namespaced tag — the shape emitted before this change', async () => {
+        const response = await POST(makeContext({ body: { tags: ['list-accom'] } }));
+
+        expect(response.status).toBe(400);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('refuses a namespace that is not a known environment', async () => {
+        const response = await POST(makeContext({ body: { tags: ['staging:home'] } }));
+
+        expect(response.status).toBe(400);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('follows HOSPEDA_DEPLOY_ENV: the same tag is accepted or refused by configuration alone', async () => {
+        vi.stubEnv('HOSPEDA_DEPLOY_ENV', 'preview');
+        _resetCacheTagEnvironment();
+
+        const accepted = await POST(makeContext({ body: { tags: ['preview:list-accom'] } }));
+        expect(accepted.status).toBe(200);
+
+        const refused = await POST(makeContext({ body: { tags: [`${NS}list-accom`] } }));
+        expect(refused.status).toBe(400);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('503s rather than purging when this deployment cannot name itself', async () => {
+        // "I cannot tell whose tag this is" must never resolve to "forward it".
+        vi.stubEnv('HOSPEDA_DEPLOY_ENV', '');
+        vi.stubEnv('NODE_ENV', 'production');
+        _resetCacheTagEnvironment();
+
+        const response = await POST(makeContext({ body: { tags: ['prod:list-accom'] } }));
+
+        expect(response.status).toBe(503);
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(await response.json()).toMatchObject({ error: 'cache_tag_namespace_unresolved' });
     });
 });

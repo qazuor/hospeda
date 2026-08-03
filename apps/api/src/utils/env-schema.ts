@@ -412,6 +412,24 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_REVALIDATION_SECRET: z.string().min(32),
     /** Cron schedule for automatic page revalidation (default: every hour) */
     HOSPEDA_REVALIDATION_CRON_SCHEDULE: z.string().optional().default('0 * * * *'),
+    /**
+     * Deploy-environment identifier. Two consumers, one value:
+     *
+     * - `@repo/media`'s `resolveEnvironment()` picks the Cloudinary folder from it;
+     * - since HOS-369 W1-2 it is ALSO the namespace prefixed to every Cloudflare
+     *   cache tag this deployment purges (`prod:list-accom`, `preview:home`).
+     *
+     * Staging and production share one Cloudflare zone, so the web app that
+     * EMITS the tags must carry the identical value — a mismatch makes every
+     * purge match nothing while reporting success. The web app's
+     * `/api/revalidate` endpoint rejects tags whose namespace is not its own,
+     * which is what turns that silent failure into a visible one.
+     *
+     * Optional here only because local dev infers `dev` from `NODE_ENV`; it is
+     * REQUIRED on any deployment running `NODE_ENV=production` (both staging
+     * and production do), where resolution deliberately refuses to guess.
+     */
+    HOSPEDA_DEPLOY_ENV: z.enum(['dev', 'test', 'preview', 'prod']).optional(),
 
     // Billing
     /** MercadoPago access token for payment processing */

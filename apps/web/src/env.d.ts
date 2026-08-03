@@ -62,6 +62,12 @@ declare namespace App {
          * during the render — page, layout or component — can contribute to it
          * without having to own the header itself (HOS-369 W1-1).
          *
+         * Holds tags that are ALREADY namespaced by deployment environment
+         * (`prod:list-accom`, not `list-accom` — HOS-369 W1-2). The prefix is
+         * added by `declareCacheTags` on the way in, so middleware only has to
+         * serialize, and so a tag that becomes unusable once prefixed is caught
+         * while the response can still be demoted.
+         *
          * Do NOT write to this directly from a page. Go through
          * `applyCacheHeaders` (`src/lib/cache/response-cache.ts`), which is the
          * only thing that may declare a response edge-cacheable, and which

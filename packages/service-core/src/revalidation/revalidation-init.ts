@@ -1,5 +1,8 @@
+import type { CacheTagEnvironment } from '@repo/cache-tags';
+import { resolveCacheTagEnvironment } from '@repo/cache-tags';
 import { createLogger } from '@repo/logger';
 import { createRevalidationAdapter } from './adapters/adapter-factory.js';
+import { NoOpRevalidationAdapter } from './adapters/noop-revalidation.adapter.js';
 import type { EntityResolver, RevalidationServiceConfig } from './revalidation.service.js';
 import { RevalidationService } from './revalidation.service.js';
 
@@ -41,6 +44,17 @@ export interface InitRevalidationParams {
      * Typically created in the API layer using {@link createEntityResolver}.
      */
     readonly entityResolver?: EntityResolver;
+    /**
+     * Raw `HOSPEDA_DEPLOY_ENV` — the deployment identity every purged cache tag
+     * is namespaced by (HOS-369 W1-2).
+     *
+     * Passed as the RAW string rather than a resolved value on purpose: the
+     * resolution rules (including which fallbacks are refused) live in
+     * `resolveCacheTagEnvironment`, the single function the web app also calls.
+     * Two copies of those rules is exactly the divergence that makes a purge
+     * evict nothing while reporting success.
+     */
+    readonly deployEnv?: string;
 }
 
 /**
@@ -58,6 +72,7 @@ export interface InitRevalidationParams {
  *   nodeEnv: process.env.NODE_ENV,
  *   revalidationSecret: process.env.HOSPEDA_REVALIDATION_SECRET,
  *   siteUrl: process.env.HOSPEDA_SITE_URL,
+ *   deployEnv: process.env.HOSPEDA_DEPLOY_ENV,
  * });
  * ```
  */
@@ -69,14 +84,36 @@ export function initializeRevalidationService(params: InitRevalidationParams): R
         return _instance;
     }
 
-    const adapter = createRevalidationAdapter({
-        nodeEnv: params.nodeEnv ?? '',
-        revalidationSecret: params.revalidationSecret,
-        siteUrl: params.siteUrl
-    });
+    // Resolved BEFORE the adapter is chosen. A deployment that cannot name
+    // itself must not be given a live Cloudflare adapter: staging and
+    // production share one zone, so an unnamespaced or mis-namespaced purge is
+    // not a degraded purge, it is a purge of the wrong environment. Fail closed
+    // — same shape as the missing-secret path in `createRevalidationAdapter`,
+    // which also disables invalidation rather than guessing (HOS-369 W1-2).
+    let cacheTagEnvironment: CacheTagEnvironment | undefined;
+    try {
+        cacheTagEnvironment = resolveCacheTagEnvironment({
+            deployEnv: params.deployEnv,
+            nodeEnv: params.nodeEnv
+        });
+    } catch (error) {
+        logger.error(
+            `Cache revalidation DISABLED: cannot resolve the cache-tag namespace. ${error instanceof Error ? error.message : String(error)}`
+        );
+    }
+
+    const adapter =
+        cacheTagEnvironment === undefined
+            ? new NoOpRevalidationAdapter()
+            : createRevalidationAdapter({
+                  nodeEnv: params.nodeEnv ?? '',
+                  revalidationSecret: params.revalidationSecret,
+                  siteUrl: params.siteUrl
+              });
 
     const config: RevalidationServiceConfig = {
         adapter,
+        cacheTagEnvironment,
         debounceMs: params.debounceMs,
         logRetentionDays: params.logRetentionDays,
         entityResolver: params.entityResolver
