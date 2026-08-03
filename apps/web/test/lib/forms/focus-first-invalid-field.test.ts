@@ -26,12 +26,35 @@ function renderInputs(ids: ReadonlyArray<string>): void {
 }
 
 describe('focusFirstInvalidField', () => {
+    // jsdom does not implement scrollIntoView. Assigning it straight onto the
+    // prototype leaks across files in the same worker — `vi.restoreAllMocks()`
+    // does not undo a plain assignment — which is exactly how an earlier version
+    // of this file hid a real `scrollIntoView is not a function` crash in the
+    // editor tests until CI sharding changed the file order. Install and remove
+    // it explicitly instead.
+    const hadNative = 'scrollIntoView' in Element.prototype;
+    let scrollSpy: ReturnType<typeof vi.fn>;
+
     beforeEach(() => {
-        // jsdom has no layout engine, so scrollIntoView is not implemented.
-        Element.prototype.scrollIntoView = vi.fn();
+        scrollSpy = vi.fn();
+        Object.defineProperty(Element.prototype, 'scrollIntoView', {
+            value: scrollSpy,
+            configurable: true,
+            writable: true
+        });
     });
 
     afterEach(() => {
+        if (hadNative) {
+            Object.defineProperty(Element.prototype, 'scrollIntoView', {
+                value: undefined,
+                configurable: true,
+                writable: true
+            });
+        } else {
+            // biome-ignore lint/performance/noDelete: restoring the absent-in-jsdom original
+            delete (Element.prototype as unknown as Record<string, unknown>).scrollIntoView;
+        }
         document.body.replaceChildren();
         vi.restoreAllMocks();
     });
@@ -104,7 +127,7 @@ describe('focusFirstInvalidField', () => {
 
         focusFirstInvalidField({ fieldNames: ['name'], map: MAP });
 
-        expect(Element.prototype.scrollIntoView).toHaveBeenCalledTimes(1);
+        expect(scrollSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should not animate the scroll when reduced motion is requested', () => {
@@ -116,8 +139,18 @@ describe('focusFirstInvalidField', () => {
 
         focusFirstInvalidField({ fieldNames: ['name'], map: MAP });
 
-        expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith(
-            expect.objectContaining({ behavior: 'auto' })
-        );
+        expect(scrollSpy).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'auto' }));
+    });
+
+    it('should still focus when scrollIntoView is unavailable', () => {
+        // The real regression: jsdom has no scrollIntoView, and this runs inside
+        // an event handler — an exception here surfaced as an unhandled
+        // rejection that failed CI while every assertion passed.
+        // biome-ignore lint/performance/noDelete: emulating an environment without it
+        delete (Element.prototype as unknown as Record<string, unknown>).scrollIntoView;
+        renderInputs(['f-name']);
+
+        expect(() => focusFirstInvalidField({ fieldNames: ['name'], map: MAP })).not.toThrow();
+        expect(document.activeElement?.id).toBe('f-name');
     });
 });

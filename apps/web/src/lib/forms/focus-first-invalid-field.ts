@@ -89,10 +89,17 @@ export function focusFirstInvalidField({
     }
 
     best.focus({ preventScroll: true });
-    best.scrollIntoView({
-        behavior: prefersReducedMotion() ? 'auto' : 'smooth',
-        block: 'center'
-    });
+
+    // Focus is the contract; scrolling is a nicety. `scrollIntoView` does not
+    // exist in jsdom (and is not guaranteed everywhere), and this runs inside an
+    // event handler — an exception here would surface as an unhandled rejection
+    // and fail a test run whose assertions all passed.
+    if (typeof best.scrollIntoView === 'function') {
+        best.scrollIntoView({
+            behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+            block: 'center'
+        });
+    }
 
     return true;
 }
