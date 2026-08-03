@@ -331,6 +331,11 @@ export class UserService extends BaseCrudService<
                     slug: user.slug,
                     avatar: user.profile?.avatar ?? null,
                     bio: user.profile?.bio ?? null,
+                    // Content-curation flag the author page needs for its
+                    // indexability gate (HOS-375 §6.5 cond. 1 / AC-13). A plain
+                    // column read, so it does not break the actor-blindness
+                    // documented above.
+                    isSystemAccount: user.isSystemAccount === true,
                     // Omitted entirely when opted out, rather than emitted as
                     // null: "this author publishes no social links" and "this
                     // author opted out" are the same thing to a consumer, and an

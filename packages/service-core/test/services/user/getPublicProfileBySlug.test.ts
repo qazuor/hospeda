@@ -82,6 +82,7 @@ describe('UserService.getPublicProfileBySlug', () => {
             'bio',
             'displayName',
             'id',
+            'isSystemAccount',
             'slug'
         ]);
     });
@@ -196,6 +197,7 @@ describe('UserService.getPublicProfileBySlug', () => {
             'bio',
             'displayName',
             'id',
+            'isSystemAccount',
             'slug',
             'socialNetworks'
         ]);
@@ -230,6 +232,38 @@ describe('UserService.getPublicProfileBySlug', () => {
         // Assert
         expectSuccess(result);
         expect(result.data).not.toHaveProperty('socialNetworks');
+    });
+
+    it('projects isSystemAccount TRUE for a platform account', async () => {
+        // Arrange — a system account with a complete, content-bearing profile:
+        // every other condition of the indexability gate passes, so this flag is
+        // the only thing keeping it out of the index (HOS-375 AC-13).
+        asMock(userModelMock.findOne).mockResolvedValue(
+            createUser({
+                id: userId,
+                slug,
+                displayName: 'Super Admin',
+                isSystemAccount: true,
+                profile: { avatar: 'https://cdn.test/staff.jpg', bio: 'Cuenta de la plataforma.' }
+            })
+        );
+        // Act
+        const result = await service.getPublicProfileBySlug(guest, { slug });
+        // Assert
+        expectSuccess(result);
+        expect(result.data?.isSystemAccount).toBe(true);
+    });
+
+    it('projects isSystemAccount FALSE for a person', async () => {
+        // Arrange
+        asMock(userModelMock.findOne).mockResolvedValue(authorRow());
+        // Act
+        const result = await service.getPublicProfileBySlug(guest, { slug });
+        // Assert — a real `false`, not `undefined`: the web predicate treats an
+        // absent value as "a person", so a silently missing key would be
+        // indistinguishable from a correct read and hide a projection bug.
+        expectSuccess(result);
+        expect(result.data?.isSystemAccount).toBe(false);
     });
 
     it('returns INTERNAL_ERROR if the model throws', async () => {

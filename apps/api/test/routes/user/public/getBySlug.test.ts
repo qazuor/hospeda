@@ -128,7 +128,7 @@ describe('GET /api/v1/public/users/by-slug/:slug', () => {
             expect(body).toHaveProperty('success');
         });
 
-        it('should expose only the 5 public fields when a user is found', async () => {
+        it('should expose only the public author fields when a user is found', async () => {
             const res = await app.request(`${BASE}/${NONEXISTENT_SLUG}`, {
                 method: 'GET',
                 headers: { 'user-agent': 'vitest', accept: 'application/json' }
@@ -145,6 +145,7 @@ describe('GET /api/v1/public/users/by-slug/:slug', () => {
                 expect('displayName' in user).toBe(true);
                 expect('avatar' in user).toBe(true);
                 expect('bio' in user).toBe(true);
+                expect('isSystemAccount' in user).toBe(true);
 
                 // Sensitive fields must be absent
                 expect(user).not.toHaveProperty('email');
@@ -361,5 +362,54 @@ describe('UserAuthorPublicResponseSchema — HOS-375 socialNetworks', () => {
         });
 
         expect(result.success).toBe(false);
+    });
+});
+
+/**
+ * HOS-375 §6.5 / AC-13 — `isSystemAccount` is the only flag deliberately carried
+ * into a public payload, because the author page's indexability gate runs in the
+ * web app and has no other source for it.
+ *
+ * The shape is `z.boolean().default(false)`, matching the `NOT NULL DEFAULT
+ * false` column, so it round-trips a real boolean rather than widening every
+ * consumer of the predicate to `boolean | undefined`.
+ */
+describe('UserAuthorPublicResponseSchema — HOS-375 isSystemAccount', () => {
+    const AUTHOR = { ...baseAuthorPayload, displayName: 'Carmen Silva' };
+
+    it('round-trips true — the flag that keeps a staff page out of the index', () => {
+        const result = UserAuthorPublicResponseSchema.safeParse({
+            ...AUTHOR,
+            isSystemAccount: true
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.isSystemAccount).toBe(true);
+        }
+    });
+
+    it('round-trips false for a person', () => {
+        const result = UserAuthorPublicResponseSchema.safeParse({
+            ...AUTHOR,
+            isSystemAccount: false
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.isSystemAccount).toBe(false);
+        }
+    });
+
+    it('defaults to false when the key is absent, never to undefined', () => {
+        // The web predicate treats an absent value as "a person". Parsing to
+        // `undefined` here would make a dropped projection indistinguishable
+        // from a correct read of a real person's row.
+        const result = UserAuthorPublicResponseSchema.safeParse(AUTHOR);
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.isSystemAccount).toBe(false);
+        }
     });
 });

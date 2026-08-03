@@ -188,11 +188,17 @@ export const UserSchema = z.object({
      * for a case the database cannot produce. Objects that omit the key still
      * parse — that is what `.default()` already guarantees.
      *
-     * Never appears in a public payload. Every public/read projection of a user
-     * is an explicit allow-list (`UserPublicSchema`, `UserListItemSchema`,
-     * `UserSummarySchema`, the route-local `UserAuthorPublicResponseSchema`),
-     * so this field is excluded by construction rather than by remembering to
-     * exclude it.
+     * Exposed in exactly ONE public payload, on purpose: the author-page
+     * projection (`UserAuthorPublicResponseSchema`), whose consumer is the
+     * indexability gate of HOS-375 §6.5 — a system account must render
+     * `noindex` even with published items, a bio and an avatar (AC-13), and the
+     * web app has no other source for that bit. It discloses nothing the
+     * sitemap does not already disclose by omission.
+     *
+     * Everywhere else it stays out by construction, not by remembering to
+     * exclude it: every public/read projection of a user is an explicit
+     * allow-list (`UserPublicSchema`, `UserListItemSchema`, `UserSummarySchema`),
+     * so adding it to one is a deliberate act, as above.
      */
     isSystemAccount: z.boolean().default(false),
 

@@ -47,6 +47,15 @@ const userService = new UserService({ logger: apiLogger });
  * of truth for that read-side leniency (type-only, bounds stay on the write
  * path), so it is imported rather than re-inlined here.
  *
+ * `isSystemAccount` is the one flag deliberately carried into a public payload
+ * (HOS-375 §6.5 condition 1 / AC-13). The author page's indexability gate runs
+ * in the web app and this is its only source: a system account must render
+ * `noindex` even when it has published items, a bio and an avatar, and the same
+ * predicate decides sitemap inclusion. It reveals nothing the sitemap does not
+ * already reveal by omission, and it is a plain column read, so the response
+ * stays actor-blind. It reuses the strict {@link UserSchema} shape because the
+ * column is `NOT NULL DEFAULT false` and therefore always a real boolean.
+ *
  * Exported so the response contract can be asserted directly in tests without
  * standing up a seeded database.
  */
@@ -56,13 +65,14 @@ export const UserAuthorPublicResponseSchema = z.object({
     slug: UserSchema.shape.slug,
     avatar: z.string().url().optional().nullable(),
     bio: z.string().optional().nullable(),
-    socialNetworks: SocialNetworkReadSchema.optional()
+    socialNetworks: SocialNetworkReadSchema.optional(),
+    isSystemAccount: UserSchema.shape.isSystemAccount
 });
 
 /**
  * GET /api/v1/public/users/by-slug/:slug
  * Retrieve minimal public profile for a user by URL slug.
- * Used by the author page (/publicaciones/autor/{slug}/).
+ * Used by the author page (/{lang}/autores/{slug}/).
  *
  * Rate limited to 60 req/min per IP.
  * Returns 404 when the user does not exist or is soft-deleted.
@@ -73,8 +83,8 @@ export const publicGetUserBySlugRoute = createPublicRoute({
     summary: 'Get user public profile by slug',
     description:
         'Retrieves a minimal public profile for a user by their URL slug. ' +
-        'Returns id, displayName, slug, avatar, and bio, plus socialNetworks ' +
-        'when the profile owner opted in to showing them. ' +
+        'Returns id, displayName, slug, avatar, bio and isSystemAccount, plus ' +
+        'socialNetworks when the profile owner opted in to showing them. ' +
         'Responds with 404 when the user does not exist or has been deleted.',
     tags: ['Users'],
     requestParams: {
