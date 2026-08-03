@@ -186,74 +186,77 @@
             "id": "T-008",
             "title": "Add publicProfileShowSocialNetworks to the user settings schema",
             "description": "Spec §6.7. Add `publicProfileShowSocialNetworks: z.boolean().default(false).optional()` to UserSettingsSchema in packages/schemas/src/entities/user/user.settings.schema.ts, mirroring searchHistoryEnabled (additive JSONB key, NO DB migration). CRITICAL: also add it to UserSettingsWebPatchSchema — that schema is `.strict()` and allows exactly four keys today, so omitting it makes the web PATCH return 400 with no obvious cause. Tests: assert a stored settings object without the key parses; assert the web patch schema accepts the key and still rejects unknown keys.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-009", "T-028"],
             "subtasks": [
-                { "title": "Add the key to UserSettingsSchema with JSDoc", "completed": false },
+                { "title": "Add the key to UserSettingsSchema with JSDoc", "completed": true },
                 {
                     "title": "Add the key to UserSettingsWebPatchSchema (.strict)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests: compat parse + strict patch accepts/rejects",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "settings"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-02T22:40:00.000Z",
+                "completed": "2026-08-02T23:05:00.000Z"
+            },
+            "notes": "packages/schemas/src/entities/user/user.settings.schema.ts. `.default(false).optional()` mirroring searchHistoryEnabled. Added to UserSettingsWebPatchSchema as the task warned; a companion test pins that unknown keys are STILL rejected, so nobody can quietly drop .strict() to make the key fit. GOTCHA that cost a debugging round: a test in packages/schemas that imports from the '@repo/schemas' BARREL resolves to the package's BUILT OUTPUT, not to src/ (this package has a build and no vitest self-alias), so the new key silently read as absent and 4 of 7 tests failed against working-tree-correct code. Import from '../../src/entities/...' instead, as entities/user/user.settings.onboarding.test.ts already does. Worth knowing that existing barrel-importing tests in this package (e.g. user.settings.beta36.test.ts) are therefore testing the LAST BUILD."
         },
         {
             "id": "T-009",
             "title": "Add optional socialNetworks to UserAuthorPublicResponseSchema",
             "description": "Spec §6.7 read path. Extend UserAuthorPublicResponseSchema in apps/api/src/routes/user/public/getBySlug.ts with `socialNetworks: SocialNetworkReadSchema.optional()`. Use the lenient read-side schema, not the strict write-side one — stored values predate the current validation. Keep the existing docstring's deliberate-exclusion note accurate by extending it. Tests: the schema contract test in this file already asserts the response shape without a DB — extend it for both the present and absent cases.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-008"],
             "blocks": ["T-010"],
             "subtasks": [
-                { "title": "Extend the response schema", "completed": false },
-                { "title": "Update the exclusion docstring", "completed": false },
-                { "title": "Extend the contract test both ways", "completed": false }
+                { "title": "Extend the response schema", "completed": true },
+                { "title": "Update the exclusion docstring", "completed": true },
+                { "title": "Extend the contract test both ways", "completed": true }
             ],
             "tags": ["api", "schemas"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-02T23:05:00.000Z",
+                "completed": "2026-08-02T23:25:00.000Z"
+            },
+            "notes": "apps/api/src/routes/user/public/getBySlug.ts. `socialNetworks: SocialNetworkReadSchema.optional()` — the LENIENT read shape, for the same reason displayName is lenient: stored values predate the current validation (bare handles, m.facebook.com variants, shortened links) and stripWithSchema FAIL-CLOSES to HTTP 500 on a PUBLIC page. Corrected the docstring's now-false claim that displayName is 'the ONLY lenient field here'. 4 new contract tests (absent key / present key / write-rejected-but-read-accepted values / wrong type still rejected as a non-vacuity guard); the file's 22 tests pass."
         },
         {
             "id": "T-010",
             "title": "Return socialNetworks from getPublicProfileBySlug only on opt-in",
             "description": "Spec §6.7. In UserService.getPublicProfileBySlug (packages/service-core/src/services/user/user.service.ts:302-326), include `socialNetworks` in the projection only when the PROFILE OWNER's settings.publicProfileShowSocialNetworks is true. Never return `settings` itself. The decision depends on the owner, never on the requesting actor, so the response stays actor-blind and the route's cacheTTL 300 remains safe — add a comment saying so, because a viewer-dependent branch here would poison a shared cache. Tests: opt-in true returns the object, false/absent omits the key, and settings never appears in the output.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": ["T-020", "T-034"],
             "subtasks": [
-                { "title": "Read the owner's opt-in inside the service", "completed": false },
-                { "title": "Conditionally project socialNetworks", "completed": false },
-                { "title": "Comment the actor-blindness invariant", "completed": false },
-                { "title": "Tests: on/off/absent + settings never leaked", "completed": false }
+                { "title": "Read the owner's opt-in inside the service", "completed": true },
+                { "title": "Conditionally project socialNetworks", "completed": true },
+                { "title": "Comment the actor-blindness invariant", "completed": true },
+                { "title": "Tests: on/off/absent + settings never leaked", "completed": true }
             ],
             "tags": ["api", "service-core", "cache"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-02T23:05:00.000Z",
+                "completed": "2026-08-02T23:30:00.000Z"
+            },
+            "notes": "packages/service-core/src/services/user/user.service.ts + user.types.ts. The key is OMITTED entirely when opted out, not emitted as null — an explicit null invites rendering an empty social block. Also omitted when the owner opted in but stored no networks. The opt-in is read off the OWNER's settings row, never off the requesting actor, and a test asserts the payload is byte-identical for a guest, the user themselves and a third party WITH THE OPT-IN ON — that is the branch that could plausibly have been written against the requesting actor, and the route is edge-cached (cacheTTL 300) on a session-blind key, so getting it wrong serves one visitor's payload to everyone. The pre-existing exact-key-set assertion in the same file is what keeps any future projection addition under review. 13 tests pass."
         },
         {
             "id": "T-011",
@@ -379,29 +382,30 @@
             "id": "T-016",
             "title": "Add eventsApi.getByAuthor to the web API client",
             "description": "Spec §6.2. The endpoint GET /api/v1/public/events/author/{authorId} already exists server-side but has no web client wrapper (apps/web/src/lib/api/endpoints.ts:842). Add getByAuthor({ authorId, page, pageSize }). Pass ONLY pagination — the handler silently discards category/isFeatured/isVirtual/q/sortBy/sortOrder even though its Zod schema declares them (NG-2), so sending them creates a false expectation. Note that it takes a UUID, not a slug. Tests: client unit test asserting the built URL and query string.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-020", "T-022"],
             "subtasks": [
                 {
                     "title": "Add the wrapper next to the other eventsApi methods",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Comment that only pagination is honored server-side",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Test the built URL", "completed": false }
+                { "title": "Test the built URL", "completed": true }
             ],
             "tags": ["web", "api-client"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-02T22:20:00.000Z",
+                "completed": "2026-08-02T22:40:00.000Z"
+            },
+            "notes": "apps/web/src/lib/api/endpoints.ts. Sends ONLY page/pageSize; one test asserts the sent param key set is exactly those two, because the server's EventByAuthorHttpSchema declares six more that the handler silently discards (NG-2) and accepting them here would advertise filtering the endpoint does not do. Takes the author UUID, not the slug. 4 tests."
         },
         {
             "id": "T-017",
@@ -456,23 +460,24 @@
             "id": "T-019",
             "title": "Create the ProfilePageJsonLd component",
             "description": "Spec §6.8. New apps/web/src/components/seo/ProfilePageJsonLd.astro delegating to the shared JsonLd.astro wrapper like every other entity component — do NOT hand-roll a <script type=\"application/ld+json\"> tag, that markup exists in exactly one file today. Emits ProfilePage with a Person as mainEntity: name, url (absolute), image and description omitted when absent, sameAs only when the social opt-in is on. Tests: snapshot the emitted JSON for a full profile and for a minimal one, asserting absent fields are omitted rather than emitted as null.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-020"],
             "subtasks": [
-                { "title": "Create the component delegating to JsonLd.astro", "completed": false },
-                { "title": "Omit empty fields instead of emitting null", "completed": false },
-                { "title": "Tests: full and minimal profile output", "completed": false }
+                { "title": "Create the component delegating to JsonLd.astro", "completed": true },
+                { "title": "Omit empty fields instead of emitting null", "completed": true },
+                { "title": "Tests: full and minimal profile output", "completed": true }
             ],
             "tags": ["web", "seo", "json-ld"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-02T21:50:00.000Z",
+                "completed": "2026-08-02T22:20:00.000Z"
+            },
+            "notes": "apps/web/src/components/seo/ProfilePageJsonLd.astro + apps/web/src/lib/seo/profile-page-json-ld.ts. SPLIT deliberately: Vitest cannot render .astro, so the only way to assert on the EMITTED JSON rather than on component source text is to keep the object construction in a pure module and have the component delegate — the same precedent as event-json-ld-date.ts. Two TypeScript-level gotchas: (1) the returned node must be a `type` alias, not an `interface`, because JsonLd.astro's prop is Record<string, unknown> and TS gives an interface no implicit index signature ('Index signature for type string is missing') — caught only by `astro check`, which tsc alone does not run; (2) the source-level test asserting the component does NOT hand-roll a ld+json script tag has to scan the TEMPLATE half only, since the frontmatter docblock legitimately names the tag it forbids. 8 tests."
         },
         {
             "id": "T-020",

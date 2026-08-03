@@ -1,6 +1,6 @@
 # HOS-375: Author page — move to `/autores/<slug>/` and unify posts + events
 
-## Progress: 13/38 tasks (34%)
+## Progress: 18/38 tasks (47%)
 
 **Average Complexity:** 1.9/3 (max)
 **Critical Path:** T-002 → T-003 → T-017 → T-020 → T-021 → T-029 → T-032 (7 steps)
@@ -56,16 +56,18 @@
   - **Done.** `0036-reattribute-imported-events.ts` (`contentOnly`), scoped to `created_by_id IS NULL`. The source account resolves by `superadmin@hospeda.com` and **falls back to `ctx.actor.id`** when absent: the documented prod bootstrap never seeds that account, so `0027`/`0028` attribute the imports to the real promoted admin and an email-only lookup would leave them on a human's public author page. See the T-007 note in `state.json`.
   - Blocked by: T-001, T-006 · Blocks: T-035
 
-- [ ] **T-008** (complexity: 2) — Add `publicProfileShowSocialNetworks` to the user settings schema
-  - Must also be added to the `.strict()` web patch schema or PATCH returns 400.
+- [x] **T-008** (complexity: 2) — Add `publicProfileShowSocialNetworks` to the user settings schema
+  - **Done.** In both schemas, defaulting to `false`. A companion test pins that unknown keys are still rejected, so `.strict()` cannot be quietly dropped to fit the key. Gotcha: a test importing from the `@repo/schemas` barrel resolves to the package's built output, not `src/` — import by relative path or the new key reads as absent.
   - Blocked by: none · Blocks: T-009, T-028
 
 ### Core Phase — 14 tasks (avg complexity 2.1)
 
-- [ ] **T-009** (complexity: 1) — Add optional `socialNetworks` to `UserAuthorPublicResponseSchema`
+- [x] **T-009** (complexity: 1) — Add optional `socialNetworks` to `UserAuthorPublicResponseSchema`
+  - **Done.** The lenient read shape, matching `displayName`'s reasoning. Corrected the docstring's now-false "the ONLY lenient field here".
   - Blocked by: T-008 · Blocks: T-010
 
-- [ ] **T-010** (complexity: 2) — Return `socialNetworks` from `getPublicProfileBySlug` only on opt-in
+- [x] **T-010** (complexity: 2) — Return `socialNetworks` from `getPublicProfileBySlug` only on opt-in
+  - **Done.** Key omitted entirely when opted out, never `null`. A test asserts the payload is identical for guest / self / third party **with the opt-in ON** — the route is edge-cached on a session-blind key, so an actor-dependent branch would serve one visitor's payload to everyone.
   - Blocked by: T-009 · Blocks: T-020, T-034
 
 - [ ] **T-011** (complexity: 3) — Create the `listPublicAuthors` service
@@ -84,7 +86,8 @@
 - [ ] **T-015** (complexity: 3) — Load the author relation on the event detail read path
   - Blocked by: T-014 · Blocks: T-026
 
-- [ ] **T-016** (complexity: 2) — Add `eventsApi.getByAuthor` to the web API client
+- [x] **T-016** (complexity: 2) — Add `eventsApi.getByAuthor` to the web API client
+  - **Done.** Sends only `page`/`pageSize`; a test pins the param key set to exactly those two (the server declares six more filters its handler discards, NG-2).
   - Blocked by: none · Blocks: T-020, T-022
 
 - [x] **T-017** (complexity: 2) — Create the shared author-indexable predicate helper
@@ -95,7 +98,8 @@
   - **Done.** New `authors` namespace in es/en/pt (the page stops being a blog surface — it lists events too). `src/types.ts` is gitignored, so the regenerated keys are not committed. Locale parity OK.
   - Blocked by: none · Blocks: T-020
 
-- [ ] **T-019** (complexity: 2) — Create the `ProfilePageJsonLd` component
+- [x] **T-019** (complexity: 2) — Create the `ProfilePageJsonLd` component
+  - **Done.** Component delegates to `JsonLd.astro`; the node is built by a pure module so the EMITTED JSON is testable (Vitest cannot render `.astro`). The node type must be a `type` alias, not an `interface`, or it fails to assign to `Record<string, unknown>` — caught only by `astro check`.
   - Blocked by: none · Blocks: T-020
 
 - [ ] **T-020** (complexity: 3) — Create the `/autores/[slug]/` page with both content blocks
@@ -191,5 +195,5 @@ T-001 and T-002 are done. The next unblocked work, in rough priority order:
 - **T-037** (complexity: 3) — the G-10 fix. Everything on the seed/data track now depends
   on it, and T-005/T-006/T-007 should be authored knowing the flag exists.
 - **T-003** (complexity: 2) — unblocks the schema/service track (T-011, T-017).
-- **T-008**, **T-014**, **T-016**, **T-019**, **T-023** — all at level 0, no
+- **T-014**, **T-023** — all at level 0, no
   dependencies, safe to pick up in any order or in parallel.
