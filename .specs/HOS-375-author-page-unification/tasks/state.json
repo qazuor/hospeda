@@ -568,17 +568,18 @@
             "blockedBy": [],
             "blocks": ["T-029", "T-033"],
             "subtasks": [
-                { "title": "Add the middleware step after 3.2", "completed": false },
-                { "title": "Verify tail and query are both preserved", "completed": false }
+                { "title": "Add the middleware step after 3.2", "completed": true },
+                { "title": "Verify tail and query are both preserved", "completed": true }
             ],
             "tags": ["web", "middleware", "seo"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-03T16:00:00.000Z",
+                "completed": "2026-08-03T16:15:00.000Z"
+            },
+            "notes": "Shipped together with T-033 — a redirect with no test is not deliverable. Step 3.3 in apps/web/src/middleware.ts, copying the shape of step 3.2 verbatim; the task's note was right that the 301-vs-308 status is the only real difference from the precedent, both existing blocks preserve the tail identically. The single regex covers three tails, not two: the bare slug, /page/<n>/ (posts) and /eventos/page/<n>/ (events), because T-022 kept the events sub-route under the same subtree. LIVE-VERIFIED end to end in the worktree dev env: /es|en|pt/publicaciones/autor/<slug>/ all 301 to /<locale>/autores/<slug>/, and following the chain on both /page/2/ and /eventos/page/2/ lands on 200 in exactly ONE hop. DEV-ONLY CAVEAT, NOT A DEFECT OF THIS CHANGE: the bare /es/publicaciones/autor/ (no slug) answers 500 in the dev server instead of redirecting, because Astro dev throws while resolving the route BEFORE the middleware runs — proven with a temporary probe that logs on every request reaching step 3.3 and never fired for that URL, while firing for the slugged one. The throw is `ReferenceError: require is not defined` from sanitize-html (the HOS-370 CJS->ESM bridge, unresolved in dev), and it hits EVERY post detail URL in dev including a real existing post and /es/publicaciones/autores/ which this regex does not even match. Reported separately. The bare case is covered by unit test instead. Coverage: 7 tests in apps/web/test/middleware.test.ts."
         },
         {
             "id": "T-024",
@@ -805,18 +806,19 @@
             "blockedBy": ["T-023"],
             "blocks": [],
             "subtasks": [
-                { "title": "Test the bare slug redirect", "completed": false },
-                { "title": "Test the paginated tail plus query string", "completed": false },
-                { "title": "Assert 301 explicitly across all locales", "completed": false }
+                { "title": "Test the bare slug redirect", "completed": true },
+                { "title": "Test the paginated tail plus query string", "completed": true },
+                { "title": "Assert 301 explicitly across all locales", "completed": true }
             ],
             "tags": ["testing", "middleware", "seo"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-03T16:00:00.000Z",
+                "completed": "2026-08-03T16:15:00.000Z"
+            },
+            "notes": "Shipped in the same commit as T-023. 7 tests appended to apps/web/test/middleware.test.ts, reusing that file's existing onRequest harness (createContext + the parseSessionUser mock) rather than a new file, so the three redirect blocks — messages, blog, authors — sit side by side. Tail and query are asserted in ONE url (/page/3/?x=1&y=2) because they are captured by different mechanisms (the regex group vs context.url.search) and a change keeping one can silently drop the other. Two tests beyond the task's list guard the regex ANCHOR: /es/publicaciones/una-nota-cualquiera/ and /es/publicaciones/autores/ must both fall through, since a looser match would send every post detail page to a non-existent /autores/<post-slug>/. Validated non-vacuous by mutation: downgrading 301 to 302 reddens 3 tests, dropping ${search} reddens the AC-2 test alone, dropping the tail reddens 4, and unanchoring the segment (autor(.*)? instead of autor(\\/.*)?) reddens exactly the sibling-segment test."
         },
         {
             "id": "T-034",
