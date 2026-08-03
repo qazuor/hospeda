@@ -594,7 +594,10 @@
             "cancelSuccess": "Alerta cancelado",
             "cancelError": "Não foi possível cancelar o alerta",
             "locked": "Avise-me quando o preço baixar",
-            "maxReached": "Limite de alertas atingido"
+            "maxReached": "Limite de alertas atingido",
+            "signInTitle": "Alertas de preço",
+            "signInHint": "Você precisa de uma conta para avisarmos quando o preço baixar.",
+            "signInCta": "Entre para criar o alerta"
         }
     },
     "amenityCategories": {

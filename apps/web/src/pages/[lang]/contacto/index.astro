@@ -229,7 +229,7 @@ const contactPageJsonLd = {
 							? PhoneIcon
 							: WhatsappIcon;
 					// No href → render a static card showing the value as text,
-					// the same degradation WhatsAppContact.astro applies. A dead
+					// the same degradation WhatsAppContact applies. A dead
 					// <a> would look identical to a working one and take no focus.
 					if (!channel.href) {
 						return (

@@ -24,7 +24,6 @@ import ExperienceContactCTA from '@/components/experience/ExperienceContactCTA.a
 import ExperienceFaqs from '@/components/experience/ExperienceFaqs.astro';
 import { ExperienceReviews } from '@/components/experience/ExperienceReviews.client';
 import { experiencesApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
-import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toExperienceDetailPageProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -119,12 +118,9 @@ const galleryImages = (() => {
     return [];
 })();
 
-const isAuthenticated = Boolean(Astro.locals.user);
 
 // --- SSR bookmark status for hero ---
 let bookmarkCount: number | undefined;
-let initialIsFavorited: boolean | undefined;
-let initialBookmarkId: string | null = null;
 
 try {
     const countResult = await userBookmarksPublicApi.count({
@@ -138,22 +134,6 @@ try {
     // graceful degradation
 }
 
-if (isAuthenticated) {
-    try {
-        const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-        const statusResult = await userBookmarksApi.checkStatus({
-            entityId: experience.id,
-            entityType: 'EXPERIENCE',
-            cookieHeader
-        });
-        if (statusResult.ok) {
-            initialIsFavorited = statusResult.data.isFavorited;
-            initialBookmarkId = statusResult.data.bookmarkId;
-        }
-    } catch {
-        // graceful degradation
-    }
-}
 
 const canonicalPath = buildUrl({ locale, path: `experiencias/${experience.slug}/` });
 
@@ -215,9 +195,6 @@ const breadcrumbItems = [
         <ExperienceHero
             experience={experience}
             locale={locale}
-            isAuthenticated={isAuthenticated}
-            initialIsFavorited={initialIsFavorited}
-            initialBookmarkId={initialBookmarkId}
             bookmarkCount={bookmarkCount}
         />
     </Fragment>
@@ -256,7 +233,6 @@ const breadcrumbItems = [
             totalReviews={totalReviews}
             averageRating={experience.averageRating}
             locale={locale}
-            isAuthenticated={isAuthenticated}
         />
 
         <!-- FAQs (static SSR accordion) -->

@@ -1,5 +1,5 @@
 /**
- * @file MediaField.test.tsx
+ * @file MediaSection.test.tsx
  * @description Tests for the self-contained commerce media editor (HOS-372).
  *
  * Covers the per-operation persistence migration (mirrors
@@ -20,15 +20,19 @@
  *   state (the UI never claims success on failure).
  * - Gallery cap enforcement (HOS-322 size-limit coverage retained).
  *
- * @module test/components/commerce/MediaField
+ * HOS-258 folded the widget into `editor/MediaSection.client.tsx`, so the
+ * component now takes `locale` and builds its own translator (and owns its CSS
+ * modules) instead of receiving a `t` function and a `classes` bag.
+ *
+ * @module test/components/commerce/editor/MediaSection
  */
 
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { getGalleryCap } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { MediaFieldProps } from '../../../src/components/commerce/MediaField';
-import { MediaField } from '../../../src/components/commerce/MediaField';
+import type { MediaSectionProps } from '../../../../src/components/commerce/editor/MediaSection.client';
+import { MediaSection } from '../../../../src/components/commerce/editor/MediaSection.client';
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks (vi.hoisted executes before vi.mock factories)
@@ -50,15 +54,15 @@ const {
     mockAddToast: vi.fn()
 }));
 
-vi.mock('../../../src/lib/env', () => ({
+vi.mock('../../../../src/lib/env', () => ({
     getApiUrl: () => 'http://api.test'
 }));
 
-vi.mock('../../../src/lib/logger', () => ({
+vi.mock('../../../../src/lib/logger', () => ({
     webLogger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() }
 }));
 
-vi.mock('../../../src/lib/api/endpoints-protected', () => ({
+vi.mock('../../../../src/lib/api/endpoints-protected', () => ({
     commerceMediaApi: {
         listMedia: mockListMedia,
         addMedia: mockAddMedia,
@@ -70,32 +74,31 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     }
 }));
 
-vi.mock('../../../src/store/toast-store', () => ({
+vi.mock('../../../../src/store/toast-store', () => ({
     addToast: mockAddToast
 }));
 
-/** Interpolating translator, matching the real `createTranslations().t`. */
-const t = (key: string, fallback?: string, params?: Record<string, string | number>): string => {
-    const raw = fallback ?? key;
-    return params
-        ? Object.entries(params).reduce(
-              (acc, [name, value]) => acc.replaceAll(`{{${name}}}`, String(value)),
-              raw
-          )
-        : raw;
-};
-
-const classes = new Proxy({} as Record<string, string>, {
-    get: (_target, prop) => String(prop)
-});
+vi.mock('../../../../src/lib/i18n', () => ({
+    // Interpolating translator, matching the real `createTranslations().t`.
+    createTranslations: () => ({
+        t: (key: string, fallback?: string, params?: Record<string, string | number>): string => {
+            const raw = fallback ?? key;
+            return params
+                ? Object.entries(params).reduce(
+                      (acc, [name, value]) => acc.replaceAll(`{{${name}}}`, String(value)),
+                      raw
+                  )
+                : raw;
+        }
+    })
+}));
 
 const LISTING_ID = '00000000-0000-4000-8000-0000000000aa';
 
-const defaultProps: MediaFieldProps = {
+const defaultProps: MediaSectionProps = {
+    locale: 'es',
     vertical: 'gastronomy',
-    listingId: LISTING_ID,
-    t,
-    classes
+    listingId: LISTING_ID
 };
 
 // ---------------------------------------------------------------------------
@@ -192,7 +195,7 @@ function fileInputs(): { featured: HTMLInputElement; gallery: HTMLInputElement }
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('MediaField — per-operation persistence (HOS-372)', () => {
+describe('MediaSection — per-operation persistence (HOS-372)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockListMedia.mockReturnValue(makeListEmpty());
@@ -203,7 +206,7 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
 
     describe('hydration from listMedia on mount', () => {
         it('calls listMedia with the vertical and listing id on mount', async () => {
-            render(<MediaField {...defaultProps} />);
+            render(<MediaSection {...defaultProps} />);
             await waitFor(() => {
                 expect(mockListMedia).toHaveBeenCalledWith({
                     vertical: 'gastronomy',
@@ -214,7 +217,7 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
 
         it('splits the featured row into the featured slot', async () => {
             mockListMedia.mockReturnValue(makeListOk([FEATURED_ROW, GALLERY_ROW_1]));
-            render(<MediaField {...defaultProps} />);
+            render(<MediaSection {...defaultProps} />);
 
             await waitFor(() => {
                 const img = screen.getByAltText('Imagen principal');
@@ -224,7 +227,7 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
 
         it('splits non-featured rows into the gallery grid', async () => {
             mockListMedia.mockReturnValue(makeListOk([FEATURED_ROW, GALLERY_ROW_1, GALLERY_ROW_2]));
-            render(<MediaField {...defaultProps} />);
+            render(<MediaSection {...defaultProps} />);
 
             await waitFor(() => {
                 const imgs = screen.getAllByRole('img');
@@ -240,7 +243,7 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
             stubFetchUploadOk();
             mockAddMedia.mockReturnValue(makeAddOk());
 
-            render(<MediaField {...defaultProps} />);
+            render(<MediaSection {...defaultProps} />);
             await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
 
             const { gallery } = fileInputs();
@@ -271,7 +274,7 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
             stubFetchUploadOk();
             mockAddMedia.mockReturnValue(makeError('quota exceeded'));
 
-            render(<MediaField {...defaultProps} />);
+            render(<MediaSection {...defaultProps} />);
             await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
 
             const { gallery } = fileInputs();
@@ -293,7 +296,7 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
             mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1, GALLERY_ROW_2]));
             mockRemoveMedia.mockReturnValue(makeRemoveOk());
 
-            render(<MediaField {...defaultProps} />);
+            render(<MediaSection {...defaultProps} />);
             await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(2));
 
             const removeButtons = screen.getAllByLabelText('Eliminar');
@@ -324,7 +327,7 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
             mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1]));
             mockRemoveMedia.mockReturnValue(makeError('remove failed'));
 
-            render(<MediaField {...defaultProps} />);
+            render(<MediaSection {...defaultProps} />);
             await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(1));
 
             fireEvent.click(screen.getByLabelText('Eliminar'));
@@ -349,7 +352,7 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
                 Promise.resolve({ ok: true as const, data: { media: featuredRow } })
             );
 
-            render(<MediaField {...defaultProps} />);
+            render(<MediaSection {...defaultProps} />);
             await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
 
             const { featured } = fileInputs();
@@ -387,7 +390,7 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
                 Promise.resolve({ ok: true as const, data: { media: newFeaturedRow } })
             );
 
-            render(<MediaField {...defaultProps} />);
+            render(<MediaSection {...defaultProps} />);
             await waitFor(() => {
                 expect(screen.getByAltText('Imagen principal')).toHaveAttribute(
                     'src',
@@ -418,7 +421,7 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
             mockAddMedia.mockReturnValue(makeAddOk({ ...NEW_ROW, isFeatured: false }));
             mockSetFeaturedMedia.mockReturnValue(makeError('featured op failed'));
 
-            render(<MediaField {...defaultProps} />);
+            render(<MediaSection {...defaultProps} />);
             await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
 
             const { featured } = fileInputs();
@@ -439,7 +442,7 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
             mockListMedia.mockReturnValue(makeListOk([FEATURED_ROW]));
             mockRemoveMedia.mockReturnValue(makeRemoveOk());
 
-            render(<MediaField {...defaultProps} />);
+            render(<MediaSection {...defaultProps} />);
             await waitFor(() => {
                 expect(screen.getByAltText('Imagen principal')).toBeInTheDocument();
             });
@@ -476,7 +479,7 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
             }));
             mockListMedia.mockReturnValue(makeListOk(fullGallery));
 
-            render(<MediaField {...defaultProps} />);
+            render(<MediaSection {...defaultProps} />);
 
             await waitFor(() => {
                 expect(screen.queryByText('+')).not.toBeInTheDocument();
@@ -484,7 +487,7 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
         });
 
         it('shows the add (+) button when the gallery is below the cap', async () => {
-            render(<MediaField {...defaultProps} />);
+            render(<MediaSection {...defaultProps} />);
             await waitFor(() => {
                 expect(screen.getByText('+')).toBeInTheDocument();
             });
@@ -497,7 +500,7 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
         const CAP_BYTES = mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB);
 
         it('states the real cap in the upload hint', async () => {
-            render(<MediaField {...defaultProps} />);
+            render(<MediaSection {...defaultProps} />);
             await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
 
             const hint = screen.getByText((content) => content.includes('máx.'));
@@ -509,7 +512,7 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
             stubFetchUploadOk();
             mockAddMedia.mockReturnValue(makeAddOk());
 
-            render(<MediaField {...defaultProps} />);
+            render(<MediaSection {...defaultProps} />);
             await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
 
             const { featured } = fileInputs();
@@ -521,7 +524,7 @@ describe('MediaField — per-operation persistence (HOS-372)', () => {
         });
 
         it('refuses a photo over the cap without calling the API, naming the cap', async () => {
-            render(<MediaField {...defaultProps} />);
+            render(<MediaSection {...defaultProps} />);
             await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
             global.fetch = vi.fn();
 

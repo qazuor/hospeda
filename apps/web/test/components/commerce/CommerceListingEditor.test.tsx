@@ -61,6 +61,32 @@ vi.mock('../../../src/lib/i18n', () => ({
     })
 }));
 
+// HOS-371: `richDescription` is a TipTap editor now, not a `<textarea>`. Booting
+// the real editor in every render here would make this suite an order of
+// magnitude slower for zero added signal — what these tests care about is the
+// dirty-tracking/payload wiring, which only needs the controlled-value contract.
+// The shim keeps the same accessible name so the existing assertions still
+// target the same field. The REAL editor is exercised in
+// `CommerceListingEditor.rich-description.test.tsx` (mount must not dirty the
+// form) and `host/editor/RichTextEditor.controlled-emit.test.tsx`.
+vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
+    RichTextEditor: ({
+        value,
+        onChange,
+        ariaLabel
+    }: {
+        value: string;
+        onChange: (value: string) => void;
+        ariaLabel?: string;
+    }) => (
+        <textarea
+            aria-label={ariaLabel}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+        />
+    )
+}));
+
 vi.mock('../../../src/lib/api/client', () => ({
     apiClient: { patch: vi.fn() }
 }));
@@ -234,8 +260,11 @@ describe('CommerceListingEditor', () => {
         });
         renderEditor('gastronomy');
 
-        fireEvent.change(screen.getByLabelText('Teléfono'), {
-            target: { value: '+5491100000000' }
+        // HOS-371: the phone is a country-code combobox + local number pair now,
+        // so the editable control is the "Número" input; the dial code comes
+        // from the combobox and is recomposed into the stored string.
+        fireEvent.change(screen.getByLabelText('Número'), {
+            target: { value: '9 11 1234 5678' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
@@ -251,13 +280,28 @@ describe('CommerceListingEditor', () => {
         // sending an explicit `null` the domain schema rejects. There was no
         // client-side validation to catch this before submit, so the PATCH
         // always fired and only failed against the real API. The fix sends
-        // `undefined` (omit the key = "no change") instead, so a clear
-        // still marks the field dirty but the PATCH now succeeds.
+        // `undefined` (omit the key = "no change") instead.
+        //
+        // HOS-258: `priceFrom` is now SEEDED from `initialData` and then
+        // cleared, instead of being typed in and cleared within the same
+        // session. Since PR 1 the payload is a diff against the last persisted
+        // snapshot, so typing 500 and deleting it again returns the field to
+        // its original value and produces no change at all — that setup
+        // exercised the old dirty-Set mechanism, not the null-vs-undefined
+        // contract this test is about. The assertion below is unchanged.
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
-        renderEditor('experience');
+        render(
+            <CommerceListingEditor
+                vertical="experience"
+                listingId="abc"
+                locale="es"
+                initialData={{ ...baseData, priceFrom: 500 } as unknown as CommerceListingDetail}
+                destinations={destinationOptions}
+            />
+        );
 
         const priceFromInput = screen.getByLabelText(/Precio desde/);
-        fireEvent.change(priceFromInput, { target: { value: '500' } });
+        expect(priceFromInput).toHaveValue(500);
         fireEvent.change(priceFromInput, { target: { value: '' } });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
@@ -284,8 +328,12 @@ describe('CommerceListingEditor', () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
         renderEditor('gastronomy');
 
-        fireEvent.change(screen.getByLabelText('Teléfono'), {
-            target: { value: '+5491100000000' }
+        // HOS-371: the local number is recomposed with the combobox's dial code
+        // (defaulting to Argentina) into the single `mobilePhone` string the
+        // backend stores — the same `<dialCode> <number>` shape the
+        // accommodation editor writes and `InternationalPhoneRegex` validates.
+        fireEvent.change(screen.getByLabelText('Número'), {
+            target: { value: '9 11 1234 5678' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
@@ -294,11 +342,67 @@ describe('CommerceListingEditor', () => {
             path: '/api/v1/protected/gastronomies/abc',
             body: {
                 contactInfo: {
-                    mobilePhone: '+5491100000000',
+                    mobilePhone: '+54 9 11 1234 5678',
                     workEmail: undefined,
                     website: undefined
                 }
             }
+        });
+    });
+
+    it('lets the owner pick a different country code and recomposes the stored phone (HOS-371)', async () => {
+        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+        renderEditor('gastronomy');
+
+        // The combobox trigger leads with the field name, then the selection.
+        fireEvent.click(screen.getByRole('button', { name: /País: Argentina/ }));
+        fireEvent.mouseDown(screen.getByRole('option', { name: /Brasil|Brazil/ }));
+
+        fireEvent.change(screen.getByLabelText('Número'), {
+            target: { value: '11 91234 5678' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+        const body = mockPatch.mock.calls[0]?.[0]?.body as {
+            contactInfo?: { mobilePhone?: string };
+        };
+        expect(body.contactInfo?.mobilePhone).toBe('+55 11 91234 5678');
+    });
+
+    describe('contact email accessibility (HOS-371)', () => {
+        it('labels the email input with a real <label>, not just an aria-label', () => {
+            const { container } = renderEditor('gastronomy');
+
+            // An `aria-label` alone leaves a sighted user staring at an
+            // anonymous empty box (WCAG 3.3.2). `getByLabelText` matches both
+            // mechanisms, so assert the <label> element exists and points at
+            // the input — that is what distinguishes the two.
+            const label = [...container.querySelectorAll('label')].find(
+                (el) => el.textContent?.trim() === 'Email'
+            );
+            expect(label).toBeDefined();
+            expect(label?.getAttribute('for')).toBe('ce-workEmail');
+
+            const input = container.querySelector('#ce-workEmail');
+            expect(input).toBeInstanceOf(HTMLInputElement);
+            expect((input as HTMLInputElement).type).toBe('email');
+        });
+
+        it('still PATCHes the contactInfo group from the labelled email input', async () => {
+            mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+            renderEditor('gastronomy');
+
+            fireEvent.change(screen.getByLabelText('Email'), {
+                target: { value: 'hola@laparrilla.test' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+            await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+            const body = mockPatch.mock.calls[0]?.[0]?.body as {
+                contactInfo?: { workEmail?: string };
+            };
+            expect(body.contactInfo?.workEmail).toBe('hola@laparrilla.test');
         });
     });
 
@@ -557,6 +661,56 @@ describe('CommerceListingEditor', () => {
         expect(body.featureIds).toEqual([FEATURE_F1]);
     });
 
+    it('carries an amenity toggled inside a COLLAPSED accordion through to the payload (HOS-371)', async () => {
+        // The test above uses `category: null` amenities, which all land in the
+        // single "Otros" bucket — and that bucket is first, therefore open. So
+        // it proves "toggle → payload" but never "toggle from behind a closed
+        // summary → payload", which is what the accordions actually introduced.
+        //
+        // <details> keeps its children in the DOM whether open or not, so the
+        // checkbox is reachable either way. That is precisely the property worth
+        // pinning: swapping <details> for conditional rendering would unmount it
+        // and break the write path with no other test noticing.
+        const WIFI = '11111111-1111-4111-8111-111111111111';
+        const TERRAZA = '33333333-3333-4333-8333-333333333333';
+
+        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+        const { container } = render(
+            <CommerceListingEditor
+                vertical="gastronomy"
+                listingId="abc"
+                locale="es"
+                initialData={
+                    {
+                        id: 'abc',
+                        ownerId: 'owner-1',
+                        name: 'La Parrilla',
+                        slug: 'la-parrilla'
+                    } as unknown as CommerceListingDetail
+                }
+                amenities={[
+                    { id: WIFI, slug: 'wifi', category: 'CONNECTIVITY' },
+                    { id: TERRAZA, slug: 'terraza', category: 'OUTDOORS' }
+                ]}
+                features={[]}
+            />
+        );
+
+        // Assert the group really IS collapsed before clicking — otherwise this
+        // silently degrades into a duplicate of the test above.
+        const outdoors = Array.from(container.querySelectorAll('details')).find((el) =>
+            el.querySelector('summary')?.textContent?.includes('Exteriores')
+        );
+        expect(outdoors?.open).toBe(false);
+
+        fireEvent.click(screen.getByLabelText('Terraza'));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+        const collapsedBody = mockPatch.mock.calls[0]?.[0]?.body as { amenityIds?: string[] };
+        expect(collapsedBody.amenityIds).toEqual([TERRAZA]);
+    });
+
     describe('D-1 identity fields (name/destinationId/description) — HOS-166', () => {
         it('renders name, destinationId, and description seeded from initialData', () => {
             render(
@@ -765,9 +919,11 @@ describe('CommerceListingEditor', () => {
                 mediaId: 'g1'
             });
         });
-        await waitFor(() =>
-            expect(mockDeleteMedia).toHaveBeenCalledWith({ publicId: galleryImage.publicId })
-        );
+        // Cloudinary cleanup is server-side since HOS-372: `removeMedia` deletes
+        // the binary before dropping the row. The client-side call this replaced
+        // was unreachable anyway — `media/protected/delete-entity` rejects
+        // `gastronomy`/`experience` with a 400, so any call here is a regression.
+        expect(mockDeleteMedia).not.toHaveBeenCalled();
 
         // No Save click occurred, and nothing in this editor was ever marked
         // dirty by the removal — the Save button must stay disabled.

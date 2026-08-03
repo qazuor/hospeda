@@ -41,14 +41,8 @@ import { CheckCircleIcon, StarIcon } from '@repo/icons';
 interface Props {
   readonly accommodation: AccommodationDetailData;
   readonly lang: string;
-  /** Whether the current user is authenticated. Defaults to false. */
-  readonly isAuthenticated?: boolean;
   /** UUID of the accommodation — used by FavoriteButton. */
   readonly accommodationId: string;
-  /** Pre-hydrated favorite state from a server-side check. */
-  readonly initialIsFavorited?: boolean;
-  /** Bookmark ID when the entity is already favorited on page load. */
-  readonly initialBookmarkId?: string | null;
   /**
    * Pre-fetched public bookmark count.
    * When undefined the counter is not rendered (parent opted out of pre-fetch).
@@ -59,10 +53,7 @@ interface Props {
 const {
   accommodation,
   lang,
-  isAuthenticated = false,
   accommodationId,
-  initialIsFavorited,
-  initialBookmarkId = null,
   bookmarkCount
 } = Astro.props;
 const locale = lang as SupportedLocale;
@@ -162,9 +153,6 @@ const newStyle =
         client:load
         entityId={accommodationId}
         entityType="ACCOMMODATION"
-        initialIsFavorited={initialIsFavorited}
-        initialBookmarkId={initialBookmarkId}
-        isAuthenticated={isAuthenticated}
         variant="standalone"
         locale={locale}
         className="detail-header__favorite-btn"

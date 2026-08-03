@@ -54,6 +54,21 @@ declare namespace App {
             readonly image: string | null;
         } | null;
 
+        /**
+         * Cloudflare cache tags collected while rendering this response.
+         *
+         * Middleware creates the set before `next()` and serializes it into the
+         * `Cache-Tag` response header afterwards, so any frontmatter that runs
+         * during the render — page, layout or component — can contribute to it
+         * without having to own the header itself (HOS-369 W1-1).
+         *
+         * Do NOT write to this directly from a page. Go through
+         * `applyCacheHeaders` (`src/lib/cache/response-cache.ts`), which is the
+         * only thing that may declare a response edge-cacheable, and which
+         * cannot do so without being handed the tags that will purge it.
+         */
+        cacheTags: Set<string>;
+
         // NOTE (HOS-369 WB0-1): there is deliberately no `cspNonce` here
         // anymore. Inline scripts/styles are allowed by the sha256 of their own
         // content, computed per response in middleware — a nonce that reaches

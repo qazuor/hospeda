@@ -115,12 +115,6 @@ interface BaseProps {
     readonly ariaLabel: string;
     readonly i18nStrings: ListingMapStrings;
     /**
-     * SPEC-098 T-044: Whether the current visitor is authenticated.
-     * Forwarded to FavoriteButton inside each accommodation popup.
-     * Defaults to false (guest) when not provided.
-     */
-    readonly isAuthenticated?: boolean;
-    /**
      * SPEC-098 T-044: Active locale forwarded to FavoriteButton for aria-labels
      * and i18n strings. Defaults to 'es'.
      */

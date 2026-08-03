@@ -181,3 +181,105 @@ describe('middleware onRequest — BETA-162 legacy /blog alias redirects to /pub
         }
     });
 });
+
+describe('middleware onRequest — Step 11 emits the Cache-Tag purge header (HOS-369 W1-1)', () => {
+    beforeEach(() => {
+        parseSessionUserMock.mockClear();
+    });
+
+    /**
+     * Render a page response through the real `onRequest`, letting the page
+     * declare its cache tags the way a real one does — from frontmatter, i.e.
+     * while `next()` is running.
+     */
+    async function runPage({
+        pathname,
+        cacheControl,
+        tags
+    }: {
+        readonly pathname: string;
+        readonly cacheControl?: string;
+        readonly tags?: readonly string[];
+    }): Promise<Response> {
+        const { onRequest } = await import('../src/middleware');
+        const context = createContext({ pathname });
+        const next = vi.fn().mockImplementation(() => {
+            for (const tag of tags ?? []) {
+                (context.locals as { cacheTags: Set<string> }).cacheTags.add(tag);
+            }
+            const headers = new Headers({ 'content-type': 'text/html' });
+            if (cacheControl) headers.set('Cache-Control', cacheControl);
+            return Promise.resolve(new Response('<html>page</html>', { headers }));
+        });
+
+        return (await onRequest(context as any, next)) as Response;
+    }
+
+    it('opens the collector before next(), so page frontmatter can contribute', async () => {
+        const { onRequest } = await import('../src/middleware');
+        const context = createContext({ pathname: '/es/alojamientos/' });
+        let seen: unknown;
+        const next = vi.fn().mockImplementation(() => {
+            seen = (context.locals as { cacheTags?: unknown }).cacheTags;
+            return Promise.resolve(new Response('ok'));
+        });
+
+        await onRequest(context as any, next);
+
+        expect(seen).toBeInstanceOf(Set);
+    });
+
+    it('emits the collected tags on a shared-cacheable response', async () => {
+        const response = await runPage({
+            pathname: '/es/alojamientos/',
+            cacheControl: 'public, s-maxage=300, stale-while-revalidate=600',
+            tags: ['list-accom', 'home']
+        });
+
+        expect(response.headers.get('Cache-Tag')).toBe('list-accom,home');
+    });
+
+    it('emits NOTHING on a private response — an uncached page has nothing to purge', async () => {
+        const response = await runPage({
+            pathname: '/es/alojamientos/',
+            cacheControl: 'private, no-cache',
+            tags: ['list-accom']
+        });
+
+        expect(response.headers.get('Cache-Tag')).toBeNull();
+    });
+
+    it('emits nothing when the page declared no tags', async () => {
+        const response = await runPage({
+            pathname: '/es/alojamientos/',
+            cacheControl: 'public, s-maxage=300',
+            tags: []
+        });
+
+        expect(response.headers.get('Cache-Tag')).toBeNull();
+    });
+
+    it('survives the CSP branch, which REPLACES the response object', async () => {
+        // Step 9 rebuilds `response` to hash the body. A header written before
+        // that point would be dropped for every SSR HTML page — which is every
+        // cacheable page there is. This asserts the ordering, not the CSP.
+        const response = await runPage({
+            pathname: '/es/alojamientos/',
+            cacheControl: 'public, s-maxage=300',
+            tags: ['list-accom']
+        });
+
+        expect(response.headers.get('content-security-policy')).toBeTruthy();
+        expect(response.headers.get('Cache-Tag')).toBe('list-accom');
+    });
+
+    it('drops a tag Cloudflare would reject rather than shipping a malformed header', async () => {
+        const response = await runPage({
+            pathname: '/es/alojamientos/',
+            cacheControl: 'public, s-maxage=300',
+            tags: ['list-accom', 'has space']
+        });
+
+        expect(response.headers.get('Cache-Tag')).toBe('list-accom');
+    });
+});

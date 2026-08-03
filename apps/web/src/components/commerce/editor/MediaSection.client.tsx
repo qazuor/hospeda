@@ -1,25 +1,25 @@
 /**
- * @file MediaField.tsx
- * @description Self-contained featured-image + gallery editor for a commerce
- * listing (gastronomy/experience), migrated to per-operation persistence
- * against the relational `gastronomy_media` / `experience_media` endpoints
- * (HOS-372).
+ * @file MediaSection.client.tsx
+ * @description Featured image + photo gallery section of the commerce owner
+ * editor (SPEC-249 T-015c, extracted in HOS-258), migrated to per-operation
+ * persistence against the relational `gastronomy_media` / `experience_media`
+ * endpoints (HOS-372).
  *
- * Mirrors the accommodation editor's migration
- * (`apps/web/src/components/host/editor/PhotoSection.client.tsx`, SPEC-204):
- * every add / remove / set-featured call hits the API immediately — nothing
- * is buffered for the parent's PATCH to persist on Save. Before this change,
- * uploads landed in Cloudinary right away but the DB association waited for
- * the form submit, so an owner who uploaded photos and navigated away without
- * pressing "Guardar" lost the association (the file stayed billed in
+ * Self-contained, NOT controlled by the orchestrator. Mirrors the accommodation
+ * editor's migration (`apps/web/src/components/host/editor/PhotoSection.client.tsx`,
+ * SPEC-204): every add / remove / set-featured call hits the API immediately —
+ * nothing is buffered for the parent's PATCH to persist on Save. Before this
+ * change, uploads landed in Cloudinary right away but the DB association waited
+ * for the form submit, so an owner who uploaded photos and navigated away
+ * without pressing "Guardar" lost the association (the file stayed billed in
  * Cloudinary and never appeared anywhere).
  *
  * Uploads still go to the protected `media/upload-entity` endpoint (which
- * already accepts the `gastronomy` and `experience` entity types) — that part
- * is UNCHANGED. What changed is what happens right after a successful
- * upload: instead of calling `onChange` with the full next `{ featuredImage,
- * gallery }` state for the parent to buffer, this component now calls
- * `commerceMediaApi.addMedia` (and, for the featured slot,
+ * already accepts the `gastronomy` and `experience` entity types, T-015a/b) —
+ * that part is UNCHANGED. What changed is what happens right after a successful
+ * upload: instead of calling `onChange` with the full next
+ * `{ featuredImage, gallery }` state for the orchestrator to buffer, this
+ * section now calls `commerceMediaApi.addMedia` (and, for the featured slot,
  * `commerceMediaApi.setFeaturedMedia`) so the row is persisted immediately.
  *
  * Cloudinary cleanup is now SERVER-SIDE and this component does not participate
@@ -41,9 +41,13 @@ import { type JSX, useCallback, useEffect, useRef, useState } from 'react';
 import { type CommerceMediaRow, commerceMediaApi } from '@/lib/api/endpoints-protected';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { getApiUrl } from '@/lib/env';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { resolveUploadTimeoutMs } from '@/lib/media/upload-entity';
 import { addToast } from '@/store/toast-store';
+import fieldStyles from './editor-fields.module.css';
+import styles from './MediaSection.module.css';
 
 /** Translator function shape (matches the editor's `createTranslations().t`). */
 type Translate = (
@@ -66,36 +70,23 @@ interface CommerceMediaItem {
     readonly isFeatured: boolean;
 }
 
-/**
- * @deprecated Legacy shape kept for backwards compat; no longer emitted by
- * this component. Photo changes are persisted per-operation — the parent
- * PATCH no longer includes `media`. See `CommerceListingEditor.client.tsx`.
- */
-export interface MediaFieldData {
-    readonly featuredImage: Image | null;
-    readonly gallery: readonly Image[];
-}
-
-export interface MediaFieldProps {
+export interface MediaSectionProps {
+    readonly locale: SupportedLocale;
     /** Vertical of the listing (drives the media endpoint path + gallery cap). */
     readonly vertical: CommerceVertical;
-    /** UUID of the listing being edited. */
+    /** UUID of the listing being edited (upload entityId). */
     readonly listingId: string;
     /**
      * Optional first-paint featured image (from the SSR-fetched `media`
-     * JSONB). Shown until `listMedia` resolves. Lacks a DB id — cannot
-     * trigger API ops until the real row loads.
+     * response field). Shown until `listMedia` resolves. Lacks a DB id —
+     * cannot trigger API ops until the real row loads.
      */
     readonly initialFeaturedImage?: Image | null;
     /**
-     * Optional first-paint gallery (from the SSR-fetched `media` JSONB).
-     * Lacks DB ids — cannot trigger API ops until the real rows load.
+     * Optional first-paint gallery (from the SSR-fetched `media` response
+     * field). Lacks DB ids — cannot trigger API ops until the real rows load.
      */
     readonly initialGallery?: readonly Image[];
-    /** Active editor translator. */
-    readonly t: Translate;
-    /** Shared CSS-module classes from the hosting editor. */
-    readonly classes: Readonly<Record<string, string>>;
 }
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -243,7 +234,7 @@ function describeUploadError(err: unknown, t: Translate): string {
 }
 
 /**
- * Featured-image + gallery editor for a commerce listing. Hydrates on mount
+ * Featured-image + gallery section for a commerce listing. Hydrates on mount
  * from `commerceMediaApi.listMedia`; every user operation (add, remove,
  * set-featured) is persisted immediately via a granular API call. The parent
  * PATCH no longer carries media data.
@@ -254,18 +245,17 @@ function describeUploadError(err: unknown, t: Translate): string {
  * scroll position. On any op failure the local state is NOT mutated, keeping
  * the UI consistent with the server.
  */
-export function MediaField({
+export function MediaSection({
+    locale,
     vertical,
     listingId,
     initialFeaturedImage = null,
-    initialGallery = [],
-    t,
-    classes
-}: MediaFieldProps): JSX.Element {
+    initialGallery = []
+}: MediaSectionProps): JSX.Element {
+    const { t } = createTranslations(locale);
     const featuredInputRef = useRef<HTMLInputElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
 
-    // null = not yet hydrated from API; CommerceMediaItem | null = loaded
     const [featuredItem, setFeaturedItem] = useState<CommerceMediaItem | null>(() =>
         initialFeaturedImage ? legacyToDisplay(initialFeaturedImage, true) : null
     );
@@ -291,7 +281,7 @@ export function MediaField({
             .then((result) => {
                 if (cancelled) return;
                 if (!result.ok) {
-                    webLogger.warn('[MediaField] listMedia failed:', result.error);
+                    webLogger.warn('[MediaSection] listMedia failed:', result.error);
                     // Keep SSR placeholders; flag as hydrated so ops become available
                     setIsHydrated(true);
                     return;
@@ -305,7 +295,7 @@ export function MediaField({
             })
             .catch((err: unknown) => {
                 if (cancelled) return;
-                webLogger.warn('[MediaField] listMedia error:', err);
+                webLogger.warn('[MediaSection] listMedia error:', err);
                 setIsHydrated(true);
             });
 
@@ -436,8 +426,8 @@ export function MediaField({
 
     /**
      * Remove the current featured row. There is no "unfeature" endpoint —
-     * removing is the clear action. `removeMedia` does not touch Cloudinary
-     * for commerce listings, so this also fires a best-effort delete.
+     * removing is the clear action. `removeMedia` deletes the Cloudinary
+     * binary server-side before dropping the row.
      */
     const handleFeaturedRemove = useCallback(async () => {
         if (!featuredItem?.id) {
@@ -540,8 +530,7 @@ export function MediaField({
 
     /**
      * Remove a gallery photo by its DB UUID. On failure, keeps the item in
-     * state (consistent with the server). Also fires the best-effort
-     * Cloudinary cleanup (see `handleFeaturedRemove`).
+     * state (consistent with the server).
      */
     const handleGalleryRemove = useCallback(
         async (item: CommerceMediaItem) => {
@@ -578,111 +567,122 @@ export function MediaField({
     const opsReady = isHydrated;
 
     return (
-        <div className={classes.media}>
-            <div className={classes.mediaGroup}>
-                <span className={classes.label}>
-                    {t('commerce.owner.editor.media.featured', 'Imagen principal')}
-                </span>
-                {featuredItem ? (
-                    <div className={classes.mediaThumb}>
-                        <img
-                            src={featuredItem.url}
-                            alt={t('commerce.owner.editor.media.featured', 'Imagen principal')}
-                            className={classes.mediaImage}
-                        />
-                        <button
-                            type="button"
-                            className={classes.mediaRemove}
-                            aria-label={t('commerce.owner.editor.media.remove', 'Eliminar')}
-                            disabled={anyOpInFlight || !opsReady || !featuredItem.id}
-                            onClick={handleFeaturedRemove}
-                        >
-                            ×
-                        </button>
-                    </div>
-                ) : (
-                    <button
-                        type="button"
-                        className={classes.mediaAdd}
-                        disabled={isUploading}
-                        onClick={() => featuredInputRef.current?.click()}
-                    >
-                        {t('commerce.owner.editor.media.add', 'Agregar foto')}
-                    </button>
-                )}
-                <input
-                    ref={featuredInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    aria-label={t('commerce.owner.editor.media.featured', 'Imagen principal')}
-                    className={classes.mediaFileInput}
-                    onChange={handleFeaturedSelect}
-                />
-            </div>
-
-            <div className={classes.mediaGroup}>
-                <span className={classes.label}>
-                    {t('commerce.owner.editor.media.gallery', 'Galería de fotos')}
-                </span>
-                <div className={classes.mediaGallery}>
-                    {galleryItems.map((image) => (
-                        <div
-                            key={image.id || image.url}
-                            className={classes.mediaThumb}
-                        >
+        <section
+            className={fieldStyles.section}
+            id="editor-media"
+        >
+            <span className={fieldStyles.label}>
+                {t('commerce.owner.editor.sections.media', 'Galería de fotos')}
+            </span>
+            <div className={styles.media}>
+                <div className={styles.mediaGroup}>
+                    <span className={fieldStyles.label}>
+                        {t('commerce.owner.editor.media.featured', 'Imagen principal')}
+                    </span>
+                    {featuredItem ? (
+                        <div className={styles.mediaThumb}>
                             <img
-                                src={image.url}
-                                alt={t('commerce.owner.editor.media.gallery', 'Galería de fotos')}
-                                className={classes.mediaImage}
+                                src={featuredItem.url}
+                                alt={t('commerce.owner.editor.media.featured', 'Imagen principal')}
+                                className={styles.mediaImage}
                             />
                             <button
                                 type="button"
-                                className={classes.mediaRemove}
+                                className={styles.mediaRemove}
                                 aria-label={t('commerce.owner.editor.media.remove', 'Eliminar')}
-                                disabled={anyOpInFlight || !opsReady || !image.id}
-                                onClick={() => handleGalleryRemove(image)}
+                                disabled={anyOpInFlight || !opsReady || !featuredItem.id}
+                                onClick={handleFeaturedRemove}
                             >
                                 ×
                             </button>
                         </div>
-                    ))}
-                    {!isGalleryFull && (
+                    ) : (
                         <button
                             type="button"
-                            className={classes.mediaAdd}
+                            className={styles.mediaAdd}
                             disabled={isUploading}
-                            aria-label={t('commerce.owner.editor.media.add', 'Agregar foto')}
-                            onClick={() => galleryInputRef.current?.click()}
+                            onClick={() => featuredInputRef.current?.click()}
                         >
-                            +
+                            {t('commerce.owner.editor.media.add', 'Agregar foto')}
                         </button>
                     )}
+                    <input
+                        ref={featuredInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        aria-label={t('commerce.owner.editor.media.featured', 'Imagen principal')}
+                        className={styles.mediaFileInput}
+                        onChange={handleFeaturedSelect}
+                    />
                 </div>
-                <input
-                    ref={galleryInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    aria-label={t('commerce.owner.editor.media.gallery', 'Galería de fotos')}
-                    className={classes.mediaFileInput}
-                    onChange={handleGallerySelect}
-                />
-                <span className={classes.mediaHint}>
-                    {t(
-                        'commerce.owner.editor.media.uploadHint',
-                        'JPG, PNG o WebP — máx. {{maxSize}}MB',
-                        { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
-                    )}
-                </span>
-            </div>
 
-            {error && (
-                <p
-                    className={classes.error}
-                    role="alert"
-                >
-                    {error}
-                </p>
-            )}
-        </div>
+                <div className={styles.mediaGroup}>
+                    <span className={fieldStyles.label}>
+                        {t('commerce.owner.editor.media.gallery', 'Galería de fotos')}
+                    </span>
+                    <div className={styles.mediaGallery}>
+                        {galleryItems.map((image) => (
+                            <div
+                                key={image.id || image.url}
+                                className={styles.mediaThumb}
+                            >
+                                <img
+                                    src={image.url}
+                                    alt={t(
+                                        'commerce.owner.editor.media.gallery',
+                                        'Galería de fotos'
+                                    )}
+                                    className={styles.mediaImage}
+                                />
+                                <button
+                                    type="button"
+                                    className={styles.mediaRemove}
+                                    aria-label={t('commerce.owner.editor.media.remove', 'Eliminar')}
+                                    disabled={anyOpInFlight || !opsReady || !image.id}
+                                    onClick={() => handleGalleryRemove(image)}
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        ))}
+                        {!isGalleryFull && (
+                            <button
+                                type="button"
+                                className={styles.mediaAdd}
+                                disabled={isUploading}
+                                aria-label={t('commerce.owner.editor.media.add', 'Agregar foto')}
+                                onClick={() => galleryInputRef.current?.click()}
+                            >
+                                +
+                            </button>
+                        )}
+                    </div>
+                    <input
+                        ref={galleryInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        aria-label={t('commerce.owner.editor.media.gallery', 'Galería de fotos')}
+                        className={styles.mediaFileInput}
+                        onChange={handleGallerySelect}
+                    />
+                    <span className={styles.mediaHint}>
+                        {t(
+                            'commerce.owner.editor.media.uploadHint',
+                            'JPG, PNG o WebP — máx. {{maxSize}}MB',
+                            { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
+                        )}
+                    </span>
+                </div>
+
+                {error && (
+                    <p
+                        className={fieldStyles.error}
+                        role="alert"
+                    >
+                        {error}
+                    </p>
+                )}
+            </div>
+        </section>
     );
 }

@@ -107,12 +107,6 @@ interface AccommodationsListingMapProps {
     readonly sidebarI18n?: SidebarI18n;
     readonly extraSearchParams?: Record<string, unknown>;
     /**
-     * SPEC-098 T-044: Whether the current visitor is authenticated.
-     * Forwarded to each accommodation popup's FavoriteButton.
-     * Defaults to false (guest) when not provided.
-     */
-    readonly isAuthenticated?: boolean;
-    /**
      * SPEC-098 T-044: Active locale forwarded to FavoriteButton for aria-labels.
      * Defaults to 'es'.
      */
@@ -142,17 +136,13 @@ export function AccommodationsListingMap({
     showSidebar = false,
     sidebarI18n,
     extraSearchParams,
-    isAuthenticated = false,
     locale = 'es'
 }: AccommodationsListingMapProps) {
     const { items, isFetching, onBoundsChange } = useViewportSearch({
         initialItems,
         pageSize: 100,
         extraParams: extraSearchParams,
-        locale,
-        // HOS-186: lets the hook bulk-resolve bookmark state for refetched
-        // items, so the popup/sidebar FavoriteButtons never mount unhydrated.
-        isAuthenticated
+        locale
     });
 
     const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
@@ -341,7 +331,6 @@ export function AccommodationsListingMap({
                 onBoundsChange={onBoundsChange}
                 ariaLabel={ariaLabel}
                 i18nStrings={i18nStrings}
-                isAuthenticated={isAuthenticated}
                 locale={locale}
             />
         );
@@ -362,7 +351,6 @@ export function AccommodationsListingMap({
                     onBoundsChange={onBoundsChange}
                     ariaLabel={ariaLabel}
                     i18nStrings={i18nStrings}
-                    isAuthenticated={isAuthenticated}
                     locale={locale}
                 />
             </div>
@@ -373,7 +361,6 @@ export function AccommodationsListingMap({
                     onCardHover={setHoveredItemId}
                     onCardSelect={handleCardSelect}
                     locale={locale}
-                    isAuthenticated={isAuthenticated}
                     isFetching={isFetching}
                     i18n={{
                         resultsHeading: sidebarI18n.resultsHeading,

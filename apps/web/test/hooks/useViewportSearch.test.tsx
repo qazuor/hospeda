@@ -129,7 +129,15 @@ describe('useViewportSearch', () => {
         });
     });
 
-    describe('bookmark bulk hydration on refetch (HOS-186)', () => {
+    describe('no client-side favorite merge on refetch (HOS-186 removed, HOS-369 WB0-5)', () => {
+        // HOS-186's `mergeFavoriteState` + the `isAuthenticated` input were
+        // deleted outright: FavoriteButton now resolves its own favorite state
+        // from the shared `favorites-store` (one bulk check per page load), so
+        // this hook has nothing left to merge and no reason to know who is
+        // looking. The tests below replace the old "merges bookmark state /
+        // does not call checkBulk for guests / degrades on bulk-check failure"
+        // coverage, which asserted behavior of a function that no longer exists.
+
         /** Arranges a successful list response returning cards `b` and `c`. */
         function arrangeListResponse(): void {
             accommodationsListMock.mockReset();
@@ -147,24 +155,23 @@ describe('useViewportSearch', () => {
             }));
         }
 
-        it('merges bookmark state into refetched items with ONE bulk call', async () => {
-            // Regression: the map refetches on every moveend/zoomend (including
-            // the initial FitBoundsOnce mount) and used to hand back items with
-            // `isFavorited === undefined` — the exact condition that makes each
-            // FavoriteButton fire its own /check, i.e. ~100 requests in ~2s.
+        it('no longer accepts isAuthenticated — removed from useViewportSearch input (HOS-369 WB0-5)', () => {
+            // Assert — this only typechecks if the field is gone. If a future
+            // change resurrects it, `@ts-expect-error` starts reporting an
+            // unused-directive error and typecheck fails.
+            // @ts-expect-error — isAuthenticated was removed; favorite state is resolved by FavoriteButton via the shared store, not merged here.
+            const input: Parameters<typeof useViewportSearch>[0] = {
+                initialItems,
+                isAuthenticated: true
+            };
+            expect(input.initialItems).toBe(initialItems);
+        });
+
+        it('never calls checkBulk on refetch — favorite state is resolved by FavoriteButton itself', async () => {
             arrangeListResponse();
-            checkBulkMock.mockResolvedValue({
-                ok: true,
-                data: {
-                    checks: {
-                        b: { isBookmarked: true, bookmarkId: 'bm-b' },
-                        c: { isBookmarked: false, bookmarkId: null }
-                    }
-                }
-            });
 
             const { result } = renderHook(() =>
-                useViewportSearch({ initialItems, debounceMs: 10, isAuthenticated: true })
+                useViewportSearch({ initialItems, debounceMs: 10 })
             );
 
             act(() => {
@@ -172,31 +179,14 @@ describe('useViewportSearch', () => {
             });
 
             await waitFor(() => expect(result.current.items.map((i) => i.id)).toEqual(['b', 'c']));
-            expect(checkBulkMock).toHaveBeenCalledTimes(1);
-            expect(checkBulkMock).toHaveBeenCalledWith({
-                entityType: 'ACCOMMODATION',
-                entityIds: ['b', 'c']
-            });
+            expect(checkBulkMock).not.toHaveBeenCalled();
         });
 
-        it('never exposes items with undefined isFavorited to the DOM (the N+1 trigger)', async () => {
-            // The merge must happen BEFORE setItems: a FavoriteButton that
-            // mounts with isFavorited === undefined self-hydrates, and React
-            // runs child effects before parent ones, so a post-render merge
-            // would be too late.
+        it('passes refetched items through unmodified — no favorite-state merge happens here', async () => {
             arrangeListResponse();
-            checkBulkMock.mockResolvedValue({
-                ok: true,
-                data: {
-                    checks: {
-                        b: { isBookmarked: true, bookmarkId: 'bm-b' },
-                        c: { isBookmarked: false, bookmarkId: null }
-                    }
-                }
-            });
 
             const { result } = renderHook(() =>
-                useViewportSearch({ initialItems, debounceMs: 10, isAuthenticated: true })
+                useViewportSearch({ initialItems, debounceMs: 10 })
             );
 
             act(() => {
@@ -205,76 +195,8 @@ describe('useViewportSearch', () => {
 
             await waitFor(() => expect(result.current.items.map((i) => i.id)).toEqual(['b', 'c']));
             for (const item of result.current.items) {
-                expect(item.isFavorited).toBeTypeOf('boolean');
+                expect(item.isFavorited).toBeUndefined();
             }
-            expect(result.current.items[0]?.isFavorited).toBe(true);
-            expect(result.current.items[0]?.favoriteBookmarkId).toBe('bm-b');
-            expect(result.current.items[1]?.isFavorited).toBe(false);
-        });
-
-        it('does not call checkBulk for guests', async () => {
-            arrangeListResponse();
-
-            const { result } = renderHook(() =>
-                useViewportSearch({ initialItems, debounceMs: 10, isAuthenticated: false })
-            );
-
-            act(() => {
-                result.current.onBoundsChange(bbox);
-            });
-
-            await waitFor(() => expect(result.current.items.map((i) => i.id)).toEqual(['b', 'c']));
-            expect(checkBulkMock).not.toHaveBeenCalled();
-        });
-
-        it('still shows refetched items when the bulk check fails (silent degrade)', async () => {
-            // Falling back to per-card self-hydration is the safety net; an
-            // empty map would be far worse than N extra checks.
-            arrangeListResponse();
-            checkBulkMock.mockResolvedValue({ ok: false, error: { message: 'boom' } });
-
-            const { result } = renderHook(() =>
-                useViewportSearch({ initialItems, debounceMs: 10, isAuthenticated: true })
-            );
-
-            act(() => {
-                result.current.onBoundsChange(bbox);
-            });
-
-            await waitFor(() => expect(result.current.items.map((i) => i.id)).toEqual(['b', 'c']));
-        });
-
-        it('still shows refetched items when the bulk check throws', async () => {
-            arrangeListResponse();
-            checkBulkMock.mockRejectedValue(new Error('network'));
-
-            const { result } = renderHook(() =>
-                useViewportSearch({ initialItems, debounceMs: 10, isAuthenticated: true })
-            );
-
-            act(() => {
-                result.current.onBoundsChange(bbox);
-            });
-
-            await waitFor(() => expect(result.current.items.map((i) => i.id)).toEqual(['b', 'c']));
-        });
-
-        it('skips the bulk call when the refetch returns no items', async () => {
-            accommodationsListMock.mockReset();
-            transformMock.mockReset();
-            checkBulkMock.mockReset();
-            accommodationsListMock.mockResolvedValue({ ok: true, data: { items: [] } });
-
-            const { result } = renderHook(() =>
-                useViewportSearch({ initialItems, debounceMs: 10, isAuthenticated: true })
-            );
-
-            act(() => {
-                result.current.onBoundsChange(bbox);
-            });
-
-            await waitFor(() => expect(result.current.items).toEqual([]));
-            expect(checkBulkMock).not.toHaveBeenCalled();
         });
     });
 

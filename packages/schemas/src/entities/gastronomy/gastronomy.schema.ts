@@ -4,7 +4,6 @@ import { BaseAuditFields } from '../../common/audit.schema.js';
 import { CommerceIdentityFields } from '../../common/commerce-identity.schema.js';
 import { CommerceRatingSchema } from '../../common/commerce-rating.schema.js';
 import { BaseContactFields } from '../../common/contact.schema.js';
-import { BaseFaqSchema } from '../../common/faq.schema.js';
 import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { BaseMediaFields, BaseVideosFields } from '../../common/media.schema.js';
@@ -16,6 +15,7 @@ import { SocialNetworkFields } from '../../common/social.schema.js';
 import { TagsFields } from '../../common/tags.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { GastronomyTypeEnumSchema, PriceRangeEnumSchema } from '../../enums/index.js';
+import { GastronomyFaqSchema } from './subtypes/gastronomy.faq.schema.js';
 
 /**
  * Gastronomy Entity Schema — commerce listing for food and beverage venues.
@@ -91,11 +91,28 @@ export const GastronomySchema = z.object({
     ...BaseAuditFields,
 
     /**
-     * Inline FAQs for the listing.
-     * Stored as a JSONB array on the row for fast public reads;
-     * also managed through the dedicated gastronomy_faqs table.
+     * FAQs belonging to this entity, loaded from the dedicated `gastronomy_faqs`
+     * table and embedded in the detail payload.
+     *
+     * Built from `GastronomyFaqSchema` with its identity fields made OPTIONAL, which is
+     * doing two jobs at once:
+     *
+     *  - It DECLARES `id`, so Zod stops stripping it. The field used to be typed
+     *    `z.array(BaseFaqSchema)`, and that base is deliberately identity-less —
+     *    it is what `FaqCreatePayloadSchema` and `BaseFaqPublicSchema` are picked
+     *    from, and what the per-entity subtypes extend by ADDING `id` + the owner
+     *    FK. Undeclared meant stripped, so every embedded FAQ came out with no
+     *    id even though the rows carry a real UUID. Consumers key their rows and
+     *    their "which one am I editing" state off that id, so a blank one made
+     *    all FAQs indistinguishable.
+     *  - It keeps both fields OPTIONAL rather than adopting the subtype whole,
+     *    because requiring them would TIGHTEN a published schema — forbidden by
+     *    the additive-only compatibility policy (see `packages/schemas/CLAUDE.md`
+     *    and `docs/guides/schema-compat-policy.md`). Historic payloads without an
+     *    id must keep parsing; the same call was made for `pointsOfInterest`'s
+     *    `relation` in HOS-146.
      */
-    faqs: z.array(BaseFaqSchema).optional(),
+    faqs: z.array(GastronomyFaqSchema.partial({ id: true, gastronomyId: true })).optional(),
 
     /**
      * Granular rating breakdown (food / service / ambiance / value).

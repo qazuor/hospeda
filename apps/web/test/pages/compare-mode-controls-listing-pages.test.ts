@@ -3,8 +3,9 @@
  * @description Source-assertion tests verifying `CompareModeControls` (the
  * compare-mode toggle + explainer banner, HOS-85 T-005; entitlement-gate
  * post-review fix) is mounted next to `ListingPageHeader` on all six
- * accommodation listing pages, receives an `isAuthenticated` prop computed
- * from `Astro.locals.user`, and is NOT present on the corresponding
+ * accommodation listing pages, carries NO prop describing the visitor (the
+ * toggle resolves the session client-side since HOS-369 WB0-4), and is NOT
+ * present on the corresponding
  * `/page/[page].astro` pagination rewrite shims (those only redirect/rewrite
  * to the parent listing — mounting the control there would be both redundant
  * and duplicate the island on the rendered page).
@@ -56,16 +57,17 @@ describe('CompareModeControls mounted on all six accommodation listing pages (HO
                 );
             });
 
-            it('mounts CompareModeControls with slot="page-header", the locale prop, and the isAuthenticated prop', () => {
+            it('mounts CompareModeControls with slot="page-header" and the locale prop', () => {
                 expect(src).toMatch(
-                    /<CompareModeControls\s+slot="page-header"\s+locale=\{locale\}\s+isAuthenticated=\{isAuthenticated\}\s*\/>/
+                    /<CompareModeControls\s+slot="page-header"\s+locale=\{locale\}\s*\/>/
                 );
             });
 
-            it('computes isAuthenticated from Astro.locals.user', () => {
-                expect(src).toMatch(
-                    /const isAuthenticated = (Boolean\(Astro\.locals\.user\)|!!Astro\.locals\.user);/
-                );
+            it('passes nothing about the visitor to CompareModeControls (HOS-369 WB0-5)', () => {
+                // The toggle resolves the session client-side (WB0-4). A page
+                // that computed it here could not be shared by an edge cache.
+                expect(src).not.toMatch(/<CompareModeControls[^>]*isAuthenticated/);
+                expect(src).not.toMatch(/const isAuthenticated = /);
             });
 
             it('mounts CompareModeControls after ListingPageHeader (same visual position across pages)', () => {

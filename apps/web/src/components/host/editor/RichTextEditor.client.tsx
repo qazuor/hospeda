@@ -23,7 +23,7 @@ import {
 } from '@repo/icons';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Markdown } from 'tiptap-markdown';
 import styles from './RichTextEditor.module.css';
 
@@ -79,6 +79,16 @@ export interface RichTextEditorProps {
     readonly hasError?: boolean;
     /** Error message to display */
     readonly errorMessage?: string;
+    /**
+     * Accessible name for the editing surface (HOS-371).
+     *
+     * The editable region is a contenteditable `<div role="textbox">`, NOT a
+     * form control, so an external `<label htmlFor>` cannot name it — a label
+     * sitting above this editor is decorative to assistive tech. Callers that
+     * replace a labelled `<textarea>` with this component MUST pass this, or
+     * the field silently loses its accessible name.
+     */
+    readonly ariaLabel?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -105,8 +115,20 @@ export function RichTextEditor({
     placeholder,
     disabled = false,
     hasError = false,
-    errorMessage
+    errorMessage,
+    ariaLabel
 }: RichTextEditorProps) {
+    /**
+     * Latest controlled `value`, read inside `onUpdate` (HOS-371).
+     *
+     * A ref rather than the prop directly: `useEditor`'s `onUpdate` closure is
+     * created once, so reading `value` from it would pin the mount-time string
+     * forever and the guard below would compare against a stale baseline after
+     * the first keystroke.
+     */
+    const valueRef = useRef(value);
+    valueRef.current = value;
+
     const editor = useEditor({
         immediatelyRender: false,
         editable: !disabled,
@@ -117,16 +139,29 @@ export function RichTextEditor({
                 role: 'textbox',
                 'aria-multiline': 'true',
                 'aria-invalid': hasError ? 'true' : 'false',
+                ...(ariaLabel ? { 'aria-label': ariaLabel } : {}),
                 class: styles.editorContent
             }
         },
         onUpdate({ editor: ed }) {
             const md = readMarkdown(ed);
+            // Defence in depth: a controlled component must not report a change
+            // it did not receive. The `setEditable` fix below removes the one
+            // source that actually fired this on mount, but any future emit
+            // that serializes back to the value we already hold is equally not
+            // an edit, and a parent that dirty-tracks per field (the commerce
+            // owner editor, HOS-371) would flag the field dirty from it.
+            if (md === (valueRef.current ?? '')) {
+                return;
+            }
             onChange(md);
         }
     });
 
     // Keep the editor in sync when the controlled `value` changes externally
+    // (e.g. the owner accepts an AiTextImprovePanel suggestion, which writes
+    // straight to the parent's field). `emitUpdate: false` is honoured here —
+    // this does NOT report back as an edit.
     useEffect(() => {
         if (!editor) return;
         const currentMd: string = readMarkdown(editor);
@@ -135,10 +170,23 @@ export function RichTextEditor({
         }
     }, [editor, value]);
 
-    // Toggle editor.editable when `disabled` flips after mount
+    // Toggle editor.editable when `disabled` flips after mount.
+    //
+    // The second argument is `emitUpdate` and defaults to TRUE, so the bare
+    // `setEditable(!disabled)` this used to be fired a full content `onUpdate`
+    // on every mount — for a change that touches only the editable flag and
+    // never the document. That was the real source of the phantom edit: the
+    // emit carried TipTap's NORMALIZED serialization of the stored Markdown,
+    // which differs from the raw stored string whenever that string is not
+    // already in TipTap's canonical form (`"a\nb"` serializes back as `"a b"`,
+    // a trailing newline is stripped, runs of blank lines collapse). So the
+    // equality guard in `onUpdate` did not catch it, and any parent that
+    // dirty-tracks per field (the commerce owner editor, HOS-371) saw the field
+    // go dirty on load — Save enabled with zero edits, and the stored Markdown
+    // silently re-flowed on the next save of an unrelated field.
     useEffect(() => {
         if (!editor) return;
-        editor.setEditable(!disabled);
+        editor.setEditable(!disabled, false);
     }, [editor, disabled]);
 
     // Loading placeholder while editor initializes

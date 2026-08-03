@@ -594,7 +594,10 @@
             "cancelSuccess": "Alert cancelled",
             "cancelError": "Couldn't cancel the alert",
             "locked": "Alert me for price drops",
-            "maxReached": "Alert limit reached"
+            "maxReached": "Alert limit reached",
+            "signInTitle": "Price alerts",
+            "signInHint": "You need an account for us to tell you when the price drops.",
+            "signInCta": "Sign in to create the alert"
         }
     },
     "amenityCategories": {

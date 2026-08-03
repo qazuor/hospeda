@@ -66,8 +66,10 @@ describe('DestinationCard.astro', () => {
             expect(src).toContain('readonly variant?: DestinationCardVariant');
         });
 
-        it('should declare isAuthenticated prop as optional boolean', () => {
-            expect(src).toContain('readonly isAuthenticated?: boolean');
+        it('no longer declares isAuthenticated/initialIsFavorited/initialBookmarkId props (removed HOS-369 WB0-5)', () => {
+            expect(src).not.toContain('isAuthenticated');
+            expect(src).not.toContain('initialIsFavorited');
+            expect(src).not.toContain('initialBookmarkId');
         });
     });
 
@@ -153,8 +155,8 @@ describe('DestinationCard.astro', () => {
             expect(src).not.toContain('entityId={destination.slug}');
         });
 
-        it('should forward isAuthenticated prop to FavoriteButton', () => {
-            expect(src).toContain('isAuthenticated={isAuthenticated}');
+        it('does NOT forward isAuthenticated to FavoriteButton — resolves client-side (HOS-369 WB0-5)', () => {
+            expect(src).not.toMatch(/<FavoriteButton[\s\S]*?isAuthenticated=/);
         });
 
         it('should pass locale to FavoriteButton', () => {
