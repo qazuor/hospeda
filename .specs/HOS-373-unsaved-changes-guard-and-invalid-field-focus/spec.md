@@ -188,9 +188,12 @@ probeSurvived:  false        window was destroyed → full page load
 final url:      /es/contacto/  the navigation completed regardless
 ```
 
-Cancelling the event tells Astro "do not handle this navigation". It does not
-tell the browser to stay. The `<a>`'s native navigation proceeds, the user
-leaves anyway, and the SPA state is lost — strictly worse than doing nothing.
+The router does this **deliberately** — `astro/dist/transitions/router.js:250-256`
+responds to a cancelled preparation by running `location.href = to.href`. In
+Astro's design, `preventDefault()` here means *"perform this navigation as a full
+page load"*, not *"do not navigate"*. It is an opt-out of the view transition,
+not a veto. No amount of care with this event yields a guard: the semantics are
+wrong, not the usage.
 
 **Result B — cancelling a `traverse` (back button) is worse still.** With a
 history stack built entirely by the router:

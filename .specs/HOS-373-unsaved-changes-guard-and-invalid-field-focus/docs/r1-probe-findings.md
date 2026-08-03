@@ -52,12 +52,36 @@ Clicked from `/es/publicaciones/` to `/es/contacto/`.
 ```
 
 - `cancelled: 1` — the listener ran and cancelled.
-- `unloadFired: true` + `probeSurvived: false` — a **native** full page load
-  happened instead.
+- `unloadFired: true` + `probeSurvived: false` — a full page load happened
+  instead.
 - `finalUrl` — the user left anyway.
 
 **Cancelling downgraded a soft navigation into a hard one.** Strictly worse than
 not listening at all: same departure, plus a full reload.
+
+### Why — the router does it deliberately
+
+This is not the `<a>`'s native navigation slipping through. Astro forces it, in
+`astro/dist/transitions/router.js:250-256`:
+
+```js
+if (prepEvent.defaultPrevented || prepEvent.signal.aborted) {
+    if (currentNavigation === mostRecentNavigation) mostRecentNavigation = void 0;
+    if (!prepEvent.signal.aborted) {
+      location.href = to.href;   // ← explicit full-page navigation
+    }
+    return;
+}
+```
+
+So in Astro's design, `preventDefault()` on `astro:before-preparation` means
+**"do this navigation as a full page load"**, not "do not navigate". It is an
+opt-out of the view transition, not a veto. That is why no amount of care with
+this event can ever produce a guard — the semantics are wrong, not the usage.
+
+Note the distinction from `signal.aborted`: an *aborted* navigation (superseded
+by a newer one) does not get the `location.href` treatment. Only an explicitly
+cancelled one does.
 
 ## Test B — cancel a `traverse` (back button)
 
