@@ -4,7 +4,8 @@
  * Coverage:
  *   - get: success per key, forbidden when missing perm, null when row absent.
  *   - upsert: success per key, forbidden, validation rejection on key/value mismatch.
- *   - SEO key write triggers revalidation; other keys do NOT trigger it.
+ *   - SEO key write purges the `site-config` + `home` cache tags (HOS-369 W1-1);
+ *     other keys do NOT trigger it.
  *
  * @module test/services/platformSettings/platform-settings.service.test
  */
@@ -24,7 +25,7 @@ import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFac
 import { asMock } from '../../utils/test-utils.js';
 
 // Mock the RevalidationService accessor so we can assert on revalidation behavior.
-const revalidateByEntityType = vi.fn().mockResolvedValue([]);
+const revalidateTags = vi.fn().mockResolvedValue([]);
 const getRevalidationServiceMock = vi.fn();
 vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
     getRevalidationService: () => getRevalidationServiceMock()
@@ -62,10 +63,10 @@ describe('PlatformSettingsService', () => {
 
         // Reset mocks
         getRevalidationServiceMock.mockReset();
-        revalidateByEntityType.mockClear();
+        revalidateTags.mockClear();
         // Default: revalidation service is "initialized"
         getRevalidationServiceMock.mockReturnValue({
-            revalidateByEntityType
+            revalidateTags
         });
     });
 
@@ -341,7 +342,7 @@ describe('PlatformSettingsService', () => {
     // -------------------------------------------------------------------------
 
     describe('SEO revalidation hook', () => {
-        it('triggers revalidateByEntityType("post") after successful seo.defaults upsert', async () => {
+        it('purges the site-config + home cache tags after successful seo.defaults upsert', async () => {
             const actor: Actor = createActor({
                 id: VALID_UUID,
                 permissions: [PermissionEnum.SETTINGS_GENERAL_WRITE]
@@ -350,9 +351,10 @@ describe('PlatformSettingsService', () => {
 
             await service.upsert({ actor, key: 'seo.defaults', value: seoRow.value });
 
-            expect(revalidateByEntityType).toHaveBeenCalledTimes(1);
-            expect(revalidateByEntityType).toHaveBeenCalledWith({
-                entityType: 'post',
+            expect(revalidateTags).toHaveBeenCalledTimes(1);
+            expect(revalidateTags).toHaveBeenCalledWith({
+                tags: ['site-config', 'home'],
+                entityType: 'platform_settings',
                 trigger: 'hook'
             });
         });
@@ -366,7 +368,7 @@ describe('PlatformSettingsService', () => {
 
             await service.upsert({ actor, key: 'maintenance.mode', value: { enabled: true } });
 
-            expect(revalidateByEntityType).not.toHaveBeenCalled();
+            expect(revalidateTags).not.toHaveBeenCalled();
         });
 
         it('does NOT trigger revalidation when the upsert fails (permission check rejection)', async () => {
@@ -376,7 +378,7 @@ describe('PlatformSettingsService', () => {
 
             await service.upsert({ actor, key: 'seo.defaults', value: seoRow.value });
 
-            expect(revalidateByEntityType).not.toHaveBeenCalled();
+            expect(revalidateTags).not.toHaveBeenCalled();
         });
 
         it('is a no-op (no throw) when RevalidationService is not initialized', async () => {
@@ -395,16 +397,16 @@ describe('PlatformSettingsService', () => {
 
             // Upsert still succeeds — revalidation failure is non-blocking.
             expectSuccess(result);
-            expect(revalidateByEntityType).not.toHaveBeenCalled();
+            expect(revalidateTags).not.toHaveBeenCalled();
         });
 
-        it('does NOT roll back the upsert when revalidateByEntityType throws (best-effort)', async () => {
+        it('does NOT roll back the upsert when revalidateTags throws (best-effort)', async () => {
             const actor: Actor = createActor({
                 id: VALID_UUID,
                 permissions: [PermissionEnum.SETTINGS_GENERAL_WRITE]
             });
             asMock(modelMock.upsertByKey).mockResolvedValue(seoRow);
-            revalidateByEntityType.mockImplementationOnce(() => {
+            revalidateTags.mockImplementationOnce(() => {
                 throw new Error('revalidation adapter exploded');
             });
 

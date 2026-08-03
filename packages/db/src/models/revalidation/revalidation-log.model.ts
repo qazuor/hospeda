@@ -46,10 +46,10 @@ export class RevalidationLogModel extends BaseModelImpl<RevalidationLogRecord> {
      * Finds revalidation log entries with advanced filtering support.
      *
      * Supports exact-match filters (entityType, entityId, trigger, status),
-     * substring matching on `path` (case-insensitive ILIKE), and date-range
+     * substring matching on `target` (case-insensitive ILIKE), and date-range
      * filtering on `createdAt` via `fromDate` / `toDate`.
      *
-     * @param filters - Filter criteria including optional path, fromDate, toDate
+     * @param filters - Filter criteria including optional target, fromDate, toDate
      * @param options - Pagination options (page, pageSize)
      * @returns Promise resolving to paginated items and total count
      */
@@ -59,7 +59,7 @@ export class RevalidationLogModel extends BaseModelImpl<RevalidationLogRecord> {
             readonly entityId?: string;
             readonly trigger?: string;
             readonly status?: string;
-            readonly path?: string;
+            readonly target?: string;
             readonly fromDate?: Date;
             readonly toDate?: Date;
         },
@@ -86,8 +86,8 @@ export class RevalidationLogModel extends BaseModelImpl<RevalidationLogRecord> {
         if (filters.status) {
             clauses.push(eq(revalidationLog.status, filters.status));
         }
-        if (filters.path) {
-            clauses.push(safeIlike(revalidationLog.path, filters.path));
+        if (filters.target) {
+            clauses.push(safeIlike(revalidationLog.target, filters.target));
         }
         if (filters.fromDate) {
             clauses.push(gte(revalidationLog.createdAt, filters.fromDate));

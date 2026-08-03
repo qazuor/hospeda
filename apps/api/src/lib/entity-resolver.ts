@@ -160,10 +160,12 @@ async function resolveAccommodationById(params: {
     const row = rows[0];
     if (!row) return null;
 
+    // `accommodationType` is gone from EntityChangeData: the type-facet pages it
+    // used to address (`/alojamientos/tipo/{type}/`) are listings, and the
+    // `list-accom` collection tag already covers every one of them (HOS-369 W1-1).
     return {
         entityType: 'accommodation' as const,
         slug: row.slug,
-        accommodationType: row.type,
         destinationSlug: row.destinationSlug ?? undefined
     };
 }
@@ -232,10 +234,11 @@ async function resolveEventById(params: {
     const entity = await model.findById(params.entityId);
     if (!entity) return null;
 
+    // `category` dropped for the same reason as `accommodationType` above: the
+    // category landing is a listing, covered by the `list-event` collection tag.
     return {
         entityType: 'event' as const,
-        slug: entity.slug,
-        category: entity.category
+        slug: entity.slug
     };
 }
 

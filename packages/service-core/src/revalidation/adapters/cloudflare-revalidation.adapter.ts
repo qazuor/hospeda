@@ -1,4 +1,5 @@
-import type { RevalidatePathResult, RevalidationAdapter } from './revalidation.adapter.js';
+import type { RevalidateTargetResult, RevalidationAdapter } from './revalidation.adapter.js';
+import { WHOLE_ZONE_TARGET } from './revalidation.adapter.js';
 
 /**
  * Constructor configuration for {@link CloudflareRevalidationAdapter}.
@@ -17,15 +18,22 @@ export interface CloudflareRevalidationAdapterConfig {
 }
 
 /**
- * Production adapter that triggers Cloudflare cache purge by POSTing to
- * the web app's `/api/revalidate` endpoint with a shared secret. The web
- * endpoint then forwards a `purge_everything` request to the Cloudflare
- * API for the configured zone.
+ * Maximum tags Cloudflare accepts in one purge request (Free/Pro/Business:
+ * 100 operations per request). Larger batches are split.
+ */
+const MAX_TAGS_PER_PURGE_REQUEST = 100;
+
+/**
+ * Production adapter that invalidates the Cloudflare cache by POSTing to the
+ * web app's `/api/revalidate` endpoint with a shared secret. The web endpoint
+ * holds the Cloudflare credentials and forwards the purge for the configured
+ * zone.
  *
- * Cloudflare's `purge_everything` invalidates the whole zone in one call,
- * so {@link revalidateMany} is implemented as a single request (rather
- * than once per path) — the input paths are returned in the result for
- * traceability but the underlying network call is unified.
+ * Since HOS-369 W1-1 this sends the cache tags to purge instead of triggering a
+ * whole-zone flush. {@link revalidateMany} still collapses a batch into as few
+ * requests as possible — Cloudflare takes 100 tags per call, and the tag-purge
+ * rate limit on the Free plan is 5 requests per minute, so requests are the
+ * scarce resource, not tags.
  *
  * @example
  * ```ts
@@ -34,7 +42,7 @@ export interface CloudflareRevalidationAdapterConfig {
  *   siteUrl: process.env.HOSPEDA_SITE_URL,
  * });
  *
- * const result = await adapter.revalidate({ path: '/alojamientos/hotel-paradise/' });
+ * const result = await adapter.revalidate({ tag: 'accom-hotel-paradise' });
  * ```
  */
 export class CloudflareRevalidationAdapter implements RevalidationAdapter {
@@ -54,44 +62,72 @@ export class CloudflareRevalidationAdapter implements RevalidationAdapter {
     }
 
     /**
-     * Triggers a single Cloudflare zone purge.
+     * Purge every response carrying one cache tag.
      * Never throws — errors are captured in the result.
      *
-     * @param params.path - The URL path that motivated the revalidation. Used only
-     *   in the result for traceability; the actual purge invalidates the whole zone.
+     * @param params.tag - The cache tag to purge
      * @returns Result with success flag, duration, and optional error message
      */
-    async revalidate(params: { readonly path: string }): Promise<RevalidatePathResult> {
-        const { path } = params;
-        const result = await this.purgeOnce();
-        return { ...result, path };
+    async revalidate(params: { readonly tag: string }): Promise<RevalidateTargetResult> {
+        const { tag } = params;
+        const result = await this.postPurge({ body: { tags: [tag] } });
+        return { ...result, target: tag };
     }
 
     /**
-     * Triggers a SINGLE Cloudflare zone purge for the whole batch — Cloudflare's
-     * purge endpoint already invalidates everything at once, so calling per-path
-     * would be wasted requests. The same result (success or failure) is reported
-     * for every input path.
+     * Purge a batch of cache tags, in as few upstream requests as Cloudflare's
+     * 100-tags-per-request limit allows. Every input tag receives the outcome
+     * of the request that carried it.
      *
-     * @param params.paths - Array of URL paths that motivated the revalidation
-     * @returns Array of results, one per path, all sharing the same purge outcome
+     * @param params.tags - Cache tags to purge
+     * @returns One result per input tag, in input order
      */
     async revalidateMany(params: {
-        readonly paths: ReadonlyArray<string>;
-    }): Promise<ReadonlyArray<RevalidatePathResult>> {
-        const { paths } = params;
-        if (paths.length === 0) {
+        readonly tags: ReadonlyArray<string>;
+    }): Promise<ReadonlyArray<RevalidateTargetResult>> {
+        const { tags } = params;
+        if (tags.length === 0) {
             return [];
         }
-        const purge = await this.purgeOnce();
-        return paths.map((path) => ({ ...purge, path }));
+
+        const results: RevalidateTargetResult[] = [];
+        for (let i = 0; i < tags.length; i += MAX_TAGS_PER_PURGE_REQUEST) {
+            const chunk = tags.slice(i, i + MAX_TAGS_PER_PURGE_REQUEST);
+            const purge = await this.postPurge({ body: { tags: chunk } });
+            for (const tag of chunk) {
+                results.push({ ...purge, target: tag });
+            }
+        }
+        return results;
     }
 
     /**
-     * Internal helper that hits the web `/api/revalidate?secret=...` endpoint once.
-     * Returns a partial result with `path: '?'` (callers fill in the path).
+     * Flush the whole zone — the deploy-time escape hatch (spec §7.3).
+     *
+     * @param params.reason - Human-readable justification, forwarded for logging
+     * @returns Result targeting `*`
      */
-    private async purgeOnce(): Promise<RevalidatePathResult> {
+    async purgeEverything(params: {
+        readonly reason?: string;
+    }): Promise<RevalidateTargetResult> {
+        const result = await this.postPurge({
+            body: { purgeEverything: true, reason: params.reason }
+        });
+        return { ...result, target: WHOLE_ZONE_TARGET };
+    }
+
+    /**
+     * POST one purge instruction to the web `/api/revalidate/` endpoint.
+     * Returns a partial result with a placeholder target — callers fill in the
+     * real one.
+     */
+    private async postPurge({
+        body
+    }: {
+        readonly body:
+            | { readonly tags: ReadonlyArray<string> }
+            | { readonly purgeEverything: true; readonly reason?: string };
+    }): Promise<RevalidateTargetResult> {
         const start = Date.now();
         // Trailing slash is REQUIRED: the web app runs `trailingSlash: 'always'`
         // (apps/web/astro.config.mjs) and its middleware exempts `/api/*` from its
@@ -108,6 +144,8 @@ export class CloudflareRevalidationAdapter implements RevalidationAdapter {
         try {
             const response = await fetch(url, {
                 method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(body),
                 signal: controller.signal
             });
 
@@ -115,25 +153,25 @@ export class CloudflareRevalidationAdapter implements RevalidationAdapter {
 
             if (!response.ok) {
                 return {
-                    path: '?',
+                    target: '?',
                     success: false,
                     durationMs,
                     error: `HTTP ${response.status}: ${response.statusText}`
                 };
             }
 
-            return { path: '?', success: true, durationMs };
+            return { target: '?', success: true, durationMs };
         } catch (error) {
             if (error instanceof Error && error.name === 'AbortError') {
                 return {
-                    path: '?',
+                    target: '?',
                     success: false,
                     durationMs: Date.now() - start,
                     error: 'Request timeout (10s)'
                 };
             }
             return {
-                path: '?',
+                target: '?',
                 success: false,
                 durationMs: Date.now() - start,
                 error: error instanceof Error ? error.message : String(error)

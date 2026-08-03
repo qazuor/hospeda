@@ -47,10 +47,11 @@ async function revalidationFetch<T>(
 }
 
 /**
- * Triggers a manual revalidation of a specific list of URL paths.
+ * Triggers a manual revalidation of a specific list of cache tags, or — when
+ * `input.purgeEverything` is `true` — a whole-zone purge.
  *
- * @param input - Paths to revalidate and an optional audit reason
- * @returns Revalidation result with per-path success/failure breakdown
+ * @param input - Cache tags to revalidate (or an explicit whole-zone purge opt-in) and an optional audit reason
+ * @returns Revalidation result with per-target success/failure breakdown
  */
 export async function manualRevalidate(
     input: ManualRevalidateRequest
@@ -59,12 +60,12 @@ export async function manualRevalidate(
 }
 
 /**
- * Triggers revalidation of all paths associated with a specific entity instance.
+ * Triggers revalidation of all cache tags associated with a specific entity instance.
  *
  * @param entityType - The type of entity (e.g., `'accommodation'`)
  * @param entityId - The ID of the specific entity instance
  * @param reason - Optional audit reason
- * @returns Revalidation result with per-path success/failure breakdown
+ * @returns Revalidation result with per-target success/failure breakdown
  */
 export async function revalidateEntity(
     entityType: string,
@@ -79,11 +80,11 @@ export async function revalidateEntity(
 }
 
 /**
- * Triggers revalidation of all paths for an entire entity type.
+ * Triggers revalidation of the collection cache tag for an entire entity type.
  * Use with caution as this can trigger a large number of revalidations.
  *
  * @param input - Entity type and optional audit reason
- * @returns Revalidation result with per-path success/failure breakdown
+ * @returns Revalidation result with per-target success/failure breakdown
  */
 export async function revalidateByType(
     input: RevalidateTypeRequest
@@ -124,7 +125,7 @@ export type RevalidationLogPage = {
  * Returns revalidation log entries with optional filtering and pagination.
  *
  * Accepts all fields from RevalidationLogFilter: entityType, entityId,
- * trigger, status, path (substring match), fromDate, toDate, page, pageSize.
+ * trigger, status, target (substring match), fromDate, toDate, page, pageSize.
  *
  * @param filters - Optional query filters for narrowing log results
  * @returns Paginated log records with total count

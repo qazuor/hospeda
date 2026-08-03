@@ -72,6 +72,14 @@ function parseInstruction(body: unknown): PurgeInstruction | { readonly error: s
 
     const record = body as Record<string, unknown>;
 
+    // An ambiguous body is rejected, not resolved. Picking a winner would mean
+    // an operator can ask for a whole-zone flush, watch the request succeed,
+    // and silently get something else — on the one endpoint whose entire
+    // contract is that the destructive path is only reachable deliberately.
+    if ('purgeEverything' in record && 'tags' in record) {
+        return { error: '`tags` and `purgeEverything` are mutually exclusive' };
+    }
+
     if (record.purgeEverything === true) {
         return { kind: 'everything' };
     }

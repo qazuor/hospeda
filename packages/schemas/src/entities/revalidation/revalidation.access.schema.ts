@@ -21,7 +21,7 @@ export const RevalidationLogPublicSchema = RevalidationLogSchema.pick({
     id: true,
 
     // What was revalidated
-    path: true,
+    target: true,
     entityType: true,
 
     // Outcome
@@ -45,7 +45,7 @@ export type RevalidationLogPublic = z.infer<typeof RevalidationLogPublicSchema>;
 export const RevalidationLogProtectedSchema = RevalidationLogSchema.pick({
     // All public fields
     id: true,
-    path: true,
+    target: true,
     entityType: true,
     status: true,
     createdAt: true,

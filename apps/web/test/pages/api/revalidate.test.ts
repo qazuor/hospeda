@@ -157,6 +157,15 @@ describe('POST /api/revalidate — whole-zone flush is reachable ONLY explicitly
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
+    it('400s when both modes are supplied, instead of silently picking one', async () => {
+        const response = await POST(
+            makeContext({ body: { tags: ['home'], purgeEverything: true } })
+        );
+
+        expect(response.status).toBe(400);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it('400s on malformed JSON without flushing', async () => {
         const response = await POST(makeContext({ body: '{not json' }));
 

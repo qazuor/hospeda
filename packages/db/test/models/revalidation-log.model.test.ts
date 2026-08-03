@@ -22,7 +22,7 @@ vi.mock('../../src/utils/logger', () => ({
 /** Sample log rows used across tests */
 const cronLogRecent = {
     id: 'log-uuid-0001-0000-0000-000000000001',
-    path: '/en/accommodations',
+    target: '/en/accommodations',
     entityType: 'accommodation',
     entityId: null,
     trigger: 'cron',
@@ -36,7 +36,7 @@ const cronLogRecent = {
 
 const cronLogOld = {
     id: 'log-uuid-0002-0000-0000-000000000002',
-    path: '/en/accommodations',
+    target: '/en/accommodations',
     entityType: 'accommodation',
     entityId: null,
     trigger: 'cron',
@@ -50,7 +50,7 @@ const cronLogOld = {
 
 const _manualLog = {
     id: 'log-uuid-0003-0000-0000-000000000003',
-    path: '/en/accommodations/hotel-abc',
+    target: '/en/accommodations/hotel-abc',
     entityType: 'accommodation',
     entityId: 'acc-001',
     trigger: 'manual',
@@ -229,12 +229,12 @@ describe('RevalidationLogModel', () => {
             expect(result.total).toBe(2);
         });
 
-        it('applies path filter parameter', async () => {
+        it('applies target filter parameter', async () => {
             // Arrange
             const { mockItemsWhere } = createFindWithFiltersMock([cronLogRecent], 1);
 
             // Act
-            const result = await model.findWithFilters({ path: '/en/accommodations' });
+            const result = await model.findWithFilters({ target: '/en/accommodations' });
 
             // Assert
             expect(result.items).toHaveLength(1);

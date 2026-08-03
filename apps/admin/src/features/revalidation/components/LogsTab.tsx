@@ -102,7 +102,7 @@ export function LogsTab({ locale }: LogsTabProps) {
     const [entityTypeFilter, setEntityTypeFilter] = useState<RevalidationEntityType | ''>('');
     const [triggerFilter, setTriggerFilter] = useState<RevalidationTrigger | ''>('');
     const [statusFilter, setStatusFilter] = useState<RevalidationStatus | ''>('');
-    const [pathFilter, setPathFilter] = useState('');
+    const [targetFilter, setTargetFilter] = useState('');
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
 
@@ -113,15 +113,15 @@ export function LogsTab({ locale }: LogsTabProps) {
     // -- Sort state (only createdAt supported) --
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-    // Debounce path filter to avoid spamming the API on every keystroke
-    const debouncedPath = useDebouncedValue(pathFilter, 500);
+    // Debounce target filter to avoid spamming the API on every keystroke
+    const debouncedTarget = useDebouncedValue(targetFilter, 500);
 
     // Reset to page 1 when any filter or pageSize changes
     const prevFiltersRef = useRef({
         entityTypeFilter,
         triggerFilter,
         statusFilter,
-        debouncedPath,
+        debouncedTarget,
         fromDate,
         toDate,
         pageSize
@@ -133,7 +133,7 @@ export function LogsTab({ locale }: LogsTabProps) {
             prev.entityTypeFilter !== entityTypeFilter ||
             prev.triggerFilter !== triggerFilter ||
             prev.statusFilter !== statusFilter ||
-            prev.debouncedPath !== debouncedPath ||
+            prev.debouncedTarget !== debouncedTarget ||
             prev.fromDate !== fromDate ||
             prev.toDate !== toDate ||
             prev.pageSize !== pageSize
@@ -143,13 +143,13 @@ export function LogsTab({ locale }: LogsTabProps) {
                 entityTypeFilter,
                 triggerFilter,
                 statusFilter,
-                debouncedPath,
+                debouncedTarget,
                 fromDate,
                 toDate,
                 pageSize
             };
         }
-    }, [entityTypeFilter, triggerFilter, statusFilter, debouncedPath, fromDate, toDate, pageSize]);
+    }, [entityTypeFilter, triggerFilter, statusFilter, debouncedTarget, fromDate, toDate, pageSize]);
 
     // Build filters object for the query hook
     const filters = useMemo((): Partial<RevalidationLogFilter> => {
@@ -157,7 +157,7 @@ export function LogsTab({ locale }: LogsTabProps) {
         if (entityTypeFilter) f.entityType = entityTypeFilter;
         if (triggerFilter) f.trigger = triggerFilter;
         if (statusFilter) f.status = statusFilter;
-        if (debouncedPath) f.path = debouncedPath;
+        if (debouncedTarget) f.target = debouncedTarget;
         if (fromDate) f.fromDate = new Date(fromDate);
         if (toDate) f.toDate = new Date(toDate);
         return f;
@@ -167,7 +167,7 @@ export function LogsTab({ locale }: LogsTabProps) {
         entityTypeFilter,
         triggerFilter,
         statusFilter,
-        debouncedPath,
+        debouncedTarget,
         fromDate,
         toDate
     ]);
@@ -202,14 +202,14 @@ export function LogsTab({ locale }: LogsTabProps) {
         setEntityTypeFilter('');
         setTriggerFilter('');
         setStatusFilter('');
-        setPathFilter('');
+        setTargetFilter('');
         setFromDate('');
         setToDate('');
         setPage(1);
     }, []);
 
     const hasActiveFilters =
-        entityTypeFilter || triggerFilter || statusFilter || pathFilter || fromDate || toDate;
+        entityTypeFilter || triggerFilter || statusFilter || targetFilter || fromDate || toDate;
 
     return (
         <div className="space-y-4">
@@ -309,19 +309,19 @@ export function LogsTab({ locale }: LogsTabProps) {
                             </select>
                         </div>
 
-                        {/* Path filter (debounced text input) */}
+                        {/* Target filter (debounced text input) — matches cache tags or legacy paths */}
                         <div>
                             <label
-                                htmlFor="logs-path"
+                                htmlFor="logs-target"
                                 className="mb-2 block font-medium text-sm"
                             >
-                                {t('revalidation.logs.filters.path' as TranslationKey)}
+                                {t('revalidation.logs.filters.target' as TranslationKey)}
                             </label>
                             <Input
-                                id="logs-path"
-                                placeholder="/en/accommodations/..."
-                                value={pathFilter}
-                                onChange={(e) => setPathFilter(e.target.value)}
+                                id="logs-target"
+                                placeholder="accom-hotel-palace"
+                                value={targetFilter}
+                                onChange={(e) => setTargetFilter(e.target.value)}
                             />
                         </div>
 
@@ -418,7 +418,7 @@ export function LogsTab({ locale }: LogsTabProps) {
                                     <thead>
                                         <tr className="border-b">
                                             <th className="px-4 py-3 text-left font-medium">
-                                                {t('revalidation.logs.path')}
+                                                {t('revalidation.logs.target')}
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
                                                 {t('revalidation.logs.entity')}
@@ -464,7 +464,7 @@ export function LogsTab({ locale }: LogsTabProps) {
                                                 className="border-b hover:bg-muted/50"
                                             >
                                                 <td className="max-w-xs truncate px-4 py-3 font-mono text-xs">
-                                                    {log.path}
+                                                    {log.target}
                                                 </td>
                                                 <td className="px-4 py-3 text-muted-foreground text-xs">
                                                     {t(

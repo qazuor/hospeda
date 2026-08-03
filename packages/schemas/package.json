@@ -33,6 +33,7 @@
         "clean": "rm -rf node_modules dist"
     },
     "dependencies": {
+        "@repo/cache-tags": "workspace:*",
         "@repo/utils": "workspace:*",
         "@repo/config": "workspace:*",
         "zod": "^4.0.8"

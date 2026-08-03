@@ -1637,6 +1637,9 @@ importers:
 
   packages/schemas:
     dependencies:
+      '@repo/cache-tags':
+        specifier: workspace:*
+        version: link:../cache-tags
       '@repo/config':
         specifier: workspace:*
         version: link:../config
@@ -1750,6 +1753,9 @@ importers:
       '@repo/billing':
         specifier: workspace:*
         version: link:../billing
+      '@repo/cache-tags':
+        specifier: workspace:*
+        version: link:../cache-tags
       '@repo/content-moderation':
         specifier: workspace:*
         version: link:../content-moderation

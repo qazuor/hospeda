@@ -1012,8 +1012,7 @@ export class AccommodationService extends BaseCrudService<
                 getRevalidationService()?.scheduleRevalidation({
                     entityType: 'accommodation',
                     slug: entity.slug,
-                    destinationSlug,
-                    accommodationType: entity.type?.toLowerCase()
+                    destinationSlug
                 });
             } catch (error) {
                 this.logger.warn(
@@ -1223,8 +1222,7 @@ export class AccommodationService extends BaseCrudService<
                     entityType: 'accommodation',
                     id: entity.id,
                     slug: entity.slug,
-                    destinationSlug,
-                    accommodationType: entity.type?.toLowerCase()
+                    destinationSlug
                 });
             } catch (error) {
                 this.logger.warn(
@@ -1891,8 +1889,7 @@ export class AccommodationService extends BaseCrudService<
                     getRevalidationService()?.scheduleRevalidation({
                         entityType: 'accommodation',
                         slug: updated.slug,
-                        destinationSlug,
-                        accommodationType: updated.type?.toLowerCase()
+                        destinationSlug
                     });
                 } catch (error) {
                     this.logger.warn(
@@ -1982,8 +1979,7 @@ export class AccommodationService extends BaseCrudService<
                     getRevalidationService()?.scheduleRevalidation({
                         entityType: 'accommodation',
                         slug: updated.slug,
-                        destinationSlug,
-                        accommodationType: updated.type?.toLowerCase()
+                        destinationSlug
                     });
                 } catch (error) {
                     this.logger.warn(
@@ -2066,8 +2062,7 @@ export class AccommodationService extends BaseCrudService<
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'accommodation',
                 slug: entity.slug,
-                destinationSlug,
-                accommodationType: entity.type?.toLowerCase()
+                destinationSlug
             });
         } catch (error) {
             this.logger.warn(
@@ -2110,8 +2105,7 @@ export class AccommodationService extends BaseCrudService<
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'accommodation',
                 slug: restored?.slug,
-                destinationSlug,
-                accommodationType: restored?.type?.toLowerCase()
+                destinationSlug
             });
         } catch (error) {
             this.logger.warn(
@@ -2172,8 +2166,7 @@ export class AccommodationService extends BaseCrudService<
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'accommodation',
                 slug: deleted?.slug,
-                destinationSlug,
-                accommodationType: deleted?.type?.toLowerCase()
+                destinationSlug
             });
         } catch (error) {
             this.logger.warn(
@@ -2217,8 +2210,7 @@ export class AccommodationService extends BaseCrudService<
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'accommodation',
                 slug: deleted?.slug,
-                destinationSlug,
-                accommodationType: deleted?.type?.toLowerCase()
+                destinationSlug
             });
         } catch (error) {
             this.logger.warn(
@@ -4256,8 +4248,7 @@ export class AccommodationService extends BaseCrudService<
                         entityType: 'accommodation',
                         id: updated.id,
                         slug: updated.slug,
-                        destinationSlug,
-                        accommodationType: updated.type?.toLowerCase()
+                        destinationSlug
                     });
                 } catch (error) {
                     this.logger.warn(

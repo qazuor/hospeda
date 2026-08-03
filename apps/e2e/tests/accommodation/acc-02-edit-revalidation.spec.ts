@@ -13,9 +13,9 @@
  *  1. Capturing a `since` checkpoint before the edit gives the assertion a
  *     bounded search window into `revalidation_log`.
  *  2. PATCH-ing the accommodation as the owner updates the row.
- *  3. The revalidation hook fires and writes at least one entry into
- *     `revalidation_log` for the accommodation entity within a small
- *     timeout (5s default).
+ *  3. The revalidation hook fires and writes an entry into `revalidation_log`
+ *     carrying the accommodation's cache tag (`accom-<slug>`, HOS-369 W1-1)
+ *     for the accommodation entity within a small timeout (5s default).
  *  4. DB invariant: the new value is persisted.
  *
  * Why we don't measure ISR cache TTL directly:
@@ -98,11 +98,12 @@ test.describe('ACC-02: edit propagates via revalidation @p0 @accommodation @cach
             `expected PATCH to succeed (got ${patchResponse.status()})`
         ).toBe(true);
 
-        // ── Assert revalidation scheduled for this entity ─────────────────
+        // ── Assert revalidation scheduled for this entity's cache tag ──────
         await assertRevalidationTriggered({
             since,
             entityType: 'accommodation',
             entityId: accommodation.id,
+            targets: [`accom-${accommodation.slug}`],
             timeoutMs: 10_000
         });
 

@@ -1,9 +1,9 @@
 /**
  * Revalidation Admin Routes
  *
- * Routes for ISR (Incremental Static Regeneration) revalidation management.
+ * Routes for CDN cache-tag revalidation management.
  * Provides admin endpoints for:
- * - Triggering manual revalidation of specific paths or tags
+ * - Triggering manual revalidation of specific cache tags, or a whole-zone purge
  * - Querying revalidation configuration
  * - Listing revalidation history/logs
  * - Managing revalidation rules
@@ -27,9 +27,10 @@ import {
     UpdateRevalidationConfigInputSchema
 } from '@repo/schemas';
 import {
-    getAffectedPaths,
+    getAffectedCacheTags,
     getRevalidationService,
-    RevalidationStatsService
+    RevalidationStatsService,
+    WHOLE_ZONE_TARGET
 } from '@repo/service-core';
 import { z } from 'zod';
 import { getActorFromContext } from '../../utils/actor';
@@ -41,30 +42,81 @@ const revalidationRouter = createRouter();
 
 // ============================================================================
 // T-066: POST /revalidate/manual
-// Trigger manual revalidation of specific URL paths
+// Trigger manual revalidation of specific cache tags, or an explicit
+// whole-zone purge (HOS-369 W1-1)
 // ============================================================================
 
 /**
  * POST /api/v1/admin/revalidation/revalidate/manual
- * Manually revalidate a list of specific URL paths.
+ * Manually revalidate a list of specific cache tags, or — only when the
+ * request explicitly opts in via `purgeEverything: true` — flush the entire
+ * zone. The two shapes are mutually exclusive (see `ManualRevalidateRequestSchema`),
+ * so the whole-zone branch below is unreachable from a tags-only body.
  */
 export const manualRevalidateRoute = createAdminRoute({
     method: 'post',
     path: '/revalidate/manual',
-    summary: 'Manual path revalidation',
+    summary: 'Manual cache-tag revalidation',
     description:
-        'Triggers immediate ISR revalidation for a list of specific URL paths. Requires REVALIDATION_TRIGGER permission.',
+        'Triggers immediate cache invalidation for a list of specific cache tags, or (via an explicit `purgeEverything: true` flag) a whole-zone purge. Requires REVALIDATION_TRIGGER permission.',
     tags: ['Revalidation'],
     requiredPermissions: [PermissionEnum.REVALIDATION_TRIGGER],
     requestBody: ManualRevalidateRequestSchema,
     responseSchema: RevalidationResponseSchema,
     handler: async (c, _params, body) => {
-        const { paths, reason } = body as { paths: string[]; reason?: string };
-
         const actor = getActorFromContext(c);
         const triggeredBy = actor?.id ?? 'system';
-
         const service = getRevalidationService();
+
+        // Whole-zone purge branch — reachable ONLY when the caller explicitly
+        // set `purgeEverything: true`. A tags-only body never enters here.
+        if ('purgeEverything' in body && body.purgeEverything) {
+            const { reason } = body as { purgeEverything: true; reason?: string };
+
+            if (!service) {
+                apiLogger.warn(
+                    { triggeredBy, reason },
+                    'Revalidation service not initialized — whole-zone purge skipped'
+                );
+                return {
+                    success: false,
+                    revalidated: [],
+                    failed: [WHOLE_ZONE_TARGET],
+                    duration: 0
+                };
+            }
+
+            const start = Date.now();
+            apiLogger.info({ triggeredBy, reason }, 'Manual whole-zone purge requested');
+
+            try {
+                const result = await service.purgeEverything({ reason, triggeredBy });
+                return {
+                    success: result.success,
+                    revalidated: result.success ? [result.target] : [],
+                    failed: result.success ? [] : [result.target],
+                    duration: Date.now() - start
+                };
+            } catch (error) {
+                apiLogger.error(
+                    {
+                        error: error instanceof Error ? error.message : String(error),
+                        triggeredBy,
+                        reason
+                    },
+                    'Whole-zone purge failed'
+                );
+                return {
+                    success: false,
+                    revalidated: [],
+                    failed: [WHOLE_ZONE_TARGET],
+                    duration: Date.now() - start
+                };
+            }
+        }
+
+        const { tags, reason } = body as { tags: string[]; reason?: string };
+
         if (!service) {
             apiLogger.warn(
                 { triggeredBy, reason },
@@ -73,34 +125,36 @@ export const manualRevalidateRoute = createAdminRoute({
             return {
                 success: false,
                 revalidated: [],
-                failed: paths,
+                failed: tags,
                 duration: 0
             };
         }
 
         const start = Date.now();
 
-        apiLogger.info({ paths, triggeredBy, reason }, 'Manual revalidation requested');
+        apiLogger.info({ tags, triggeredBy, reason }, 'Manual revalidation requested');
 
         try {
-            await service.revalidatePaths({
-                paths,
+            const results = await service.revalidateTags({
+                tags,
                 triggeredBy,
                 reason,
                 trigger: 'manual',
                 entityType: 'manual'
             });
+            const revalidated = results.filter((r) => r.success).map((r) => r.target);
+            const failed = results.filter((r) => !r.success).map((r) => r.target);
             return {
-                success: true,
-                revalidated: paths,
-                failed: [],
+                success: failed.length === 0,
+                revalidated,
+                failed,
                 duration: Date.now() - start
             };
         } catch (error) {
             apiLogger.error(
                 {
                     error: error instanceof Error ? error.message : String(error),
-                    paths,
+                    tags,
                     triggeredBy,
                     reason
                 },
@@ -109,7 +163,7 @@ export const manualRevalidateRoute = createAdminRoute({
             return {
                 success: false,
                 revalidated: [],
-                failed: paths,
+                failed: tags,
                 duration: Date.now() - start
             };
         }
@@ -118,15 +172,15 @@ export const manualRevalidateRoute = createAdminRoute({
 
 // ============================================================================
 // T-067: POST /revalidate/entity
-// Trigger revalidation for all paths of a specific entity instance
+// Trigger revalidation for all cache tags of a specific entity instance
 // ============================================================================
 
 /**
  * POST /api/v1/admin/revalidation/revalidate/entity
- * Revalidate all paths associated with a specific entity instance.
+ * Revalidate all cache tags associated with a specific entity instance.
  *
  * Uses the configured {@link EntityResolver} to look up the entity by ID,
- * compute its affected paths, and trigger immediate revalidation.
+ * compute its affected cache tags, and trigger immediate revalidation.
  * Falls back to type-level revalidation when no resolver is available.
  */
 export const revalidateEntityRoute = createAdminRoute({
@@ -134,7 +188,7 @@ export const revalidateEntityRoute = createAdminRoute({
     path: '/revalidate/entity',
     summary: 'Entity revalidation',
     description:
-        'Triggers immediate ISR revalidation for all paths associated with a specific entity instance (by ID). Falls back to type-level revalidation if the entity cannot be resolved. Requires REVALIDATION_TRIGGER permission.',
+        'Triggers immediate cache invalidation for all cache tags associated with a specific entity instance (by ID). Falls back to type-level revalidation if the entity cannot be resolved. Requires REVALIDATION_TRIGGER permission.',
     tags: ['Revalidation'],
     requiredPermissions: [PermissionEnum.REVALIDATION_TRIGGER],
     requestBody: RevalidateEntityRequestSchema,
@@ -186,17 +240,17 @@ export const revalidateEntityRoute = createAdminRoute({
                     );
                 }
 
-                const paths = getAffectedPaths(entityData, service.getLocales());
-                const results = await service.revalidatePaths({
-                    paths,
+                const affectedTags = getAffectedCacheTags(entityData);
+                const results = await service.revalidateTags({
+                    tags: affectedTags,
                     triggeredBy,
                     reason,
                     trigger: 'manual',
                     entityType
                 });
 
-                const revalidated = results.filter((r) => r.success).map((r) => r.path);
-                const failed = results.filter((r) => !r.success).map((r) => r.path);
+                const revalidated = results.filter((r) => r.success).map((r) => r.target);
+                const failed = results.filter((r) => !r.success).map((r) => r.target);
 
                 return {
                     success: failed.length === 0,
@@ -241,19 +295,19 @@ export const revalidateEntityRoute = createAdminRoute({
 
 // ============================================================================
 // T-068: POST /revalidate/type
-// Trigger revalidation for all paths of an entire entity type
+// Trigger revalidation for the collection cache tag of an entire entity type
 // ============================================================================
 
 /**
  * POST /api/v1/admin/revalidation/revalidate/type
- * Revalidate all paths for every instance of a given entity type.
+ * Revalidate the collection cache tag for every instance of a given entity type.
  */
 export const revalidateTypeRoute = createAdminRoute({
     method: 'post',
     path: '/revalidate/type',
     summary: 'Entity-type revalidation',
     description:
-        'Triggers immediate ISR revalidation for all paths of an entire entity type. Use with caution — may trigger many revalidations. Requires REVALIDATION_TRIGGER permission.',
+        'Triggers immediate cache invalidation for the collection cache tag of an entire entity type. Use with caution — may trigger many revalidations. Requires REVALIDATION_TRIGGER permission.',
     tags: ['Revalidation'],
     requiredPermissions: [PermissionEnum.REVALIDATION_TRIGGER],
     requestBody: RevalidateTypeRequestSchema,
@@ -407,7 +461,7 @@ export const listRevalidationLogsRoute = createAdminRoute({
             entityId?: string;
             trigger?: string;
             status?: string;
-            path?: string;
+            target?: string;
             fromDate?: Date;
             toDate?: Date;
         } = {};
@@ -415,7 +469,7 @@ export const listRevalidationLogsRoute = createAdminRoute({
         if (query?.entityId) filters.entityId = query.entityId as string;
         if (query?.trigger) filters.trigger = query.trigger as string;
         if (query?.status) filters.status = query.status as string;
-        if (query?.path) filters.path = query.path as string;
+        if (query?.target) filters.target = query.target as string;
         if (query?.fromDate) filters.fromDate = query.fromDate as Date;
         if (query?.toDate) filters.toDate = query.toDate as Date;
 
@@ -483,8 +537,8 @@ export const revalidationHealthRoute = createAdminRoute({
 
         const start = Date.now();
         try {
-            await service.revalidatePaths({
-                paths: ['/__health-probe__'],
+            await service.revalidateTags({
+                tags: ['health-probe'],
                 trigger: 'manual',
                 entityType: 'manual'
             });
