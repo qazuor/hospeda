@@ -24,6 +24,8 @@
  * endpoints cannot drift apart.
  */
 
+import { CACHE_TAG_COLLECTIONS, CACHE_TAG_HEADER_NAME } from '@repo/cache-tags';
+
 /**
  * Supported locales and their URL prefix, ordered es/en/pt.
  *
@@ -181,8 +183,26 @@ ${entries.join('\n')}
 </sitemapindex>`;
 }
 
-/** Response headers shared by every sitemap endpoint: XML, cached 24h. */
+/**
+ * Cache tags for every sitemap: one per collection a sitemap can list.
+ *
+ * Deliberately broad. A sitemap enumerates a whole collection, so any member's
+ * creation, deletion or slug change alters it — and sitemaps are cheap to
+ * regenerate, unlike the 24 h of staleness the narrower alternative buys.
+ * Whole-zone purge used to cover this for free (HOS-369 §5.5); selective purge
+ * does not, so it is stated here.
+ */
+const SITEMAP_CACHE_TAG = Object.values(CACHE_TAG_COLLECTIONS).join(',');
+
+/**
+ * Response headers shared by every sitemap endpoint: XML, cached 24h.
+ *
+ * Sitemap endpoints bypass middleware (the `.xml` extension short-circuits
+ * `isStaticAssetRoute`), so the `Cache-Tag` header is set here rather than by
+ * the Step 11 collector, which never sees these responses (HOS-369 W1-1).
+ */
 export const SITEMAP_RESPONSE_HEADERS = {
     'Content-Type': 'application/xml; charset=utf-8',
-    'Cache-Control': 'public, max-age=86400, stale-while-revalidate=86400'
+    'Cache-Control': 'public, max-age=86400, stale-while-revalidate=86400',
+    [CACHE_TAG_HEADER_NAME]: SITEMAP_CACHE_TAG
 } as const;

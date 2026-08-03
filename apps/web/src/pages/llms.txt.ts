@@ -16,6 +16,7 @@
  * cannot reflect.
  */
 
+import { CACHE_TAG_HEADER_NAME, CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import type { APIRoute } from 'astro';
 import { getNoindexHosts, getSiteUrl } from '@/lib/env';
 import { parseNoindexHosts } from '@/lib/middleware-helpers';
@@ -110,6 +111,10 @@ export const GET: APIRoute = ({ request }) => {
         headers: {
             'Content-Type': 'text/plain; charset=utf-8',
             'Cache-Control': 'public, max-age=3600',
+            // This response bypasses middleware (the `.txt` extension short-circuits
+            // `isStaticAssetRoute`), so it must carry its own `Cache-Tag` — the
+            // Step 11 collector never sees it (HOS-369 W1-1).
+            [CACHE_TAG_HEADER_NAME]: CACHE_TAG_SITE_CONFIG,
             ...(isNoindexHost && { 'X-Robots-Tag': 'noindex, nofollow' })
         }
     });

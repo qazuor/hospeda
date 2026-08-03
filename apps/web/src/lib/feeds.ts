@@ -12,6 +12,7 @@
  */
 
 import rss from '@astrojs/rss';
+import { CACHE_TAG_COLLECTIONS, CACHE_TAG_HEADER_NAME } from '@repo/cache-tags';
 import type { SupportedLocale } from './i18n';
 import { SUPPORTED_LOCALES } from './i18n';
 import { buildUrl } from './urls';
@@ -195,6 +196,10 @@ export async function buildPostsFeed({
         'Cache-Control',
         'public, max-age=86400, stale-while-revalidate=86400'
     );
+    // Feeds bypass middleware (the `.xml` extension short-circuits
+    // `isStaticAssetRoute`), so the tag is set here, not by the Step 11
+    // collector (HOS-369 W1-1).
+    feedResponse.headers.set(CACHE_TAG_HEADER_NAME, CACHE_TAG_COLLECTIONS.post);
 
     return feedResponse;
 }
@@ -253,6 +258,10 @@ export async function buildEventsFeed({
         'Cache-Control',
         'public, max-age=86400, stale-while-revalidate=86400'
     );
+    // Feeds bypass middleware (the `.xml` extension short-circuits
+    // `isStaticAssetRoute`), so the tag is set here, not by the Step 11
+    // collector (HOS-369 W1-1).
+    feedResponse.headers.set(CACHE_TAG_HEADER_NAME, CACHE_TAG_COLLECTIONS.event);
 
     return feedResponse;
 }

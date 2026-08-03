@@ -40,7 +40,9 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { getApiUrl } from '@/lib/env';
-import { hasActiveAccommodationListingFilters, resolveListingCacheControl } from '@/lib/cache/listing-cache';
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { hasActiveAccommodationListingFilters } from '@/lib/cache/listing-cache';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { AccommodationTypeEnum } from '@repo/schemas';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -82,12 +84,12 @@ const pageSize = 9;
 // The origin gate ensures a favourite-baked response is never MARKED shareable;
 // the Cloudflare Cache Rule this header enables must also bypass on the session
 // cookie (see `@/lib/cache/listing-cache`).
-Astro.response.headers.set(
-	'Cache-Control',
-	resolveListingCacheControl({
-		cacheable: !hasActiveAccommodationListingFilters({ searchParams: url.searchParams })
-	})
-);
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: !hasActiveAccommodationListingFilters({ searchParams: url.searchParams }),
+	tags: [CACHE_TAG_COLLECTIONS.accommodation]
+});
 
 /**
  * Maps the URL's user-friendly sort key to the backend `(sortBy, sortOrder)`
