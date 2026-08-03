@@ -32,6 +32,8 @@ import {
 	PRICING_CACHE_MAX_AGE_SECONDS,
 	PRICING_CACHE_SWR_SECONDS,
 } from '@/lib/billing/fetch-plans';
+import { CACHE_TAG_PRICING } from '@repo/cache-tags';
+import { declareCacheTags } from '@/lib/cache/response-cache';
 import { BeachUmbrellaIcon, CompassIcon, SunIcon } from '@repo/icons';
 
 export const prerender = false;
@@ -47,6 +49,11 @@ Astro.response.headers.set(
 	'Cache-Control',
 	`s-maxage=${PRICING_CACHE_MAX_AGE_SECONDS}, stale-while-revalidate=${PRICING_CACHE_SWR_SECONDS}`
 );
+
+// Tag the cached response so a plan write purges exactly these pages instead of
+// flushing the whole zone (HOS-369 W1-1). `PlanService.triggerPricingRevalidation`
+// is the writer that purges `pricing`.
+declareCacheTags({ locals: Astro.locals, tags: [CACHE_TAG_PRICING] });
 
 // Fetch active plans from the public API endpoint at runtime.
 const fetchResult = await fetchPublicPlans();

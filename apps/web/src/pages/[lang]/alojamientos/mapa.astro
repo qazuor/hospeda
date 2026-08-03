@@ -23,7 +23,9 @@ import { toAccommodationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { hasActiveAccommodationListingFilters, resolveListingCacheControl } from '@/lib/cache/listing-cache';
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { hasActiveAccommodationListingFilters } from '@/lib/cache/listing-cache';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { resolveI18nText } from '@/lib/resolve-i18n-text';
 import { getAccommodationTypeLabel, getBadgeStatusColor } from '@/lib/colors';
 import { formatPrice } from '@/lib/format-utils';
@@ -60,14 +62,14 @@ const url = Astro.url;
 // — otherwise `hasActiveAccommodationListingFilters` (which treats `types` as
 // non-filtering for the other two pages) would edge-cache arbitrary multi-type
 // map combinations.
-Astro.response.headers.set(
-	'Cache-Control',
-	resolveListingCacheControl({
-		cacheable:
-			!url.searchParams.has('types') &&
-			!hasActiveAccommodationListingFilters({ searchParams: url.searchParams })
-	})
-);
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable:
+		!url.searchParams.has('types') &&
+		!hasActiveAccommodationListingFilters({ searchParams: url.searchParams }),
+	tags: [CACHE_TAG_COLLECTIONS.accommodation]
+});
 
 // Extract filter params (same as list view, minus pagination)
 const q = url.searchParams.get('q') ?? undefined;

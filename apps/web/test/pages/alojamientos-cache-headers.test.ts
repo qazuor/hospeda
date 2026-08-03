@@ -44,18 +44,31 @@ describe.each([
     ['mapa.astro', () => mapaSrc],
     ['tipo/[type]/index.astro', () => tipoSrc]
 ])('%s — shared Cache-Control wiring', (_name, getSrc) => {
-    it('imports the shared listing-cache helper', () => {
+    it('imports the shared cache helpers', () => {
         const src = getSrc();
         expect(src).toContain("from '@/lib/cache/listing-cache'");
-        expect(src).toContain('resolveListingCacheControl');
         expect(src).toContain('hasActiveAccommodationListingFilters');
+        expect(src).toContain("from '@/lib/cache/response-cache'");
+        expect(src).toContain('applyCacheHeaders');
     });
 
-    it('sets Cache-Control on Astro.response.headers via the helper', () => {
+    it('sets Cache-Control through applyCacheHeaders, never by hand', () => {
+        // HOS-369 W1-1 inverted this assertion. Setting the header directly is
+        // now the defect: `applyCacheHeaders` is the only thing that may declare
+        // a response cacheable, because it cannot do so without being handed the
+        // cache tags that will purge it. A hand-set header would produce a
+        // cacheable response nothing can invalidate before its TTL expires.
         const src = getSrc();
-        expect(src).toContain('Astro.response.headers.set(');
-        expect(src).toContain("'Cache-Control'");
-        expect(src).toContain('resolveListingCacheControl({');
+        expect(src).toContain('applyCacheHeaders({');
+        expect(src).toContain('headers: Astro.response.headers');
+        expect(src).not.toContain('resolveListingCacheControl');
+        expect(src).not.toMatch(/headers\.set\(\s*'Cache-Control'/);
+    });
+
+    it('declares the accommodation collection tag so a write can purge it', () => {
+        const src = getSrc();
+        expect(src).toContain("from '@repo/cache-tags'");
+        expect(src).toContain('CACHE_TAG_COLLECTIONS.accommodation');
     });
 
     it('does NOT gate the shareable decision on the session (HOS-369 WB0-5)', () => {
@@ -93,7 +106,7 @@ describe('mapa.astro — type gate', () => {
 describe('tipo/[type]/index.astro — header placement', () => {
     it('sets the header AFTER the invalid-type 404 guard', () => {
         const guardIdx = tipoSrc.indexOf('status: 404');
-        const headerIdx = tipoSrc.indexOf("'Cache-Control'");
+        const headerIdx = tipoSrc.indexOf('applyCacheHeaders({');
         expect(guardIdx).toBeGreaterThan(-1);
         expect(headerIdx).toBeGreaterThan(-1);
         expect(guardIdx).toBeLessThan(headerIdx);

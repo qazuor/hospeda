@@ -27,7 +27,9 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
-import { hasActiveAccommodationListingFilters, resolveListingCacheControl } from '@/lib/cache/listing-cache';
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { hasActiveAccommodationListingFilters } from '@/lib/cache/listing-cache';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
 import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
 import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param';
@@ -481,14 +483,14 @@ const canonicalPath = page > 1 ? `${canonicalBaseUrl}page/${page}/` : canonicalB
 // cache. That is the point — the gate existed because the HTML used to differ,
 // and D-8 replaces "the origin promises not to mark it shareable" with "there
 // is nothing personal in it to begin with".
-Astro.response.headers.set(
-	'Cache-Control',
-	resolveListingCacheControl({
-		cacheable:
-			!facetSeoDecision.noindex &&
-			!hasActiveAccommodationListingFilters({ searchParams: url.searchParams })
-	})
-);
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable:
+		!facetSeoDecision.noindex &&
+		!hasActiveAccommodationListingFilters({ searchParams: url.searchParams }),
+	tags: [CACHE_TAG_COLLECTIONS.accommodation]
+});
 
 /**
  * Quick-filter type chips shown above the listing grid (HOS-97). Uses the
