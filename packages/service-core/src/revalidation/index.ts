@@ -1,17 +1,6 @@
 export * from './adapters/index.js';
-export type {
-    AccommodationTypeSlug,
-    EntityChangeData,
-    EventCategorySlug,
-    SupportedLocale
-} from './entity-path-mapper.js';
-export {
-    ACCOMMODATION_TYPE_SLUGS,
-    EVENT_CATEGORY_SLUGS,
-    getAffectedPaths,
-    getLocalizedPath,
-    SUPPORTED_LOCALES
-} from './entity-path-mapper.js';
+export type { EntityChangeData } from './entity-change.types.js';
+export { getAffectedCacheTags } from './entity-tag-mapper.js';
 export type {
     EntityResolver,
     RevalidationServiceConfig,

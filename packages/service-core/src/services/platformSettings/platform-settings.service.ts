@@ -1,3 +1,4 @@
+import { CACHE_TAG_HOME, CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import { type PlatformSettingRecord, PlatformSettingsModel } from '@repo/db';
 import {
     type AnnouncementItem,
@@ -28,11 +29,14 @@ import { ServiceError } from '../../types';
  *   - `maintenance.mode` and `announcements.global` (read or write) → `MAINTENANCE_MODE_WRITE`
  *     (SUPER_ADMIN-only — V1 collapses read+write into the single critical perm).
  *
- * Side effect (per tech-analysis D7): a successful write to `seo.defaults`
- * fires `revalidateByEntityType({ entityType: 'post' })` against the cached
- * `RevalidationService` instance. The call is best-effort — failure is logged
- * but does NOT roll back the upsert (revalidation is a cache concern, not a
- * data consistency concern).
+ * Side effect (per tech-analysis D7; tag purge since HOS-369 W1-1): a
+ * successful write to `seo.defaults` purges the `site-config` and `home`
+ * cache tags against the cached `RevalidationService` instance — settings are
+ * not posts, so `revalidateByEntityType({ entityType: 'post' })` was always a
+ * hack; `robots.txt`/`llms.txt` emit `site-config` and the home page reads
+ * SEO defaults too, so this is the honest mapping. The call is best-effort —
+ * failure is logged but does NOT roll back the upsert (revalidation is a
+ * cache concern, not a data consistency concern).
  */
 
 // ---------------------------------------------------------------------------
@@ -198,11 +202,11 @@ export class PlatformSettingsService extends BaseService {
     }
 
     /**
-     * Schedules a best-effort revalidation of all post pages after a
-     * `seo.defaults` write. The web app reads SEO defaults at SSR time, so
-     * stale meta tags persist until the relevant pages are regenerated. If
-     * the revalidation service is not initialized (e.g. running in a test
-     * harness without the global init), this is a silent no-op.
+     * Schedules a best-effort purge of the `site-config` and `home` cache
+     * tags after a `seo.defaults` write. The web app reads SEO defaults at
+     * SSR time, so stale meta tags persist until the relevant pages are
+     * purged. If the revalidation service is not initialized (e.g. running
+     * in a test harness without the global init), this is a silent no-op.
      */
     private triggerSeoRevalidation(): void {
         try {
@@ -214,7 +218,11 @@ export class PlatformSettingsService extends BaseService {
                 return;
             }
             // Fire-and-forget — revalidation should not block the response.
-            void svc.revalidateByEntityType({ entityType: 'post', trigger: 'hook' });
+            void svc.revalidateTags({
+                tags: [CACHE_TAG_SITE_CONFIG, CACHE_TAG_HOME],
+                entityType: 'platform_settings',
+                trigger: 'hook'
+            });
         } catch (error) {
             this.logger.warn(
                 { error },

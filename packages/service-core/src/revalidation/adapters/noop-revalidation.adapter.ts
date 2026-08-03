@@ -1,13 +1,14 @@
-import type { RevalidatePathResult, RevalidationAdapter } from './revalidation.adapter.js';
+import type { RevalidateTargetResult, RevalidationAdapter } from './revalidation.adapter.js';
+import { WHOLE_ZONE_TARGET } from './revalidation.adapter.js';
 
 /**
  * No-op adapter used in development and test environments.
- * Simulates successful revalidation without making any HTTP calls.
+ * Simulates successful invalidation without making any HTTP calls.
  *
  * @example
  * ```ts
  * const adapter = new NoOpRevalidationAdapter();
- * const result = await adapter.revalidate({ path: '/alojamientos/hotel-paradise/' });
+ * const result = await adapter.revalidate({ tag: 'accom-hotel-paradise' });
  * // result.success === true, no HTTP request was made
  * ```
  */
@@ -15,34 +16,46 @@ export class NoOpRevalidationAdapter implements RevalidationAdapter {
     readonly name = 'NoOpRevalidationAdapter';
 
     /**
-     * Simulates a successful revalidation without making any HTTP calls.
-     * Used in development and test environments to avoid network dependencies.
+     * Simulates a successful purge without making any HTTP calls.
      *
-     * @param params - Object containing the URL path to simulate revalidating
-     * @param params.path - The URL path (returned in the result, otherwise ignored)
-     * @returns A successful result with the given path and measured duration
+     * @param params.tag - The cache tag (returned in the result, otherwise ignored)
+     * @returns A successful result targeting the given tag
      */
-    async revalidate(params: { readonly path: string }): Promise<RevalidatePathResult> {
-        const { path } = params;
+    async revalidate(params: { readonly tag: string }): Promise<RevalidateTargetResult> {
+        const { tag } = params;
         const start = Date.now();
         return {
-            path,
+            target: tag,
             success: true,
             durationMs: Date.now() - start
         };
     }
 
     /**
-     * Simulates successful revalidation for all paths without making any HTTP calls.
+     * Simulates a successful purge for every tag without making any HTTP calls.
      *
-     * @param params - Object containing the URL paths to simulate revalidating
-     * @param params.paths - The URL paths to simulate revalidating
-     * @returns Array of successful results, one per path
+     * @param params.tags - The cache tags to simulate purging
+     * @returns Array of successful results, one per tag
      */
     async revalidateMany(params: {
-        readonly paths: ReadonlyArray<string>;
-    }): Promise<ReadonlyArray<RevalidatePathResult>> {
-        const { paths } = params;
-        return Promise.all(paths.map((path) => this.revalidate({ path })));
+        readonly tags: ReadonlyArray<string>;
+    }): Promise<ReadonlyArray<RevalidateTargetResult>> {
+        const { tags } = params;
+        return Promise.all(tags.map((tag) => this.revalidate({ tag })));
+    }
+
+    /**
+     * Simulates a successful whole-zone flush.
+     *
+     * @param _params.reason - Ignored; accepted for interface parity
+     * @returns A successful result targeting `*`
+     */
+    async purgeEverything(_params: { readonly reason?: string }): Promise<RevalidateTargetResult> {
+        const start = Date.now();
+        return {
+            target: WHOLE_ZONE_TARGET,
+            success: true,
+            durationMs: Date.now() - start
+        };
     }
 }

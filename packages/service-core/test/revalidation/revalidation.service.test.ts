@@ -2,11 +2,12 @@
  * @fileoverview
  * Unit tests for RevalidationService:
  * - scheduleRevalidation: fire-and-forget entity-level debounced scheduling with config gating
- * - revalidateByEntityType: immediate revalidation of all paths for an entity type
- * - revalidatePaths: immediate revalidation of an explicit path list with entityType threading
+ * - revalidateByEntityType: immediate purge of all cache tags for an entity type
+ * - revalidateTags: immediate purge of an explicit cache-tag list with entityType threading
+ * - purgeEverything: whole-zone flush escape hatch, one audit row targeting `*`
  * - getRevalidationService / initializeRevalidationService: singleton management
  * - _resetRevalidationService: test isolation helper
- * - Config getters: getLocales, getMaxCronRevalidations, getLogRetentionDays
+ * - Config getters: getLogRetentionDays
  *
  * Uses vi.useFakeTimers() for deterministic debounce testing.
  * Mocks @repo/db models and @repo/logger to isolate the service under test.
@@ -47,21 +48,16 @@ vi.mock('@repo/logger', () => ({
 import { RevalidationConfigModel, RevalidationLogModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type {
-    RevalidatePathResult,
+    RevalidateTargetResult,
     RevalidationAdapter
 } from '../../src/revalidation/adapters/revalidation.adapter.js';
+import { WHOLE_ZONE_TARGET } from '../../src/revalidation/adapters/revalidation.adapter.js';
 import { RevalidationService } from '../../src/revalidation/revalidation.service.js';
 import {
     _resetRevalidationService,
     getRevalidationService,
     initializeRevalidationService
 } from '../../src/revalidation/revalidation-init.js';
-
-// ---------------------------------------------------------------------------
-// Test constants
-// ---------------------------------------------------------------------------
-
-const TEST_LOCALES = ['es', 'en', 'pt'] as const;
 
 // ---------------------------------------------------------------------------
 // Helpers to access mock instances
@@ -78,39 +74,44 @@ function getMockLogger() {
 // Test data helpers
 // ---------------------------------------------------------------------------
 
-function makeSuccessResult(path: string): RevalidatePathResult {
-    return { success: true, path, durationMs: 1 };
+function makeSuccessResult(tag: string): RevalidateTargetResult {
+    return { success: true, target: tag, durationMs: 1 };
 }
 
-function makeFailureResult(path: string, error: string): RevalidatePathResult {
-    return { success: false, path, durationMs: 1, error };
+function makeFailureResult(tag: string, error: string): RevalidateTargetResult {
+    return { success: false, target: tag, durationMs: 1, error };
 }
 
 /**
  * Creates a mock adapter whose revalidate() and revalidateMany() calls are tracked.
- * Defaults to returning success for all paths.
+ * Defaults to returning success for all tags.
  */
 function makeMockAdapter(
-    revalidateImpl: (path: string) => Promise<RevalidatePathResult> = (path) =>
-        Promise.resolve(makeSuccessResult(path))
+    revalidateImpl: (tag: string) => Promise<RevalidateTargetResult> = (tag) =>
+        Promise.resolve(makeSuccessResult(tag))
 ): RevalidationAdapter {
-    const revalidateFn = vi.fn((params: { readonly path: string }) => revalidateImpl(params.path));
+    const revalidateFn = vi.fn((params: { readonly tag: string }) => revalidateImpl(params.tag));
     return {
         name: 'MockAdapter',
         revalidate: revalidateFn,
-        revalidateMany: vi.fn(async (params: { readonly paths: ReadonlyArray<string> }) => {
+        revalidateMany: vi.fn(async (params: { readonly tags: ReadonlyArray<string> }) => {
             const settled = await Promise.allSettled(
-                params.paths.map((p) => revalidateFn({ path: p }))
+                params.tags.map((t) => revalidateFn({ tag: t }))
             );
             return settled.map((r, i) =>
                 r.status === 'fulfilled'
                     ? r.value
                     : makeFailureResult(
-                          params.paths[i] ?? '',
+                          params.tags[i] ?? '',
                           String((r as PromiseRejectedResult).reason)
                       )
             );
-        })
+        }),
+        purgeEverything: vi.fn(async (_params: { readonly reason?: string }) => ({
+            target: WHOLE_ZONE_TARGET,
+            success: true,
+            durationMs: 1
+        }))
     };
 }
 
@@ -130,7 +131,7 @@ function makeEnabledConfig(entityType: string, debounceSeconds = 1) {
 
 /** Creates a RevalidationService with test defaults */
 function createTestService(adapter: RevalidationAdapter) {
-    return new RevalidationService({ adapter, locales: TEST_LOCALES });
+    return new RevalidationService({ adapter });
 }
 
 // ---------------------------------------------------------------------------
@@ -185,12 +186,12 @@ describe('RevalidationService.scheduleRevalidation -- fire-and-forget', () => {
         expect(adapter.revalidate).not.toHaveBeenCalled();
     });
 
-    it('calls adapter for each affected path after debounce timeout fires', async () => {
+    it('calls adapter for each affected cache tag after debounce timeout fires', async () => {
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
-        // tag -> 3 paths (/alojamientos/ + /en/alojamientos/ + /pt/alojamientos/)
-        service.scheduleRevalidation({ entityType: 'tag' });
+        // accommodation with slug -> 3 tags (accom-hotel-a, list-accom, home)
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'hotel-a' });
 
         await vi.runAllTimersAsync();
 
@@ -201,13 +202,13 @@ describe('RevalidationService.scheduleRevalidation -- fire-and-forget', () => {
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
-        service.scheduleRevalidation({ entityType: 'tag' });
-        service.scheduleRevalidation({ entityType: 'tag' });
-        service.scheduleRevalidation({ entityType: 'tag' });
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'hotel-a' });
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'hotel-a' });
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'hotel-a' });
 
         await vi.runAllTimersAsync();
 
-        // Still 3 paths (es, en, pt) -- NOT 9 (3 calls x 3 paths)
+        // Still 3 tags (entity + collection + home) -- NOT 9 (3 calls x 3 tags)
         expect(adapter.revalidate).toHaveBeenCalledTimes(3);
     });
 
@@ -230,12 +231,14 @@ describe('RevalidationService.scheduleRevalidation -- fire-and-forget', () => {
 
         await vi.runAllTimersAsync();
 
-        const paths = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.map(
-            (args: unknown[]) => (args[0] as { path: string }).path
+        const tags = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.map(
+            (args: unknown[]) => (args[0] as { tag: string }).tag
         );
 
-        expect(paths.some((p: string) => p.includes('/alojamientos/'))).toBe(true);
-        expect(paths.some((p: string) => p.includes('/destinos/my-dest/'))).toBe(true);
+        // 'tag' events fold into the shared accommodation-collection tag.
+        expect(tags).toContain('list-accom');
+        // 'destination' events carry their own entity tag.
+        expect(tags).toContain('dest-my-dest');
     });
 
     it('uses entity-level debounce key (entityType:entityId) for slug-bearing events', async () => {
@@ -258,13 +261,13 @@ describe('RevalidationService.scheduleRevalidation -- fire-and-forget', () => {
 
         await vi.runAllTimersAsync();
 
-        // Both should fire independently, producing paths for both slugs
-        const paths = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.map(
-            (args: unknown[]) => (args[0] as { path: string }).path
+        // Both should fire independently, producing tags for both slugs
+        const tags = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.map(
+            (args: unknown[]) => (args[0] as { tag: string }).tag
         );
 
-        expect(paths.some((p: string) => p.includes('/alojamientos/hotel-a/'))).toBe(true);
-        expect(paths.some((p: string) => p.includes('/alojamientos/hotel-b/'))).toBe(true);
+        expect(tags).toContain('accom-hotel-a');
+        expect(tags).toContain('accom-hotel-b');
     });
 
     it('debounces distinct destinations on independent timers (no shared bucket)', async () => {
@@ -272,8 +275,8 @@ describe('RevalidationService.scheduleRevalidation -- fire-and-forget', () => {
         // to entity_id (extractEntityId returns undefined for them), but the debounce
         // bucket key must still be per-entity (slug) so distinct entities of the same
         // type don't collapse into one shared bucket and reset each other's timer.
-        // This asserts timer ISOLATION, which the path-accumulation test above cannot:
-        // a collapsed bucket would still revalidate both paths, just on a reset timer.
+        // This asserts timer ISOLATION, which the tag-accumulation test above cannot:
+        // a collapsed bucket would still purge both tags, just on a reset timer.
         (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
             return {
                 findByEntityType: vi
@@ -297,14 +300,14 @@ describe('RevalidationService.scheduleRevalidation -- fire-and-forget', () => {
         service.scheduleRevalidation({ entityType: 'destination', slug: 'dest-b' });
         await vi.advanceTimersByTimeAsync(500); // now at t=1100
 
-        const firedPaths = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.map(
-            (args: unknown[]) => (args[0] as { path: string }).path
+        const firedTags = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.map(
+            (args: unknown[]) => (args[0] as { tag: string }).tag
         );
 
         // dest-a must have already fired on its own timer (t=1000), independent of dest-b.
-        expect(firedPaths.some((p: string) => p.includes('/destinos/dest-a/'))).toBe(true);
+        expect(firedTags).toContain('dest-dest-a');
         // dest-b must NOT have fired yet (its window ends at t=1600).
-        expect(firedPaths.some((p: string) => p.includes('/destinos/dest-b/'))).toBe(false);
+        expect(firedTags).not.toContain('dest-dest-b');
     });
 });
 
@@ -559,16 +562,16 @@ describe('RevalidationService.revalidateByEntityType', () => {
         vi.restoreAllMocks();
     });
 
-    it('calls adapter.revalidateMany with paths for the entity type', async () => {
+    it('calls adapter.revalidateMany with tags for the entity type', async () => {
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
         await service.revalidateByEntityType({ entityType: 'tag' });
 
-        // tag -> 3 paths (es, en, pt)
+        // 'tag' entities have no page of their own -- they fold into list-accom
         expect(adapter.revalidateMany).toHaveBeenCalledOnce();
         const [params] = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls[0]!;
-        expect((params as { paths: string[] }).paths.length).toBe(3);
+        expect((params as { tags: string[] }).tags).toEqual(['list-accom']);
     });
 
     it('passes entityType to log entries', async () => {
@@ -594,7 +597,7 @@ describe('RevalidationService.revalidateByEntityType', () => {
     });
 
     it('resolves without throwing even when adapter calls fail', async () => {
-        const adapter = makeMockAdapter((_path) => {
+        const adapter = makeMockAdapter((_tag) => {
             return Promise.reject(new Error('forced fail'));
         });
         const service = createTestService(adapter);
@@ -606,10 +609,10 @@ describe('RevalidationService.revalidateByEntityType', () => {
 });
 
 // ---------------------------------------------------------------------------
-// revalidatePaths -- immediate execution
+// revalidateTags -- immediate execution
 // ---------------------------------------------------------------------------
 
-describe('RevalidationService.revalidatePaths', () => {
+describe('RevalidationService.revalidateTags', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
@@ -634,17 +637,17 @@ describe('RevalidationService.revalidatePaths', () => {
         vi.restoreAllMocks();
     });
 
-    it('calls adapter.revalidateMany with the provided paths', async () => {
+    it('calls adapter.revalidateMany with the provided tags', async () => {
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
-        const paths = ['/path-a/', '/path-b/', '/path-c/'] as const;
+        const tags = ['tag-a', 'tag-b', 'tag-c'] as const;
 
-        await service.revalidatePaths({ paths });
+        await service.revalidateTags({ tags });
 
         expect(adapter.revalidateMany).toHaveBeenCalledOnce();
         const [params] = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls[0]!;
-        expect((params as { paths: readonly string[] }).paths).toEqual(
-            expect.arrayContaining([...paths])
+        expect((params as { tags: readonly string[] }).tags).toEqual(
+            expect.arrayContaining([...tags])
         );
     });
 
@@ -652,7 +655,7 @@ describe('RevalidationService.revalidatePaths', () => {
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
-        const result = await service.revalidatePaths({ paths: [] });
+        const result = await service.revalidateTags({ tags: [] });
         expect(result).toEqual([]);
         expect(adapter.revalidateMany).not.toHaveBeenCalled();
     });
@@ -662,29 +665,29 @@ describe('RevalidationService.revalidatePaths', () => {
         const service = createTestService(adapter);
 
         await expect(
-            service.revalidatePaths({ paths: ['/path-1/', '/path-2/', '/path-3/'] })
+            service.revalidateTags({ tags: ['tag-1', 'tag-2', 'tag-3'] })
         ).resolves.toBeDefined();
     });
 
-    it('logs error when a path returns a non-success result', async () => {
+    it('logs error when a tag returns a non-success result', async () => {
         (createLogger as ReturnType<typeof vi.fn>).mockReturnValue({
             error: vi.fn(),
             warn: vi.fn(),
             info: vi.fn(),
             debug: vi.fn()
         });
-        const adapter = makeMockAdapter((path) =>
-            Promise.resolve(makeFailureResult(path, 'upstream 500'))
+        const adapter = makeMockAdapter((tag) =>
+            Promise.resolve(makeFailureResult(tag, 'upstream 500'))
         );
         const service = createTestService(adapter);
 
-        await service.revalidatePaths({ paths: ['/some-path/'] });
+        await service.revalidateTags({ tags: ['some-tag'] });
 
         const loggerMock = getMockLogger();
         expect(loggerMock?.error).toHaveBeenCalled();
     });
 
-    it('writes a log entry to DB for each revalidated path', async () => {
+    it('writes a log entry to DB for each revalidated tag', async () => {
         const mockCreate = vi.fn().mockResolvedValue(undefined);
         (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
             return {
@@ -694,7 +697,7 @@ describe('RevalidationService.revalidatePaths', () => {
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
-        await service.revalidatePaths({ paths: ['/path-x/', '/path-y/'] });
+        await service.revalidateTags({ tags: ['tag-x', 'tag-y'] });
 
         // Allow any pending async log writes to complete
         await Promise.resolve();
@@ -713,8 +716,8 @@ describe('RevalidationService.revalidatePaths', () => {
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
-        await service.revalidatePaths({
-            paths: ['/some-path/'],
+        await service.revalidateTags({
+            tags: ['some-tag'],
             triggeredBy: 'user-1',
             reason: 'test reason',
             trigger: 'manual',
@@ -741,13 +744,100 @@ describe('RevalidationService.revalidatePaths', () => {
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
-        await service.revalidatePaths({ paths: ['/path/'] });
+        await service.revalidateTags({ tags: ['tag'] });
 
         await Promise.resolve();
         await Promise.resolve();
 
         const logArg = mockCreate.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(logArg.entityType).toBe('manual');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// purgeEverything -- whole-zone flush escape hatch
+// ---------------------------------------------------------------------------
+
+describe('RevalidationService.purgeEverything', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return {
+                create: vi.fn().mockResolvedValue(undefined)
+            };
+        });
+        (createLogger as ReturnType<typeof vi.fn>).mockReturnValue({
+            error: vi.fn(),
+            warn: vi.fn(),
+            info: vi.fn(),
+            debug: vi.fn()
+        });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('delegates to the adapter and returns a result targeting WHOLE_ZONE_TARGET', async () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        const result = await service.purgeEverything({ reason: 'deploy' });
+
+        expect(adapter.purgeEverything).toHaveBeenCalledWith({ reason: 'deploy' });
+        expect(result.target).toBe(WHOLE_ZONE_TARGET);
+        expect(result.success).toBe(true);
+    });
+
+    it('writes exactly ONE audit row targeting WHOLE_ZONE_TARGET', async () => {
+        const mockCreate = vi.fn().mockResolvedValue(undefined);
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return { create: mockCreate };
+        });
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        await service.purgeEverything({ reason: 'deploy', triggeredBy: 'ci' });
+
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(mockCreate).toHaveBeenCalledTimes(1);
+        const logArg = mockCreate.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(logArg.target).toBe(WHOLE_ZONE_TARGET);
+        expect(logArg.triggeredBy).toBe('ci');
+    });
+
+    it('defaults trigger to "manual"', async () => {
+        const mockCreate = vi.fn().mockResolvedValue(undefined);
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return { create: mockCreate };
+        });
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        await service.purgeEverything();
+
+        await Promise.resolve();
+        await Promise.resolve();
+
+        const logArg = mockCreate.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(logArg.trigger).toBe('manual');
+    });
+
+    it('resolves without throwing when the adapter reports failure', async () => {
+        const adapter = makeMockAdapter();
+        (adapter.purgeEverything as ReturnType<typeof vi.fn>).mockResolvedValue({
+            target: WHOLE_ZONE_TARGET,
+            success: false,
+            durationMs: 5,
+            error: 'Cloudflare unreachable'
+        });
+        const service = createTestService(adapter);
+
+        const result = await service.purgeEverything({ reason: 'deploy' });
+
+        expect(result.success).toBe(false);
     });
 });
 
@@ -776,39 +866,10 @@ describe('RevalidationService config getters', () => {
         });
     });
 
-    it('getLocales returns the configured locales', () => {
-        const adapter = makeMockAdapter();
-        const service = new RevalidationService({
-            adapter,
-            locales: ['es', 'en']
-        });
-
-        expect(service.getLocales()).toEqual(['es', 'en']);
-    });
-
-    it('getMaxCronRevalidations returns configured value', () => {
-        const adapter = makeMockAdapter();
-        const service = new RevalidationService({
-            adapter,
-            locales: TEST_LOCALES,
-            maxCronRevalidations: 100
-        });
-
-        expect(service.getMaxCronRevalidations()).toBe(100);
-    });
-
-    it('getMaxCronRevalidations returns default 500 when not configured', () => {
-        const adapter = makeMockAdapter();
-        const service = createTestService(adapter);
-
-        expect(service.getMaxCronRevalidations()).toBe(500);
-    });
-
     it('getLogRetentionDays returns configured value', () => {
         const adapter = makeMockAdapter();
         const service = new RevalidationService({
             adapter,
-            locales: TEST_LOCALES,
             logRetentionDays: 7
         });
 
@@ -860,8 +921,7 @@ describe('singleton management', () => {
     it('initializeRevalidationService returns a RevalidationService instance', () => {
         const service = initializeRevalidationService({
             nodeEnv: 'test',
-            siteUrl: 'https://example.com',
-            locales: TEST_LOCALES
+            siteUrl: 'https://example.com'
         });
 
         expect(service).toBeInstanceOf(RevalidationService);
@@ -870,8 +930,7 @@ describe('singleton management', () => {
     it('getRevalidationService returns the same instance after initialization', () => {
         const initialized = initializeRevalidationService({
             nodeEnv: 'test',
-            siteUrl: 'https://example.com',
-            locales: TEST_LOCALES
+            siteUrl: 'https://example.com'
         });
 
         const retrieved = getRevalidationService();
@@ -882,13 +941,11 @@ describe('singleton management', () => {
     it('initializeRevalidationService is idempotent -- repeated calls return same instance', () => {
         const first = initializeRevalidationService({
             nodeEnv: 'test',
-            siteUrl: 'https://example.com',
-            locales: TEST_LOCALES
+            siteUrl: 'https://example.com'
         });
         const second = initializeRevalidationService({
             nodeEnv: 'test',
-            siteUrl: 'https://different.com',
-            locales: TEST_LOCALES
+            siteUrl: 'https://different.com'
         });
 
         expect(second).toBe(first);
@@ -905,13 +962,11 @@ describe('singleton management', () => {
 
         const first = initializeRevalidationService({
             nodeEnv: 'test',
-            siteUrl: 'https://example.com',
-            locales: TEST_LOCALES
+            siteUrl: 'https://example.com'
         });
         const second = initializeRevalidationService({
             nodeEnv: 'test',
-            siteUrl: 'https://other.com',
-            locales: TEST_LOCALES
+            siteUrl: 'https://other.com'
         });
 
         // The idempotent behavior (same instance) is the observable effect of the warning path
@@ -921,8 +976,7 @@ describe('singleton management', () => {
     it('_resetRevalidationService clears the singleton', () => {
         initializeRevalidationService({
             nodeEnv: 'test',
-            siteUrl: 'https://example.com',
-            locales: TEST_LOCALES
+            siteUrl: 'https://example.com'
         });
 
         _resetRevalidationService();
@@ -933,40 +987,25 @@ describe('singleton management', () => {
     it('new instance can be created after reset', () => {
         initializeRevalidationService({
             nodeEnv: 'test',
-            siteUrl: 'https://a.com',
-            locales: TEST_LOCALES
+            siteUrl: 'https://a.com'
         });
         _resetRevalidationService();
         const second = initializeRevalidationService({
             nodeEnv: 'test',
-            siteUrl: 'https://b.com',
-            locales: TEST_LOCALES
+            siteUrl: 'https://b.com'
         });
 
         expect(second).toBeInstanceOf(RevalidationService);
         expect(getRevalidationService()).toBe(second);
     });
 
-    it('passes locales config through to the service', () => {
+    it('passes logRetentionDays through to the service', () => {
         const service = initializeRevalidationService({
             nodeEnv: 'test',
             siteUrl: 'https://example.com',
-            locales: ['es', 'en']
-        });
-
-        expect(service.getLocales()).toEqual(['es', 'en']);
-    });
-
-    it('passes maxCronRevalidations and logRetentionDays through to the service', () => {
-        const service = initializeRevalidationService({
-            nodeEnv: 'test',
-            siteUrl: 'https://example.com',
-            locales: TEST_LOCALES,
-            maxCronRevalidations: 200,
             logRetentionDays: 14
         });
 
-        expect(service.getMaxCronRevalidations()).toBe(200);
         expect(service.getLogRetentionDays()).toBe(14);
     });
 });
@@ -1039,13 +1078,13 @@ describe('RevalidationService.scheduleRevalidationBatch', () => {
 
         await vi.runAllTimersAsync();
 
-        const paths = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.map(
-            (args: unknown[]) => (args[0] as { path: string }).path
+        const tags = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.map(
+            (args: unknown[]) => (args[0] as { tag: string }).tag
         );
 
-        expect(paths.some((p: string) => p.includes('/alojamientos/hotel-a/'))).toBe(true);
-        expect(paths.some((p: string) => p.includes('/alojamientos/hotel-b/'))).toBe(true);
-        expect(paths.some((p: string) => p.includes('/alojamientos/hotel-c/'))).toBe(true);
+        expect(tags).toContain('accom-hotel-a');
+        expect(tags).toContain('accom-hotel-b');
+        expect(tags).toContain('accom-hotel-c');
     });
 
     it('deduplicate within batch: same entity twice merges into single debounce entry', async () => {
@@ -1062,16 +1101,16 @@ describe('RevalidationService.scheduleRevalidationBatch', () => {
 
         await vi.runAllTimersAsync();
 
-        // Should produce the same paths as a single scheduleRevalidation call
+        // Should produce the same tags as a single scheduleRevalidation call
         const callCount = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.length;
         expect(callCount).toBeGreaterThan(0);
 
-        // Verify no duplicate paths were revalidated
-        const paths = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.map(
-            (args: unknown[]) => (args[0] as { path: string }).path
+        // Verify no duplicate tags were purged
+        const tags = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.map(
+            (args: unknown[]) => (args[0] as { tag: string }).tag
         );
-        const uniquePaths = new Set(paths);
-        expect(paths.length).toBe(uniquePaths.size);
+        const uniqueTags = new Set(tags);
+        expect(tags.length).toBe(uniqueTags.size);
     });
 
     it('reason is propagated to each scheduled event', async () => {
@@ -1113,12 +1152,12 @@ describe('RevalidationService.scheduleRevalidationBatch', () => {
 
         await vi.runAllTimersAsync();
 
-        const paths = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.map(
-            (args: unknown[]) => (args[0] as { path: string }).path
+        const tags = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.map(
+            (args: unknown[]) => (args[0] as { tag: string }).tag
         );
-        const uniquePaths = new Set(paths);
-        // Paths for hotel-y should be deduplicated (no double revalidation)
-        expect(paths.length).toBe(uniquePaths.size);
+        const uniqueTags = new Set(tags);
+        // Tags for hotel-y should be deduplicated (no double purge)
+        expect(tags.length).toBe(uniqueTags.size);
     });
 });
 
@@ -1319,12 +1358,12 @@ describe('RevalidationService.revalidateEntityTypesBatch -- one purge per run', 
 
         // One batch call = one purge. (Asserting on `adapter.revalidate` would
         // test this harness's own fan-out, not the service: the mock's
-        // revalidateMany delegates per path, whereas the real Cloudflare adapter
+        // revalidateMany delegates per tag, whereas the real Cloudflare adapter
         // collapses the batch into a single purgeOnce.)
         expect(adapter.revalidateMany).toHaveBeenCalledTimes(1);
     });
 
-    it('hands the adapter the deduplicated union of every type’s paths', async () => {
+    it('hands the adapter the deduplicated union of every type’s tags', async () => {
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
@@ -1333,10 +1372,10 @@ describe('RevalidationService.revalidateEntityTypesBatch -- one purge per run', 
         });
 
         const call = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as {
-            paths: string[];
+            tags: string[];
         };
-        expect(call.paths.length).toBeGreaterThan(0);
-        expect(new Set(call.paths).size).toBe(call.paths.length);
+        expect(call.tags.length).toBeGreaterThan(0);
+        expect(new Set(call.tags).size).toBe(call.tags.length);
     });
 
     /**
@@ -1394,7 +1433,7 @@ describe('RevalidationService.revalidateEntityTypesBatch -- one purge per run', 
         expect(adapter.revalidateMany).toHaveBeenCalledTimes(1);
     });
 
-    it('purges nothing when no entity type resolves to a path', async () => {
+    it('purges nothing when no entity type resolves to a tag', async () => {
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
@@ -1447,6 +1486,61 @@ describe('RevalidationService -- coalesced purge window', () => {
      * include `accommodation.sync-featured-by-entitlement`, which maps over every
      * accommodation an owner has.
      */
+    /**
+     * THE REGRESSION GUARD for the rate-limit hole HOS-369 W1-1 introduced.
+     *
+     * Cloudflare's Free-plan ceiling is 5 tag-purge requests per MINUTE. The
+     * 50 ms coalescing window above only merges siblings enqueued in the same
+     * tick; writes arriving seconds apart each got their own request, and six
+     * hosts saving six listings over fifteen seconds blew straight past the
+     * limit. Under `purge_everything` that was self-correcting — any later
+     * flush covered what the rejected one carried. Under tags it is not: the
+     * rejected request's tags are disjoint from the next one's, so its content
+     * stays cached for the full TTL with nothing able to evict it.
+     *
+     * The fix DELAYS rather than drops, which is what these two assert.
+     */
+    it('spaces consecutive purges by the Cloudflare rate-limit interval', async () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'primera' });
+        await vi.runAllTimersAsync();
+        expect(adapter.revalidateMany).toHaveBeenCalledTimes(1);
+
+        // A second write moments later must NOT produce a second request yet.
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'segunda' });
+        await vi.advanceTimersByTimeAsync(2_000);
+        expect(adapter.revalidateMany).toHaveBeenCalledTimes(1);
+
+        // ...but it must go out once the interval has elapsed.
+        await vi.advanceTimersByTimeAsync(12_000);
+        expect(adapter.revalidateMany).toHaveBeenCalledTimes(2);
+    });
+
+    it('DELAYS the held-back tags rather than dropping them', async () => {
+        // The load-bearing half. Spacing requests would be worthless — worse
+        // than the 429, even — if the tags waiting behind the interval were
+        // discarded instead of accumulated.
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'primera' });
+        await vi.runAllTimersAsync();
+
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'segunda' });
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'tercera' });
+        await vi.advanceTimersByTimeAsync(15_000);
+
+        const secondCall = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls[1] as
+            | [{ tags: readonly string[] }]
+            | undefined;
+        expect(secondCall).toBeDefined();
+        expect(secondCall?.[0].tags).toEqual(
+            expect.arrayContaining(['accom-segunda', 'accom-tercera'])
+        );
+    });
+
     it('fires ONE purge for a batch of many entities, not one per entity', async () => {
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
@@ -1467,7 +1561,7 @@ describe('RevalidationService -- coalesced purge window', () => {
         expect(adapter.revalidateMany).toHaveBeenCalledTimes(1);
     });
 
-    it('still covers every entity’s paths in that single purge', async () => {
+    it('still covers every entity’s tags in that single purge', async () => {
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
@@ -1481,12 +1575,12 @@ describe('RevalidationService -- coalesced purge window', () => {
         await vi.runAllTimersAsync();
 
         const call = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as {
-            paths: string[];
+            tags: string[];
         };
-        expect(call.paths.some((p) => p.includes('cabana-uno'))).toBe(true);
-        expect(call.paths.some((p) => p.includes('cabana-dos'))).toBe(true);
-        // Deduplicated: the shared listing/home paths appear once, not per entity.
-        expect(new Set(call.paths).size).toBe(call.paths.length);
+        expect(call.tags.some((t) => t.includes('cabana-uno'))).toBe(true);
+        expect(call.tags.some((t) => t.includes('cabana-dos'))).toBe(true);
+        // Deduplicated: the shared collection/home tags appear once, not per entity.
+        expect(new Set(call.tags).size).toBe(call.tags.length);
     });
 
     it('keeps a per-entity audit row so the log stays attributable', async () => {
@@ -1502,11 +1596,11 @@ describe('RevalidationService -- coalesced purge window', () => {
 
         await vi.runAllTimersAsync();
 
-        const loggedPaths = mockCreate.mock.calls.map(
-            (call) => (call[0] as Record<string, unknown>).path as string
+        const loggedTargets = mockCreate.mock.calls.map(
+            (call) => (call[0] as Record<string, unknown>).target as string
         );
-        expect(loggedPaths.some((p) => p.includes('cabana-uno'))).toBe(true);
-        expect(loggedPaths.some((p) => p.includes('cabana-dos'))).toBe(true);
+        expect(loggedTargets.some((t) => t.includes('cabana-uno'))).toBe(true);
+        expect(loggedTargets.some((t) => t.includes('cabana-dos'))).toBe(true);
     });
 
     it('records a failed purge on every entity in the window', async () => {
@@ -1605,27 +1699,32 @@ describe('RevalidationService -- coalescing covers BOTH debounce branches', () =
         });
         await vi.runAllTimersAsync();
 
-        const allPaths = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls.flatMap(
-            (call) => (call[0] as { paths: string[] }).paths
+        const allTags = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls.flatMap(
+            (call) => (call[0] as { tags: string[] }).tags
         );
-        expect(allPaths.some((p) => p.includes('cabana-uno'))).toBe(true);
-        expect(allPaths.some((p) => p.includes('cabana-dos'))).toBe(true);
+        expect(allTags.some((t) => t.includes('cabana-uno'))).toBe(true);
+        expect(allTags.some((t) => t.includes('cabana-dos'))).toBe(true);
     });
 
     /**
      * Guards the FALLBACK DIRECTION of result matching. Matching purge results
-     * back by path is right, but recording an unmatched path as failed would turn
-     * any adapter that normalises paths into a 100%-failure report for a purge
+     * back by tag is right, but recording an unmatched tag as failed would turn
+     * any adapter that normalises tags into a 100%-failure report for a purge
      * that actually succeeded — a worse bug than the shared-verdict one it
      * replaced. When the counts line up, position wins.
      */
-    it('falls back to positional matching when the adapter renames paths', async () => {
+    it('falls back to positional matching when the adapter renames tags', async () => {
         const adapter: RevalidationAdapter = {
             name: 'RenamingAdapter',
             revalidate: vi.fn(),
-            revalidateMany: vi.fn(async (params: { readonly paths: ReadonlyArray<string> }) =>
-                params.paths.map(() => makeSuccessResult('?'))
-            )
+            revalidateMany: vi.fn(async (params: { readonly tags: ReadonlyArray<string> }) =>
+                params.tags.map(() => makeSuccessResult('?'))
+            ),
+            purgeEverything: vi.fn(async () => ({
+                target: WHOLE_ZONE_TARGET,
+                success: true,
+                durationMs: 1
+            }))
         };
         const service = createTestService(adapter);
 

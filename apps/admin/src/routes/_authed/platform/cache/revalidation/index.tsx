@@ -4,7 +4,7 @@
  * Three-tab admin page to manage on-demand ISR revalidation:
  * - Config tab: View and edit revalidation configs per entity type
  * - Logs tab: Browse recent revalidation log entries
- * - Manual tab: Trigger revalidation for specific paths
+ * - Manual tab: Trigger revalidation for specific cache tags, or a whole-zone purge
  */
 
 import type { TranslationKey } from '@repo/i18n';
@@ -273,16 +273,19 @@ function ConfigTab() {
 /**
  * ManualTab
  *
- * Form to enter comma-separated paths and trigger on-demand revalidation,
- * plus a section to revalidate all pages for a specific entity type.
+ * Form to enter comma-separated cache tags and trigger on-demand
+ * revalidation, or (via an explicit, confirmed opt-in) purge the entire
+ * zone, plus a section to revalidate all pages for a specific entity type.
  * Shows aggregated stats above the forms and a result breakdown after each run.
  */
 function ManualTab() {
     const { t } = useTranslations();
     const queryClient = useQueryClient();
     const { addToast } = useToast();
-    const [pathsInput, setPathsInput] = useState('');
+    const [tagsInput, setTagsInput] = useState('');
     const [reason, setReason] = useState('');
+    const [purgeEverything, setPurgeEverything] = useState(false);
+    const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
 
     const { data: stats, isLoading: statsLoading } = useQuery<RevalidationStats>({
         queryKey: REVALIDATION_QUERY_KEYS.stats,
@@ -304,23 +307,38 @@ function ManualTab() {
                 }),
                 variant: failed > 0 ? 'error' : 'success'
             });
-            setPathsInput('');
+            setTagsInput('');
             setReason('');
+            setPurgeEverything(false);
         },
         onError: () => {
             addToast({ message: t('revalidation.manual.errorToast'), variant: 'error' });
         }
     });
 
-    const parsedPaths = pathsInput
+    const parsedTags = tagsInput
         .split(',')
         .map((p) => p.trim())
         .filter(Boolean);
 
+    /**
+     * Submitting the form never fires the whole-zone purge directly — when
+     * `purgeEverything` is on, it only opens the confirmation dialog. The
+     * actual mutation for that path only runs from `handleConfirmPurge`.
+     */
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (parsedPaths.length === 0) return;
-        mutation.mutate({ paths: parsedPaths, reason: reason || undefined });
+        if (purgeEverything) {
+            setShowPurgeConfirm(true);
+            return;
+        }
+        if (parsedTags.length === 0) return;
+        mutation.mutate({ tags: parsedTags, reason: reason || undefined });
+    };
+
+    const handleConfirmPurge = () => {
+        setShowPurgeConfirm(false);
+        mutation.mutate({ purgeEverything: true, reason: reason || undefined });
     };
 
     return (
@@ -351,12 +369,14 @@ function ManualTab() {
                 </CardHeader>
                 <CardContent>
                     <ManualForm
-                        pathsInput={pathsInput}
+                        tagsInput={tagsInput}
                         reason={reason}
                         isPending={mutation.isPending}
-                        parsedCount={parsedPaths.length}
-                        onPathsChange={setPathsInput}
+                        parsedCount={parsedTags.length}
+                        purgeEverything={purgeEverything}
+                        onTagsChange={setTagsInput}
                         onReasonChange={setReason}
+                        onPurgeEverythingChange={setPurgeEverything}
                         onSubmit={handleSubmit}
                     />
                 </CardContent>
@@ -364,7 +384,31 @@ function ManualTab() {
 
             {mutation.data ? <RevalidationResultTable result={mutation.data} /> : null}
 
-            {/* Divider between path-based and entity-type revalidation */}
+            <AlertDialog
+                open={showPurgeConfirm}
+                onOpenChange={setShowPurgeConfirm}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {t('revalidation.manual.purgeEverythingConfirmTitle')}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('revalidation.manual.purgeEverythingConfirmDescription')}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>
+                            {t('revalidation.manual.purgeEverythingConfirmCancel')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmPurge}>
+                            {t('revalidation.manual.purgeEverythingConfirmAction')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Divider between tag-based and entity-type revalidation */}
             <div className="border-t pt-2" />
 
             <EntityTypeRevalidationSection />

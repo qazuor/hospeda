@@ -10,7 +10,6 @@ import {
     registerModerationMonitoringHooks
 } from '@repo/content-moderation/engine/index';
 import { ContentModerationTermModel, getDb, rolePermission } from '@repo/db';
-import { locales } from '@repo/i18n';
 import { configureLogger, LogFormat, LogLevel, registerCaptureHook } from '@repo/logger';
 import {
     ensureDefaultPromoCodes,
@@ -306,7 +305,6 @@ const startServer = async (): Promise<void> => {
                 nodeEnv: env.NODE_ENV,
                 revalidationSecret: env.HOSPEDA_REVALIDATION_SECRET,
                 siteUrl: env.HOSPEDA_SITE_URL ?? 'https://hospeda.com.ar',
-                locales,
                 entityResolver: createEntityResolver()
             });
             apiLogger.info('ISR revalidation service initialized');
