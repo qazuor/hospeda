@@ -750,32 +750,33 @@
             "id": "T-031",
             "title": "Add the role-change indexability regression test (AC-16)",
             "description": "Regression test for the R-9 class of bug. Assert that changing an account's ROLE does not change its indexability, in both directions: an eligible author promoted to ADMIN stays indexable and stays in the sitemap, and a system account demoted to EDITOR stays excluded. This is the test that fails if anyone re-couples the gate to the role — which the first draft of this spec did. Cover both the T-017 web predicate and the T-011 service query, since a future change could re-introduce the coupling on either side.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-011", "T-017"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Test promotion to ADMIN keeps an author indexable",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test demotion to EDITOR keeps a system account excluded",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Cover both the web predicate and the service query",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "regression", "seo"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-03T18:40:00.000Z",
+                "completed": "2026-08-03T19:50:00.000Z"
+            },
+            "notes": "Delegated, then independently re-verified. Covers BOTH sides, since either could reintroduce the coupling on its own. (1) The SQL the sitemap reads: two integration tests in packages/db/test/integration/list-public-authors.integration.test.ts (now 17) against a REAL database — an eligible author granted ADMIN stays listed, a system account granted EDITOR stays excluded. Roles live in the `user_role` junction table since HOS-296 dropped `users.role`, so the helper grants by INSERT, not by setting a column; the suite gates on HOSPEDA_TEST_DATABASE_URL, not the legacy isDbAvailable(). (2) Static guards asserting neither the TS predicate nor the SQL method mentions a role at all — each strips comments or slices to the executable body first, because BOTH files' docblocks discuss SUPER_ADMIN/ADMIN precisely to explain why they must not be checked, and a naive whole-file scan would trip on the documentation for the very invariant it enforces. FINDING: the coupling does NOT exist in current code; these tests are purely preventive, which matches the task's framing. MUTATION-VERIFIED BY ME, not taken on report: excluding live ADMINs from the query reddens exactly `includes an eligible author PROMOTED to ADMIN` (16/17 stay green); letting an EDITOR grant rescue a system account reddens exactly `EXCLUDES a system account DEMOTED to EDITOR` (16/17 green). My first attempt at that mutation named the table `r_user_role` (the FILE is r_user_role.dbschema.ts but the TABLE is `user_role`), which broke the query outright and reddened all 17 — a useless mutation that proves nothing about the specific test; worth knowing that a mutation reddening EVERYTHING is a signal the mutation is wrong, not that the tests are strong. UNRESOLVED, reported not chased: the sub-agent saw one transient failure of 5 unrelated pre-existing tests in this file during one full 33-file parallel run, green on an immediate re-run. I ran the full integration suite twice more — 241/241 both times — so it did not reproduce. Plausible mechanism worth checking if it recurs: several integration files use withCleanSlate (TRUNCATE of all user tables) while this one uses withTestTransaction (rollback), under maxForks 3. Not confirmed."
         },
         {
             "id": "T-032",
