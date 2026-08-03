@@ -626,6 +626,33 @@ type NormalisedMediaObject = {
 };
 
 /**
+ * Maps the HTTP `media` field of an UPDATE payload onto the domain's top-level
+ * `videos` field (HOS-372).
+ *
+ * The HTTP boundary still accepts `media` so existing clients keep working — and
+ * so `HttpMediaUpdateSchema` can keep REJECTING photo keys explicitly rather than
+ * discarding them silently. The domain update surface, however, no longer has a
+ * `media` field at all: the JSONB column is gone, photos live in
+ * `accommodation_media`, and videos live in their own `videos` column.
+ *
+ * The three cases are deliberately distinct:
+ *  - `media` absent          → `{}`, the column is not touched (PATCH semantics).
+ *  - `media: null`           → `{ videos: null }`, an explicit clear.
+ *  - `media` without `videos` → `{}`. A payload that only carried photo keys has
+ *    nothing to say about videos, and emitting `videos: []` here would wipe them.
+ */
+function httpMediaToDomainVideos(httpMedia: HttpMedia | undefined): {
+    videos?: AccommodationUpdateInput['videos'];
+} {
+    if (httpMedia === undefined) return {};
+    if (httpMedia === null) return { videos: null };
+    if (httpMedia.videos === undefined) return {};
+    return {
+        videos: normaliseHttpMedia(httpMedia)?.videos as AccommodationUpdateInput['videos']
+    };
+}
+
+/**
  * Normalise an HTTP media payload to the domain shape.
  *
  * - Applies `moderationState: APPROVED` to any image that doesn't supply one
@@ -1025,13 +1052,9 @@ export const httpToDomainAccommodationUpdate = (
     ...(httpData.amenityIds === undefined ? {} : { amenityIds: httpData.amenityIds }),
     ...(httpData.featureIds === undefined ? {} : { featureIds: httpData.featureIds }),
 
-    // Media (SPEC-208 additive): normalise images to domain shape with APPROVED default.
-    // Cast is safe: see create converter comment above for the null-as-clear rationale.
-    ...(httpData.media === undefined
-        ? {}
-        : {
-              media: normaliseHttpMedia(httpData.media ?? null) as AccommodationUpdateInput['media']
-          })
+    // Media (HOS-372): the domain update surface has no `media` field — the HTTP
+    // `media` object carries videos only, and they land on the top-level column.
+    ...httpMediaToDomainVideos(httpData.media)
 });
 
 // ============================================================================
