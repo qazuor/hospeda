@@ -262,30 +262,31 @@
             "id": "T-011",
             "title": "Create the listPublicAuthors service",
             "description": "Spec §6.6. New service in packages/service-core/src/services/user/ returning authors eligible for the public surface: is_system_account = false AND at least one published post or event AND profile->>'bio' non-empty AND profile->>'avatar' non-empty. NOTE the JSONB paths — users has NO bio and NO avatar column (spec §12); the public profile reads user.profile.bio / user.profile.avatar. Returns { slug, updatedAt } plus pagination. Must never return every user. Tests: fixtures covering each excluded reason independently (system account, zero content, missing bio, missing avatar) plus one fully eligible author.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-003"],
             "blocks": ["T-012", "T-031"],
             "subtasks": [
-                { "title": "Write the query with the four conditions", "completed": false },
+                { "title": "Write the query with the four conditions", "completed": true },
                 {
                     "title": "Use profile->>'bio' / profile->>'avatar' JSONB paths",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Paginate the result", "completed": false },
+                { "title": "Paginate the result", "completed": true },
                 {
                     "title": "Tests: one fixture per exclusion reason + one eligible",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "database"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-03T12:30:00.000Z",
+                "completed": "2026-08-03T13:50:00.000Z"
+            },
+            "notes": "Commits 2a64ab317 (model + service + unit tests), 81afdb2ca (integration tests). The query lives in UserModel.listPublicAuthors (correlated EXISTS per table + trim/coalesce JSONB conditions), the service is a permission-free, actor-blind wrapper capped at pageSize 100. DECISION on 'published': read conservatively as visibility PUBLIC + lifecycle ACTIVE + not deleted. Verified while implementing that GET /api/v1/public/posts applies NO visibility or lifecycle filter of its own (PostService._executeSearch injects no override, unlike EventService.getByAuthor which does force visibility=PUBLIC for non-privileged actors) — so the PAGE can count content this query does not. The divergence is one-way by design: a page may be indexable without being listed, but a listed page is never noindex, which is the failure §6.6 exists to prevent. That unfiltered public post list is a pre-existing issue outside this spec — reported separately. Coverage: 7 unit tests (packages/db, mocked — pin that the page and count queries share ONE condition object, the limit/offset arithmetic, the slug tiebreak, and the two-column projection) + 10 service tests + 15 REAL-database integration tests in packages/db/test/integration/list-public-authors.integration.test.ts covering every exclusion reason independently. Note the integration suite gates on HOSPEDA_TEST_DATABASE_URL, not helpers.isDbAvailable() — the latter reads the DEV database and silently skipped all 15 tests on the first run while reporting exit 0."
         },
         {
             "id": "T-012",
@@ -483,29 +484,30 @@
             "id": "T-020",
             "title": "Create the /autores/[slug]/ page with both content blocks",
             "description": "Spec §6.1-6.3, §6.5, §8. New apps/web/src/pages/[lang]/autores/[slug]/index.astro. Resolve the author first (404 when absent), then fan out with a REAL Promise.all for posts and events — the user lookup waterfall is unavoidable because both endpoints take a UUID, but the second hop must be parallel; do not carry over the old page's misleading 'no waterfall' comment. Render profile header (avatar/bio omitted when absent, no placeholder filler), then the Publicaciones block, then the Eventos block; omit a block entirely when empty rather than showing an empty box. Use @/components/EmptyState.astro (the TOP-LEVEL one — a second, incompatible EmptyState exists at components/shared/feedback/). Set noindex from the T-017 predicate instead of the hardcoded true. Emit ProfilePageJsonLd only when indexable. All URLs via buildUrl. Tests: renders both blocks; omits an empty block; 404 for an unknown slug; noindex flips with the predicate.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010", "T-016", "T-017", "T-018", "T-019"],
             "blocks": ["T-021", "T-022", "T-024", "T-025", "T-026", "T-030"],
             "subtasks": [
-                { "title": "Author resolution + 404 path", "completed": false },
-                { "title": "Promise.all for posts and events", "completed": false },
-                { "title": "Profile header with absent-field omission", "completed": false },
-                { "title": "Two blocks with per-block empty handling", "completed": false },
-                { "title": "Conditional noindex + conditional JSON-LD", "completed": false },
+                { "title": "Author resolution + 404 path", "completed": true },
+                { "title": "Promise.all for posts and events", "completed": true },
+                { "title": "Profile header with absent-field omission", "completed": true },
+                { "title": "Two blocks with per-block empty handling", "completed": true },
+                { "title": "Conditional noindex + conditional JSON-LD", "completed": true },
                 {
                     "title": "Tests: both blocks, empty block, 404, noindex toggle",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "pages", "astro"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-03T10:40:00.000Z",
+                "completed": "2026-08-03T12:20:00.000Z"
+            },
+            "notes": "Commits d43d51582 (payload change) and cf3b030bb (page). BLOCKER FOUND AND RESOLVED BY OWNER DECISION: §6.5 condition 1 and AC-13 require the page to evaluate isSystemAccount, but T-009's UserAuthorPublicResponseSchema did not carry it and the UserSchema docstring written in T-003 stated the flag 'never appears in a public payload'. Owner chose to expose it on the by-slug payload (options weighed: an SEO-named derived boolean, which would split the predicate across two places; or 404ing system accounts, which changes the spec's scope from indexability to existence). d43d51582 projects it through getPublicProfileBySlug, adds it to the route schema and corrects the UserSchema docstring to name the single deliberate exception. PAGINATION CONTRACT for T-021/T-022: this one file serves all three URLs — the rewrite routes pass ?page=<n> (posts) and ?eventsPage=<n> (events), and pages 2..n render only the block being paginated. Documented in the page's own docblock as a table. The events Pagination base is /autores/<slug>/eventos, whose page-1 href is never emitted from the index because the component renders the current page as text; T-022 must handle that base itself. Social-link filtering was extracted to apps/web/src/lib/authors/author-social-links.ts because the lenient read schema lets bare handles ('@carmen') through and an href of a handle resolves against the current path — Vitest cannot render .astro, so inline it would have been untestable. Coverage: 15 unit tests for the helper + 20 source-guard tests for the page + the updated breadcrumbs guard, 71 web tests green, web lint exit 0 (118 preexisting warnings, unchanged), astro check 0 errors."
         },
         {
             "id": "T-021",

@@ -1,6 +1,6 @@
 # HOS-375: Author page — move to `/autores/<slug>/` and unify posts + events
 
-## Progress: 18/38 tasks (47%)
+## Progress: 20/38 tasks (53%)
 
 **Average Complexity:** 1.9/3 (max)
 **Critical Path:** T-002 → T-003 → T-017 → T-020 → T-021 → T-029 → T-032 (7 steps)
@@ -70,7 +70,8 @@
   - **Done.** Key omitted entirely when opted out, never `null`. A test asserts the payload is identical for guest / self / third party **with the opt-in ON** — the route is edge-cached on a session-blind key, so an actor-dependent branch would serve one visitor's payload to everyone.
   - Blocked by: T-009 · Blocks: T-020, T-034
 
-- [ ] **T-011** (complexity: 3) — Create the `listPublicAuthors` service
+- [x] **T-011** (complexity: 3) — Create the `listPublicAuthors` service
+  - **Done.** Query in `UserModel.listPublicAuthors` (correlated `EXISTS` per table, `trim(coalesce(profile->>…))` for bio/avatar); the service wrapper is permission-free and actor-blind, capped at `pageSize` 100. "Published" = `visibility PUBLIC + lifecycle ACTIVE + not deleted`, deliberately CONSERVATIVE: `GET /public/posts` applies no visibility filter of its own, so the page can count content this query does not. The divergence is one-way on purpose — a page may be indexable without being listed, but a listed page is never `noindex`. 15 integration tests against a real DB cover every exclusion reason.
   - Blocked by: T-002, T-003 · Blocks: T-012, T-031
 
 - [ ] **T-012** (complexity: 2) — Add the `GET /api/v1/public/authors` route
@@ -102,7 +103,10 @@
   - **Done.** Component delegates to `JsonLd.astro`; the node is built by a pure module so the EMITTED JSON is testable (Vitest cannot render `.astro`). The node type must be a `type` alias, not an `interface`, or it fails to assign to `Record<string, unknown>` — caught only by `astro check`.
   - Blocked by: none · Blocks: T-020
 
-- [ ] **T-020** (complexity: 3) — Create the `/autores/[slug]/` page with both content blocks
+- [x] **T-020** (complexity: 3) — Create the `/autores/[slug]/` page with both content blocks
+  - **Done.** `apps/web/src/pages/[lang]/autores/[slug]/index.astro`. Required an unplanned payload change first: §6.5 condition 1 / AC-13 need `isSystemAccount` on the page, and the by-slug response did not carry it — the owner approved exposing it (see the T-020 note in `state.json` for the options weighed).
+  - **Read before starting T-021/T-022.** This one file serves all three URLs. The rewrite routes pass `?page=<n>` (posts) and `?eventsPage=<n>` (events), and pages 2..n render ONLY the block being paginated. The contract is a table in the page's own docblock. The events `Pagination` base is `/autores/<slug>/eventos`, whose page-1 href is never emitted from the index (the component renders the current page as text) — T-022 must decide what that base does on its own pages.
+  - Social-link filtering lives in `apps/web/src/lib/authors/author-social-links.ts`, not inline: the lenient read schema lets bare handles (`@carmen`) through, and a handle in an `href` resolves against the current path.
   - Blocked by: T-010, T-016, T-017, T-018, T-019 · Blocks: T-021, T-022, T-024, T-025, T-026, T-030
 
 - [ ] **T-021** (complexity: 2) — Create the posts pagination page `/autores/[slug]/page/[page]/`
