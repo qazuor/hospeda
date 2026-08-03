@@ -6,6 +6,7 @@ import { EventByAuthorHttpSchema, EventPublicSchema, UserIdSchema } from '@repo/
 import { EventService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
+import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
 
 const eventService = new EventService({ logger: apiLogger });
@@ -26,15 +27,25 @@ export const publicGetEventsByAuthorRoute = createPublicListRoute({
     handler: async (ctx, params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { authorId } = params as { authorId: string };
-        const { page, pageSize } = (query || {}) as { page?: number; pageSize?: number };
+        const { page, pageSize } = extractPaginationParams(query || {});
         const result = await eventService.getByAuthor(actor, {
             // TYPE-WORKAROUND: service input expects branded UserId but route params arrive as plain string; cast bypasses brand-narrowing since validation already happened via UserIdSchema upstream.
             authorId: authorId as unknown as never,
-            page: page ?? 1,
-            pageSize: pageSize ?? 20
+            page,
+            pageSize
         });
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
-        return result.data as never;
+
+        // The service returns `{ items, total }`; `createPublicListRoute`
+        // requires `{ items, pagination }` and throws "Paginated result must
+        // have items and pagination properties" otherwise. Returning the
+        // service output directly made this route answer 500 for EVERY author
+        // — the `as never` cast that used to sit here is what hid the mismatch
+        // from the compiler. Mirrors the public post/event list routes.
+        return {
+            items: result.data?.items ?? [],
+            pagination: getPaginationResponse(result.data?.total ?? 0, { page, pageSize })
+        } as never;
     },
     options: {
         cacheTTL: 60

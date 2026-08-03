@@ -97,15 +97,23 @@ export class EventService {
         };
     }
 
+    /**
+     * Mirrors the REAL `EventService.getByAuthor`, which returns the model's
+     * `{ items, total }` — NOT `{ items, pagination }`.
+     *
+     * This mock used to return a `pagination` envelope the service never
+     * produces, which made the route look correct in tests while answering 500
+     * in production for every author: `createPublicListRoute` demands the
+     * envelope, and the route was handing the service output straight through.
+     * A mock that is kinder than the real service cannot catch that class of
+     * bug — building the envelope is the ROUTE's job, so the mock must stop
+     * doing it for free.
+     */
     async getByAuthor(
         _actor: unknown,
-        input: { authorId: string; page?: number; pageSize?: number }
+        _input: { authorId: string; page?: number; pageSize?: number }
     ) {
-        const page = input.page ?? 1;
-        const pageSize = input.pageSize ?? 10;
-        return {
-            data: { items: [], pagination: { page, pageSize, total: 0, totalPages: 0 } }
-        };
+        return { data: { items: [], total: 0 } };
     }
 
     async getByLocation(
