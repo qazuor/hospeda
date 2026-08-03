@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
     EventAdminSchema,
-    EventProtectedSchema
+    EventProtectedSchema,
+    EventPublicSchema
 } from '../../../src/entities/event/event.access.schema.js';
 import { EventLocationAddressSchema } from '../../../src/entities/eventLocation/eventLocation.address.schema.js';
 import { createValidEvent } from '../../fixtures/event.fixtures.js';
@@ -93,6 +94,114 @@ describe('Event read schemas — HOS-300 admin list 500', () => {
         expect(result.success).toBe(true);
         if (result.success) {
             expect(result.data.location?.street).toBe(PROD_LONG_STREET);
+        }
+    });
+});
+
+/**
+ * HOS-375 §6.9 (G-7) — the public event payload gained an `author` relation so
+ * the event detail page can render a byline linking to `/autores/<slug>/`.
+ *
+ * `EventService` was already eager-loading the relation; the schema was what
+ * discarded it, because `stripWithSchema` drops every key the response schema
+ * does not declare. These tests pin the two properties that make the addition
+ * safe: it is ADDITIVE (a payload without the key still parses, per the
+ * package's additive-only compat policy) and it is PUBLIC-TIER ONLY (the raw
+ * `users` row the JOIN returns is projected down, never forwarded whole).
+ */
+describe('EventPublicSchema — author relation (HOS-375 G-7)', () => {
+    /**
+     * `createValidEvent()` ships a plain coordinates blob under `location`,
+     * which is NOT the `EventLocation` relation `EventPublicSchema` declares —
+     * the admin/protected tests above only pass because they overwrite that key
+     * with a real venue row. These tests exercise the `author` relation and
+     * nothing else, so the mismatched key is dropped rather than filled in.
+     */
+    const publicEventBase = () => {
+        const { location: _location, ...event } = createValidEvent();
+        return event;
+    };
+
+    /**
+     * A verbatim `users` row as the Drizzle `author` relation returns it: the
+     * whole record, private columns included. The public payload must expose
+     * only the public-tier subset of this.
+     */
+    const rawAuthorRow = {
+        id: '550e8400-e29b-41d4-a716-446655440010',
+        displayName: 'Laura Vega',
+        firstName: 'Laura',
+        lastName: 'Vega',
+        slug: 'laura-vega',
+        image: 'https://cdn.hospeda.test/avatars/laura-vega.jpg',
+        // Private columns that must NOT survive the projection.
+        email: 'laura.vega@hospeda.test',
+        password: 'hashed-secret',
+        phone: '+5493442123456',
+        settings: { publicProfileShowSocialNetworks: false },
+        contactInfo: { personalEmail: 'laura@personal.test' },
+        isSystemAccount: false,
+        deletedAt: null
+    };
+
+    it('parses a historic payload that carries no author key at all', () => {
+        const historic = publicEventBase();
+        expect(historic).not.toHaveProperty('author');
+
+        const result = EventPublicSchema.safeParse(historic);
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.author).toBeUndefined();
+        }
+    });
+
+    it('parses an author of null — the FK is nullable on the row', () => {
+        const result = EventPublicSchema.safeParse({ ...publicEventBase(), author: null });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.author).toBeNull();
+        }
+    });
+
+    it('carries the author fields the byline needs when the relation is loaded', () => {
+        const result = EventPublicSchema.safeParse({
+            ...publicEventBase(),
+            author: rawAuthorRow
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.author).toBeDefined();
+            expect(result.data.author?.id).toBe(rawAuthorRow.id);
+            expect(result.data.author?.displayName).toBe('Laura Vega');
+            // The byline's link target — without it there is no author page to
+            // point at, which is the entire purpose of the relation.
+            expect(result.data.author?.slug).toBe('laura-vega');
+            expect(result.data.author?.image).toBe(rawAuthorRow.image);
+        }
+    });
+
+    it('strips every private user column out of the loaded author', () => {
+        const result = EventPublicSchema.safeParse({
+            ...publicEventBase(),
+            author: rawAuthorRow
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            const author = result.data.author as Record<string, unknown>;
+            for (const leaked of [
+                'email',
+                'password',
+                'phone',
+                'settings',
+                'contactInfo',
+                'deletedAt'
+            ]) {
+                expect(author).not.toHaveProperty(leaked);
+            }
         }
     });
 });

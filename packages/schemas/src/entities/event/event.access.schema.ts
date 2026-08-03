@@ -10,6 +10,7 @@ import {
     EventOrganizerProtectedSchema,
     EventOrganizerPublicSchema
 } from '../eventOrganizer/eventOrganizer.access.schema.js';
+import { UserPublicSchema } from '../user/user.access.schema.js';
 import { EventSchema } from './event.schema.js';
 
 /**
@@ -62,7 +63,30 @@ export const EventPublicSchema = EventSchema.pick({
     // Relation fields — nullish to accept both undefined (relation not loaded)
     // and null (relation loaded but FK is null on the row).
     organizer: EventOrganizerPublicSchema.nullish(),
-    location: EventLocationPublicSchema.nullish()
+    location: EventLocationPublicSchema.nullish(),
+    /**
+     * Event author, when the JOIN is performed — public-tier fields only
+     * (HOS-375 §6.9 / G-7).
+     *
+     * The public event payload used to carry no author at all: this schema picks
+     * `organizerId` but neither `authorId` nor an author relation, so the event
+     * detail page had nothing to build a byline from. `EventService` already
+     * eager-loads the `author` relation (`getDefaultListRelations`, inherited by
+     * `getDefaultGetByIdRelations`), so the row was being fetched and then
+     * silently discarded by `stripWithSchema`. Declaring it here is what lets it
+     * through — it adds no query and no JOIN.
+     *
+     * Deliberately {@link UserPublicSchema}, the same projection
+     * `PostPublicSchema.author` already uses, and never a fuller user shape:
+     * everything it exposes (display name, slug, avatar) is what the author page
+     * publishes by decision anyway, so the payload gains no new class of data and
+     * stays actor-blind — which is what keeps `/api/v1/public/events` shareable
+     * across its edge cache.
+     *
+     * Additive, so allowed by the package's additive-only compat policy: a
+     * historic event payload without the key still parses.
+     */
+    author: UserPublicSchema.nullish()
 });
 
 export type EventPublic = z.infer<typeof EventPublicSchema>;
