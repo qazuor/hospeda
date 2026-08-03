@@ -747,6 +747,44 @@ describe('httpToDomainAccommodationUpdate — media maps to top-level videos (HO
     });
 });
 
+describe('httpToDomainAccommodationCreate — videos reach their own column (HOS-372)', () => {
+    const baseCreate = baseCreatePayload;
+
+    it('emits videos alongside media so they survive the insert', () => {
+        // `media` is kept on create for the photo shadow-write into
+        // `accommodation_media`, but the key is dropped on the way to the INSERT
+        // and the shadow-write ignores videos — so the column emission is the
+        // only path videos have.
+        const result = httpToDomainAccommodationCreate({
+            ...baseCreate,
+            media: { videos: [{ url: 'https://youtu.be/abc' }] }
+        });
+
+        expect(result.videos).toHaveLength(1);
+        expect(result.videos?.[0]?.url).toBe('https://youtu.be/abc');
+        expect(result.videos?.[0]?.moderationState).toBe('APPROVED');
+    });
+
+    it('still emits media so the photo shadow-write keeps working', () => {
+        const result = httpToDomainAccommodationCreate({
+            ...baseCreate,
+            media: { featuredImage: { url: 'https://example.com/hero.jpg' } }
+        });
+
+        const media = result.media as { featuredImage?: { url: string } } | undefined;
+        expect(media?.featuredImage?.url).toBe('https://example.com/hero.jpg');
+    });
+
+    it('leaves videos undefined when media carries no videos key', () => {
+        const result = httpToDomainAccommodationCreate({
+            ...baseCreate,
+            media: { featuredImage: { url: 'https://example.com/hero.jpg' } }
+        });
+
+        expect(result.videos).toBeUndefined();
+    });
+});
+
 // ---------------------------------------------------------------------------
 // SPEC-229: partial grouped-object emission (no default injection)
 //

@@ -820,7 +820,14 @@ export const httpToDomainAccommodationCreate = (
         ? {}
         : {
               media: normaliseHttpMedia(httpData.media) as AccommodationCreateInput['media']
-          })
+          }),
+
+    // HOS-372: `media` above survives on CREATE because `_afterCreate` fans its
+    // PHOTOS out into `accommodation_media`. That shadow-write ignores videos, and
+    // the `media` key itself is dropped on the way to the INSERT (verified against
+    // the DB: no error, the key just vanishes), so videos sent inside the blob
+    // would be lost without this second emission onto the real column.
+    ...httpMediaToDomainVideos(httpData.media)
 });
 
 /**
