@@ -374,7 +374,14 @@ And `alojamientos/index.astro:208-220` runs 4 sequential awaits
 (destinations → amenities → features → accommodations) with no `Promise.all`,
 contradicting a comment in `listing-cache.ts:9` that claims otherwise.
 
-### 5.5 Purge is still whole-zone
+### 5.5 Purge is still whole-zone — RESOLVED by W1-1 (2026-08-03)
+
+> **Status.** Everything below described the state before W1-1. It shipped:
+> `/api/revalidate` now purges `{ tags }` (or `{ purgeEverything: true }` behind
+> an explicit flag), `entity-path-mapper.ts` is deleted, and
+> `revalidation_log.path` is now `target`. Kept as written because it is the
+> record of WHY, and because §5.11's reasoning still governs W1-2.
+
 
 `apps/web/src/pages/api/revalidate.ts:60` sends
 `{ purge_everything: true }` to the Cloudflare zone. Verified by reading the
@@ -691,6 +698,30 @@ it over-purges catastrophically: purging `/es/alojamientos/` also evicts every
 accommodation detail page under it — precisely the finite, high-value, expensive
 -to-render surface the cache exists to protect. Tags give the same coverage with
 none of the collateral.
+
+#### 5.11.5 Does Free honor a `Cache-Tag` header from an ORIGIN? (open, gates W1-2)
+
+> Method: re-read the live Cloudflare docs on 2026-08-03 while implementing
+> W1-1 — the purge-cache overview, the purge-by-tags page, and the Workers
+> cache configuration page.
+
+Everything §5.11.2 claims about the purge METHODS holds. What no page states is
+whether the `Cache-Tag` **response header emitted by an origin server** — as
+opposed to one set inside a Worker — is honored on the Free plan. The
+2025-04-01 changelog universalized the five purge *methods*; it says nothing
+about the header, which was historically Enterprise-only.
+
+The circumstantial case that it works is decent: purge-by-tag on Free would be
+useless without an origin-side way to attach tags, and Cache Response Rules
+(available on Free, 10 rules) exist to set cache tags on responses. But that is
+inference, and the failure mode is the silent one §5.11.3 warns about — the
+purge returns `200 success` and evicts nothing.
+
+**This must be verified empirically before the Cache Rule opens** (W1-2), and
+it is cheap: scope a Cache Rule to one probe path, confirm `CF-Cache-Status:
+HIT`, purge by that response's tag, confirm the next request is a `MISS`. If it
+fails, the fallback is a Cache Response Rule that copies a first-party origin
+header into `Cache-Tag` — the emitter side stays exactly as built either way.
 
 ### 5.12 The auth-blind SSR audit (Rev 3)
 
@@ -1009,7 +1040,49 @@ a number the protected endpoint returned to that viewer personally.
 
 ### 6.4 Wave B — turn on the edge
 
-**W1-1 — Selective purge by cache tag (prerequisite, not follow-up).**
+**W1-1 — Selective purge by cache tag (prerequisite, not follow-up). DONE
+(2026-08-03, PRs #2575 + the purge-side PR).**
+
+Shipped in two halves, emission before purge — tags nobody purges by are
+inert, while purging by tags nobody emits is a silent no-op against a live
+cache. What landed, and the four things that differ from the plan below:
+
+- **`@repo/cache-tags`**, a new dependency-free package, is the single
+  vocabulary both sides read. Anything it imported would be pulled into the web
+  client graph, hence the zero dependencies.
+- **The tag vocabulary in §7.3 would not have purged anything.** It specifies
+  `accom-<id>`, but all ~40 revalidation call sites pass `slug`; only the
+  plan-remediation paths pass `id`, and they fall back to an id-only event when
+  the slug lookup fails. Emitting one and purging by the other purges nothing,
+  silently. Resolved by emitting BOTH tags per entity — a few dozen bytes
+  against a 16 KB header budget.
+- **Four cacheable responses bypass middleware entirely**: `robots.txt`,
+  `llms.txt`, the sitemaps and the RSS feeds, because `isStaticAssetRoute`
+  short-circuits on the `.txt`/`.xml` extension. They set `Cache-Tag`
+  themselves. A static guard found them; without it the sitemap would have
+  shipped stale for 24 h with nothing able to evict it. `/api/og` is exempt and
+  needs no tag: it is content-addressed by construction, since every input that
+  changes the image is a query param and the query string is in the cache key.
+- **`revalidateByEntityType` no longer enumerates published rows.** The
+  collection tag covers every listing surface for a type, and walking hundreds
+  of rows would blow past the 5-requests-per-minute tag-purge ceiling. Each
+  entity purges its own tag from its own write hook. This is a deliberate
+  narrowing of the cron backstop, not an oversight.
+
+**Two gates remain before W1-2:**
+
+1. **§5.11.5** — verify empirically that Free honors an origin-emitted
+   `Cache-Tag` header. The failure mode is silent.
+2. **Audit the live `revalidation_config` rows.** Any row with `enabled = false`
+   or `autoRevalidateOnChange = false` now means that entity type invalidates
+   **nothing at all** on write. `tag` and `amenity` are seeded that way. Under
+   `purge_everything` this was harmless — the next write of any type flushed the
+   zone and corrected them within minutes. Under selective purge, an amenity
+   rename waits for the next accommodation write or up to 24 h. The gate is
+   worth checking against the live 8 rows, not the seed.
+
+The original plan, for the record:
+
 Emit `Cache-Tag` per response (entity ids + listing/collection tags + locale)
 from an Astro middleware collector, and change
 `CloudflareRevalidationAdapter` to POST the tags to `/api/revalidate`, which
@@ -1234,15 +1307,36 @@ parameter for deploy-time flushes.
 **Tag vocabulary** (must be printable ASCII, ≤1024 chars each, ≤1000 tags per
 response — Cloudflare limits):
 
+> **As built (W1-1).** The table below was the plan; two rows changed. Both
+> tags are emitted per entity — by SLUG **and** by ID — because the call sites
+> are not consistent about which identifier they hold, and emitting one while
+> purging by the other purges nothing (§6.4). Two page tags were also added
+> that the plan did not anticipate. The vocabulary lives in
+> `packages/cache-tags/src/vocabulary.ts`, which is the source of truth.
+
 | Tag shape | Emitted by | Purged when |
 |---|---|---|
-| `accom-<id>` / `dest-<slug>` / `event-<id>` / `post-<id>` | any response rendering that entity | that entity is written |
-| `list-accom` / `list-dest` / `list-event` / `list-post` | any listing containing that collection | any member of the collection changes |
+| `accom-<slug>` **and** `accom-<id>` (same for `dest-`, `event-`, `post-`) | any response rendering that entity | that entity is written |
+| `list-accom` / `list-dest` / `list-event` / `list-post` | any listing containing that collection — including the facet landings, the sitemaps and the feeds | any member of the collection changes |
 | `home` | the home page | anything featured on it changes |
+| `pricing` | the four subscriber pricing/comparison pages | a billing plan is written |
+| `site-config` | `robots.txt`, `llms.txt` | platform settings change |
 
 The response-side collector is Astro middleware; the purge-side caller is
 `CloudflareRevalidationAdapter`. `entity-path-mapper.ts` is **deleted** by this
 change, not extended (D-6).
+
+**As built**, two contract details the plan did not state:
+
+- The whole-zone form is a **separate method** (`purgeEverything`) at every
+  layer — adapter, service, HTTP body — not a flag on the tag path. A content
+  write cannot reach a zone flush by accident, and reading a call site tells you
+  which one it is. `POST /api/revalidate` rejects an ambiguous body
+  (`{ tags, purgeEverything }` together) with a 400 rather than picking one.
+- `revalidation_log.path` was renamed to **`target`** (migration
+  `0070_volatile_freak.sql`, `RENAME COLUMN`, no data loss). It holds a cache
+  tag, or `*` for a zone flush. `target` rather than `tag` because historical
+  rows keep their URL paths.
 
 Rev 2's `{ files: string[] }` form is rejected — see §5.11 for why it cannot
 work at this plan tier.

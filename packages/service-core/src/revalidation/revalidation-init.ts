@@ -29,18 +29,6 @@ export interface InitRevalidationParams {
      */
     readonly debounceMs?: number;
     /**
-     * Supported locales for URL path generation.
-     * Used by getAffectedPaths to generate locale-prefixed paths.
-     * Should match the locales supported by the web app.
-     */
-    readonly locales: ReadonlyArray<string>;
-    /**
-     * Maximum number of entity types to revalidate per cron job run.
-     * Prevents runaway revalidation in large deployments.
-     * Defaults to 500.
-     */
-    readonly maxCronRevalidations?: number;
-    /**
      * Number of days to retain revalidation log entries before cleanup.
      * Used by the cron job to delete old log entries.
      * Defaults to 30.
@@ -90,8 +78,6 @@ export function initializeRevalidationService(params: InitRevalidationParams): R
     const config: RevalidationServiceConfig = {
         adapter,
         debounceMs: params.debounceMs,
-        locales: params.locales,
-        maxCronRevalidations: params.maxCronRevalidations,
         logRetentionDays: params.logRetentionDays,
         entityResolver: params.entityResolver
     };

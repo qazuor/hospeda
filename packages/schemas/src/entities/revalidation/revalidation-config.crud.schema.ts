@@ -7,7 +7,7 @@ import { z } from 'zod';
  * All fields are optional — only provided fields will be updated.
  */
 export const UpdateRevalidationConfigInputSchema = z.object({
-    /** Whether to automatically revalidate affected paths when the entity changes */
+    /** Whether to automatically revalidate affected cache tags when the entity changes */
     autoRevalidateOnChange: z.boolean().optional(),
     /** Interval in minutes for cron-based revalidation (1 minute to 1 week / 10080 minutes) */
     cronIntervalMinutes: z.number().int().min(1).max(10080).optional(),

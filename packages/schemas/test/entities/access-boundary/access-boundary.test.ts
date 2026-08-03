@@ -1287,7 +1287,7 @@ const PARSE_STRIP_CONFIGS: readonly ParseStripConfig[] = [
         adminSchema: RevalidationLogAdminSchema,
         mockData: {
             id: UUID1,
-            path: '/en/accommodations/test',
+            target: 'accom-test',
             entityType: 'accommodation',
             entityId: UUID2,
             trigger: 'manual',

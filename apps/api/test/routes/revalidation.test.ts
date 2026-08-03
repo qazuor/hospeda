@@ -3,7 +3,7 @@
  *
  * Tests all eight endpoints mounted at /api/v1/admin/revalidation:
  *
- *   POST   /revalidate/manual   — trigger manual path revalidation
+ *   POST   /revalidate/manual   — trigger manual cache-tag revalidation, or a whole-zone purge
  *   POST   /revalidate/entity   — trigger entity-instance revalidation
  *   POST   /revalidate/type     — trigger full entity-type revalidation
  *   GET    /config              — list all revalidation configs
@@ -44,8 +44,13 @@ vi.mock('../../src/utils/env', async (importOriginal) => {
 // ---------------------------------------------------------------------------
 
 const mockRevalidateService = {
-    revalidatePaths: vi.fn().mockResolvedValue([]),
-    revalidateByEntityType: vi.fn().mockResolvedValue([])
+    revalidateTags: vi.fn().mockResolvedValue([]),
+    revalidateByEntityType: vi.fn().mockResolvedValue([]),
+    purgeEverything: vi.fn().mockResolvedValue({
+        target: '*',
+        success: true,
+        durationMs: 5
+    })
 };
 
 vi.mock('@repo/service-core', async (importOriginal) => {
@@ -91,8 +96,8 @@ const mockLogItems = [
         trigger: 'manual',
         status: 'success',
         durationMs: 123,
-        pathsRevalidated: ['/en/accommodations/hotel-abc'],
-        pathsFailed: [],
+        targetsRevalidated: ['accom-hotel-abc'],
+        targetsFailed: [],
         createdAt: new Date('2025-01-01T00:00:00Z')
     }
 ];
@@ -221,8 +226,13 @@ describe('Revalidation Admin API — /api/v1/admin/revalidation', () => {
 
         // Restore defaults after any test overrides
         (getRevalidationService as ReturnType<typeof vi.fn>).mockReturnValue(mockRevalidateService);
-        mockRevalidateService.revalidatePaths.mockResolvedValue([]);
+        mockRevalidateService.revalidateTags.mockResolvedValue([]);
         mockRevalidateService.revalidateByEntityType.mockResolvedValue([]);
+        mockRevalidateService.purgeEverything.mockResolvedValue({
+            target: '*',
+            success: true,
+            durationMs: 5
+        });
         mockConfigModel.findAll.mockResolvedValue({ items: mockConfigItems, total: 1 });
         mockConfigModel.update.mockResolvedValue(mockConfigItems[0]);
         mockLogModel.findAll.mockResolvedValue({ items: mockLogItems, total: 1 });
@@ -236,7 +246,7 @@ describe('Revalidation Admin API — /api/v1/admin/revalidation', () => {
         it('all routes are registered and do not return 404', async () => {
             // Arrange / Act / Assert
             const endpoints: Array<{ method: string; path: string; body?: unknown }> = [
-                { method: 'POST', path: '/revalidate/manual', body: { paths: ['/test'] } },
+                { method: 'POST', path: '/revalidate/manual', body: { tags: ['test-tag'] } },
                 {
                     method: 'POST',
                     path: '/revalidate/entity',
@@ -280,7 +290,7 @@ describe('Revalidation Admin API — /api/v1/admin/revalidation', () => {
 
     describe('POST /revalidate/manual', () => {
         describe('Input validation', () => {
-            it('returns 400 when paths is missing', async () => {
+            it('returns 400 when neither tags nor purgeEverything is present', async () => {
                 // Act
                 try {
                     const res = await post(app, '/revalidate/manual', { reason: 'test' });
@@ -296,11 +306,27 @@ describe('Revalidation Admin API — /api/v1/admin/revalidation', () => {
                 }
             });
 
-            it('returns 400 when paths is an empty array', async () => {
+            it('returns 400 when tags is an empty array', async () => {
                 // Act
                 try {
-                    const res = await post(app, '/revalidate/manual', { paths: [] });
+                    const res = await post(app, '/revalidate/manual', { tags: [] });
                     // Auth gate (401/403) also acceptable when auth runs before validation
+                    expect([400, 401, 403, 422]).toContain(res.status);
+                } catch (err) {
+                    if (err && typeof err === 'object' && 'status' in err) {
+                        expect([400, 401, 403, 422]).toContain((err as { status: number }).status);
+                    } else {
+                        throw err;
+                    }
+                }
+            });
+
+            it('returns 400 when a tag contains an invalid character (comma)', async () => {
+                // Act — a tag with an embedded comma can never round-trip through
+                // the Cache-Tag header's comma-separated list, so the schema
+                // rejects it at the boundary rather than letting it ship broken.
+                try {
+                    const res = await post(app, '/revalidate/manual', { tags: ['bad,tag'] });
                     expect([400, 401, 403, 422]).toContain(res.status);
                 } catch (err) {
                     if (err && typeof err === 'object' && 'status' in err) {
@@ -320,7 +346,7 @@ describe('Revalidation Admin API — /api/v1/admin/revalidation', () => {
                 // Act
                 try {
                     const res = await post(app, '/revalidate/manual', {
-                        paths: ['/en/accommodations/test']
+                        tags: ['accom-test']
                     });
 
                     if (res.status === 200) {
@@ -328,7 +354,7 @@ describe('Revalidation Admin API — /api/v1/admin/revalidation', () => {
                         // Handler returns { success: false, revalidated: [], failed: [...], duration: 0 }
                         expect(body).toHaveProperty('success', false);
                         expect(body.revalidated).toEqual([]);
-                        expect(body.failed).toContain('/en/accommodations/test');
+                        expect(body.failed).toContain('accom-test');
                         expect(body.duration).toBe(0);
                     } else {
                         // Auth gate or validation gate
@@ -345,11 +371,17 @@ describe('Revalidation Admin API — /api/v1/admin/revalidation', () => {
         });
 
         describe('Success path', () => {
-            it('returns success response with revalidated paths', async () => {
+            it('returns success response with revalidated tags', async () => {
+                // Arrange
+                mockRevalidateService.revalidateTags.mockResolvedValue([
+                    { target: 'accom-hotel-abc', success: true, durationMs: 5 },
+                    { target: 'list-accom', success: true, durationMs: 5 }
+                ]);
+
                 // Act
                 try {
                     const res = await post(app, '/revalidate/manual', {
-                        paths: ['/en/accommodations/hotel-abc', '/es/alojamientos/hotel-abc'],
+                        tags: ['accom-hotel-abc', 'list-accom'],
                         reason: 'admin update'
                     });
 
@@ -357,7 +389,7 @@ describe('Revalidation Admin API — /api/v1/admin/revalidation', () => {
                         const body = await res.json();
                         expect(body).toHaveProperty('success', true);
                         expect(Array.isArray(body.revalidated)).toBe(true);
-                        expect(body.revalidated).toContain('/en/accommodations/hotel-abc');
+                        expect(body.revalidated).toContain('accom-hotel-abc');
                         expect(body.failed).toEqual([]);
                         expect(typeof body.duration).toBe('number');
                     } else {
@@ -372,15 +404,15 @@ describe('Revalidation Admin API — /api/v1/admin/revalidation', () => {
                 }
             });
 
-            it('calls revalidatePaths with the provided paths', async () => {
+            it('calls revalidateTags with the provided tags', async () => {
                 // Act
                 try {
-                    const paths = ['/en/accommodations/hotel-abc'];
-                    const res = await post(app, '/revalidate/manual', { paths });
+                    const tags = ['accom-hotel-abc'];
+                    const res = await post(app, '/revalidate/manual', { tags });
 
                     if (res.status === 200) {
-                        expect(mockRevalidateService.revalidatePaths).toHaveBeenCalledWith({
-                            paths,
+                        expect(mockRevalidateService.revalidateTags).toHaveBeenCalledWith({
+                            tags,
                             triggeredBy: expect.any(String),
                             reason: undefined,
                             trigger: 'manual',
@@ -398,26 +430,82 @@ describe('Revalidation Admin API — /api/v1/admin/revalidation', () => {
                 }
             });
 
-            it('returns failure body when revalidatePaths throws', async () => {
+            it('returns failure body when revalidateTags throws', async () => {
                 // Arrange
-                mockRevalidateService.revalidatePaths.mockRejectedValue(new Error('Network error'));
+                mockRevalidateService.revalidateTags.mockRejectedValue(new Error('Network error'));
 
                 // Act
                 try {
                     const res = await post(app, '/revalidate/manual', {
-                        paths: ['/en/accommodations/hotel-abc']
+                        tags: ['accom-hotel-abc']
                     });
 
                     if (res.status === 200) {
                         const body = await res.json();
                         expect(body).toHaveProperty('success', false);
-                        expect(body.failed).toContain('/en/accommodations/hotel-abc');
+                        expect(body.failed).toContain('accom-hotel-abc');
                     } else {
                         expect([400, 401, 403, 422, 500]).toContain(res.status);
                     }
                 } catch (err) {
                     if (err && typeof err === 'object' && 'status' in err) {
                         expect([400, 401, 403, 500]).toContain((err as { status: number }).status);
+                    } else {
+                        throw err;
+                    }
+                }
+            });
+        });
+
+        // =====================================================================
+        // purgeEverything — the whole-zone branch must be reachable ONLY via
+        // an explicit `purgeEverything: true` flag, never as a fallback.
+        // =====================================================================
+
+        describe('purgeEverything', () => {
+            it('routes to service.purgeEverything and never calls revalidateTags', async () => {
+                // Act
+                try {
+                    const res = await post(app, '/revalidate/manual', {
+                        purgeEverything: true,
+                        reason: 'deploy invalidated every asset'
+                    });
+
+                    if (res.status === 200) {
+                        const body = await res.json();
+                        expect(body).toHaveProperty('success', true);
+                        expect(body.revalidated).toContain('*');
+                        expect(mockRevalidateService.purgeEverything).toHaveBeenCalledWith({
+                            reason: 'deploy invalidated every asset',
+                            triggeredBy: expect.any(String)
+                        });
+                        expect(mockRevalidateService.revalidateTags).not.toHaveBeenCalled();
+                    } else {
+                        expect([400, 401, 403, 422]).toContain(res.status);
+                    }
+                } catch (err) {
+                    if (err && typeof err === 'object' && 'status' in err) {
+                        expect([400, 401, 403]).toContain((err as { status: number }).status);
+                    } else {
+                        throw err;
+                    }
+                }
+            });
+
+            it('a body without purgeEverything never calls service.purgeEverything', async () => {
+                // Act — a plain tags-only body must never reach the whole-zone path
+                try {
+                    const res = await post(app, '/revalidate/manual', {
+                        tags: ['accom-hotel-abc']
+                    });
+
+                    if (res.status === 200 || res.status === 400) {
+                        expect(mockRevalidateService.purgeEverything).not.toHaveBeenCalled();
+                    }
+                } catch (err) {
+                    if (err && typeof err === 'object' && 'status' in err) {
+                        expect([400, 401, 403]).toContain((err as { status: number }).status);
+                        expect(mockRevalidateService.purgeEverything).not.toHaveBeenCalled();
                     } else {
                         throw err;
                     }
@@ -892,10 +980,10 @@ describe('Revalidation Admin API — /api/v1/admin/revalidation', () => {
                 }
             });
 
-            it('accepts path filter without crashing', async () => {
+            it('accepts target filter without crashing', async () => {
                 // Act
                 try {
-                    const res = await get(app, '/logs', '?path=/en/accommodations');
+                    const res = await get(app, '/logs', '?target=accom-hotel-abc');
                     expect([200, 400, 401, 403, 422]).toContain(res.status);
                 } catch (err) {
                     if (err && typeof err === 'object' && 'status' in err) {
@@ -1156,7 +1244,7 @@ describe('Revalidation Admin API — /api/v1/admin/revalidation', () => {
             {
                 label: 'POST /revalidate/manual',
                 path: '/revalidate/manual',
-                body: { paths: ['/en/test'] }
+                body: { tags: ['accom-test'] }
             },
             {
                 label: 'POST /revalidate/entity',
@@ -1238,7 +1326,7 @@ describe('Revalidation Admin API — /api/v1/admin/revalidation', () => {
                 label: 'POST /revalidate/manual',
                 method: 'POST',
                 path: '/revalidate/manual',
-                body: { paths: ['/test'] }
+                body: { tags: ['accom-test'] }
             },
             {
                 label: 'POST /revalidate/entity',

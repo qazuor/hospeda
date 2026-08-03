@@ -45,6 +45,7 @@
     },
     "dependencies": {
         "@repo/billing": "workspace:*",
+        "@repo/cache-tags": "workspace:*",
         "@repo/content-moderation": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/logger": "workspace:*",

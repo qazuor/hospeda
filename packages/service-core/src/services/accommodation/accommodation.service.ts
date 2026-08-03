@@ -1011,9 +1011,9 @@ export class AccommodationService extends BaseCrudService<
             try {
                 getRevalidationService()?.scheduleRevalidation({
                     entityType: 'accommodation',
+                    id: entity.id,
                     slug: entity.slug,
-                    destinationSlug,
-                    accommodationType: entity.type?.toLowerCase()
+                    destinationSlug
                 });
             } catch (error) {
                 this.logger.warn(
@@ -1223,8 +1223,7 @@ export class AccommodationService extends BaseCrudService<
                     entityType: 'accommodation',
                     id: entity.id,
                     slug: entity.slug,
-                    destinationSlug,
-                    accommodationType: entity.type?.toLowerCase()
+                    destinationSlug
                 });
             } catch (error) {
                 this.logger.warn(
@@ -1890,9 +1889,9 @@ export class AccommodationService extends BaseCrudService<
                 try {
                     getRevalidationService()?.scheduleRevalidation({
                         entityType: 'accommodation',
+                        id: updated.id,
                         slug: updated.slug,
-                        destinationSlug,
-                        accommodationType: updated.type?.toLowerCase()
+                        destinationSlug
                     });
                 } catch (error) {
                     this.logger.warn(
@@ -1981,9 +1980,9 @@ export class AccommodationService extends BaseCrudService<
                 try {
                     getRevalidationService()?.scheduleRevalidation({
                         entityType: 'accommodation',
+                        id: updated.id,
                         slug: updated.slug,
-                        destinationSlug,
-                        accommodationType: updated.type?.toLowerCase()
+                        destinationSlug
                     });
                 } catch (error) {
                     this.logger.warn(
@@ -2065,9 +2064,9 @@ export class AccommodationService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'accommodation',
+                id: entity.id,
                 slug: entity.slug,
-                destinationSlug,
-                accommodationType: entity.type?.toLowerCase()
+                destinationSlug
             });
         } catch (error) {
             this.logger.warn(
@@ -2086,6 +2085,7 @@ export class AccommodationService extends BaseCrudService<
         const entity = await this.model.findById(id, ctx?.tx);
         if (entity && ctx.hookState) {
             ctx.hookState.restoredAccommodation = {
+                id: entity.id,
                 slug: entity.slug,
                 destinationId: entity.destinationId,
                 type: entity.type
@@ -2109,9 +2109,9 @@ export class AccommodationService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'accommodation',
+                id: restored?.id,
                 slug: restored?.slug,
-                destinationSlug,
-                accommodationType: restored?.type?.toLowerCase()
+                destinationSlug
             });
         } catch (error) {
             this.logger.warn(
@@ -2130,6 +2130,7 @@ export class AccommodationService extends BaseCrudService<
         const entity = await this.model.findById(id, ctx?.tx);
         if (entity && ctx.hookState) {
             ctx.hookState.deletedEntity = {
+                id: entity.id,
                 destinationId: entity.destinationId,
                 slug: entity.slug,
                 type: entity.type
@@ -2171,9 +2172,9 @@ export class AccommodationService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'accommodation',
+                id: deleted?.id,
                 slug: deleted?.slug,
-                destinationSlug,
-                accommodationType: deleted?.type?.toLowerCase()
+                destinationSlug
             });
         } catch (error) {
             this.logger.warn(
@@ -2192,6 +2193,7 @@ export class AccommodationService extends BaseCrudService<
         const entity = await this.model.findById(id, ctx?.tx);
         if (entity && ctx.hookState) {
             ctx.hookState.deletedEntity = {
+                id: entity.id,
                 destinationId: entity.destinationId,
                 slug: entity.slug,
                 type: entity.type
@@ -2216,9 +2218,9 @@ export class AccommodationService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'accommodation',
+                id: deleted?.id,
                 slug: deleted?.slug,
-                destinationSlug,
-                accommodationType: deleted?.type?.toLowerCase()
+                destinationSlug
             });
         } catch (error) {
             this.logger.warn(
@@ -4256,8 +4258,7 @@ export class AccommodationService extends BaseCrudService<
                         entityType: 'accommodation',
                         id: updated.id,
                         slug: updated.slug,
-                        destinationSlug,
-                        accommodationType: updated.type?.toLowerCase()
+                        destinationSlug
                     });
                 } catch (error) {
                     this.logger.warn(
