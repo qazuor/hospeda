@@ -20,14 +20,21 @@
 -- ---------------------------------------------------------------------------
 
 -- accommodations.media shape
+--
+-- HOS-372: guarded on the COLUMN, not the table. `accommodations` outlives its
+-- `media` column, and once the cutover drops it this ALTER TABLE would raise —
+-- taking every later extras file down with it, since `db:apply-extras` runs
+-- them as one batch. destinations / events / posts below still keep their media
+-- blob and are deliberately left on the table-existence guard.
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM information_schema.tables
+    SELECT 1 FROM information_schema.columns
     WHERE table_schema = 'public'
       AND table_name   = 'accommodations'
+      AND column_name  = 'media'
   ) THEN
-    RAISE NOTICE 'Table accommodations does not exist, skipping chk_accommodations_media_shape.';
+    RAISE NOTICE 'accommodations.media column does not exist, skipping chk_accommodations_media_shape.';
     RETURN;
   END IF;
 
@@ -135,14 +142,20 @@ $$;
 -- ---------------------------------------------------------------------------
 
 -- accommodations gallery max
+--
+-- HOS-372: guarded on the COLUMN, same reason as the shape constraint above.
+-- The gallery cap for accommodations is now enforced against the relational
+-- table by the shared resolver in `apps/api/src/routes/media/gallery-count.ts`,
+-- not by this CHECK.
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM information_schema.tables
+    SELECT 1 FROM information_schema.columns
     WHERE table_schema = 'public'
       AND table_name = 'accommodations'
+      AND column_name = 'media'
   ) THEN
-    RAISE NOTICE 'Table accommodations does not exist, skipping chk_accommodations_gallery_max.';
+    RAISE NOTICE 'accommodations.media column does not exist, skipping chk_accommodations_gallery_max.';
     RETURN;
   END IF;
 
