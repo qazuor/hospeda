@@ -653,26 +653,27 @@
             "id": "T-027",
             "title": "Add author entries to the dynamic sitemap",
             "description": "Spec §6.6 (G-3). apps/web/src/pages/sitemap-dynamic.xml.ts has zero author logic today. Add a block that fetches GET /api/v1/public/authors and emits /{locale}/autores/<slug>/ entries, following the existing buildEntriesForEntity pattern used for the other entities. Only eligible authors appear, because the endpoint already applies the shared predicate. Tests: an eligible author appears once per locale; a system account, a content-less author and an author missing bio or avatar never appear.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012", "T-017"],
             "blocks": ["T-030"],
             "subtasks": [
-                { "title": "Add the authors block to the dynamic sitemap", "completed": false },
-                { "title": "Emit one entry per locale", "completed": false },
+                { "title": "Add the authors block to the dynamic sitemap", "completed": true },
+                { "title": "Emit one entry per locale", "completed": true },
                 {
                     "title": "Tests: eligible appears, each excluded reason absent",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "seo", "sitemap"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-03T17:45:00.000Z",
+                "completed": "2026-08-03T18:30:00.000Z"
+            },
+            "notes": "apps/web/src/pages/sitemap-dynamic.xml.ts: one /autores/<slug>/ entry per locale from GET /api/v1/public/authors, lastmod = the author row's updatedAt. NO filter in this file, deliberately and unlike every other entity block here — the §6.5 predicate lives behind the endpoint, shared with the page via evaluateAuthorIndexability, and re-deciding it here would build the second source of truth §6.6 exists to prevent. Consequently the task's 'a system account / content-less / bio-less author never appears' coverage is asserted as THE ENDPOINT URL being /api/v1/public/authors (and never /public/users), not as filtered output: a test feeding this file an ineligible author and expecting it dropped would assert a filter that must not exist. The real exclusion coverage lives in T-011 (15 db integration tests) and T-012. IMPLEMENTATION NOTE: the fetch is APPENDED to the Promise.allSettled array, never inserted — the existing suite stubs fetch positionally with mockImplementationOnce, so a fetch added above would shift every later entity onto the wrong stub; the new tests use URL matching instead. 7 tests, mutation-validated (wrong mount reddens only the endpoint test; wrong public path reddens 3; dropping the block reddens 4). FOUND AND FIXED A REAL DEFECT THIS TASK WOULD HAVE SHIPPED: the live sitemap advertised ana-rodríguez and carlos-martínez, whose pages answered 404. getBySlug validates the slug param as ^[a-z0-9]+([_-][a-z0-9]+)*$ and returned 400, while UserSchema.slug was only .min(1) — write permissive, read strict. Harmless while the author page was noindex and unlinked; fatal the moment a sitemap advertises those URLs. Fixed in commit 32aafa2fe (owner chose transliteration over filtering them out): fixture slug values corrected (NOT their `id`, which is the deterministic-UUID seed key referenced as ownerId by accommodation fixtures), data-migration 0038 backfills seeded environments, and the ^...$ pattern was added to UserCreateInputSchema/UserUpdateInputSchema via .extend() — never to UserSchema itself, because that is also the READ shape and getBySlug's stripWithSchema FAIL-CLOSES to 500, so tightening the base would turn a legacy 404 into a 500. Data first, validation second, for that reason. FULL PAIRING VERIFIED LIVE against the running stack: all 11 advertised author URLs answer 200 with index,follow, and admin-user/super-admin-user are absent while serving noindex — the invariant §6.6 exists for, checked end to end rather than inferred from mocks."
         },
         {
             "id": "T-028",
