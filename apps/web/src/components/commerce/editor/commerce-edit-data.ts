@@ -8,7 +8,7 @@
  * graph read backwards and trips the repo's circular-dependency guard.
  */
 
-import type { Image, OpeningHours } from '@repo/schemas';
+import type { OpeningHours } from '@repo/schemas';
 import type { CommerceI18nValues } from '../CommerceTranslationPanel.client';
 
 /**
@@ -48,8 +48,9 @@ export const SOCIAL_KEYS: ReadonlyArray<keyof SocialValues> = [
  * two. It replaced the 18 independent `useState` slots + manual `dirty` Set this
  * editor used to carry, which made per-section extraction impossible.
  *
- * `preservedMedia` is deliberately NOT part of this type — it is never editable,
- * never diffed, and only rides along on a media patch.
+ * Media is deliberately NOT part of this type (HOS-372): `MediaSection` owns its
+ * own state and persists every photo operation immediately against the
+ * relational media endpoints, so photos are never diffed into the PATCH body.
  */
 export interface CommerceEditData {
     readonly name: string;
@@ -66,8 +67,6 @@ export interface CommerceEditData {
     readonly isPriceOnRequest: boolean;
     readonly priceFrom: number | null;
     readonly priceUnit: string;
-    readonly featuredImage: Image | null;
-    readonly gallery: readonly Image[];
     readonly amenityIds: ReadonlySet<string>;
     readonly featureIds: ReadonlySet<string>;
     readonly i18nValues: CommerceI18nValues;

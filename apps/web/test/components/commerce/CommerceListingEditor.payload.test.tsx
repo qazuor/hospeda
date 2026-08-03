@@ -13,11 +13,11 @@
  *    send an explicit `null` when cleared;
  *  - experience `priceFrom`/`priceUnit` REJECT `null` (T-021) and must instead
  *    omit the key entirely when cleared;
- *  - `contactInfo`/`socialNetworks`/`media`/the four i18n fields are replaced
- *    WHOLESALE, so the payload must carry the untouched members too — the JSONB
- *    block is overwritten server-side, not merged;
- *  - `media` re-sends `videos`/`archivedGallery`, which the owner never edits and
- *    no UI surface displays.
+ *  - `contactInfo`/`socialNetworks`/the four i18n fields are replaced WHOLESALE,
+ *    so the payload must carry the untouched members too — the JSONB block is
+ *    overwritten server-side, not merged;
+ *  - `media` is never sent at all since HOS-372: photos are persisted per
+ *    operation by `MediaSection` against the relational media endpoints.
  *
  * Assertions run against a JSON round-trip of the body (`wireBody`) rather than
  * the raw object, because `toHaveBeenCalledWith` uses `toEqual` semantics and
@@ -113,7 +113,15 @@ vi.mock('../../../src/lib/i18n', () => ({
 
 vi.mock('../../../src/lib/api/client', () => ({ apiClient: { patch: vi.fn() } }));
 
+// `MediaSection` hydrates itself from `commerceMediaApi.listMedia` on mount
+// (HOS-372), so the editor cannot render without it stubbed.
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
+    commerceMediaApi: {
+        listMedia: vi.fn().mockResolvedValue({ ok: true, data: { media: [] } }),
+        addMedia: vi.fn(),
+        removeMedia: vi.fn(),
+        setFeaturedMedia: vi.fn()
+    },
     protectedMediaApi: { deleteMedia: vi.fn().mockResolvedValue({ ok: true, data: {} }) }
 }));
 
@@ -122,10 +130,11 @@ vi.mock('../../../src/lib/env', () => ({ getApiUrl: () => 'http://api.test' }));
 vi.mock('../../../src/lib/logger', () => ({ webLogger: { warn: vi.fn() } }));
 
 import { apiClient } from '../../../src/lib/api/client';
-import { protectedMediaApi } from '../../../src/lib/api/endpoints-protected';
+import { commerceMediaApi, protectedMediaApi } from '../../../src/lib/api/endpoints-protected';
 
 const mockPatch = vi.mocked(apiClient.patch);
 const mockDeleteMedia = vi.mocked(protectedMediaApi.deleteMedia);
+const mockListMedia = vi.mocked(commerceMediaApi.listMedia);
 
 const DESTINATION_1 = '11111111-1111-4111-8111-111111111111';
 const DESTINATION_2 = '22222222-2222-4222-8222-222222222222';
@@ -396,12 +405,14 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         });
     });
 
-    describe('media preserves owner-invisible sub-fields', () => {
-        it('re-sends videos and archivedGallery when the gallery changes', async () => {
+    describe('media never travels in the PATCH body (HOS-372)', () => {
+        it('omits media even when the listing was loaded with photos', async () => {
             renderEditor(
                 'gastronomy',
                 buildListing({
+                    summary: 'Resumen original con largo suficiente.',
                     media: {
+                        featuredImage: galleryImage,
                         gallery: [galleryImage],
                         videos: [preservedVideo],
                         archivedGallery: [archivedImage]
@@ -409,22 +420,29 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
                 })
             );
 
-            // Removing the only gallery image is the cheapest way to mark the
-            // media group dirty without going through a file upload.
-            fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
-            await waitFor(() =>
-                expect(mockDeleteMedia).toHaveBeenCalledWith({ publicId: 'commerce/g1' })
-            );
-
+            // Any unrelated edit is enough: the question is whether the editor
+            // still carries a buffered `media` block alongside it.
+            fireEvent.change(screen.getByLabelText('Resumen'), {
+                target: { value: 'Resumen editado con largo suficiente.' }
+            });
             fireEvent.click(saveButton());
 
             const body = await wireBody();
-            const media = body.media as Record<string, unknown>;
-            // The media JSONB is replaced wholesale — dropping these silently
-            // deletes the owner's videos and archived images.
-            expect(media.videos).toEqual([preservedVideo]);
-            expect(media.archivedGallery).toEqual([archivedImage]);
-            expect(media.gallery).toEqual([]);
+            // `MediaSection` persists every photo operation on its own against
+            // the relational endpoints. Re-adding `media` here would overwrite
+            // those rows with a stale snapshot — the bug HOS-372 fixed.
+            expect(body).not.toHaveProperty('media');
+            expect(body).toEqual({ summary: 'Resumen editado con largo suficiente.' });
+        });
+
+        it('never fires the client-side Cloudinary delete', async () => {
+            renderEditor('gastronomy', buildListing({ media: { gallery: [galleryImage] } }));
+
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+            // Removal goes through `commerceMediaApi.removeMedia`, which deletes
+            // the binary server-side. `delete-entity` rejects commerce verticals
+            // with a 400, so any call here is a regression.
+            expect(mockDeleteMedia).not.toHaveBeenCalled();
         });
     });
 

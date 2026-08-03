@@ -319,11 +319,21 @@ describe('createCommerceOperationalSection', () => {
     it('AC-5: contains media fields with correct types', () => {
         const featuredImage = section.fields.find((f) => f.id === 'media.featuredImage');
         const gallery = section.fields.find((f) => f.id === 'media.gallery');
-        const videos = section.fields.find((f) => f.id === 'media.videos');
+        // HOS-372: videos are a top-level column now, not a key of the dropped
+        // `media` blob, so the field id is `videos`. A dotted `media.videos` id
+        // would submit a `media` object the update schema strips, and the videos
+        // would never reach the DB.
+        const videos = section.fields.find((f) => f.id === 'videos');
 
         expect(featuredImage?.type).toBe(FieldTypeEnum.IMAGE);
         expect(gallery?.type).toBe(FieldTypeEnum.GALLERY);
         expect(videos?.type).toBe(FieldTypeEnum.VIDEO_GALLERY);
+    });
+
+    it('AC-5: exposes no dotted media.videos field (HOS-372 regression)', () => {
+        // Guards the exact mistake this change fixes: a reintroduced dotted id
+        // still renders and still validates, it just silently persists nothing.
+        expect(section.fields.map((f) => f.id)).not.toContain('media.videos');
     });
 
     it('AC-5: contains openingHours field (read-only JSON — structured object)', () => {

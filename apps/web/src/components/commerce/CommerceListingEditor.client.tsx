@@ -141,28 +141,27 @@ function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
  *
  * This is NOT a uniform per-leaf diff, and the asymmetries are load-bearing:
  *
- *  - `contactInfo` / `socialNetworks` / `media` are JSONB blocks the API
- *    REPLACES rather than merges, so the whole block ships whenever any member
- *    changed — sending only the changed leaf would wipe the others.
+ *  - `contactInfo` / `socialNetworks` are JSONB blocks the API REPLACES rather
+ *    than merges, so the whole block ships whenever any member changed —
+ *    sending only the changed leaf would wipe the others.
  *  - The four i18n fields travel together, as the translation panel edits them
  *    as one unit.
  *  - Gastronomy's `priceRange`/`menuUrl` are `.nullish()` on the domain schema
  *    and clear to an explicit `null`; experience's `priceFrom`/`priceUnit` are
  *    NOT nullable and must omit the key instead (T-021 — sending `null` there
  *    fails validation whenever the owner clears the field).
- *  - `preservedMedia` (videos / archivedGallery) is re-sent with every media
- *    patch because the owner never edits it and the block is replaced wholesale.
+ *  - `media` is absent by design (HOS-372): photos are persisted per operation
+ *    by `MediaSection` against the relational media endpoints, so re-sending a
+ *    buffered `media` block here would overwrite the rows the owner just saved.
  */
 function buildPatchPayload({
     current,
     baseline,
-    vertical,
-    preservedMedia
+    vertical
 }: {
     current: CommerceEditData;
     baseline: CommerceEditData;
     vertical: CommerceVertical;
-    preservedMedia: Record<string, unknown>;
 }): Record<string, unknown> {
     const payload: Record<string, unknown> = {};
 
@@ -212,17 +211,6 @@ function buildPatchPayload({
 
     if (!sameValue(current.openingHours, baseline.openingHours)) {
         payload.openingHours = current.openingHours;
-    }
-
-    if (
-        !sameValue(current.featuredImage, baseline.featuredImage) ||
-        !sameValue(current.gallery, baseline.gallery)
-    ) {
-        payload.media = {
-            ...preservedMedia,
-            ...(current.featuredImage ? { featuredImage: current.featuredImage } : {}),
-            gallery: current.gallery
-        };
     }
 
     if (!sameSet(current.amenityIds, baseline.amenityIds)) {
@@ -295,25 +283,14 @@ export function CommerceListingEditor({
     const initialSocial = (data.socialNetworks ?? {}) as Record<string, unknown>;
     const initialMedia = (data.media ?? {}) as Record<string, unknown>;
 
-    // HOS-166 D-1: name + destinationId + description — identity fields now
-    // owner-editable (description was widened alongside name/destinationId on
-    // the schema — see `GastronomyOwnerUpdateInputSchema`/
-    // `ExperienceOwnerUpdateInputSchema` — but the FORM never exposed it,
-    // leaving it settable only at create, contradicting AC-19).
-    // Media JSONB is REPLACED wholesale on save (gastronomy/experience do not
-    // merge it), so preserve the owner-unmanaged sub-fields (videos,
-    // archivedGallery) and re-send them with every media patch. Deliberately
-    // outside `formData`: never editable, never diffed.
-    const [preservedMedia] = useState<Record<string, unknown>>(() => {
-        const preserved: Record<string, unknown> = {};
-        if (Array.isArray(initialMedia.videos)) {
-            preserved.videos = initialMedia.videos;
-        }
-        if (Array.isArray(initialMedia.archivedGallery)) {
-            preserved.archivedGallery = initialMedia.archivedGallery;
-        }
-        return preserved;
-    });
+    // HOS-372: media is no longer buffered in this editor's state. MediaSection
+    // is now self-contained (per-operation persistence against the relational
+    // gastronomy_media / experience_media endpoints — see its file header) and
+    // hydrates its own state from the API. These two consts only feed its
+    // first-paint SSR placeholders (from the `media` response field); they are
+    // read once and never written back, so they stay outside `formData`.
+    const initialFeaturedImage = (initialMedia.featuredImage as Image | undefined) ?? null;
+    const initialGallery = (initialMedia.gallery as Image[] | undefined) ?? [];
 
     // HOS-166 D-1: name + destinationId + description are identity fields the
     // owner may edit (description was widened alongside name/destinationId on
@@ -351,8 +328,6 @@ export function CommerceListingEditor({
         // T-021: experience-only pricing fields
         priceFrom: typeof data.priceFrom === 'number' ? data.priceFrom : null,
         priceUnit: strField(data, 'priceUnit'),
-        featuredImage: (initialMedia.featuredImage as Image | undefined) ?? null,
-        gallery: (initialMedia.gallery as Image[] | undefined) ?? [],
         amenityIds: new Set((data.amenityIds as string[] | undefined) ?? []),
         featureIds: new Set((data.featureIds as string[] | undefined) ?? []),
         // T-023: i18n fields (nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n)
@@ -370,7 +345,7 @@ export function CommerceListingEditor({
 
     // Only the values still read by the orchestrator's own JSX. Everything else
     // reaches its section component through the `data` prop (HOS-258 PR 2).
-    const { openingHours, featuredImage, gallery, amenityIds, featureIds, i18nValues } = formData;
+    const { openingHours, amenityIds, featureIds, i18nValues } = formData;
 
     const [status, setStatus] = useState<SaveStatus>({ kind: 'idle' });
 
@@ -397,18 +372,6 @@ export function CommerceListingEditor({
         setFormData((prev) => ({ ...prev, social: { ...prev.social, [key]: val } }));
         setStatus({ kind: 'idle' });
     }, []);
-
-    const updateMedia = useCallback(
-        (next: { readonly featuredImage: Image | null; readonly gallery: readonly Image[] }) => {
-            setFormData((prev) => ({
-                ...prev,
-                featuredImage: next.featuredImage,
-                gallery: next.gallery
-            }));
-            setStatus({ kind: 'idle' });
-        },
-        []
-    );
 
     const toggleAmenity = useCallback((id: string) => {
         setFormData((prev) => {
@@ -449,8 +412,8 @@ export function CommerceListingEditor({
      * render.
      */
     const patchPayload = useMemo(
-        () => buildPatchPayload({ current: formData, baseline, vertical, preservedMedia }),
-        [formData, baseline, vertical, preservedMedia]
+        () => buildPatchPayload({ current: formData, baseline, vertical }),
+        [formData, baseline, vertical]
     );
 
     const handleSubmit = useCallback(
@@ -562,9 +525,8 @@ export function CommerceListingEditor({
                 locale={locale}
                 vertical={vertical}
                 listingId={listingId}
-                featuredImage={featuredImage}
-                gallery={gallery}
-                onChange={updateMedia}
+                initialFeaturedImage={initialFeaturedImage}
+                initialGallery={initialGallery}
             />
 
             {/* T-023: i18n editing panel */}

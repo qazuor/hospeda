@@ -6,7 +6,7 @@ import { CommerceRatingSchema } from '../../common/commerce-rating.schema.js';
 import { BaseContactFields } from '../../common/contact.schema.js';
 import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
-import { BaseMediaFields } from '../../common/media.schema.js';
+import { BaseMediaFields, BaseVideosFields } from '../../common/media.schema.js';
 import { BaseModerationFields } from '../../common/moderation.schema.js';
 import { OpeningHoursFields } from '../../common/opening-hours.schema.js';
 import { BaseReviewFields } from '../../common/review.schema.js';
@@ -85,6 +85,7 @@ export const GastronomySchema = z.object({
     ...SocialNetworkFields,
     ...OpeningHoursFields,
     ...BaseMediaFields,
+    ...BaseVideosFields,
     ...BaseAdminFields,
     ...TagsFields,
     ...BaseAuditFields,

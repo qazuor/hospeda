@@ -3,10 +3,14 @@
  *
  * Validates that reading accommodation media from the relational
  * `accommodation_media` table (via `attachComposedMedia`) yields a `Media`
- * shape that is byte-identical to what was written through the write-both
- * `syncAccommodationMedia` path — i.e. the JSONB → table → compose round-trip
- * is lossless and shape-stable. This is the golden guard for the ~21 read-sites
+ * shape that is byte-identical to what was written through
+ * `syncAccommodationMedia` — i.e. the write → table → compose round-trip is
+ * lossless and shape-stable. This is the golden guard for the ~21 read-sites
  * that consume `accommodation.media`.
+ *
+ * HOS-372: photos live ONLY in the table now (the `media` JSONB column is gone)
+ * and `videos` moved to their own entity column, so the composed `media` these
+ * tests assert on is a RESPONSE shape assembled at read time, never a stored one.
  *
  * Like the T-011 media-sync test, this calls the helpers directly with a real
  * `AccommodationMediaModel` + a real transaction (rollback-on-exit) instead of
@@ -60,9 +64,21 @@ const FULL_MEDIA: Media = {
 
 const mediaModel = new AccommodationMediaModel();
 
-/** Builds a minimal accommodation entity carrying only id + media (videos). */
-function entityFor(accommodationId: string, media: Media | null): Accommodation {
-    return { id: accommodationId, media } as unknown as Accommodation;
+/**
+ * Builds a minimal accommodation entity carrying id + media + videos.
+ *
+ * `videos` is a SEPARATE entity column since HOS-372, not a member of the `media`
+ * blob: a video is an external YouTube/Vimeo URL rather than an uploaded asset, so
+ * it never moved into `accommodation_media`, and the JSONB column that used to
+ * carry it is gone. `composeAccommodationMedia` reads `entity.videos`, so seeding
+ * them under `media` would leave the composed result videoless.
+ */
+function entityFor(
+    accommodationId: string,
+    media: Media | null,
+    videos?: Media['videos']
+): Accommodation {
+    return { id: accommodationId, media, videos } as unknown as Accommodation;
 }
 
 // ---------------------------------------------------------------------------
@@ -96,8 +112,8 @@ describe('accommodation media read switch — T-015 (golden shape stability)', (
                     tx
                 });
 
-                // Read entity carries only videos in JSONB; photos come from the table.
-                const entity = entityFor(accommodationId, { videos: FULL_MEDIA.videos } as Media);
+                // Read entity carries only videos (own column); photos come from the table.
+                const entity = entityFor(accommodationId, null, FULL_MEDIA.videos);
                 const result = await attachComposedMedia({ entity, mediaModel, tx });
 
                 expect(result?.media?.featuredImage).toEqual({
@@ -134,13 +150,12 @@ describe('accommodation media read switch — T-015 (golden shape stability)', (
                     tx
                 });
 
-                // Entity JSONB claims a different (stale) gallery — must be IGNORED.
+                // Entity carries a different (stale) gallery — must be IGNORED.
                 const staleMedia = {
-                    gallery: [img('https://stale.example.com/WRONG.jpg', 'stale')],
-                    videos: FULL_MEDIA.videos
+                    gallery: [img('https://stale.example.com/WRONG.jpg', 'stale')]
                 } as Media;
                 const result = await attachComposedMedia({
-                    entity: entityFor(accommodationId, staleMedia),
+                    entity: entityFor(accommodationId, staleMedia, FULL_MEDIA.videos),
                     mediaModel,
                     tx
                 });
@@ -156,13 +171,13 @@ describe('accommodation media read switch — T-015 (golden shape stability)', (
     );
 
     it.skipIf(!dbAvailable)(
-        'T-015-c: videos-only (no photo rows) composes only videos from JSONB',
+        'T-015-c: videos-only (no photo rows) composes only videos from the column',
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 const { accommodationId } = await seedAccommodation(tx);
                 // No syncAccommodationMedia → zero rows in the table.
                 const result = await attachComposedMedia({
-                    entity: entityFor(accommodationId, { videos: FULL_MEDIA.videos } as Media),
+                    entity: entityFor(accommodationId, null, FULL_MEDIA.videos),
                     mediaModel,
                     tx
                 });

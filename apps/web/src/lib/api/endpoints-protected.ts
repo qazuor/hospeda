@@ -35,6 +35,15 @@ import { MAX_BULK_CHECK_ENTITY_IDS } from '@repo/schemas';
 import { apiClient } from './client';
 import type { ApiResult, PaginatedResponse } from './types';
 
+/**
+ * The two commerce verticals that share the granular media endpoint shape
+ * (HOS-372). Duplicated (not imported) from `@/lib/commerce/owner-listings`
+ * to avoid this low-level endpoints module depending on a higher-level
+ * feature module — mirrors how other entity-scoped unions in this file are
+ * hand-declared rather than imported (see `CalendarProviderToken` above).
+ */
+export type CommerceMediaVertical = 'gastronomy' | 'experience';
+
 const BASE = '/api/v1/public';
 const PROTECTED = '/api/v1/protected';
 
@@ -3737,6 +3746,181 @@ export const priceAlertsApi = {
         return apiClient.getProtected({
             path: `${PROTECTED}/price-alerts`,
             cookieHeader: params?.cookieHeader
+        });
+    }
+};
+
+// --- Commerce Listing Media (Protected — HOS-372) ---
+
+/**
+ * Maps a commerce vertical to its URL path segment.
+ */
+function commerceMediaPathSegment(vertical: CommerceMediaVertical): 'gastronomies' | 'experiences' {
+    return vertical === 'gastronomy' ? 'gastronomies' : 'experiences';
+}
+
+/**
+ * Row shape returned by the gastronomy_media / experience_media relational
+ * endpoints. Field-for-field identical between both verticals (they share
+ * `BaseCommerceMediaSchema`) — one client, parameterized by `vertical`, reads
+ * cleanly instead of two near-identical objects.
+ *
+ * The `id` is the DB UUID needed for removeMedia / setFeaturedMedia /
+ * reorderMedia.
+ */
+export interface CommerceMediaRow {
+    readonly id: string;
+    readonly url: string;
+    readonly publicId?: string | null;
+    readonly caption?: string | null;
+    readonly description?: string | null;
+    readonly alt?: string | null;
+    readonly isFeatured: boolean;
+    readonly sortOrder: number;
+    readonly state: 'visible' | 'archived';
+    readonly moderationState: string;
+}
+
+/**
+ * Granular per-operation protected endpoints for commerce listing (gastronomy
+ * / experience) photo management (HOS-372).
+ *
+ * Mirrors `accommodationMediaApi` (SPEC-204): each operation persists
+ * immediately to the vertical's relational media table — the parent
+ * `CommerceListingEditor` PATCH no longer carries photo data. Unlike the
+ * accommodation endpoint, `removeMedia` here does NOT delete the Cloudinary
+ * asset server-side (see `removeMedia`'s JSDoc) — callers must also call
+ * `protectedMediaApi.deleteMedia` for cleanup.
+ *
+ * @example
+ * ```ts
+ * const list = await commerceMediaApi.listMedia({ vertical: 'gastronomy', id: 'listing-uuid' });
+ * const added = await commerceMediaApi.addMedia({ vertical: 'gastronomy', id: 'listing-uuid', body: { url, publicId } });
+ * await commerceMediaApi.setFeaturedMedia({ vertical: 'gastronomy', id: 'listing-uuid', mediaId: added.data.media.id });
+ * await commerceMediaApi.removeMedia({ vertical: 'gastronomy', id: 'listing-uuid', mediaId: added.data.media.id });
+ * ```
+ */
+export const commerceMediaApi = {
+    /**
+     * List media rows for a commerce listing.
+     *
+     * @param params - Vertical, listing ID, optional state filter, optional SSR cookie
+     * @returns `{ media: CommerceMediaRow[] }`
+     */
+    listMedia({
+        vertical,
+        id,
+        state = 'visible',
+        cookieHeader
+    }: {
+        readonly vertical: CommerceMediaVertical;
+        readonly id: string;
+        readonly state?: 'visible' | 'archived';
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<{ readonly media: readonly CommerceMediaRow[] }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media`,
+            params: { state },
+            cookieHeader
+        });
+    },
+
+    /**
+     * Add a new media row for a commerce listing.
+     * `sortOrder` and `isFeatured` are server-controlled.
+     *
+     * @param params - Vertical, listing ID, and media body
+     * @returns `{ media: CommerceMediaRow }` — the newly created row (with DB id)
+     */
+    addMedia({
+        vertical,
+        id,
+        body
+    }: {
+        readonly vertical: CommerceMediaVertical;
+        readonly id: string;
+        readonly body: {
+            readonly url: string;
+            readonly publicId?: string;
+            readonly caption?: string;
+            readonly description?: string;
+            readonly alt?: string;
+            readonly moderationState?: string;
+        };
+    }): Promise<ApiResult<{ readonly media: CommerceMediaRow }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media`,
+            body
+        });
+    },
+
+    /**
+     * Delete a media row by its DB UUID (soft-delete + resequence).
+     *
+     * Unlike `accommodationMediaApi.removeMedia`, this does NOT delete the
+     * Cloudinary asset — the gastronomy/experience media routes intentionally
+     * leave binary cleanup to the caller. Pair with
+     * `protectedMediaApi.deleteMedia({ publicId })` (best-effort) when the
+     * row being removed carries a `publicId`.
+     *
+     * @param params - Vertical, listing ID, and media row ID (DB UUID)
+     * @returns Delete result
+     */
+    removeMedia({
+        vertical,
+        id,
+        mediaId
+    }: {
+        readonly vertical: CommerceMediaVertical;
+        readonly id: string;
+        readonly mediaId: string;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.delete({
+            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/${mediaId}`
+        });
+    },
+
+    /**
+     * Mark a media row as the featured (cover) image.
+     * Enforces the single-featured invariant: the previous featured row is
+     * automatically unmarked by the server and becomes a normal visible row.
+     *
+     * @param params - Vertical, listing ID, and media row ID (DB UUID) to feature
+     * @returns `{ media: CommerceMediaRow }` — the updated row
+     */
+    setFeaturedMedia({
+        vertical,
+        id,
+        mediaId
+    }: {
+        readonly vertical: CommerceMediaVertical;
+        readonly id: string;
+        readonly mediaId: string;
+    }): Promise<ApiResult<{ readonly media: CommerceMediaRow }>> {
+        return apiClient.put({
+            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/${mediaId}/featured`
+        });
+    },
+
+    /**
+     * Reorder the visible gallery photos of a commerce listing.
+     *
+     * @param params - Vertical, listing ID, and the full ordered list of
+     *   visible media UUIDs (must match the current visible set exactly).
+     * @returns `{ media: CommerceMediaRow[] }` — the rows in their new order
+     */
+    reorderMedia({
+        vertical,
+        id,
+        orderedIds
+    }: {
+        readonly vertical: CommerceMediaVertical;
+        readonly id: string;
+        readonly orderedIds: readonly string[];
+    }): Promise<ApiResult<{ readonly media: readonly CommerceMediaRow[] }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/reorder`,
+            body: { orderedIds }
         });
     }
 };

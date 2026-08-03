@@ -43,8 +43,6 @@ export function buildEditData(overrides: Partial<CommerceEditData> = {}): Commer
         isPriceOnRequest: false,
         priceFrom: null,
         priceUnit: '',
-        featuredImage: null,
-        gallery: [],
         amenityIds: new Set<string>(),
         featureIds: new Set<string>(),
         i18nValues: {

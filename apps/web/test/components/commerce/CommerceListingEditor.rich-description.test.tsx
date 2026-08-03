@@ -42,7 +42,15 @@ vi.mock('../../../src/lib/i18n', () => ({
 
 vi.mock('../../../src/lib/api/client', () => ({ apiClient: { patch: vi.fn() } }));
 
+// `MediaSection` hydrates itself from `commerceMediaApi.listMedia` on mount
+// (HOS-372), so the editor cannot render without it stubbed.
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
+    commerceMediaApi: {
+        listMedia: vi.fn().mockResolvedValue({ ok: true, data: { media: [] } }),
+        addMedia: vi.fn(),
+        removeMedia: vi.fn(),
+        setFeaturedMedia: vi.fn()
+    },
     protectedMediaApi: { deleteMedia: vi.fn() }
 }));
 

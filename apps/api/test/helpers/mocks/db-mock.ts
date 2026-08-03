@@ -919,6 +919,27 @@ export function createDbMock() {
             hardDelete: vi.fn().mockResolvedValue(undefined)
         },
 
+        // HOS-372: relational commerce media singletons, the gastronomy/experience
+        // twins of accommodationMediaModel above. GastronomyService and
+        // ExperienceService resolve them in their constructors
+        // (`mediaModel ?? gastronomyMediaModel`), so a mock without them fails at
+        // MODULE LOAD for every test that touches the commerce routes — the suite
+        // reports "0 tests" rather than a failure, which reads like a pass.
+        gastronomyMediaModel: {
+            findByGastronomy: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+            findByGastronomies: vi.fn().mockResolvedValue(new Map()),
+            findFeatured: vi.fn().mockResolvedValue(null),
+            create: vi.fn().mockResolvedValue(null),
+            hardDelete: vi.fn().mockResolvedValue(undefined)
+        },
+        experienceMediaModel: {
+            findByExperience: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+            findByExperiences: vi.fn().mockResolvedValue(new Map()),
+            findFeatured: vi.fn().mockResolvedValue(null),
+            create: vi.fn().mockResolvedValue(null),
+            hardDelete: vi.fn().mockResolvedValue(undefined)
+        },
+
         // SPEC-239: Gastronomy singleton model instances. GastronomyService,
         // GastronomyReviewService, and the standalone FAQ helpers access these at module
         // scope (via service constructor or direct import). They are exported as singleton

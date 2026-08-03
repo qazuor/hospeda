@@ -154,7 +154,15 @@ export const AccommodationUpdateInputSchema = z
                 // Server-managed (SPEC-291): only the verify admin action flips these.
                 isVerified: true,
                 verifiedAt: true,
-                verifiedById: true
+                verifiedById: true,
+                // HOS-372: the `media` JSONB column was dropped. Photos live in
+                // `accommodation_media` and are written through the relational media
+                // endpoints; videos travel as the top-level `videos` column, which
+                // stays writable here. `media` remains a RESPONSE field, composed
+                // from the rows on the way out — it is only the write side that goes.
+                // CREATE deliberately keeps it: `_beforeCreate` captures it into
+                // `pendingMedia` and `_afterCreate` fans it out into the rows.
+                media: true
             }).shape
         )
     )

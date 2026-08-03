@@ -6,6 +6,7 @@ import {
     billingSubscriptions,
     commerceListingSubscriptions,
     eq,
+    GastronomyMediaModel,
     gastronomies,
     gastronomyFaqs,
     gastronomyReviews,
@@ -17,10 +18,12 @@ import { LifecycleStatusEnum, RoleEnum, RoleGrantReason, VisibilityEnum } from '
 import { grantRole } from '@repo/service-core';
 import { hash } from 'bcryptjs';
 import exampleManifest from '../manifest-example.json';
+import { buildGastronomyMediaRows } from '../utils/commerce-media-builder.js';
 import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { loadJsonFiles } from '../utils/loadJsonFile.js';
 import { logger } from '../utils/logger.js';
+import type { FixtureMediaBlock } from '../utils/media-rows-builder.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
 
@@ -317,6 +320,49 @@ async function ensureCommerceSubscription(
  * This link is what makes a listing publicly visible: the public-read layer
  * checks `commerce_listing_subscriptions` status for each listing returned.
  */
+/**
+ * Inserts a listing's fixture photos as `gastronomy_media` rows (HOS-372).
+ *
+ * Photos used to be written into the `gastronomy` row's `media` JSONB column.
+ * They now live in a relational table, which is what every read path composes
+ * from, so seeding the blob would produce listings with no visible photos.
+ *
+ * Idempotent: skips entirely when the listing already has media rows, so a
+ * re-run against an already-seeded database never duplicates a gallery.
+ *
+ * @param input.gastronomyId - Real DB id of the listing.
+ * @param input.media - The fixture's `media` block, if any.
+ * @param input.label - Listing name, for logging.
+ */
+async function seedGastronomyMediaRows({
+    gastronomyId,
+    media,
+    label
+}: {
+    readonly gastronomyId: string;
+    readonly media: FixtureMediaBlock | undefined;
+    readonly label: string;
+}): Promise<void> {
+    if (!media) return;
+    const hasPhotos = Boolean(media.featuredImage) || (media.gallery?.length ?? 0) > 0;
+    if (!hasPhotos) return;
+
+    const mediaModel = new GastronomyMediaModel();
+    const { total: existingCount } = await mediaModel.findByGastronomy({
+        gastronomyId,
+        pageSize: 1
+    });
+    if (existingCount > 0) {
+        logger.info(`Skipping media for ${label}: ${existingCount} rows already exist`);
+        return;
+    }
+
+    const rows = buildGastronomyMediaRows({ gastronomyId, media });
+    for (const row of rows) {
+        await mediaModel.create(row);
+    }
+}
+
 async function ensureListingSubscriptionLink(
     subscriptionId: string,
     entityId: string,
@@ -683,7 +729,10 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                         null) as (typeof gastronomies.$inferInsert)['socialNetworks'],
                     openingHours: (item.openingHours ??
                         null) as (typeof gastronomies.$inferInsert)['openingHours'],
-                    media: (item.media ?? null) as (typeof gastronomies.$inferInsert)['media'],
+                    // HOS-372: photos are NOT written here anymore. They go to
+                    // `gastronomy_media` after the insert (see step 3b below);
+                    // the `media` JSONB column is on its way out and every read
+                    // path already composes from the table.
                     seo: (item.seo ?? null) as (typeof gastronomies.$inferInsert)['seo'],
                     reviewsCount: item.reviewsCount,
                     averageRating: item.averageRating,
@@ -712,6 +761,16 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             if (realId) {
                 // Register in idMapper so downstream (reviews, FAQs) can resolve
                 context.idMapper.setMapping('gastronomies', item.id, realId, item.name);
+
+                // ── Step 3b: relational media rows (HOS-372) ───────────────────
+                // Mirrors the accommodation seed: a direct model insert rather
+                // than the service, so `isFeatured` and `sortOrder` are set
+                // explicitly and no permission gate or N+1 ordering query runs.
+                await seedGastronomyMediaRows({
+                    gastronomyId: realId,
+                    media: item.media as FixtureMediaBlock | undefined,
+                    label: item.name
+                });
 
                 // ── Step 4: Subscription link (PUBLIC/ACTIVE only) ─────────────
                 // Listings 001–005 (PUBLIC + ACTIVE) get a `commerce_listing_subscriptions`

@@ -22,6 +22,8 @@ export {
 export * from './commerce-completeness.js';
 // Commerce common schemas (SPEC-239)
 export * from './commerce-identity.schema.js';
+// Shared relational media row base (HOS-372) — gastronomy/experience media extend this
+export * from './commerce-media.schema.js';
 export * from './commerce-owner-listing.schema.js';
 export * from './commerce-rating.schema.js';
 export * from './contact.schema.js';

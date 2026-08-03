@@ -42,6 +42,10 @@ export {
     type MarkLeadHandledInput
 } from './commerce-lead.service';
 export {
+    type ComposeCommerceMediaInput,
+    composeCommerceMedia
+} from './commerce-media-compose';
+export {
     CommerceOwnerProvisioningService,
     type CreateUserPort,
     type CreateUserPortResult,

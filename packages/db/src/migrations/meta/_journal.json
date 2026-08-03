@@ -498,6 +498,20 @@
       "when": 1785734540497,
       "tag": "0070_volatile_freak",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1785734540498,
+      "tag": "0071_nervous_rogue",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1785734586479,
+      "tag": "0072_wealthy_kingpin",
+      "breakpoints": true
     }
   ]
 }
