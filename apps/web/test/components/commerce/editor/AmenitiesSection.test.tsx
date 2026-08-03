@@ -140,4 +140,121 @@ describe('AmenitiesSection', () => {
 
         expect(document.getElementById('editor-amenities')).not.toBeNull();
     });
+
+    describe('category accordions (HOS-371)', () => {
+        const WIFI = '11111111-1111-4111-8111-111111111111';
+        const TV = '22222222-2222-4222-8222-222222222222';
+        const TERRAZA = '33333333-3333-4333-8333-333333333333';
+        const UNCATEGORIZED = '44444444-4444-4444-8444-444444444444';
+
+        /** Renders the section with amenities spanning three category buckets. */
+        function renderCategorized(selected: readonly string[] = []) {
+            return render(
+                <AmenitiesSection
+                    locale="es"
+                    amenities={[
+                        { id: TV, slug: 'tv', category: 'ENTERTAINMENT' },
+                        { id: WIFI, slug: 'wifi', category: 'CONNECTIVITY' },
+                        { id: TERRAZA, slug: 'terraza', category: 'OUTDOORS' },
+                        { id: UNCATEGORIZED, slug: 'algo', category: null }
+                    ]}
+                    features={[]}
+                    selectedAmenityIds={new Set(selected)}
+                    selectedFeatureIds={new Set<string>()}
+                    onToggleAmenity={vi.fn()}
+                    onToggleFeature={vi.fn()}
+                />
+            );
+        }
+
+        it('groups amenities into one collapsible <details> per category', () => {
+            const { container } = renderCategorized();
+
+            const summaries = Array.from(container.querySelectorAll('details > summary')).map(
+                (el) => el.textContent
+            );
+
+            // One accordion per non-empty bucket, plus the "Otros" catch-all for
+            // the null-category amenity — four buckets, not one flat list.
+            expect(summaries).toHaveLength(4);
+            expect(summaries.some((s) => s?.includes('Conectividad'))).toBe(true);
+            expect(summaries.some((s) => s?.includes('Entretenimiento'))).toBe(true);
+            expect(summaries.some((s) => s?.includes('Exteriores'))).toBe(true);
+            expect(summaries.some((s) => s?.includes('Otros'))).toBe(true);
+        });
+
+        it('renders categories in the canonical order, not catalog order', () => {
+            const { container } = renderCategorized();
+
+            const summaries = Array.from(container.querySelectorAll('details > summary')).map(
+                (el) => el.textContent ?? ''
+            );
+
+            // The catalog above deliberately lists ENTERTAINMENT before
+            // CONNECTIVITY; AMENITY_CATEGORY_ORDER puts CONNECTIVITY first and
+            // the "Otros" bucket always last.
+            const positions = ['Conectividad', 'Entretenimiento', 'Exteriores', 'Otros'].map(
+                (label) => summaries.findIndex((s) => s.includes(label))
+            );
+            expect(positions).toEqual([...positions].sort((a, b) => a - b));
+            expect(positions.at(-1)).toBe(summaries.length - 1);
+        });
+
+        it('opens the first group and any group holding a selection, and badges the count', () => {
+            const { container } = renderCategorized([TERRAZA]);
+
+            const groups = Array.from(container.querySelectorAll('details'));
+            const byLabel = (label: string) =>
+                groups.find((el) => el.querySelector('summary')?.textContent?.includes(label));
+
+            // First group is open so the section never reads as empty...
+            expect(byLabel('Conectividad')?.open).toBe(true);
+            // ...and a selected amenity is never hidden behind a closed summary.
+            expect(byLabel('Exteriores')?.open).toBe(true);
+            expect(byLabel('Exteriores')?.querySelector('summary')?.textContent).toContain('1');
+            // A group with neither property stays collapsed.
+            expect(byLabel('Entretenimiento')?.open).toBe(false);
+        });
+
+        it('still toggles an amenity from inside a collapsed accordion', () => {
+            const onToggleAmenity = vi.fn();
+            render(
+                <AmenitiesSection
+                    locale="es"
+                    amenities={[
+                        { id: WIFI, slug: 'wifi', category: 'CONNECTIVITY' },
+                        { id: TERRAZA, slug: 'terraza', category: 'OUTDOORS' }
+                    ]}
+                    features={[]}
+                    selectedAmenityIds={new Set<string>()}
+                    selectedFeatureIds={new Set<string>()}
+                    onToggleAmenity={onToggleAmenity}
+                    onToggleFeature={vi.fn()}
+                />
+            );
+
+            // "Terraza" lives in a collapsed group; <details> keeps its contents
+            // in the DOM, so the checkbox is reachable either way.
+            fireEvent.click(screen.getByLabelText('Terraza'));
+
+            expect(onToggleAmenity).toHaveBeenCalledWith(TERRAZA);
+        });
+
+        it('keeps features as a flat grid — the catalog carries no category for them', () => {
+            const { container } = render(
+                <AmenitiesSection
+                    locale="es"
+                    amenities={[]}
+                    features={[{ id: FEATURE_A, slug: 'pet_friendly', category: null }]}
+                    selectedAmenityIds={new Set<string>()}
+                    selectedFeatureIds={new Set<string>()}
+                    onToggleAmenity={vi.fn()}
+                    onToggleFeature={vi.fn()}
+                />
+            );
+
+            expect(container.querySelectorAll('details')).toHaveLength(0);
+            expect(screen.getByLabelText('pet_friendly')).toBeInTheDocument();
+        });
+    });
 });

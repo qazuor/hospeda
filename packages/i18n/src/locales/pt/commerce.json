@@ -110,6 +110,7 @@
                 "mobilePhone": "Telefone",
                 "workEmail": "E-mail"
             },
+            "richDescriptionPlaceholder": "Conte a história do seu comércio em detalhe...",
             "validation": {
                 "summaryMin": "Mínimo 10 caracteres.",
                 "summaryMax": "Máximo 300 caracteres.",

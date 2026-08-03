@@ -29,6 +29,31 @@ vi.mock('../../../../src/lib/i18n', () => ({
     })
 }));
 
+// HOS-371: `richDescription` is a TipTap editor now. These tests cover the
+// section's wiring (seeding + `onFieldChange`), which the controlled-value
+// contract fully expresses; the shim keeps the same accessible name so the
+// assertions below still target the same field. That the field really IS a rich
+// editor (toolbar, contenteditable, mount does not dirty the form) is asserted
+// against the REAL component in
+// `test/components/commerce/CommerceListingEditor.rich-description.test.tsx`.
+vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
+    RichTextEditor: ({
+        value,
+        onChange,
+        ariaLabel
+    }: {
+        value: string;
+        onChange: (value: string) => void;
+        ariaLabel?: string;
+    }) => (
+        <textarea
+            aria-label={ariaLabel}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+        />
+    )
+}));
+
 const DESTINATION_1 = '11111111-1111-4111-8111-111111111111';
 const DESTINATION_2 = '22222222-2222-4222-8222-222222222222';
 

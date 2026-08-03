@@ -1,11 +1,34 @@
 /* CommerceTranslationPanel.module.css — SPEC-253 T-022
    Visual language mirrors TranslationPanel.module.css (SPEC-212) for consistency. */
 
-/* Section card — matches the fieldset pattern used by other editor sections */
+/* Section card (HOS-371) — composes the same canonical AccountSectionCard
+   recipe as every other editor section (`editor/editor-fields.module.css`
+   `.section`), so the panel reads as one more card in the stack instead of the
+   bare fieldset it used to be.
+
+   The old `border: none` / `padding: 0` resets are deliberately gone: `composes`
+   only ADDS a class name and conflicts resolve by source order, so leaving them
+   here would silently cancel the card's own border and padding — a change that
+   is a visual no-op while every test stays green. The `margin-bottom` is gone
+   too: the hosting form owns the spacing between sections via its flex `gap`,
+   so that margin would render as dead space INSIDE the card. `margin: 0` stays,
+   to neutralize the UA's default `<fieldset>` margin. */
 .section {
-    border: none;
-    padding: 0;
-    margin: 0 0 var(--space-5, 2rem);
+    composes: card from "../account/AccountSection.module.css";
+    margin: 0;
+}
+
+/* A UA renders a <legend> ON the fieldset's top border, outside its padding
+   box — invisible against a borderless fieldset, but against a real card it
+   makes the title escape the card and slice the brand accent bar in half.
+   Same fix as `editor/editor-fields.module.css`. */
+.section > legend {
+    float: left;
+    width: 100%;
+}
+
+.section > legend + * {
+    clear: both;
 }
 
 .sectionTitle {
