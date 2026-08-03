@@ -4,10 +4,14 @@
  * Async read-side glue that loads `accommodation_media` rows and attaches the
  * composed `Media` shape onto accommodation entities (SPEC-204, T-013).
  *
- * Phase 2 (P2) read switch:
- *  - `featuredImage`, `gallery`, and `archivedGallery` are now READ from the
+ * Read switch:
+ *  - `featuredImage`, `gallery`, and `archivedGallery` are READ from the
  *    relational table via {@link composeAccommodationMedia}.
- *  - `videos` continue to be carried from the JSONB `media.videos` (D1 decision).
+ *  - `videos` come from the entity's own `videos` column (HOS-372). They were
+ *    never migrated to the relational table — a video is an external YouTube/Vimeo
+ *    URL rather than an uploaded asset — but the `media` JSONB blob that used to
+ *    hold them is gone, so reading `entity.media.videos` yields `undefined` and
+ *    silently strips every video from the response.
  *  - Writes still go to BOTH stores (write-both stays on until P3), so the JSONB
  *    column remains consistent for the raw-JSONB readers not yet migrated
  *    (search cover-image, bookmark enrichment, billing limit/downgrade) — those
@@ -54,7 +58,7 @@ function withComposedMedia<T extends Accommodation>(
     entity: T,
     rows: readonly AccommodationMedia[]
 ): T {
-    const composed = composeAccommodationMedia({ rows, currentMedia: entity.media });
+    const composed = composeAccommodationMedia({ rows, videos: entity.videos });
     const hasContent = Object.keys(composed).length > 0;
     return { ...entity, media: hasContent ? composed : entity.media } as T;
 }
