@@ -498,6 +498,13 @@
       "when": 1785680063088,
       "tag": "0070_nervous_rogue",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1785734586479,
+      "tag": "0071_wealthy_kingpin",
+      "breakpoints": true
     }
   ]
 }

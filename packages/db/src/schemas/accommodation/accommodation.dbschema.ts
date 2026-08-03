@@ -68,7 +68,6 @@ export const accommodations = pgTable(
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         price: jsonb('price').$type<Record<string, unknown>>(),
         location: jsonb('location').$type<AccommodationLocationType>(),
-        media: jsonb('media').$type<Media>(),
         /**
          * Embedded videos for the accommodation (HOS-372).
          *

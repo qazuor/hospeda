@@ -67,7 +67,6 @@ export const gastronomies = pgTable(
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         /** Weekly opening hours — keyed by day name with open/close time strings. */
         openingHours: jsonb('opening_hours').$type<Record<string, unknown>>(),
-        media: jsonb('media').$type<Media>(),
         /**
          * Embedded videos for the listing (HOS-372).
          *

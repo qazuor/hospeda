@@ -89,7 +89,6 @@ export const experiences = pgTable(
          * Stored as jsonb on the main table (same choice as gastronomy — no separate hours table).
          */
         openingHours: jsonb('opening_hours').$type<Record<string, unknown>>(),
-        media: jsonb('media').$type<Media>(),
         /**
          * Embedded videos for the listing (HOS-372).
          *
