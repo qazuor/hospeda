@@ -582,9 +582,22 @@ picks by document order, not by the order Zod happens to report issues.
 | AC-8: invalid `phone` (one Zod field, two inputs) → focus | `acc-phone-number`, **not** `acc-phone-country`; scroll 0 → 2056 |
 | AC-4: save, then leave immediately | No prompt — and the save really persisted (DB row shows the new name + phone), so this is not a false positive from a silently failed save |
 
-**NOT verified in a browser:** the commerce editor (same reason as §11.1), and
-the `openingHours` / social dynamic ids — the static guard covers their
-existence, and one social attempt did not produce a validation error to focus.
+## 11.3 Commerce editor verification (2026-08-03, post-merge)
+
+Closed after the merge, as `gastro-owner-rodrigo@local.test` on
+`/mi-cuenta/comercio/gastronomy/<id>/editar/`. The earlier "listings do not
+appear" reading in §11.1/§11.2 was wrong: the route segment is `gastronomy`
+(English), and the seeded owners do have listings.
+
+| Check | Result |
+|---|---|
+| All ids this spec created exist in the DOM | `ce-social-facebook`, `ce-openingHours`, `ce-richDescription`, `ce-phone-number` — all present |
+| Dirty + internal link → cancel | Dialog shown, stays put, marker identical → no reload, edit preserved |
+| Invalid `socialNetworks.facebook` → focus | `ce-social-facebook`, scroll 0 → 1522 |
+
+That last row is the one worth having: `socialNetworks.*` had **no id at all**
+before this spec, so it exercises an id created here rather than one that
+already existed.
 
 ## 12. Implementation notes
 
