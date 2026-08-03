@@ -1,6 +1,7 @@
 /**
  * @file user.model.listPublicAuthors.test.ts
- * @description Unit tests for `UserModel.listPublicAuthors` (HOS-375 T-011).
+ * @description Unit tests for `UserModel.listPublicAuthors` (HOS-375 T-011,
+ * T-031).
  *
  * The query is mocked, so these tests do not prove the SQL predicate selects the
  * right rows — only a real database can do that. What they DO pin is the wiring
@@ -10,6 +11,8 @@
  * and that the ordering carries its tiebreak.
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { UserModel } from '../../src/models/user/user.model';
@@ -201,5 +204,51 @@ describe('UserModel.listPublicAuthors', () => {
 
         // Assert
         expect(result).toEqual({ items: [], total: 0 });
+    });
+});
+
+describe('listPublicAuthors — role-coupling static guard (HOS-375 T-031)', () => {
+    /**
+     * Eligibility must key off the STORED `users.is_system_account` column,
+     * never off a live role lookup — the role is mutable and the flag is not
+     * (see the model's own docstring and `packages/db/CLAUDE.md`
+     * "`users.is_system_account` — service accounts"). Promoting a real
+     * editor to ADMIN, or demoting a system account to EDITOR, must never
+     * change whether it appears in this list.
+     *
+     * The integration suite (`list-public-authors.integration.test.ts`)
+     * proves the two concrete cases against a real database. This guard
+     * proves the STRUCTURAL invariant that makes a THIRD case impossible: the
+     * method body cannot even reach for role data, because it never mentions
+     * it. A unit test that merely re-asserts one more role/permission
+     * combination would still leave the door open for a different one; this
+     * closes the whole class.
+     */
+    it('does not reference role data anywhere in its implementation', () => {
+        // Arrange — read the real source, not a copy, so the guard tracks the
+        // method as it evolves and cannot go stale.
+        const source = readFileSync(
+            resolve(__dirname, '../../src/models/user/user.model.ts'),
+            'utf8'
+        );
+        const methodStart = source.indexOf('async listPublicAuthors(');
+        expect(methodStart).toBeGreaterThan(-1);
+
+        // `listPublicAuthors` is the LAST method declared in `UserModel`, so
+        // its body runs up to the class-closing brace at the start of a
+        // line. Slicing from `methodStart` (not from the class start)
+        // deliberately EXCLUDES the JSDoc above it, which legitimately
+        // discusses roles to explain why the code below must not.
+        const classEnd = source.indexOf('\n}\n', methodStart);
+        expect(classEnd).toBeGreaterThan(methodStart);
+        const methodSource = source.slice(methodStart, classEnd);
+
+        // Act / Assert — none of these identifiers may appear in the
+        // executable body. `userRole` is the actual Drizzle table import a
+        // regression would join against; the enum members cover a filter
+        // written as a raw SQL string instead.
+        for (const forbidden of ['RoleEnum', 'userRole', 'ADMIN', 'SUPER_ADMIN', 'EDITOR']) {
+            expect(methodSource).not.toContain(forbidden);
+        }
     });
 });

@@ -15,10 +15,12 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { RoleEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
 import { UserModel } from '../../src/models/user/user.model';
 import { events } from '../../src/schemas/event/event.dbschema';
 import { posts } from '../../src/schemas/post/post.dbschema';
+import { userRole } from '../../src/schemas/user/r_user_role.dbschema';
 import { users } from '../../src/schemas/user/user.dbschema';
 import type { DrizzleClient } from '../../src/types';
 import { closeTestPool, testData, withTestTransaction } from './helpers';
@@ -99,6 +101,11 @@ async function insertEvent(
         lifecycleState: 'ACTIVE',
         ...overrides
     });
+}
+
+/** Grants a role to a user via the `user_role` junction table (HOS-296). */
+async function grantRole(tx: DrizzleClient, userId: string, role: RoleEnum): Promise<void> {
+    await tx.insert(userRole).values({ userId, role });
 }
 
 /** The slugs `listPublicAuthors` returned, across every page. */
@@ -222,6 +229,39 @@ describe.skipIf(!DB_AVAILABLE)('UserModel.listPublicAuthors — the §6.5 predic
             // Arrange
             const author = await insertAuthor(tx, { deletedAt: new Date() });
             await insertPost(tx, author.id);
+            // Act
+            const slugs = await listedSlugs(tx);
+            // Assert
+            expect(slugs).not.toContain(author.slug);
+        });
+    });
+
+    it('includes an eligible author PROMOTED to ADMIN (HOS-375 T-031)', async () => {
+        await withTestTransaction(async (tx) => {
+            // Arrange — an ordinary, fully-eligible author (isSystemAccount:
+            // false) who also happens to hold the ADMIN hat. Eligibility must
+            // key off the stored `is_system_account` column, never off the
+            // live role set, or promoting a real editor to ADMIN would
+            // silently unpublish their author page.
+            const author = await insertAuthor(tx);
+            await insertPost(tx, author.id);
+            await grantRole(tx, author.id, RoleEnum.ADMIN);
+            // Act
+            const slugs = await listedSlugs(tx);
+            // Assert
+            expect(slugs).toContain(author.slug);
+        });
+    });
+
+    it('EXCLUDES a system account DEMOTED to EDITOR (HOS-375 T-031)', async () => {
+        await withTestTransaction(async (tx) => {
+            // Arrange — a system account (the actual exclusion trigger) that
+            // also holds only the EDITOR role, i.e. no ADMIN/SUPER_ADMIN hat
+            // left. If the predicate were (mis-)coupled to role instead of
+            // the flag, demoting a staff account would make its page appear.
+            const author = await insertAuthor(tx, { isSystemAccount: true });
+            await insertPost(tx, author.id);
+            await grantRole(tx, author.id, RoleEnum.EDITOR);
             // Act
             const slugs = await listedSlugs(tx);
             // Assert

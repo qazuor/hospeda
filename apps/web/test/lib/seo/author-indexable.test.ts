@@ -5,6 +5,8 @@
  * independently, plus the all-pass case, so a regression names the condition it
  * broke instead of just "not indexable".
  */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
     type AuthorIndexabilityInput,
@@ -136,5 +138,44 @@ describe('evaluateAuthorIndexability', () => {
         });
 
         expect(result.reason).toBe('system-account');
+    });
+});
+
+describe('evaluateAuthorIndexability — role-coupling static guard (HOS-375 T-031)', () => {
+    /**
+     * `evaluateAuthorIndexability` does not even accept a role today, which
+     * is the correct design (HOS-375 §6.10.1, R-9): eligibility is decided
+     * from the STORED `isSystemAccount` flag, never from a live role. Roles
+     * are mutable and this property is not — coupling the two would mean
+     * promoting a real editor to ADMIN silently unpublishes their author
+     * page, and demoting a staff account publishes one.
+     *
+     * The first draft of this spec DID couple them. Since the function has no
+     * `role` parameter to exercise with a value-level test, the only way to
+     * pin the invariant is structurally: assert its SOURCE never references
+     * role data at all. If a future edit adds a `role`/`roles` field or
+     * branches on `RoleEnum`/`ADMIN`/`SUPER_ADMIN`/`EDITOR`, this fails
+     * before a single indexed URL can appear or vanish as a side effect of a
+     * permissions change.
+     */
+    it('never references role data anywhere in the module', () => {
+        // Arrange — read the real source, not a copy, so the guard tracks the
+        // file as it evolves and cannot go stale.
+        const source = readFileSync(
+            resolve(__dirname, '../../../src/lib/seo/author-indexable.ts'),
+            'utf8'
+        );
+
+        // Strip comments (block + line) before scanning: the file's JSDoc
+        // legitimately explains the "not a role check" decision using these
+        // exact words, and that documentation must not trip the guard it
+        // motivates. Only the EXECUTABLE source (types, params, logic) is
+        // checked below.
+        const codeOnly = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+
+        // Act / Assert
+        for (const forbidden of ['RoleEnum', 'roles', 'ADMIN', 'SUPER_ADMIN', 'EDITOR']) {
+            expect(codeOnly).not.toContain(forbidden);
+        }
     });
 });
