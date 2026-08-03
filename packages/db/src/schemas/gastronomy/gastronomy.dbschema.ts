@@ -2,7 +2,6 @@ import type {
     AdminInfoType,
     ContactInfo,
     I18nText,
-    Media,
     Seo,
     SocialNetwork,
     Video
