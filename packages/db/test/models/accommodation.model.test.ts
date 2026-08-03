@@ -132,7 +132,6 @@ describe('AccommodationModel', () => {
             const mergeable = (model as any).mergeableJsonbColumns as readonly string[];
             expect(mergeable).toEqual(
                 expect.arrayContaining([
-                    'media',
                     'price',
                     'extraInfo',
                     'contactInfo',
@@ -140,6 +139,15 @@ describe('AccommodationModel', () => {
                     'location'
                 ])
             );
+        });
+
+        // HOS-372: `media` left this list with the column itself. Keeping it named
+        // was a live trap — `buildMergeSetClause` guards on `key in table`, so a
+        // `media` key would miss the merge branch and fall through to a plain
+        // assignment, producing an UPDATE against a column that no longer exists.
+        it('does not declare the dropped media column', () => {
+            const mergeable = (model as any).mergeableJsonbColumns as readonly string[];
+            expect(mergeable).not.toContain('media');
         });
     });
 
