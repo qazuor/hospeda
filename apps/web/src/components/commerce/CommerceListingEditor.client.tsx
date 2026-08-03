@@ -49,6 +49,7 @@ import {
     SOCIAL_KEYS,
     type SocialValues
 } from './editor/commerce-edit-data';
+import { COMMERCE_FIELD_INPUT_IDS } from './editor/field-input-ids';
 import { MediaSection } from './editor/MediaSection.client';
 import { OpeningHoursSection } from './editor/OpeningHoursSection.client';
 import { PriceSection } from './editor/PriceSection.client';
@@ -281,7 +282,12 @@ export function CommerceListingEditor({
         vertical === 'gastronomy'
             ? GastronomyOwnerUpdateInputSchema
             : ExperienceOwnerUpdateInputSchema;
-    const { fieldErrors, formError, validate, handleApiError } = useZodForm({ schema, t });
+    const { fieldErrors, formError, validate, handleApiError } = useZodForm({
+        schema,
+        t,
+        // HOS-373: a failed submit focuses the first invalid field on the page.
+        fieldInputIds: COMMERCE_FIELD_INPUT_IDS
+    });
 
     // TYPE-WORKAROUND: the detail is a gastronomy|experience union; we read heterogeneous operational fields by key, which the union type cannot express.
     const data = initialData as unknown as Record<string, unknown>;

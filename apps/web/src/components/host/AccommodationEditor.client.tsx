@@ -39,6 +39,7 @@ import { ContactInfoSection } from './editor/ContactInfoSection.client';
 import type { EditorSectionNavItem } from './editor/EditorSectionNav.client';
 import { EditorSectionNav } from './editor/EditorSectionNav.client';
 import { FeaturedToggleSection } from './editor/FeaturedToggleSection.client';
+import { ACCOMMODATION_FIELD_INPUT_IDS } from './editor/field-input-ids';
 import { LocationPicker } from './editor/LocationPicker.client';
 import { PhotoSection } from './editor/PhotoSection.client';
 import { PlanEntitlementGate } from './editor/PlanEntitlementGate.client';
@@ -247,7 +248,13 @@ export function AccommodationEditor({
     // leaving the ContactInfoSection/SocialNetworksSection/LocationPicker
     // error slots permanently unpopulated.
     const { fieldErrors, formError, validate, handleApiError, clearError, setFormError } =
-        useZodForm({ schema: AccommodationEditFormSchema, t });
+        useZodForm({
+            schema: AccommodationEditFormSchema,
+            t,
+            // HOS-373: a failed submit focuses the first invalid field on the
+            // page. Without this map the hook behaves exactly as before.
+            fieldInputIds: ACCOMMODATION_FIELD_INPUT_IDS
+        });
     const [isSaving, setIsSaving] = useState(false);
 
     // --- Field change handlers ---

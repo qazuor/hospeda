@@ -1,0 +1,98 @@
+/**
+ * @file focus-first-invalid-field.ts
+ * @description Moves focus to the first invalid field after a failed submit
+ * (HOS-373 phase 2), so a validation error in a distant section is not just a
+ * generic toast with no hint of where to look.
+ *
+ * ## "First" means first on the page, not first in the schema
+ *
+ * The obvious implementation takes `zodError.issues[0]`. That is the first
+ * issue in *schema declaration* order, which has no relationship to where the
+ * field sits on screen — the accommodation schema declares `youtube` in the
+ * same object as `name`, so a form with both invalid could send the user to the
+ * bottom of a 12-section page while an error sits at the top.
+ *
+ * So this resolves every mapped invalid field to its element and picks the one
+ * that comes first in document order. That is what "the first error" means to
+ * the person looking at the form.
+ *
+ * ## Fields with no single input
+ *
+ * Some fields carry one aggregate error over a group (commerce `openingHours`
+ * is 7 day checkboxes × N shift inputs). They are handled by pointing their map
+ * entry at the group's first control — no special case here (HOS-373 OQ-3).
+ */
+
+import type { FieldInputIdMap } from '@/components/ui/FieldError';
+
+/** Options accepted by {@link focusFirstInvalidField}. */
+export interface FocusFirstInvalidFieldOptions {
+    /** Dotted Zod paths that failed validation, in any order. */
+    readonly fieldNames: ReadonlyArray<string>;
+    /** The editor's field-to-input-id table. */
+    readonly map: FieldInputIdMap;
+}
+
+/** Whether the user asked for reduced motion, so scrolling does not animate. */
+function prefersReducedMotion(): boolean {
+    return (
+        typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    );
+}
+
+/**
+ * Returns the element that appears first in document order.
+ *
+ * `compareDocumentPosition` returns a bitmask; `DOCUMENT_POSITION_FOLLOWING`
+ * (4) means the argument comes after `this`, i.e. the current best is earlier.
+ */
+function earlierInDocument(a: HTMLElement, b: HTMLElement): HTMLElement {
+    // eslint-disable-next-line no-bitwise -- the DOM API is a bitmask
+    return a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? a : b;
+}
+
+/**
+ * Focuses the first invalid field present on the page.
+ *
+ * Silently does nothing when no invalid field resolves to an element in the
+ * DOM — a field can be unmapped, or live in a collapsed/unrendered section.
+ * That silence is exactly why the field-id contract needs a static guard: a
+ * missing id makes this a no-op with no error anywhere.
+ *
+ * @returns `true` when a field was focused, so callers (and tests) can tell the
+ * difference between "focused" and "found nothing".
+ */
+export function focusFirstInvalidField({
+    fieldNames,
+    map
+}: FocusFirstInvalidFieldOptions): boolean {
+    if (typeof document === 'undefined' || fieldNames.length === 0) {
+        return false;
+    }
+
+    let best: HTMLElement | null = null;
+
+    for (const fieldName of fieldNames) {
+        const id = map[fieldName];
+        if (!id) continue;
+
+        const element = document.getElementById(id);
+        if (!(element instanceof HTMLElement)) continue;
+
+        best = best === null ? element : earlierInDocument(best, element);
+    }
+
+    if (!best) {
+        return false;
+    }
+
+    best.focus({ preventScroll: true });
+    best.scrollIntoView({
+        behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+        block: 'center'
+    });
+
+    return true;
+}

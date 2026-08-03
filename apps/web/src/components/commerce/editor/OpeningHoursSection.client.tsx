@@ -75,7 +75,7 @@ export function OpeningHoursSection({
                 {t('commerce.owner.editor.sections.openingHours', 'Horarios de atención')}
             </span>
             <div className={styles.days}>
-                {DAYS.map(({ key, label }) => {
+                {DAYS.map(({ key, label }, dayIndex) => {
                     const schedule = dayOf(value, key);
                     return (
                         <div
@@ -86,6 +86,13 @@ export function OpeningHoursSection({
 
                             <label className={fieldStyles.checkbox}>
                                 <input
+                                    // HOS-373 OQ-3: `openingHours` carries ONE
+                                    // aggregate error over 7 days × N shifts, so
+                                    // focus targets the group's first control.
+                                    // Not necessarily the failing day — but it
+                                    // lands the user in the right section, which
+                                    // beats a toast and no hint at all.
+                                    id={dayIndex === 0 ? 'ce-openingHours' : undefined}
                                     type="checkbox"
                                     checked={schedule.closed}
                                     aria-label={`${label} cerrado`}

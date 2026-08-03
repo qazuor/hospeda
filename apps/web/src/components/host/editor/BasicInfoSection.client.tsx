@@ -169,6 +169,7 @@ export function BasicInfoSection({
                     }
                 >
                     <RichTextEditor
+                        id="acc-description"
                         value={data.description}
                         onChange={(value) => onFieldChange('description', value)}
                         placeholder={t(
