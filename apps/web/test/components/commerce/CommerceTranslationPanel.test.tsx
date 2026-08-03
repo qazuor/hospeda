@@ -160,6 +160,33 @@ describe('CommerceTranslationPanel', () => {
         const lastCall = handleChange.mock.calls.at(-1)?.[0] as CommerceI18nValues;
         expect(lastCall.nameI18n.es).toBe('nombre 2');
     });
+
+    describe('field labels carry the active locale (HOS-371)', () => {
+        it('qualifies every field label so it cannot collide with the editor own fields', () => {
+            renderPanel(EMPTY_I18N);
+
+            // The hosting editor renders its OWN "Nombre del comercio",
+            // "Resumen", "Descripción" and "Descripción ampliada" on the same
+            // page. Unqualified, these four announced identically to a screen
+            // reader and made `getByRole('textbox', { name })` ambiguous.
+            for (const base of ['Nombre', 'Resumen', 'Descripción', 'Descripción ampliada']) {
+                expect(screen.getByLabelText(`${base} (ES)`)).toBeInTheDocument();
+                expect(screen.queryByLabelText(base)).toBeNull();
+            }
+        });
+
+        it('updates the qualifier when the locale tab changes', () => {
+            renderPanel(EMPTY_I18N);
+
+            fireEvent.click(screen.getByRole('tab', { name: /EN/i }));
+
+            // The locale must live in the NAME, not only in the active tab:
+            // the tab is a separate control, so someone landing straight on the
+            // field would otherwise never learn which language they are typing.
+            expect(screen.getByLabelText('Descripción ampliada (EN)')).toBeInTheDocument();
+            expect(screen.queryByLabelText('Descripción ampliada (ES)')).toBeNull();
+        });
+    });
 });
 
 describe('parseCommerceI18nValues', () => {
