@@ -407,48 +407,50 @@
             "id": "T-017",
             "title": "Create the shared author-indexable predicate helper",
             "description": "Spec §6.5. New apps/web/src/lib/seo/author-indexable.ts exporting the single predicate used by BOTH the page and the sitemap, so the two can never disagree. Conditions: is_system_account false, at least one published item, non-empty profile bio, non-empty profile avatar, and page 1. Add a comment stating condition 1 is a CONTENT-CURATION rule, not an authorization check (so the PermissionEnum convention does not apply) and that it is deliberately NOT a role check because roles are mutable. Tests: table-driven, one case per condition failing independently plus the all-pass case.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-020", "T-027", "T-030", "T-031"],
             "subtasks": [
-                { "title": "Write the predicate with RO-RO signature", "completed": false },
+                { "title": "Write the predicate with RO-RO signature", "completed": true },
                 {
                     "title": "Document why it is not a role or permission check",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Table-driven tests, one failing condition each", "completed": false }
+                { "title": "Table-driven tests, one failing condition each", "completed": true }
             ],
             "tags": ["web", "seo"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-02T20:20:00.000Z",
+                "completed": "2026-08-02T20:40:00.000Z"
+            },
+            "notes": "apps/web/src/lib/seo/author-indexable.ts. RO-RO: evaluateAuthorIndexability({...}) -> {isIndexable, reason}. Returns the FIRST failing condition as a typed AuthorNotIndexableReason rather than a bare boolean, so a regression names the condition it broke and the page can log the decision. Absent bio/avatar FAIL (a payload that omitted the field must not index by omission); absent isSystemAccount passes (matches the column default); an omitted page means 1, which is what the sitemap passes since it only ever emits page-1 URLs. Posts and events are summed internally so either alone satisfies condition 2. 12 tests. NOT done here: moving the author page out of FACET_PAGES in test/components/seo/facet-noindex.test.ts — that list names publicaciones/autor/[slug]/index.astro, which still exists and is still unconditionally noindex until T-020/T-023 move it."
         },
         {
             "id": "T-018",
             "title": "Add i18n keys for the author page",
             "description": "Spec §8. Add keys to packages/i18n for the two block headings (Publicaciones / Eventos), the empty states, the pagination labels, the social-links region label, and the page title/meta template. All three locales (es, en, pt); es is the source of truth. NOTE: the `autores` URL segment itself is NOT translated (NG-4) — only visible copy. Tests: the i18n completeness test must pass for all three locales.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-020"],
             "subtasks": [
-                { "title": "Add es keys", "completed": false },
-                { "title": "Add en and pt translations", "completed": false },
-                { "title": "Run the locale completeness test", "completed": false }
+                { "title": "Add es keys", "completed": true },
+                { "title": "Add en and pt translations", "completed": true },
+                { "title": "Run the locale completeness test", "completed": true }
             ],
             "tags": ["i18n", "web"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-02T20:40:00.000Z",
+                "completed": "2026-08-02T21:05:00.000Z"
+            },
+            "notes": "NEW namespace `authors` (packages/i18n/src/locales/{es,en,pt}/authors.json) rather than more keys under `blog`: under HOS-375 the page stops being a blog surface, it lists events too. Precedent for per-feature namespaces already exists (benefits, contact, aiSearch, alliance-leads), so this is not a new convention. Wiring a namespace touches four places in config.shared.ts (webNamespaces + one import and one map entry per locale) and then needs `pnpm --filter @repo/i18n generate-types`. Gotcha: src/types.ts is GITIGNORED (build-generated), so the regenerated keys are deliberately not committed. Second gotcha: biome's organizeImports sorts './locales/xx/auth-ui.json' BEFORE './locales/xx/authors.json' ('-' < 'o'), the opposite of the intuitive order. check-locales reports parity OK across es/en/pt; 801 i18n tests pass."
         },
         {
             "id": "T-019",
@@ -832,50 +834,52 @@
             "id": "T-035",
             "title": "Verify fresh-build and migrated-DB parity (AC-15)",
             "description": "The acceptance test for the whole seed strategy (AC-15 + AC-18). Run pnpm db:fresh-dev on a clean worktree DB — ONE command, no manual re-run step — and assert three facts: the editorial account's slug is equipo-hospeda; both staff accounts have is_system_account = true; zero events remain attributed to the super-admin with created_by_id IS NULL. Then assert AC-18 on the ledger: contentOnly migrations show result='ok', non-contentOnly ones show result='baseline-stamp'. CORRECTED PREMISE (T-001): the original wording of this task said 'fix the fixtures, do not adjust the assertion'. That was wrong for M-B/M-C — there is no fixture, because the rows they act on do not exist on a fresh build at all. A failure here means the contentOnly wiring from T-037/T-038 is wrong, NOT that a fixture is missing. Do not go looking for one. Record the verified procedure in the spec's docs/ folder.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-005", "T-006", "T-007", "T-037", "T-038"],
             "blocks": [],
             "subtasks": [
                 {
-                    "title": "Run db:fresh-dev on a clean DB and snapshot the three facts",
-                    "completed": false
+                    "title": "Reproduce a fresh build on a dedicated DB and snapshot the facts",
+                    "completed": true
                 },
-                { "title": "Compare against a migrated DB", "completed": false },
+                { "title": "Compare against a migrated DB", "completed": true },
                 {
-                    "title": "Fix fixtures on divergence and document the procedure",
-                    "completed": false
+                    "title": "Document the verified procedure (no divergence found)",
+                    "completed": true
                 }
             ],
             "tags": ["testing", "seed", "database"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-02T20:00:00.000Z",
+                "completed": "2026-08-02T21:00:00.000Z"
+            },
+            "notes": "Verified 2026-08-02; both tracks agree on all six facts. Procedure recorded in docs/fresh-build-parity-verification.md. MIGRATED track: db:push + db:seed:migrate on the worktree DB, which was genuinely pre-HOS-375 (no is_system_account column, editorial on auto-slug user-76eb2960, 52 events on the super admin). FRESH track: a DEDICATED throwaway database (hos375_freshbuild) + db:migrate + db:apply-extras + full seed + --baseline-stamp. CRITICAL DEVIATION FROM THE TASK TEXT: `pnpm db:fresh-dev` was NOT run and MUST NOT be — every worktree DB plus hospeda_dev and hospeda_template live in the SAME container, and its `docker compose down -v` destroys that volume, i.e. every worktree on the machine. Result on both tracks: slug equipo-hospeda, both staff flagged, 0 super-admin orphan events, 52 events + 22 posts on the editorial account. AC-18 over the fresh build's 36 ledger rows: the 5 contentOnly migrations 'ok', the other 31 'baseline-stamp', zero violations. KEY FINDING: which half produces the end state DIFFERS per migration. 0034's flag comes from the FIXTURE (it was stamped and never ran) — correct, which is why it is not contentOnly. 0035 RAN but was a no-op, because 0025 already writes the slug — the correct outcome for a well-formed dual-write. 0036 moved 52 rows on the FRESH build too, because 0027/0028 create the events attributed to the acting actor and no fixture can produce them pre-attributed; had it been stamped, a fresh build would ship 52 events under /autores/super-admin-user/ while a migrated one shipped zero. That is the concrete case justifying the contentOnly flag. Two tooling gotchas documented: db:migrate FAILS on a worktree DB (built with db:push, __drizzle_migrations empty, so it replays from 0000 onto an existing schema — use db:push there), and drizzle-kit swallows its own errors when stdout is not a TTY (exit 1, no message) — diagnose by calling the migrator programmatically and logging error.message."
         },
         {
             "id": "T-036",
             "title": "Document the is_system_account convention",
             "description": "Risk R-12. The column defaults to false, so a future service account (importer, bot, integration user) created without setting it would be eligible for a public author page. Document in packages/db/CLAUDE.md and packages/seed/CLAUDE.md that any code path creating a service account MUST set isSystemAccount: true, and state why the flag exists instead of a role check (roles are mutable; this property is not).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-002"],
             "blocks": [],
             "subtasks": [
-                { "title": "Document in packages/db/CLAUDE.md", "completed": false },
-                { "title": "Document in packages/seed/CLAUDE.md", "completed": false }
+                { "title": "Document in packages/db/CLAUDE.md", "completed": true },
+                { "title": "Document in packages/seed/CLAUDE.md", "completed": true }
             ],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-02T20:10:00.000Z",
+                "completed": "2026-08-02T20:20:00.000Z"
+            },
+            "notes": "Documented in BOTH packages/db/CLAUDE.md (column side: the rule for any code path creating a service account, why a stored flag beats a live role check, and that it is content curation so the PermissionEnum convention does not apply) and packages/seed/CLAUDE.md (fixture side: the same rule for fixtures/seeders/data-migrations, plus the note that the editorial account is deliberately NOT a system account since it is a real editorial voice with a public page). The seed section also records why T-004's guard test asserts the key survives UserCreateInputSchema rather than just checking two fixture values."
         },
         {
             "id": "T-037",

@@ -1,6 +1,6 @@
 # HOS-375: Author page — move to `/autores/<slug>/` and unify posts + events
 
-## Progress: 9/38 tasks (24%)
+## Progress: 13/38 tasks (34%)
 
 **Average Complexity:** 1.9/3 (max)
 **Critical Path:** T-002 → T-003 → T-017 → T-020 → T-021 → T-029 → T-032 (7 steps)
@@ -87,11 +87,12 @@
 - [ ] **T-016** (complexity: 2) — Add `eventsApi.getByAuthor` to the web API client
   - Blocked by: none · Blocks: T-020, T-022
 
-- [ ] **T-017** (complexity: 2) — Create the shared author-indexable predicate helper
-  - One predicate shared by page and sitemap, so they can never disagree.
+- [x] **T-017** (complexity: 2) — Create the shared author-indexable predicate helper
+  - **Done.** `apps/web/src/lib/seo/author-indexable.ts`. Returns the FIRST failing condition, not a bare boolean. Absent bio/avatar fail; an omitted `page` means 1 (what the sitemap passes). The `facet-noindex` guard is NOT touched yet — the old `publicaciones/autor/` page still exists and is still unconditionally `noindex` until T-020/T-023 move it.
   - Blocked by: T-003 · Blocks: T-020, T-027, T-030, T-031
 
-- [ ] **T-018** (complexity: 2) — Add i18n keys for the author page
+- [x] **T-018** (complexity: 2) — Add i18n keys for the author page
+  - **Done.** New `authors` namespace in es/en/pt (the page stops being a blog surface — it lists events too). `src/types.ts` is gitignored, so the regenerated keys are not committed. Locale parity OK.
   - Blocked by: none · Blocks: T-020
 
 - [ ] **T-019** (complexity: 2) — Create the `ProfilePageJsonLd` component
@@ -150,13 +151,15 @@
 - [ ] **T-034** (complexity: 2) — Add the actor-blind response test for by-slug (AC-6)
   - Blocked by: T-010 · Blocks: none
 
-- [ ] **T-035** (complexity: 2) — Verify fresh-build and migrated-DB parity (AC-15 + AC-18)
+- [x] **T-035** (complexity: 2) — Verify fresh-build and migrated-DB parity (AC-15 + AC-18)
+  - **Done, both tracks agree on all six facts.** Procedure in [`docs/fresh-build-parity-verification.md`](../docs/fresh-build-parity-verification.md). `db:fresh-dev` was deliberately NOT used: every worktree DB shares one container and its `down -v` would destroy all of them. AC-18 clean over 36 ledger rows.
   - Premise corrected by T-001: a failure here means the `contentOnly` wiring is wrong, **not** that a fixture is missing. There is no fixture.
   - Blocked by: T-004, T-005, T-006, T-007, T-037, T-038 · Blocks: none
 
 ### Docs Phase — 1 task (avg complexity 1.0)
 
-- [ ] **T-036** (complexity: 1) — Document the `is_system_account` convention
+- [x] **T-036** (complexity: 1) — Document the `is_system_account` convention
+  - **Done.** `packages/db/CLAUDE.md` (column side) and `packages/seed/CLAUDE.md` (fixture side).
   - Blocked by: T-002 · Blocks: none
 
 ---
@@ -188,5 +191,5 @@ T-001 and T-002 are done. The next unblocked work, in rough priority order:
 - **T-037** (complexity: 3) — the G-10 fix. Everything on the seed/data track now depends
   on it, and T-005/T-006/T-007 should be authored knowing the flag exists.
 - **T-003** (complexity: 2) — unblocks the schema/service track (T-011, T-017).
-- **T-008**, **T-014**, **T-016**, **T-018**, **T-019**, **T-023** — all at level 0, no
+- **T-008**, **T-014**, **T-016**, **T-019**, **T-023** — all at level 0, no
   dependencies, safe to pick up in any order or in parallel.
