@@ -27,11 +27,7 @@
  * All exports are pure — no I/O, no throwing.
  */
 
-import {
-    buildEntityCacheTags,
-    CACHE_TAG_COLLECTIONS,
-    CACHE_TAG_HOME
-} from '@repo/cache-tags';
+import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS, CACHE_TAG_HOME } from '@repo/cache-tags';
 import type { EntityChangeData } from './entity-change.types.js';
 
 /**

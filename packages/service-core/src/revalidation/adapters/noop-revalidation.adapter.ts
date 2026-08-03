@@ -50,9 +50,7 @@ export class NoOpRevalidationAdapter implements RevalidationAdapter {
      * @param _params.reason - Ignored; accepted for interface parity
      * @returns A successful result targeting `*`
      */
-    async purgeEverything(_params: {
-        readonly reason?: string;
-    }): Promise<RevalidateTargetResult> {
+    async purgeEverything(_params: { readonly reason?: string }): Promise<RevalidateTargetResult> {
         const start = Date.now();
         return {
             target: WHOLE_ZONE_TARGET,

@@ -148,9 +148,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const purgeBody =
-        instruction.kind === 'everything'
-            ? { purge_everything: true }
-            : { tags: instruction.tags };
+        instruction.kind === 'everything' ? { purge_everything: true } : { tags: instruction.tags };
 
     const purgeRes = await fetch(CLOUDFLARE_PURGE_ENDPOINT(cfZoneId), {
         method: 'POST',
@@ -163,7 +161,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!purgeRes.ok) {
         const detail = await purgeRes.text().catch(() => '<no body>');
-        return jsonError({ error: 'cloudflare_purge_failed', status: purgeRes.status, detail }, 502);
+        return jsonError(
+            { error: 'cloudflare_purge_failed', status: purgeRes.status, detail },
+            502
+        );
     }
 
     // A 2xx is not proof the purge happened. Cloudflare's v4 API answers with an

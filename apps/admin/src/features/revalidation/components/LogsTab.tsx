@@ -149,7 +149,15 @@ export function LogsTab({ locale }: LogsTabProps) {
                 pageSize
             };
         }
-    }, [entityTypeFilter, triggerFilter, statusFilter, debouncedTarget, fromDate, toDate, pageSize]);
+    }, [
+        entityTypeFilter,
+        triggerFilter,
+        statusFilter,
+        debouncedTarget,
+        fromDate,
+        toDate,
+        pageSize
+    ]);
 
     // Build filters object for the query hook
     const filters = useMemo((): Partial<RevalidationLogFilter> => {

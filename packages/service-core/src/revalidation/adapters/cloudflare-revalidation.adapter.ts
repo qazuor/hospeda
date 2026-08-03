@@ -107,9 +107,7 @@ export class CloudflareRevalidationAdapter implements RevalidationAdapter {
      * @param params.reason - Human-readable justification, forwarded for logging
      * @returns Result targeting `*`
      */
-    async purgeEverything(params: {
-        readonly reason?: string;
-    }): Promise<RevalidateTargetResult> {
+    async purgeEverything(params: { readonly reason?: string }): Promise<RevalidateTargetResult> {
         const result = await this.postPurge({
             body: { purgeEverything: true, reason: params.reason }
         });

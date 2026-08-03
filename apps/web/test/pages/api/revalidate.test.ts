@@ -27,9 +27,10 @@ function makeContext({
     readonly secret?: string | null;
     readonly body?: unknown;
 }): Parameters<typeof POST>[0] {
-    const url = secret === null
-        ? 'https://hospeda.test/api/revalidate/'
-        : `https://hospeda.test/api/revalidate/?secret=${encodeURIComponent(secret)}`;
+    const url =
+        secret === null
+            ? 'https://hospeda.test/api/revalidate/'
+            : `https://hospeda.test/api/revalidate/?secret=${encodeURIComponent(secret)}`;
 
     const request = new Request(url, {
         method: 'POST',

@@ -157,8 +157,12 @@ describe('detector behaviour (non-vacuity)', () => {
     });
 
     it('catches a template literal value', () => {
-        const source =
-            "headers.set('Cache-Control', `s-maxage=${TTL}, stale-while-revalidate=${SWR}`);";
+        // Assembled rather than written literally: the `${` sequence is the
+        // thing under test — it is source text the detector must handle — and
+        // writing it inline trips `noTemplateCurlyInString`, whose whole job is
+        // to catch the case where someone MEANT to interpolate.
+        const placeholder = (name: string) => `\${${name}}`;
+        const source = `headers.set('Cache-Control', \`s-maxage=${placeholder('TTL')}, stale-while-revalidate=${placeholder('SWR')}\`);`;
         expect(violatesTagRule({ source })).toBe(true);
     });
 
