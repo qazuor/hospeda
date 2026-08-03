@@ -32,24 +32,41 @@ const VIDEO = {
 };
 
 describe('videos field exposure on relational-media entities (HOS-372)', () => {
+    // `.pick()` is applied HERE, where each schema still has its own concrete
+    // type. Collecting the schemas first and picking inside the loop makes
+    // `schema` a union of three unrelated ZodObjects, and `.pick()` on that
+    // union has no compatible call signature (TS2349).
+    //
+    // Isolating the field is what makes the parse assertion meaningful: these
+    // schemas have other required members, so a whole-object parse would fail on
+    // those and tell us nothing about videos. The pick also proves the key really
+    // exists — picking an absent key yields an empty shape, which the shape
+    // assertion below then catches.
     const cases = [
-        { name: 'GastronomyPublicSchema', schema: GastronomyPublicSchema },
-        { name: 'ExperiencePublicSchema', schema: ExperiencePublicSchema },
-        { name: 'AccommodationPublicSchema', schema: AccommodationPublicSchema }
-    ] as const;
+        {
+            name: 'GastronomyPublicSchema',
+            shapeKeys: Object.keys(GastronomyPublicSchema.shape),
+            isolated: GastronomyPublicSchema.pick({ videos: true })
+        },
+        {
+            name: 'ExperiencePublicSchema',
+            shapeKeys: Object.keys(ExperiencePublicSchema.shape),
+            isolated: ExperiencePublicSchema.pick({ videos: true })
+        },
+        {
+            name: 'AccommodationPublicSchema',
+            shapeKeys: Object.keys(AccommodationPublicSchema.shape),
+            isolated: AccommodationPublicSchema.pick({ videos: true })
+        }
+    ];
 
-    for (const { name, schema } of cases) {
+    for (const { name, shapeKeys, isolated } of cases) {
         it(`${name} declares a videos field`, () => {
             // A picked-away field is absent from `.shape` entirely.
-            expect(Object.keys(schema.shape)).toContain('videos');
+            expect(shapeKeys).toContain('videos');
         });
 
         it(`${name} preserves videos through a parse instead of stripping them`, () => {
-            // Isolate the field: these schemas have other required members, so a
-            // whole-object parse would fail on those and tell us nothing about
-            // videos. Picking it also proves the key really exists — .pick() on an
-            // absent key yields an empty shape, and the assertion below then fails.
-            const isolated = schema.pick({ videos: true });
             expect(Object.keys(isolated.shape)).toEqual(['videos']);
 
             const parsed = isolated.parse({ videos: [VIDEO] });
