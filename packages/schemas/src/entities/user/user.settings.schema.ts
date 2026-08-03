@@ -120,6 +120,19 @@ export const UserSettingsSchema = z.object({
     searchHistoryEnabled: z.boolean().default(true).optional(),
 
     /**
+     * Whether the user's social networks may be shown on their public author
+     * page (HOS-375 §6.7). Defaults to `false` — the opt-in is explicit,
+     * because publishing someone's social handles is not something to infer
+     * from the mere presence of the data. Networks already stored by users who
+     * never asked for a public profile stay private until they say so.
+     *
+     * Stored additively in the existing `settings` JSONB column — no DB
+     * migration needed, and a stored settings object without the key parses
+     * fine (it reads as `false`).
+     */
+    publicProfileShowSocialNetworks: z.boolean().default(false).optional(),
+
+    /**
      * Onboarding progress namespace. Shared by SPEC-174 (welcome tour) and
      * SPEC-175 (What's New). Added additively — no DB migration required.
      *
@@ -183,7 +196,13 @@ export const UserSettingsWebPatchSchema = z
         themeWeb: ThemeEnumSchema.optional(),
         languageWeb: LanguageEnumSchema.optional(),
         notifications: UserNotificationsSchema.optional(),
-        newsletter: z.boolean().optional()
+        newsletter: z.boolean().optional(),
+        /**
+         * The author-page social opt-in (HOS-375 §6.7). It MUST be listed here:
+         * this schema is `.strict()`, so a key it does not declare makes the web
+         * PATCH fail with a 400 whose cause is not obvious from the UI.
+         */
+        publicProfileShowSocialNetworks: z.boolean().optional()
     })
     .strict();
 
