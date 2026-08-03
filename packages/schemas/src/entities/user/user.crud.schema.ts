@@ -21,11 +21,35 @@ import { AssignableRoleEnumSchema } from './user-role.schema.js';
  * (it gates persistence and MUST keep its bounds); `*OutputSchema` derives from
  * `UserReadSchema`, because an output schema describes a row that already exists
  * — including rows Better Auth wrote without ever passing the write bounds.
+ *
+ * HOS-375 slug format rule: `UserSchema.slug` itself stays `.min(1)` — it is
+ * also the READ shape (`UserAuthorPublicResponseSchema` in
+ * `apps/api/src/routes/user/public/getBySlug.ts` reuses `UserSchema.shape.slug`
+ * verbatim), and that route's `stripWithSchema` FAIL-CLOSES to HTTP 500 on a
+ * public page. Tightening the base schema would turn a legacy non-conforming
+ * row (see `packages/seed/src/data-migrations/0038-transliterate-user-slugs.ts`
+ * for the backfill, and any row created before this constraint existed) from a
+ * 404 into a 500 on that same public page — strictly worse. The
+ * `^[a-z0-9]+(?:[_-][a-z0-9]+)*$` pattern the public route's `:slug` path param
+ * already enforces is therefore added ONLY on the write schemas below, via
+ * `.extend({ slug: ... })` over the field the base schema declares — never on
+ * `UserSchema` itself.
  */
 
 // ============================================================================
 // CREATE SCHEMAS
 // ============================================================================
+
+/**
+ * Public-route-conforming slug pattern (HOS-375). Mirrors the `:slug` path
+ * param regex in `apps/api/src/routes/user/public/getBySlug.ts` — lowercase
+ * alphanumerics, segments separated by a single hyphen or underscore. Applied
+ * only to the write schemas (see the HOS-375 note above the CRUD schemas
+ * JSDoc); `UserSchema.slug` stays unconstrained beyond `.min(1)`.
+ */
+const UserSlugPatternSchema = UserSchema.shape.slug.regex(/^[a-z0-9]+(?:[_-][a-z0-9]+)*$/, {
+    message: 'zodError.user.slug.pattern'
+});
 
 /**
  * Schema for creating a new user
@@ -39,6 +63,8 @@ export const UserCreateInputSchema = UserSchema.omit({
     updatedById: true,
     deletedAt: true,
     deletedById: true
+}).extend({
+    slug: UserSlugPatternSchema
 });
 
 /**
@@ -110,7 +136,14 @@ export const UserUpdateInputSchema = z
             }).shape
         )
     )
-    .partial();
+    .partial()
+    .extend({
+        // HOS-375: same write-only pattern as UserCreateInputSchema (see the
+        // note above the CRUD schemas JSDoc). `.optional()` because an update
+        // omitting `slug` must mean "no change", matching every other field's
+        // `.partial()` semantics.
+        slug: UserSlugPatternSchema.optional()
+    });
 
 /**
  * Schema for partial user updates (PATCH)

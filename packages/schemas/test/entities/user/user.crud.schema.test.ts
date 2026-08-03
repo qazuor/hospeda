@@ -64,6 +64,45 @@ describe('User CRUD Schemas', () => {
 
             expect(() => UserCreateInputSchema.parse(invalidInput)).toThrow(ZodError);
         });
+
+        // HOS-375: the public author route (getBySlug.ts) validates its
+        // `:slug` path param against `^[a-z0-9]+(?:[_-][a-z0-9]+)*$` and 400s
+        // otherwise. Writing a non-conforming slug used to be silently
+        // accepted, producing a permanently 404ing author page — this schema
+        // is the fix, on the WRITE side only (see the JSDoc note above the
+        // CRUD schemas for why `UserSchema.slug` itself stays unconstrained).
+        it('rejects a slug with non-ASCII characters', () => {
+            const user = createUserFixture();
+            const invalidInput = {
+                ...user,
+                slug: 'ana-rodríguez'
+            };
+
+            expect(() => UserCreateInputSchema.parse(invalidInput)).toThrow(ZodError);
+        });
+
+        it('accepts a plain ASCII hyphenated slug', () => {
+            const user = createUserFixture();
+            const validInput = {
+                ...user,
+                slug: 'ana-rodriguez'
+            };
+
+            expect(() => UserCreateInputSchema.parse(validInput)).not.toThrow();
+        });
+
+        it('accepts the auto-generated `user-<8 hex>` slug shape', () => {
+            // Must keep passing: `users.slug.$defaultFn` in
+            // packages/db/src/schemas/user/user.dbschema.ts produces exactly
+            // this shape for any signup that omits a slug.
+            const user = createUserFixture();
+            const validInput = {
+                ...user,
+                slug: 'user-a1b2c3d4'
+            };
+
+            expect(() => UserCreateInputSchema.parse(validInput)).not.toThrow();
+        });
     });
 
     describe('UserUpdateInputSchema', () => {
@@ -140,6 +179,34 @@ describe('User CRUD Schemas', () => {
             // system-account flag. If it could, an unrelated profile save on a
             // staff account would turn it back into an indexable author page.
             expect(Object.hasOwn(parsed, 'isSystemAccount')).toBe(false);
+        });
+
+        // HOS-375: same write-side pattern constraint as UserCreateInputSchema.
+        it('rejects a slug with non-ASCII characters', () => {
+            const invalidInput = { slug: 'carlos-martínez' };
+
+            expect(() => UserUpdateInputSchema.parse(invalidInput)).toThrow(ZodError);
+        });
+
+        it('accepts a plain ASCII hyphenated slug', () => {
+            const validInput = { slug: 'carlos-martinez' };
+
+            expect(() => UserUpdateInputSchema.parse(validInput)).not.toThrow();
+        });
+
+        it('accepts the auto-generated `user-<8 hex>` slug shape', () => {
+            const validInput = { slug: 'user-a1b2c3d4' };
+
+            expect(() => UserUpdateInputSchema.parse(validInput)).not.toThrow();
+        });
+
+        it('omitting slug still means "no change" (partial semantics preserved)', () => {
+            const parsed = UserUpdateInputSchema.parse({ firstName: 'Jane' }) as Record<
+                string,
+                unknown
+            >;
+
+            expect(Object.hasOwn(parsed, 'slug')).toBe(false);
         });
 
         it('no longer carries a scalar `role` (HOS-296)', () => {
