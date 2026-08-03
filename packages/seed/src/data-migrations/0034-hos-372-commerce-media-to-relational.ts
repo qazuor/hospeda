@@ -37,8 +37,20 @@
  * re-running never duplicates a gallery. It only ever INSERTs — nothing is
  * deleted, and the `media` blob is left untouched for the schema migration that
  * drops the column to remove.
+ *
+ * ## Why the source columns are read with raw SQL
+ *
+ * `gastronomies.media` and `experiences.media` are dropped from the Drizzle
+ * schema by the very cutover this migration precedes. Referencing them through
+ * the typed table objects would stop this file compiling the moment the columns
+ * are removed, even though the migration itself has long since run and been
+ * recorded in the ledger. Raw SQL keeps it readable and compiling forever.
+ *
+ * A `to_regclass` / `information_schema` guard makes the read safe on a database
+ * where the columns are already gone: there is nothing left to backfill there,
+ * so the migration reports zero and exits.
  */
-import { experienceMedia, experiences, gastronomies, gastronomyMedia, inArray } from '@repo/db';
+import { experienceMedia, gastronomyMedia, inArray, sql } from '@repo/db';
 import {
     buildExperienceMediaRows,
     buildGastronomyMediaRows
@@ -71,16 +83,44 @@ function toPhotoBlock(value: unknown): FixtureMediaBlock | null {
     return hasPhotos ? block : null;
 }
 
+/**
+ * Reads `(id, media)` from a listing table with raw SQL, tolerating a database
+ * where the `media` column has already been dropped.
+ *
+ * Returns an empty list in that case: the cutover is complete there, so there is
+ * nothing left to move.
+ *
+ * @param db - Transaction-scoped Drizzle client.
+ * @param table - Listing table name (`gastronomies` or `experiences`).
+ * @returns Listings whose blob still carries photos.
+ */
+async function readPhotoCandidates(
+    db: SeedMigrationCtx['db'],
+    table: 'gastronomies' | 'experiences'
+): Promise<PhotoCandidate[]> {
+    const columnExists = await db.execute(
+        sql`SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = ${table} AND column_name = 'media'`
+    );
+    if ((columnExists.rows?.length ?? 0) === 0) return [];
+
+    // `sql.raw` is safe here: `table` is a closed union of two literals, never
+    // caller-supplied text.
+    const result = await db.execute(
+        sql`SELECT id, media FROM ${sql.raw(table)} WHERE media IS NOT NULL`
+    );
+
+    return (result.rows as Array<{ id: string; media: unknown }>).flatMap((row) => {
+        const media = toPhotoBlock(row.media);
+        return media ? [{ id: row.id, media }] : [];
+    });
+}
+
 export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     const { db } = ctx;
 
     // ── Gastronomy ──────────────────────────────────────────────────────────
-    const gastronomyCandidates: PhotoCandidate[] = (
-        await db.select({ id: gastronomies.id, media: gastronomies.media }).from(gastronomies)
-    ).flatMap((row) => {
-        const media = toPhotoBlock(row.media);
-        return media ? [{ id: row.id, media }] : [];
-    });
+    const gastronomyCandidates = await readPhotoCandidates(db, 'gastronomies');
 
     // One query for the whole set rather than one per listing: any id that
     // already owns a media row has been migrated and must be left alone.
@@ -115,12 +155,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     }
 
     // ── Experience ──────────────────────────────────────────────────────────
-    const experienceCandidates: PhotoCandidate[] = (
-        await db.select({ id: experiences.id, media: experiences.media }).from(experiences)
-    ).flatMap((row) => {
-        const media = toPhotoBlock(row.media);
-        return media ? [{ id: row.id, media }] : [];
-    });
+    const experienceCandidates = await readPhotoCandidates(db, 'experiences');
 
     const experienceMigrated = new Set<string>(
         experienceCandidates.length === 0

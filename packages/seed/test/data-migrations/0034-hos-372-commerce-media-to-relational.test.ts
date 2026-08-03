@@ -48,13 +48,20 @@ function buildDbMock(selectBatches: ReadonlyArray<readonly unknown[]>): {
     let selectCall = 0;
 
     const db = {
+        // Listing rows are read with raw SQL so the migration keeps compiling
+        // after the `media` columns leave the Drizzle schema. Each vertical
+        // issues two: a column-existence probe, then the data read.
+        execute: vi.fn(() => {
+            const batch = selectBatches[selectCall] ?? [];
+            selectCall += 1;
+            return Promise.resolve({ rows: batch });
+        }),
         select: vi.fn(() => {
             const batch = selectBatches[selectCall] ?? [];
             selectCall += 1;
-            // The listing queries await `.from()` directly; the media-id queries
-            // chain a `.where()` first. Returning a REAL promise with `where`
-            // attached supports both without hand-rolling a thenable — its
-            // `then` is the native one, not a property we define.
+            // The media-id queries chain `.from().where()`. A REAL promise with
+            // `where` attached avoids hand-rolling a thenable — its `then` is
+            // the native one, not a property we define.
             const awaitable = Promise.resolve(batch) as Promise<unknown[]> & {
                 where: ReturnType<typeof vi.fn>;
             };
@@ -72,6 +79,31 @@ function buildDbMock(selectBatches: ReadonlyArray<readonly unknown[]>): {
     return { db, inserts };
 }
 
+/** A single row from the column-existence probe: the column is present. */
+const COLUMN_PRESENT = [{ exists: 1 }];
+
+/**
+ * Builds the query sequence the migration issues, in order, so tests describe
+ * intent instead of counting call positions:
+ *   gastronomy column probe → gastronomy rows → gastronomy media ids
+ *   experience column probe → experience rows → experience media ids
+ */
+function sequence(input: {
+    gastronomyRows?: readonly unknown[];
+    gastronomyMigrated?: readonly unknown[];
+    experienceRows?: readonly unknown[];
+    experienceMigrated?: readonly unknown[];
+}): ReadonlyArray<readonly unknown[]> {
+    return [
+        COLUMN_PRESENT,
+        input.gastronomyRows ?? [],
+        input.gastronomyMigrated ?? [],
+        COLUMN_PRESENT,
+        input.experienceRows ?? [],
+        input.experienceMigrated ?? []
+    ];
+}
+
 /** Wraps a db mock into the minimal ctx the migration reads. */
 function buildCtx(selectBatches: ReadonlyArray<readonly unknown[]>) {
     const { db, inserts } = buildDbMock(selectBatches);
@@ -87,12 +119,12 @@ describe('0034-hos-372-commerce-media-to-relational', () => {
     });
 
     it('should insert rows for listings whose blob carries photos', async () => {
-        const { ctx, inserts } = buildCtx([
-            [{ id: GASTRONOMY_ID, media: PHOTO_BLOCK }],
-            [], // no gastronomy_media rows yet
-            [{ id: EXPERIENCE_ID, media: PHOTO_BLOCK }],
-            [] // no experience_media rows yet
-        ]);
+        const { ctx, inserts } = buildCtx(
+            sequence({
+                gastronomyRows: [{ id: GASTRONOMY_ID, media: PHOTO_BLOCK }],
+                experienceRows: [{ id: EXPERIENCE_ID, media: PHOTO_BLOCK }]
+            })
+        );
 
         const result = await migration.up(ctx);
 
@@ -103,14 +135,29 @@ describe('0034-hos-372-commerce-media-to-relational', () => {
         expect(result.summary).toContain('2 photo(s) across 1 experience listing(s)');
     });
 
+    it('should no-op on a database where the media columns are already dropped', async () => {
+        // The cutover is complete there, so there is nothing left to move. An
+        // empty probe result must short-circuit rather than letting the data
+        // read hit a column that no longer exists.
+        const { ctx, inserts } = buildCtx([[], [], [], [], [], []]);
+
+        const result = await migration.up(ctx);
+
+        expect(inserts).toHaveLength(0);
+        expect(result.summary).toContain('0 photo(s) across 0 gastronomy listing(s)');
+        expect(result.summary).toContain('0 photo(s) across 0 experience listing(s)');
+    });
+
     it('should insert nothing when the listings already own media rows', async () => {
         // The idempotency contract: re-running must not duplicate a gallery.
-        const { ctx, inserts } = buildCtx([
-            [{ id: GASTRONOMY_ID, media: PHOTO_BLOCK }],
-            [{ gastronomyId: GASTRONOMY_ID }],
-            [{ id: EXPERIENCE_ID, media: PHOTO_BLOCK }],
-            [{ experienceId: EXPERIENCE_ID }]
-        ]);
+        const { ctx, inserts } = buildCtx(
+            sequence({
+                gastronomyRows: [{ id: GASTRONOMY_ID, media: PHOTO_BLOCK }],
+                gastronomyMigrated: [{ gastronomyId: GASTRONOMY_ID }],
+                experienceRows: [{ id: EXPERIENCE_ID, media: PHOTO_BLOCK }],
+                experienceMigrated: [{ experienceId: EXPERIENCE_ID }]
+            })
+        );
 
         const result = await migration.up(ctx);
 
@@ -121,15 +168,15 @@ describe('0034-hos-372-commerce-media-to-relational', () => {
     it('should backfill only the listings that are still missing rows', async () => {
         // The real shape of a partially-migrated environment.
         const OTHER_ID = 'c0ffee00-0000-4000-a000-000000000001';
-        const { ctx, inserts } = buildCtx([
-            [
-                { id: GASTRONOMY_ID, media: PHOTO_BLOCK },
-                { id: OTHER_ID, media: PHOTO_BLOCK }
-            ],
-            [{ gastronomyId: GASTRONOMY_ID }],
-            [],
-            []
-        ]);
+        const { ctx, inserts } = buildCtx(
+            sequence({
+                gastronomyRows: [
+                    { id: GASTRONOMY_ID, media: PHOTO_BLOCK },
+                    { id: OTHER_ID, media: PHOTO_BLOCK }
+                ],
+                gastronomyMigrated: [{ gastronomyId: GASTRONOMY_ID }]
+            })
+        );
 
         await migration.up(ctx);
 
@@ -138,22 +185,21 @@ describe('0034-hos-372-commerce-media-to-relational', () => {
     });
 
     it('should ignore listings with no photos in the blob', async () => {
-        const { ctx, inserts } = buildCtx([
-            [
-                { id: GASTRONOMY_ID, media: null },
-                { id: 'b0000000-0000-4000-a000-000000000002', media: {} },
-                // Videos-only: they belong in the `videos` column, never in the
-                // media tables, so this must produce no rows either.
-                {
-                    id: 'b0000000-0000-4000-a000-000000000003',
-                    media: { videos: [{ url: 'https://youtube.com/watch?v=x' }] }
-                },
-                { id: 'b0000000-0000-4000-a000-000000000004', media: { gallery: [] } }
-            ],
-            [],
-            [],
-            []
-        ]);
+        const { ctx, inserts } = buildCtx(
+            sequence({
+                gastronomyRows: [
+                    { id: GASTRONOMY_ID, media: null },
+                    { id: 'b0000000-0000-4000-a000-000000000002', media: {} },
+                    // Videos-only: they belong in the `videos` column, never in
+                    // the media tables, so this must produce no rows either.
+                    {
+                        id: 'b0000000-0000-4000-a000-000000000003',
+                        media: { videos: [{ url: 'https://youtube.com/watch?v=x' }] }
+                    },
+                    { id: 'b0000000-0000-4000-a000-000000000004', media: { gallery: [] } }
+                ]
+            })
+        );
 
         const result = await migration.up(ctx);
 
