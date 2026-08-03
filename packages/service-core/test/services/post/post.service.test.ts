@@ -1,4 +1,4 @@
-import { EntityTypeEnum, RoleEnum } from '@repo/schemas';
+import { EntityTypeEnum, LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import type { Actor, ServiceConfig } from '../../../src/types';
@@ -205,7 +205,16 @@ describe('PostService - tags filter via r_entity_tag (HOS-109 regression)', () =
             expect(mockRelatedModel.findEntityIdsByTags).not.toHaveBeenCalled();
             const call = mockModel.findAllWithRelations.mock.calls[0];
             const whereArg = call?.[1] as Record<string, unknown>;
-            expect(whereArg).toEqual({ category: 'blog', isNews: false, isFeatured: true });
+            // The caller's filters survive verbatim, PLUS the public visibility
+            // scope: `search` is a public read path, and without these two keys
+            // it served PRIVATE and DRAFT posts to anonymous visitors.
+            expect(whereArg).toEqual({
+                category: 'blog',
+                isNews: false,
+                isFeatured: true,
+                visibility: VisibilityEnum.PUBLIC,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            });
             expect(call?.[3]).toBeUndefined();
         });
     });
@@ -259,7 +268,13 @@ describe('PostService - tags filter via r_entity_tag (HOS-109 regression)', () =
             const call = mockModel.count.mock.calls[0];
             const whereArg = call?.[0] as Record<string, unknown>;
             const options = call?.[1] as { additionalConditions: unknown[] };
-            expect(whereArg).toEqual({ category: 'news' });
+            // Must carry the SAME visibility scope as `_executeSearch`, or
+            // `total` counts rows `items` never shows.
+            expect(whereArg).toEqual({
+                category: 'news',
+                visibility: VisibilityEnum.PUBLIC,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            });
             expect(options.additionalConditions).toEqual([]);
         });
     });

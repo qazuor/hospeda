@@ -56,6 +56,7 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
+import { applyPublicVisibilityScope } from '../../utils/public-visibility-scope';
 import { generatePostSlug, mapPostFilterKeysToColumns } from './post.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './post.normalizers';
 import {
@@ -792,7 +793,17 @@ export class PostService extends BaseCrudService<
      * @param actor - The actor performing the search.
      * @returns A paginated list of posts matching the criteria.
      */
-    protected async _executeSearch(params: PostListInput, _actor: Actor, ctx: ServiceContext) {
+    /**
+     * The public visibility scope for posts (see
+     * {@link applyPublicVisibilityScope}). Declared once so `_executeSearch`
+     * and `_executeCount` cannot drift onto different permissions.
+     */
+    private static readonly PUBLIC_SCOPE_PERMISSIONS = {
+        viewPrivate: PermissionEnum.POST_VIEW_PRIVATE,
+        viewDraft: PermissionEnum.POST_VIEW_DRAFT
+    } as const;
+
+    protected async _executeSearch(params: PostListInput, actor: Actor, ctx: ServiceContext) {
         const {
             page: _page,
             pageSize: _pageSize,
@@ -845,9 +856,18 @@ export class PostService extends BaseCrudService<
             boolean | Record<string, unknown>
         >;
 
+        // `search` is a PUBLIC read path — its only callers are public-tier
+        // routes — and it used to hand the caller's filters through untouched,
+        // so PRIVATE and DRAFT posts were served to anonymous visitors.
+        const scopedFilters = applyPublicVisibilityScope({
+            filters: filterParams,
+            actor,
+            permissions: PostService.PUBLIC_SCOPE_PERMISSIONS
+        });
+
         return this.model.findAllWithRelations(
             relations,
-            mapPostFilterKeysToColumns(filterParams),
+            mapPostFilterKeysToColumns(scopedFilters),
             {
                 page: ctx.pagination?.page ?? 1,
                 pageSize: ctx.pagination?.pageSize ?? 10,
@@ -864,7 +884,7 @@ export class PostService extends BaseCrudService<
      * @param actor - The actor performing the count.
      * @returns An object containing the total count of posts matching the criteria.
      */
-    protected async _executeCount(params: PostListInput, _actor: Actor, _ctx: ServiceContext) {
+    protected async _executeCount(params: PostListInput, actor: Actor, _ctx: ServiceContext) {
         const {
             page: _page,
             pageSize: _pageSize,
@@ -893,7 +913,15 @@ export class PostService extends BaseCrudService<
             additionalConditions.push(inArray(posts.id, postIds));
         }
 
-        const count = await this.model.count(mapPostFilterKeysToColumns(filterParams), {
+        // Same scope as `_executeSearch`, or `total` would count rows `items`
+        // never shows.
+        const scopedFilters = applyPublicVisibilityScope({
+            filters: filterParams,
+            actor,
+            permissions: PostService.PUBLIC_SCOPE_PERMISSIONS
+        });
+
+        const count = await this.model.count(mapPostFilterKeysToColumns(scopedFilters), {
             additionalConditions
         });
         return { count };

@@ -57,6 +57,7 @@ import type {
 } from '../../types';
 import { type Actor, ServiceError } from '../../types';
 import { checkCanFindOptions } from '../../utils';
+import { applyPublicVisibilityScope } from '../../utils/public-visibility-scope';
 import { projectEventLocationCityDestination } from '../eventLocation/eventLocation.projections';
 import {
     buildEventDateConditions,
@@ -708,7 +709,17 @@ export class EventService extends BaseCrudService<
      * @param _actor - The actor performing the search
      * @returns Paginated list of events matching the criteria
      */
-    protected async _executeSearch(params: EventSearchInput, _actor: Actor, ctx: ServiceContext) {
+    /**
+     * The public visibility scope for events (see
+     * {@link applyPublicVisibilityScope}). Declared once so `_executeSearch`
+     * and `_executeCount` cannot drift onto different permissions.
+     */
+    private static readonly PUBLIC_SCOPE_PERMISSIONS = {
+        viewPrivate: PermissionEnum.EVENT_VIEW_PRIVATE,
+        viewDraft: PermissionEnum.EVENT_VIEW_DRAFT
+    } as const;
+
+    protected async _executeSearch(params: EventSearchInput, actor: Actor, ctx: ServiceContext) {
         const {
             page: _page,
             pageSize: _pageSize,
@@ -796,9 +807,18 @@ export class EventService extends BaseCrudService<
         // ordering falls back to the default (id DESC) instead of bookmark count.
         // Accept this regression to keep card relations consistent; a future
         // change can implement mostSaved at the findAllWithRelations layer.
+        // `search` is a PUBLIC read path — its only callers are public-tier
+        // routes — and it used to hand the caller's filters through untouched,
+        // so PRIVATE and DRAFT events were served to anonymous visitors.
+        const scopedFilters = applyPublicVisibilityScope({
+            filters: filterParams,
+            actor,
+            permissions: EventService.PUBLIC_SCOPE_PERMISSIONS
+        });
+
         const searchResult = await this.model.findAllWithRelations(
             this.getCardListRelations(),
-            filterParams,
+            scopedFilters,
             {
                 page: ctx.pagination?.page ?? 1,
                 pageSize: ctx.pagination?.pageSize ?? 10,
@@ -823,7 +843,7 @@ export class EventService extends BaseCrudService<
      * @param _actor - The actor performing the count
      * @returns Count of events matching the criteria
      */
-    protected async _executeCount(params: EventSearchInput, _actor: Actor, _ctx: ServiceContext) {
+    protected async _executeCount(params: EventSearchInput, actor: Actor, _ctx: ServiceContext) {
         const {
             page: _page,
             pageSize: _pageSize,
@@ -893,8 +913,16 @@ export class EventService extends BaseCrudService<
             if (searchCondition) additionalConditions.push(searchCondition);
         }
 
+        // Same scope as `_executeSearch`, or `total` would count rows `items`
+        // never shows.
+        const scopedFilters = applyPublicVisibilityScope({
+            filters: filterParams,
+            actor,
+            permissions: EventService.PUBLIC_SCOPE_PERMISSIONS
+        });
+
         const count = await this.model.count(
-            filterParams,
+            scopedFilters,
             additionalConditions.length > 0 ? { additionalConditions } : undefined
         );
         return { count };
