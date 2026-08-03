@@ -37,8 +37,8 @@
         "@vitejs/plugin-react": "^6.0.4",
         "@vitest/coverage-v8": "^4.1.10",
         "jsdom": "^26.0.0",
-        "react": "19.1.1",
-        "react-dom": "19.1.1",
+        "react": "19.2.8",
+        "react-dom": "19.2.8",
         "typescript": "6.0.3",
         "vite-tsconfig-paths": "^6.1.1",
         "vitest": "^4.1.10"
