@@ -302,3 +302,64 @@ describe('UserAuthorPublicResponseSchema — HOS-302 read⊇write', () => {
         }
     });
 });
+
+/**
+ * HOS-375 §6.7 (T-009) — `socialNetworks` is the one CONDITIONAL field in the
+ * response. The service omits the key entirely when the profile owner has not
+ * opted in, so the schema must accept the payload both with and without it.
+ *
+ * It also uses the LENIENT read shape: stored values predate the current
+ * validation (bare handles, `m.facebook.com` variants, shortened links), and
+ * `stripWithSchema` fail-closes to HTTP 500 on this PUBLIC page.
+ */
+describe('UserAuthorPublicResponseSchema — HOS-375 socialNetworks', () => {
+    const AUTHOR = { ...baseAuthorPayload, displayName: 'Carmen Silva' };
+
+    it('accepts a payload WITHOUT the key — the opted-out case', () => {
+        const result = UserAuthorPublicResponseSchema.safeParse(AUTHOR);
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data).not.toHaveProperty('socialNetworks');
+        }
+    });
+
+    it('accepts a payload WITH the key — the opted-in case', () => {
+        const socialNetworks = {
+            instagram: 'https://instagram.com/carmen',
+            twitter: 'https://x.com/carmen'
+        };
+
+        const result = UserAuthorPublicResponseSchema.safeParse({ ...AUTHOR, socialNetworks });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.socialNetworks).toEqual(socialNetworks);
+        }
+    });
+
+    it('accepts stored values the WRITE shape would reject', () => {
+        // A bare handle and an `m.` mobile variant — both real shapes in the
+        // column today, both failing the write-side platform regex. Rejecting
+        // them here would 500 the author page.
+        const result = UserAuthorPublicResponseSchema.safeParse({
+            ...AUTHOR,
+            socialNetworks: {
+                instagram: '@carmen',
+                facebook: 'https://m.facebook.com/carmen'
+            }
+        });
+
+        expect(result.success).toBe(true);
+    });
+
+    it('still rejects a socialNetworks entry of the wrong type', () => {
+        // Non-vacuity guard for the leniency above: it is on FORMAT, not TYPE.
+        const result = UserAuthorPublicResponseSchema.safeParse({
+            ...AUTHOR,
+            socialNetworks: { instagram: 42 }
+        });
+
+        expect(result.success).toBe(false);
+    });
+});

@@ -1,3 +1,5 @@
+import type { SocialNetworkRead } from '@repo/schemas';
+
 /**
  * The public author projection of a user.
  *
@@ -17,6 +19,18 @@ export interface UserPublicProfile {
     readonly slug: string;
     readonly avatar: string | null;
     readonly bio: string | null;
+
+    /**
+     * The author's social profiles, present ONLY when the profile owner has set
+     * `settings.publicProfileShowSocialNetworks` (HOS-375 §6.7). Absent — the
+     * key omitted entirely, not `null` — when they have not.
+     *
+     * Note this is the one field here that is not a straight column read, and
+     * it still satisfies the actor-blindness rule above: the branch reads the
+     * OWNER's setting, never the requesting actor's. `settings` itself is never
+     * returned.
+     */
+    readonly socialNetworks?: SocialNetworkRead;
 }
 
 /**

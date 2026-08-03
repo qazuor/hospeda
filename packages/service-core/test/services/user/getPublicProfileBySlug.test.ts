@@ -136,6 +136,102 @@ describe('UserService.getPublicProfileBySlug', () => {
         expect(result.data?.displayName).toBeNull();
     });
 
+    // -----------------------------------------------------------------------
+    // HOS-375 §6.7 — the social block is opt-in, and the opt-in is the PROFILE
+    // OWNER's, never the requesting actor's.
+    // -----------------------------------------------------------------------
+
+    const SOCIAL = { instagram: 'https://instagram.com/carmen' };
+
+    /** An author row with social networks stored and a given opt-in value. */
+    const authorWithSocial = (optIn: boolean | undefined) =>
+        createUser({
+            id: userId,
+            slug,
+            displayName: 'Carmen Silva',
+            socialNetworks: SOCIAL,
+            profile: { avatar: 'https://cdn.test/carmen.jpg', bio: 'Escribe sobre el litoral.' },
+            ...(optIn === undefined ? {} : { settings: { publicProfileShowSocialNetworks: optIn } })
+        });
+
+    it('emits socialNetworks when the owner opted in', async () => {
+        // Arrange
+        asMock(userModelMock.findOne).mockResolvedValue(authorWithSocial(true));
+        // Act
+        const result = await service.getPublicProfileBySlug(guest, { slug });
+        // Assert
+        expectSuccess(result);
+        expect(result.data?.socialNetworks).toEqual(SOCIAL);
+    });
+
+    it('OMITS the key entirely when the owner opted out', async () => {
+        // Arrange — the networks are stored; only the opt-in is off.
+        asMock(userModelMock.findOne).mockResolvedValue(authorWithSocial(false));
+        // Act
+        const result = await service.getPublicProfileBySlug(guest, { slug });
+        // Assert — the KEY, not just a null value: an explicit null invites
+        // rendering an empty social block.
+        expectSuccess(result);
+        expect(result.data).not.toHaveProperty('socialNetworks');
+    });
+
+    it('OMITS the key when the setting was never written', async () => {
+        // Arrange — every user on the platform today predates the setting.
+        asMock(userModelMock.findOne).mockResolvedValue(authorWithSocial(undefined));
+        // Act
+        const result = await service.getPublicProfileBySlug(guest, { slug });
+        // Assert
+        expectSuccess(result);
+        expect(result.data).not.toHaveProperty('socialNetworks');
+    });
+
+    it('never emits settings itself, opted in or out', async () => {
+        // Arrange
+        asMock(userModelMock.findOne).mockResolvedValue(authorWithSocial(true));
+        // Act
+        const result = await service.getPublicProfileBySlug(guest, { slug });
+        // Assert — only that one boolean's EFFECT may be observable.
+        expect(Object.keys(result.data ?? {}).sort()).toEqual([
+            'avatar',
+            'bio',
+            'displayName',
+            'id',
+            'slug',
+            'socialNetworks'
+        ]);
+    });
+
+    it('stays actor-blind with the opt-in ON, which the shared edge cache requires', async () => {
+        // Arrange — this is the branch that could have been written against the
+        // REQUESTING actor. If it ever is, one visitor's payload gets served to
+        // everyone from the 300s cache.
+        asMock(userModelMock.findOne).mockResolvedValue(authorWithSocial(true));
+        // Act
+        const asGuest = await service.getPublicProfileBySlug(guest, { slug });
+        const asSelf = await service.getPublicProfileBySlug(self, { slug });
+        const asOther = await service.getPublicProfileBySlug(otherUser, { slug });
+        // Assert
+        expect(asSelf.data).toEqual(asGuest.data);
+        expect(asOther.data).toEqual(asGuest.data);
+    });
+
+    it('omits the key when the owner opted in but stored no networks', async () => {
+        // Arrange
+        asMock(userModelMock.findOne).mockResolvedValue(
+            createUser({
+                id: userId,
+                slug,
+                socialNetworks: undefined,
+                settings: { publicProfileShowSocialNetworks: true }
+            })
+        );
+        // Act
+        const result = await service.getPublicProfileBySlug(guest, { slug });
+        // Assert
+        expectSuccess(result);
+        expect(result.data).not.toHaveProperty('socialNetworks');
+    });
+
     it('returns INTERNAL_ERROR if the model throws', async () => {
         // Arrange
         asMock(userModelMock.findOne).mockRejectedValue(new Error('DB error'));

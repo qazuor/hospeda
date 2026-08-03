@@ -3,7 +3,12 @@ import { z } from '@hono/zod-openapi';
  * Public user by slug endpoint
  * Returns minimal public profile fields for an author page
  */
-import { ServiceErrorCode, UserNameReadFields, UserSchema } from '@repo/schemas';
+import {
+    ServiceErrorCode,
+    SocialNetworkReadSchema,
+    UserNameReadFields,
+    UserSchema
+} from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor.js';
@@ -16,7 +21,20 @@ const userService = new UserService({ logger: apiLogger });
  * Public author profile response schema — only exposes safe public fields.
  * Deliberately excludes email, phone, role, settings, and any audit fields.
  *
- * `displayName` is the ONLY lenient field here, and deliberately so (HOS-302).
+ * `socialNetworks` is the one conditional field (HOS-375 §6.7): the service
+ * projects it ONLY when the profile OWNER set
+ * `settings.publicProfileShowSocialNetworks`, and omits the key entirely
+ * otherwise. `settings` itself stays excluded — only that one boolean's effect
+ * is observable. The decision depends on the owner and never on the requesting
+ * actor, so this response stays actor-blind and safe for the route's shared
+ * edge cache.
+ *
+ * It uses the LENIENT {@link SocialNetworkReadSchema}, not the write-side shape,
+ * for the same reason `displayName` does: stored values predate the current
+ * validation (bare handles, `m.facebook.com` variants, shortened links), and
+ * `stripWithSchema` FAIL-CLOSES to HTTP 500 — on a PUBLIC author page.
+ *
+ * `displayName` is the other lenient field, and deliberately so (HOS-302).
  * `id` and `slug` keep their strict {@link UserSchema} shapes because the
  * database genuinely guarantees them: `id` is a UUID primary key and `slug` is a
  * NOT NULL column the route already matched a non-empty value against.
@@ -37,7 +55,8 @@ export const UserAuthorPublicResponseSchema = z.object({
     displayName: UserNameReadFields.displayName,
     slug: UserSchema.shape.slug,
     avatar: z.string().url().optional().nullable(),
-    bio: z.string().optional().nullable()
+    bio: z.string().optional().nullable(),
+    socialNetworks: SocialNetworkReadSchema.optional()
 });
 
 /**
@@ -54,7 +73,8 @@ export const publicGetUserBySlugRoute = createPublicRoute({
     summary: 'Get user public profile by slug',
     description:
         'Retrieves a minimal public profile for a user by their URL slug. ' +
-        'Returns id, displayName, slug, avatar, and bio. ' +
+        'Returns id, displayName, slug, avatar, and bio, plus socialNetworks ' +
+        'when the profile owner opted in to showing them. ' +
         'Responds with 404 when the user does not exist or has been deleted.',
     tags: ['Users'],
     requestParams: {

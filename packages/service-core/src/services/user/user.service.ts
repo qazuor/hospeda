@@ -314,12 +314,30 @@ export class UserService extends BaseCrudService<
 
                 if (!user || user.deletedAt) return null;
 
+                // The social block is opt-in (HOS-375 §6.7) and the opt-in
+                // belongs to the PROFILE OWNER, never to whoever is asking.
+                // That is load-bearing, not stylistic: this route is edge-cached
+                // (`cacheTTL: 300`) with a cache key that does not include the
+                // session, so a viewer-dependent branch here would serve one
+                // visitor's payload to everyone. Read the owner's setting only.
+                //
+                // `settings` itself is never projected — only this one derived
+                // boolean's EFFECT is visible.
+                const showSocialNetworks = user.settings?.publicProfileShowSocialNetworks === true;
+
                 return {
                     id: user.id,
                     displayName: user.displayName ?? null,
                     slug: user.slug,
                     avatar: user.profile?.avatar ?? null,
-                    bio: user.profile?.bio ?? null
+                    bio: user.profile?.bio ?? null,
+                    // Omitted entirely when opted out, rather than emitted as
+                    // null: "this author publishes no social links" and "this
+                    // author opted out" are the same thing to a consumer, and an
+                    // explicit null invites rendering an empty block.
+                    ...(showSocialNetworks && user.socialNetworks
+                        ? { socialNetworks: user.socialNetworks }
+                        : {})
                 };
             }
         });
