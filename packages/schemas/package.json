@@ -33,13 +33,13 @@
         "clean": "rm -rf node_modules dist"
     },
     "dependencies": {
-        "@repo/cache-tags": "workspace:*",
         "@repo/utils": "workspace:*",
         "@repo/config": "workspace:*",
         "zod": "^4.0.8"
     },
     "devDependencies": {
         "@faker-js/faker": "^10.5.0",
+        "@repo/cache-tags": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "^26.1.1",
         "@vitest/coverage-v8": "^4.1.10",

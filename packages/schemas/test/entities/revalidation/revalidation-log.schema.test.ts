@@ -192,7 +192,12 @@ describe('RevalidationLogSchema', () => {
 
         it('should throw ZodError when using .parse() on invalid input', () => {
             expect(() =>
-                RevalidationLogSchema.parse({ id: 'bad', target: 123, trigger: 'bad', status: 'bad' })
+                RevalidationLogSchema.parse({
+                    id: 'bad',
+                    target: 123,
+                    trigger: 'bad',
+                    status: 'bad'
+                })
             ).toThrow(ZodError);
         });
     });

@@ -1,3 +1,4 @@
+import { isValidCacheTag } from '@repo/cache-tags';
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import {
@@ -487,5 +488,61 @@ describe('RevalidationStatsSchema', () => {
             expect(typeof result.byEntityType).toBe('object');
             expect(typeof result.byTrigger).toBe('object');
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Drift guard for the duplicated cache-tag rule
+// ---------------------------------------------------------------------------
+
+/**
+ * `CacheTagSchema` in `revalidation.http.schema.ts` re-states the tag validity
+ * rule instead of importing `isValidCacheTag`, because `@repo/schemas` is
+ * consumed from SOURCE by apps that would then all need `@repo/cache-tags`
+ * declared themselves (importing it broke `apps/admin`'s test run).
+ *
+ * A duplicated rule that nothing compares is a rule that drifts. This asserts
+ * the two agree on the same corpus — which is why `@repo/cache-tags` is a
+ * devDependency here, and only a devDependency.
+ */
+describe('cache-tag validation stays in sync with @repo/cache-tags', () => {
+    const CASES: ReadonlyArray<string> = [
+        'accom-cabana-del-rio',
+        'list-accom',
+        'home',
+        'pricing',
+        'site-config',
+        'accom-3f1a2b4c-0000-4000-8000-000000000001',
+        'a',
+        'UPPER-CASE',
+        'with.dots-and_underscores~tilde',
+        '!#$%&()*+',
+        '',
+        ' leading-space',
+        'trailing-space ',
+        'has space',
+        'has,comma',
+        'concepción',
+        'emoji-🙂',
+        'tab\there',
+        'newline\nhere',
+        'a'.repeat(1024),
+        'a'.repeat(1025)
+    ];
+
+    it('accepts and rejects exactly the same tags as isValidCacheTag', () => {
+        const disagreements = CASES.filter((tag) => {
+            const bySchema = ManualRevalidateRequestSchema.safeParse({ tags: [tag] }).success;
+            const byPackage = isValidCacheTag({ tag });
+            return bySchema !== byPackage;
+        });
+
+        expect(disagreements).toEqual([]);
+    });
+
+    it('is non-vacuous — the corpus contains both accepted and rejected tags', () => {
+        const accepted = CASES.filter((tag) => isValidCacheTag({ tag }));
+        expect(accepted.length).toBeGreaterThan(5);
+        expect(CASES.length - accepted.length).toBeGreaterThan(5);
     });
 });

@@ -1532,7 +1532,7 @@ describe('RevalidationService -- coalesced purge window', () => {
         service.scheduleRevalidation({ entityType: 'accommodation', slug: 'tercera' });
         await vi.advanceTimersByTimeAsync(15_000);
 
-        const secondCall = adapter.revalidateMany.mock.calls[1] as
+        const secondCall = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls[1] as
             | [{ tags: readonly string[] }]
             | undefined;
         expect(secondCall).toBeDefined();

@@ -1,15 +1,33 @@
-import { isValidCacheTag } from '@repo/cache-tags';
 import { z } from 'zod';
 import { RevalidationEntityTypeEnum } from './revalidation-config.schema.js';
 
 /**
- * A single Cloudflare cache tag, validated against the same rules
- * `@repo/cache-tags`'s {@link isValidCacheTag} enforces at the emitter/purger
- * boundary: printable ASCII (0x21–0x7E) excluding the comma, at most 1024
- * characters. Delegating to `isValidCacheTag` instead of re-deriving the
- * pattern keeps this the single source of truth for "what is a valid tag".
+ * Maximum characters in one cache tag (Cloudflare limit).
+ * Mirrors `MAX_CACHE_TAG_LENGTH` in `@repo/cache-tags`.
  */
-const CacheTagSchema = z.string().refine((tag) => isValidCacheTag({ tag }), {
+const MAX_CACHE_TAG_LENGTH = 1024;
+
+/**
+ * Printable ASCII (0x21–0x7E) excluding the comma, which is the `Cache-Tag`
+ * list separator.
+ *
+ * **Deliberately duplicated** from `@repo/cache-tags`'s `isValidCacheTag`
+ * rather than imported. `@repo/schemas` is consumed by every app in the repo,
+ * several of which resolve it from SOURCE rather than from its build output —
+ * so any runtime dependency it takes becomes a dependency every one of those
+ * consumers must also declare, or their bundler fails to resolve it. That is
+ * not hypothetical: importing it here broke `apps/admin`'s test run, which
+ * pulls `@repo/schemas/src` through tsconfig paths.
+ *
+ * The duplication is held honest by `revalidation-http.schema.test.ts`, which
+ * asserts this schema and `isValidCacheTag` agree on the same corpus of
+ * accepted and rejected tags. `@repo/cache-tags` is a devDependency here for
+ * exactly that test, never for runtime.
+ */
+const CACHE_TAG_PATTERN = /^[\x21-\x2B\x2D-\x7E]+$/;
+
+/** A single Cloudflare cache tag. */
+const CacheTagSchema = z.string().min(1).max(MAX_CACHE_TAG_LENGTH).regex(CACHE_TAG_PATTERN, {
     message:
         'Cache tag must be printable ASCII (0x21-0x7E) excluding commas, 1-1024 characters long'
 });

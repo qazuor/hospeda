@@ -1637,9 +1637,6 @@ importers:
 
   packages/schemas:
     dependencies:
-      '@repo/cache-tags':
-        specifier: workspace:*
-        version: link:../cache-tags
       '@repo/config':
         specifier: workspace:*
         version: link:../config
@@ -1653,6 +1650,9 @@ importers:
       '@faker-js/faker':
         specifier: ^10.5.0
         version: 10.5.0
+      '@repo/cache-tags':
+        specifier: workspace:*
+        version: link:../cache-tags
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
