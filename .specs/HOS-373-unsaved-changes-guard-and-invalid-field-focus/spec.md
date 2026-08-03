@@ -514,17 +514,20 @@ Proposed: `editor.unsavedChanges.confirm`.
   removes the synchronous constraint, the dialog *may* be a styled async modal —
   but no shared modal exists (§5.3), so `window.confirm()` stays the lower-cost
   starting point unless someone wants to build one.
-- **OQ-2 — Lookup table or a shared `<TextField>` wrapper?** P2-1 proposes the
-  table because it is additive and low-risk. The alternative — introducing a
-  shared field wrapper that owns `id`/`aria-describedby`/`FieldError` together —
-  fixes the drift at its root and would make G-4 free, but it is a rewrite of
-  ~30 call sites across 13 files. **Owner decision required.** NG-4 assumes the
-  table unless overridden.
-- **OQ-3 — What does focus target for non-input fields?** `openingHours` has one
-  aggregate error across 7 days × N shift inputs, and rich `description` is a
-  contenteditable with no `id`. Options: focus the section heading, focus the
-  first control in the group, or exclude these fields from the map (documented,
-  guard-exempt). Needs a UX call.
+- **OQ-2 — RESOLVED 2026-08-03 (owner decision): the lookup table now, the
+  shared wrapper as its own spec.** Phase 2 ships `fieldInputId()` + a per-editor
+  map (P2-1), which is additive and delivers the focus behaviour without
+  rewriting ~30 call sites. The shared `<TextField>` wrapper that would fix the
+  three-layer drift at its root — and make G-4 free — becomes a separate tech-debt
+  spec. Accepted cost: both patterns coexist until that lands.
+- **OQ-3 — RESOLVED 2026-08-03 (owner decision): focus the first control in the
+  group.** `openingHours` focuses the first day checkbox; rich `description` /
+  `richDescription` focuses the contenteditable itself (focusable without an
+  `id`, so it is reached by ref rather than through the map).
+  Known imprecision, accepted: `openingHours` carries ONE aggregate error, so the
+  first day is not necessarily the failing one. The user still lands in the right
+  section. If that proves confusing in practice, per-shift errors — not a
+  different focus target — are the real fix.
 - **OQ-4 — Does Phase 1 cover the other nine `useZodForm` forms?** NG-2 says no.
   Confirm that is acceptable: `ProfileEditForm` and `CommerceCreateForm` can also
   lose typed work.
