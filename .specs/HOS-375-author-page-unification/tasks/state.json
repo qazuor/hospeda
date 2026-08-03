@@ -724,26 +724,27 @@
             "id": "T-030",
             "title": "Update the facet-noindex CI guard and add conditional indexability tests",
             "description": "Spec §5.6, risk R-4. apps/web/test/components/seo/facet-noindex.test.ts:39 asserts the author page belongs to the UNCONDITIONAL noindex list — that guard encodes the old behavior and goes red the moment G-3 lands. Move the author page out of that list and add tests asserting the conditional predicate in BOTH directions: an eligible author renders without the robots noindex meta and appears in the sitemap; an ineligible one renders with it and is absent. Do not weaken the guard for the other facet pages it protects.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017", "T-020", "T-027"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Remove the author page from the unconditional list",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Add both-direction conditional tests", "completed": false },
-                { "title": "Confirm other facet pages are still guarded", "completed": false }
+                { "title": "Add both-direction conditional tests", "completed": true },
+                { "title": "Confirm other facet pages are still guarded", "completed": true }
             ],
             "tags": ["testing", "seo", "ci"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-03T18:40:00.000Z",
+                "completed": "2026-08-03T18:55:00.000Z"
+            },
+            "notes": "Done in two pieces. Subtask 1 (remove the author page from the unconditional list) was already carried out in T-029, because deleting the page made facet-noindex.test.ts fail on a missing file; that entry is deliberately NOT relisted under the new path — the page's noindex stopped being unconditional. Subtask 3 is now a real assertion rather than an inspection: FACET_PAGES is pinned to its four surviving entries BY NAME, since the cheap way to make a `for` loop pass is to empty the list it iterates. Subtask 2 became apps/web/test/lib/seo/author-indexability-parity.test.ts, a cross-package guard for R-4. Rationale for its shape: the page decides in TypeScript (evaluateAuthorIndexability) and the sitemap decides in SQL (UserModel.listPublicAuthors); they cannot share code, and each docstring naming the other is documentation, not enforcement. The guard asserts each of the four ROW-level §6.5 conditions is present on BOTH sides — deliberately NOT claiming semantic equivalence, which a source scan cannot prove and which would be a guard whose message outruns its predicate. `page` is excluded on purpose: request-level, not row-level, so the SQL has nothing to mirror. THE IMPORTANT DETAIL: the first version scanned the whole listPublicAuthors method and stayed GREEN when the avatar condition was deleted from the where-clause — because the conditions are declared as named `sql` constants ABOVE it, so removing one from the and(...) while leaving its declaration keeps every name present in the method body. That is the single likeliest way this breaks and it ships a sitemap advertising authors the page serves noindex. Caught by mutation testing, not by review; the guard now slices the where-clause and asserts each condition is APPLIED, not merely declared. Mutation-validated across five cases (avatar and bio dropped from the where-clause with declarations intact, system-account exclusion dropped, published-content requirement dropped, and a condition removed from the TS predicate) — each reddens the assertion that names it. 18 tests here + 14 in facet-noindex; 270 green across test/lib/seo + test/components/seo; astro check 0 errors."
         },
         {
             "id": "T-031",
