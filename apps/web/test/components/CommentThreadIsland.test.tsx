@@ -16,7 +16,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     type CommentItem,
-    CommentThreadIsland
+    CommentThreadIsland,
+    type CommentThreadIslandProps
 } from '../../src/components/comments/CommentThreadIsland.client';
 import { buildAuthSnapshot } from '../helpers/auth-session';
 
@@ -237,15 +238,29 @@ describe('CommentThreadIsland', () => {
     // ── Cached anonymous HTML (HOS-369 WB0-4) ────────────────────────────────
 
     describe('client-side session resolution', () => {
-        it('renders the form for a signed-in visitor even when the SSR prop says guest', () => {
+        it('no longer accepts isAuthenticated/currentUserName — removed from CommentThreadIslandProps (HOS-369 WB0-5)', () => {
+            // Assert — this only typechecks if both fields are gone. If a
+            // future change resurrects either one, `@ts-expect-error` starts
+            // reporting an unused-directive error and typecheck fails.
+            // @ts-expect-error — isAuthenticated/currentUserName were removed; session and author name are resolved client-side via useAccountPermissions.
+            const props: CommentThreadIslandProps = {
+                ...BASE_PROPS,
+                initialComments: [],
+                isAuthenticated: false,
+                currentUserName: 'Someone'
+            };
+            expect(props.entityId).toBe(BASE_PROPS.entityId);
+        });
+
+        it('renders the form for a signed-in visitor — state comes only from the session, never a prop', () => {
             // The page was rendered for an anonymous visitor — which is what an
-            // edge-cached page always is — but this reader has a session.
+            // edge-cached page always is — but this reader has a session. There
+            // is no prop left that could disagree with that session.
             mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
             render(
                 <CommentThreadIsland
                     {...BASE_PROPS}
                     initialComments={[]}
-                    isAuthenticated={false}
                 />
             );
 

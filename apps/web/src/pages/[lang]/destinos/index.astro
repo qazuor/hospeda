@@ -78,11 +78,6 @@ const rawCards = items.map((item) =>
 // DestinationModel.findAll default ordering), so no client-side sort is needed.
 const sortedCards = rawCards;
 
-// --- Bulk favorite pre-check (eliminates N+1 per card on mount) -----------
-// Mirrors the pattern in alojamientos/index.astro: one /check-bulk request
-// per page load for authenticated users, then each DestinationCard receives
-// `initialIsFavorited` so FavoriteButton never fires its own per-card request.
-
 // --- Attraction filter state ----------------------------------------------
 // Parse the active attraction ids from the query string. Empty/missing means
 // no filter is active. We store an ordered array (for canonical URL building)

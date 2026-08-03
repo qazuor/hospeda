@@ -13,6 +13,7 @@
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ExperienceReviewsProps } from '@/components/experience/ExperienceReviews.client';
 import { ExperienceReviews } from '@/components/experience/ExperienceReviews.client';
 import type { ExperienceReviewPublicItem } from '../../../src/lib/api/endpoints';
 import { buildAuthSnapshot } from '../../helpers/auth-session';
@@ -128,15 +129,23 @@ describe('ExperienceReviews', () => {
             expect(screen.queryByText('Dejar reseña')).not.toBeInTheDocument();
         });
 
-        it('shows the review CTA for a signed-in visitor even when the SSR prop says guest', () => {
+        it('no longer accepts isAuthenticated — removed from ExperienceReviewsProps (HOS-369 WB0-5)', () => {
+            // Assert — this only typechecks if the field is gone. If a future
+            // change resurrects it, `@ts-expect-error` starts reporting an
+            // unused-directive error and typecheck fails.
+            // @ts-expect-error — isAuthenticated was removed; session is resolved client-side via useAccountPermissions.
+            const props: ExperienceReviewsProps = {
+                ...DEFAULT_PROPS,
+                isAuthenticated: false
+            };
+            expect(props.experienceId).toBe(DEFAULT_PROPS.experienceId);
+        });
+
+        it('shows the review CTA for a signed-in visitor — state comes only from the session, never a prop', () => {
             // Cached anonymous HTML served to a reader who has a session.
+            // There is no prop left that could disagree with that session.
             mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
-            render(
-                <ExperienceReviews
-                    {...DEFAULT_PROPS}
-                    isAuthenticated={false}
-                />
-            );
+            render(<ExperienceReviews {...DEFAULT_PROPS} />);
 
             expect(screen.getByText('Dejar reseña')).toBeInTheDocument();
         });

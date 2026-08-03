@@ -495,7 +495,6 @@ describe('SearchChatPanel', () => {
                     <SearchChatPanel
                         locale="es"
                         apiUrl="http://localhost:3001"
-                        isAuthenticated={true}
                         currentUrl="http://localhost:4321/es/alojamientos"
                     />
                 );
@@ -757,16 +756,30 @@ describe('SearchChatPanel', () => {
             expect(screen.getByRole('textbox')).toBeInTheDocument();
         });
 
-        it('renders the chat for a signed-in visitor even when the SSR prop says guest', () => {
+        it('no longer accepts isAuthenticated — removed from SearchChatPanelProps (HOS-369 WB0-5)', () => {
+            // Assert — this only typechecks if the field is gone. If a future
+            // change resurrects it, `@ts-expect-error` starts reporting an
+            // unused-directive error and typecheck fails.
+            // @ts-expect-error — isAuthenticated was removed; session is resolved client-side via useAccountPermissions.
+            const props: SearchChatPanelProps = {
+                locale: 'es',
+                apiUrl: 'http://localhost:3001',
+                currentUrl: 'http://localhost:4321/es/alojamientos',
+                isAuthenticated: false
+            };
+            expect(props.locale).toBe('es');
+        });
+
+        it('renders the chat for a signed-in visitor — state comes only from the session, never a prop', () => {
             // HOS-369 WB0-4: cached anonymous HTML served to a reader who has a
             // session. Before this, AI search silently disappeared for them.
+            // There is no prop left that could disagree with that session.
             mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
             render(
                 <SearchChatPanel
                     locale="es"
                     apiUrl="http://localhost:3001"
                     currentUrl="http://localhost:4321/es/alojamientos"
-                    isAuthenticated={false}
                 />
             );
 

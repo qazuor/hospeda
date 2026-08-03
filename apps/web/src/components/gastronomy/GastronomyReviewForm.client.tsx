@@ -41,13 +41,6 @@ interface GastronomyReviewFormProps {
     readonly locale: SupportedLocale;
     /** Absolute API base URL (web app and API live on different hosts). */
     readonly apiUrl: string;
-    /**
-     * @deprecated Ignored since HOS-369 WB0-4 — the session is resolved
-     * client-side via `useAccountPermissions`, so a signed-in visitor gets the
-     * review form rather than the sign-in card on cached anonymous HTML.
-     * Callers stop passing it in WB0-5.
-     */
-    readonly isAuthenticated?: boolean;
     /** Sign-in URL (with return path) shown to anonymous visitors. */
     readonly signInHref: string;
 }

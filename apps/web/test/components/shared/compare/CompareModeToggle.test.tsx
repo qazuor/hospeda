@@ -25,6 +25,7 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { CompareModeToggleProps } from '../../../../src/components/shared/compare/CompareModeToggle.client';
 import { CompareModeToggle } from '../../../../src/components/shared/compare/CompareModeToggle.client';
 import { buildAuthSnapshot } from '../../../helpers/auth-session';
 
@@ -235,17 +236,21 @@ describe('CompareModeToggle — entitlement gate (post-review fix)', () => {
         expect(screen.queryByTestId('compare-upsell-popover')).not.toBeInTheDocument();
     });
 
-    it('opens the upsell, not the sign-in prompt, when the SSR prop says guest but a session exists', () => {
-        // HOS-369 WB0-4: cached anonymous HTML served to a subscriber. The
-        // deprecated prop must not send them to a sign-in they do not need.
+    it('no longer accepts isAuthenticated — removed from CompareModeToggleProps (HOS-369 WB0-5)', () => {
+        // Assert — this only typechecks if the field is gone. If a future
+        // change resurrects it, `@ts-expect-error` starts reporting an
+        // unused-directive error and typecheck fails.
+        // @ts-expect-error — isAuthenticated was removed; session is resolved client-side via useAccountPermissions.
+        const props: CompareModeToggleProps = { locale: 'es', isAuthenticated: false };
+        expect(props.locale).toBe('es');
+    });
+
+    it('opens the upsell, not the sign-in prompt, for a subscriber — state comes only from the session', () => {
+        // HOS-369 WB0-4: cached anonymous HTML served to a subscriber. There
+        // is no prop left that could send them to a sign-in they do not need.
         mockGuard.value = { canCompare: false, isLoading: false };
         mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
-        render(
-            <CompareModeToggle
-                locale="es"
-                isAuthenticated={false}
-            />
-        );
+        render(<CompareModeToggle locale="es" />);
         fireEvent.click(screen.getByRole('button'));
         expect(screen.getByTestId('compare-upsell-popover')).toBeInTheDocument();
         expect(screen.queryByTestId('auth-required-popover')).not.toBeInTheDocument();
@@ -255,12 +260,7 @@ describe('CompareModeToggle — entitlement gate (post-review fix)', () => {
         // Never ask for money before knowing whether someone is signed in.
         mockGuard.value = { canCompare: false, isLoading: false };
         mockReadCachedAuthMe.mockReturnValue(null);
-        render(
-            <CompareModeToggle
-                locale="es"
-                isAuthenticated={true}
-            />
-        );
+        render(<CompareModeToggle locale="es" />);
         fireEvent.click(screen.getByRole('button'));
         expect(screen.getByTestId('auth-required-popover')).toBeInTheDocument();
         expect(screen.queryByTestId('compare-upsell-popover')).not.toBeInTheDocument();

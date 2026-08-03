@@ -7,7 +7,7 @@
  * DROPS an attribute whose value is `null`. Passing that result straight into
  * `href={...}` therefore ships a fully-styled `<a>` that is not a link and
  * takes no keyboard focus — visually identical to a working one, with no
- * feedback. The two other call sites already degrade (`WhatsAppContact.astro`
+ * feedback. The two other call sites already degrade (`WhatsAppContact`
  * falls through to the number as text, `ExperienceContactCTA.astro`
  * early-returns); this page did not.
  *

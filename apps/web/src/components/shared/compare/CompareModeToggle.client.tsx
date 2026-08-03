@@ -55,14 +55,6 @@ import { CompareUpsellPopover } from './CompareUpsellPopover.client';
 
 /** Props for the compare-mode toggle island. */
 export interface CompareModeToggleProps {
-    /**
-     * @deprecated Ignored since HOS-369 WB0-4 — the session is resolved
-     * client-side via `useAccountPermissions`. A page that carries this flag
-     * cannot be shared by an edge cache, and on cached anonymous HTML it would
-     * send every subscriber to the sign-in prompt instead of their comparison.
-     * Callers stop passing it in WB0-5.
-     */
-    readonly isAuthenticated?: boolean;
     /** Locale for labels. Defaults to `es`. */
     readonly locale?: SupportedLocale;
     /** Additional CSS classes forwarded to the root button element. */

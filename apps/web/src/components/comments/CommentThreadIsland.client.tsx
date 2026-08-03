@@ -48,21 +48,8 @@ export interface CommentThreadIslandProps {
     readonly initialComments: readonly CommentItem[];
     /** Active UI locale for i18n. */
     readonly locale: SupportedLocale;
-    /**
-     * @deprecated Ignored since HOS-369 WB0-4 — the session is resolved
-     * client-side via `useAccountPermissions`, so a signed-in visitor gets the
-     * comment form rather than the login CTA on cached anonymous HTML.
-     * Callers stop passing it in WB0-5.
-     */
-    readonly isAuthenticated?: boolean;
     /** Full sign-in URL with returnUrl already appended (built server-side). */
     readonly signinUrl: string;
-    /**
-     * @deprecated Ignored since HOS-369 WB0-4 — the display name comes from the
-     * client-resolved session instead. It is the visitor's own name, so baking
-     * it into the HTML would hand it to whoever the cache serves next.
-     */
-    readonly currentUserName?: string | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

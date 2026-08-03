@@ -107,20 +107,20 @@ describe('DetailHeader.astro — T-045: FavoriteButton + bookmark counter', () =
     });
 
     describe('Props interface', () => {
-        it('declares isAuthenticated prop', () => {
-            expect(src).toContain('isAuthenticated');
+        it('no longer declares isAuthenticated prop (removed HOS-369 WB0-5)', () => {
+            expect(src).not.toContain('isAuthenticated');
         });
 
         it('declares accommodationId prop', () => {
             expect(src).toContain('accommodationId');
         });
 
-        it('declares initialIsFavorited prop', () => {
-            expect(src).toContain('initialIsFavorited');
+        it('no longer declares initialIsFavorited prop (removed HOS-369 WB0-5)', () => {
+            expect(src).not.toContain('initialIsFavorited');
         });
 
-        it('declares initialBookmarkId prop', () => {
-            expect(src).toContain('initialBookmarkId');
+        it('no longer declares initialBookmarkId prop (removed HOS-369 WB0-5)', () => {
+            expect(src).not.toContain('initialBookmarkId');
         });
 
         it('declares bookmarkCount prop', () => {
@@ -141,8 +141,8 @@ describe('DetailHeader.astro — T-045: FavoriteButton + bookmark counter', () =
             expect(src).toMatch(/<FavoriteButton[\s\S]*?entityId=\{accommodationId\}/);
         });
 
-        it('passes isAuthenticated prop through to FavoriteButton', () => {
-            expect(src).toMatch(/<FavoriteButton[\s\S]*?isAuthenticated=\{isAuthenticated\}/);
+        it('does NOT pass isAuthenticated to FavoriteButton — resolves client-side (HOS-369 WB0-5)', () => {
+            expect(src).not.toMatch(/<FavoriteButton[\s\S]*?isAuthenticated=/);
         });
 
         it('uses standalone variant for detail page', () => {

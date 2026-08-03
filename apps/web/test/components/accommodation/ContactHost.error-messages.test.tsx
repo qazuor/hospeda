@@ -30,6 +30,20 @@ vi.mock('@/lib/auth-cache', () => ({
     resetInFlightAuthMe: () => undefined
 }));
 
+// HOS-369 WB0-7: `existingConversationId` stopped being an SSR prop too — it is
+// the same per-visitor lookup, now shared with ReviewSidebarCard through the
+// store. Default: no conversation, which is the guest and fail-closed answer.
+const mockConversation = vi.fn(() => ({
+    conversationId: null as string | null,
+    hasConversation: false,
+    isResolving: false
+}));
+
+vi.mock('@/store/accommodation-conversation-store', () => ({
+    useAccommodationConversation: (params: { readonly accommodationId: string }) =>
+        mockConversation(params)
+}));
+
 const ACTIVE_ACCOMMODATION = {
     id: 'acc-001',
     lifecycleState: 'ACTIVE' as const,
@@ -70,7 +84,6 @@ describe('ContactHost — accurate API error message (HOS-190)', () => {
         render(
             <ContactHost
                 accommodation={ACTIVE_ACCOMMODATION}
-                existingConversationId={null}
                 locale="es"
             />
         );

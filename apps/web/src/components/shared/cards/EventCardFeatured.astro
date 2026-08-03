@@ -47,7 +47,7 @@ import type { SupportedLocale } from '@/lib/i18n';
  *
  * @example
  * ```astro
- * <EventCardFeatured data={eventData} locale="es" isAuthenticated={false} />
+ * <EventCardFeatured data={eventData} locale="es" />
  * ```
  */
 interface Props {
@@ -55,15 +55,9 @@ interface Props {
   readonly data: EventCardData;
   /** Active locale used to build the detail page URL and format date values. */
   readonly locale: SupportedLocale;
-  /**
-   * Whether the current user is authenticated.
-   * Forwarded to FavoriteButton to decide between toggle-favorite or
-   * auth-required popover. Defaults to false (guest user).
-   */
-  readonly isAuthenticated?: boolean;
 }
 
-const { data, locale, isAuthenticated = false } = Astro.props;
+const { data, locale } = Astro.props;
 
 const detailUrl = buildUrl({ locale, path: `/eventos/${data.slug}/` });
 
@@ -97,13 +91,10 @@ const hasRealImage =
       client:visible
       entityId={data.id}
       entityType="EVENT"
-      initialIsFavorited={data.isFavorited}
-      initialBookmarkId={data.favoriteBookmarkId ?? null}
       count={data.bookmarkCount}
       variant="standalone"
       showCount={true}
       locale={locale}
-      isAuthenticated={isAuthenticated}
     />
   </div>
   <a href={detailUrl} class="event-card-featured__link" aria-label={data.name}>

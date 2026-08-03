@@ -13,7 +13,7 @@
  * `gastronomy/GastronomyContactBlock.astro`'s `socialNetworks.whatsapp` href).
  *
  * Before this module the app hand-rolled the link from a stored phone in three
- * places running TWO distinct rules: `WhatsAppContact.astro` and
+ * places running TWO distinct rules: `WhatsAppContact.client.tsx` and
  * `ExperienceContactCTA.astro` shared byte-identical logic (differing only in
  * concat syntax) that preserved the leading `+` of an E.164 number, producing
  * `https://wa.me/+543442453797`; `contacto/index.astro` was the one genuinely

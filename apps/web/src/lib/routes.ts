@@ -21,22 +21,45 @@ export const AUTH_SEGMENTS = ['auth'] as const;
 /**
  * URL path segments where the session is parsed (if available) but NOT required.
  * Unlike PROTECTED_SEGMENTS, unauthenticated users are NOT redirected to login.
- * Used to pre-fill user info in forms (e.g. feedback), to let pages run their
- * own in-page auth guard (e.g. /publicar/nueva), or to forward the auth state
- * to interactive islands like FavoriteButton on entity listings/details.
+ * Used to pre-fill user info in forms (e.g. feedback) or to let pages run their
+ * own in-page auth guard (e.g. /publicar/nueva).
+ *
+ * ## This list is a cache-safety boundary (HOS-369 W1-2a)
+ *
+ * Parsing the session here is what puts a value in `Astro.locals.user`, and the
+ * SHELL reads it on every page it wraps: `Header.astro` hands `UserMenu` the
+ * visitor's id, name, e-mail and avatar; `Footer.astro` hands `NewsletterForm`
+ * their e-mail; `BaseLayout.astro` writes `<html data-user-authenticated>` and
+ * forwards id/e-mail/name to the feedback host. Astro serializes island props
+ * into the document, so all of that is TEXT IN THE HTML.
+ *
+ * A segment on this list therefore cannot be edge-cached, whatever its pages do:
+ * even a perfectly session-blind page ships a personalized shell, and the cache
+ * would hand one visitor's e-mail to the next for the whole TTL.
+ *
+ * The six public catalog families (`alojamientos`, `destinos`, `eventos`,
+ * `publicaciones`, `gastronomia`, `experiencias`) were on this list because
+ * their pages needed the visitor — for `FavoriteButton` state, review gates, and
+ * the accommodation detail's conversation/price-alert/WhatsApp lookups. HOS-369
+ * Wave B0 moved every one of those into the browser, so nothing under them
+ * consumes the session any more and they were REMOVED. Two things follow, and
+ * both are intended:
+ *
+ * - The shell renders its guest variant there. A signed-in visitor sees it for
+ *   one frame until `UserMenu` resolves `/auth/me` — the behaviour that already
+ *   applies on SSG/public routes and that `BaseLayout`/`MobileMenuIsland` both
+ *   document. A cached page cannot know who you are; this is the cost of the
+ *   cache, not a defect.
+ * - Those routes stop issuing a `get-session` call per page view, which is a
+ *   direct win on the highest-traffic paths in the app.
+ *
+ * `test/lib/cacheable-routes-parse-no-session.guard.test.ts` asserts the
+ * invariant: no cacheable route family may appear here.
  */
 export const SESSION_OPTIONAL_SEGMENTS = [
     'feedback',
-    'alojamientos',
-    'destinos',
-    'eventos',
-    'publicaciones',
     'guest',
     'publicar',
-    // Gastronomy public listing + detail (SPEC-239)
-    'gastronomia',
-    // Experiences & services public listing + detail (SPEC-240)
-    'experiencias',
     // Commerce lead forms — "Sumá tu negocio" (HOS-295).
     //
     // Both pages mount the CommerceLead island, which pre-fills the visitor's

@@ -55,7 +55,9 @@
         "title": "Your review",
         "canLeaveReview": "You've contacted the host. Share your experience to help other travellers.",
         "cta": "Leave a review",
-        "locked": "To leave a review, first message the host from the contact button."
+        "locked": "To leave a review, first message the host from the contact button.",
+        "signInCta": "Sign in to leave a review",
+        "signInHint": "You need an account to leave your review."
     },
     "destinationSidebar": {
         "title": "Your opinion",
