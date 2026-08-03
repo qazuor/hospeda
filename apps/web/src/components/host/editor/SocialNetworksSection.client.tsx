@@ -7,6 +7,7 @@
  * composed/parsed against `data.<network>Url` on every change.
  */
 
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import type { AccommodationEditData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -163,7 +164,7 @@ function SocialUrlField({
     onHandleChange
 }: SocialUrlFieldProps) {
     const prefixId = `${id}-prefix`;
-    const errorId = `${id}-error`;
+    const errorId = fieldErrorId(id);
     const describedBy = [prefixId, error ? errorId : undefined].filter(Boolean).join(' ');
 
     return (
@@ -192,15 +193,11 @@ function SocialUrlField({
                     aria-describedby={describedBy}
                 />
             </div>
-            {error && (
-                <span
-                    id={errorId}
-                    className={styles.fieldError}
-                    role="alert"
-                >
-                    {error}
-                </span>
-            )}
+            <FieldError
+                id={errorId}
+                message={error}
+                className={styles.fieldErrorSpacing}
+            />
         </div>
     );
 }

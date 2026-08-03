@@ -19,6 +19,7 @@
 
 import { useCallback, useState } from 'react';
 import type { ZodTypeAny, z } from 'zod';
+import type { FieldInputIdMap } from '@/components/ui/FieldError';
 import type { TranslationFn } from '@/lib/api-errors';
 import { translateApiError } from '@/lib/api-errors';
 import { addToast } from '@/store/toast-store';
@@ -28,6 +29,7 @@ import {
     type FieldErrors,
     zodIssuesToFieldErrors
 } from './field-errors';
+import { focusFirstInvalidField } from './focus-first-invalid-field';
 
 /** Result of `schema.safeParse(payload)` for a given schema — version-agnostic. */
 type SafeParseResult<TSchema extends ZodTypeAny> = ReturnType<TSchema['safeParse']>;
@@ -44,6 +46,13 @@ export interface UseZodFormOptions<TSchema extends ZodTypeAny> {
      * `translateApiError`.
      */
     readonly t?: TranslationFn;
+    /**
+     * When supplied, a failed `validate()` also moves focus to the first
+     * invalid field on the page (HOS-373 phase 2). Omit it and behaviour is
+     * exactly as before — the other consumers of this hook are unaffected
+     * until they opt in with a map of their own.
+     */
+    readonly fieldInputIds?: FieldInputIdMap;
 }
 
 /** API error payload shape accepted by `handleApiError` — a superset of `ApiErrorWithDetails`. */
@@ -112,7 +121,8 @@ export interface UseZodFormResult<TSchema extends ZodTypeAny> {
  */
 export function useZodForm<TSchema extends ZodTypeAny>({
     schema,
-    t
+    t,
+    fieldInputIds
 }: UseZodFormOptions<TSchema>): UseZodFormResult<TSchema> {
     const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
     const [formError, setFormErrorState] = useState<string | null>(null);
@@ -124,7 +134,8 @@ export function useZodForm<TSchema extends ZodTypeAny>({
                 setFieldErrors({});
             } else {
                 const parseError = (result as { error: z.ZodError }).error;
-                setFieldErrors(zodIssuesToFieldErrors(parseError.issues, t));
+                const mapped = zodIssuesToFieldErrors(parseError.issues, t);
+                setFieldErrors(mapped);
                 // Consistent submit-time feedback across every form: a single
                 // error toast announcing the form has field errors to review,
                 // alongside the inline <FieldError> messages the caller renders.
@@ -134,10 +145,19 @@ export function useZodForm<TSchema extends ZodTypeAny>({
                         ? t('validation.formHasErrors', 'Revisá los campos marcados')
                         : 'Revisá los campos marcados'
                 });
+                // Opt-in (HOS-373): only forms that supplied a field-to-input-id
+                // map get the focus move. Runs after the toast so the toast is
+                // never what steals focus.
+                if (fieldInputIds) {
+                    focusFirstInvalidField({
+                        fieldNames: Object.keys(mapped),
+                        map: fieldInputIds
+                    });
+                }
             }
             return result;
         },
-        [schema, t]
+        [schema, t, fieldInputIds]
     );
 
     const handleApiError = useCallback(

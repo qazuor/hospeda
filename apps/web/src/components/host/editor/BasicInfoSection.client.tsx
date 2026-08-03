@@ -4,6 +4,7 @@
  * description, type, and destination. Uses native HTML form elements.
  */
 
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import type { AccommodationEditData, DestinationData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -63,17 +64,13 @@ export function BasicInfoSection({
                     required
                     maxLength={100}
                     aria-invalid={Boolean(errors.name)}
-                    aria-describedby={errors.name ? 'acc-name-error' : undefined}
+                    aria-describedby={errors.name ? fieldErrorId('acc-name') : undefined}
                 />
-                {errors.name && (
-                    <span
-                        id="acc-name-error"
-                        className={styles.fieldError}
-                        role="alert"
-                    >
-                        {errors.name}
-                    </span>
-                )}
+                <FieldError
+                    id={fieldErrorId('acc-name')}
+                    message={errors.name}
+                    className={styles.fieldErrorSpacing}
+                />
             </div>
 
             <div className={styles.field}>
@@ -92,17 +89,13 @@ export function BasicInfoSection({
                     maxLength={300}
                     rows={3}
                     aria-invalid={Boolean(errors.summary)}
-                    aria-describedby={errors.summary ? 'acc-summary-error' : undefined}
+                    aria-describedby={errors.summary ? fieldErrorId('acc-summary') : undefined}
                 />
-                {errors.summary && (
-                    <span
-                        id="acc-summary-error"
-                        className={styles.fieldError}
-                        role="alert"
-                    >
-                        {errors.summary}
-                    </span>
-                )}
+                <FieldError
+                    id={fieldErrorId('acc-summary')}
+                    message={errors.summary}
+                    className={styles.fieldErrorSpacing}
+                />
                 <PlanEntitlementGate
                     entitlementKey="ai_text_improve"
                     locale={locale}
@@ -150,7 +143,7 @@ export function BasicInfoSection({
                                 )}
                                 aria-invalid={Boolean(errors.description)}
                                 aria-describedby={
-                                    errors.description ? 'acc-description-error' : undefined
+                                    errors.description ? fieldErrorId('acc-description') : undefined
                                 }
                             />
                             <p className={styles.fieldHint}>
@@ -169,6 +162,7 @@ export function BasicInfoSection({
                     }
                 >
                     <RichTextEditor
+                        id="acc-description"
                         value={data.description}
                         onChange={(value) => onFieldChange('description', value)}
                         placeholder={t(
@@ -179,15 +173,11 @@ export function BasicInfoSection({
                         errorMessage={errors.description}
                     />
                 </PlanEntitlementGate>
-                {errors.description && (
-                    <span
-                        id="acc-description-error"
-                        className={styles.fieldError}
-                        role="alert"
-                    >
-                        {errors.description}
-                    </span>
-                )}
+                <FieldError
+                    id={fieldErrorId('acc-description')}
+                    message={errors.description}
+                    className={styles.fieldErrorSpacing}
+                />
                 {/*
                  * Independent entitlement from `can_use_rich_description` above:
                  * an owner can have AI-improve without rich text, rich text
@@ -225,7 +215,7 @@ export function BasicInfoSection({
                     value={data.type}
                     onChange={(e) => onFieldChange('type', e.target.value)}
                     aria-invalid={Boolean(errors.type)}
-                    aria-describedby={errors.type ? 'acc-type-error' : undefined}
+                    aria-describedby={errors.type ? fieldErrorId('acc-type') : undefined}
                 >
                     <option value="HOTEL">Hotel</option>
                     <option value="APARTMENT">Apartamento</option>
@@ -241,15 +231,11 @@ export function BasicInfoSection({
                     <option value="ESTANCIA">Estancia</option>
                     <option value="BED_AND_BREAKFAST">Bed & Breakfast</option>
                 </select>
-                {errors.type && (
-                    <span
-                        id="acc-type-error"
-                        className={styles.fieldError}
-                        role="alert"
-                    >
-                        {errors.type}
-                    </span>
-                )}
+                <FieldError
+                    id={fieldErrorId('acc-type')}
+                    message={errors.type}
+                    className={styles.fieldErrorSpacing}
+                />
             </div>
 
             <div className={styles.field}>
@@ -266,7 +252,9 @@ export function BasicInfoSection({
                     onChange={(e) => onFieldChange('destinationId', e.target.value)}
                     required
                     aria-invalid={Boolean(errors.destinationId)}
-                    aria-describedby={errors.destinationId ? 'acc-destination-error' : undefined}
+                    aria-describedby={
+                        errors.destinationId ? fieldErrorId('acc-destination') : undefined
+                    }
                 >
                     <option value="">
                         {t(
@@ -283,15 +271,11 @@ export function BasicInfoSection({
                         </option>
                     ))}
                 </select>
-                {errors.destinationId && (
-                    <span
-                        id="acc-destination-error"
-                        className={styles.fieldError}
-                        role="alert"
-                    >
-                        {errors.destinationId}
-                    </span>
-                )}
+                <FieldError
+                    id={fieldErrorId('acc-destination')}
+                    message={errors.destinationId}
+                    className={styles.fieldErrorSpacing}
+                />
             </div>
         </fieldset>
     );

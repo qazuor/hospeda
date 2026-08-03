@@ -43,6 +43,9 @@ export function SocialNetworksSection({
                 return (
                     <div key={key}>
                         <input
+                            // HOS-373: these inputs had no id at all, so the
+                            // focus-on-error contract had nothing to target.
+                            id={`ce-social-${key}`}
                             className={styles.input}
                             type="url"
                             aria-label={key}

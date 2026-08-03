@@ -29,6 +29,7 @@ import type { DestinationOption } from '@/components/gastronomy/CommerceLead.cli
 import { apiClient } from '@/lib/api/client';
 import type { AmenityData } from '@/lib/api/types';
 import type { CommerceListingDetail, CommerceVertical } from '@/lib/commerce/owner-listings';
+import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -48,6 +49,7 @@ import {
     SOCIAL_KEYS,
     type SocialValues
 } from './editor/commerce-edit-data';
+import { COMMERCE_FIELD_INPUT_IDS } from './editor/field-input-ids';
 import { MediaSection } from './editor/MediaSection.client';
 import { OpeningHoursSection } from './editor/OpeningHoursSection.client';
 import { PriceSection } from './editor/PriceSection.client';
@@ -280,7 +282,12 @@ export function CommerceListingEditor({
         vertical === 'gastronomy'
             ? GastronomyOwnerUpdateInputSchema
             : ExperienceOwnerUpdateInputSchema;
-    const { fieldErrors, formError, validate, handleApiError } = useZodForm({ schema, t });
+    const { fieldErrors, formError, validate, handleApiError } = useZodForm({
+        schema,
+        t,
+        // HOS-373: a failed submit focuses the first invalid field on the page.
+        fieldInputIds: COMMERCE_FIELD_INPUT_IDS
+    });
 
     // TYPE-WORKAROUND: the detail is a gastronomy|experience union; we read heterogeneous operational fields by key, which the union type cannot express.
     const data = initialData as unknown as Record<string, unknown>;
@@ -500,6 +507,16 @@ export function CommerceListingEditor({
     // Derived from the diff, so reverting an edit by hand disables the button
     // again — the accommodation editor behaves the same way.
     const canSave = Object.keys(patchPayload).length > 0 && !isSaving;
+
+    // HOS-373: warns before leaving with unsaved edits. Reuses the same diff as
+    // `canSave`, so the guard goes quiet the moment a save resyncs the baseline.
+    useUnsavedChangesGuard({
+        isDirty: Object.keys(patchPayload).length > 0,
+        message: t(
+            'commerce.owner.editor.unsavedChanges',
+            'Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?'
+        )
+    });
 
     return (
         <form

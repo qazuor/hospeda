@@ -23,6 +23,7 @@ import type {
     DestinationData,
     MediaImage
 } from '@/lib/api/types';
+import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -38,6 +39,7 @@ import { ContactInfoSection } from './editor/ContactInfoSection.client';
 import type { EditorSectionNavItem } from './editor/EditorSectionNav.client';
 import { EditorSectionNav } from './editor/EditorSectionNav.client';
 import { FeaturedToggleSection } from './editor/FeaturedToggleSection.client';
+import { ACCOMMODATION_FIELD_INPUT_IDS } from './editor/field-input-ids';
 import { LocationPicker } from './editor/LocationPicker.client';
 import { PhotoSection } from './editor/PhotoSection.client';
 import { PlanEntitlementGate } from './editor/PlanEntitlementGate.client';
@@ -246,7 +248,13 @@ export function AccommodationEditor({
     // leaving the ContactInfoSection/SocialNetworksSection/LocationPicker
     // error slots permanently unpopulated.
     const { fieldErrors, formError, validate, handleApiError, clearError, setFormError } =
-        useZodForm({ schema: AccommodationEditFormSchema, t });
+        useZodForm({
+            schema: AccommodationEditFormSchema,
+            t,
+            // HOS-373: a failed submit focuses the first invalid field on the
+            // page. Without this map the hook behaves exactly as before.
+            fieldInputIds: ACCOMMODATION_FIELD_INPUT_IDS
+        });
     const [isSaving, setIsSaving] = useState(false);
 
     // --- Field change handlers ---
@@ -403,13 +411,31 @@ export function AccommodationEditor({
         [baseline]
     );
 
+    /**
+     * The PATCH body for the current form state. Memoized (HOS-373) so the
+     * unsaved-changes guard can read the dirty state on every render — the
+     * diff used to be computed only inside `handleSubmit`. Same inputs, same
+     * output: this is the exact value `handleSubmit` used to build inline.
+     */
+    const patchPayload = useMemo(() => buildPatchPayload(formData), [buildPatchPayload, formData]);
+
+    // HOS-373: warns before leaving with unsaved edits. Goes quiet as soon as a
+    // successful save resyncs `baseline` and collapses the diff back to empty.
+    useUnsavedChangesGuard({
+        isDirty: Object.keys(patchPayload).length > 0,
+        message: t(
+            'host.properties.editor.unsavedChanges',
+            'Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?'
+        )
+    });
+
     // --- Submit handler ---
 
     const handleSubmit = useCallback(
         async (e: React.FormEvent) => {
             e.preventDefault();
             setFormError(null);
-            const payload = buildPatchPayload(formData);
+            const payload = patchPayload;
             if (Object.keys(payload).length === 0) {
                 // No changes to persist. Never save silently (HOS-190): give
                 // explicit feedback so "Save" always visibly does something.
@@ -462,7 +488,7 @@ export function AccommodationEditor({
                 setIsSaving(false);
             }
         },
-        [formData, accommodationId, buildPatchPayload, validate, handleApiError, setFormError, t]
+        [formData, accommodationId, patchPayload, validate, handleApiError, setFormError, t]
     );
 
     // --- Cancel handler ---

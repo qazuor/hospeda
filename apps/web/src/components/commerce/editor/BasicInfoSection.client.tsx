@@ -266,6 +266,7 @@ export function BasicInfoSection({
                     {t('commerce.owner.editor.sections.richDescription', 'Descripción ampliada')}
                 </span>
                 <RichTextEditor
+                    id="ce-richDescription"
                     value={data.richDescription}
                     ariaLabel={t(
                         'commerce.owner.editor.sections.richDescription',

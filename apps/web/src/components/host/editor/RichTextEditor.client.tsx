@@ -89,6 +89,15 @@ export interface RichTextEditorProps {
      * the field silently loses its accessible name.
      */
     readonly ariaLabel?: string;
+    /**
+     * DOM id for the editing surface (HOS-373).
+     *
+     * Lets the field-to-input-id contract point at this editor the same way it
+     * points at a plain `<textarea>`, so "focus the first invalid field" works
+     * whether the rich or fallback branch rendered. Without it the contenteditable
+     * has no id at all and focus silently does nothing.
+     */
+    readonly id?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -116,7 +125,8 @@ export function RichTextEditor({
     disabled = false,
     hasError = false,
     errorMessage,
-    ariaLabel
+    ariaLabel,
+    id
 }: RichTextEditorProps) {
     /**
      * Latest controlled `value`, read inside `onUpdate` (HOS-371).
@@ -140,6 +150,7 @@ export function RichTextEditor({
                 'aria-multiline': 'true',
                 'aria-invalid': hasError ? 'true' : 'false',
                 ...(ariaLabel ? { 'aria-label': ariaLabel } : {}),
+                ...(id ? { id } : {}),
                 class: styles.editorContent
             }
         },

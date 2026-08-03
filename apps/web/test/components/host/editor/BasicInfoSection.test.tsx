@@ -191,12 +191,16 @@ describe('BasicInfoSection — AI text-improve (description field, SPEC-321 T-00
         const onFieldChange = vi.fn();
         render(<BasicInfoSection {...buildProps({ onFieldChange })} />);
 
-        // Confirm the TipTap editor (not the plain textarea) is the active branch:
-        // the plain `<textarea id="acc-description">` is absent, and the
-        // TipTap editable region (`[contenteditable="true"]`) is present
-        // instead. (Not using getByRole('textbox') here — the `name` field's
-        // plain `<input type="text">` also has an implicit textbox role.)
-        expect(document.getElementById('acc-description')).not.toBeInTheDocument();
+        // Confirm the TipTap editor (not the plain textarea) is the active
+        // branch. Since HOS-373 BOTH branches carry `id="acc-description"` —
+        // the id names the FIELD so focus-on-error can reach it either way — so
+        // asserting the id is absent no longer distinguishes them. Assert the
+        // element's kind instead, which is what this test actually meant.
+        // (Not using getByRole('textbox') here — the `name` field's plain
+        // `<input type="text">` also has an implicit textbox role.)
+        const descriptionField = document.getElementById('acc-description');
+        expect(descriptionField).toBeInTheDocument();
+        expect(descriptionField?.tagName).not.toBe('TEXTAREA');
         expect(document.querySelector('[contenteditable="true"]')).toBeInTheDocument();
 
         fireEvent.click(screen.getByTestId('ai-mock-trigger-description'));

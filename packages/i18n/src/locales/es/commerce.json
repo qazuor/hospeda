@@ -184,6 +184,7 @@
             "saving": "Guardando...",
             "success": "Cambios guardados.",
             "error": "No se pudieron guardar los cambios. Probá de nuevo.",
+            "unsavedChanges": "Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?",
             "media": {
                 "featured": "Imagen principal",
                 "gallery": "Galería de fotos",

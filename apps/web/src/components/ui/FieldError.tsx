@@ -45,6 +45,42 @@ export function fieldErrorId(fieldName: string): string {
 }
 
 /**
+ * Maps a Zod field path to the DOM `id` of the input that should receive focus
+ * when that field fails validation (HOS-373 phase 2).
+ *
+ * Deliberately an explicit table rather than a template. Three naming layers
+ * have drifted apart independently in the editors, so no string rule can bridge
+ * them:
+ *
+ * | Zod key         | React state key | DOM id             |
+ * |-----------------|-----------------|--------------------|
+ * | `facebook`      | `facebookUrl`   | `acc-facebook`     |
+ * | `destinationId` | `destinationId` | `acc-destination`  |
+ * | `phone`         | `phone`         | `acc-phone-number` |
+ *
+ * The last row is also why one Zod field can only point at ONE id: phone and
+ * whatsapp are composed from a country combobox plus a number input, and the
+ * number input is the right target (it is what `aria-describedby` already
+ * points at).
+ */
+export type FieldInputIdMap = Readonly<Record<string, string>>;
+
+/**
+ * Resolves the input id to focus for a failed field, or `undefined` when the
+ * field is not mapped.
+ *
+ * Returning `undefined` is a real answer, not a failure: some fields have no
+ * single focusable input (an aggregate error over a group), and callers handle
+ * those separately.
+ *
+ * @param fieldName - Dotted Zod path, e.g. `'contactInfo.mobilePhone'`.
+ * @param map - The editor's field-to-input-id table.
+ */
+export function fieldInputId(fieldName: string, map: FieldInputIdMap): string | undefined {
+    return map[fieldName];
+}
+
+/**
  * FieldError — inline, accessible validation message for a single form field.
  *
  * Renders a `role="alert"` paragraph so assistive tech announces the error

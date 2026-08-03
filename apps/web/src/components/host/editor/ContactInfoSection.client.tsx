@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react';
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import type { AccommodationEditData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -123,20 +124,18 @@ export function ContactInfoSection({
                                 onChange={(e) => handleNumberChange(e.target.value)}
                                 placeholder="9 343 1234567"
                                 aria-invalid={Boolean(errors.phone)}
-                                aria-describedby={errors.phone ? 'acc-phone-error' : undefined}
+                                aria-describedby={
+                                    errors.phone ? fieldErrorId('acc-phone') : undefined
+                                }
                             />
                         </div>
                     </div>
                 </fieldset>
-                {errors.phone && (
-                    <span
-                        id="acc-phone-error"
-                        className={styles.fieldError}
-                        role="alert"
-                    >
-                        {errors.phone}
-                    </span>
-                )}
+                <FieldError
+                    id={fieldErrorId('acc-phone')}
+                    message={errors.phone}
+                    className={styles.fieldErrorSpacing}
+                />
             </div>
 
             <div className={styles.field}>
@@ -176,21 +175,17 @@ export function ContactInfoSection({
                                 placeholder="9 343 1234567"
                                 aria-invalid={Boolean(errors.whatsapp)}
                                 aria-describedby={
-                                    errors.whatsapp ? 'acc-whatsapp-error' : undefined
+                                    errors.whatsapp ? fieldErrorId('acc-whatsapp') : undefined
                                 }
                             />
                         </div>
                     </div>
                 </fieldset>
-                {errors.whatsapp && (
-                    <span
-                        id="acc-whatsapp-error"
-                        className={styles.fieldError}
-                        role="alert"
-                    >
-                        {errors.whatsapp}
-                    </span>
-                )}
+                <FieldError
+                    id={fieldErrorId('acc-whatsapp')}
+                    message={errors.whatsapp}
+                    className={styles.fieldErrorSpacing}
+                />
             </div>
 
             <div className={styles.field}>
@@ -208,17 +203,13 @@ export function ContactInfoSection({
                     onChange={(e) => onFieldChange('email', e.target.value)}
                     placeholder="contacto@ejemplo.com"
                     aria-invalid={Boolean(errors.email)}
-                    aria-describedby={errors.email ? 'acc-email-error' : undefined}
+                    aria-describedby={errors.email ? fieldErrorId('acc-email') : undefined}
                 />
-                {errors.email && (
-                    <span
-                        id="acc-email-error"
-                        className={styles.fieldError}
-                        role="alert"
-                    >
-                        {errors.email}
-                    </span>
-                )}
+                <FieldError
+                    id={fieldErrorId('acc-email')}
+                    message={errors.email}
+                    className={styles.fieldErrorSpacing}
+                />
             </div>
 
             <div className={styles.field}>
@@ -236,17 +227,13 @@ export function ContactInfoSection({
                     onChange={(e) => onFieldChange('website', e.target.value)}
                     placeholder="https://www.ejemplo.com"
                     aria-invalid={Boolean(errors.website)}
-                    aria-describedby={errors.website ? 'acc-website-error' : undefined}
+                    aria-describedby={errors.website ? fieldErrorId('acc-website') : undefined}
                 />
-                {errors.website && (
-                    <span
-                        id="acc-website-error"
-                        className={styles.fieldError}
-                        role="alert"
-                    >
-                        {errors.website}
-                    </span>
-                )}
+                <FieldError
+                    id={fieldErrorId('acc-website')}
+                    message={errors.website}
+                    className={styles.fieldErrorSpacing}
+                />
             </div>
         </fieldset>
     );
