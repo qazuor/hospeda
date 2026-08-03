@@ -1638,9 +1638,11 @@ export class AccommodationService extends BaseCrudService<
         // videos; the JSONB `media` column itself was dropped, and `media` on the way
         // OUT is composed from those two sources by `accommodation.media-read.ts`.
         //
-        // `AccommodationUpdateInputSchema` therefore omits `media` entirely. A legacy
-        // client that still sends it gets the key stripped here rather than forwarded:
-        // writing it would target a column that no longer exists.
+        // `AccommodationUpdateInputSchema` omits `media`, so a validated payload can
+        // never carry it. This strip is the second line of defence, for the callers
+        // that reach the service with an unvalidated object (tests, internal callers,
+        // any future route that forgets the schema): forwarding it would target a
+        // column that no longer exists.
         //
         // Videos need no preservation logic anymore. `videos` is a plain top-level
         // column, so an absent key never reaches the SET clause and the stored array
