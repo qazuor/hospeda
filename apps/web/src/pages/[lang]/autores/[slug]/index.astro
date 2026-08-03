@@ -1,0 +1,440 @@
+---
+/**
+ * @file autores/[slug]/index.astro
+ * @description Public author page. Renders the author's profile header plus TWO
+ * separate, reverse-chronological blocks — "Publicaciones" first, then
+ * "Eventos" — both visible at once (HOS-375 §6.3). Not a merged feed and not
+ * tabs: the two content types keep their own cards and their own pagination.
+ * @route /{lang}/autores/{slug}/
+ * @rendering SSR (the profile and both lists change independently of a build)
+ *
+ * ## Pagination contract with the two rewrite routes
+ *
+ * This one file serves all three URLs of §6.3. The two pagination routes rewrite
+ * here with a query param, exactly as the old `page/[page].astro` did:
+ *
+ * | URL                                    | Rewrites to        | Renders          |
+ * |----------------------------------------|--------------------|------------------|
+ * | `/autores/<slug>/`                     | —                  | both blocks      |
+ * | `/autores/<slug>/page/<n>/`            | `?page=<n>`        | posts only       |
+ * | `/autores/<slug>/eventos/page/<n>/`    | `?eventsPage=<n>`  | events only      |
+ *
+ * Pages 2..n render only the block being paginated, so the same markup is never
+ * duplicated across several URLs. All of them are `noindex` (§6.5 condition 5).
+ *
+ * A URL carrying BOTH params cannot come from either rewrite; posts win, so such
+ * a request still renders one real block rather than an empty page.
+ *
+ * ## Indexability
+ *
+ * `noindex` is NEVER a literal here. It is `!isIndexable`, decided by
+ * `evaluateAuthorIndexability` — the same helper the dynamic sitemap uses, so
+ * the sitemap can never advertise a URL this page then serves as `noindex`
+ * (§6.5/§6.6). The `ProfilePage` JSON-LD is mounted only when indexable:
+ * structured data on a `noindex` page is noise (§6.8).
+ */
+
+import EmptyState from '@/components/EmptyState.astro';
+import ProfilePageJsonLd from '@/components/seo/ProfilePageJsonLd.astro';
+import ArticleCard from '@/components/shared/cards/ArticleCard.astro';
+import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
+import Pagination from '@/components/shared/feedback/Pagination.astro';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import ListingLayout from '@/layouts/ListingLayout.astro';
+import { eventsApi, postsApi, usersApi } from '@/lib/api/endpoints';
+import { toArticleCardProps, toEventCardProps } from '@/lib/api/transforms';
+import type { AuthorSocialNetworkKey } from '@/lib/authors/author-social-links';
+import { resolveAuthorSocialLinks } from '@/lib/authors/author-social-links';
+import { getSiteUrl } from '@/lib/env';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { evaluateAuthorIndexability } from '@/lib/seo/author-indexable';
+import { buildUrl } from '@/lib/urls';
+import {
+	FacebookIcon,
+	InstagramIcon,
+	LinkedInIcon,
+	TiktokIcon,
+	TwitterIcon,
+	YoutubeIcon,
+} from '@repo/icons';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+const { slug } = Astro.params;
+const isAuthenticated = Boolean(Astro.locals.user);
+
+if (!slug) return new Response(null, { status: 404 });
+
+/** Both blocks page at the same size, so the two grids stay visually balanced. */
+const PAGE_SIZE = 9;
+
+/** Reads a 1-based page number off the query string, tolerating garbage. */
+function readPageParam(key: string): number {
+	const raw = Astro.url.searchParams.get(key) ?? '1';
+	return Math.max(1, Number.parseInt(raw, 10) || 1);
+}
+
+const postsPage = readPageParam('page');
+const eventsPage = readPageParam('eventsPage');
+const isPostsPaginated = postsPage > 1;
+const isEventsPaginated = eventsPage > 1 && !isPostsPaginated;
+
+// Pages 2..n show only the block being paginated (§6.3).
+const wantsPosts = !isEventsPaginated;
+const wantsEvents = !isPostsPaginated;
+
+// The page number the indexability gate sees: whichever block is paginated, or
+// 1 on the index page where neither is.
+const paginatedPage = isPostsPaginated ? postsPage : eventsPage;
+
+// The author resolves by slug; both content endpoints take the UUID, so this
+// hop cannot be parallelized with them.
+const authorResult = await usersApi.getBySlug({ slug });
+if (!authorResult.ok) {
+	return new Response(null, { status: 404 });
+}
+const author = authorResult.data;
+
+// One real Promise.all — the posts and events reads are independent.
+const [postsResult, eventsResult] = await Promise.all([
+	wantsPosts ? postsApi.list({ authorId: author.id, page: postsPage, pageSize: PAGE_SIZE }) : null,
+	wantsEvents
+		? eventsApi.getByAuthor({ authorId: author.id, page: eventsPage, pageSize: PAGE_SIZE })
+		: null,
+]);
+
+const postItems = postsResult?.ok ? postsResult.data.items : [];
+const postsPagination = postsResult?.ok ? postsResult.data.pagination : null;
+const totalPosts = postsPagination?.total ?? 0;
+const postsTotalPages = postsPagination?.totalPages ?? 1;
+
+const eventItems = eventsResult?.ok ? eventsResult.data.items : [];
+const eventsPagination = eventsResult?.ok ? eventsResult.data.pagination : null;
+const totalEvents = eventsPagination?.total ?? 0;
+const eventsTotalPages = eventsPagination?.totalPages ?? 1;
+
+const articleCards = postItems.map((item) =>
+	toArticleCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
+const eventCards = eventItems.map((item) =>
+	toEventCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
+
+// A slug-derived name is a last resort for rows whose `display_name` is NULL or
+// the empty string — both shapes exist in production (HOS-302).
+const authorName =
+	author.displayName?.trim() ||
+	slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+const bio = author.bio?.trim() ?? '';
+const avatar = author.avatar?.trim() ?? '';
+
+const { isIndexable } = evaluateAuthorIndexability({
+	isSystemAccount: author.isSystemAccount,
+	publishedPostsCount: totalPosts,
+	publishedEventsCount: totalEvents,
+	bio,
+	avatar,
+	page: paginatedPage,
+});
+
+// `autores` is a fixed segment in all three locales, like `publicaciones` and
+// `destinos` — `buildUrl` only prefixes the locale, it never translates (NG-4).
+const authorPath = buildUrl({ locale, path: `autores/${slug}` });
+const authorUrl = new URL(authorPath, getSiteUrl()).href;
+
+/** Which icon renders each network. Order and filtering live in the helper. */
+const SOCIAL_ICONS: Readonly<Record<AuthorSocialNetworkKey, typeof FacebookIcon>> = {
+	instagram: InstagramIcon,
+	facebook: FacebookIcon,
+	twitter: TwitterIcon,
+	linkedIn: LinkedInIcon,
+	youtube: YoutubeIcon,
+	tiktok: TiktokIcon,
+};
+
+// The payload carries `socialNetworks` only when the OWNER opted in (§6.7), so
+// its mere presence is the consent check — passing a default `{}` here would
+// silently defeat the opt-in.
+const socialLinks = resolveAuthorSocialLinks({ socialNetworks: author.socialNetworks });
+
+const hasAnyContent = articleCards.length > 0 || eventCards.length > 0;
+
+const metaTitle = t('authors.meta.title', `${authorName} - Autor`, { name: authorName });
+const metaDescription =
+	bio ||
+	t('authors.meta.description', `Notas y eventos publicados por ${authorName} en Hospeda.`, {
+		name: authorName,
+	});
+---
+
+<ListingLayout
+	locale={locale}
+	title={metaTitle}
+	description={metaDescription}
+	canonicalPath={authorPath}
+	showFilters={false}
+	noindex={!isIndexable}
+>
+	{isIndexable && (
+		<ProfilePageJsonLd
+			slot="head-extra"
+			name={authorName}
+			url={authorUrl}
+			image={avatar || null}
+			description={bio || null}
+			sameAs={socialLinks.map((link) => link.url)}
+		/>
+	)}
+
+	{/*
+	  Inicio → <displayName>. There is no `/autores/` index (NG-1), so there is
+	  no intermediate level, and the component drops the current page from the
+	  visible trail — leaving home alone, which it renders as nothing. That is
+	  the correct outcome, not a missing level: the trail gains a real step the
+	  day an authors index exists.
+	*/}
+	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: authorName }]} />
+
+	<ListingPageHeader
+		slot="page-header"
+		locale={locale}
+		tagline={t('authors.tagline', 'Autor')}
+		title={authorName}
+	/>
+
+	{/*
+	  An author with no avatar AND no bio AND no published social links gets no
+	  profile card at all — not an empty box and not a placeholder silhouette.
+	  An empty profile should look empty (§8).
+	*/}
+	{(avatar || bio || socialLinks.length > 0) && (
+		<div class="author-page__profile">
+			{avatar && (
+				<img
+					src={avatar}
+					alt={authorName}
+					class="author-page__avatar"
+					width={96}
+					height={96}
+					loading="eager"
+					decoding="async"
+				/>
+			)}
+
+			{(bio || socialLinks.length > 0) && (
+				<div class="author-page__info">
+					{bio && <p class="author-page__bio">{bio}</p>}
+
+					{socialLinks.length > 0 && (
+						<ul
+							class="author-page__social"
+							aria-label={t('authors.socialNetworks.regionLabel', 'Redes sociales', {
+								name: authorName,
+							})}
+						>
+							{socialLinks.map(({ key, url, label }) => {
+								const Icon = SOCIAL_ICONS[key];
+								return (
+								<li>
+									<a
+										href={url}
+										class="author-page__social-link"
+										target="_blank"
+										rel="noopener noreferrer me"
+										aria-label={label}
+									>
+										<Icon size={20} aria-hidden="true" />
+									</a>
+								</li>
+									);
+								})}
+						</ul>
+					)}
+				</div>
+			)}
+		</div>
+	)}
+
+	{hasAnyContent ? (
+		<>
+			{articleCards.length > 0 && (
+				<section class="author-page__block" aria-labelledby="author-posts-heading">
+					<h2 class="author-page__block-title" id="author-posts-heading">
+						{t('authors.posts.heading', 'Publicaciones')}
+					</h2>
+
+					<div class="author-page__grid">
+						{articleCards.map((card, i) => (
+							<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="80">
+								<ArticleCard data={card} locale={locale} isAuthenticated={isAuthenticated} />
+							</div>
+						))}
+					</div>
+
+					{postsTotalPages > 1 && (
+						<Pagination
+							locale={locale}
+							currentPage={postsPage}
+							totalPages={postsTotalPages}
+							baseUrl={authorPath}
+						/>
+					)}
+				</section>
+			)}
+
+			{eventCards.length > 0 && (
+				<section class="author-page__block" aria-labelledby="author-events-heading">
+					<h2 class="author-page__block-title" id="author-events-heading">
+						{t('authors.events.heading', 'Eventos')}
+					</h2>
+
+					<div class="author-page__grid author-page__grid--events">
+						{eventCards.map((card, i) => (
+							<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="80">
+								<EventCardHorizontal data={card} locale={locale} isAuthenticated={isAuthenticated} />
+							</div>
+						))}
+					</div>
+
+					{/*
+					  Events page 2..n live under their own sub-route so neither block's
+					  tail collides with the other's. Page 1 is this page, and the
+					  component renders the current page as text rather than a link, so
+					  the `/eventos/` base is never emitted as an href from here.
+					*/}
+					{eventsTotalPages > 1 && (
+						<Pagination
+							locale={locale}
+							currentPage={eventsPage}
+							totalPages={eventsTotalPages}
+							baseUrl={buildUrl({ locale, path: `autores/${slug}/eventos` })}
+						/>
+					)}
+				</section>
+			)}
+		</>
+	) : (
+		<EmptyState
+			title={t('authors.empty.title', 'Sin contenido publicado')}
+			description={t(
+				'authors.empty.description',
+				'Este autor todavía no tiene notas ni eventos publicados. Volvé pronto.'
+			)}
+		>
+			<a href={buildUrl({ locale, path: 'publicaciones' })} class="btn btn--outline">
+				{t('blog.byAuthor.viewAll', 'Ver todas las publicaciones')}
+			</a>
+		</EmptyState>
+	)}
+</ListingLayout>
+
+<style>
+	.author-page__profile {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-5);
+		background-color: var(--core-card);
+		border-radius: var(--radius-card);
+		padding: var(--space-6);
+		box-shadow: var(--shadow-card);
+		margin-bottom: var(--space-8);
+	}
+
+	.author-page__avatar {
+		width: 96px;
+		height: 96px;
+		border-radius: 50%;
+		object-fit: cover;
+		flex-shrink: 0;
+		border: 3px solid var(--border);
+	}
+
+	.author-page__info {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	.author-page__bio {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--core-muted-foreground);
+		line-height: 1.6;
+		margin: 0;
+	}
+
+	.author-page__social {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-3);
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.author-page__social-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 36px;
+		height: 36px;
+		border-radius: var(--radius-pill);
+		color: var(--core-muted-foreground);
+		background-color: var(--surface-warm);
+		transition: color var(--duration-normal) ease-in-out,
+			background-color var(--duration-normal) ease-in-out;
+	}
+
+	.author-page__social-link:hover,
+	.author-page__social-link:focus-visible {
+		color: var(--accent-foreground);
+		background-color: var(--brand-accent);
+	}
+
+	.author-page__block {
+		margin-bottom: var(--space-8);
+	}
+
+	.author-page__block-title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-xl);
+		color: var(--core-foreground);
+		margin: 0 0 var(--space-5);
+	}
+
+	.author-page__grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--space-card-gap);
+		margin-bottom: var(--space-6);
+	}
+
+	@media (min-width: 640px) {
+		.author-page__grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.author-page__grid {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	/* Horizontal event cards need the full column width to stay readable. */
+	@media (min-width: 640px) {
+		.author-page__grid--events {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.author-page__grid--events {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+</style>
