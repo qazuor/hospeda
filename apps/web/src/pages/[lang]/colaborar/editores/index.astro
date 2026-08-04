@@ -42,21 +42,6 @@ const roleItems = [
 ].filter((item) => item.length > 0);
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
-// --- Auth (HOS-278 AC-1) ---
-// The page stays public — an anonymous applicant is the primary case. When
-// there IS a session, hand the visitor down so the island can file the
-// application under the account's address instead of asking for one. Islands
-// cannot read `Astro.locals`, and this is only populated because the segment
-// is listed in `SESSION_OPTIONAL_SEGMENTS` (see `@/lib/routes`).
-// Only the two fields the form uses — island props are serialized into the
-// rendered HTML, so the user id has no business being here.
-const currentUser = Astro.locals.user
-    ? {
-          name: Astro.locals.user.name ?? null,
-          email: Astro.locals.user.email ?? null
-      }
-    : null;
-
 ---
 
 <BaseLayout locale={locale} title={title} description={subtitle}>
@@ -119,7 +104,7 @@ const currentUser = Astro.locals.user
 
     <section class="sumate__form section section--warm">
         <div class="sumate__form-container section__container">
-            <AllianceLead client:load locale={locale} kind="editor" currentUser={currentUser} />
+            <AllianceLead client:load locale={locale} kind="editor" />
         </div>
     </section>
 </BaseLayout>
