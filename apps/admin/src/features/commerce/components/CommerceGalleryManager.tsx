@@ -1,10 +1,12 @@
 /**
- * GalleryManager
+ * CommerceGalleryManager
  *
- * Dedicated gallery management UI for accommodation photos.
- * Operates on the relational `accommodation_media` table via the SPEC-204
- * granular endpoints — each operation persists immediately (settle-and-refetch).
- * No accumulate-and-save, no drag-and-drop reorder.
+ * Dedicated gallery management UI for gastronomy/experience listing photos
+ * (HOS-382). Vertical-agnostic mirror of accommodations' `GalleryManager` —
+ * operates on the relational `gastronomy_media` / `experience_media` tables
+ * via the HOS-372 granular admin endpoints — each operation persists
+ * immediately (settle-and-refetch). No accumulate-and-save, no drag-and-drop
+ * reorder.
  *
  * Layout:
  *   ┌─────────────────────────────────────────────────┐
@@ -13,8 +15,8 @@
  *   │  · Set   → thumbnail + remove (✕) button        │
  *   ├─────────────────────────────────────────────────┤
  *   │  GALERÍA grid (non-featured visible rows)       │
- *   │  · Each item: thumbnail + remove button         │
- *   │  · Add button (disabled at gallery cap)         │
+ *   │  · Each item: thumbnail + remove button          │
+ *   │  · Add button (disabled at gallery cap)          │
  *   └─────────────────────────────────────────────────┘
  *
  * Upload flow (portada):
@@ -25,24 +27,27 @@
  *
  * Remove portada = removeMedia (the endpoint soft-deletes; no separate unfeature endpoint).
  *
- * SPEC-204 locked decisions honoured:
+ * Decisions carried over from the accommodation gallery precedent (SPEC-204):
  * - role:'gallery' for ALL uploads (role:'featured' would collide publicId for multiple rows)
  * - No reorder / no dnd-kit
+ * - No archive/restore (the admin API exposes no such routes for either
+ *   commerce vertical — see `useCommerceMedia` module docs)
  * - Replacing portada is non-destructive (upload → add → setFeatured; backend clears old)
  */
 
 import { AddIcon, LoaderIcon, XCircleIcon } from '@repo/icons';
-import type { AccommodationMedia } from '@repo/schemas';
 import { ENTITY_GALLERY_CAPS, ModerationStatusEnum } from '@repo/schemas';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { GalleryPortadaSection } from '@/features/accommodations/components/GalleryPortadaSection';
+import { CommerceGalleryPortadaSection } from '@/features/commerce/components/CommerceGalleryPortadaSection';
 import {
-    useAccommodationMediaAdd,
-    useAccommodationMediaList,
-    useAccommodationMediaRemove,
-    useAccommodationMediaSetFeatured
-} from '@/features/accommodations/hooks/useAccommodationMedia';
+    type CommerceMedia,
+    type CommerceMediaVertical,
+    useCommerceMediaAdd,
+    useCommerceMediaList,
+    useCommerceMediaRemove,
+    useCommerceMediaSetFeatured
+} from '@/features/commerce/hooks/useCommerceMedia';
 import { useMediaUpload } from '@/hooks/use-media-upload';
 import { useTranslations } from '@/hooks/use-translations';
 import { deriveAltFromEntityName } from '@/lib/utils/media-alt.utils';
@@ -52,17 +57,19 @@ import { deriveAltFromEntityName } from '@/lib/utils/media-alt.utils';
 // ---------------------------------------------------------------------------
 
 /**
- * Props for GalleryManager.
+ * Props for CommerceGalleryManager.
  */
-export interface GalleryManagerProps {
-    /** UUID of the accommodation whose gallery is being managed. */
-    readonly accommodationId: string;
+export interface CommerceGalleryManagerProps {
+    /** Which commerce vertical this gallery belongs to. */
+    readonly vertical: CommerceMediaVertical;
+    /** UUID of the gastronomy/experience listing whose gallery is being managed. */
+    readonly entityId: string;
     /**
-     * Display name of the accommodation, if already available to the caller
-     * (the edit/view route already fetches it for the breadcrumb). Used to
-     * derive a non-empty `alt` fallback for newly-uploaded photos — see
-     * `deriveAltFromEntityName`. Optional; when absent, uploads are added
-     * without `alt` (current behaviour), never with an invalid one.
+     * Display name of the listing, if already available to the caller (e.g.
+     * from the page's own entity query). Used to derive a non-empty `alt`
+     * fallback for newly-uploaded photos — see `deriveAltFromEntityName`.
+     * Optional; when absent, uploads are added without `alt` (current
+     * behaviour), never with an invalid one.
      */
     readonly entityName?: string;
     /**
@@ -79,12 +86,6 @@ export interface GalleryManagerProps {
      */
     readonly isEntityLoading?: boolean;
 }
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const GALLERY_CAP = ENTITY_GALLERY_CAPS.accommodation;
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -121,17 +122,18 @@ function useFileInput(onFile: (file: File) => void) {
 // ---------------------------------------------------------------------------
 
 /**
- * Full gallery management panel for a single accommodation.
+ * Full gallery management panel for a single gastronomy/experience listing.
  *
  * Splits the visible media list into:
  *   - One optional `featured` row (the "Portada" slot).
  *   - The remaining non-featured `visible` rows (the gallery grid).
  */
-export function GalleryManager({
-    accommodationId,
+export function CommerceGalleryManager({
+    vertical,
+    entityId,
     entityName,
     isEntityLoading = false
-}: GalleryManagerProps) {
+}: CommerceGalleryManagerProps) {
     const { t } = useTranslations();
 
     // ── Data ──────────────────────────────────────────────────────────────────
@@ -139,13 +141,13 @@ export function GalleryManager({
         data: allMedia = [],
         isLoading: isMediaLoading,
         isError
-    } = useAccommodationMediaList(accommodationId);
+    } = useCommerceMediaList(vertical, entityId);
     // Gate on BOTH queries — see `isEntityLoading` JSDoc above for why.
     const isLoading = isMediaLoading || isEntityLoading;
 
-    const addMutation = useAccommodationMediaAdd(accommodationId);
-    const removeMutation = useAccommodationMediaRemove(accommodationId);
-    const setFeaturedMutation = useAccommodationMediaSetFeatured(accommodationId);
+    const addMutation = useCommerceMediaAdd(vertical, entityId);
+    const removeMutation = useCommerceMediaRemove(vertical, entityId);
+    const setFeaturedMutation = useCommerceMediaSetFeatured(vertical, entityId);
 
     const { uploadEntityImage } = useMediaUpload();
 
@@ -154,8 +156,10 @@ export function GalleryManager({
     const derivedAlt = deriveAltFromEntityName(entityName);
 
     // ── Derived state ─────────────────────────────────────────────────────────
-    const featuredRow: AccommodationMedia | undefined = allMedia.find((m) => m.isFeatured);
-    const galleryRows: AccommodationMedia[] = allMedia.filter((m) => !m.isFeatured);
+    const featuredRow: CommerceMedia | undefined = allMedia.find((m) => m.isFeatured);
+    const galleryRows: CommerceMedia[] = allMedia.filter((m) => !m.isFeatured);
+
+    const galleryCap = ENTITY_GALLERY_CAPS[vertical];
 
     const anyMutationPending =
         addMutation.isPending ||
@@ -163,7 +167,7 @@ export function GalleryManager({
         setFeaturedMutation.isPending ||
         uploadEntityImage.isPending;
 
-    const atCap = galleryRows.length >= GALLERY_CAP;
+    const atCap = galleryRows.length >= galleryCap;
 
     // ── Error state (per-operation) ───────────────────────────────────────────
     const [addError, setAddError] = React.useState<string | null>(null);
@@ -190,8 +194,8 @@ export function GalleryManager({
             try {
                 const uploaded = await uploadEntityImage.mutateAsync({
                     file,
-                    entityType: 'accommodation',
-                    entityId: accommodationId,
+                    entityType: vertical,
+                    entityId,
                     role: 'gallery'
                 });
                 url = uploaded.url;
@@ -202,7 +206,7 @@ export function GalleryManager({
             }
 
             // 2. Register the URL in the relational table
-            let newRow: AccommodationMedia;
+            let newRow: CommerceMedia;
             try {
                 newRow = await addMutation.mutateAsync({
                     url,
@@ -223,7 +227,8 @@ export function GalleryManager({
             }
         },
         [
-            accommodationId,
+            vertical,
+            entityId,
             uploadEntityImage,
             addMutation,
             setFeaturedMutation,
@@ -258,8 +263,8 @@ export function GalleryManager({
             try {
                 const uploaded = await uploadEntityImage.mutateAsync({
                     file,
-                    entityType: 'accommodation',
-                    entityId: accommodationId,
+                    entityType: vertical,
+                    entityId,
                     role: 'gallery'
                 });
                 url = uploaded.url;
@@ -280,7 +285,7 @@ export function GalleryManager({
                 setAddError(t('admin-pages.gallery.errors.addFailed'));
             }
         },
-        [accommodationId, uploadEntityImage, addMutation, derivedAlt, t, clearErrors]
+        [vertical, entityId, uploadEntityImage, addMutation, derivedAlt, t, clearErrors]
     );
 
     const galleryInput = useFileInput(handleGalleryFile);
@@ -346,7 +351,7 @@ export function GalleryManager({
             {!isLoading && !isError && (
                 <>
                     {/* ── Portada slot ─────────────────────────────────────── */}
-                    <GalleryPortadaSection
+                    <CommerceGalleryPortadaSection
                         t={t}
                         featuredRow={featuredRow}
                         anyMutationPending={anyMutationPending}
@@ -394,7 +399,7 @@ export function GalleryManager({
                             >
                                 {t('admin-pages.gallery.grid.cap').replace(
                                     '{{count}}',
-                                    String(GALLERY_CAP)
+                                    String(galleryCap)
                                 )}
                             </p>
                         )}
