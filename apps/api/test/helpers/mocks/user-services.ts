@@ -8,9 +8,70 @@
  */
 
 /**
+ * Slug of a seeded author who has NOT opted into showing social networks.
+ * Exported so tests assert against the same value the mock branches on.
+ */
+export const AUTHOR_SLUG_OPTED_OUT = 'carmen-silva';
+
+/** Slug of a seeded author who HAS opted into showing social networks. */
+export const AUTHOR_SLUG_OPTED_IN = 'laura-vega';
+
+/**
+ * Public author profiles keyed by slug, shaped exactly like the real
+ * `UserService.getPublicProfileBySlug` return value.
+ *
+ * The `socialNetworks` key is present on ONE of them and absent from the other,
+ * which mirrors the real service: the block is opt-in and the opt-in belongs to
+ * the PROFILE OWNER. Keying it by slug rather than by actor is the whole point —
+ * a mock that varied it by requester could not detect a route that started
+ * doing the same (HOS-375 AC-6).
+ */
+const PUBLIC_AUTHOR_PROFILES: Record<string, Record<string, unknown>> = {
+    [AUTHOR_SLUG_OPTED_OUT]: {
+        id: '11111111-1111-4111-8111-111111111111',
+        displayName: 'Carmen Silva',
+        slug: AUTHOR_SLUG_OPTED_OUT,
+        avatar: 'https://example.com/avatars/carmen-silva.jpg',
+        bio: 'Escribe sobre el litoral.',
+        isSystemAccount: false
+    },
+    [AUTHOR_SLUG_OPTED_IN]: {
+        id: '22222222-2222-4222-8222-222222222222',
+        displayName: 'Laura Vega',
+        slug: AUTHOR_SLUG_OPTED_IN,
+        avatar: 'https://example.com/avatars/laura-vega.jpg',
+        bio: 'Cubre eventos del Litoral.',
+        isSystemAccount: false,
+        socialNetworks: {
+            instagram: 'https://instagram.com/lauravega',
+            linkedIn: 'https://linkedin.com/in/lauravega'
+        }
+    }
+};
+
+/**
  * Mock UserService - always returns an admin user with all permissions.
  */
 export class UserService {
+    /**
+     * HOS-375 — backs `GET /api/v1/public/users/by-slug/{slug}`.
+     *
+     * Returns `null` for any unknown slug, which the route turns into a 404.
+     * That is what the pre-existing tests in
+     * `apps/api/test/routes/user/public/getBySlug.test.ts` assume, and until
+     * this method existed the route answered 500 for EVERY slug — so every
+     * success-path assertion there sat behind an `if (res.status === 200)` that
+     * never ran.
+     *
+     * `_actor` is ignored, exactly as the real service ignores it beyond
+     * logging. Do not add an actor branch here: the route is edge-cached on a
+     * session-blind key, and a mock that varied by requester would make the
+     * actor-blindness test in `by-slug-actor-blind.test.ts` unfalsifiable.
+     */
+    async getPublicProfileBySlug(_actor: unknown, params: { slug: string }) {
+        return { data: PUBLIC_AUTHOR_PROFILES[params.slug] ?? null };
+    }
+
     async findOptions(_actor: unknown, _params: { q?: string; limit?: number }) {
         return { data: { items: [] } };
     }

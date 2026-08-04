@@ -24,6 +24,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import { UserAuthorPublicResponseSchema } from '../../../../src/routes/user/public/getBySlug.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
+import { AUTHOR_SLUG_OPTED_OUT } from '../../../helpers/mocks/user-services.js';
 
 const BASE = '/api/v1/public/users/by-slug';
 
@@ -129,33 +130,39 @@ describe('GET /api/v1/public/users/by-slug/:slug', () => {
         });
 
         it('should expose only the public author fields when a user is found', async () => {
-            const res = await app.request(`${BASE}/${NONEXISTENT_SLUG}`, {
+            // Pointed at a slug the service mock actually resolves. It used to
+            // request NONEXISTENT_SLUG behind `if (res.status === 200)`, so the
+            // whole body of this test had never once executed — the mocked
+            // UserService carried no `getPublicProfileBySlug` at all until
+            // HOS-375 T-034 added one, and the route answered 500 for every
+            // slug.
+            const res = await app.request(`${BASE}/${AUTHOR_SLUG_OPTED_OUT}`, {
                 method: 'GET',
                 headers: { 'user-agent': 'vitest', accept: 'application/json' }
             });
-            if (res.status === 200) {
-                const body = await res.json();
-                expect(body.success).toBe(true);
+            expect(res.status).toBe(200);
 
-                const user = body.data;
-                // Required public fields
-                expect(user).toHaveProperty('id');
-                expect(user).toHaveProperty('slug');
-                // Optional but must be present as keys
-                expect('displayName' in user).toBe(true);
-                expect('avatar' in user).toBe(true);
-                expect('bio' in user).toBe(true);
-                expect('isSystemAccount' in user).toBe(true);
+            const body = await res.json();
+            expect(body.success).toBe(true);
 
-                // Sensitive fields must be absent
-                expect(user).not.toHaveProperty('email');
-                expect(user).not.toHaveProperty('phone');
-                expect(user).not.toHaveProperty('role');
-                expect(user).not.toHaveProperty('settings');
-                expect(user).not.toHaveProperty('permissions');
-                expect(user).not.toHaveProperty('createdAt');
-                expect(user).not.toHaveProperty('deletedAt');
-            }
+            const user = body.data;
+            // Required public fields
+            expect(user).toHaveProperty('id');
+            expect(user).toHaveProperty('slug');
+            // Optional but must be present as keys
+            expect('displayName' in user).toBe(true);
+            expect('avatar' in user).toBe(true);
+            expect('bio' in user).toBe(true);
+            expect('isSystemAccount' in user).toBe(true);
+
+            // Sensitive fields must be absent
+            expect(user).not.toHaveProperty('email');
+            expect(user).not.toHaveProperty('phone');
+            expect(user).not.toHaveProperty('role');
+            expect(user).not.toHaveProperty('settings');
+            expect(user).not.toHaveProperty('permissions');
+            expect(user).not.toHaveProperty('createdAt');
+            expect(user).not.toHaveProperty('deletedAt');
         });
     });
 
