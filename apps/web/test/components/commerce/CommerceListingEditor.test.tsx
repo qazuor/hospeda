@@ -5,8 +5,11 @@
  * changes, and that submitting PATCHes the correct per-vertical endpoint with
  * only the dirty field group.
  */
+
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { COMMERCE_FIELD_PREFIX } from '@/components/commerce/editor/field-ids';
+import { buildFieldId } from '@/lib/forms/build-field-id';
 import { addToast } from '@/store/toast-store';
 import { CommerceListingEditor } from '../../../src/components/commerce/CommerceListingEditor.client';
 import type { CommerceListingDetail } from '../../../src/lib/commerce/owner-listings';
@@ -111,6 +114,16 @@ vi.mock('../../../src/lib/logger', () => ({ webLogger: { warn: vi.fn() } }));
 
 import { apiClient } from '../../../src/lib/api/client';
 import { commerceMediaApi, protectedMediaApi } from '../../../src/lib/api/endpoints-protected';
+
+/**
+ * Derived rather than written out (HOS-385): the section builds this id with
+ * `buildFieldId`, so hardcoding it here would let the test and the markup drift
+ * apart again — the exact failure mode this spec removes.
+ */
+const WORK_EMAIL_ID = buildFieldId({
+    prefix: COMMERCE_FIELD_PREFIX,
+    name: 'contactInfo.workEmail'
+});
 
 const mockPatch = vi.mocked(apiClient.patch);
 const mockDeleteMedia = vi.mocked(protectedMediaApi.deleteMedia);
@@ -382,9 +395,9 @@ describe('CommerceListingEditor', () => {
                 (el) => el.textContent?.trim() === 'Email'
             );
             expect(label).toBeDefined();
-            expect(label?.getAttribute('for')).toBe('ce-workEmail');
+            expect(label?.getAttribute('for')).toBe(WORK_EMAIL_ID);
 
-            const input = container.querySelector('#ce-workEmail');
+            const input = container.querySelector(`#${WORK_EMAIL_ID}`);
             expect(input).toBeInstanceOf(HTMLInputElement);
             expect((input as HTMLInputElement).type).toBe('email');
         });

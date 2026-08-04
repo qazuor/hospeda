@@ -11,9 +11,22 @@
  *
  * @module test/components/commerce/editor/ContactSection
  */
+
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { COMMERCE_FIELD_PREFIX } from '@/components/commerce/editor/field-ids';
+import { buildFieldId } from '@/lib/forms/build-field-id';
 import { ContactSection } from '../../../../src/components/commerce/editor/ContactSection.client';
+
+/**
+ * Derived rather than written out (HOS-385): the section builds this id with
+ * `buildFieldId`, so hardcoding it here would let the test and the markup drift
+ * apart again — the exact failure mode this spec removes.
+ */
+const WORK_EMAIL_ID = buildFieldId({
+    prefix: COMMERCE_FIELD_PREFIX,
+    name: 'contactInfo.workEmail'
+});
 
 vi.mock('../../../../src/lib/i18n', () => ({
     createTranslations: () => ({
@@ -118,8 +131,8 @@ describe('ContactSection', () => {
             (el) => el.textContent?.trim() === 'Email'
         );
         expect(label).toBeDefined();
-        expect(label?.getAttribute('for')).toBe('ce-workEmail');
-        expect(container.querySelector('#ce-workEmail')).toBeInstanceOf(HTMLInputElement);
+        expect(label?.getAttribute('for')).toBe(WORK_EMAIL_ID);
+        expect(container.querySelector(`#${WORK_EMAIL_ID}`)).toBeInstanceOf(HTMLInputElement);
     });
 
     it('does NOT expose a website field (SPEC-253 AC-4)', () => {
