@@ -253,14 +253,21 @@ Stripping only `ACCESS_PANEL_ADMIN` would block the admin **UI** while leaving
 
 - A publication gate for posts and events, honored on **every** public read path
   (list/search included, not only single-item reads).
-- A per-user "trusted editor" flag that makes an editor's content born approved.
+- Eight new `_OWN` permissions and the author-scoped authorization model in §7.6.
+- The trusted editor: two per-user permission grants plus one atomic admin action
+  that applies them together.
+- The state lock — published content is not editable by its author (§7.6.3).
+- Dedicated `moderate()` and `setPublishState()` methods with their own routes,
+  **and** removing `moderationState`/`visibility`/`lifecycleState` from the
+  generic update payload. Both halves, or neither works.
 - `authorId` forced to `actor.id` server-side and removed from the create schema.
-- Author-scoped ownership for posts and events on the protected write path.
 - Fixing both production bugs in §2.4 — they block Phase 2 outright.
 - Post and event editors under `/mi-cuenta`, plus their list pages.
 - Removing `ACCESS_PANEL_ADMIN` + `ACCESS_API_ADMIN` from `EDITOR` and
   `CLIENT_MANAGER`, in seed **and** a numbered data migration.
-- `discovery-doors.ts` flip, including the `manageHref` the option currently
+- Rewriting `packages/seed/test/role-permission-audit.test.ts`, which encodes the
+  SPEC-169 policy this spec reverses.
+- `discovery-doors.ts`: two entries, with the `manageHref` the option currently
   lacks.
 
 ### 3.2 Out of scope (non-goals)
@@ -330,17 +337,15 @@ asserting that no public post/event read path can be reached without the
 moderation predicate — the "N call sites forgot the gate" class of problem is
 better solved by one guard than by N tests.
 
-#### 5.1.2 The trusted-editor flag
+#### 5.1.2 The trusted editor
 
-A per-user flag that, when an admin enables it, makes that editor's content born
-`APPROVED` and publicly visible immediately.
+Not a flag and not a role: two per-user permission grants
+(`*_DELETE_OWN`, `*_PUBLISH_OWN`) written to `user_permission`, applied together
+by one atomic admin action. Full rationale and the permission table are in §7.6.
 
-There is no precedent for a "trust" flag on users; the closest in shape is
-`users.serviceSuspended`. Placement is **OQ-1** — it is the one design decision
-in this phase that materially changes the data model.
-
-Whatever the placement, the resolution happens **server-side at creation time**,
-never client-supplied, in the same place `authorId` is forced.
+A trusted editor's content is born `APPROVED` because they hold `*_PUBLISH_OWN`.
+That resolution happens **server-side at creation time**, never client-supplied,
+in the same place `authorId` is forced.
 
 #### 5.1.3 `authorId`
 
@@ -353,18 +358,18 @@ never client-supplied, in the same place `authorId` is forced.
 #### 5.1.4 Author-scoped ownership
 
 `checkCanUpdateEvent` must take the event, as its post twin already does, and
-both must compare against the author. The flat `POST_UPDATE`/`EVENT_UPDATE`
-bypass has to stop short-circuiting for `EDITOR` — see OQ-2 for whether that is
-achieved by narrowing the role's permissions or by introducing `_OWN`/`_ANY`
-variants.
+both must compare against `authorId` (OQ-4). The flat `POST_UPDATE`/`EVENT_UPDATE`
+bypass stops applying to `EDITOR` because the role no longer holds it — see the
+permission table in §7.6.2, and the state lock in §7.6.3.
 
 Posts and events currently use **two different authorization patterns**: posts
 gate on a flat permission at the route middleware with no ownership fallback,
-events use `ownershipMiddleware`. That inconsistency must be resolved rather than
-preserved, because an editor needs the same guarantees on both.
+events use `ownershipMiddleware` (configured on `createdById`, which moves to
+`authorId`). That inconsistency must be resolved rather than preserved, because
+an editor needs the same guarantees on both.
 
-Note that `EDITOR` holds neither `POST_DELETE` nor `EVENT_DELETE` in the seed —
-see OQ-3.
+Delete stays out of reach for a plain editor (OQ-3) and is a trusted-editor
+capability only.
 
 #### 5.1.5 The two production bugs
 
@@ -405,7 +410,7 @@ proper starts once they are merged.
   `ACCOMMODATION_UPDATE_OWN`/`COMMERCE_EDIT_OWN` on flows that work today.
 
 Both were validated by mutation, not just observed green. Neither decides the
-ownership model — OQ-2 and OQ-4 stay open.
+ownership model — that is settled in §7.6.
 
 ### 5.2 Phase 2 — The editor in `/mi-cuenta`
 
@@ -521,42 +526,197 @@ small hub, if posts and events get separate entries — OQ-5).
 ## 6. Testing
 
 - Unit: the moderation predicate, the `authorId` forcing, author-scoped
-  ownership for both entities, trusted-flag resolution at creation.
+  ownership for both entities, trusted-editor resolution at creation.
+- **The state lock (§7.6.3) needs its own matrix**, not a variation on an
+  existing test — it is the first write-side state gate in the repo. At minimum:
+  author + unpublished → allowed; author + published → refused; author +
+  published + `PUBLISH_OWN` → allowed; admin + published → allowed; non-author →
+  refused regardless of state.
+- **A guard asserting the generic update payload rejects `moderationState`,
+  `visibility` and `lifecycleState`.** This is the back door in §7.6.4; a test
+  that only exercises the new dedicated routes would pass while the model is
+  fully bypassable. Prefer one guard over per-route tests.
 - Regression, mandatory (both reproduce a shipped bug before its fix): a
   protected event write that must not 500, and a post/event media upload that
-  must not 403 for the author.
-- Guard: no public post/event read path reachable without the moderation
-  predicate (§5.1.1).
-- Seed: the staff allow-list test updated; a data-migration test asserting
-  idempotency.
+  must not 403 for the author. **Both shipped in Phase 0** — see §5.1.5.
+- Guard: no public post/event read path reachable without the publication
+  predicate (§7.6.5).
+- Seed: the staff allow-list test updated; `role-permission-audit.test.ts`
+  rewritten for the new policy; a data-migration test asserting idempotency.
 - E2E: an editor authors a post, sees it non-public, an admin approves it, it
-  becomes public. And: an editor cannot see or edit another editor's content.
+  becomes public, and the editor can no longer edit it. A trusted editor
+  publishes and unpublishes their own. An editor cannot see or edit another
+  editor's content.
 - Manual: `status-needs-smoke-local` at minimum. An editor's loss of panel access
   is a live-permissions change, so `status-needs-smoke-staging` is warranted for
-  Phase 3.
+  Phase 3. The in-memory role/user permission caches (10-minute TTL, not
+  invalidated across instances) mean a permissions change is not observable
+  immediately after deploy — build that wait into the smoke, or the first check
+  will read as a failure.
 
-## 7. Open questions (owner)
+## 7. Decisions (owner, 2026-08-04)
 
-- **OQ-1 — Where does the trusted-editor flag live?** A boolean column on
-  `users` (shaped like `users.serviceSuspended`), a dedicated permission, or a
-  row in a settings table. Changes the data model and the admin UI needed to
-  toggle it.
-- **OQ-2 — What happens to `POST_VIEW_ALL` / `EVENT_VIEW_ALL` on `EDITOR`?**
-  They were granted deliberately per SPEC-169 ("EDITOR sees ALL editorial
-  content... by design"). "Only sees their own" contradicts that. Either narrow
-  the role's permissions (reversing SPEC-169) or introduce `_OWN`/`_ANY`
-  variants and keep viewing broad while scoping *writing*.
-- **OQ-3 — Can an editor delete their own content?** `EDITOR` holds neither
-  `POST_DELETE` nor `EVENT_DELETE` today. If yes, the permission must be granted
-  in the same seed change and scoped to own content.
-- **OQ-4 — `authorId` or `createdById` as the ownership field?** The event
-  protected routes are configured on `createdById`
-  (`event/protected/update.ts:38`); this spec's model is authorship. They
-  coincide when the author creates their own content and diverge when staff
-  creates on someone's behalf.
-- **OQ-5 — One door entry or two?** Posts and events are folded into a single
-  `editor` option today. Separate `manageHref` targets imply either two entries
-  or a small hub page.
+All five open questions are resolved. The authorization model is settled below;
+§7.6 is the resulting specification.
+
+- **OQ-1 — The trusted editor is a permission grant, not a column or a role.**
+  "Trusted" is the same `EDITOR` with two extra permissions granted per user
+  through the existing `user_permission` table (grant/deny, SPEC-170). No new
+  column, no new role, no schema migration. The admin gets **one atomic action**
+  ("mark as trusted editor") that grants both at once rather than two separate
+  checkboxes — a user holding publish but not delete is a state nobody intends.
+  `PermissionPicker` already renders new permissions with no extra UI code
+  (`packages/schemas/src/utils/permission-grouping.ts:17-43` derives categories
+  by prefix).
+- **OQ-2 — `EDITOR` is scoped to its own content, in both view and edit.**
+  This **reverses the SPEC-169 decision** that granted `POST_VIEW_ALL` /
+  `EVENT_VIEW_ALL` deliberately ("the editorial role sees ALL editorial content
+  ... by design"). Confirmed by the owner with that consequence stated: the
+  internal editorial team loses the cross-author view. The guardrail test that
+  encodes the old policy (`packages/seed/test/role-permission-audit.test.ts:32-39`)
+  must be rewritten as part of this change — it failing is the mechanism working.
+- **OQ-3 — `EDITOR` cannot delete.** No `DELETE_OWN` for the plain editor; it is
+  a trusted-editor capability only. In `/mi-cuenta` the delete control is
+  **absent** for a plain editor, not rendered disabled — a disabled button only
+  invites the question of how to enable it.
+- **OQ-4 — `authorId`, not `createdById`.** D-2 forces `authorId = actor.id` at
+  creation, so the two coincide for editor-authored content and diverge only when
+  staff creates on someone's behalf — where authorship is the meaningful field.
+  The event protected routes are currently configured on `createdById`
+  (`event/protected/update.ts:38`) and move to `authorId`.
+- **OQ-5 — Two doors, not a hub.** Separate `discovery-doors` entries for posts
+  and events, with `manageHref` pointing at `mi-cuenta/publicaciones` and
+  `mi-cuenta/eventos`. Matches the convention properties and commerce already
+  use, and avoids inventing an intermediate page that exists only to be a link
+  target.
+
+### 7.6 The resulting authorization model
+
+#### Why permissions alone are not enough
+
+Four granular permissions already exist for this — `POST_PUBLISH_TOGGLE`,
+`POST_VISIBILITY_CHANGE`, `POST_LIFECYCLE_CHANGE`, `POST_MODERATION_CHANGE`, and
+their event twins (`permission.enum.ts:211-215,234,238-240`). They are seeded to
+roles and **enforce nothing server-side**: their only consumers are admin React
+config files deciding whether to render a widget
+(`apps/admin/src/features/posts/config/posts.columns.ts:196-264`). The admin
+update routes require plain `POST_UPDATE`
+(`apps/api/src/routes/post/admin/update.ts:30`) and the service checks the same.
+
+So **any actor holding `POST_UPDATE` can already change visibility, moderation
+state and lifecycle state through the generic PUT.** There is no `publish()` or
+`unpublish()` method anywhere; every state change flows through one `update()`.
+
+This is why the model below cannot be delivered by adding permissions alone. Any
+new publish permission is bypassable through the generic update payload until
+that payload stops accepting state fields (§7.6.4).
+
+#### 7.6.1 What "published" means
+
+`moderationState` and `lifecycleState` are currently inert for posts and events —
+no read path, no write path, no permission check consults them (only `visibility`
+does, and only on single-item reads). This model gives two of them a job, kept
+deliberately orthogonal:
+
+- **`moderationState`** — the platform's verdict. `PENDING` → `APPROVED` /
+  `REJECTED`. Moved by an admin, or by a trusted editor on their own content.
+- **`visibility`** — the author's switch. `PUBLIC` / `PRIVATE`.
+
+Publicly readable ⟺ `moderationState = APPROVED` **and** `visibility = PUBLIC`
+**and** `lifecycleState = ACTIVE` **and** not soft-deleted.
+
+Keeping them separate is what lets a trusted editor unpublish their own content
+**without discarding the verdict**: `visibility` drops to `PRIVATE`, the approval
+survives, and republishing does not re-enter the review queue. A single combined
+field cannot express that.
+
+#### 7.6.2 Permissions
+
+Only the `_OWN` side is new. The existing flat permissions stay exactly as they
+are and serve as the broad side — the same reasoning as `_VIEW_ALL`: Postgres
+cannot rename or drop an enum value in place (`permission_enum` is generated 1:1
+from the TS enum), so renaming would force recreating the type plus backfilling
+`role_permission` **and** `user_permission`. Additive costs nothing and leaves
+~35 production call sites untouched.
+
+| Permission | `EDITOR` | Trusted | `ADMIN` / `SUPER_ADMIN` |
+|---|:--:|:--:|:--:|
+| `POST_CREATE` / `EVENT_CREATE` (existing) | ✅ | ✅ | ✅ |
+| `POST_VIEW_OWN` / `EVENT_VIEW_OWN` — **new** | ✅ | ✅ | ✅ |
+| `POST_VIEW_ALL` / `EVENT_VIEW_ALL` (existing) | ❌ | ❌ | ✅ |
+| `POST_UPDATE_OWN` / `EVENT_UPDATE_OWN` — **new** | ✅ | ✅ | ✅ |
+| `POST_UPDATE` / `EVENT_UPDATE` (existing = any) | ❌ | ❌ | ✅ |
+| `POST_DELETE_OWN` / `EVENT_DELETE_OWN` — **new** | ❌ | ✅ | ✅ |
+| `POST_DELETE` / `EVENT_DELETE` (existing = any) | ❌ | ❌ | ✅ |
+| `POST_PUBLISH_OWN` / `EVENT_PUBLISH_OWN` — **new** | ❌ | ✅ | ✅ |
+| `POST_MODERATION_CHANGE` / `EVENT_MODERATION_CHANGE` (existing, made real) | ❌ | ❌ | ✅ |
+
+**Publish and unpublish are one permission, not two.** The owner listed them
+separately; they are merged deliberately, because "may publish but may not
+unpublish" is a state nobody wants — it lets someone push content live with no
+way to pull it back. The pre-existing permission is even named `PUBLISH_TOGGLE`
+for this reason.
+
+#### 7.6.3 The state lock on editing
+
+> Once published, content cannot be edited by its author — only by an admin.
+
+There is **no precedent for this in the codebase.** Every write-side permission
+check in the repo gates on ownership or a permission flag, never on the entity's
+own state. State-conditional checks exist only on the read side (accommodation,
+point-of-interest, owner-promotion: non-`ACTIVE` → `NOT_FOUND` unless staff), and
+billing's state-transition validators are authorization-agnostic. This is the
+first write-side state gate and should be built as a named, reusable predicate
+rather than an inline condition.
+
+It lives in `checkCanUpdatePost` / `checkCanUpdateEvent`, after the authorship
+check: an author holding only `*_UPDATE_OWN` is refused once the content is
+`APPROVED`.
+
+**A trusted editor can edit their own published content.** The lock is bypassed
+by holding `*_PUBLISH_OWN`, because that actor can already unpublish, edit and
+republish — three steps to the same end. Enforcing the lock on them would be
+friction, not control.
+
+#### 7.6.4 Methods, routes, and closing the back door
+
+Follow the review-moderation pattern (SPEC-166), which already works in this
+codebase for exactly this problem: a dedicated single-purpose permission, a
+dedicated service method touching only the field it owns, a dedicated route whose
+`requiredPermissions` matches the service check, and a forced override on public
+reads.
+
+- `moderate({ id, decision, actor })` — admin approves/rejects. Gated by
+  `*_MODERATION_CHANGE`, which finally becomes load-bearing.
+- `setPublishState({ id, published, actor })` — a trusted editor raises or lowers
+  `visibility` on their own content. Gated by `*_PUBLISH_OWN` + authorship.
+
+**Non-negotiable: the generic PUT/PATCH must stop accepting `moderationState`,
+`visibility` and `lifecycleState`.** Leaving them in the payload makes every gate
+above bypassable by editing the field directly. `BaseCrudService.updateVisibility()`
+already exists, is overridden by both services, and is called by no route — it is
+either wired up here or left alone deliberately, not ignored by accident.
+
+#### 7.6.5 The public read floor
+
+Force `moderationState = APPROVED`, `visibility = PUBLIC`,
+`lifecycleState = ACTIVE` in `_executeSearch` / `_executeCount`, applied **after**
+the caller's filters, exactly as `accommodationReview.service.ts:167-202` does.
+Admin search paths do not get the override.
+
+Without this the rest is decoration: the public post/event list currently applies
+no filter at all, not even on `visibility` (§2.1).
+
+#### 7.6.6 Sequencing
+
+The permission split ships **in the same release that removes panel access**, not
+in Phase 1. Splitting earlier leaves a window where `EDITOR` has already lost
+`*_VIEW_ALL` but still reaches the admin panel, landing on list screens gated on
+that permission and getting empty lists and 403s where yesterday there was work.
+This is the mirror image of the risk D-3 already prevents in the other direction.
+
+The admin panel itself is otherwise unaffected: its ~18 gate sites use the flat
+permissions, which `ADMIN` keeps.
 
 ## 8. Risks
 
@@ -567,8 +727,25 @@ small hub, if posts and events get separate entries — OQ-5).
   marking existing content `APPROVED` is mandatory and must land in the same
   release — this is the highest-risk item in the spec and belongs in the same
   data migration as, or immediately adjacent to, the gate.
-- Narrowing `EDITOR` (OQ-2) reverses a documented prior decision; if any current
-  workflow depends on cross-editor editing, it breaks.
+- **Narrowing `EDITOR` reverses a documented prior decision (OQ-2), accepted by
+  the owner with that consequence stated.** The internal editorial team loses the
+  cross-author view, not just the external collaborator — the two populations
+  share one role today. Any current workflow that depends on an editor seeing
+  another's content breaks. Worth confirming how many `EDITOR` users exist in
+  production before the release, since a single-user reality makes this a
+  non-event and a multi-user one makes it a coordination problem.
+- **The four granular publish permissions are decorative today** (§7.6): anyone
+  with `POST_UPDATE` already changes visibility and moderation state through the
+  generic PUT. If the payload is not closed in the same change that adds the new
+  permissions, the entire model is bypassable and will read as working in tests
+  while being unenforced in production.
+- **Splitting permissions before cutting panel access** strands `EDITOR` inside
+  the admin panel with empty lists and 403s (§7.6.6). Mitigated by shipping both
+  in the same release.
 - Phase 3 shipping early strands active editors (mitigated by D-3).
+- The state lock (§7.6.3) is the first write-side state gate in the codebase.
+  There is no existing pattern to copy and no existing test shape to imitate;
+  expect it to need its own careful test matrix rather than a variation on an
+  existing one.
 - The two production bugs mean the protected surface has never been exercised;
   expect further defects once traffic actually reaches it.
