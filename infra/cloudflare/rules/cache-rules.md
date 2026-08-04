@@ -28,7 +28,19 @@ edge caching **on staging only**, honoring the origin's own `Cache-Control`.
  and http.request.method in {"GET" "PURGE"}
  and http.request.uri.query eq ""
  and not http.cookie contains "better-auth.session_token"
- and (http.request.uri.path in {"/es/" "/en/" "/pt/"}
+ and (http.request.uri.path in {"/es/" "/en/" "/pt/"
+        "/es/nosotros/" "/es/beneficios/" "/es/funcionalidades/" "/es/contacto/"
+        "/es/preguntas-frecuentes/" "/es/legal/cookies/" "/es/legal/privacidad/"
+        "/es/legal/terminos/" "/es/colaborar/" "/es/colaborar/editores/"
+        "/es/colaborar/fotos/" "/es/colaborar/reportar/"
+        "/en/nosotros/" "/en/beneficios/" "/en/funcionalidades/" "/en/contacto/"
+        "/en/preguntas-frecuentes/" "/en/legal/cookies/" "/en/legal/privacidad/"
+        "/en/legal/terminos/" "/en/colaborar/" "/en/colaborar/editores/"
+        "/en/colaborar/fotos/" "/en/colaborar/reportar/"
+        "/pt/nosotros/" "/pt/beneficios/" "/pt/funcionalidades/" "/pt/contacto/"
+        "/pt/preguntas-frecuentes/" "/pt/legal/cookies/" "/pt/legal/privacidad/"
+        "/pt/legal/terminos/" "/pt/colaborar/" "/pt/colaborar/editores/"
+        "/pt/colaborar/fotos/" "/pt/colaborar/reportar/"}
    or starts_with(http.request.uri.path, "/es/alojamientos")
    or starts_with(http.request.uri.path, "/en/alojamientos")
    or starts_with(http.request.uri.path, "/pt/alojamientos")
@@ -40,15 +52,27 @@ edge caching **on staging only**, honoring the origin's own `Cache-Control`.
    or starts_with(http.request.uri.path, "/pt/suscriptores/turistas")))
 ```
 
-The live rule stores this on a single line (796 characters). The nine
-`starts_with` terms are written out rather than expressed as a regex because
-the `matches` operator requires a Business plan.
+The live rule stores this on a single line (1576 characters since W2-2; it was
+796 before). The nine `starts_with` terms are written out rather than expressed
+as a regex because the `matches` operator requires a Business plan.
 
 The home is matched with `in { … }` — an **exact** path set, not a prefix.
 `starts_with(path, "/es/")` would match every Spanish page in the app, including
 `/es/mi-cuenta/`. Nothing would actually cache there (those pages never opt in,
 and `bypass_by_default` refuses anything that has not), but a rule whose
 expression claims more than it means is one refactor away from being true.
+
+The twelve copy-only pages W2-2 added (36 entries: 12 paths × 3 locales) join
+that same exact set for the same reason, and deliberately **not** as
+`starts_with(path, "/es/legal")` / `"/es/colaborar"`. Those two prefixes would
+be shorter, but they would also pre-approve a `legal/` or `colaborar/` page that
+does not exist yet — one that might read a session. Listing the paths means a
+new sibling is excluded until somebody adds it here on purpose, which is the
+same fail-closed posture `http.request.uri.query eq ""` takes on filters.
+
+`/{lang}/colaborar/reportar/` is documented as taking `?destino=<slug>`. The
+pre-filled form is therefore never cached — the empty-query clause excludes it —
+while the bare entry point is. That asymmetry is intended, not an oversight.
 
 ### Settings
 
@@ -133,6 +157,10 @@ the response cacheable. Measured on 2026-08-04:
 | Path | Cached? |
 |---|---|
 | `/{lang}/` (home) | yes — **since 2026-08-04** (W2-1), tagged `home` |
+| `/{lang}/{nosotros,beneficios,funcionalidades,contacto}/` | yes — **since 2026-08-04** (W2-2), tagged `site-config` |
+| `/{lang}/preguntas-frecuentes/` | yes — **since 2026-08-04** (W2-2), tagged `site-config` |
+| `/{lang}/legal/{cookies,privacidad,terminos}/` | yes — **since 2026-08-04** (W2-2), tagged `site-config` |
+| `/{lang}/colaborar/` and `/{editores,fotos,reportar}/` | yes — **since 2026-08-04** (W2-2), tagged `site-config` |
 | `/{lang}/alojamientos/` and `/page/N/` | yes |
 | `/{lang}/alojamientos/mapa/` | yes |
 | `/{lang}/alojamientos/tipo/<type>/` | yes |
@@ -156,6 +184,22 @@ set by the destination.
 **Adding a family is an application change, not a Cloudflare change.** The rule
 already matches these paths; the moment a page calls `applyCacheHeaders()` it
 starts being cached, with no rule edit.
+
+### The W2-2 pages have no purger of their own
+
+The twelve copy-only pages are tagged `site-config`, which
+`platform-settings.service.ts` purges. They do not read platform settings — the
+tag is borrowed, because it is the only one in the vocabulary with a live
+purger, and a cacheable response whose tag nobody ever purges is the silent
+no-op `home` was stuck in before W2-1. A settings write evicts them for no
+reason; the cost is a re-render.
+
+What that leaves open: **nothing purges the cache on deploy.** There is no
+purge step in `.github/workflows/` or in `hops`, and these pages change only on
+deploy. So the 300s `s-maxage` is also the window in which a shipped copy
+change is still invisible at the edge. That is the argument against giving them
+a longer TTL, and it is the thing to fix first if one is ever wanted: add the
+purge to the deploy, then raise the TTL — in that order, never the reverse.
 
 ### Verifying
 
