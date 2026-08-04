@@ -49,6 +49,35 @@ export const allianceLeads = pgTable(
         status: varchar('status', { length: 50 }).notNull().default('pending'),
         /** Internal admin note about the lead disposition, set via mark-handled. */
         adminNote: text('admin_note'),
+        /**
+         * The account this application belongs to (HOS-278 §6.2).
+         *
+         * Nullable because the anonymous applicant is the PRIMARY case, not an
+         * edge case: the four "aliados" forms are public and most submissions
+         * arrive with no session. It is set in three ways:
+         *  - immediately, when the submitter is authenticated;
+         *  - at approval, when the email had no account and one is created;
+         *  - via {@link claimToken}, when the email already belonged to someone.
+         *
+         * This column is the ONLY way a lead is resolved to a user. Never match
+         * by `email` (HOS-278 R-1): the lead's email is unverified, so an email
+         * match would let anyone attach an application — and whatever benefits
+         * it carries — to someone else's account.
+         */
+        applicantUserId: uuid('applicant_user_id').references(() => users.id, {
+            onDelete: 'set null'
+        }),
+        /**
+         * Single-use secret proving the person clicking owns {@link email}.
+         *
+         * Only issued when an anonymous submission arrives with an email that
+         * ALREADY has an account. Until it is redeemed, `applicantUserId` stays
+         * null — an unconfirmed application is simply unlinked, never wrong
+         * (HOS-278 OQ-5): the admin still sees it, it just hangs off nobody.
+         */
+        claimToken: text('claim_token'),
+        /** When {@link claimToken} stops being redeemable. 7 days (HOS-278 OQ-5). */
+        claimExpiresAt: timestamp('claim_expires_at', { withTimezone: true }),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
         deletedAt: timestamp('deleted_at', { withTimezone: true }),
@@ -60,11 +89,21 @@ export const allianceLeads = pgTable(
         alliance_leads_kind_idx: index('alliance_leads_kind_idx').on(table.kind),
         alliance_leads_status_idx: index('alliance_leads_status_idx').on(table.status),
         alliance_leads_email_idx: index('alliance_leads_email_idx').on(table.email),
-        alliance_leads_deletedAt_idx: index('alliance_leads_deletedAt_idx').on(table.deletedAt)
+        alliance_leads_deletedAt_idx: index('alliance_leads_deletedAt_idx').on(table.deletedAt),
+        // Backs `GET /protected/alliance/leads/mine`, which every signed-in
+        // applicant hits on `/mi-cuenta/aliados`.
+        alliance_leads_applicantUserId_idx: index('alliance_leads_applicant_user_id_idx').on(
+            table.applicantUserId
+        )
     })
 );
 
 export const allianceLeadsRelations = relations(allianceLeads, ({ one }) => ({
+    applicant: one(users, {
+        fields: [allianceLeads.applicantUserId],
+        references: [users.id],
+        relationName: 'allianceLeadApplicant'
+    }),
     createdBy: one(users, {
         fields: [allianceLeads.createdById],
         references: [users.id],
