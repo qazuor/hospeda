@@ -1,0 +1,30 @@
+/**
+ * TextField — layout-neutral by design.
+ *
+ * This module deliberately does NOT style the label or the control. Measuring
+ * the editors before writing it (HOS-385) found `.fieldLabel` defined 9 times in
+ * 4 variants, and the difference between the two main ones is `display: block`:
+ * present in 4 sections, absent in 3. A `<label>` is inline by default, so
+ * imposing one shared style here would move the layout in Capacity, Location and
+ * Pricing — exactly the silent visual regression NG-4 forbids. Sections keep
+ * passing their own classes.
+ *
+ * The error spacing IS owned here, because that one measured identical in all 6
+ * definitions.
+ */
+
+/*
+ * The doubled selector is intentional and load-bearing — do not "clean it up".
+ *
+ * `FieldError`'s own `.error` sets `margin: 0`. A single `.errorSpacing` has the
+ * same specificity (0,1,0), so which one wins would depend on the order the two
+ * CSS modules happen to be emitted in the build — i.e. it would work until it
+ * silently didn't. Repeating the class raises this to (0,2,0) so it wins
+ * deterministically.
+ *
+ * This replaces six copies of the same `.fieldErrorSpacing.fieldErrorSpacing`
+ * hack across the editors' section modules (HOS-385 G-5).
+ */
+.errorSpacing.errorSpacing {
+    margin-top: var(--space-1, 0.25rem);
+}
