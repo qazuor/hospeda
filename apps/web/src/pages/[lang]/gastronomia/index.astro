@@ -34,8 +34,25 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
 
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+
+// --- Edge cacheability (HOS-369 W2-4) ---
+// Newly cacheable: until W2-4 built the purge chain, `gastronomy` had no tag
+// vocabulary, no `entity-tag-mapper` case, and its service never called the
+// revalidation service — so caching this page would have shipped a response
+// nothing could evict.
+//
+// Tagged with the collection: this IS a listing, so every gastronomy write
+// must evict it.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: true,
+	tags: [CACHE_TAG_COLLECTIONS.gastronomy]
+});
 
 const url = Astro.url;
 
