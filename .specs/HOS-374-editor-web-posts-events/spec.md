@@ -165,7 +165,10 @@ explicit decision — see OQ-2.
 
 Both are shipped today and independent of this feature's UI.
 
-**(a) Every protected event write returns 500.** `PUT`/`PATCH`/`DELETE
+**(a) Every protected write in the event family returns 500 — nine routes, not
+three.** Measured while fixing it: three entity types are configured for
+ownership with no fetcher registered, each across update/patch/softDelete —
+`event`, `eventLocation` and `eventOrganizer`. `PUT`/`PATCH`/`DELETE
 /api/v1/protected/events/:id` are configured with
 `ownership: { entityType: 'event', ownershipFields: ['createdById'],
 bypassPermission: EVENT_UPDATE }`
@@ -200,6 +203,13 @@ if (!entity.ownerId || entity.ownerId !== actor.id) { ... 403 ... }
 (`post.dbschema.ts:43`, `event.dbschema.ts:41`). So `!entity.ownerId` is always
 true and the route 403s for everyone, including the true author and
 `SUPER_ADMIN`.
+
+**Three of the six routed entity types are affected, not two.** Measured while
+fixing it: the route serves `accommodation`, `destination`, `event`, `post`,
+`gastronomy` and `experience`. Only `accommodation`, `gastronomy` and
+`experience` actually have an `ownerId` column. `post` and `event` have
+`authorId`; **`destination` has neither**, so it 403s the same way and the issue
+did not mention it.
 
 This is the exact route `/mi-cuenta` uploads call
 (`apps/web/src/lib/media/upload-entity.ts:117`). The parallel **admin** upload
@@ -379,6 +389,23 @@ dependency on HOS-374's design — the protected event write path is entirely de
 and post/event media upload has never worked. Each goes out with its own
 regression test, targeting `staging`, carrying **no** Linear magic word. Phase 1
 proper starts once they are merged.
+
+**Status: both delivered (2026-08-03).**
+
+- **PR #2593** — registers the three missing fetchers, plus
+  `ownership-fetcher-coverage.guard.test.ts`, which scans every route for
+  `ownership: { entityType: 'X' }` and asserts X is in the real registry after
+  `registerEntityFetchers()` runs. Three fetchers alone would have fixed the nine
+  routes and left the trap armed for the tenth.
+- **PR #2596** — routes the protected media check through the existing
+  `validateEntityMediaPermission` policy for entity types with no `ownerId`, and
+  adds an author fallback for post/event behind the permission check (so admin
+  behavior is unchanged). The `ownerId` path is deliberately left untouched:
+  routing all six types through the helper would newly require
+  `ACCOMMODATION_UPDATE_OWN`/`COMMERCE_EDIT_OWN` on flows that work today.
+
+Both were validated by mutation, not just observed green. Neither decides the
+ownership model — OQ-2 and OQ-4 stay open.
 
 ### 5.2 Phase 2 — The editor in `/mi-cuenta`
 
