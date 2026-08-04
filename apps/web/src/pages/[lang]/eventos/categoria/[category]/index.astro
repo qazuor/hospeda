@@ -45,6 +45,9 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { category: catSlug } = Astro.params;
@@ -64,6 +67,25 @@ const VALID_CATEGORIES: Record<string, string> = {
 
 const catEnum = catSlug ? VALID_CATEGORIES[catSlug] : undefined;
 if (!catEnum) return new Response(null, { status: 404 });
+
+// --- Edge cacheability (HOS-369 W2-3) ---
+// After the 404 guard, so an unknown category is never marked shareable.
+//
+// This landing accepts a dozen filter params (`q`, price, date range, featured,
+// destination, sort). Anything beyond pagination makes the render an arbitrary
+// slice, so only the plain landing and its paginated variants are shared.
+//
+// Belt-and-braces with the Cloudflare rule rather than redundant: the rule
+// bypasses on a non-empty query, but `/eventos/categoria/{slug}/page/N/` is a
+// rewrite into this route with `?page=N` appended — Cloudflare sees the clean
+// path and matches, while the origin sees the query. The two checks look at
+// different URLs, so both are needed.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
+	tags: [CACHE_TAG_COLLECTIONS.event]
+});
 
 const categoryName = t(`events.categoryPage.categories.${catEnum}.name`, catEnum);
 const categoryPageTitle = t(`events.categoryPage.categories.${catEnum}.pageTitle`, categoryName);

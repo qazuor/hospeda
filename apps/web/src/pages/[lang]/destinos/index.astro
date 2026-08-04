@@ -37,6 +37,8 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { CloseIcon } from '@repo/icons';
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 
 /**
  * How many attraction chips render in the first row before the "Ver más"
@@ -47,6 +49,23 @@ const VISIBLE_ATTRACTION_LIMIT = 12;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+
+// --- Edge cacheability (HOS-369 W2-3) ---
+// Unconditional, unlike the accommodation listing. The `?attractions=` filter
+// this page offers is applied ENTIRELY client-side (the frontmatter never
+// reads `searchParams`), so the SSR HTML is byte-identical with or without a
+// query string — there is no filtered variant to withhold from the cache.
+//
+// Tagged with the collection, not with any one destination: this IS a listing,
+// so every destination write must evict it. `entity-tag-mapper.ts` already
+// emits `list-dest` on destination writes; until this call existed those
+// purges evicted nothing.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: true,
+	tags: [CACHE_TAG_COLLECTIONS.destination]
+});
 
 const url = Astro.url;
 

@@ -20,6 +20,9 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
+import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 // Forwarded to CompareModeControls so the compare-mode toggle can gate
@@ -32,6 +35,28 @@ if (!destResult.ok) return new Response(null, { status: 404 });
 const dest = destResult.data as Record<string, unknown>;
 const destId = String(dest.id || '');
 const destName = String(dest.name || slug);
+
+// --- Edge cacheability (HOS-369 W2-3) ---
+// After the two 404 guards, so an error response is never marked shareable.
+//
+// Two tags, because two independent things change this page: an accommodation
+// write in this destination (`list-accom` — this IS a listing, so the
+// collection tag is right here in a way it is not on a detail page), and a
+// destination write that renames it (`dest-<slug>`, which the heading and
+// title interpolate). `entity-tag-mapper.ts` already emits both.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	// `/…/page/N/` is an `Astro.rewrite` into this route with `?page=N`
+	// appended, so `Astro.url.search` is NOT empty there. Checking for an empty
+	// query would silently stop caching every paginated page while still
+	// looking correct on page 1.
+	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
+	tags: [
+		CACHE_TAG_COLLECTIONS.accommodation,
+		...buildEntityCacheTags({ entity: 'destination', slug, id: destId })
+	]
+});
 
 // Heading scoped to the destination — "Alojamientos en {Ciudad}" (localized).
 // The city moves into the H1 (and <title>); the decorative tagline reverts to

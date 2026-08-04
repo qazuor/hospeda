@@ -18,9 +18,22 @@ import { toDestinationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t, tPlural } = createTranslations(locale);
+
+// --- Edge cacheability (HOS-369 W2-3) ---
+// The map view of the same catalog the listing renders: no session, no query
+// string read, no filtered variant. Tagged `list-dest` for the same reason the
+// listing is — a destination write must evict both.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: true,
+	tags: [CACHE_TAG_COLLECTIONS.destination]
+});
 
 // Fetch a higher cap for the map view; destinations are typically a small set
 // but allow up to 100 to avoid surprises if the catalog grows.
