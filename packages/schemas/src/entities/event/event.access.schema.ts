@@ -83,6 +83,13 @@ export const EventPublicSchema = EventSchema.pick({
      * stays actor-blind — which is what keeps `/api/v1/public/events` shareable
      * across its edge cache.
      *
+     * It reaches the LIST routes too, not just the detail one, and that is
+     * deliberate: `getDefaultListRelations()` and `getCardListRelations()` both
+     * already load `author`, so scoping the field to the detail payload would
+     * mean introducing a second, narrower event schema to strip on lists — a
+     * new divergence to maintain in exchange for dropping a handful of bytes of
+     * data the author page publishes anyway.
+     *
      * Additive, so allowed by the package's additive-only compat policy: a
      * historic event payload without the key still parses.
      */

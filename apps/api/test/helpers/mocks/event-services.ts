@@ -11,6 +11,29 @@
 const NOT_FOUND_UUID = '87654321-4321-4321-8765-876543218765';
 
 /**
+ * A `users` row exactly as the Drizzle `author` relation returns it — every
+ * column, private ones included. Exported so route tests can assert against the
+ * same source values they expect the response to project down from.
+ *
+ * @see apps/api/test/routes/event/public/author-relation.test.ts
+ */
+export const RAW_AUTHOR_ROW = {
+    id: '34011499-69a6-4f82-8d97-58b161a28f91',
+    displayName: 'Laura Vega',
+    firstName: 'Laura',
+    lastName: 'Vega',
+    slug: 'laura-vega',
+    image: 'https://example.com/avatars/laura-vega.jpg',
+    email: 'laura.vega@example.com',
+    password: 'hashed-secret',
+    phone: '+5493442123456',
+    settings: { publicProfileShowSocialNetworks: false },
+    contactInfo: { personalEmail: 'laura@personal.example.com' },
+    isSystemAccount: false,
+    deletedAt: null
+} as const;
+
+/**
  * Mock EventService - returns predictable happy-path data.
  */
 export class EventService {
@@ -78,7 +101,40 @@ export class EventService {
     }
 
     async getBySlug(_actor: unknown, slug: string) {
-        return { data: { id: 'event_by_slug', slug, name: 'Event By Slug' } };
+        return {
+            data: {
+                id: 'e5e5e5e5-e5e5-4e5e-ae5e-e5e5e5e5e5e5',
+                slug,
+                name: 'Event By Slug',
+                category: 'SPORTS',
+                summary: 'A mock event summary long enough to satisfy the public read schema.',
+                description:
+                    'A mock event description that is comfortably long enough to satisfy the minimum length the public read schema enforces on this field.',
+                isFeatured: false,
+                visibility: 'PUBLIC',
+                lifecycleState: 'ACTIVE',
+                media: {
+                    featuredImage: {
+                        url: 'https://example.com/event.jpg',
+                        moderationState: 'APPROVED'
+                    }
+                },
+                date: { start: '2024-02-01T00:00:00.000Z', precision: 'EXACT' },
+                pricing: { price: 2000, currency: 'ARS', isFree: false },
+                createdAt: '2024-01-01T00:00:00.000Z',
+                updatedAt: '2024-01-01T00:00:00.000Z',
+                deletedAt: null,
+                // HOS-375 §6.9: the REAL service eager-loads the `author`
+                // relation (`getDefaultListRelations`, inherited by
+                // `getDefaultGetByIdRelations`), and Drizzle hands back the
+                // WHOLE `users` row — private columns included. The mock
+                // returns that row verbatim on purpose: projecting it down to
+                // the public tier is the RESPONSE SCHEMA's job, so a mock that
+                // pre-trimmed it would make the route look correct no matter
+                // what `EventPublicSchema` declares.
+                author: RAW_AUTHOR_ROW
+            }
+        };
     }
 
     async getSummary(_actor: unknown, params: { id: string }) {
