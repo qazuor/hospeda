@@ -1543,6 +1543,50 @@ Overlaps HOS-168; this spec supplies the measurements it lacked.
 - **W3-5** — Consolidate the 20 render-blocking stylesheets. Gated on the
   CSP/`inlineStylesheets` constraint (HOS-164/HOS-168) — do not start before
   that resolves.
+- **W3-6 (new, 2026-08-04)** — Deduplicate the inline SVG icons. See the
+  re-measurement below: 520 inline `<svg>` elements on one listing page, only
+  **169 distinct** — each icon repeated ~20×, once per card. 355 KB, the second
+  largest bucket in the document and not covered by W3-1..W3-5.
+
+#### Re-measured 2026-08-04, after Waves A, B0 and B shipped
+
+The owner asked why PageSpeed against staging had not moved. It had not, and the
+measurement says exactly why — **this wave is now the only thing standing
+between the work already done and a visible score.** Recorded here so HOS-369 is
+not closed without it.
+
+`/es/alojamientos/`, measured live on staging: **1,385,789 B of HTML**, 197,500 B
+transferred (brotli). Compression hides it on the wire; the browser still parses
+1.39 MB.
+
+| Bucket | Bytes | Share |
+|---|---|---|
+| `<script id="hospeda-i18n">` | **639,458** | **46.4 %** |
+| Inline SVG (520 elements, 169 distinct) | **354,976** | **25.7 %** |
+| `astro-island` props (57 islands) | 55,758 | 4.0 % |
+| `<style>` | 51,144 | 3.7 % |
+| JSON-LD | 3,286 | 0.2 % |
+
+**72 % of the document is payload the page does not need in that form.** The
+i18n blob carries `.m.cookies.sections.*`, `.m.faq.categories.*`,
+`.m.privacy.sections.*`, `.m.about.story.*` and `.m.features.hero.*` — the
+cookie policy, the FAQ, the privacy policy and two marketing pages, shipped
+inside the accommodation listing.
+
+**New fact that raises W3-1's value beyond the 631 KB already claimed**: the
+blob is **byte-identical across every page** (`/es/`, `/es/alojamientos/`, a
+detail page, `/es/suscriptores/planes/`, `/es/legal/cookies/` — all 645,173 B of
+`id="hospeda-i18n"`). Moving it to a hashed immutable asset therefore saves the
+bytes **once per session**, not once per page: the browser downloads it on the
+first navigation and reuses it for every subsequent one. It also shrinks every
+edge-cached HTML object to roughly a third of its size.
+
+**Why the edge cache could not have moved the score, stated plainly so nobody
+re-litigates it.** Wave B fixed the cost of *serving* (TTFB 689 ms → 15 ms).
+Lighthouse weights TBT 30 %, LCP 25 %, CLS 25 %, FCP 10 %, SI 10 % — TTFB is not
+scored directly and only partly feeds FCP. Mobile PSI additionally throttles CPU
+4×, which punishes precisely the parse-and-execute work this payload creates.
+Two different problems; both real; PageSpeed measures the second one.
 
 ### 6.7 Documentation cleanup
 
@@ -1782,7 +1826,12 @@ Wave B onward:
   purge-by-URL provably could not reach (§5.11.2).
 - **AC-7** — `https://hospeda.com.ar/` resolves to `/es/` at the edge
   (`cf-cache-status` present on the 301, no origin hit).
-- **AC-8** — Home HTML drops below 500 KB uncompressed after W3-1.
+- **AC-8** — Home HTML drops below 500 KB uncompressed after W3-1. **Baseline
+  re-measured 2026-08-04** (see §6.6): the home is 1,256,468 B and the
+  accommodation listing 1,385,789 B, so this is a ~3× reduction, not a trim.
+  **HOS-369 does not close until Wave D ships** — the owner's acceptance of this
+  spec is a faster site, and the waves already delivered do not move a
+  Lighthouse score on their own.
 - **AC-9** — TTFB for an anonymous, cached catalog route measured from Buenos
   Aires is under 200 ms.
 - **AC-10** — Googlebot user-agent receives the same `HIT` as a browser
