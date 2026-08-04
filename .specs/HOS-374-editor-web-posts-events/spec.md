@@ -720,13 +720,24 @@ permissions, which `ADMIN` keeps.
 
 ## 8. Risks
 
-- **The publication gate changes public read behavior for all existing content.**
-  Every post and event in staging/prod is currently `PENDING` (the create mapper
-  has always written it). Enforcing `moderationState = APPROVED` on public reads
-  would **hide the entire existing catalog** the moment it ships. A backfill
-  marking existing content `APPROVED` is mandatory and must land in the same
-  release — this is the highest-risk item in the spec and belongs in the same
-  data migration as, or immediately adjacent to, the gate.
+- **The publication gate changes public read behavior for existing content.**
+  The HTTP create mappers write `PENDING` unconditionally and the example
+  seeders never set the column, so enforcing `moderationState = APPROVED` on
+  public reads would hide that content the moment it ships.
+
+  **Correction (2026-08-04):** an earlier version of this risk said no seed
+  fixture sets the column. `0025-seed-real-blog-posts.ts:233` does write
+  `APPROVED` explicitly, so the real editorial blog posts were never exposed.
+  What is exposed is the example content and — more importantly — everything
+  created through the HTTP layer, which is how events are loaded from the admin
+  panel today.
+
+  **Resolved by `0035-hos-374-approve-existing-posts-events`**, which ships
+  ahead of the gate in its own release rather than alongside it. Bundling the
+  two would only shrink the window, not remove it: new code is live from
+  container start, while data migrations run as a separate step, and in between
+  the public catalog is empty. The backfill is safe to run early precisely
+  because the column is inert until the gate exists.
 - **Narrowing `EDITOR` reverses a documented prior decision (OQ-2), accepted by
   the owner with that consequence stated.** The internal editorial team loses the
   cross-author view, not just the external collaborator — the two populations
