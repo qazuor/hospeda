@@ -2086,6 +2086,120 @@ export function transformOwnerPromotionList({
 }
 
 // ---------------------------------------------------------------------------
+// Editor own-content list transforms (HOS-374 Phase 2 2C-1)
+// ---------------------------------------------------------------------------
+
+/**
+ * Transforms a raw `GET /protected/posts` item into `PostEditListItem`
+ * (the card data for `/mi-cuenta/publicaciones`).
+ *
+ * `moderationState`/`visibility`/`lifecycleState` fall back to their most
+ * conservative values (`PENDING`/`PRIVATE`/`DRAFT`) when missing from the raw
+ * item — never to a value that would read as "safe to show publicly".
+ *
+ * @param item - Raw post object from `postEditApi.listOwn`
+ * @returns Typed `PostEditListItem` for `EditableContentCard`
+ *
+ * @example
+ * ```ts
+ * const result = await postEditApi.listOwn({ cookieHeader });
+ * if (result.ok) {
+ *   const cards = transformPostEditCardList({ items: result.data.items });
+ * }
+ * ```
+ */
+export function transformPostEditCard({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').PostEditListItem {
+    return {
+        id: String(item.id ?? ''),
+        slug: String(item.slug ?? ''),
+        title: String(item.title ?? ''),
+        moderationState: String(
+            item.moderationState ?? 'PENDING'
+        ) as import('./types').EditorContentModerationState,
+        visibility: String(
+            item.visibility ?? 'PRIVATE'
+        ) as import('./types').EditorContentVisibility,
+        lifecycleState: String(
+            item.lifecycleState ?? 'DRAFT'
+        ) as import('./types').EditorContentLifecycleState,
+        updatedAt: String(item.updatedAt ?? item.createdAt ?? '')
+    };
+}
+
+/**
+ * Transforms a paginated raw `GET /protected/posts` response into a typed
+ * list of `PostEditListItem`.
+ *
+ * @param items - Array of raw API response items
+ * @returns Array of typed PostEditListItem objects
+ */
+export function transformPostEditCardList({
+    items
+}: {
+    readonly items: ReadonlyArray<Record<string, unknown>>;
+}): ReadonlyArray<import('./types').PostEditListItem> {
+    return items.map((item) => transformPostEditCard({ item }));
+}
+
+/**
+ * Transforms a raw `GET /protected/events` item into `EventEditListItem`
+ * (the card data for `/mi-cuenta/eventos`). Mirrors
+ * {@link transformPostEditCard} field for field, except `name` replaces
+ * `title` (the event schema's own field name).
+ *
+ * @param item - Raw event object from `eventEditApi.listOwn`
+ * @returns Typed `EventEditListItem` for `EditableContentCard`
+ *
+ * @example
+ * ```ts
+ * const result = await eventEditApi.listOwn({ cookieHeader });
+ * if (result.ok) {
+ *   const cards = transformEventEditCardList({ items: result.data.items });
+ * }
+ * ```
+ */
+export function transformEventEditCard({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').EventEditListItem {
+    return {
+        id: String(item.id ?? ''),
+        slug: String(item.slug ?? ''),
+        name: String(item.name ?? ''),
+        moderationState: String(
+            item.moderationState ?? 'PENDING'
+        ) as import('./types').EditorContentModerationState,
+        visibility: String(
+            item.visibility ?? 'PRIVATE'
+        ) as import('./types').EditorContentVisibility,
+        lifecycleState: String(
+            item.lifecycleState ?? 'DRAFT'
+        ) as import('./types').EditorContentLifecycleState,
+        updatedAt: String(item.updatedAt ?? item.createdAt ?? '')
+    };
+}
+
+/**
+ * Transforms a paginated raw `GET /protected/events` response into a typed
+ * list of `EventEditListItem`.
+ *
+ * @param items - Array of raw API response items
+ * @returns Array of typed EventEditListItem objects
+ */
+export function transformEventEditCardList({
+    items
+}: {
+    readonly items: ReadonlyArray<Record<string, unknown>>;
+}): ReadonlyArray<import('./types').EventEditListItem> {
+    return items.map((item) => transformEventEditCard({ item }));
+}
+
+// ---------------------------------------------------------------------------
 // Gastronomy transforms (SPEC-239)
 // ---------------------------------------------------------------------------
 

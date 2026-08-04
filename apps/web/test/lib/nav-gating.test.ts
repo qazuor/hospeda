@@ -8,6 +8,8 @@ import {
 import {
     hasAccommodationsNavAccess,
     hasCommerceNavAccess,
+    hasEventsNavAccess,
+    hasPostsNavAccess,
     isDoorVisible,
     isVisibleByPermissions,
     isVisibleByRoles,
@@ -46,6 +48,51 @@ describe('PERMISSION_ROLE_MAP', () => {
         expect(mapped?.has(RoleEnum.SUPER_ADMIN)).toBe(true);
         expect(mapped?.has(RoleEnum.HOST)).toBe(false);
         expect(mapped?.has(RoleEnum.COMMERCE_OWNER)).toBe(false);
+    });
+
+    it('grants EVENT_CREATE to EDITOR (and platform staff), but not HOST or COMMERCE_OWNER (HOS-374 own-events listing gate)', () => {
+        const mapped = PERMISSION_ROLE_MAP[PermissionEnum.EVENT_CREATE];
+        expect(mapped).toBeDefined();
+        expect(mapped?.has(RoleEnum.EDITOR)).toBe(true);
+        expect(mapped?.has(RoleEnum.ADMIN)).toBe(true);
+        expect(mapped?.has(RoleEnum.SUPER_ADMIN)).toBe(true);
+        expect(mapped?.has(RoleEnum.HOST)).toBe(false);
+        expect(mapped?.has(RoleEnum.COMMERCE_OWNER)).toBe(false);
+    });
+});
+
+describe('hasPostsNavAccess / hasEventsNavAccess (HOS-374 Phase 2 2C-1)', () => {
+    it('grants EDITOR access to both own-content listings', () => {
+        expect(hasPostsNavAccess({ roles: [RoleEnum.EDITOR] })).toBe(true);
+        expect(hasEventsNavAccess({ roles: [RoleEnum.EDITOR] })).toBe(true);
+    });
+
+    it('grants platform staff (ADMIN, SUPER_ADMIN) access to both listings', () => {
+        expect(hasPostsNavAccess({ roles: [RoleEnum.ADMIN] })).toBe(true);
+        expect(hasEventsNavAccess({ roles: [RoleEnum.ADMIN] })).toBe(true);
+        expect(hasPostsNavAccess({ roles: [RoleEnum.SUPER_ADMIN] })).toBe(true);
+        expect(hasEventsNavAccess({ roles: [RoleEnum.SUPER_ADMIN] })).toBe(true);
+    });
+
+    it('denies a plain HOST access to either listing', () => {
+        expect(hasPostsNavAccess({ roles: [RoleEnum.HOST] })).toBe(false);
+        expect(hasEventsNavAccess({ roles: [RoleEnum.HOST] })).toBe(false);
+    });
+
+    it('denies a plain tourist USER access to either listing', () => {
+        expect(hasPostsNavAccess({ roles: [RoleEnum.USER] })).toBe(false);
+        expect(hasEventsNavAccess({ roles: [RoleEnum.USER] })).toBe(false);
+    });
+
+    it('denies an anonymous visitor (null roles) access to either listing', () => {
+        expect(hasPostsNavAccess({ roles: null })).toBe(false);
+        expect(hasEventsNavAccess({ roles: null })).toBe(false);
+    });
+
+    it('grants access when the EDITOR hat is one of several held roles', () => {
+        const multiHatRoles = [RoleEnum.USER, RoleEnum.HOST, RoleEnum.EDITOR];
+        expect(hasPostsNavAccess({ roles: multiHatRoles })).toBe(true);
+        expect(hasEventsNavAccess({ roles: multiHatRoles })).toBe(true);
     });
 });
 
