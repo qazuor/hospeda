@@ -1044,5 +1044,24 @@
                 "description": "Desbloqueia ferramentas de suporte com IA para anfitriões, incluindo sugestões de resposta inteligentes e tratamento automático de perguntas frequentes de hóspedes. Renova mensalmente."
             }
         }
+    },
+    "alliances": {
+        "applications": {
+            "title": "Suas candidaturas",
+            "submittedOn": "Enviada em",
+            "note": "Assim que resolvermos uma candidatura, escrevemos para você por e-mail."
+        },
+        "programs": {
+            "partner": "Partner",
+            "sponsor": "Sponsor",
+            "editor": "Editor",
+            "service_provider": "Fornecedor"
+        },
+        "status": {
+            "pending": "Em análise",
+            "reviewing": "Em análise",
+            "approved": "Aprovada",
+            "rejected": "Não avançou"
+        }
     }
 }

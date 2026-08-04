@@ -1957,6 +1957,48 @@ export const hostDashboardApi = {
     }
 };
 
+// --- Alliance applications (Protected — HOS-278 AC-5 / AC-14) ---
+
+/** One of the caller's own "aliados" applications, as the account page shows it. */
+export interface MyAllianceLeadItem {
+    readonly id: string;
+    readonly kind: 'partner' | 'sponsor' | 'editor' | 'service_provider';
+    readonly status: 'pending' | 'reviewing' | 'approved' | 'rejected';
+    /** ISO-8601 submission timestamp. */
+    readonly createdAt: string;
+}
+
+/** Response envelope for `GET /protected/alliance/leads/mine`. */
+export interface MyAllianceLeadsResponse {
+    readonly leads: ReadonlyArray<MyAllianceLeadItem>;
+}
+
+/**
+ * Applicant self-service view of their own alliance applications.
+ *
+ * Auth-only — the endpoint scopes to the caller's own `applicantUserId`, and
+ * answers `{ leads: [] }` rather than an error when there are none, which is
+ * the common case (HOS-278 AC-5).
+ */
+export const allianceLeadsApi = {
+    /**
+     * Lists the caller's own applications, newest first.
+     *
+     * @param params - `{ cookieHeader }` when calling from SSR; omit in the browser.
+     * @returns The caller's applications, or an error the page degrades from.
+     */
+    mine({
+        cookieHeader
+    }: {
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<MyAllianceLeadsResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/alliance/leads/mine`,
+            cookieHeader
+        });
+    }
+};
+
 // --- Host Analytics (Protected — SPEC-207) ---
 
 /** Analytics window type for time-range queries */

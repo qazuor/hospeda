@@ -1044,5 +1044,24 @@
             "message": "Las sugerencias personalizadas están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.",
             "cta": "Ver planes"
         }
+    },
+    "alliances": {
+        "applications": {
+            "title": "Tus postulaciones",
+            "submittedOn": "Enviada el",
+            "note": "Cuando resolvamos una postulación te vamos a escribir por correo."
+        },
+        "programs": {
+            "partner": "Partner",
+            "sponsor": "Sponsor",
+            "editor": "Editor",
+            "service_provider": "Proveedor"
+        },
+        "status": {
+            "pending": "En revisión",
+            "reviewing": "En revisión",
+            "approved": "Aprobada",
+            "rejected": "No avanzó"
+        }
     }
 }

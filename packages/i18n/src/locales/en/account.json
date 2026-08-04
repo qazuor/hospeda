@@ -1044,5 +1044,24 @@
                 "description": "Unlocks AI-powered support tools for hosts, including smart reply suggestions and automated guest FAQ handling. Renews monthly."
             }
         }
+    },
+    "alliances": {
+        "applications": {
+            "title": "Your applications",
+            "submittedOn": "Submitted on",
+            "note": "We'll email you as soon as an application is resolved."
+        },
+        "programs": {
+            "partner": "Partner",
+            "sponsor": "Sponsor",
+            "editor": "Editor",
+            "service_provider": "Service provider"
+        },
+        "status": {
+            "pending": "Under review",
+            "reviewing": "Under review",
+            "approved": "Approved",
+            "rejected": "Not moving forward"
+        }
     }
 }
