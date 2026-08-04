@@ -1,18 +1,23 @@
 /**
  * @file catalog-cache.test.ts
- * @description HOS-369 W2-3 — destinations, events and posts opt into the edge cache.
+ * @description HOS-369 W2-3 and W2-4 — the catalog pages opt into the edge cache.
  *
- * Three families whose purge side ALREADY existed and evicted nothing:
- * `entity-tag-mapper.ts` has emitted `list-dest` / `list-event` / `list-post`
- * and the `dest-` / `event-` / `post-` entity tags since long before any page
- * declared them. These assertions pin the emitter half so the two cannot drift
- * apart again — the same silent no-op the `home` tag sat in before W2-1.
+ * **W2-3** covered three families whose purge side ALREADY existed and evicted
+ * nothing: `entity-tag-mapper.ts` has emitted `list-dest` / `list-event` /
+ * `list-post` and the `dest-` / `event-` / `post-` entity tags since long
+ * before any page declared them. Those assertions pin the emitter half so the
+ * two cannot drift apart again — the same silent no-op the `home` tag sat in
+ * before W2-1.
  *
- * Deliberately NOT covered, because their purge chain does not exist yet
- * (no vocabulary entry, no `entity-tag-mapper` case, no `scheduleRevalidation`
- * call in their services): `/destinos/atraccion/`, `/destinos/lugar/`,
- * `/gastronomia/`, `/experiencias/`. Caching those today would manufacture the
- * exact unpurgeable-response failure this suite exists to prevent.
+ * **W2-4** covers the six pages W2-3 deliberately left uncached
+ * (`/destinos/atraccion/`, `/destinos/lugar/`, `/gastronomia/`,
+ * `/experiencias/` and the two commerce detail pages). They were excluded
+ * because `attraction`, `pointOfInterest`, `gastronomy` and `experience` had no
+ * tag vocabulary, no `entity-tag-mapper` case, and their services never called
+ * the revalidation service — caching them would have manufactured the exact
+ * unpurgeable-response failure this suite exists to prevent. W2-4 built that
+ * chain, so the standing "stays uncached" assertion is gone and real coverage
+ * replaces it in the second describe block.
  *
  * `.astro` frontmatter cannot render in Vitest, so these are source-based —
  * the established pattern here (see `home-cache.test.ts`).
