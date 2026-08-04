@@ -20,6 +20,8 @@ type OwnableEntity = {
     ownerId?: string | null;
     createdById?: string | null;
     userId?: string | null;
+    /** Editorial content (posts, events) is owned by its author, not its creator. */
+    authorId?: string | null;
     [key: string]: unknown;
 };
 

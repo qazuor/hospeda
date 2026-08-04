@@ -1,40 +1,21 @@
-import {
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
-    PermissionEnum,
-    VisibilityEnum
-} from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
 
-// Spanish enum labels (SPEC-117 D-DROPDOWN.1 / D-POSTS.4).
-const VISIBILITY_LABELS: Record<string, string> = {
-    PUBLIC: 'Público',
-    PRIVATE: 'Privado',
-    RESTRICTED: 'Restringido',
-    HIDDEN: 'Oculto'
-};
-const LIFECYCLE_LABELS: Record<string, string> = {
-    DRAFT: 'Borrador',
-    ACTIVE: 'Activo',
-    INACTIVE: 'Inactivo',
-    ARCHIVED: 'Archivado',
-    DELETED: 'Eliminado'
-};
-const MODERATION_LABELS: Record<string, string> = {
-    PENDING: 'Pendiente',
-    APPROVED: 'Aprobado',
-    REJECTED: 'Rechazado',
-    UNDER_REVIEW: 'En revisión'
-};
-
 /**
- * Consolidated configuration for the States & Moderation section of post
+ * Publication dates for a post.
+ *
+ * This section used to also carry visibility / lifecycleState / moderationState.
+ * HOS-374 §7.6.4 moved those onto dedicated endpoints, so they can no longer be
+ * form fields — `EntityPageBase` builds one PATCH body out of the editable
+ * sections, and the API no longer accepts them there. They are displayed on the
+ * view page by `createContentStatesViewSection` and edited by
+ * `ContentStatePanel`.
  */
 export const createStatesModerationConsolidatedSection = (): ConsolidatedSectionConfig => ({
     id: 'states-moderation',
-    title: 'Estados y Moderación',
-    description: 'Configuración de visibilidad, ciclo de vida y moderación',
+    title: 'Publicación',
+    description: 'Fechas de publicación y expiración',
     layout: LayoutTypeEnum.GRID,
     modes: ['view', 'edit'],
     permissions: {
@@ -42,60 +23,6 @@ export const createStatesModerationConsolidatedSection = (): ConsolidatedSection
         edit: [PermissionEnum.POST_UPDATE]
     },
     fields: [
-        {
-            id: 'visibility',
-            type: FieldTypeEnum.SELECT,
-            required: true,
-            modes: ['view', 'edit'],
-            label: 'Visibilidad',
-            description: 'Nivel de visibilidad del artículo',
-            permissions: {
-                view: [PermissionEnum.POST_VIEW_ALL],
-                edit: [PermissionEnum.POST_PUBLISH_TOGGLE]
-            },
-            typeConfig: {
-                options: Object.values(VisibilityEnum).map((value) => ({
-                    value,
-                    label: VISIBILITY_LABELS[value] ?? value
-                }))
-            }
-        },
-        {
-            id: 'lifecycleState',
-            type: FieldTypeEnum.SELECT,
-            required: true,
-            modes: ['view', 'edit'],
-            label: 'Estado del Ciclo de Vida',
-            description: 'Estado actual del artículo',
-            permissions: {
-                view: [PermissionEnum.POST_VIEW_ALL],
-                edit: [PermissionEnum.POST_UPDATE]
-            },
-            typeConfig: {
-                options: Object.values(LifecycleStatusEnum).map((value) => ({
-                    value,
-                    label: LIFECYCLE_LABELS[value] ?? value
-                }))
-            }
-        },
-        {
-            id: 'moderationState',
-            type: FieldTypeEnum.SELECT,
-            required: true,
-            modes: ['view', 'edit'],
-            label: 'Estado de Moderación',
-            description: 'Estado de moderación del artículo',
-            permissions: {
-                view: [PermissionEnum.POST_VIEW_ALL],
-                edit: [PermissionEnum.POST_UPDATE]
-            },
-            typeConfig: {
-                options: Object.values(ModerationStatusEnum).map((value) => ({
-                    value,
-                    label: MODERATION_LABELS[value] ?? value
-                }))
-            }
-        },
         {
             id: 'publishedAt',
             type: FieldTypeEnum.DATE,

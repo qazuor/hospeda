@@ -28,7 +28,9 @@ describe('EventService.update', () => {
     const actorNoPerm = createActor();
     const existingEvent = createMockEvent({ visibility: VisibilityEnum.PUBLIC });
     const eventId = existingEvent.id;
-    const updateInput = createEventUpdateInput({ visibility: VisibilityEnum.PUBLIC });
+    // No visibility here: HOS-374 §7.6.4 took it out of the update payload, and the
+    // event update schema is strict.
+    const updateInput = createEventUpdateInput();
 
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findById', 'update']);

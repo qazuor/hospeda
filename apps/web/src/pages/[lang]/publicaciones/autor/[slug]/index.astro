@@ -20,6 +20,9 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { slug } = Astro.params;
@@ -39,6 +42,21 @@ if (!userResult.ok) {
 
 const author = userResult.data;
 const authorName = author.displayName ?? slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+// --- Edge cacheability (HOS-369 W2-3) ---
+// After the 404 guard, so a missing author is never marked shareable.
+//
+// Tagged `list-post` only. The AUTHOR is a user, and `user` has no entry in the
+// tag vocabulary or in `entity-tag-mapper.ts` — so an author renaming their
+// display name does not purge this page; the heading goes stale for at most the
+// 300s TTL. Post writes, which change the list itself, do purge it.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	// `/…/page/N/` rewrites into this route with `?page=N`.
+	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
+	tags: [CACHE_TAG_COLLECTIONS.post]
+});
 
 // Fetch author's posts in parallel (no waterfall)
 const postsResult = await postsApi.list({ authorId: author.id, page, pageSize });

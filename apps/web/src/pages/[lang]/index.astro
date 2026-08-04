@@ -40,9 +40,30 @@ import { shouldShowSocialProof } from "@/lib/home-guards";
 import { createTranslations } from "@/lib/i18n";
 import type { SupportedLocale } from "@/lib/i18n";
 import { buildUrl } from "@/lib/urls";
+import { CACHE_TAG_HOME } from "@repo/cache-tags";
+import { applyCacheHeaders } from "@/lib/cache/response-cache";
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+
+// --- Edge cacheability (HOS-369 W2-1) ---
+// Unconditional, like the pricing pages: the home reads no session, is not a
+// `SESSION_OPTIONAL_SEGMENT` (so it never pays the `/auth/me` round-trip), and
+// takes no filter parameters — there is no visitor-specific render to protect
+// against.
+//
+// The `home` tag was already being PURGED before anything emitted it:
+// `entity-tag-mapper.ts` adds it to every accommodation write (the home shows
+// featured accommodations) and `platform-settings.service.ts` purges it
+// alongside `site-config`. Until this call existed those purges evicted
+// nothing — the silent no-op §6.4 warns about, in reverse. This is the emitter
+// side that makes them mean something.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: true,
+	tags: [CACHE_TAG_HOME]
+});
 
 // Site-level structured data (SPEC-157 REQ-5)
 // Logo: android-chrome-512x512.png is a 512×512 square PNG — the recommended

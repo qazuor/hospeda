@@ -31,11 +31,12 @@
  * - Replacing portada is non-destructive (upload → add → setFeatured; backend clears old)
  */
 
-import { AddIcon, LoaderIcon, UploadIcon, XCircleIcon } from '@repo/icons';
+import { AddIcon, LoaderIcon, XCircleIcon } from '@repo/icons';
 import type { AccommodationMedia } from '@repo/schemas';
 import { ENTITY_GALLERY_CAPS, ModerationStatusEnum } from '@repo/schemas';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
+import { GalleryPortadaSection } from '@/features/accommodations/components/GalleryPortadaSection';
 import {
     useAccommodationMediaAdd,
     useAccommodationMediaList,
@@ -44,6 +45,7 @@ import {
 } from '@/features/accommodations/hooks/useAccommodationMedia';
 import { useMediaUpload } from '@/hooks/use-media-upload';
 import { useTranslations } from '@/hooks/use-translations';
+import { deriveAltFromEntityName } from '@/lib/utils/media-alt.utils';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -55,6 +57,27 @@ import { useTranslations } from '@/hooks/use-translations';
 export interface GalleryManagerProps {
     /** UUID of the accommodation whose gallery is being managed. */
     readonly accommodationId: string;
+    /**
+     * Display name of the accommodation, if already available to the caller
+     * (the edit/view route already fetches it for the breadcrumb). Used to
+     * derive a non-empty `alt` fallback for newly-uploaded photos — see
+     * `deriveAltFromEntityName`. Optional; when absent, uploads are added
+     * without `alt` (current behaviour), never with an invalid one.
+     */
+    readonly entityName?: string;
+    /**
+     * Whether the entity-detail query that provides `entityName` is still
+     * loading. The media list query and the entity-detail query run in
+     * parallel and settle independently — a fast media response can render
+     * the upload controls while `entityName` is still `undefined`, so an
+     * upload started in that window is added with NO `alt` at all. Since
+     * there is no update-media endpoint, that gap is permanent for the
+     * photo. Passing this keeps the existing loading skeleton up until BOTH
+     * queries have settled, closing the race at its source. Optional;
+     * defaults to `false` so callers that don't fetch the entity separately
+     * are unaffected.
+     */
+    readonly isEntityLoading?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -104,17 +127,31 @@ function useFileInput(onFile: (file: File) => void) {
  *   - One optional `featured` row (the "Portada" slot).
  *   - The remaining non-featured `visible` rows (the gallery grid).
  */
-export function GalleryManager({ accommodationId }: GalleryManagerProps) {
+export function GalleryManager({
+    accommodationId,
+    entityName,
+    isEntityLoading = false
+}: GalleryManagerProps) {
     const { t } = useTranslations();
 
     // ── Data ──────────────────────────────────────────────────────────────────
-    const { data: allMedia = [], isLoading, isError } = useAccommodationMediaList(accommodationId);
+    const {
+        data: allMedia = [],
+        isLoading: isMediaLoading,
+        isError
+    } = useAccommodationMediaList(accommodationId);
+    // Gate on BOTH queries — see `isEntityLoading` JSDoc above for why.
+    const isLoading = isMediaLoading || isEntityLoading;
 
     const addMutation = useAccommodationMediaAdd(accommodationId);
     const removeMutation = useAccommodationMediaRemove(accommodationId);
     const setFeaturedMutation = useAccommodationMediaSetFeatured(accommodationId);
 
     const { uploadEntityImage } = useMediaUpload();
+
+    // Derived once per render — undefined when no valid alt can be built
+    // (missing name, or a name that can't satisfy the schema's bounds).
+    const derivedAlt = deriveAltFromEntityName(entityName);
 
     // ── Derived state ─────────────────────────────────────────────────────────
     const featuredRow: AccommodationMedia | undefined = allMedia.find((m) => m.isFeatured);
@@ -170,7 +207,8 @@ export function GalleryManager({ accommodationId }: GalleryManagerProps) {
                 newRow = await addMutation.mutateAsync({
                     url,
                     publicId,
-                    moderationState: ModerationStatusEnum.APPROVED
+                    moderationState: ModerationStatusEnum.APPROVED,
+                    ...(derivedAlt ? { alt: derivedAlt } : {})
                 });
             } catch {
                 setAddError(t('admin-pages.gallery.errors.addFailed'));
@@ -184,7 +222,15 @@ export function GalleryManager({ accommodationId }: GalleryManagerProps) {
                 setSetFeaturedError(t('admin-pages.gallery.errors.setFeaturedFailed'));
             }
         },
-        [accommodationId, uploadEntityImage, addMutation, setFeaturedMutation, t, clearErrors]
+        [
+            accommodationId,
+            uploadEntityImage,
+            addMutation,
+            setFeaturedMutation,
+            derivedAlt,
+            t,
+            clearErrors
+        ]
     );
 
     const portadaInput = useFileInput(handlePortadaFile);
@@ -227,13 +273,14 @@ export function GalleryManager({ accommodationId }: GalleryManagerProps) {
                 await addMutation.mutateAsync({
                     url,
                     publicId,
-                    moderationState: ModerationStatusEnum.APPROVED
+                    moderationState: ModerationStatusEnum.APPROVED,
+                    ...(derivedAlt ? { alt: derivedAlt } : {})
                 });
             } catch {
                 setAddError(t('admin-pages.gallery.errors.addFailed'));
             }
         },
-        [accommodationId, uploadEntityImage, addMutation, t, clearErrors]
+        [accommodationId, uploadEntityImage, addMutation, derivedAlt, t, clearErrors]
     );
 
     const galleryInput = useFileInput(handleGalleryFile);
@@ -299,93 +346,20 @@ export function GalleryManager({ accommodationId }: GalleryManagerProps) {
             {!isLoading && !isError && (
                 <>
                     {/* ── Portada slot ─────────────────────────────────────── */}
-                    <section aria-label={t('admin-pages.gallery.portada.title')}>
-                        <div className="mb-3 flex items-center justify-between">
-                            <div>
-                                <h2 className="font-semibold text-base">
-                                    {t('admin-pages.gallery.portada.title')}
-                                </h2>
-                                <p className="text-muted-foreground text-sm">
-                                    {t('admin-pages.gallery.portada.description')}
-                                </p>
-                            </div>
-
-                            {featuredRow && (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={portadaInput.open}
-                                    disabled={anyMutationPending}
-                                    className="gap-1.5"
-                                >
-                                    {anyMutationPending && uploadEntityImage.isPending ? (
-                                        <LoaderIcon className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <UploadIcon className="h-4 w-4" />
-                                    )}
-                                    {t('admin-pages.gallery.portada.actions.replace')}
-                                </Button>
-                            )}
-                        </div>
-
-                        {featuredRow ? (
-                            <div className="relative inline-block">
-                                <img
-                                    src={featuredRow.url}
-                                    alt={featuredRow.alt ?? featuredRow.caption ?? 'Portada'}
-                                    className="h-48 w-full max-w-sm rounded-lg border object-cover"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={handleRemovePortada}
-                                    disabled={anyMutationPending}
-                                    aria-label={t('admin-pages.gallery.portada.actions.remove')}
-                                    className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow transition-opacity hover:opacity-90 disabled:opacity-50"
-                                >
-                                    {removeMutation.isPending &&
-                                    removeMutation.variables?.mediaId === featuredRow.id ? (
-                                        <LoaderIcon className="h-3.5 w-3.5 animate-spin" />
-                                    ) : (
-                                        <XCircleIcon className="h-3.5 w-3.5" />
-                                    )}
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="flex h-48 max-w-sm items-center justify-center rounded-lg border border-dashed">
-                                <div className="text-center">
-                                    <p className="mb-3 text-muted-foreground text-sm">
-                                        {t('admin-pages.gallery.portada.empty')}
-                                    </p>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={portadaInput.open}
-                                        disabled={anyMutationPending}
-                                        className="gap-1.5"
-                                    >
-                                        {anyMutationPending && uploadEntityImage.isPending ? (
-                                            <LoaderIcon className="h-4 w-4 animate-spin" />
-                                        ) : (
-                                            <UploadIcon className="h-4 w-4" />
-                                        )}
-                                        {t('admin-pages.gallery.portada.actions.upload')}
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Hidden file input for portada */}
-                        <input
-                            ref={portadaInput.inputRef}
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp"
-                            className="hidden"
-                            onChange={portadaInput.handleChange}
-                            tabIndex={-1}
-                        />
-                    </section>
+                    <GalleryPortadaSection
+                        t={t}
+                        featuredRow={featuredRow}
+                        anyMutationPending={anyMutationPending}
+                        isUploadPending={uploadEntityImage.isPending}
+                        isRemovingPortada={
+                            removeMutation.isPending &&
+                            removeMutation.variables?.mediaId === featuredRow?.id
+                        }
+                        onOpenFilePicker={portadaInput.open}
+                        onFileInputChange={portadaInput.handleChange}
+                        fileInputRef={portadaInput.inputRef}
+                        onRemovePortada={handleRemovePortada}
+                    />
 
                     {/* ── Gallery grid ─────────────────────────────────────── */}
                     <section aria-label={t('admin-pages.gallery.grid.title')}>
@@ -448,7 +422,7 @@ export function GalleryManager({ accommodationId }: GalleryManagerProps) {
                                             onClick={() => handleRemoveGalleryItem(item.id)}
                                             disabled={anyMutationPending}
                                             aria-label={t(
-                                                'admin-pages.gallery.portada.actions.remove'
+                                                'admin-pages.gallery.grid.actions.remove'
                                             )}
                                             className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 shadow transition-opacity focus:opacity-100 disabled:opacity-50 group-hover:opacity-100"
                                         >

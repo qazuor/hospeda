@@ -3,6 +3,9 @@ import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
 import type {
+    ContentLifecycleStateInput,
+    ContentModerationChangeInput,
+    ContentPublishStateInput,
     GetPostByCategoryInput,
     GetPostByRelatedAccommodationInput,
     GetPostByRelatedDestinationInput,
@@ -56,6 +59,7 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
+import { applyPublicReadFloor } from '../moderation/public-read-floor';
 import { generatePostSlug, mapPostFilterKeysToColumns } from './post.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './post.normalizers';
 import {
@@ -65,7 +69,10 @@ import {
     checkCanDeletePost,
     checkCanHardDeletePost,
     checkCanLikePost,
+    checkCanModeratePost,
     checkCanRestorePost,
+    checkCanSetPostLifecycleState,
+    checkCanSetPostPublishState,
     checkCanUpdatePost,
     checkCanViewPost
 } from './post.permissions';
@@ -826,9 +833,13 @@ export class PostService extends BaseCrudService<
             boolean | Record<string, unknown>
         >;
 
+        // The public read floor (HOS-374 §7.6.5) is applied LAST, on top of the
+        // caller's filters, so no query parameter can widen the result set to
+        // pending, private or archived posts. `adminList` is a separate code
+        // path (`_executeAdminSearch`) and deliberately does not get it.
         return this.model.findAllWithRelations(
             relations,
-            mapPostFilterKeysToColumns(filterParams),
+            applyPublicReadFloor(mapPostFilterKeysToColumns(filterParams)),
             {
                 page: ctx.pagination?.page ?? 1,
                 pageSize: ctx.pagination?.pageSize ?? 10,
@@ -874,9 +885,14 @@ export class PostService extends BaseCrudService<
             additionalConditions.push(inArray(posts.id, postIds));
         }
 
-        const count = await this.model.count(mapPostFilterKeysToColumns(filterParams), {
-            additionalConditions
-        });
+        // Mirror the `_executeSearch` public read floor so `total` stays
+        // consistent with the items actually returned (HOS-374 §7.6.5).
+        const count = await this.model.count(
+            applyPublicReadFloor(mapPostFilterKeysToColumns(filterParams)),
+            {
+                additionalConditions
+            }
+        );
         return { count };
     }
 
@@ -901,19 +917,15 @@ export class PostService extends BaseCrudService<
                 await this._canList(actor);
                 const where: Record<string, unknown> = { isNews: true };
 
-                // If no visibility is specified, default to PUBLIC for guest users
-                if (validated.visibility) {
-                    where.visibility = validated.visibility;
-                } else if (!actor.id) {
-                    where.visibility = 'PUBLIC';
-                }
                 if (validated.fromDate || validated.toDate) {
                     const expiresAtFilter: Record<string, unknown> = {};
                     if (validated.fromDate) expiresAtFilter.gte = validated.fromDate;
                     if (validated.toDate) expiresAtFilter.lte = validated.toDate;
                     where.expiresAt = expiresAtFilter;
                 }
-                const { items } = await this.model.findAll(where);
+                // Public read floor (HOS-374 §7.6.5), applied last so a caller
+                // cannot widen the result set through the `visibility` param.
+                const { items } = await this.model.findAll(applyPublicReadFloor(where));
                 return items;
             }
         });
@@ -940,19 +952,15 @@ export class PostService extends BaseCrudService<
                 await this._canList(actor);
                 const where: Record<string, unknown> = { isFeatured: true };
 
-                // If no visibility is specified, default to PUBLIC for guest users
-                if (validated.visibility) {
-                    where.visibility = validated.visibility;
-                } else if (!actor.id) {
-                    where.visibility = 'PUBLIC';
-                }
                 if (validated.fromDate || validated.toDate) {
                     const createdAtFilter: Record<string, unknown> = {};
                     if (validated.fromDate) createdAtFilter.gte = validated.fromDate;
                     if (validated.toDate) createdAtFilter.lte = validated.toDate;
                     where.createdAt = createdAtFilter;
                 }
-                const { items } = await this.model.findAll(where);
+                // Public read floor (HOS-374 §7.6.5), applied last so a caller
+                // cannot widen the result set through the `visibility` param.
+                const { items } = await this.model.findAll(applyPublicReadFloor(where));
                 return items;
             }
         });
@@ -979,12 +987,6 @@ export class PostService extends BaseCrudService<
                 await this._canList(actor);
                 const where: Record<string, unknown> = { category: validated.category };
 
-                // If no visibility is specified, default to PUBLIC for guest users
-                if ('visibility' in validated && validated.visibility) {
-                    where.visibility = validated.visibility;
-                } else if (!actor.id) {
-                    where.visibility = 'PUBLIC';
-                }
                 if (
                     ('fromDate' in validated && validated.fromDate) ||
                     ('toDate' in validated && validated.toDate)
@@ -996,7 +998,9 @@ export class PostService extends BaseCrudService<
                         createdAtFilter.lte = validated.toDate;
                     where.createdAt = createdAtFilter;
                 }
-                const { items } = await this.model.findAll(where);
+                // Public read floor (HOS-374 §7.6.5), applied last so a caller
+                // cannot widen the result set through the `visibility` param.
+                const { items } = await this.model.findAll(applyPublicReadFloor(where));
                 return items;
             }
         });
@@ -1025,19 +1029,15 @@ export class PostService extends BaseCrudService<
                     relatedAccommodationId: validated.accommodationId
                 };
 
-                // If no visibility is specified, default to PUBLIC for guest users
-                if (validated.visibility) {
-                    where.visibility = validated.visibility;
-                } else if (!actor.id) {
-                    where.visibility = 'PUBLIC';
-                }
                 if (validated.fromDate || validated.toDate) {
                     const createdAtFilter: Record<string, unknown> = {};
                     if (validated.fromDate) createdAtFilter.gte = validated.fromDate;
                     if (validated.toDate) createdAtFilter.lte = validated.toDate;
                     where.createdAt = createdAtFilter;
                 }
-                const { items } = await this.model.findAll(where);
+                // Public read floor (HOS-374 §7.6.5), applied last so a caller
+                // cannot widen the result set through the `visibility` param.
+                const { items } = await this.model.findAll(applyPublicReadFloor(where));
                 return items;
             }
         });
@@ -1066,19 +1066,15 @@ export class PostService extends BaseCrudService<
                     relatedDestinationId: validated.destinationId
                 };
 
-                // If no visibility is specified, default to PUBLIC for guest users
-                if (validated.visibility) {
-                    where.visibility = validated.visibility;
-                } else if (!actor.id) {
-                    where.visibility = 'PUBLIC';
-                }
                 if (validated.fromDate || validated.toDate) {
                     const createdAtFilter: Record<string, unknown> = {};
                     if (validated.fromDate) createdAtFilter.gte = validated.fromDate;
                     if (validated.toDate) createdAtFilter.lte = validated.toDate;
                     where.createdAt = createdAtFilter;
                 }
-                const { items } = await this.model.findAll(where);
+                // Public read floor (HOS-374 §7.6.5), applied last so a caller
+                // cannot widen the result set through the `visibility` param.
+                const { items } = await this.model.findAll(applyPublicReadFloor(where));
                 return items;
             }
         });
@@ -1105,19 +1101,15 @@ export class PostService extends BaseCrudService<
                 await this._canList(actor);
                 const where: Record<string, unknown> = { relatedEventId: validated.eventId };
 
-                // If no visibility is specified, default to PUBLIC for guest users
-                if (validated.visibility) {
-                    where.visibility = validated.visibility;
-                } else if (!actor.id) {
-                    where.visibility = 'PUBLIC';
-                }
                 if (validated.fromDate || validated.toDate) {
                     const createdAtFilter: Record<string, unknown> = {};
                     if (validated.fromDate) createdAtFilter.gte = validated.fromDate;
                     if (validated.toDate) createdAtFilter.lte = validated.toDate;
                     where.createdAt = createdAtFilter;
                 }
-                const { items } = await this.model.findAll(where);
+                // Public read floor (HOS-374 §7.6.5), applied last so a caller
+                // cannot widen the result set through the `visibility` param.
+                const { items } = await this.model.findAll(applyPublicReadFloor(where));
                 return items;
             }
         });
@@ -1359,6 +1351,163 @@ export class PostService extends BaseCrudService<
                 resolvedCtx.hookState.updateId = undefined;
             }
         }
+    }
+
+    /**
+     * Applies a single state transition to one post.
+     *
+     * Shared tail of `moderate` / `setPublishState` / `setLifecycleState`
+     * (HOS-374 §7.6.4): load the post, authorize against the loaded row, write
+     * ONLY the field the caller owns, then revalidate the public page. Each
+     * transition supplies its own `authorize` because the three are gated by
+     * three different permissions, two of which have no author path at all.
+     *
+     * Writing one field per call is the point: it is what makes the permission
+     * on each transition impossible to sidestep by bundling a second state
+     * change into the same payload.
+     *
+     * @param input - actor, post id, the patch to apply, and the authorization check
+     * @param methodName - name reported to the service logger
+     * @param ctx - optional service context for transaction propagation
+     */
+    private async _applyStateChange(
+        input: {
+            readonly actor: Actor;
+            readonly id: string;
+            readonly patch: Partial<Post>;
+            readonly authorize: (actor: Actor, post: Post) => void;
+        },
+        methodName: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Post>> {
+        const { actor, id, patch, authorize } = input;
+        return this.runWithLoggingAndValidation({
+            methodName,
+            input: { actor, id },
+            schema: z.object({ id: z.string().uuid() }),
+            ctx,
+            execute: async (validated, validatedActor, execCtx) => {
+                const existing = await this.model.findById(validated.id, execCtx?.tx);
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Post not found: ${validated.id}`
+                    );
+                }
+
+                authorize(validatedActor, existing as Post);
+
+                const updated = await this.model.update(
+                    { id: validated.id },
+                    patch as Partial<Post>,
+                    execCtx?.tx
+                );
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Post not found after update: ${validated.id}`
+                    );
+                }
+
+                // Every one of these transitions can flip the post in or out of
+                // the public predicate (APPROVED + PUBLIC + ACTIVE), so the
+                // cached page is stale either way. Best-effort: a revalidation
+                // failure must not undo a committed state change.
+                try {
+                    getRevalidationService()?.scheduleRevalidation({
+                        entityType: 'post',
+                        slug: updated.slug
+                    });
+                } catch (error) {
+                    PostService.revalidationLogger.warn(
+                        { error, entityType: 'post' },
+                        'Revalidation scheduling failed (non-blocking)'
+                    );
+                }
+
+                return updated as Post;
+            }
+        });
+    }
+
+    /**
+     * Applies the platform's moderation verdict to a post.
+     *
+     * Gated by `POST_MODERATION_CHANGE`, which finally gates something. Touches
+     * `moderationState` and nothing else — the author's `visibility` switch is
+     * deliberately untouched, so approving does not publish and rejecting does
+     * not unpublish (HOS-374 §7.6.1).
+     *
+     * @param input - actor, post id, and the new moderation state
+     * @param ctx - optional service context for transaction propagation
+     * @returns The updated post or a service error
+     */
+    public async moderate(
+        input: { readonly actor: Actor; readonly id: string } & ContentModerationChangeInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Post>> {
+        return this._applyStateChange(
+            {
+                actor: input.actor,
+                id: input.id,
+                patch: { moderationState: input.moderationState },
+                authorize: (actor) => checkCanModeratePost(actor)
+            },
+            'moderate',
+            ctx
+        );
+    }
+
+    /**
+     * Raises or lowers a post's publication.
+     *
+     * Gated by `POST_PUBLISH_TOGGLE` (any post) or `POST_PUBLISH_OWN` plus
+     * authorship. Touches `visibility` only, so unpublishing keeps the approval
+     * and republishing does not re-enter the review queue (§7.6.1).
+     *
+     * @param input - actor, post id, and the new visibility
+     * @param ctx - optional service context for transaction propagation
+     * @returns The updated post or a service error
+     */
+    public async setPublishState(
+        input: { readonly actor: Actor; readonly id: string } & ContentPublishStateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Post>> {
+        return this._applyStateChange(
+            {
+                actor: input.actor,
+                id: input.id,
+                patch: { visibility: input.visibility },
+                authorize: (actor, post) => checkCanSetPostPublishState(actor, post)
+            },
+            'setPublishState',
+            ctx
+        );
+    }
+
+    /**
+     * Moves a post through its lifecycle (draft / active / archived).
+     *
+     * Gated by `POST_LIFECYCLE_CHANGE`.
+     *
+     * @param input - actor, post id, and the new lifecycle state
+     * @param ctx - optional service context for transaction propagation
+     * @returns The updated post or a service error
+     */
+    public async setLifecycleState(
+        input: { readonly actor: Actor; readonly id: string } & ContentLifecycleStateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Post>> {
+        return this._applyStateChange(
+            {
+                actor: input.actor,
+                id: input.id,
+                patch: { lifecycleState: input.lifecycleState },
+                authorize: (actor) => checkCanSetPostLifecycleState(actor)
+            },
+            'setLifecycleState',
+            ctx
+        );
     }
 
     /**

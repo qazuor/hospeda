@@ -10,6 +10,10 @@
  * This module is the reusable shared layer only.
  */
 
+export type { CommerceGalleryManagerProps } from './components/CommerceGalleryManager';
+
+// Relational gallery manager UI (HOS-382)
+export { CommerceGalleryManager } from './components/CommerceGalleryManager';
 // Shared section builders
 export {
     createCommerceIdentitySection,
@@ -29,6 +33,19 @@ export type {
 
 // Hooks factory + related types
 export { createCommerceEntityHooks } from './hooks/createCommerceEntityHooks';
+export type {
+    CommerceMedia,
+    CommerceMediaAddPayload,
+    CommerceMediaVertical
+} from './hooks/useCommerceMedia';
+// Relational media gallery hooks (HOS-382)
+export {
+    commerceMediaQueryKeys,
+    useCommerceMediaAdd,
+    useCommerceMediaList,
+    useCommerceMediaRemove,
+    useCommerceMediaSetFeatured
+} from './hooks/useCommerceMedia';
 // Types
 export type {
     ColumnTFunction,

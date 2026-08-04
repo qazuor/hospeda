@@ -3,18 +3,25 @@
  *
  * Uses `EntityPageBase` in edit mode with `EntityEditContent` (flat layout).
  * Gate-protected by COMMERCE_EDIT_ALL.
+ *
+ * HOS-382: the `media.featuredImage` / `media.gallery` field handlers were
+ * removed. Those fields used to buffer uploads into a `media` object on
+ * PATCH, but the `media` JSONB column was dropped (HOS-372) and the update
+ * schema silently strips that key — every photo uploaded through this form
+ * was orphaned in Cloudinary with no DB row. Photos are now managed via the
+ * dedicated Gallery tab (`/gastronomies/:id/gallery`, `CommerceGalleryManager`),
+ * reachable from the `PageTabs` bar below, mirroring accommodations.
  */
 
 import { GastronomyUpdateInputSchema, PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
-import { useMemo } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { FaqManager } from '@/components/faqs/FaqManager';
+import { gastronomyTabs, PageTabs } from '@/components/layout/PageTabs';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
 import { useGastronomyPage } from '@/features/gastronomy';
-import { createUploadHandler, useMediaUpload } from '@/hooks/use-media-upload';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
@@ -35,36 +42,15 @@ function GastronomyEditPage() {
     const { id } = Route.useParams();
     const { t } = useTranslations();
     const entityData = useGastronomyPage(id);
-    const { uploadEntityImage, deleteImage } = useMediaUpload();
-
-    const mediaFieldHandlers = useMemo(
-        () => ({
-            'media.featuredImage': {
-                onUpload: createUploadHandler({
-                    entityType: 'gastronomy',
-                    entityId: id,
-                    role: 'featured',
-                    onUpload: (input) => uploadEntityImage.mutateAsync(input)
-                })
-            },
-            'media.gallery': {
-                onUpload: createUploadHandler({
-                    entityType: 'gastronomy',
-                    entityId: id,
-                    role: 'gallery',
-                    onUpload: (input) => uploadEntityImage.mutateAsync(input)
-                }),
-                onDelete: async (publicId: string) => {
-                    await deleteImage.mutateAsync({ publicId });
-                }
-            }
-        }),
-        [id, uploadEntityImage, deleteImage]
-    );
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.COMMERCE_EDIT_ALL]}>
             <div className="space-y-4">
+                <PageTabs
+                    tabs={gastronomyTabs}
+                    basePath={`/gastronomies/${id}`}
+                />
+
                 <EntityPageBase
                     entityType="gastronomy"
                     entityId={id}
@@ -88,7 +74,6 @@ function GastronomyEditPage() {
                         >
                             <EntityEditContent
                                 entityType="gastronomy"
-                                fieldHandlers={mediaFieldHandlers}
                                 flat
                             />
                         </TabsContent>

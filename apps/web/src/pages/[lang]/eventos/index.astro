@@ -72,6 +72,8 @@ import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
 import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
 import { EventCategoryEnum } from '@repo/schemas';
 
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
@@ -328,6 +330,27 @@ const canonicalBaseUrl =
 // so we rebuild the crawlable URL from the page number to keep each paginated
 // page self-canonical and indexable (instead of canonicalizing to page 1).
 const canonicalPath = page > 1 ? `${canonicalBaseUrl}page/${page}/` : canonicalBaseUrl;
+
+// --- Edge cacheability (HOS-369 W2-3) ---
+// The same two-part gate the accommodation listing uses, reusing the predicates
+// this page already computes for SEO rather than inventing a parallel notion of
+// "filtered": a `noindex` response is a low-repeat facet combination not worth
+// a cache entry, and any other active filter makes the render an arbitrary
+// slice. Both stay `private`.
+//
+// Pagination is deliberately NOT part of the gate — `/eventos/page/N/` rewrites
+// here with `?page=N`, and those are a bounded, high-repeat set of variants
+// over the same result set.
+//
+// Tagged with the collection: this IS a listing, so every event write must
+// evict it. `entity-tag-mapper.ts` already emits `list-event`; until this call
+// existed those purges evicted nothing.
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: !facetSeoDecision.noindex && !hasOtherEventFilters,
+    tags: [CACHE_TAG_COLLECTIONS.event]
+});
 
 // Auth state forwarded to FavoriteButton via EventCard so authenticated users
 // see their saved state on listing cards (instead of a guest-default heart).

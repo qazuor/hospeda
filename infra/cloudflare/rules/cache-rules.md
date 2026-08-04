@@ -28,7 +28,20 @@ edge caching **on staging only**, honoring the origin's own `Cache-Control`.
  and http.request.method in {"GET" "PURGE"}
  and http.request.uri.query eq ""
  and not http.cookie contains "better-auth.session_token"
- and (starts_with(http.request.uri.path, "/es/alojamientos")
+ and (http.request.uri.path in {"/es/" "/en/" "/pt/"
+        "/es/nosotros/" "/es/beneficios/" "/es/funcionalidades/" "/es/contacto/"
+        "/es/preguntas-frecuentes/" "/es/legal/cookies/" "/es/legal/privacidad/"
+        "/es/legal/terminos/" "/es/colaborar/" "/es/colaborar/editores/"
+        "/es/colaborar/fotos/" "/es/colaborar/reportar/"
+        "/en/nosotros/" "/en/beneficios/" "/en/funcionalidades/" "/en/contacto/"
+        "/en/preguntas-frecuentes/" "/en/legal/cookies/" "/en/legal/privacidad/"
+        "/en/legal/terminos/" "/en/colaborar/" "/en/colaborar/editores/"
+        "/en/colaborar/fotos/" "/en/colaborar/reportar/"
+        "/pt/nosotros/" "/pt/beneficios/" "/pt/funcionalidades/" "/pt/contacto/"
+        "/pt/preguntas-frecuentes/" "/pt/legal/cookies/" "/pt/legal/privacidad/"
+        "/pt/legal/terminos/" "/pt/colaborar/" "/pt/colaborar/editores/"
+        "/pt/colaborar/fotos/" "/pt/colaborar/reportar/"}
+   or starts_with(http.request.uri.path, "/es/alojamientos")
    or starts_with(http.request.uri.path, "/en/alojamientos")
    or starts_with(http.request.uri.path, "/pt/alojamientos")
    or starts_with(http.request.uri.path, "/es/suscriptores/planes")
@@ -36,12 +49,56 @@ edge caching **on staging only**, honoring the origin's own `Cache-Control`.
    or starts_with(http.request.uri.path, "/pt/suscriptores/planes")
    or starts_with(http.request.uri.path, "/es/suscriptores/turistas")
    or starts_with(http.request.uri.path, "/en/suscriptores/turistas")
-   or starts_with(http.request.uri.path, "/pt/suscriptores/turistas")))
+   or starts_with(http.request.uri.path, "/pt/suscriptores/turistas")
+   or starts_with(http.request.uri.path, "/es/destinos")
+   or starts_with(http.request.uri.path, "/en/destinos")
+   or starts_with(http.request.uri.path, "/pt/destinos")
+   or starts_with(http.request.uri.path, "/es/eventos")
+   or starts_with(http.request.uri.path, "/en/eventos")
+   or starts_with(http.request.uri.path, "/pt/eventos")
+   or starts_with(http.request.uri.path, "/es/publicaciones")
+   or starts_with(http.request.uri.path, "/en/publicaciones")
+   or starts_with(http.request.uri.path, "/pt/publicaciones")))
 ```
 
-The live rule stores this on a single line (745 characters). The nine
-`starts_with` terms are written out rather than expressed as a regex because
-the `matches` operator requires a Business plan.
+The live rule stores this on a single line (2074 characters since W2-3; it was
+1576 after W2-2 and 796 before that). The eighteen `starts_with` terms are
+written out rather than expressed as a regex because the `matches` operator
+requires a Business plan.
+
+The home is matched with `in { … }` — an **exact** path set, not a prefix.
+`starts_with(path, "/es/")` would match every Spanish page in the app, including
+`/es/mi-cuenta/`. Nothing would actually cache there (those pages never opt in,
+and `bypass_by_default` refuses anything that has not), but a rule whose
+expression claims more than it means is one refactor away from being true.
+
+The twelve copy-only pages W2-2 added (36 entries: 12 paths × 3 locales) join
+that same exact set for the same reason, and deliberately **not** as
+`starts_with(path, "/es/legal")` / `"/es/colaborar"`. Those two prefixes would
+be shorter, but they would also pre-approve a `legal/` or `colaborar/` page that
+does not exist yet — one that might read a session. Listing the paths means a
+new sibling is excluded until somebody adds it here on purpose, which is the
+same fail-closed posture `http.request.uri.query eq ""` takes on filters.
+
+`/{lang}/colaborar/reportar/` is documented as taking `?destino=<slug>`. The
+pre-filled form is therefore never cached — the empty-query clause excludes it —
+while the bare entry point is. That asymmetry is intended, not an oversight.
+
+W2-3 added the three catalog families as **prefixes**, not as an exact set, and
+that reversal is deliberate rather than an inconsistency. W2-2's twelve pages
+are a closed list of literal paths, so enumerating them costs nothing and buys
+fail-closed behavior. `destinos`, `eventos` and `publicaciones` are keyed on
+slugs, categories, tags, authors and page numbers — there is no finite set to
+enumerate, so a prefix is the only option available.
+
+The safety property is not lost, it just moves: `edge_ttl.mode =
+"bypass_by_default"` means matching the prefix does nothing on its own. Six
+pages under those prefixes deliberately do NOT opt in — `/destinos/atraccion/`,
+`/destinos/lugar/`, and the four gastronomy/experience pages — because
+`attraction`, `pointOfInterest`, `gastronomy` and `experience` have no tag
+vocabulary, no `entity-tag-mapper` case, and their services never call the
+revalidation service. They match the rule and return `BYPASS`, which is the
+mechanism working, not a gap.
 
 ### Settings
 
@@ -125,11 +182,25 @@ the response cacheable. Measured on 2026-08-04:
 
 | Path | Cached? |
 |---|---|
+| `/{lang}/` (home) | yes — **since 2026-08-04** (W2-1), tagged `home` |
+| `/{lang}/{nosotros,beneficios,funcionalidades,contacto}/` | yes — **since 2026-08-04** (W2-2), tagged `site-config` |
+| `/{lang}/preguntas-frecuentes/` | yes — **since 2026-08-04** (W2-2), tagged `site-config` |
+| `/{lang}/legal/{cookies,privacidad,terminos}/` | yes — **since 2026-08-04** (W2-2), tagged `site-config` |
+| `/{lang}/colaborar/` and `/{editores,fotos,reportar}/` | yes — **since 2026-08-04** (W2-2), tagged `site-config` |
+| `/{lang}/destinos/` and `/mapa/` | yes — **since 2026-08-04** (W2-3), tagged `list-dest` |
+| `/{lang}/destinos/<path>/` (detail) | yes — **since 2026-08-04** (W2-3), tagged `dest-<slug>` + `dest-<id>` |
+| `/{lang}/destinos/<slug>/{alojamientos,eventos}/` | yes — **since 2026-08-04** (W2-3), tagged `list-accom`/`list-event` + `dest-<slug>` |
+| `/{lang}/eventos/` and `/categoria/<c>/` and `/en/<loc>/` | yes — **since 2026-08-04** (W2-3), tagged `list-event` |
+| `/{lang}/eventos/<slug>/` (detail) | yes — **since 2026-08-04** (W2-3), tagged `event-<slug>` + `event-<id>` |
+| `/{lang}/publicaciones/` and `/{categoria,etiqueta,autor}/<x>/` | yes — **since 2026-08-04** (W2-3), tagged `list-post` |
+| `/{lang}/publicaciones/<slug>/` (detail) | yes — **since 2026-08-04** (W2-3), tagged `post-<slug>` + `post-<id>` |
+| `/{lang}/destinos/{atraccion,lugar}/<slug>/` | **no** — no purge chain (W2-4) |
+| `/{lang}/{gastronomia,experiencias}/` and detail | **no** — no purge chain (W2-4) |
 | `/{lang}/alojamientos/` and `/page/N/` | yes |
 | `/{lang}/alojamientos/mapa/` | yes |
 | `/{lang}/alojamientos/tipo/<type>/` | yes |
 | `/{lang}/suscriptores/{planes,turistas}/` and `/comparar/` | yes |
-| `/{lang}/alojamientos/<slug>/` (detail) | **no** — origin sends no `Cache-Control` |
+| `/{lang}/alojamientos/<slug>/` (detail) | yes — **since 2026-08-04**, tagged `accom-<slug>` + `accom-<id>` |
 | `/{lang}/alojamientos/<slug>/fotos/` | **no** |
 | `/{lang}/alojamientos/comparar/` | **no** |
 | `/{lang}/alojamientos/comodidades/<slug>/` | **no** |
@@ -148,6 +219,22 @@ set by the destination.
 **Adding a family is an application change, not a Cloudflare change.** The rule
 already matches these paths; the moment a page calls `applyCacheHeaders()` it
 starts being cached, with no rule edit.
+
+### The W2-2 pages have no purger of their own
+
+The twelve copy-only pages are tagged `site-config`, which
+`platform-settings.service.ts` purges. They do not read platform settings — the
+tag is borrowed, because it is the only one in the vocabulary with a live
+purger, and a cacheable response whose tag nobody ever purges is the silent
+no-op `home` was stuck in before W2-1. A settings write evicts them for no
+reason; the cost is a re-render.
+
+What that leaves open: **nothing purges the cache on deploy.** There is no
+purge step in `.github/workflows/` or in `hops`, and these pages change only on
+deploy. So the 300s `s-maxage` is also the window in which a shipped copy
+change is still invisible at the edge. That is the argument against giving them
+a longer TTL, and it is the thing to fix first if one is ever wanted: add the
+purge to the deploy, then raise the TTL — in that order, never the reverse.
 
 ### Verifying
 
@@ -182,3 +269,70 @@ Measured 2026-08-04: propagation ≤ ~4 s; purging `preview:list-accom` evicted
 `/es/alojamientos/` and `/es/alojamientos/page/2/` while the `/_astro/*` chunks
 kept climbing their `age` untouched (purge by tag is not affected by custom
 cache keys and does not reach static assets).
+
+Purge scoping was then measured in **both** directions, which is what makes it
+a demonstration rather than a coincidence:
+
+| Purged tag | Detail page (es/en/pt) | Listing |
+|---|---|---|
+| `preview:accom-<slug>` | **MISS ×3** | `HIT` — survived |
+| `preview:list-accom` | `HIT` ×3 — survived | **MISS** |
+
+W2-2 repeated the same two-direction check for the borrowed `site-config` tag,
+against `/es/nosotros/`, `/es/legal/terminos/` and `/pt/colaborar/`. Both probes
+ran 6–7 s after the purge — far enough inside the 300 s TTL that neither result
+can be a natural expiry, and `MISS` rather than `EXPIRED` confirms an explicit
+eviction:
+
+| Purged tag | Static pages (3) | `/es/alojamientos/` |
+|---|---|---|
+| `preview:site-config` | **MISS ×3** | `HIT` — survived |
+| `preview:list-accom` | `HIT` ×3 — survived | **MISS** |
+
+### Measured on 2026-08-04, after W2-2 was applied
+
+All 36 static-page URLs reached `HIT` on the second request, with a rising
+`age`. The bypasses hold on every one of them:
+
+| Probe on `/es/legal/terminos/` | Result |
+|---|---|
+| plain `GET` | `HIT` |
+| `Cookie: better-auth.session_token=x` | `DYNAMIC` |
+| `Cookie: __Secure-better-auth.session_token=x` | `DYNAMIC` |
+| `?foo=1` | `DYNAMIC` |
+| `HEAD` | `DYNAMIC` |
+
+The `HEAD` row is not redundant. `curl -sSI` sends `HEAD`, the expression
+requires `GET`, and a probe written that way therefore reports `DYNAMIC`
+forever — on a zone where the cache is working perfectly. Probe with
+`curl -sS -o /dev/null -D -`. This cost real debugging time on 2026-08-04.
+
+The fail-closed choice of an exact path set over `starts_with` was confirmed by
+measurement rather than left as an argument: `/es/legal/` — which
+`starts_with(path, "/es/legal")` would have matched — returns `DYNAMIC`, as does
+`/es/mi-cuenta/`.
+
+### Purging from a shell
+
+The probes must run from your own machine (the cache is per-PoP and the VPS
+resolves to a different one), while the purge itself runs on the VPS so the
+secret never leaves it:
+
+```bash
+ssh -p 2222 qazuor@216.238.103.219 'bash -lc "
+CID=\$(docker ps --filter label=coolify.serviceName=hospeda-web-staging --format \"{{.Names}}\" | head -1)
+S=\$(docker exec \$CID printenv HOSPEDA_REVALIDATION_SECRET | tr -d \"\\n\")
+ENC=\$(printf %s \"\$S\" | jq -sRr @uri)
+curl -sS -X POST -H \"Content-Type: application/json\" \
+  -d \"{\\\"tags\\\":[\\\"preview:list-accom\\\"]}\" \
+  \"https://staging.hospeda.com.ar/api/revalidate/?secret=\$ENC\"
+"'
+```
+
+**Resolve the container by label, never by name.** Coolify assigns a new
+container name on every redeploy, so a hardcoded name breaks silently the next
+time the app ships: `docker exec` fails, the secret comes back empty, and the
+purge returns `Unauthorized` — which looks like a credential problem and is not.
+
+The trailing slash on `/api/revalidate/` is mandatory; without it Astro's
+trailing-slash middleware answers 301 and the POST body is lost.

@@ -7,6 +7,8 @@ import type { Event } from '@repo/schemas';
 import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import { type Actor, ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
+import { isAuthorEditLockedByModeration } from '../moderation/author-edit-lock';
+import { isContentStateApproved } from '../moderation/public-read-floor';
 
 /**
  * Checks if the actor can create an event.
@@ -21,23 +23,113 @@ export function checkCanCreateEvent(actor: Actor): void {
 
 /**
  * Checks if the actor can update the given event.
+ *
+ * Mirrors the post twin (HOS-374 §7.6.2): `EVENT_UPDATE` covers any event,
+ * `EVENT_UPDATE_OWN` covers only the actor's own and stops applying once the
+ * platform approved the event, unless the actor also holds `EVENT_PUBLISH_OWN`
+ * (§7.6.3).
+ *
+ * The event is now a required argument — the check could not be author-scoped
+ * without it.
+ *
  * Throws ServiceError(FORBIDDEN) if not allowed.
  */
-export function checkCanUpdateEvent(actor: Actor): void {
+export function checkCanUpdateEvent(actor: Actor, event: Event): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
-    if (!actor.permissions?.includes(PermissionEnum.EVENT_UPDATE)) {
-        throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied to update event');
+    if (hasPermission(actor, PermissionEnum.EVENT_UPDATE)) {
+        return;
     }
+    if (actor.id === event.authorId && hasPermission(actor, PermissionEnum.EVENT_UPDATE_OWN)) {
+        if (
+            isAuthorEditLockedByModeration({
+                moderationState: event.moderationState,
+                canPublishOwn: hasPermission(actor, PermissionEnum.EVENT_PUBLISH_OWN)
+            })
+        ) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Permission denied to update a published event'
+            );
+        }
+        return;
+    }
+    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied to update event');
 }
 
 /**
  * Checks if the actor can delete the given event.
+ *
+ * `EVENT_DELETE` deletes any event; `EVENT_DELETE_OWN` deletes only the actor's
+ * own. Authorship alone grants nothing (HOS-374 §7.6.2).
+ *
  * Throws ServiceError(FORBIDDEN) if not allowed.
  */
-export function checkCanDeleteEvent(actor: Actor): void {
+export function checkCanDeleteEvent(actor: Actor, event: Event): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
-    if (!actor.permissions?.includes(PermissionEnum.EVENT_DELETE)) {
-        throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied to delete event');
+    if (hasPermission(actor, PermissionEnum.EVENT_DELETE)) {
+        return;
+    }
+    if (actor.id === event.authorId && hasPermission(actor, PermissionEnum.EVENT_DELETE_OWN)) {
+        return;
+    }
+    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied to delete event');
+}
+
+/**
+ * Checks if the actor can change an event's moderation state.
+ *
+ * `EVENT_MODERATION_CHANGE` was seeded but gated nothing server-side until
+ * HOS-374 §7.6.4 — it only decided whether the admin panel rendered a widget,
+ * while the write itself rode the generic update behind plain `EVENT_UPDATE`.
+ *
+ * The verdict belongs to the platform, so there is no author path.
+ *
+ * Throws ServiceError(FORBIDDEN) if not allowed.
+ */
+export function checkCanModerateEvent(actor: Actor): void {
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+    if (!hasPermission(actor, PermissionEnum.EVENT_MODERATION_CHANGE)) {
+        throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied to moderate event');
+    }
+}
+
+/**
+ * Checks if the actor can raise or lower an event's publication.
+ *
+ * `EVENT_PUBLISH_TOGGLE` is the broad side (any event), `EVENT_PUBLISH_OWN` the
+ * author side. One permission covers both directions on purpose (§7.6.2).
+ *
+ * Throws ServiceError(FORBIDDEN) if not allowed.
+ */
+export function checkCanSetEventPublishState(actor: Actor, event: Event): void {
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+    if (hasPermission(actor, PermissionEnum.EVENT_PUBLISH_TOGGLE)) {
+        return;
+    }
+    if (actor.id === event.authorId && hasPermission(actor, PermissionEnum.EVENT_PUBLISH_OWN)) {
+        return;
+    }
+    throw new ServiceError(
+        ServiceErrorCode.FORBIDDEN,
+        'Permission denied to change event publication state'
+    );
+}
+
+/**
+ * Checks if the actor can change an event's lifecycle state.
+ *
+ * Archiving is a platform-side action with no author counterpart, same shape as
+ * moderation.
+ *
+ * Throws ServiceError(FORBIDDEN) if not allowed.
+ */
+export function checkCanSetEventLifecycleState(actor: Actor): void {
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+    if (!hasPermission(actor, PermissionEnum.EVENT_LIFECYCLE_CHANGE)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied to change event lifecycle state'
+        );
     }
 }
 
@@ -76,6 +168,22 @@ export function checkCanViewEvent(actor: Actor, event: Event): void {
         if (event.visibility === VisibilityEnum.PUBLIC) {
             throw new ServiceError(ServiceErrorCode.GONE, 'Event is gone');
         }
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Event not found');
+    }
+
+    // Public read floor, platform half (HOS-374 §5.1.1 / §7.6.5): content the
+    // platform has not approved, or that has been archived, is not readable —
+    // regardless of how public its `visibility` says it is. The author still
+    // reads their own drafts, and so do the elevated view permissions;
+    // otherwise an editor could not review what they just wrote. NOT_FOUND, not
+    // FORBIDDEN, so an unapproved event is indistinguishable from a missing one.
+    if (
+        !isContentStateApproved(event) &&
+        actor.id !== event.authorId &&
+        !hasPermission(actor, PermissionEnum.EVENT_VIEW_ALL) &&
+        !hasPermission(actor, PermissionEnum.EVENT_VIEW_PRIVATE) &&
+        !hasPermission(actor, PermissionEnum.EVENT_VIEW_DRAFT)
+    ) {
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Event not found');
     }
 

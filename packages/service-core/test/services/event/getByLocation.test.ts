@@ -3,6 +3,7 @@ import type { EventLocationIdType } from '@repo/schemas';
 import { PermissionEnum, VisibilityEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
+import { PUBLIC_READ_FLOOR } from '../../../src/services/moderation/public-read-floor';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createActor } from '../../factories/actorFactory';
 import { createMockEvent } from '../../factories/eventFactory';
@@ -33,11 +34,13 @@ describe('EventService.getByLocation', () => {
         service = new EventService({ model: modelMock, logger: loggerMock });
     });
 
-    it('should return public and private events if actor has EVENT_SOFT_DELETE_VIEW', async () => {
+    it('should apply the public read floor even when the actor has EVENT_SOFT_DELETE_VIEW', async () => {
         // Arrange
+        // HOS-374 §7.6.5: EVENT_SOFT_DELETE_VIEW no longer widens this public read
+        // path — the floor is unconditional, so only public events are mocked back.
         const events = [
             createMockEvent({ locationId, visibility: VisibilityEnum.PUBLIC }),
-            createMockEvent({ locationId, visibility: VisibilityEnum.PRIVATE })
+            createMockEvent({ locationId, visibility: VisibilityEnum.PUBLIC })
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 2 });
         // Act
@@ -52,14 +55,14 @@ describe('EventService.getByLocation', () => {
         if (!data) throw new Error('Expected data to be defined after expectSuccess');
         expect(data.items).toHaveLength(2);
         expect(modelMock.findAll).toHaveBeenCalledWith(
-            { locationId },
+            { locationId, ...PUBLIC_READ_FLOOR },
             { page: 1, pageSize: 10 },
             undefined,
             undefined
         );
     });
 
-    it('should return only public events if actor lacks EVENT_SOFT_DELETE_VIEW', async () => {
+    it('should apply the public read floor for an actor without elevated permissions', async () => {
         // Arrange
         const events = [createMockEvent({ locationId, visibility: VisibilityEnum.PUBLIC })];
         (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 1 });
@@ -75,7 +78,7 @@ describe('EventService.getByLocation', () => {
         if (!data) throw new Error('Expected data to be defined after expectSuccess');
         expect(data.items).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith(
-            { locationId, visibility: VisibilityEnum.PUBLIC },
+            { locationId, ...PUBLIC_READ_FLOOR },
             { page: 1, pageSize: 10 },
             undefined,
             undefined

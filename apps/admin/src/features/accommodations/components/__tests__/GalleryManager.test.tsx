@@ -236,7 +236,7 @@ describe('GalleryManager — remove gallery photo', () => {
             name: 'admin-pages.gallery.grid.title'
         });
         const removeBtn = gallerySection.querySelector(
-            'button[aria-label="admin-pages.gallery.portada.actions.remove"]'
+            'button[aria-label="admin-pages.gallery.grid.actions.remove"]'
         );
         expect(removeBtn).not.toBeNull();
 
@@ -270,6 +270,98 @@ describe('GalleryManager — remove portada', () => {
             expect(mockRemoveMutateAsync).toHaveBeenCalledWith({ mediaId: 'feat-del' });
         });
         expect(mockSetFeaturedMutateAsync).not.toHaveBeenCalled();
+    });
+});
+
+describe('GalleryManager — grid remove button uses its own accessible name', () => {
+    it('gives the grid remove button a DIFFERENT accessible name than the portada remove button', () => {
+        const featured = makeFeaturedRow('feat-1');
+        const gallery = makeGalleryRow('g1');
+        mockListData.data = [featured, gallery];
+
+        renderGalleryManager();
+
+        // Regression guard: both buttons used to share the same i18n key,
+        // so a screen reader announced "Quitar portada" on every gallery
+        // photo — not just the actual cover. They must now resolve to
+        // distinct, non-empty accessible names.
+        const portadaRemoveBtn = screen.getByRole('button', {
+            name: 'admin-pages.gallery.portada.actions.remove'
+        });
+        const gridRemoveBtn = screen.getByRole('button', {
+            name: 'admin-pages.gallery.grid.actions.remove'
+        });
+
+        expect(portadaRemoveBtn.getAttribute('aria-label')).toBe(
+            'admin-pages.gallery.portada.actions.remove'
+        );
+        expect(gridRemoveBtn.getAttribute('aria-label')).toBe(
+            'admin-pages.gallery.grid.actions.remove'
+        );
+        expect(gridRemoveBtn.getAttribute('aria-label')).not.toBe(
+            portadaRemoveBtn.getAttribute('aria-label')
+        );
+    });
+});
+
+describe('GalleryManager — alt derived from entity name', () => {
+    it('sends a non-empty alt on addMedia when entityName is provided', async () => {
+        const file = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
+        mockUploadEntityImageMutateAsync.mockResolvedValue({
+            url: 'https://cdn.example.com/new.jpg',
+            publicId: 'hospeda/dev/new'
+        });
+        mockAddMutateAsync.mockResolvedValue({
+            id: 'new-row',
+            url: 'https://cdn.example.com/new.jpg',
+            isFeatured: false
+        });
+
+        mockListData.data = [];
+        render(
+            <GalleryManager
+                accommodationId="acc-1"
+                entityName="Hotel Costanera"
+            />
+        );
+
+        const inputs = document.querySelectorAll('input[type="file"]');
+        const galleryInput = inputs[1] as HTMLInputElement;
+
+        fireEvent.change(galleryInput, { target: { files: [file] } });
+
+        await waitFor(() => {
+            expect(mockAddMutateAsync).toHaveBeenCalledWith(
+                expect.objectContaining({ alt: 'Hotel Costanera' })
+            );
+        });
+    });
+
+    it('does NOT send an alt key on addMedia when entityName is absent', async () => {
+        const file = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
+        mockUploadEntityImageMutateAsync.mockResolvedValue({
+            url: 'https://cdn.example.com/new.jpg',
+            publicId: 'hospeda/dev/new'
+        });
+        mockAddMutateAsync.mockResolvedValue({
+            id: 'new-row',
+            url: 'https://cdn.example.com/new.jpg',
+            isFeatured: false
+        });
+
+        mockListData.data = [];
+        renderGalleryManager();
+
+        const inputs = document.querySelectorAll('input[type="file"]');
+        const galleryInput = inputs[1] as HTMLInputElement;
+
+        fireEvent.change(galleryInput, { target: { files: [file] } });
+
+        await waitFor(() => {
+            expect(mockAddMutateAsync).toHaveBeenCalled();
+        });
+        const call = mockAddMutateAsync.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(Object.hasOwn(call, 'alt')).toBe(false);
     });
 });
 
@@ -307,6 +399,126 @@ describe('GalleryManager — set portada (upload → add → setFeatured)', () =
             );
             expect(mockSetFeaturedMutateAsync).toHaveBeenCalledWith({ mediaId: 'portada-row' });
         });
+    });
+
+    // Regression guard: `handlePortadaFile` has its OWN `...(derivedAlt ? {
+    // alt: derivedAlt } : {})` spread, separate from the gallery-grid
+    // handler's. The grid-path tests above ("alt derived from entity name")
+    // exercise a completely different code path and would stay green even
+    // if this spread were removed from the portada handler alone.
+    it('sends a non-empty alt on the portada addMedia call when entityName is provided', async () => {
+        const file = new File(['data'], 'portada.jpg', { type: 'image/jpeg' });
+        mockUploadEntityImageMutateAsync.mockResolvedValue({
+            url: 'https://cdn.example.com/portada.jpg',
+            publicId: 'hospeda/dev/portada'
+        });
+        mockAddMutateAsync.mockResolvedValue({
+            id: 'portada-row',
+            url: 'https://cdn.example.com/portada.jpg',
+            isFeatured: false
+        });
+        mockSetFeaturedMutateAsync.mockResolvedValue({
+            id: 'portada-row',
+            isFeatured: true
+        });
+
+        mockListData.data = [];
+        render(
+            <GalleryManager
+                accommodationId="acc-1"
+                entityName="Hotel Costanera"
+            />
+        );
+
+        const inputs = document.querySelectorAll('input[type="file"]');
+        const portadaInput = inputs[0] as HTMLInputElement;
+
+        fireEvent.change(portadaInput, { target: { files: [file] } });
+
+        await waitFor(() => {
+            expect(mockAddMutateAsync).toHaveBeenCalledWith(
+                expect.objectContaining({ alt: 'Hotel Costanera' })
+            );
+        });
+    });
+
+    it('does NOT send an alt key on the portada addMedia call when entityName is absent', async () => {
+        const file = new File(['data'], 'portada.jpg', { type: 'image/jpeg' });
+        mockUploadEntityImageMutateAsync.mockResolvedValue({
+            url: 'https://cdn.example.com/portada.jpg',
+            publicId: 'hospeda/dev/portada'
+        });
+        mockAddMutateAsync.mockResolvedValue({
+            id: 'portada-row',
+            url: 'https://cdn.example.com/portada.jpg',
+            isFeatured: false
+        });
+        mockSetFeaturedMutateAsync.mockResolvedValue({
+            id: 'portada-row',
+            isFeatured: true
+        });
+
+        mockListData.data = [];
+        renderGalleryManager();
+
+        const inputs = document.querySelectorAll('input[type="file"]');
+        const portadaInput = inputs[0] as HTMLInputElement;
+
+        fireEvent.change(portadaInput, { target: { files: [file] } });
+
+        await waitFor(() => {
+            expect(mockAddMutateAsync).toHaveBeenCalled();
+        });
+        const call = mockAddMutateAsync.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(Object.hasOwn(call, 'alt')).toBe(false);
+    });
+});
+
+describe('GalleryManager — gated on entity-detail loading too (race regression guard)', () => {
+    it('keeps the loading skeleton (no upload controls) while isEntityLoading is true, even though the media query already settled', () => {
+        // Reproduces the race: media list resolves fast (few rows), while the
+        // parallel entity-detail query (source of `entityName`) is still in
+        // flight. If the gallery UI gated on the media query alone, the
+        // upload controls would render here with `entityName` undefined —
+        // and since there is no update-media endpoint, an upload started in
+        // this window would be stuck with `alt=null` forever.
+        mockListData.isLoading = false;
+        mockListData.data = [];
+
+        render(
+            <GalleryManager
+                accommodationId="acc-1"
+                isEntityLoading={true}
+            />
+        );
+
+        // No file inputs (portada or gallery) must be present while gated.
+        expect(document.querySelectorAll('input[type="file"]')).toHaveLength(0);
+        // The gallery "add" button and portada section must not be rendered.
+        expect(
+            screen.queryByRole('button', { name: 'admin-pages.gallery.grid.actions.add' })
+        ).toBeNull();
+        expect(
+            screen.queryByRole('region', { name: 'admin-pages.gallery.portada.title' })
+        ).toBeNull();
+    });
+
+    it('renders the upload controls once BOTH the media query and isEntityLoading have settled', () => {
+        mockListData.isLoading = false;
+        mockListData.data = [];
+
+        render(
+            <GalleryManager
+                accommodationId="acc-1"
+                entityName="Hotel Costanera"
+                isEntityLoading={false}
+            />
+        );
+
+        expect(document.querySelectorAll('input[type="file"]').length).toBeGreaterThan(0);
+        expect(
+            screen.getByRole('region', { name: 'admin-pages.gallery.portada.title' })
+        ).toBeDefined();
     });
 });
 

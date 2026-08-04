@@ -24,7 +24,7 @@ export const Route = createFileRoute('/_authed/accommodations/$id_/gallery')({
 
 function AccommodationGalleryPage() {
     const { id } = Route.useParams();
-    const { data: accommodation } = useAccommodationQuery(id);
+    const { data: accommodation, isLoading: isAccommodationLoading } = useAccommodationQuery(id);
 
     return (
         <AccommodationSubTabLayout
@@ -32,7 +32,11 @@ function AccommodationGalleryPage() {
             entityName={accommodation?.name}
         >
             <div className="rounded-lg border bg-card p-6">
-                <GalleryManager accommodationId={id} />
+                <GalleryManager
+                    accommodationId={id}
+                    entityName={accommodation?.name}
+                    isEntityLoading={isAccommodationLoading}
+                />
             </div>
         </AccommodationSubTabLayout>
     );

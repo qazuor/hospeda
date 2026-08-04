@@ -1326,18 +1326,55 @@ exist (2026-08-04).** All probes from Buenos Aires, PoP `EZE`, pinned via
 `cf-ray`.
 
 - **AC-1 PASSED** — `HIT` on the second request, `age` climbing (3, 6).
-- **AC-2 PARTIAL** — the bypass half passes: both `better-auth.session_token`
-  and `__Secure-better-auth.session_token` return `DYNAMIC`, never `HIT`. The
-  "and its body contains that user's state" half is **not** verified: a
-  synthetic cookie value was used, not a real session. Needs a logged-in run.
+- **AC-2 PASSED with a real session — and the criterion as written is wrong.**
+  Re-run on 2026-08-04 with an actual logged-in visitor, every probe issued from
+  inside the browser (`fetch` with `credentials: 'include'` vs `'omit'`) so the
+  session token was never read or handled.
+
+  *Bypass half:* across `/es/alojamientos/`, `/en/alojamientos/` and
+  `/es/suscriptores/planes/`, **12 authenticated requests returned `DYNAMIC`,
+  never `HIT`**, while the anonymous ones warmed to `HIT` alongside them. No
+  `Set-Cookie` on any anonymous response.
+
+  *Body half:* AC-2 asks that the bypassed response "contains that user's
+  state". **It cannot, and should not — W1-2a is what changed this.** The
+  authenticated response carries `data-user-authenticated="false"` exactly like
+  the anonymous one. What holds instead is the stronger **AC-B0-1**: after
+  normalising only the two Sentry telemetry metas (`sentry-trace`, `baggage` —
+  per-request span ids carrying no visitor state), the two documents are
+  **byte-identical**: 1,378,961 characters, same length, zero differing regions.
+  That identity is precisely what makes the cookie bypass redundant rather than
+  load-bearing. Record AC-2 as passing on this basis; its original wording
+  predates the de-personalization and now describes a failure, not a success.
+
+  Two traps worth keeping. `/api/v1/public/auth/me` does **not** exist on the
+  web origin — it lives on the API host, and fetching it returns the web app's
+  404 *page* with `data-user-authenticated="false"` baked in, which reads
+  exactly like "not logged in". Confirm a session with `fetch('/es/mi-cuenta/')`
+  instead. And `document.cookie` cannot see `better-auth.session_token` because
+  it is HttpOnly, so its absence proves nothing.
 - **AC-3 PASSED** — `?types=HOTEL` → `DYNAMIC`.
-- **AC-6 PASSED for the existing surfaces** — purging `preview:list-accom`
+- **AC-6 PASSED, both directions.** First pass: purging `preview:list-accom`
   evicted `/es/alojamientos/` **and** `/es/alojamientos/page/2/` (the case
   purge-by-URL provably could not reach, §5.11.2), while the `/_astro/*` chunk
   stayed `HIT` with its `age` climbing *through* the purge (4409 → 4542, i.e.
-  +133 s of wall time, not a reset). Tag purge does not touch static assets. The
-  "event detail in three locales" half is not testable yet: `/eventos/` is
-  outside the rule and emits no cache header.
+  +133 s of wall time, not a reset). Tag purge does not touch static assets.
+
+  The remaining half became testable once the accommodation **detail** page
+  opted into the cache (see W1-6 below), and was measured on 2026-08-04 in
+  **both directions**, which is what makes it non-vacuous rather than a lucky
+  single observation:
+
+  | Purged tag | Detail (es/en/pt) | Listing | `/_astro/*` |
+  |---|---|---|---|
+  | `preview:accom-<slug>` | **MISS ×3** | `HIT` (survived) | `HIT`, age climbing |
+  | `preview:list-accom` | `HIT` ×3 (survived, ages 37→69, 45→68, 54→68) | **MISS** | — |
+
+  An entity purge takes the entity's page in every locale and nothing else; a
+  collection purge takes the listing and leaves every detail page standing. The
+  spec's original wording names an *event*, but `/eventos/` is outside the Cache
+  Rule and emits no cache header — accommodations exercise the identical
+  property on a family the rule actually covers.
 - **AC-9 PASSED, with a caveat worth keeping.** TTFB on the cached route is
   **15–18 ms** on a warm connection. A first reading of 246 ms looked like a
   failure until it was decomposed: 213 ms of it was the TCP+TLS handshake and
@@ -1419,6 +1456,34 @@ writing one cache rule. Until then the documents are the source of truth for
 convention: a rule changed in the dashboard is changed in its document in the
 same PR. Redirect Rules join the same directory when W1-4 lands.
 
+**W1-6 — The accommodation detail page opts into the cache. DONE (2026-08-04,
+PR #2610).** Not in the original plan; added once W1-3 measured **15 ms cached
+vs 689 ms uncached on the same host** and the §6.4 footprint audit showed detail
+pages — the bulk of the indexable surface — were returning `BYPASS` purely
+because the origin never opted in.
+
+No Cloudflare change was needed: the W1-2 rule already matched
+`/{lang}/alojamientos*`, and `bypass_by_default` was doing exactly its job.
+Adding a family is an application change, and this is the proof of it.
+
+The page is the **first caller of `buildEntityCacheTags`** — the helper shipped
+with W1-1 and had no call site until now. It emits `accom-<slug>` **and**
+`accom-<id>`, and deliberately **not** `list-accom`: a detail page is not a
+listing, and tagging it with the collection would make every accommodation write
+evict every other accommodation's page. The trade, stated plainly: content
+pulled in from other entities (similar stays, the owner's other properties,
+related posts and events, reviews, promotions, nearby POIs) is not
+purge-addressable from this page and goes stale for at most the 300 s TTL.
+
+`cacheable` is gated on two fail-closed conditions — an empty query string
+(every `ctx*` on the page comes from a search param and feeds the WhatsApp
+prefill with the visitor's dates and party size, so the ORIGIN must refuse to
+mark such a render shareable regardless of what the edge does) and the existence
+of a usable entity tag. The call sits **after** the 404/410 guards, so an error
+response is never marked `public, s-maxage=300` — pinning a 404 at the edge for
+five minutes. A test asserts that ordering, because the ordering is the whole
+protection.
+
 ### 6.5 Wave C — extend the pattern across the catalog
 
 > **Rev 3.** Wave C shrank. Its de-personalization tasks moved into Wave B0,
@@ -1478,6 +1543,50 @@ Overlaps HOS-168; this spec supplies the measurements it lacked.
 - **W3-5** — Consolidate the 20 render-blocking stylesheets. Gated on the
   CSP/`inlineStylesheets` constraint (HOS-164/HOS-168) — do not start before
   that resolves.
+- **W3-6 (new, 2026-08-04)** — Deduplicate the inline SVG icons. See the
+  re-measurement below: 520 inline `<svg>` elements on one listing page, only
+  **169 distinct** — each icon repeated ~20×, once per card. 355 KB, the second
+  largest bucket in the document and not covered by W3-1..W3-5.
+
+#### Re-measured 2026-08-04, after Waves A, B0 and B shipped
+
+The owner asked why PageSpeed against staging had not moved. It had not, and the
+measurement says exactly why — **this wave is now the only thing standing
+between the work already done and a visible score.** Recorded here so HOS-369 is
+not closed without it.
+
+`/es/alojamientos/`, measured live on staging: **1,385,789 B of HTML**, 197,500 B
+transferred (brotli). Compression hides it on the wire; the browser still parses
+1.39 MB.
+
+| Bucket | Bytes | Share |
+|---|---|---|
+| `<script id="hospeda-i18n">` | **639,458** | **46.4 %** |
+| Inline SVG (520 elements, 169 distinct) | **354,976** | **25.7 %** |
+| `astro-island` props (57 islands) | 55,758 | 4.0 % |
+| `<style>` | 51,144 | 3.7 % |
+| JSON-LD | 3,286 | 0.2 % |
+
+**72 % of the document is payload the page does not need in that form.** The
+i18n blob carries `.m.cookies.sections.*`, `.m.faq.categories.*`,
+`.m.privacy.sections.*`, `.m.about.story.*` and `.m.features.hero.*` — the
+cookie policy, the FAQ, the privacy policy and two marketing pages, shipped
+inside the accommodation listing.
+
+**New fact that raises W3-1's value beyond the 631 KB already claimed**: the
+blob is **byte-identical across every page** (`/es/`, `/es/alojamientos/`, a
+detail page, `/es/suscriptores/planes/`, `/es/legal/cookies/` — all 645,173 B of
+`id="hospeda-i18n"`). Moving it to a hashed immutable asset therefore saves the
+bytes **once per session**, not once per page: the browser downloads it on the
+first navigation and reuses it for every subsequent one. It also shrinks every
+edge-cached HTML object to roughly a third of its size.
+
+**Why the edge cache could not have moved the score, stated plainly so nobody
+re-litigates it.** Wave B fixed the cost of *serving* (TTFB 689 ms → 15 ms).
+Lighthouse weights TBT 30 %, LCP 25 %, CLS 25 %, FCP 10 %, SI 10 % — TTFB is not
+scored directly and only partly feeds FCP. Mobile PSI additionally throttles CPU
+4×, which punishes precisely the parse-and-execute work this payload creates.
+Two different problems; both real; PageSpeed measures the second one.
 
 ### 6.7 Documentation cleanup
 
@@ -1717,7 +1826,12 @@ Wave B onward:
   purge-by-URL provably could not reach (§5.11.2).
 - **AC-7** — `https://hospeda.com.ar/` resolves to `/es/` at the edge
   (`cf-cache-status` present on the 301, no origin hit).
-- **AC-8** — Home HTML drops below 500 KB uncompressed after W3-1.
+- **AC-8** — Home HTML drops below 500 KB uncompressed after W3-1. **Baseline
+  re-measured 2026-08-04** (see §6.6): the home is 1,256,468 B and the
+  accommodation listing 1,385,789 B, so this is a ~3× reduction, not a trim.
+  **HOS-369 does not close until Wave D ships** — the owner's acceptance of this
+  spec is a faster site, and the waves already delivered do not move a
+  Lighthouse score on their own.
 - **AC-9** — TTFB for an anonymous, cached catalog route measured from Buenos
   Aires is under 200 ms.
 - **AC-10** — Googlebot user-agent receives the same `HIT` as a browser
