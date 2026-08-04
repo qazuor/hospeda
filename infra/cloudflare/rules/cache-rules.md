@@ -368,6 +368,44 @@ the real slugs are the lowercased `PostCategoryEnum` values (`culture`,
 `tourism`, …). Always check the status code before concluding a page is
 misconfigured.
 
+### Measured on 2026-08-04, after W2-4 was applied
+
+The four W2-4 surfaces that have data on staging all reach `HIT`:
+`/es/gastronomia/`, `/es/experiencias/`, an experience detail, and two
+attraction pages.
+
+Purge scoping, each probe 7 s after the purge:
+
+| Purged tag | `/es/experiencias/` | `/es/gastronomia/` | Experience detail | Attraction |
+|---|---|---|---|---|
+| `preview:list-exp` | **MISS** | `HIT` | `HIT` | `HIT` |
+
+| Purged tag | `attr-centro-historico` | `attr-complejo-termal-principal` | `/es/experiencias/` | `/es/destinos/` |
+|---|---|---|---|---|
+| `preview:attr-centro-historico` | **MISS** | `HIT` | `HIT` | `HIT` |
+
+The first table shows the two new commerce collections are isolated from each
+other and from the detail pages. The second shows a per-entity tag evicts one
+attraction without touching its sibling.
+
+#### What is NOT verified by probing, and why
+
+Two W2-4 surfaces could not be measured because staging has no data for them:
+a gastronomy detail page (the listing renders no entries) and a POI detail page
+(`hasOwnPage` is false for every seeded row — it is the flag that separates a
+curated landmark from the 839 catalog rows).
+
+More importantly, the **many-to-many fan-out is not probe-verifiable at all**.
+Confirming that editing one POI evicts every destination page showing it needs
+a real write through `PointOfInterestService`, which means the admin UI — a
+`curl` cannot trigger it. What IS verified is the mapper: `getAffectedCacheTags`
+emits one `dest-<slug>` per related destination, mutation-tested by truncating
+the fan-out to its first element (three assertions go red).
+
+That is coverage of the tag computation, NOT of the chain from service through
+Cloudflare. Treat the fan-out as untested end-to-end until somebody edits a
+multi-destination POI in staging and watches those destination pages fall.
+
 ### Purging from a shell
 
 The probes must run from your own machine (the cache is per-PoP and the VPS
