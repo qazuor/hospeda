@@ -683,24 +683,25 @@
             "id": "T-028",
             "title": "Add the social-networks opt-in toggle and consent copy to the profile editor",
             "description": "Spec §6.7 (G-5), risk R-2 and R-8. In apps/web/src/components/account/ProfileEditForm.client.tsx, add a toggle for publicProfileShowSocialNetworks in the social block, plus copy stating that the author page exists, is public, and that these links will appear on it. Wire it through buildProfilePatch to settings. This MUST ship together with T-008 — a schema key with no UI is a preference nobody can ever turn on, and the toggle without the copy still publishes data the user never knew was publishable. Copy in all three locales. Tests: toggle round-trips through a PATCH (not a 400), defaults to off for a user with no stored value, and the consent copy is present in the rendered form.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008"],
             "blocks": [],
             "subtasks": [
-                { "title": "Add the toggle to the social block", "completed": false },
-                { "title": "Write the consent copy in es/en/pt", "completed": false },
-                { "title": "Wire through buildProfilePatch to settings", "completed": false },
-                { "title": "Tests: round-trip, default off, copy present", "completed": false }
+                { "title": "Add the toggle to the social block", "completed": true },
+                { "title": "Write the consent copy in es/en/pt", "completed": true },
+                { "title": "Wire through buildProfilePatch to settings", "completed": true },
+                { "title": "Tests: round-trip, default off, copy present", "completed": true }
             ],
             "tags": ["web", "account", "forms", "i18n"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-04T02:10:00.000Z",
+                "completed": "2026-08-04T03:50:00.000Z"
+            },
+            "notes": "Five layers: `publicProfileShowSocialNetworks` on ProfileEditUser + ProfileSnapshot, the default in buildInitialProfileSnapshot, the `payload.settings` branch in buildProfilePatch, state + wiring in ProfileEditForm.client.tsx, and the toggle + consent copy + styles in ProfileEditSocialSection.tsx. The page flattens the value out of the `settings` JSONB the same way `phone` is flattened out of `contactInfo`. OFF BY DEFAULT AT EVERY LAYER — state seed, diff baseline, and the page's fallbackUser shape (a failed profile GET must never render as prior consent). `=== true` everywhere, never `??` or a truthy check: the stored value is null for anyone who never chose. TRANSPORT: under `settings`, which the protected PATCH validates against the STRICT UserSettingsWebPatchSchema allowlist. Deliberately NOT in `flatChanged` — that map is parsed by ProfileEditFormSchema (strict, form text fields only), which has nothing to say about a boolean and would just reject it. It does reach `payload`, which is what the component's 'no changes' guard counts, so flipping the toggle alone is a real save. COPY: phrased conditionally ('si publicás notas o eventos') because the author page only exists for someone with at least one published item — promising 'tu página de autor' to every account would describe a page most do not have. Deliberately NOT linked for the same reason. VERIFIED LIVE, full consent loop, against the running worktree stack with a real session (host-pro@local.test): the page SSRs the checkbox unchecked, PATCH {settings:{...:true}} answers 200 (not 400), a re-fetch of the page renders `checked=\"\"`, and GET /api/v1/public/users/by-slug/<slug> then CARRIES socialNetworks; flipping it back to false answers 200 and the key DISAPPEARS from the public payload. Tests: 11 component cases + 11 helper/contract cases. The contract half asserts the emitted payload against the REAL UserSettingsWebPatchSchema rather than a local copy, with a misspelt-key case proving the check bites. MUTATIONS VALIDATED: `=== true` → `!== false` reddens 6 (both default-off cases plus 4 component cases); deleting the `payload.settings` branch reddens 8. Full apps/web suite green: 8460 passed, 536 files. FOUND, NOT FIXED (pre-existing, reported): the sibling labels in this very section — `account.pages.editProfile.socialSection` and all five `account.editProfile.fields.<network>` — do not exist in any locale and have been rendering their Spanish inline fallbacks in en/pt. `check-locales` cannot see this: it validates parity BETWEEN locales, not that keys used in code exist. Also left behind on the dev test user: an instagram URL set while verifying (opt-in is back OFF, so nothing is published)."
         },
         {
             "id": "T-029",
