@@ -277,18 +277,38 @@ export { buildLoginRedirect } from './auth-redirect';
 /**
  * Builds a redirect URL for an invalid or missing locale, defaulting to the default locale.
  *
- * @param params - Object with the remaining path after the (invalid) locale segment
- * @returns Absolute path prefixed with DEFAULT_LOCALE
+ * The query string is carried over, which is what the other three redirect
+ * builders in the middleware already do (Steps 3, 3.1 and 3.2 all append
+ * `context.url.search`). This one did not, and the omission was silent: a
+ * campaign link to `hospeda.com.ar/?utm_source=newsletter` landed on a bare
+ * `/es/` with the parameters stripped, so the attribution was lost before the
+ * first pageview was captured. Nothing errored and the page rendered fine,
+ * which is how it survived in production.
+ *
+ * @param params.restOfPath - The remaining path after the (invalid) locale segment
+ * @param params.search - The URL's query string including its leading `?`, as
+ *   given by `URL.search` — pass it straight through. Empty string for a
+ *   query-less URL, which is why it defaults to `''` rather than being required.
+ * @returns Absolute path prefixed with DEFAULT_LOCALE, query string preserved
  *
  * @example
  * ```ts
  * buildLocaleRedirect({ restOfPath: '/alojamientos/' })
  * // => '/es/alojamientos/'
+ *
+ * buildLocaleRedirect({ restOfPath: '/', search: '?utm_source=newsletter' })
+ * // => '/es/?utm_source=newsletter'
  * ```
  */
-export function buildLocaleRedirect({ restOfPath }: { restOfPath: string }): string {
+export function buildLocaleRedirect({
+    restOfPath,
+    search = ''
+}: {
+    restOfPath: string;
+    search?: string;
+}): string {
     const normalizedPath = restOfPath.startsWith('/') ? restOfPath : `/${restOfPath}`;
-    return `/${DEFAULT_LOCALE}${normalizedPath}`;
+    return `/${DEFAULT_LOCALE}${normalizedPath}${search}`;
 }
 
 /**

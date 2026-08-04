@@ -182,6 +182,58 @@ describe('middleware onRequest — BETA-162 legacy /blog alias redirects to /pub
     });
 });
 
+// ---------------------------------------------------------------------------
+// Regression: Step 4 (locale redirect) dropped the query string.
+//
+// `buildLocaleRedirect({ restOfPath })` took only the path, unlike Steps 3,
+// 3.1 and 3.2 which all append `context.url.search`. So every URL without a
+// locale segment lost its parameters in the 301: a campaign link to
+// `hospeda.com.ar/?utm_source=newsletter` landed on a bare `/es/` and the
+// attribution was gone before the first pageview was captured. Nothing looked
+// broken — the page rendered fine — which is why it survived in production.
+//
+// These assert the CALL SITE, not just the helper: the helper accepting a
+// `search` argument is useless if Step 4 forgets to pass it, and that omission
+// is exactly what the bug was.
+// ---------------------------------------------------------------------------
+describe('middleware onRequest — Step 4 locale redirect preserves the query string', () => {
+    it('carries the query string through the root redirect (campaign attribution)', async () => {
+        const { onRequest } = await import('../src/middleware');
+        const context = createContext({
+            pathname: '/?utm_source=newsletter&utm_campaign=verano'
+        });
+
+        await onRequest(context as any, vi.fn());
+
+        expect(context.redirect).toHaveBeenCalledWith(
+            '/es/?utm_source=newsletter&utm_campaign=verano',
+            301
+        );
+    });
+
+    it('carries the query string through a nested path with an unsupported locale', async () => {
+        // `/fr/...` is the unambiguous Step 4 case: a real (unsupported) locale
+        // segment, which `extractLocaleFromPath` correctly strips, leaving the
+        // rest of the path intact. Deliberately NOT `/alojamientos/?page=2` —
+        // see the note below on why that URL behaves differently.
+        const { onRequest } = await import('../src/middleware');
+        const context = createContext({ pathname: '/fr/alojamientos/?page=2' });
+
+        await onRequest(context as any, vi.fn());
+
+        expect(context.redirect).toHaveBeenCalledWith('/es/alojamientos/?page=2', 301);
+    });
+
+    it('emits no stray "?" when the URL carries no query string', async () => {
+        const { onRequest } = await import('../src/middleware');
+        const context = createContext({ pathname: '/' });
+
+        await onRequest(context as any, vi.fn());
+
+        expect(context.redirect).toHaveBeenCalledWith('/es/', 301);
+    });
+});
+
 describe('middleware onRequest — Step 11 emits the Cache-Tag purge header (HOS-369 W1-1)', () => {
     beforeEach(() => {
         parseSessionUserMock.mockClear();

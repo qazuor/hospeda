@@ -259,6 +259,31 @@ describe('buildLocaleRedirect', () => {
         const result = buildLocaleRedirect({ restOfPath: 'alojamientos/' });
         expect(result).toBe('/es/alojamientos/');
     });
+
+    // Regression: this helper was the only redirect builder in the middleware
+    // that dropped the query string. Steps 3, 3.1 and 3.2 all append
+    // `context.url.search`; Step 4 did not, so every locale-less URL lost its
+    // parameters in the 301 — `/?utm_source=newsletter` arrived at a bare
+    // `/es/` and the campaign attribution was gone before analytics saw it.
+    it('should preserve the query string when one is supplied', () => {
+        const result = buildLocaleRedirect({
+            restOfPath: '/',
+            search: '?utm_source=newsletter&utm_campaign=verano'
+        });
+        expect(result).toBe('/es/?utm_source=newsletter&utm_campaign=verano');
+    });
+
+    it('should preserve the query string on a nested path', () => {
+        const result = buildLocaleRedirect({ restOfPath: '/alojamientos/', search: '?page=2' });
+        expect(result).toBe('/es/alojamientos/?page=2');
+    });
+
+    it('should emit no stray separator when there is no query string', () => {
+        // `URL.search` is '' (not undefined) for a query-less URL, so the empty
+        // case is the common one and must not produce a trailing '?'.
+        expect(buildLocaleRedirect({ restOfPath: '/', search: '' })).toBe('/es/');
+        expect(buildLocaleRedirect({ restOfPath: '/' })).toBe('/es/');
+    });
 });
 
 // ---------------------------------------------------------------------------
