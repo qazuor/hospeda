@@ -836,22 +836,23 @@
             "id": "T-034",
             "title": "Add the actor-blind response test for by-slug (AC-6)",
             "description": "Spec §6.7. Assert that GET /api/v1/public/users/by-slug/:slug returns byte-identical bodies for an anonymous request and an authenticated one, including when the profile owner has the social opt-in enabled. This is the invariant that keeps the route's shared cache safe: what is returned depends on the PROFILE OWNER's preference, never on who is asking. A viewer-dependent branch would poison the cache for every subsequent visitor.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-010"],
             "blocks": [],
             "subtasks": [
-                { "title": "Compare anonymous vs authenticated bodies", "completed": false },
-                { "title": "Cover both opt-in states", "completed": false }
+                { "title": "Compare anonymous vs authenticated bodies", "completed": true },
+                { "title": "Cover both opt-in states", "completed": true }
             ],
             "tags": ["testing", "api", "cache"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-04T01:30:00.000Z",
+                "completed": "2026-08-04T02:00:00.000Z"
+            },
+            "notes": "apps/api/test/routes/user/public/by-slug-actor-blind.test.ts, 6 cases. Placed at the ROUTE layer on purpose: getPublicProfileBySlug is ALREADY proven actor-blind in packages/service-core/test/services/user/getPublicProfileBySlug.test.ts (two cases there compare guest vs self vs third party, one of them with the opt-in ON). What was unproven is everything above it — the route handler, the response schema, and the middleware chain. THE BLOCKER: the shared UserService mock had no getPublicProfileBySlug at all, so the route answered 500 for every slug. That is also why the pre-existing getBySlug.test.ts was quietly hollow — its whole 'exposes only the public author fields' body sat behind `if (res.status === 200)` and had never once executed. Added the mock method (keyed by SLUG, never by actor, so the test stays falsifiable) and repointed that dead assertion at a slug that resolves; it now asserts 200 unconditionally. TWO NON-VACUITY GUARDS, because 'identical' is trivially true for two identical failures: one test proves the bearer token really authenticates by hitting a session-gated route (401 without, not-401 with), another proves the endpoint serves a real 200 profile, and the opt-in case asserts socialNetworks is actually present before comparing. Compared with JSON.stringify rather than toEqual — key order is part of what gets cached. MUTATIONS VALIDATED: making the route strip socialNetworks for guests reddens exactly the opt-in case; making it add a viewer-specific field reddens that one plus the byte-identical case. FINDING, not a defect: the response does carry Set-Cookie (hospeda_vid, middlewares/visitor-id.ts) for a caller without one, so that assertion was dropped rather than left asserting something false. It does NOT reach the cached entry — visitorIdMiddleware writes the cookie AFTER its own `await next()`, i.e. after middlewares/cache.ts has already snapshotted c.res.headers — so no visitor's id can be replayed to the next one. Documented in the test. Whether a DOWNSTREAM shared cache (Cloudflare) refuses to store a Set-Cookie response on this host is a separate question owned by HOS-369. Full apps/api suite green afterwards: 10335 passed, 658 files."
         },
         {
             "id": "T-035",
