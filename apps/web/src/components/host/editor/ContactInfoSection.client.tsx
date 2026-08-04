@@ -7,13 +7,37 @@
  */
 
 import { useState } from 'react';
-import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
+import { FieldError } from '@/components/ui/FieldError';
+import { buildFieldErrorId, TextField } from '@/components/ui/TextField';
 import type { AccommodationEditData } from '@/lib/api/types';
+import { buildFieldId } from '@/lib/forms/build-field-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { composePhoneValue, type PhoneCountry, parsePhoneValue } from '@/lib/phone-countries';
 import styles from './ContactInfoSection.module.css';
 import { CountryCodeCombobox } from './CountryCodeCombobox.client';
+import { ACCOMMODATION_FIELD_ID_SUFFIXES, ACCOMMODATION_FIELD_PREFIX } from './field-ids';
+
+/**
+ * Identity of the two grouped phone fields.
+ *
+ * The suffix is READ from the editor's shared map rather than written here.
+ * That is the whole safeguard for these two fields: `focusFirstInvalidField`
+ * reads the same map, so the control this points at and the one focus targets
+ * cannot drift. Hard-coding `'number'` in either place would compile, render
+ * and silently focus nothing.
+ */
+const PHONE_FIELD = {
+    prefix: ACCOMMODATION_FIELD_PREFIX,
+    name: 'phone',
+    suffix: ACCOMMODATION_FIELD_ID_SUFFIXES.phone
+} as const;
+
+const WHATSAPP_FIELD = {
+    prefix: ACCOMMODATION_FIELD_PREFIX,
+    name: 'whatsapp',
+    suffix: ACCOMMODATION_FIELD_ID_SUFFIXES.whatsapp
+} as const;
 
 /** Props for ContactInfoSection. */
 export interface ContactInfoSectionProps {
@@ -96,43 +120,43 @@ export function ContactInfoSection({
                     <div className={styles.phoneRow}>
                         <div className={styles.phoneCountryField}>
                             <label
-                                htmlFor="acc-phone-country"
+                                htmlFor={buildFieldId({ ...PHONE_FIELD, suffix: 'country' })}
                                 className={styles.fieldSubLabel}
                             >
                                 {t('host.properties.editor.field.phoneCountry', 'País')}
                             </label>
                             <CountryCodeCombobox
                                 locale={locale}
-                                id="acc-phone-country"
+                                id={buildFieldId({ ...PHONE_FIELD, suffix: 'country' })}
                                 value={phoneCountry}
                                 onChange={handleCountryChange}
                             />
                         </div>
                         <div className={styles.phoneNumberField}>
-                            <label
-                                htmlFor="acc-phone-number"
-                                className={styles.fieldSubLabel}
-                            >
-                                {t('host.properties.editor.field.phoneNumber', 'Número')}
-                            </label>
-                            <input
-                                id="acc-phone-number"
+                            {/*
+                             * `renderError={false}`: one Zod field, two controls.
+                             * The message belongs under the whole fieldset (below),
+                             * not inside this column — the wrapper still owns the
+                             * aria wiring, only the placement is ours.
+                             */}
+                            <TextField
+                                {...PHONE_FIELD}
+                                label={t('host.properties.editor.field.phoneNumber', 'Número')}
+                                labelClassName={styles.fieldSubLabel}
+                                className={`${styles.fieldInput} ${styles.phoneNumberInput}`}
+                                error={errors.phone}
+                                renderError={false}
                                 type="tel"
                                 inputMode="tel"
-                                className={`${styles.fieldInput} ${styles.phoneNumberInput}`}
                                 value={phoneNumber}
                                 onChange={(e) => handleNumberChange(e.target.value)}
                                 placeholder="9 343 1234567"
-                                aria-invalid={Boolean(errors.phone)}
-                                aria-describedby={
-                                    errors.phone ? fieldErrorId('acc-phone') : undefined
-                                }
                             />
                         </div>
                     </div>
                 </fieldset>
                 <FieldError
-                    id={fieldErrorId('acc-phone')}
+                    id={buildFieldErrorId(PHONE_FIELD)}
                     message={errors.phone}
                     className={styles.fieldErrorSpacing}
                 />
@@ -146,93 +170,70 @@ export function ContactInfoSection({
                     <div className={styles.phoneRow}>
                         <div className={styles.phoneCountryField}>
                             <label
-                                htmlFor="acc-whatsapp-country"
+                                htmlFor={buildFieldId({ ...WHATSAPP_FIELD, suffix: 'country' })}
                                 className={styles.fieldSubLabel}
                             >
                                 {t('host.properties.editor.field.phoneCountry', 'País')}
                             </label>
                             <CountryCodeCombobox
                                 locale={locale}
-                                id="acc-whatsapp-country"
+                                id={buildFieldId({ ...WHATSAPP_FIELD, suffix: 'country' })}
                                 value={whatsappCountry}
                                 onChange={handleWhatsappCountryChange}
                             />
                         </div>
                         <div className={styles.phoneNumberField}>
-                            <label
-                                htmlFor="acc-whatsapp-number"
-                                className={styles.fieldSubLabel}
-                            >
-                                {t('host.properties.editor.field.phoneNumber', 'Número')}
-                            </label>
-                            <input
-                                id="acc-whatsapp-number"
+                            {/* Mirrors the phone block above — see the note there. */}
+                            <TextField
+                                {...WHATSAPP_FIELD}
+                                label={t('host.properties.editor.field.phoneNumber', 'Número')}
+                                labelClassName={styles.fieldSubLabel}
+                                className={`${styles.fieldInput} ${styles.phoneNumberInput}`}
+                                error={errors.whatsapp}
+                                renderError={false}
                                 type="tel"
                                 inputMode="tel"
-                                className={`${styles.fieldInput} ${styles.phoneNumberInput}`}
                                 value={whatsappNumber}
                                 onChange={(e) => handleWhatsappNumberChange(e.target.value)}
                                 placeholder="9 343 1234567"
-                                aria-invalid={Boolean(errors.whatsapp)}
-                                aria-describedby={
-                                    errors.whatsapp ? fieldErrorId('acc-whatsapp') : undefined
-                                }
                             />
                         </div>
                     </div>
                 </fieldset>
                 <FieldError
-                    id={fieldErrorId('acc-whatsapp')}
+                    id={buildFieldErrorId(WHATSAPP_FIELD)}
                     message={errors.whatsapp}
                     className={styles.fieldErrorSpacing}
                 />
             </div>
 
             <div className={styles.field}>
-                <label
-                    htmlFor="acc-email"
-                    className={styles.fieldLabel}
-                >
-                    {t('host.properties.editor.field.email', 'Email')}
-                </label>
-                <input
-                    id="acc-email"
-                    type="email"
+                <TextField
+                    prefix={ACCOMMODATION_FIELD_PREFIX}
+                    name="email"
+                    label={t('host.properties.editor.field.email', 'Email')}
+                    labelClassName={styles.fieldLabel}
                     className={styles.fieldInput}
+                    error={errors.email}
+                    type="email"
                     value={data.email}
                     onChange={(e) => onFieldChange('email', e.target.value)}
                     placeholder="contacto@ejemplo.com"
-                    aria-invalid={Boolean(errors.email)}
-                    aria-describedby={errors.email ? fieldErrorId('acc-email') : undefined}
-                />
-                <FieldError
-                    id={fieldErrorId('acc-email')}
-                    message={errors.email}
-                    className={styles.fieldErrorSpacing}
                 />
             </div>
 
             <div className={styles.field}>
-                <label
-                    htmlFor="acc-website"
-                    className={styles.fieldLabel}
-                >
-                    {t('host.properties.editor.field.website', 'Sitio web')}
-                </label>
-                <input
-                    id="acc-website"
-                    type="url"
+                <TextField
+                    prefix={ACCOMMODATION_FIELD_PREFIX}
+                    name="website"
+                    label={t('host.properties.editor.field.website', 'Sitio web')}
+                    labelClassName={styles.fieldLabel}
                     className={styles.fieldInput}
+                    error={errors.website}
+                    type="url"
                     value={data.website}
                     onChange={(e) => onFieldChange('website', e.target.value)}
                     placeholder="https://www.ejemplo.com"
-                    aria-invalid={Boolean(errors.website)}
-                    aria-describedby={errors.website ? fieldErrorId('acc-website') : undefined}
-                />
-                <FieldError
-                    id={fieldErrorId('acc-website')}
-                    message={errors.website}
-                    className={styles.fieldErrorSpacing}
                 />
             </div>
         </fieldset>

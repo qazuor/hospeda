@@ -26,6 +26,7 @@
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { cn } from '@/lib/cn';
+import type { BuildFieldIdParams } from '@/lib/forms/build-field-id';
 import { buildFieldId } from '@/lib/forms/build-field-id';
 import styles from './TextField.module.css';
 
@@ -52,6 +53,36 @@ interface TextFieldCommonProps {
     readonly labelClassName?: string;
     /** Extra content rendered between the label and the control. */
     readonly beforeControl?: ReactNode;
+    /**
+     * Whether the wrapper renders the `<FieldError>` itself. Defaults to `true`.
+     *
+     * Set `false` when ONE Zod field is edited by SEVERAL controls and the error
+     * belongs below the group rather than below this control — `phone` and
+     * `whatsapp` are a country combobox plus a number input inside a
+     * `<fieldset>`, with the message under the whole fieldset. Rendering it here
+     * would move it into the number column, a silent visual change.
+     *
+     * The wrapper still owns `aria-invalid` and `aria-describedby`, so the
+     * caller only chooses WHERE the message goes, never what it is keyed by.
+     * Build that element's id with {@link buildFieldErrorId} and the same
+     * params — never by hand.
+     */
+    readonly renderError?: boolean;
+}
+
+/**
+ * Builds the id of a field's error element, from the same params that build the
+ * control's id.
+ *
+ * Only needed when {@link TextField} is used with `renderError={false}` and the
+ * caller places the `<FieldError>` itself. Using this rather than writing the id
+ * out is what keeps the externally-placed message and the control's
+ * `aria-describedby` pointing at each other.
+ *
+ * @param params - The same prefix/name/suffix passed to the field.
+ */
+export function buildFieldErrorId(params: BuildFieldIdParams): string {
+    return fieldErrorId(buildFieldId(params));
 }
 
 /** Props for {@link TextField}, discriminated by the control being rendered. */
@@ -85,6 +116,7 @@ export function TextField(props: TextFieldProps) {
         error,
         labelClassName,
         beforeControl,
+        renderError = true,
         as = 'input',
         className,
         ...controlProps
@@ -132,11 +164,13 @@ export function TextField(props: TextFieldProps) {
                 />
             )}
 
-            <FieldError
-                id={errorId}
-                message={error}
-                className={cn(styles.errorSpacing)}
-            />
+            {renderError && (
+                <FieldError
+                    id={errorId}
+                    message={error}
+                    className={cn(styles.errorSpacing)}
+                />
+            )}
         </>
     );
 }
