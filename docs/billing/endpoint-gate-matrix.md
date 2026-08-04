@@ -793,6 +793,8 @@
 | **ALLIANCE LEADS — ADMIN (HOS-277)** | | | | | |
 | `GET /api/v1/admin/alliance/leads` | `alliance/admin/list-leads.ts` | none | - | n/a | Admin read; PermissionEnum-gated (ALLIANCE_LEAD_VIEW_ALL) (HOS-277) |
 | `POST /api/v1/admin/alliance/leads/{id}/mark-handled` | `alliance/admin/mark-handled.ts` | none | - | n/a | Admin lead handling (approve/reject + note), never auto-provisions (HOS-277 NG-1); PermissionEnum-gated (ALLIANCE_LEAD_MANAGE) (HOS-277) |
+| **ALLIANCE LEADS — PROTECTED (applicant self-service, HOS-278)** | | | | | |
+| `GET /api/v1/protected/alliance/leads/mine` | `alliance/protected/list-mine.ts` | none | - | n/a | HOS-278 AC-5: applicant self-service read. Auth-only, no ALLIANCE_LEAD_* permission — scoped to the caller's OWN `applicant_user_id`, so there is nothing an elevated permission would unlock. Returns `[]` (never 404/403) when the caller has never applied. Deliberately EXEMPT from `pastDueGraceMiddleware` (prefix `/api/v1/protected/alliance/`): an accommodation subscription that lapsed must not hide the state of a PARTNER application — a different product domain (ADR-035) and a read of non-billing state. |
 | **SOCIAL AUTOMATION (SPEC-254)** | | | | | |
 | `GET /api/v1/admin/social/audiences` | `social/admin/audiences/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `GET /api/v1/admin/social/audiences/{id}` | `social/admin/audiences/getById.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
