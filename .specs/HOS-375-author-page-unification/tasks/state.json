@@ -612,22 +612,23 @@
             "id": "T-025",
             "title": "Populate ArticleJsonLd author.url on the post detail page",
             "description": "Spec §5.6 / §6.9. ArticleJsonLd already accepts author: { name, url? } but the post detail page (apps/web/src/pages/[lang]/publicaciones/[slug].astro:275-276) only ever passes { name }, so the Article structured data has never linked to the author page. Pass the absolute /autores/<slug>/ URL. Tests: assert the emitted Article JSON-LD contains a non-empty author.url.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-020"],
             "blocks": [],
             "subtasks": [
-                { "title": "Pass the absolute author URL", "completed": false },
-                { "title": "Test the emitted JSON-LD", "completed": false }
+                { "title": "Pass the absolute author URL", "completed": true },
+                { "title": "Test the emitted JSON-LD", "completed": true }
             ],
             "tags": ["web", "seo", "json-ld"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-04T01:05:00.000Z",
+                "completed": "2026-08-04T01:20:00.000Z"
+            },
+            "notes": "`articleAuthorUrl` in publicaciones/[slug].astro, spread into the existing `articleAuthor` object. Absolute (`${siteBase}${buildUrl(...)}`) because a schema.org entity URL cannot be path-relative. Emitted ONLY when there is both a real author name AND a slug: `articleAuthorName` falls back to the literal 'Hospeda' — the SITE, not a person — and a slug-less author has no page, so either case must leave the key off rather than point somewhere wrong. NOT GATED on the author page's own indexability (§6.5), deliberately: `author.url` is an entity reference, not a crawl instruction, and this payload could not evaluate the gate anyway — the post's author relation is `UserPublicSchema`, which carries no `isSystemAccount`. Google honors the page's own noindex regardless. VERIFIED IN THE RENDERED HTML, not just in source (dev server 500s on every content detail page — the sanitize-html `require` bridge; used a production build + astro preview): the BlogPosting block now emits `author: {\"@type\":\"Person\",\"name\":\"Carmen Silva\",\"url\":\"http://localhost:4430/es/autores/carmen-silva/\"}`, the /en/ variant emits the /en/-prefixed URL, and both targets return 200. MUTATION VALIDATED on the subtle failure mode this task exists to prevent — computing the URL but forgetting to pass it: deleting only the spread reddens exactly the one test that asserts the wiring, leaving the four that assert the computation green. Tests: 6 cases in apps/web/test/pages/publicaciones-detail-author-jsonld.test.ts, split across the page (builds it) and the component (emits it conditionally)."
         },
         {
             "id": "T-026",
