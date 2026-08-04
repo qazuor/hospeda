@@ -36,6 +36,7 @@ import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
 
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
@@ -50,7 +51,11 @@ const { t } = createTranslations(locale);
 applyCacheHeaders({
 	locals: Astro.locals,
 	headers: Astro.response.headers,
-	cacheable: true,
+	// This listing accepts `q`, `type`, `destinationId`, `isFeatured`,
+	// `minRating`, `sortBy` — all read in the frontmatter, all
+	// changing the SSR HTML. Anything beyond pagination makes the render an
+	// arbitrary slice and stays private.
+	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
 	tags: [CACHE_TAG_COLLECTIONS.experience]
 });
 
