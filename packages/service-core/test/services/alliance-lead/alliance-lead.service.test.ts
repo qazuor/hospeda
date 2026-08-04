@@ -30,6 +30,12 @@ const guestActor: Actor = {
     permissions: []
 };
 
+const authenticatedActor: Actor = {
+    id: ACTOR_ID,
+    roles: [RoleEnum.USER],
+    permissions: []
+};
+
 const createInput = {
     kind: 'partner' as const,
     contactName: 'Juan Pérez',
@@ -125,6 +131,71 @@ describe('AllianceLeadService', () => {
             });
 
             expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        });
+
+        // HOS-278 AC-1 / AC-2 — the account link is derived from the actor.
+        it('should link the lead to an authenticated submitter (AC-1)', async () => {
+            const service = makeService();
+            const model = makeLeadModel();
+            (service as any)._model = model;
+
+            await service.createLead({ actor: authenticatedActor, input: createInput });
+
+            expect(model.create).toHaveBeenCalledWith(
+                expect.objectContaining({ applicantUserId: ACTOR_ID }),
+                undefined
+            );
+        });
+
+        it('should leave an anonymous submission unlinked (AC-2)', async () => {
+            const service = makeService();
+            const model = makeLeadModel();
+            (service as any)._model = model;
+
+            await service.createLead({ actor: guestActor, input: createInput });
+
+            expect(model.create).toHaveBeenCalledWith(
+                expect.objectContaining({ applicantUserId: null }),
+                undefined
+            );
+        });
+
+        it('should leave a roleless actor unlinked rather than guessing an owner', async () => {
+            const service = makeService();
+            const model = makeLeadModel();
+            (service as any)._model = model;
+
+            await service.createLead({
+                actor: { id: ACTOR_ID, roles: [], permissions: [] },
+                input: createInput
+            });
+
+            expect(model.create).toHaveBeenCalledWith(
+                expect.objectContaining({ applicantUserId: null }),
+                undefined
+            );
+        });
+
+        it('should ignore an applicantUserId supplied in the request body (R-1)', async () => {
+            const service = makeService();
+            const model = makeLeadModel();
+            (service as any)._model = model;
+
+            await service.createLead({
+                actor: guestActor,
+                input: {
+                    ...createInput,
+                    // A caller trying to hang their application off someone
+                    // else's account. The create schema omits the field, so Zod
+                    // strips it before it can reach the model.
+                    applicantUserId: ACTOR_ID
+                } as any
+            });
+
+            expect(model.create).toHaveBeenCalledWith(
+                expect.objectContaining({ applicantUserId: null }),
+                undefined
+            );
         });
 
         it('should return VALIDATION_ERROR for a too-short message', async () => {

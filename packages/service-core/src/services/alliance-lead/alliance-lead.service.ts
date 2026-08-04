@@ -37,6 +37,7 @@ import {
     AllianceLeadCreateInputSchema,
     AllianceLeadMarkHandledSchema,
     PermissionEnum,
+    RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { z } from 'zod';
@@ -99,6 +100,33 @@ const markHandledInputSchema = AllianceLeadMarkHandledSchema.extend({
 });
 
 // ---------------------------------------------------------------------------
+// Actor helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolves the account an incoming submission belongs to (HOS-278 AC-1).
+ *
+ * Identity is read from the ROLE SET, never from the actor's id: the guest
+ * actor's id is a sentinel UUID with no `users` row behind it, so writing it
+ * into `applicant_user_id` would violate the column's FK. `createGuestActor()`
+ * produces exactly `[GUEST]` and no real account is ever granted that hat
+ * (see `actorMiddleware`'s `isGuestOnly`), which makes "holds only GUEST" the
+ * canonical anonymity test.
+ *
+ * A degenerate actor with NO roles is treated as anonymous too. Fail-safe is
+ * the whole point: an unlinked application is merely unlinked, while a wrongly
+ * linked one hands someone else's account whatever the application carries.
+ *
+ * @param actor - The actor submitting the lead.
+ * @returns The applicant's user id, or `null` for an anonymous submission.
+ */
+const resolveApplicantUserId = (actor: Actor): string | null => {
+    const isAnonymous =
+        actor.roles.length === 0 || actor.roles.every((role) => role === RoleEnum.GUEST);
+    return isAnonymous ? null : actor.id;
+};
+
+// ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
 
@@ -152,6 +180,13 @@ export class AllianceLeadService extends BaseService {
      * the DB column default / schema default); `createdById` is intentionally
      * left unset (see class-level doc).
      *
+     * When the submitter is authenticated, the lead is linked to their account
+     * on the spot via `applicantUserId` (HOS-278 AC-1). An anonymous submission
+     * stays unlinked (AC-2) — it is NEVER resolved to an account by matching
+     * `email` (R-1), since the submitted email is unverified. Linking an
+     * anonymous lead whose email already has an owner requires that owner to
+     * redeem a claim token (AC-4).
+     *
      * @param params - `{ actor, input }`.
      * @param ctx - Optional service execution context.
      * @returns `ServiceOutput<AllianceLead>` wrapping the created lead.
@@ -166,9 +201,16 @@ export class AllianceLeadService extends BaseService {
             input: { actor, ...input },
             schema: AllianceLeadCreateInputSchema,
             ctx,
-            execute: async (validated, _a, execCtx) => {
+            execute: async (validated, a, execCtx) => {
+                // The account link is derived from the ACTOR, never from the
+                // request body: `AllianceLeadCreateInputSchema` omits
+                // `applicantUserId` precisely so a caller cannot name the
+                // account their application hangs off.
                 const lead = await this._model.create(
-                    validated as Partial<AllianceLead>,
+                    {
+                        ...(validated as Partial<AllianceLead>),
+                        applicantUserId: resolveApplicantUserId(a)
+                    },
                     execCtx?.tx
                 );
                 return lead as AllianceLead;

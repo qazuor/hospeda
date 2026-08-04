@@ -521,6 +521,9 @@
         "adminNote": {
             "max": "Note must not exceed {{max}} characters"
         },
+        "claimExpiresAt": {
+            "invalid": "The confirmation expiry date is invalid"
+        },
         "contactName": {
             "max": "Contact name must not exceed {{max}} characters",
             "min": "Contact name must be at least {{min}} characters"

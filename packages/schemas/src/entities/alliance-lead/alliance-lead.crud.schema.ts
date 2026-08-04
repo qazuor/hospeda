@@ -8,14 +8,22 @@ import { AllianceLeadSchema, AllianceLeadStatusEnum } from './alliance-lead.sche
 /**
  * Input schema for submitting a new alliance lead (public "aliados" forms).
  *
- * Excludes system-managed fields: id, status, adminNote, and all audit fields.
- * Callers supply only the applicant-facing fields (`kind`, `contactName`,
- * `email`, `phone`, `message`).
+ * Excludes system-managed fields: id, status, adminNote, the account link, and
+ * all audit fields. Callers supply only the applicant-facing fields (`kind`,
+ * `contactName`, `email`, `phone`, `message`).
+ *
+ * `applicantUserId`/`claimExpiresAt` are omitted deliberately (HOS-278 §6.2):
+ * the account link is derived server-side from the authenticated actor or from
+ * a redeemed claim token. Accepting either from the request body would let a
+ * caller attach an application to an arbitrary account — exactly the R-1 attack
+ * the "never resolve a lead by email" rule exists to prevent.
  */
 export const AllianceLeadCreateInputSchema = AllianceLeadSchema.omit({
     id: true,
     status: true,
     adminNote: true,
+    applicantUserId: true,
+    claimExpiresAt: true,
     createdAt: true,
     updatedAt: true,
     createdById: true,
