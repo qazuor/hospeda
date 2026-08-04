@@ -45,7 +45,11 @@ describe('deriveFlushTargetState', () => {
 
     it('reports error when the health query failed', () => {
         // Arrange / Act
-        const state = deriveFlushTargetState({ isLoading: false, isError: true, target: undefined });
+        const state = deriveFlushTargetState({
+            isLoading: false,
+            isError: true,
+            target: undefined
+        });
 
         // Assert
         expect(state).toEqual({ kind: 'error' });
@@ -116,9 +120,9 @@ describe('FlushTargetNotice', () => {
 
         // Assert — the warning is shown, and NO target element exists to be
         // misread as an environment the flush would actually reach.
-        expect(
-            screen.getByTestId('revalidation-flush-target-unresolved')
-        ).toHaveTextContent('revalidation.manual.flushTargetUnresolved');
+        expect(screen.getByTestId('revalidation-flush-target-unresolved')).toHaveTextContent(
+            'revalidation.manual.flushTargetUnresolved'
+        );
         expect(screen.queryByTestId('revalidation-flush-target')).toBeNull();
     });
 
