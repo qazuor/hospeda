@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 /**
- * Component tests for GalleryManager (SPEC-204).
+ * Component tests for CommerceGalleryManager (HOS-382).
  *
- * Tests:
+ * Mirrors the accommodation GalleryManager component tests. Tests:
  *  1. Splits list into featured (portada) slot and gallery grid
  *  2. Shows empty portada state when no featured row
  *  3. Shows portada image when a featured row exists
@@ -11,9 +11,12 @@
  *  6. Removing portada calls removeMedia with the featured row's id
  *  7. Setting portada: upload → addMedia → setFeatured sequence
  *  8. Load error displays inline error alert
+ *  9. entityType passed to uploadEntityImage matches the `vertical` prop
+ *     (HOS-382-specific: this is the vertical-agnostic wiring the
+ *     accommodation precedent doesn't need to cover)
  *
- * Mocking strategy: the four useAccommodationMedia* hooks and useMediaUpload
- * are mocked at the module level so we can control their return values
+ * Mocking strategy: the four useCommerceMedia* hooks and useMediaUpload are
+ * mocked at the module level so we can control their return values
  * (mutations and query state) without any network calls.
  */
 
@@ -39,20 +42,20 @@ const mockRemoveMutateAsync = vi.fn();
 const mockSetFeaturedMutateAsync = vi.fn();
 const mockUploadEntityImageMutateAsync = vi.fn();
 
-vi.mock('@/features/accommodations/hooks/useAccommodationMedia', () => ({
-    useAccommodationMediaList: () => mockListData,
-    useAccommodationMediaAdd: () => ({
+vi.mock('@/features/commerce/hooks/useCommerceMedia', () => ({
+    useCommerceMediaList: () => mockListData,
+    useCommerceMediaAdd: () => ({
         mutateAsync: mockAddMutateAsync,
         isPending: false,
         isError: false
     }),
-    useAccommodationMediaRemove: () => ({
+    useCommerceMediaRemove: () => ({
         mutateAsync: mockRemoveMutateAsync,
         isPending: false,
         isError: false,
         variables: undefined
     }),
-    useAccommodationMediaSetFeatured: () => ({
+    useCommerceMediaSetFeatured: () => ({
         mutateAsync: mockSetFeaturedMutateAsync,
         isPending: false,
         isError: false
@@ -71,7 +74,7 @@ vi.mock('@/hooks/use-media-upload', () => ({
 
 // @repo/schemas mock — provide ENTITY_GALLERY_CAPS + ModerationStatusEnum
 vi.mock('@repo/schemas', () => ({
-    ENTITY_GALLERY_CAPS: { accommodation: 50 },
+    ENTITY_GALLERY_CAPS: { gastronomy: 30, experience: 30 },
     ModerationStatusEnum: { APPROVED: 'APPROVED', PENDING: 'PENDING', REJECTED: 'REJECTED' }
 }));
 
@@ -79,7 +82,7 @@ vi.mock('@repo/schemas', () => ({
 // Import component AFTER mocks
 // ---------------------------------------------------------------------------
 
-import { GalleryManager } from '../GalleryManager';
+import { CommerceGalleryManager } from '../CommerceGalleryManager';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -88,7 +91,7 @@ import { GalleryManager } from '../GalleryManager';
 function makeFeaturedRow(id = 'featured-1') {
     return {
         id,
-        accommodationId: 'acc-1',
+        gastronomyId: 'ent-1',
         url: `https://example.com/${id}.jpg`,
         isFeatured: true,
         state: 'visible',
@@ -102,7 +105,7 @@ function makeFeaturedRow(id = 'featured-1') {
 function makeGalleryRow(id: string, sortOrder = 1) {
     return {
         id,
-        accommodationId: 'acc-1',
+        gastronomyId: 'ent-1',
         url: `https://example.com/${id}.jpg`,
         isFeatured: false,
         state: 'visible',
@@ -118,7 +121,12 @@ function makeGalleryRow(id: string, sortOrder = 1) {
 // ---------------------------------------------------------------------------
 
 function renderGalleryManager() {
-    return render(<GalleryManager accommodationId="acc-1" />);
+    return render(
+        <CommerceGalleryManager
+            vertical="gastronomy"
+            entityId="ent-1"
+        />
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -139,15 +147,13 @@ afterEach(() => {
     vi.clearAllMocks();
 });
 
-describe('GalleryManager — split: featured vs gallery', () => {
+describe('CommerceGalleryManager — split: featured vs gallery', () => {
     it('renders the portada empty state when no featured row', () => {
         mockListData.data = [makeGalleryRow('g1'), makeGalleryRow('g2', 2)];
 
         renderGalleryManager();
 
-        // Empty portada state
         expect(screen.getByText('admin-pages.gallery.portada.empty')).toBeDefined();
-        // Gallery grid shows items (images with alt="" are role="presentation")
         const imgs = document.querySelectorAll('img');
         expect(imgs).toHaveLength(2);
     });
@@ -159,7 +165,6 @@ describe('GalleryManager — split: featured vs gallery', () => {
 
         renderGalleryManager();
 
-        // Portada image is rendered inside the portada section
         const portadaSection = screen.getByRole('region', {
             name: 'admin-pages.gallery.portada.title'
         });
@@ -167,17 +172,15 @@ describe('GalleryManager — split: featured vs gallery', () => {
         expect(portadaImg).not.toBeNull();
         expect((portadaImg as HTMLImageElement).src).toContain('feat-1');
 
-        // Empty state text must NOT be shown
         expect(screen.queryByText('admin-pages.gallery.portada.empty')).toBeNull();
 
-        // Total images = portada + 1 gallery item
         const allImgs = document.querySelectorAll('img');
         expect(allImgs).toHaveLength(2);
     });
 });
 
-describe('GalleryManager — add gallery photo', () => {
-    it('calls upload then addMedia when a file is selected for the gallery', async () => {
+describe('CommerceGalleryManager — add gallery photo', () => {
+    it('calls upload then addMedia when a file is selected for the gallery, with entityType matching the vertical prop', async () => {
         const file = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
         mockUploadEntityImageMutateAsync.mockResolvedValue({
             url: 'https://cdn.example.com/new.jpg',
@@ -192,10 +195,7 @@ describe('GalleryManager — add gallery photo', () => {
         mockListData.data = [];
         renderGalleryManager();
 
-        // Find the hidden gallery file input
         const inputs = document.querySelectorAll('input[type="file"]');
-        // There are two: one for portada, one for gallery
-        // The second one is the gallery input
         const galleryInput = inputs[1] as HTMLInputElement;
 
         fireEvent.change(galleryInput, { target: { files: [file] } });
@@ -203,8 +203,8 @@ describe('GalleryManager — add gallery photo', () => {
         await waitFor(() => {
             expect(mockUploadEntityImageMutateAsync).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    entityType: 'accommodation',
-                    entityId: 'acc-1',
+                    entityType: 'gastronomy',
+                    entityId: 'ent-1',
                     role: 'gallery'
                 })
             );
@@ -216,12 +216,11 @@ describe('GalleryManager — add gallery photo', () => {
                 })
             );
         });
-        // setFeatured should NOT have been called for a regular gallery upload
         expect(mockSetFeaturedMutateAsync).not.toHaveBeenCalled();
     });
 });
 
-describe('GalleryManager — remove gallery photo', () => {
+describe('CommerceGalleryManager — remove gallery photo', () => {
     it('calls removeMedia with the correct mediaId', async () => {
         const row = makeGalleryRow('g-del');
         mockListData.data = [row];
@@ -229,9 +228,6 @@ describe('GalleryManager — remove gallery photo', () => {
 
         renderGalleryManager();
 
-        // Gallery section contains the remove button for each item.
-        // The button is aria-label'd, so query by aria-label attribute directly
-        // since it has opacity-0 (hover-only visibility) but is in the DOM.
         const gallerySection = screen.getByRole('region', {
             name: 'admin-pages.gallery.grid.title'
         });
@@ -248,7 +244,7 @@ describe('GalleryManager — remove gallery photo', () => {
     });
 });
 
-describe('GalleryManager — remove portada', () => {
+describe('CommerceGalleryManager — remove portada', () => {
     it('calls removeMedia with the featured row id', async () => {
         const featured = makeFeaturedRow('feat-del');
         mockListData.data = [featured];
@@ -273,7 +269,7 @@ describe('GalleryManager — remove portada', () => {
     });
 });
 
-describe('GalleryManager — grid remove button uses its own accessible name', () => {
+describe('CommerceGalleryManager — grid remove button uses its own accessible name', () => {
     it('gives the grid remove button a DIFFERENT accessible name than the portada remove button', () => {
         const featured = makeFeaturedRow('feat-1');
         const gallery = makeGalleryRow('g1');
@@ -304,7 +300,7 @@ describe('GalleryManager — grid remove button uses its own accessible name', (
     });
 });
 
-describe('GalleryManager — alt derived from entity name', () => {
+describe('CommerceGalleryManager — alt derived from entity name', () => {
     it('sends a non-empty alt on addMedia when entityName is provided', async () => {
         const file = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
         mockUploadEntityImageMutateAsync.mockResolvedValue({
@@ -319,9 +315,10 @@ describe('GalleryManager — alt derived from entity name', () => {
 
         mockListData.data = [];
         render(
-            <GalleryManager
-                accommodationId="acc-1"
-                entityName="Hotel Costanera"
+            <CommerceGalleryManager
+                vertical="gastronomy"
+                entityId="ent-1"
+                entityName="Parrilla El Fogón"
             />
         );
 
@@ -332,7 +329,7 @@ describe('GalleryManager — alt derived from entity name', () => {
 
         await waitFor(() => {
             expect(mockAddMutateAsync).toHaveBeenCalledWith(
-                expect.objectContaining({ alt: 'Hotel Costanera' })
+                expect.objectContaining({ alt: 'Parrilla El Fogón' })
             );
         });
     });
@@ -365,7 +362,7 @@ describe('GalleryManager — alt derived from entity name', () => {
     });
 });
 
-describe('GalleryManager — set portada (upload → add → setFeatured)', () => {
+describe('CommerceGalleryManager — set portada (upload → add → setFeatured)', () => {
     it('calls upload → addMedia → setFeatured in sequence for portada upload', async () => {
         const file = new File(['data'], 'portada.jpg', { type: 'image/jpeg' });
         mockUploadEntityImageMutateAsync.mockResolvedValue({
@@ -424,9 +421,10 @@ describe('GalleryManager — set portada (upload → add → setFeatured)', () =
 
         mockListData.data = [];
         render(
-            <GalleryManager
-                accommodationId="acc-1"
-                entityName="Hotel Costanera"
+            <CommerceGalleryManager
+                vertical="gastronomy"
+                entityId="ent-1"
+                entityName="Parrilla El Fogón"
             />
         );
 
@@ -437,7 +435,7 @@ describe('GalleryManager — set portada (upload → add → setFeatured)', () =
 
         await waitFor(() => {
             expect(mockAddMutateAsync).toHaveBeenCalledWith(
-                expect.objectContaining({ alt: 'Hotel Costanera' })
+                expect.objectContaining({ alt: 'Parrilla El Fogón' })
             );
         });
     });
@@ -474,27 +472,27 @@ describe('GalleryManager — set portada (upload → add → setFeatured)', () =
     });
 });
 
-describe('GalleryManager — gated on entity-detail loading too (race regression guard)', () => {
+describe('CommerceGalleryManager — gated on entity-detail loading too (race regression guard)', () => {
     it('keeps the loading skeleton (no upload controls) while isEntityLoading is true, even though the media query already settled', () => {
-        // Reproduces the race: media list resolves fast (few rows), while the
-        // parallel entity-detail query (source of `entityName`) is still in
-        // flight. If the gallery UI gated on the media query alone, the
-        // upload controls would render here with `entityName` undefined —
-        // and since there is no update-media endpoint, an upload started in
-        // this window would be stuck with `alt=null` forever.
+        // Reproduces the race: the media list resolves fast (few rows), while
+        // the parallel entity-detail query (source of `entityName`, e.g.
+        // useGastronomyQuery/useExperienceQuery) is still in flight. If the
+        // gallery UI gated on the media query alone, the upload controls
+        // would render here with `entityName` undefined — and since there is
+        // no update-media endpoint, an upload started in this window would
+        // be stuck with `alt=null` forever.
         mockListData.isLoading = false;
         mockListData.data = [];
 
         render(
-            <GalleryManager
-                accommodationId="acc-1"
+            <CommerceGalleryManager
+                vertical="gastronomy"
+                entityId="ent-1"
                 isEntityLoading={true}
             />
         );
 
-        // No file inputs (portada or gallery) must be present while gated.
         expect(document.querySelectorAll('input[type="file"]')).toHaveLength(0);
-        // The gallery "add" button and portada section must not be rendered.
         expect(
             screen.queryByRole('button', { name: 'admin-pages.gallery.grid.actions.add' })
         ).toBeNull();
@@ -508,9 +506,10 @@ describe('GalleryManager — gated on entity-detail loading too (race regression
         mockListData.data = [];
 
         render(
-            <GalleryManager
-                accommodationId="acc-1"
-                entityName="Hotel Costanera"
+            <CommerceGalleryManager
+                vertical="gastronomy"
+                entityId="ent-1"
+                entityName="Parrilla El Fogón"
                 isEntityLoading={false}
             />
         );
@@ -522,7 +521,7 @@ describe('GalleryManager — gated on entity-detail loading too (race regression
     });
 });
 
-describe('GalleryManager — load error', () => {
+describe('CommerceGalleryManager — load error', () => {
     it('shows a load error alert when isError is true', () => {
         mockListData.isError = true;
         mockListData.data = [];
@@ -532,5 +531,43 @@ describe('GalleryManager — load error', () => {
         const alert = screen.getByRole('alert');
         expect(alert).toBeDefined();
         expect(alert.textContent).toContain('admin-pages.gallery.errors.loadFailed');
+    });
+});
+
+describe('CommerceGalleryManager — vertical prop wiring', () => {
+    it('passes entityType="experience" to the upload mutation when vertical="experience"', async () => {
+        const file = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
+        mockUploadEntityImageMutateAsync.mockResolvedValue({
+            url: 'https://cdn.example.com/new.jpg',
+            publicId: 'hospeda/dev/new'
+        });
+        mockAddMutateAsync.mockResolvedValue({
+            id: 'new-row',
+            url: 'https://cdn.example.com/new.jpg',
+            isFeatured: false
+        });
+
+        mockListData.data = [];
+        render(
+            <CommerceGalleryManager
+                vertical="experience"
+                entityId="ent-2"
+            />
+        );
+
+        const inputs = document.querySelectorAll('input[type="file"]');
+        const galleryInput = inputs[1] as HTMLInputElement;
+
+        fireEvent.change(galleryInput, { target: { files: [file] } });
+
+        await waitFor(() => {
+            expect(mockUploadEntityImageMutateAsync).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    entityType: 'experience',
+                    entityId: 'ent-2',
+                    role: 'gallery'
+                })
+            );
+        });
     });
 });

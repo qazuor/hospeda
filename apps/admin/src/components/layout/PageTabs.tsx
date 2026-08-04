@@ -204,10 +204,12 @@ export const pointOfInterestTabs: TabConfig[] = [
 
 export const gastronomyTabs: TabConfig[] = [
     { id: 'overview', label: 'General', labelKey: 'admin-tabs.overview', href: '' },
+    { id: 'gallery', label: 'Galería', labelKey: 'admin-tabs.gallery', href: '/gallery' },
     { id: 'seo', label: 'SEO', labelKey: 'admin-tabs.seo', href: '/seo' }
 ];
 
 export const experienceTabs: TabConfig[] = [
     { id: 'overview', label: 'General', labelKey: 'admin-tabs.overview', href: '' },
+    { id: 'gallery', label: 'Galería', labelKey: 'admin-tabs.gallery', href: '/gallery' },
     { id: 'seo', label: 'SEO', labelKey: 'admin-tabs.seo', href: '/seo' }
 ];

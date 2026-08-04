@@ -66,6 +66,8 @@ import {
     accommodationTabs,
     destinationTabs,
     eventTabs,
+    experienceTabs,
+    gastronomyTabs,
     PageTabs,
     postTabs,
     userTabs
@@ -307,6 +309,18 @@ describe('PageTabs', () => {
             expect(postTabs).toBeDefined();
             expect(postTabs).toHaveLength(3);
             expect(postTabs.map((t) => t.id)).toEqual(['content', 'seo', 'sponsorship']);
+        });
+
+        it('should export gastronomyTabs', () => {
+            expect(gastronomyTabs).toBeDefined();
+            expect(gastronomyTabs).toHaveLength(3);
+            expect(gastronomyTabs.map((t) => t.id)).toEqual(['overview', 'gallery', 'seo']);
+        });
+
+        it('should export experienceTabs', () => {
+            expect(experienceTabs).toBeDefined();
+            expect(experienceTabs).toHaveLength(3);
+            expect(experienceTabs.map((t) => t.id)).toEqual(['overview', 'gallery', 'seo']);
         });
     });
 

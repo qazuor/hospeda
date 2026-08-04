@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { createCommerceOperationalSection } from '@/features/commerce/config/commerceSections';
 import { createMediaConsolidatedSection as createDestinationMediaSection } from '@/features/destinations/config/sections/media.consolidated';
 import { createBasicInfoConsolidatedSection as createEventOrganizerBasicInfoSection } from '@/features/event-organizers/config/sections/basic-info.consolidated';
 import { createContactMediaConsolidatedSection } from '@/features/events/config/sections/contact-media.consolidated';
@@ -34,11 +33,5 @@ describe('Admin media fields with no entityId in create mode', () => {
         expect(findFieldModes(createEventOrganizerBasicInfoSection().fields, 'logo')).not.toContain(
             'create'
         );
-        expect(
-            findFieldModes(createCommerceOperationalSection().fields, 'media.featuredImage')
-        ).not.toContain('create');
-        expect(
-            findFieldModes(createCommerceOperationalSection().fields, 'media.gallery')
-        ).not.toContain('create');
     });
 });
