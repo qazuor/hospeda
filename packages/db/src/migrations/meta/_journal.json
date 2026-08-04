@@ -512,6 +512,13 @@
       "when": 1785734586479,
       "tag": "0072_wealthy_kingpin",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1785822784422,
+      "tag": "0073_sparkling_deadpool",
+      "breakpoints": true
     }
   ]
 }
