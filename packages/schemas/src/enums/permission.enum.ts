@@ -223,6 +223,13 @@ export enum PermissionEnum {
     EVENT_VIEW_DRAFT = 'event.view.draft', // Allows viewing draft events.
     EVENT_VIEW_ALL = 'event.viewAll', // Allows viewing all events.
     EVENT_LOCATION_MANAGE = 'event.location.manage', // Allows managing event locations catalog.
+    // Author-scoped variants (HOS-374). The flat EVENT_UPDATE/EVENT_DELETE above
+    // remain the unscoped "any" side; these grant the same verb over the actor's
+    // OWN content only, matched on authorId.
+    EVENT_VIEW_OWN = 'event.view.own', // Allows viewing events the actor authored.
+    EVENT_UPDATE_OWN = 'event.update.own', // Allows updating events the actor authored.
+    EVENT_DELETE_OWN = 'event.delete.own', // Allows deleting events the actor authored.
+    EVENT_PUBLISH_OWN = 'event.publish.own', // Allows publishing and unpublishing events the actor authored.
 
     // POST: Permissions related to blog posts and articles
     POST_CREATE = 'post.create', // Allows creating a new post.
@@ -246,6 +253,13 @@ export enum PermissionEnum {
     POST_VIEW_DRAFT = 'post.view.draft', // Allows viewing draft posts.
     POST_VIEW_ALL = 'post.viewAll', // Allows viewing all posts.
     POST_SPONSORSHIP_MANAGE = 'post.sponsorship.manage', // Allows managing post sponsorships/contracts.
+    // Author-scoped variants (HOS-374). The flat POST_UPDATE/POST_DELETE above
+    // remain the unscoped "any" side; these grant the same verb over the actor's
+    // OWN content only, matched on authorId.
+    POST_VIEW_OWN = 'post.view.own', // Allows viewing posts the actor authored.
+    POST_UPDATE_OWN = 'post.update.own', // Allows updating posts the actor authored.
+    POST_DELETE_OWN = 'post.delete.own', // Allows deleting posts the actor authored.
+    POST_PUBLISH_OWN = 'post.publish.own', // Allows publishing and unpublishing posts the actor authored.
 
     // USER: Permissions related to user management and actions
     USER_READ_ALL = 'user.read.all', // Allows reading all user profiles.
