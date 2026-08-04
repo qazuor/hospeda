@@ -42,11 +42,15 @@ const { stubService } = vi.hoisted(() => ({
         }
 }));
 
+// Every service `entity-fetchers.ts` imports must appear here. A missing entry
+// does not fail an assertion — it makes the whole suite fail to LOAD, which the
+// runner reports as zero tests run. That reads like a pass at a glance.
 vi.mock('@repo/service-core', () => ({
     AccommodationService: stubService('user-123'),
     EventService: stubService('user-123'),
     EventLocationService: stubService('user-123'),
-    EventOrganizerService: stubService('user-123')
+    EventOrganizerService: stubService('user-123'),
+    PostService: stubService('user-123')
 }));
 
 vi.mock('../../src/utils/actor');
@@ -161,17 +165,29 @@ describe('editorial ownership is author-scoped (HOS-374 §5.1.4/OQ-4)', () => {
     // admin creates content on an editor's behalf.
     const routeFiles = ['update.ts', 'patch.ts', 'softDelete.ts'];
 
-    for (const fileName of routeFiles) {
-        it(`scopes protected event ${fileName} ownership on authorId`, () => {
-            const source = readFileSync(join(ROUTES_DIR, 'event/protected', fileName), 'utf8');
-            const declared = extractOwnershipFields(source);
+    // Posts were the asymmetric half: the same three routes gated on a flat
+    // `requiredPermissions: [POST_UPDATE]` with no ownership at all, so an
+    // editor holding only POST_UPDATE_OWN was rejected at the route before the
+    // author-aware service check ever ran.
+    for (const entity of ['event', 'post'] as const) {
+        for (const fileName of routeFiles) {
+            it(`scopes protected ${entity} ${fileName} ownership on authorId`, () => {
+                const source = readFileSync(
+                    join(ROUTES_DIR, `${entity}/protected`, fileName),
+                    'utf8'
+                );
+                const declared = extractOwnershipFields(source);
 
-            expect(declared.length).toBeGreaterThan(0);
-            for (const fields of declared) {
-                expect(fields).toContain('authorId');
-                expect(fields).not.toContain('createdById');
-            }
-        });
+                expect(
+                    declared.length,
+                    `${entity}/protected/${fileName} declares no ownership block. Without one the route falls back to a flat permission and an author holding only *_UPDATE_OWN is refused before the service can authorize them.`
+                ).toBeGreaterThan(0);
+                for (const fields of declared) {
+                    expect(fields).toContain('authorId');
+                    expect(fields).not.toContain('createdById');
+                }
+            });
+        }
     }
 
     it('resolves ownership from authorId through the middleware', async () => {
