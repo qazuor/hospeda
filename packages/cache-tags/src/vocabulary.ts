@@ -77,6 +77,39 @@ export const CACHE_TAG_PRICING = 'pricing';
  */
 export const CACHE_TAG_SITE_CONFIG = 'site-config';
 
+/**
+ * The catch-all every cacheable response carries IN ADDITION to its own tags.
+ *
+ * It exists because Cloudflare's `purge_everything` has no scoped form, and
+ * `staging.hospeda.com.ar` and `hospeda.com.ar` are ONE zone (`namespace.ts`).
+ * Per-tag purges are isolated by the environment prefix; a zone flush is not
+ * and cannot be, so a deploy-time flush from staging empties production's cache
+ * and vice versa. Giving "everything" a TAG puts it back under the namespacing
+ * that already works: purging `prod:all` empties production completely — detail
+ * pages, listings, home, the static surfaces — and leaves `preview:*` alone.
+ *
+ * It is a BARE vocabulary word rather than a pre-namespaced constant, so that
+ * `<env>:all` is produced by `namespaceCacheTag` (`namespace.ts`) like every
+ * other tag, through the one code path both sides already share. A
+ * second builder for one special tag is exactly how the emitter and the purger
+ * end up spelling something differently, which is the failure this package
+ * exists to prevent.
+ *
+ * Two properties make it affordable and unambiguous:
+ *
+ *   - it costs 9 bytes on the wire (`prod:all` plus its separating comma; 12
+ *     for `preview:`) once per response, against the 16 KB budget below;
+ *   - it cannot collide with the rest of the vocabulary. Entity tags are always
+ *     `<prefix>-<key>`, collection tags are always `list-*`, and the three
+ *     remaining constants are `home`, `pricing` and `site-config`.
+ *
+ * Emitters put it at the HEAD of the tag list. See {@link serializeCacheTags}:
+ * truncation drops the TAIL, and this is the only tag whose loss would remove a
+ * response's last-resort purge path, whereas any other tag's loss is still
+ * covered by this one.
+ */
+export const CACHE_TAG_ALL = 'all';
+
 /** Maximum characters in one tag (Cloudflare limit). */
 export const MAX_CACHE_TAG_LENGTH = 1024;
 

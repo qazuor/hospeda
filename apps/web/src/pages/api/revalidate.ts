@@ -27,8 +27,14 @@
  *
  * `purgeEverything` is deliberately NOT namespaced: Cloudflare has no scoped
  * form of it. It flushes the shared zone, and therefore BOTH environments. That
- * is accepted for the deploy-time escape hatch it exists to be, and is another
+ * is accepted for the emergency escape hatch it exists to be, and is another
  * reason it is a separate, explicit mode rather than a fallback.
+ *
+ * Nothing routine posts that mode any more. "Flush everything" from the API and
+ * the admin panel is now a purge of the `<env>:all` catch-all tag through the
+ * `tags` mode above (`RevalidationService.purgeEverything`), which stays inside
+ * one environment. This mode is what `RevalidationService.purgeWholeZone` and a
+ * hand-run operator `curl` use when the zone itself is what must be flushed.
  *
  * Authenticated via the shared secret `HOSPEDA_REVALIDATION_SECRET`
  * passed as a `?secret=...` query parameter (same contract the API uses

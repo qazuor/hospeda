@@ -3,7 +3,7 @@
  *
  * Exercises the full manual invalidation path at the service level:
  *   initializeRevalidationService (NoOp adapter)
- *     → revalidateTags / revalidateByEntityType / purgeEverything
+ *     → revalidateTags / revalidateByEntityType / purgeEverything / purgeWholeZone
  *       → NoOpRevalidationAdapter (spy)
  *
  * This is an API-level integration smoke test — no HTTP layer involved. It
@@ -245,23 +245,49 @@ describe('Manual Revalidation Flow — Integration Smoke Test', () => {
     });
 
     // -----------------------------------------------------------------------
-    describe('purgeEverything — the deploy escape hatch', () => {
-        it('should reach the adapter whole-zone flush', async () => {
+    describe('purgeEverything — the environment flush', () => {
+        it('should purge the environment catch-all tag, not the zone', async () => {
+            // Staging and production share one Cloudflare zone, so the normal
+            // "flush everything" path must address a namespaced tag.
             const { service, purgeEverythingSpy, revalidateManySpy } = createService();
 
             await service.purgeEverything({ reason: 'deploy' });
+
+            expect(revalidateManySpy).toHaveBeenCalledWith({ tags: [ns('all')] });
+            expect(purgeEverythingSpy).not.toHaveBeenCalled();
+        });
+
+        it('should NOT be reachable from a tag purge', async () => {
+            // The whole point of the split: a content write can never flush
+            // everything by accident. Only an explicit call gets there.
+            const { service, revalidateManySpy } = createService();
+
+            await service.revalidateTags({ tags: ['list-accom'] });
+            await service.revalidateByEntityType({ entityType: 'post' });
+
+            for (const call of revalidateManySpy.mock.calls) {
+                expect(call[0].tags).not.toContain(ns('all'));
+            }
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    describe('purgeWholeZone — the emergency escape hatch', () => {
+        it('should reach the adapter whole-zone flush', async () => {
+            const { service, purgeEverythingSpy, revalidateManySpy } = createService();
+
+            await service.purgeWholeZone({ reason: 'cache rule changed' });
 
             expect(purgeEverythingSpy).toHaveBeenCalledOnce();
             expect(revalidateManySpy).not.toHaveBeenCalled();
         });
 
-        it('should NOT be reachable from a tag purge', async () => {
-            // The whole point of the split: a content write can never flush the
-            // zone by accident. Only an explicit call gets there.
+        it('should NOT be reachable from a tag purge or an environment flush', async () => {
             const { service, purgeEverythingSpy } = createService();
 
             await service.revalidateTags({ tags: ['list-accom'] });
             await service.revalidateByEntityType({ entityType: 'post' });
+            await service.purgeEverything({ reason: 'deploy' });
 
             expect(purgeEverythingSpy).not.toHaveBeenCalled();
         });

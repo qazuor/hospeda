@@ -20,6 +20,7 @@ import {
     RevalidateEntityRequestSchema,
     RevalidateTypeRequestSchema,
     RevalidationConfigSchema,
+    RevalidationHealthSchema,
     RevalidationLogFilterSchema,
     RevalidationLogSchema,
     RevalidationResponseSchema,
@@ -30,7 +31,7 @@ import {
     getAffectedCacheTags,
     getRevalidationService,
     RevalidationStatsService,
-    WHOLE_ZONE_TARGET
+    UNRESOLVED_ENVIRONMENT_TARGET
 } from '@repo/service-core';
 import { z } from 'zod';
 import { getActorFromContext } from '../../utils/actor';
@@ -43,22 +44,31 @@ const revalidationRouter = createRouter();
 // ============================================================================
 // T-066: POST /revalidate/manual
 // Trigger manual revalidation of specific cache tags, or an explicit
-// whole-zone purge (HOS-369 W1-1)
+// environment-wide flush (HOS-369 W1-1)
 // ============================================================================
 
 /**
  * POST /api/v1/admin/revalidation/revalidate/manual
  * Manually revalidate a list of specific cache tags, or — only when the
- * request explicitly opts in via `purgeEverything: true` — flush the entire
- * zone. The two shapes are mutually exclusive (see `ManualRevalidateRequestSchema`),
- * so the whole-zone branch below is unreachable from a tags-only body.
+ * request explicitly opts in via `purgeEverything: true` — flush everything
+ * THIS deployment cached. The two shapes are mutually exclusive (see
+ * `ManualRevalidateRequestSchema`), so the flush branch below is unreachable
+ * from a tags-only body.
+ *
+ * `purgeEverything: true` no longer means "flush the Cloudflare zone": it
+ * purges this deployment's catch-all tag (`prod:all`), so an admin acting on
+ * staging can no longer empty production's cache from a zone the two share. A
+ * true zone flush stays available as `RevalidationService.purgeWholeZone` and,
+ * for operators, as a direct `POST /api/revalidate { purgeEverything: true }`
+ * against the web app with the shared secret. It is deliberately NOT reachable
+ * from this admin surface.
  */
 export const manualRevalidateRoute = createAdminRoute({
     method: 'post',
     path: '/revalidate/manual',
     summary: 'Manual cache-tag revalidation',
     description:
-        'Triggers immediate cache invalidation for a list of specific cache tags, or (via an explicit `purgeEverything: true` flag) a whole-zone purge. Requires REVALIDATION_TRIGGER permission.',
+        'Triggers immediate cache invalidation for a list of specific cache tags, or (via an explicit `purgeEverything: true` flag) a flush of everything this deployment cached. Requires REVALIDATION_TRIGGER permission.',
     tags: ['Revalidation'],
     requiredPermissions: [PermissionEnum.REVALIDATION_TRIGGER],
     requestBody: ManualRevalidateRequestSchema,
@@ -68,7 +78,7 @@ export const manualRevalidateRoute = createAdminRoute({
         const triggeredBy = actor?.id ?? 'system';
         const service = getRevalidationService();
 
-        // Whole-zone purge branch — reachable ONLY when the caller explicitly
+        // Environment-flush branch — reachable ONLY when the caller explicitly
         // set `purgeEverything: true`. A tags-only body never enters here.
         if ('purgeEverything' in body && body.purgeEverything) {
             const { reason } = body as { purgeEverything: true; reason?: string };
@@ -76,18 +86,21 @@ export const manualRevalidateRoute = createAdminRoute({
             if (!service) {
                 apiLogger.warn(
                     { triggeredBy, reason },
-                    'Revalidation service not initialized — whole-zone purge skipped'
+                    'Revalidation service not initialized — environment flush skipped'
                 );
+                // Reported as unresolved rather than as `*`: with no service
+                // there is no namespace to name, and claiming a whole-zone
+                // target would describe an escalation that did not happen.
                 return {
                     success: false,
                     revalidated: [],
-                    failed: [WHOLE_ZONE_TARGET],
+                    failed: [UNRESOLVED_ENVIRONMENT_TARGET],
                     duration: 0
                 };
             }
 
             const start = Date.now();
-            apiLogger.info({ triggeredBy, reason }, 'Manual whole-zone purge requested');
+            apiLogger.info({ triggeredBy, reason }, 'Manual environment flush requested');
 
             try {
                 const result = await service.purgeEverything({ reason, triggeredBy });
@@ -104,12 +117,15 @@ export const manualRevalidateRoute = createAdminRoute({
                         triggeredBy,
                         reason
                     },
-                    'Whole-zone purge failed'
+                    'Environment flush failed'
                 );
                 return {
                     success: false,
                     revalidated: [],
-                    failed: [WHOLE_ZONE_TARGET],
+                    // The service knows which tag the flush WOULD have
+                    // addressed, so a throw is still reported against the same
+                    // target the audit row would carry.
+                    failed: [service.getEnvironmentFlushTarget()],
                     duration: Date.now() - start
                 };
             }
@@ -511,27 +527,35 @@ export const getRevalidationStatsRoute = createAdminRoute({
  * GET /api/v1/admin/revalidation/health
  * Returns the operational status of the revalidation service.
  * Public to admin consumers — no special permission required beyond admin access.
+ *
+ * Also reports `environmentFlushTarget`, the tag a "flush everything" request
+ * would purge on this deployment (HOS-369). It lives here, on the endpoint that
+ * already answers "what state is this service in", rather than on `/stats`
+ * (which aggregates log rows, not service configuration) or on a route of its
+ * own: an unresolvable deployment namespace IS an operational defect, and this
+ * is the one endpoint whose no-service branch already had to be modelled. The
+ * admin panel reads it so the flush control can name its own blast radius
+ * instead of the browser guessing which environment it is talking to.
  */
 export const revalidationHealthRoute = createAdminRoute({
     method: 'get',
     path: '/health',
     summary: 'Revalidation service health',
     description:
-        'Returns the operational status of the RevalidationService singleton and its underlying adapter.',
+        'Returns the operational status of the RevalidationService singleton, its underlying adapter, and the cache tag an environment flush would purge on this deployment.',
     tags: ['Revalidation'],
-    responseSchema: z.object({
-        status: z.enum(['operational', 'not_initialized', 'degraded']),
-        adapter: z.enum(['active', 'none']),
-        latencyMs: z.number().int().optional(),
-        error: z.string().optional()
-    }),
+    responseSchema: RevalidationHealthSchema,
     options: { skipAuth: false },
     handler: async () => {
         const service = getRevalidationService();
         if (!service) {
             return {
                 status: 'not_initialized' as const,
-                adapter: 'none' as const
+                adapter: 'none' as const,
+                // No service means no namespace to name. Reported as unresolved
+                // rather than omitted, so a consumer never has to treat a
+                // missing field as "probably fine".
+                environmentFlushTarget: UNRESOLVED_ENVIRONMENT_TARGET
             };
         }
 
@@ -553,12 +577,17 @@ export const revalidationHealthRoute = createAdminRoute({
                     service.getAdapterName() === 'NoOpRevalidationAdapter'
                         ? ('none' as const)
                         : ('active' as const),
+                environmentFlushTarget: service.getEnvironmentFlushTarget(),
                 latencyMs: Date.now() - start
             };
         } catch (error) {
             return {
                 status: 'degraded' as const,
                 adapter: 'active' as const,
+                // A degraded service cannot be trusted to name its own target,
+                // so the report falls back to the same honest sentinel the
+                // no-service branch uses.
+                environmentFlushTarget: UNRESOLVED_ENVIRONMENT_TARGET,
                 latencyMs: Date.now() - start,
                 error: error instanceof Error ? error.message : String(error)
             };

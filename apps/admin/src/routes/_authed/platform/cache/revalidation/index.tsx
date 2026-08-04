@@ -4,12 +4,18 @@
  * Three-tab admin page to manage on-demand ISR revalidation:
  * - Config tab: View and edit revalidation configs per entity type
  * - Logs tab: Browse recent revalidation log entries
- * - Manual tab: Trigger revalidation for specific cache tags, or a whole-zone purge
+ * - Manual tab: Trigger revalidation for specific cache tags, or flush every
+ *   page this deployment has cached
  */
 
 import type { TranslationKey } from '@repo/i18n';
 import { LoaderIcon } from '@repo/icons';
-import type { RevalidationConfig, RevalidationEntityType, RevalidationStats } from '@repo/schemas';
+import type {
+    RevalidationConfig,
+    RevalidationEntityType,
+    RevalidationHealth,
+    RevalidationStats
+} from '@repo/schemas';
 import { PermissionEnum, RevalidationEntityTypeEnum } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
@@ -39,8 +45,10 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped/Tabs';
 import { LogsTab } from '@/features/revalidation/components/LogsTab';
 import {
+    deriveFlushTargetState,
     EmptyState,
     ErrorState,
+    FlushTargetNotice,
     InlineNumberField,
     LoadingState,
     ManualForm,
@@ -53,6 +61,7 @@ import { REVALIDATION_QUERY_KEYS } from '@/hooks/useRevalidation';
 import { requireAdminApiAccess } from '@/lib/admin-api-access';
 import {
     getRevalidationConfigs,
+    getRevalidationHealth,
     getRevalidationStats,
     manualRevalidate,
     revalidateByType,
@@ -274,9 +283,14 @@ function ConfigTab() {
  * ManualTab
  *
  * Form to enter comma-separated cache tags and trigger on-demand
- * revalidation, or (via an explicit, confirmed opt-in) purge the entire
- * zone, plus a section to revalidate all pages for a specific entity type.
- * Shows aggregated stats above the forms and a result breakdown after each run.
+ * revalidation, or (via an explicit, confirmed opt-in) flush everything THIS
+ * deployment cached, plus a section to revalidate all pages for a specific
+ * entity type. Shows aggregated stats above the forms and a result breakdown
+ * after each run.
+ *
+ * The flush names its own blast radius: the environment cache tag it would
+ * purge comes from the API's health report, so the panel never guesses which
+ * deployment it is talking to (HOS-369).
  */
 function ManualTab() {
     const { t } = useTranslations();
@@ -290,6 +304,24 @@ function ManualTab() {
     const { data: stats, isLoading: statsLoading } = useQuery<RevalidationStats>({
         queryKey: REVALIDATION_QUERY_KEYS.stats,
         queryFn: getRevalidationStats
+    });
+
+    // Which environment a flush would empty is read from the API, never
+    // inferred in the browser: the API is what executes the purge, so it is the
+    // only party that knows which cache-tag namespace it would address.
+    const {
+        data: health,
+        isLoading: healthLoading,
+        isError: healthError
+    } = useQuery<RevalidationHealth>({
+        queryKey: REVALIDATION_QUERY_KEYS.health,
+        queryFn: getRevalidationHealth
+    });
+
+    const flushTargetState = deriveFlushTargetState({
+        isLoading: healthLoading,
+        isError: healthError,
+        target: health?.environmentFlushTarget
     });
 
     const mutation = useMutation({
@@ -374,6 +406,7 @@ function ManualTab() {
                         isPending={mutation.isPending}
                         parsedCount={parsedTags.length}
                         purgeEverything={purgeEverything}
+                        flushTarget={flushTargetState}
                         onTagsChange={setTagsInput}
                         onReasonChange={setReason}
                         onPurgeEverythingChange={setPurgeEverything}
@@ -397,6 +430,10 @@ function ManualTab() {
                             {t('revalidation.manual.purgeEverythingConfirmDescription')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
+                    {/* Repeated here on purpose: the dialog is the last screen
+                        before the flush runs, so the environment it will empty
+                        has to be legible without scrolling back to the form. */}
+                    <FlushTargetNotice state={flushTargetState} />
                     <AlertDialogFooter>
                         <AlertDialogCancel>
                             {t('revalidation.manual.purgeEverythingConfirmCancel')}

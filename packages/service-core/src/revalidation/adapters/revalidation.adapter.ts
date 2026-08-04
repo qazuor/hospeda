@@ -34,6 +34,27 @@ export interface RevalidateTargetResult {
 export const WHOLE_ZONE_TARGET = '*';
 
 /**
+ * The target recorded when an ENVIRONMENT flush could not be addressed at all,
+ * because the deployment namespace is unresolved.
+ *
+ * A distinct third value, deliberately. `revalidation_log.target` must let a
+ * reader tell the three outcomes apart after the fact, and the two obvious
+ * shortcuts both lie: writing `prod:all` would claim a purge that never
+ * happened, and writing `*` would claim a whole-zone flush — the very
+ * escalation `RevalidationService.purgeEverything` refuses to perform in this
+ * state.
+ *
+ * The value is a bare word rather than a `<env>:all`-shaped string. It cannot
+ * collide with a real tag — `namespaceCacheTag` always emits a `:` separator,
+ * so no tag it produces is ever a single unqualified word — and it reads
+ * unambiguously to someone scanning the table with no context, which a
+ * punctuation-based sentinel does not. The cost is that a consumer splitting
+ * this column on `:` sees one row that does not split; that is intended, since
+ * such a row genuinely has no environment to report.
+ */
+export const UNRESOLVED_ENVIRONMENT_TARGET = 'unresolved';
+
+/**
  * Adapter interface for CDN cache invalidation.
  *
  * Implementations must be safe to call concurrently and must never throw.

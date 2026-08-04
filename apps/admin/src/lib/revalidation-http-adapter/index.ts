@@ -15,6 +15,7 @@ import type {
     ManualRevalidateRequest,
     RevalidateTypeRequest,
     RevalidationConfig,
+    RevalidationHealth,
     RevalidationLog,
     RevalidationLogFilter,
     RevalidationResponse,
@@ -48,9 +49,15 @@ async function revalidationFetch<T>(
 
 /**
  * Triggers a manual revalidation of a specific list of cache tags, or — when
- * `input.purgeEverything` is `true` — a whole-zone purge.
+ * `input.purgeEverything` is `true` — a flush of everything the target
+ * deployment cached.
  *
- * @param input - Cache tags to revalidate (or an explicit whole-zone purge opt-in) and an optional audit reason
+ * That flush is scoped to the deployment this admin panel talks to, not to the
+ * Cloudflare zone: staging and production share one zone, so the API purges the
+ * `<env>:all` catch-all tag rather than issuing `purge_everything` (HOS-369). A
+ * true zone flush is not reachable from this surface at all.
+ *
+ * @param input - Cache tags to revalidate (or an explicit environment-flush opt-in) and an optional audit reason
  * @returns Revalidation result with per-target success/failure breakdown
  */
 export async function manualRevalidate(
@@ -153,4 +160,20 @@ export async function getRevalidationLogs(
  */
 export async function getRevalidationStats(): Promise<RevalidationStats> {
     return revalidationFetch<RevalidationStats>(`${BASE}/stats`);
+}
+
+/**
+ * Returns the operational state of the revalidation service backing this
+ * admin panel, including `environmentFlushTarget` — the cache tag a
+ * "flush everything" request would purge on that deployment (`prod:all`), or
+ * the literal `'unresolved'` when the deployment namespace is not configured.
+ *
+ * The panel reads this rather than deriving the environment in the browser:
+ * the flush is executed by the API, so only the API knows which namespace it
+ * would address (HOS-369).
+ *
+ * @returns The revalidation service health report
+ */
+export async function getRevalidationHealth(): Promise<RevalidationHealth> {
+    return revalidationFetch<RevalidationHealth>(`${BASE}/health`);
 }

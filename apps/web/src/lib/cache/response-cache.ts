@@ -35,9 +35,19 @@
  * ceiling, or already carrying a foreign namespace) is rejected while there is
  * still a chance to demote the response, instead of quietly vanishing from a
  * header written after the decision was made.
+ *
+ * Since the catch-all change, both entry points also add `<env>:all` on top of
+ * whatever the caller asked for. That is what makes "flush this environment" a
+ * TAG purge instead of a zone purge the shared Cloudflare zone would apply to
+ * both deployments — see `CACHE_TAG_ALL` in `@repo/cache-tags`. Injecting it in
+ * these two functions rather than at the call sites is the point: the catch-all
+ * is only useful if it is on every cacheable response, and the two functions
+ * below are the only way this app produces one.
  */
 
+import type { CacheTagEnvironment } from '@repo/cache-tags';
 import {
+    CACHE_TAG_ALL,
     CACHE_TAG_HEADER_NAME,
     namespaceCacheTag,
     namespaceCacheTags,
@@ -45,6 +55,30 @@ import {
 } from '@repo/cache-tags';
 import { getCacheTagEnvironment } from './cache-tag-environment.js';
 import { LISTING_CACHEABLE_CONTROL, LISTING_PRIVATE_CONTROL } from './listing-cache.js';
+
+/**
+ * The environment catch-all every cacheable response carries in addition to its
+ * own tags (HOS-369).
+ *
+ * Added HERE — inside the only two functions that may tag a response — rather
+ * than at the ~11 call sites, because a tag a caller has to remember is a tag a
+ * caller will eventually forget, and the whole value of the catch-all is that it
+ * is on EVERY cacheable response without exception. `purgeEverything` now means
+ * "purge `<env>:all`", so a response missing it is a response the environment
+ * flush cannot reach: silently unpurgeable until its TTL, which is the failure
+ * mode this file was built to make impossible.
+ *
+ * @param params.environment - The already-resolved deployment environment.
+ * @returns The namespaced catch-all, or `null` if it cannot be built (which
+ *   `namespaceCacheTag` only reports for an unusable tag, and `all` is not).
+ */
+function buildCatchAllTag({
+    environment
+}: {
+    readonly environment: CacheTagEnvironment;
+}): string | null {
+    return namespaceCacheTag({ environment, tag: CACHE_TAG_ALL });
+}
 
 /**
  * Tags for a cacheable response. The tuple type requires at least one tag to be
@@ -78,12 +112,20 @@ export interface AppliedCacheHeaders {
  * demotes the response at every call site rather than shipping a cacheable
  * response no purge can reach.
  *
+ * The environment catch-all ({@link buildCatchAllTag}) is registered on top of
+ * whatever the caller supplied, FIRST, so it survives `serializeCacheTags`'s
+ * tail truncation. It is added only once at least one supplied tag was usable:
+ * a response the catch-all alone could purge is a response no content write can
+ * purge, so it must still be demoted rather than shipped.
+ *
  * @param params.locals - `Astro.locals` for the current request.
  * @param params.tags - Bare tags that must purge this response.
- * @returns How many of the SUPPLIED tags were usable. Deliberately not the size
- *   of the accumulated set: {@link applyCacheHeaders} decides whether to demote
- *   a response from this number, and a tag some other component contributed does
- *   not make THIS response purgeable.
+ * @returns How many of the SUPPLIED tags were usable — the catch-all is
+ *   deliberately NOT counted, or a page whose every real tag was unusable would
+ *   stop being demoted. Deliberately not the size of the accumulated set
+ *   either: {@link applyCacheHeaders} decides whether to demote a response from
+ *   this number, and a tag some other component contributed does not make THIS
+ *   response purgeable.
  */
 export function declareCacheTags({
     locals,
@@ -95,14 +137,21 @@ export function declareCacheTags({
     const environment = getCacheTagEnvironment();
     if (environment === null) return { tagCount: 0 };
 
-    let accepted = 0;
+    const accepted: string[] = [];
     for (const tag of tags) {
         const namespaced = namespaceCacheTag({ environment, tag });
-        if (namespaced === null) continue;
-        locals.cacheTags.add(namespaced);
-        accepted++;
+        if (namespaced !== null) accepted.push(namespaced);
     }
-    return { tagCount: accepted };
+    if (accepted.length === 0) return { tagCount: 0 };
+
+    // Before the supplied tags, not after: `locals.cacheTags` is a Set, so the
+    // first insertion pins the head of the iteration order middleware Step 11
+    // serializes, and the head is what survives truncation.
+    const catchAll = buildCatchAllTag({ environment });
+    if (catchAll !== null) locals.cacheTags.add(catchAll);
+    for (const tag of accepted) locals.cacheTags.add(tag);
+
+    return { tagCount: accepted.length };
 }
 
 /**
@@ -120,6 +169,11 @@ export function declareCacheTags({
  * `/api/og` is deliberately NOT a caller. It is content-addressed by its query
  * string, so it has no entity to purge by and nothing to tag.
  *
+ * Like {@link declareCacheTags}, this prepends the environment catch-all — and
+ * decides cacheability from the SUPPLIED tags alone, before the catch-all is
+ * added, so a surface whose real tags all turned out unusable is still demoted
+ * instead of shipping with only the coarse tag.
+ *
  * @param params.cacheControl - The `Cache-Control` this endpoint wants when it
  *   is taggable (e.g. `public, max-age=3600`).
  * @param params.tags - Bare tags that must purge this response.
@@ -136,8 +190,12 @@ export function buildStaticCacheHeaders({
     const environment = getCacheTagEnvironment();
     if (environment === null) return { 'Cache-Control': LISTING_PRIVATE_CONTROL };
 
+    const supplied = namespaceCacheTags({ environment, tags });
+    if (supplied.length === 0) return { 'Cache-Control': LISTING_PRIVATE_CONTROL };
+
+    const catchAll = buildCatchAllTag({ environment });
     const { header } = serializeCacheTags({
-        tags: namespaceCacheTags({ environment, tags })
+        tags: catchAll === null ? supplied : [catchAll, ...supplied]
     });
     if (header === null) return { 'Cache-Control': LISTING_PRIVATE_CONTROL };
 

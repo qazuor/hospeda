@@ -119,3 +119,51 @@ export function producesCacheTags({ source }: { readonly source: string }): bool
 export function violatesTagRule({ source }: { readonly source: string }): boolean {
     return classifyCacheControl({ source }).kind === 'cacheable' && !producesCacheTags({ source });
 }
+
+/**
+ * The three functions of `src/lib/cache/response-cache.ts` — and ONLY these —
+ * may tag a response. They are where the environment catch-all is injected, so
+ * a response that reaches the `Cache-Tag` header any other way is a response
+ * `purgeEverything` cannot reach.
+ *
+ * Note this is a STRICTER list than {@link TAG_PRODUCERS}: writing the header
+ * name by hand or calling `serializeCacheTags` directly counts as producing
+ * tags, but not as routing through the choke point.
+ */
+const CHOKE_POINTS: ReadonlyArray<RegExp> = [
+    /\bapplyCacheHeaders\s*\(/,
+    /\bdeclareCacheTags\s*\(/,
+    /\bbuildStaticCacheHeaders\s*\(/
+];
+
+/**
+ * Whether a source file gets its cache tags from the choke point rather than
+ * assembling them itself.
+ *
+ * @param params.source - Raw file contents.
+ * @returns `true` when at least one choke-point call is present.
+ */
+export function routesThroughCacheChokePoint({ source }: { readonly source: string }): boolean {
+    const code = stripComments({ source });
+    return CHOKE_POINTS.some((pattern) => pattern.test(code));
+}
+
+/**
+ * The catch-all rule: a file that declares a response shared-cacheable must get
+ * its tags from the choke point, not build them itself.
+ *
+ * Stated as "which function did you call" rather than "does the source mention
+ * the catch-all" on purpose. A text search for the tag would pass the moment
+ * someone wrote the literal `all` anywhere, and would fail a file that is
+ * perfectly correct because it delegates. What actually guarantees the tag is
+ * ONE call reaching `response-cache.ts`; that is what this asserts.
+ *
+ * @param params.source - Raw file contents.
+ * @returns `true` when the file violates the rule.
+ */
+export function violatesCatchAllRule({ source }: { readonly source: string }): boolean {
+    return (
+        classifyCacheControl({ source }).kind === 'cacheable' &&
+        !routesThroughCacheChokePoint({ source })
+    );
+}

@@ -150,6 +150,36 @@ export const RevalidationResponseSchema = z.object({
 export type RevalidationResponse = z.infer<typeof RevalidationResponseSchema>;
 
 /**
+ * RevalidationHealthSchema
+ *
+ * Operational state of the revalidation service, as reported by
+ * `GET /api/v1/admin/revalidation/health`.
+ *
+ * `environmentFlushTarget` is the concrete cache tag a "flush everything"
+ * request would purge on THIS deployment (`prod:all`, `preview:all`), or the
+ * literal `'unresolved'` when the deployment namespace cannot be resolved. It
+ * is reported as the resolved TAG rather than as the bare environment name so
+ * that no consumer has to re-derive `<env>:all` on its own — the string here is
+ * byte-for-byte the one that lands in `revalidation_log.target`, which is what
+ * makes an operator's "did my flush run?" check a straight comparison.
+ */
+export const RevalidationHealthSchema = z.object({
+    /** Whether the service singleton is up, absent, or erroring */
+    status: z.enum(['operational', 'not_initialized', 'degraded']),
+    /** Whether a real revalidation adapter is wired, or the no-op one */
+    adapter: z.enum(['active', 'none']),
+    /** The tag an environment flush would purge, or `'unresolved'` */
+    environmentFlushTarget: z.string(),
+    /** Time spent producing this report, in milliseconds */
+    latencyMs: z.number().int().optional(),
+    /** Error message when `status` is `degraded` */
+    error: z.string().optional()
+});
+
+/** Operational state of the revalidation service */
+export type RevalidationHealth = z.infer<typeof RevalidationHealthSchema>;
+
+/**
  * RevalidationStatsSchema
  *
  * Aggregated statistics for revalidation activity.
