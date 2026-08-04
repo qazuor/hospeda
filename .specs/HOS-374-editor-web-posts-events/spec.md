@@ -27,9 +27,12 @@ which are live production bugs unrelated to this feature's UI.
 
 Delivered in three phases, in this order:
 
+- **Phase 0 — The two production bugs.** The protected event write path returns
+  500 unconditionally and post/event media upload returns 403 unconditionally
+  (§2.4). Both are pre-existing, independent of this feature's design, and ship
+  first in their own PRs.
 - **Phase 1 — Close the write path.** Publication gate, `authorId` forced
-  server-side, author-scoped ownership, plus the two production bugs that make
-  the protected event and media routes unusable today.
+  server-side, author-scoped ownership.
 - **Phase 2 — The editor in `/mi-cuenta`.** Post and event editors built from
   the accommodation editor mold, first consumer of `protected/posts` and
   `protected/events` from `apps/web`.
@@ -370,8 +373,12 @@ see OQ-3.
   editor a bypass for post/event deletes either. It surfaces as soon as upload
   is fixed.
 
-Both bugs are pre-existing and independently shippable. They may go out as their
-own PR ahead of the rest of Phase 1 (no magic word).
+**Decided (owner, 2026-08-03): both bugs ship first, in their own PRs, ahead of
+everything else in this spec.** They are pre-existing production defects with no
+dependency on HOS-374's design — the protected event write path is entirely dead
+and post/event media upload has never worked. Each goes out with its own
+regression test, targeting `staging`, carrying **no** Linear magic word. Phase 1
+proper starts once they are merged.
 
 ### 5.2 Phase 2 — The editor in `/mi-cuenta`
 
