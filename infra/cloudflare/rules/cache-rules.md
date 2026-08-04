@@ -49,12 +49,22 @@ edge caching **on staging only**, honoring the origin's own `Cache-Control`.
    or starts_with(http.request.uri.path, "/pt/suscriptores/planes")
    or starts_with(http.request.uri.path, "/es/suscriptores/turistas")
    or starts_with(http.request.uri.path, "/en/suscriptores/turistas")
-   or starts_with(http.request.uri.path, "/pt/suscriptores/turistas")))
+   or starts_with(http.request.uri.path, "/pt/suscriptores/turistas")
+   or starts_with(http.request.uri.path, "/es/destinos")
+   or starts_with(http.request.uri.path, "/en/destinos")
+   or starts_with(http.request.uri.path, "/pt/destinos")
+   or starts_with(http.request.uri.path, "/es/eventos")
+   or starts_with(http.request.uri.path, "/en/eventos")
+   or starts_with(http.request.uri.path, "/pt/eventos")
+   or starts_with(http.request.uri.path, "/es/publicaciones")
+   or starts_with(http.request.uri.path, "/en/publicaciones")
+   or starts_with(http.request.uri.path, "/pt/publicaciones")))
 ```
 
-The live rule stores this on a single line (1576 characters since W2-2; it was
-796 before). The nine `starts_with` terms are written out rather than expressed
-as a regex because the `matches` operator requires a Business plan.
+The live rule stores this on a single line (2074 characters since W2-3; it was
+1576 after W2-2 and 796 before that). The eighteen `starts_with` terms are
+written out rather than expressed as a regex because the `matches` operator
+requires a Business plan.
 
 The home is matched with `in { … }` — an **exact** path set, not a prefix.
 `starts_with(path, "/es/")` would match every Spanish page in the app, including
@@ -73,6 +83,22 @@ same fail-closed posture `http.request.uri.query eq ""` takes on filters.
 `/{lang}/colaborar/reportar/` is documented as taking `?destino=<slug>`. The
 pre-filled form is therefore never cached — the empty-query clause excludes it —
 while the bare entry point is. That asymmetry is intended, not an oversight.
+
+W2-3 added the three catalog families as **prefixes**, not as an exact set, and
+that reversal is deliberate rather than an inconsistency. W2-2's twelve pages
+are a closed list of literal paths, so enumerating them costs nothing and buys
+fail-closed behavior. `destinos`, `eventos` and `publicaciones` are keyed on
+slugs, categories, tags, authors and page numbers — there is no finite set to
+enumerate, so a prefix is the only option available.
+
+The safety property is not lost, it just moves: `edge_ttl.mode =
+"bypass_by_default"` means matching the prefix does nothing on its own. Six
+pages under those prefixes deliberately do NOT opt in — `/destinos/atraccion/`,
+`/destinos/lugar/`, and the four gastronomy/experience pages — because
+`attraction`, `pointOfInterest`, `gastronomy` and `experience` have no tag
+vocabulary, no `entity-tag-mapper` case, and their services never call the
+revalidation service. They match the rule and return `BYPASS`, which is the
+mechanism working, not a gap.
 
 ### Settings
 
@@ -161,6 +187,15 @@ the response cacheable. Measured on 2026-08-04:
 | `/{lang}/preguntas-frecuentes/` | yes — **since 2026-08-04** (W2-2), tagged `site-config` |
 | `/{lang}/legal/{cookies,privacidad,terminos}/` | yes — **since 2026-08-04** (W2-2), tagged `site-config` |
 | `/{lang}/colaborar/` and `/{editores,fotos,reportar}/` | yes — **since 2026-08-04** (W2-2), tagged `site-config` |
+| `/{lang}/destinos/` and `/mapa/` | yes — **since 2026-08-04** (W2-3), tagged `list-dest` |
+| `/{lang}/destinos/<path>/` (detail) | yes — **since 2026-08-04** (W2-3), tagged `dest-<slug>` + `dest-<id>` |
+| `/{lang}/destinos/<slug>/{alojamientos,eventos}/` | yes — **since 2026-08-04** (W2-3), tagged `list-accom`/`list-event` + `dest-<slug>` |
+| `/{lang}/eventos/` and `/categoria/<c>/` and `/en/<loc>/` | yes — **since 2026-08-04** (W2-3), tagged `list-event` |
+| `/{lang}/eventos/<slug>/` (detail) | yes — **since 2026-08-04** (W2-3), tagged `event-<slug>` + `event-<id>` |
+| `/{lang}/publicaciones/` and `/{categoria,etiqueta,autor}/<x>/` | yes — **since 2026-08-04** (W2-3), tagged `list-post` |
+| `/{lang}/publicaciones/<slug>/` (detail) | yes — **since 2026-08-04** (W2-3), tagged `post-<slug>` + `post-<id>` |
+| `/{lang}/destinos/{atraccion,lugar}/<slug>/` | **no** — no purge chain (W2-4) |
+| `/{lang}/{gastronomia,experiencias}/` and detail | **no** — no purge chain (W2-4) |
 | `/{lang}/alojamientos/` and `/page/N/` | yes |
 | `/{lang}/alojamientos/mapa/` | yes |
 | `/{lang}/alojamientos/tipo/<type>/` | yes |
