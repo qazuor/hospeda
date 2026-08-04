@@ -228,6 +228,24 @@ const claimTokenMatches = (candidate: string, storedDigest: string): boolean => 
  */
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 
+/**
+ * Presents a persisted row as the service-level entity.
+ *
+ * The two types genuinely differ and neither is wrong: `SelectAllianceLead`
+ * carries `kind`/`status` as the varchar the column actually is, plus
+ * `claimToken`, which `AllianceLeadSchema` deliberately does not declare
+ * (that schema doubles as the admin list's response allowlist, and a bearer
+ * secret has no business being serialized there). So there is no assignability
+ * between them in either direction, and the alternative to this one cast is
+ * `AllianceLeadSchema.parse` on every read — runtime validation, and a throw,
+ * on rows this service just wrote itself.
+ *
+ * Funnelled through a single function rather than repeated at each call site so
+ * the gap is asserted in one place instead of three.
+ */
+// TYPE-WORKAROUND: the DB row types kind/status as varchar and carries claimToken, which the entity schema deliberately omits — no assignability exists in either direction.
+const toAllianceLead = (row: SelectAllianceLead): AllianceLead => row as unknown as AllianceLead;
+
 // ---------------------------------------------------------------------------
 // Actor helpers
 // ---------------------------------------------------------------------------
@@ -358,17 +376,20 @@ export class AllianceLeadService extends BaseService {
                           }
                         : null;
 
-                const lead = (await this._model.create(
-                    {
-                        ...(validated as Partial<SelectAllianceLead>),
-                        applicantUserId,
-                        // The row stores the DIGEST. The raw token exists only
-                        // in this closure and in the email that carries it.
-                        claimToken: claim === null ? null : digestClaimToken(claim.token),
-                        claimExpiresAt: claim?.expiresAt ?? null
-                    },
-                    execCtx?.tx
-                )) as unknown as AllianceLead;
+                const lead = toAllianceLead(
+                    await this._model.create(
+                        {
+                            ...(validated as Partial<SelectAllianceLead>),
+                            applicantUserId,
+                            // The row stores the DIGEST. The raw token exists
+                            // only in this closure and in the email that
+                            // carries it.
+                            claimToken: claim === null ? null : digestClaimToken(claim.token),
+                            claimExpiresAt: claim?.expiresAt ?? null
+                        },
+                        execCtx?.tx
+                    )
+                );
 
                 if (claim !== null && this._claimInviter !== null) {
                     // Deliberately NOT awaited. Delivery takes a network
@@ -530,7 +551,7 @@ export class AllianceLeadService extends BaseService {
                 // from a bad token.
                 if (existing.applicantUserId !== null) {
                     if (existing.applicantUserId === actorUserId) {
-                        return existing as unknown as AllianceLead;
+                        return toAllianceLead(existing);
                     }
                     throw rejected;
                 }
@@ -562,7 +583,17 @@ export class AllianceLeadService extends BaseService {
                     },
                     execCtx?.tx
                 );
-                return updated as unknown as AllianceLead;
+
+                // `update` answers null when the row is gone — it existed a few
+                // lines ago, so this is a row deleted mid-request. Nothing was
+                // linked, so it answers like every other rejected claim rather
+                // than surfacing a distinct "it vanished" the caller could
+                // learn something from.
+                if (!updated) {
+                    throw rejected;
+                }
+
+                return toAllianceLead(updated);
             }
         });
     }
