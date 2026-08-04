@@ -31,6 +31,44 @@
  * that per-row DEBUG noise at the source, and a generous explicit
  * `maxBuffer` is a defensive backstop for whatever INFO-level output (or a
  * future larger migration) remains.
+ *
+ * ## Per-test timeouts (HOS-386)
+ *
+ * The vitest budget for each test here is DERIVED from `CLI_TIMEOUT_MS` rather
+ * than left to the carril-wide `testTimeout` (30s, see
+ * `vitest.integration.config.ts`). That default was not merely tight, it was
+ * self-contradictory: a single test spawning the CLI twice with a 90s
+ * `execFile` timeout each budgeted 180s of subprocess time inside a 30s test,
+ * so vitest always killed the test first and the `execFile` timeout could never
+ * fire. CI failed intermittently with an opaque `Test timed out in 30000ms`
+ * instead of the CLI's own output, on PRs touching nothing related.
+ *
+ * Measured locally (idle machine, local Docker PostgreSQL, HOS-386):
+ *
+ * | Invocation                                 | Wall clock |
+ * | ------------------------------------------ | ---------- |
+ * | `--data-migrate-status` (ledger read only) | 23.1s      |
+ * | `--data-migrate` (applies all pending)     | 45.0s      |
+ * | `--data-migrate` (2nd run, ledger no-op)   | 22.7s      |
+ *
+ * Two things follow. First, ~23s of EVERY invocation is `pnpm exec tsx` cold
+ * start of the `@repo/*` module graph, not migration work — the ledger-only
+ * read and the no-op second run both cost it in full, and they are the two
+ * cheapest things the CLI can do. The migrations themselves are only ~22s of
+ * the 45s. Second, that made even the read-only status test (23.1s of a 30s
+ * budget, on an idle machine) one loaded runner away from the same failure, so
+ * both tests get an explicit budget, not just the two-run one.
+ *
+ * Note the cost here scales with the number of data migrations in
+ * `src/data-migrations/`, not with any one of them: the ephemeral integration
+ * DB starts with an empty `seed_migrations` ledger, so `--data-migrate` applies
+ * EVERY migration ever added (35 at the time of writing, incl. the large
+ * `0018` POI-curation and `0027`/`0028` event batches — the HOS-142 note above
+ * names `0013` only because that is the one that blew the `maxBuffer`).
+ *
+ * Deliberately NOT fixed with `retries`: a real performance regression in the
+ * migration runner or in CLI startup is exactly what this test should surface,
+ * and a retry would paper over it.
  */
 import { execFile } from 'node:child_process';
 import path from 'node:path';
@@ -58,6 +96,34 @@ const dbAvailable = Boolean(process.env.HOSPEDA_DATABASE_URL);
  */
 const CLI_MAX_BUFFER = 20 * 1024 * 1024;
 
+/**
+ * `execFile` timeout for ONE spawned CLI run. The slowest measured invocation
+ * (`--data-migrate` applying every pending migration) took 45s locally on an
+ * idle machine; CI runs the three integration carriles (`db`, `service-core`,
+ * `seed`) concurrently under turbo on a 2-vCPU runner, so this leaves ~2.7x
+ * headroom for contention while still bounding a genuinely hung CLI.
+ *
+ * This is the timeout that SHOULD fire when the CLI misbehaves: it rejects with
+ * the child's own stdout/stderr, which the assertions below put in the failure
+ * message. The per-test budgets are derived from it precisely so vitest never
+ * kills the test first and replaces that output with `Test timed out in Nms`.
+ */
+const CLI_TIMEOUT_MS = 120_000;
+
+/**
+ * Slack for per-test work OUTSIDE the spawned runs — the worker fork's own
+ * module loading, and building assertion messages that interpolate up to
+ * `CLI_MAX_BUFFER` of CLI output. CLI startup is NOT covered here: it happens
+ * inside the child process, so `CLI_TIMEOUT_MS` already accounts for it.
+ */
+const TEST_OVERHEAD_MARGIN_MS = 30_000;
+
+/** Budget for a test that spawns the CLI once. */
+const ONE_RUN_BUDGET_MS = CLI_TIMEOUT_MS + TEST_OVERHEAD_MARGIN_MS;
+
+/** Budget for a test that spawns the CLI twice. */
+const TWO_RUN_BUDGET_MS = 2 * CLI_TIMEOUT_MS + TEST_OVERHEAD_MARGIN_MS;
+
 /** Runs the seed CLI with the given args from the package dir, inheriting env. */
 async function runCli(
     args: readonly string[]
@@ -73,7 +139,7 @@ async function runCli(
                 // explicit LOG_LEVEL in the environment (e.g. a developer
                 // debugging locally) always wins.
                 env: { ...process.env, LOG_LEVEL: process.env.LOG_LEVEL ?? 'INFO' },
-                timeout: 90_000,
+                timeout: CLI_TIMEOUT_MS,
                 maxBuffer: CLI_MAX_BUFFER
             }
         );
@@ -87,6 +153,7 @@ async function runCli(
 describe('HOS-101: standalone data-migrate CLI initializes the DB', () => {
     it.skipIf(!dbAvailable)(
         '`--data-migrate-status` connects and reports without "not initialized"',
+        { timeout: ONE_RUN_BUDGET_MS },
         async () => {
             const { stdout, stderr, code } = await runCli(['--data-migrate-status']);
             const combined = `${stdout}\n${stderr}`;
@@ -100,6 +167,7 @@ describe('HOS-101: standalone data-migrate CLI initializes the DB', () => {
 
     it.skipIf(!dbAvailable)(
         '`--data-migrate` applies pending migrations and exits 0 (idempotent second run)',
+        { timeout: TWO_RUN_BUDGET_MS },
         async () => {
             const first = await runCli(['--data-migrate']);
             expect(`${first.stdout}\n${first.stderr}`).not.toContain('Database not initialized');
