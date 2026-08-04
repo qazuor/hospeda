@@ -12,14 +12,19 @@ import type { OpeningHours } from '@repo/schemas';
 import type { CommerceI18nValues } from '../CommerceTranslationPanel.client';
 
 /**
- * Subset of the contact JSONB block the owner edits in this surface.
- * NOTE: `website` is intentionally absent per SPEC-253 AC-4 — it is not
- * exposed in the owner editor UI even though it exists in ContactInfoSchema.
+ * The `contactInfo` members this surface exposes, in render order.
+ *
+ * NOTE: `website` is intentionally absent per SPEC-253 AC-4 — it is not exposed
+ * in the owner editor UI even though it exists in `ContactInfoSchema`.
+ *
+ * Runtime array rather than a bare type so the id contract can ENUMERATE what
+ * the editor claims to render (HOS-385): the schema's `contactInfo` block is a
+ * whole object, and only these members have a control to focus.
  */
-export interface ContactValues {
-    mobilePhone: string;
-    workEmail: string;
-}
+export const CONTACT_KEYS = ['mobilePhone', 'workEmail'] as const;
+
+/** Subset of the contact JSONB block the owner edits in this surface. */
+export type ContactValues = Record<(typeof CONTACT_KEYS)[number], string>;
 
 /** Social URLs the owner edits (subset of SocialNetwork, includes linkedIn per AC-4). */
 export interface SocialValues {
