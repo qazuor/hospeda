@@ -363,24 +363,25 @@
             "id": "T-015",
             "title": "Load the author relation on the event detail read path",
             "description": "Spec §6.9. Make the event service populate the new author relation for the public detail read, using the same public projection as getPublicProfileBySlug (id, displayName, slug, avatar, bio — no settings, no email). Confirm whether the public list routes also need it; if they do, verify the payload growth is acceptable and that the response stays actor-blind so /api/v1/public/events keeps its shared caching. Tests: detail response contains the author with only public fields; assert no private field leaks.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-014"],
             "blocks": ["T-026"],
             "subtasks": [
-                { "title": "Load the relation in the detail read", "completed": false },
-                { "title": "Project only public author fields", "completed": false },
-                { "title": "Decide and document the list-route behavior", "completed": false },
-                { "title": "Tests: shape + no private leak", "completed": false }
+                { "title": "Load the relation in the detail read", "completed": true },
+                { "title": "Project only public author fields", "completed": true },
+                { "title": "Decide and document the list-route behavior", "completed": true },
+                { "title": "Tests: shape + no private leak", "completed": true }
             ],
             "tags": ["service-core", "events", "api"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-03T23:15:00.000Z",
+                "completed": "2026-08-04T00:05:00.000Z"
+            },
+            "notes": "NO SERVICE CODE CHANGED, and that is the finding, not a shortcut. The task assumed the read path had to start loading the relation; it already did. EventService.getDefaultListRelations() returns `{ author: true, organizer: true, location: true }` and getDefaultGetByIdRelations() inherits it unchanged, so getBySlug/getById have been fetching the whole users row all along — stripWithSchema was discarding it for want of a declared key. T-014 was therefore the entire fix; this task is its verification. VERIFIED LIVE against the worktree stack, not just mocks: GET /api/v1/public/events/slug/torneo-nacional-futbol-concordia-2025 returns author {id, displayName, firstName, lastName, slug, image, roles} and NOTHING private. LIST DECISION: the author reaches /api/v1/public/events too (confirmed live on the list endpoint) and stays. Scoping it to the detail payload would require a second, narrower event schema to strip on lists — a new divergence to maintain in exchange for dropping a handful of bytes of data the author page publishes by decision §6.5 anyway. It is a plain column read with no actor input, so the response stays actor-blind and the route keeps its shared cache. Documented in the schema JSDoc, since that is where the next reader will ask. TESTS: apps/api/test/routes/event/public/author-relation.test.ts (4 cases) at the ROUTE layer, because that is where the discarding happened and the schema unit tests cannot see it. Hardening the shared mock was mandatory and is the load-bearing part: EventService.getBySlug's mock returned a bare {id, slug, name}, so it had to start returning the RAW users row verbatim (exported as RAW_AUTHOR_ROW) the way the Drizzle join does — a mock that pre-trimmed the private columns would make the route look correct no matter what EventPublicSchema declares, the same failure mode that let getByAuthor answer 500 in production behind green tests. Filling out the mock also exposed that its event was never a valid public payload (non-UUID id, media.featuredImage missing moderationState), which made every request 500 before any assertion ran. MUTATIONS VALIDATED: dropping the schema field reddens all 4; widening UserPublicSchema to UserProtectedSchema reddens only the leak guard. Added an explicit `expect(author).toBeDefined()` inside that guard so it cannot pass vacuously on an absent author. Full apps/api default suite green afterwards: 10329 passed, 657 files."
         },
         {
             "id": "T-016",
