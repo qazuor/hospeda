@@ -28,7 +28,8 @@ edge caching **on staging only**, honoring the origin's own `Cache-Control`.
  and http.request.method in {"GET" "PURGE"}
  and http.request.uri.query eq ""
  and not http.cookie contains "better-auth.session_token"
- and (starts_with(http.request.uri.path, "/es/alojamientos")
+ and (http.request.uri.path in {"/es/" "/en/" "/pt/"}
+   or starts_with(http.request.uri.path, "/es/alojamientos")
    or starts_with(http.request.uri.path, "/en/alojamientos")
    or starts_with(http.request.uri.path, "/pt/alojamientos")
    or starts_with(http.request.uri.path, "/es/suscriptores/planes")
@@ -39,9 +40,15 @@ edge caching **on staging only**, honoring the origin's own `Cache-Control`.
    or starts_with(http.request.uri.path, "/pt/suscriptores/turistas")))
 ```
 
-The live rule stores this on a single line (745 characters). The nine
+The live rule stores this on a single line (796 characters). The nine
 `starts_with` terms are written out rather than expressed as a regex because
 the `matches` operator requires a Business plan.
+
+The home is matched with `in { … }` — an **exact** path set, not a prefix.
+`starts_with(path, "/es/")` would match every Spanish page in the app, including
+`/es/mi-cuenta/`. Nothing would actually cache there (those pages never opt in,
+and `bypass_by_default` refuses anything that has not), but a rule whose
+expression claims more than it means is one refactor away from being true.
 
 ### Settings
 
@@ -125,6 +132,7 @@ the response cacheable. Measured on 2026-08-04:
 
 | Path | Cached? |
 |---|---|
+| `/{lang}/` (home) | yes — **since 2026-08-04** (W2-1), tagged `home` |
 | `/{lang}/alojamientos/` and `/page/N/` | yes |
 | `/{lang}/alojamientos/mapa/` | yes |
 | `/{lang}/alojamientos/tipo/<type>/` | yes |
