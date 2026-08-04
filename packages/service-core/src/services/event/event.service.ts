@@ -40,9 +40,8 @@ import {
     EventSummaryInputSchema,
     EventUpcomingInputSchema,
     EventUpdateInputSchema,
-    PermissionEnum,
     ServiceErrorCode,
-    VisibilityEnum
+    type VisibilityEnum
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
@@ -61,6 +60,7 @@ import type {
 import { type Actor, ServiceError } from '../../types';
 import { checkCanFindOptions } from '../../utils';
 import { projectEventLocationCityDestination } from '../eventLocation/eventLocation.projections';
+import { applyPublicReadFloor } from '../moderation/public-read-floor';
 import {
     buildEventDateConditions,
     buildEventPriceConditions,
@@ -795,9 +795,13 @@ export class EventService extends BaseCrudService<
         // ordering falls back to the default (id DESC) instead of bookmark count.
         // Accept this regression to keep card relations consistent; a future
         // change can implement mostSaved at the findAllWithRelations layer.
+        // The public read floor (HOS-374 §7.6.5) is applied LAST, on top of the
+        // caller's filters, so no query parameter can widen the result set to
+        // pending, private or archived events. `adminList` is a separate code
+        // path (`_executeAdminSearch`) and deliberately does not get it.
         const searchResult = await this.model.findAllWithRelations(
             this.getCardListRelations(),
-            filterParams,
+            applyPublicReadFloor(filterParams),
             {
                 page: ctx.pagination?.page ?? 1,
                 pageSize: ctx.pagination?.pageSize ?? 10,
@@ -892,8 +896,10 @@ export class EventService extends BaseCrudService<
             if (searchCondition) additionalConditions.push(searchCondition);
         }
 
+        // Mirror the `_executeSearch` public read floor so `total` stays
+        // consistent with the items actually returned (HOS-374 §7.6.5).
         const count = await this.model.count(
-            filterParams,
+            applyPublicReadFloor(filterParams),
             additionalConditions.length > 0 ? { additionalConditions } : undefined
         );
         return { count };
@@ -925,14 +931,15 @@ export class EventService extends BaseCrudService<
                     throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
                 }
                 const filters: Record<string, unknown> = { authorId: validatedInput.authorId };
-                if (!validatedActor.permissions?.includes(PermissionEnum.EVENT_SOFT_DELETE_VIEW)) {
-                    filters.visibility = VisibilityEnum.PUBLIC;
-                }
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
+                    // Public read floor (HOS-374 §7.6.5), applied last so
+                    // neither a caller-supplied filter nor an elevated
+                    // permission widens a public read path to pending, private
+                    // or archived events.
                     return await this.model.findAll(
-                        filters,
+                        applyPublicReadFloor(filters),
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx
@@ -970,14 +977,15 @@ export class EventService extends BaseCrudService<
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
                 }
                 const filters: Record<string, unknown> = { locationId: validatedInput.locationId };
-                if (!validatedActor.permissions?.includes(PermissionEnum.EVENT_SOFT_DELETE_VIEW)) {
-                    filters.visibility = VisibilityEnum.PUBLIC;
-                }
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
+                    // Public read floor (HOS-374 §7.6.5), applied last so
+                    // neither a caller-supplied filter nor an elevated
+                    // permission widens a public read path to pending, private
+                    // or archived events.
                     return await this.model.findAll(
-                        filters,
+                        applyPublicReadFloor(filters),
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx
@@ -1017,14 +1025,15 @@ export class EventService extends BaseCrudService<
                 const filters: Record<string, unknown> = {
                     organizerId: validatedInput.organizerId
                 };
-                if (!validatedActor.permissions?.includes(PermissionEnum.EVENT_SOFT_DELETE_VIEW)) {
-                    filters.visibility = VisibilityEnum.PUBLIC;
-                }
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
+                    // Public read floor (HOS-374 §7.6.5), applied last so
+                    // neither a caller-supplied filter nor an elevated
+                    // permission widens a public read path to pending, private
+                    // or archived events.
                     return await this.model.findAll(
-                        filters,
+                        applyPublicReadFloor(filters),
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx
@@ -1085,9 +1094,6 @@ export class EventService extends BaseCrudService<
                 if (validatedInput.maxPrice) {
                     filters['pricing.basePrice'] = { $lte: validatedInput.maxPrice };
                 }
-                if (!validatedActor.permissions?.includes(PermissionEnum.EVENT_SOFT_DELETE_VIEW)) {
-                    filters.visibility = VisibilityEnum.PUBLIC;
-                }
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
@@ -1096,7 +1102,8 @@ export class EventService extends BaseCrudService<
                     // project location.destination → location.cityDestination.
                     const upcomingResult = await this.model.findAllWithRelations(
                         this.getCardListRelations(),
-                        filters,
+                        // Public read floor (HOS-374 §7.6.5), applied last.
+                        applyPublicReadFloor(filters),
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx
@@ -1193,14 +1200,15 @@ export class EventService extends BaseCrudService<
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
                 }
                 const filters: Record<string, unknown> = { category: validatedInput.category };
-                if (!validatedActor.permissions?.includes(PermissionEnum.EVENT_SOFT_DELETE_VIEW)) {
-                    filters.visibility = VisibilityEnum.PUBLIC;
-                }
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
+                    // Public read floor (HOS-374 §7.6.5), applied last so
+                    // neither a caller-supplied filter nor an elevated
+                    // permission widens a public read path to pending, private
+                    // or archived events.
                     return await this.model.findAll(
-                        filters,
+                        applyPublicReadFloor(filters),
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx
@@ -1238,14 +1246,15 @@ export class EventService extends BaseCrudService<
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
                 }
                 const filters: Record<string, unknown> = { pricing: undefined };
-                if (!validatedActor.permissions?.includes(PermissionEnum.EVENT_SOFT_DELETE_VIEW)) {
-                    filters.visibility = VisibilityEnum.PUBLIC;
-                }
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
+                    // Public read floor (HOS-374 §7.6.5), applied last so
+                    // neither a caller-supplied filter nor an elevated
+                    // permission widens a public read path to pending, private
+                    // or archived events.
                     return await this.model.findAll(
-                        filters,
+                        applyPublicReadFloor(filters),
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx

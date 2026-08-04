@@ -3,6 +3,7 @@ import type { PostIdType } from '@repo/schemas';
 import { PostCategoryEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock } from 'vitest';
 import type { Actor } from '../../../src';
+import { PUBLIC_READ_FLOOR } from '../../../src/services/moderation/public-read-floor';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createMockPost } from '../../factories/postFactory';
@@ -42,11 +43,14 @@ describe('PostService.getByCategory', () => {
         const result = await service.getByCategory(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(2);
-        expect(modelMock.findAll).toHaveBeenCalledWith({ category });
+        expect(modelMock.findAll).toHaveBeenCalledWith({ category, ...PUBLIC_READ_FLOOR });
     });
 
-    it('should filter by visibility', async () => {
-        const posts = [createMockPost({ category, visibility: VisibilityEnum.PRIVATE })];
+    it('should override a caller-supplied visibility with the public read floor', async () => {
+        // HOS-374 §7.6.5: the public read floor is applied last on public read
+        // paths, so a caller-supplied `visibility` (even PRIVATE) is overridden
+        // rather than honored.
+        const posts = [createMockPost({ category, visibility: VisibilityEnum.PUBLIC })];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 1 });
         const params = { category, visibility: VisibilityEnum.PRIVATE };
         const result = await service.getByCategory(actor, params);
@@ -54,7 +58,7 @@ describe('PostService.getByCategory', () => {
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             category,
-            visibility: VisibilityEnum.PRIVATE
+            ...PUBLIC_READ_FLOOR
         });
     });
 
@@ -71,7 +75,8 @@ describe('PostService.getByCategory', () => {
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             category,
-            createdAt: { gte: params.fromDate, lte: params.toDate }
+            createdAt: { gte: params.fromDate, lte: params.toDate },
+            ...PUBLIC_READ_FLOOR
         });
     });
 
