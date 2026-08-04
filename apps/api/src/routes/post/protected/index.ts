@@ -7,6 +7,7 @@ import { protectedPostCommentRoutes } from '../comments/protected/index.js';
 import { protectedCreatePostRoute } from './create';
 import { protectedLikePostRoute } from './like';
 import { protectedPatchPostRoute } from './patch';
+import { protectedSetPostPublishStateRoute } from './publishState';
 import { protectedSoftDeletePostRoute } from './softDelete';
 import { protectedUnlikePostRoute } from './unlike';
 import { protectedUpdatePostRoute } from './update';
@@ -30,6 +31,9 @@ app.route('/', protectedLikePostRoute);
 
 // DELETE /:id/like - Unlike post
 app.route('/', protectedUnlikePostRoute);
+
+// POST /:id/publish-state - Publish or unpublish own post (HOS-374)
+app.route('/', protectedSetPostPublishStateRoute);
 
 // POST /:postId/comments - Create comment (SPEC-165)
 app.route('/', protectedPostCommentRoutes);

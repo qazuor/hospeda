@@ -6,6 +6,7 @@ import { createRouter } from '../../../utils/create-app';
 import { protectedEventCommentRoutes } from '../comments/protected/index.js';
 import { protectedCreateEventRoute } from './create';
 import { protectedPatchEventRoute } from './patch';
+import { protectedSetEventPublishStateRoute } from './publishState';
 import { protectedSoftDeleteEventRoute } from './softDelete';
 import { protectedUpdateEventRoute } from './update';
 
@@ -22,6 +23,9 @@ app.route('/', protectedPatchEventRoute);
 
 // DELETE /:id - Soft delete event
 app.route('/', protectedSoftDeleteEventRoute);
+
+// POST /:id/publish-state - Publish or unpublish own event (HOS-374)
+app.route('/', protectedSetEventPublishStateRoute);
 
 // POST /:eventId/comments - Create comment (SPEC-165)
 app.route('/', protectedEventCommentRoutes);

@@ -75,6 +75,64 @@ export function checkCanDeleteEvent(actor: Actor, event: Event): void {
 }
 
 /**
+ * Checks if the actor can change an event's moderation state.
+ *
+ * `EVENT_MODERATION_CHANGE` was seeded but gated nothing server-side until
+ * HOS-374 §7.6.4 — it only decided whether the admin panel rendered a widget,
+ * while the write itself rode the generic update behind plain `EVENT_UPDATE`.
+ *
+ * The verdict belongs to the platform, so there is no author path.
+ *
+ * Throws ServiceError(FORBIDDEN) if not allowed.
+ */
+export function checkCanModerateEvent(actor: Actor): void {
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+    if (!hasPermission(actor, PermissionEnum.EVENT_MODERATION_CHANGE)) {
+        throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied to moderate event');
+    }
+}
+
+/**
+ * Checks if the actor can raise or lower an event's publication.
+ *
+ * `EVENT_PUBLISH_TOGGLE` is the broad side (any event), `EVENT_PUBLISH_OWN` the
+ * author side. One permission covers both directions on purpose (§7.6.2).
+ *
+ * Throws ServiceError(FORBIDDEN) if not allowed.
+ */
+export function checkCanSetEventPublishState(actor: Actor, event: Event): void {
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+    if (hasPermission(actor, PermissionEnum.EVENT_PUBLISH_TOGGLE)) {
+        return;
+    }
+    if (actor.id === event.authorId && hasPermission(actor, PermissionEnum.EVENT_PUBLISH_OWN)) {
+        return;
+    }
+    throw new ServiceError(
+        ServiceErrorCode.FORBIDDEN,
+        'Permission denied to change event publication state'
+    );
+}
+
+/**
+ * Checks if the actor can change an event's lifecycle state.
+ *
+ * Archiving is a platform-side action with no author counterpart, same shape as
+ * moderation.
+ *
+ * Throws ServiceError(FORBIDDEN) if not allowed.
+ */
+export function checkCanSetEventLifecycleState(actor: Actor): void {
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+    if (!hasPermission(actor, PermissionEnum.EVENT_LIFECYCLE_CHANGE)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied to change event lifecycle state'
+        );
+    }
+}
+
+/**
  * Checks if the actor can restore the given event.
  * Throws ServiceError(FORBIDDEN) if not allowed.
  */

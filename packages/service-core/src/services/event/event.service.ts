@@ -9,6 +9,9 @@ import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
 import type {
+    ContentLifecycleStateInput,
+    ContentModerationChangeInput,
+    ContentPublishStateInput,
     EntityOptionsItem,
     Event,
     EventByAuthorInput,
@@ -70,7 +73,10 @@ import {
     checkCanDeleteEvent,
     checkCanHardDeleteEvent,
     checkCanListEvents,
+    checkCanModerateEvent,
     checkCanRestoreEvent,
+    checkCanSetEventLifecycleState,
+    checkCanSetEventPublishState,
     checkCanUpdateEvent,
     checkCanViewEvent
 } from './event.permissions';
@@ -1249,5 +1255,161 @@ export class EventService extends BaseCrudService<
                 }
             }
         });
+    }
+
+    /**
+     * Applies a single state transition to one event.
+     *
+     * Shared tail of `moderate` / `setPublishState` / `setLifecycleState`
+     * (HOS-374 §7.6.4): load the event, authorize against the loaded row, write
+     * ONLY the field the caller owns, then revalidate the public page. Each
+     * transition supplies its own `authorize` because the three are gated by
+     * three different permissions, two of which have no author path at all.
+     *
+     * Writing one field per call is the point: it is what makes the permission
+     * on each transition impossible to sidestep by bundling a second state
+     * change into the same payload.
+     *
+     * @param input - actor, event id, the patch to apply, and the authorization check
+     * @param methodName - name reported to the service logger
+     * @param ctx - optional service context for transaction propagation
+     */
+    private async _applyStateChange(
+        input: {
+            readonly actor: Actor;
+            readonly id: string;
+            readonly patch: Partial<Event>;
+            readonly authorize: (actor: Actor, event: Event) => void;
+        },
+        methodName: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Event>> {
+        const { actor, id, patch, authorize } = input;
+        return this.runWithLoggingAndValidation({
+            methodName,
+            input: { actor, id },
+            schema: z.object({ id: z.string().uuid() }),
+            ctx,
+            execute: async (validated, validatedActor, resolvedCtx) => {
+                const existing = await this.model.findById(validated.id, resolvedCtx.tx);
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Event not found: ${validated.id}`
+                    );
+                }
+
+                authorize(validatedActor, existing as Event);
+
+                const updated = await this.model.update(
+                    { id: validated.id },
+                    patch as Partial<Event>,
+                    resolvedCtx.tx
+                );
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Event not found after update: ${validated.id}`
+                    );
+                }
+
+                // Every one of these transitions can flip the event in or out of
+                // the public predicate (APPROVED + PUBLIC + ACTIVE), so the
+                // cached page is stale either way. Best-effort: a revalidation
+                // failure must not undo a committed state change.
+                try {
+                    getRevalidationService()?.scheduleRevalidation({
+                        entityType: 'event',
+                        slug: updated.slug
+                    });
+                } catch (error) {
+                    EventService.revalidationLogger.warn(
+                        { error, entityType: 'event' },
+                        'Revalidation scheduling failed (non-blocking)'
+                    );
+                }
+
+                return updated as Event;
+            }
+        });
+    }
+
+    /**
+     * Applies the platform's moderation verdict to an event.
+     *
+     * Gated by `EVENT_MODERATION_CHANGE`. Touches `moderationState` and nothing
+     * else — approving does not publish and rejecting does not unpublish
+     * (HOS-374 §7.6.1).
+     *
+     * @param input - actor, event id, and the new moderation state
+     * @param ctx - optional service context for transaction propagation
+     * @returns The updated event or a service error
+     */
+    public async moderate(
+        input: { readonly actor: Actor; readonly id: string } & ContentModerationChangeInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Event>> {
+        return this._applyStateChange(
+            {
+                actor: input.actor,
+                id: input.id,
+                patch: { moderationState: input.moderationState },
+                authorize: (actor) => checkCanModerateEvent(actor)
+            },
+            'moderate',
+            ctx
+        );
+    }
+
+    /**
+     * Raises or lowers an event's publication.
+     *
+     * Gated by `EVENT_PUBLISH_TOGGLE` (any event) or `EVENT_PUBLISH_OWN` plus
+     * authorship. Touches `visibility` only, so unpublishing keeps the approval
+     * (§7.6.1).
+     *
+     * @param input - actor, event id, and the new visibility
+     * @param ctx - optional service context for transaction propagation
+     * @returns The updated event or a service error
+     */
+    public async setPublishState(
+        input: { readonly actor: Actor; readonly id: string } & ContentPublishStateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Event>> {
+        return this._applyStateChange(
+            {
+                actor: input.actor,
+                id: input.id,
+                patch: { visibility: input.visibility },
+                authorize: (actor, event) => checkCanSetEventPublishState(actor, event)
+            },
+            'setPublishState',
+            ctx
+        );
+    }
+
+    /**
+     * Moves an event through its lifecycle (draft / active / archived).
+     *
+     * Gated by `EVENT_LIFECYCLE_CHANGE`.
+     *
+     * @param input - actor, event id, and the new lifecycle state
+     * @param ctx - optional service context for transaction propagation
+     * @returns The updated event or a service error
+     */
+    public async setLifecycleState(
+        input: { readonly actor: Actor; readonly id: string } & ContentLifecycleStateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Event>> {
+        return this._applyStateChange(
+            {
+                actor: input.actor,
+                id: input.id,
+                patch: { lifecycleState: input.lifecycleState },
+                authorize: (actor) => checkCanSetEventLifecycleState(actor)
+            },
+            'setLifecycleState',
+            ctx
+        );
     }
 }
