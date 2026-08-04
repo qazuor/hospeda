@@ -70,7 +70,12 @@ overrides:
   # 1.20.5 -> 1.20.6 is a patch within the 1.x line. Bounded below 2 so an
   # express 5 consumer keeps resolving its own 2.x.
   "body-parser@<2": ">=1.20.6 <2"
-  undici: ">=8.7.0 <9"
+  # GHSA (2026-08-03): <8.9.0 is hit by a cross-user information disclosure. The
+  # floor was already ours, so Dependabot bumping the lock alone (#2584) does not
+  # close it — the range still ALLOWS 8.7.0 for transitive paths. Raise the floor.
+  # Stays bounded below 9: the h2-by-default concern that gated adopting 8.x was
+  # settled on that major, and this is a minor within it.
+  undici: ">=8.9.0 <9"
   "vite@^6.0.0": ">=8.0.16 <9"
   "vite@^7.0.0": ">=8.0.16 <9"
   "vite@>=6.0.0": ">=8.0.16 <9"
