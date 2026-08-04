@@ -267,15 +267,15 @@ export class EventService extends BaseCrudService<
     /**
      * Permission hook: checks if the actor can update an event.
      */
-    protected _canUpdate(actor: Actor, _entity: Event): void {
-        checkCanUpdateEvent(actor);
+    protected _canUpdate(actor: Actor, entity: Event): void {
+        checkCanUpdateEvent(actor, entity);
     }
 
     /**
      * Permission hook: checks if the actor can soft-delete an event.
      */
-    protected _canSoftDelete(actor: Actor, _entity: Event): void {
-        checkCanDeleteEvent(actor);
+    protected _canSoftDelete(actor: Actor, entity: Event): void {
+        checkCanDeleteEvent(actor, entity);
     }
 
     /**
@@ -328,10 +328,10 @@ export class EventService extends BaseCrudService<
      */
     protected _canUpdateVisibility(
         actor: Actor,
-        _entity: Event,
+        entity: Event,
         _newVisibility: VisibilityEnum
     ): void {
-        checkCanUpdateEvent(actor);
+        checkCanUpdateEvent(actor, entity);
     }
     /**
      * @inheritdoc

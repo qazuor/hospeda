@@ -2,6 +2,7 @@ import type { Post } from '@repo/schemas';
 import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import { type Actor, ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
+import { isAuthorEditLockedByModeration } from '../moderation/author-edit-lock';
 
 /**
  * Checks if the actor has a specific permission.
@@ -25,12 +26,34 @@ export function checkCanCreatePost(actor: Actor): void {
 
 /**
  * Checks if the actor can update a post.
+ *
+ * Two independent paths (HOS-374 §7.6.2):
+ * - `POST_UPDATE` is the broad side: any post, any state.
+ * - `POST_UPDATE_OWN` is the author side: only posts the actor authored, and
+ *   only while the platform has not approved them — unless the actor also
+ *   holds `POST_PUBLISH_OWN` (§7.6.3).
+ *
+ * Authorship alone no longer grants the update. Before HOS-374 any actor whose
+ * id matched `authorId` could edit, with no permission at all.
+ *
  * @throws ServiceError if forbidden
  */
 export function checkCanUpdatePost(actor: Actor, post: Post): void {
-    // Users with POST_UPDATE permission can update any post.
-    // Authors can update their own posts.
-    if (actor.permissions.includes(PermissionEnum.POST_UPDATE) || actor.id === post.authorId) {
+    if (hasPermission(actor, PermissionEnum.POST_UPDATE)) {
+        return;
+    }
+    if (actor.id === post.authorId && hasPermission(actor, PermissionEnum.POST_UPDATE_OWN)) {
+        if (
+            isAuthorEditLockedByModeration({
+                moderationState: post.moderationState,
+                canPublishOwn: hasPermission(actor, PermissionEnum.POST_PUBLISH_OWN)
+            })
+        ) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Forbidden: cannot update a published post'
+            );
+        }
         return;
     }
     throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: cannot update post');
@@ -38,12 +61,18 @@ export function checkCanUpdatePost(actor: Actor, post: Post): void {
 
 /**
  * Checks if the actor can delete a post.
+ *
+ * `POST_DELETE` deletes any post; `POST_DELETE_OWN` deletes only the actor's
+ * own. Authorship alone is not enough — deleting own content is a trusted-editor
+ * capability, not a plain editor one (HOS-374 §7.6.2).
+ *
  * @throws ServiceError if forbidden
  */
 export function checkCanDeletePost(actor: Actor, post: Post): void {
-    // Users with POST_DELETE permission can delete any post.
-    // Authors can delete their own posts.
-    if (actor.permissions.includes(PermissionEnum.POST_DELETE) || actor.id === post.authorId) {
+    if (hasPermission(actor, PermissionEnum.POST_DELETE)) {
+        return;
+    }
+    if (actor.id === post.authorId && hasPermission(actor, PermissionEnum.POST_DELETE_OWN)) {
         return;
     }
     throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: cannot delete post');

@@ -1,5 +1,11 @@
 import type { PostIdType, UserIdType } from '@repo/schemas';
-import { PermissionEnum, RoleEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
+import {
+    ModerationStatusEnum,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode,
+    VisibilityEnum
+} from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     checkCanCommentPost,
@@ -34,16 +40,72 @@ describe('checkCanCreatePost', () => {
     });
 });
 
+// HOS-374 §7.6.2/§7.6.3. Two changes to this block, both deliberate:
+//  1. Authorship alone no longer authorizes anything. Until HOS-374 an actor
+//     whose id matched `authorId` could update AND delete with zero permissions.
+//     The author path now requires POST_UPDATE_OWN / POST_DELETE_OWN.
+//  2. The author path carries a state lock: once the platform APPROVED the post,
+//     its author can no longer edit it unless they also hold POST_PUBLISH_OWN.
+//     `post` above is APPROVED (the factory default), `pendingPost` is not.
 describe('checkCanUpdatePost', () => {
-    it('should allow actor with POST_UPDATE permission', () => {
+    const pendingPost = createMockPost({
+        id: getMockId('post', 'p1-pending') as PostIdType,
+        authorId,
+        visibility: VisibilityEnum.PUBLIC,
+        moderationState: ModerationStatusEnum.PENDING
+    });
+
+    it('should allow actor with POST_UPDATE permission (any post, any moderation state)', () => {
         const actor = createActor({ ...baseActor, permissions: [PermissionEnum.POST_UPDATE] });
         expect(() => checkCanUpdatePost(actor, post)).not.toThrow();
     });
-    it('should allow author with USER or EDITOR role', () => {
-        const actorUser = createActor({ id: authorId, roles: [RoleEnum.USER] });
-        expect(() => checkCanUpdatePost(actorUser, post)).not.toThrow();
-        const actorEditor = createActor({ id: authorId, roles: [RoleEnum.EDITOR] });
-        expect(() => checkCanUpdatePost(actorEditor, post)).not.toThrow();
+    it('should allow the author with POST_UPDATE_OWN while the post is not approved', () => {
+        const author = createActor({
+            id: authorId,
+            roles: [RoleEnum.EDITOR],
+            permissions: [PermissionEnum.POST_UPDATE_OWN]
+        });
+        expect(() => checkCanUpdatePost(author, pendingPost)).not.toThrow();
+    });
+    it('should allow the author with POST_UPDATE_OWN on a REJECTED post — the lock is APPROVED-only', () => {
+        const rejectedPost = createMockPost({
+            id: getMockId('post', 'p1-rejected') as PostIdType,
+            authorId,
+            moderationState: ModerationStatusEnum.REJECTED
+        });
+        const author = createActor({
+            id: authorId,
+            roles: [RoleEnum.EDITOR],
+            permissions: [PermissionEnum.POST_UPDATE_OWN]
+        });
+        expect(() => checkCanUpdatePost(author, rejectedPost)).not.toThrow();
+    });
+    it('should refuse the author with only POST_UPDATE_OWN once the post is APPROVED', () => {
+        const author = createActor({
+            id: authorId,
+            roles: [RoleEnum.EDITOR],
+            permissions: [PermissionEnum.POST_UPDATE_OWN]
+        });
+        expect(() => checkCanUpdatePost(author, post)).toThrow(ServiceError);
+    });
+    it('should let a trusted author (POST_PUBLISH_OWN) edit their own APPROVED post', () => {
+        const trustedAuthor = createActor({
+            id: authorId,
+            roles: [RoleEnum.EDITOR],
+            permissions: [PermissionEnum.POST_UPDATE_OWN, PermissionEnum.POST_PUBLISH_OWN]
+        });
+        expect(() => checkCanUpdatePost(trustedAuthor, post)).not.toThrow();
+    });
+    it('should throw ServiceError for the author with no permission at all', () => {
+        const author = createActor({ id: authorId, roles: [RoleEnum.USER] });
+        expect(() => checkCanUpdatePost(author, pendingPost)).toThrow(ServiceError);
+    });
+    it('should throw ServiceError for a non-author holding POST_UPDATE_OWN', () => {
+        const stranger = createActor({
+            id: getMockId('user', 'not-author') as UserIdType,
+            permissions: [PermissionEnum.POST_UPDATE_OWN]
+        });
+        expect(() => checkCanUpdatePost(stranger, pendingPost)).toThrow(ServiceError);
     });
     it('should throw ServiceError if not author and lacks permission', () => {
         const actor = createActor({
@@ -59,11 +121,30 @@ describe('checkCanDeletePost', () => {
         const actor = createActor({ ...baseActor, permissions: [PermissionEnum.POST_DELETE] });
         expect(() => checkCanDeletePost(actor, post)).not.toThrow();
     });
-    it('should allow author with USER or EDITOR role', () => {
+    it('should allow the author with POST_DELETE_OWN', () => {
+        const trustedAuthor = createActor({
+            id: authorId,
+            roles: [RoleEnum.EDITOR],
+            permissions: [PermissionEnum.POST_DELETE_OWN]
+        });
+        expect(() => checkCanDeletePost(trustedAuthor, post)).not.toThrow();
+    });
+    it('should throw ServiceError for the author with no delete permission', () => {
         const actorUser = createActor({ id: authorId, roles: [RoleEnum.USER] });
-        expect(() => checkCanDeletePost(actorUser, post)).not.toThrow();
-        const actorEditor = createActor({ id: authorId, roles: [RoleEnum.EDITOR] });
-        expect(() => checkCanDeletePost(actorEditor, post)).not.toThrow();
+        expect(() => checkCanDeletePost(actorUser, post)).toThrow(ServiceError);
+        const actorEditor = createActor({
+            id: authorId,
+            roles: [RoleEnum.EDITOR],
+            permissions: [PermissionEnum.POST_UPDATE_OWN]
+        });
+        expect(() => checkCanDeletePost(actorEditor, post)).toThrow(ServiceError);
+    });
+    it('should throw ServiceError for a non-author holding POST_DELETE_OWN', () => {
+        const stranger = createActor({
+            id: getMockId('user', 'not-author') as UserIdType,
+            permissions: [PermissionEnum.POST_DELETE_OWN]
+        });
+        expect(() => checkCanDeletePost(stranger, post)).toThrow(ServiceError);
     });
     it('should throw ServiceError if not author and lacks permission', () => {
         const actor = createActor({

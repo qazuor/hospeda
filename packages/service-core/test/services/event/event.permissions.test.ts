@@ -1,4 +1,10 @@
-import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
+import type { UserIdType } from '@repo/schemas';
+import {
+    ModerationStatusEnum,
+    PermissionEnum,
+    ServiceErrorCode,
+    VisibilityEnum
+} from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     checkCanCreateEvent,
@@ -11,6 +17,7 @@ import {
 import { ServiceError } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { createMockEvent } from '../../factories/eventFactory';
+import { getMockId } from '../../factories/utilsFactory';
 
 /**
  * Tests for EventService permission helpers.
@@ -30,18 +37,103 @@ describe('EventService permissions', () => {
 
     it('should allow update if actor has EVENT_UPDATE', () => {
         const actor = createActor({ permissions: [PermissionEnum.EVENT_UPDATE] });
-        expect(() => checkCanUpdateEvent(actor)).not.toThrow();
+        expect(() => checkCanUpdateEvent(actor, mockEvent)).not.toThrow();
     });
     it('should forbid update if actor lacks EVENT_UPDATE', () => {
-        expect(() => checkCanUpdateEvent(baseActor)).toThrow();
+        expect(() => checkCanUpdateEvent(baseActor, mockEvent)).toThrow();
     });
 
     it('should allow delete if actor has EVENT_DELETE', () => {
         const actor = createActor({ permissions: [PermissionEnum.EVENT_DELETE] });
-        expect(() => checkCanDeleteEvent(actor)).not.toThrow();
+        expect(() => checkCanDeleteEvent(actor, mockEvent)).not.toThrow();
     });
     it('should forbid delete if actor lacks EVENT_DELETE', () => {
-        expect(() => checkCanDeleteEvent(baseActor)).toThrow();
+        expect(() => checkCanDeleteEvent(baseActor, mockEvent)).toThrow();
+    });
+
+    // HOS-374 §7.6.2/§7.6.3 — author-scoped ownership plus the state lock.
+    // `checkCanUpdateEvent` now takes the event (it could not be author-scoped
+    // without it) and mirrors its post twin exactly.
+    describe('author-scoped ownership and the state lock', () => {
+        const authorId = getMockId('user', 'event-author') as UserIdType;
+        const strangerId = getMockId('user', 'event-stranger') as UserIdType;
+        const pendingEvent = createMockEvent({
+            authorId,
+            moderationState: ModerationStatusEnum.PENDING
+        });
+        const approvedEvent = createMockEvent({
+            authorId,
+            moderationState: ModerationStatusEnum.APPROVED
+        });
+
+        it('should allow the author with EVENT_UPDATE_OWN while the event is not approved', () => {
+            const author = createActor({
+                id: authorId,
+                permissions: [PermissionEnum.EVENT_UPDATE_OWN]
+            });
+            expect(() => checkCanUpdateEvent(author, pendingEvent)).not.toThrow();
+        });
+
+        it('should refuse the author with only EVENT_UPDATE_OWN once the event is APPROVED', () => {
+            const author = createActor({
+                id: authorId,
+                permissions: [PermissionEnum.EVENT_UPDATE_OWN]
+            });
+            expect(() => checkCanUpdateEvent(author, approvedEvent)).toThrow(ServiceError);
+        });
+
+        it('should let a trusted author (EVENT_PUBLISH_OWN) edit their own APPROVED event', () => {
+            const trustedAuthor = createActor({
+                id: authorId,
+                permissions: [PermissionEnum.EVENT_UPDATE_OWN, PermissionEnum.EVENT_PUBLISH_OWN]
+            });
+            expect(() => checkCanUpdateEvent(trustedAuthor, approvedEvent)).not.toThrow();
+        });
+
+        it('should allow an actor with EVENT_UPDATE to edit an APPROVED event they did not author', () => {
+            const admin = createActor({
+                id: strangerId,
+                permissions: [PermissionEnum.EVENT_UPDATE]
+            });
+            expect(() => checkCanUpdateEvent(admin, approvedEvent)).not.toThrow();
+        });
+
+        it('should forbid a non-author holding EVENT_UPDATE_OWN', () => {
+            const stranger = createActor({
+                id: strangerId,
+                permissions: [PermissionEnum.EVENT_UPDATE_OWN]
+            });
+            expect(() => checkCanUpdateEvent(stranger, pendingEvent)).toThrow(ServiceError);
+        });
+
+        it('should forbid the author with no update permission at all', () => {
+            const author = createActor({ id: authorId, permissions: [] });
+            expect(() => checkCanUpdateEvent(author, pendingEvent)).toThrow(ServiceError);
+        });
+
+        it('should allow the author with EVENT_DELETE_OWN to delete their own event', () => {
+            const trustedAuthor = createActor({
+                id: authorId,
+                permissions: [PermissionEnum.EVENT_DELETE_OWN]
+            });
+            expect(() => checkCanDeleteEvent(trustedAuthor, approvedEvent)).not.toThrow();
+        });
+
+        it('should forbid the author holding only EVENT_UPDATE_OWN from deleting', () => {
+            const author = createActor({
+                id: authorId,
+                permissions: [PermissionEnum.EVENT_UPDATE_OWN]
+            });
+            expect(() => checkCanDeleteEvent(author, pendingEvent)).toThrow(ServiceError);
+        });
+
+        it('should forbid a non-author holding EVENT_DELETE_OWN', () => {
+            const stranger = createActor({
+                id: strangerId,
+                permissions: [PermissionEnum.EVENT_DELETE_OWN]
+            });
+            expect(() => checkCanDeleteEvent(stranger, pendingEvent)).toThrow(ServiceError);
+        });
     });
 
     it('should allow view if actor has EVENT_VIEW', () => {
