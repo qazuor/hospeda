@@ -58,6 +58,46 @@ describe('extractLocaleFromPath', () => {
         const result = extractLocaleFromPath({ path: '/en/mi-cuenta/perfil/' });
         expect(result).toEqual({ locale: 'en', restOfPath: '/mi-cuenta/perfil/' });
     });
+
+    // Regression: the first segment used to be consumed unconditionally when it
+    // was not a supported locale, so a path with NO locale segment at all lost
+    // its first segment. `/destinos/colon/` redirected to `/es/colon/`, a 404.
+    // The two cases are distinguished by SHAPE: a language tag is two letters
+    // (optionally with a region), a route segment is a word.
+    it('should keep the whole path when the first segment is not shaped like a locale', () => {
+        expect(extractLocaleFromPath({ path: '/destinos/colon/' })).toEqual({
+            locale: null,
+            restOfPath: '/destinos/colon/'
+        });
+        expect(extractLocaleFromPath({ path: '/alojamientos/' })).toEqual({
+            locale: null,
+            restOfPath: '/alojamientos/'
+        });
+    });
+
+    it('should still strip a segment that IS shaped like a locale but is unsupported', () => {
+        // `/fr/...` is a genuine unsupported locale: the visitor asked for
+        // French, so the segment is replaced rather than kept.
+        expect(extractLocaleFromPath({ path: '/fr/alojamientos/' })).toEqual({
+            locale: null,
+            restOfPath: '/alojamientos/'
+        });
+        expect(extractLocaleFromPath({ path: '/it/' })).toEqual({
+            locale: null,
+            restOfPath: '/'
+        });
+    });
+
+    it('should treat a regional language tag as a locale segment', () => {
+        expect(extractLocaleFromPath({ path: '/en-US/alojamientos/' })).toEqual({
+            locale: null,
+            restOfPath: '/alojamientos/'
+        });
+        expect(extractLocaleFromPath({ path: '/pt-BR/eventos/' })).toEqual({
+            locale: null,
+            restOfPath: '/eventos/'
+        });
+    });
 });
 
 describe('isProtectedRoute', () => {

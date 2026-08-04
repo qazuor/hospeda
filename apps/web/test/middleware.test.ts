@@ -234,6 +234,49 @@ describe('middleware onRequest — Step 4 locale redirect preserves the query st
     });
 });
 
+// ---------------------------------------------------------------------------
+// Regression: Step 4 ate the first path segment of any locale-less URL.
+//
+// `extractLocaleFromPath` consumed the first segment whenever it was not a
+// supported locale, without asking whether it looked like a locale at all. So
+// `/destinos/colon/` — a URL a visitor could plausibly type, or an old link
+// could point at — redirected to `/es/colon/`, which is a 404. Verified against
+// production before the fix.
+//
+// The distinguishing signal is SHAPE: `fr` is a language tag, `destinos` is a
+// route segment.
+// ---------------------------------------------------------------------------
+describe('middleware onRequest — Step 4 keeps the path when there is no locale segment', () => {
+    it('redirects /destinos/colon/ to /es/destinos/colon/, not /es/colon/', async () => {
+        const { onRequest } = await import('../src/middleware');
+        const context = createContext({ pathname: '/destinos/colon/' });
+
+        await onRequest(context as any, vi.fn());
+
+        expect(context.redirect).toHaveBeenCalledWith('/es/destinos/colon/', 301);
+    });
+
+    it('keeps the path AND the query string together', async () => {
+        const { onRequest } = await import('../src/middleware');
+        const context = createContext({ pathname: '/alojamientos/?page=2' });
+
+        await onRequest(context as any, vi.fn());
+
+        expect(context.redirect).toHaveBeenCalledWith('/es/alojamientos/?page=2', 301);
+    });
+
+    it('still replaces a real unsupported locale rather than keeping it', async () => {
+        // The counter-case that stops the fix from being over-broad: `/fr/...`
+        // must NOT become `/es/fr/...`.
+        const { onRequest } = await import('../src/middleware');
+        const context = createContext({ pathname: '/fr/alojamientos/' });
+
+        await onRequest(context as any, vi.fn());
+
+        expect(context.redirect).toHaveBeenCalledWith('/es/alojamientos/', 301);
+    });
+});
+
 describe('middleware onRequest — Step 11 emits the Cache-Tag purge header (HOS-369 W1-1)', () => {
     beforeEach(() => {
         parseSessionUserMock.mockClear();
