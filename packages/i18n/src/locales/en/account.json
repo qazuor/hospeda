@@ -127,9 +127,14 @@
                     "title": "Service provider",
                     "description": "Join the local provider directory that hosts recommend to their guests."
                 },
-                "editor": {
-                    "title": "Editor",
-                    "description": "Want to write posts and add events on Hospeda? Apply to become a content editor.",
+                "editorPosts": {
+                    "title": "Article editor",
+                    "description": "Want to write articles and stories on Hospeda? Apply as a content editor.",
+                    "cta": "Apply as an editor"
+                },
+                "editorEvents": {
+                    "title": "Event editor",
+                    "description": "Want to keep the region's event calendar up to date? Apply as a content editor.",
                     "cta": "Apply as an editor"
                 }
             }
@@ -1042,6 +1047,48 @@
             "ai-support-monthly": {
                 "name": "AI Support (monthly)",
                 "description": "Unlocks AI-powered support tools for hosts, including smart reply suggestions and automated guest FAQ handling. Renews monthly."
+            }
+        }
+    },
+    "myContent": {
+        "status": {
+            "moderation": {
+                "label": "Moderation",
+                "PENDING": "Awaiting review",
+                "APPROVED": "Approved",
+                "REJECTED": "Rejected"
+            },
+            "visibility": {
+                "label": "Visibility",
+                "PUBLIC": "Public",
+                "PRIVATE": "Private",
+                "RESTRICTED": "Restricted"
+            },
+            "lifecycle": {
+                "label": "Status",
+                "DRAFT": "Draft",
+                "ACTIVE": "Active",
+                "ARCHIVED": "Archived"
+            }
+        },
+        "card": {
+            "editLink": "Edit",
+            "retry": "Retry"
+        },
+        "posts": {
+            "list": {
+                "title": "My posts",
+                "subtitle": "Check the status of your articles",
+                "empty": "You haven't written any post yet",
+                "fetchError": "Couldn't load the list. Try reloading the page."
+            }
+        },
+        "events": {
+            "list": {
+                "title": "My events",
+                "subtitle": "Check the status of your events",
+                "empty": "You haven't created any event yet",
+                "fetchError": "Couldn't load the list. Try reloading the page."
             }
         }
     }

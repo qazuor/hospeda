@@ -449,3 +449,54 @@ export interface OwnerPromotionUpdateInput {
     readonly maxRedemptions?: number | null;
     readonly touristAudience?: OwnerPromotionTouristAudience;
 }
+
+// ---------------------------------------------------------------------------
+// Editor own-content list types (HOS-374 Phase 2 2C-1)
+// ---------------------------------------------------------------------------
+
+/**
+ * The platform's moderation verdict on the author's own content.
+ * Mirrors `ModerationStatusEnum` (`@repo/schemas`) as a string union so
+ * `lib/api/` stays free of a runtime dependency on the schemas package.
+ */
+export type EditorContentModerationState = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+/**
+ * The author's own publish switch. Independent of `moderationState` — see
+ * `EditableContentCard.astro` for why the two must never be collapsed into
+ * one "draft/published" boolean (HOS-374 §7.6.1).
+ */
+export type EditorContentVisibility = 'PUBLIC' | 'PRIVATE' | 'RESTRICTED';
+
+/** The content's workflow stage, independent of moderation and visibility. */
+export type EditorContentLifecycleState = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+
+/**
+ * Card data for one of the authenticated user's own posts
+ * (`/mi-cuenta/publicaciones`). Transformed from the raw
+ * `GET /protected/posts` item by `transformPostEditCard`.
+ */
+export interface PostEditListItem {
+    readonly id: string;
+    readonly slug: string;
+    readonly title: string;
+    readonly moderationState: EditorContentModerationState;
+    readonly visibility: EditorContentVisibility;
+    readonly lifecycleState: EditorContentLifecycleState;
+    readonly updatedAt: string;
+}
+
+/**
+ * Card data for one of the authenticated user's own events
+ * (`/mi-cuenta/eventos`). Transformed from the raw
+ * `GET /protected/events` item by `transformEventEditCard`.
+ */
+export interface EventEditListItem {
+    readonly id: string;
+    readonly slug: string;
+    readonly name: string;
+    readonly moderationState: EditorContentModerationState;
+    readonly visibility: EditorContentVisibility;
+    readonly lifecycleState: EditorContentLifecycleState;
+    readonly updatedAt: string;
+}
