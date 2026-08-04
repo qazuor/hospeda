@@ -633,23 +633,24 @@
             "id": "T-026",
             "title": "Add an author byline linking from the event detail page",
             "description": "Spec §6.9 (G-7). No event component links to an author today. Add a byline on the event detail page rendering the author's display name as a link to /autores/<slug>/, using the author relation added in T-014/T-015. Degrade gracefully when the relation is null. Tests: byline renders and links correctly when the author is present; nothing renders (no broken link, no empty label) when it is null.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-015", "T-020"],
             "blocks": [],
             "subtasks": [
-                { "title": "Add the byline to the event detail page", "completed": false },
-                { "title": "Handle the null-author case", "completed": false },
-                { "title": "Tests: present and null cases", "completed": false }
+                { "title": "Add the byline to the event detail page", "completed": true },
+                { "title": "Handle the null-author case", "completed": true },
+                { "title": "Tests: present and null cases", "completed": true }
             ],
             "tags": ["web", "events", "components"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-02T14:15:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-08-04T00:10:00.000Z",
+                "completed": "2026-08-04T00:55:00.000Z"
+            },
+            "notes": "Four layers, because the payload had to travel the whole way: EventDetailAuthor + the optional `author` field on EventDetailData (data/types.ts), extraction in toEventDetailProps (transforms.ts), the `author` prop + byline markup + styles on EventDetailHeader.astro, and the page forwarding `author={author ?? null}`. Placed in the header meta row (after date/location, before the bookmark count) rather than in a sidebar card: the task asked for a byline, and EventDetailOrganizerCard already owns the sidebar for the ORGANIZER — who runs the event, a different person from the contributor who wrote it up. i18n: new `events.detail.byline` in es/en/pt. The NAMESPACE is `events`, not `event` — event.json is registered under the `events` key in config.shared.ts, so an `event.detail.*` key silently resolves to its inline fallback. Several PRE-EXISTING keys in this same header do exactly that (`event.detail.pastEvent`, `event.detail.cancelled`, `event.detail.bookmark_count*`) — reported, not fixed here. TWO DEGRADATIONS, both deliberate and both tested: an author with no resolvable name (displayName null/'' AND no first/last) is DROPPED in the transform rather than rendered as an empty byline; an author with no slug keeps the attribution as PLAIN TEXT, since there is no author page to link to — never an anchor to `/autores/undefined/`. Linked directly, not via the T-023 middleware redirect, matching the T-024 decision on the post bylines. VERIFIED IN A BROWSER, not just in tests, and the dev server could NOT do it: every content detail page 500s in dev on the known sanitize-html `require is not defined` bridge (pending item #3 — the untouched post detail page 500s identically, which is how it was confirmed unrelated). Ran a production build + astro preview instead: /es/ renders `<a href=\"/es/autores/laura-vega/\" class=\"event-header__byline-link\">Por Laura Vega</a>` and /en/ renders `By Laura Vega` at `/en/autores/laura-vega/`. That EN string is also what PROVES the i18n key resolves — the es fallback is byte-identical to the es translation, so the Spanish page alone would have looked correct with a broken key. Author page target confirmed 200. NOT verifiable live: no seeded event lacks an author (0 of 54), so both degradation paths rest on unit tests only. NO JSON-LD CHANGE: schema.org `Event` has no `author` property (only `organizer`/`performer`), so unlike T-025's ArticleJsonLd there is nothing to populate. Tests: 6 transform cases + 8 source-level cases across page and header. apps/web suite green (8431 passed); one unrelated AccommodationEditor timeout flaked under load and passes in isolation."
         },
         {
             "id": "T-027",
