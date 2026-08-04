@@ -4,6 +4,7 @@
  * Unit tests for AllianceLeadService (HOS-277). All DB interactions are mocked.
  */
 
+import { createHash } from 'node:crypto';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AllianceLeadService } from '../../../src/services/alliance-lead/alliance-lead.service';
@@ -49,6 +50,9 @@ const mockLead = {
     ...createInput,
     status: 'pending' as string,
     adminNote: null,
+    applicantUserId: null as string | null,
+    claimToken: null as string | null,
+    claimExpiresAt: null as Date | null,
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
@@ -206,6 +210,367 @@ describe('AllianceLeadService', () => {
                 actor: guestActor,
                 input: { ...createInput, message: 'short' }
             });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        });
+    });
+
+    // HOS-278 A4 — claim token issuance on anonymous submissions.
+    describe('createLead — claim token issuance', () => {
+        it('should mint a claim token for an anonymous submission and store only its digest', async () => {
+            const service = makeService();
+            const model = makeLeadModel();
+            (service as any)._model = model;
+
+            await service.createLead({ actor: guestActor, input: createInput });
+
+            const written = model.create.mock.calls[0]?.[0];
+            expect(written.claimToken).toEqual(expect.any(String));
+            // sha256 hex
+            expect(written.claimToken).toMatch(/^[0-9a-f]{64}$/);
+            expect(written.claimExpiresAt).toBeInstanceOf(Date);
+        });
+
+        it('should expire the claim 7 days out', async () => {
+            const service = makeService();
+            const model = makeLeadModel();
+            (service as any)._model = model;
+
+            const before = Date.now();
+            await service.createLead({ actor: guestActor, input: createInput });
+            const after = Date.now();
+
+            const written = model.create.mock.calls[0]?.[0];
+            const sevenDays = 7 * 24 * 60 * 60 * 1000;
+            expect(written.claimExpiresAt.getTime()).toBeGreaterThanOrEqual(before + sevenDays);
+            expect(written.claimExpiresAt.getTime()).toBeLessThanOrEqual(after + sevenDays);
+        });
+
+        it('should mint a DIFFERENT token per submission', async () => {
+            const service = makeService();
+            const model = makeLeadModel();
+            (service as any)._model = model;
+
+            await service.createLead({ actor: guestActor, input: createInput });
+            await service.createLead({ actor: guestActor, input: createInput });
+
+            const first = model.create.mock.calls[0]?.[0]?.claimToken;
+            const second = model.create.mock.calls[1]?.[0]?.claimToken;
+            expect(first).not.toBe(second);
+        });
+
+        it('should NOT mint a claim token when the submitter is authenticated', async () => {
+            const service = makeService();
+            const model = makeLeadModel();
+            (service as any)._model = model;
+
+            await service.createLead({ actor: authenticatedActor, input: createInput });
+
+            const written = model.create.mock.calls[0]?.[0];
+            expect(written.claimToken).toBeNull();
+            expect(written.claimExpiresAt).toBeNull();
+        });
+
+        it('should hand the RAW token to the invite port, never the digest', async () => {
+            const inviteToClaim = vi.fn().mockResolvedValue(undefined);
+            const service = new AllianceLeadService({ logger: undefined }, { inviteToClaim });
+            const model = makeLeadModel();
+            (service as any)._model = model;
+
+            await service.createLead({ actor: guestActor, input: createInput });
+
+            expect(inviteToClaim).toHaveBeenCalledOnce();
+            const invite = inviteToClaim.mock.calls[0]?.[0];
+            const written = model.create.mock.calls[0]?.[0];
+            expect(invite.token).not.toBe(written.claimToken);
+            expect(invite.token).not.toMatch(/^[0-9a-f]{64}$/);
+            expect(invite.leadId).toBe(LEAD_ID);
+            expect(invite.email).toBe('juan@example.com');
+        });
+
+        it('should not invite anyone when the submitter is authenticated', async () => {
+            const inviteToClaim = vi.fn().mockResolvedValue(undefined);
+            const service = new AllianceLeadService({ logger: undefined }, { inviteToClaim });
+            (service as any)._model = makeLeadModel();
+
+            await service.createLead({ actor: authenticatedActor, input: createInput });
+
+            expect(inviteToClaim).not.toHaveBeenCalled();
+        });
+
+        it('should still succeed when the invitation fails to send', async () => {
+            const inviteToClaim = vi.fn().mockRejectedValue(new Error('SMTP down'));
+            const service = new AllianceLeadService({ logger: undefined }, { inviteToClaim });
+            (service as any)._model = makeLeadModel();
+
+            const result = await service.createLead({ actor: guestActor, input: createInput });
+
+            expect(result.error).toBeUndefined();
+            expect(result.data?.id).toBe(LEAD_ID);
+        });
+
+        it('should work with no invite port injected at all', async () => {
+            const service = makeService();
+            (service as any)._model = makeLeadModel();
+
+            const result = await service.createLead({ actor: guestActor, input: createInput });
+
+            expect(result.error).toBeUndefined();
+        });
+    });
+
+    // HOS-278 AC-4 — redeeming the emailed token is the ONLY way an anonymous
+    // lead gets linked.
+    describe('claimLead', () => {
+        const RAW_TOKEN = 'raw-token-value';
+        const TOKEN_DIGEST = createHash('sha256').update(RAW_TOKEN, 'utf8').digest('hex');
+
+        const claimant: Actor = {
+            id: ACTOR_ID,
+            roles: [RoleEnum.USER],
+            permissions: [],
+            email: 'juan@example.com'
+        };
+
+        function claimableLead(overrides: Record<string, unknown> = {}) {
+            return {
+                ...mockLead,
+                applicantUserId: null,
+                claimToken: TOKEN_DIGEST,
+                claimExpiresAt: new Date(Date.now() + 60_000),
+                ...overrides
+            };
+        }
+
+        it('should link the lead when token, expiry and email owner all check out', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead());
+            (service as any)._model = model;
+
+            const result = await service.claimLead({
+                actor: claimant,
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(model.update).toHaveBeenCalledWith(
+                { id: LEAD_ID },
+                { applicantUserId: ACTOR_ID, claimToken: null, claimExpiresAt: null },
+                undefined
+            );
+        });
+
+        it('should burn the token so the same link cannot be replayed', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead());
+            (service as any)._model = model;
+
+            await service.claimLead({ actor: claimant, id: LEAD_ID, token: RAW_TOKEN });
+
+            const payload = model.update.mock.calls[0]?.[1];
+            expect(payload.claimToken).toBeNull();
+            expect(payload.claimExpiresAt).toBeNull();
+        });
+
+        it('should reject a wrong token', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead());
+            (service as any)._model = model;
+
+            const result = await service.claimLead({
+                actor: claimant,
+                id: LEAD_ID,
+                token: 'not-the-token'
+            });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+            expect(model.update).not.toHaveBeenCalled();
+        });
+
+        it('should reject an expired token', async () => {
+            const service = makeService();
+            const model = makeLeadModel(
+                claimableLead({ claimExpiresAt: new Date(Date.now() - 1000) })
+            );
+            (service as any)._model = model;
+
+            const result = await service.claimLead({
+                actor: claimant,
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+            expect(model.update).not.toHaveBeenCalled();
+        });
+
+        it('should reject a VALID token presented by a different mailbox (forwarded link)', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead());
+            (service as any)._model = model;
+
+            const result = await service.claimLead({
+                actor: { ...claimant, id: 'other-user-id', email: 'someone.else@example.com' },
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+            expect(model.update).not.toHaveBeenCalled();
+        });
+
+        it('should match the owner email case-insensitively', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead());
+            (service as any)._model = model;
+
+            const result = await service.claimLead({
+                actor: { ...claimant, email: '  JUAN@Example.COM ' },
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(model.update).toHaveBeenCalled();
+        });
+
+        it('should reject an anonymous actor', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead());
+            (service as any)._model = model;
+
+            const result = await service.claimLead({
+                actor: { ...guestActor, email: 'juan@example.com' },
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+            expect(model.update).not.toHaveBeenCalled();
+        });
+
+        it('should reject an actor with no email on the session', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead());
+            (service as any)._model = model;
+
+            const result = await service.claimLead({
+                actor: { id: ACTOR_ID, roles: [RoleEnum.USER], permissions: [] },
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
+
+        it('should answer idempotently when the SAME account already holds the lead', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead({ applicantUserId: ACTOR_ID }));
+            (service as any)._model = model;
+
+            const result = await service.claimLead({
+                actor: claimant,
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(model.update).not.toHaveBeenCalled();
+        });
+
+        it('should reject a claim on a lead already linked to someone else', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead({ applicantUserId: 'another-user-id' }));
+            (service as any)._model = model;
+
+            const result = await service.claimLead({
+                actor: claimant,
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+            expect(model.update).not.toHaveBeenCalled();
+        });
+
+        it('should reject a soft-deleted lead', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead({ deletedAt: new Date() }));
+            (service as any)._model = model;
+
+            const result = await service.claimLead({
+                actor: claimant,
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
+
+        it('should reject a lead that never had a claim issued', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead({ claimToken: null, claimExpiresAt: null }));
+            (service as any)._model = model;
+
+            const result = await service.claimLead({
+                actor: claimant,
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
+
+        it('should give the SAME error for every rejection reason (no oracle)', async () => {
+            const service = makeService();
+            const reasons = [
+                claimableLead({ claimExpiresAt: new Date(Date.now() - 1000) }),
+                claimableLead({ applicantUserId: 'another-user-id' }),
+                claimableLead({ claimToken: null, claimExpiresAt: null })
+            ];
+
+            const errors: (string | undefined)[] = [];
+            for (const lead of reasons) {
+                (service as any)._model = makeLeadModel(lead);
+                const result = await service.claimLead({
+                    actor: claimant,
+                    id: LEAD_ID,
+                    token: RAW_TOKEN
+                });
+                errors.push(result.error?.message);
+            }
+            // Wrong token, on an otherwise perfectly valid lead.
+            (service as any)._model = makeLeadModel(claimableLead());
+            const wrongToken = await service.claimLead({
+                actor: claimant,
+                id: LEAD_ID,
+                token: 'nope'
+            });
+            errors.push(wrongToken.error?.message);
+
+            expect(new Set(errors).size).toBe(1);
+            expect(errors[0]).toBeDefined();
+        });
+
+        it('should return VALIDATION_ERROR for a non-UUID lead id', async () => {
+            const service = makeService();
+            (service as any)._model = makeLeadModel(claimableLead());
+
+            const result = await service.claimLead({
+                actor: claimant,
+                id: 'not-a-uuid',
+                token: RAW_TOKEN
+            });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        });
+
+        it('should return VALIDATION_ERROR for an empty token', async () => {
+            const service = makeService();
+            (service as any)._model = makeLeadModel(claimableLead());
+
+            const result = await service.claimLead({ actor: claimant, id: LEAD_ID, token: '' });
 
             expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
         });

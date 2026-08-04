@@ -524,6 +524,10 @@
         "claimExpiresAt": {
             "invalid": "The confirmation expiry date is invalid"
         },
+        "claimToken": {
+            "max": "The confirmation code must not exceed {{max}} characters",
+            "required": "The confirmation code is missing"
+        },
         "contactName": {
             "max": "Contact name must not exceed {{max}} characters",
             "min": "Contact name must be at least {{min}} characters"

@@ -7,15 +7,19 @@
  * be cached or moved to the public tier (spec §12).
  */
 import { createRouter } from '../../../utils/create-app';
+import { protectedClaimAllianceLeadRoute } from './claim';
 import { protectedListMyAllianceLeadsRoute } from './list-mine';
 
 const router = createRouter();
 
 // GET /leads/mine — the caller's own applications (AC-5)
 router.route('/', protectedListMyAllianceLeadsRoute);
+// POST /leads/:id/claim — redeem an emailed claim token (AC-4)
+router.route('/', protectedClaimAllianceLeadRoute);
 
 /**
  * Protected alliance routes:
  * - GET /leads/mine
+ * - POST /leads/{id}/claim
  */
 export const protectedAllianceRoutes = router;

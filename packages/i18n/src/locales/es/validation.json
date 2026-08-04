@@ -524,6 +524,10 @@
         "claimExpiresAt": {
             "invalid": "La fecha de vencimiento de la confirmación no es válida"
         },
+        "claimToken": {
+            "max": "El código de confirmación no puede superar los {{max}} caracteres",
+            "required": "Falta el código de confirmación"
+        },
         "contactName": {
             "max": "El nombre de contacto no puede superar los {{max}} caracteres",
             "min": "El nombre de contacto debe tener al menos {{min}} caracteres"

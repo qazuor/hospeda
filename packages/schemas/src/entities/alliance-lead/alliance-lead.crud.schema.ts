@@ -82,6 +82,32 @@ export const AllianceLeadAdminUpdateInputSchema = z.object({
 export type AllianceLeadAdminUpdateInput = z.infer<typeof AllianceLeadAdminUpdateInputSchema>;
 
 // ---------------------------------------------------------------------------
+// Claim (applicant redeeming an emailed confirmation token)
+// ---------------------------------------------------------------------------
+
+/**
+ * Input schema for redeeming a claim invitation (HOS-278 AC-4).
+ *
+ * The token is the single-use secret from the invitation email. It is the ONLY
+ * body field: the lead comes from the path, and the identity of the claimant
+ * comes from the session — never from the request, which is the whole point of
+ * R-1 (the lead's email is unverified, so nothing the caller sends may decide
+ * whose account an application attaches to).
+ */
+export const AllianceLeadClaimInputSchema = z.object({
+    /** UUID of the lead being claimed. */
+    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    /** Single-use token from the claim invitation email. */
+    token: z
+        .string()
+        .min(1, { message: 'zodError.allianceLead.claimToken.required' })
+        .max(512, { message: 'zodError.allianceLead.claimToken.max' })
+});
+
+/** TypeScript type for {@link AllianceLeadClaimInputSchema}. */
+export type AllianceLeadClaimInput = z.infer<typeof AllianceLeadClaimInputSchema>;
+
+// ---------------------------------------------------------------------------
 // Delete
 // ---------------------------------------------------------------------------
 

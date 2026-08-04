@@ -175,6 +175,8 @@
         "zodError.allianceLead.adminList.pageSize.positive",
         "zodError.allianceLead.adminNote.max",
         "zodError.allianceLead.claimExpiresAt.invalid",
+        "zodError.allianceLead.claimToken.max",
+        "zodError.allianceLead.claimToken.required",
         "zodError.allianceLead.contactName.max",
         "zodError.allianceLead.contactName.min",
         "zodError.allianceLead.email.invalid",
@@ -1769,7 +1771,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1768,
+    "total": 1770,
     "byNamespace": {
         "accommodation": 69,
         "accommodationAmenity": 4,
@@ -1781,7 +1783,7 @@
         "accommodationReview": 3,
         "admin": 50,
         "adminView": 3,
-        "allianceLead": 15,
+        "allianceLead": 17,
         "amenity": 46,
         "attraction": 26,
         "billing": 233,
