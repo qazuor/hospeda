@@ -8,6 +8,7 @@ in version control.
 | PostHog first-party reverse proxy (Worker) | [`posthog-proxy/`](posthog-proxy/) | `wrangler deploy` |
 | Sentry envelope tunnel (Worker) | [`sentry-tunnel/`](sentry-tunnel/) | `wrangler deploy` |
 | Cache Rules | [`rules/cache-rules.md`](rules/cache-rules.md) | **Dashboard (manual)** |
+| Redirect Rules | [`rules/redirect-rules.md`](rules/redirect-rules.md) | **Dashboard (manual)** |
 
 ## Why the rules are documented here even though they are applied by hand
 
