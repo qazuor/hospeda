@@ -1,5 +1,5 @@
 {
-  "id": "9846d2bb-478f-4c7e-9ce3-7223209a6b76",
+  "id": "f75761c6-5a84-4a7d-a7d9-e1db092c6399",
   "prevId": "7466f38d-fc72-4f30-82b0-8ffcde3df2e6",
   "version": "7",
   "dialect": "postgresql",
@@ -16951,8 +16951,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "path": {
-          "name": "path",
+        "target": {
+          "name": "target",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -17060,11 +17060,11 @@
           "method": "btree",
           "with": {}
         },
-        "revalidation_log_path_idx": {
-          "name": "revalidation_log_path_idx",
+        "revalidation_log_target_idx": {
+          "name": "revalidation_log_target_idx",
           "columns": [
             {
-              "expression": "path",
+              "expression": "target",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -23214,13 +23214,6 @@
         },
         "must_change_password": {
           "name": "must_change_password",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "is_system_account": {
-          "name": "is_system_account",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,

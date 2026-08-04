@@ -25,7 +25,6 @@ import GastronomyContactBlock from '@/components/gastronomy/GastronomyContactBlo
 import { GastronomyReviewForm } from '@/components/gastronomy/GastronomyReviewForm.client';
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
 import { gastronomyApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
-import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toGastronomyDetailPageProps } from '@/lib/api/transforms';
 import { getApiUrl } from '@/lib/env';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
@@ -120,12 +119,9 @@ const galleryImages = (() => {
     return [];
 })();
 
-const isAuthenticated = Boolean(Astro.locals.user);
 
 // --- SSR bookmark status for header ---
 let bookmarkCount: number | undefined;
-let initialIsFavorited: boolean | undefined;
-let initialBookmarkId: string | null = null;
 
 try {
     const countResult = await userBookmarksPublicApi.count({
@@ -139,22 +135,6 @@ try {
     // graceful degradation
 }
 
-if (isAuthenticated) {
-    try {
-        const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-        const statusResult = await userBookmarksApi.checkStatus({
-            entityId: gastronomy.id,
-            entityType: 'GASTRONOMY',
-            cookieHeader
-        });
-        if (statusResult.ok) {
-            initialIsFavorited = statusResult.data.isFavorited;
-            initialBookmarkId = statusResult.data.bookmarkId;
-        }
-    } catch {
-        // graceful degradation
-    }
-}
 
 const descriptionText = renderPlain({ raw: gastronomy.description });
 
@@ -235,9 +215,6 @@ const breadcrumbItems = [
         <GastronomyDetailHeader
             gastronomy={gastronomy}
             locale={locale}
-            isAuthenticated={isAuthenticated}
-            initialIsFavorited={initialIsFavorited}
-            initialBookmarkId={initialBookmarkId}
             bookmarkCount={bookmarkCount}
         />
     </Fragment>
@@ -327,7 +304,6 @@ const breadcrumbItems = [
                 gastronomyName={gastronomy.name}
                 locale={locale}
                 apiUrl={getApiUrl()}
-                isAuthenticated={isAuthenticated}
                 signInHref={reviewSignInHref}
             />
         </section>

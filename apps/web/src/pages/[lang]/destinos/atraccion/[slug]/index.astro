@@ -31,7 +31,6 @@ import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
-const isAuthenticated = Boolean(Astro.locals.user);
 const { slug } = Astro.params;
 if (!slug) return new Response(null, { status: 404 });
 
@@ -126,7 +125,6 @@ const itemListItems = cards.map((card) => ({
 						destination={card}
 						locale={locale}
 						variant="grid"
-						isAuthenticated={isAuthenticated}
 					/>
 				</div>
 			))}

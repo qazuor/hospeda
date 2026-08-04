@@ -12,11 +12,10 @@ import { getMediaUrl } from '@repo/media';
 interface Props {
   readonly owner: AccommodationOwnerData;
   readonly accommodationId: string;
-  readonly userId: string | null;
   readonly lang: string;
 }
 
-const { owner, accommodationId: _accommodationId, userId: _userId, lang } = Astro.props;
+const { owner, accommodationId: _accommodationId, lang } = Astro.props;
 const { t } = createTranslations(lang as SupportedLocale);
 
 const initials = getInitialsFromName(owner.name);

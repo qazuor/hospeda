@@ -222,6 +222,28 @@ export const BaseMediaFields = {
 export type BaseMediaFieldsType = typeof BaseMediaFields;
 
 /**
+ * Top-level `videos` field for entities whose photos live in a relational media
+ * table (HOS-372).
+ *
+ * Accommodations, gastronomy listings and experiences store their photos as rows
+ * (`accommodation_media` / `gastronomy_media` / `experience_media`), so the JSONB
+ * `media` blob is being retired for them. Videos have no relational table of their
+ * own — a video is an external YouTube/Vimeo URL rather than an uploaded asset, so
+ * it can never be orphaned and gains nothing from a row — and therefore moves to a
+ * dedicated `videos` column instead.
+ *
+ * Entities that still keep their whole media object in JSONB (posts, events,
+ * destinations) do NOT spread this: their videos stay inside `media.videos`.
+ *
+ * Adding this field is additive under the schema compatibility policy: it is
+ * `.nullish()`, so payloads written before it existed keep parsing.
+ */
+export const BaseVideosFields = {
+    videos: z.array(VideoSchema).nullish()
+} as const;
+export type BaseVideosFieldsType = typeof BaseVideosFields;
+
+/**
  * Accommodation-entity-only media fields.
  *
  * Extends `BaseMediaObjectSchema` with `archivedGallery`, which is:

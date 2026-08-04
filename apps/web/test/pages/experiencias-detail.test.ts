@@ -108,8 +108,11 @@ describe('experiencias/[slug].astro', () => {
             expect(src).toContain('initialReviews={reviews}');
         });
 
-        it('passes isAuthenticated flag to ExperienceReviews', () => {
-            expect(src).toContain('isAuthenticated={isAuthenticated}');
+        it('passes nothing about the visitor to ExperienceReviews (HOS-369 WB0-5)', () => {
+            // The island resolves the session client-side (WB0-4). Computing it
+            // here would make this page per-visitor, and therefore uncacheable.
+            expect(src).not.toContain('isAuthenticated={isAuthenticated}');
+            expect(src).not.toContain('Astro.locals.user');
         });
     });
 

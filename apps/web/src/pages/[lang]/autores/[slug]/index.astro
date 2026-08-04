@@ -64,7 +64,6 @@ import {
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { slug } = Astro.params;
-const isAuthenticated = Boolean(Astro.locals.user);
 
 if (!slug) return new Response(null, { status: 404 });
 
@@ -282,7 +281,7 @@ const metaDescription =
 					<div class="author-page__grid">
 						{articleCards.map((card, i) => (
 							<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="80">
-								<ArticleCard data={card} locale={locale} isAuthenticated={isAuthenticated} />
+								<ArticleCard data={card} locale={locale} />
 							</div>
 						))}
 					</div>
@@ -307,7 +306,7 @@ const metaDescription =
 					<div class="author-page__grid author-page__grid--events">
 						{eventCards.map((card, i) => (
 							<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="80">
-								<EventCardHorizontal data={card} locale={locale} isAuthenticated={isAuthenticated} />
+								<EventCardHorizontal data={card} locale={locale} />
 							</div>
 						))}
 					</div>

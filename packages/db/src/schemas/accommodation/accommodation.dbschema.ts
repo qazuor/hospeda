@@ -3,10 +3,10 @@ import type {
     AdminInfoType,
     ContactInfo,
     I18nText,
-    Media,
     Seo,
     SocialNetwork,
-    TranslationMeta
+    TranslationMeta,
+    Video
 } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import {
@@ -67,7 +67,19 @@ export const accommodations = pgTable(
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         price: jsonb('price').$type<Record<string, unknown>>(),
         location: jsonb('location').$type<AccommodationLocationType>(),
-        media: jsonb('media').$type<Media>(),
+        /**
+         * Embedded videos for the accommodation (HOS-372).
+         *
+         * SPEC-204's D1 decision kept videos in the `media` JSONB blob while photos moved
+         * to `accommodation_media`. Now that the blob is being dropped, they need a home
+         * of their own — but NOT a relational row: a video is an external YouTube/Vimeo
+         * URL, not an uploaded asset, so it cannot be orphaned in Cloudinary and would
+         * only carry dead columns (`public_id`, `is_featured`, file moderation).
+         *
+         * Rendered by the `/alojamientos/:slug/fotos` gallery page, which is the only
+         * public surface that displays them. Guarded by `videosPreservation.test.ts`.
+         */
+        videos: jsonb('videos').$type<Video[]>(),
         isFeatured: boolean('is_featured').notNull().default(false),
         // Denormalized billing-state flag (SPEC-292, renamed SPEC-309): true when the
         // owner's plan OR a customer-level addon grants an active FEATURED_LISTING

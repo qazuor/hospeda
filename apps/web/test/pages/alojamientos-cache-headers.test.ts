@@ -18,9 +18,25 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const PAGES = '../../src/pages/[lang]/alojamientos';
-const indexSrc = readFileSync(resolve(__dirname, `${PAGES}/index.astro`), 'utf8');
-const mapaSrc = readFileSync(resolve(__dirname, `${PAGES}/mapa.astro`), 'utf8');
-const tipoSrc = readFileSync(resolve(__dirname, `${PAGES}/tipo/[type]/index.astro`), 'utf8');
+
+/**
+ * Read a page with its comments stripped.
+ *
+ * These are substring assertions, so prose counts as code unless it is removed
+ * first: the pages now carry a comment explaining that the `!isAuthenticated`
+ * gate was REMOVED (HOS-369 WB0-5), and a raw `toContain` would read that as
+ * the gate still being there.
+ */
+function readPage(relative: string): string {
+    return readFileSync(resolve(__dirname, `${PAGES}/${relative}`), 'utf8')
+        .replace(/<!--[\s\S]*?-->/g, ' ')
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .replace(/(^|[^:])\/\/[^\n]*/gm, '$1');
+}
+
+const indexSrc = readPage('index.astro');
+const mapaSrc = readPage('mapa.astro');
+const tipoSrc = readPage('tipo/[type]/index.astro');
 
 /** The three pages all import the shared cache helper and set the header. */
 describe.each([
@@ -28,31 +44,41 @@ describe.each([
     ['mapa.astro', () => mapaSrc],
     ['tipo/[type]/index.astro', () => tipoSrc]
 ])('%s — shared Cache-Control wiring', (_name, getSrc) => {
-    it('imports the shared listing-cache helper', () => {
+    it('imports the shared cache helpers', () => {
         const src = getSrc();
         expect(src).toContain("from '@/lib/cache/listing-cache'");
-        expect(src).toContain('resolveListingCacheControl');
         expect(src).toContain('hasActiveAccommodationListingFilters');
+        expect(src).toContain("from '@/lib/cache/response-cache'");
+        expect(src).toContain('applyCacheHeaders');
     });
 
-    it('sets Cache-Control on Astro.response.headers via the helper', () => {
+    it('sets Cache-Control through applyCacheHeaders, never by hand', () => {
+        // HOS-369 W1-1 inverted this assertion. Setting the header directly is
+        // now the defect: `applyCacheHeaders` is the only thing that may declare
+        // a response cacheable, because it cannot do so without being handed the
+        // cache tags that will purge it. A hand-set header would produce a
+        // cacheable response nothing can invalidate before its TTL expires.
         const src = getSrc();
-        expect(src).toContain('Astro.response.headers.set(');
-        expect(src).toContain("'Cache-Control'");
-        expect(src).toContain('resolveListingCacheControl({');
+        expect(src).toContain('applyCacheHeaders({');
+        expect(src).toContain('headers: Astro.response.headers');
+        expect(src).not.toContain('resolveListingCacheControl');
+        expect(src).not.toMatch(/headers\.set\(\s*'Cache-Control'/);
     });
 
-    it('gates the shareable decision on the anonymous case (!isAuthenticated)', () => {
-        expect(getSrc()).toContain('!isAuthenticated');
-    });
-
-    it('computes isAuthenticated BEFORE setting the header (no personalised leak)', () => {
+    it('declares the accommodation collection tag so a write can purge it', () => {
         const src = getSrc();
-        const authIdx = src.search(/const isAuthenticated\s*=/);
-        const headerIdx = src.indexOf("'Cache-Control'");
-        expect(authIdx).toBeGreaterThan(-1);
-        expect(headerIdx).toBeGreaterThan(-1);
-        expect(authIdx).toBeLessThan(headerIdx);
+        expect(src).toContain("from '@repo/cache-tags'");
+        expect(src).toContain('CACHE_TAG_COLLECTIONS.accommodation');
+    });
+
+    it('does NOT gate the shareable decision on the session (HOS-369 WB0-5)', () => {
+        // The `!isAuthenticated` term is gone by construction: the response no
+        // longer varies by visitor, so there is no personalised variant to
+        // withhold from the cache. D-8 replaces "the origin promises not to
+        // mark it shareable" with "there is nothing personal in it".
+        const src = getSrc();
+        expect(src).not.toContain('!isAuthenticated');
+        expect(src).not.toContain('Astro.locals.user');
     });
 
     it('gates on the absence of active filters', () => {
@@ -80,7 +106,7 @@ describe('mapa.astro — type gate', () => {
 describe('tipo/[type]/index.astro — header placement', () => {
     it('sets the header AFTER the invalid-type 404 guard', () => {
         const guardIdx = tipoSrc.indexOf('status: 404');
-        const headerIdx = tipoSrc.indexOf("'Cache-Control'");
+        const headerIdx = tipoSrc.indexOf('applyCacheHeaders({');
         expect(guardIdx).toBeGreaterThan(-1);
         expect(headerIdx).toBeGreaterThan(-1);
         expect(guardIdx).toBeLessThan(headerIdx);

@@ -46,8 +46,13 @@
  * on its own; it is the origin-side prerequisite for the Cache Rule.
  *
  * On-demand freshness is handled by `POST /api/revalidate`, which purges the
- * entire Cloudflare cache on any content write, so the TTL below only bounds
- * staleness in the (rare) case a purge is missed.
+ * cache TAGS a write affects (HOS-369 W1-1 — it used to flush the whole zone on
+ * any content write, which would have made this cache empty itself). The TTL
+ * below only bounds staleness in the case a purge is missed.
+ *
+ * Which tags a response carries is declared through `applyCacheHeaders`
+ * (`./response-cache.ts`) — the only thing that may mark a response cacheable,
+ * and which cannot do so without them.
  */
 
 /** `s-maxage` in seconds — how long Cloudflare serves the cached HTML. */

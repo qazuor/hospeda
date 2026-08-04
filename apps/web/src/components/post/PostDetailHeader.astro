@@ -47,9 +47,6 @@ interface Props {
 	readonly bookmarkCount?: number;
 	readonly postId: string;
 	readonly locale: SupportedLocale;
-	readonly isAuthenticated: boolean;
-	readonly initialIsFavorited?: boolean;
-	readonly initialBookmarkId?: string | null;
 	readonly author?: AuthorByline | null;
 	readonly likes?: number;
 	readonly comments?: number;
@@ -69,9 +66,6 @@ const {
 	bookmarkCount,
 	postId,
 	locale,
-	isAuthenticated,
-	initialIsFavorited,
-	initialBookmarkId = null,
 	author = null,
 	likes = 0,
 	comments = 0,
@@ -209,9 +203,6 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 				client:load
 				entityId={postId}
 				entityType="POST"
-				initialIsFavorited={initialIsFavorited}
-				initialBookmarkId={initialBookmarkId}
-				isAuthenticated={isAuthenticated}
 				variant="standalone"
 				locale={locale}
 			/>

@@ -103,7 +103,7 @@ const BARE_TOKEN_PREFIX = 'channel-whatsapp';
  * tokens; each has its own test asserting how it inks them.
  */
 const OWNING_FILES: readonly string[] = [
-    'components/accommodation/WhatsAppContact.astro',
+    'components/accommodation/WhatsAppContact.module.css',
     'components/experience/ExperienceContactCTA.astro',
     'components/newsletter/WhatsAppCTA.module.css'
 ];
@@ -115,7 +115,7 @@ const OWNING_FILES: readonly string[] = [
  * which is worth a line of review.
  */
 const EXPECTED_REFERENCES: Readonly<Record<string, Readonly<Record<string, number>>>> = {
-    'components/accommodation/WhatsAppContact.astro': {
+    'components/accommodation/WhatsAppContact.module.css': {
         '--channel-whatsapp': 1,
         '--channel-whatsapp-foreground': 1,
         '--channel-whatsapp-hover': 1,

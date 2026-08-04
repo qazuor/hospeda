@@ -3,8 +3,14 @@
  * @description Unit tests for ReviewSidebarCard.client.tsx.
  * Uses @testing-library/react — the component is a React island.
  *
+ * Since HOS-369 WB0-7 the card resolves its own session and review eligibility
+ * instead of receiving them as SSR props, so those two inputs are now MOCKS
+ * (`@/lib/auth-cache` and the conversation store) rather than props. The three
+ * render states are unchanged; only where they come from moved.
+ *
  * Coverage:
- * - Renders the CTA when canLeaveReview=true, a locked note otherwise
+ * - Renders the anonymous `children` fallback with no session (the SSR/cached
+ *   output), the CTA for an eligible visitor, a locked note otherwise
  * - Clicking the CTA opens the dialog
  * - Submit is disabled until all 6 rating aspects are rated
  * - Successful submit shows the success message and fires review_submitted
@@ -14,7 +20,7 @@
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ReviewSidebarCard } from '@/components/accommodation/ReviewSidebarCard.client';
+import { buildAuthSnapshot } from '../../helpers/auth-session';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -45,6 +51,38 @@ vi.mock('@/components/accommodation/ReviewSidebarCard.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
 
+const mockReadCachedAuthMe = vi.fn();
+
+vi.mock('@/lib/auth-cache', () => ({
+    readCachedAuthMe: () => mockReadCachedAuthMe(),
+    // A cached AUTHENTICATED snapshot resolves synchronously inside the hook's
+    // mount effect. Anything else falls through to this deliberately pending
+    // fetch, which is the unresolved state a guest must also see.
+    fetchAuthMe: () => new Promise(() => undefined),
+    writeCachedAuthMe: () => undefined,
+    resetInFlightAuthMe: () => undefined
+}));
+
+const mockConversation = vi.fn();
+
+vi.mock('@/store/accommodation-conversation-store', () => ({
+    useAccommodationConversation: (params: { readonly accommodationId: string }) =>
+        mockConversation(params)
+}));
+
+// Imported after the mocks so the module graph picks them up.
+import { ReviewSidebarCard } from '@/components/accommodation/ReviewSidebarCard.client';
+
+/** Signed in, and already contacted the host — the eligible-reviewer case. */
+function arrangeEligible(): void {
+    mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
+    mockConversation.mockReturnValue({
+        conversationId: 'conv-1',
+        hasConversation: true,
+        isResolving: false
+    });
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -52,9 +90,9 @@ vi.mock('@/components/accommodation/ReviewSidebarCard.module.css', () => ({
 const DEFAULT_PROPS = {
     accommodationId: 'acc-123',
     accommodationName: 'Cabaña del Lago',
-    canLeaveReview: true,
     locale: 'es' as const,
-    apiUrl: 'http://localhost:3001'
+    apiUrl: 'http://localhost:3001',
+    children: <div data-testid="signin-cta">Iniciá sesión para opinar</div>
 };
 
 type CardProps = Parameters<typeof ReviewSidebarCard>[0];
@@ -99,15 +137,67 @@ function rateAllAspects() {
 // Tests
 // ---------------------------------------------------------------------------
 
+// Every suite below except the render one is about the review FORM, which only
+// exists for an eligible visitor. Arranging that here keeps those suites
+// reading exactly as they did when eligibility was an SSR prop.
+beforeEach(() => {
+    mockReadCachedAuthMe.mockReset();
+    mockConversation.mockReset();
+    arrangeEligible();
+});
+
 describe('ReviewSidebarCard — render', () => {
-    it('renders the CTA when canLeaveReview=true', () => {
-        renderCard();
-        expect(screen.getByRole('button', { name: /dejar reseña/i })).toBeInTheDocument();
+    beforeEach(() => {
+        // This suite owns the gating, so it starts from "no conversation" and
+        // each test arranges the session it is actually about.
+        mockReadCachedAuthMe.mockReset();
+        mockConversation.mockReturnValue({
+            conversationId: null,
+            hasConversation: false,
+            isResolving: false
+        });
     });
 
-    it('renders a locked note (no CTA) when canLeaveReview=false', () => {
-        renderCard({ canLeaveReview: false });
+    it('renders the anonymous children while no session is resolved', () => {
+        // The SSR / edge-cached output. Asserting the card is ABSENT is the
+        // half that matters: a review CTA in cached HTML would be shown to
+        // every visitor, signed in or not.
+        mockReadCachedAuthMe.mockReturnValue(null);
+        renderCard();
+
+        expect(screen.getByTestId('signin-cta')).toBeInTheDocument();
         expect(screen.queryByRole('button', { name: /dejar reseña/i })).not.toBeInTheDocument();
+    });
+
+    it('renders the anonymous children for a confirmed guest', () => {
+        mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: false }));
+        renderCard();
+
+        expect(screen.getByTestId('signin-cta')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /dejar reseña/i })).not.toBeInTheDocument();
+    });
+
+    it('renders the CTA for a signed-in visitor who contacted the host', () => {
+        arrangeEligible();
+        renderCard();
+
+        expect(screen.getByRole('button', { name: /dejar reseña/i })).toBeInTheDocument();
+        expect(screen.queryByTestId('signin-cta')).not.toBeInTheDocument();
+    });
+
+    it('renders a locked note (no CTA) for a signed-in visitor with no conversation', () => {
+        mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
+        renderCard();
+
+        expect(screen.queryByRole('button', { name: /dejar reseña/i })).not.toBeInTheDocument();
+        // Not the anonymous fallback either — this visitor IS signed in.
+        expect(screen.queryByTestId('signin-cta')).not.toBeInTheDocument();
+    });
+
+    it('asks the store about the accommodation it was given', () => {
+        arrangeEligible();
+        renderCard();
+        expect(mockConversation).toHaveBeenCalledWith({ accommodationId: 'acc-123' });
     });
 });
 

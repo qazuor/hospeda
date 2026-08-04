@@ -421,8 +421,7 @@ export class EventService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'event',
-                slug: entity.slug,
-                category: entity.category?.toLowerCase()
+                slug: entity.slug
             });
         } catch (error) {
             EventService.revalidationLogger.warn(
@@ -460,8 +459,7 @@ export class EventService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'event',
-                slug: entity.slug,
-                category: entity.category?.toLowerCase()
+                slug: entity.slug
             });
         } catch (error) {
             EventService.revalidationLogger.warn(
@@ -504,8 +502,7 @@ export class EventService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'event',
-                slug: entity.slug,
-                category: entity.category?.toLowerCase()
+                slug: entity.slug
             });
         } catch (error) {
             EventService.revalidationLogger.warn(
@@ -524,8 +521,7 @@ export class EventService extends BaseCrudService<
         const entity = await this.model.findById(id);
         if (entity && ctx.hookState) {
             ctx.hookState.restoredEvent = {
-                slug: entity.slug,
-                category: entity.category
+                slug: entity.slug
             };
         }
         return id;
@@ -540,8 +536,7 @@ export class EventService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'event',
-                slug: restored?.slug,
-                category: restored?.category?.toLowerCase()
+                slug: restored?.slug
             });
         } catch (error) {
             EventService.revalidationLogger.warn(
@@ -559,7 +554,7 @@ export class EventService extends BaseCrudService<
     ): Promise<string> {
         const entity = await this.model.findById(id);
         if (entity && ctx.hookState) {
-            ctx.hookState.deletedEvent = { slug: entity.slug, category: entity.category };
+            ctx.hookState.deletedEvent = { slug: entity.slug };
         }
         return id;
     }
@@ -573,8 +568,7 @@ export class EventService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'event',
-                slug: deleted?.slug,
-                category: deleted?.category?.toLowerCase()
+                slug: deleted?.slug
             });
         } catch (error) {
             EventService.revalidationLogger.warn(
@@ -592,7 +586,7 @@ export class EventService extends BaseCrudService<
     ): Promise<string> {
         const entity = await this.model.findById(id);
         if (entity && ctx.hookState) {
-            ctx.hookState.deletedEvent = { slug: entity.slug, category: entity.category };
+            ctx.hookState.deletedEvent = { slug: entity.slug };
             ctx.hookState.deletedEntityId = id;
         }
         return id;
@@ -607,8 +601,7 @@ export class EventService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'event',
-                slug: deleted?.slug,
-                category: deleted?.category?.toLowerCase()
+                slug: deleted?.slug
             });
         } catch (error) {
             EventService.revalidationLogger.warn(

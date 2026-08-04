@@ -822,7 +822,10 @@
             "cancelSuccess": "Alerta cancelada",
             "cancelError": "No se pudo cancelar la alerta",
             "locked": "Avisame si baja el precio",
-            "maxReached": "Límite de alertas alcanzado"
+            "maxReached": "Límite de alertas alcanzado",
+            "signInTitle": "Alertas de precio",
+            "signInHint": "Necesitás una cuenta para que te avisemos si baja el precio.",
+            "signInCta": "Iniciá sesión para crear la alerta"
         }
     },
     "list": {

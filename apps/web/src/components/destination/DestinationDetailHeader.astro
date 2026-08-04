@@ -37,9 +37,6 @@ interface Props {
 	readonly destinationId: string;
 	readonly name: string;
 	readonly locale: SupportedLocale;
-	readonly isAuthenticated?: boolean;
-	readonly initialIsFavorited?: boolean;
-	readonly initialBookmarkId?: string | null;
 	readonly bookmarkCount?: number;
 	/** Optional attractions, rendered as badges below the name. */
 	readonly attractions?: ReadonlyArray<HeaderAttraction>;
@@ -51,9 +48,6 @@ const {
 	destinationId,
 	name,
 	locale,
-	isAuthenticated = false,
-	initialIsFavorited,
-	initialBookmarkId = null,
 	bookmarkCount,
 	attractions = [],
 	maxAttractions = 6
@@ -133,9 +127,6 @@ const remainingAttractions = Math.max(0, attractions.length - sortedAttractions.
 				client:load
 				entityId={destinationId}
 				entityType="DESTINATION"
-				initialIsFavorited={initialIsFavorited}
-				initialBookmarkId={initialBookmarkId}
-				isAuthenticated={isAuthenticated}
 				variant="standalone"
 				locale={locale}
 			/>

@@ -9,6 +9,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GastronomyReviewForm } from '@/components/gastronomy/GastronomyReviewForm.client';
+import { buildAuthSnapshot } from '../../helpers/auth-session';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -37,18 +38,36 @@ vi.mock('@/components/gastronomy/GastronomyReviewForm.module.css', () => ({
 // Helpers
 // ---------------------------------------------------------------------------
 
+// HOS-369 WB0-4: the component resolves the session client-side via
+// `useAccountPermissions`, which reads `auth-cache`. See test/helpers/auth-session.ts.
+const mockReadCachedAuthMe = vi.fn();
+
+vi.mock('@/lib/auth-cache', () => ({
+    readCachedAuthMe: () => mockReadCachedAuthMe(),
+    fetchAuthMe: () => new Promise(() => undefined),
+    writeCachedAuthMe: () => undefined,
+    resetInFlightAuthMe: () => undefined
+}));
+
 const DEFAULT_PROPS = {
     gastronomyId: 'gastro-123',
     gastronomyName: 'La Parrilla de Juan',
     locale: 'es' as const,
     apiUrl: 'http://localhost:3001',
-    isAuthenticated: true,
     signInHref: '/es/auth/signin'
 };
 
 type FormProps = Parameters<typeof GastronomyReviewForm>[0];
 
-function renderForm(overrides: Partial<FormProps> = {}) {
+/**
+ * Render the card for a signed-in visitor by default. `isAuthenticated` is no
+ * longer a prop — it arranges the session the component resolves.
+ */
+function renderForm({
+    isAuthenticated = true,
+    ...overrides
+}: Partial<FormProps> & { readonly isAuthenticated?: boolean } = {}) {
+    mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated }));
     return render(
         <GastronomyReviewForm
             {...DEFAULT_PROPS}
@@ -153,5 +172,40 @@ describe('GastronomyReviewForm — title/content min-length gate (HOS-190)', () 
             target: { value: 'Volvería sin dudas, todo excelente.' }
         });
         expect(screen.getByRole('button', { name: /enviar reseña/i })).not.toBeDisabled();
+    });
+});
+
+describe('GastronomyReviewForm — client-side session resolution (HOS-369 WB0-4)', () => {
+    beforeEach(() => {
+        setupDialogMocks();
+    });
+
+    it('shows the sign-in card for a guest', () => {
+        renderForm({ isAuthenticated: false });
+        expect(screen.getByText(/Necesitás una cuenta para dejar tu reseña/i)).toBeInTheDocument();
+    });
+
+    it('no longer accepts isAuthenticated — removed from GastronomyReviewForm props (HOS-369 WB0-5)', () => {
+        // Assert — this only typechecks if the field is gone. If a future
+        // change resurrects it, `@ts-expect-error` starts reporting an
+        // unused-directive error and typecheck fails.
+        // @ts-expect-error — isAuthenticated was removed; session is resolved client-side via useAccountPermissions.
+        const props: FormProps = {
+            ...DEFAULT_PROPS,
+            isAuthenticated: false
+        };
+        expect(props.gastronomyId).toBe(DEFAULT_PROPS.gastronomyId);
+    });
+
+    it('shows the review CTA for a signed-in visitor — state comes only from the session, never a prop', () => {
+        // Cached anonymous HTML served to a reader who has a session.
+        // There is no prop left that could disagree with that session.
+        mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
+        render(<GastronomyReviewForm {...DEFAULT_PROPS} />);
+
+        expect(screen.getByRole('button', { name: /dejar reseña/i })).toBeInTheDocument();
+        expect(
+            screen.queryByText(/Necesitás una cuenta para dejar tu reseña/i)
+        ).not.toBeInTheDocument();
     });
 });

@@ -26,7 +26,23 @@ vi.mock('../../../src/components/commerce/CommerceTranslationPanel.module.css', 
 }));
 
 vi.mock('../../../src/lib/i18n', () => ({
-    createTranslations: () => ({ t: (key: string, fallback?: string) => fallback ?? key })
+    // Mirrors the real resolver on the one point that matters here: when a key
+    // EXISTS in the catalog its value wins and the fallback is discarded, so an
+    // interpolation baked into the fallback never reaches the screen. A plain
+    // `fallback ?? key` mock hides exactly that class of bug (BETA-124).
+    createTranslations: () => ({
+        t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
+            const raw =
+                key === 'commerce.owner.editor.translationPanel.localePlaceholder'
+                    ? 'Ingresá el texto en {{locale}}...'
+                    : (fallback ?? key);
+            if (!params) return raw;
+            return Object.keys(params).reduce(
+                (acc, name) => acc.replaceAll(`{{${name}}}`, String(params[name])),
+                raw
+            );
+        }
+    })
 }));
 
 // ---------------------------------------------------------------------------
@@ -62,6 +78,28 @@ function renderPanel(initialValues: CommerceI18nValues = EMPTY_I18N, onChange = 
 // ---------------------------------------------------------------------------
 
 describe('CommerceTranslationPanel', () => {
+    it('interpolates the active locale into the placeholder instead of printing the template', () => {
+        renderPanel();
+
+        const textareas = screen.getAllByRole('textbox') as HTMLTextAreaElement[];
+        expect(textareas.length).toBeGreaterThan(0);
+        for (const textarea of textareas) {
+            expect(textarea.placeholder).toBe('Ingresá el texto en ES...');
+            expect(textarea.placeholder).not.toContain('{{');
+        }
+    });
+
+    it('re-interpolates the placeholder after switching locale tabs', () => {
+        renderPanel();
+
+        fireEvent.click(screen.getByRole('tab', { name: /PT/i }));
+
+        const textareas = screen.getAllByRole('textbox') as HTMLTextAreaElement[];
+        for (const textarea of textareas) {
+            expect(textarea.placeholder).toBe('Ingresá el texto en PT...');
+        }
+    });
+
     it('renders locale tabs for es, en, pt', () => {
         renderPanel();
         expect(screen.getByRole('tab', { name: /ES/i })).toBeInTheDocument();
@@ -121,6 +159,33 @@ describe('CommerceTranslationPanel', () => {
 
         const lastCall = handleChange.mock.calls.at(-1)?.[0] as CommerceI18nValues;
         expect(lastCall.nameI18n.es).toBe('nombre 2');
+    });
+
+    describe('field labels carry the active locale (HOS-371)', () => {
+        it('qualifies every field label so it cannot collide with the editor own fields', () => {
+            renderPanel(EMPTY_I18N);
+
+            // The hosting editor renders its OWN "Nombre del comercio",
+            // "Resumen", "Descripción" and "Descripción ampliada" on the same
+            // page. Unqualified, these four announced identically to a screen
+            // reader and made `getByRole('textbox', { name })` ambiguous.
+            for (const base of ['Nombre', 'Resumen', 'Descripción', 'Descripción ampliada']) {
+                expect(screen.getByLabelText(`${base} (ES)`)).toBeInTheDocument();
+                expect(screen.queryByLabelText(base)).toBeNull();
+            }
+        });
+
+        it('updates the qualifier when the locale tab changes', () => {
+            renderPanel(EMPTY_I18N);
+
+            fireEvent.click(screen.getByRole('tab', { name: /EN/i }));
+
+            // The locale must live in the NAME, not only in the active tab:
+            // the tab is a separate control, so someone landing straight on the
+            // field would otherwise never learn which language they are typing.
+            expect(screen.getByLabelText('Descripción ampliada (EN)')).toBeInTheDocument();
+            expect(screen.queryByLabelText('Descripción ampliada (ES)')).toBeNull();
+        });
     });
 });
 

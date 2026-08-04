@@ -66,13 +66,6 @@
     border-color: oklch(0.55 0.22 25);
 }
 
-.fieldError {
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    color: oklch(0.55 0.22 25);
-    margin-top: var(--space-1, 0.25rem);
-}
-
 select.fieldInput {
     appearance: auto;
 }
@@ -91,4 +84,15 @@ select.fieldInput {
     font-size: 0.9375rem;
     line-height: 1.5;
     box-sizing: border-box;
+}
+
+/*
+ * HOS-373: the shared `FieldError` ships `margin: 0` and expects its container
+ * to own the spacing. These sections previously relied on the error element's
+ * own `margin-top`, so without this the message sits flush against the input.
+ * The selector is doubled to raise specificity above `.error` deterministically
+ * — with equal specificity the winner would depend on stylesheet order.
+ */
+.fieldErrorSpacing.fieldErrorSpacing {
+    margin-top: var(--space-1, 0.25rem);
 }

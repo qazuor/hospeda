@@ -4,6 +4,7 @@
  * bathrooms. Uses native HTML number inputs.
  */
 
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import type { AccommodationEditData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -52,17 +53,15 @@ export function CapacitySection({ locale, data, errors, onFieldChange }: Capacit
                             )
                         }
                         aria-invalid={Boolean(errors.maxGuests)}
-                        aria-describedby={errors.maxGuests ? 'acc-maxGuests-error' : undefined}
+                        aria-describedby={
+                            errors.maxGuests ? fieldErrorId('acc-maxGuests') : undefined
+                        }
                     />
-                    {errors.maxGuests && (
-                        <span
-                            id="acc-maxGuests-error"
-                            className={styles.fieldError}
-                            role="alert"
-                        >
-                            {errors.maxGuests}
-                        </span>
-                    )}
+                    <FieldError
+                        id={fieldErrorId('acc-maxGuests')}
+                        message={errors.maxGuests}
+                        className={styles.fieldErrorSpacing}
+                    />
                 </div>
 
                 <div className={styles.field}>
@@ -86,17 +85,15 @@ export function CapacitySection({ locale, data, errors, onFieldChange }: Capacit
                             )
                         }
                         aria-invalid={Boolean(errors.bedrooms)}
-                        aria-describedby={errors.bedrooms ? 'acc-bedrooms-error' : undefined}
+                        aria-describedby={
+                            errors.bedrooms ? fieldErrorId('acc-bedrooms') : undefined
+                        }
                     />
-                    {errors.bedrooms && (
-                        <span
-                            id="acc-bedrooms-error"
-                            className={styles.fieldError}
-                            role="alert"
-                        >
-                            {errors.bedrooms}
-                        </span>
-                    )}
+                    <FieldError
+                        id={fieldErrorId('acc-bedrooms')}
+                        message={errors.bedrooms}
+                        className={styles.fieldErrorSpacing}
+                    />
                 </div>
 
                 <div className={styles.field}>
@@ -120,17 +117,15 @@ export function CapacitySection({ locale, data, errors, onFieldChange }: Capacit
                             )
                         }
                         aria-invalid={Boolean(errors.bathrooms)}
-                        aria-describedby={errors.bathrooms ? 'acc-bathrooms-error' : undefined}
+                        aria-describedby={
+                            errors.bathrooms ? fieldErrorId('acc-bathrooms') : undefined
+                        }
                     />
-                    {errors.bathrooms && (
-                        <span
-                            id="acc-bathrooms-error"
-                            className={styles.fieldError}
-                            role="alert"
-                        >
-                            {errors.bathrooms}
-                        </span>
-                    )}
+                    <FieldError
+                        id={fieldErrorId('acc-bathrooms')}
+                        message={errors.bathrooms}
+                        className={styles.fieldErrorSpacing}
+                    />
                 </div>
             </div>
         </fieldset>

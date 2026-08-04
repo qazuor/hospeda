@@ -123,6 +123,7 @@ import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
 import { DestinationService } from '../destination/destination.service';
+import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
 import { PointOfInterestService } from '../point-of-interest/point-of-interest.service';
 import { getUserRoles, grantRole } from '../user-role/user-role.service.js';
 import {
@@ -691,10 +692,18 @@ export class AccommodationService extends BaseCrudService<
 
         if (!result?.items) return result;
 
-        return {
-            ...result,
-            items: projectAccommodationCityDestinationList(result.items)
-        };
+        // SPEC-204 T-024: `adminList` returns `_executeAdminSearch` output verbatim —
+        // unlike `list()`/`search()`, it never routes through `_afterList`/`_afterSearch`,
+        // so the relational media read has to happen here. Without it the admin list
+        // ships the raw `accommodations.media` JSONB, whose photo keys were stripped by
+        // the `021-accommodation-media-strip-blob-photos` data migration.
+        const items = await attachComposedMediaList({
+            items: projectAccommodationCityDestinationList(result.items),
+            mediaModel: this._accommodationMediaModel,
+            tx: params.ctx?.tx
+        });
+
+        return { ...result, items };
     }
 
     /**
@@ -1011,9 +1020,9 @@ export class AccommodationService extends BaseCrudService<
             try {
                 getRevalidationService()?.scheduleRevalidation({
                     entityType: 'accommodation',
+                    id: entity.id,
                     slug: entity.slug,
-                    destinationSlug,
-                    accommodationType: entity.type?.toLowerCase()
+                    destinationSlug
                 });
             } catch (error) {
                 this.logger.warn(
@@ -1223,8 +1232,7 @@ export class AccommodationService extends BaseCrudService<
                     entityType: 'accommodation',
                     id: entity.id,
                     slug: entity.slug,
-                    destinationSlug,
-                    accommodationType: entity.type?.toLowerCase()
+                    destinationSlug
                 });
             } catch (error) {
                 this.logger.warn(
@@ -1624,51 +1632,27 @@ export class AccommodationService extends BaseCrudService<
             }
         }
 
-        // SPEC-204 DIRECT CUTOVER — media blob on update carries ONLY videos.
+        // HOS-372 — `media` is READ-ONLY on this entity. The relational
+        // `accommodation_media` table owns the photos and the `videos` column owns the
+        // videos; the JSONB `media` column itself was dropped, and `media` on the way
+        // OUT is composed from those two sources by `accommodation.media-read.ts`.
         //
-        // The relational `accommodation_media` table is the sole source of truth for
-        // photos (gallery, featuredImage, archivedGallery). Sending photo fields from
-        // a bulk update would overwrite the blob's photo-related keys and create a
-        // divergence with the table. We therefore strip those fields from any incoming
-        // `media` object before passing it to `super.update()`.
+        // `AccommodationUpdateInputSchema` omits `media`, so a validated payload can
+        // never carry it. This strip is the second line of defence, for the callers
+        // that reach the service with an unvalidated object (tests, internal callers,
+        // any future route that forgets the schema): forwarding it would target a
+        // column that no longer exists.
         //
-        // B-2 (videos preservation): videos remain in the JSONB blob. The web editor
-        // sends only featuredImage+gallery, so `videos` is typically absent from
-        // client payloads. Without the guard the existing videos array would be wiped
-        // by the shallow JSONB merge. We carry it forward from the current DB row
-        // whenever the payload omits the `videos` key entirely.
-        //   - Absent `videos` key in payload → carry forward from existing row.
-        //   - Explicit `videos: []` in payload → respected (clears the list).
-        //
-        // Fetch only when needed: if `data.media` is undefined the DB write won't
-        // touch the media column at all, so no action is required.
-        let normalizedData = data;
-        if (data.media !== undefined) {
-            // Strip photo fields — they are managed exclusively via media endpoints.
-            const {
-                gallery: _gallery,
-                featuredImage: _featuredImage,
-                archivedGallery: _archivedGallery,
-                ...videosOnlyMedia
-            } = data.media as Record<string, unknown>;
-            // Carry forward existing videos when the payload omits the `videos` key.
-            const existingVideos = (await this.model.findById(id, resolvedCtx?.tx))?.media?.videos;
-            const shouldCarryVideos =
-                existingVideos !== undefined &&
-                !('videos' in (data.media as Record<string, unknown>));
-            normalizedData = {
-                ...data,
-                media: {
-                    ...videosOnlyMedia,
-                    ...(shouldCarryVideos ? { videos: existingVideos } : {})
-                }
-            } as AccommodationUpdateInput;
-        }
+        // Videos need no preservation logic anymore. `videos` is a plain top-level
+        // column, so an absent key never reaches the SET clause and the stored array
+        // survives on its own — the old B-2 carry-forward guard existed only because
+        // the blob write was a wholesale replace.
+        const { media: _legacyMedia, ...normalizedData } = data as AccommodationUpdateInput & {
+            media?: unknown;
+        };
 
         // SPEC-172: if junction sync fields are present and no external tx exists,
         // open a transaction so the accommodation update + junction sync are atomic.
-        // Media no longer needs a tx here: the JSONB write goes through model.update()
-        // directly and is atomic by itself.
         const { amenityIds, featureIds } = normalizedData as {
             amenityIds?: readonly string[];
             featureIds?: readonly string[];
@@ -1890,9 +1874,9 @@ export class AccommodationService extends BaseCrudService<
                 try {
                     getRevalidationService()?.scheduleRevalidation({
                         entityType: 'accommodation',
+                        id: updated.id,
                         slug: updated.slug,
-                        destinationSlug,
-                        accommodationType: updated.type?.toLowerCase()
+                        destinationSlug
                     });
                 } catch (error) {
                     this.logger.warn(
@@ -1981,9 +1965,9 @@ export class AccommodationService extends BaseCrudService<
                 try {
                     getRevalidationService()?.scheduleRevalidation({
                         entityType: 'accommodation',
+                        id: updated.id,
                         slug: updated.slug,
-                        destinationSlug,
-                        accommodationType: updated.type?.toLowerCase()
+                        destinationSlug
                     });
                 } catch (error) {
                     this.logger.warn(
@@ -2065,9 +2049,9 @@ export class AccommodationService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'accommodation',
+                id: entity.id,
                 slug: entity.slug,
-                destinationSlug,
-                accommodationType: entity.type?.toLowerCase()
+                destinationSlug
             });
         } catch (error) {
             this.logger.warn(
@@ -2086,6 +2070,7 @@ export class AccommodationService extends BaseCrudService<
         const entity = await this.model.findById(id, ctx?.tx);
         if (entity && ctx.hookState) {
             ctx.hookState.restoredAccommodation = {
+                id: entity.id,
                 slug: entity.slug,
                 destinationId: entity.destinationId,
                 type: entity.type
@@ -2109,9 +2094,9 @@ export class AccommodationService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'accommodation',
+                id: restored?.id,
                 slug: restored?.slug,
-                destinationSlug,
-                accommodationType: restored?.type?.toLowerCase()
+                destinationSlug
             });
         } catch (error) {
             this.logger.warn(
@@ -2130,6 +2115,7 @@ export class AccommodationService extends BaseCrudService<
         const entity = await this.model.findById(id, ctx?.tx);
         if (entity && ctx.hookState) {
             ctx.hookState.deletedEntity = {
+                id: entity.id,
                 destinationId: entity.destinationId,
                 slug: entity.slug,
                 type: entity.type
@@ -2171,9 +2157,9 @@ export class AccommodationService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'accommodation',
+                id: deleted?.id,
                 slug: deleted?.slug,
-                destinationSlug,
-                accommodationType: deleted?.type?.toLowerCase()
+                destinationSlug
             });
         } catch (error) {
             this.logger.warn(
@@ -2192,6 +2178,7 @@ export class AccommodationService extends BaseCrudService<
         const entity = await this.model.findById(id, ctx?.tx);
         if (entity && ctx.hookState) {
             ctx.hookState.deletedEntity = {
+                id: entity.id,
                 destinationId: entity.destinationId,
                 slug: entity.slug,
                 type: entity.type
@@ -2216,9 +2203,9 @@ export class AccommodationService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'accommodation',
+                id: deleted?.id,
                 slug: deleted?.slug,
-                destinationSlug,
-                accommodationType: deleted?.type?.toLowerCase()
+                destinationSlug
             });
         } catch (error) {
             this.logger.warn(
@@ -3720,8 +3707,12 @@ export class AccommodationService extends BaseCrudService<
      * 4. Resequence the remaining visible rows to a dense 0-based `sortOrder`
      *    (preserves their relative order). Both steps run in a single transaction.
      *
-     * Does NOT touch Cloudinary — deleting the binary is a separate concern
-     * orchestrated by the caller. Only the DB row is affected.
+     * Deletes the Cloudinary binary too, when the service was constructed with a
+     * `mediaProvider` (HOS-372). That step runs after authorization and row
+     * resolution but BEFORE the DB transaction: a storage failure aborts the
+     * removal with the row intact, so the user can retry and an orphaned asset
+     * becomes impossible rather than merely unlikely. See
+     * `services/media/delete-media-asset.ts` for the full ordering rationale.
      *
      * @param actor - The actor performing the action.
      * @param data  - Input containing accommodationId and mediaId.
@@ -3752,6 +3743,16 @@ export class AccommodationService extends BaseCrudService<
                         'Media not found for this accommodation'
                     );
                 }
+
+                // Binary first, row second. Runs outside the transaction on
+                // purpose — an external call cannot be rolled back, so it must
+                // fail before the DB is touched rather than after (see
+                // services/media/delete-media-asset.ts).
+                await deleteMediaAssetOrThrow({
+                    provider: this.mediaProvider,
+                    row: mediaRow,
+                    logger: this.logger
+                });
 
                 // Soft-delete + resequence in a single transaction.
                 const doRemove = async (tx: DrizzleClient): Promise<void> => {
@@ -3832,6 +3833,26 @@ export class AccommodationService extends BaseCrudService<
 
                 // Validate set equality: orderedIds must match existingIds exactly.
                 const inputIds = new Set(validated.orderedIds);
+
+                // Duplicates first: comparing SETS cannot see them. [A, A, B] against
+                // {A, B} dedupes to {A, B}, so nothing is missing and nothing is extra
+                // and the checks below pass — then the loop writes A at index 0 and
+                // again at index 1, leaving no row at sortOrder 0, and the response maps
+                // over orderedIds so the same photo comes back twice. The payload schema
+                // does not guard this either (orderedIds is array(uuid).min(1)).
+                // Duplicates first: comparing SETS cannot see them. [A, A, B] against
+                // {A, B} dedupes to {A, B}, so nothing is missing and nothing is extra
+                // and the checks below pass — then the loop writes A at index 0 and
+                // again at index 1, leaving no row at sortOrder 0, and the response maps
+                // over orderedIds so the same photo comes back twice. The payload schema
+                // does not guard this either (orderedIds is array(uuid).min(1)).
+                if (validated.orderedIds.length !== inputIds.size) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'orderedIds contains duplicate media ids'
+                    );
+                }
+
                 const missingIds = [...existingIds].filter((id) => !inputIds.has(id));
                 const extraIds = [...inputIds].filter((id) => !existingIds.has(id));
 
@@ -4256,8 +4277,7 @@ export class AccommodationService extends BaseCrudService<
                         entityType: 'accommodation',
                         id: updated.id,
                         slug: updated.slug,
-                        destinationSlug,
-                        accommodationType: updated.type?.toLowerCase()
+                        destinationSlug
                     });
                 } catch (error) {
                     this.logger.warn(

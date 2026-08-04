@@ -23,6 +23,7 @@
         "clean": "rm -rf node_modules test-results playwright-report"
     },
     "dependencies": {
+        "@repo/cache-tags": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/logger": "workspace:*",
@@ -35,7 +36,7 @@
         "zod": "^4.0.8"
     },
     "devDependencies": {
-        "@playwright/test": "^1.61.1",
+        "@playwright/test": "^1.62.0",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "^26.1.1",
         "@types/pg": "^8.20.0",

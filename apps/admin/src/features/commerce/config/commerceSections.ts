@@ -517,7 +517,12 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 }
             },
             {
-                id: 'media.videos',
+                // HOS-372: the field id is `videos`, NOT `media.videos`. The `media`
+                // JSONB column was dropped from `gastronomies`/`experiences` and
+                // `media` is no longer a write field — a dotted `media.videos` id
+                // submits a `media` object the update schema now strips, so the
+                // videos would never reach the DB. `videos` is its own column.
+                id: 'videos',
                 type: FieldTypeEnum.VIDEO_GALLERY,
                 required: false,
                 modes: ['view', 'edit', 'create'],

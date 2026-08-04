@@ -311,6 +311,7 @@
                 "saveFailed": "Failed to save",
                 "network": "Network error"
             },
+            "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
             "toast": {
                 "saveSuccess": "Changes saved",
                 "saveError": "We couldn't save your changes. Please try again.",

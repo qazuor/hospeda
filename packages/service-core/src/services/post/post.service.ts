@@ -557,14 +557,10 @@ export class PostService extends BaseCrudService<
         checkCanAdminList(actor);
     }
     protected async _afterCreate(entity: Post, _actor: Actor, _ctx: ServiceContext): Promise<Post> {
-        // User-tags (r_entity_tag) do not have slugs per SPEC-086 D-002.
-        // PostTag slugs live in the separate post_tags system and are not on entity.tags.
-        const tagSlugs: string[] | undefined = undefined;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
-                slug: entity.slug,
-                tagSlugs
+                slug: entity.slug
             });
         } catch (error) {
             PostService.revalidationLogger.warn(
@@ -599,13 +595,10 @@ export class PostService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext<PostHookState>
     ): Promise<Post> {
-        // User-tags do not have slugs per SPEC-086 D-002
-        const tagSlugs: string[] | undefined = undefined;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
-                slug: entity.slug,
-                tagSlugs
+                slug: entity.slug
             });
         } catch (error) {
             PostService.revalidationLogger.warn(
@@ -645,13 +638,10 @@ export class PostService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<Post> {
-        // User-tags do not have slugs per SPEC-086 D-002
-        const tagSlugs: string[] | undefined = undefined;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
-                slug: entity.slug,
-                tagSlugs
+                slug: entity.slug
             });
         } catch (error) {
             PostService.revalidationLogger.warn(
@@ -670,9 +660,7 @@ export class PostService extends BaseCrudService<
         const entity = await this.model.findById(id);
         if (entity && ctx.hookState) {
             ctx.hookState.restoredPost = {
-                slug: entity.slug,
-                // User-tags do not have slugs per SPEC-086 D-002
-                tagSlugs: undefined
+                slug: entity.slug
             };
         }
         return id;
@@ -687,8 +675,7 @@ export class PostService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
-                slug: restored?.slug,
-                tagSlugs: restored?.tagSlugs
+                slug: restored?.slug
             });
         } catch (error) {
             PostService.revalidationLogger.warn(
@@ -707,9 +694,7 @@ export class PostService extends BaseCrudService<
         const entity = await this.model.findById(id);
         if (entity && ctx.hookState) {
             ctx.hookState.deletedPost = {
-                slug: entity.slug,
-                // User-tags do not have slugs per SPEC-086 D-002
-                tagSlugs: undefined
+                slug: entity.slug
             };
         }
         return id;
@@ -724,8 +709,7 @@ export class PostService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
-                slug: deleted?.slug,
-                tagSlugs: deleted?.tagSlugs
+                slug: deleted?.slug
             });
         } catch (error) {
             PostService.revalidationLogger.warn(
@@ -744,9 +728,7 @@ export class PostService extends BaseCrudService<
         const entity = await this.model.findById(id);
         if (entity && ctx.hookState) {
             ctx.hookState.deletedPost = {
-                slug: entity.slug,
-                // User-tags do not have slugs per SPEC-086 D-002
-                tagSlugs: undefined
+                slug: entity.slug
             };
             ctx.hookState.deletedEntityId = id;
         }
@@ -762,8 +744,7 @@ export class PostService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
-                slug: deleted?.slug,
-                tagSlugs: deleted?.tagSlugs
+                slug: deleted?.slug
             });
         } catch (error) {
             PostService.revalidationLogger.warn(

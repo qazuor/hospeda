@@ -54,12 +54,8 @@ describe('ArticleCard.astro', () => {
             expect(src).toContain('readonly data: ArticleCardBaseProps');
         });
 
-        it('should declare optional isAuthenticated prop', () => {
-            expect(src).toContain('readonly isAuthenticated?: boolean');
-        });
-
-        it('should default isAuthenticated to false', () => {
-            expect(src).toContain('isAuthenticated = false');
+        it('no longer declares isAuthenticated prop (removed HOS-369 WB0-5)', () => {
+            expect(src).not.toContain('isAuthenticated');
         });
     });
 
@@ -76,12 +72,9 @@ describe('ArticleCard.astro', () => {
             expect(src).toContain('entityType="POST"');
         });
 
-        it('should pass initialIsFavorited from data.isFavorited', () => {
-            expect(src).toContain('initialIsFavorited={data.isFavorited}');
-        });
-
-        it('should pass initialBookmarkId from data.favoriteBookmarkId with null fallback', () => {
-            expect(src).toContain('initialBookmarkId={data.favoriteBookmarkId ?? null}');
+        it('no longer passes initialIsFavorited/initialBookmarkId — FavoriteButton resolves client-side (HOS-369 WB0-5)', () => {
+            expect(src).not.toContain('initialIsFavorited');
+            expect(src).not.toContain('initialBookmarkId');
         });
 
         it('should pass count from data.bookmarkCount', () => {
@@ -96,8 +89,8 @@ describe('ArticleCard.astro', () => {
             expect(src).toContain('locale={locale}');
         });
 
-        it('should forward isAuthenticated to FavoriteButton', () => {
-            expect(src).toContain('isAuthenticated={isAuthenticated}');
+        it('does NOT forward isAuthenticated to FavoriteButton — resolves client-side (HOS-369 WB0-5)', () => {
+            expect(src).not.toMatch(/<FavoriteButton[\s\S]*?isAuthenticated=/);
         });
 
         it('should guard FavoriteButton rendering on data.id being present', () => {

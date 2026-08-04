@@ -92,7 +92,7 @@
         "@commitlint/cli": "^21.2.1",
         "@commitlint/config-conventional": "^21.2.0",
         "@inquirer/prompts": "^8.5.2",
-        "@playwright/test": "^1.61.1",
+        "@playwright/test": "^1.62.0",
         "@repo/config": "workspace:*",
         "@types/node": "^26.1.1",
         "@vitest/coverage-v8": "^4.1.10",
@@ -102,15 +102,15 @@
         "dotenv": "^17.4.2",
         "fuse.js": "^7.5.0",
         "husky": "^9.1.7",
-        "lint-staged": "^17.0.8",
-        "markdownlint-cli2": "^0.23.0",
+        "lint-staged": "^17.2.0",
+        "markdownlint-cli2": "^0.23.1",
         "sharp": "^0.35.2",
         "tsx": "^4.23.1",
-        "turbo": "^2.10.5",
+        "turbo": "^2.10.7",
         "typescript": "6.0.3",
         "vitest": "^4.1.10"
     },
-    "packageManager": "pnpm@11.13.0",
+    "packageManager": "pnpm@11.18.0",
     "engines": {
         "node": ">=22.19.0"
     },

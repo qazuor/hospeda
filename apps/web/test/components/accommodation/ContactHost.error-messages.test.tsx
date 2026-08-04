@@ -12,9 +12,36 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContactHost } from '../../../src/components/accommodation/ContactHost.client';
+import { buildAuthSnapshot } from '../../helpers/auth-session';
 
 vi.mock('../../../src/lib/analytics/posthog-client', () => ({
     trackEvent: vi.fn()
+}));
+
+// HOS-369 WB0-4: the island resolves the visitor client-side, so the signed-in
+// mode this regression exercises is arranged through the session cache rather
+// than a `currentUser` prop. See test/helpers/auth-session.ts.
+const mockReadCachedAuthMe = vi.fn();
+
+vi.mock('@/lib/auth-cache', () => ({
+    readCachedAuthMe: () => mockReadCachedAuthMe(),
+    fetchAuthMe: () => new Promise(() => undefined),
+    writeCachedAuthMe: () => undefined,
+    resetInFlightAuthMe: () => undefined
+}));
+
+// HOS-369 WB0-7: `existingConversationId` stopped being an SSR prop too — it is
+// the same per-visitor lookup, now shared with ReviewSidebarCard through the
+// store. Default: no conversation, which is the guest and fail-closed answer.
+const mockConversation = vi.fn(() => ({
+    conversationId: null as string | null,
+    hasConversation: false,
+    isResolving: false
+}));
+
+vi.mock('@/store/accommodation-conversation-store', () => ({
+    useAccommodationConversation: (params: { readonly accommodationId: string }) =>
+        mockConversation(params)
 }));
 
 const ACTIVE_ACCOMMODATION = {
@@ -34,6 +61,14 @@ const CURRENT_USER = { id: 'user-1', name: 'Ana', email: 'ana@example.com' };
 describe('ContactHost — accurate API error message (HOS-190)', () => {
     beforeEach(() => {
         global.fetch = vi.fn();
+        mockReadCachedAuthMe.mockReturnValue(
+            buildAuthSnapshot({
+                isAuthenticated: true,
+                id: CURRENT_USER.id,
+                name: CURRENT_USER.name,
+                email: CURRENT_USER.email
+            })
+        );
     });
 
     it('surfaces the real API error message instead of "conversation not found"', async () => {
@@ -49,7 +84,6 @@ describe('ContactHost — accurate API error message (HOS-190)', () => {
         render(
             <ContactHost
                 accommodation={ACTIVE_ACCOMMODATION}
-                currentUser={CURRENT_USER}
                 locale="es"
             />
         );

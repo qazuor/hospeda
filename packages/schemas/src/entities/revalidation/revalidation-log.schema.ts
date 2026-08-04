@@ -13,8 +13,8 @@ export const RevalidationTriggerEnum = z.enum(['manual', 'hook', 'cron', 'stale'
 export type RevalidationTrigger = z.infer<typeof RevalidationTriggerEnum>;
 
 /**
- * Outcome of a revalidation attempt for a single path.
- * - `success`: Path was successfully revalidated
+ * Outcome of a revalidation attempt for a single target.
+ * - `success`: Target was successfully revalidated
  * - `failed`: Revalidation was attempted but encountered an error
  * - `skipped`: Revalidation was not performed (e.g., debounce active, feature disabled)
  */
@@ -26,14 +26,18 @@ export type RevalidationStatus = z.infer<typeof RevalidationStatusEnum>;
 /**
  * RevalidationLogSchema
  *
- * Records a single revalidation attempt for an ISR path.
- * Used for auditing, debugging, and monitoring revalidation health.
+ * Records a single revalidation attempt for a cache tag (or a whole-zone
+ * purge target). Used for auditing, debugging, and monitoring revalidation health.
  */
 export const RevalidationLogSchema = z.object({
     /** Unique identifier for this log entry */
     id: z.string().uuid(),
-    /** The URL path that was revalidated (e.g., `/en/accommodations/hotel-palace`) */
-    path: z.string(),
+    /**
+     * The revalidation target: a Cloudflare cache tag (e.g. `accom-hotel-palace`,
+     * `list-accom`) or `*` for a whole-zone purge. Historical rows predating
+     * HOS-369 W1-1 hold URL paths instead.
+     */
+    target: z.string(),
     /** The entity type associated with this revalidation (e.g., `accommodation`) */
     entityType: z.string(),
     /** The specific entity ID that triggered this revalidation, if applicable */

@@ -3,7 +3,13 @@
  * @description Unit tests for DestinationReviewSidebarCard.client.tsx.
  * Uses @testing-library/react — the component is a React island.
  *
+ * Since HOS-369 WB0-7 the card resolves its own session instead of the page
+ * branching on `Astro.locals.user`: it renders the anonymous `children` — the
+ * sign-in CTA the page slots in, and therefore what the edge caches — until a
+ * session resolves. The session is a MOCK (`@/lib/auth-cache`), not a prop.
+ *
  * Coverage:
+ * - Renders the anonymous children with no session; the card once signed in
  * - Renders the sidebar card with the CTA button (card + inline variants)
  * - Clicking the CTA opens the dialog
  * - Submit is disabled until all 18 dimensions are rated
@@ -18,7 +24,7 @@
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DestinationReviewSidebarCard } from '@/components/destination/DestinationReviewSidebarCard.client';
+import { buildAuthSnapshot } from '../../helpers/auth-session';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -43,6 +49,21 @@ vi.mock('@/components/destination/DestinationReviewSidebarCard.module.css', () =
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
 
+const mockReadCachedAuthMe = vi.fn();
+
+vi.mock('@/lib/auth-cache', () => ({
+    readCachedAuthMe: () => mockReadCachedAuthMe(),
+    // A cached AUTHENTICATED snapshot resolves synchronously inside the hook's
+    // mount effect. Anything else falls through to this deliberately pending
+    // fetch, which is the unresolved state a guest must also see.
+    fetchAuthMe: () => new Promise(() => undefined),
+    writeCachedAuthMe: () => undefined,
+    resetInFlightAuthMe: () => undefined
+}));
+
+// Imported after the mocks so the module graph picks them up.
+import { DestinationReviewSidebarCard } from '@/components/destination/DestinationReviewSidebarCard.client';
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -51,8 +72,17 @@ const DEFAULT_PROPS = {
     destinationId: 'dest-123',
     destinationName: 'Colón',
     locale: 'es' as const,
-    apiUrl: 'http://localhost:3001'
+    apiUrl: 'http://localhost:3001',
+    children: <div data-testid="signin-cta">Iniciá sesión para opinar</div>
 };
+
+// Every suite below is about the review FORM, which only exists once a session
+// is resolved. Arranging that here keeps them reading as they did when the page
+// did the gating. The gating itself is asserted in its own suite.
+beforeEach(() => {
+    mockReadCachedAuthMe.mockReset();
+    mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
+});
 
 type CardProps = Parameters<typeof DestinationReviewSidebarCard>[0];
 
@@ -115,6 +145,38 @@ describe('DestinationReviewSidebarCard — render', () => {
     it('renders the card title', () => {
         renderCard();
         expect(screen.getByText(/tu opinión/i)).toBeInTheDocument();
+    });
+});
+
+describe('DestinationReviewSidebarCard — session gate (HOS-369 WB0-7)', () => {
+    it('renders the anonymous children while the session is unresolved', () => {
+        // The SSR / edge-cached output. The card must be ABSENT: a review CTA
+        // baked into cached HTML would be shown to every visitor alike.
+        mockReadCachedAuthMe.mockReturnValue(null);
+        renderCard();
+
+        expect(screen.getByTestId('signin-cta')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /dejar reseña/i })).not.toBeInTheDocument();
+    });
+
+    it('renders the anonymous children for a confirmed guest', () => {
+        mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: false }));
+        renderCard();
+
+        expect(screen.getByTestId('signin-cta')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /dejar reseña/i })).not.toBeInTheDocument();
+    });
+
+    it('swaps to the card once a session resolves, in both variants', () => {
+        mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
+        const { unmount } = renderCard();
+        expect(screen.getByRole('button', { name: /dejar reseña/i })).toBeInTheDocument();
+        expect(screen.queryByTestId('signin-cta')).not.toBeInTheDocument();
+        unmount();
+
+        renderCard({ variant: 'inline' });
+        expect(screen.getByRole('button', { name: /dejar reseña/i })).toBeInTheDocument();
+        expect(screen.queryByTestId('signin-cta')).not.toBeInTheDocument();
     });
 });
 

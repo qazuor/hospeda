@@ -51,7 +51,9 @@ const KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA = new Set<string>([
     // recognizes them; they deliberately stay out of the API Zod schema, so they
     // belong here. All three are optional with built-in fallbacks.
     'HOSPEDA_TAG_USER_QUOTA_PER_USER', // packages/service-core tag quota (default 50)
-    'HOSPEDA_DEPLOY_ENV', // packages/media environment resolution (falls back to NODE_ENV)
+    // (HOSPEDA_DEPLOY_ENV moved OUT of this gap set in HOS-369 W1-2: apps/api
+    // now reads it directly, at startup, to namespace Cloudflare cache-tag
+    // purges — so it belongs in ApiEnvBaseSchema, not here.)
     'HOSPEDA_QZPAY_TEST_CONTROL_ENABLED', // packages/billing test-control gate (dev/test only)
 
     // env-registry-hygiene (follow-up to HOS-79) — read directly by the

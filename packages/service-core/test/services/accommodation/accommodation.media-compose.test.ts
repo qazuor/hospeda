@@ -1,4 +1,4 @@
-import type { AccommodationMedia, Media } from '@repo/schemas';
+import type { AccommodationMedia, Video } from '@repo/schemas';
 import { ModerationStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { composeAccommodationMedia } from '../../../src/services/accommodation/accommodation.media-compose';
@@ -103,28 +103,20 @@ describe('composeAccommodationMedia (SPEC-204 T-012)', () => {
         expect(result.gallery).toBeUndefined();
     });
 
-    it('carries videos forward from the current JSONB media unchanged', () => {
-        const currentMedia: Media = {
-            gallery: [
-                {
-                    moderationState: ModerationStatusEnum.APPROVED,
-                    url: 'https://stale.example.com/old.jpg'
-                }
-            ],
-            videos: [
-                {
-                    moderationState: ModerationStatusEnum.APPROVED,
-                    url: 'https://cdn.example.com/tour.mp4'
-                }
-            ]
-        };
+    it('carries videos forward from the videos column unchanged', () => {
+        const videos: Video[] = [
+            {
+                moderationState: ModerationStatusEnum.APPROVED,
+                url: 'https://cdn.example.com/tour.mp4'
+            }
+        ];
 
-        const result = composeAccommodationMedia({ rows: [], currentMedia });
+        const result = composeAccommodationMedia({ rows: [], videos });
 
         expect(result.videos).toEqual([
             { moderationState: 'APPROVED', url: 'https://cdn.example.com/tour.mp4' }
         ]);
-        // Gallery is rebuilt from rows (empty), NOT carried from the stale JSONB.
+        // Gallery is rebuilt from rows (empty) — there is no JSONB blob to fall back to.
         expect(result.gallery).toBeUndefined();
     });
 

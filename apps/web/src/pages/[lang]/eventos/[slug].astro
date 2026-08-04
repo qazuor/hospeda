@@ -22,7 +22,6 @@ import EventDetailOrganizerCard from '@/components/event/EventDetailOrganizerCar
 import EventDetailTagsRow from '@/components/event/EventDetailTagsRow.astro';
 import ImageAttribution from '@/components/shared/ImageAttribution.astro';
 import { eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
-import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toEventDetailProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -72,13 +71,9 @@ const seoTitle = pickLocalizedSeo({ stored: seo.title, fallback: name, locale })
 const seoDescription = pickLocalizedSeo({ stored: seo.description, fallback: summary, locale });
 
 // --- Auth ---
-const userId = Astro.locals.user?.id ?? null;
-const isAuthenticated = userId !== null;
 
 // --- Bookmark count + favorite status (graceful degradation) ---
 let bookmarkCount: number | undefined;
-let initialIsFavorited: boolean | undefined;
-let initialBookmarkId: string | null = null;
 
 if (eventId) {
 	try {
@@ -93,22 +88,6 @@ if (eventId) {
 		// Graceful degradation: counter not shown if fetch fails
 	}
 
-	if (isAuthenticated) {
-		try {
-			const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-			const statusResult = await userBookmarksApi.checkStatus({
-				entityId: eventId,
-				entityType: 'EVENT',
-				cookieHeader
-			});
-			if (statusResult.ok) {
-				initialIsFavorited = statusResult.data.isFavorited;
-				initialBookmarkId = statusResult.data.bookmarkId;
-			}
-		} catch {
-			// Graceful degradation: FavoriteButton hydrates itself on mount
-		}
-	}
 }
 
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
@@ -220,9 +199,6 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 			author={author ?? null}
 			bookmarkCount={bookmarkCount}
 			locale={locale}
-			isAuthenticated={isAuthenticated}
-			initialIsFavorited={initialIsFavorited}
-			initialBookmarkId={initialBookmarkId}
 		/>
 	</Fragment>
 
@@ -269,9 +245,7 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 			entityType="EVENT"
 			entityId={eventId}
 			locale={locale}
-			isAuthenticated={isAuthenticated}
 			currentUrl={Astro.url.href}
-			currentUserName={Astro.locals.user?.name ?? null}
 		/>
 
 		<!-- Tags row (only when tags exist) -->

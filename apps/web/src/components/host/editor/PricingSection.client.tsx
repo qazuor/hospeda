@@ -5,6 +5,7 @@
  * Uses native HTML form elements.
  */
 
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import type { AccommodationEditData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -62,17 +63,15 @@ export function PricingSection({ locale, data, errors, onFieldChange }: PricingS
                             )
                         }
                         aria-invalid={Boolean(errors.basePrice)}
-                        aria-describedby={errors.basePrice ? 'acc-basePrice-error' : undefined}
+                        aria-describedby={
+                            errors.basePrice ? fieldErrorId('acc-basePrice') : undefined
+                        }
                     />
-                    {errors.basePrice && (
-                        <span
-                            id="acc-basePrice-error"
-                            className={styles.fieldError}
-                            role="alert"
-                        >
-                            {errors.basePrice}
-                        </span>
-                    )}
+                    <FieldError
+                        id={fieldErrorId('acc-basePrice')}
+                        message={errors.basePrice}
+                        className={styles.fieldErrorSpacing}
+                    />
                 </div>
 
                 <div className={styles.field}>

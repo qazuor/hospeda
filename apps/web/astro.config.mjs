@@ -280,7 +280,12 @@ export default defineConfig({
             // sanitize-html was. Bundling is preferred over warming it at boot
             // because `victory-vendor` exposes no root entry point — warming it
             // would mean importing every `d3-*` subpath by hand.
-            noExternal: ['sanitize-html', 'recharts'],
+            // `markdown-it` is the third of the same shape, surfaced when the
+            // dev-dependency bump resolved `entities` to 8.0.0, which dropped its
+            // CommonJS build and became ESM-only. It reaches the server through
+            // `tiptap-markdown`, a runtime dependency of this app, so the bridge is
+            // live rather than build-time tooling.
+            noExternal: ['sanitize-html', 'recharts', 'markdown-it'],
             external: ['cloudinary', 'image-size']
         },
         define: {
