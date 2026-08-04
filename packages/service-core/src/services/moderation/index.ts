@@ -3,6 +3,8 @@
  *
  * @module services/moderation
  */
+export type { AuthorEditLockInput } from './author-edit-lock';
+export { isAuthorEditLockedByModeration } from './author-edit-lock';
 export { ModerationAggregationService } from './moderation.aggregation.service';
 export type {
     ResolveInitialModerationStateInput,

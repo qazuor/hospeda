@@ -7,6 +7,7 @@ import type { Event } from '@repo/schemas';
 import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import { type Actor, ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
+import { isAuthorEditLockedByModeration } from '../moderation/author-edit-lock';
 
 /**
  * Checks if the actor can create an event.
@@ -21,24 +22,56 @@ export function checkCanCreateEvent(actor: Actor): void {
 
 /**
  * Checks if the actor can update the given event.
+ *
+ * Mirrors the post twin (HOS-374 §7.6.2): `EVENT_UPDATE` covers any event,
+ * `EVENT_UPDATE_OWN` covers only the actor's own and stops applying once the
+ * platform approved the event, unless the actor also holds `EVENT_PUBLISH_OWN`
+ * (§7.6.3).
+ *
+ * The event is now a required argument — the check could not be author-scoped
+ * without it.
+ *
  * Throws ServiceError(FORBIDDEN) if not allowed.
  */
-export function checkCanUpdateEvent(actor: Actor): void {
+export function checkCanUpdateEvent(actor: Actor, event: Event): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
-    if (!actor.permissions?.includes(PermissionEnum.EVENT_UPDATE)) {
-        throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied to update event');
+    if (hasPermission(actor, PermissionEnum.EVENT_UPDATE)) {
+        return;
     }
+    if (actor.id === event.authorId && hasPermission(actor, PermissionEnum.EVENT_UPDATE_OWN)) {
+        if (
+            isAuthorEditLockedByModeration({
+                moderationState: event.moderationState,
+                canPublishOwn: hasPermission(actor, PermissionEnum.EVENT_PUBLISH_OWN)
+            })
+        ) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Permission denied to update a published event'
+            );
+        }
+        return;
+    }
+    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied to update event');
 }
 
 /**
  * Checks if the actor can delete the given event.
+ *
+ * `EVENT_DELETE` deletes any event; `EVENT_DELETE_OWN` deletes only the actor's
+ * own. Authorship alone grants nothing (HOS-374 §7.6.2).
+ *
  * Throws ServiceError(FORBIDDEN) if not allowed.
  */
-export function checkCanDeleteEvent(actor: Actor): void {
+export function checkCanDeleteEvent(actor: Actor, event: Event): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
-    if (!actor.permissions?.includes(PermissionEnum.EVENT_DELETE)) {
-        throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied to delete event');
+    if (hasPermission(actor, PermissionEnum.EVENT_DELETE)) {
+        return;
     }
+    if (actor.id === event.authorId && hasPermission(actor, PermissionEnum.EVENT_DELETE_OWN)) {
+        return;
+    }
+    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied to delete event');
 }
 
 /**

@@ -27,7 +27,8 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import {
     clearEntityFetchers,
     getRegisteredEntityTypes,
-    ownershipMiddleware
+    ownershipMiddleware,
+    registerEntityFetcher
 } from '../../src/middlewares/ownership';
 
 // The fetchers call real services; stub them so this exercises the registry and
@@ -125,6 +126,85 @@ describe('ownership entity fetcher coverage (guard)', () => {
             missing,
             `These entity types are configured on a route but have no registered fetcher, so every request to those routes throws HTTP 500 before any permission logic runs. Register them in apps/api/src/utils/entity-fetchers.ts:\n  ${missing.join('\n  ')}`
         ).toEqual([]);
+    });
+});
+
+/**
+ * Extract the `ownershipFields` array declared inside an `ownership: { ... }`
+ * block, per file.
+ */
+const extractOwnershipFields = (source: string): string[][] => {
+    const found: string[][] = [];
+    const ownershipBlock = /ownership:\s*\{([\s\S]*?)\}/g;
+    let match = ownershipBlock.exec(source);
+    while (match !== null) {
+        const fields = /ownershipFields:\s*\[([^\]]*)\]/.exec(match[1] as string);
+        if (fields?.[1]) {
+            found.push(
+                fields[1]
+                    .split(',')
+                    .map((raw) => raw.trim().replace(/^'|'$/g, ''))
+                    .filter((raw) => raw.length > 0)
+            );
+        }
+        match = ownershipBlock.exec(source);
+    }
+    return found;
+};
+
+describe('editorial ownership is author-scoped (HOS-374 §5.1.4/OQ-4)', () => {
+    // The protected event write routes used to scope ownership on
+    // `createdById`. The service layer now authorizes the author
+    // (`EVENT_UPDATE_OWN` + `authorId`), so a middleware keyed on the creator
+    // rejects the legitimate author of any content someone else created —
+    // before the service ever runs. The two fields diverge exactly when an
+    // admin creates content on an editor's behalf.
+    const routeFiles = ['update.ts', 'patch.ts', 'softDelete.ts'];
+
+    for (const fileName of routeFiles) {
+        it(`scopes protected event ${fileName} ownership on authorId`, () => {
+            const source = readFileSync(join(ROUTES_DIR, 'event/protected', fileName), 'utf8');
+            const declared = extractOwnershipFields(source);
+
+            expect(declared.length).toBeGreaterThan(0);
+            for (const fields of declared) {
+                expect(fields).toContain('authorId');
+                expect(fields).not.toContain('createdById');
+            }
+        });
+    }
+
+    it('resolves ownership from authorId through the middleware', async () => {
+        vi.clearAllMocks();
+        clearEntityFetchers();
+        registerEntityFetcher('event', async () => ({
+            data: { id: 'entity-123', authorId: 'author-1', createdById: 'admin-9' }
+        }));
+
+        const app = new Hono();
+        app.use(
+            '/:id',
+            ownershipMiddleware({ entityType: 'event', ownershipFields: ['authorId'] })
+        );
+        app.get('/:id', (c) => c.json({ reached: true }));
+
+        vi.mocked(getActorFromContext).mockReturnValue({
+            id: 'author-1',
+            roles: [RoleEnum.USER],
+            permissions: [PermissionEnum.ACCESS_API_PUBLIC]
+        } satisfies Actor);
+        const asAuthor = await app.request('/entity-123');
+        expect(asAuthor.status).toBe(200);
+        expect(await asAuthor.json()).toEqual({ reached: true });
+
+        // The creator is NOT the owner — this is the whole point of the switch.
+        vi.mocked(getActorFromContext).mockReturnValue({
+            id: 'admin-9',
+            roles: [RoleEnum.USER],
+            permissions: [PermissionEnum.ACCESS_API_PUBLIC]
+        } satisfies Actor);
+        const asCreator = await app.request('/entity-123');
+        expect(asCreator.status).toBe(403);
     });
 });
 
