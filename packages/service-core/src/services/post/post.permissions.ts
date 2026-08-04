@@ -79,6 +79,59 @@ export function checkCanDeletePost(actor: Actor, post: Post): void {
 }
 
 /**
+ * Checks if the actor can change a post's moderation state.
+ *
+ * `POST_MODERATION_CHANGE` has existed and been seeded since long before
+ * HOS-374, but gated nothing server-side: it only decided whether the admin
+ * panel rendered a widget, while the write itself went through the generic
+ * update behind plain `POST_UPDATE`. This is where it becomes load-bearing
+ * (§7.6.4).
+ *
+ * The verdict belongs to the platform, so there is no author path here — not
+ * even for a trusted editor, who moves `visibility` instead.
+ *
+ * @throws ServiceError if forbidden
+ */
+export function checkCanModeratePost(actor: Actor): void {
+    requirePermission(actor, PermissionEnum.POST_MODERATION_CHANGE);
+}
+
+/**
+ * Checks if the actor can raise or lower a post's publication.
+ *
+ * `POST_PUBLISH_TOGGLE` is the broad side (any post), `POST_PUBLISH_OWN` the
+ * author side. Publish and unpublish are deliberately one permission: "may
+ * publish but may not unpublish" pushes content live with no way to pull it
+ * back (§7.6.2).
+ *
+ * @throws ServiceError if forbidden
+ */
+export function checkCanSetPostPublishState(actor: Actor, post: Post): void {
+    if (hasPermission(actor, PermissionEnum.POST_PUBLISH_TOGGLE)) {
+        return;
+    }
+    if (actor.id === post.authorId && hasPermission(actor, PermissionEnum.POST_PUBLISH_OWN)) {
+        return;
+    }
+    throw new ServiceError(
+        ServiceErrorCode.FORBIDDEN,
+        'Forbidden: cannot change post publication state'
+    );
+}
+
+/**
+ * Checks if the actor can change a post's lifecycle state.
+ *
+ * Archiving is a platform-side action with no author counterpart, same shape as
+ * moderation. `POST_LIFECYCLE_CHANGE` also stops being decorative here.
+ *
+ * @throws ServiceError if forbidden
+ */
+export function checkCanSetPostLifecycleState(actor: Actor): void {
+    requirePermission(actor, PermissionEnum.POST_LIFECYCLE_CHANGE);
+}
+
+/**
  * Checks if the actor can restore a post.
  * @throws ServiceError if forbidden
  */
