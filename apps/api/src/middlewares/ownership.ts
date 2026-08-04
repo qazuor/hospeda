@@ -66,6 +66,17 @@ export const clearEntityFetchers = (): void => {
 };
 
 /**
+ * List the entity types that currently have a fetcher registered.
+ *
+ * Exposed so the coverage guard can assert against the real registry rather
+ * than parsing the registration source, which would pass on a call that never
+ * executes.
+ */
+export const getRegisteredEntityTypes = (): OwnableEntityType[] => {
+    return [...entityFetchers.keys()];
+};
+
+/**
  * Check if an actor is the owner of an entity
  * Checks multiple ownership fields in order of priority
  */
