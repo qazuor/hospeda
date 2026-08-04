@@ -26,12 +26,16 @@ export const protectedUpdatePostRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}',
     summary: 'Update post',
-    description: 'Updates an existing post. Requires POST_UPDATE permission.',
+    description: 'Updates an existing post. Requires authorship or POST_UPDATE permission.',
     tags: ['Posts'],
-    requiredPermissions: [PermissionEnum.POST_UPDATE],
     requestParams: { id: PostIdSchema },
     requestBody: PostUpdateHttpSchema,
     responseSchema: PostProtectedSchema,
+    ownership: {
+        entityType: 'post',
+        ownershipFields: ['authorId'],
+        bypassPermission: PermissionEnum.POST_UPDATE
+    },
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

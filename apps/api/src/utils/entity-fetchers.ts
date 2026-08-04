@@ -6,7 +6,8 @@ import {
     AccommodationService,
     EventLocationService,
     EventOrganizerService,
-    EventService
+    EventService,
+    PostService
 } from '@repo/service-core';
 import { registerEntityFetcher } from '../middlewares/ownership';
 import { apiLogger } from './logger';
@@ -16,6 +17,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 const eventService = new EventService({ logger: apiLogger });
 const eventLocationService = new EventLocationService({ logger: apiLogger });
 const eventOrganizerService = new EventOrganizerService({ logger: apiLogger });
+const postService = new PostService({ logger: apiLogger });
 
 /**
  * Register all entity fetchers for ownership middleware
@@ -38,6 +40,23 @@ export const registerEntityFetchers = (): void => {
     // Event
     registerEntityFetcher('event', async (actor, entityId) => {
         const result = await eventService.getById(actor, entityId);
+        return {
+            data: result.data as {
+                id: string;
+                ownerId?: string | null;
+                createdById?: string | null;
+                authorId?: string | null;
+            } | null,
+            error: result.error
+        };
+    });
+
+    // Post — author-scoped, mirroring the event fetcher (HOS-374 §5.1.4/OQ-4).
+    // `authorId` is the ownership field, not `createdById`: the two diverge
+    // exactly when staff creates content on an editor's behalf, and authorship
+    // is the meaningful one there.
+    registerEntityFetcher('post', async (actor, entityId) => {
+        const result = await postService.getById(actor, entityId);
         return {
             data: result.data as {
                 id: string;
@@ -79,7 +98,7 @@ export const registerEntityFetchers = (): void => {
     // directly in the handler, not via the ownership middleware, because the User
     // entity uses 'id' (not 'userId'/'ownerId') for self-ownership checks.
     //
-    // 'destination', 'post' and 'attraction' are declared in OwnableEntityType but
+    // 'destination' and 'attraction' are declared in OwnableEntityType but
     // have no fetcher because no route configures ownership for them. The guard in
     // test/middlewares/ownership-fetcher-coverage.guard.test.ts fails CI the moment
     // a route starts using one, so an unregistered type can never reach production
