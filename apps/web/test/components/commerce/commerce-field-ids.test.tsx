@@ -27,7 +27,7 @@
  */
 
 import { ExperienceOwnerUpdateInputSchema, GastronomyOwnerUpdateInputSchema } from '@repo/schemas';
-import { render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
 import { CONTACT_KEYS, SOCIAL_KEYS } from '@/components/commerce/editor/commerce-edit-data';
@@ -35,7 +35,6 @@ import {
     COMMERCE_FIELD_ID_SUFFIXES,
     COMMERCE_FIELD_PREFIX
 } from '@/components/commerce/editor/field-ids';
-import { COMMERCE_FIELD_INPUT_IDS } from '@/components/commerce/editor/field-input-ids';
 import type { CommerceListingDetail } from '@/lib/commerce/owner-listings';
 import { buildFieldId } from '@/lib/forms/build-field-id';
 
@@ -225,27 +224,23 @@ describe('commerce editor — derived field ids (HOS-385 AC-5)', () => {
         });
     }
 
-    describe('the surviving field-input-ids table agrees with the derivation', () => {
-        // TRANSITIONAL (HOS-385 PR 4 deletes both this block and the table).
-        // `useZodForm` still resolves focus through `COMMERCE_FIELD_INPUT_IDS`
-        // while the sections already render derived ids, so between the two PRs
-        // the table is the one thing that can still disagree with the DOM.
-        it('should map every row to the derived id', () => {
-            for (const [key, id] of Object.entries(COMMERCE_FIELD_INPUT_IDS)) {
-                expect(id, `"${key}" points at "${id}" but renders as "${idFor(key)}"`).toBe(
-                    idFor(key)
-                );
-            }
-        });
+    it('should focus the offending control on a failed submit', () => {
+        // The two halves above are each proven in isolation: the sections
+        // RENDER `buildFieldId(key)`, and `focusFirstInvalidField` RESOLVES
+        // `buildFieldId(key)`. Neither proves the editor hands the hook the
+        // right namespace — with `fieldIdPrefix: 'acc'` both would still pass
+        // and focus would silently do nothing, which is precisely the failure
+        // HOS-385 exists to remove. So assert the round trip once, end to end.
+        renderEditor('gastronomy');
 
-        it('should not map a key neither vertical covers', () => {
-            const covered = new Set([
-                ...focusableKeysFor('gastronomy'),
-                ...focusableKeysFor('experience')
-            ]);
-            for (const key of Object.keys(COMMERCE_FIELD_INPUT_IDS)) {
-                expect([...covered], `"${key}" is mapped but not covered`).toContain(key);
-            }
+        // `summary` has a 10-character minimum. It is not the first field on
+        // the page, which is the point: the helper picks the first INVALID
+        // control in document order, not the first control.
+        fireEvent.change(document.getElementById(idFor('summary')) as HTMLElement, {
+            target: { value: 'corto' }
         });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        expect(document.activeElement?.id).toBe(idFor('summary'));
     });
 });

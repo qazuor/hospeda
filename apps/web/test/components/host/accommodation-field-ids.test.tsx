@@ -32,7 +32,7 @@
  * does render a control.
  */
 
-import { render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AccommodationEditorProps } from '@/components/host/AccommodationEditor.client';
 import {
@@ -43,7 +43,6 @@ import {
     ACCOMMODATION_FIELD_ID_SUFFIXES,
     ACCOMMODATION_FIELD_PREFIX
 } from '@/components/host/editor/field-ids';
-import { ACCOMMODATION_FIELD_INPUT_IDS } from '@/components/host/editor/field-input-ids';
 import { buildFieldId } from '@/lib/forms/build-field-id';
 
 // ---------------------------------------------------------------------------
@@ -248,6 +247,25 @@ describe('accommodation editor — derived field ids (HOS-385 AC-5)', () => {
         }
     });
 
+    it('should focus the offending control on a failed submit', () => {
+        // The two halves above are each proven in isolation: the sections
+        // RENDER `buildFieldId(key)`, and `focusFirstInvalidField` RESOLVES
+        // `buildFieldId(key)`. Neither proves the editor hands the hook the
+        // right namespace — with `fieldIdPrefix: 'ce'` both would still pass
+        // and focus would silently do nothing, which is precisely the failure
+        // HOS-385 exists to remove. So assert the round trip once, end to end.
+        render(<AccommodationEditor {...DEFAULT_PROPS} />);
+
+        // `name` has a 3-character minimum, and it is the first field on the
+        // page — so it is both invalid and the expected focus target.
+        fireEvent.change(document.getElementById(idFor('name')) as HTMLElement, {
+            target: { value: 'x' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: /guardar/i }));
+
+        expect(document.activeElement?.id).toBe(idFor('name'));
+    });
+
     it('should resolve "description" in the rich-text branch too', () => {
         // `description` is the only key whose CONTROL depends on an entitlement:
         // a plain `<textarea>` without `can_use_rich_description`, a TipTap
@@ -262,27 +280,5 @@ describe('accommodation editor — derived field ids (HOS-385 AC-5)', () => {
         expect(element).not.toBeNull();
         expect(element?.tagName).not.toBe('TEXTAREA');
         expect(isFocusableControl(element as HTMLElement)).toBe(true);
-    });
-
-    describe('the surviving field-input-ids table agrees with the derivation', () => {
-        // TRANSITIONAL (HOS-385 PR 4 deletes both this block and the table).
-        // `useZodForm` still resolves focus through `ACCOMMODATION_FIELD_INPUT_IDS`
-        // while the sections already render derived ids, so between the two PRs
-        // the table is the one thing that can still disagree with the DOM. Every
-        // other guarantee in this file is about the derivation; this one is about
-        // the table catching up with it.
-        it('should map every row to the derived id', () => {
-            for (const [key, id] of Object.entries(ACCOMMODATION_FIELD_INPUT_IDS)) {
-                expect(id, `"${key}" points at "${id}" but renders as "${idFor(key)}"`).toBe(
-                    idFor(key)
-                );
-            }
-        });
-
-        it('should not map a key the derivation does not cover', () => {
-            for (const key of Object.keys(ACCOMMODATION_FIELD_INPUT_IDS)) {
-                expect(FOCUSABLE_KEYS, `"${key}" is mapped but not covered`).toContain(key);
-            }
-        });
     });
 });

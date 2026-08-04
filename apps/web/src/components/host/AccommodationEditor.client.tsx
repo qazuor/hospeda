@@ -39,7 +39,7 @@ import { ContactInfoSection } from './editor/ContactInfoSection.client';
 import type { EditorSectionNavItem } from './editor/EditorSectionNav.client';
 import { EditorSectionNav } from './editor/EditorSectionNav.client';
 import { FeaturedToggleSection } from './editor/FeaturedToggleSection.client';
-import { ACCOMMODATION_FIELD_INPUT_IDS } from './editor/field-input-ids';
+import { ACCOMMODATION_FIELD_ID_SUFFIXES, ACCOMMODATION_FIELD_PREFIX } from './editor/field-ids';
 import { LocationPicker } from './editor/LocationPicker.client';
 import { PhotoSection } from './editor/PhotoSection.client';
 import { PlanEntitlementGate } from './editor/PlanEntitlementGate.client';
@@ -252,8 +252,11 @@ export function AccommodationEditor({
             schema: AccommodationEditFormSchema,
             t,
             // HOS-373: a failed submit focuses the first invalid field on the
-            // page. Without this map the hook behaves exactly as before.
-            fieldInputIds: ACCOMMODATION_FIELD_INPUT_IDS
+            // page. HOS-385: the id is derived from the Zod key by the same
+            // `buildFieldId` the sections render with, so this is a namespace
+            // plus the genuine exceptions — not a table that can disagree.
+            fieldIdPrefix: ACCOMMODATION_FIELD_PREFIX,
+            fieldIdSuffixes: ACCOMMODATION_FIELD_ID_SUFFIXES
         });
     const [isSaving, setIsSaving] = useState(false);
 
