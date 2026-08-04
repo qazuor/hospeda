@@ -1,5 +1,6 @@
 import type { PostIdType, UserIdType } from '@repo/schemas';
 import {
+    LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
     RoleEnum,
@@ -260,6 +261,81 @@ describe('checkCanViewPost', () => {
             permissions: [PermissionEnum.POST_VIEW_ALL]
         });
         expect(() => checkCanViewPost(staffActor, deletedPost)).not.toThrow();
+    });
+});
+
+// HOS-374 §5.1.1/§7.6.5 — the single-row half of the public read floor.
+// `checkCanViewPost` used to consult only `deletedAt` and `visibility`, so a
+// PENDING or ARCHIVED post with `visibility=PUBLIC` was fully readable by an
+// anonymous actor through getById/getBySlug/getSummary/getStats. It is not
+// anymore, but its author and the elevated view permissions still reach it —
+// an editor has to be able to read back the draft they just wrote.
+describe('checkCanViewPost — public read floor', () => {
+    const strangerId = getMockId('user', 'not-author') as UserIdType;
+    const stranger = createActor({ ...baseActor, id: strangerId });
+
+    const pendingPost = createMockPost({
+        ...post,
+        moderationState: ModerationStatusEnum.PENDING
+    });
+    const rejectedPost = createMockPost({
+        ...post,
+        moderationState: ModerationStatusEnum.REJECTED
+    });
+    const archivedPost = createMockPost({
+        ...post,
+        lifecycleState: LifecycleStatusEnum.ARCHIVED
+    });
+
+    it('hides a PENDING post from a stranger even when its visibility is PUBLIC', () => {
+        expect(pendingPost.visibility).toBe(VisibilityEnum.PUBLIC);
+        expect(() => checkCanViewPost(stranger, pendingPost)).toThrow(ServiceError);
+    });
+
+    it('answers NOT_FOUND, never FORBIDDEN — a 403 would confirm the post exists', () => {
+        try {
+            checkCanViewPost(stranger, pendingPost);
+            throw new Error('Should have thrown');
+        } catch (err) {
+            expect(err).toBeInstanceOf(ServiceError);
+            if (err instanceof ServiceError) {
+                expect(err.code).toBe(ServiceErrorCode.NOT_FOUND);
+            }
+        }
+    });
+
+    it('hides a REJECTED post from a stranger', () => {
+        expect(() => checkCanViewPost(stranger, rejectedPost)).toThrow(ServiceError);
+    });
+
+    it('hides an ARCHIVED post from a stranger even when it was APPROVED', () => {
+        expect(archivedPost.moderationState).toBe(ModerationStatusEnum.APPROVED);
+        expect(() => checkCanViewPost(stranger, archivedPost)).toThrow(ServiceError);
+    });
+
+    it('lets the author read back their own PENDING post', () => {
+        const author = createActor({ id: authorId, roles: [RoleEnum.USER] });
+        expect(() => checkCanViewPost(author, pendingPost)).not.toThrow();
+    });
+
+    for (const permission of [
+        PermissionEnum.POST_VIEW_ALL,
+        PermissionEnum.POST_VIEW_PRIVATE,
+        PermissionEnum.POST_VIEW_DRAFT
+    ]) {
+        it(`lets an actor holding ${permission} read a PENDING post`, () => {
+            const privileged = createActor({
+                ...baseActor,
+                id: strangerId,
+                permissions: [permission]
+            });
+            expect(() => checkCanViewPost(privileged, pendingPost)).not.toThrow();
+        });
+    }
+
+    it('still serves an APPROVED, ACTIVE, PUBLIC post to a stranger', () => {
+        // The floor must not swallow the normal case.
+        expect(() => checkCanViewPost(stranger, post)).not.toThrow();
     });
 });
 

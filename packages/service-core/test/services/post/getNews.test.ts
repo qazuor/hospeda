@@ -2,6 +2,7 @@ import { PostModel } from '@repo/db';
 import type { PostIdType } from '@repo/schemas';
 import { RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock } from 'vitest';
+import { PUBLIC_READ_FLOOR } from '../../../src/services/moderation/public-read-floor';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createMockPost } from '../../factories/postFactory';
@@ -39,11 +40,14 @@ describe('PostService.getNews', () => {
         const result = await service.getNews(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(2);
-        expect(modelMock.findAll).toHaveBeenCalledWith({ isNews: true });
+        expect(modelMock.findAll).toHaveBeenCalledWith({ isNews: true, ...PUBLIC_READ_FLOOR });
     });
 
-    it('should filter by visibility', async () => {
-        const posts = [createMockPost({ visibility: VisibilityEnum.PRIVATE })];
+    it('should override a caller-supplied visibility with the public read floor', async () => {
+        // HOS-374 §7.6.5: the public read floor is applied last on public read
+        // paths, so a caller-supplied `visibility` (even PRIVATE) is overridden
+        // rather than honored.
+        const posts = [createMockPost({ visibility: VisibilityEnum.PUBLIC })];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 1 });
         const params = { visibility: VisibilityEnum.PRIVATE };
         const result = await service.getNews(actor, params);
@@ -51,7 +55,7 @@ describe('PostService.getNews', () => {
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             isNews: true,
-            visibility: VisibilityEnum.PRIVATE
+            ...PUBLIC_READ_FLOOR
         });
     });
 
@@ -64,7 +68,8 @@ describe('PostService.getNews', () => {
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             isNews: true,
-            expiresAt: { gte: params.fromDate, lte: params.toDate }
+            expiresAt: { gte: params.fromDate, lte: params.toDate },
+            ...PUBLIC_READ_FLOOR
         });
     });
 

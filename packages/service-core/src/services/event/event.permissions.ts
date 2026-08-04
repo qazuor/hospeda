@@ -8,6 +8,7 @@ import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas'
 import { type Actor, ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
 import { isAuthorEditLockedByModeration } from '../moderation/author-edit-lock';
+import { isContentStateApproved } from '../moderation/public-read-floor';
 
 /**
  * Checks if the actor can create an event.
@@ -167,6 +168,22 @@ export function checkCanViewEvent(actor: Actor, event: Event): void {
         if (event.visibility === VisibilityEnum.PUBLIC) {
             throw new ServiceError(ServiceErrorCode.GONE, 'Event is gone');
         }
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Event not found');
+    }
+
+    // Public read floor, platform half (HOS-374 §5.1.1 / §7.6.5): content the
+    // platform has not approved, or that has been archived, is not readable —
+    // regardless of how public its `visibility` says it is. The author still
+    // reads their own drafts, and so do the elevated view permissions;
+    // otherwise an editor could not review what they just wrote. NOT_FOUND, not
+    // FORBIDDEN, so an unapproved event is indistinguishable from a missing one.
+    if (
+        !isContentStateApproved(event) &&
+        actor.id !== event.authorId &&
+        !hasPermission(actor, PermissionEnum.EVENT_VIEW_ALL) &&
+        !hasPermission(actor, PermissionEnum.EVENT_VIEW_PRIVATE) &&
+        !hasPermission(actor, PermissionEnum.EVENT_VIEW_DRAFT)
+    ) {
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Event not found');
     }
 

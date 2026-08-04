@@ -255,3 +255,77 @@ describe('EventService permissions', () => {
         expect(() => checkCanRestoreEvent(baseActor)).toThrow();
     });
 });
+
+// HOS-374 §5.1.1/§7.6.5 — the single-row half of the public read floor.
+// `checkCanViewEvent` used to consult only `deletedAt` and `visibility`, so a
+// PENDING or ARCHIVED event with `visibility=PUBLIC` was fully readable by an
+// anonymous actor through getById/getBySlug/getSummary. It is not anymore, but
+// its author and the elevated view permissions still reach it.
+//
+// Every actor here carries an EXPLICIT id. `createActor()` and the event
+// factory both default to `getMockId('user')`, so a default actor IS the
+// author of a default event and would silently pass through the author bypass
+// instead of exercising the floor.
+describe('checkCanViewEvent — public read floor', () => {
+    const authorId = getMockId('user', 'floor-author') as UserIdType;
+    const strangerId = getMockId('user', 'floor-stranger') as UserIdType;
+    const stranger = createActor({ id: strangerId, permissions: [] });
+
+    const approvedEvent = createMockEvent({
+        authorId,
+        visibility: VisibilityEnum.PUBLIC,
+        moderationState: ModerationStatusEnum.APPROVED
+    });
+    const pendingEvent = createMockEvent({
+        authorId,
+        visibility: VisibilityEnum.PUBLIC,
+        moderationState: ModerationStatusEnum.PENDING
+    });
+    const rejectedEvent = createMockEvent({
+        authorId,
+        visibility: VisibilityEnum.PUBLIC,
+        moderationState: ModerationStatusEnum.REJECTED
+    });
+
+    it('hides a PENDING event from a stranger even when its visibility is PUBLIC', () => {
+        expect(pendingEvent.visibility).toBe(VisibilityEnum.PUBLIC);
+        expect(() => checkCanViewEvent(stranger, pendingEvent)).toThrow(ServiceError);
+    });
+
+    it('answers NOT_FOUND, never FORBIDDEN — a 403 would confirm the event exists', () => {
+        try {
+            checkCanViewEvent(stranger, pendingEvent);
+            throw new Error('Should have thrown');
+        } catch (err) {
+            expect(err).toBeInstanceOf(ServiceError);
+            if (err instanceof ServiceError) {
+                expect(err.code).toBe(ServiceErrorCode.NOT_FOUND);
+            }
+        }
+    });
+
+    it('hides a REJECTED event from a stranger', () => {
+        expect(() => checkCanViewEvent(stranger, rejectedEvent)).toThrow(ServiceError);
+    });
+
+    it('lets the author read back their own PENDING event', () => {
+        const author = createActor({ id: authorId, permissions: [] });
+        expect(() => checkCanViewEvent(author, pendingEvent)).not.toThrow();
+    });
+
+    for (const permission of [
+        PermissionEnum.EVENT_VIEW_ALL,
+        PermissionEnum.EVENT_VIEW_PRIVATE,
+        PermissionEnum.EVENT_VIEW_DRAFT
+    ]) {
+        it(`lets an actor holding ${permission} read a PENDING event`, () => {
+            const privileged = createActor({ id: strangerId, permissions: [permission] });
+            expect(() => checkCanViewEvent(privileged, pendingEvent)).not.toThrow();
+        });
+    }
+
+    it('still serves an APPROVED, ACTIVE, PUBLIC event to a stranger', () => {
+        // The floor must not swallow the normal case.
+        expect(() => checkCanViewEvent(stranger, approvedEvent)).not.toThrow();
+    });
+});
