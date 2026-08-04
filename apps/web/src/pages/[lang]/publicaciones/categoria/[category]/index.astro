@@ -20,6 +20,9 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { resolvePostCategorySlug } from '@/lib/post-category';
 import { buildUrl } from '@/lib/urls';
 
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { category: catSlug } = Astro.params;
@@ -31,6 +34,18 @@ if (!catEnum) return new Response(null, { status: 404 });
 
 // Canonical lowercase slug for URLs and i18n key lookups.
 const catSlugLower = catEnum.toLowerCase();
+
+// --- Edge cacheability (HOS-369 W2-3) ---
+// After the 404 guard, so an unknown category is never marked shareable. The
+// category is a closed enum fixed by the URL path, not a query facet, so there
+// is no filtered variant here beyond pagination.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	// `/…/page/N/` rewrites into this route with `?page=N`.
+	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
+	tags: [CACHE_TAG_COLLECTIONS.post]
+});
 
 const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
 const result = await postsApi.list({ page, pageSize: 9, category: catEnum });

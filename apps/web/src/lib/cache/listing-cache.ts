@@ -152,3 +152,34 @@ export function hasActiveAccommodationListingFilters({
 
     return false;
 }
+
+/**
+ * Whether a listing URL carries nothing but pagination — the signal that it is
+ * the plain, unfiltered listing, possibly at page N.
+ *
+ * This exists because `/…/page/N/` is not what the listing page actually sees.
+ * Those routes are `Astro.rewrite`s into the parent listing with `?page=N`
+ * appended, so a naive `Astro.url.search === ''` check would mark every
+ * paginated page non-cacheable while looking correct on page 1 — the kind of
+ * regression that shows up as a cache-hit-rate number nobody is watching
+ * rather than as a broken page.
+ *
+ * The accommodation listing does not use this: it has its own richer predicate
+ * ({@link hasActiveAccommodationListingFilters}) covering sort and trip-context
+ * params it additionally accepts. This is the conservative default for the
+ * catalog listings that accept no facets of their own (HOS-369 W2-3), where
+ * anything other than `page` should keep the response private.
+ *
+ * @param params.searchParams - The request URL's search params.
+ * @returns `true` when the only params present (if any) are pagination.
+ */
+export function hasOnlyPaginationParams({
+    searchParams
+}: {
+    readonly searchParams: URLSearchParams;
+}): boolean {
+    for (const key of searchParams.keys()) {
+        if (key !== 'page') return false;
+    }
+    return true;
+}
