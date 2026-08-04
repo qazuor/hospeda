@@ -1473,7 +1473,8 @@
             "empty": "Nenhuma foto na galeria ainda. Carregue a primeira.",
             "cap": "Limite atingido ({{count}} fotos). Exclua uma para adicionar outra.",
             "actions": {
-                "add": "Adicionar foto"
+                "add": "Adicionar foto",
+                "remove": "Remover foto"
             }
         },
         "errors": {
