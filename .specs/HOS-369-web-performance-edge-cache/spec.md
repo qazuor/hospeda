@@ -385,7 +385,6 @@ contradicting a comment in `listing-cache.ts:9` that claims otherwise.
 > `revalidation_log.path` is now `target`. Kept as written because it is the
 > record of WHY, and because §5.11's reasoning still governs W1-2.
 
-
 `apps/web/src/pages/api/revalidate.ts:60` sends
 `{ purge_everything: true }` to the Cloudflare zone. Verified by reading the
 file on 2026-07-31 — HOS-297 (Done) solved the *burst* problem (a 50 ms
@@ -710,7 +709,7 @@ none of the collateral.
 > and the method that actually proves it are in §5.11.6; the original open
 > question is preserved below because the reasoning is what made it worth
 > testing rather than assuming.
-
+>
 > Method: re-read the live Cloudflare docs on 2026-08-03 while implementing
 > W1-1 — the purge-cache overview, the purge-by-tags page, and the Workers
 > cache configuration page.
@@ -1216,8 +1215,38 @@ coalesces per-entity debounce buckets into a **single** flush per window
 (`revalidation.service.ts`, `enqueuePurgeGroup`), so the 5 requests/min tag-purge
 ceiling is not a constraint at our write volume.
 
-**W1-2 — Cloudflare Cache Rule.**
-Scope: `/{lang}/alojamientos*` and `/{lang}/suscriptores/{planes,turistas}*`
+**W1-2 — Cloudflare Cache Rule. DONE (2026-08-04, staging only).**
+Live as `HOS-369 W1-2 - staging catalog + subscriber`; the expression, every
+setting, and the reasoning per clause are versioned at
+[`infra/cloudflare/rules/cache-rules.md`](../../infra/cloudflare/rules/cache-rules.md)
+(W1-5). Three things differ from the plan below, all found by measuring rather
+than by reading:
+
+- **Edge TTL is `bypass_by_default`, not `respect_origin`.** "Honor the origin"
+  has three sub-modes in Cloudflare and only this one fails closed:
+  `respect_origin` would cache any matched response whose origin sent no
+  `Cache-Control` at Cloudflare's own default TTL — untagged, therefore
+  unpurgeable. This mirrors `applyCacheHeaders`'s coupling at the edge.
+- **A Browser TTL of `respect_origin` had to be added, and it is load-bearing.**
+  The zone's Browser Cache TTL is 4 h and Cloudflare injects `max-age=14400`
+  into everything a Cache Rule makes cacheable — absent before the rule, absent
+  on prod. A purge never reaches browser caches, so without this a returning
+  visitor holds stale HTML for four hours with nothing able to evict it. The fix
+  is per-rule; the zone setting is left alone because it would also hit prod.
+- **The rule's real footprint is smaller than its expression.** Only the listing
+  index (and `/page/N/`), `mapa/`, `tipo/<type>/` and the four subscriber pages
+  declare cacheability. Accommodation **detail** pages, `fotos/`, `comparar/`,
+  `comodidades/<slug>/`, `caracteristicas/<slug>/` and
+  `suscriptores/propietarios/` send no `Cache-Control` and return `BYPASS`.
+  Adding one is an application change (one `applyCacheHeaders` call), not a
+  Cloudflare change.
+
+Requirement 5 (Sort query string) is satisfied but currently **inert**:
+`http.request.uri.query eq ""` means the rule never sees a query string to
+normalize. Kept per §7.2 so it is already right if the expression widens.
+
+The original plan, for the record. Scope: `/{lang}/alojamientos*` and
+`/{lang}/suscriptores/{planes,turistas}*`
 first — the routes that already emit a correct header — then **one path family
 at a time** as WB0-5 proves each one auth-blind. Requirements, in order:
 
@@ -1292,22 +1321,69 @@ aliased the whole locals object (`const locals = Astro.locals as { user?: … }`
 rather than reading `Astro.locals.user`. A membership check cannot be defeated
 by a spelling, and it covers every future consumer, not just the three layouts.
 
-**W1-3 — Verify by measurement, not by assumption.**
-Re-run the §5.1 probes. Acceptance is in §9; a rule that is created but not
-verified is exactly the failure mode that left the pricing header dead for
-months.
+**W1-3 — Verify by measurement, not by assumption. DONE for the surfaces that
+exist (2026-08-04).** All probes from Buenos Aires, PoP `EZE`, pinned via
+`cf-ray`.
+
+- **AC-1 PASSED** — `HIT` on the second request, `age` climbing (3, 6).
+- **AC-2 PARTIAL** — the bypass half passes: both `better-auth.session_token`
+  and `__Secure-better-auth.session_token` return `DYNAMIC`, never `HIT`. The
+  "and its body contains that user's state" half is **not** verified: a
+  synthetic cookie value was used, not a real session. Needs a logged-in run.
+- **AC-3 PASSED** — `?types=HOTEL` → `DYNAMIC`.
+- **AC-6 PASSED for the existing surfaces** — purging `preview:list-accom`
+  evicted `/es/alojamientos/` **and** `/es/alojamientos/page/2/` (the case
+  purge-by-URL provably could not reach, §5.11.2), while the `/_astro/*` chunk
+  stayed `HIT` with its `age` climbing *through* the purge (4409 → 4542, i.e.
+  +133 s of wall time, not a reset). Tag purge does not touch static assets. The
+  "event detail in three locales" half is not testable yet: `/eventos/` is
+  outside the rule and emits no cache header.
+- **AC-9 PASSED, with a caveat worth keeping.** TTFB on the cached route is
+  **15–18 ms** on a warm connection. A first reading of 246 ms looked like a
+  failure until it was decomposed: 213 ms of it was the TCP+TLS handshake and
+  only ~33 ms was the response. Measure with connection reuse, or the number
+  describes the handshake rather than the cache.
+- **AC-10 PASSED** — Googlebot and Chrome user-agents received the same cached
+  object: both `HIT`, identical `age` (109).
+
+Purge propagation measured at **≤ ~4 s** (tighter than gate A's 5–8 s on
+`llms.txt`): confirmed `HIT` → purge returns 3 s later → `MISS` 1 s after that,
+with the object 4 s into a 300 s TTL. Both arms of the §5.11.6 discriminator
+were observed on the same URL and PoP — natural expiry → `EXPIRED`, explicit
+purge → `MISS`.
+
+**Headline**: cached listing **15 ms** vs uncached accommodation detail
+**689 ms**, same host. That is the concrete argument for extending
+`applyCacheHeaders` to the detail pages.
+
+Operational note: the purge must be issued from the VPS (the secret never
+leaves it) while the probes run locally — the cache is per-PoP and the VPS
+resolves to a different one. `POST /api/revalidate/` **requires** the trailing
+slash; without it Astro's trailing-slash middleware returns a 301 and the POST
+body is lost. Not a defect — `CloudflareRevalidationAdapter` already documents
+it — but it will catch anyone hand-rolling a curl.
 
 **W1-4 — Redirect Rules at the edge.**
 Move the trailing-slash and `/` → `/es/` redirects to Cloudflare Redirect
 Rules. Collapse the `/es/blog` → `/es/blog/` → `/es/publicaciones/` chain into a
 single hop.
 
-**W1-5 — Version the Cloudflare configuration.**
-The only Cloudflare config-as-code in the repo today is two Workers
-(`infra/cloudflare/posthog-proxy`, `infra/cloudflare/sentry-tunnel`). Cache
-Rules and Redirect Rules must not be dashboard-only — that is precisely how a
-dead header survived unnoticed. At minimum, commit the rule expressions as
-documentation under `infra/cloudflare/`; ideally as Terraform.
+**W1-5 — Version the Cloudflare configuration. DONE at the documentation tier
+(2026-08-04).**
+[`infra/cloudflare/README.md`](../../infra/cloudflare/README.md) now indexes
+everything the zone carries and states the shared-zone constraint every rule
+must respect; [`infra/cloudflare/rules/cache-rules.md`](../../infra/cloudflare/rules/cache-rules.md)
+mirrors the live Cache Rule — expression, every setting with its API
+equivalent, the reasoning per clause, the measured list of what it does and does
+not actually cache, and the verification commands.
+
+**Terraform is deliberately deferred, not forgotten.** It needs a state backend,
+a provider credential with ruleset-write scope, and a decision about who may
+apply — three choices worth making on purpose rather than as a side effect of
+writing one cache rule. Until then the documents are the source of truth for
+*intent* and the dashboard for *what is live*, and the two are kept in step by
+convention: a rule changed in the dashboard is changed in its document in the
+same PR. Redirect Rules join the same directory when W1-4 lands.
 
 ### 6.5 Wave C — extend the pattern across the catalog
 
@@ -1429,7 +1505,7 @@ response — Cloudflare limits):
 > purging by the other purges nothing (§6.4). Two page tags were also added
 > that the plan did not anticipate. The vocabulary lives in
 > `packages/cache-tags/src/vocabulary.ts`, which is the source of truth.
-
+>
 > **EVERY tag below is prefixed by its deployment environment** —
 > `prod:list-accom`, `preview:home` — see §7.3.1. The table gives the bare
 > vocabulary; the namespace is applied on top of it, symmetrically, in every
