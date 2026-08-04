@@ -1363,10 +1363,44 @@ slash; without it Astro's trailing-slash middleware returns a 301 and the POST
 body is lost. Not a defect — `CloudflareRevalidationAdapter` already documents
 it — but it will catch anyone hand-rolling a curl.
 
-**W1-4 — Redirect Rules at the edge.**
-Move the trailing-slash and `/` → `/es/` redirects to Cloudflare Redirect
-Rules. Collapse the `/es/blog` → `/es/blog/` → `/es/publicaciones/` chain into a
-single hop.
+**W1-4 — Redirect Rules at the edge. DONE, narrowed to one rule (2026-08-04,
+staging only).** Versioned at
+[`infra/cloudflare/rules/redirect-rules.md`](../../infra/cloudflare/rules/redirect-rules.md).
+
+Only `/` → `/es/` moved. It is served at the edge with no origin round-trip,
+which satisfies **AC-7** for staging. Two of the three things this task asked
+for were deliberately not done:
+
+- **The generic trailing-slash redirect stays at the origin.** Moving it means
+  transcribing `routes.ts`'s skip-list (`/_astro/`, `/_server-islands/`,
+  `/api/`, `/favicon`, images, fonts, `.txt`, `.xml`, `/_image`) into a
+  Cloudflare expression with no tests and no link back to its source. That is
+  the `entity-path-mapper` failure shape this spec deleted 466 lines to remove,
+  re-created inside Cloudflare, for ~90 ms per redirect.
+- **The `/es/blog` chain collapse was built, verified, and then removed the same
+  day.** It worked — 1051 ms → 369 ms, two hops to one. But `/blog` is not a
+  legacy URL: the blog has always lived at `/publicaciones/`, and the alias
+  exists only because BETA-162 (priority Low) found that `/es/blog` 404'd, an
+  *obvious* URL a visitor might guess. Nothing has ever linked to it, so the
+  traffic is near zero by construction. Two permanently-maintained rules with
+  dynamic `concat`/`substring` targets to save 680 ms on a URL nobody requests
+  is a bad trade — the latency was measured, the volume was not, and the volume
+  is what decided it.
+
+**AC-7's stated signal is wrong and should be read as measured, not as
+written.** It expects `cf-cache-status` to be *present* on the edge-served 301.
+Cloudflare Redirect Rules answer *before* the cache layer, so an edge-served
+redirect has **no** `cf-cache-status` header at all and an **absolute**
+`Location`; the origin-served one is what carries `cf-cache-status: DYNAMIC` and
+a relative `Location`. Measured both ways on the same URL.
+
+**Found while building it (out of scope, tracked separately):** `middleware.ts`
+Step 4 drops the query string. `buildLocaleRedirect({ restOfPath })` takes only
+the path, unlike Steps 3/3.1/3.2 which all append `context.url.search` — so
+`https://hospeda.com.ar/?utm_source=newsletter` arrives at a bare `/es/` and the
+campaign parameters are gone before analytics sees them. The edge rule preserves
+them, so staging's root is now fixed and production is not; every other
+locale-less path is still affected on both.
 
 **W1-5 — Version the Cloudflare configuration. DONE at the documentation tier
 (2026-08-04).**
