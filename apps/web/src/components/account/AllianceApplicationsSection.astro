@@ -114,9 +114,9 @@ const dateFormatter = new Intl.DateTimeFormat(locale, {
         justify-content: space-between;
         gap: var(--space-4, 1rem);
         padding: var(--space-4, 1rem);
-        border: 1px solid var(--core-border);
+        border: 1px solid var(--border);
         border-radius: var(--radius-card, 12px);
-        background-color: var(--core-background);
+        background-color: var(--core-card);
         flex-wrap: wrap;
     }
     .applications__main {
@@ -145,15 +145,15 @@ const dateFormatter = new Intl.DateTimeFormat(locale, {
         white-space: nowrap;
     }
     .applications__status.is-open {
-        background-color: var(--core-muted);
+        background-color: var(--core-foreground-a08);
         color: var(--core-muted-foreground);
     }
     .applications__status.is-approved {
-        background-color: var(--brand-tertiary-a10, rgba(34, 197, 94, 0.12));
-        color: var(--brand-tertiary, #16a34a);
+        background-color: var(--brand-primary-a10);
+        color: var(--brand-primary);
     }
     .applications__status.is-rejected {
-        background-color: var(--core-muted);
+        background-color: var(--core-foreground-a08);
         color: var(--core-muted-foreground);
     }
     .applications__note {
