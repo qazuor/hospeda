@@ -243,6 +243,40 @@ a demonstration rather than a coincidence:
 | `preview:accom-<slug>` | **MISS ×3** | `HIT` — survived |
 | `preview:list-accom` | `HIT` ×3 — survived | **MISS** |
 
+W2-2 repeated the same two-direction check for the borrowed `site-config` tag,
+against `/es/nosotros/`, `/es/legal/terminos/` and `/pt/colaborar/`. Both probes
+ran 6–7 s after the purge — far enough inside the 300 s TTL that neither result
+can be a natural expiry, and `MISS` rather than `EXPIRED` confirms an explicit
+eviction:
+
+| Purged tag | Static pages (3) | `/es/alojamientos/` |
+|---|---|---|
+| `preview:site-config` | **MISS ×3** | `HIT` — survived |
+| `preview:list-accom` | `HIT` ×3 — survived | **MISS** |
+
+### Measured on 2026-08-04, after W2-2 was applied
+
+All 36 static-page URLs reached `HIT` on the second request, with a rising
+`age`. The bypasses hold on every one of them:
+
+| Probe on `/es/legal/terminos/` | Result |
+|---|---|
+| plain `GET` | `HIT` |
+| `Cookie: better-auth.session_token=x` | `DYNAMIC` |
+| `Cookie: __Secure-better-auth.session_token=x` | `DYNAMIC` |
+| `?foo=1` | `DYNAMIC` |
+| `HEAD` | `DYNAMIC` |
+
+The `HEAD` row is not redundant. `curl -sSI` sends `HEAD`, the expression
+requires `GET`, and a probe written that way therefore reports `DYNAMIC`
+forever — on a zone where the cache is working perfectly. Probe with
+`curl -sS -o /dev/null -D -`. This cost real debugging time on 2026-08-04.
+
+The fail-closed choice of an exact path set over `starts_with` was confirmed by
+measurement rather than left as an argument: `/es/legal/` — which
+`starts_with(path, "/es/legal")` would have matched — returns `DYNAMIC`, as does
+`/es/mi-cuenta/`.
+
 ### Purging from a shell
 
 The probes must run from your own machine (the cache is per-PoP and the VPS
