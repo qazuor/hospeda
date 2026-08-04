@@ -19,7 +19,6 @@
 
 import { useCallback, useState } from 'react';
 import type { ZodTypeAny, z } from 'zod';
-import type { FieldInputIdMap } from '@/components/ui/FieldError';
 import type { TranslationFn } from '@/lib/api-errors';
 import { translateApiError } from '@/lib/api-errors';
 import { addToast } from '@/store/toast-store';
@@ -50,9 +49,21 @@ export interface UseZodFormOptions<TSchema extends ZodTypeAny> {
      * When supplied, a failed `validate()` also moves focus to the first
      * invalid field on the page (HOS-373 phase 2). Omit it and behaviour is
      * exactly as before — the other consumers of this hook are unaffected
-     * until they opt in with a map of their own.
+     * until they opt in with a prefix of their own.
+     *
+     * This is the form's id NAMESPACE, e.g. `'acc'` or `'ce'`. It replaced a
+     * per-editor `FieldInputIdMap` in HOS-385: the id is now DERIVED from the
+     * Zod key by `buildFieldId`, the same call the field wrapper makes, so
+     * opting in costs one string instead of a table that could silently rot.
      */
-    readonly fieldInputIds?: FieldInputIdMap;
+    readonly fieldIdPrefix?: string;
+    /**
+     * The form's shared sub-control suffix map, for Zod keys rendered as more
+     * than one control (`phone` → country combobox + number input). Only
+     * meaningful alongside `fieldIdPrefix`, and MUST be the same constant the
+     * render site reads.
+     */
+    readonly fieldIdSuffixes?: Readonly<Record<string, string>>;
 }
 
 /** API error payload shape accepted by `handleApiError` — a superset of `ApiErrorWithDetails`. */
@@ -122,7 +133,8 @@ export interface UseZodFormResult<TSchema extends ZodTypeAny> {
 export function useZodForm<TSchema extends ZodTypeAny>({
     schema,
     t,
-    fieldInputIds
+    fieldIdPrefix,
+    fieldIdSuffixes
 }: UseZodFormOptions<TSchema>): UseZodFormResult<TSchema> {
     const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
     const [formError, setFormErrorState] = useState<string | null>(null);
@@ -145,19 +157,20 @@ export function useZodForm<TSchema extends ZodTypeAny>({
                         ? t('validation.formHasErrors', 'Revisá los campos marcados')
                         : 'Revisá los campos marcados'
                 });
-                // Opt-in (HOS-373): only forms that supplied a field-to-input-id
-                // map get the focus move. Runs after the toast so the toast is
-                // never what steals focus.
-                if (fieldInputIds) {
+                // Opt-in (HOS-373): only forms that declared an id namespace get
+                // the focus move. Runs after the toast so the toast is never
+                // what steals focus.
+                if (fieldIdPrefix) {
                     focusFirstInvalidField({
                         fieldNames: Object.keys(mapped),
-                        map: fieldInputIds
+                        prefix: fieldIdPrefix,
+                        suffixes: fieldIdSuffixes
                     });
                 }
             }
             return result;
         },
-        [schema, t, fieldInputIds]
+        [schema, t, fieldIdPrefix, fieldIdSuffixes]
     );
 
     const handleApiError = useCallback(
