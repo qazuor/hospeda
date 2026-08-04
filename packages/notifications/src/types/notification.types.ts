@@ -109,6 +109,18 @@ export enum NotificationType {
      */
     ALLIANCE_CLAIM_INVITE = 'alliance_claim_invite',
     /**
+     * HOS-278 AC-6 — sent to an applicant when an admin resolves their
+     * "aliados" application, whichever way it went.
+     *
+     * The copy the landing pages already make ("nos contactamos a la
+     * brevedad") is a promise this notification is what keeps. Before it, a
+     * rejected applicant heard nothing at all and an approved one heard
+     * whatever the admin remembered to write by hand.
+     *
+     * TRANSACTIONAL: it is the answer to something the recipient asked for.
+     */
+    ALLIANCE_LEAD_DECISION = 'alliance_lead_decision',
+    /**
      * HOS-176 Increment A — advance notice sent to a subscriber before a plan
      * price INCREASE is applied to their MercadoPago preapproval.
      *
@@ -697,6 +709,41 @@ export interface AllianceClaimInvitePayload extends BaseNotificationPayload {
 }
 
 /**
+ * Payload for the ALLIANCE_LEAD_DECISION notification (HOS-278 AC-6).
+ *
+ * Sent when an admin approves or rejects an "aliados" application. One type
+ * rather than two: the recipient, the program and the next step all come from
+ * the same place, and splitting it would duplicate every field to vary one
+ * sentence.
+ *
+ * `adminNote` is NOT carried. It is the admin's internal note on the
+ * disposition — written for colleagues, not for the applicant, and the
+ * applicant-facing endpoints strip it for the same reason.
+ *
+ * @example
+ * ```ts
+ * const payload: AllianceLeadDecisionPayload = {
+ *   type: NotificationType.ALLIANCE_LEAD_DECISION,
+ *   recipientEmail: 'juan@example.com',
+ *   recipientName: 'Juan Pérez',
+ *   userId: null,
+ *   leadId: 'lead-uuid',
+ *   programLabel: 'Partner',
+ *   outcome: 'approved',
+ * };
+ * ```
+ */
+export interface AllianceLeadDecisionPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.ALLIANCE_LEAD_DECISION;
+    /** UUID of the resolved application. For traceability. */
+    readonly leadId: string;
+    /** Human-readable program name (e.g. "Partner", "Proveedor"). */
+    readonly programLabel: string;
+    /** Which way the admin resolved it. */
+    readonly outcome: 'approved' | 'rejected';
+}
+
+/**
  * Payload for the ACCOMMODATION_CALENDAR_FEED_BROKEN notification
  * (HOS-162 Phase 3, spec §14.4).
  *
@@ -793,5 +840,6 @@ export type NotificationPayload =
     | PlanBeingRetiredPayload
     | CommerceOwnerCredentialsPayload
     | AllianceClaimInvitePayload
+    | AllianceLeadDecisionPayload
     | AccommodationCalendarFeedBrokenPayload
     | PlanPriceChangeNoticePayload;

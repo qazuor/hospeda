@@ -40,7 +40,10 @@ vi.mock('../../src/utils/notification-helper', () => ({
 
 vi.mock('../../src/utils/logger', () => ({ apiLogger: loggerMock }));
 
-import { createAllianceClaimInvitePort } from '../../src/lib/alliance-ports';
+import {
+    createAllianceClaimInvitePort,
+    createAllianceDecisionNotifyPort
+} from '../../src/lib/alliance-ports';
 
 const SITE_URL = 'https://hospeda.com.ar';
 const LEAD_ID = '00000000-0000-4000-a000-000000000002';
@@ -166,5 +169,56 @@ describe('createAllianceClaimInvitePort', () => {
             ]);
             expect(logged).not.toContain(RAW_TOKEN);
         });
+    });
+});
+
+describe('createAllianceDecisionNotifyPort', () => {
+    function decision(overrides: Record<string, unknown> = {}) {
+        return {
+            leadId: LEAD_ID,
+            email: 'juan@example.com',
+            contactName: 'Juan Pérez',
+            kind: 'partner' as const,
+            outcome: 'approved' as const,
+            ...overrides
+        };
+    }
+
+    it('emails the address the APPLICATION carries', async () => {
+        const port = createAllianceDecisionNotifyPort();
+
+        await port.notifyDecision(decision());
+
+        expect(sendNotificationMock).toHaveBeenCalledOnce();
+        const payload = sendNotificationMock.mock.calls[0]?.[0];
+        expect(payload.type).toBe('alliance_lead_decision');
+        expect(payload.recipientEmail).toBe('juan@example.com');
+        expect(payload.outcome).toBe('approved');
+    });
+
+    it('does NOT look the address up in users — an applicant may have no account', async () => {
+        const port = createAllianceDecisionNotifyPort();
+
+        await port.notifyDecision(decision());
+
+        expect(selectLimitMock).not.toHaveBeenCalled();
+    });
+
+    it('carries a human program label, never the raw slug', async () => {
+        const port = createAllianceDecisionNotifyPort();
+
+        await port.notifyDecision(decision({ kind: 'service_provider' }));
+
+        const payload = sendNotificationMock.mock.calls[0]?.[0];
+        expect(payload.programLabel).toBe('Proveedor');
+    });
+
+    it('forwards a rejection as such', async () => {
+        const port = createAllianceDecisionNotifyPort();
+
+        await port.notifyDecision(decision({ outcome: 'rejected' }));
+
+        const payload = sendNotificationMock.mock.calls[0]?.[0];
+        expect(payload.outcome).toBe('rejected');
     });
 });

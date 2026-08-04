@@ -19,7 +19,7 @@
 import { getDb, users } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import type { AllianceLeadKind } from '@repo/schemas';
-import type { AllianceClaimInvitePort } from '@repo/service-core';
+import type { AllianceClaimInvitePort, AllianceDecisionNotifyPort } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';
@@ -114,6 +114,35 @@ export function createAllianceClaimInvitePort(siteUrl: string): AllianceClaimInv
             // Deliberately logs the lead id ONLY. The claim URL embeds the raw
             // token; putting it in a log line would defeat storing a digest.
             apiLogger.info({ leadId }, '[alliance-claim] invitation sent to the address owner');
+        }
+    };
+}
+
+/**
+ * Creates the {@link AllianceDecisionNotifyPort} implementation (HOS-278 AC-6).
+ *
+ * Writes to the address the APPLICATION carries, not to an account's — an
+ * anonymous applicant may have no account at all, and that is the ordinary
+ * case for these forms. `userId` is therefore null: this notification is
+ * addressed to whoever applied, and the account link (if any) is not what
+ * decides where the answer goes.
+ *
+ * @returns An {@link AllianceDecisionNotifyPort} implementation.
+ */
+export function createAllianceDecisionNotifyPort(): AllianceDecisionNotifyPort {
+    return {
+        notifyDecision: async ({ leadId, email, contactName, kind, outcome }) => {
+            await sendNotification({
+                type: NotificationType.ALLIANCE_LEAD_DECISION,
+                recipientEmail: email,
+                recipientName: contactName,
+                userId: null,
+                leadId,
+                programLabel: PROGRAM_LABELS[kind],
+                outcome
+            });
+
+            apiLogger.info({ leadId, outcome }, '[alliance-decision] applicant notified');
         }
     };
 }

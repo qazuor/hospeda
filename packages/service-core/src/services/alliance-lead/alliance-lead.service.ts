@@ -129,6 +129,34 @@ export interface AllianceClaimInvitePort {
     }) => Promise<void>;
 }
 
+/**
+ * Port for telling an applicant how their application was resolved
+ * (HOS-278 AC-6).
+ *
+ * Injected rather than imported for the same reason as
+ * {@link AllianceClaimInvitePort}: `@repo/service-core` has no business
+ * knowing about an email transport. Omitting it silences the notification
+ * (tests, preview environments) without changing the workflow transition.
+ */
+export interface AllianceDecisionNotifyPort {
+    /**
+     * Announces the decision to the applicant.
+     *
+     * Called fire-and-forget AFTER the status is already persisted: a mail
+     * server having a bad afternoon must not roll back an admin's decision, and
+     * an admin watching a spinner must not be waiting on Resend.
+     *
+     * @param input - Recipient details, the program, and which way it went.
+     */
+    notifyDecision: (input: {
+        readonly leadId: string;
+        readonly email: string;
+        readonly contactName: string;
+        readonly kind: AllianceLeadKind;
+        readonly outcome: 'approved' | 'rejected';
+    }) => Promise<void>;
+}
+
 /** Input for {@link AllianceLeadService.markHandled}. */
 export interface MarkAllianceLeadHandledInput {
     /** The admin actor handling the lead. */
@@ -314,11 +342,17 @@ const resolveApplicantUserId = (actor: Actor): string | null => {
 export class AllianceLeadService extends BaseService {
     private readonly _model: AllianceLeadModel;
     private readonly _claimInviter: AllianceClaimInvitePort | null;
+    private readonly _decisionNotifier: AllianceDecisionNotifyPort | null;
 
-    constructor(config: ServiceConfig, claimInviter?: AllianceClaimInvitePort | null) {
+    constructor(
+        config: ServiceConfig,
+        claimInviter?: AllianceClaimInvitePort | null,
+        decisionNotifier?: AllianceDecisionNotifyPort | null
+    ) {
         super(config, 'allianceLead');
         this._model = new AllianceLeadModel();
         this._claimInviter = claimInviter ?? null;
+        this._decisionNotifier = decisionNotifier ?? null;
     }
 
     // -----------------------------------------------------------------------
@@ -703,7 +737,48 @@ export class AllianceLeadService extends BaseService {
                     updatePayload,
                     execCtx?.tx
                 );
-                return updated as AllianceLead;
+
+                // Same reasoning as `update` in `claimLead`: null means the row
+                // went away mid-request. The decision has nowhere to land, so
+                // it is reported rather than announced to an applicant whose
+                // application no longer exists.
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Alliance lead not found: ${validated.id}`
+                    );
+                }
+
+                const lead = toAllianceLead(updated as SelectAllianceLead);
+
+                if (this._decisionNotifier !== null) {
+                    // AFTER the write, and deliberately NOT awaited. The status
+                    // change is the durable outcome; the email is a courtesy on
+                    // top of it. Awaiting would let a slow mail transport hold
+                    // an admin's UI open, and throwing would surface a delivery
+                    // problem as a failed decision the admin would then retry —
+                    // re-sending, never re-deciding.
+                    void this._decisionNotifier
+                        .notifyDecision({
+                            leadId: lead.id,
+                            email: lead.email,
+                            contactName: lead.contactName,
+                            kind: lead.kind,
+                            outcome: validated.status
+                        })
+                        .catch((error: unknown) => {
+                            this.logger.error(
+                                {
+                                    leadId: lead.id,
+                                    outcome: validated.status,
+                                    error: error instanceof Error ? error.message : String(error)
+                                },
+                                '[alliance-lead] decision notification failed to send'
+                            );
+                        });
+                }
+
+                return lead;
             }
         });
     }
