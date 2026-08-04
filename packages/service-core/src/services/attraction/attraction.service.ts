@@ -37,6 +37,7 @@ import {
 import { inArray, type SQL } from 'drizzle-orm';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
+import { getRevalidationService } from '../../revalidation';
 import {
     type Actor,
     type PaginatedListOutput,
@@ -61,6 +62,13 @@ import {
     checkCanViewAttraction
 } from './attraction.permissions';
 
+/**
+ * Page size used when resolving an attraction's destination relations for a
+ * cache purge — the `MAX_PAGE_SIZE` ceiling `findAll` clamps to, NOT the
+ * model's silently-truncating default of 20. See the POI service for the full
+ * rationale; the failure mode is identical.
+ */
+const REVALIDATION_RELATION_PAGE_SIZE = 200;
 /**
  * Upper bound for a single destination's attraction-relation lookup in
  * {@link AttractionService.resolveDestinationIdFilter}. The base model caps
@@ -110,6 +118,95 @@ export class AttractionService extends BaseCrudRelatedService<
      */
     protected override getSearchableColumns(): string[] {
         return ['name', 'description'];
+    }
+
+    // -----------------------------------------------------------------------
+    // Edge cache revalidation (HOS-369 W2-4)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Every destination that lists this attraction, as slugs, for the purge
+     * payload.
+     *
+     * Many-to-many via `r_destination_attraction`, and the destination detail
+     * page renders its attractions, so one attraction edit evicts N
+     * destination pages.
+     *
+     * **`pageSize` is passed explicitly and that is load-bearing** — see the
+     * identical note on the POI service. `findAll` defaults to 20 rows, and a
+     * popular attraction can be referenced by more destinations than that; the
+     * default would purge the first 20 and leave the rest stale while still
+     * reporting success. A shortfall past the 200 cap is logged, not swallowed.
+     *
+     * @param attractionId - The changed attraction.
+     * @returns Destination slugs, possibly empty.
+     */
+    private async _resolveDestinationSlugsForRevalidation(
+        attractionId: string
+    ): Promise<readonly string[]> {
+        const { items: relations, total } = await this.relatedModel.findAll(
+            { attractionId },
+            { pageSize: REVALIDATION_RELATION_PAGE_SIZE }
+        );
+
+        if (total > relations.length) {
+            this.logger.warn(
+                { attractionId, total, fetched: relations.length },
+                'Attraction has more destination relations than the purge page size; some destination pages will stay stale until their TTL expires'
+            );
+        }
+
+        const destinationIds = relations
+            .map((relation) => (relation as { destinationId?: unknown }).destinationId)
+            .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+        if (destinationIds.length === 0) return [];
+
+        const destinations = await Promise.all(
+            destinationIds.map((id) => this.destinationModel.findById(id))
+        );
+
+        return destinations
+            .map((destination) => (destination as { slug?: unknown } | null)?.slug)
+            .filter((slug): slug is string => typeof slug === 'string' && slug.length > 0);
+    }
+
+    /**
+     * Schedule a cache purge for this attraction and every destination listing
+     * it. Never blocking — a Cloudflare outage must not fail a content write.
+     *
+     * @param entity - The attraction as it now stands after the write.
+     */
+    private async _scheduleAttractionRevalidation(entity: Attraction): Promise<void> {
+        try {
+            const destinationSlugs = await this._resolveDestinationSlugsForRevalidation(entity.id);
+
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'attraction',
+                id: entity.id,
+                // `Attraction.slug` is nullable; `EntityChangeData` takes
+                // `string | undefined`. A null slug degrades to the id tag plus
+                // the destination fan-out, which is the honest answer rather
+                // than emitting an `attr-null` tag nothing would ever purge.
+                slug: entity.slug ?? undefined,
+                destinationSlugs
+            });
+        } catch (error) {
+            this.logger.warn(
+                { error, entityType: 'attraction' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
+    }
+
+    protected async _afterCreate(entity: Attraction): Promise<Attraction> {
+        await this._scheduleAttractionRevalidation(entity);
+        return entity;
+    }
+
+    protected async _afterUpdate(entity: Attraction): Promise<Attraction> {
+        await this._scheduleAttractionRevalidation(entity);
+        return entity;
     }
 
     protected readonly destinationModel: DestinationModel;

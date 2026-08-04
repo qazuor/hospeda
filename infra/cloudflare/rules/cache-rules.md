@@ -58,13 +58,19 @@ edge caching **on staging only**, honoring the origin's own `Cache-Control`.
    or starts_with(http.request.uri.path, "/pt/eventos")
    or starts_with(http.request.uri.path, "/es/publicaciones")
    or starts_with(http.request.uri.path, "/en/publicaciones")
-   or starts_with(http.request.uri.path, "/pt/publicaciones")))
+   or starts_with(http.request.uri.path, "/pt/publicaciones")
+   or starts_with(http.request.uri.path, "/es/gastronomia")
+   or starts_with(http.request.uri.path, "/en/gastronomia")
+   or starts_with(http.request.uri.path, "/pt/gastronomia")
+   or starts_with(http.request.uri.path, "/es/experiencias")
+   or starts_with(http.request.uri.path, "/en/experiencias")
+   or starts_with(http.request.uri.path, "/pt/experiencias")))
 ```
 
-The live rule stores this on a single line (2074 characters since W2-3; it was
-1576 after W2-2 and 796 before that). The eighteen `starts_with` terms are
-written out rather than expressed as a regex because the `matches` operator
-requires a Business plan.
+The live rule stores this on a single line (2419 characters since W2-4; it was
+2074 after W2-3, 1576 after W2-2, and 796 before that). The twenty-four
+`starts_with` terms are written out rather than expressed as a regex because the
+`matches` operator requires a Business plan.
 
 The home is matched with `in { … }` — an **exact** path set, not a prefix.
 `starts_with(path, "/es/")` would match every Spanish page in the app, including
@@ -92,13 +98,17 @@ slugs, categories, tags, authors and page numbers — there is no finite set to
 enumerate, so a prefix is the only option available.
 
 The safety property is not lost, it just moves: `edge_ttl.mode =
-"bypass_by_default"` means matching the prefix does nothing on its own. Six
-pages under those prefixes deliberately do NOT opt in — `/destinos/atraccion/`,
+"bypass_by_default"` means matching the prefix does nothing on its own. A page
+under a matched prefix that has not opted in returns `BYPASS`, which is the
+mechanism working rather than a gap.
+
+W2-3 left six such pages deliberately uncached — `/destinos/atraccion/`,
 `/destinos/lugar/`, and the four gastronomy/experience pages — because
-`attraction`, `pointOfInterest`, `gastronomy` and `experience` have no tag
-vocabulary, no `entity-tag-mapper` case, and their services never call the
-revalidation service. They match the rule and return `BYPASS`, which is the
-mechanism working, not a gap.
+`attraction`, `pointOfInterest`, `gastronomy` and `experience` had no tag
+vocabulary, no `entity-tag-mapper` case, and their services never called the
+revalidation service at all. **W2-4 built that chain and all six now cache**,
+which is why this wave added the `gastronomia`/`experiencias` prefixes: the
+other two already sat under `/destinos`.
 
 ### Settings
 
@@ -194,8 +204,9 @@ the response cacheable. Measured on 2026-08-04:
 | `/{lang}/eventos/<slug>/` (detail) | yes — **since 2026-08-04** (W2-3), tagged `event-<slug>` + `event-<id>` |
 | `/{lang}/publicaciones/` and `/{categoria,etiqueta,autor}/<x>/` | yes — **since 2026-08-04** (W2-3), tagged `list-post` |
 | `/{lang}/publicaciones/<slug>/` (detail) | yes — **since 2026-08-04** (W2-3), tagged `post-<slug>` + `post-<id>` |
-| `/{lang}/destinos/{atraccion,lugar}/<slug>/` | **no** — no purge chain (W2-4) |
-| `/{lang}/{gastronomia,experiencias}/` and detail | **no** — no purge chain (W2-4) |
+| `/{lang}/destinos/{atraccion,lugar}/<slug>/` | yes — **since 2026-08-04** (W2-4), tagged `attr-<slug>` / `poi-<slug>` (no collection tag exists) |
+| `/{lang}/{gastronomia,experiencias}/` | yes — **since 2026-08-04** (W2-4), tagged `list-gastro` / `list-exp` |
+| `/{lang}/{gastronomia,experiencias}/<slug>/` | yes — **since 2026-08-04** (W2-4), tagged `gastro-<slug>` / `exp-<slug>` + id |
 | `/{lang}/alojamientos/` and `/page/N/` | yes |
 | `/{lang}/alojamientos/mapa/` | yes |
 | `/{lang}/alojamientos/tipo/<type>/` | yes |

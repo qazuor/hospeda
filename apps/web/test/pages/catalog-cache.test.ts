@@ -1,18 +1,23 @@
 /**
  * @file catalog-cache.test.ts
- * @description HOS-369 W2-3 — destinations, events and posts opt into the edge cache.
+ * @description HOS-369 W2-3 and W2-4 — the catalog pages opt into the edge cache.
  *
- * Three families whose purge side ALREADY existed and evicted nothing:
- * `entity-tag-mapper.ts` has emitted `list-dest` / `list-event` / `list-post`
- * and the `dest-` / `event-` / `post-` entity tags since long before any page
- * declared them. These assertions pin the emitter half so the two cannot drift
- * apart again — the same silent no-op the `home` tag sat in before W2-1.
+ * **W2-3** covered three families whose purge side ALREADY existed and evicted
+ * nothing: `entity-tag-mapper.ts` has emitted `list-dest` / `list-event` /
+ * `list-post` and the `dest-` / `event-` / `post-` entity tags since long
+ * before any page declared them. Those assertions pin the emitter half so the
+ * two cannot drift apart again — the same silent no-op the `home` tag sat in
+ * before W2-1.
  *
- * Deliberately NOT covered, because their purge chain does not exist yet
- * (no vocabulary entry, no `entity-tag-mapper` case, no `scheduleRevalidation`
- * call in their services): `/destinos/atraccion/`, `/destinos/lugar/`,
- * `/gastronomia/`, `/experiencias/`. Caching those today would manufacture the
- * exact unpurgeable-response failure this suite exists to prevent.
+ * **W2-4** covers the six pages W2-3 deliberately left uncached
+ * (`/destinos/atraccion/`, `/destinos/lugar/`, `/gastronomia/`,
+ * `/experiencias/` and the two commerce detail pages). They were excluded
+ * because `attraction`, `pointOfInterest`, `gastronomy` and `experience` had no
+ * tag vocabulary, no `entity-tag-mapper` case, and their services never called
+ * the revalidation service — caching them would have manufactured the exact
+ * unpurgeable-response failure this suite exists to prevent. W2-4 built that
+ * chain, so the standing "stays uncached" assertion is gone and real coverage
+ * replaces it in the second describe block.
  *
  * `.astro` frontmatter cannot render in Vitest, so these are source-based —
  * the established pattern here (see `home-cache.test.ts`).
@@ -114,14 +119,40 @@ const CATALOG_PAGES: readonly CatalogPage[] = [
     }
 ] as const;
 
-/** Pages whose purge chain does not exist yet — see the file docblock. */
-const DELIBERATELY_UNCACHED = [
+/**
+ * The six pages W2-3 deliberately left uncached, now cacheable.
+ *
+ * W2-4 built the purge chain they were waiting on: entries in
+ * `@repo/cache-tags`, `EntityChangeData` variants, `entity-tag-mapper` cases,
+ * and a `scheduleRevalidation` call in each service. The standing assertion
+ * that used to guard them (`stays uncached until its purge chain exists`) has
+ * done its job and is replaced by real coverage below.
+ *
+ * `attraction` and `pointOfInterest` have NO collection tag on purpose —
+ * nothing lists them — so they are checked separately from the two commerce
+ * families.
+ */
+const W2_4_PAGES = [
+    {
+        path: 'gastronomia/index.astro',
+        tag: 'CACHE_TAG_COLLECTIONS.gastronomy',
+        kind: 'collection'
+    },
+    {
+        path: 'experiencias/index.astro',
+        tag: 'CACHE_TAG_COLLECTIONS.experience',
+        kind: 'collection'
+    },
+    { path: 'gastronomia/[slug].astro', tag: 'gastronomy', kind: 'entity' },
+    { path: 'experiencias/[slug].astro', tag: 'experience', kind: 'entity' },
+    { path: 'destinos/atraccion/[slug]/index.astro', tag: 'attraction', kind: 'entity' },
+    { path: 'destinos/lugar/[slug]/index.astro', tag: 'pointOfInterest', kind: 'entity' }
+] as const;
+
+/** The two W2-4 entities that have a detail page but no listing anywhere. */
+const NO_COLLECTION_PAGES = [
     'destinos/atraccion/[slug]/index.astro',
-    'destinos/lugar/[slug]/index.astro',
-    'gastronomia/index.astro',
-    'gastronomia/[slug].astro',
-    'experiencias/index.astro',
-    'experiencias/[slug].astro'
+    'destinos/lugar/[slug]/index.astro'
 ] as const;
 
 /** Argument text of a call, anchored on the call so it cannot match an import. */
@@ -233,14 +264,67 @@ describe('catalog pages — edge cacheability (HOS-369 W2-3)', () => {
         expect(source).not.toContain('Astro.locals.user');
         expect(source).not.toMatch(/locals\s+as\s+\{[^}]*user/);
     });
+});
 
-    it.each(DELIBERATELY_UNCACHED)('%s stays uncached until its purge chain exists', (path) => {
-        // Not an oversight — a standing assertion. `attraction`,
-        // `pointOfInterest`, `gastronomy` and `experience` have no entry in
-        // `@repo/cache-tags`, no case in `entity-tag-mapper.ts`, and their
-        // services never call the revalidation service at all. Whoever makes
-        // one of these cacheable has to delete a line here, which is the
-        // moment to check that the purge side landed first.
-        expect(readPage(path)).not.toContain('applyCacheHeaders');
+describe('W2-4 pages — cacheable now that their purge chain exists (HOS-369)', () => {
+    it.each(W2_4_PAGES)('$path opts in through applyCacheHeaders', ({ path }) => {
+        expect(readPage(path)).toContain('applyCacheHeaders({');
+    });
+
+    it.each(W2_4_PAGES.filter((p) => p.kind === 'collection'))('$path declares $tag', ({
+        path,
+        tag
+    }) => {
+        const args = callArgsOf(readPage(path), 'applyCacheHeaders');
+        expect(args).toMatch(new RegExp(`\\b${tag.replace(/\./g, '\\.')}\\b`));
+    });
+
+    it.each(
+        W2_4_PAGES.filter((p) => p.kind === 'entity')
+    )('$path derives its tags from the $tag entity', ({ path, tag }) => {
+        const source = readPage(path);
+        expect(source).toMatch(
+            new RegExp(`buildEntityCacheTags\\(\\{\\s*\\n?\\s*entity:\\s*'${tag}'`)
+        );
+    });
+
+    it.each(NO_COLLECTION_PAGES)('%s falls back to an id tag, not a collection tag', (path) => {
+        // These two have no collection tag to fall back to — that is the whole
+        // reason `CACHE_TAG_COLLECTIONS` became partial in W2-4. If somebody
+        // later adds `list-attr`/`list-poi` to satisfy a type, this catches it:
+        // a collection tag for something nothing lists is a tag nothing purges.
+        const args = callArgsOf(readPage(path), 'applyCacheHeaders');
+        expect(args).not.toContain('CACHE_TAG_COLLECTIONS');
+    });
+
+    it.each(W2_4_PAGES)('$path reads no session state', ({ path }) => {
+        const source = readPage(path);
+        expect(source).not.toContain('Astro.locals.user');
+        expect(source).not.toMatch(/locals\s+as\s+\{[^}]*user/);
+    });
+
+    it('the commerce detail pages cache only AFTER their visibility gate', () => {
+        // A PRIVATE or RESTRICTED listing 404s before reaching
+        // `applyCacheHeaders`. If the call ever moves above that gate, a
+        // non-public listing becomes shareable from the edge — the worst
+        // possible cache bug, and one no page would visibly fail on.
+        for (const path of ['gastronomia/[slug].astro', 'experiencias/[slug].astro']) {
+            const source = readPage(path);
+            const gate = source.indexOf("visibility !== 'PUBLIC'");
+            const call = source.indexOf('applyCacheHeaders({');
+            expect(gate, `${path}: visibility gate not found`).toBeGreaterThan(-1);
+            expect(call, `${path}: cache call must come after the gate`).toBeGreaterThan(gate);
+        }
+    });
+
+    it('the POI page caches only AFTER the hasOwnPage gate', () => {
+        // `hasOwnPage` separates a curated landmark from the 839 catalog rows
+        // that must never get a URL. Caching before it would share pages that
+        // are supposed to 404.
+        const source = readPage('destinos/lugar/[slug]/index.astro');
+        const gate = source.indexOf('hasOwnPage !== true');
+        const call = source.indexOf('applyCacheHeaders({');
+        expect(gate).toBeGreaterThan(-1);
+        expect(call).toBeGreaterThan(gate);
     });
 });
