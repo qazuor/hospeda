@@ -49,7 +49,7 @@ import {
     SOCIAL_KEYS,
     type SocialValues
 } from './editor/commerce-edit-data';
-import { COMMERCE_FIELD_INPUT_IDS } from './editor/field-input-ids';
+import { COMMERCE_FIELD_ID_SUFFIXES, COMMERCE_FIELD_PREFIX } from './editor/field-ids';
 import { MediaSection } from './editor/MediaSection.client';
 import { OpeningHoursSection } from './editor/OpeningHoursSection.client';
 import { PriceSection } from './editor/PriceSection.client';
@@ -274,7 +274,11 @@ export function CommerceListingEditor({
         schema,
         t,
         // HOS-373: a failed submit focuses the first invalid field on the page.
-        fieldInputIds: COMMERCE_FIELD_INPUT_IDS
+        // HOS-385: derived from the Zod key by the same `buildFieldId` the
+        // sections render with, so this is a namespace plus the genuine
+        // exceptions — not a table that can disagree with the markup.
+        fieldIdPrefix: COMMERCE_FIELD_PREFIX,
+        fieldIdSuffixes: COMMERCE_FIELD_ID_SUFFIXES
     });
 
     // TYPE-WORKAROUND: the detail is a gastronomy|experience union; we read heterogeneous operational fields by key, which the union type cannot express.
