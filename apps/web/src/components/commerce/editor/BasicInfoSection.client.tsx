@@ -14,12 +14,39 @@ import { ExperienceTypeEnum, GastronomyTypeEnum } from '@repo/schemas';
 import type { JSX } from 'react';
 import type { DestinationOption } from '@/components/gastronomy/CommerceLead.client';
 import { RichTextEditor } from '@/components/host/editor/RichTextEditor.client';
-import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
+import { FieldError } from '@/components/ui/FieldError';
+import { buildFieldErrorId, TextField } from '@/components/ui/TextField';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
+import { buildFieldId } from '@/lib/forms/build-field-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { CommerceEditData, CommerceFieldChange } from './commerce-edit-data';
 import styles from './editor-fields.module.css';
+import { COMMERCE_FIELD_PREFIX } from './field-ids';
+
+/**
+ * Identity of the two fields that keep their own wiring (HOS-385).
+ *
+ * `summary` points `aria-describedby` at a live character counter when it is
+ * VALID and at the error when it is not. `TextField` owns a single-target
+ * `aria-describedby` that exists only while there is an error, and renders
+ * label/control/error as flat siblings with no slot between control and error —
+ * so adopting it would drop the counter from the accessible description.
+ *
+ * `richDescription` is a contenteditable named by `ariaLabel`, deliberately
+ * titled with a `<span>` rather than a `<label>` (a `<label>` cannot name a
+ * `role="textbox"`); the wrapper always renders a real `<label htmlFor>`.
+ *
+ * Both still DERIVE their id, which is the half that was drifting.
+ */
+const SUMMARY_FIELD = { prefix: COMMERCE_FIELD_PREFIX, name: 'summary' } as const;
+const SUMMARY_ID = buildFieldId(SUMMARY_FIELD);
+const SUMMARY_HINT_ID = `${SUMMARY_ID}-hint`;
+
+const RICH_DESCRIPTION_ID = buildFieldId({
+    prefix: COMMERCE_FIELD_PREFIX,
+    name: 'richDescription'
+});
 
 /** Gastronomy type options in display order. */
 const GASTRONOMY_TYPE_OPTIONS = Object.values(GastronomyTypeEnum);
@@ -62,26 +89,18 @@ export function BasicInfoSection({
                 className={styles.section}
                 id="editor-basicInfo"
             >
-                <label
-                    className={styles.label}
-                    htmlFor="ce-name"
-                >
-                    {t('commerce.owner.editor.sections.name', 'Nombre del comercio')}
-                </label>
-                <input
-                    id="ce-name"
+                <TextField
+                    prefix={COMMERCE_FIELD_PREFIX}
+                    name="name"
+                    label={t('commerce.owner.editor.sections.name', 'Nombre del comercio')}
+                    labelClassName={styles.label}
                     className={styles.input}
+                    error={errors.name}
                     type="text"
                     value={data.name}
-                    aria-invalid={errors.name ? 'true' : 'false'}
-                    aria-describedby={errors.name ? fieldErrorId('name') : undefined}
                     onChange={(event) => {
                         onFieldChange('name', event.target.value);
                     }}
-                />
-                <FieldError
-                    id={fieldErrorId('name')}
-                    message={errors.name}
                 />
             </section>
 
@@ -103,20 +122,15 @@ export function BasicInfoSection({
                 </section>
             ) : destinations.length > 0 ? (
                 <section className={styles.section}>
-                    <label
-                        className={styles.label}
-                        htmlFor="ce-destinationId"
-                    >
-                        {t('commerce.owner.editor.sections.destination', 'Ciudad / Destino')}
-                    </label>
-                    <select
-                        id="ce-destinationId"
+                    <TextField
+                        as="select"
+                        prefix={COMMERCE_FIELD_PREFIX}
+                        name="destinationId"
+                        label={t('commerce.owner.editor.sections.destination', 'Ciudad / Destino')}
+                        labelClassName={styles.label}
                         className={styles.input}
+                        error={errors.destinationId}
                         value={data.destinationId}
-                        aria-invalid={errors.destinationId ? 'true' : 'false'}
-                        aria-describedby={
-                            errors.destinationId ? fieldErrorId('destinationId') : undefined
-                        }
                         onChange={(event) => {
                             onFieldChange('destinationId', event.target.value);
                         }}
@@ -130,11 +144,7 @@ export function BasicInfoSection({
                                 {d.name}
                             </option>
                         ))}
-                    </select>
-                    <FieldError
-                        id={fieldErrorId('destinationId')}
-                        message={errors.destinationId}
-                    />
+                    </TextField>
                 </section>
             ) : (
                 // HOS-260: catalog fetch SUCCEEDED but returned zero rows. The old
@@ -157,14 +167,18 @@ export function BasicInfoSection({
 
             {/* T-020: type select */}
             <section className={styles.section}>
-                <label
-                    className={styles.label}
-                    htmlFor="ce-type"
-                >
-                    {t('commerce.owner.editor.sections.type', 'Categoría')}
-                </label>
-                <select
-                    id="ce-type"
+                {/*
+                 * `type` is the Zod key; `listingType` is the React state key.
+                 * HOS-385 unifies the ID layer, not the state layer — the
+                 * wrapper takes the Zod name and the caller still supplies the
+                 * state value separately (spec §6.2).
+                 */}
+                <TextField
+                    as="select"
+                    prefix={COMMERCE_FIELD_PREFIX}
+                    name="type"
+                    label={t('commerce.owner.editor.sections.type', 'Categoría')}
+                    labelClassName={styles.label}
                     className={styles.input}
                     value={data.listingType}
                     onChange={(event) => {
@@ -180,32 +194,34 @@ export function BasicInfoSection({
                             {t(`commerce.owner.editor.typeOption.${opt}`, opt)}
                         </option>
                     ))}
-                </select>
+                </TextField>
             </section>
 
             {/* T-020: summary textarea (min 10 / max 300) */}
             <section className={styles.section}>
                 <label
                     className={styles.label}
-                    htmlFor="ce-summary"
+                    htmlFor={SUMMARY_ID}
                 >
                     {t('commerce.owner.editor.sections.summary', 'Resumen')}
                 </label>
                 <textarea
-                    id="ce-summary"
+                    id={SUMMARY_ID}
                     className={styles.textarea}
                     value={data.summary}
                     rows={3}
                     minLength={10}
                     maxLength={300}
                     aria-invalid={errors.summary ? 'true' : 'false'}
-                    aria-describedby={errors.summary ? fieldErrorId('summary') : 'ce-summary-hint'}
+                    aria-describedby={
+                        errors.summary ? buildFieldErrorId(SUMMARY_FIELD) : SUMMARY_HINT_ID
+                    }
                     onChange={(event) => {
                         onFieldChange('summary', event.target.value);
                     }}
                 />
                 <span
-                    id="ce-summary-hint"
+                    id={SUMMARY_HINT_ID}
                     className={styles.hint}
                     aria-live="polite"
                 >
@@ -214,7 +230,7 @@ export function BasicInfoSection({
                     })}
                 </span>
                 <FieldError
-                    id={fieldErrorId('summary')}
+                    id={buildFieldErrorId(SUMMARY_FIELD)}
                     message={errors.summary}
                 />
             </section>
@@ -222,26 +238,19 @@ export function BasicInfoSection({
             {/* HOS-166 judgment-day W2: description — identity field, already
                 owner-editable server-side (D-1) but never exposed here. */}
             <section className={styles.section}>
-                <label
-                    className={styles.label}
-                    htmlFor="ce-description"
-                >
-                    {t('commerce.owner.editor.sections.description', 'Descripción')}
-                </label>
-                <textarea
-                    id="ce-description"
+                <TextField
+                    as="textarea"
+                    prefix={COMMERCE_FIELD_PREFIX}
+                    name="description"
+                    label={t('commerce.owner.editor.sections.description', 'Descripción')}
+                    labelClassName={styles.label}
                     className={styles.textarea}
+                    error={errors.description}
                     value={data.description}
                     rows={5}
-                    aria-invalid={errors.description ? 'true' : 'false'}
-                    aria-describedby={errors.description ? fieldErrorId('description') : undefined}
                     onChange={(event) => {
                         onFieldChange('description', event.target.value);
                     }}
-                />
-                <FieldError
-                    id={fieldErrorId('description')}
-                    message={errors.description}
                 />
             </section>
 
@@ -266,7 +275,7 @@ export function BasicInfoSection({
                     {t('commerce.owner.editor.sections.richDescription', 'Descripción ampliada')}
                 </span>
                 <RichTextEditor
-                    id="ce-richDescription"
+                    id={RICH_DESCRIPTION_ID}
                     value={data.richDescription}
                     ariaLabel={t(
                         'commerce.owner.editor.sections.richDescription',

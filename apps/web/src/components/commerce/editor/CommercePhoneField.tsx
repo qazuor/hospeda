@@ -19,12 +19,32 @@
 
 import { type JSX, useState } from 'react';
 import { CountryCodeCombobox } from '@/components/host/editor/CountryCodeCombobox.client';
-import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
+import { FieldError } from '@/components/ui/FieldError';
+import { buildFieldErrorId, TextField } from '@/components/ui/TextField';
+import { buildFieldId } from '@/lib/forms/build-field-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { composePhoneValue, type PhoneCountry, parsePhoneValue } from '@/lib/phone-countries';
 import styles from './ContactSection.module.css';
 import fieldStyles from './editor-fields.module.css';
+import { COMMERCE_FIELD_ID_SUFFIXES, COMMERCE_FIELD_PREFIX } from './field-ids';
+
+/**
+ * Identity of the two grouped phone controls.
+ *
+ * The suffix is READ from the editor's shared map rather than written here.
+ * That is the whole safeguard for this field: `focusFirstInvalidField` reads the
+ * same map, so the control this points at and the one focus targets cannot
+ * drift. Hard-coding `'number'` in either place would compile, render and
+ * silently focus nothing.
+ */
+const PHONE_FIELD = {
+    prefix: COMMERCE_FIELD_PREFIX,
+    name: 'contactInfo.mobilePhone',
+    suffix: COMMERCE_FIELD_ID_SUFFIXES['contactInfo.mobilePhone']
+} as const;
+
+const PHONE_COUNTRY_ID = buildFieldId({ ...PHONE_FIELD, suffix: 'country' });
 
 export interface CommercePhoneFieldProps {
     /** Active UI locale (drives the combobox's translated labels). */
@@ -64,8 +84,6 @@ export function CommercePhoneField({
         onChange(composePhoneValue({ country, number: nextNumber }));
     };
 
-    const errorId = fieldErrorId('contactInfo.mobilePhone');
-
     return (
         <div className={styles.phoneField}>
             <fieldset className={styles.phoneFieldset}>
@@ -81,41 +99,43 @@ export function CommercePhoneField({
                             commerce key would let the visible label and the
                             accessible name drift apart on the next edit. */}
                         <label
-                            htmlFor="ce-phone-country"
+                            htmlFor={PHONE_COUNTRY_ID}
                             className={styles.fieldSubLabel}
                         >
                             {t('host.properties.editor.field.phoneCountry', 'País')}
                         </label>
                         <CountryCodeCombobox
                             locale={locale}
-                            id="ce-phone-country"
+                            id={PHONE_COUNTRY_ID}
                             value={country}
                             onChange={handleCountryChange}
                         />
                     </div>
                     <div className={styles.phoneNumberField}>
-                        <label
-                            htmlFor="ce-phone-number"
-                            className={styles.fieldSubLabel}
-                        >
-                            {t('host.properties.editor.field.phoneNumber', 'Número')}
-                        </label>
-                        <input
-                            id="ce-phone-number"
+                        {/*
+                         * `renderError={false}`: one Zod field, two controls.
+                         * The message belongs under the whole fieldset (below),
+                         * not inside this column — the wrapper still owns the
+                         * aria wiring, only the placement is ours.
+                         */}
+                        <TextField
+                            {...PHONE_FIELD}
+                            label={t('host.properties.editor.field.phoneNumber', 'Número')}
+                            labelClassName={styles.fieldSubLabel}
                             className={fieldStyles.input}
+                            error={error}
+                            renderError={false}
                             type="tel"
                             inputMode="tel"
                             value={number}
                             placeholder="9 343 1234567"
-                            aria-invalid={error ? 'true' : 'false'}
-                            aria-describedby={error ? errorId : undefined}
                             onChange={(event) => handleNumberChange(event.target.value)}
                         />
                     </div>
                 </div>
             </fieldset>
             <FieldError
-                id={errorId}
+                id={buildFieldErrorId(PHONE_FIELD)}
                 message={error}
             />
         </div>
