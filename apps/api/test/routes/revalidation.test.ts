@@ -46,11 +46,14 @@ vi.mock('../../src/utils/env', async (importOriginal) => {
 const mockRevalidateService = {
     revalidateTags: vi.fn().mockResolvedValue([]),
     revalidateByEntityType: vi.fn().mockResolvedValue([]),
+    // `purgeEverything` now purges the deployment catch-all tag, not the zone,
+    // so the target it reports is a namespaced tag (HOS-369).
     purgeEverything: vi.fn().mockResolvedValue({
-        target: '*',
+        target: 'test:all',
         success: true,
         durationMs: 5
-    })
+    }),
+    getEnvironmentFlushTarget: vi.fn().mockReturnValue('test:all')
 };
 
 vi.mock('@repo/service-core', async (importOriginal) => {
@@ -229,10 +232,11 @@ describe('Revalidation Admin API — /api/v1/admin/revalidation', () => {
         mockRevalidateService.revalidateTags.mockResolvedValue([]);
         mockRevalidateService.revalidateByEntityType.mockResolvedValue([]);
         mockRevalidateService.purgeEverything.mockResolvedValue({
-            target: '*',
+            target: 'test:all',
             success: true,
             durationMs: 5
         });
+        mockRevalidateService.getEnvironmentFlushTarget.mockReturnValue('test:all');
         mockConfigModel.findAll.mockResolvedValue({ items: mockConfigItems, total: 1 });
         mockConfigModel.update.mockResolvedValue(mockConfigItems[0]);
         mockLogModel.findAll.mockResolvedValue({ items: mockLogItems, total: 1 });
@@ -458,8 +462,8 @@ describe('Revalidation Admin API — /api/v1/admin/revalidation', () => {
         });
 
         // =====================================================================
-        // purgeEverything — the whole-zone branch must be reachable ONLY via
-        // an explicit `purgeEverything: true` flag, never as a fallback.
+        // purgeEverything — the environment-flush branch must be reachable ONLY
+        // via an explicit `purgeEverything: true` flag, never as a fallback.
         // =====================================================================
 
         describe('purgeEverything', () => {
@@ -474,7 +478,9 @@ describe('Revalidation Admin API — /api/v1/admin/revalidation', () => {
                     if (res.status === 200) {
                         const body = await res.json();
                         expect(body).toHaveProperty('success', true);
-                        expect(body.revalidated).toContain('*');
+                        // The flush addresses this deployment's catch-all tag,
+                        // never the zone-wide `*` (HOS-369).
+                        expect(body.revalidated).toContain('test:all');
                         expect(mockRevalidateService.purgeEverything).toHaveBeenCalledWith({
                             reason: 'deploy invalidated every asset',
                             triggeredBy: expect.any(String)

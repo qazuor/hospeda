@@ -4,7 +4,10 @@
  * - scheduleRevalidation: fire-and-forget entity-level debounced scheduling with config gating
  * - revalidateByEntityType: immediate purge of all cache tags for an entity type
  * - revalidateTags: immediate purge of an explicit cache-tag list with entityType threading
- * - purgeEverything: whole-zone flush escape hatch, one audit row targeting `*`
+ * - purgeEverything: environment flush (purges `<env>:all`), one audit row
+ *   targeting that tag -- and never a zone flush, not even when the namespace
+ *   is unresolved
+ * - purgeWholeZone: the emergency zone flush, one audit row targeting `*`
  * - getRevalidationService / initializeRevalidationService: singleton management
  * - _resetRevalidationService: test isolation helper
  * - Config getters: getLogRetentionDays
@@ -51,7 +54,10 @@ import type {
     RevalidateTargetResult,
     RevalidationAdapter
 } from '../../src/revalidation/adapters/revalidation.adapter.js';
-import { WHOLE_ZONE_TARGET } from '../../src/revalidation/adapters/revalidation.adapter.js';
+import {
+    UNRESOLVED_ENVIRONMENT_TARGET,
+    WHOLE_ZONE_TARGET
+} from '../../src/revalidation/adapters/revalidation.adapter.js';
 import { RevalidationService } from '../../src/revalidation/revalidation.service.js';
 import {
     _resetRevalidationService,
@@ -822,7 +828,8 @@ describe('RevalidationService.revalidateTags', () => {
 });
 
 // ---------------------------------------------------------------------------
-// purgeEverything -- whole-zone flush escape hatch
+// purgeEverything -- environment flush (the catch-all tag, NOT the zone)
+// purgeWholeZone  -- the emergency zone flush it replaced
 // ---------------------------------------------------------------------------
 
 describe('RevalidationService.purgeEverything', () => {
@@ -845,18 +852,33 @@ describe('RevalidationService.purgeEverything', () => {
         vi.restoreAllMocks();
     });
 
-    it('delegates to the adapter and returns a result targeting WHOLE_ZONE_TARGET', async () => {
+    it('purges the environment catch-all tag and never the zone', async () => {
+        // The whole point of the change: staging and production share one
+        // Cloudflare zone, so "flush everything" must address a namespaced tag.
         const adapter = makeMockAdapter();
         const service = createTestService(adapter);
 
         const result = await service.purgeEverything({ reason: 'deploy' });
 
-        expect(adapter.purgeEverything).toHaveBeenCalledWith({ reason: 'deploy' });
-        expect(result.target).toBe(WHOLE_ZONE_TARGET);
+        expect(adapter.revalidateMany).toHaveBeenCalledWith({ tags: ['test:all'] });
+        expect(adapter.purgeEverything).not.toHaveBeenCalled();
+        expect(result.target).toBe('test:all');
         expect(result.success).toBe(true);
     });
 
-    it('writes exactly ONE audit row targeting WHOLE_ZONE_TARGET', async () => {
+    it('addresses the OTHER environment when configured as that environment', async () => {
+        // Guards the property that makes this safe at all: the tag carries the
+        // deployment, so a preview deployment can never purge `prod:all`.
+        const adapter = makeMockAdapter();
+        const service = new RevalidationService({ adapter, cacheTagEnvironment: 'preview' });
+
+        const result = await service.purgeEverything();
+
+        expect(adapter.revalidateMany).toHaveBeenCalledWith({ tags: ['preview:all'] });
+        expect(result.target).toBe('preview:all');
+    });
+
+    it('writes exactly ONE audit row targeting the environment catch-all', async () => {
         const mockCreate = vi.fn().mockResolvedValue(undefined);
         (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
             return { create: mockCreate };
@@ -871,7 +893,11 @@ describe('RevalidationService.purgeEverything', () => {
 
         expect(mockCreate).toHaveBeenCalledTimes(1);
         const logArg = mockCreate.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(logArg.target).toBe(WHOLE_ZONE_TARGET);
+        // The audit trail must distinguish an environment flush from a zone
+        // flush after the fact; `test:all` vs `*` is that distinction.
+        expect(logArg.target).toBe('test:all');
+        expect(logArg.target).not.toBe(WHOLE_ZONE_TARGET);
+        expect(logArg.status).toBe('success');
         expect(logArg.triggeredBy).toBe('ci');
     });
 
@@ -894,6 +920,142 @@ describe('RevalidationService.purgeEverything', () => {
 
     it('resolves without throwing when the adapter reports failure', async () => {
         const adapter = makeMockAdapter();
+        (adapter.revalidateMany as ReturnType<typeof vi.fn>).mockResolvedValue([
+            {
+                target: 'test:all',
+                success: false,
+                durationMs: 5,
+                error: 'Cloudflare unreachable'
+            }
+        ]);
+        const service = createTestService(adapter);
+
+        const result = await service.purgeEverything({ reason: 'deploy' });
+
+        expect(result.success).toBe(false);
+        expect(result.target).toBe('test:all');
+    });
+
+    describe('unresolved deployment namespace', () => {
+        it('purges NOTHING and never escalates to a whole-zone flush', async () => {
+            // The failure this must not create. With no namespace, falling back
+            // to `purge_everything` would flush the OTHER environment too --
+            // strictly worse than the bug the catch-all was added to fix.
+            const adapter = makeMockAdapter();
+            const service = new RevalidationService({ adapter });
+
+            const result = await service.purgeEverything({ reason: 'deploy' });
+
+            expect(adapter.purgeEverything).not.toHaveBeenCalled();
+            expect(adapter.revalidateMany).not.toHaveBeenCalled();
+            expect(result.success).toBe(false);
+            expect(result.target).toBe(UNRESOLVED_ENVIRONMENT_TARGET);
+            expect(result.error).toMatch(/HOSPEDA_DEPLOY_ENV/);
+        });
+
+        it('records the attempt as skipped, under its own unambiguous target', async () => {
+            const mockCreate = vi.fn().mockResolvedValue(undefined);
+            (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+                return { create: mockCreate };
+            });
+            const adapter = makeMockAdapter();
+            const service = new RevalidationService({ adapter });
+
+            await service.purgeEverything({ reason: 'deploy' });
+
+            await Promise.resolve();
+            await Promise.resolve();
+
+            expect(mockCreate).toHaveBeenCalledTimes(1);
+            const logArg = mockCreate.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(logArg.target).toBe(UNRESOLVED_ENVIRONMENT_TARGET);
+            // Neither of the two shortcuts a reader could be misled by: it must
+            // not claim a zone flush, and it must not name a real environment.
+            expect(logArg.target).not.toBe(WHOLE_ZONE_TARGET);
+            expect(logArg.target).not.toBe('test:all');
+            expect(logArg.status).toBe('skipped');
+        });
+    });
+
+    describe('getEnvironmentFlushTarget', () => {
+        it('names the tag a flush would address', () => {
+            expect(createTestService(makeMockAdapter()).getEnvironmentFlushTarget()).toBe(
+                'test:all'
+            );
+        });
+
+        it('names the unresolved sentinel when there is no namespace', () => {
+            expect(
+                new RevalidationService({
+                    adapter: makeMockAdapter()
+                }).getEnvironmentFlushTarget()
+            ).toBe(UNRESOLVED_ENVIRONMENT_TARGET);
+        });
+    });
+});
+
+describe('RevalidationService.purgeWholeZone', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return { create: vi.fn().mockResolvedValue(undefined) };
+        });
+        (createLogger as ReturnType<typeof vi.fn>).mockReturnValue({
+            error: vi.fn(),
+            warn: vi.fn(),
+            info: vi.fn(),
+            debug: vi.fn()
+        });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('still flushes the zone, for the emergencies a tag purge cannot cover', async () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        const result = await service.purgeWholeZone({ reason: 'cache rule changed' });
+
+        expect(adapter.purgeEverything).toHaveBeenCalledWith({ reason: 'cache rule changed' });
+        expect(result.target).toBe(WHOLE_ZONE_TARGET);
+        expect(result.success).toBe(true);
+    });
+
+    it('writes ONE audit row targeting `*`, distinguishable from an environment flush', async () => {
+        const mockCreate = vi.fn().mockResolvedValue(undefined);
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(function () {
+            return { create: mockCreate };
+        });
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        await service.purgeWholeZone({ reason: 'deploy', triggeredBy: 'ci' });
+
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(mockCreate).toHaveBeenCalledTimes(1);
+        const logArg = mockCreate.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(logArg.target).toBe(WHOLE_ZONE_TARGET);
+        expect(logArg.triggeredBy).toBe('ci');
+    });
+
+    it('flushes the zone even with an unresolved namespace, because it needs none', async () => {
+        // The complement of purgeEverything's refusal: this call is explicitly
+        // zone-wide, so an unresolvable environment is simply irrelevant to it.
+        const adapter = makeMockAdapter();
+        const service = new RevalidationService({ adapter });
+
+        const result = await service.purgeWholeZone({ reason: 'emergency' });
+
+        expect(adapter.purgeEverything).toHaveBeenCalledOnce();
+        expect(result.target).toBe(WHOLE_ZONE_TARGET);
+    });
+
+    it('resolves without throwing when the adapter reports failure', async () => {
+        const adapter = makeMockAdapter();
         (adapter.purgeEverything as ReturnType<typeof vi.fn>).mockResolvedValue({
             target: WHOLE_ZONE_TARGET,
             success: false,
@@ -902,7 +1064,7 @@ describe('RevalidationService.purgeEverything', () => {
         });
         const service = createTestService(adapter);
 
-        const result = await service.purgeEverything({ reason: 'deploy' });
+        const result = await service.purgeWholeZone({ reason: 'deploy' });
 
         expect(result.success).toBe(false);
     });

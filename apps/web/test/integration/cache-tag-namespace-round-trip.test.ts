@@ -84,7 +84,11 @@ describe('cache-tag namespace round trip', () => {
         const response = await purge((header as string).split(','));
 
         expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({ ok: true, purged: 3 });
+        // Four, not three: the emitter also leads with the environment
+        // catch-all (`test:all`), and the purge endpoint accepts it on the same
+        // namespace check as every other tag — which is what keeps a staging
+        // flush from ever addressing `prod:all` (HOS-369).
+        expect(await response.json()).toEqual({ ok: true, purged: 4 });
     });
 
     it('sends the namespaced form to Cloudflare, not the bare vocabulary', async () => {
@@ -93,7 +97,9 @@ describe('cache-tag namespace round trip', () => {
         await purge((header as string).split(','));
 
         const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
-        expect(JSON.parse(String(init.body))).toEqual({ tags: ['test:list-accom'] });
+        expect(JSON.parse(String(init.body))).toEqual({
+            tags: ['test:all', 'test:list-accom']
+        });
     });
 
     it('FAILS the round trip when the emitter and the purger read different values', async () => {
@@ -104,7 +110,7 @@ describe('cache-tag namespace round trip', () => {
         vi.stubEnv('HOSPEDA_DEPLOY_ENV', 'preview');
         _resetCacheTagEnvironment();
         const header = emitCacheTagHeader(['accom-cabana-del-rio', 'list-accom']);
-        expect(header).toBe('preview:accom-cabana-del-rio,preview:list-accom');
+        expect(header).toBe('preview:all,preview:accom-cabana-del-rio,preview:list-accom');
 
         vi.stubEnv('HOSPEDA_DEPLOY_ENV', 'test');
         _resetCacheTagEnvironment();

@@ -5,6 +5,7 @@ import {
     ManualRevalidateRequestSchema,
     RevalidateEntityRequestSchema,
     RevalidateTypeRequestSchema,
+    RevalidationHealthSchema,
     RevalidationResponseSchema,
     RevalidationStatsSchema
 } from '../../../src/entities/revalidation/revalidation.http.schema.js';
@@ -488,6 +489,52 @@ describe('RevalidationStatsSchema', () => {
             expect(typeof result.byEntityType).toBe('object');
             expect(typeof result.byTrigger).toBe('object');
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// RevalidationHealthSchema (HOS-369)
+// ---------------------------------------------------------------------------
+
+describe('RevalidationHealthSchema', () => {
+    const createValidHealth = () => ({
+        status: 'operational' as const,
+        adapter: 'active' as const,
+        environmentFlushTarget: 'prod:all',
+        latencyMs: 3
+    });
+
+    it('should validate an operational report naming its flush target', () => {
+        const result = RevalidationHealthSchema.parse(createValidHealth());
+        expect(result.environmentFlushTarget).toBe('prod:all');
+        expect(result.status).toBe('operational');
+    });
+
+    it("should accept the 'unresolved' sentinel as a flush target", () => {
+        const result = RevalidationHealthSchema.parse({
+            status: 'not_initialized',
+            adapter: 'none',
+            environmentFlushTarget: 'unresolved'
+        });
+        expect(result.environmentFlushTarget).toBe('unresolved');
+    });
+
+    it('should REQUIRE environmentFlushTarget — a consumer must never have to read a missing key as "probably fine"', () => {
+        const { environmentFlushTarget: _omitted, ...withoutTarget } = createValidHealth();
+        expect(RevalidationHealthSchema.safeParse(withoutTarget).success).toBe(false);
+    });
+
+    it('should reject an unknown status', () => {
+        expect(
+            RevalidationHealthSchema.safeParse({
+                ...createValidHealth(),
+                status: 'purged'
+            }).success
+        ).toBe(false);
+    });
+
+    it('should throw ZodError when using .parse() on invalid input', () => {
+        expect(() => RevalidationHealthSchema.parse({ status: 'operational' })).toThrow(ZodError);
     });
 });
 

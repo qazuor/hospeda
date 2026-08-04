@@ -3,17 +3,24 @@
  *
  * HOS-369 W1-1 turned this service from URL-path purging to cache-tag purging.
  * Every "path" concept below is now a "tag" (what to invalidate) or a "target"
- * (what the adapter/log actually recorded — a tag, or `*` for a whole-zone
- * flush). See `entity-tag-mapper.ts` for the entity→tag mapping this service
- * delegates to.
+ * (what the adapter/log actually recorded). Three target shapes exist, and the
+ * `revalidation_log.target` column is how they are told apart afterwards:
+ * `<env>:<tag>` for an ordinary purge and for an environment flush
+ * (`prod:all`), `*` for a whole-zone flush, and `?:all` for an environment
+ * flush that could not be addressed at all. See `entity-tag-mapper.ts` for the
+ * entity→tag mapping this service delegates to.
  *
- * Slightly over the 500-line guideline; split deferred (reviewed SPEC-167 T-023).
+ * Well over the 500-line guideline — most of it prose, since nearly every
+ * decision here has a silent failure mode behind it. The split was reviewed and
+ * deferred (SPEC-167 T-023) and is still deferred: the natural seam is
+ * scheduling/debounce vs purging, and moving either half while the purge
+ * semantics are actively changing would make the diffs unreviewable.
  *
  * @module revalidation/revalidation.service
  */
 
 import type { CacheTagEnvironment } from '@repo/cache-tags';
-import { namespaceCacheTags } from '@repo/cache-tags';
+import { CACHE_TAG_ALL, namespaceCacheTags } from '@repo/cache-tags';
 import type { RevalidationConfigRecord } from '@repo/db';
 import { RevalidationConfigModel, RevalidationLogModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
@@ -21,7 +28,10 @@ import type {
     RevalidateTargetResult,
     RevalidationAdapter
 } from './adapters/revalidation.adapter.js';
-import { WHOLE_ZONE_TARGET } from './adapters/revalidation.adapter.js';
+import {
+    UNRESOLVED_ENVIRONMENT_TARGET,
+    WHOLE_ZONE_TARGET
+} from './adapters/revalidation.adapter.js';
 import type { EntityChangeData } from './entity-change.types.js';
 import { getAffectedCacheTags } from './entity-tag-mapper.js';
 
@@ -684,22 +694,149 @@ export class RevalidationService {
     }
 
     /**
-     * Flushes the entire Cloudflare zone — the deliberate deploy-time escape
-     * hatch (spec §7.3). Delegates to the adapter's own `purgeEverything` and
-     * writes exactly ONE audit row targeting {@link WHOLE_ZONE_TARGET}, rather
-     * than one row per tag: there is no per-tag outcome to attribute when the
-     * whole zone was flushed in a single call.
+     * The tag a flush of THIS deployment addresses (`prod:all`, `preview:all`),
+     * or {@link UNRESOLVED_ENVIRONMENT_TARGET} when the namespace is unresolved.
      *
-     * This is a SEPARATE method from {@link revalidateTags}, not a flag on it,
-     * so "purge everything" can never be reached by accident from a content
-     * write — reading a call site tells you which one it is.
+     * Exposed so a caller that must report a flush it could not even attempt
+     * (the admin route's failure branches) names the same thing the audit row
+     * does, instead of falling back to `*` and claiming a zone flush.
+     *
+     * @returns The environment catch-all tag, or the unresolved sentinel.
+     */
+    getEnvironmentFlushTarget(): string {
+        if (this.cacheTagEnvironment === undefined) return UNRESOLVED_ENVIRONMENT_TARGET;
+        return this.toNamespacedTags([CACHE_TAG_ALL])[0] ?? UNRESOLVED_ENVIRONMENT_TARGET;
+    }
+
+    /**
+     * Flushes everything THIS deployment cached, by purging the environment
+     * catch-all tag (`prod:all`) that every cacheable response carries.
+     *
+     * NOT a zone flush any more. `staging.hospeda.com.ar` and `hospeda.com.ar`
+     * are one Cloudflare zone and `purge_everything` has no scoped form, so the
+     * old implementation emptied production's cache every time staging deployed
+     * (and vice versa). Purging one namespaced tag reaches exactly the same
+     * responses within this environment — the emitter puts `<env>:all` on every
+     * one of them (`apps/web/src/lib/cache/response-cache.ts`) — and reaches
+     * none of the other environment's. {@link purgeWholeZone} is still there for
+     * the case that genuinely needs the zone.
+     *
+     * Writes exactly ONE audit row, targeting the tag it purged, rather than one
+     * row per tag: there is only ever one tag.
+     *
+     * UNRESOLVED ENVIRONMENT: returns a failed result and writes a `skipped`
+     * row targeting {@link UNRESOLVED_ENVIRONMENT_TARGET}. It deliberately does
+     * NOT fall back to {@link purgeWholeZone}. Escalating a flush that cannot be
+     * scoped into one that hits both environments would be strictly worse than
+     * the bug this replaced, and it would do it exactly when the operator has
+     * the least evidence about which deployment they are talking to.
+     *
+     * Still a SEPARATE method from {@link revalidateTags}, not a flag on it, so
+     * "purge everything" can never be reached by accident from a content write.
+     *
+     * @param params.reason - Human-readable justification, recorded in the log.
+     * @param params.triggeredBy - User id or 'system' for log attribution.
+     * @param params.trigger - Trigger source for the log entry (defaults to 'manual').
+     * @returns The result, targeting `<env>:all` (or the unresolved sentinel).
+     */
+    async purgeEverything(
+        params: {
+            readonly reason?: string;
+            readonly triggeredBy?: string;
+            readonly trigger?: RevalidationTrigger;
+        } = {}
+    ): Promise<RevalidateTargetResult> {
+        const { reason, triggeredBy, trigger = 'manual' } = params;
+
+        // Read the environment directly rather than through `toNamespacedTags`,
+        // whose own error log would otherwise fire alongside the more specific
+        // one below and describe the same event twice.
+        const tag =
+            this.cacheTagEnvironment === undefined
+                ? undefined
+                : this.toNamespacedTags([CACHE_TAG_ALL])[0];
+
+        if (tag === undefined) {
+            const error =
+                'Cannot flush this environment: the deployment cache-tag namespace is unresolved (set HOSPEDA_DEPLOY_ENV to prod | preview | dev | test). Refusing to fall back to a whole-zone purge, which would also flush the other environment sharing this Cloudflare zone.';
+            this.logger.error(`[RevalidationService] ${error}`);
+
+            void this.writeLog({
+                target: UNRESOLVED_ENVIRONMENT_TARGET,
+                entityType: 'manual',
+                trigger,
+                triggeredBy,
+                status: 'skipped',
+                durationMs: 0,
+                errorMessage: error,
+                metadata: reason ? { reason } : undefined
+            });
+
+            return {
+                target: UNRESOLVED_ENVIRONMENT_TARGET,
+                success: false,
+                durationMs: 0,
+                error
+            };
+        }
+
+        const [purged] = await this.adapter.revalidateMany({ tags: [tag] });
+        const result: RevalidateTargetResult =
+            purged === undefined
+                ? {
+                      target: tag,
+                      success: false,
+                      durationMs: 0,
+                      error: `${this.adapter.name} returned no result for the environment catch-all tag`
+                  }
+                : { ...purged, target: tag };
+
+        if (!result.success) {
+            this.logger.error(
+                `[RevalidationService] Environment flush failed via ${this.adapter.name} for "${tag}": ${result.error}`
+            );
+        }
+
+        // Best-effort, never throw -- mirrors the per-tag log write above.
+        void this.writeLog({
+            target: result.target,
+            entityType: 'manual',
+            trigger,
+            triggeredBy,
+            status: result.success ? 'success' : 'failed',
+            durationMs: result.durationMs,
+            errorMessage: result.error,
+            metadata: reason ? { reason } : undefined
+        });
+
+        return result;
+    }
+
+    /**
+     * Flushes the ENTIRE Cloudflare zone — both deployments — via the adapter's
+     * own `purgeEverything`.
+     *
+     * The emergency escape hatch, and nothing routine calls it. It exists for
+     * the cases a tag purge genuinely cannot cover: a Cache Rule change that
+     * altered the cache key, objects cached before tagging shipped, or a
+     * suspected corruption where trusting the tags is the thing in doubt.
+     *
+     * It is unscoped BY NATURE: Cloudflare offers no per-environment
+     * `purge_everything`, so running this from staging also empties production.
+     * That is why it is a separate, explicitly named method instead of a flag on
+     * {@link purgeEverything} — reading a call site tells you which one it is,
+     * and no content write, cron or admin flush can reach it by accident.
+     *
+     * Writes exactly ONE audit row targeting {@link WHOLE_ZONE_TARGET} (`*`),
+     * which is what distinguishes it in the log from an environment flush's
+     * `<env>:all` row.
      *
      * @param params.reason - Human-readable justification, recorded in the log.
      * @param params.triggeredBy - User id or 'system' for log attribution.
      * @param params.trigger - Trigger source for the log entry (defaults to 'manual').
      * @returns The adapter's result, targeting `*`.
      */
-    async purgeEverything(
+    async purgeWholeZone(
         params: {
             readonly reason?: string;
             readonly triggeredBy?: string;
@@ -945,8 +1082,9 @@ export class RevalidationService {
     /**
      * Writes one log entry to `revalidation_log`. Best-effort -- errors are swallowed.
      *
-     * @param params.target - The cache tag purged, or `*` for a whole-zone flush.
-     *   Written to `revalidation_log.target`.
+     * @param params.target - The cache tag purged (`prod:accom-x`, `prod:all`),
+     *   `*` for a whole-zone flush, or `?:all` for an environment flush that
+     *   could not be addressed. Written to `revalidation_log.target`.
      * @param params.entityId - Canonical UUID of the entity that triggered revalidation.
      *   Written to `revalidation_log.entity_id`. Pass undefined to leave the column NULL.
      */

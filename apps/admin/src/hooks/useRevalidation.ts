@@ -18,6 +18,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { RevalidationLogPage } from '@/lib/revalidation-http-adapter';
 import {
     getRevalidationConfigs,
+    getRevalidationHealth,
     getRevalidationLogs,
     getRevalidationStats,
     manualRevalidate,
@@ -33,7 +34,8 @@ import {
 export const REVALIDATION_QUERY_KEYS = {
     configs: ['revalidation', 'configs'] as const,
     logs: ['revalidation', 'logs'] as const,
-    stats: ['revalidation', 'stats'] as const
+    stats: ['revalidation', 'stats'] as const,
+    health: ['revalidation', 'health'] as const
 } as const;
 
 /**
@@ -88,6 +90,19 @@ export function useRevalidationStats() {
     return useQuery({
         queryKey: REVALIDATION_QUERY_KEYS.stats,
         queryFn: getRevalidationStats
+    });
+}
+
+/**
+ * Fetches the revalidation service health report, including the cache tag an
+ * environment flush would purge on the deployment this panel talks to.
+ *
+ * @returns TanStack Query result with `RevalidationHealth` data
+ */
+export function useRevalidationHealth() {
+    return useQuery({
+        queryKey: REVALIDATION_QUERY_KEYS.health,
+        queryFn: getRevalidationHealth
     });
 }
 

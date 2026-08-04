@@ -13,6 +13,12 @@
  * prefix is asserted literally rather than derived from the same helper the
  * code under test uses — a test that recomputes the value cannot fail when the
  * value changes.
+ *
+ * Every tagged response also leads with `test:all`, the environment catch-all
+ * that turns "purge everything" into a scoped tag purge (HOS-369). It is
+ * asserted here as part of each expected tag LIST rather than in a separate
+ * case, so an emitter that stopped adding it — or added it in the wrong
+ * position — fails these tests too, not only the dedicated guard.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -45,7 +51,7 @@ describe('declareCacheTags', () => {
         const result = declareCacheTags({ locals, tags: ['list-accom', 'home'] });
 
         expect(result.tagCount).toBe(2);
-        expect([...locals.cacheTags]).toEqual(['test:list-accom', 'test:home']);
+        expect([...locals.cacheTags]).toEqual(['test:all', 'test:list-accom', 'test:home']);
     });
 
     it('normalizes case, matching Cloudflare case-insensitive purge semantics', () => {
@@ -53,7 +59,7 @@ describe('declareCacheTags', () => {
 
         declareCacheTags({ locals, tags: ['List-Accom'] });
 
-        expect([...locals.cacheTags]).toEqual(['test:list-accom']);
+        expect([...locals.cacheTags]).toEqual(['test:all', 'test:list-accom']);
     });
 
     it('drops tags Cloudflare would reject instead of registering them', () => {
@@ -62,7 +68,7 @@ describe('declareCacheTags', () => {
         const result = declareCacheTags({ locals, tags: ['ok-tag', 'has space', 'has,comma'] });
 
         expect(result.tagCount).toBe(1);
-        expect([...locals.cacheTags]).toEqual(['test:ok-tag']);
+        expect([...locals.cacheTags]).toEqual(['test:all', 'test:ok-tag']);
     });
 
     it('counts only the tags it was given, not the accumulated set', () => {
@@ -75,7 +81,9 @@ describe('declareCacheTags', () => {
         const result = declareCacheTags({ locals, tags: ['bad tag'] });
 
         expect(result.tagCount).toBe(0);
-        expect(locals.cacheTags.size).toBe(1);
+        // The catch-all plus the one tag the earlier call contributed. The
+        // rejected call added nothing of its own — not even a second catch-all.
+        expect([...locals.cacheTags]).toEqual(['test:all', 'test:from-elsewhere']);
     });
 
     it('follows HOSPEDA_DEPLOY_ENV, so staging never emits production tags', () => {
@@ -85,7 +93,7 @@ describe('declareCacheTags', () => {
 
         declareCacheTags({ locals, tags: ['list-accom'] });
 
-        expect([...locals.cacheTags]).toEqual(['preview:list-accom']);
+        expect([...locals.cacheTags]).toEqual(['preview:all', 'preview:list-accom']);
     });
 
     it('registers NOTHING when the deployment namespace cannot be resolved', () => {
@@ -114,7 +122,7 @@ describe('buildStaticCacheHeaders', () => {
             })
         ).toEqual({
             'Cache-Control': 'public, max-age=3600',
-            'Cache-Tag': 'test:site-config'
+            'Cache-Tag': 'test:all,test:site-config'
         });
     });
 
@@ -124,7 +132,7 @@ describe('buildStaticCacheHeaders', () => {
                 cacheControl: 'public, max-age=86400',
                 tags: ['list-post', 'list-event']
             })['Cache-Tag']
-        ).toBe('test:list-post,test:list-event');
+        ).toBe('test:all,test:list-post,test:list-event');
     });
 
     it('deduplicates repeated tags', () => {
@@ -133,7 +141,7 @@ describe('buildStaticCacheHeaders', () => {
                 cacheControl: 'public, max-age=86400',
                 tags: ['list-post', 'list-post']
             })['Cache-Tag']
-        ).toBe('test:list-post');
+        ).toBe('test:all,test:list-post');
     });
 
     it('DEMOTES to private and emits NO Cache-Tag when the namespace is unresolved', () => {
@@ -175,7 +183,7 @@ describe('applyCacheHeaders', () => {
             cacheable: true,
             tagCount: 1
         });
-        expect([...locals.cacheTags]).toEqual(['test:list-accom']);
+        expect([...locals.cacheTags]).toEqual(['test:all', 'test:list-accom']);
     });
 
     it('DEMOTES to private when the deployment namespace is unresolved (fail-closed)', () => {

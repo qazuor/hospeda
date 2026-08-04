@@ -24,6 +24,7 @@ export type { CacheTagEntity, SerializedCacheTags } from './vocabulary.js';
 export {
     buildEntityCacheTag,
     buildEntityCacheTags,
+    CACHE_TAG_ALL,
     CACHE_TAG_COLLECTIONS,
     CACHE_TAG_ENTITY_PREFIXES,
     CACHE_TAG_HEADER_NAME,

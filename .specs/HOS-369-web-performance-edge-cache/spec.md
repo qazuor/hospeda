@@ -58,8 +58,11 @@ valid.
 
 PR #2551 → `staging`; PR #2552 → `main` (`616bf1613`). Live: 414-line
 `robots.txt`, 280 facet rules, no contradictions, Cloudflare's managed block
-disabled. **WA-5 (the 48–72 h measurement) is still pending** — scheduled
-2026-08-03/04.
+disabled. **WA-5 measured 2026-08-03: Wave A worked.** Applebot — the clean
+signal, still unblocked — fell **326,810 → 1.2 k (−99.6 %)**; total crawl
+traffic **464 k → ≈2 k (−95.5 %)**; egress **83.7 GB/day → ≈21 MB/day**. The
+trigger to reconsider strategy C did not fire; D-1 stands. Full table and
+caveats in §6.1 (WA-5).
 
 > Read WA-5 correctly: GPTBot is now `Disallow: /`, so its drop proves nothing
 > about the crawl trap. **Applebot is the clean signal** — still allowed, so it
@@ -699,7 +702,14 @@ accommodation detail page under it — precisely the finite, high-value, expensi
 -to-render surface the cache exists to protect. Tags give the same coverage with
 none of the collateral.
 
-#### 5.11.5 Does Free honor a `Cache-Tag` header from an ORIGIN? (open, gates W1-2)
+#### 5.11.5 Does Free honor a `Cache-Tag` header from an ORIGIN? (RESOLVED — yes, measured 2026-08-03)
+
+> **Outcome: YES.** Cloudflare honors an origin-emitted `Cache-Tag` on the Free
+> plan, and purge-by-tag evicts it. The fallback below is NOT needed and the
+> emitter side stays exactly as built. **W1-2 is unblocked.** The measurement
+> and the method that actually proves it are in §5.11.6; the original open
+> question is preserved below because the reasoning is what made it worth
+> testing rather than assuming.
 
 > Method: re-read the live Cloudflare docs on 2026-08-03 while implementing
 > W1-1 — the purge-cache overview, the purge-by-tags page, and the Workers
@@ -722,6 +732,55 @@ it is cheap: scope a Cache Rule to one probe path, confirm `CF-Cache-Status:
 HIT`, purge by that response's tag, confirm the next request is a `MISS`. If it
 fails, the fallback is a Cache Response Rule that copies a first-party origin
 header into `Cache-Tag` — the emitter side stays exactly as built either way.
+
+#### 5.11.6 The measurement, and why the test above was not sufficient
+
+> Method: executed against `staging.hospeda.com.ar` on 2026-08-03, immediately
+> after W1-1 + the environment namespace were deployed there.
+
+Setup: one Cache Rule scoped to
+`(http.host eq "staging.hospeda.com.ar" and http.request.uri.path eq "/llms.txt")`,
+action *Eligible for cache*, Edge TTL **ignore the origin `cache-control`, use
+120 s**. Overriding the TTL is not incidental — it bounds the whole experiment,
+and the origin's own `max-age=3600` would have made it unrunnable. Blast radius:
+one staging URL, one zone-shared config row, no production path.
+
+The purge went through the REAL chain — `POST /api/revalidate?secret=…` on the
+staging web app, the same endpoint `CloudflareRevalidationAdapter` calls and the
+only process holding the Cloudflare credentials — with
+`{"tags":["preview:site-config"]}`, answering `200 {"ok":true,"purged":1}`. That
+the endpoint ACCEPTED the namespaced tag instead of rejecting it (§7.3) is a
+second result: the purger and the emitter agreed on the namespace.
+
+| Condition | Terminal status | `age` at reset |
+|---|---|---|
+| Control, no purge | **`EXPIRED`** | ~120 s (the configured TTL) |
+| After purge-by-tag | **`MISS`** | ~70 s, 5-8 s after the POST |
+
+**`EXPIRED` vs `MISS` is the discriminator, not the `age` reset.** §5.11.5's
+proposed test — "confirm the next request is a `MISS`" — is NOT sufficient, and
+following it literally produced a false positive on the first attempt: a `MISS`
+observed after several minutes of unrelated debugging looked like proof, but the
+elapsed time had exceeded the TTL, so the object would have dropped out on its
+own. Cloudflare reports a natural TTL expiry as `EXPIRED` and an explicit
+eviction as `MISS`, so the STATUS is what carries the signal. Two further
+controls are required for the result to mean anything:
+
+- **Bound the sequence inside the TTL.** Print the elapsed seconds between the
+  confirmed `HIT` and the post-purge probe; if it approaches the Edge TTL the
+  run proves nothing and must be repeated.
+- **Pin the PoP.** Cache is per-PoP, so a `MISS` served from a different edge is
+  a false negative. Every probe above reported `cf-ray … -EZE`.
+
+Purge propagation was **not instantaneous**: a probe 3 s after the POST still
+returned `HIT age 70`; the eviction landed within ~5-8 s. Any automated check
+that asserts a `MISS` immediately after purging will flake.
+
+Incidental findings from the same session: the zone is on the **`free`** plan
+(dashboard badge) and had **0 Cache Rules and 0 Cache Response Rules** before
+this probe — consistent with the `DYNAMIC` measured everywhere in §2.3 — and
+both rule types are in fact available on Free, so the §5.11.5 fallback would
+have been viable had it been needed.
 
 ### 5.12 The auth-blind SSR audit (Rev 3)
 
@@ -927,11 +986,57 @@ policy is in force. This is where the GPTBot decision (§11 D-3) is actually
 expressed. Add a guard test asserting no user-agent appears in two groups with
 conflicting root rules.
 
-**WA-5 — Measure the effect before doing anything else.**
+**WA-5 — Measure the effect before doing anything else. DONE 2026-08-03 — Wave A worked; C stays rejected.**
 Re-read AI Crawl Control after 48–72 h (crawlers must re-read `robots.txt` and
 drain their queues). Record the new per-crawler numbers against the §5.9
 baseline. **If Applebot has not dropped materially, that is the trigger to
 reconsider C** — with data, not preemptively.
+
+> Measured 2026-08-03, AI Crawl Control → Métricas, **last 24 h (GMT-3)**, same
+> window shape as the §5.9 baseline.
+
+| Crawler | §5.9 baseline (07-31) | Now (08-03) | Change |
+|---|---:|---:|---|
+| **Applebot** — the clean signal | **326,810** | **1.2 k** | **≈ −99.6 %** |
+| GPTBot | 136,990 | not in top 5 | now `Disallow: /` |
+| Googlebot | 151 | 63 | — |
+| Baidu | 156 | 159 | flat |
+| Claude-SearchBot | — | 15 | — |
+| OAI-SearchBot | in "+2" | 7 | — |
+| **Total requests** | **464,000** | **≈ 2 k** | **−95.48 %** |
+| **Egress** | **≈ 83.7 GB/day** | **≈ 21 MB/day** | **≈ −99.97 %** |
+
+Per-crawler egress now: Applebot 12.04 MB, Googlebot 3.92 MB, Baidu 3.81 MB,
+OAI-SearchBot 1.15 MB, ChatGPT-User 552 kB. Monthly projection falls from
+≈2.5 TB to well under 1 GB.
+
+**Verdict: the trigger did NOT fire. Strategy C is not reconsidered; D-1 stands.**
+
+Read it the way §3's note instructed. GPTBot's disappearance proves nothing —
+it is explicitly `Disallow: /` in the live file, alongside ClaudeBot,
+anthropic-ai, CCBot, Applebot-**Extended**, Amazonbot, Bytespider,
+meta-externalagent and CloudflareBrowserRenderingCrawler. **Applebot carries the
+signal**: it is NOT blocked (only its `-Extended` training variant is), it was
+free to crawl exactly as before, and it still fell 99.6 %. The only thing that
+changed for it is that the ~280 facet `Disallow` rules closed the combinatorial
+URL space.
+
+That is direct confirmation of §5.9.1's diagnosis — the volume was a
+self-inflicted crawl trap, not legitimate demand — and it **refutes R-11**
+("Applebot may not respond to Wave A at all"). The 857-fetches-per-URL-per-day
+figure is now ≈3, which is ordinary.
+
+Two caveats worth carrying forward rather than declaring victory:
+
+- **The load is gone, but the cache is not built yet.** Wave B remains
+  justified on its own terms (origin CPU, TTFB, egress on *human* traffic); it
+  simply no longer has a crawl storm to absorb. Do not read this as licence to
+  descope B.
+- **Googlebot fell too (151 → 63)**, and Googlebot is the revenue channel (D-2).
+  Some of that is the same facet closure removing junk URLs it was wasting
+  budget on, which is the intended outcome — but D-2's requirement stands: this
+  must be confirmed in Search Console → Crawl stats, not inferred from this
+  panel.
 
 ### 6.2 Wave 0 — housekeeping (independent, can run in parallel with A)
 
@@ -1069,17 +1174,28 @@ cache. What landed, and the four things that differ from the plan below:
   entity purges its own tag from its own write hook. This is a deliberate
   narrowing of the cron backstop, not an oversight.
 
-**Two gates remain before W1-2:**
+**Two gates remained before W1-2. Both cleared on 2026-08-03:**
 
-1. **§5.11.5** — verify empirically that Free honors an origin-emitted
-   `Cache-Tag` header. The failure mode is silent.
-2. **Audit the live `revalidation_config` rows.** Any row with `enabled = false`
-   or `autoRevalidateOnChange = false` now means that entity type invalidates
-   **nothing at all** on write. `tag` and `amenity` are seeded that way. Under
+1. ~~**§5.11.5** — verify empirically that Free honors an origin-emitted
+   `Cache-Tag` header. The failure mode is silent.~~ **PASSED** — measured, see
+   §5.11.6. Free honors it; purge-by-tag evicts within ~5-8 s. No fallback
+   needed.
+2. ~~**Audit the live `revalidation_config` rows.**~~ **PASSED, clean.** Queried
+   prod directly (`hops --target=prod psql`): all 8 baseline rows present, none
+   with `enabled = false`, and `tag` + `amenity` carrying
+   `auto_revalidate_on_change = false` exactly as seeded — no drift, every row
+   still on the original seed `updated_at`. The consequence below is therefore
+   accepted rather than discovered: an amenity or tag write invalidates nothing
+   until the next write of another type or the 24 h cron. Under
    `purge_everything` this was harmless — the next write of any type flushed the
-   zone and corrected them within minutes. Under selective purge, an amenity
-   rename waits for the next accommodation write or up to 24 h. The gate is
-   worth checking against the live 8 rows, not the seed.
+   zone and corrected it within minutes.
+
+   Note the audit is **wider than "rows set to false"**: the gate in
+   `revalidation.service.ts` is three conditions, and the first is `if (!config)
+   return` — an entity type with NO row invalidates nothing either. That is not
+   reachable today only because `EntityChangeData` is a closed union over the
+   same 8 types the seed creates. Adding a ninth entity type to that union
+   without seeding its config row would silently disable its invalidation.
 
 The original plan, for the record:
 
@@ -1314,6 +1430,11 @@ response — Cloudflare limits):
 > that the plan did not anticipate. The vocabulary lives in
 > `packages/cache-tags/src/vocabulary.ts`, which is the source of truth.
 
+> **EVERY tag below is prefixed by its deployment environment** —
+> `prod:list-accom`, `preview:home` — see §7.3.1. The table gives the bare
+> vocabulary; the namespace is applied on top of it, symmetrically, in every
+> environment including production.
+
 | Tag shape | Emitted by | Purged when |
 |---|---|---|
 | `accom-<slug>` **and** `accom-<id>` (same for `dest-`, `event-`, `post-`) | any response rendering that entity | that entity is written |
@@ -1341,11 +1462,61 @@ change, not extended (D-6).
 Rev 2's `{ files: string[] }` form is rejected — see §5.11 for why it cannot
 work at this plan tier.
 
-Env vars unchanged: `HOSPEDA_REVALIDATION_SECRET` (required),
-`CLOUDFLARE_ZONE_ID` and `CLOUDFLARE_API_TOKEN` (production-scoped, `web` app
-only). Note the existing silent-disable path: a missing
-`HOSPEDA_REVALIDATION_SECRET` falls back to `NoOpRevalidationAdapter` with only
-a `logger.warn` (§5.5).
+Env vars: `HOSPEDA_REVALIDATION_SECRET` (required), `CLOUDFLARE_ZONE_ID` and
+`CLOUDFLARE_API_TOKEN` (`web` app only), plus **`HOSPEDA_DEPLOY_ENV` — now
+required on the `web` apps too**, not just the API (§7.3.1). Note the existing
+silent-disable path: a missing `HOSPEDA_REVALIDATION_SECRET` falls back to
+`NoOpRevalidationAdapter` with only a `logger.warn` (§5.5).
+
+#### 7.3.1 Tags are namespaced by deployment environment
+
+> Discovered and fixed on 2026-08-03, after W1-1 merged and before the Cache
+> Rule opened. Verified by comparing `CLOUDFLARE_ZONE_ID` (sha256, without
+> exposing it) inside all four containers.
+
+`staging.hospeda.com.ar` and `hospeda.com.ar` are the **same Cloudflare zone**,
+and the vocabulary above is byte-identical across deployments. Two consequences,
+both dormant only because nothing was cached yet:
+
+1. **Cross-environment eviction.** Any write in staging — a smoke run, a seed, a
+   QA click — purges the identically-tagged objects cached for production, and
+   vice versa. That directly attacks the hit rate this spec exists to raise.
+2. **Shared quota, uncoordinated limiter.** Cloudflare's 5 purges/min is
+   per-ZONE, but `MIN_PURGE_INTERVAL_MS` is enforced through
+   `lastPurgeStartedAt` — instance state in process memory. Two API processes
+   against one zone cannot coordinate, and over-quota no longer self-heals:
+   pre-W1-1 it degraded to `purge_everything`, with tags it returns 429 and
+   evicts nothing.
+
+Resolution: every tag carries the deployment that produced it, symmetrically,
+production included — `<env>:<tag>`, separator `:` (0x3A, already inside the
+existing validity pattern, and unlike `-` it does not collide with slugs or
+entity prefixes). Production is prefixed too because with nothing cached the
+transition was free, and an unprefixed tag would otherwise mean "prod" only
+implicitly. The environment comes from the existing `HOSPEDA_DEPLOY_ENV` and
+reuses its established vocabulary (`prod | preview | dev | test`).
+
+**The invariant, and where it is actually enforced.** If the emitter (web) and
+the purger (API) derive different namespaces, purges match nothing and evict
+nothing — silently. Both halves call one shared `resolveCacheTagEnvironment`,
+but that only rules out CODE divergence, which was never the risk; the risk is
+CONFIGURATION divergence between two processes, and that was the measured
+state (the API had `HOSPEDA_DEPLOY_ENV`, the web apps did not). So
+`POST /api/revalidate` **rejects any tag whose namespace is not its own** with a
+400 naming both, turning a mismatch into a hard failure recorded in
+`revalidation_log` on every write.
+
+Deliberately **fail-closed, not fail-fast**: an unresolvable environment skips
+tagging, responses demote to `private, no-cache`, and the site keeps serving
+uncached. Throwing would take a public site down over a cache variable; guessing
+`prod` would make staging evict production. Do NOT reuse `resolveEnvironment()`
+from `@repo/media/server` here — its `NODE_ENV=production → 'prod'` fallback is
+precisely the bug, since staging runs `NODE_ENV=production` too.
+
+**Still open: `purgeEverything` cannot be namespaced.** Cloudflare has no
+zone-scoped variant of a whole-zone flush, so a deploy-time flush from staging
+still empties production's cache. Pre-existing, but consequential once the Cache
+Rule opens.
 
 ## 8. UX / UI behavior
 
@@ -1510,10 +1681,10 @@ Added in Rev 2:
   *increases* crawl rate while fragmenting the cache across thousands of
   low-value variants. This is the concrete reason A precedes B (§12.3), beyond
   cost ordering.
-- **R-11 — Applebot may not respond to Wave A at all.** Its +254 % growth is
-  anomalous for a 381-URL site, and the crawl-trap explanation, while
-  well-evidenced, is not proven to be the *whole* explanation. WA-5 exists to
-  detect that case rather than assume it away.
+- ~~**R-11 — Applebot may not respond to Wave A at all.**~~ **REFUTED
+  2026-08-03.** Applebot fell 326,810 → 1.2 k (−99.6 %) while remaining
+  unblocked, so the crawl trap was in fact the whole explanation. WA-5 did its
+  job: the risk was retired by measurement, not by assumption. See §6.1 (WA-5).
 
 ## 11. Decisions and open questions
 
@@ -1524,7 +1695,9 @@ Added in Rev 2:
   crawlers as a first move. Rationale: the owner wants AI visibility; A is the
   only lever that reduces load without surrendering any of it; and C treats the
   symptom. C is reconsidered only if WA-5's post-A measurement shows Applebot has
-  not dropped materially.
+  not dropped materially. **Confirmed correct 2026-08-03** — Applebot dropped
+  99.6 %, so the condition for reconsidering C was never met. C stays rejected
+  and AI visibility was retained in full.
 - **D-2 — Googlebot's 151 requests/day is treated as a first-class concern**, not
   a footnote. Organic search is the revenue channel; Applebot and GPTBot are not.
   The working hypothesis — that Google throttled our crawl budget because of

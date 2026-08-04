@@ -22,6 +22,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 const NS = 'test:';
 
+/** The environment catch-all every cacheable response leads with (HOS-369). */
+const CATCH_ALL = `${NS}all`;
+
 vi.mock('@/lib/env', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
@@ -47,7 +50,7 @@ describe('routes that bypass the middleware collector', () => {
         } as never);
 
         expect(response.headers.get('Cache-Control')).toBe('public, max-age=3600');
-        expect(tagsOf(response)).toEqual([`${NS}site-config`]);
+        expect(tagsOf(response)).toEqual([CATCH_ALL, `${NS}site-config`]);
     });
 
     it('llms.txt tags itself with a namespaced site-config tag', async () => {
@@ -59,7 +62,7 @@ describe('routes that bypass the middleware collector', () => {
         } as never);
 
         expect(response.headers.get('Cache-Control')).toBe('public, max-age=3600');
-        expect(tagsOf(response)).toEqual([`${NS}site-config`]);
+        expect(tagsOf(response)).toEqual([CATCH_ALL, `${NS}site-config`]);
     });
 
     it('the sitemap headers namespace every collection tag', async () => {
@@ -68,6 +71,7 @@ describe('routes that bypass the middleware collector', () => {
 
         const tags = String(headers['Cache-Tag']).split(',');
         expect(tags).toEqual([
+            CATCH_ALL,
             `${NS}list-accom`,
             `${NS}list-dest`,
             `${NS}list-event`,

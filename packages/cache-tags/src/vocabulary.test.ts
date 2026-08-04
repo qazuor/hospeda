@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
     buildEntityCacheTag,
     buildEntityCacheTags,
+    CACHE_TAG_ALL,
     CACHE_TAG_COLLECTIONS,
     CACHE_TAG_ENTITY_PREFIXES,
+    CACHE_TAG_HOME,
+    CACHE_TAG_PRICING,
+    CACHE_TAG_SITE_CONFIG,
     isValidCacheTag,
     MAX_CACHE_TAG_HEADER_BYTES,
     MAX_CACHE_TAG_LENGTH,
@@ -173,5 +177,89 @@ describe('serializeCacheTags', () => {
         expect((result.header as string).length).toBeLessThanOrEqual(MAX_CACHE_TAG_HEADER_BYTES);
         expect(result.droppedCount).toBeGreaterThan(0);
         expect(result.tagCount + result.droppedCount).toBe(400);
+    });
+});
+
+describe('CACHE_TAG_ALL', () => {
+    it('is a bare vocabulary word, so it is namespaced by the same path as any other tag', () => {
+        // A pre-namespaced constant would be a SECOND way of spelling a tag,
+        // and two spellings is how the emitter and the purger drift apart.
+        expect(CACHE_TAG_ALL).toBe('all');
+        expect(CACHE_TAG_ALL).not.toContain(':');
+        expect(isValidCacheTag({ tag: CACHE_TAG_ALL })).toBe(true);
+    });
+
+    it('cannot collide with any other tag the vocabulary can produce', () => {
+        // Entity tags always carry a `<prefix>-` and collection tags are
+        // `list-*`; the remaining constants are asserted explicitly.
+        const entityTags = Object.values(CACHE_TAG_ENTITY_PREFIXES).map(
+            (prefix) => `${prefix}-${CACHE_TAG_ALL}`
+        );
+        const others = [
+            ...Object.values(CACHE_TAG_COLLECTIONS),
+            ...entityTags,
+            CACHE_TAG_HOME,
+            CACHE_TAG_PRICING,
+            CACHE_TAG_SITE_CONFIG
+        ];
+
+        expect(others).not.toContain(CACHE_TAG_ALL);
+    });
+
+    it('costs under 16 bytes on the wire, prefix and separator included', () => {
+        // The budget argument for putting it on EVERY response: worst case is
+        // the longest environment name plus its colon plus a comma.
+        const worstCase = `preview:${CACHE_TAG_ALL},`;
+        expect(worstCase.length).toBeLessThan(16);
+    });
+});
+
+describe('serializeCacheTags truncation ordering (why the catch-all leads)', () => {
+    it('keeps a leading catch-all and drops the tail when over the count limit', () => {
+        // The property the emitter relies on. `<env>:all` is the only tag whose
+        // loss would remove a response's last-resort purge path: every other
+        // tag's loss is still covered BY it, so it goes first and the specific
+        // tags are what truncation eats.
+        const tags = [
+            `test:${CACHE_TAG_ALL}`,
+            ...Array.from({ length: MAX_CACHE_TAGS_PER_RESPONSE + 10 }, (_, i) => `test:t-${i}`)
+        ];
+
+        const result = serializeCacheTags({ tags });
+
+        expect(result.tagCount).toBe(MAX_CACHE_TAGS_PER_RESPONSE);
+        expect(result.droppedCount).toBe(11);
+        expect((result.header as string).split(',')[0]).toBe(`test:${CACHE_TAG_ALL}`);
+        expect(result.header).toContain(`test:${CACHE_TAG_ALL}`);
+    });
+
+    it('would DROP the catch-all if it were placed last — the case the ordering avoids', () => {
+        // The counterfactual, asserted rather than argued: with the catch-all at
+        // the tail of an over-long list, the environment flush could no longer
+        // reach this response at all.
+        const tags = [
+            ...Array.from({ length: MAX_CACHE_TAGS_PER_RESPONSE + 10 }, (_, i) => `test:t-${i}`),
+            `test:${CACHE_TAG_ALL}`
+        ];
+
+        const result = serializeCacheTags({ tags });
+
+        expect(result.header).not.toContain(`test:${CACHE_TAG_ALL}`);
+    });
+
+    it('keeps a leading catch-all when the 16 KB byte budget is what binds', () => {
+        // The other truncation trigger. Same conclusion, different limit.
+        const tags = [
+            `test:${CACHE_TAG_ALL}`,
+            ...Array.from(
+                { length: 400 },
+                (_, i) => `test:${String(i).padStart(4, '0')}${'x'.repeat(96)}`
+            )
+        ];
+
+        const result = serializeCacheTags({ tags });
+
+        expect(result.droppedCount).toBeGreaterThan(0);
+        expect((result.header as string).split(',')[0]).toBe(`test:${CACHE_TAG_ALL}`);
     });
 });

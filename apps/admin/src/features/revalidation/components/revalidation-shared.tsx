@@ -149,6 +149,121 @@ export function StatCard({ label, value, suffix }: StatCardProps) {
 }
 
 // ---------------------------------------------------------------------------
+// FlushTargetNotice
+// ---------------------------------------------------------------------------
+
+/**
+ * The literal the API reports as `environmentFlushTarget` when the deployment
+ * cache-tag namespace could not be resolved. Mirrors
+ * `UNRESOLVED_ENVIRONMENT_TARGET` in `@repo/service-core`; duplicated here
+ * rather than imported because the admin bundle has no other reason to pull in
+ * that package, and the value travels over HTTP as a plain string anyway.
+ */
+export const UNRESOLVED_FLUSH_TARGET = 'unresolved';
+
+/**
+ * What the panel currently knows about the tag an environment flush would
+ * purge. Modelled as a closed union so every branch has to be rendered
+ * explicitly — a plain `string | undefined` would let an unknown target fall
+ * through as an empty label, which is exactly the failure mode this display
+ * exists to prevent.
+ */
+export type FlushTargetState =
+    | { readonly kind: 'loading' }
+    | { readonly kind: 'error' }
+    | { readonly kind: 'unresolved' }
+    | { readonly kind: 'resolved'; readonly target: string };
+
+/**
+ * Derives the display state of the flush target from a health query.
+ *
+ * Kept as a pure function (rather than inlined in the page) so the mapping
+ * from "backend said `unresolved`" to "UI must say so out loud" is testable on
+ * its own.
+ *
+ * @param params.isLoading - Whether the health query is still in flight
+ * @param params.isError - Whether the health query failed
+ * @param params.target - `environmentFlushTarget` as reported by the API
+ * @returns The state the notice should render
+ */
+export function deriveFlushTargetState({
+    isLoading,
+    isError,
+    target
+}: {
+    readonly isLoading: boolean;
+    readonly isError: boolean;
+    readonly target: string | undefined;
+}): FlushTargetState {
+    if (isLoading) return { kind: 'loading' };
+    if (isError) return { kind: 'error' };
+    if (target === undefined || target === '' || target === UNRESOLVED_FLUSH_TARGET) {
+        return { kind: 'unresolved' };
+    }
+    return { kind: 'resolved', target };
+}
+
+/**
+ * Names the blast radius of an environment flush: which cache tag it would
+ * purge on the deployment this panel talks to.
+ *
+ * Every non-resolved branch renders its own explicit sentence. Nothing here
+ * ever degrades to a blank line or to a plausible-looking default such as
+ * `prod:all` — an operator reading a guessed environment is the precise hazard
+ * this component was added for (HOS-369).
+ */
+export function FlushTargetNotice({ state }: { readonly state: FlushTargetState }) {
+    const { t } = useTranslations();
+
+    if (state.kind === 'loading') {
+        return (
+            <p
+                className="text-muted-foreground text-xs"
+                data-testid="revalidation-flush-target-loading"
+            >
+                {t('revalidation.manual.flushTargetLoading')}
+            </p>
+        );
+    }
+
+    if (state.kind === 'error') {
+        return (
+            <p
+                className="font-medium text-destructive text-xs"
+                data-testid="revalidation-flush-target-error"
+            >
+                {t('revalidation.manual.flushTargetError')}
+            </p>
+        );
+    }
+
+    if (state.kind === 'unresolved') {
+        return (
+            <p
+                className="font-medium text-destructive text-xs"
+                data-testid="revalidation-flush-target-unresolved"
+            >
+                {t('revalidation.manual.flushTargetUnresolved')}
+            </p>
+        );
+    }
+
+    return (
+        <p className="text-xs">
+            <span className="text-muted-foreground">
+                {t('revalidation.manual.flushTargetLabel')}
+            </span>{' '}
+            <code
+                className="rounded bg-muted px-1 py-0.5 font-mono"
+                data-testid="revalidation-flush-target"
+            >
+                {state.target}
+            </code>
+        </p>
+    );
+}
+
+// ---------------------------------------------------------------------------
 // ManualForm
 // ---------------------------------------------------------------------------
 
@@ -157,8 +272,10 @@ type ManualFormProps = {
     readonly reason: string;
     readonly isPending: boolean;
     readonly parsedCount: number;
-    /** Whether the destructive "purge entire zone" mode is active. Defaults off. */
+    /** Whether the destructive environment-flush mode is active. Defaults off. */
     readonly purgeEverything: boolean;
+    /** Which environment the flush would empty, as reported by the API. */
+    readonly flushTarget: FlushTargetState;
     readonly onTagsChange: (value: string) => void;
     readonly onReasonChange: (value: string) => void;
     readonly onPurgeEverythingChange: (value: boolean) => void;
@@ -167,12 +284,14 @@ type ManualFormProps = {
 
 /**
  * Form to enter comma-separated cache tags and an optional audit reason, plus
- * an explicit, visually distinct opt-in for a whole-zone purge.
+ * an explicit, visually distinct opt-in for flushing this environment's cache.
  *
- * The whole-zone toggle is OFF by default (`purgeEverything`) — reaching the
+ * The flush toggle is OFF by default (`purgeEverything`) — reaching the
  * destructive path always requires the operator to deliberately flip it, per
  * the same "never the implicit fallback" contract the manual-revalidate
- * endpoint enforces server-side.
+ * endpoint enforces server-side. The flush is scoped to THIS deployment: it
+ * purges the `<env>:all` catch-all tag, leaving the other environments that
+ * share the Cloudflare zone untouched, which is why the box names the target.
  */
 export function ManualForm({
     tagsInput,
@@ -180,6 +299,7 @@ export function ManualForm({
     isPending,
     parsedCount,
     purgeEverything,
+    flushTarget,
     onTagsChange,
     onReasonChange,
     onPurgeEverythingChange,
@@ -226,7 +346,7 @@ export function ManualForm({
                 />
             </div>
 
-            {/* Whole-zone purge opt-in — deliberately styled as destructive and
+            {/* Environment-flush opt-in — deliberately styled as destructive and
                 kept visually separate from the tags form above it. */}
             <div className="flex items-start gap-3 rounded-md border border-destructive/40 bg-destructive/5 p-3">
                 <Switch
@@ -246,6 +366,7 @@ export function ManualForm({
                     <p className="text-muted-foreground text-xs">
                         {t('revalidation.manual.purgeEverythingWarning')}
                     </p>
+                    <FlushTargetNotice state={flushTarget} />
                 </div>
             </div>
 
@@ -288,7 +409,9 @@ type RevalidationResultTableProps = {
 
 /**
  * Displays the per-target result of a completed revalidation request. A
- * target is a cache tag, or `*` for a whole-zone purge.
+ * target is a cache tag — including `<env>:all` for an environment flush, and
+ * `unresolved` for a flush the API refused because it could not name its own
+ * environment.
  */
 export function RevalidationResultTable({ result }: RevalidationResultTableProps) {
     const { t } = useTranslations();
