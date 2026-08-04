@@ -312,6 +312,51 @@ measurement rather than left as an argument: `/es/legal/` — which
 `starts_with(path, "/es/legal")` would have matched — returns `DYNAMIC`, as does
 `/es/mi-cuenta/`.
 
+### Measured on 2026-08-04, after W2-3 was applied
+
+All fourteen catalog pages reach `HIT`. **Pagination was the point of the
+exercise** and it caches, which is what proves `hasOnlyPaginationParams` was
+needed: these URLs are `Astro.rewrite`s carrying `?page=N` into the parent
+listing, so a `Astro.url.search === ''` gate would have left every one of them
+private while page 1 kept working.
+
+| Probe | Result |
+|---|---|
+| `/es/publicaciones/page/2/` | `HIT` |
+| `/es/eventos/page/2/` | `HIT` |
+| `/es/publicaciones/categoria/culture/page/2/` | `HIT` |
+| `/es/destinos/colon/alojamientos/page/2/` | `HIT` |
+
+Purge scoping, both directions, each probe 7 s after the purge:
+
+| Purged tag | Post listing | Post detail | `/es/destinos/` | `/es/eventos/` |
+|---|---|---|---|---|
+| `preview:list-post` | **MISS** | `HIT` — survived | `HIT` | `HIT` |
+| `preview:post-<slug>` | `HIT` — survived | **MISS** | `HIT` | `HIT` |
+
+That first row is the whole argument for not tagging a detail page with its
+collection, demonstrated: every post write evicts the listing without touching
+any individual post's page. The last two columns show the families are isolated
+from each other.
+
+The six deliberately-excluded pages fail closed at **two different layers**,
+which is worth knowing when reading a probe:
+
+| Path | Result | Why |
+|---|---|---|
+| `/es/destinos/{atraccion,lugar}/<slug>/` | `BYPASS` | matches the `/es/destinos` prefix; origin never opts in |
+| `/es/{gastronomia,experiencias}/` | `DYNAMIC` | no prefix in the expression at all |
+
+`BYPASS` there is the `bypass_by_default` mechanism doing its job, not a defect.
+
+One trap when probing by hand: an invented slug returns **404**, and the 404
+guard runs BEFORE `applyCacheHeaders`, so the response carries no
+`Cache-Control` at all and reads as `BYPASS`. That looks identical to "the page
+refuses to cache" and is not. `/es/publicaciones/categoria/cultura/` is 404;
+the real slugs are the lowercased `PostCategoryEnum` values (`culture`,
+`tourism`, …). Always check the status code before concluding a page is
+misconfigured.
+
 ### Purging from a shell
 
 The probes must run from your own machine (the cache is per-PoP and the VPS
