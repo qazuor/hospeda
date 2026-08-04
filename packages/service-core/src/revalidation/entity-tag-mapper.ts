@@ -163,6 +163,65 @@ export function getAffectedCacheTags(event: EntityChangeData): readonly string[]
             break;
         }
 
+        case 'gastronomy':
+        case 'experience': {
+            // Both are commerce listings with the same shape: a detail page and
+            // a listing page of their own, optionally tied to one destination.
+            // `event.entityType` is the discriminant, so this shared arm stays
+            // exact rather than guessing.
+            for (const tag of buildEntityCacheTags({
+                entity: event.entityType,
+                slug: event.slug,
+                id: event.id
+            })) {
+                tags.add(tag);
+            }
+            tags.add(CACHE_TAG_COLLECTIONS[event.entityType]);
+            // Deliberately NOT `CACHE_TAG_HOME`: unlike accommodations, events
+            // and posts, the home page does not surface commerce listings.
+            // Adding it would evict the home on every restaurant edit for no
+            // reason.
+            if (event.destinationSlug) {
+                for (const tag of buildEntityCacheTags({
+                    entity: 'destination',
+                    slug: event.destinationSlug
+                })) {
+                    tags.add(tag);
+                }
+            }
+            break;
+        }
+
+        case 'attraction':
+        case 'pointOfInterest': {
+            // Both have a detail page but NO listing page anywhere, which is
+            // why neither has a collection tag (see `CACHE_TAG_COLLECTIONS`).
+            for (const tag of buildEntityCacheTags({
+                entity: event.entityType,
+                slug: event.slug,
+                id: event.id
+            })) {
+                tags.add(tag);
+            }
+            // Fan out across EVERY destination that shows this entity. The
+            // relation is many-to-many in both cases, so this loop is the
+            // difference between a correct purge and one that quietly evicts
+            // a single destination and leaves the others stale — a failure
+            // that reports success and is invisible until somebody notices a
+            // renamed POI still showing its old name on four destination
+            // pages.
+            for (const destinationSlug of event.destinationSlugs ?? []) {
+                if (!destinationSlug) continue;
+                for (const tag of buildEntityCacheTags({
+                    entity: 'destination',
+                    slug: destinationSlug
+                })) {
+                    tags.add(tag);
+                }
+            }
+            break;
+        }
+
         case 'tag':
         case 'amenity': {
             // Neither has a page of its own; both are accommodation filters.
