@@ -99,7 +99,9 @@ const CASES: readonly UpdateSchemaCase[] = [
     {
         name: 'EventUpdateInputSchema',
         schema: EventUpdateInputSchema,
-        defaulted: ['lifecycleState', 'visibility', 'moderationState', 'isFeatured']
+        // See the PostUpdateInputSchema note: the three state fields left this
+        // payload entirely in HOS-374 §7.6.4.
+        defaulted: ['isFeatured']
     },
     {
         name: 'EventLocationUpdateInputSchema',
@@ -119,10 +121,11 @@ const CASES: readonly UpdateSchemaCase[] = [
     {
         name: 'PostUpdateInputSchema',
         schema: PostUpdateInputSchema,
+        // lifecycleState / visibility / moderationState are no longer listed: HOS-374
+        // §7.6.4 removed them from this payload entirely, so "must not be injected" was
+        // superseded by "must not be accepted" — see
+        // content-state-fields-excluded.guard.test.ts.
         defaulted: [
-            'lifecycleState',
-            'visibility',
-            'moderationState',
             'isFeatured',
             'isFeaturedInWebsite',
             'isNews',
