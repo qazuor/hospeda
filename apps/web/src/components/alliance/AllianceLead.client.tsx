@@ -41,12 +41,31 @@ const API_BASE = (import.meta.env.PUBLIC_API_URL ?? '').replace(/\/$/, '');
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+/** The signed-in visitor, as handed down by the page frontmatter. */
+export interface AllianceLeadCurrentUser {
+    /** Display name, when the account has one. */
+    readonly name: string | null;
+    /** Account email — the address the application will be filed under. */
+    readonly email: string | null;
+}
+
 /** Props for the AllianceLead island. */
 export interface AllianceLeadProps {
     /** Active locale for i18n. */
     readonly locale: SupportedLocale;
     /** Which "aliados" program this form submits for. Fixed per landing page. */
     readonly kind: AllianceLeadKind;
+    /**
+     * The signed-in visitor, when there is one (HOS-278 AC-1).
+     *
+     * With an email present the form does NOT ask for one — the account's
+     * address is what the application is filed under, and asking again would
+     * invite a second address that then needs an email round-trip to confirm.
+     * Only ever populated because `sumate`/`colaborar` are listed in
+     * `SESSION_OPTIONAL_SEGMENTS` (see `@/lib/routes`); an island cannot read
+     * `Astro.locals` itself.
+     */
+    readonly currentUser?: AllianceLeadCurrentUser | null;
 }
 
 interface GenericFields {
@@ -86,14 +105,24 @@ const KIND_NAMESPACE: Record<AllianceLeadKind, string> = {
  *
  * @param props - Component props (see {@link AllianceLeadProps})
  */
-export function AllianceLead({ locale, kind }: AllianceLeadProps) {
+export function AllianceLead({ locale, kind, currentUser = null }: AllianceLeadProps) {
     const { t } = createTranslations(locale);
 
     const namespaceKey = KIND_NAMESPACE[kind];
     const formTitleKey = `alliance-leads.${namespaceKey}.form.heading`;
     const specificFields = ALLIANCE_LEAD_SPECIFIC_FIELDS[kind];
 
-    const [fields, setFields] = useState<GenericFields>(INITIAL_GENERIC_FIELDS);
+    // A session can carry an empty email, so "signed in" is not the same as
+    // "we know where to file this". Only a real address replaces the field —
+    // otherwise the applicant would be left with no way to give us one.
+    const accountEmail = currentUser?.email?.trim() ?? '';
+    const usesAccountEmail = accountEmail.length > 0;
+
+    const [fields, setFields] = useState<GenericFields>(() => ({
+        ...INITIAL_GENERIC_FIELDS,
+        contactName: currentUser?.name?.trim() ?? '',
+        email: accountEmail
+    }));
     const [specificValues, setSpecificValues] = useState<AllianceLeadSpecificValues>({});
     const [hp, setHp] = useState('');
     const [errors, setErrors] = useState<FieldErrors>({});
@@ -139,7 +168,11 @@ export function AllianceLead({ locale, kind }: AllianceLeadProps) {
         const payload: AllianceLeadCreateInput = {
             kind,
             contactName: fields.contactName,
-            email: fields.email,
+            // The account address wins over anything in state when there is
+            // one: the field it came from is not rendered, so state cannot have
+            // drifted, and this keeps the submitted address and the session
+            // that links the lead in agreement.
+            email: usesAccountEmail ? accountEmail : fields.email,
             phone: fields.phone || undefined,
             message
         };
@@ -160,6 +193,11 @@ export function AllianceLead({ locale, kind }: AllianceLeadProps) {
             const res = await fetch(`${API_BASE}/api/v1/public/alliance/leads`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                // Load-bearing for AC-1. The web app and the API are on
+                // different origins, so without this the session cookie is not
+                // sent, the API resolves a guest actor, and a signed-in
+                // applicant's lead arrives unlinked — silently, with a 200.
+                credentials: 'include',
                 body: JSON.stringify({ ...(parsed.success ? parsed.data : payload), _hp: hp })
             });
 
@@ -287,45 +325,55 @@ export function AllianceLead({ locale, kind }: AllianceLeadProps) {
                 )}
             </div>
 
-            {/* Email */}
-            <div className={styles.field}>
-                <label
-                    className={styles.label}
-                    htmlFor="al-email"
-                >
-                    {t('alliance-leads.form.fields.email', 'Correo electrónico')}
-                    <span
-                        className={styles.required}
-                        aria-hidden="true"
+            {/* Email — not asked for at all when the visitor is signed in (AC-1) */}
+            {usesAccountEmail ? (
+                <p className={styles.accountEmailNotice}>
+                    {t(
+                        'alliance-leads.form.accountEmailNotice',
+                        'Vamos a usar el correo de tu cuenta:'
+                    )}{' '}
+                    <strong>{accountEmail}</strong>
+                </p>
+            ) : (
+                <div className={styles.field}>
+                    <label
+                        className={styles.label}
+                        htmlFor="al-email"
                     >
-                        *
-                    </span>
-                </label>
-                <input
-                    id="al-email"
-                    type="email"
-                    name="email"
-                    value={fields.email}
-                    onChange={handleChange}
-                    className={`${styles.input}${errors.email ? ` ${styles.inputError}` : ''}`}
-                    autoComplete="email"
-                    aria-describedby={errors.email ? 'al-email-error' : undefined}
-                    aria-invalid={!!errors.email}
-                    required
-                />
-                {errors.email && (
-                    <p
-                        id="al-email-error"
-                        className={styles.errorMsg}
-                        role="alert"
-                    >
-                        {t(
-                            'alliance-leads.form.validation.email',
-                            'Ingresá un correo electrónico válido.'
-                        )}
-                    </p>
-                )}
-            </div>
+                        {t('alliance-leads.form.fields.email', 'Correo electrónico')}
+                        <span
+                            className={styles.required}
+                            aria-hidden="true"
+                        >
+                            *
+                        </span>
+                    </label>
+                    <input
+                        id="al-email"
+                        type="email"
+                        name="email"
+                        value={fields.email}
+                        onChange={handleChange}
+                        className={`${styles.input}${errors.email ? ` ${styles.inputError}` : ''}`}
+                        autoComplete="email"
+                        aria-describedby={errors.email ? 'al-email-error' : undefined}
+                        aria-invalid={!!errors.email}
+                        required
+                    />
+                    {errors.email && (
+                        <p
+                            id="al-email-error"
+                            className={styles.errorMsg}
+                            role="alert"
+                        >
+                            {t(
+                                'alliance-leads.form.validation.email',
+                                'Ingresá un correo electrónico válido.'
+                            )}
+                        </p>
+                    )}
+                </div>
+            )}
 
             {/* Phone (optional) */}
             <div className={styles.field}>

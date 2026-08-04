@@ -79,7 +79,24 @@ export const SESSION_OPTIONAL_SEGMENTS = [
     // (HOS-128), it MUST bypass on the auth cookie, or one visitor's prefilled
     // form gets served to the next.
     'publicar-restaurante',
-    'publicar-experiencia'
+    'publicar-experiencia',
+    // "Aliados" lead forms — `/sumate/{partner,proveedor,sponsor}` and
+    // `/colaborar/editores` (HOS-278 AC-1).
+    //
+    // Same mechanism as the two commerce entries above, one requirement
+    // stronger: a signed-in applicant is not merely PRE-FILLED, they are not
+    // asked for their email at all. The island decides that from a
+    // `currentUser` prop, and the frontmatter only has one where the middleware
+    // resolved the session — so without these two entries the form would keep
+    // asking a logged-in user for an address we already know, and the lead
+    // would arrive unlinked.
+    //
+    // Both are landing pages with a form and NO Cache-Control of their own, so
+    // Cloudflare serves them dynamic. If a path-based Cache Rule is ever added
+    // for `/sumate/*` or `/colaborar/*`, it MUST bypass on the auth cookie —
+    // the SSR response now embeds the visitor's name and email.
+    'sumate',
+    'colaborar'
 ] as const;
 
 /**

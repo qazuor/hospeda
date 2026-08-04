@@ -234,6 +234,103 @@ describe('AllianceLead', () => {
 
     // ── Submission ────────────────────────────────────────────────────────────
 
+    // ── Signed-in applicant (HOS-278 AC-1) ──────────────────────────────────
+
+    describe('Signed-in applicant', () => {
+        function renderSignedIn(user: { name: string | null; email: string | null }) {
+            return render(
+                <AllianceLead
+                    locale="es"
+                    kind="partner"
+                    currentUser={user}
+                />
+            );
+        }
+
+        it('does NOT ask for the email when the account has one (AC-1)', () => {
+            renderSignedIn({ name: 'Juan Pérez', email: 'juan@example.com' });
+
+            expect(screen.queryByLabelText(/correo electrónico/i)).not.toBeInTheDocument();
+        });
+
+        it('states the address the application will be filed under', () => {
+            renderSignedIn({ name: 'Juan Pérez', email: 'juan@example.com' });
+
+            expect(screen.getByText('juan@example.com')).toBeInTheDocument();
+        });
+
+        it('pre-fills the contact name but leaves it editable', () => {
+            renderSignedIn({ name: 'Juan Pérez', email: 'juan@example.com' });
+
+            const nameInput = screen.getByLabelText(/tu nombre/i) as HTMLInputElement;
+            expect(nameInput.value).toBe('Juan Pérez');
+            expect(nameInput).not.toBeDisabled();
+        });
+
+        it('submits the account email even though no field collected it', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ id: 'abc' })
+            } as Response);
+
+            renderSignedIn({ name: 'Juan Pérez', email: 'juan@example.com' });
+            fireEvent.change(screen.getByLabelText(/^businessName/i), {
+                target: { value: 'Acme SA' }
+            });
+            fireEvent.change(screen.getByLabelText(/^partnershipType/i), {
+                target: { value: 'Agencia de turismo' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                expect(global.fetch).toHaveBeenCalled();
+            });
+            const [, init] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
+            expect(JSON.parse(String(init.body)).email).toBe('juan@example.com');
+        });
+
+        it('sends the session cookie, or the lead would arrive unlinked (AC-1)', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ id: 'abc' })
+            } as Response);
+
+            renderSignedIn({ name: 'Juan Pérez', email: 'juan@example.com' });
+            fireEvent.change(screen.getByLabelText(/^businessName/i), {
+                target: { value: 'Acme SA' }
+            });
+            fireEvent.change(screen.getByLabelText(/^partnershipType/i), {
+                target: { value: 'Agencia de turismo' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                expect(global.fetch).toHaveBeenCalledWith(
+                    expect.any(String),
+                    expect.objectContaining({ credentials: 'include' })
+                );
+            });
+        });
+
+        it('still asks for the email when the session carries none', () => {
+            renderSignedIn({ name: 'Juan Pérez', email: null });
+
+            expect(screen.getByLabelText(/correo electrónico/i)).toBeInTheDocument();
+        });
+
+        it('still asks for the email when the session email is blank', () => {
+            renderSignedIn({ name: 'Juan Pérez', email: '   ' });
+
+            expect(screen.getByLabelText(/correo electrónico/i)).toBeInTheDocument();
+        });
+
+        it('asks an anonymous visitor for the email as before (AC-2)', () => {
+            renderForm('partner');
+
+            expect(screen.getByLabelText(/correo electrónico/i)).toBeInTheDocument();
+        });
+    });
+
     describe('Successful submission', () => {
         it('POSTs to /api/v1/public/alliance/leads', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce({

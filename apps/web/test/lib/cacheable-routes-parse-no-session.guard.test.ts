@@ -94,7 +94,9 @@ describe('HOS-369 W1-2a — cacheable route families parse no session', () => {
             guest: 'The guest area is per-visitor by definition.',
             publicar: 'The host onboarding funnel branches on having an account.',
             'publicar-restaurante': 'Commerce lead form pre-fills the visitor name/e-mail.',
-            'publicar-experiencia': 'Commerce lead form pre-fills the visitor name/e-mail.'
+            'publicar-experiencia': 'Commerce lead form pre-fills the visitor name/e-mail.',
+            sumate: 'Alliance lead form stops asking a signed-in applicant for their e-mail.',
+            colaborar: 'Alliance lead form stops asking a signed-in applicant for their e-mail.'
         };
 
         for (const segment of SESSION_OPTIONAL_SEGMENTS) {
