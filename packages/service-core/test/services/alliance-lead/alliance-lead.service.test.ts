@@ -211,6 +211,74 @@ describe('AllianceLeadService', () => {
         });
     });
 
+    describe('listMine', () => {
+        it('should scope the read to the caller and return their leads (AC-5)', async () => {
+            const service = makeService();
+            const model = makeLeadModel();
+            (service as any)._model = model;
+
+            const result = await service.listMine({ actor: authenticatedActor });
+
+            expect(result.error).toBeUndefined();
+            expect(result.data).toEqual([mockLead]);
+            expect(model.findAll).toHaveBeenCalledWith(
+                { deletedAt: null, applicantUserId: ACTOR_ID },
+                expect.objectContaining({ sortBy: 'createdAt', sortOrder: 'desc' }),
+                undefined,
+                undefined
+            );
+        });
+
+        it('should require no permission (self-service read)', async () => {
+            const service = makeService();
+            (service as any)._model = makeLeadModel();
+
+            // `authenticatedActor` holds zero permissions.
+            const result = await service.listMine({ actor: authenticatedActor });
+
+            expect(result.error).toBeUndefined();
+        });
+
+        it('should return [] for an anonymous actor WITHOUT querying (never an unscoped read)', async () => {
+            const service = makeService();
+            const model = makeLeadModel();
+            (service as any)._model = model;
+
+            const result = await service.listMine({ actor: guestActor });
+
+            expect(result.error).toBeUndefined();
+            expect(result.data).toEqual([]);
+            expect(model.findAll).not.toHaveBeenCalled();
+        });
+
+        it('should return [] (not NOT_FOUND) when the caller has never applied (AC-5)', async () => {
+            const service = makeService();
+            const model = makeLeadModel();
+            model.findAll.mockResolvedValue({ items: [], total: 0 });
+            (service as any)._model = model;
+
+            const result = await service.listMine({ actor: authenticatedActor });
+
+            expect(result.error).toBeUndefined();
+            expect(result.data).toEqual([]);
+        });
+
+        it('should exclude soft-deleted leads', async () => {
+            const service = makeService();
+            const model = makeLeadModel();
+            (service as any)._model = model;
+
+            await service.listMine({ actor: authenticatedActor });
+
+            expect(model.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({ deletedAt: null }),
+                expect.any(Object),
+                undefined,
+                undefined
+            );
+        });
+    });
+
     describe('listForAdmin', () => {
         it('should return leads for admin actor', async () => {
             const service = makeService();

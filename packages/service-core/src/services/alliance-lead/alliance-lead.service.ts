@@ -29,7 +29,7 @@
  * @module alliance-lead.service
  */
 
-import { AllianceLeadModel } from '@repo/db';
+import { AllianceLeadModel, type SelectAllianceLead } from '@repo/db';
 import {
     type AllianceLead,
     AllianceLeadAdminListQuerySchema,
@@ -77,6 +77,12 @@ export interface ListAllianceLeadsForAdminInput {
     };
 }
 
+/** Input for {@link AllianceLeadService.listMine}. */
+export interface ListMyAllianceLeadsInput {
+    /** The authenticated actor whose own applications are being listed. */
+    readonly actor: Actor;
+}
+
 /** Input for {@link AllianceLeadService.markHandled}. */
 export interface MarkAllianceLeadHandledInput {
     /** The admin actor handling the lead. */
@@ -98,6 +104,27 @@ export interface MarkAllianceLeadHandledInput {
 const markHandledInputSchema = AllianceLeadMarkHandledSchema.extend({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 });
+
+/** `listMine` takes no caller-supplied input — its only scope is the actor. */
+const listMineInputSchema = z.object({});
+
+/**
+ * The `where` key that scopes a read to a single applicant.
+ *
+ * Typed against the table's row shape ON PURPOSE. `buildWhereClause` silently
+ * DROPS a key the table does not have, so a typo (or a future column rename)
+ * would not fail — it would quietly remove the ownership filter and turn
+ * "my applications" into "everyone's". Binding the literal to
+ * `keyof SelectAllianceLead` turns that runtime footgun into a build error.
+ */
+const APPLICANT_SCOPE_KEY: keyof SelectAllianceLead = 'applicantUserId';
+
+/**
+ * Upper bound on how many of an applicant's own leads a single `listMine` call
+ * returns (newest first). A person applies to at most a handful of the four
+ * programs; this is a sanity cap, not a paging contract.
+ */
+const MY_LEADS_MAX = 100;
 
 // ---------------------------------------------------------------------------
 // Actor helpers
@@ -137,6 +164,8 @@ const resolveApplicantUserId = (actor: Actor): string | null => {
  * ## Public surface
  * - `createLead({ actor, input })` — submit a new lead (public, no permission
  *   gate — corresponds to one of the 4 "aliados" landing forms).
+ * - `listMine({ actor })` — the caller's OWN applications (authenticated, no
+ *   permission gate; `[]` when there are none).
  * - `listForAdmin({ actor, query })` — list leads with optional kind/status
  *   filters (admin, requires `ALLIANCE_LEAD_VIEW_ALL`).
  * - `markHandled({ actor, id, input })` — approve or reject a lead (admin,
@@ -214,6 +243,64 @@ export class AllianceLeadService extends BaseService {
                     execCtx?.tx
                 );
                 return lead as AllianceLead;
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // listMine — authenticated caller, own applications only
+    // -----------------------------------------------------------------------
+
+    /**
+     * Lists the calling user's OWN alliance applications, newest first
+     * (HOS-278 AC-5).
+     *
+     * No permission gate, deliberately: the read is scoped to the actor's own
+     * `applicantUserId`, so there is nothing an elevated permission could
+     * unlock. Requiring one would turn a self-service read into an accidental
+     * gate — the same reasoning as `CommerceLeadService.getMyLead`.
+     *
+     * Having no applications is the COMMON case (`/mi-cuenta/aliados` is a
+     * discovery hub most visitors reach without ever having applied), so it
+     * returns `[]` — never `NOT_FOUND`, never `FORBIDDEN`.
+     *
+     * An actor with no real identity short-circuits to `[]` BEFORE any query
+     * runs. That guard is load-bearing: the alternative is a `where` whose
+     * ownership filter is `null`, which reads as "every unlinked lead" rather
+     * than "nothing".
+     *
+     * @param params - `{ actor }`.
+     * @param ctx - Optional service execution context.
+     * @returns `ServiceOutput<AllianceLead[]>` — the caller's own leads.
+     */
+    public async listMine(
+        params: ListMyAllianceLeadsInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AllianceLead[]>> {
+        const { actor } = params;
+        return this.runWithLoggingAndValidation({
+            methodName: 'listMine',
+            input: { actor },
+            schema: listMineInputSchema,
+            ctx,
+            execute: async (_validated, a, execCtx) => {
+                const applicantUserId = resolveApplicantUserId(a);
+                if (applicantUserId === null) {
+                    return [];
+                }
+
+                const result = await this._model.findAll(
+                    { deletedAt: null, [APPLICANT_SCOPE_KEY]: applicantUserId },
+                    {
+                        page: 1,
+                        pageSize: MY_LEADS_MAX,
+                        sortBy: 'createdAt',
+                        sortOrder: 'desc'
+                    },
+                    undefined,
+                    execCtx?.tx
+                );
+                return result.items as AllianceLead[];
             }
         });
     }
