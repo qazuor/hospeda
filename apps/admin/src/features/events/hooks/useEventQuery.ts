@@ -1,6 +1,7 @@
 import type { Event } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { createContentStateMutationHooks } from '@/features/content/hooks/useContentStateMutations';
 import { fetchApi } from '@/lib/api/client';
 import { adminLogger } from '@/utils/logger';
 import { normalizeEventDatePrecision } from '../utils/normalize-event-date-precision';
@@ -27,6 +28,19 @@ export const eventQueryKeys = {
     details: () => [...eventQueryKeys.all, 'detail'] as const,
     detail: (id: string) => [...eventQueryKeys.details(), id] as const
 };
+
+/**
+ * The three dedicated state-transition mutations for events (HOS-374 §7.6.4).
+ *
+ * Built once at module scope: `InlineStateSelectCell` invokes the hook factory
+ * on every render, so it must be a stable reference. These replace the generic
+ * update mutation for `moderationState` / `visibility` / `lifecycleState`, which
+ * the update payload no longer accepts.
+ */
+export const EVENT_STATE_MUTATIONS = createContentStateMutationHooks({
+    entity: 'events',
+    queryKeys: eventQueryKeys
+});
 
 /**
  * Fetch a single event by ID

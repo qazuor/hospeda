@@ -302,9 +302,13 @@ describe('Event CRUD Schemas', () => {
                     price: 75.0,
                     currency: 'USD',
                     isFree: false
-                },
-                visibility: 'PRIVATE',
-                lifecycleState: 'DRAFT'
+                }
+                // visibility and lifecycleState used to be part of a "full" update.
+                // HOS-374 §7.6.4 moved them (and moderationState) out of this payload
+                // and onto dedicated endpoints, because carrying them here made the
+                // publication and moderation permissions bypassable by anyone holding
+                // EVENT_UPDATE. The schema is strict, so sending them now fails —
+                // asserted in content-state-fields-excluded.guard.test.ts.
             };
 
             const result = EventUpdateInputSchema.safeParse(fullInput);

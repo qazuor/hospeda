@@ -7,7 +7,7 @@ import {
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
 
-// Spanish enum labels (SPEC-117 D-DROPDOWN.1).
+// Spanish enum labels (SPEC-117 D-DROPDOWN.1 / D-POSTS.4).
 const VISIBILITY_LABELS: Record<string, string> = {
     PUBLIC: 'Público',
     PRIVATE: 'Privado',
@@ -29,29 +29,37 @@ const MODERATION_LABELS: Record<string, string> = {
 };
 
 /**
- * Consolidated configuration for the States & Moderation section of event
+ * Read-only display of the three content states on the evento VIEW page.
+ *
+ * `modes: ['view']` is load-bearing, not cosmetic: `filterSectionsByMode` keeps
+ * this section out of `editSections`, and `EntityPageBase` builds its PATCH body
+ * by iterating exactly those. HOS-374 §7.6.4 removed these three fields from the
+ * generic update payload — each now has its own endpoint and its own permission —
+ * so a section that reached the edit form would put them straight back into a
+ * payload the API no longer accepts.
+ *
+ * Editing them lives in `ContentStatePanel` on the edit page, which writes each
+ * one immediately through its dedicated endpoint.
  */
-export const createStatesModerationConsolidatedSection = (): ConsolidatedSectionConfig => ({
-    id: 'states-moderation',
+export const createContentStatesViewSection = (): ConsolidatedSectionConfig => ({
+    id: 'content-states',
     title: 'Estados y Moderación',
-    description: 'Configuración de visibilidad, ciclo de vida y moderación',
+    description: 'Visibilidad, ciclo de vida y moderación del evento',
     layout: LayoutTypeEnum.GRID,
-    modes: ['view', 'edit'],
+    modes: ['view'],
     permissions: {
-        view: [PermissionEnum.EVENT_VIEW_ALL],
-        edit: [PermissionEnum.EVENT_UPDATE]
+        view: [PermissionEnum.EVENT_VIEW_ALL]
     },
     fields: [
         {
             id: 'visibility',
             type: FieldTypeEnum.SELECT,
-            required: true,
-            modes: ['view', 'edit'],
+            required: false,
+            modes: ['view'],
             label: 'Visibilidad',
             description: 'Nivel de visibilidad del evento',
             permissions: {
-                view: [PermissionEnum.EVENT_VIEW_ALL],
-                edit: [PermissionEnum.EVENT_PUBLISH_TOGGLE]
+                view: [PermissionEnum.EVENT_VIEW_ALL]
             },
             typeConfig: {
                 options: Object.values(VisibilityEnum).map((value) => ({
@@ -63,13 +71,12 @@ export const createStatesModerationConsolidatedSection = (): ConsolidatedSection
         {
             id: 'lifecycleState',
             type: FieldTypeEnum.SELECT,
-            required: true,
-            modes: ['view', 'edit'],
+            required: false,
+            modes: ['view'],
             label: 'Estado del Ciclo de Vida',
             description: 'Estado actual del evento',
             permissions: {
-                view: [PermissionEnum.EVENT_VIEW_ALL],
-                edit: [PermissionEnum.EVENT_UPDATE]
+                view: [PermissionEnum.EVENT_VIEW_ALL]
             },
             typeConfig: {
                 options: Object.values(LifecycleStatusEnum).map((value) => ({
@@ -81,13 +88,12 @@ export const createStatesModerationConsolidatedSection = (): ConsolidatedSection
         {
             id: 'moderationState',
             type: FieldTypeEnum.SELECT,
-            required: true,
-            modes: ['view', 'edit'],
+            required: false,
+            modes: ['view'],
             label: 'Estado de Moderación',
             description: 'Estado de moderación del evento',
             permissions: {
-                view: [PermissionEnum.EVENT_VIEW_ALL],
-                edit: [PermissionEnum.EVENT_UPDATE]
+                view: [PermissionEnum.EVENT_VIEW_ALL]
             },
             typeConfig: {
                 options: Object.values(ModerationStatusEnum).map((value) => ({

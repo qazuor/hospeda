@@ -5,6 +5,7 @@ import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
+import { ContentStatePanel } from '@/features/content/components/ContentStatePanel';
 import { TranslationSection } from '@/features/content/components/TranslationSection';
 import { PostQualityScore } from '@/features/posts/components/PostQualityScore';
 import { usePostPage } from '@/features/posts/hooks/usePostPage';
@@ -75,6 +76,20 @@ function PostEditPage() {
                         entityId={id}
                     />
                 </div>
+                {entityData.entity && (
+                    <ContentStatePanel
+                        entityType="post"
+                        entityId={id}
+                        entityName={(entityData.entity as { title?: string }).title ?? ''}
+                        visibility={(entityData.entity as { visibility?: string }).visibility}
+                        moderationState={
+                            (entityData.entity as { moderationState?: string }).moderationState
+                        }
+                        lifecycleState={
+                            (entityData.entity as { lifecycleState?: string }).lifecycleState
+                        }
+                    />
+                )}
                 <EntityPageBase
                     entityType="post"
                     entityId={id}

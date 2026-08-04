@@ -89,6 +89,11 @@ export const createMockEventCreateInput = (
  * Returns a valid input for EventService.update (matches EventUpdateSchema).
  * Only includes fields allowed by the Zod schema (no slug, createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById).
  * The id field is handled separately in the update method.
+ *
+ * `visibility`, `lifecycleState` and `moderationState` are stripped too: HOS-374
+ * §7.6.4 moved them onto dedicated endpoints and the event update schema is
+ * strict, so leaving them here fails every update test with a VALIDATION_ERROR.
+ *
  * @param overrides - Partial fields to override in the input.
  */
 export const createMockEventUpdateInput = (
@@ -104,6 +109,8 @@ export const createMockEventUpdateInput = (
         updatedById,
         deletedById,
         moderationState,
+        visibility,
+        lifecycleState,
         tags,
         ...rest
     } = getMockEvent();
