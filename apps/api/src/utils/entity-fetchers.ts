@@ -43,6 +43,7 @@ export const registerEntityFetchers = (): void => {
                 id: string;
                 ownerId?: string | null;
                 createdById?: string | null;
+                authorId?: string | null;
             } | null,
             error: result.error
         };
