@@ -1578,6 +1578,32 @@ export function toEventDetailProps({
         };
     }
 
+    // --- Author (HOS-375 G-7) ---
+    // Distinct from the organizer above: the organizer runs the event, the
+    // author is the contributor who wrote it up and the only one with a public
+    // page at `/autores/<slug>/`.
+    const authorObj = item.author as Record<string, unknown> | undefined;
+    let author: EventDetailData['author'];
+
+    if (authorObj?.id) {
+        // Same fallback chain the post byline uses: `displayName` is a nullable
+        // column Better Auth signup writes directly, so it can be absent or an
+        // empty string on a perfectly valid row.
+        const authorName =
+            String(authorObj.displayName || '') ||
+            [authorObj.firstName, authorObj.lastName].filter(Boolean).map(String).join(' ').trim();
+
+        // An author with no resolvable name would render an empty byline —
+        // worse than none at all, so it is dropped entirely.
+        if (authorName) {
+            author = {
+                id: String(authorObj.id),
+                name: authorName,
+                slug: authorObj.slug ? String(authorObj.slug) : null
+            };
+        }
+    }
+
     // --- SEO ---
     const seoObj = item.seo as Record<string, unknown> | undefined;
     const rawKeywords = seoObj?.keywords;
@@ -1620,6 +1646,7 @@ export function toEventDetailProps({
             coordinates
         },
         organizer,
+        author,
         contactEmail: contactObj?.email
             ? String(contactObj.email)
             : item.contactEmail

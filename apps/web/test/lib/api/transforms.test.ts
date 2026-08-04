@@ -1551,6 +1551,89 @@ describe('toEventDetailProps — precision (HOS-280)', () => {
     });
 });
 
+/**
+ * HOS-375 §6.9 (G-7) — the event detail page gained an author byline linking to
+ * `/autores/<slug>/`. The payload now carries the author relation (public tier),
+ * and this transform is where it becomes a display-ready `{ id, name, slug }`.
+ *
+ * The name resolution is the load-bearing part: `displayName` is a NULLABLE
+ * column Better Auth signup writes directly, bypassing the create/update Zod
+ * schemas, so production holds rows where it is `null` or `''`.
+ */
+describe('toEventDetailProps — author byline (HOS-375 G-7)', () => {
+    const authorRelation = {
+        id: 'c0ffee00-0000-4000-8000-000000000001',
+        displayName: 'Laura Vega',
+        firstName: 'Laura',
+        lastName: 'Vega',
+        slug: 'laura-vega'
+    };
+
+    it('carries the author through when the relation is loaded', () => {
+        const result = toEventDetailProps({
+            item: { slug: 'evento-con-autor', author: authorRelation }
+        });
+
+        expect(result.author).toEqual({
+            id: authorRelation.id,
+            name: 'Laura Vega',
+            slug: 'laura-vega'
+        });
+    });
+
+    it('omits the author entirely when the payload carries no relation', () => {
+        // Every event created before this shipped, plus any list payload where
+        // the JOIN was not requested. The byline must simply not render.
+        const result = toEventDetailProps({ item: { slug: 'evento-sin-autor' } });
+
+        expect(result.author).toBeUndefined();
+    });
+
+    it('omits the author when the relation is null (FK is nullable)', () => {
+        const result = toEventDetailProps({ item: { slug: 'evento-fk-null', author: null } });
+
+        expect(result.author).toBeUndefined();
+    });
+
+    it('falls back to first + last name when displayName is empty', () => {
+        // The `''` case is real: Better Auth writes `display_name` directly and
+        // production holds empty strings. `||` catches it; `??` would not.
+        const result = toEventDetailProps({
+            item: {
+                slug: 'evento-sin-display-name',
+                author: { ...authorRelation, displayName: '' }
+            }
+        });
+
+        expect(result.author?.name).toBe('Laura Vega');
+    });
+
+    it('drops an author with no resolvable name rather than rendering an empty byline', () => {
+        const result = toEventDetailProps({
+            item: {
+                slug: 'evento-autor-anonimo',
+                author: { id: authorRelation.id, displayName: null, slug: 'anon' }
+            }
+        });
+
+        expect(result.author).toBeUndefined();
+    });
+
+    it('keeps the author but nulls the slug when there is no author page to link to', () => {
+        // A slug-less author still deserves attribution — as plain text, not as
+        // a link to `/autores/undefined/`.
+        const result = toEventDetailProps({
+            item: {
+                slug: 'evento-autor-sin-slug',
+                author: { ...authorRelation, slug: undefined }
+            }
+        });
+
+        expect(result.author?.name).toBe('Laura Vega');
+        expect(result.author?.slug).toBeNull();
+    });
+});
+
 // ---------------------------------------------------------------------------
 // transformFavoritesBreakdown
 // ---------------------------------------------------------------------------
