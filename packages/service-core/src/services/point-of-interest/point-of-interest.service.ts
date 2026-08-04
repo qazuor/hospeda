@@ -47,6 +47,7 @@ import { inArray, type SQL } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
+import { getRevalidationService } from '../../revalidation';
 import {
     type Actor,
     type AdminSearchExecuteParams,
@@ -72,6 +73,16 @@ import {
     checkCanViewPointOfInterest
 } from './point-of-interest.permissions';
 
+/**
+ * Page size used when resolving a POI's destination relations for a cache
+ * purge. `MAX_PAGE_SIZE` in `@repo/db`'s base model, which is the ceiling
+ * `findAll` clamps to — asking for more silently gets this anyway.
+ *
+ * NOT the model default (20): a POI belongs to an unbounded number of
+ * destinations, and truncating the list produces a purge that reports success
+ * while leaving destination pages stale.
+ */
+const REVALIDATION_RELATION_PAGE_SIZE = 200;
 /**
  * Upper bound for a single destination's POI-relation lookup in
  * {@link PointOfInterestService.resolveDestinationIdFilter}, and for the
@@ -149,6 +160,95 @@ export class PointOfInterestService extends BaseCrudRelatedService<
      * below to resolve them the same way `_executeSearch` does.
      */
     public readonly adminSearchSchema = PointOfInterestAdminSearchSchema;
+
+    // -----------------------------------------------------------------------
+    // Edge cache revalidation (HOS-369 W2-4)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Every destination that shows this POI, as slugs, for the purge payload.
+     *
+     * The relation is genuinely many-to-many
+     * (`r_destination_point_of_interest`), and the destination detail page
+     * renders its POIs, so ONE POI edit has to evict N destination pages.
+     *
+     * **`pageSize` is passed explicitly and that is load-bearing.** `findAll`
+     * defaults to 20 rows (`DEFAULT_PAGE_SIZE` in `base.model.ts`). Colón alone
+     * carries 57 POIs, and the reverse direction is just as unbounded — so the
+     * default would have purged the first 20 destinations and left the rest
+     * stale, silently, because the purge still reports success. When the
+     * relation count exceeds even the 200-row cap the shortfall is logged
+     * rather than swallowed: a partial purge that nobody can see is the exact
+     * failure mode this whole wave exists to avoid.
+     *
+     * @param pointOfInterestId - The changed POI.
+     * @returns Destination slugs, possibly empty.
+     */
+    private async _resolveDestinationSlugsForRevalidation(
+        pointOfInterestId: string
+    ): Promise<readonly string[]> {
+        const { items: relations, total } = await this.relatedModel.findAll(
+            { pointOfInterestId },
+            { pageSize: REVALIDATION_RELATION_PAGE_SIZE }
+        );
+
+        if (total > relations.length) {
+            this.logger.warn(
+                { pointOfInterestId, total, fetched: relations.length },
+                'POI has more destination relations than the purge page size; some destination pages will stay stale until their TTL expires'
+            );
+        }
+
+        const destinationIds = relations
+            .map((relation) => (relation as { destinationId?: unknown }).destinationId)
+            .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+        if (destinationIds.length === 0) return [];
+
+        const destinations = await Promise.all(
+            destinationIds.map((id) => this.destinationModel.findById(id))
+        );
+
+        return destinations
+            .map((destination) => (destination as { slug?: unknown } | null)?.slug)
+            .filter((slug): slug is string => typeof slug === 'string' && slug.length > 0);
+    }
+
+    /**
+     * Schedule a cache purge for this POI and every destination showing it.
+     *
+     * Never blocking: revalidation is a side effect of a content write, and a
+     * Cloudflare outage must not fail the write that triggered it.
+     *
+     * @param entity - The POI as it now stands after the write.
+     */
+    private async _schedulePointOfInterestRevalidation(entity: PointOfInterest): Promise<void> {
+        try {
+            const destinationSlugs = await this._resolveDestinationSlugsForRevalidation(entity.id);
+
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'pointOfInterest',
+                id: entity.id,
+                slug: entity.slug,
+                destinationSlugs
+            });
+        } catch (error) {
+            this.logger.warn(
+                { error, entityType: 'pointOfInterest' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
+    }
+
+    protected async _afterCreate(entity: PointOfInterest): Promise<PointOfInterest> {
+        await this._schedulePointOfInterestRevalidation(entity);
+        return entity;
+    }
+
+    protected async _afterUpdate(entity: PointOfInterest): Promise<PointOfInterest> {
+        await this._schedulePointOfInterestRevalidation(entity);
+        return entity;
+    }
 
     protected getDefaultListRelations() {
         return undefined;
