@@ -127,9 +127,14 @@
                     "title": "Service provider",
                     "description": "Join the local provider directory that hosts recommend to their guests."
                 },
-                "editor": {
-                    "title": "Editor",
-                    "description": "Want to write posts and add events on Hospeda? Apply to become a content editor.",
+                "editorPosts": {
+                    "title": "Article editor",
+                    "description": "Want to write articles and stories on Hospeda? Apply as a content editor.",
+                    "cta": "Apply as an editor"
+                },
+                "editorEvents": {
+                    "title": "Event editor",
+                    "description": "Want to keep the region's event calendar up to date? Apply as a content editor.",
                     "cta": "Apply as an editor"
                 }
             }

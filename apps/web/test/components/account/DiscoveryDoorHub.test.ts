@@ -131,7 +131,8 @@ describe('DiscoveryDoorHub — per-option state resolution (engine integration)'
     });
 
     it('resolves the sponsor/partner/serviceProvider lead-only options to unacquired regardless of role (HOS-277 NG-1, no acquiredPermission exists)', () => {
-        const leadOnlyOptions = partner?.options.filter((option) => option.id !== 'editor') ?? [];
+        const leadOnlyOptions =
+            partner?.options.filter((option) => !option.id.startsWith('editor')) ?? [];
         for (const option of leadOnlyOptions) {
             expect(
                 resolveDoorOptionState({
@@ -142,24 +143,28 @@ describe('DiscoveryDoorHub — per-option state resolution (engine integration)'
         }
     });
 
-    it('resolves "editor" to acquired for an EDITOR role, unacquired for a plain USER (HOS-134)', () => {
-        const editor = partner?.options.find((option) => option.id === 'editor');
-        expect(editor).toBeDefined();
-        if (!editor) return;
+    // HOS-374 OQ-5: one option per content type, each keyed to the permission
+    // it actually manages (POST_CREATE / EVENT_CREATE).
+    for (const optionId of ['editorPosts', 'editorEvents'] as const) {
+        it(`resolves "${optionId}" to acquired for an EDITOR role, unacquired for a plain USER`, () => {
+            const editorOption = partner?.options.find((option) => option.id === optionId);
+            expect(editorOption).toBeDefined();
+            if (!editorOption) return;
 
-        expect(
-            resolveDoorOptionState({
-                option: editor,
-                visibility: (node) => isVisibleByRoles(node, [RoleEnum.EDITOR])
-            })
-        ).toBe('acquired');
-        expect(
-            resolveDoorOptionState({
-                option: editor,
-                visibility: (node) => isVisibleByRoles(node, [RoleEnum.USER])
-            })
-        ).toBe('unacquired');
-    });
+            expect(
+                resolveDoorOptionState({
+                    option: editorOption,
+                    visibility: (node) => isVisibleByRoles(node, [RoleEnum.EDITOR])
+                })
+            ).toBe('acquired');
+            expect(
+                resolveDoorOptionState({
+                    option: editorOption,
+                    visibility: (node) => isVisibleByRoles(node, [RoleEnum.USER])
+                })
+            ).toBe('unacquired');
+        });
+    }
 
     it('resolves both listing-door options to acquired for platform staff (ADMIN)', () => {
         for (const option of listing?.options ?? []) {

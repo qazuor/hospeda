@@ -127,9 +127,14 @@
                     "title": "Proveedor de servicios",
                     "description": "Sumate al directorio de proveedores locales que los anfitriones recomiendan a sus huéspedes."
                 },
-                "editor": {
-                    "title": "Editor",
-                    "description": "¿Querés escribir notas y cargar eventos en Hospeda? Postulate como editor de contenidos.",
+                "editorPosts": {
+                    "title": "Editor de notas",
+                    "description": "¿Querés escribir notas y artículos en Hospeda? Postulate como editor de contenidos.",
+                    "cta": "Postulate como editor"
+                },
+                "editorEvents": {
+                    "title": "Editor de eventos",
+                    "description": "¿Querés cargar la agenda de eventos de la región? Postulate como editor de contenidos.",
                     "cta": "Postulate como editor"
                 }
             }
