@@ -80,6 +80,15 @@ export interface ProfileSnapshot {
     readonly addressLine1: string;
     readonly postalCode: string;
     readonly avatarUrl: string;
+    /**
+     * `settings.publicProfileShowSocialNetworks` (HOS-375 §6.7 / G-5) — the
+     * owner's opt-in to publishing the links above on their public author page.
+     *
+     * The only non-string field in this snapshot, and deliberately so: it is a
+     * setting rather than a profile field, it needs no trimming, and coercing it
+     * to `'true'`/`'false'` would only invite a truthiness bug at the diff.
+     */
+    readonly publicProfileShowSocialNetworks: boolean;
 }
 
 /**
@@ -110,7 +119,11 @@ export function buildInitialProfileSnapshot(user: ProfileEditUser): ProfileSnaps
         city: user.city ?? '',
         addressLine1: user.addressLine1 ?? '',
         postalCode: user.postalCode ?? '',
-        avatarUrl: user.avatarUrl ?? ''
+        avatarUrl: user.avatarUrl ?? '',
+        // Defaults to OFF: nothing is published until the owner says so
+        // (HOS-375 §6.7). `=== true` rather than a truthy check, so a user with
+        // no stored settings at all lands on false rather than undefined.
+        publicProfileShowSocialNetworks: user.publicProfileShowSocialNetworks === true
     };
 }
 
@@ -264,6 +277,25 @@ export function buildProfilePatch({
     }
     if (socialChanged) {
         payload.socialNetworks = socialPatch;
+    }
+
+    // settings.publicProfileShowSocialNetworks (HOS-375 §6.7) — the owner's
+    // opt-in to publishing the links above on their author page.
+    //
+    // Sent under `settings`, which the protected PATCH validates against the
+    // web-scoped allowlist (`UserSettingsWebPatchSchema`, strict), NOT under
+    // `socialNetworks`: it is a preference about the block, not part of it, and
+    // slipping it into the JSONB would be rejected as an unknown key.
+    //
+    // Deliberately absent from `flatChanged`. That map feeds
+    // `ProfileEditFormSchema`, which validates the FORM's text fields; a boolean
+    // it does not declare has nothing to validate and would only risk tripping
+    // the schema. It still reaches `payload`, which is what the "no changes"
+    // guard in the component counts, so flipping the toggle alone is a real save.
+    if (current.publicProfileShowSocialNetworks !== baseline.publicProfileShowSocialNetworks) {
+        payload.settings = {
+            publicProfileShowSocialNetworks: current.publicProfileShowSocialNetworks
+        };
     }
 
     // location JSONB — whole block rebuilt (non-empty only), `province → region`.

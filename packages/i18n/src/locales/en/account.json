@@ -169,6 +169,10 @@
         "saving": "Saving...",
         "success": "Profile updated successfully",
         "noChanges": "No changes to save",
+        "social": {
+            "showOnPublicProfile": "Show my social links on my public author page",
+            "showOnPublicProfileHelp": "If you publish notes or events, you have an author page that anyone on the internet can see. Turning this on displays the links above there. It stays off unless you turn it on, and you can turn it off at any time."
+        },
         "errors": {
             "saveFailed": "Failed to save profile",
             "displayNameRequired": "Display name is required",

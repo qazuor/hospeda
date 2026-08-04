@@ -169,6 +169,10 @@
         "saving": "Guardando...",
         "success": "Perfil actualizado correctamente",
         "noChanges": "No hay cambios para guardar",
+        "social": {
+            "showOnPublicProfile": "Mostrar mis redes en mi página pública de autor",
+            "showOnPublicProfileHelp": "Si publicás notas o eventos, tenés una página de autor visible para cualquiera en internet. Al activar esto, los enlaces de arriba se muestran ahí. Está desactivado salvo que vos lo actives, y podés desactivarlo cuando quieras."
+        },
         "errors": {
             "saveFailed": "Error al guardar el perfil",
             "displayNameRequired": "El nombre visible es obligatorio",
