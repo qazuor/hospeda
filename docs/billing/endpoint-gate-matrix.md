@@ -285,6 +285,7 @@
 | `DELETE /api/v1/protected/destinations/{id}` | `destination/protected/softDelete.ts` | none | - | n/a | Auth + PermissionEnum-gated |
 | **EVENT — PROTECTED** | | | | | |
 | `GET /api/v1/protected/events` | `event/protected/list.ts` | none | - | n/a | Author's own events for the web editor; scoped by `authorId = actor.id` in the handler, no permission gate (HOS-374) |
+| `GET /api/v1/protected/events/{id}` | `event/protected/getById.ts` | none | - | n/a | Author's own event for the web editor; ownership on `authorId`, EVENT_VIEW_ALL bypasses (HOS-374) |
 | `POST /api/v1/protected/events` | `event/protected/create.ts` | none | - | n/a | Content contributor; auth + PermissionEnum-gated |
 | `PATCH /api/v1/protected/events/{id}` | `event/protected/patch.ts` | none | - | n/a | Auth + PermissionEnum-gated |
 | `PUT /api/v1/protected/events/{id}` | `event/protected/update.ts` | none | - | n/a | Auth + PermissionEnum-gated |
@@ -308,6 +309,7 @@
 | `DELETE /api/v1/protected/features/{id}` | `feature/protected/softDelete.ts` | none | - | n/a | Auth + PermissionEnum-gated |
 | **POST (BLOG) — PROTECTED** | | | | | |
 | `GET /api/v1/protected/posts` | `post/protected/list.ts` | none | - | n/a | Author's own posts for the web editor; scoped by `authorId = actor.id` in the handler, no permission gate (HOS-374) |
+| `GET /api/v1/protected/posts/{id}` | `post/protected/getById.ts` | none | - | n/a | Author's own post for the web editor; ownership on `authorId`, POST_VIEW_ALL bypasses (HOS-374) |
 | `POST /api/v1/protected/posts` | `post/protected/create.ts` | none | - | n/a | Content contributor; auth + PermissionEnum-gated |
 | `PATCH /api/v1/protected/posts/{id}` | `post/protected/patch.ts` | none | - | n/a | Auth + PermissionEnum-gated |
 | `PUT /api/v1/protected/posts/{id}` | `post/protected/update.ts` | none | - | n/a | Auth + PermissionEnum-gated |

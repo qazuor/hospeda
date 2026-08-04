@@ -5,6 +5,7 @@
 import { createRouter } from '../../../utils/create-app';
 import { protectedPostCommentRoutes } from '../comments/protected/index.js';
 import { protectedCreatePostRoute } from './create';
+import { protectedGetPostByIdRoute } from './getById';
 import { protectedLikePostRoute } from './like';
 import { protectedListOwnPostsRoute } from './list';
 import { protectedPatchPostRoute } from './patch';
@@ -17,6 +18,9 @@ const app = createRouter();
 
 // GET / - List own posts (HOS-374)
 app.route('/', protectedListOwnPostsRoute);
+
+// GET /:id - Get own post by id (HOS-374)
+app.route('/', protectedGetPostByIdRoute);
 
 // POST / - Create post
 app.route('/', protectedCreatePostRoute);

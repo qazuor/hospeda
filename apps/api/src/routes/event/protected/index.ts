@@ -5,6 +5,7 @@
 import { createRouter } from '../../../utils/create-app';
 import { protectedEventCommentRoutes } from '../comments/protected/index.js';
 import { protectedCreateEventRoute } from './create';
+import { protectedGetEventByIdRoute } from './getById';
 import { protectedListOwnEventsRoute } from './list';
 import { protectedPatchEventRoute } from './patch';
 import { protectedSetEventPublishStateRoute } from './publishState';
@@ -15,6 +16,9 @@ const app = createRouter();
 
 // GET / - List own events (HOS-374)
 app.route('/', protectedListOwnEventsRoute);
+
+// GET /:id - Get own event by id (HOS-374)
+app.route('/', protectedGetEventByIdRoute);
 
 // POST / - Create event
 app.route('/', protectedCreateEventRoute);
