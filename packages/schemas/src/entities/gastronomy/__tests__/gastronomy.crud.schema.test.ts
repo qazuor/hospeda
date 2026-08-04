@@ -485,6 +485,29 @@ describe('GastronomyUpdateInputSchema', () => {
             expect((result.data as Record<string, unknown>).ownerId).toBeUndefined();
         }
     });
+
+    it('HOS-382 regression: silently strips a `media` object instead of rejecting it', () => {
+        // The admin panel used to submit `media.featuredImage` / `media.gallery`
+        // as a nested `media` object on PATCH. The `media` JSONB column was
+        // dropped from the `gastronomies` table (HOS-372), so this schema omits
+        // `media` from its shape entirely — but since the schema is NOT `.strict()`,
+        // Zod's default object mode ('strip') drops the unknown `media` key rather
+        // than failing validation. That silent-strip behaviour is exactly what let
+        // uploaded photos vanish: the binary reached Cloudinary but the DB write
+        // never happened, and neither the client nor the server ever saw an error.
+        const result = GastronomyUpdateInputSchema.safeParse({
+            name: 'Updated Name',
+            media: {
+                featuredImage: { url: 'https://example.com/photo.jpg' },
+                gallery: [{ url: 'https://example.com/photo2.jpg' }]
+            }
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect((result.data as Record<string, unknown>).media).toBeUndefined();
+        }
+    });
 });
 
 // ============================================================================
