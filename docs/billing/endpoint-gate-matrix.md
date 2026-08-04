@@ -288,6 +288,7 @@
 | `PATCH /api/v1/protected/events/{id}` | `event/protected/patch.ts` | none | - | n/a | Auth + PermissionEnum-gated |
 | `PUT /api/v1/protected/events/{id}` | `event/protected/update.ts` | none | - | n/a | Auth + PermissionEnum-gated |
 | `DELETE /api/v1/protected/events/{id}` | `event/protected/softDelete.ts` | none | - | n/a | Auth + PermissionEnum-gated |
+| `POST /api/v1/protected/events/{id}/publish-state` | `event/protected/publishState.ts` | none | - | n/a | Author publication switch — authorship + EVENT_PUBLISH_OWN checked in the service (HOS-374) |
 | `POST /api/v1/protected/events/{eventId}/comments` | `event/comments/protected/create.ts` | none | - | n/a | Community feature; no plan restriction on event comments |
 | **EVENT-LOCATION — PROTECTED** | | | | | |
 | `POST /api/v1/protected/event-locations` | `event-location/protected/create.ts` | none | - | n/a | Content contributor; auth + PermissionEnum-gated |
@@ -311,6 +312,7 @@
 | `DELETE /api/v1/protected/posts/{id}` | `post/protected/softDelete.ts` | none | - | n/a | Auth + PermissionEnum-gated |
 | `POST /api/v1/protected/posts/{id}/like` | `post/protected/like.ts` | none | - | n/a | Community engagement; no plan restriction |
 | `DELETE /api/v1/protected/posts/{id}/like` | `post/protected/unlike.ts` | none | - | n/a | Community engagement; removal always allowed |
+| `POST /api/v1/protected/posts/{id}/publish-state` | `post/protected/publishState.ts` | none | - | n/a | Author publication switch — authorship + POST_PUBLISH_OWN checked in the service (HOS-374) |
 | `POST /api/v1/protected/posts/{postId}/comments` | `post/comments/protected/create.ts` | none | - | n/a | Community feature; no plan restriction on post comments |
 | **COMMENT — PROTECTED** | | | | | |
 | `DELETE /api/v1/protected/comments/{commentId}` | `comment/protected/delete.ts` | none | - | n/a | Delete own comment; auth + ownership sufficient |
@@ -394,6 +396,9 @@
 | `POST /api/v1/admin/events/{id}/restore` | `event/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
 | `POST /api/v1/admin/events/batch` | `event/admin/batch.ts` | none | - | n/a | Admin batch; PermissionEnum-gated |
 | `GET /api/v1/admin/events/options` | `event/admin/options.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
+| `POST /api/v1/admin/events/{id}/moderate` | `event/admin/moderate.ts` | none | - | n/a | Admin moderation — PermissionEnum-gated (HOS-374; EVENT_MODERATION_CHANGE) |
+| `POST /api/v1/admin/events/{id}/publish-state` | `event/admin/publishState.ts` | none | - | n/a | Admin publication switch — PermissionEnum-gated (HOS-374; EVENT_PUBLISH_TOGGLE) |
+| `POST /api/v1/admin/events/{id}/lifecycle-state` | `event/admin/lifecycleState.ts` | none | - | n/a | Admin lifecycle change — PermissionEnum-gated (HOS-374; EVENT_LIFECYCLE_CHANGE) |
 | **EVENT COMMENTS — ADMIN** | | | | | |
 | `GET /api/v1/admin/events/{eventId}/comments` | `event/comments/public/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | **AMENITY — ADMIN** | | | | | |
@@ -472,6 +477,9 @@
 | `DELETE /api/v1/admin/posts/{id}` | `post/admin/delete.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | `DELETE /api/v1/admin/posts/{id}/hard` | `post/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated |
 | `POST /api/v1/admin/posts/{id}/restore` | `post/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
+| `POST /api/v1/admin/posts/{id}/moderate` | `post/admin/moderate.ts` | none | - | n/a | Admin moderation — PermissionEnum-gated (HOS-374; POST_MODERATION_CHANGE) |
+| `POST /api/v1/admin/posts/{id}/publish-state` | `post/admin/publishState.ts` | none | - | n/a | Admin publication switch — PermissionEnum-gated (HOS-374; POST_PUBLISH_TOGGLE) |
+| `POST /api/v1/admin/posts/{id}/lifecycle-state` | `post/admin/lifecycleState.ts` | none | - | n/a | Admin lifecycle change — PermissionEnum-gated (HOS-374; POST_LIFECYCLE_CHANGE) |
 | `POST /api/v1/admin/posts/batch` | `post/admin/batch.ts` | none | - | n/a | Admin batch; PermissionEnum-gated |
 | `GET /api/v1/admin/posts/{id}/seo` | `post/admin/getSeo.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `PUT /api/v1/admin/posts/{id}/seo` | `post/admin/updateSeo.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
