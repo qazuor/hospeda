@@ -1,0 +1,22 @@
+/*
+ * Banner shown while an emailed claim token is being redeemed, and after
+ * (HOS-278 AC-4). Rendered only when the URL carried one.
+ */
+
+.banner {
+    padding: var(--space-4, 1rem);
+    margin-bottom: var(--space-6, 1.5rem);
+    border-radius: var(--radius-card, 12px);
+    border: 1px solid var(--brand-primary-a20);
+    background-color: var(--brand-primary-a10);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    color: var(--core-foreground);
+    line-height: 1.5;
+}
+
+.bannerError {
+    border-color: var(--core-border);
+    background-color: var(--core-muted);
+    color: var(--core-muted-foreground);
+}

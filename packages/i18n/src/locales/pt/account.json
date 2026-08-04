@@ -1062,6 +1062,11 @@
             "reviewing": "Em análise",
             "approved": "Aprovada",
             "rejected": "Não avançou"
+        },
+        "claim": {
+            "working": "Confirmando sua candidatura…",
+            "confirmed": "Pronto! Vinculamos a candidatura à sua conta.",
+            "failed": "Não foi possível confirmar essa candidatura. O link pode ter expirado ou já ter sido usado."
         }
     }
 }

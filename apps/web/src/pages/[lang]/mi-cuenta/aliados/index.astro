@@ -14,6 +14,7 @@
 
 import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';
 import AllianceApplicationsSection from '@/components/account/AllianceApplicationsSection.astro';
+import { AllianceClaimBanner } from '@/components/account/AllianceClaimBanner.client';
 import DiscoveryDoorHub from '@/components/account/DiscoveryDoorHub.astro';
 import { allianceLeadsApi } from '@/lib/api/endpoints-protected';
 import AccountLayout from '@/layouts/AccountLayout.astro';
@@ -59,10 +60,20 @@ const myLeadsResult = await allianceLeadsApi.mine({
     cookieHeader: Astro.request.headers.get('cookie') ?? undefined
 });
 const myLeads = myLeadsResult.ok ? myLeadsResult.data.leads : [];
+
+// HOS-278 AC-4 — this is where the claim invitation email lands.
+//
+// Only a boolean crosses into the island. The token stays in the address bar
+// for the island to read and then strip: serializing it as a prop would print
+// a single-use secret into the document, where a screenshot or a copied page
+// source outlives the click it was meant for.
+const hasPendingClaim =
+    Astro.url.searchParams.has('claim') && Astro.url.searchParams.has('lead');
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="aliados">
     <AccountPageHeader title={title} />
+    {hasPendingClaim && <AllianceClaimBanner client:load locale={locale} />}
     <AllianceApplicationsSection locale={locale} leads={myLeads} />
     <DiscoveryDoorHub locale={locale} door={door} roles={user.roles} adminUrl={getAdminUrl()} />
 </AccountLayout>

@@ -1062,6 +1062,11 @@
             "reviewing": "Under review",
             "approved": "Approved",
             "rejected": "Not moving forward"
+        },
+        "claim": {
+            "working": "Confirming your application…",
+            "confirmed": "Done! We linked the application to your account.",
+            "failed": "We couldn't confirm that application. The link may have expired or already been used."
         }
     }
 }

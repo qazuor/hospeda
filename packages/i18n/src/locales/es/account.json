@@ -1062,6 +1062,11 @@
             "reviewing": "En revisión",
             "approved": "Aprobada",
             "rejected": "No avanzó"
+        },
+        "claim": {
+            "working": "Confirmando tu postulación…",
+            "confirmed": "¡Listo! Vinculamos la postulación a tu cuenta.",
+            "failed": "No pudimos confirmar esa postulación. El enlace pudo haber vencido o ya haberse usado."
         }
     }
 }
