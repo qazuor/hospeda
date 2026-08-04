@@ -1195,7 +1195,8 @@ describe('parseSessionUser — /auth/me (HOS-296)', () => {
                     name: 'Multi Hat',
                     email: 'multi@test',
                     image: 'https://img.test/a.png',
-                    roles: ['USER', 'HOST', 'COMMERCE_OWNER']
+                    roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
+                    permissions: ['post.create', 'post.update.own']
                 },
                 isAuthenticated: true
             }
@@ -1206,8 +1207,67 @@ describe('parseSessionUser — /auth/me (HOS-296)', () => {
             name: 'Multi Hat',
             email: 'multi@test',
             roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
+            permissions: ['post.create', 'post.update.own'],
             image: 'https://img.test/a.png',
             mustChangePassword: false
+        });
+    });
+
+    // HOS-374 OQ-1: the "trusted editor" is two per-user grants in
+    // `user_permission` layered on the plain EDITOR role, never a role of its
+    // own — so a role-only session cannot tell the two apart, and every gate
+    // that must (the publish/delete controls in /mi-cuenta, ABSENT rather than
+    // disabled for a plain editor per OQ-3) reads this set instead.
+    it('carries the granular permission set, which roles cannot stand in for', async () => {
+        mockAuthMe({
+            data: {
+                actor: {
+                    id: 'u1',
+                    email: 'trusted@test',
+                    roles: ['EDITOR'],
+                    permissions: ['post.create', 'post.update.own', 'post.publish.own']
+                },
+                isAuthenticated: true
+            }
+        });
+
+        const user = await parseSessionUser({ cookieHeader: COOKIE });
+
+        // Two actors with the IDENTICAL role set differ only here.
+        expect(user?.roles).toEqual(['EDITOR']);
+        expect(user?.permissions).toContain('post.publish.own');
+    });
+
+    it('falls back to an EMPTY permission set when the payload omits it', async () => {
+        // Fail closed: a gate reading this must deny, never grant, on a
+        // malformed payload. Mirrors the same rule for `roles`.
+        mockAuthMe({
+            data: {
+                actor: { id: 'u1', email: 'u@test', roles: ['EDITOR'] },
+                isAuthenticated: true
+            }
+        });
+
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toMatchObject({
+            permissions: []
+        });
+    });
+
+    it('drops non-string entries instead of forwarding a partial set', async () => {
+        mockAuthMe({
+            data: {
+                actor: {
+                    id: 'u1',
+                    email: 'u@test',
+                    roles: ['EDITOR'],
+                    permissions: ['post.create', 42, null, 'post.publish.own']
+                },
+                isAuthenticated: true
+            }
+        });
+
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toMatchObject({
+            permissions: ['post.create', 'post.publish.own']
         });
     });
 
