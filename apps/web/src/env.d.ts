@@ -46,6 +46,20 @@ declare namespace App {
              */
             readonly roles: readonly string[];
             /**
+             * Every granular permission the actor holds, from the same
+             * `/api/v1/public/auth/me` payload as `roles`.
+             *
+             * Roles cannot stand in for this (HOS-374 OQ-1): the "trusted
+             * editor" is two per-user grants in `user_permission`
+             * (`*_PUBLISH_OWN`, `*_DELETE_OWN`) layered on the plain `EDITOR`
+             * role, deliberately not a role of its own. A gate that must tell
+             * a plain editor from a trusted one can only ask this set.
+             *
+             * Empty when the payload was malformed — treat that defensively as
+             * the lowest-privilege case, exactly like `roles`.
+             */
+            readonly permissions: readonly string[];
+            /**
              * Avatar URL from the actor (`users.image`), or null when the user
              * has no avatar. Forwarded by middleware so SSR surfaces (header,
              * account dashboard) can render the avatar instead of falling back
