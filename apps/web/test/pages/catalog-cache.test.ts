@@ -47,10 +47,15 @@ interface CatalogPage {
 const CATALOG_PAGES: readonly CatalogPage[] = [
     // --- destinations ---
     {
+        // Reclassified from `always`: the frontmatter reads `?attractions=` to
+        // seed the badge state, so the SSR HTML is not identical across query
+        // strings. The original classification (and the page comment it agreed
+        // with) were both wrong — see `listing-filter-gate.guard.test.ts`,
+        // which now derives this from the source instead of trusting a table.
         path: 'destinos/index.astro',
         tag: 'CACHE_TAG_COLLECTIONS.destination',
         kind: 'collection',
-        gate: 'always'
+        gate: 'pagination-only'
     },
     {
         path: 'destinos/mapa.astro',
