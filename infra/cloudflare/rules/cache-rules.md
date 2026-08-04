@@ -129,7 +129,7 @@ the response cacheable. Measured on 2026-08-04:
 | `/{lang}/alojamientos/mapa/` | yes |
 | `/{lang}/alojamientos/tipo/<type>/` | yes |
 | `/{lang}/suscriptores/{planes,turistas}/` and `/comparar/` | yes |
-| `/{lang}/alojamientos/<slug>/` (detail) | **no** — origin sends no `Cache-Control` |
+| `/{lang}/alojamientos/<slug>/` (detail) | yes — **since 2026-08-04**, tagged `accom-<slug>` + `accom-<id>` |
 | `/{lang}/alojamientos/<slug>/fotos/` | **no** |
 | `/{lang}/alojamientos/comparar/` | **no** |
 | `/{lang}/alojamientos/comodidades/<slug>/` | **no** |
@@ -182,3 +182,36 @@ Measured 2026-08-04: propagation ≤ ~4 s; purging `preview:list-accom` evicted
 `/es/alojamientos/` and `/es/alojamientos/page/2/` while the `/_astro/*` chunks
 kept climbing their `age` untouched (purge by tag is not affected by custom
 cache keys and does not reach static assets).
+
+Purge scoping was then measured in **both** directions, which is what makes it
+a demonstration rather than a coincidence:
+
+| Purged tag | Detail page (es/en/pt) | Listing |
+|---|---|---|
+| `preview:accom-<slug>` | **MISS ×3** | `HIT` — survived |
+| `preview:list-accom` | `HIT` ×3 — survived | **MISS** |
+
+### Purging from a shell
+
+The probes must run from your own machine (the cache is per-PoP and the VPS
+resolves to a different one), while the purge itself runs on the VPS so the
+secret never leaves it:
+
+```bash
+ssh -p 2222 qazuor@216.238.103.219 'bash -lc "
+CID=\$(docker ps --filter label=coolify.serviceName=hospeda-web-staging --format \"{{.Names}}\" | head -1)
+S=\$(docker exec \$CID printenv HOSPEDA_REVALIDATION_SECRET | tr -d \"\\n\")
+ENC=\$(printf %s \"\$S\" | jq -sRr @uri)
+curl -sS -X POST -H \"Content-Type: application/json\" \
+  -d \"{\\\"tags\\\":[\\\"preview:list-accom\\\"]}\" \
+  \"https://staging.hospeda.com.ar/api/revalidate/?secret=\$ENC\"
+"'
+```
+
+**Resolve the container by label, never by name.** Coolify assigns a new
+container name on every redeploy, so a hardcoded name breaks silently the next
+time the app ships: `docker exec` fails, the secret comes back empty, and the
+purge returns `Unauthorized` — which looks like a credential problem and is not.
+
+The trailing slash on `/api/revalidate/` is mandatory; without it Astro's
+trailing-slash middleware answers 301 and the POST body is lost.

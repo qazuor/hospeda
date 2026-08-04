@@ -3,6 +3,9 @@ import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
 import type {
+    ContentLifecycleStateInput,
+    ContentModerationChangeInput,
+    ContentPublishStateInput,
     GetPostByCategoryInput,
     GetPostByRelatedAccommodationInput,
     GetPostByRelatedDestinationInput,
@@ -65,7 +68,10 @@ import {
     checkCanDeletePost,
     checkCanHardDeletePost,
     checkCanLikePost,
+    checkCanModeratePost,
     checkCanRestorePost,
+    checkCanSetPostLifecycleState,
+    checkCanSetPostPublishState,
     checkCanUpdatePost,
     checkCanViewPost
 } from './post.permissions';
@@ -1359,6 +1365,163 @@ export class PostService extends BaseCrudService<
                 resolvedCtx.hookState.updateId = undefined;
             }
         }
+    }
+
+    /**
+     * Applies a single state transition to one post.
+     *
+     * Shared tail of `moderate` / `setPublishState` / `setLifecycleState`
+     * (HOS-374 §7.6.4): load the post, authorize against the loaded row, write
+     * ONLY the field the caller owns, then revalidate the public page. Each
+     * transition supplies its own `authorize` because the three are gated by
+     * three different permissions, two of which have no author path at all.
+     *
+     * Writing one field per call is the point: it is what makes the permission
+     * on each transition impossible to sidestep by bundling a second state
+     * change into the same payload.
+     *
+     * @param input - actor, post id, the patch to apply, and the authorization check
+     * @param methodName - name reported to the service logger
+     * @param ctx - optional service context for transaction propagation
+     */
+    private async _applyStateChange(
+        input: {
+            readonly actor: Actor;
+            readonly id: string;
+            readonly patch: Partial<Post>;
+            readonly authorize: (actor: Actor, post: Post) => void;
+        },
+        methodName: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Post>> {
+        const { actor, id, patch, authorize } = input;
+        return this.runWithLoggingAndValidation({
+            methodName,
+            input: { actor, id },
+            schema: z.object({ id: z.string().uuid() }),
+            ctx,
+            execute: async (validated, validatedActor, execCtx) => {
+                const existing = await this.model.findById(validated.id, execCtx?.tx);
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Post not found: ${validated.id}`
+                    );
+                }
+
+                authorize(validatedActor, existing as Post);
+
+                const updated = await this.model.update(
+                    { id: validated.id },
+                    patch as Partial<Post>,
+                    execCtx?.tx
+                );
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Post not found after update: ${validated.id}`
+                    );
+                }
+
+                // Every one of these transitions can flip the post in or out of
+                // the public predicate (APPROVED + PUBLIC + ACTIVE), so the
+                // cached page is stale either way. Best-effort: a revalidation
+                // failure must not undo a committed state change.
+                try {
+                    getRevalidationService()?.scheduleRevalidation({
+                        entityType: 'post',
+                        slug: updated.slug
+                    });
+                } catch (error) {
+                    PostService.revalidationLogger.warn(
+                        { error, entityType: 'post' },
+                        'Revalidation scheduling failed (non-blocking)'
+                    );
+                }
+
+                return updated as Post;
+            }
+        });
+    }
+
+    /**
+     * Applies the platform's moderation verdict to a post.
+     *
+     * Gated by `POST_MODERATION_CHANGE`, which finally gates something. Touches
+     * `moderationState` and nothing else — the author's `visibility` switch is
+     * deliberately untouched, so approving does not publish and rejecting does
+     * not unpublish (HOS-374 §7.6.1).
+     *
+     * @param input - actor, post id, and the new moderation state
+     * @param ctx - optional service context for transaction propagation
+     * @returns The updated post or a service error
+     */
+    public async moderate(
+        input: { readonly actor: Actor; readonly id: string } & ContentModerationChangeInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Post>> {
+        return this._applyStateChange(
+            {
+                actor: input.actor,
+                id: input.id,
+                patch: { moderationState: input.moderationState },
+                authorize: (actor) => checkCanModeratePost(actor)
+            },
+            'moderate',
+            ctx
+        );
+    }
+
+    /**
+     * Raises or lowers a post's publication.
+     *
+     * Gated by `POST_PUBLISH_TOGGLE` (any post) or `POST_PUBLISH_OWN` plus
+     * authorship. Touches `visibility` only, so unpublishing keeps the approval
+     * and republishing does not re-enter the review queue (§7.6.1).
+     *
+     * @param input - actor, post id, and the new visibility
+     * @param ctx - optional service context for transaction propagation
+     * @returns The updated post or a service error
+     */
+    public async setPublishState(
+        input: { readonly actor: Actor; readonly id: string } & ContentPublishStateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Post>> {
+        return this._applyStateChange(
+            {
+                actor: input.actor,
+                id: input.id,
+                patch: { visibility: input.visibility },
+                authorize: (actor, post) => checkCanSetPostPublishState(actor, post)
+            },
+            'setPublishState',
+            ctx
+        );
+    }
+
+    /**
+     * Moves a post through its lifecycle (draft / active / archived).
+     *
+     * Gated by `POST_LIFECYCLE_CHANGE`.
+     *
+     * @param input - actor, post id, and the new lifecycle state
+     * @param ctx - optional service context for transaction propagation
+     * @returns The updated post or a service error
+     */
+    public async setLifecycleState(
+        input: { readonly actor: Actor; readonly id: string } & ContentLifecycleStateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Post>> {
+        return this._applyStateChange(
+            {
+                actor: input.actor,
+                id: input.id,
+                patch: { lifecycleState: input.lifecycleState },
+                authorize: (actor) => checkCanSetPostLifecycleState(actor)
+            },
+            'setLifecycleState',
+            ctx
+        );
     }
 
     /**

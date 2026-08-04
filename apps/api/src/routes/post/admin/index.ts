@@ -9,8 +9,11 @@ import { adminDeletePostRoute } from './delete';
 import { adminGetPostByIdRoute } from './getById';
 import { adminGetPostSeoRoute } from './getSeo';
 import { adminHardDeletePostRoute } from './hardDelete';
+import { adminSetPostLifecycleStateRoute } from './lifecycleState';
 import { adminListPostsRoute } from './list';
+import { adminModeratePostRoute } from './moderate';
 import { adminPatchPostRoute } from './patch';
+import { adminSetPostPublishStateRoute } from './publishState';
 import { adminRestorePostRoute } from './restore';
 import { adminPostTrendRoute } from './trend';
 import { adminUpdatePostRoute } from './update';
@@ -46,6 +49,15 @@ app.route('/', adminHardDeletePostRoute);
 
 // POST /:id/restore - Restore post
 app.route('/', adminRestorePostRoute);
+
+// POST /:id/moderate - Apply the moderation verdict (HOS-374)
+app.route('/', adminModeratePostRoute);
+
+// POST /:id/publish-state - Raise or lower publication (HOS-374)
+app.route('/', adminSetPostPublishStateRoute);
+
+// POST /:id/lifecycle-state - Move through the lifecycle (HOS-374)
+app.route('/', adminSetPostLifecycleStateRoute);
 
 // POST /batch - Batch operations
 app.route('/', adminPostBatchRoute);
