@@ -4,9 +4,11 @@
  * as simple number inputs (MVP — no Leaflet map yet).
  */
 
+import { TextField } from '@/components/ui/TextField';
 import type { AccommodationEditData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { ACCOMMODATION_FIELD_PREFIX } from './field-ids';
 import styles from './LocationSection.module.css';
 
 /** Props for LocationSection. */
@@ -36,16 +38,14 @@ export function LocationSection({ locale, data, errors, onFieldChange }: Locatio
 
             <div className={styles.row}>
                 <div className={styles.field}>
-                    <label
-                        htmlFor="acc-latitude"
-                        className={styles.fieldLabel}
-                    >
-                        {t('host.properties.editor.field.latitude', 'Latitud')}
-                    </label>
-                    <input
-                        id="acc-latitude"
-                        type="number"
+                    <TextField
+                        prefix={ACCOMMODATION_FIELD_PREFIX}
+                        name="latitude"
+                        label={t('host.properties.editor.field.latitude', 'Latitud')}
+                        labelClassName={styles.fieldLabel}
                         className={styles.fieldInput}
+                        error={errors.latitude}
+                        type="number"
                         value={data.latitude ?? ''}
                         min={-90}
                         max={90}
@@ -56,31 +56,18 @@ export function LocationSection({ locale, data, errors, onFieldChange }: Locatio
                                 e.target.value === '' ? null : Number(e.target.value)
                             )
                         }
-                        aria-invalid={Boolean(errors.latitude)}
-                        aria-describedby={errors.latitude ? 'acc-latitude-error' : undefined}
                     />
-                    {errors.latitude && (
-                        <span
-                            id="acc-latitude-error"
-                            className={styles.fieldError}
-                            role="alert"
-                        >
-                            {errors.latitude}
-                        </span>
-                    )}
                 </div>
 
                 <div className={styles.field}>
-                    <label
-                        htmlFor="acc-longitude"
-                        className={styles.fieldLabel}
-                    >
-                        {t('host.properties.editor.field.longitude', 'Longitud')}
-                    </label>
-                    <input
-                        id="acc-longitude"
-                        type="number"
+                    <TextField
+                        prefix={ACCOMMODATION_FIELD_PREFIX}
+                        name="longitude"
+                        label={t('host.properties.editor.field.longitude', 'Longitud')}
+                        labelClassName={styles.fieldLabel}
                         className={styles.fieldInput}
+                        error={errors.longitude}
+                        type="number"
                         value={data.longitude ?? ''}
                         min={-180}
                         max={180}
@@ -91,18 +78,7 @@ export function LocationSection({ locale, data, errors, onFieldChange }: Locatio
                                 e.target.value === '' ? null : Number(e.target.value)
                             )
                         }
-                        aria-invalid={Boolean(errors.longitude)}
-                        aria-describedby={errors.longitude ? 'acc-longitude-error' : undefined}
                     />
-                    {errors.longitude && (
-                        <span
-                            id="acc-longitude-error"
-                            className={styles.fieldError}
-                            role="alert"
-                        >
-                            {errors.longitude}
-                        </span>
-                    )}
                 </div>
             </div>
 

@@ -7,10 +7,17 @@
  * no string rule can bridge them — see `fieldInputId` in
  * `@/components/ui/FieldError` for the worked examples.
  *
- * Every entry is verified against the rendered sections by
- * `test/lib/forms/field-input-id-contract.test.ts`. Adding a field here without
- * a matching `id` in the markup fails that guard, which is the whole point: a
- * wrong id makes focus a silent no-op that nobody notices.
+ * ## Transitional as of HOS-385
+ *
+ * The accommodation sections no longer write these ids — they DERIVE them with
+ * `buildFieldId`. This table survives only because `useZodForm` still takes a
+ * `FieldInputIdMap`; PR 4 of HOS-385 switches `focusFirstInvalidField` to the
+ * derivation and deletes this file.
+ *
+ * Until then every row here must equal `buildFieldId({ prefix, name, suffix })`
+ * for its key, and `test/components/host/accommodation-field-ids.test.tsx`
+ * asserts exactly that. The old text-scanning guard cannot: it searches the
+ * sources for an id literal, and there are none left to find.
  */
 
 import type { FieldInputIdMap } from '@/components/ui/FieldError';
@@ -19,7 +26,9 @@ import type { FieldInputIdMap } from '@/components/ui/FieldError';
  * Accommodation editor: Zod field path → input id.
  *
  * Notable rows:
- * - `destinationId` → `acc-destination` (the id slug drops the `Id` suffix).
+ * - `destinationId` → `acc-destinationId`. It was `acc-destination` until
+ *   HOS-385: the slug dropped the `Id` the Zod key carries, and the derivation
+ *   restores it. Ids here are internal, so the rename is safe at runtime.
  * - `facebook`/`instagram`/… → `acc-<network>` while React state calls them
  *   `<network>Url`; `SOCIAL_FIELD_TO_SCHEMA_KEY` in the editor bridges the other
  *   half of that drift.
@@ -36,7 +45,7 @@ export const ACCOMMODATION_FIELD_INPUT_IDS: FieldInputIdMap = {
     summary: 'acc-summary',
     description: 'acc-description',
     type: 'acc-type',
-    destinationId: 'acc-destination',
+    destinationId: 'acc-destinationId',
     maxGuests: 'acc-maxGuests',
     bedrooms: 'acc-bedrooms',
     bathrooms: 'acc-bathrooms',
