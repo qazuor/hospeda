@@ -20,7 +20,11 @@ export {
     resolveCacheTagEnvironment,
     toCacheTagEnvironment
 } from './namespace.js';
-export type { CacheTagEntity, SerializedCacheTags } from './vocabulary.js';
+export type {
+    CacheTagCollectionEntity,
+    CacheTagEntity,
+    SerializedCacheTags
+} from './vocabulary.js';
 export {
     buildEntityCacheTag,
     buildEntityCacheTags,
