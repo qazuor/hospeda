@@ -1326,18 +1326,55 @@ exist (2026-08-04).** All probes from Buenos Aires, PoP `EZE`, pinned via
 `cf-ray`.
 
 - **AC-1 PASSED** — `HIT` on the second request, `age` climbing (3, 6).
-- **AC-2 PARTIAL** — the bypass half passes: both `better-auth.session_token`
-  and `__Secure-better-auth.session_token` return `DYNAMIC`, never `HIT`. The
-  "and its body contains that user's state" half is **not** verified: a
-  synthetic cookie value was used, not a real session. Needs a logged-in run.
+- **AC-2 PASSED with a real session — and the criterion as written is wrong.**
+  Re-run on 2026-08-04 with an actual logged-in visitor, every probe issued from
+  inside the browser (`fetch` with `credentials: 'include'` vs `'omit'`) so the
+  session token was never read or handled.
+
+  *Bypass half:* across `/es/alojamientos/`, `/en/alojamientos/` and
+  `/es/suscriptores/planes/`, **12 authenticated requests returned `DYNAMIC`,
+  never `HIT`**, while the anonymous ones warmed to `HIT` alongside them. No
+  `Set-Cookie` on any anonymous response.
+
+  *Body half:* AC-2 asks that the bypassed response "contains that user's
+  state". **It cannot, and should not — W1-2a is what changed this.** The
+  authenticated response carries `data-user-authenticated="false"` exactly like
+  the anonymous one. What holds instead is the stronger **AC-B0-1**: after
+  normalising only the two Sentry telemetry metas (`sentry-trace`, `baggage` —
+  per-request span ids carrying no visitor state), the two documents are
+  **byte-identical**: 1,378,961 characters, same length, zero differing regions.
+  That identity is precisely what makes the cookie bypass redundant rather than
+  load-bearing. Record AC-2 as passing on this basis; its original wording
+  predates the de-personalization and now describes a failure, not a success.
+
+  Two traps worth keeping. `/api/v1/public/auth/me` does **not** exist on the
+  web origin — it lives on the API host, and fetching it returns the web app's
+  404 *page* with `data-user-authenticated="false"` baked in, which reads
+  exactly like "not logged in". Confirm a session with `fetch('/es/mi-cuenta/')`
+  instead. And `document.cookie` cannot see `better-auth.session_token` because
+  it is HttpOnly, so its absence proves nothing.
 - **AC-3 PASSED** — `?types=HOTEL` → `DYNAMIC`.
-- **AC-6 PASSED for the existing surfaces** — purging `preview:list-accom`
+- **AC-6 PASSED, both directions.** First pass: purging `preview:list-accom`
   evicted `/es/alojamientos/` **and** `/es/alojamientos/page/2/` (the case
   purge-by-URL provably could not reach, §5.11.2), while the `/_astro/*` chunk
   stayed `HIT` with its `age` climbing *through* the purge (4409 → 4542, i.e.
-  +133 s of wall time, not a reset). Tag purge does not touch static assets. The
-  "event detail in three locales" half is not testable yet: `/eventos/` is
-  outside the rule and emits no cache header.
+  +133 s of wall time, not a reset). Tag purge does not touch static assets.
+
+  The remaining half became testable once the accommodation **detail** page
+  opted into the cache (see W1-6 below), and was measured on 2026-08-04 in
+  **both directions**, which is what makes it non-vacuous rather than a lucky
+  single observation:
+
+  | Purged tag | Detail (es/en/pt) | Listing | `/_astro/*` |
+  |---|---|---|---|
+  | `preview:accom-<slug>` | **MISS ×3** | `HIT` (survived) | `HIT`, age climbing |
+  | `preview:list-accom` | `HIT` ×3 (survived, ages 37→69, 45→68, 54→68) | **MISS** | — |
+
+  An entity purge takes the entity's page in every locale and nothing else; a
+  collection purge takes the listing and leaves every detail page standing. The
+  spec's original wording names an *event*, but `/eventos/` is outside the Cache
+  Rule and emits no cache header — accommodations exercise the identical
+  property on a family the rule actually covers.
 - **AC-9 PASSED, with a caveat worth keeping.** TTFB on the cached route is
   **15–18 ms** on a warm connection. A first reading of 246 ms looked like a
   failure until it was decomposed: 213 ms of it was the TCP+TLS handshake and
@@ -1418,6 +1455,34 @@ writing one cache rule. Until then the documents are the source of truth for
 *intent* and the dashboard for *what is live*, and the two are kept in step by
 convention: a rule changed in the dashboard is changed in its document in the
 same PR. Redirect Rules join the same directory when W1-4 lands.
+
+**W1-6 — The accommodation detail page opts into the cache. DONE (2026-08-04,
+PR #2610).** Not in the original plan; added once W1-3 measured **15 ms cached
+vs 689 ms uncached on the same host** and the §6.4 footprint audit showed detail
+pages — the bulk of the indexable surface — were returning `BYPASS` purely
+because the origin never opted in.
+
+No Cloudflare change was needed: the W1-2 rule already matched
+`/{lang}/alojamientos*`, and `bypass_by_default` was doing exactly its job.
+Adding a family is an application change, and this is the proof of it.
+
+The page is the **first caller of `buildEntityCacheTags`** — the helper shipped
+with W1-1 and had no call site until now. It emits `accom-<slug>` **and**
+`accom-<id>`, and deliberately **not** `list-accom`: a detail page is not a
+listing, and tagging it with the collection would make every accommodation write
+evict every other accommodation's page. The trade, stated plainly: content
+pulled in from other entities (similar stays, the owner's other properties,
+related posts and events, reviews, promotions, nearby POIs) is not
+purge-addressable from this page and goes stale for at most the 300 s TTL.
+
+`cacheable` is gated on two fail-closed conditions — an empty query string
+(every `ctx*` on the page comes from a search param and feeds the WhatsApp
+prefill with the visitor's dates and party size, so the ORIGIN must refuse to
+mark such a render shareable regardless of what the edge does) and the existence
+of a usable entity tag. The call sits **after** the 404/410 guards, so an error
+response is never marked `public, s-maxage=300` — pinning a 404 at the edge for
+five minutes. A test asserts that ordering, because the ordering is the whole
+protection.
 
 ### 6.5 Wave C — extend the pattern across the catalog
 
