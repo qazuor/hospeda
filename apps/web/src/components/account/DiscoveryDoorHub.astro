@@ -53,11 +53,17 @@ const visibility = (node: GatedNavNode) => isVisibleByRoles(node, roles);
 const optionRows = door.options.map((option) => {
     const state = resolveDoorOptionState({ option, visibility });
     // Resolve the "Gestionar" target only for acquired options. A
-    // `managesInAdminPanel` option (the editor role — HOS-134) links the
-    // absolute admin URL; when that env var isn't configured, `manageHref`
-    // stays undefined and the button is hidden entirely rather than emitting
-    // a self-referential link back to the current hub page (mirrors the
-    // hide-on-unavailable behavior of `buildAdminPanelItem`).
+    // `managesInAdminPanel` option links the absolute admin URL; when that env
+    // var isn't configured, `manageHref` stays undefined and the button is
+    // hidden entirely rather than emitting a self-referential link back to the
+    // current hub page (mirrors the hide-on-unavailable behavior of
+    // `buildAdminPanelItem`).
+    //
+    // NOTE: no option in `ACCOUNT_DISCOVERY_DOORS` sets that flag today — the
+    // editor role was the only one, and HOS-374 moved it to a `/mi-cuenta`
+    // `manageHref` because Phase 3 closes the admin panel to editors. The
+    // branch is kept (and still covered by this component's tests) for the
+    // next role that is genuinely managed cross-app.
     const manageHref =
         state === 'acquired'
             ? option.managesInAdminPanel

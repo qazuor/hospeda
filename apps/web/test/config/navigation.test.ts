@@ -130,13 +130,15 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
             'sponsor',
             'partner',
             'serviceProvider',
-            'editor'
+            'editorPosts',
+            'editorEvents'
         ]);
     });
 
     it('routes sponsor, partner, and serviceProvider to their alliance-lead landings with no acquiredPermission (HOS-277 NG-1)', () => {
         const partner = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'partner');
-        const leadOptions = partner?.options.filter((option) => option.id !== 'editor') ?? [];
+        const leadOptions =
+            partner?.options.filter((option) => !option.id.startsWith('editor')) ?? [];
         expect(leadOptions).toHaveLength(3);
         for (const option of leadOptions) {
             expect(option.comingSoon).toBeUndefined();
@@ -150,13 +152,36 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         expect(serviceProvider?.href).toBe('sumate/proveedor');
     });
 
-    it('gives the editor option a real acquired signal (POST_CREATE), no comingSoon, and admin-panel management (HOS-134 D-4)', () => {
+    // HOS-374 OQ-5 split the single `editor` option in two, one per content
+    // type, and moved management OFF the admin panel: Phase 3 (§7.6.6) closes
+    // the panel to editors, so a `managesInAdminPanel` "Gestionar" button would
+    // point at a door they can no longer open.
+    it('gives each editor option a real acquired signal, no comingSoon, and /mi-cuenta management (HOS-374 OQ-5)', () => {
         const partner = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'partner');
-        const editor = partner?.options.find((option) => option.id === 'editor');
-        expect(editor?.acquiredPermission).toBe(PermissionEnum.POST_CREATE);
-        expect(editor?.managesInAdminPanel).toBe(true);
-        expect(editor?.comingSoon).toBeUndefined();
-        expect(editor?.href).toBe('colaborar/editores');
+
+        const editorPosts = partner?.options.find((option) => option.id === 'editorPosts');
+        expect(editorPosts?.acquiredPermission).toBe(PermissionEnum.POST_CREATE);
+        expect(editorPosts?.manageHref).toBe('mi-cuenta/publicaciones');
+        expect(editorPosts?.comingSoon).toBeUndefined();
+        expect(editorPosts?.href).toBe('colaborar/editores');
+
+        const editorEvents = partner?.options.find((option) => option.id === 'editorEvents');
+        // EVENT_CREATE, not POST_CREATE: keyed to the capability the option
+        // actually manages, so a future split between the two permissions
+        // cannot show an editor a listing they cannot write to.
+        expect(editorEvents?.acquiredPermission).toBe(PermissionEnum.EVENT_CREATE);
+        expect(editorEvents?.manageHref).toBe('mi-cuenta/eventos');
+        expect(editorEvents?.comingSoon).toBeUndefined();
+        expect(editorEvents?.href).toBe('colaborar/editores');
+    });
+
+    it('never sends an acquired editor to the admin panel (HOS-374 Phase 3 closes it to them)', () => {
+        const partner = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'partner');
+        for (const option of partner?.options ?? []) {
+            if (option.id.startsWith('editor')) {
+                expect(option.managesInAdminPanel).toBeUndefined();
+            }
+        }
     });
 
     it('declares the stateful "Sumá otra alianza" key on the partner door, activated once the editor option is acquired (HOS-134)', () => {

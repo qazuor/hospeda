@@ -127,9 +127,14 @@
                     "title": "Proveedor de servicios",
                     "description": "Sumate al directorio de proveedores locales que los anfitriones recomiendan a sus huéspedes."
                 },
-                "editor": {
-                    "title": "Editor",
-                    "description": "¿Querés escribir notas y cargar eventos en Hospeda? Postulate como editor de contenidos.",
+                "editorPosts": {
+                    "title": "Editor de notas",
+                    "description": "¿Querés escribir notas y artículos en Hospeda? Postulate como editor de contenidos.",
+                    "cta": "Postulate como editor"
+                },
+                "editorEvents": {
+                    "title": "Editor de eventos",
+                    "description": "¿Querés cargar la agenda de eventos de la región? Postulate como editor de contenidos.",
                     "cta": "Postulate como editor"
                 }
             }
@@ -1043,6 +1048,48 @@
             "title": "Sugerencias para vos",
             "message": "Las sugerencias personalizadas están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.",
             "cta": "Ver planes"
+        }
+    },
+    "myContent": {
+        "status": {
+            "moderation": {
+                "label": "Moderación",
+                "PENDING": "Pendiente de revisión",
+                "APPROVED": "Aprobado",
+                "REJECTED": "Rechazado"
+            },
+            "visibility": {
+                "label": "Visibilidad",
+                "PUBLIC": "Pública",
+                "PRIVATE": "Privada",
+                "RESTRICTED": "Restringida"
+            },
+            "lifecycle": {
+                "label": "Estado",
+                "DRAFT": "Borrador",
+                "ACTIVE": "Activo",
+                "ARCHIVED": "Archivado"
+            }
+        },
+        "card": {
+            "editLink": "Editar",
+            "retry": "Reintentar"
+        },
+        "posts": {
+            "list": {
+                "title": "Mis publicaciones",
+                "subtitle": "Revisá el estado de tus artículos",
+                "empty": "Todavía no escribiste ninguna publicación",
+                "fetchError": "No se pudo cargar la lista. Intentá recargar la página."
+            }
+        },
+        "events": {
+            "list": {
+                "title": "Mis eventos",
+                "subtitle": "Revisá el estado de tus eventos",
+                "empty": "Todavía no creaste ningún evento",
+                "fetchError": "No se pudo cargar la lista. Intentá recargar la página."
+            }
         }
     },
     "alliances": {
