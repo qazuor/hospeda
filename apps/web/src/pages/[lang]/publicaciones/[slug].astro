@@ -272,8 +272,27 @@ const articleAuthorName =
 	authorForCard?.displayName ||
 	[authorForCard?.firstName, authorForCard?.lastName].filter(Boolean).join(' ') ||
 	'';
+/**
+ * Absolute URL of the author's page, for the JSON-LD `author.url` (HOS-375
+ * §5.6 / §6.9). It had never been populated, so the Article structured data
+ * named an author it gave search engines no way to identify.
+ *
+ * Only emitted when the post has a REAL author with a slug: the `'Hospeda'`
+ * fallback below is the site itself, not a person, and a slug-less author has
+ * no page. Not gated on the page's indexability (§6.5) — `author.url` is an
+ * entity reference, not a crawl instruction, and the two inputs that gate it
+ * (`isSystemAccount`, plus the avatar) are not both in this payload anyway.
+ */
+const articleAuthorUrl =
+	articleAuthorName && authorForCard?.slug
+		? `${siteBase}${buildUrl({ locale, path: `autores/${authorForCard.slug}` })}`
+		: undefined;
+
 /** Byline for the Article JSON-LD, falling back to the site itself. */
-const articleAuthor = { name: articleAuthorName || 'Hospeda' } as const;
+const articleAuthor = {
+	name: articleAuthorName || 'Hospeda',
+	...(articleAuthorUrl && { url: articleAuthorUrl }),
+} as const;
 
 // Speakable selectors (AEO / voice): the article headline and lead/summary
 // rendered by PostDetailHeader.astro. Class names are the stable BEM-lite
