@@ -26,6 +26,20 @@ vi.mock('../../../src/components/alliance/AllianceLead.module.css', () => ({
     })
 }));
 
+const { mockReadCachedAuthMe, mockFetchAuthMe, mockWriteCachedAuthMe } = vi.hoisted(() => ({
+    mockReadCachedAuthMe: vi.fn(),
+    mockFetchAuthMe: vi.fn(),
+    mockWriteCachedAuthMe: vi.fn()
+}));
+
+// The island resolves the visitor in the browser (HOS-278 AC-1). Mocked at the
+// module boundary so the suite drives auth state without a network.
+vi.mock('@/lib/auth-cache', () => ({
+    readCachedAuthMe: mockReadCachedAuthMe,
+    fetchAuthMe: mockFetchAuthMe,
+    writeCachedAuthMe: mockWriteCachedAuthMe
+}));
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function renderForm(kind: 'partner' | 'sponsor' | 'service_provider' | 'editor' = 'partner') {
@@ -56,6 +70,21 @@ async function fillGenericRequiredFields(
 describe('AllianceLead', () => {
     beforeEach(() => {
         global.fetch = vi.fn();
+        // Reset call history too, not just the return value: several assertions
+        // below check that /auth/me was NOT called, and a stale count from the
+        // previous test would make them pass or fail for the wrong reason.
+        mockReadCachedAuthMe.mockReset();
+        mockFetchAuthMe.mockReset();
+        // Default: anonymous visitor, the primary case for these forms.
+        mockReadCachedAuthMe.mockReturnValue(null);
+        mockFetchAuthMe.mockResolvedValue({
+            isAuthenticated: false,
+            user: null,
+            permissions: [],
+            roles: [],
+            cachedAt: Date.now()
+        });
+        mockWriteCachedAuthMe.mockReset();
     });
 
     // ── Render — generic fields ─────────────────────────────────────────────
@@ -235,35 +264,96 @@ describe('AllianceLead', () => {
     // ── Submission ────────────────────────────────────────────────────────────
 
     // ── Signed-in applicant (HOS-278 AC-1) ──────────────────────────────────
+    //
+    // The visitor is resolved in the BROWSER, after hydration — these pages
+    // must stay session-blind because `colaborar/editores` is edge-cached
+    // (HOS-369 W2-2). So the suite drives `/auth/me`, not a prop.
 
     describe('Signed-in applicant', () => {
         function renderSignedIn(user: { name: string | null; email: string | null }) {
+            mockReadCachedAuthMe.mockReturnValue({
+                isAuthenticated: true,
+                user: { id: 'u1', name: user.name ?? '', email: user.email ?? '' },
+                permissions: [],
+                roles: ['USER'],
+                cachedAt: Date.now()
+            });
             return render(
                 <AllianceLead
                     locale="es"
                     kind="partner"
-                    currentUser={user}
                 />
             );
         }
 
-        it('does NOT ask for the email when the account has one (AC-1)', () => {
+        it('does NOT ask for the email when the account has one (AC-1)', async () => {
             renderSignedIn({ name: 'Juan Pérez', email: 'juan@example.com' });
 
-            expect(screen.queryByLabelText(/correo electrónico/i)).not.toBeInTheDocument();
+            await waitFor(() => {
+                expect(screen.queryByLabelText(/correo electrónico/i)).not.toBeInTheDocument();
+            });
         });
 
-        it('states the address the application will be filed under', () => {
+        it('states the address the application will be filed under', async () => {
             renderSignedIn({ name: 'Juan Pérez', email: 'juan@example.com' });
 
-            expect(screen.getByText('juan@example.com')).toBeInTheDocument();
+            expect(await screen.findByText('juan@example.com')).toBeInTheDocument();
         });
 
-        it('pre-fills the contact name but leaves it editable', () => {
+        it('resolves the visitor without a network call when the shared cache is warm', async () => {
             renderSignedIn({ name: 'Juan Pérez', email: 'juan@example.com' });
 
-            const nameInput = screen.getByLabelText(/tu nombre/i) as HTMLInputElement;
-            expect(nameInput.value).toBe('Juan Pérez');
+            await screen.findByText('juan@example.com');
+            expect(mockFetchAuthMe).not.toHaveBeenCalled();
+        });
+
+        it('falls back to /auth/me when the shared cache is cold', async () => {
+            mockReadCachedAuthMe.mockReturnValue(null);
+            mockFetchAuthMe.mockResolvedValue({
+                isAuthenticated: true,
+                user: { id: 'u1', name: 'Juan Pérez', email: 'juan@example.com' },
+                permissions: [],
+                roles: ['USER'],
+                cachedAt: Date.now()
+            });
+
+            render(
+                <AllianceLead
+                    locale="es"
+                    kind="partner"
+                />
+            );
+
+            expect(await screen.findByText('juan@example.com')).toBeInTheDocument();
+            expect(mockWriteCachedAuthMe).toHaveBeenCalled();
+        });
+
+        it('stays anonymous when /auth/me says guest', async () => {
+            mockReadCachedAuthMe.mockReturnValue(null);
+            mockFetchAuthMe.mockResolvedValue({
+                isAuthenticated: false,
+                user: null,
+                permissions: [],
+                roles: [],
+                cachedAt: Date.now()
+            });
+
+            render(
+                <AllianceLead
+                    locale="es"
+                    kind="partner"
+                />
+            );
+
+            await waitFor(() => expect(mockFetchAuthMe).toHaveBeenCalled());
+            expect(screen.getByLabelText(/correo electrónico/i)).toBeInTheDocument();
+        });
+
+        it('pre-fills the contact name but leaves it editable', async () => {
+            renderSignedIn({ name: 'Juan Pérez', email: 'juan@example.com' });
+
+            const nameInput = (await screen.findByLabelText(/tu nombre/i)) as HTMLInputElement;
+            await waitFor(() => expect(nameInput.value).toBe('Juan Pérez'));
             expect(nameInput).not.toBeDisabled();
         });
 

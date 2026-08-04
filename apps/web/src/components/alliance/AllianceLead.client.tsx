@@ -23,7 +23,13 @@
 import { CheckCircleIcon } from '@repo/icons';
 import type { AllianceLeadCreateInput, AllianceLeadKind } from '@repo/schemas';
 import { AllianceLeadCreateInputSchema } from '@repo/schemas';
-import { type ChangeEvent, type FormEvent, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
+import {
+    type AuthMeSnapshot,
+    fetchAuthMe,
+    readCachedAuthMe,
+    writeCachedAuthMe
+} from '@/lib/auth-cache';
 import {
     ALLIANCE_LEAD_SPECIFIC_FIELDS,
     type AllianceLeadSpecificValues,
@@ -41,7 +47,7 @@ const API_BASE = (import.meta.env.PUBLIC_API_URL ?? '').replace(/\/$/, '');
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-/** The signed-in visitor, as handed down by the page frontmatter. */
+/** The signed-in visitor, once resolved in the browser. */
 export interface AllianceLeadCurrentUser {
     /** Display name, when the account has one. */
     readonly name: string | null;
@@ -56,14 +62,14 @@ export interface AllianceLeadProps {
     /** Which "aliados" program this form submits for. Fixed per landing page. */
     readonly kind: AllianceLeadKind;
     /**
-     * The signed-in visitor, when there is one (HOS-278 AC-1).
+     * TEST-ONLY seam: pre-resolved visitor, bypassing the `/auth/me` lookup.
      *
-     * With an email present the form does NOT ask for one — the account's
-     * address is what the application is filed under, and asking again would
-     * invite a second address that then needs an email round-trip to confirm.
-     * Only ever populated because `sumate`/`colaborar` are listed in
-     * `SESSION_OPTIONAL_SEGMENTS` (see `@/lib/routes`); an island cannot read
-     * `Astro.locals` itself.
+     * Production callers MUST NOT pass this. The visitor is resolved in the
+     * BROWSER (see the mount effect below) precisely so the four landing pages
+     * stay session-blind: `colaborar/editores` is one of the twelve pages
+     * HOS-369 W2-2 made edge-cacheable, and an SSR-personalized prop there
+     * would bake one applicant's email into HTML Cloudflare then serves to
+     * everyone for the whole 300s TTL.
      */
     readonly currentUser?: AllianceLeadCurrentUser | null;
 }
@@ -112,17 +118,70 @@ export function AllianceLead({ locale, kind, currentUser = null }: AllianceLeadP
     const formTitleKey = `alliance-leads.${namespaceKey}.form.heading`;
     const specificFields = ALLIANCE_LEAD_SPECIFIC_FIELDS[kind];
 
+    const [visitor, setVisitor] = useState<AllianceLeadCurrentUser | null>(currentUser);
+
     // A session can carry an empty email, so "signed in" is not the same as
     // "we know where to file this". Only a real address replaces the field —
     // otherwise the applicant would be left with no way to give us one.
-    const accountEmail = currentUser?.email?.trim() ?? '';
+    const accountEmail = visitor?.email?.trim() ?? '';
     const usesAccountEmail = accountEmail.length > 0;
 
-    const [fields, setFields] = useState<GenericFields>(() => ({
-        ...INITIAL_GENERIC_FIELDS,
-        contactName: currentUser?.name?.trim() ?? '',
-        email: accountEmail
-    }));
+    const [fields, setFields] = useState<GenericFields>(INITIAL_GENERIC_FIELDS);
+
+    // Resolve the visitor in the BROWSER, not on the server (HOS-278 AC-1).
+    //
+    // These pages must stay session-blind: `colaborar/editores` is edge-cached
+    // (HOS-369 W2-2), so a personalized SSR response there would be handed to
+    // every subsequent visitor for the whole TTL. Reading `/auth/me` after
+    // hydration is the pattern Wave B0 established for exactly this reason —
+    // `UserMenu` and `NewsletterForm` already do it, and the shared cache means
+    // this usually costs no request at all.
+    //
+    // Consequence, and it is intended: a signed-in applicant sees the email
+    // field for the frame before resolution lands. A cached page cannot know
+    // who you are; anything typed into it in that frame is discarded in favour
+    // of the account address, which is what AC-1 asks for.
+    useEffect(() => {
+        if (currentUser !== null) return;
+
+        let cancelled = false;
+
+        const apply = (snapshot: AuthMeSnapshot): void => {
+            if (cancelled || !snapshot.isAuthenticated || !snapshot.user) return;
+            setVisitor({ name: snapshot.user.name ?? null, email: snapshot.user.email ?? null });
+        };
+
+        const cached = readCachedAuthMe();
+        if (cached) {
+            apply(cached);
+            return;
+        }
+
+        void fetchAuthMe()
+            .then((snapshot) => {
+                if (cancelled) return;
+                writeCachedAuthMe(snapshot);
+                apply(snapshot);
+            })
+            // `fetchAuthMe` resolves a guest snapshot rather than rejecting, so
+            // this only fires on something genuinely unexpected. Staying
+            // anonymous is the safe outcome: the applicant is asked for an
+            // address, exactly as an anonymous visitor would be.
+            .catch(() => undefined);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [currentUser]);
+
+    // Seed the contact name once the visitor resolves, without clobbering
+    // anything already typed — resolution can land after the applicant has
+    // started filling the form.
+    useEffect(() => {
+        const name = visitor?.name?.trim();
+        if (!name) return;
+        setFields((prev) => (prev.contactName === '' ? { ...prev, contactName: name } : prev));
+    }, [visitor]);
     const [specificValues, setSpecificValues] = useState<AllianceLeadSpecificValues>({});
     const [hp, setHp] = useState('');
     const [errors, setErrors] = useState<FieldErrors>({});
