@@ -1,0 +1,146 @@
+---
+/**
+ * @file mi-cuenta/eventos/[id]/editar.astro
+ * @description Editor page for one of the author's own events (HOS-374
+ * Phase 2 2C-3). Twin of `mi-cuenta/publicaciones/[id]/editar.astro` — see that
+ * file for the shared rationale on the three gates and on why capabilities come
+ * from the permission set rather than roles.
+ *
+ * What differs here is the read-only context: `organizer` and `location` are
+ * shown but not editable. Both ARE mapped by the server's update, but there is
+ * no public catalog endpoint to populate a picker (`eventLocationsApi` exposes
+ * only `getBySlug`; organizers expose nothing), so shipping a field that cannot
+ * list its options would be worse than showing the current value.
+ *
+ * @route     /[lang]/mi-cuenta/eventos/[id]/editar/
+ * @rendering SSR (prerender = false — authenticated, author-scoped data)
+ */
+
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import btn from '@/components/account/AccountButton.module.css';
+import { EventEditor } from '@/components/event/editor/EventEditor.client';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { eventEditApi } from '@/lib/api/endpoints-protected';
+import { transformEventEditDetail } from '@/lib/api/transforms';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { webLogger as logger } from '@/lib/logger';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { hasEventsNavAccess } from '@/lib/nav-gating';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const listUrl = buildUrl({ locale, path: 'mi-cuenta/eventos' });
+
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
+}
+
+if (!hasEventsNavAccess({ roles: user.roles })) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+}
+
+const eventId = Astro.params.id;
+if (!eventId) {
+    return Astro.redirect(listUrl);
+}
+
+// ---------------------------------------------------------------------------
+// Server-side fetch: the event itself, author-scoped by the protected route.
+// ---------------------------------------------------------------------------
+
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+
+const result = await eventEditApi.getById({ id: eventId, cookieHeader });
+
+if (!result.ok) {
+    // 403 (not the author) and 404 (no such event) land in the same place on
+    // purpose: telling the two apart would confirm the existence of another
+    // author's event to someone who may not read it.
+    logger.error('[mi-cuenta/eventos/editar] Failed to fetch event', result.error.message);
+    return Astro.redirect(listUrl);
+}
+
+const event = transformEventEditDetail({ item: result.data });
+
+// ---------------------------------------------------------------------------
+// Capabilities — permission set, never roles (HOS-374 OQ-1).
+// ---------------------------------------------------------------------------
+
+const permissions = user.permissions;
+const canUpdateAny = permissions.includes('event.update');
+const canPublish =
+    permissions.includes('event.publish.own') || permissions.includes('event.publish.toggle');
+const canDelete = permissions.includes('event.delete.own') || permissions.includes('event.delete');
+
+/*
+ * The §7.6.3 write-side state lock, mirroring `checkCanUpdateEvent` +
+ * `isAuthorEditLockedByModeration`: an author holding only `event.update.own`
+ * loses edit rights once the platform APPROVES the content. Holding
+ * `event.publish.own` lifts it, and a broad `event.update` holder is authorized
+ * before the predicate is ever consulted.
+ */
+const isEditLocked = event.moderationState === 'APPROVED' && !canPublish && !canUpdateAny;
+
+const title = t('account.myContent.events.editor.pageTitle', 'Editar evento');
+const organizerLabel = t('account.myContent.events.editor.field.organizer', 'Organiza');
+const locationLabel = t('account.myContent.events.editor.field.location', 'Lugar');
+---
+
+<AccountLayout locale={locale} title={`${title}: ${event.name}`} activeSection="eventos">
+    <AccountPageHeader title={title} description={event.name} />
+
+    <p class="event-edit-page__meta">
+        <code>/{event.slug}</code>
+        {event.organizerName && <span>{organizerLabel}: {event.organizerName}</span>}
+        {event.locationName && <span>{locationLabel}: {event.locationName}</span>}
+    </p>
+    <p class="event-edit-page__note">
+        {
+            t(
+                'account.myContent.events.editor.readOnlyNotice',
+                'La URL, el organizador y el lugar se definen al crear el evento y no se editan desde acá.'
+            )
+        }
+    </p>
+
+    <a class:list={['event-edit-page__back', btn.secondary]} href={listUrl}>
+        {t('account.myContent.events.editor.backToList', 'Volver a mis eventos')}
+    </a>
+
+    <EventEditor
+        client:load
+        locale={locale}
+        initialData={event}
+        canPublish={canPublish}
+        canDelete={canDelete}
+        isEditLocked={isEditLocked}
+    />
+</AccountLayout>
+
+<style>
+    .event-edit-page__meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: var(--space-2, 0.5rem) var(--space-4, 1rem);
+        margin: 0 0 var(--space-2, 0.5rem);
+        font-size: var(--text-caption, 0.75rem);
+        color: var(--core-muted-foreground);
+    }
+
+    .event-edit-page__note {
+        margin: 0 0 var(--space-3, 0.75rem);
+        font-size: var(--text-caption, 0.75rem);
+        color: var(--core-muted-foreground);
+    }
+
+    .event-edit-page__back {
+        text-decoration: none;
+    }
+</style>
