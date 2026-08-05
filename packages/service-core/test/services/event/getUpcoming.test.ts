@@ -2,6 +2,7 @@ import { EventModel } from '@repo/db';
 import {
     DestinationTypeEnum,
     EventDatePrecisionEnum,
+    LifecycleStatusEnum,
     PermissionEnum,
     VisibilityEnum
 } from '@repo/schemas';
@@ -27,6 +28,12 @@ const EXPECTED_LIST_RELATIONS = {
     organizer: true,
     location: { destination: true }
 };
+
+/** The scope every caller of this public route must receive, whoever they are. */
+const PUBLISHED_SCOPE = {
+    visibility: VisibilityEnum.PUBLIC,
+    lifecycleState: LifecycleStatusEnum.ACTIVE
+} as const;
 
 /** A valid `destination` relation that satisfies CityDestinationRefSchema. */
 const cityRelation = {
@@ -56,38 +63,24 @@ describe('EventService.getUpcoming', () => {
         service = new EventService({ model: modelMock, logger: loggerMock });
     });
 
-    it('should return public and private events if actor has EVENT_SOFT_DELETE_VIEW', async () => {
-        // Arrange
-        const events = [
-            createMockEvent({
-                date: { start: fromDate, end: toDate, precision: EventDatePrecisionEnum.EXACT },
-                visibility: VisibilityEnum.PUBLIC
-            }),
-            createMockEvent({
-                date: { start: fromDate, end: toDate, precision: EventDatePrecisionEnum.EXACT },
-                visibility: VisibilityEnum.PRIVATE
-            })
-        ];
-        (modelMock.findAllWithRelations as Mock).mockResolvedValue({ items: events, total: 2 });
-        // Act
-        const result = await service.getUpcoming(actorWithPerm, {
-            daysAhead: 7,
+    it('scopes a PRIVILEGED actor to PUBLIC + ACTIVE — the route is actor-blind', async () => {
+        // `GET /api/v1/public/events/upcoming` declares `cacheTTL: 60` under the
+        // `/api/v1/public/events` prefix of PUBLIC_CACHE_ENDPOINTS, and the key
+        // carries no actor. This method also feeds the home page's next-events
+        // section, so a widened result was the most-served cached body on the
+        // site.
+        (modelMock.findAllWithRelations as Mock).mockResolvedValue({ items: [], total: 0 });
 
-            page: 1,
-            pageSize: 10
-        });
-        // Assert
-        expectSuccess(result);
-        const { data } = result;
-        if (!data) throw new Error('Expected data to be defined after expectSuccess');
-        expect(data.items).toHaveLength(2);
+        await service.getUpcoming(actorWithPerm, { daysAhead: 7, page: 1, pageSize: 10 });
+
         expect(modelMock.findAllWithRelations).toHaveBeenCalledWith(
             EXPECTED_LIST_RELATIONS,
             expect.objectContaining({
                 'date.start': expect.objectContaining({
                     $gte: expect.any(Date),
                     $lte: expect.any(Date)
-                })
+                }),
+                ...PUBLISHED_SCOPE
             }),
             { page: 1, pageSize: 10 },
             undefined,
@@ -95,8 +88,8 @@ describe('EventService.getUpcoming', () => {
         );
     });
 
-    it('should return only public events if actor lacks EVENT_SOFT_DELETE_VIEW', async () => {
-        // Arrange
+    it('scopes an unprivileged actor to PUBLIC + ACTIVE', async () => {
+        // `lifecycleState` is the half that was missing for EVERY caller.
         const events = [
             createMockEvent({
                 date: { start: fromDate, end: toDate, precision: EventDatePrecisionEnum.EXACT },
@@ -104,14 +97,13 @@ describe('EventService.getUpcoming', () => {
             })
         ];
         (modelMock.findAllWithRelations as Mock).mockResolvedValue({ items: events, total: 1 });
-        // Act
+
         const result = await service.getUpcoming(actorNoPerm, {
             daysAhead: 7,
-
             page: 1,
             pageSize: 10
         });
-        // Assert
+
         expectSuccess(result);
         const { data } = result;
         if (!data) throw new Error('Expected data to be defined after expectSuccess');
@@ -123,7 +115,7 @@ describe('EventService.getUpcoming', () => {
                     $gte: expect.any(Date),
                     $lte: expect.any(Date)
                 }),
-                visibility: VisibilityEnum.PUBLIC
+                ...PUBLISHED_SCOPE
             }),
             { page: 1, pageSize: 10 },
             undefined,
@@ -131,7 +123,7 @@ describe('EventService.getUpcoming', () => {
         );
     });
 
-    it('should return only public events and filter by fromDate if toDate is not provided', async () => {
+    it('keeps the published scope when only a fromDate bound applies', async () => {
         // Arrange
         const events = [
             createMockEvent({
@@ -158,7 +150,7 @@ describe('EventService.getUpcoming', () => {
                     $gte: expect.any(Date),
                     $lte: expect.any(Date)
                 }),
-                visibility: VisibilityEnum.PUBLIC
+                ...PUBLISHED_SCOPE
             }),
             { page: 1, pageSize: 10 },
             undefined,

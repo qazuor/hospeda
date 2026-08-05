@@ -1,6 +1,6 @@
 import { PostModel } from '@repo/db';
 import type { EventIdType, PostIdType } from '@repo/schemas';
-import { RoleEnum, VisibilityEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
@@ -13,6 +13,12 @@ import {
 } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
+
+/** The scope every caller of this public route must receive, whoever they are. */
+const PUBLISHED_SCOPE = {
+    visibility: VisibilityEnum.PUBLIC,
+    lifecycleState: LifecycleStatusEnum.ACTIVE
+} as const;
 
 describe('PostService.getByRelatedEvent', () => {
     let service: PostService;
@@ -41,10 +47,17 @@ describe('PostService.getByRelatedEvent', () => {
         const result = await service.getByRelatedEvent(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(2);
-        expect(modelMock.findAll).toHaveBeenCalledWith({ relatedEventId: eventId });
+        expect(modelMock.findAll).toHaveBeenCalledWith({
+            relatedEventId: eventId,
+            ...PUBLISHED_SCOPE
+        });
     });
 
-    it('should filter by visibility', async () => {
+    it('honours an explicit visibility filter but still constrains lifecycleState', async () => {
+        // A caller-supplied filter wins over the default — it can only
+        // narrow. `lifecycleState` was never constrained at all, so a
+        // DRAFT row whose visibility defaults to PUBLIC reached every
+        // visitor regardless of what `visibility` said.
         const posts = [
             createMockPost({ relatedEventId: eventId, visibility: VisibilityEnum.PRIVATE })
         ];
@@ -55,7 +68,8 @@ describe('PostService.getByRelatedEvent', () => {
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             relatedEventId: eventId,
-            visibility: VisibilityEnum.PRIVATE
+            visibility: VisibilityEnum.PRIVATE,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
         });
     });
 
@@ -74,7 +88,8 @@ describe('PostService.getByRelatedEvent', () => {
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             relatedEventId: eventId,
-            createdAt: { gte: params.fromDate, lte: params.toDate }
+            createdAt: { gte: params.fromDate, lte: params.toDate },
+            ...PUBLISHED_SCOPE
         });
     });
 

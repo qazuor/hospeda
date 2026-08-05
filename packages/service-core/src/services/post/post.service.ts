@@ -774,16 +774,6 @@ export class PostService extends BaseCrudService<
      * @param actor - The actor performing the search.
      * @returns A paginated list of posts matching the criteria.
      */
-    /**
-     * The public visibility scope for posts (see
-     * {@link applyPublicVisibilityScope}). Declared once so `_executeSearch`
-     * and `_executeCount` cannot drift onto different permissions.
-     */
-    private static readonly PUBLIC_SCOPE_PERMISSIONS = {
-        viewPrivate: PermissionEnum.POST_VIEW_PRIVATE,
-        viewDraft: PermissionEnum.POST_VIEW_DRAFT
-    } as const;
-
     protected async _executeSearch(params: PostListInput, actor: Actor, ctx: ServiceContext) {
         const {
             page: _page,
@@ -842,8 +832,7 @@ export class PostService extends BaseCrudService<
         // so PRIVATE and DRAFT posts were served to anonymous visitors.
         const scopedFilters = applyPublicVisibilityScope({
             filters: filterParams,
-            actor,
-            permissions: PostService.PUBLIC_SCOPE_PERMISSIONS
+            actor
         });
 
         return this.model.findAllWithRelations(
@@ -898,8 +887,7 @@ export class PostService extends BaseCrudService<
         // never shows.
         const scopedFilters = applyPublicVisibilityScope({
             filters: filterParams,
-            actor,
-            permissions: PostService.PUBLIC_SCOPE_PERMISSIONS
+            actor
         });
 
         const count = await this.model.count(mapPostFilterKeysToColumns(scopedFilters), {
@@ -909,11 +897,30 @@ export class PostService extends BaseCrudService<
     }
 
     /**
-     * Gets news posts, optionally filtered by date and visibility.
-     * @param actor - The user or system performing the action.
+     * Gets PUBLISHED news posts, optionally filtered by date.
+     *
+     * Its only caller is `GET /api/v1/public/posts/news` (`cacheTTL: 60`, under
+     * the `/api/v1/public/posts` prefix of `PUBLIC_CACHE_ENDPOINTS`), so it goes
+     * through {@link applyPublicVisibilityScope} and returns `PUBLIC` + `ACTIVE`
+     * rows to everyone, regardless of who is asking.
+     *
+     * It previously carried the same DEAD `!actor.id` guard {@link getByCategory}
+     * documents in full: `createGuestActor` (`apps/api/src/utils/actor.ts`) gives
+     * every anonymous public request a real UUID and
+     * `runWithLoggingAndValidation` rejects an id-less actor, so the branch never
+     * fired for any caller. `visibility` was therefore effectively unfiltered and
+     * `lifecycleState` never constrained at all — a `PRIVATE` news post, or a
+     * `DRAFT`/`ARCHIVED` one whose `visibility` is `PUBLIC` (the column default),
+     * reached every visitor and sat in the shared 60s cache entry.
+     *
+     * An explicit `params.visibility` is still honoured and can only narrow
+     * further; the route does not forward one.
+     *
+     * @param actor - The user or system performing the action. Recorded for
+     *   logging and permission checks; it does not change which rows come back.
      * @param params - Optional filters for news posts.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns List of news posts
+     * @returns List of published news posts
      */
     public async getNews(
         actor: Actor,
@@ -929,11 +936,10 @@ export class PostService extends BaseCrudService<
                 await this._canList(actor);
                 const where: Record<string, unknown> = { isNews: true };
 
-                // If no visibility is specified, default to PUBLIC for guest users
+                // An explicit filter is honoured; `applyPublicVisibilityScope`
+                // fills the gap when there is none, for EVERY caller.
                 if (validated.visibility) {
                     where.visibility = validated.visibility;
-                } else if (!actor.id) {
-                    where.visibility = 'PUBLIC';
                 }
                 if (validated.fromDate || validated.toDate) {
                     const expiresAtFilter: Record<string, unknown> = {};
@@ -941,18 +947,32 @@ export class PostService extends BaseCrudService<
                     if (validated.toDate) expiresAtFilter.lte = validated.toDate;
                     where.expiresAt = expiresAtFilter;
                 }
-                const { items } = await this.model.findAll(where);
+                const scopedWhere = applyPublicVisibilityScope({ filters: where, actor });
+                const { items } = await this.model.findAll(scopedWhere);
                 return items;
             }
         });
     }
 
     /**
-     * Gets featured posts.
-     * @param actor - The user or system performing the action.
+     * Gets PUBLISHED featured posts.
+     *
+     * Its only caller is `GET /api/v1/public/posts/featured` (`cacheTTL: 60`,
+     * under the `/api/v1/public/posts` prefix of `PUBLIC_CACHE_ENDPOINTS`), so it
+     * goes through {@link applyPublicVisibilityScope} and returns `PUBLIC` +
+     * `ACTIVE` rows to everyone, regardless of who is asking. It previously
+     * carried the same DEAD `!actor.id` guard {@link getByCategory} documents in
+     * full, so `PRIVATE`/`DRAFT`/`ARCHIVED` posts reached every visitor and sat
+     * in the shared 60s cache entry.
+     *
+     * An explicit `params.visibility` is still honoured and can only narrow
+     * further; the route does not forward one.
+     *
+     * @param actor - The user or system performing the action. Recorded for
+     *   logging and permission checks; it does not change which rows come back.
      * @param params - Optional filters for featured posts.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns List of featured posts
+     * @returns List of published featured posts
      */
     public async getFeatured(
         actor: Actor,
@@ -968,11 +988,10 @@ export class PostService extends BaseCrudService<
                 await this._canList(actor);
                 const where: Record<string, unknown> = { isFeatured: true };
 
-                // If no visibility is specified, default to PUBLIC for guest users
+                // An explicit filter is honoured; `applyPublicVisibilityScope`
+                // fills the gap when there is none, for EVERY caller.
                 if (validated.visibility) {
                     where.visibility = validated.visibility;
-                } else if (!actor.id) {
-                    where.visibility = 'PUBLIC';
                 }
                 if (validated.fromDate || validated.toDate) {
                     const createdAtFilter: Record<string, unknown> = {};
@@ -980,18 +999,52 @@ export class PostService extends BaseCrudService<
                     if (validated.toDate) createdAtFilter.lte = validated.toDate;
                     where.createdAt = createdAtFilter;
                 }
-                const { items } = await this.model.findAll(where);
+                const scopedWhere = applyPublicVisibilityScope({ filters: where, actor });
+                const { items } = await this.model.findAll(scopedWhere);
                 return items;
             }
         });
     }
 
     /**
-     * Gets posts by category.
-     * @param actor - The user or system performing the action.
+     * Gets PUBLISHED posts by category.
+     *
+     * Its only caller is `GET /api/v1/public/posts/category/{category}`
+     * (`cacheTTL: 300`, under the `/api/v1/public/posts` prefix of
+     * `PUBLIC_CACHE_ENDPOINTS`), so it goes through
+     * {@link applyPublicVisibilityScope} and returns `PUBLIC` + `ACTIVE` rows to
+     * everyone, regardless of who is asking — see that helper's docstring for
+     * why a public read cannot branch on the actor.
+     *
+     * It previously defaulted `visibility` to `PUBLIC` only when `!actor.id`,
+     * and never constrained `lifecycleState` at all. **That guard was dead
+     * code**: `createGuestActor` (`apps/api/src/utils/actor.ts`) hands every
+     * unauthenticated public request a real UUID
+     * (`00000000-0000-4000-8000-000000000000`), and `runWithLoggingAndValidation`
+     * rejects an actor without an id outright — so `!actor.id` was never true
+     * for any caller that reached this method. The route therefore served
+     * `PRIVATE` and `DRAFT` posts to every visitor unconditionally, with the
+     * shared 300s cache entry merely widening the blast radius rather than
+     * causing it. The two failure modes it is worth keeping straight:
+     *
+     * - **Unconditional leak.** `visibility` was effectively unfiltered, and
+     *   `lifecycleState` genuinely unfiltered, so a `PRIVATE` post, or a
+     *   `DRAFT`/`ARCHIVED` one whose `visibility` is `PUBLIC` (the column
+     *   default), reached anonymous callers directly.
+     * - **Cache poisoning.** Even had the `!actor.id` branch worked, the cached
+     *   body carries no actor component and `cacheMiddleware` runs before
+     *   `authMiddleware`, so one signed-in request would have stored the
+     *   widened result under the shared anonymous entry for the whole TTL.
+     *
+     * An explicit `params.visibility` is still honoured and can only narrow
+     * further: the public HTTP schema (`PostsByCategoryHttpSchema`) cannot
+     * express it and the route forwards only `category`.
+     *
+     * @param actor - The user or system performing the action. Recorded for
+     *   logging and permission checks; it does not change which rows come back.
      * @param params - The category and optional filters.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns List of posts in the given category
+     * @returns List of published posts in the given category
      */
     public async getByCategory(
         actor: Actor,
@@ -1007,11 +1060,10 @@ export class PostService extends BaseCrudService<
                 await this._canList(actor);
                 const where: Record<string, unknown> = { category: validated.category };
 
-                // If no visibility is specified, default to PUBLIC for guest users
+                // An explicit filter is honoured; `applyPublicVisibilityScope`
+                // fills the gap when there is none, for EVERY caller.
                 if ('visibility' in validated && validated.visibility) {
                     where.visibility = validated.visibility;
-                } else if (!actor.id) {
-                    where.visibility = 'PUBLIC';
                 }
                 if (
                     ('fromDate' in validated && validated.fromDate) ||
@@ -1024,18 +1076,34 @@ export class PostService extends BaseCrudService<
                         createdAtFilter.lte = validated.toDate;
                     where.createdAt = createdAtFilter;
                 }
-                const { items } = await this.model.findAll(where);
+                const scopedWhere = applyPublicVisibilityScope({ filters: where, actor });
+                const { items } = await this.model.findAll(scopedWhere);
                 return items;
             }
         });
     }
 
     /**
-     * Gets posts related to an accommodation.
-     * @param actor - The user or system performing the action.
+     * Gets PUBLISHED posts related to an accommodation.
+     *
+     * Its only caller is
+     * `GET /api/v1/public/posts/related/accommodation/{accommodationId}`
+     * (`cacheTTL: 300`, under the `/api/v1/public/posts` prefix of
+     * `PUBLIC_CACHE_ENDPOINTS`), so it goes through
+     * {@link applyPublicVisibilityScope} and returns `PUBLIC` + `ACTIVE` rows to
+     * everyone, regardless of who is asking. It previously carried the same DEAD
+     * `!actor.id` guard {@link getByCategory} documents in full, so
+     * `PRIVATE`/`DRAFT`/`ARCHIVED` posts reached every visitor and sat in the
+     * shared 300s cache entry.
+     *
+     * An explicit `params.visibility` is still honoured and can only narrow
+     * further; the route forwards only `accommodationId`.
+     *
+     * @param actor - The user or system performing the action. Recorded for
+     *   logging and permission checks; it does not change which rows come back.
      * @param params - The accommodationId and optional filters.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns List of posts related to the accommodation
+     * @returns List of published posts related to the accommodation
      */
     public async getByRelatedAccommodation(
         actor: Actor,
@@ -1053,11 +1121,10 @@ export class PostService extends BaseCrudService<
                     relatedAccommodationId: validated.accommodationId
                 };
 
-                // If no visibility is specified, default to PUBLIC for guest users
+                // An explicit filter is honoured; `applyPublicVisibilityScope`
+                // fills the gap when there is none, for EVERY caller.
                 if (validated.visibility) {
                     where.visibility = validated.visibility;
-                } else if (!actor.id) {
-                    where.visibility = 'PUBLIC';
                 }
                 if (validated.fromDate || validated.toDate) {
                     const createdAtFilter: Record<string, unknown> = {};
@@ -1065,18 +1132,34 @@ export class PostService extends BaseCrudService<
                     if (validated.toDate) createdAtFilter.lte = validated.toDate;
                     where.createdAt = createdAtFilter;
                 }
-                const { items } = await this.model.findAll(where);
+                const scopedWhere = applyPublicVisibilityScope({ filters: where, actor });
+                const { items } = await this.model.findAll(scopedWhere);
                 return items;
             }
         });
     }
 
     /**
-     * Gets posts related to a destination.
-     * @param actor - The user or system performing the action.
+     * Gets PUBLISHED posts related to a destination.
+     *
+     * Its only caller is
+     * `GET /api/v1/public/posts/related/destination/{destinationId}`
+     * (`cacheTTL: 300`, under the `/api/v1/public/posts` prefix of
+     * `PUBLIC_CACHE_ENDPOINTS`), so it goes through
+     * {@link applyPublicVisibilityScope} and returns `PUBLIC` + `ACTIVE` rows to
+     * everyone, regardless of who is asking. It previously carried the same DEAD
+     * `!actor.id` guard {@link getByCategory} documents in full, so
+     * `PRIVATE`/`DRAFT`/`ARCHIVED` posts reached every visitor and sat in the
+     * shared 300s cache entry.
+     *
+     * An explicit `params.visibility` is still honoured and can only narrow
+     * further; the route forwards only `destinationId`.
+     *
+     * @param actor - The user or system performing the action. Recorded for
+     *   logging and permission checks; it does not change which rows come back.
      * @param params - The destinationId and optional filters.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns List of posts related to the destination
+     * @returns List of published posts related to the destination
      */
     public async getByRelatedDestination(
         actor: Actor,
@@ -1094,11 +1177,10 @@ export class PostService extends BaseCrudService<
                     relatedDestinationId: validated.destinationId
                 };
 
-                // If no visibility is specified, default to PUBLIC for guest users
+                // An explicit filter is honoured; `applyPublicVisibilityScope`
+                // fills the gap when there is none, for EVERY caller.
                 if (validated.visibility) {
                     where.visibility = validated.visibility;
-                } else if (!actor.id) {
-                    where.visibility = 'PUBLIC';
                 }
                 if (validated.fromDate || validated.toDate) {
                     const createdAtFilter: Record<string, unknown> = {};
@@ -1106,18 +1188,33 @@ export class PostService extends BaseCrudService<
                     if (validated.toDate) createdAtFilter.lte = validated.toDate;
                     where.createdAt = createdAtFilter;
                 }
-                const { items } = await this.model.findAll(where);
+                const scopedWhere = applyPublicVisibilityScope({ filters: where, actor });
+                const { items } = await this.model.findAll(scopedWhere);
                 return items;
             }
         });
     }
 
     /**
-     * Gets posts related to an event.
-     * @param actor - The user or system performing the action.
+     * Gets PUBLISHED posts related to an event.
+     *
+     * Its only caller is `GET /api/v1/public/posts/related/event/{eventId}`
+     * (`cacheTTL: 300`, under the `/api/v1/public/posts` prefix of
+     * `PUBLIC_CACHE_ENDPOINTS`), so it goes through
+     * {@link applyPublicVisibilityScope} and returns `PUBLIC` + `ACTIVE` rows to
+     * everyone, regardless of who is asking. It previously carried the same DEAD
+     * `!actor.id` guard {@link getByCategory} documents in full, so
+     * `PRIVATE`/`DRAFT`/`ARCHIVED` posts reached every visitor and sat in the
+     * shared 300s cache entry.
+     *
+     * An explicit `params.visibility` is still honoured and can only narrow
+     * further; the route forwards only `eventId`.
+     *
+     * @param actor - The user or system performing the action. Recorded for
+     *   logging and permission checks; it does not change which rows come back.
      * @param params - The eventId and optional filters.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns List of posts related to the event
+     * @returns List of published posts related to the event
      */
     public async getByRelatedEvent(
         actor: Actor,
@@ -1133,11 +1230,10 @@ export class PostService extends BaseCrudService<
                 await this._canList(actor);
                 const where: Record<string, unknown> = { relatedEventId: validated.eventId };
 
-                // If no visibility is specified, default to PUBLIC for guest users
+                // An explicit filter is honoured; `applyPublicVisibilityScope`
+                // fills the gap when there is none, for EVERY caller.
                 if (validated.visibility) {
                     where.visibility = validated.visibility;
-                } else if (!actor.id) {
-                    where.visibility = 'PUBLIC';
                 }
                 if (validated.fromDate || validated.toDate) {
                     const createdAtFilter: Record<string, unknown> = {};
@@ -1145,7 +1241,8 @@ export class PostService extends BaseCrudService<
                     if (validated.toDate) createdAtFilter.lte = validated.toDate;
                     where.createdAt = createdAtFilter;
                 }
-                const { items } = await this.model.findAll(where);
+                const scopedWhere = applyPublicVisibilityScope({ filters: where, actor });
+                const { items } = await this.model.findAll(scopedWhere);
                 return items;
             }
         });

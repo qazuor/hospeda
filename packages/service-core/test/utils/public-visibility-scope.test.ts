@@ -7,17 +7,20 @@
  * anonymous visitors, because neither the routes nor the services ever
  * constrained those two columns. Reproduced against a real database — one
  * `PRIVATE` and one `DRAFT` post moved the public list's `total` from 40 to 42.
+ *
+ * The second half of this file is the one that matters most. The helper's first
+ * version skipped the filter for actors holding `*_VIEW_PRIVATE`/`*_VIEW_DRAFT`,
+ * which is cache poisoning rather than a preview feature: the public cache key
+ * (`public:${path}${suffix}`) has no actor component and `cacheMiddleware` runs
+ * BEFORE `authMiddleware`, so one privileged request stores unpublished rows
+ * under the anonymous entry for the whole TTL. Every assertion below pins the
+ * scope as actor-blind.
  */
 
 import { LifecycleStatusEnum, PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import type { Actor } from '../../src/types';
 import { applyPublicVisibilityScope } from '../../src/utils/public-visibility-scope';
-
-const POST_PERMISSIONS = {
-    viewPrivate: PermissionEnum.POST_VIEW_PRIVATE,
-    viewDraft: PermissionEnum.POST_VIEW_DRAFT
-} as const;
 
 /** An actor holding exactly the permissions given. */
 const actorWith = (permissions: PermissionEnum[]): Actor =>
@@ -29,33 +32,31 @@ const actorWith = (permissions: PermissionEnum[]): Actor =>
 
 const guest = actorWith([]);
 
-const scope = (filters: Record<string, unknown>, actor: Actor | undefined) =>
-    applyPublicVisibilityScope({ filters, actor, permissions: POST_PERMISSIONS });
+const PUBLISHED = {
+    visibility: VisibilityEnum.PUBLIC,
+    lifecycleState: LifecycleStatusEnum.ACTIVE
+} as const;
 
-describe('applyPublicVisibilityScope — the unprivileged default', () => {
+const scope = (filters: Record<string, unknown>, actor: Actor | undefined) =>
+    applyPublicVisibilityScope({ filters, actor });
+
+describe('applyPublicVisibilityScope — the published scope', () => {
     it('constrains an unfiltered request to published content', () => {
         // The exact call the public list route makes.
-        expect(scope({}, guest)).toEqual({
-            visibility: VisibilityEnum.PUBLIC,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
-        });
+        expect(scope({}, guest)).toEqual(PUBLISHED);
     });
 
     it('constrains a request with unrelated filters too', () => {
         // Non-vacuity guard: the scope is added, not substituted.
         expect(scope({ category: 'CULTURE' }, guest)).toEqual({
             category: 'CULTURE',
-            visibility: VisibilityEnum.PUBLIC,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            ...PUBLISHED
         });
     });
 
     it('constrains an ABSENT actor, not just a guest one', () => {
         // A missing actor must not read as "no restrictions".
-        expect(scope({}, undefined)).toEqual({
-            visibility: VisibilityEnum.PUBLIC,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
-        });
+        expect(scope({}, undefined)).toEqual(PUBLISHED);
     });
 
     it('does not mutate the caller-supplied filters', () => {
@@ -65,63 +66,55 @@ describe('applyPublicVisibilityScope — the unprivileged default', () => {
     });
 });
 
-describe('applyPublicVisibilityScope — privileged actors', () => {
-    it('leaves visibility open for an actor who may see private rows', () => {
-        const result = scope({}, actorWith([PermissionEnum.POST_VIEW_PRIVATE]));
+describe('applyPublicVisibilityScope — actor-blindness (the cache-poisoning guard)', () => {
+    /**
+     * Every permission that could plausibly be read as "may see unpublished
+     * content", for both entities the helper serves. None of them may change
+     * the result.
+     */
+    const PRIVILEGED = [
+        PermissionEnum.POST_VIEW_PRIVATE,
+        PermissionEnum.POST_VIEW_DRAFT,
+        PermissionEnum.EVENT_VIEW_PRIVATE,
+        PermissionEnum.EVENT_VIEW_DRAFT,
+        PermissionEnum.EVENT_SOFT_DELETE_VIEW,
+        PermissionEnum.POST_SOFT_DELETE_VIEW
+    ] as const;
 
-        expect(result.visibility).toBeUndefined();
-        // Still drafts-restricted: the two permissions are independent.
-        expect(result.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+    it.each(PRIVILEGED)('gives an actor holding %s the anonymous scope', (permission) => {
+        expect(scope({}, actorWith([permission]))).toEqual(scope({}, guest));
     });
 
-    it('leaves lifecycleState open for an actor who may see drafts', () => {
-        const result = scope({}, actorWith([PermissionEnum.POST_VIEW_DRAFT]));
-
-        expect(result.lifecycleState).toBeUndefined();
-        expect(result.visibility).toBe(VisibilityEnum.PUBLIC);
+    it('gives an actor holding ALL of them the anonymous scope', () => {
+        // The strongest form: not even the full set unlocks anything, because
+        // the response is stored under a key that does not know who asked.
+        expect(scope({}, actorWith([...PRIVILEGED]))).toEqual(PUBLISHED);
     });
 
-    it('adds nothing for an actor holding both', () => {
-        const result = scope(
-            {},
-            actorWith([PermissionEnum.POST_VIEW_PRIVATE, PermissionEnum.POST_VIEW_DRAFT])
-        );
+    it('still scopes an actor holding every permission the enum defines', () => {
+        // A super-admin-shaped actor. If a future edit reintroduces a
+        // permission branch under a different key, this catches it without the
+        // test having to name that key.
+        const everything = Object.values(PermissionEnum) as PermissionEnum[];
 
-        expect(result).toEqual({});
-    });
-
-    it('does not honour the EVENT permissions for a POST scope', () => {
-        // The permissions are passed in per entity precisely so an event
-        // permission cannot unlock post content.
-        const result = scope(
-            {},
-            actorWith([PermissionEnum.EVENT_VIEW_PRIVATE, PermissionEnum.EVENT_VIEW_DRAFT])
-        );
-
-        expect(result).toEqual({
-            visibility: VisibilityEnum.PUBLIC,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
-        });
+        expect(scope({}, actorWith(everything))).toEqual(PUBLISHED);
     });
 });
 
 describe('applyPublicVisibilityScope — an explicit filter wins', () => {
     it('keeps a caller-supplied visibility', () => {
-        const result = scope(
-            { visibility: VisibilityEnum.PRIVATE },
-            actorWith([PermissionEnum.POST_VIEW_PRIVATE])
-        );
+        // Only reachable from a caller that is not the public HTTP schema (the
+        // public query schemas cannot express PRIVATE). The helper fills gaps;
+        // it does not overwrite.
+        const result = scope({ visibility: VisibilityEnum.PRIVATE }, guest);
 
         expect(result.visibility).toBe(VisibilityEnum.PRIVATE);
     });
 
     it('keeps a caller-supplied lifecycleState', () => {
-        const result = scope(
-            { lifecycleState: LifecycleStatusEnum.DRAFT },
-            actorWith([PermissionEnum.POST_VIEW_DRAFT])
-        );
+        const result = scope({ lifecycleState: LifecycleStatusEnum.ARCHIVED }, guest);
 
-        expect(result.lifecycleState).toBe(LifecycleStatusEnum.DRAFT);
+        expect(result.lifecycleState).toBe(LifecycleStatusEnum.ARCHIVED);
     });
 
     it('still fills the OTHER field when only one was supplied', () => {

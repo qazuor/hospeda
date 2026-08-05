@@ -1,6 +1,6 @@
 import { PostModel } from '@repo/db';
 import type { PostIdType } from '@repo/schemas';
-import { RoleEnum, VisibilityEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
@@ -12,6 +12,12 @@ import {
     expectValidationError
 } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+
+/** The scope every caller of this public route must receive, whoever they are. */
+const PUBLISHED_SCOPE = {
+    visibility: VisibilityEnum.PUBLIC,
+    lifecycleState: LifecycleStatusEnum.ACTIVE
+} as const;
 
 describe('PostService.getFeatured', () => {
     let service: PostService;
@@ -39,10 +45,14 @@ describe('PostService.getFeatured', () => {
         const result = await service.getFeatured(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(2);
-        expect(modelMock.findAll).toHaveBeenCalledWith({ isFeatured: true });
+        expect(modelMock.findAll).toHaveBeenCalledWith({ isFeatured: true, ...PUBLISHED_SCOPE });
     });
 
-    it('should filter by visibility', async () => {
+    it('honours an explicit visibility filter but still constrains lifecycleState', async () => {
+        // A caller-supplied filter wins over the default — it can only
+        // narrow. `lifecycleState` was never constrained at all, so a
+        // DRAFT row whose visibility defaults to PUBLIC reached every
+        // visitor regardless of what `visibility` said.
         const posts = [createMockPost({ isFeatured: true, visibility: VisibilityEnum.PRIVATE })];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 1 });
         const params = { visibility: VisibilityEnum.PRIVATE };
@@ -51,7 +61,8 @@ describe('PostService.getFeatured', () => {
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             isFeatured: true,
-            visibility: VisibilityEnum.PRIVATE
+            visibility: VisibilityEnum.PRIVATE,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
         });
     });
 
@@ -64,7 +75,8 @@ describe('PostService.getFeatured', () => {
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             isFeatured: true,
-            createdAt: { gte: params.fromDate, lte: params.toDate }
+            createdAt: { gte: params.fromDate, lte: params.toDate },
+            ...PUBLISHED_SCOPE
         });
     });
 

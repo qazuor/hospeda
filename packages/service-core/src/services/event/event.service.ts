@@ -702,16 +702,6 @@ export class EventService extends BaseCrudService<
      * @param _actor - The actor performing the search
      * @returns Paginated list of events matching the criteria
      */
-    /**
-     * The public visibility scope for events (see
-     * {@link applyPublicVisibilityScope}). Declared once so `_executeSearch`
-     * and `_executeCount` cannot drift onto different permissions.
-     */
-    private static readonly PUBLIC_SCOPE_PERMISSIONS = {
-        viewPrivate: PermissionEnum.EVENT_VIEW_PRIVATE,
-        viewDraft: PermissionEnum.EVENT_VIEW_DRAFT
-    } as const;
-
     protected async _executeSearch(params: EventSearchInput, actor: Actor, ctx: ServiceContext) {
         const {
             page: _page,
@@ -805,8 +795,7 @@ export class EventService extends BaseCrudService<
         // so PRIVATE and DRAFT events were served to anonymous visitors.
         const scopedFilters = applyPublicVisibilityScope({
             filters: filterParams,
-            actor,
-            permissions: EventService.PUBLIC_SCOPE_PERMISSIONS
+            actor
         });
 
         const searchResult = await this.model.findAllWithRelations(
@@ -910,8 +899,7 @@ export class EventService extends BaseCrudService<
         // never shows.
         const scopedFilters = applyPublicVisibilityScope({
             filters: filterParams,
-            actor,
-            permissions: EventService.PUBLIC_SCOPE_PERMISSIONS
+            actor
         });
 
         const count = await this.model.count(
@@ -922,14 +910,30 @@ export class EventService extends BaseCrudService<
     }
 
     /**
-     * Returns a paginated list of events authored by a specific user.
-     * - Any authenticated actor can see public events.
-     * - Only actors with EVENT_SOFT_DELETE_VIEW can see private/draft events.
-     * - Uses homogeneous validation and pagination logic.
-     * @param actor - Authenticated actor
+     * Returns a paginated list of PUBLISHED events authored by a specific user.
+     *
+     * Its only caller is `GET /api/v1/public/events/author/{authorId}`, which
+     * backs the public author page (HOS-375). It therefore goes through
+     * {@link applyPublicVisibilityScope} and returns `PUBLIC` + `ACTIVE` rows to
+     * everyone, regardless of the actor's permissions.
+     *
+     * It previously constrained `visibility` alone, and only for actors lacking
+     * `EVENT_SOFT_DELETE_VIEW`. Both halves were wrong:
+     *
+     * - **`lifecycleState` was never filtered**, so a `DRAFT` or `ARCHIVED`
+     *   event was published on the author page AND counted toward the page's
+     *   indexability gate (§6.5), which decides whether Google is told the URL
+     *   exists.
+     * - **The permission branch poisoned the shared cache.** This route sits
+     *   under a public cache key that carries no actor (see the
+     *   `applyPublicVisibilityScope` docstring), so one privileged request would
+     *   store unpublished events for every subsequent anonymous visitor.
+     *
+     * @param actor - Authenticated actor. Recorded for logging; it does not
+     *   change which rows come back.
      * @param input - Search parameters (authorId, page, pageSize)
      * @param ctx - Optional service context (transaction, hook state)
-     * @returns Paginated list of events
+     * @returns Paginated list of published events
      * @throws ServiceError (FORBIDDEN) if actor is undefined
      */
     public async getByAuthor(
@@ -946,10 +950,10 @@ export class EventService extends BaseCrudService<
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
                 }
-                const filters: Record<string, unknown> = { authorId: validatedInput.authorId };
-                if (!validatedActor.permissions?.includes(PermissionEnum.EVENT_SOFT_DELETE_VIEW)) {
-                    filters.visibility = VisibilityEnum.PUBLIC;
-                }
+                const filters = applyPublicVisibilityScope({
+                    filters: { authorId: validatedInput.authorId },
+                    actor: validatedActor
+                });
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
@@ -967,14 +971,27 @@ export class EventService extends BaseCrudService<
     }
 
     /**
-     * Returns a paginated list of events at a specific location.
-     * - Any authenticated actor can see public events.
-     * - Only actors with EVENT_SOFT_DELETE_VIEW can see private/draft events.
-     * - Uses homogeneous validation and pagination logic.
-     * @param actor - Authenticated actor
+     * Returns a paginated list of PUBLISHED events at a specific location.
+     *
+     * Its only caller is `GET /api/v1/public/events/location/{locationId}`
+     * (`cacheTTL: 60`, under the `/api/v1/public/events` prefix of
+     * `PUBLIC_CACHE_ENDPOINTS`), so it goes through
+     * {@link applyPublicVisibilityScope} and returns `PUBLIC` + `ACTIVE` rows to
+     * everyone, regardless of the actor's permissions — see that helper's
+     * docstring for why a public read cannot branch on the actor.
+     *
+     * It previously constrained `visibility` alone, and only for actors lacking
+     * `EVENT_SOFT_DELETE_VIEW`. Both halves were wrong, exactly as in
+     * {@link getByAuthor}: `lifecycleState` was never filtered (so a `DRAFT`
+     * event whose `visibility` defaulted to `PUBLIC` was served to anonymous
+     * callers unconditionally), and the permission branch let one privileged
+     * request store unpublished events under the shared actorless cache entry.
+     *
+     * @param actor - Authenticated actor. Recorded for logging; it does not
+     *   change which rows come back.
      * @param input - Search parameters (locationId, page, pageSize)
      * @param ctx - Optional service context (transaction, hook state)
-     * @returns Paginated list of events
+     * @returns Paginated list of published events
      * @throws ServiceError (UNAUTHORIZED) if actor is undefined
      */
     public async getByLocation(
@@ -991,10 +1008,10 @@ export class EventService extends BaseCrudService<
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
                 }
-                const filters: Record<string, unknown> = { locationId: validatedInput.locationId };
-                if (!validatedActor.permissions?.includes(PermissionEnum.EVENT_SOFT_DELETE_VIEW)) {
-                    filters.visibility = VisibilityEnum.PUBLIC;
-                }
+                const filters = applyPublicVisibilityScope({
+                    filters: { locationId: validatedInput.locationId },
+                    actor: validatedActor
+                });
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
@@ -1012,14 +1029,22 @@ export class EventService extends BaseCrudService<
     }
 
     /**
-     * Returns a paginated list of events organized by a specific organizer.
-     * - Any authenticated actor can see public events.
-     * - Only actors with EVENT_SOFT_DELETE_VIEW can see private/draft events.
-     * - Uses homogeneous validation and pagination logic.
-     * @param actor - Authenticated actor
+     * Returns a paginated list of PUBLISHED events organized by a specific
+     * organizer.
+     *
+     * Its only caller is `GET /api/v1/public/events/organizer/{organizerId}`
+     * (`cacheTTL: 60`, under the `/api/v1/public/events` prefix of
+     * `PUBLIC_CACHE_ENDPOINTS`), so it goes through
+     * {@link applyPublicVisibilityScope} and returns `PUBLIC` + `ACTIVE` rows to
+     * everyone. Same two defects as {@link getByLocation}: no `lifecycleState`
+     * constraint at all, and an actor-dependent `visibility` branch on a
+     * response stored under an actorless cache key.
+     *
+     * @param actor - Authenticated actor. Recorded for logging; it does not
+     *   change which rows come back.
      * @param input - Search parameters (organizerId, page, pageSize)
      * @param ctx - Optional service context (transaction, hook state)
-     * @returns Paginated list of events
+     * @returns Paginated list of published events
      * @throws ServiceError (UNAUTHORIZED) if actor is undefined
      */
     public async getByOrganizer(
@@ -1036,12 +1061,10 @@ export class EventService extends BaseCrudService<
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
                 }
-                const filters: Record<string, unknown> = {
-                    organizerId: validatedInput.organizerId
-                };
-                if (!validatedActor.permissions?.includes(PermissionEnum.EVENT_SOFT_DELETE_VIEW)) {
-                    filters.visibility = VisibilityEnum.PUBLIC;
-                }
+                const filters = applyPublicVisibilityScope({
+                    filters: { organizerId: validatedInput.organizerId },
+                    actor: validatedActor
+                });
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
@@ -1059,14 +1082,22 @@ export class EventService extends BaseCrudService<
     }
 
     /**
-     * Returns a paginated list of upcoming events within a date range.
-     * - Any authenticated actor can see public events.
-     * - Only actors with EVENT_SOFT_DELETE_VIEW can see private/draft events.
-     * - Uses homogeneous validation and pagination logic.
-     * @param actor - Authenticated actor
-     * @param input - Search parameters (fromDate, toDate, page, pageSize)
+     * Returns a paginated list of PUBLISHED upcoming events within a date range.
+     *
+     * Its only caller is `GET /api/v1/public/events/upcoming` (`cacheTTL: 60`,
+     * under the `/api/v1/public/events` prefix of `PUBLIC_CACHE_ENDPOINTS`),
+     * which also backs the home page's "next events" section, so it goes
+     * through {@link applyPublicVisibilityScope} and returns `PUBLIC` +
+     * `ACTIVE` rows to everyone. Same two defects as {@link getByLocation}: no
+     * `lifecycleState` constraint at all, and an actor-dependent `visibility`
+     * branch on a response stored under an actorless cache key.
+     *
+     * @param actor - Authenticated actor. Recorded for logging; it does not
+     *   change which rows come back.
+     * @param input - Search parameters (daysAhead, category, maxPrice, page,
+     *   pageSize)
      * @param ctx - Optional service context (transaction, hook state)
-     * @returns Paginated list of events
+     * @returns Paginated list of published events
      * @throws ServiceError (UNAUTHORIZED) if actor is undefined
      */
     public async getUpcoming(
@@ -1107,9 +1138,10 @@ export class EventService extends BaseCrudService<
                 if (validatedInput.maxPrice) {
                     filters['pricing.basePrice'] = { $lte: validatedInput.maxPrice };
                 }
-                if (!validatedActor.permissions?.includes(PermissionEnum.EVENT_SOFT_DELETE_VIEW)) {
-                    filters.visibility = VisibilityEnum.PUBLIC;
-                }
+                const scopedFilters = applyPublicVisibilityScope({
+                    filters,
+                    actor: validatedActor
+                });
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
@@ -1118,7 +1150,7 @@ export class EventService extends BaseCrudService<
                     // project location.destination → location.cityDestination.
                     const upcomingResult = await this.model.findAllWithRelations(
                         this.getCardListRelations(),
-                        filters,
+                        scopedFilters,
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx
