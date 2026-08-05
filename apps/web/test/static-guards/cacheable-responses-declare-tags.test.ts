@@ -68,6 +68,10 @@ const EXEMPT: ReadonlyArray<{ readonly file: string; readonly why: string }> = [
     {
         file: 'pages/i18n/[file].js.ts',
         why: 'Content-addressed by construction (HOS-369 Wave D): the filename carries sha256 of the exact body served, so a dictionary change produces a NEW URL and the old one is simply never requested again. The endpoint 404s any hash it does not currently serve, so a stale URL can never be answered with fresh content either. Nothing a purge could target.'
+    },
+    {
+        file: 'pages/icons/[file].svg.ts',
+        why: 'Content-addressed by construction (HOS-369 W3-6): the filename carries sha256 of the exact sprite served, so an icon change produces a NEW URL and the old one is simply never requested again. The endpoint 404s any hash it does not currently serve, so a stale URL can never be answered with fresh content either. Nothing a purge could target.'
     }
 ];
 
