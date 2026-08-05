@@ -80,6 +80,10 @@ const EXEMPT: ReadonlyArray<{ readonly file: string; readonly why: string }> = [
         why: 'Content-addressed by construction: every input that changes the image is a query param, and the query string is part of the Cloudflare cache key. Nothing to purge, so nothing to flush it out of either.'
     },
     {
+        file: 'pages/i18n/[file].js.ts',
+        why: 'Content-addressed by construction (HOS-369 Wave D): the filename carries sha256 of the body served, so a dictionary change ships a NEW URL rather than needing the old one flushed — and the endpoint 404s any hash it does not currently serve. Nothing to purge, so nothing for the catch-all to reach either.'
+    },
+    {
         file: 'middleware.ts',
         why: 'The `Cache-Control` it writes belongs to `/_image`, which Astro content-addresses by transform query string — the same reasoning as og.ts. Its OTHER caching responsibility, writing the `Cache-Tag` header at Step 11, only ever serializes what the choke point already collected into `locals.cacheTags`; it never invents a tag.'
     }

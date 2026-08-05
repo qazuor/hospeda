@@ -29,9 +29,10 @@
     <!-- Astro ClientRouter view-transitions script -->
     <script type="module" src="/_astro/ClientRouter.astro_astro_type_script_index_0_lang.hash.js"></script>
 
-    <!-- Non-executable data block (I18nClientData ships one of these). Hashed
-         anyway — see collect-csp-hashes.ts for why. -->
-    <script id="hospeda-i18n" type="application/json">{"locale":"es","m":{"a":"b"}}</script>
+    <!-- Non-executable data block. Nothing in the app ships one today (the i18n
+         dictionary moved to a hashed asset in HOS-369 Wave D), but the collector
+         must keep handling the shape — hashed anyway, see collect-csp-hashes.ts. -->
+    <script id="page-data" type="application/json">{"locale":"es","m":{"a":"b"}}</script>
 
     <!-- A tag still carrying a stray nonce attribute. The hash is computed over
          CONTENT only, so the attribute must not change the digest. -->
