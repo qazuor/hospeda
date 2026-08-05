@@ -407,18 +407,6 @@ const itemListEntries = sortedCards.map((card) => ({
 		display: none;
 	}
 
-	/* During chip-toggle View Transitions, fold the per-image transition
-	 * names (Astro emits them for list ↔ detail page morphs) back into the
-	 * root snapshot. Otherwise the named images snapshot independently and
-	 * escape their parent's rounded `overflow: hidden` mask while the
-	 * crossfade runs, briefly looking like the photo pops out of the card.
-	 * Astro applies the name via inline style, so we need `!important` to
-	 * win the cascade. Scoped to `:global` so it pierces Astro's scoped
-	 * styling and reaches the cards rendered by DestinationCard.astro. */
-	:global(html.is-attractions-transition .dest-card__img) {
-		view-transition-name: none !important;
-	}
-
 	/* Attraction filter block.
 	 * Vertical stack: head row of chips → "Ver más" toggle. Each chip is an
 	 * <a> with an href that doubles as a no-JS fallback; the inline script
@@ -794,14 +782,14 @@ const itemListEntries = sortedCards.map((card) => ({
 			// reflow. This is the same animation `<ClientRouter />` gave us
 			// for free when chip clicks still triggered a full navigation.
 			//
-			// `is-attractions-transition` on <html> suppresses the per-card
-			// `view-transition-name` Astro emits for list ↔ detail morphs
-			// (see DestinationCard.astro). Without that suppression the
-			// named images get their own snapshot and escape the parent's
-			// rounded `overflow: hidden` mask while crossfading — they
-			// briefly render with no clip, looking like the image "pops
-			// out" of the card. Stripping the names for the duration of
-			// our transition folds them back into the root snapshot.
+			// This used to also toggle `is-attractions-transition` on <html>
+			// to suppress the per-card `view-transition-name` DestinationCard
+			// emitted: those named images took their own snapshot and escaped
+			// the parent's rounded `overflow: hidden` mask mid-crossfade,
+			// looking like the photo popped out of the card. HOS-369 removed
+			// the names themselves (no detail page ever declared the matching
+			// name, so the list ↔ detail morph they existed for could not
+			// happen), which removes the cause and with it the workaround.
 			//
 			// Browsers without VT (Firefox < 129 at time of writing) get
 			// the unanimated reconcile, which still works fine.
@@ -810,12 +798,7 @@ const itemListEntries = sortedCards.map((card) => ({
 					update();
 					return;
 				}
-				var root = document.documentElement;
-				root.classList.add('is-attractions-transition');
-				var transition = document.startViewTransition(update);
-				transition.finished.finally(function () {
-					root.classList.remove('is-attractions-transition');
-				});
+				document.startViewTransition(update);
 			}
 
 			function onClick(e) {

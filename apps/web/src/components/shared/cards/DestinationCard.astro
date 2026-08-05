@@ -72,7 +72,6 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 					width="432"
 					height="280"
 					data-fallback="/assets/images/placeholder-destination.svg"
-					transition:name={`destination-${destination.slug}`}
 				/>
 			) : (
 				<Image
@@ -89,7 +88,6 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 					decoding="async"
 					class="dest-card__img"
 					data-fallback="/assets/images/placeholder-destination.svg"
-					transition:name={`destination-${destination.slug}`}
 				/>
 			)}
 

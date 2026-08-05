@@ -22,7 +22,12 @@
    fails on any new inline `oklch(from`; genuinely runtime-dynamic cases live in
    its count-pinned allowlist.
    ========================================================================== */
-@import "@repo/design-tokens/tokens.css";
+/* `tokens.web.css`, NOT `tokens.css`: the full artifact also carries the two
+   `[data-app="admin"]` blocks (6,544 B of 71,550), and this app never sets
+   `data-app="admin"` on <html>, so they could only ever be dead weight here —
+   measured shipping render-blocking on every public page (HOS-369 W3-5).
+   `apps/admin` keeps importing the full `tokens.css`. */
+@import "@repo/design-tokens/tokens.web.css";
 @import "./components.css";
 @import "./css-var-themes.css";
 

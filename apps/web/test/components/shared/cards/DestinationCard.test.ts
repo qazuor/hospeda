@@ -130,8 +130,11 @@ describe('DestinationCard.astro', () => {
             expect(src).toContain('placeholder-destination.svg');
         });
 
-        it('should use transition:name for view transitions', () => {
-            expect(src).toContain('transition:name={`destination-${destination.slug}`}');
+        // HOS-369: the name was removed. See the shared guard
+        // test/static-guards/card-view-transition-names.test.ts for the reason
+        // and the byte measurements; this local assertion keeps the file honest.
+        it('should declare no view transition name', () => {
+            expect(src).not.toContain('transition:name');
         });
     });
 
