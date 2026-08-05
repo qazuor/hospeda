@@ -81,13 +81,59 @@ Two properties that migration must have:
 - **Idempotent** — `WHERE owner_user_id IS NULL` in the UPDATE itself, so
   re-running never overwrites an owner set legitimately in between.
 
-## Status
+## Result — run 2026-08-05
 
-Not yet run. Requires DB access to staging/prod (`hops`/SSH, needs `ssh-add`
-first). The local `hospeda_dev` database cannot stand in: its migration ledger is
-empty and it predates the `provisioned_host_trade_id` column entirely, so the
-query does not even parse there.
+**Zero orphans on both environments. The promotion gate is clear — but not for
+the reason the audit was written to check.**
 
-The SQL above is validated statically against the committed Drizzle schema —
+Neither database has the columns the bug needs in order to produce an orphan.
+The count query does not return `0`; it does not parse at all.
+
+| | migrations applied | last applied | `alliance_leads.provisioned_host_trade_id` | `host_trades.owner_user_id` |
+|---|---|---|---|---|
+| **staging** | 75 of 79 | 2026-08-04 | absent | absent |
+| **production** | 70 of 79 | 2026-07-28 | absent | absent |
+
+Staging carries `alliance_leads.applicant_user_id` (the §6.2 claim work) and
+nothing else from the provisioning line. Production carries none of the four
+columns at all.
+
+So no listing has ever been provisioned by this flow in a live environment, and
+the claim has never had a listing to strand. The bug is real in the code that
+shipped, but it has had no opportunity to fire.
+
+**Re-run this audit after the pending migrations are applied**, before any real
+partner or provider is provisioned. Zero today is a statement about the schema,
+not about the data, and it stops being true the moment the columns land and the
+first lead is approved.
+
+## The finding that actually matters
+
+Both environments are **behind on migrations**, and by more than this spec:
+
+- staging is 4 behind (0075–0078),
+- production is 9 behind (0070–0078).
+
+Everything HOS-278 has merged — the typed provider/partner columns, the
+provisioned links, `partners.owner_user_id`, the nullable `starts_at` — is
+present only in the repository. None of it is live anywhere. Applying them is
+`hops db-migrate --target=staging|prod`, followed by `db:apply-extras` and
+`db:seed:migrate` in that order.
+
+## Reproducing
+
+`hops` lives at `~/.local/bin/hops` on the VPS and is NOT on the PATH of a
+non-interactive SSH shell, so invoke it by absolute path. `--target` goes BEFORE
+the subcommand, and `hops psql` takes the SQL as a single argument — it does not
+forward psql flags like `-tAc`.
+
+```bash
+ssh -p 2222 qazuor@216.238.103.219 \
+  '~/.local/bin/hops --target=staging psql "SELECT count(*) FROM alliance_leads;"'
+```
+
+The SQL above is also validated statically against the committed Drizzle schema —
 `alliance_leads.provisioned_host_trade_id`, `alliance_leads.applicant_user_id`,
-`host_trades.owner_user_id`, and `deleted_at` on both tables all exist as written.
+`host_trades.owner_user_id`, and `deleted_at` on both tables all exist as written
+in the repo, which is what makes the environments' missing columns a deployment
+gap rather than a query bug.
