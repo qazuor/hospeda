@@ -203,7 +203,12 @@ describe('EventService.getByAuthor — unpublished events never reach the author
         });
         service = new EventService({
             model: modelMock,
-            logger: { log: vi.fn(), error: vi.fn() } as unknown as ServiceLogger
+            logger: { log: vi.fn(), error: vi.fn() } as unknown as ServiceLogger,
+            // `getByAuthor` composes `media` from the relational `event_media`
+            // rows (HOS-390). Without this stub the read path reaches for a real
+            // EventMediaModel and every case here fails on "Database not
+            // initialized" rather than on the scope rule it is asserting.
+            eventMediaModel: makeEventMediaModelStub() as never
         });
     });
 

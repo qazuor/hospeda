@@ -43,7 +43,7 @@ import { createActor } from '../../factories/actorFactory';
 import { createMockEvent } from '../../factories/eventFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import { expectSuccess } from '../../helpers/assertions';
-import { createTypedModelMock } from '../../utils/modelMockFactory';
+import { createTypedModelMock, makeEventMediaModelStub } from '../../utils/modelMockFactory';
 
 const locationId = getMockId('event') as EventLocationIdType;
 const organizerId = getMockId('event') as EventOrganizerIdType;
@@ -141,7 +141,12 @@ describe('EventService — public reads never publish unpublished events', () =>
         );
         service = new EventService({
             model: modelMock,
-            logger: { log: vi.fn(), error: vi.fn() } as unknown as ServiceLogger
+            logger: { log: vi.fn(), error: vi.fn() } as unknown as ServiceLogger,
+            // Every public feed asserted below composes `media` from the
+            // relational `event_media` rows (HOS-390). Without this stub the
+            // read path reaches for a real EventMediaModel and each case fails
+            // on "Database not initialized" instead of on the scope rule.
+            eventMediaModel: makeEventMediaModelStub() as never
         });
     });
 

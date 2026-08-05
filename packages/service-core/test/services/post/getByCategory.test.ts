@@ -195,7 +195,17 @@ describe('PostService.getByCategory — unpublished posts never reach the public
             );
             return { items, total: items.length };
         });
-        service = new PostService({ logger: createLoggerMock() }, modelMock);
+        // `getByCategory` composes `media` from the relational `post_media` rows
+        // (HOS-390). Without the stub the read path reaches for a real
+        // PostMediaModel and every case here fails on "Database not initialized"
+        // rather than on the scope rule it is asserting.
+        service = new PostService(
+            { logger: createLoggerMock() },
+            modelMock,
+            null,
+            undefined,
+            makePostMediaModelStub() as never
+        );
     });
 
     it.each([

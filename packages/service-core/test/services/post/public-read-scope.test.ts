@@ -63,7 +63,11 @@ import type { Actor } from '../../../src/types';
 import { createMockPost } from '../../factories/postFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import { expectSuccess } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makePostMediaModelStub
+} from '../../utils/modelMockFactory';
 
 const accommodationId = getMockId('accommodation') as AccommodationIdType;
 const destinationId = getMockId('destination') as DestinationIdType;
@@ -179,7 +183,17 @@ describe('PostService — public reads never publish unpublished posts', () => {
             const items = honourScope(where);
             return { items, total: items.length };
         });
-        service = new PostService({ logger: createLoggerMock() }, modelMock);
+        // Every public feed asserted below composes `media` from the relational
+        // `post_media` rows (HOS-390). Without this stub the read path reaches
+        // for a real PostMediaModel and each case fails on "Database not
+        // initialized" instead of on the scope rule.
+        service = new PostService(
+            { logger: createLoggerMock() },
+            modelMock,
+            null,
+            undefined,
+            makePostMediaModelStub() as never
+        );
     });
 
     it.each(ACTORS)('getNews returns only the published post to %s', async (_label, actor) => {
