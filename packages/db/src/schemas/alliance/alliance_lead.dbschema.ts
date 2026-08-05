@@ -62,6 +62,35 @@ export const allianceLeads = pgTable(
          */
         businessName: varchar('business_name', { length: 255 }),
         /**
+         * What kind of organization a `partner` applicant is (HOS-278 §6.3/§7,
+         * provisioning slice D).
+         *
+         * Mirrors {@link category}'s reasoning one field over: approving a
+         * `partner` will eventually provision a `partners` row, and
+         * `partners.type` is NOT NULL — so this typed column exists for the
+         * same reason `category`/`destinationId`/`benefit*` do for
+         * `service_provider`, one program earlier in the pipeline (this slice
+         * only collects the field; provisioning itself is a later spec).
+         *
+         * Distinct from {@link kind} (which program the lead applies to —
+         * always `'partner'` for rows carrying this) and from the free-text
+         * `partnershipType` serialized into {@link message} (what alliance
+         * the applicant is PROPOSING, prose for an admin to read — not this
+         * closed, structured value).
+         *
+         * Nullable and partner-only, for the same reason the service-provider
+         * columns are nullable: the other three kinds never populate it.
+         * Required-ness for `partner` is enforced by Zod
+         * (`refineAllianceLeadKindFields`) at write time, not by the column.
+         *
+         * Stored as varchar rather than a pg enum to match this table's own
+         * documented convention (see {@link kind}, {@link status}, and
+         * {@link category}), even though a `PartnerTypePgEnum` already exists
+         * for the `partners` table itself. Validated against `PartnerTypeEnum`
+         * in `@repo/schemas`.
+         */
+        partnerType: varchar('partner_type', { length: 30 }),
+        /**
          * Service category the applicant operates in (HOS-278 §6.4).
          *
          * This column and its neighbours REVERSE HOS-277's NG-3 ("no dedicated

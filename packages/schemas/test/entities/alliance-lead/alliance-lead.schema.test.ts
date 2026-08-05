@@ -153,6 +153,13 @@ describe('AllianceLeadCreateInputSchema', () => {
         expect(keys).toContain('benefitValue');
     });
 
+    it('should keep the applicant-supplied partnerType field IN the create input', () => {
+        // Mirror of the provider assertion above, for the partner-only field
+        // added in HOS-278 provisioning slice D.
+        const keys = Object.keys(AllianceLeadCreateInputSchema.shape ?? {});
+        expect(keys).toContain('partnerType');
+    });
+
     it('should reject when email is missing', () => {
         const data = { kind: 'editor', contactName: 'Test', message: 'A valid message here.' };
         expect(() => AllianceLeadCreateInputSchema.parse(data)).toThrow(ZodError);
@@ -324,12 +331,11 @@ describe('AllianceLeadSubmissionSchema — per-kind requirement (HOS-278)', () =
     });
 
     it.each([
-        'partner',
         'sponsor',
         'editor'
     ] as const)('should accept a %s submission with none of the provider fields', (kind) => {
-        // Arrange — the other three programs never collect provider data;
-        // requiring it from them would break three live public forms.
+        // Arrange — sponsor/editor never collect provider OR partner data;
+        // requiring either from them would break two live public forms.
         const data = {
             kind,
             contactName: 'Test Applicant',
@@ -338,6 +344,57 @@ describe('AllianceLeadSubmissionSchema — per-kind requirement (HOS-278)', () =
         };
 
         // Act + Assert
+        expect(() => AllianceLeadSubmissionSchema.parse(data)).not.toThrow();
+    });
+
+    // ── partner (HOS-278 §6.3/§7, provisioning slice D) ─────────────────────
+
+    it('should accept a partner submission with partnerType supplied', () => {
+        const data = {
+            kind: 'partner' as const,
+            contactName: 'Test Applicant',
+            email: 'applicant@example.com',
+            message: 'Quiero sumarme al programa de aliados.',
+            partnerType: 'commerce'
+        };
+
+        expect(() => AllianceLeadSubmissionSchema.parse(data)).not.toThrow();
+    });
+
+    it('should reject a partner submission missing partnerType', () => {
+        const data = {
+            kind: 'partner' as const,
+            contactName: 'Test Applicant',
+            email: 'applicant@example.com',
+            message: 'Quiero sumarme al programa de aliados.'
+        };
+
+        const result = AllianceLeadSubmissionSchema.safeParse(data);
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            const paths = result.error.issues.map((issue) => issue.path.join('.'));
+            expect(paths).toContain('partnerType');
+        }
+    });
+
+    it('should reject a partner submission with an invalid partnerType value', () => {
+        const data = {
+            kind: 'partner' as const,
+            contactName: 'Test Applicant',
+            email: 'applicant@example.com',
+            message: 'Quiero sumarme al programa de aliados.',
+            partnerType: 'not-a-partner-type'
+        };
+
+        expect(() => AllianceLeadSubmissionSchema.parse(data)).toThrow(ZodError);
+    });
+
+    it('should NOT require partnerType from a service_provider submission', () => {
+        // Arrange — the per-kind rule is kind-GATED, not additive: a provider
+        // application must not be tripped up by the partner-only requirement.
+        const data = validProviderSubmission();
+
         expect(() => AllianceLeadSubmissionSchema.parse(data)).not.toThrow();
     });
 

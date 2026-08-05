@@ -5,7 +5,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { PartnerTypeEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AllianceLeadService } from '../../../src/services/alliance-lead/alliance-lead.service';
 import type { Actor } from '../../../src/types';
@@ -60,7 +60,11 @@ const createInput = {
     contactName: 'Juan Pérez',
     email: 'juan@example.com',
     phone: '+5491112345678',
-    message: 'Nombre del negocio: Acme SA\nSitio web: https://acme.com\n\nMensaje:\nQuiero sumarme.'
+    message: 'Nombre del negocio: Acme SA\nSitio web: https://acme.com\n\nMensaje:\nQuiero sumarme.',
+    // partnerType is required for kind='partner' since HOS-278 provisioning
+    // slice D (refineAllianceLeadKindFields) — without it, createLead's
+    // AllianceLeadSubmissionSchema.parse rejects every fixture below.
+    partnerType: PartnerTypeEnum.COMMERCE
 };
 
 const mockLead = {

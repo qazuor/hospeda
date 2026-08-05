@@ -126,11 +126,17 @@ describe('AllianceLead', () => {
     // ── Render — kind-specific fields ───────────────────────────────────────
 
     describe('Kind-specific fields', () => {
-        it('renders businessName, website, partnershipType for partner', () => {
+        it('renders businessName, partnerType, website, partnershipType for partner (HOS-278 provisioning slice D)', () => {
             renderForm('partner');
             expect(screen.getByLabelText(/^businessName/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/^partnerType/i)).toBeInTheDocument();
             expect(screen.getByLabelText(/^website/i)).toBeInTheDocument();
             expect(screen.getByLabelText(/^partnershipType/i)).toBeInTheDocument();
+        });
+
+        it('renders partnerType as a <select> element for partner', () => {
+            renderForm('partner');
+            expect(screen.getByLabelText(/^partnerType/i).tagName).toBe('SELECT');
         });
 
         it('renders businessName, website, sponsorshipInterest for sponsor', () => {
@@ -513,6 +519,9 @@ describe('AllianceLead', () => {
             fireEvent.change(screen.getByLabelText(/^businessName/i), {
                 target: { value: 'Acme SA' }
             });
+            fireEvent.change(screen.getByLabelText(/^partnerType/i), {
+                target: { value: 'commerce' }
+            });
             fireEvent.change(screen.getByLabelText(/^partnershipType/i), {
                 target: { value: 'Agencia de turismo' }
             });
@@ -534,6 +543,9 @@ describe('AllianceLead', () => {
             renderSignedIn({ name: 'Juan Pérez', email: 'juan@example.com' });
             fireEvent.change(screen.getByLabelText(/^businessName/i), {
                 target: { value: 'Acme SA' }
+            });
+            fireEvent.change(screen.getByLabelText(/^partnerType/i), {
+                target: { value: 'commerce' }
             });
             fireEvent.change(screen.getByLabelText(/^partnershipType/i), {
                 target: { value: 'Agencia de turismo' }
@@ -579,6 +591,9 @@ describe('AllianceLead', () => {
             fireEvent.change(screen.getByLabelText(/^businessName/i), {
                 target: { value: 'Acme SA' }
             });
+            fireEvent.change(screen.getByLabelText(/^partnerType/i), {
+                target: { value: 'commerce' }
+            });
             fireEvent.change(screen.getByLabelText(/^partnershipType/i), {
                 target: { value: 'Agencia de turismo' }
             });
@@ -592,7 +607,7 @@ describe('AllianceLead', () => {
             });
         });
 
-        it('sends kind: "partner" and serializes the specific fields into message (HOS-277 §7.3)', async () => {
+        it('sends kind: "partner" and serializes the non-typed specific fields into message (HOS-277 §7.3, HOS-278 provisioning slice D)', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({ id: 'abc' })
@@ -602,6 +617,9 @@ describe('AllianceLead', () => {
             await fillGenericRequiredFields();
             fireEvent.change(screen.getByLabelText(/^businessName/i), {
                 target: { value: 'Acme SA' }
+            });
+            fireEvent.change(screen.getByLabelText(/^partnerType/i), {
+                target: { value: 'commerce' }
             });
             fireEvent.change(screen.getByLabelText(/^website/i), {
                 target: { value: 'https://acme.com' }
@@ -618,13 +636,15 @@ describe('AllianceLead', () => {
                     unknown
                 >;
                 expect(body.kind).toBe('partner');
-                expect(body.message).toContain('businessName: Acme SA');
+                // businessName is now a TYPED field for partner (HOS-278
+                // provisioning slice D) — sent as its own key, not prose.
+                expect(body.message).not.toContain('businessName');
                 expect(body.message).toContain('website: https://acme.com');
                 expect(body.message).toContain('partnershipType: Agencia de turismo');
             });
         });
 
-        it('does not POST the specific fields as top-level payload keys (backend contract stays generic)', async () => {
+        it('POSTs businessName and partnerType as top-level typed payload keys, keeping website/partnershipType in message (HOS-278 provisioning slice D)', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({ id: 'abc' })
@@ -638,6 +658,9 @@ describe('AllianceLead', () => {
             fireEvent.change(screen.getByLabelText(/^businessName/i), {
                 target: { value: 'Acme SA' }
             });
+            fireEvent.change(screen.getByLabelText(/^partnerType/i), {
+                target: { value: 'commerce' }
+            });
             fireEvent.change(screen.getByLabelText(/^partnershipType/i), {
                 target: { value: 'Agencia' }
             });
@@ -650,10 +673,23 @@ describe('AllianceLead', () => {
                     unknown
                 >;
                 expect(Object.keys(body).sort()).toEqual(
-                    ['_hp', 'contactName', 'email', 'kind', 'message', 'phone'].sort()
+                    [
+                        '_hp',
+                        'businessName',
+                        'contactName',
+                        'email',
+                        'kind',
+                        'message',
+                        'partnerType',
+                        'phone'
+                    ].sort()
                 );
-                expect(body).not.toHaveProperty('businessName');
+                expect(body.businessName).toBe('Acme SA');
+                expect(body.partnerType).toBe('commerce');
+                // partnershipType stays prose — it is what alliance the
+                // applicant is proposing, not a typed column.
                 expect(body).not.toHaveProperty('partnershipType');
+                expect(body.message).toContain('partnershipType: Agencia');
             });
         });
 
