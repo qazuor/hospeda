@@ -154,4 +154,48 @@ describe('PermissionService.getPermissionOverridesForUser', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
         expect(result.data).toBeUndefined();
     });
+    // Regression (HOS-374): `BaseModelImpl.findAll` ALWAYS paginates and
+    // defaults to 20 rows when no `pageSize` is passed. `PermissionEnum` has
+    // ~750 values, so a user can easily hold more overrides than one default
+    // page returns. Reading a single unsized page silently dropped the rest —
+    // tolerable while it only fed a display list, but `isTrustedEditor` is now
+    // DERIVED from that list, so a truncated page reports a trusted editor as
+    // NOT trusted and the admin toggle shows the opposite of the truth.
+    //
+    // The double below reproduces the model's real paging contract (default 20,
+    // honours page/pageSize) over 25 rows whose LAST four are the trusted-editor
+    // bundle. Read one unsized page and those four fall off the end.
+    it('reads EVERY override page, so a user past the default page size is still detected as trusted', async () => {
+        const filler = Array.from({ length: 21 }, (_, index) => ({
+            userId,
+            permission: `filler.${index}` as unknown as PermissionEnum,
+            effect: 'grant'
+        }));
+        const backing = [
+            ...filler,
+            ...TRUSTED_EDITOR_PERMISSIONS.map((permission) => ({
+                userId,
+                permission,
+                effect: 'grant'
+            }))
+        ];
+
+        userPermissionModelMock.findAll.mockImplementation(
+            async (_where: unknown, options?: { page?: number; pageSize?: number }) => {
+                // Mirrors BaseModelImpl: page defaults to 1, pageSize to 20,
+                // and pageSize is capped at MAX_PAGE_SIZE (200).
+                const page = options?.page ?? 1;
+                const pageSize = Math.min(options?.pageSize ?? 20, 200);
+                const offset = (page - 1) * pageSize;
+                return { items: backing.slice(offset, offset + pageSize), total: backing.length };
+            }
+        );
+        rolePermissionModelMock.findAll.mockResolvedValue({ items: [] });
+
+        const result = await service.getPermissionOverridesForUser(actor, validInput);
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.grantOverrides).toHaveLength(backing.length);
+        expect(result.data?.isTrustedEditor).toBe(true);
+    });
 });
