@@ -1588,6 +1588,36 @@ scored directly and only partly feeds FCP. Mobile PSI additionally throttles CPU
 4×, which punishes precisely the parse-and-execute work this payload creates.
 Two different problems; both real; PageSpeed measures the second one.
 
+#### Measured on 2026-08-05, after W3-1 shipped
+
+W3-1 is merged (PR #2654) and live on staging. Measured against the same URLs,
+before and after the redeploy:
+
+| Page | Before | After | Drop |
+|---|---|---|---|
+| `/es/` (home) | 1,258,565 B | **611,860 B** | 51.4 % |
+| `/es/alojamientos/` | 1,387,892 B | **741,193 B** | 46.6 % |
+
+The dictionary now ships as `/i18n/<locale>.<hash>.js` (658,231 B, `immutable`,
+`HIT` at the edge on the second request — see `infra/cloudflare/rules/cache-rules.md`),
+so the browser pays it once per session per locale instead of once per navigation.
+
+**AC-8 does NOT pass on W3-1 alone, and the AC as written is wrong.** It says the
+home drops below 500 KB "after W3-1"; the measurement above is 611,860 B. The AC
+was written before the 2026-08-04 re-measurement discovered the 354,976 B inline-SVG
+bucket, and was never updated to account for it. Closing HOS-369 on the strength of
+that sentence would close it on a page still 22 % over the threshold.
+
+**W3-6 is therefore a closure blocker, not an optional extra.** Removing the
+duplicated SVG (520 elements, 169 distinct) should bring the home to roughly
+256 KB. Note the 354,976 B figure was measured on the LISTING; the home's own SVG
+bucket has not been measured separately and must be, rather than assumed equal.
+
+One framing correction while the numbers are fresh: the dictionary is ~100 KB
+brotli / 127 KB gzip on the wire, not 639 KB. The 632 KB that *is* paid in full on
+every navigation is HTML parsing and the DOM text node — which is exactly the
+CPU-bound work mobile PSI throttles 4×, and therefore still the right target.
+
 ### 6.7 Documentation cleanup
 
 `docs/performance/caching.md`, `docs/performance/README.md`,
@@ -1826,12 +1856,18 @@ Wave B onward:
   purge-by-URL provably could not reach (§5.11.2).
 - **AC-7** — `https://hospeda.com.ar/` resolves to `/es/` at the edge
   (`cf-cache-status` present on the 301, no origin hit).
-- **AC-8** — Home HTML drops below 500 KB uncompressed after W3-1. **Baseline
-  re-measured 2026-08-04** (see §6.6): the home is 1,256,468 B and the
-  accommodation listing 1,385,789 B, so this is a ~3× reduction, not a trim.
-  **HOS-369 does not close until Wave D ships** — the owner's acceptance of this
-  spec is a faster site, and the waves already delivered do not move a
-  Lighthouse score on their own.
+- **AC-8** — Home HTML drops below 500 KB uncompressed. **Baseline re-measured
+  2026-08-04** (see §6.6): the home is 1,256,468 B and the accommodation listing
+  1,385,789 B, so this is a ~3× reduction, not a trim. **HOS-369 does not close
+  until Wave D ships** — the owner's acceptance of this spec is a faster site,
+  and the waves already delivered do not move a Lighthouse score on their own.
+
+  **Corrected 2026-08-05.** This criterion previously read "after W3-1", which is
+  wrong: W3-1 shipped and the home measured 611,860 B — still 22 % over. It takes
+  **W3-1 and W3-6 together** to clear 500 KB, because the 2026-08-04
+  re-measurement found a second bucket (354,976 B of duplicated inline SVG) that
+  postdates the original wording. Do not read the old sentence as licence to close
+  on W3-1 alone.
 - **AC-9** — TTFB for an anonymous, cached catalog route measured from Buenos
   Aires is under 200 ms.
 - **AC-10** — Googlebot user-agent receives the same `HIT` as a browser
