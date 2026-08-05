@@ -13,6 +13,7 @@
 import { PostUpdateHttpSchema } from '@repo/schemas';
 import { type JSX, useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
+import styles from '@/components/account/editor/content-editor-layout.module.css';
 import type { PublicationSectionLabels } from '@/components/account/editor/PublicationSection.client';
 import { PublicationSection } from '@/components/account/editor/PublicationSection.client';
 import { ActionBar } from '@/components/host/editor/ActionBar.client';
@@ -31,7 +32,6 @@ import { ContentSection } from './ContentSection.client';
 import type { PostDestinationOption } from './DetailsSection.client';
 import { DetailsSection } from './DetailsSection.client';
 import { POST_FIELD_ID_SUFFIXES, POST_FIELD_PREFIX } from './field-ids';
-import styles from './PostEditor.module.css';
 import type { PostEditFormData } from './post-edit-data';
 import { buildPostEditFormData, buildPostPatchPayload } from './post-edit-data';
 
