@@ -7,6 +7,7 @@
             "message": "Conte mais (opcional)",
             "messageRequired": "Conte sobre seu serviço",
             "businessName": "Nome do negócio",
+            "partnerType": "Tipo de organização",
             "website": "Site",
             "partnershipType": "Tipo de parceria",
             "sponsorshipInterest": "Interesse de patrocínio",
@@ -24,13 +25,19 @@
         "placeholders": {
             "category": "Selecione uma categoria",
             "destinationId": "Selecione uma localidade",
-            "benefitType": "Selecione um benefício"
+            "benefitType": "Selecione um benefício",
+            "partnerType": "Selecione um tipo de organização"
         },
         "benefitTypeOptions": {
             "PERCENTAGE": "Desconto percentual",
             "FIXED_AMOUNT": "Desconto de valor fixo",
             "TWO_FOR_ONE": "Leve 2 pague 1",
             "SPECIAL_CONDITION": "Condição especial"
+        },
+        "partnerTypeOptions": {
+            "commerce": "Comércio",
+            "ngo": "ONG",
+            "institution": "Instituição"
         },
         "accountEmailNotice": "Vamos usar o e-mail da sua conta:",
         "messageIntro": "Mensagem:",

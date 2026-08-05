@@ -1084,7 +1084,26 @@
                 "title": "Minhas publicações",
                 "subtitle": "Veja o status dos seus artigos",
                 "empty": "Você ainda não escreveu nenhuma publicação",
-                "fetchError": "Não foi possível carregar a lista. Tente recarregar a página."
+                "fetchError": "Não foi possível carregar a lista. Tente recarregar a página.",
+                "createCta": "+ Nova publicação",
+                "emptyCta": "Escrever minha primeira publicação"
+            },
+            "create": {
+                "pageTitle": "Nova publicação",
+                "subtitle": "Preencha o básico agora — você vai poder adicionar fotos e mais detalhes depois no editor.",
+                "field": {
+                    "title": "Título",
+                    "summary": "Resumo",
+                    "content": "Conteúdo",
+                    "category": "Categoria"
+                },
+                "hint": {
+                    "summary": "Entre 10 e 500 caracteres. Aparece na listagem do blog.",
+                    "content": "Mínimo de 100 caracteres. Você vai poder continuar editando no editor completo."
+                },
+                "submit": "Criar publicação",
+                "submitting": "Criando...",
+                "error": "Não foi possível criar a publicação. Tente novamente."
             },
             "editor": {
                 "pageTitle": "Editar publicação",

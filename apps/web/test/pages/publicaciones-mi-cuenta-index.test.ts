@@ -55,4 +55,15 @@ describe('mi-cuenta/publicaciones/index.astro', () => {
     it('transforms the raw response through transformPostEditCardList', () => {
         expect(pageSource).toContain('transformPostEditCardList(');
     });
+
+    it('renders a create CTA linking to the create page (HOS-374 §5.2.2)', () => {
+        expect(pageSource).toContain("path: 'mi-cuenta/publicaciones/nuevo'");
+        expect(pageSource).toContain('createUrl');
+        expect(pageSource).toMatch(/href=\{createUrl\}/);
+    });
+
+    it('passes the create URL to EmptyState as its action', () => {
+        expect(pageSource).toContain('actionUrl={createUrl}');
+        expect(pageSource).toContain('actionLabel={emptyCtaLabel}');
+    });
 });

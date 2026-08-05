@@ -1,6 +1,6 @@
 {
-  "id": "e835dc2d-697a-4553-8764-113931f668a4",
-  "prevId": "c0d45895-e36b-4cc3-a3ff-b3a7f76d7865",
+  "id": "213b63f7-5224-4199-aa09-20e723d033f9",
+  "prevId": "e835dc2d-697a-4553-8764-113931f668a4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -24313,6 +24313,13 @@
         },
         "must_change_password": {
           "name": "must_change_password",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_system_account": {
+          "name": "is_system_account",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,

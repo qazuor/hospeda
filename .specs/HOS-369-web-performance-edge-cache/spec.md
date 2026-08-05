@@ -261,6 +261,10 @@ with no validatable form.
   immutable, edge-cacheable asset.
 - **G-7** — Bots (Googlebot, PageSpeed, AI crawlers) get the same cached-edge
   benefit as human visitors, and are not throttled by the public rate limit.
+  **MET on staging 2026-08-05 (W2-6).** Googlebot and Chrome were measured
+  served from the *same* cache entry (identical `age`, no `Vary`), and the
+  rate-limit half needs no work: a 24 h census found zero crawler requests
+  against the API host. See §6.5 W2-6 and D-13.
 
 Added in Rev 2:
 
@@ -1515,9 +1519,76 @@ do not dangle.
 for the first request after every TTL expiry and for every `stale-while-
 revalidate` refresh.
 
-**W2-6 — Bot handling.** Confirm crawlers benefit from the edge cache (they
-will, since the cache is UA-agnostic) and add a rate-limit allowlist or a
-separate tier for verified crawler traffic hitting the API directly.
+**W2-6 — Bot handling. DONE (2026-08-05), and the second half was closed as
+unnecessary rather than built.** This task had two halves. The first is
+confirmed by measurement; the second turned out to protect an empty set.
+
+**Half 1 — crawlers do benefit from the edge cache. Confirmed on staging.**
+Not "they will, since the cache is UA-agnostic" — measured. The same URL
+(`https://staging.hospeda.com.ar/es/`) was requested twice in immediate
+succession with different User-Agents:
+
+| User-Agent | Status | `cf-cache-status` | `age` |
+|---|---|---|---|
+| `Googlebot/2.1` | 200 | `HIT` | 6 |
+| `Chrome/151` | 200 | `HIT` | 6 |
+
+The **identical `age`** is the actual evidence, not the two `HIT`s: it proves
+both requests were served from *the same cache object*, rather than each UA
+warming its own entry. No `Vary` header is present on the response, which is
+what makes that true. **AC-G-7 is satisfied for staging.**
+
+**Half 2 — the rate-limit allowlist is not built, because verified crawlers
+never reach the API.** §5.6 described the residual exposure as "a crawler
+hitting `api.hospeda.com.ar` directly from a shared datacenter range". That
+exposure was already closed by a different spec: **HOS-109 T-011 serves
+`User-agent: * / Disallow: /` on the API host** (`apps/api/src/routes/robots.ts`),
+because crawlers were probing it for feeds. The consequence for this task is
+structural:
+
+- A crawler that *respects* robots.txt — which is what "verified" means — never
+  requests anything from the API host, so an allowlist grants it nothing.
+- A crawler that reaches the API *anyway* is by definition ignoring robots.txt,
+  so it is not verified and must not be allowlisted.
+
+The set the allowlist would serve is empty by construction, not by accident.
+
+**Measured, not just reasoned (Cloudflare AI Crawl Control, 24 h to
+2026-08-05, the maximum window the Free plan exposes).** Filtering the zone's
+crawler traffic to `hostname contains "api."` — which covers both
+`api.hospeda.com.ar` and `staging-api.hospeda.com.ar` — returns **one single
+request**, and that request is **our own probe**: `GET /api/v1/public/destinations`
+on `staging-api.hospeda.com.ar`, issued by the curl that verified the API's
+robots.txt an hour earlier. Real crawler traffic against the API is **zero**.
+The same window shows **~2,000 crawler requests zone-wide** (Applebot 947,
+Googlebot 182, ChatGPT-User 28, Amazonbot 22, Claude-SearchBot 10, +5 others
+35) — all of it against the web app, none against the API.
+
+**A User-Agent allowlist would have been a rate-limit bypass, and we
+demonstrated it by accident.** Cloudflare's AI Crawl Control attributed the
+probe above to **"Googlebot"** — because that is the User-Agent string the
+curl sent. A `curl -A` is all it takes. Any allowlist keyed on the UA string
+would hand a rate-limit exemption to anyone who asks for one. Building it
+honestly would require Cloudflare's `cf.verified_bot` signal plus a shared
+secret so the header cannot be forged by bypassing the proxy — real work, a
+permanent bypass path to maintain, in exchange for protecting a set measured
+at zero. Rejected on that trade, not on difficulty.
+
+**The inverse risk was checked and is not real.** The API's `Disallow: /` also
+tells Googlebot's *renderer* not to fetch API subresources while rendering a
+page, which would matter if any indexable content arrived only via a
+client-side fetch. It does not: the SSR-first island rule
+(`apps/web/CLAUDE.md`) requires the critical data to be in the SSR HTML, and
+the browser-side calls to `PUBLIC_API_URL` on public pages are `/protected/*`
+endpoints (which return nothing without a session), "load more" pagination
+past page 1, forms, and analytics. Nothing indexable depends on them.
+
+**Scope limit, stated so this is not read as broader than it is.** AI Crawl
+Control tracks *known* crawlers, and the Free plan caps the window at 24 hours.
+A rogue scraper with a forged UA would not necessarily appear in it — but that
+is precisely the actor an allowlist for *verified* crawlers could never have
+covered. The public tier's 1000 req/h per IP and the per-route limiters remain
+the defence there, unchanged by this task.
 
 **W2-7 — Fix the 19 misleading `@rendering SSR + ISR 24h` comments** — either
 implement the caching they claim (covered by W2-3) or correct the comment. A
@@ -1538,7 +1609,15 @@ Overlaps HOS-168; this spec supplies the measurements it lacked.
   631 KB per cold page load. **This is the single largest byte win available.**
 - **W3-2** — Split the i18n catalog by namespace. `validation` (157 KB) has no
   business being on a page without forms.
-- **W3-3** — Audit the 170 KB of `astro-island` props across 26 islands.
+- **W3-3** — ~~Audit the 170 KB of `astro-island` props across 26 islands.~~
+  **DONE 2026-08-05, and the framing above was wrong.** It is not 26 islands: on
+  the home, `DestinationsIsland` alone carried 147,372 B — 28.9% of the whole
+  document and 79% of all island props. Measured per field, `gallery` was 77,162 B
+  of that and is read nowhere, along with `coordinates`, `ratingDimensions`,
+  `isFeatured` and `eventsCount`. The island tree reads exactly ten fields
+  (`DestinationsMap` reads one, `slug`). Fixed by projecting to those ten before
+  passing them. The 170 KB figure came from the LISTING; nobody had bucketed the
+  home.
 - **W3-4** — Remove `driver.js` CSS from the global bundle.
 - **W3-5** — Consolidate the 20 render-blocking stylesheets. Gated on the
   CSP/`inlineStylesheets` constraint (HOS-164/HOS-168) — do not start before
@@ -1617,6 +1696,36 @@ One framing correction while the numbers are fresh: the dictionary is ~100 KB
 brotli / 127 KB gzip on the wire, not 639 KB. The 632 KB that *is* paid in full on
 every navigation is HTML parsing and the DOM text node — which is exactly the
 CPU-bound work mobile PSI throttles 4×, and therefore still the right target.
+
+#### Measured on 2026-08-05 — AC-8 met, after W3-6 and W3-3
+
+| Page | Baseline 2026-08-04 | After W3-1 | After W3-6 | After W3-3 | Total |
+|---|---|---|---|---|---|
+| `/es/` (home) | 1,256,468 B | 611,861 B | 511,077 B | **412,346 B** | **−67.2 %** |
+| `/es/alojamientos/` | 1,385,789 B | 741,191 B | 490,047 B | 490,046 B | **−64.6 %** |
+
+**AC-8 is met**: the home is 412,346 B against the 500,000 B threshold, a 17.5 %
+margin rather than the knife-edge the earlier projections kept landing on.
+
+It took THREE levers, not the one the criterion named — and each time the
+arithmetic fell short, it was because a bucket nobody had measured on the home
+turned out to dominate it:
+
+1. **W3-1** removed the 641,597 B i18n blob → 611,861 B. Still 22 % over.
+2. **W3-6** replaced 520 inline SVGs with `<use>` into a hashed sprite →
+   511,077 B. Still 2.2 % over.
+3. **W3-3** stopped serializing 84,870 B of island props nothing renders →
+   412,346 B. Clear.
+
+The recurring lesson is worth stating once: **the spec's bucket table was
+measured on the LISTING, and every projection made from it onto the home was
+wrong.** The two pages do not share a profile — the listing is dominated by
+repeated card SVGs, the home by one island's props. Re-bucket the specific page
+before predicting anything about it.
+
+Verified on staging with real data after each deploy: the sprite reaches `HIT` at
+the edge, 383 `<use>` resolve with none broken, the destinations map and carousel
+render from the narrowed prop set, and the i18n dictionary carries its 8,840 keys.
 
 ### 6.7 Documentation cleanup
 
@@ -1862,12 +1971,16 @@ Wave B onward:
   until Wave D ships** — the owner's acceptance of this spec is a faster site,
   and the waves already delivered do not move a Lighthouse score on their own.
 
-  **Corrected 2026-08-05.** This criterion previously read "after W3-1", which is
-  wrong: W3-1 shipped and the home measured 611,860 B — still 22 % over. It takes
-  **W3-1 and W3-6 together** to clear 500 KB, because the 2026-08-04
-  re-measurement found a second bucket (354,976 B of duplicated inline SVG) that
-  postdates the original wording. Do not read the old sentence as licence to close
-  on W3-1 alone.
+  **MET 2026-08-05: the home measures 412,346 B on staging** (17.5 % under the
+  threshold). See §6.6 for the full progression.
+
+  Corrected twice on the way there, and both corrections are worth keeping. The
+  criterion originally read "after W3-1": W3-1 shipped and the home was 611,860 B,
+  22 % over. It was then amended to "W3-1 and W3-6 together": those shipped and
+  the home was 511,077 B, still 2.2 % over. It took **W3-1, W3-6 and W3-3**.
+  Each shortfall had the same cause — the bucket table in §6.6 was measured on the
+  LISTING, and the home has a different profile. Do not project one page's
+  composition onto another.
 - **AC-9** — TTFB for an anonymous, cached catalog route measured from Buenos
   Aires is under 200 ms.
 - **AC-10** — Googlebot user-agent receives the same `HIT` as a browser
@@ -2028,6 +2141,20 @@ Added in Rev 2:
   Unblocking it requires native `security.csp` → dropping `<ClientRouter/>` →
   HOS-124, canceled. The same doc records that prerender does not change
   indexability, only TTFB, and that CWV is already "Good".
+
+### 11.1.2 Decisions taken (owner, 2026-08-05)
+
+- **D-13 — W2-6's crawler rate-limit allowlist is closed as unnecessary, not
+  deferred.** The owner asked for a Cloudflare census before deciding rather
+  than accepting the argument on its logic, and the census settled it: zero real
+  crawler requests against the API host in 24 h, against ~2,000 zone-wide. The
+  allowlist would protect a set that is empty by construction — HOS-109 already
+  serves `Disallow: /` on the API host, so a compliant crawler never arrives and
+  a non-compliant one is not "verified". Recorded as a decision rather than as a
+  dropped task, because the reasoning is reusable: **an allowlist keyed on a
+  self-declared identity is a bypass, not a control.** The census demonstrated
+  this in the act of being taken — Cloudflare attributed our own `curl -A
+  "…Googlebot…"` probe to Googlebot. Full record and evidence in §6.5 W2-6.
 
 ### 11.2 Still open
 

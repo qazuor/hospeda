@@ -27,6 +27,7 @@ import SkipToContent from '@/components/shared/navigation/SkipToContent.astro';
 import ScrollToTop from '@/components/shared/navigation/ScrollToTop.astro';
 import NavigationProgress from '@/components/shared/navigation/NavigationProgress.astro';
 import I18nClientData from '@/components/shared/I18nClientData.astro';
+import IconSpriteClientData from '@/components/shared/IconSpriteClientData.astro';
 import FontsLoader from '@/components/shared/FontsLoader.astro';
 import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
 import { CookieConsentBanner } from '@/components/legal/CookieConsentBanner.client';
@@ -110,6 +111,14 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		  hydrate against an empty dictionary.
 		-->
 		<I18nClientData locale={locale} />
+
+		<!--
+		  HOS-369 W3-6: the icon sprite's URL, for islands that render icons
+		  after hydration. Inline and classic, so it executes during parse —
+		  before any island's deferred hydration module can ask @repo/icons
+		  where the sprite lives and be told "nowhere".
+		-->
+		<IconSpriteClientData />
 
 		<!-- SPEC-157 REQ-18: browser UI chrome matches the brand blue. The light
 		     value matches site.webmanifest theme_color; the dark variant keeps the

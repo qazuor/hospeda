@@ -32,6 +32,7 @@ import {
     isDevelopment,
     isProduction
 } from './lib/env';
+import { initIconSprite } from './lib/icon-sprite';
 import { reportInternalBypassSelfCheck } from './lib/internal-bypass-report';
 import {
     buildChangePasswordRedirect,
@@ -73,6 +74,29 @@ import { CJS_ESM_BRIDGES_WARMED } from './lib/warm-cjs-esm-bridges';
  */
 if (!CJS_ESM_BRIDGES_WARMED) {
     throw new Error('[middleware] CJS/ESM bridge warm-up module failed to load');
+}
+
+/**
+ * Boot-time activation of the external icon sprite (HOS-369 W3-6).
+ *
+ * Middleware is part of the SSR **entry** chunk, so this runs once during boot,
+ * before the listener accepts traffic — which is the only correct time. Sprite
+ * mode is a module-level singleton in `@repo/icons`; flipping it from a layout
+ * or a page would leave every icon already rendered in that tree inline, and the
+ * document would ship both forms. Building the sprite itself (rendering ~1,000
+ * symbols and hashing them) also belongs to boot, not to a request.
+ *
+ * It stays OFF until this call, which is what leaves `apps/admin` — which has no
+ * sprite endpoint and never makes it — rendering icons exactly as before.
+ *
+ * Guarded by `import.meta.env.SSR` for the same reason the self-check below is:
+ * it is false under vitest, and a module-level singleton flipped there would
+ * reach into every OTHER test in the same worker that renders an icon, changing
+ * markup those tests never asked about. Production and `astro build` both see
+ * `true`, so the shipped behaviour is unconditional.
+ */
+if (import.meta.env.SSR) {
+    initIconSprite();
 }
 
 /**

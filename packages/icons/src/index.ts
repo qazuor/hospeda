@@ -593,6 +593,20 @@ export { CloudSnowIcon } from './icons/weather/CloudSnowIcon';
 export { CloudSunIcon } from './icons/weather/CloudSunIcon';
 export { SnowflakeIcon } from './icons/weather/SnowflakeIcon';
 export { WindIcon } from './icons/weather/WindIcon';
+export type { PhosphorGlyphComponent, PhosphorGlyphProps, SpriteWeight } from './sprite';
+// External-sprite mode (HOS-369 W3-6). OPT-IN: with no base URL configured the
+// wrappers render exactly as they always have, which is what keeps apps/admin —
+// where no sprite endpoint exists — unchanged.
+export {
+    getIconSpriteBase,
+    getIconSpriteGlyph,
+    getIconSpriteName,
+    ICON_SPRITE_GLOBAL,
+    iconSymbolId,
+    isSpriteWeight,
+    SPRITE_WEIGHTS,
+    setIconSpriteBase
+} from './sprite';
 export type { IconProps, IconWeight } from './types';
 // Export types and constants
 export { DEFAULT_DUOTONE_COLOR, ICON_SIZES } from './types';

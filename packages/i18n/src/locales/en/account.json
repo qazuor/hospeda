@@ -1084,7 +1084,26 @@
                 "title": "My posts",
                 "subtitle": "Check the status of your articles",
                 "empty": "You haven't written any post yet",
-                "fetchError": "Couldn't load the list. Try reloading the page."
+                "fetchError": "Couldn't load the list. Try reloading the page.",
+                "createCta": "+ New post",
+                "emptyCta": "Write my first post"
+            },
+            "create": {
+                "pageTitle": "New post",
+                "subtitle": "Fill in the basics now — you'll be able to add photos and more details afterward in the editor.",
+                "field": {
+                    "title": "Title",
+                    "summary": "Summary",
+                    "content": "Content",
+                    "category": "Category"
+                },
+                "hint": {
+                    "summary": "Between 10 and 500 characters. Shown in the blog listing.",
+                    "content": "At least 100 characters. You'll be able to keep editing it in the full editor."
+                },
+                "submit": "Create post",
+                "submitting": "Creating...",
+                "error": "We couldn't create the post. Please try again."
             },
             "editor": {
                 "pageTitle": "Edit post",

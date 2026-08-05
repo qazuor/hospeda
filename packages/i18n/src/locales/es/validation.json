@@ -562,6 +562,9 @@
             "max": "El mensaje no puede superar los {{max}} caracteres",
             "min": "El mensaje debe tener al menos {{min}} caracteres"
         },
+        "partnerType": {
+            "requiredForPartner": "Elegí qué tipo de organización representás"
+        },
         "phone": {
             "max": "El teléfono no puede superar los {{max}} caracteres"
         },
@@ -2477,6 +2480,7 @@
         },
         "date": {
             "end": {
+                "beforeStart": "La fecha de fin no puede ser anterior a la de inicio",
                 "invalid": "El fin no es válido"
             },
             "start": {

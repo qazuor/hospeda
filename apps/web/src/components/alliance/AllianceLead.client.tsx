@@ -18,6 +18,9 @@
  * `benefitValue`, `benefitText`) are typed payload columns instead — sent as
  * their own top-level keys, NOT serialized into `message`. Only `website`
  * still goes through the free-text `message` path for that kind too.
+ * `partner` gets the same treatment for `businessName` + `partnerType`
+ * (HOS-278 §6.3/§7, provisioning slice D) — `website` and `partnershipType`
+ * stay free text for that kind, same as before.
  *
  * Includes a honeypot `_hp` field for spam rejection, mirroring
  * `CommerceLead.client.tsx`. Rate-limit (429) and generic API errors surface
@@ -33,7 +36,8 @@ import {
     AllianceLeadCreateInputSchema,
     HostTradeBenefitTypeEnum,
     HostTradeCategoryEnum,
-    hostTradeBenefitTypeRequiresValue
+    hostTradeBenefitTypeRequiresValue,
+    PartnerTypeEnum
 } from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
 import type { TranslationFn } from '@/lib/api-errors';
@@ -124,6 +128,14 @@ function getBenefitTypeOptions(t: TranslationFn): readonly SpecificSelectOption[
     return Object.values(HostTradeBenefitTypeEnum).map((value) => ({
         value,
         label: t(`alliance-leads.form.benefitTypeOptions.${value}`, value)
+    }));
+}
+
+/** `partnerType` select options — the closed {@link PartnerTypeEnum} set (HOS-278 §6.3/§7). */
+function getPartnerTypeOptions(t: TranslationFn): readonly SpecificSelectOption[] {
+    return Object.values(PartnerTypeEnum).map((value) => ({
+        value,
+        label: t(`alliance-leads.form.partnerTypeOptions.${value}`, value)
     }));
 }
 
@@ -274,6 +286,7 @@ export function AllianceLead({
     );
     const categoryOptions = getCategoryOptions(t);
     const benefitTypeOptions = getBenefitTypeOptions(t);
+    const partnerTypeOptions = getPartnerTypeOptions(t);
     const destinationOptions = getDestinationOptions(destinations);
 
     function handleChange(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void {
@@ -582,7 +595,9 @@ export function AllianceLead({
                           ? benefitTypeOptions
                           : field.name === 'destinationId'
                             ? destinationOptions
-                            : null;
+                            : field.name === 'partnerType'
+                              ? partnerTypeOptions
+                              : null;
 
                 return (
                     <div
