@@ -1,12 +1,11 @@
 /**
- * @file ContentSection.client.tsx
- * @description The post body — a rich-text (Markdown-persisting) editor
- * (HOS-374 2C-2).
+ * @file DescriptionSection.client.tsx
+ * @description The event description — a rich-text (Markdown-persisting) editor
+ * (HOS-374 2C-3).
  *
- * Unlike the accommodation editor's description, this is NOT behind a
- * `PlanEntitlementGate`: `can_use_rich_description` gates a HOST's listing
- * description by subscription plan, and a post author is an editor, not a
- * subscriber. Formatted body text is the whole point of the field here.
+ * `description` doubles as the source of `summary`: `httpToDomainEventUpdate`
+ * derives the summary from its first 300 characters, so there is no separate
+ * summary field to edit (and adding one would be a field the server ignores).
  */
 
 import styles from '@/components/account/editor/content-editor-fields.module.css';
@@ -16,24 +15,23 @@ import { buildFieldErrorId } from '@/components/ui/TextField';
 import { buildFieldId } from '@/lib/forms/build-field-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { POST_FIELD_PREFIX } from './field-ids';
+import { EVENT_FIELD_PREFIX } from './field-ids';
 
 /**
- * Identity of the `content` field.
+ * Identity of the `description` field.
  *
  * The control is a contenteditable, not a form control, so the id is derived
- * once here and handed to BOTH the label's `htmlFor` and the editor's `id` —
- * the same contract `TextField` applies to the plain inputs.
+ * once here and handed to BOTH the label's `htmlFor` and the editor's `id`.
  */
-const CONTENT_FIELD = {
-    prefix: POST_FIELD_PREFIX,
-    name: 'content'
+const DESCRIPTION_FIELD = {
+    prefix: EVENT_FIELD_PREFIX,
+    name: 'description'
 } as const;
 
-const CONTENT_ID = buildFieldId(CONTENT_FIELD);
+const DESCRIPTION_ID = buildFieldId(DESCRIPTION_FIELD);
 
-/** Props for {@link ContentSection}. */
-export interface ContentSectionProps {
+/** Props for {@link DescriptionSection}. */
+export interface DescriptionSectionProps {
     readonly locale: SupportedLocale;
     readonly value: string;
     readonly error?: string;
@@ -43,61 +41,63 @@ export interface ContentSectionProps {
 }
 
 /**
- * Post body section.
+ * Event description section.
  *
- * @param props - See {@link ContentSectionProps}.
+ * @param props - See {@link DescriptionSectionProps}.
  */
-export function ContentSection({
+export function DescriptionSection({
     locale,
     value,
     error,
     disabled = false,
     onChange
-}: ContentSectionProps) {
+}: DescriptionSectionProps) {
     const { t } = createTranslations(locale);
 
-    const label = t('account.myContent.posts.editor.field.content', 'Contenido');
+    const label = t('account.myContent.events.editor.field.description', 'Descripción');
 
     return (
         <fieldset className={styles.section}>
             <legend className={styles.sectionTitle}>
-                {t('account.myContent.posts.editor.section.content', 'Contenido')}
+                {t('account.myContent.events.editor.section.description', 'Descripción')}
             </legend>
 
             <div className={styles.field}>
                 <label
-                    htmlFor={CONTENT_ID}
+                    htmlFor={DESCRIPTION_ID}
                     className={styles.fieldLabel}
                 >
                     {`${label} *`}
                 </label>
                 {/*
                  * `disabled` is passed explicitly rather than relying on the
-                 * wrapping <fieldset>: the editing surface is a
-                 * contenteditable <div>, not a form control, so `fieldset
-                 * [disabled]` does not reach it. Without this the moderation
-                 * lock would disable every input on the page EXCEPT the body.
+                 * wrapping <fieldset>: the editing surface is a contenteditable
+                 * <div>, not a form control, so `fieldset[disabled]` does not
+                 * reach it.
                  */}
                 <RichTextEditor
-                    id={CONTENT_ID}
+                    id={DESCRIPTION_ID}
                     ariaLabel={label}
                     value={value}
                     onChange={onChange}
                     disabled={disabled}
                     placeholder={t(
-                        'account.myContent.posts.editor.placeholder.content',
-                        'Escribí tu nota...'
+                        'account.myContent.events.editor.placeholder.description',
+                        'Contá de qué se trata el evento...'
                     )}
                     hasError={Boolean(error)}
                     errorMessage={error}
                 />
                 <FieldError
-                    id={buildFieldErrorId(CONTENT_FIELD)}
+                    id={buildFieldErrorId(DESCRIPTION_FIELD)}
                     message={error}
                     className={styles.fieldErrorSpacing}
                 />
                 <span className={styles.fieldHint}>
-                    {t('account.myContent.posts.editor.hint.content', 'Mínimo 100 caracteres.')}
+                    {t(
+                        'account.myContent.events.editor.hint.description',
+                        'Entre 50 y 2000 caracteres. El resumen del listado sale de acá.'
+                    )}
                 </span>
             </div>
         </fieldset>

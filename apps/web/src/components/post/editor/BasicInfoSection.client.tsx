@@ -8,13 +8,13 @@
  */
 
 import { PostCategoryEnum } from '@repo/schemas';
+import styles from '@/components/account/editor/content-editor-fields.module.css';
 import { TextField } from '@/components/ui/TextField';
 import { getPostCategoryLabel } from '@/lib/colors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { POST_FIELD_PREFIX } from './field-ids';
 import type { PostEditFormData } from './post-edit-data';
-import styles from './post-editor-fields.module.css';
 
 /** Props for {@link BasicInfoSection}. */
 export interface BasicInfoSectionProps {
