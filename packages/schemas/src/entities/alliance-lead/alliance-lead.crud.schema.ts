@@ -141,6 +141,9 @@ export const AllianceLeadCreateInputSchema = AllianceLeadSchema.omit({
     // from a request body would let a caller point their application at
     // somebody else's directory listing.
     provisionedHostTradeId: true,
+    // Same reason, for the partner side: provisioning WROTE it, a submission
+    // may never assert it.
+    provisionedPartnerId: true,
     createdAt: true,
     updatedAt: true,
     createdById: true,

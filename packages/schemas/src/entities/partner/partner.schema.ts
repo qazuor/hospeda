@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { BaseAuditFields } from '../../common/audit.schema.js';
+import { UserIdSchema } from '../../common/id.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { PartnerSubscriptionStatusEnumSchema } from '../../enums/partner-subscription-status.schema.js';
 import { PartnerTierEnumSchema } from '../../enums/partner-tier.schema.js';
@@ -37,7 +38,23 @@ export const partnerSchema = z.object({
     analytics: partnerAnalyticsSchema.default({}),
     planId: z.string().uuid().nullable().optional(),
     subscriptionId: z.string().uuid().nullable().optional(),
-    startsAt: z.coerce.date(),
+    /**
+     * The account that owns this partner listing.
+     *
+     * Null for curated partners the admin created by hand, and for a
+     * provisioned partner whose anonymous applicant has not redeemed their
+     * claim token yet. Ownership queries must therefore fail CLOSED on null.
+     */
+    ownerUserId: UserIdSchema.nullish(),
+    /**
+     * When the alliance began — null until it actually does.
+     *
+     * Relaxed from required (HOS-278 D1): provisioning creates the row before
+     * any payment, so a DRAFT partner genuinely has no start date and must not
+     * be forced to invent one. Written for real when the subscription
+     * activates.
+     */
+    startsAt: z.coerce.date().nullable().optional(),
     endsAt: z.coerce.date().nullable().optional(),
     ...BaseAuditFields
 });

@@ -139,8 +139,6 @@ export function PartnerForm({
 }: PartnerFormProps) {
     const [globalError, setGlobalError] = React.useState<string | null>(null);
 
-    const today = new Date().toISOString().slice(0, 10);
-
     const form = useForm<PartnerFormValues>({
         defaultValues: {
             name: initialData?.name ?? '',
@@ -154,7 +152,7 @@ export function PartnerForm({
             subscriptionStatus:
                 initialData?.subscriptionStatus ?? PartnerSubscriptionStatusEnum.PENDING,
             lifecycleState: initialData?.lifecycleState ?? LifecycleStatusEnum.ACTIVE,
-            startsAt: initialData?.startsAt ?? new Date(today),
+            startsAt: initialData?.startsAt ?? null,
             endsAt: initialData?.endsAt ?? null
         } as PartnerFormValues,
         onSubmit: async ({ value }) => {
@@ -488,18 +486,11 @@ export function PartnerForm({
                     </h3>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         {/* Starts At */}
-                        <form.Field
-                            name="startsAt"
-                            validators={{
-                                onChange: ({ value }) =>
-                                    value ? undefined : 'La fecha de inicio es requerida'
-                            }}
-                        >
+                        <form.Field name="startsAt">
                             {(field) => (
                                 <FieldWrapper
-                                    label="Inicio"
+                                    label="Inicio (opcional)"
                                     htmlFor={field.name}
-                                    required
                                     error={
                                         field.state.meta.isTouched
                                             ? field.state.meta.errors.join(', ')
@@ -514,15 +505,19 @@ export function PartnerForm({
                                             field.state.value as Date | string | null
                                         )}
                                         onBlur={field.handleBlur}
-                                        onChange={(e) => {
-                                            // startsAt is required — only update when a real date is chosen.
-                                            if (e.target.value) {
-                                                field.handleChange(new Date(e.target.value));
-                                            }
-                                        }}
+                                        // Clearable, and empty by default (HOS-278 D1). This
+                                        // field used to refuse to clear and to prefill the
+                                        // current date, so a partner that had not started yet
+                                        // still carried a start date — invented, and
+                                        // indistinguishable from a real one everywhere it was
+                                        // read afterwards.
+                                        onChange={(e) =>
+                                            field.handleChange(
+                                                e.target.value ? new Date(e.target.value) : null
+                                            )
+                                        }
                                         className={INPUT_CLASS}
                                         disabled={isSubmitting}
-                                        required
                                     />
                                 </FieldWrapper>
                             )}
