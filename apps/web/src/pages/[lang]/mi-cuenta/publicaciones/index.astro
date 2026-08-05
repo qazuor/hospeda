@@ -101,12 +101,27 @@ const fetchErrorMessage = t(
     'No se pudo cargar la lista. Intentá recargar la página.'
 );
 const retryLabel = t('account.myContent.card.retry', 'Reintentar');
+const createCtaLabel = t('account.myContent.posts.list.createCta', '+ Nueva publicación');
+const emptyCtaLabel = t(
+    'account.myContent.posts.list.emptyCta',
+    'Escribir mi primera publicación'
+);
+
+const createUrl = buildUrl({ locale, path: 'mi-cuenta/publicaciones/nuevo' });
 
 const isEmpty = posts.length === 0;
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="publicaciones">
-    <AccountPageHeader title={title} description={subtitle} />
+    <div class="my-content-page__header">
+        <AccountPageHeader title={title} description={subtitle} />
+        <a
+            class:list={['my-content-page__create-btn', btn.primary]}
+            href={createUrl}
+        >
+            {createCtaLabel}
+        </a>
+    </div>
 
     {fetchError ? (
         <div class:list={['my-content-page__error', accountSectionStyles.branded]} role="alert">
@@ -135,13 +150,33 @@ const isEmpty = posts.length === 0;
             ))}
         </div>
     ) : (
-        <EmptyState locale={locale} variant="empty" message={emptyMessage} tone="warm">
+        <EmptyState
+            locale={locale}
+            variant="empty"
+            message={emptyMessage}
+            actionUrl={createUrl}
+            actionLabel={emptyCtaLabel}
+            tone="warm"
+        >
             <FileTextIcon size={56} weight="duotone" />
         </EmptyState>
     )}
 </AccountLayout>
 
 <style>
+    .my-content-page__header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-4, 1rem);
+        flex-wrap: wrap;
+    }
+
+    .my-content-page__create-btn {
+        flex-shrink: 0;
+        text-decoration: none;
+    }
+
     .my-content-page__grid {
         display: grid;
         grid-template-columns: 1fr;
