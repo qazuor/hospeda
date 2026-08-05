@@ -8,7 +8,7 @@
  * `EventAuthorPublicSchema.image` and the author page's `avatar` — assert TYPE
  * but not URL FORMAT. That is deliberate: `users.image` and the
  * `profile.avatar` JSONB path are both written outside Zod (Better Auth signup,
- * seed fixtures, data-migration `0042`), and a strict response schema
+ * seed fixtures, data-migration `0043`), and a strict response schema
  * fail-closes to HTTP 500 through `stripWithSchema`, taking a whole public page
  * down over one bad stored row.
  *
@@ -45,7 +45,7 @@ describe('isRenderableImageUrl — accepts what a browser can actually load', ()
 describe('isRenderableImageUrl — rejects what would render a broken image', () => {
     it.each([
         // What makes this class reachable is that `profile.avatar` is a JSONB
-        // path written OUTSIDE Zod (seed fixtures, data-migration `0042`), so
+        // path written OUTSIDE Zod (seed fixtures, data-migration `0043`), so
         // no schema vouches for the stored value. Note those two writers do
         // currently write well-formed `https://` URLs — they establish the
         // bypass, not this specific shape. The write path a user can reach

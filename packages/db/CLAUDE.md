@@ -711,7 +711,7 @@ not. Evaluating `SUPER_ADMIN`/`ADMIN` live would mean promoting a real editor si
 unpublishes their author page and drops it from the sitemap, and demoting a staff account
 publishes it — an indexed URL appearing or vanishing as a side effect of a permissions
 change nobody connected to SEO. Role is consulted exactly once, at backfill time
-(`packages/seed/src/data-migrations/0039-system-account-flag-staff.ts`), to decide the
+(`packages/seed/src/data-migrations/0040-system-account-flag-staff.ts`), to decide the
 initial value; never at read time.
 
 Note this is **content curation, not authorization**: the `PermissionEnum` convention does

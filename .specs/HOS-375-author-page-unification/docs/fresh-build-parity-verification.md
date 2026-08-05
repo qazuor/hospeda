@@ -3,20 +3,26 @@
 Executed 2026-08-02 against the HOS-375 worktree's Postgres instance
 (`localhost:5436`). Both tracks were measured, and they agree on every fact.
 
-> **Numbering note (added 2026-08-05, updated after the second renumber).** The command
+> **Numbering note (added 2026-08-05, updated after the third renumber).** The command
 > transcripts below are verbatim and still show the numeric prefixes these migrations
-> carried when the runs happened. Two successive catch-up merges of `staging` each
+> carried when the runs happened. Three successive catch-up merges of `staging` each
 > collided with this branch's prefixes, so the five HOS-375 migrations were renumbered
-> twice to sit after staging's highest. The first merge brought in
+> three times to sit after staging's highest. The first merge brought in
 > `0036-hos-369-w24-revalidation-config` and `0037-hos-390-content-media-to-relational`;
-> the second brought in `0038-hos-374-cut-editor-panel-access`. Nothing about the
-> migrations' content or relative order changed either time. Cumulative mapping, from
-> the prefixes in the transcripts below to the current ones:
-> `0034-system-account-flag-staff` → `0038` → `0039`,
-> `0035-editorial-author-slug` → `0039` → `0040`,
-> `0036-reattribute-imported-events` → `0040` → `0041`,
-> `0037-editorial-author-avatar` → `0041` → `0042`,
-> `0038-transliterate-user-slugs` → `0042` → `0043`.
+> the second brought in `0038-hos-374-cut-editor-panel-access`; the third brought in
+> `0039-event-organizer-permissions`. Nothing about the migrations' content or relative
+> order changed any of the three times. Cumulative mapping, from the prefixes in the
+> transcripts below to the current ones:
+> `0034-system-account-flag-staff` → `0038` → `0039` → `0040`,
+> `0035-editorial-author-slug` → `0039` → `0040` → `0041`,
+> `0036-reattribute-imported-events` → `0040` → `0041` → `0042`,
+> `0037-editorial-author-avatar` → `0041` → `0042` → `0043`,
+> `0038-transliterate-user-slugs` → `0042` → `0043` → `0044`.
+>
+> The third collision was found only by CI, and that is the durable lesson: GitHub's
+> `pull_request` workflows test `refs/pull/<n>/merge`, not the branch, so a duplicate
+> prefix contributed by `staging` is invisible to every local run. Check the merge ref,
+> not the branch, before choosing prefixes.
 
 ## What is being proven
 

@@ -47,7 +47,7 @@ export interface AuthorIndexabilityInput {
      * sitemap, and demoting a staff account publishes it — an indexed URL
      * appearing or vanishing as a side effect of a permissions change nobody
      * connected to SEO. Role decided this flag's value exactly once, at backfill
-     * time (`0039-system-account-flag-staff`). See HOS-375 §6.10.1.
+     * time (`0040-system-account-flag-staff`). See HOS-375 §6.10.1.
      *
      * A missing value is treated as `false` (a person), matching the column
      * default — an author page is not withheld because a payload omitted the

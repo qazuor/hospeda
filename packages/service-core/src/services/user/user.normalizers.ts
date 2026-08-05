@@ -136,7 +136,7 @@ export type UserNormalizeMode = 'create' | 'update';
  * a redirect from an old user slug, so an unrelated profile edit would break
  * every inbound link and every Google result pointing at the author. A slug
  * change is a deliberate operation (see
- * `packages/seed/src/data-migrations/0040-editorial-author-slug.ts`), not a side
+ * `packages/seed/src/data-migrations/0041-editorial-author-slug.ts`), not a side
  * effect of editing a name.
  *
  * An explicitly supplied slug is still honoured on both paths — it is just

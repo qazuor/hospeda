@@ -20,7 +20,7 @@ export const AUTHOR_SLUG_OPTED_IN = 'laura-vega';
  * Slug of an author whose stored `profile.avatar` is NOT a parseable URL.
  *
  * Not a hypothetical: `profile.avatar` is a JSONB path written directly by the
- * seed fixtures and by data-migration `0042`, both of which bypass Zod, so
+ * seed fixtures and by data-migration `0043`, both of which bypass Zod, so
  * nothing in the write path guarantees the value is a URL. The value below is
  * the shape that matters — a non-empty string the `z.string().url()` check
  * rejects — because `stripWithSchema` fail-closes to HTTP 500 and this is a

@@ -23,7 +23,7 @@ const AUTHOR_ID = 'c0ffee00-0000-4000-8000-000000000001';
 
 describe('toArticleCardProps — author avatar is dropped unless renderable', () => {
     it.each([
-        // The exact production shape data-migration `0042` and the seed
+        // The exact production shape data-migration `0043` and the seed
         // fixtures can leave behind in the JSONB/`users.image` columns.
         ['a bare relative path', 'avatars/laura-vega.jpg'],
         ['a protocol-less host', 'example.com/a.jpg'],

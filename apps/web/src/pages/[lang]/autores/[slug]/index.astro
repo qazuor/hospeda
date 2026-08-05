@@ -203,7 +203,7 @@ const authorName =
 
 const bio = author.bio?.trim() ?? '';
 // The route's `avatar` asserts type but NOT URL format on purpose (HOS-375):
-// `profile.avatar` is a JSONB path the seed fixtures and data-migration `0042`
+// `profile.avatar` is a JSONB path the seed fixtures and data-migration `0043`
 // write directly, bypassing Zod, so a strict response schema fail-closed this
 // PUBLIC page to a 500 on one malformed stored value. The junk now arrives
 // here intact and is dropped at the last moment instead.

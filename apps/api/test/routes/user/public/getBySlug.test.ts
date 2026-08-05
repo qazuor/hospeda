@@ -172,7 +172,7 @@ describe('GET /api/v1/public/users/by-slug/:slug', () => {
         // HOS-375 round-2 review finding: `avatar` was the last STRICT field on
         // this response, and `stripWithSchema` fail-closes to HTTP 500. Since
         // `profile.avatar` is a JSONB path written by seed fixtures and by
-        // data-migration `0042` — both bypassing Zod — one malformed stored
+        // data-migration `0043` — both bypassing Zod — one malformed stored
         // value took down the entire PUBLIC author page. Dropping `.url()`
         // (the same treatment `EventAuthorPublicSchema` applies to the event
         // author avatar) makes the response accept it instead.
@@ -420,7 +420,7 @@ describe('UserAuthorPublicResponseSchema — HOS-375 socialNetworks', () => {
  * HOS-375 round-2 — `avatar` ACCEPTS, it does not reject.
  *
  * The value comes from the `profile.avatar` JSONB path, written by seed
- * fixtures and by data-migration `0042` without ever passing through Zod, so a
+ * fixtures and by data-migration `0043` without ever passing through Zod, so a
  * non-URL string is a reachable stored state rather than a hypothetical one.
  * Dropping the `.url()` constraint is what keeps it from taking the whole
  * PUBLIC author page down through `stripWithSchema`'s fail-closed 500.

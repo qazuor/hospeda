@@ -57,7 +57,7 @@ const userService = new UserService({ logger: apiLogger });
  *
  * `avatar` is the third lenient field, and for the same fail-closed reason.
  * `profile.avatar` is a JSONB path, not a validated column: the seed fixtures
- * and data-migration `0042` both write it directly, bypassing Zod entirely, so
+ * and data-migration `0043` both write it directly, bypassing Zod entirely, so
  * nothing guarantees the stored value is a parseable URL. Leaving it strict
  * meant ONE malformed stored value 500'd the whole author page. The ABSENCE of
  * `.url()` is the load-bearing part — the same treatment

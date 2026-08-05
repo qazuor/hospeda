@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Integration tests for `0042-editorial-author-avatar.ts` (HOS-375).
+ * Integration tests for `0043-editorial-author-avatar.ts` (HOS-375).
  *
  * Same rollback-isolation idiom as
  * `test/data-migrations/editorial-author-slug.integration.test.ts`: every test
@@ -25,7 +25,7 @@ import type { Actor } from '@repo/service-core';
 import { config as loadEnv } from 'dotenv';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import * as editorialAuthorAvatar from '../../src/data-migrations/0042-editorial-author-avatar.js';
+import * as editorialAuthorAvatar from '../../src/data-migrations/0043-editorial-author-avatar.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -126,7 +126,7 @@ async function clearTargets(tx: DrizzleClient): Promise<void> {
     await tx.delete(users).where(inArray(users.slug, ['equipo-hospeda', BYSTANDER_SLUG]));
 }
 
-describe('HOS-375: 0042-editorial-author-avatar (integration)', () => {
+describe('HOS-375: 0043-editorial-author-avatar (integration)', () => {
     beforeAll(async () => {
         if (!process.env.HOSPEDA_DATABASE_URL) {
             throw new Error(
@@ -184,7 +184,7 @@ describe('HOS-375: 0042-editorial-author-avatar (integration)', () => {
     it('resolves by email, not by slug — and works from any slug', async () => {
         await withRollback(async (tx) => {
             await clearTargets(tx);
-            // Deliberately NOT the curated slug: nothing may depend on `0040`
+            // Deliberately NOT the curated slug: nothing may depend on `0041`
             // having already run.
             await insertUser(tx, EDITORIAL_EMAIL, 'user-ffffffff', { bio: EDITORIAL_BIO });
 

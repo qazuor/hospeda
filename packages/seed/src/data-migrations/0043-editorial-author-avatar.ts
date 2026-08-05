@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0042-editorial-author-avatar
+ * Data migration: 0043-editorial-author-avatar
  *
  * Gives the shared editorial author ("Equipo Hospeda") the Hospeda isotype as
  * its avatar, in environments seeded before HOS-375 set one.
@@ -17,17 +17,17 @@
  * ## Resolved by email, never by slug or id
  *
  * The row id differs per environment and the slug only became stable in
- * `0040`. `email` is the account's stable identity and is `UNIQUE`, exactly as
- * `0025`'s own `ensureEditorialAuthor` and `0040` resolve it.
+ * `0041`. `email` is the account's stable identity and is `UNIQUE`, exactly as
+ * `0025`'s own `ensureEditorialAuthor` and `0041` resolve it.
  *
  * The email is re-declared here rather than imported: data migrations are
  * frozen historical artifacts and do not import from one another (`0030` and
- * `0040` re-declare it the same way). Sharing a mutable constant would let a
+ * `0041` re-declare it the same way). Sharing a mutable constant would let a
  * future edit retroactively change what an already-applied migration targeted.
  *
  * ## Never clobbers an operator's own avatar
  *
- * Unlike `0040`, which overwrote a slug because the value it replaced was a
+ * Unlike `0041`, which overwrote a slug because the value it replaced was a
  * machine-generated `user-<8 hex>` string nobody chose, this migration writes
  * ONLY when the avatar is absent or blank. An avatar already on the row is a
  * deliberate choice by whoever set it, and a seed migration has no business
@@ -43,7 +43,7 @@
  *
  * ## `contentOnly` flag decision
  *
- * `true`, for the same reason as `0040`: the row this migration edits has NO
+ * `true`, for the same reason as `0041`: the row this migration edits has NO
  * fixture baseline. It exists only because `0025` created it, and `0025` is
  * itself `contentOnly`. On a fresh build `--baseline-stamp` therefore leaves
  * both pending and runs them in order, and `0025` already writes the avatar
@@ -64,7 +64,7 @@ import { eq, users } from '@repo/db';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0042-editorial-author-avatar',
+    name: '0043-editorial-author-avatar',
     group: 'required',
     destructive: false,
     contentOnly: true

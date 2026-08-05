@@ -62,11 +62,11 @@ async function grantSuperAdminRole(userId: string): Promise<void> {
  * update moving a tuple).
  *
  * That turns a specific data-migration failure into a reachable one rather
- * than a theoretical one. `0041-reattribute-imported-events.ts` resolves its
+ * than a theoretical one. `0042-reattribute-imported-events.ts` resolves its
  * fallback actor through {@link findSuperAdminActor}, and by design it THROWS
  * when the actor it resolves is not the one `0027`/`0028` ran as. A
  * non-deterministic pick therefore does not merely choose a different-but-fine
- * actor: it aborts `0041` and blocks `0042`/`0043` from ever applying.
+ * actor: it aborts `0042` and blocks `0043`/`0044` from ever applying.
  *
  * `createdAt ASC` is the tiebreak because it is the one column here that is
  * both immutable and monotonic — "the FIRST super admin this database ever

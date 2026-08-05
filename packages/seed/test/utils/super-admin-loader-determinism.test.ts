@@ -11,11 +11,11 @@
  * which is not a stable property of the data — it can change after a `VACUUM`,
  * a plan change, or a concurrent update that moves a tuple.
  *
- * `packages/seed/src/data-migrations/0041-reattribute-imported-events.ts`
+ * `packages/seed/src/data-migrations/0042-reattribute-imported-events.ts`
  * resolves its fallback actor through this function and THROWS by design when
  * that actor is not the one `0027`/`0028` ran as. So a non-deterministic pick
- * does not quietly choose a different-but-equivalent actor — it aborts `0041`
- * and blocks `0042`/`0043` from applying at all.
+ * does not quietly choose a different-but-equivalent actor — it aborts `0042`
+ * and blocks `0043`/`0044` from applying at all.
  *
  * ## How this is tested without a live Postgres
  *

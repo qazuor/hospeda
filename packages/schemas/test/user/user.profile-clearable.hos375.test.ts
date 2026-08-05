@@ -115,7 +115,7 @@ describe('UserProfileReadSchema (READ) — a stored JSON null must not 500 the G
     // their own profile.
     //
     // `profile.avatar` is a JSONB path the seed fixtures and data-migration
-    // `0042` write DIRECTLY, bypassing Zod, so a non-URL string is a reachable
+    // `0043` write DIRECTLY, bypassing Zod, so a non-URL string is a reachable
     // stored state. `UserProfileReadSchema` is reached by
     // `UserProtectedSchema.profile` → `UserSelfSchema`, the response of
     // `GET`/`PATCH /api/v1/protected/users/:id`, and `stripWithSchema`

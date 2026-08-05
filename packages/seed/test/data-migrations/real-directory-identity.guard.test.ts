@@ -20,9 +20,18 @@
  * `staging` landed `0038-hos-374-cut-editor-panel-access` while this branch's
  * `system-account-flag-staff` was sitting on the same prefix, and the five
  * HOS-375 migrations had to be renumbered a second time (to `0039`-`0043`).
+ * And a THIRD time, at `0039`: `staging` landed
+ * `0039-event-organizer-permissions` against the same
+ * `system-account-flag-staff`, pushing the five to `0040`-`0044`.
  * That is the point — the collision is not a one-off mistake but the default
  * outcome of any long-lived branch that allocates a prefix, and this guard is
  * what reports it in CI at unit level instead of at `db:seed:migrate` time.
+ *
+ * The third occurrence also exposed the guard's own blind spot, which is why it
+ * only ever fired in CI: `pull_request` workflows build `refs/pull/N/merge`, so
+ * the duplicate exists ONLY in the merged tree. Run locally against the branch
+ * this guard is green and correct — there really is one `0039` here. Verify a
+ * renumber against the merge ref, not the branch.
  *
  * This guard is deliberately source-level (readdir + read the file text) and
  * imports no migration module: importing them pulls in the DB layer, which is
