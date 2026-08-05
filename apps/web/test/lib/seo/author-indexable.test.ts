@@ -125,6 +125,55 @@ describe('evaluateAuthorIndexability', () => {
         expect(evaluateAuthorIndexability(withoutPage).isIndexable).toBe(true);
     });
 
+    it('distinguishes a FAILED content fetch from a genuinely empty author', () => {
+        // The two arrive identically — both leave the totals at 0 — and
+        // collapsing them de-indexes a live author on a transient 500 while the
+        // sitemap keeps advertising the URL, which is the one direction §6.6
+        // forbids outright.
+        const genuinelyEmpty = evaluateAuthorIndexability({
+            ...INDEXABLE_AUTHOR,
+            publishedPostsCount: 0,
+            publishedEventsCount: 0
+        });
+        const fetchFailed = evaluateAuthorIndexability({
+            ...INDEXABLE_AUTHOR,
+            publishedPostsCount: 0,
+            publishedEventsCount: 0,
+            contentCountsUnavailable: true
+        });
+
+        expect(genuinelyEmpty).toEqual({ isIndexable: false, reason: 'no-published-items' });
+        expect(fetchFailed).toEqual({ isIndexable: true, reason: null });
+    });
+
+    it('still applies every OTHER condition when the counts are unavailable', () => {
+        // The counts are the only thing the outage took away. The bio, the
+        // avatar, the system-account flag and the page number all come from the
+        // author payload, which loaded — an unreadable count must not be a
+        // blanket "index anything".
+        const inputs = { ...INDEXABLE_AUTHOR, contentCountsUnavailable: true };
+
+        expect(evaluateAuthorIndexability({ ...inputs, bio: '' }).reason).toBe('missing-bio');
+        expect(evaluateAuthorIndexability({ ...inputs, avatar: '' }).reason).toBe('missing-avatar');
+        expect(evaluateAuthorIndexability({ ...inputs, isSystemAccount: true }).reason).toBe(
+            'system-account'
+        );
+        expect(evaluateAuthorIndexability({ ...inputs, page: 2 }).reason).toBe('paginated');
+    });
+
+    it('treats an absent contentCountsUnavailable as "the counts are trustworthy"', () => {
+        // Every existing caller omits the flag; omission must keep meaning
+        // "0 really is zero", never "unknown".
+        const result = evaluateAuthorIndexability({
+            ...INDEXABLE_AUTHOR,
+            publishedPostsCount: 0,
+            publishedEventsCount: 0,
+            contentCountsUnavailable: undefined
+        });
+
+        expect(result.reason).toBe('no-published-items');
+    });
+
     it('reports the FIRST failing condition when several fail at once', () => {
         // Ordering matters for diagnosis: a system account with no content is
         // reported as a system account, not as an empty one.

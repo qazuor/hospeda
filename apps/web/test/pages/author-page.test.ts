@@ -74,6 +74,39 @@ describe('author page — indexability wiring (§6.5, AC-3/AC-4/AC-13)', () => {
     });
 });
 
+describe('author page — a failed fetch is not "zero content" (§6.6)', () => {
+    it('tells the predicate the counts could not be read', () => {
+        // Without this the page reads a failed fetch as an empty author and
+        // emits `noindex` on a URL the sitemap still lists — the one direction
+        // §6.6 forbids. Behaviour is covered in author-indexable.test.ts; what
+        // this pins is that the page actually FEEDS the flag.
+        expect(src).toContain(
+            'const contentCountsUnavailable = postsFetchFailed || eventsFetchFailed'
+        );
+        expect(src).toContain('contentCountsUnavailable,');
+    });
+});
+
+describe('author page — canonical + out-of-range URLs (§6.6)', () => {
+    it('derives the canonical from the shared resolver, never from the bare profile path', () => {
+        expect(src).toContain('resolveAuthorCanonicalPath({');
+        expect(template).toContain('canonicalPath={canonicalPath}');
+        // The regression: pages 2..n are `noindex`, so canonicalising them to
+        // page 1 contradicts their own robots directive.
+        expect(template).not.toContain('canonicalPath={authorPath}');
+    });
+
+    it('404s a page number past the last real page instead of rendering an empty 200', () => {
+        expect(src).toContain('isAuthorPageOutOfRange({');
+        expect(src).toMatch(/isAuthorPageOutOfRange[\s\S]{0,400}?status: 404/);
+    });
+
+    it('asks about BOTH blocks, so neither tail mints crawlable URLs', () => {
+        expect(src).toContain('page: postsPage, totalPages: postsPagination?.totalPages ?? null');
+        expect(src).toContain('page: eventsPage, totalPages: eventsPagination?.totalPages ?? null');
+    });
+});
+
 describe('author page — JSON-LD (§6.8, AC-8)', () => {
     it('mounts ProfilePageJsonLd only when the page is indexable', () => {
         // Structured data on a noindex page is noise.
@@ -141,6 +174,36 @@ describe('author page — empty profile stays empty (§8)', () => {
     it('ships no placeholder silhouette or filler copy', () => {
         expect(template).not.toContain('placeholder-avatar');
         expect(template).not.toContain('avatar-fallback');
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-375 — the API's `avatar` asserts TYPE but not URL FORMAT on purpose
+    // (`profile.avatar` is JSONB written outside Zod, and a strict response
+    // schema fail-closed this PUBLIC page to a 500). The schema no longer
+    // erases a bad value either — `.catch()` was removed because `ZodCatch` is
+    // unrenderable by `@hono/zod-openapi` and 500'd the GLOBAL OpenAPI
+    // document. So suppressing the broken image is THIS page's job.
+    // -----------------------------------------------------------------------
+    it('drops an unrenderable avatar before it can reach an <img>', () => {
+        expect(src).toContain('toRenderableImageUrl(author.avatar)');
+        // The old raw read would put `avatars/x.jpg` straight into `src`.
+        expect(src).not.toContain("author.avatar?.trim() ?? ''");
+    });
+
+    it('feeds the indexability gate the RAW avatar, so it agrees with the sitemap', () => {
+        // §6.6 is ONE-WAY: the sitemap may never advertise a URL the page then
+        // serves `noindex`. The sitemap's predicate is non-EMPTY
+        // (`trim(coalesce(profile->>'avatar','')) <> ''` in
+        // `UserModel.listPublicAuthors`); `toRenderableImageUrl` is STRONGER
+        // than that. Feeding the filtered value here would tighten the WEB
+        // side — the forbidden direction — and a stored `ftp://cdn/x.png`
+        // (which passes the write schema's `.url()`, so the admin form can
+        // produce it) would be sitemapped AND noindexed at once.
+        //
+        // An earlier revision of this test pinned the opposite and is what let
+        // that inconsistency through review.
+        expect(src).toContain('evaluateAuthorIndexability({');
+        expect(src).toContain('avatar: author.avatar');
     });
 
     it('delegates the social block to the opt-in-aware helper', () => {

@@ -61,6 +61,28 @@ export interface AuthorIndexabilityInput {
     /** Count of the author's published events. */
     readonly publishedEventsCount?: number | null;
 
+    /**
+     * `true` when the counts above could NOT be read — a content fetch failed,
+     * so `0` means "unknown", not "this author published nothing".
+     *
+     * A failed fetch and a genuinely empty author look identical to the caller:
+     * both leave the totals at `0`. Collapsing the two is the one mistake §6.6
+     * forbids OUTRIGHT, because it fails in the prohibited direction: the
+     * sitemap keeps listing the URL (it is built from the API's own row-level
+     * predicate, which never saw the outage) while the page it advertises now
+     * serves `noindex`. A transient 500 on the events endpoint would quietly
+     * de-index a real author page, and `noindex` is far more expensive to
+     * recover from than a thin page — Google has to re-crawl to unlearn it.
+     *
+     * So when this is `true` the "at least one published item" condition is
+     * SKIPPED rather than failed: with no evidence either way, the page defers
+     * to the sitemap instead of contradicting it. Every other condition still
+     * applies — they come from the author payload, which did load.
+     *
+     * Absent/`false` means the counts are trustworthy and `0` really is zero.
+     */
+    readonly contentCountsUnavailable?: boolean | null;
+
     /** `profile.bio`. Whitespace-only counts as empty. */
     readonly bio?: string | null;
 
@@ -98,6 +120,11 @@ function isNonEmpty(value: string | null | undefined): boolean {
  * one published post or event, a non-empty bio, a non-empty avatar, and page 1.
  * Conditions are evaluated in that order and the first failure is reported.
  *
+ * The one exception is {@link AuthorIndexabilityInput.contentCountsUnavailable}:
+ * when the caller could not read the counts, the "published item" condition is
+ * skipped instead of failed, so an outage cannot turn a listed URL into a
+ * `noindex` page (§6.6).
+ *
  * @param input - {@link AuthorIndexabilityInput} from whichever source the caller has.
  * @returns {@link AuthorIndexabilityResult}.
  *
@@ -122,8 +149,10 @@ export function evaluateAuthorIndexability(
         return { isIndexable: false, reason: 'system-account' };
     }
 
+    // A zero total only means "no content" when the counts were actually read.
+    // See `contentCountsUnavailable` for why a failed fetch must not de-index.
     const publishedItems = (input.publishedPostsCount ?? 0) + (input.publishedEventsCount ?? 0);
-    if (publishedItems < 1) {
+    if (publishedItems < 1 && input.contentCountsUnavailable !== true) {
         return { isIndexable: false, reason: 'no-published-items' };
     }
 

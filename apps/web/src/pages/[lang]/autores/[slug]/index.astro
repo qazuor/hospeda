@@ -20,7 +20,14 @@
  * | `/autores/<slug>/eventos/page/<n>/`    | `?eventsPage=<n>`  | events only      |
  *
  * Pages 2..n render only the block being paginated, so the same markup is never
- * duplicated across several URLs. All of them are `noindex` (§6.5 condition 5).
+ * duplicated across several URLs. All of them are `noindex` (§6.5 condition 5)
+ * and each declares ITSELF canonical — a `noindex` page pointing its canonical
+ * at page 1 would contradict its own robots directive
+ * (`resolveAuthorCanonicalPath`).
+ *
+ * A page number past the last real page is a 404, not an empty state: answering
+ * 200 would mint an unbounded family of crawlable URLs
+ * (`isAuthorPageOutOfRange`).
  *
  * A URL carrying BOTH params cannot come from either rewrite; posts win, so such
  * a request still renders one real block rather than an empty page.
@@ -44,12 +51,17 @@ import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import { eventsApi, postsApi, usersApi } from '@/lib/api/endpoints';
 import { toArticleCardProps, toEventCardProps } from '@/lib/api/transforms';
+import {
+	isAuthorPageOutOfRange,
+	resolveAuthorCanonicalPath,
+} from '@/lib/authors/author-page-pagination';
 import type { AuthorSocialNetworkKey } from '@/lib/authors/author-social-links';
 import { resolveAuthorSocialLinks } from '@/lib/authors/author-social-links';
 import { getSiteUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
+import { toRenderableImageUrl } from '@/lib/media';
 import { evaluateAuthorIndexability } from '@/lib/seo/author-indexable';
 import { buildUrl } from '@/lib/urls';
 import {
@@ -110,12 +122,19 @@ const [postsResult, eventsResult] = await Promise.all([
 // posts-only page, not to an error page. But degrading silently is how a 500 on
 // the events endpoint stayed invisible while this page shipped no events block
 // for an author who had 52 of them. Log the difference the markup cannot show.
-if (wantsPosts && !postsResult?.ok) {
+const postsFetchFailed = wantsPosts && !postsResult?.ok;
+const eventsFetchFailed = wantsEvents && !eventsResult?.ok;
+if (postsFetchFailed) {
 	webLogger.warn('[autores] posts fetch failed — the block will be omitted', { slug });
 }
-if (wantsEvents && !eventsResult?.ok) {
+if (eventsFetchFailed) {
 	webLogger.warn('[autores] events fetch failed — the block will be omitted', { slug });
 }
+
+// A failed fetch reports the same `0` a genuinely empty author does. Carried
+// into the indexability gate below so the two are not confused: a broken
+// endpoint must not de-index a URL the sitemap still advertises (§6.6).
+const contentCountsUnavailable = postsFetchFailed || eventsFetchFailed;
 
 const postItems = postsResult?.ok ? postsResult.data.items : [];
 const postsPagination = postsResult?.ok ? postsResult.data.pagination : null;
@@ -126,6 +145,17 @@ const eventItems = eventsResult?.ok ? eventsResult.data.items : [];
 const eventsPagination = eventsResult?.ok ? eventsResult.data.pagination : null;
 const totalEvents = eventsPagination?.total ?? 0;
 const eventsTotalPages = eventsPagination?.totalPages ?? 1;
+
+// A page number past the last real page is not an empty state, it is a URL that
+// does not exist — serving it with 200 mints an unbounded crawlable family. The
+// pagination routes already 404 malformed numbers; this covers the well-formed
+// ones. `null` means the count could not be read, and an outage never 404s.
+if (
+	isAuthorPageOutOfRange({ page: postsPage, totalPages: postsPagination?.totalPages ?? null }) ||
+	isAuthorPageOutOfRange({ page: eventsPage, totalPages: eventsPagination?.totalPages ?? null })
+) {
+	return new Response(null, { status: 404 });
+}
 
 const articleCards = postItems.map((item) =>
 	toArticleCardProps({ item: item as unknown as Record<string, unknown>, locale })
@@ -141,21 +171,55 @@ const authorName =
 	slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 const bio = author.bio?.trim() ?? '';
-const avatar = author.avatar?.trim() ?? '';
+// The route's `avatar` asserts type but NOT URL format on purpose (HOS-375):
+// `profile.avatar` is a JSONB path the seed fixtures and data-migration `0037`
+// write directly, bypassing Zod, so a strict response schema fail-closed this
+// PUBLIC page to a 500 on one malformed stored value. The junk now arrives
+// here intact and is dropped at the last moment instead.
+//
+// This gates the RENDERS below only — deliberately NOT the indexability gate.
+//
+// §6.6 is a ONE-WAY invariant: the sitemap may never advertise a URL the page
+// then serves as `noindex`. The sitemap's row predicate is
+// `trim(coalesce(profile->>'avatar','')) <> ''` (`UserModel.listPublicAuthors`),
+// i.e. non-EMPTY. `toRenderableImageUrl` is strictly STRONGER than that — it
+// also demands `http(s):` or a leading `/`. Feeding the filtered value to the
+// gate would therefore tighten the WEB side, which is the forbidden side to
+// tighten: a stored `ftp://cdn/x.png` (which passes `UserProfileSchema.avatar`'s
+// `.url()`, so the admin form can produce it) would be listed in the sitemap and
+// then served `noindex`.
+//
+// So the gate gets the RAW value and agrees with the SQL by construction. In the
+// pathological case the page renders a bio-and-links profile with no picture and
+// stays indexable — strictly better than dropping out of the index, and it keeps
+// exactly one source of truth for "has an avatar".
+const avatar = toRenderableImageUrl(author.avatar) ?? '';
 
 const { isIndexable } = evaluateAuthorIndexability({
 	isSystemAccount: author.isSystemAccount,
 	publishedPostsCount: totalPosts,
 	publishedEventsCount: totalEvents,
+	contentCountsUnavailable,
 	bio,
-	avatar,
+	avatar: author.avatar,
 	page: paginatedPage,
 });
 
 // `autores` is a fixed segment in all three locales, like `publicaciones` and
 // `destinos` — `buildUrl` only prefixes the locale, it never translates (NG-4).
 const authorPath = buildUrl({ locale, path: `autores/${slug}` });
+const eventsPath = buildUrl({ locale, path: `autores/${slug}/eventos` });
 const authorUrl = new URL(authorPath, getSiteUrl()).href;
+
+// Self-referential on every paginated URL. Canonicalising a `noindex` page to
+// page 1 hands Google two contradictory signals about the same document; the
+// listing pages already resolved this the same way (§6.6).
+const canonicalPath = resolveAuthorCanonicalPath({
+	authorPath,
+	eventsPath,
+	postsPage,
+	eventsPage,
+});
 
 /** Which icon renders each network. Order and filtering live in the helper. */
 const SOCIAL_ICONS: Readonly<Record<AuthorSocialNetworkKey, typeof FacebookIcon>> = {
@@ -186,7 +250,7 @@ const metaDescription =
 	locale={locale}
 	title={metaTitle}
 	description={metaDescription}
-	canonicalPath={authorPath}
+	canonicalPath={canonicalPath}
 	showFilters={false}
 	noindex={!isIndexable}
 >
@@ -322,7 +386,7 @@ const metaDescription =
 							locale={locale}
 							currentPage={eventsPage}
 							totalPages={eventsTotalPages}
-							baseUrl={buildUrl({ locale, path: `autores/${slug}/eventos` })}
+							baseUrl={eventsPath}
 						/>
 					)}
 				</section>
