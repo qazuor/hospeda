@@ -521,6 +521,12 @@
         "adminNote": {
             "max": "La nota no puede superar los {{max}} caracteres"
         },
+        "benefitType": {
+            "requiredForServiceProvider": "Elegí qué beneficio ofrecés a los anfitriones"
+        },
+        "category": {
+            "requiredForServiceProvider": "Elegí la categoría del servicio que ofrecés"
+        },
         "claimExpiresAt": {
             "invalid": "La fecha de vencimiento de la confirmación no es válida"
         },
@@ -531,6 +537,9 @@
         "contactName": {
             "max": "El nombre de contacto no puede superar los {{max}} caracteres",
             "min": "El nombre de contacto debe tener al menos {{min}} caracteres"
+        },
+        "destinationId": {
+            "requiredForServiceProvider": "Elegí la localidad donde prestás el servicio"
         },
         "email": {
             "invalid": "El email no es válido",

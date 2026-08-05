@@ -36,9 +36,9 @@ import {
     AllianceLeadAdminListQuerySchema,
     AllianceLeadClaimInputSchema,
     type AllianceLeadCreateInput,
-    AllianceLeadCreateInputSchema,
     type AllianceLeadKind,
     AllianceLeadMarkHandledSchema,
+    AllianceLeadSubmissionSchema,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode
@@ -386,7 +386,13 @@ export class AllianceLeadService extends BaseService {
         return this.runWithLoggingAndValidation({
             methodName: 'createLead',
             input: { actor, ...input },
-            schema: AllianceLeadCreateInputSchema,
+            // The SUBMISSION schema, not the plain create-input object: it is
+            // the one carrying the per-kind requirement (a `service_provider`
+            // must declare category, destination and benefit). The HTTP layer
+            // validates against the plain object because OpenAPI and `.extend()`
+            // cannot consume a refined schema, which makes this the only place
+            // the rule is actually enforced for every caller.
+            schema: AllianceLeadSubmissionSchema,
             ctx,
             execute: async (validated, a, execCtx) => {
                 // The account link is derived from the ACTOR, never from the

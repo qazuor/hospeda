@@ -521,6 +521,12 @@
         "adminNote": {
             "max": "Note must not exceed {{max}} characters"
         },
+        "benefitType": {
+            "requiredForServiceProvider": "[EN] Elegí qué beneficio ofrecés a los anfitriones"
+        },
+        "category": {
+            "requiredForServiceProvider": "[EN] Elegí la categoría del servicio que ofrecés"
+        },
         "claimExpiresAt": {
             "invalid": "The confirmation expiry date is invalid"
         },
@@ -531,6 +537,9 @@
         "contactName": {
             "max": "Contact name must not exceed {{max}} characters",
             "min": "Contact name must be at least {{min}} characters"
+        },
+        "destinationId": {
+            "requiredForServiceProvider": "[EN] Elegí la localidad donde prestás el servicio"
         },
         "email": {
             "invalid": "Email is invalid",

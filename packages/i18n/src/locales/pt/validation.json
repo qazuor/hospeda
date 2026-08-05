@@ -521,6 +521,12 @@
         "adminNote": {
             "max": "A nota não pode exceder {{max}} caracteres"
         },
+        "benefitType": {
+            "requiredForServiceProvider": "[PT] Elegí qué beneficio ofrecés a los anfitriones"
+        },
+        "category": {
+            "requiredForServiceProvider": "[PT] Elegí la categoría del servicio que ofrecés"
+        },
         "claimExpiresAt": {
             "invalid": "A data de expiração da confirmação é inválida"
         },
@@ -531,6 +537,9 @@
         "contactName": {
             "max": "O nome de contato não pode exceder {{max}} caracteres",
             "min": "O nome de contato deve ter pelo menos {{min}} caracteres"
+        },
+        "destinationId": {
+            "requiredForServiceProvider": "[PT] Elegí la localidad donde prestás el servicio"
         },
         "email": {
             "invalid": "O email é inválido",

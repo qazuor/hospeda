@@ -6,9 +6,12 @@ import {
     AllianceLeadAdminUpdateInputSchema,
     AllianceLeadCreateInputSchema,
     AllianceLeadDeleteInputSchema,
-    AllianceLeadMarkHandledSchema
+    AllianceLeadMarkHandledSchema,
+    AllianceLeadSubmissionSchema
 } from '../../../src/entities/alliance-lead/alliance-lead.crud.schema.js';
 import { AllianceLeadSchema } from '../../../src/entities/alliance-lead/alliance-lead.schema.js';
+import { HostTradeBenefitTypeEnum } from '../../../src/enums/host-trade-benefit-type.enum.js';
+import { HostTradeCategoryEnum } from '../../../src/enums/host-trade-category.enum.js';
 
 const validLeadBase = () => ({
     id: faker.string.uuid(),
@@ -252,5 +255,117 @@ describe('AllianceLeadAdminListQuerySchema', () => {
 
     it('should reject pageSize above the max of 100', () => {
         expect(() => AllianceLeadAdminListQuerySchema.parse({ pageSize: 101 })).toThrow(ZodError);
+    });
+});
+
+describe('AllianceLeadSubmissionSchema — per-kind requirement (HOS-278)', () => {
+    /** A `service_provider` submission carrying every field its kind requires. */
+    const validProviderSubmission = () => ({
+        kind: 'service_provider' as const,
+        contactName: 'Test Provider',
+        email: 'provider@example.com',
+        message: 'Quiero sumar mi servicio al directorio de proveedores.',
+        category: HostTradeCategoryEnum.PLOMERIA,
+        destinationId: faker.string.uuid(),
+        benefitType: HostTradeBenefitTypeEnum.PERCENTAGE,
+        benefitValue: 15,
+        benefitText: 'No acumulable con otras promociones.'
+    });
+
+    it('should accept a complete service_provider submission', () => {
+        expect(() => AllianceLeadSubmissionSchema.parse(validProviderSubmission())).not.toThrow();
+    });
+
+    it.each([
+        'category',
+        'destinationId',
+        'benefitType'
+    ] as const)('should reject a service_provider submission missing %s', (field) => {
+        const { [field]: _omitted, ...data } = validProviderSubmission();
+        expect(() => AllianceLeadSubmissionSchema.parse(data)).toThrow(ZodError);
+    });
+
+    it.each([
+        'category',
+        'destinationId',
+        'benefitType'
+    ] as const)('should point the %s error at that exact field', (field) => {
+        const { [field]: _omitted, ...data } = validProviderSubmission();
+        const result = AllianceLeadSubmissionSchema.safeParse(data);
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            const paths = result.error.issues.map((issue) => issue.path.join('.'));
+            expect(paths).toContain(field);
+        }
+    });
+
+    it.each([
+        'partner',
+        'sponsor',
+        'editor'
+    ] as const)('should accept a %s submission with none of the provider fields', (kind) => {
+        // Arrange — the other three programs never collect provider data;
+        // requiring it from them would break three live public forms.
+        const data = {
+            kind,
+            contactName: 'Test Applicant',
+            email: 'applicant@example.com',
+            message: 'Quiero sumarme al programa de aliados.'
+        };
+
+        // Act + Assert
+        expect(() => AllianceLeadSubmissionSchema.parse(data)).not.toThrow();
+    });
+
+    it('should still enforce the benefit value/type pairing on a provider', () => {
+        // Arrange — a PERCENTAGE with no value: the benefit rule is delegated,
+        // and this proves the delegation is actually wired, not just written.
+        const { benefitValue: _v, ...data } = validProviderSubmission();
+
+        // Act
+        const result = AllianceLeadSubmissionSchema.safeParse(data);
+
+        // Assert
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            const messages = result.error.issues.map((issue) => issue.message);
+            expect(messages).toContain('zodError.hostTrade.benefitValue.required');
+        }
+    });
+
+    it('should reject a provider benefit above 100%', () => {
+        const data = { ...validProviderSubmission(), benefitValue: 101 };
+        const result = AllianceLeadSubmissionSchema.safeParse(data);
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            const messages = result.error.issues.map((issue) => issue.message);
+            expect(messages).toContain('zodError.hostTrade.benefitValue.percentageMax');
+        }
+    });
+
+    it('should accept a 2x1 provider benefit with no numeric value', () => {
+        const { benefitValue: _v, ...rest } = validProviderSubmission();
+        const data = { ...rest, benefitType: HostTradeBenefitTypeEnum.TWO_FOR_ONE };
+
+        expect(() => AllianceLeadSubmissionSchema.parse(data)).not.toThrow();
+    });
+
+    it('should leave the plain create-input object unrefined, so .extend() keeps working', () => {
+        // Arrange — the HTTP layer extends this object with a honeypot field and
+        // OpenAPI generates from it; neither survives a superRefine wrapper. An
+        // incomplete provider payload passing HERE is the intended split, with
+        // the service as the enforcing choke point.
+        const {
+            category: _c,
+            destinationId: _d,
+            benefitType: _b,
+            ...data
+        } = validProviderSubmission();
+
+        // Act + Assert
+        expect(() => AllianceLeadCreateInputSchema.parse(data)).not.toThrow();
+        expect(AllianceLeadCreateInputSchema.shape).toBeDefined();
     });
 });
