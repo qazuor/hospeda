@@ -562,6 +562,9 @@
             "max": "A mensagem não pode exceder {{max}} caracteres",
             "min": "A mensagem deve ter pelo menos {{min}} caracteres"
         },
+        "partnerType": {
+            "requiredForPartner": "[PT] Elegí qué tipo de organización representás"
+        },
         "phone": {
             "max": "O telefone não pode exceder {{max}} caracteres"
         },

@@ -562,6 +562,9 @@
             "max": "El mensaje no puede superar los {{max}} caracteres",
             "min": "El mensaje debe tener al menos {{min}} caracteres"
         },
+        "partnerType": {
+            "requiredForPartner": "Elegí qué tipo de organización representás"
+        },
         "phone": {
             "max": "El teléfono no puede superar los {{max}} caracteres"
         },

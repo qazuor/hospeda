@@ -14,6 +14,14 @@ import { AllianceLeadSchema, AllianceLeadStatusEnum } from './alliance-lead.sche
 const SERVICE_PROVIDER_KIND: z.infer<typeof AllianceLeadSchema.shape.kind> = 'service_provider';
 
 /**
+ * Bound to the enum's literal for the same reason as
+ * {@link SERVICE_PROVIDER_KIND} — a typo here would silently disable the
+ * `partner` requirement below and let every partner application through with
+ * no `partnerType`.
+ */
+const PARTNER_KIND: z.infer<typeof AllianceLeadSchema.shape.kind> = 'partner';
+
+/**
  * The fields a `service_provider` application must supply, each paired with its
  * error key.
  *
@@ -40,23 +48,43 @@ const REQUIRED_SERVICE_PROVIDER_FIELDS = [
 ] as const;
 
 /**
+ * The field a `partner` application must supply (HOS-278 §6.3/§7, provisioning
+ * slice D) — mirrors {@link REQUIRED_SERVICE_PROVIDER_FIELDS}'s reasoning one
+ * program over: `partners.type` is NOT NULL, so `partnerType` is required here
+ * for the same reason `category` is required for `service_provider`.
+ *
+ * `businessName` deliberately stays OUT of this list even though it is now a
+ * typed payload column for `partner` too (HOS-278 provisioning slice D form
+ * work): this array only encodes what the BACKEND schema enforces, and that
+ * asymmetry with `service_provider` (where `businessName` IS enforced here)
+ * already existed before this change — extending it was not asked for.
+ */
+const REQUIRED_PARTNER_FIELDS = [
+    { field: 'partnerType', message: 'zodError.allianceLead.partnerType.requiredForPartner' }
+] as const;
+
+/**
  * Per-kind requirement rule for an alliance lead submission.
  *
- * The provider fields are nullable columns shared by four programs, so the
- * database cannot express "required, but only for one kind". This is where that
- * lives — and it is load-bearing rather than cosmetic: approving a
+ * The provider/partner fields are nullable columns shared by four programs, so
+ * the database cannot express "required, but only for one kind". This is where
+ * that lives — and it is load-bearing rather than cosmetic: approving a
  * `service_provider` materializes a `host_trades` row whose `category`,
- * `destination_id` and benefit are NOT NULL, so a lead accepted without them
- * cannot be approved later without going back to the applicant.
+ * `destination_id` and benefit are NOT NULL, and a future `partner` approval
+ * will materialize a `partners` row whose `type` is NOT NULL — so a lead
+ * accepted without its kind's required field(s) cannot be approved later
+ * without going back to the applicant.
  *
  * The benefit's own internal consistency (value required by numeric types,
  * rejected by the others) is delegated to {@link refineHostTradeBenefit} so the
- * rule is not restated here and cannot drift from the listing's copy of it.
+ * rule is not restated here and cannot drift from the listing's copy of it —
+ * `partner` has no equivalent cross-field rule to delegate to.
  */
 export const refineAllianceLeadKindFields = (
     value: {
         readonly kind?: string;
         readonly businessName?: string | null;
+        readonly partnerType?: string | null;
         readonly category?: string | null;
         readonly destinationId?: string | null;
         readonly benefitType?: HostTradeBenefitTypeEnum | null;
@@ -64,18 +92,26 @@ export const refineAllianceLeadKindFields = (
     },
     ctx: z.RefinementCtx
 ): void => {
-    if (value.kind !== SERVICE_PROVIDER_KIND) {
+    if (value.kind === SERVICE_PROVIDER_KIND) {
+        for (const { field, message } of REQUIRED_SERVICE_PROVIDER_FIELDS) {
+            const supplied = value[field];
+            if (supplied === null || supplied === undefined) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message });
+            }
+        }
+
+        refineHostTradeBenefit(value, ctx);
         return;
     }
 
-    for (const { field, message } of REQUIRED_SERVICE_PROVIDER_FIELDS) {
-        const supplied = value[field];
-        if (supplied === null || supplied === undefined) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message });
+    if (value.kind === PARTNER_KIND) {
+        for (const { field, message } of REQUIRED_PARTNER_FIELDS) {
+            const supplied = value[field];
+            if (supplied === null || supplied === undefined) {
+                ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message });
+            }
         }
     }
-
-    refineHostTradeBenefit(value, ctx);
 };
 
 // ---------------------------------------------------------------------------
