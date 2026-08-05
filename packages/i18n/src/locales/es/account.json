@@ -1218,5 +1218,48 @@
             "confirmed": "¡Listo! Vinculamos la postulación a tu cuenta.",
             "failed": "No pudimos confirmar esa postulación. El enlace pudo haber vencido o ya haberse usado."
         }
+    },
+    "provider": {
+        "pageTitle": "Mi ficha de proveedor",
+        "pageSubtitle": "Gestioná tu ficha en el directorio de proveedores",
+        "empty": {
+            "text": "Todavía no tenés una ficha de proveedor. Postulate desde \"Sumate como aliado\" y, una vez aprobada tu solicitud, tu ficha va a aparecer acá.",
+            "cta": "Ir a Sumate como aliado"
+        },
+        "revoked": {
+            "text": "Tu ficha fue dada de baja del directorio de proveedores.",
+            "contact": "Si querés más información, escribinos y te contamos los detalles."
+        },
+        "errors": {
+            "fetchFailed": "No pudimos cargar tu ficha de proveedor. Recargá la página para reintentar."
+        },
+        "form": {
+            "title": "Editar mi ficha de proveedor",
+            "identitySection": "Datos administrados por Hospeda",
+            "identityNote": "Estos datos los gestiona el equipo de Hospeda. Si necesitás corregirlos, contactanos.",
+            "fields": {
+                "name": "Nombre",
+                "slug": "Identificador (slug)",
+                "category": "Categoría",
+                "contact": "Contacto",
+                "is24h": "Disponible las 24 horas",
+                "scheduleText": "Horario de atención",
+                "scheduleTextPlaceholder": "Ej: Lunes a Viernes 8:00–18:00"
+            },
+            "operationalSection": "Contacto y disponibilidad",
+            "operationalNote": "Estos cambios se aplican al instante en el directorio.",
+            "benefitSection": "Beneficio para hosts",
+            "benefitNote": "Un cambio en el beneficio pasa a revisión del equipo de Hospeda antes de publicarse. Mientras tanto, el beneficio actual sigue visible en el directorio.",
+            "liveBenefitLabel": "Beneficio publicado actualmente",
+            "noBenefit": "Sin beneficio estructurado cargado",
+            "pendingLabel": "Esperando revisión",
+            "noChanges": "No hay cambios para guardar",
+            "success": "Cambios guardados",
+            "saving": "Guardando…",
+            "save": "Guardar cambios",
+            "errors": {
+                "saveFailed": "No se pudieron guardar los cambios"
+            }
+        }
     }
 }

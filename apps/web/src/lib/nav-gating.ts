@@ -257,7 +257,14 @@ export function hasEventsNavAccess({
  * the same circular-dependency reason as `GatedNavNode` above.
  */
 export interface DoorGatingOption {
-    /** The permission that signals "already acquired". Omitted = never acquired. */
+    /**
+     * Stable identifier, matched against `acquiredOptionIds` (see
+     * {@link resolveDoorOptionState}). Optional here only because most
+     * existing callers/tests construct ad hoc option objects that never need
+     * the override; every real `DiscoveryDoorOption` always has one.
+     */
+    readonly id?: string;
+    /** The permission that signals "already acquired". Omitted = never acquired via permissions. */
     readonly acquiredPermission?: PermissionEnum;
     /** `true` = a not-yet-implemented placeholder (sponsor, service provider). */
     readonly comingSoon?: boolean;
@@ -273,23 +280,43 @@ export type DoorOptionState = 'acquired' | 'unacquired' | 'comingSoon';
  * `(node) => isVisibleByRoles(node, roles)` on the server-rendered sidebar/hub
  * pages.
  *
- * An option with no `acquiredPermission` (the sponsor/service-provider
- * placeholders — HOS-131 NG-2) is NEVER `'acquired'`: it resolves to
- * `'comingSoon'` when `comingSoon` is set, or `'unacquired'` otherwise. This
- * is what makes the "Sumate como aliado" door "always shown" fall out of the
- * SAME `isDoorVisible` logic used for the listing door — no `kind`-based
- * branching required.
+ * An option with no `acquiredPermission` (the sponsor/partner placeholders —
+ * HOS-131 NG-2) is NEVER `'acquired'` via the permission mechanism: it
+ * resolves to `'comingSoon'` when `comingSoon` is set, or `'unacquired'`
+ * otherwise. This is what makes the "Sumate como aliado" door "always shown"
+ * fall out of the SAME `isDoorVisible` logic used for the listing door — no
+ * `kind`-based branching required.
  *
- * @param params - `{ option, visibility }` (RO-RO).
+ * `acquiredOptionIds` (HOS-278) is an explicit, out-of-band override for the
+ * ONE option that permissions structurally cannot represent: the
+ * `serviceProvider` door option. The door's "acquired" signal is normally
+ * PERMISSIONS (HOS-131 OQ-3), but an approved service provider deliberately
+ * receives NO permission and NO role change (HOS-278 AC-7 — a provider is an
+ * ordinary tourist account; ownership of the `host_trades` row is the real
+ * gate). So a permission-only evaluator can never say "acquired" for it, and
+ * the page that CAN know (it fetched `GET /host-trades/mine`) supplies the
+ * verdict here instead. When `option.id` is present in `acquiredOptionIds`,
+ * the option resolves to `'acquired'` unconditionally — the permission/
+ * `comingSoon` checks are skipped entirely for that id. Every other option is
+ * completely unaffected: an absent/undefined `acquiredOptionIds` (the default
+ * for every existing caller) falls straight through to the permission logic
+ * below, unchanged.
+ *
+ * @param params - `{ option, visibility, acquiredOptionIds? }` (RO-RO).
  * @returns The option's resolved state.
  */
 export function resolveDoorOptionState({
     option,
-    visibility
+    visibility,
+    acquiredOptionIds
 }: {
     readonly option: DoorGatingOption;
     readonly visibility: (node: GatedNavNode) => boolean;
+    readonly acquiredOptionIds?: readonly string[];
 }): DoorOptionState {
+    if (option.id !== undefined && acquiredOptionIds?.includes(option.id)) {
+        return 'acquired';
+    }
     if (!option.acquiredPermission) {
         return option.comingSoon ? 'comingSoon' : 'unacquired';
     }
