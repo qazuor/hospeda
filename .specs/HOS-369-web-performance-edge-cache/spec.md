@@ -1607,8 +1607,69 @@ Overlaps HOS-168; this spec supplies the measurements it lacked.
 - **W3-1** — Move the i18n payload out of the HTML into a hashed, immutable
   asset served on the `/_astro/*` carril that already returns `HIT`. Saves
   631 KB per cold page load. **This is the single largest byte win available.**
-- **W3-2** — Split the i18n catalog by namespace. `validation` (157 KB) has no
-  business being on a page without forms.
+- **W3-2** — ~~Split the i18n catalog by namespace. `validation` (157 KB) has no
+  business being on a page without forms.~~ **DONE 2026-08-05, but by a
+  different cut than the one this line proposed.** The asset went from
+  **104,701 B to 76,588 B brotli (−26.9%)**, 663,143 → 509,702 B raw, by
+  dropping the **21 namespaces no browser-reachable module can name**. The
+  per-page split the line asked for was measured and rejected; see below.
+
+  **The right question was not "which page needs this namespace" but "can the
+  browser name it at all".** The asset exists only for the client:
+  `getClientLocaleDict` reads it, while SSR resolves keys from the full
+  `@repo/i18n` catalog server-side and never touches it. Twenty-one namespaces
+  — `faq`, `features`, `social`, `terms`, `privacy`, `fields`, `benefits`,
+  `about`, `error`, `mobile`, `gastronomy`, `google-calendar`, `cookies`,
+  `content-moderation`, `exchange-rate`, `tags`, `owners`, `notifications`,
+  `api`, `partners`, `revalidation` — are named only by `.astro` files. They
+  were downloaded by every visitor on every cold load and could never be read.
+
+  **Reachability had to come from the import graph, not from the directory
+  layout, and the difference was not academic.** `apps/web/src/lib/` holds both
+  kinds of module: `features-content.ts` is imported only by `.astro`
+  (SSR-only, `features` is droppable), while `colors.ts` carries
+  `blog.categories.*` literals and is imported by `PostCreateForm.client.tsx`
+  (**`blog` is NOT droppable**). A directory-scoped scan called `blog`
+  unreachable and would have shipped a broken chip label. Two other things the
+  graph walk had to get right: keys frequently live in a data structure first
+  (`config/navigation.ts`, tour steps, filter definitions) and reach `t()`
+  through a variable, so the scan matches any string literal headed by a
+  namespace rather than only `t()` call sites; and `packages/feedback` writes
+  ESM `./Button.js` specifiers for `.tsx` files on disk, which left **112
+  imports unresolved** and 2 modules unexplored until the resolver learned to
+  strip `.js`.
+
+  **`validation` stays, and the line above was wrong about it.** It is the
+  largest namespace (1,902 keys, 16,028 B brotli) and it is reachable from
+  PUBLIC pages: `zodIssuesToFieldErrors` (`lib/forms/field-errors.ts`) feeds
+  `issue.message` — a runtime string from `@repo/schemas` — through
+  `resolveValidationMessage`, which maps `zodError.X` → `validation.X`, and it
+  passes the fallback as an explicit `undefined`. `use-zod-form.ts` reaches it
+  from `ContactHost` and `CommentThreadIsland`. Pruning it to the keys
+  *reachable from the schemas* was measured and does not pay: `@repo/schemas`
+  declares 1,727 `zodError.*` keys, **1,722 of the 1,902 (90.5%) are
+  reachable**, and the prune is worth **1,446 B brotli (1.4%)**. Only a
+  per-page analysis of which schemas can run in which browser page would touch
+  the 16 KB, and that re-creates the hand-maintained mirror of the routing
+  table this spec deleted `entity-path-mapper.ts` to be rid of. Deliberately
+  not done.
+
+  **The guard is the deliverable, not the byte count** —
+  `test/lib/i18n-client-namespaces.guard.test.ts`. A missing namespace does not
+  throw: `resolve()` renders the call site's inline fallback (**154 client call
+  sites pass one**, so the failure is invisible there) or, with no fallback,
+  **the raw key text in production** — `[MISSING: …]` is emitted only under
+  `import.meta.env.DEV`. The same DEV-only asymmetry sits in
+  `resolveValidationMessage`, whose `startsWith('[MISSING:')` recovery branch
+  can never fire in a production build. A wrong list therefore passes dev,
+  `astro check` and every component test. So the guard recomputes the set from
+  the import graph and asserts it in BOTH directions — a namespace named by an
+  island but not shipped fails, and a namespace shipped but unreachable fails
+  too, so dead weight cannot creep back. An import it cannot resolve is a
+  FAILURE rather than an "external" skip, because a truncated graph is exactly
+  how a namespace gets misreported as unreachable. Mutation-tested both ways:
+  removing `blog` names `blog (named in apps/web/src/lib/colors.ts)`, adding
+  `faq` names `faq`.
 - **W3-3** — ~~Audit the 170 KB of `astro-island` props across 26 islands.~~
   **DONE 2026-08-05, and the framing above was wrong.** It is not 26 islands: on
   the home, `DestinationsIsland` alone carried 147,372 B — 28.9% of the whole
