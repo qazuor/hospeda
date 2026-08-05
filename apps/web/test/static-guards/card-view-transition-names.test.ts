@@ -5,8 +5,9 @@
  *
  * ## Why the names were removed
  *
- * Five card components (`AccommodationCard`, `DestinationCard`, `GastronomyCard`,
- * `ExperienceCard`) carried `transition:name={`<kind>-${slug}`}` on their image,
+ * Four card components (`AccommodationCard`, `DestinationCard`, `GastronomyCard`,
+ * `ExperienceCard`) carried `transition:name={`<kind>-${slug}`}` on their image
+ * — seven declarations in all, since three of them render two image variants —
  * for a list → detail shared-element morph. **That morph could never happen**: a
  * `view-transition-name` only produces a shared-element transition when the SAME
  * name exists on an element in the destination document, and no detail page ever
