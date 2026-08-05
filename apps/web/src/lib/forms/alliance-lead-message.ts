@@ -1,7 +1,7 @@
 /**
  * @file alliance-lead-message.ts
  * @description Pure helpers for the Alliance Lead form (HOS-277 §7.3,
- * HOS-278 §6.4): per-kind specific-field configuration, `message`
+ * HOS-278 §6.4, §6.3/§7): per-kind specific-field configuration, `message`
  * serialization, typed-field extraction, and front-only validation for the
  * kind-specific fields.
  *
@@ -11,10 +11,13 @@
  * (`businessName`, `category`, `destinationId`, `benefitType`,
  * `benefitValue`, `benefitText` — HOS-278 §6.4), because approving a
  * `service_provider` lead materializes a `host_trades` directory row from
- * them and prose is unusable as data.
+ * them and prose is unusable as data. `partner` gets the same treatment for
+ * two of its fields (`businessName`, `partnerType` — HOS-278 §6.3/§7,
+ * provisioning slice D), one program earlier in the pipeline: a future
+ * `partner` approval will materialize a `partners` row the same way.
  *
- * For the other three kinds (`partner`, `sponsor`, `editor`), kind-specific
- * details collected in the UI are still NOT persisted as separate columns
+ * For the remaining kind-specific details of `partner`, and for the whole of
+ * `sponsor`/`editor`, fields are still NOT persisted as separate columns
  * (HOS-277 NG-3) — the form serializes them into the `message` field with
  * human-readable labels before submitting.
  */
@@ -63,8 +66,20 @@ export interface AllianceLeadSpecificFieldConfig {
 export const ALLIANCE_LEAD_SPECIFIC_FIELDS: Readonly<
     Record<AllianceLeadKind, ReadonlyArray<AllianceLeadSpecificFieldConfig>>
 > = {
+    // HOS-278 provisioning slice D: `businessName` and `partnerType` become
+    // typed payload columns for `partner`, mirroring the `service_provider`
+    // exception below one program earlier in the pipeline (this slice only
+    // collects the field; provisioning a `partners` row is a later spec).
+    // `partnershipType` deliberately STAYS free text / untyped: it is WHAT
+    // ALLIANCE the applicant is proposing (prose an admin reads to evaluate
+    // the application), while `partnerType` is WHAT KIND of organization
+    // they are (the structured value that becomes `partners.type`).
+    // Collapsing the two into one field would throw away the evaluation
+    // input the admin actually reads. `website` stays untyped prose too,
+    // same as every other kind.
     partner: [
-        { name: 'businessName', type: 'text', required: true },
+        { name: 'businessName', type: 'text', required: true, typed: true },
+        { name: 'partnerType', type: 'select', required: true, typed: true },
         { name: 'website', type: 'url', required: false },
         { name: 'partnershipType', type: 'text', required: true }
     ],
@@ -152,14 +167,15 @@ export function serializeAllianceLeadMessage({
 }
 
 /**
- * The typed `service_provider` payload fields (HOS-278 §6.4), extracted from
- * the form's flat specific-values map so they can be spread onto the create
- * payload as their own top-level keys.
+ * The typed `service_provider` and `partner` payload fields (HOS-278 §6.4,
+ * §6.3/§7), extracted from the form's flat specific-values map so they can be
+ * spread onto the create payload as their own top-level keys.
  */
 export type AllianceLeadTypedFields = Partial<
     Pick<
         AllianceLeadCreateInput,
         | 'businessName'
+        | 'partnerType'
         | 'category'
         | 'destinationId'
         | 'benefitType'
@@ -169,10 +185,10 @@ export type AllianceLeadTypedFields = Partial<
 >;
 
 /**
- * Extracts the `typed` fields (HOS-278 §6.4) from the form's specific-values
- * map, converting `'number'`-typed fields to an actual `number` — a native
- * `<input type="number">` always yields a string, and the backend column is
- * an integer.
+ * Extracts the `typed` fields (HOS-278 §6.4, §6.3/§7) from the form's
+ * specific-values map, converting `'number'`-typed fields to an actual
+ * `number` — a native `<input type="number">` always yields a string, and the
+ * backend column is an integer.
  *
  * `benefitValue` gets one extra rule beyond "is it typed": it is only
  * included when the CURRENT `benefitType` selection actually carries a
@@ -183,8 +199,8 @@ export type AllianceLeadTypedFields = Partial<
  * value" rule (`refineHostTradeBenefit`) with a confusing error on a field
  * the applicant no longer sees.
  *
- * For kinds other than `service_provider` this returns `{}` — none of their
- * fields are marked `typed`.
+ * For `sponsor`/`editor` this returns `{}` — none of their fields are marked
+ * `typed`.
  */
 export function buildAllianceLeadTypedFields({
     kind,

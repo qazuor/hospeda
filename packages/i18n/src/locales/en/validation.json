@@ -562,6 +562,9 @@
             "max": "Message must not exceed {{max}} characters",
             "min": "Message must be at least {{min}} characters"
         },
+        "partnerType": {
+            "requiredForPartner": "[EN] Elegí qué tipo de organización representás"
+        },
         "phone": {
             "max": "Phone must not exceed {{max}} characters"
         },
@@ -2477,6 +2480,7 @@
         },
         "date": {
             "end": {
+                "beforeStart": "[EN] La fecha de fin no puede ser anterior a la de inicio",
                 "invalid": "[EN] El fin no es válido"
             },
             "start": {

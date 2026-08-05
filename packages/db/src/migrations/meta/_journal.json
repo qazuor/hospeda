@@ -540,6 +540,13 @@
       "when": 1785897612792,
       "tag": "0076_smiling_longshot",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1785942333246,
+      "tag": "0077_daffy_bedlam",
+      "breakpoints": true
     }
   ]
 }

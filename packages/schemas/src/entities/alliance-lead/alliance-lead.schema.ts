@@ -7,6 +7,7 @@ import {
 import { DestinationIdSchema, HostTradeIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import { HostTradeBenefitTypeEnumSchema } from '../../enums/host-trade-benefit-type.schema.js';
 import { HostTradeCategoryEnumSchema } from '../../enums/host-trade-category.schema.js';
+import { PartnerTypeEnumSchema } from '../../enums/partner-type.schema.js';
 
 // ---------------------------------------------------------------------------
 // Alliance Lead Schema
@@ -172,6 +173,30 @@ export const AllianceLeadSchema = z.object({
         .min(2, { message: 'zodError.allianceLead.businessName.min' })
         .max(255, { message: 'zodError.allianceLead.businessName.max' })
         .nullish(),
+
+    /**
+     * What kind of organization a `partner` applicant is (HOS-278 §6.3/§7,
+     * provisioning slice D).
+     *
+     * Mirrors {@link AllianceLeadSchema.shape.category}'s reasoning one field
+     * over: approving a `partner` will eventually provision a `partners` row,
+     * and `partners.type` is NOT NULL — so this typed column exists for the
+     * same reason `category`/`destinationId`/`benefit*` do for
+     * `service_provider`, one program earlier in the pipeline (this slice
+     * only collects the field; provisioning itself is a later spec).
+     *
+     * Distinct from `partnershipType`, which stays free-text prose serialized
+     * into {@link AllianceLeadSchema.shape.message} by the submitting form —
+     * that field is WHAT ALLIANCE the applicant is proposing (for an admin to
+     * read and evaluate), while this one is WHAT KIND of organization they
+     * are (the structured value that becomes `partners.type`).
+     *
+     * Nullish because the other three kinds never carry it. The per-kind
+     * requirement is imposed by `refineAllianceLeadKindFields` on the create
+     * input, not here — this schema also parses rows submitted before the
+     * column existed, which legitimately have none.
+     */
+    partnerType: PartnerTypeEnumSchema.nullish(),
 
     /**
      * Service category the applicant operates in (HOS-278 §6.4).

@@ -21,11 +21,55 @@ import { EventSchema } from './event.schema.js';
 // ============================================================================
 
 /**
+ * Rejects an event whose date range ends before it starts.
+ *
+ * `end` is optional on {@link EventDateSchema}, so an event with only a start
+ * is always valid; the check only fires when both bounds are present.
+ *
+ * WHY IT LIVES ON THE WRITE SCHEMAS AND NOT ON `EventDateSchema` (HOS-374):
+ * `EventSchema` is also the READ contract — `EventProtectedSchema` /
+ * `EventAdminSchema` derive from it and `stripWithSchema` re-parses every
+ * response against them, throwing INTERNAL_ERROR (HTTP 500) on a mismatch.
+ * Tightening the shared date subtype would therefore turn any already-stored
+ * inverted row into a 500 on its own detail page, which is exactly the kind of
+ * retroactive tightening the schema compatibility policy forbids. Constraining
+ * only the create/update inputs blocks new bad data without making old data
+ * unreadable.
+ */
+const isDateRangeOrdered = (input: {
+    readonly date?: { readonly start: Date; readonly end?: Date };
+}): boolean => {
+    const range = input.date;
+    if (!range?.end) return true;
+    return range.end >= range.start;
+};
+
+/**
+ * `.refine()` options for {@link isDateRangeOrdered}.
+ *
+ * A factory rather than a shared constant: Zod types `path` as a mutable
+ * `PropertyKey[]`, so an `as const` object is rejected outright, and handing the
+ * same array to two schemas would leave it aliased between them.
+ */
+const dateRangeOrderIssue = () => ({
+    message: 'zodError.event.date.end.beforeStart',
+    path: ['date', 'end']
+});
+
+/**
  * Schema for creating a new event
  * Omits auto-generated fields like id and audit fields
  * Makes slug optional since it can be auto-generated
  * Allows moderationState and tags for seed data
  * Makes moderationState optional (will default to PENDING if not provided)
+ *
+ * Carries the date-order refinement, so it is the single gate every writer
+ * passes: the admin route validates against it directly, and the protected
+ * route reaches it through `EventService.create` (`createSchema`) after
+ * `httpToDomainEventCreate` flattens the HTTP body into the domain shape.
+ *
+ * NOTE (Zod 4): `.pick()`, `.omit()` and `.partial()` THROW on a schema that
+ * carries a refinement. Derive from `EventSchema` instead of from this schema.
  */
 export const EventCreateInputSchema = EventSchema.omit({
     id: true,
@@ -35,11 +79,13 @@ export const EventCreateInputSchema = EventSchema.omit({
     updatedById: true,
     deletedAt: true,
     deletedById: true
-}).extend({
-    slug: z.string().min(1, { message: 'zodError.event.slug.min' }).optional(),
-    // Make moderationState optional for creation
-    moderationState: ModerationStatusEnumSchema.optional()
-});
+})
+    .extend({
+        slug: z.string().min(1, { message: 'zodError.event.slug.min' }).optional(),
+        // Make moderationState optional for creation
+        moderationState: ModerationStatusEnumSchema.optional()
+    })
+    .refine(isDateRangeOrdered, dateRangeOrderIssue());
 
 /**
  * Schema for event creation response
@@ -84,7 +130,11 @@ export const EventUpdateInputSchema = z
         )
     )
     .partial()
-    .strict();
+    .strict()
+    // Applies whenever the payload carries a `date`, which is always the whole
+    // subobject (`start` + optional `end`) — there is no way to PATCH `end`
+    // alone past this check.
+    .refine(isDateRangeOrdered, dateRangeOrderIssue());
 
 /**
  * Schema for partial event updates (PATCH)

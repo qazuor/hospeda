@@ -2892,6 +2892,27 @@ export const postEditApi = {
     },
 
     /**
+     * Create a new post authored by the caller (HOS-374 §5.2.2 create page).
+     *
+     * `POST /api/v1/protected/posts`. Authorship (`authorId`) is forced
+     * server-side from the authenticated actor by `httpToDomainPostCreate`
+     * (HOS-374 D-2) — never sent from here, and the HTTP schema does not even
+     * accept it. The created post starts `isPublished: false`; publication is
+     * a moderation-gate decision, not the author's, at create time.
+     *
+     * @param params - The create payload, a `.pick()` subset of
+     *   `PostCreateHttpSchema` (see `PostCreateForm.client.tsx`).
+     * @returns The created post record.
+     */
+    create({
+        data
+    }: {
+        readonly data: Record<string, unknown>;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({ path: `${PROTECTED}/posts`, body: data });
+    },
+
+    /**
      * Update one of the caller's own posts via PATCH (partial update). Only
      * sends the fields provided in `data`.
      *

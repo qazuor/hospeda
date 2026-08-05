@@ -7,6 +7,7 @@
             "message": "Tell us more (optional)",
             "messageRequired": "Tell us about your service",
             "businessName": "Business name",
+            "partnerType": "Organization type",
             "website": "Website",
             "partnershipType": "Partnership type",
             "sponsorshipInterest": "Sponsorship interest",
@@ -24,13 +25,19 @@
         "placeholders": {
             "category": "Select a category",
             "destinationId": "Select a destination",
-            "benefitType": "Select a benefit"
+            "benefitType": "Select a benefit",
+            "partnerType": "Select an organization type"
         },
         "benefitTypeOptions": {
             "PERCENTAGE": "Percentage discount",
             "FIXED_AMOUNT": "Fixed amount discount",
             "TWO_FOR_ONE": "Two for one",
             "SPECIAL_CONDITION": "Special condition"
+        },
+        "partnerTypeOptions": {
+            "commerce": "Business",
+            "ngo": "NGO",
+            "institution": "Institution"
         },
         "accountEmailNotice": "We'll use your account email:",
         "messageIntro": "Message:",
