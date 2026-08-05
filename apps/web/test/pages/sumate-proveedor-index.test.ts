@@ -38,4 +38,14 @@ describe('sumate/proveedor/index.astro', () => {
         expect(src).toContain('BaseLayout');
         expect(src).toContain('SEOHead');
     });
+
+    it('fetches destinations SSR and passes them to the AllianceLead island (HOS-278 §6.4)', () => {
+        expect(src).toContain("from '@/lib/api/endpoints'");
+        expect(src).toContain('destinationsApi.list(');
+        expect(src).toMatch(/<AllianceLead[^>]*destinations={destinations}/s);
+    });
+
+    it('degrades to an empty destinations list when the fetch fails (must not 500)', () => {
+        expect(src).toMatch(/destinationsResult\.ok\s*\n?\s*\?[\s\S]*?:\s*\[\]/);
+    });
 });
