@@ -224,8 +224,8 @@ export class PointOfInterestService extends BaseCrudRelatedService<
      * @param extraDestinationSlugs - Destinations that must be purged even
      *   though the live relation table no longer links them to this POI. Only
      *   `removePointOfInterestFromDestination` needs this: by the time the
-     *   purge runs, the link is already soft-deleted, so the destination whose
-     *   page still renders the POI is precisely the one
+     *   purge runs the link row is gone, so the destination whose page still
+     *   renders the POI is precisely the one
      *   {@link _resolveDestinationSlugsForRevalidation} can no longer see.
      */
     private async _schedulePointOfInterestRevalidation(
@@ -574,9 +574,9 @@ export class PointOfInterestService extends BaseCrudRelatedService<
 
                 // Scheduled here, before the return branching below, so BOTH
                 // shapes the model can hand back purge the destination page —
-                // and scheduled unconditionally because the row is already
-                // soft-deleted at this point: the write happened whether or
-                // not we can read the full relation back afterwards.
+                // and scheduled unconditionally because the delete has already
+                // been issued at this point: the write happened whether or not
+                // we can read the full relation back afterwards.
                 await this._scheduleRelationRevalidation(
                     pointOfInterest as PointOfInterest,
                     (destination as { slug?: string }).slug
