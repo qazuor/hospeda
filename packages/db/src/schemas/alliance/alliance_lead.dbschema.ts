@@ -2,6 +2,7 @@ import { relations } from 'drizzle-orm';
 import { index, integer, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { destinations } from '../destination/destination.dbschema.ts';
 import { hostTrades } from '../host-trade/host_trade.dbschema.ts';
+import { partners } from '../partner/partner.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 
 /**
@@ -140,6 +141,29 @@ export const allianceLeads = pgTable(
             onDelete: 'set null'
         }),
         /**
+         * The partner listing this lead's approval produced (HOS-278 D1).
+         *
+         * The `partner` counterpart of {@link provisionedHostTradeId}, and it
+         * earns its keep for the same reason: it is what makes provisioning
+         * IDEMPOTENT. A second "approve and provision" on a lead that already
+         * has one provisions nothing, instead of minting a second `partners`
+         * row under a deduplicated slug that nobody would notice until the
+         * same organization appeared twice.
+         *
+         * It is a SEPARATE column rather than a shared polymorphic
+         * `provisioned_entity_id`, because the two point at different tables
+         * with different FKs — collapsing them would trade a real foreign key
+         * for a type discriminator the database cannot enforce.
+         *
+         * Null for every lead that is not an approved, provisioned `partner`.
+         * Approving a partner lead alone does NOT set it: provisioning is a
+         * deliberate second action (§6.5 OQ-1), never a side effect of the
+         * approval.
+         */
+        provisionedPartnerId: uuid('provisioned_partner_id').references(() => partners.id, {
+            onDelete: 'set null'
+        }),
+        /**
          * The account this application belongs to (HOS-278 §6.2).
          *
          * Nullable because the anonymous applicant is the PRIMARY case, not an
@@ -196,6 +220,10 @@ export const allianceLeadsRelations = relations(allianceLeads, ({ one }) => ({
     provisionedHostTrade: one(hostTrades, {
         fields: [allianceLeads.provisionedHostTradeId],
         references: [hostTrades.id]
+    }),
+    provisionedPartner: one(partners, {
+        fields: [allianceLeads.provisionedPartnerId],
+        references: [partners.id]
     }),
     applicant: one(users, {
         fields: [allianceLeads.applicantUserId],

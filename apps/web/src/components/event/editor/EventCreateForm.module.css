@@ -1,0 +1,143 @@
+/**
+ * Event create-form styles (HOS-374 §5.2.2).
+ * Mirrors `PostCreateForm.module.css` / `CommerceCreateForm.module.css`'s
+ * visual language, plus a few classes for the inline organizer-create block.
+ * Plain CSS modules per web conventions.
+ */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.label {
+    font-family: var(--font-heading, var(--font-sans));
+    font-size: var(--text-body, 1rem);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.input,
+.textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 0.625rem);
+    background: var(--core-card, var(--core-background));
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    padding: var(--space-2) var(--space-3);
+    transition:
+        border-color 150ms ease,
+        box-shadow 150ms ease;
+}
+
+.textarea {
+    resize: vertical;
+    min-height: 4.5rem;
+}
+
+.input:disabled,
+.textarea:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.hint {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.9375rem);
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+/** The inline "create an organizer" block (select fallback / toggle target). */
+.organizerCreateBlock {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md, 0.625rem);
+    background: var(--surface-warm);
+}
+
+.organizerCreateActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.organizerCreateSubmit {
+    padding: var(--space-2) var(--space-4);
+    border: none;
+    border-radius: var(--radius-button, 0.5rem);
+    background: var(--brand-primary);
+    color: var(--primary-foreground);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: var(--text-body-sm, 0.9375rem);
+    cursor: pointer;
+    transition: opacity 150ms ease;
+}
+
+.organizerCreateSubmit:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.organizerCreateSubmit:not(:disabled):hover {
+    opacity: 0.85;
+}
+
+/** Text-button used for "+ Crear organizador nuevo" and "Cancelar". */
+.linkButton {
+    align-self: flex-start;
+    border: none;
+    background: none;
+    padding: 0;
+    color: var(--brand-primary);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.9375rem);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.submit {
+    align-self: flex-start;
+    padding: var(--space-3) var(--space-8);
+    border: none;
+    border-radius: var(--radius-button, 0.5rem);
+    background: var(--brand-accent);
+    color: var(--accent-foreground);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: var(--text-body-lg, 1.0625rem);
+    cursor: pointer;
+    transition: opacity 150ms ease;
+}
+
+.submit:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.submit:not(:disabled):hover {
+    opacity: 0.85;
+}
+
+.error {
+    margin: 0;
+    font-size: var(--text-body-sm, 0.9375rem);
+    color: var(--destructive, #b91c1c);
+}

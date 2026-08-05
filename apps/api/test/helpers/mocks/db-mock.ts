@@ -895,6 +895,10 @@ export function createDbMock() {
         FeatureModel: GenericMockModel,
         HostTradeModel: GenericMockModel,
         NotificationScheduleModel: GenericMockModel,
+        // HOS-278 §6.5: AllianceLeadService's constructor now also instantiates
+        // PartnerModel (partner provisioning), so the whole alliance admin route
+        // tree fails to load without it.
+        PartnerModel: GenericMockModel,
         OwnerPromotionModel: GenericMockModel,
         // HOS-113 T-021: PointOfInterestService (+ its default related model)
         // is instantiated at module scope by the new public POI routes, same

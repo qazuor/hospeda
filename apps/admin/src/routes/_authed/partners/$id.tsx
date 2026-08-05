@@ -66,7 +66,9 @@ function PartnerViewPage() {
                     </div>
                     <div>
                         <span className="font-medium">Inicio:</span>{' '}
-                        {new Date(partner.startsAt).toLocaleDateString('es-AR')}
+                        {partner.startsAt
+                            ? new Date(partner.startsAt).toLocaleDateString('es-AR')
+                            : 'Sin iniciar'}
                     </div>
                     <div>
                         <span className="font-medium">Fin:</span>{' '}

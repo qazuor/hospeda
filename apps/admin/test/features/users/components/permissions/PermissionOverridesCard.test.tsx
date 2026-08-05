@@ -65,7 +65,12 @@ describe('PermissionOverridesCard', () => {
 
     it('renders the empty state and the picker when there are no overrides', () => {
         overrides.value = {
-            data: { fromRole: [], grantOverrides: [], denyOverrides: [] },
+            data: {
+                fromRole: [],
+                grantOverrides: [],
+                denyOverrides: [],
+                isTrustedEditor: false
+            },
             isLoading: false,
             isError: false
         };

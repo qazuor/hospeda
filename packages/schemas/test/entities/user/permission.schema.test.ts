@@ -49,7 +49,8 @@ describe('User Permission Schemas (SPEC-170)', () => {
             const input = {
                 fromRole: [PermissionEnum.USER_CREATE, PermissionEnum.ANALYTICS_VIEW],
                 grantOverrides: [PermissionEnum.POST_CREATE],
-                denyOverrides: [PermissionEnum.USER_DELETE]
+                denyOverrides: [PermissionEnum.USER_DELETE],
+                isTrustedEditor: false
             };
 
             const result = UserPermissionOverridesResponseSchema.parse(input);
@@ -57,10 +58,16 @@ describe('User Permission Schemas (SPEC-170)', () => {
             expect(result.fromRole).toHaveLength(2);
             expect(result.grantOverrides).toContain(PermissionEnum.POST_CREATE);
             expect(result.denyOverrides).toContain(PermissionEnum.USER_DELETE);
+            expect(result.isTrustedEditor).toBe(false);
         });
 
         it('should validate empty buckets', () => {
-            const input = { fromRole: [], grantOverrides: [], denyOverrides: [] };
+            const input = {
+                fromRole: [],
+                grantOverrides: [],
+                denyOverrides: [],
+                isTrustedEditor: false
+            };
 
             expect(() => UserPermissionOverridesResponseSchema.parse(input)).not.toThrow();
         });
@@ -69,8 +76,18 @@ describe('User Permission Schemas (SPEC-170)', () => {
             const input = {
                 fromRole: [],
                 grantOverrides: ['not-a-permission'],
-                denyOverrides: []
+                denyOverrides: [],
+                isTrustedEditor: false
             };
+
+            expect(() => UserPermissionOverridesResponseSchema.parse(input)).toThrow(ZodError);
+        });
+
+        // HOS-374 OQ-1: the admin UI needs a definite boolean to render the
+        // mark/unmark control's state — a missing field must not silently
+        // become `undefined` and read as "not trusted".
+        it('should require isTrustedEditor', () => {
+            const input = { fromRole: [], grantOverrides: [], denyOverrides: [] };
 
             expect(() => UserPermissionOverridesResponseSchema.parse(input)).toThrow(ZodError);
         });

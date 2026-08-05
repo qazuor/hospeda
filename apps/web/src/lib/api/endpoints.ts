@@ -11,6 +11,7 @@ import type {
     CommerceLeadCreateInput,
     DestinationPointOfInterestSummary,
     DestinationPublic,
+    EventOrganizerPublic,
     EventPublic,
     EventSummary,
     ExternalReputationBlock,
@@ -557,6 +558,37 @@ export const eventLocationsApi = {
     /** Get event location by slug */
     getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<Record<string, unknown>>> {
         return apiClient.get({ path: `${BASE}/event-locations/slug/${slug}` });
+    }
+};
+
+// --- Event Organizers ---
+
+/**
+ * Public event organizer API endpoints.
+ *
+ * Added for `EventCreateForm.client.tsx` (HOS-374 §5.2.2): `organizerId` is a
+ * REQUIRED UUID on `EventCreateHttpSchema`, so the create form needs a catalog
+ * to populate its `<select>`. No caller needed this before — the event editor
+ * shows `organizerId` read-only (see `event-edit-data.ts`), and none of it was
+ * wired.
+ */
+export const eventOrganizersApi = {
+    /**
+     * List event organizers, matching `destinationsApi.list`'s shape.
+     *
+     * @param params - Optional pagination.
+     * @returns Paginated list of public event organizers.
+     *
+     * @example
+     * ```ts
+     * const result = await eventOrganizersApi.list({ pageSize: 100 });
+     * ```
+     */
+    list(params?: {
+        readonly page?: number;
+        readonly pageSize?: number;
+    }): Promise<ApiResult<PaginatedResponse<EventOrganizerPublic>>> {
+        return apiClient.getList({ path: `${BASE}/event-organizers`, params });
     }
 };
 

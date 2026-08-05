@@ -4,7 +4,12 @@ import {
     HOST_TRADE_BENEFIT_TEXT_MAX,
     HostTradeBenefitValueSchema
 } from '../../common/host-trade-benefit.schema.js';
-import { DestinationIdSchema, HostTradeIdSchema, UserIdSchema } from '../../common/id.schema.js';
+import {
+    DestinationIdSchema,
+    HostTradeIdSchema,
+    PartnerIdSchema,
+    UserIdSchema
+} from '../../common/id.schema.js';
 import { HostTradeBenefitTypeEnumSchema } from '../../enums/host-trade-benefit-type.schema.js';
 import { HostTradeCategoryEnumSchema } from '../../enums/host-trade-category.schema.js';
 import { PartnerTypeEnumSchema } from '../../enums/partner-type.schema.js';
@@ -239,6 +244,21 @@ export const AllianceLeadSchema = z.object({
      * else's listing.
      */
     provisionedHostTradeId: HostTradeIdSchema.nullish(),
+
+    /**
+     * The partner listing this lead's provisioning produced, or null.
+     *
+     * System-managed and omitted from the create input for exactly the reason
+     * {@link provisionedHostTradeId} is: it records what an admin action WROTE,
+     * so accepting it from a request body would let a caller point their
+     * application at an organization that is not theirs.
+     *
+     * Unlike its host-trade sibling, this is NOT written by approval — a
+     * partner lead is approved and provisioned by two separate admin actions
+     * (HOS-278 §6.5 OQ-1), so an approved partner lead routinely has a null
+     * here.
+     */
+    provisionedPartnerId: PartnerIdSchema.nullish(),
 
     // Audit fields (createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById)
     ...BaseAuditFields
