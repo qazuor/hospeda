@@ -72,7 +72,7 @@ export type UserProfile = z.infer<typeof UserProfileSchema>;
  * profile GET. Read ⊇ write is not optional here.
  *
  * `avatar` drops `.url()` for the same reason and a concrete one (HOS-375):
- * `profile.avatar` is a JSONB path the seed fixtures and data-migration `0037`
+ * `profile.avatar` is a JSONB path the seed fixtures and data-migration `0042`
  * write DIRECTLY, bypassing Zod, so nothing guarantees the stored value parses
  * as a URL. This schema is reached by `UserProtectedSchema.profile` →
  * `UserSelfSchema`, the response of `GET`/`PATCH

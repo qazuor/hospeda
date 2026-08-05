@@ -101,7 +101,7 @@ export function isAllowedRemoteHost(url: string): boolean {
  * deliberately LENIENT on the API side: they assert type and presence but not
  * URL format, because `users.image` and the `profile.avatar` JSONB path are
  * both written outside Zod (Better Auth signup, seed fixtures, data-migration
- * `0037`) and a strict response schema fail-closes to an HTTP 500 through
+ * `0042`) and a strict response schema fail-closes to an HTTP 500 through
  * `stripWithSchema`. The schema's job is "never take the page down"; keeping a
  * broken picture off the page is THIS function's job, at the consumer, right
  * before render.
