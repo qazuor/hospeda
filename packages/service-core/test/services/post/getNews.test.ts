@@ -12,7 +12,11 @@ import {
     expectSuccess,
     expectValidationError
 } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makePostMediaModelStub
+} from '../../utils/modelMockFactory';
 
 describe('PostService.getNews', () => {
     let service: PostService;
@@ -27,7 +31,13 @@ describe('PostService.getNews', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(PostModel, ['findAll']);
         loggerMock = createLoggerMock();
-        service = new PostService({ logger: loggerMock }, modelMock);
+        service = new PostService(
+            { logger: loggerMock },
+            modelMock,
+            null,
+            undefined,
+            makePostMediaModelStub() as never
+        );
     });
 
     it('should return news posts (success)', async () => {

@@ -6,7 +6,11 @@ import { createActor } from '../../factories/actorFactory';
 import { createMockPost, getMockPostId } from '../../factories/postFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import { expectForbiddenError, expectNotFoundError } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makePostMediaModelStub
+} from '../../utils/modelMockFactory';
 
 // Helper to cast a function to a Vitest mock
 function asMock(fn: unknown) {
@@ -24,7 +28,13 @@ describe('PostService - getAdminInfo', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(PostModel, ['findById']);
         loggerMock = createLoggerMock();
-        service = new PostService({ logger: loggerMock }, modelMock);
+        service = new PostService(
+            { logger: loggerMock },
+            modelMock,
+            null,
+            undefined,
+            makePostMediaModelStub() as never
+        );
         superAdmin = createActor({
             roles: [RoleEnum.SUPER_ADMIN],
             permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.POST_UPDATE]

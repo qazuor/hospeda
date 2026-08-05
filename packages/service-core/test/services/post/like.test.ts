@@ -13,7 +13,11 @@ import {
     expectUnauthorizedError,
     expectValidationError
 } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makePostMediaModelStub
+} from '../../utils/modelMockFactory';
 
 describe('PostService.like', () => {
     let service: PostService;
@@ -25,7 +29,13 @@ describe('PostService.like', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(PostModel, ['findOne', 'incrementLikes']);
         loggerMock = createLoggerMock();
-        service = new PostService({ logger: loggerMock }, modelMock);
+        service = new PostService(
+            { logger: loggerMock },
+            modelMock,
+            null,
+            undefined,
+            makePostMediaModelStub() as never
+        );
     });
 
     it('should increment likes (success)', async () => {

@@ -1506,6 +1506,12 @@
             "publicId": {
                 "min": "O public id deve ter ao menos {{min}} caracteres"
             },
+            "reorder": {
+                "orderedIds": {
+                    "invalid": "A lista ordenada deve ser um arranjo de UUIDs válidos",
+                    "min": "A lista ordenada deve conter ao menos {{min}} item"
+                }
+            },
             "sortOrder": {
                 "int": "A ordem de exibição deve ser um número inteiro"
             },

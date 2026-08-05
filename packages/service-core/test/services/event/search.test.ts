@@ -10,7 +10,11 @@ import { EventService } from '../../../src/services/event/event.service';
 import { createActor } from '../../factories/actorFactory';
 import { createMockEvent } from '../../factories/eventFactory';
 import { expectInternalError, expectSuccess } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makeEventMediaModelStub
+} from '../../utils/modelMockFactory';
 
 /** A valid `destination` relation that satisfies CityDestinationRefSchema. */
 const cityRelation = {
@@ -48,7 +52,11 @@ describe('EventService.search', () => {
         // EventService._executeSearch loads relations via findAllWithRelations.
         modelMock = createTypedModelMock(EventModel, ['findAll', 'findAllWithRelations']);
         loggerMock = createLoggerMock();
-        service = new EventService({ model: modelMock, logger: loggerMock });
+        service = new EventService({
+            model: modelMock,
+            logger: loggerMock,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
     });
 
     it('should return paginated events (success)', async () => {

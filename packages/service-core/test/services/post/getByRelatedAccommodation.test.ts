@@ -12,7 +12,11 @@ import {
     expectSuccess,
     expectValidationError
 } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makePostMediaModelStub
+} from '../../utils/modelMockFactory';
 
 describe('PostService.getByRelatedAccommodation', () => {
     let service: PostService;
@@ -28,7 +32,13 @@ describe('PostService.getByRelatedAccommodation', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(PostModel, ['findAll']);
         loggerMock = createLoggerMock();
-        service = new PostService({ logger: loggerMock }, modelMock);
+        service = new PostService(
+            { logger: loggerMock },
+            modelMock,
+            null,
+            undefined,
+            makePostMediaModelStub() as never
+        );
     });
 
     it('should return posts by related accommodation (success)', async () => {

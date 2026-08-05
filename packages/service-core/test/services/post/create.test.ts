@@ -15,7 +15,11 @@ import { createActor } from '../../factories/actorFactory';
 import { createMockPost, createNewPostInput } from '../../factories/postFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import { expectSuccess, expectValidationError } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makePostMediaModelStub
+} from '../../utils/modelMockFactory';
 
 describe('PostService.create (custom business logic)', () => {
     let service: PostService;
@@ -31,7 +35,13 @@ describe('PostService.create (custom business logic)', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(PostModel, ['findOne', 'create']);
         loggerMock = createLoggerMock();
-        service = new PostService({ logger: loggerMock }, modelMock);
+        service = new PostService(
+            { logger: loggerMock },
+            modelMock,
+            null,
+            undefined,
+            makePostMediaModelStub() as never
+        );
         vi.spyOn(helpers, 'generatePostSlug').mockResolvedValue('mock-slug');
     });
 

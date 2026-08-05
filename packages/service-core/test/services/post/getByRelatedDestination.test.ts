@@ -12,7 +12,11 @@ import {
     expectSuccess,
     expectValidationError
 } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makePostMediaModelStub
+} from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
 
 describe('PostService.getByRelatedDestination', () => {
@@ -29,7 +33,13 @@ describe('PostService.getByRelatedDestination', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(PostModel, ['findAll']);
         loggerMock = createLoggerMock();
-        service = new PostService({ logger: loggerMock }, modelMock);
+        service = new PostService(
+            { logger: loggerMock },
+            modelMock,
+            null,
+            undefined,
+            makePostMediaModelStub() as never
+        );
     });
 
     it('should return posts by related destination (success)', async () => {

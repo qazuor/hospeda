@@ -6,7 +6,7 @@ import { createActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';
 import { expectInternalError, expectSuccess } from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
-import { createTypedModelMock } from '../../utils/modelMockFactory';
+import { createTypedModelMock, makePostMediaModelStub } from '../../utils/modelMockFactory';
 
 describe('PostService.list', () => {
     let service: PostService;
@@ -16,7 +16,14 @@ describe('PostService.list', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         modelMock = createTypedModelMock(PostModel, ['findAll']);
-        service = createServiceTestInstance(PostService, modelMock);
+        service = createServiceTestInstance(
+            PostService,
+            modelMock,
+            undefined,
+            null,
+            undefined,
+            makePostMediaModelStub()
+        );
         actor = createActor({ permissions: [], id: 'actor-id', roles: [RoleEnum.USER] });
     });
 
