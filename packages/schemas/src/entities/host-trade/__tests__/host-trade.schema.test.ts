@@ -123,9 +123,15 @@ describe('HostTradeSchema', () => {
             expect(result.success).toBe(false);
         });
 
-        it('should reject an empty benefit string', () => {
+        it('should ACCEPT an empty benefit string, which is now the fine print', () => {
+            // Deliberate contract change (HOS-278 §6.4): `benefit` stopped being
+            // the benefit and became the conditions attached to a structured
+            // one. An offer with no conditions has no fine print, and the old
+            // `.min(1)` would only have forced a placeholder character into the
+            // column. Relaxing a rule is additive — everything that parsed
+            // before still parses.
             const result = HostTradeSchema.safeParse({ ...VALID_FULL_HOST_TRADE, benefit: '' });
-            expect(result.success).toBe(false);
+            expect(result.success).toBe(true);
         });
 
         it('should reject a non-UUID id', () => {

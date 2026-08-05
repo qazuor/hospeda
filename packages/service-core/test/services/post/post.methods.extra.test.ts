@@ -15,7 +15,11 @@ import { PostService } from '../../../src/services/post/post.service.js';
 import { createActor } from '../../factories/actorFactory.js';
 import { getMockId } from '../../factories/utilsFactory.js';
 import { expectForbiddenError, expectSuccess } from '../../helpers/assertions.js';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory.js';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makePostMediaModelStub
+} from '../../utils/modelMockFactory.js';
 
 describe('PostService — extra method coverage', () => {
     let service: PostService;
@@ -30,7 +34,13 @@ describe('PostService — extra method coverage', () => {
 
     beforeEach(() => {
         modelMock = createTypedModelMock(PostModel, ['findOne', 'getMonthlyTrend']);
-        service = new PostService({ logger: createLoggerMock() }, modelMock);
+        service = new PostService(
+            { logger: createLoggerMock() },
+            modelMock,
+            null,
+            undefined,
+            makePostMediaModelStub() as never
+        );
     });
 
     // =========================================================================

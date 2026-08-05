@@ -1,4 +1,4 @@
-import { buildSearchCondition, PostModel, posts, REntityTagModel } from '@repo/db';
+import { buildSearchCondition, PostMediaModel, PostModel, posts, REntityTagModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
@@ -61,6 +61,7 @@ import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
 import { applyPublicReadFloor } from '../moderation/public-read-floor';
 import { generatePostSlug, mapPostFilterKeysToColumns } from './post.helpers';
+import { attachComposedPostMedia, attachComposedPostMediaList } from './post.media-read';
 import { normalizeCreateInput, normalizeUpdateInput } from './post.normalizers';
 import {
     checkCanAdminList,
@@ -168,17 +169,31 @@ export class PostService extends BaseCrudService<
     private readonly relatedModel: REntityTagModel;
 
     /**
+     * Model for the relational `post_media` table (HOS-390).
+     *
+     * Photos live in this table, not in the `posts.media` JSONB blob, so every
+     * read path has to rebuild the `media` shape consumers expect — see the
+     * media-composition hooks below.
+     */
+    private readonly postMediaModel: PostMediaModel;
+
+    /**
      * Initializes a new instance of the PostService.
      * @param ctx - The service context, containing the logger.
      * @param model - Optional PostModel instance (for testing/mocking).
      * @param mediaProvider - Optional ImageProvider for Cloudinary cleanup on hard delete.
      * @param relatedModel - Optional REntityTagModel instance (for testing/mocking).
+     * @param postMediaModel - Optional PostMediaModel instance. Unit tests that
+     *   mock the entity model must inject a stub here, otherwise the read hooks
+     *   below query a database that was never initialized (see
+     *   `makePostMediaModelStub` in the test utils).
      */
     constructor(
         ctx: ServiceConfig,
         model?: PostModel,
         mediaProvider?: ImageProvider | null,
-        relatedModel?: REntityTagModel
+        relatedModel?: REntityTagModel,
+        postMediaModel?: PostMediaModel
     ) {
         super(ctx, PostService.ENTITY_NAME);
         this.model = model ?? new PostModel();
@@ -186,6 +201,7 @@ export class PostService extends BaseCrudService<
         this.adminSearchSchema = PostAdminSearchSchema;
         this.mediaProvider = mediaProvider ?? null;
         this.relatedModel = relatedModel ?? new REntityTagModel();
+        this.postMediaModel = postMediaModel ?? new PostMediaModel();
     }
 
     /**
@@ -358,68 +374,119 @@ export class PostService extends BaseCrudService<
         } as Partial<Post>;
     }
 
+    // -----------------------------------------------------------------------
+    // Media composition (HOS-390)
+    // -----------------------------------------------------------------------
+    //
+    // Photos live in the relational `post_media` table, not in the `posts.media`
+    // JSONB blob, so every read path has to rebuild the `media` shape consumers
+    // expect. These are the standard chokepoints: `getById`/`getBySlug` go
+    // through `_afterGetByField`, `list()` and `search()` through their own
+    // hooks, and `adminList` through `_executeAdminSearch` — which the base
+    // flow does NOT route through `_afterList`, so it needs its own call.
+    //
+    // WITHOUT this wiring the relational rows are written but never read: the
+    // author persists photos successfully and they appear nowhere.
+    //
+    // Composition is batched (`findByPosts`, one IN query) so a list page does
+    // not go N+1.
+    //
+    // Videos are NOT composed from the table — they stay in the JSONB blob
+    // (SPEC-204 D1) and `attachComposedPostMedia*` reads them from there.
+
+    /**
+     * Composes `media` from the relational `post_media` rows for a plain array
+     * result (HOS-390).
+     *
+     * `_afterList` / `_afterSearch` only cover `list()` and `search()`. The
+     * public card feeds below (`getNews`, `getFeatured`, `getByCategory` and the
+     * three `getByRelated*`) read the model directly and return a bare `Post[]`,
+     * so each has to compose explicitly — otherwise those surfaces would render
+     * posts with no photos while the detail page shows them, which is exactly
+     * the half-migrated state the read switch exists to avoid.
+     */
+    private composeMediaForItems(items: Post[], ctx?: ServiceContext): Promise<Post[]> {
+        return attachComposedPostMediaList({
+            items,
+            mediaModel: this.postMediaModel,
+            tx: ctx?.tx
+        });
+    }
+
     /**
      * Lifecycle hook: flattens the nested `r_post_post_tag` join rows into
-     * a top-level `PostTag[]` on the returned entity (SPEC-086).
+     * a top-level `PostTag[]` on the returned entity (SPEC-086), then composes
+     * `media` from the relational rows (HOS-390).
      */
     protected override async _afterGetByField(
         entity: Post | null,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<Post | null> {
-        return this.flattenPostTagsRelation(entity);
+        return attachComposedPostMedia({
+            entity: this.flattenPostTagsRelation(entity),
+            mediaModel: this.postMediaModel,
+            tx: ctx?.tx
+        });
     }
 
     /**
      * Lifecycle hook: flattens nested `r_post_post_tag` join rows into a
      * top-level `PostTag[]` on every item of a paginated list result
-     * (SPEC-086).
+     * (SPEC-086), then composes `media` from the relational rows (HOS-390).
      */
     protected override async _afterList(
         result: PaginatedListOutput<Post>,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<Post>> {
         if (!result?.items) return result;
-        return {
-            ...result,
-            items: result.items.map((item) => this.flattenPostTagsRelation(item))
-        };
+        const items = await attachComposedPostMediaList({
+            items: result.items.map((item) => this.flattenPostTagsRelation(item)),
+            mediaModel: this.postMediaModel,
+            tx: ctx?.tx
+        });
+        return { ...result, items };
     }
 
     /**
      * Lifecycle hook: flattens nested `r_post_post_tag` join rows into a
      * top-level `PostTag[]` on every item of a paginated search result
-     * (SPEC-086).
+     * (SPEC-086), then composes `media` from the relational rows (HOS-390).
      */
     protected override async _afterSearch(
         result: PaginatedListOutput<Post>,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<Post>> {
         if (!result?.items) return result;
-        return {
-            ...result,
-            items: result.items.map((item) => this.flattenPostTagsRelation(item))
-        };
+        const items = await attachComposedPostMediaList({
+            items: result.items.map((item) => this.flattenPostTagsRelation(item)),
+            mediaModel: this.postMediaModel,
+            tx: ctx?.tx
+        });
+        return { ...result, items };
     }
 
     /**
      * Override admin search execution to flatten the `r_post_post_tag` join rows
-     * into a top-level `PostTag[]` for every item, matching the behavior of
-     * `_afterList` and `_afterSearch`. The base `adminList` flow does NOT invoke
-     * `_afterList`, so this override is required to keep the response shape
-     * consistent with `PostAdminSchema.postTags` (SPEC-086 / SPEC-117 A-2 fix).
+     * into a top-level `PostTag[]` for every item and compose `media` from the
+     * relational rows, matching the behavior of `_afterList` and `_afterSearch`.
+     * The base `adminList` flow does NOT invoke `_afterList`, so this override is
+     * required to keep the response shape consistent with `PostAdminSchema`
+     * (SPEC-086 / SPEC-117 A-2 fix; HOS-390 for the media half).
      */
     protected override async _executeAdminSearch(
         params: AdminSearchExecuteParams
     ): Promise<PaginatedListOutput<Post>> {
         const result = await super._executeAdminSearch(params);
         if (!result?.items) return result;
-        return {
-            ...result,
-            items: result.items.map((item) => this.flattenPostTagsRelation(item))
-        };
+        const items = await attachComposedPostMediaList({
+            items: result.items.map((item) => this.flattenPostTagsRelation(item)),
+            mediaModel: this.postMediaModel,
+            tx: params.ctx?.tx
+        });
+        return { ...result, items };
     }
 
     /**
@@ -946,7 +1013,7 @@ export class PostService extends BaseCrudService<
                 // Public read floor (HOS-374 §7.6.5), applied last so a caller
                 // cannot widen the result set through the `visibility` param.
                 const { items } = await this.model.findAll(applyPublicReadFloor(where));
-                return items;
+                return this.composeMediaForItems(items, ctx);
             }
         });
     }
@@ -995,7 +1062,7 @@ export class PostService extends BaseCrudService<
                 // Public read floor (HOS-374 §7.6.5), applied last so a caller
                 // cannot widen the result set through the `visibility` param.
                 const { items } = await this.model.findAll(applyPublicReadFloor(where));
-                return items;
+                return this.composeMediaForItems(items, ctx);
             }
         });
     }
@@ -1069,7 +1136,7 @@ export class PostService extends BaseCrudService<
                 // Public read floor (HOS-374 §7.6.5), applied last so a caller
                 // cannot widen the result set through the `visibility` param.
                 const { items } = await this.model.findAll(applyPublicReadFloor(where));
-                return items;
+                return this.composeMediaForItems(items, ctx);
             }
         });
     }
@@ -1122,7 +1189,7 @@ export class PostService extends BaseCrudService<
                 // Public read floor (HOS-374 §7.6.5), applied last so a caller
                 // cannot widen the result set through the `visibility` param.
                 const { items } = await this.model.findAll(applyPublicReadFloor(where));
-                return items;
+                return this.composeMediaForItems(items, ctx);
             }
         });
     }
@@ -1175,7 +1242,7 @@ export class PostService extends BaseCrudService<
                 // Public read floor (HOS-374 §7.6.5), applied last so a caller
                 // cannot widen the result set through the `visibility` param.
                 const { items } = await this.model.findAll(applyPublicReadFloor(where));
-                return items;
+                return this.composeMediaForItems(items, ctx);
             }
         });
     }
@@ -1225,7 +1292,7 @@ export class PostService extends BaseCrudService<
                 // Public read floor (HOS-374 §7.6.5), applied last so a caller
                 // cannot widen the result set through the `visibility` param.
                 const { items } = await this.model.findAll(applyPublicReadFloor(where));
-                return items;
+                return this.composeMediaForItems(items, ctx);
             }
         });
     }

@@ -34,6 +34,8 @@ export * from './content-state.schema.js';
 export * from './entity-options.schema.js';
 export * from './faq.schema.js';
 export * from './helpers.schema.js';
+// Structured service-provider benefit, shared by alliance leads and host trades
+export * from './host-trade-benefit.schema.js';
 // Shared i18n text schema (I18nTextSchema, i18nText factory, I18nText type)
 export * from './i18n.schema.js';
 export * from './ia.schema.js';

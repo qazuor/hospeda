@@ -1,5 +1,6 @@
 import {
     buildSearchCondition,
+    EventMediaModel,
     EventModel,
     eventLocations as eventLocationsTable,
     events as eventTable,
@@ -66,6 +67,7 @@ import {
     buildEventPriceConditions,
     generateEventSlug
 } from './event.helpers';
+import { attachComposedEventMedia, attachComposedEventMediaList } from './event.media-read';
 import { normalizeCreateInput, normalizeUpdateInput } from './event.normalizers';
 import {
     checkCanAdminList,
@@ -161,15 +163,32 @@ export class EventService extends BaseCrudService<
     private readonly mediaProvider: ImageProvider | null;
 
     /**
+     * Model for the relational `event_media` table (HOS-390).
+     *
+     * Photos live in this table, not in the `events.media` JSONB blob, so every
+     * read path has to rebuild the `media` shape consumers expect — see the
+     * media-composition hooks below.
+     */
+    private readonly eventMediaModel: EventMediaModel;
+
+    /**
      * Initializes a new instance of the EventService.
      * @param ctx - The service context, containing the logger and optional model.
+     *   `eventMediaModel` is an optional injection point: unit tests that mock
+     *   the entity model must supply a stub, otherwise the read hooks below
+     *   query a database that was never initialized (see
+     *   `makeEventMediaModelStub` in the test utils).
      * @param mediaProvider - Optional ImageProvider for Cloudinary cleanup on hard delete.
      */
-    constructor(ctx: ServiceConfig & { model?: EventModel }, mediaProvider?: ImageProvider | null) {
+    constructor(
+        ctx: ServiceConfig & { model?: EventModel; eventMediaModel?: EventMediaModel },
+        mediaProvider?: ImageProvider | null
+    ) {
         super(ctx, EventService.ENTITY_NAME);
         this.model = ctx.model ?? new EventModel();
         this.adminSearchSchema = EventAdminSearchSchema;
         this.mediaProvider = mediaProvider ?? null;
+        this.eventMediaModel = ctx.eventMediaModel ?? new EventMediaModel();
     }
 
     /**
@@ -631,11 +650,108 @@ export class EventService extends BaseCrudService<
     }
 
     /**
+     * Composes `media` from the relational `event_media` rows for a plain array
+     * of events (HOS-390).
+     *
+     * `_afterList` / `_afterSearch` only cover `list()` and `search()`. The
+     * public card feeds below (`getByAuthor`, `getByLocation`, `getByOrganizer`,
+     * `getUpcoming`, `getByCategory`, `getFreeEvents`) read the model directly
+     * and return their own paginated shape, so each has to compose explicitly —
+     * otherwise those surfaces would render events with no photos while the
+     * detail page shows them, which is exactly the half-migrated state the read
+     * switch exists to avoid.
+     */
+    private composeMediaForItems(items: Event[], ctx?: ServiceContext): Promise<Event[]> {
+        return attachComposedEventMediaList({
+            items,
+            mediaModel: this.eventMediaModel,
+            tx: ctx?.tx
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // Media composition (HOS-390)
+    // -----------------------------------------------------------------------
+    //
+    // Photos live in the relational `event_media` table, not in the
+    // `events.media` JSONB blob, so every read path has to rebuild the `media`
+    // shape consumers expect. These are the standard chokepoints:
+    // `getById`/`getBySlug` go through `_afterGetByField`, `list()` and
+    // `search()` through their own hooks, and `adminList` through
+    // `_executeAdminSearch` — which the base flow does NOT route through
+    // `_afterList`, so it needs its own call.
+    //
+    // WITHOUT this wiring the relational rows are written but never read: the
+    // author persists photos successfully and they appear nowhere.
+    //
+    // Composition is batched (`findByEvents`, one IN query) so a list page does
+    // not go N+1.
+    //
+    // Videos are NOT composed from the table — they stay in the JSONB blob
+    // (SPEC-204 D1) and `attachComposedEventMedia*` reads them from there.
+
+    /**
+     * Lifecycle hook: composes `media` from the relational `event_media` rows
+     * for a single-entity read (HOS-390).
+     */
+    protected override async _afterGetByField(
+        entity: Event | null,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<Event | null> {
+        return attachComposedEventMedia({
+            entity,
+            mediaModel: this.eventMediaModel,
+            tx: ctx?.tx
+        });
+    }
+
+    /**
+     * Lifecycle hook: composes `media` from the relational `event_media` rows
+     * for every item of a paginated list result (HOS-390).
+     */
+    protected override async _afterList(
+        result: PaginatedListOutput<Event>,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<PaginatedListOutput<Event>> {
+        if (!result?.items) return result;
+        const items = await attachComposedEventMediaList({
+            items: result.items,
+            mediaModel: this.eventMediaModel,
+            tx: ctx?.tx
+        });
+        return { ...result, items };
+    }
+
+    /**
+     * Lifecycle hook: composes `media` from the relational `event_media` rows
+     * for every item of a paginated search result (HOS-390).
+     */
+    protected override async _afterSearch(
+        result: PaginatedListOutput<Event>,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<PaginatedListOutput<Event>> {
+        if (!result?.items) return result;
+        const items = await attachComposedEventMediaList({
+            items: result.items,
+            mediaModel: this.eventMediaModel,
+            tx: ctx?.tx
+        });
+        return { ...result, items };
+    }
+
+    /**
      * Executes admin search for events with JSONB date filters.
      *
      * Extracts date range filters (startDateAfter, startDateBefore, endDateAfter, endDateBefore)
      * from entity filters and converts them into raw SQL conditions against the JSONB `date` column.
      * The JSONB column uses `start` and `end` keys as defined by EventDateSchema.
+     *
+     * Also composes `media` from the relational rows: the base `adminList` flow
+     * does NOT invoke `_afterList`, so without this the admin panel would read
+     * an event with no photos (HOS-390).
      *
      * @param params - The assembled admin search parameters from the base class.
      * @returns A paginated list of events matching the criteria.
@@ -657,11 +773,18 @@ export class EventService extends BaseCrudService<
             })
         ];
 
-        return super._executeAdminSearch({
+        const result = await super._executeAdminSearch({
             ...rest,
             entityFilters: simpleFilters,
             extraConditions
         });
+        if (!result?.items) return result;
+        const items = await attachComposedEventMediaList({
+            items: result.items,
+            mediaModel: this.eventMediaModel,
+            tx: params.ctx?.tx
+        });
+        return { ...result, items };
     }
 
     /**
@@ -954,12 +1077,17 @@ export class EventService extends BaseCrudService<
                     // neither a caller-supplied filter nor an elevated
                     // permission widens a public read path to pending, private
                     // or archived events.
-                    return await this.model.findAll(
+                    const result = await this.model.findAll(
                         applyPublicReadFloor(filters),
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx
                     );
+                    if (!result?.items) return result;
+                    return {
+                        ...result,
+                        items: await this.composeMediaForItems(result.items, resolvedCtx)
+                    };
                 } catch (err) {
                     throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, (err as Error).message);
                 }
@@ -1013,12 +1141,17 @@ export class EventService extends BaseCrudService<
                     // neither a caller-supplied filter nor an elevated
                     // permission widens a public read path to pending, private
                     // or archived events.
-                    return await this.model.findAll(
+                    const result = await this.model.findAll(
                         applyPublicReadFloor(filters),
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx
                     );
+                    if (!result?.items) return result;
+                    return {
+                        ...result,
+                        items: await this.composeMediaForItems(result.items, resolvedCtx)
+                    };
                 } catch (err) {
                     throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, (err as Error).message);
                 }
@@ -1069,12 +1202,17 @@ export class EventService extends BaseCrudService<
                     // neither a caller-supplied filter nor an elevated
                     // permission widens a public read path to pending, private
                     // or archived events.
-                    return await this.model.findAll(
+                    const result = await this.model.findAll(
                         applyPublicReadFloor(filters),
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx
                     );
+                    if (!result?.items) return result;
+                    return {
+                        ...result,
+                        items: await this.composeMediaForItems(result.items, resolvedCtx)
+                    };
                 } catch (err) {
                     throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, (err as Error).message);
                 }
@@ -1155,8 +1293,11 @@ export class EventService extends BaseCrudService<
                     );
                     return {
                         ...upcomingResult,
-                        items: upcomingResult.items.map((event) =>
-                            this.projectEventLocationCity(event)
+                        items: await this.composeMediaForItems(
+                            upcomingResult.items.map((event) =>
+                                this.projectEventLocationCity(event)
+                            ),
+                            resolvedCtx
                         )
                     };
                 } catch (err) {
@@ -1252,12 +1393,17 @@ export class EventService extends BaseCrudService<
                     // neither a caller-supplied filter nor an elevated
                     // permission widens a public read path to pending, private
                     // or archived events.
-                    return await this.model.findAll(
+                    const result = await this.model.findAll(
                         applyPublicReadFloor(filters),
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx
                     );
+                    if (!result?.items) return result;
+                    return {
+                        ...result,
+                        items: await this.composeMediaForItems(result.items, resolvedCtx)
+                    };
                 } catch (err) {
                     throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, (err as Error).message);
                 }
@@ -1298,12 +1444,17 @@ export class EventService extends BaseCrudService<
                     // neither a caller-supplied filter nor an elevated
                     // permission widens a public read path to pending, private
                     // or archived events.
-                    return await this.model.findAll(
+                    const result = await this.model.findAll(
                         applyPublicReadFloor(filters),
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx
                     );
+                    if (!result?.items) return result;
+                    return {
+                        ...result,
+                        items: await this.composeMediaForItems(result.items, resolvedCtx)
+                    };
                 } catch (err) {
                     throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, (err as Error).message);
                 }

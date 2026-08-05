@@ -12,7 +12,7 @@ import {
     expectNotFoundError
 } from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
-import { createTypedModelMock } from '../../utils/modelMockFactory';
+import { createTypedModelMock, makePostMediaModelStub } from '../../utils/modelMockFactory';
 
 describe('PostService.getBySlug', () => {
     let service: PostService;
@@ -24,7 +24,14 @@ describe('PostService.getBySlug', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         modelMock = createTypedModelMock(PostModel, ['findOne']);
-        service = createServiceTestInstance(PostService, modelMock);
+        service = createServiceTestInstance(
+            PostService,
+            modelMock,
+            undefined,
+            null,
+            undefined,
+            makePostMediaModelStub()
+        );
         post = createMockPost();
         actor = createActor({
             id: getMockId('user'),

@@ -57,6 +57,25 @@ export function checkCanUpdateEvent(actor: Actor, event: Event): void {
 }
 
 /**
+ * Checks if the actor can manage an event's gallery photos (HOS-390).
+ *
+ * Delegates to {@link checkCanUpdateEvent} rather than introducing a dedicated
+ * `EVENT_MEDIA_*` permission: a photo IS event content, so editing the gallery
+ * cannot require less — nor more — than editing the event itself. Adding a
+ * separate permission would let the two drift, producing an actor who can
+ * rewrite an event's description but not replace its cover image (or vice versa).
+ *
+ * Exists as its own named function so the media helpers read against a
+ * media-specific seam (mirroring `checkGastronomyCanEditMedia`), and so a future
+ * divergence has one place to land instead of five call sites.
+ *
+ * Throws ServiceError(FORBIDDEN) if not allowed.
+ */
+export function checkEventCanEditMedia(actor: Actor, event: Event): void {
+    checkCanUpdateEvent(actor, event);
+}
+
+/**
  * Checks if the actor can delete the given event.
  *
  * `EVENT_DELETE` deletes any event; `EVENT_DELETE_OWN` deletes only the actor's

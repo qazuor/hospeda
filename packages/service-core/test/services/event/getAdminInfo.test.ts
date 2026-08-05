@@ -6,7 +6,11 @@ import { createActor } from '../../factories/actorFactory';
 import { getMockEvent, getMockEventId } from '../../factories/eventFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import { expectForbiddenError, expectNotFoundError } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makeEventMediaModelStub
+} from '../../utils/modelMockFactory';
 
 // Helper to cast a function to a Vitest mock
 function asMock(fn: unknown) {
@@ -24,7 +28,11 @@ describe('EventService - getAdminInfo', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findById']);
         loggerMock = createLoggerMock();
-        service = new EventService({ model: modelMock, logger: loggerMock });
+        service = new EventService({
+            model: modelMock,
+            logger: loggerMock,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
         superAdmin = createActor({
             roles: [RoleEnum.SUPER_ADMIN],
             permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.EVENT_UPDATE]

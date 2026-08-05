@@ -10,7 +10,11 @@ import {
     expectNotFoundError,
     expectSuccess
 } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makeEventMediaModelStub
+} from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
 
 /**
@@ -27,7 +31,11 @@ describe('EventService.restore', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findById', 'restore']);
         loggerMock = createLoggerMock();
-        service = new EventService({ model: modelMock, logger: loggerMock });
+        service = new EventService({
+            model: modelMock,
+            logger: loggerMock,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
     });
 
     it('should restore an event (success, deleted)', async () => {

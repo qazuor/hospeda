@@ -49,6 +49,8 @@ export * from './external-platform.enum.js';
 export * from './external-platform.schema.js';
 export * from './gastronomy-type.enum.js';
 export * from './gastronomy-type.schema.js';
+export * from './host-trade-benefit-type.enum.js';
+export * from './host-trade-benefit-type.schema.js';
 export * from './host-trade-category.enum.js';
 export * from './host-trade-category.schema.js';
 export * from './invoice-status.enum.js';

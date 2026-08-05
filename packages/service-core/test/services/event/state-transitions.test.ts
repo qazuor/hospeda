@@ -14,7 +14,7 @@ import { createActor } from '../../factories/actorFactory';
 import { createMockEvent } from '../../factories/eventFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import { expectForbiddenError, expectNotFoundError, expectSuccess } from '../../helpers/assertions';
-import { createTypedModelMock } from '../../utils/modelMockFactory';
+import { createTypedModelMock, makeEventMediaModelStub } from '../../utils/modelMockFactory';
 
 /**
  * HOS-374 §7.6.4 — the three dedicated state transitions, event twin.
@@ -35,7 +35,11 @@ describe('EventService state transitions', () => {
         vi.clearAllMocks();
         modelMock = createTypedModelMock(EventModel, ['findById', 'update']);
         const loggerMock = { log: vi.fn(), error: vi.fn() } as unknown as ServiceLogger;
-        service = new EventService({ model: modelMock, logger: loggerMock });
+        service = new EventService({
+            model: modelMock,
+            logger: loggerMock,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
         event = createMockEvent({
             authorId,
             visibility: VisibilityEnum.PUBLIC,

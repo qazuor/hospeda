@@ -5,7 +5,11 @@ import { EventService } from '../../../src/services/event/event.service';
 import { createActor } from '../../factories/actorFactory';
 import { createMockEvent } from '../../factories/eventFactory';
 import { expectInternalError, expectSuccess } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makeEventMediaModelStub
+} from '../../utils/modelMockFactory';
 
 /**
  * Test suite for EventService.list
@@ -28,7 +32,11 @@ describe('EventService.list', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findAll']);
         loggerMock = createLoggerMock();
-        service = new EventService({ model: modelMock, logger: loggerMock });
+        service = new EventService({
+            model: modelMock,
+            logger: loggerMock,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
     });
 
     it('should return paginated events (success)', async () => {

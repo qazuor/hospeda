@@ -278,6 +278,8 @@
 | `DELETE /api/v1/protected/attractions/{id}` | `attraction/protected/softDelete.ts` | none | - | n/a | Auth + PermissionEnum-gated |
 | **HOST-TRADE — PROTECTED** | | | | | |
 | `GET /api/v1/protected/host-trades` | `host-trade/protected/list.ts` | none | - | n/a | Host perk, gated by HOST_TRADE_VIEW permission only — no billing entitlement |
+| `GET /api/v1/protected/host-trades/mine` | `host-trade/protected/mine.ts` | none | - | n/a | HOS-278 AC-7: a provider's OWN listing. Auth-only by design — no HOST_TRADE_* permission and no entitlement. An approved service provider is an ordinary tourist account; gating on the host-directory perk would lock them out of their own ficha. Scoped server-side to `ownerUserId = actor.id`, so nothing an elevated permission would unlock |
+| `PATCH /api/v1/protected/host-trades/mine` | `host-trade/protected/mine.ts` | none | - | n/a | HOS-278 AC-8/AC-9. Same auth-only reasoning as the GET. Identity fields are absent from the request schema and therefore stripped, not rejected; a benefit change is parked for admin review rather than published |
 | **DESTINATION — PROTECTED** | | | | | |
 | `POST /api/v1/protected/destinations` | `destination/protected/create.ts` | none | - | n/a | Content contributor; auth + PermissionEnum-gated |
 | `PATCH /api/v1/protected/destinations/{id}` | `destination/protected/patch.ts` | none | - | n/a | Auth + PermissionEnum-gated |
@@ -452,6 +454,8 @@
 | `DELETE /api/v1/admin/host-trades/{id}` | `host-trade/admin/delete.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | `DELETE /api/v1/admin/host-trades/{id}/hard` | `host-trade/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated |
 | `POST /api/v1/admin/host-trades/{id}/restore` | `host-trade/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
+| `POST /api/v1/admin/host-trades/{id}/revoke` | `host-trade/admin/revoke.ts` | none | - | n/a | HOS-278 R-4. Admin write; PermissionEnum-gated (HOST_TRADE_DELETE — it removes a provider from the directory, nearer to deletion than to an edit). Action-POST rather than DELETE because the reason is required and Hono discards a DELETE body |
+| `POST /api/v1/admin/host-trades/{id}/review-benefit` | `host-trade/admin/review-benefit.ts` | none | - | n/a | HOS-278 AC-8. Admin write; PermissionEnum-gated (HOST_TRADE_UPDATE). Resolves the pending benefit edit a provider submitted from /mi-cuenta |
 | **EVENT-LOCATION — ADMIN** | | | | | |
 | `GET /api/v1/admin/event-locations` | `event-location/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `POST /api/v1/admin/event-locations` | `event-location/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated |

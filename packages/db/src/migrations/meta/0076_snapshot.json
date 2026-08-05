@@ -1,5 +1,5 @@
 {
-  "id": "9a6e7d64-a6f9-498b-9a5e-8f96e738d5fd",
+  "id": "c0d45895-e36b-4cc3-a3ff-b3a7f76d7865",
   "prevId": "c84a00d1-31cc-40f8-a44e-c8c998fce2c0",
   "version": "7",
   "dialect": "postgresql",
@@ -4198,6 +4198,48 @@
           "primaryKey": false,
           "notNull": false
         },
+        "business_name": {
+          "name": "business_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "category": {
+          "name": "category",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "destination_id": {
+          "name": "destination_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "benefit_type": {
+          "name": "benefit_type",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "benefit_value": {
+          "name": "benefit_value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "benefit_text": {
+          "name": "benefit_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "provisioned_host_trade_id": {
+          "name": "provisioned_host_trade_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "applicant_user_id": {
           "name": "applicant_user_id",
           "type": "uuid",
@@ -4333,6 +4375,32 @@
         }
       },
       "foreignKeys": {
+        "alliance_leads_destination_id_destinations_id_fk": {
+          "name": "alliance_leads_destination_id_destinations_id_fk",
+          "tableFrom": "alliance_leads",
+          "tableTo": "destinations",
+          "columnsFrom": [
+            "destination_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "alliance_leads_provisioned_host_trade_id_host_trades_id_fk": {
+          "name": "alliance_leads_provisioned_host_trade_id_host_trades_id_fk",
+          "tableFrom": "alliance_leads",
+          "tableTo": "host_trades",
+          "columnsFrom": [
+            "provisioned_host_trade_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
         "alliance_leads_applicant_user_id_users_id_fk": {
           "name": "alliance_leads_applicant_user_id_users_id_fk",
           "tableFrom": "alliance_leads",
@@ -14951,6 +15019,19 @@
           "primaryKey": false,
           "notNull": true
         },
+        "benefit_type": {
+          "name": "benefit_type",
+          "type": "host_trade_benefit_type_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "benefit_value": {
+          "name": "benefit_value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "destination_id": {
           "name": "destination_id",
           "type": "uuid",
@@ -14976,6 +15057,55 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pending_benefit_type": {
+          "name": "pending_benefit_type",
+          "type": "host_trade_benefit_type_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pending_benefit_value": {
+          "name": "pending_benefit_value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pending_benefit_text": {
+          "name": "pending_benefit_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "benefit_review_state": {
+          "name": "benefit_review_state",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revoked_by_id": {
+          "name": "revoked_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revoke_reason": {
+          "name": "revoke_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -15082,6 +15212,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "hostTrades_ownerUserId_idx": {
+          "name": "hostTrades_ownerUserId_idx",
+          "columns": [
+            {
+              "expression": "owner_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -15096,6 +15241,32 @@
             "id"
           ],
           "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "host_trades_owner_user_id_users_id_fk": {
+          "name": "host_trades_owner_user_id_users_id_fk",
+          "tableFrom": "host_trades",
+          "tableTo": "users",
+          "columnsFrom": [
+            "owner_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "host_trades_revoked_by_id_users_id_fk": {
+          "name": "host_trades_revoked_by_id_users_id_fk",
+          "tableFrom": "host_trades",
+          "tableTo": "users",
+          "columnsFrom": [
+            "revoked_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "host_trades_created_by_id_users_id_fk": {
@@ -24141,13 +24312,6 @@
           "notNull": true,
           "default": false
         },
-        "is_system_account": {
-          "name": "is_system_account",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -30348,6 +30512,16 @@
         "PANADERIA",
         "ROTISERIA",
         "FOOD_TRUCK"
+      ]
+    },
+    "public.host_trade_benefit_type_enum": {
+      "name": "host_trade_benefit_type_enum",
+      "schema": "public",
+      "values": [
+        "PERCENTAGE",
+        "FIXED_AMOUNT",
+        "TWO_FOR_ONE",
+        "SPECIAL_CONDITION"
       ]
     },
     "public.host_trade_category_enum": {

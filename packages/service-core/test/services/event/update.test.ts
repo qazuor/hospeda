@@ -18,7 +18,7 @@ import {
     expectSuccess,
     expectValidationError
 } from '../../helpers/assertions';
-import { createTypedModelMock } from '../../utils/modelMockFactory';
+import { createTypedModelMock, makeEventMediaModelStub } from '../../utils/modelMockFactory';
 
 describe('EventService.update', () => {
     let service: EventService;
@@ -35,7 +35,11 @@ describe('EventService.update', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findById', 'update']);
         loggerMock = { log: vi.fn(), error: vi.fn() } as unknown as ServiceLogger;
-        service = new EventService({ model: modelMock, logger: loggerMock });
+        service = new EventService({
+            model: modelMock,
+            logger: loggerMock,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
     });
 
     afterEach(() => {

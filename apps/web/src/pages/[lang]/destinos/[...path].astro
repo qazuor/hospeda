@@ -4,7 +4,9 @@
  * @description Destination detail page with hierarchical catch-all routing.
  * Handles paths like /destinos/entre-rios/ and /destinos/entre-rios/colon/.
  * @route /{lang}/destinos/{...path}/
- * @rendering SSR + ISR 24h
+ * @rendering SSR + Cloudflare edge cache — `public, s-maxage=300,
+ *   stale-while-revalidate=600`, purged by cache tag. Eligibility is decided
+ *   per request by the `applyCacheHeaders` call below, not by this comment.
  */
 
 import DetailLayout from '@/layouts/DetailLayout.astro';

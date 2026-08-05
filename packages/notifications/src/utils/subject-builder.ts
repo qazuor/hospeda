@@ -64,6 +64,11 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.ALLIANCE_LEAD_DECISION]:
         'Novedades sobre tu postulación a {programLabel} en Hospeda',
 
+    // Listing revoked (HOS-278 R-4). Names the listing so a provider with more
+    // than one knows which; the reason stays in the body, where it has room.
+    [NotificationType.HOST_TRADE_REVOKED]:
+        'Tu ficha {listingName} ya no aparece en el directorio de Hospeda',
+
     // Broken iCal feed alert to the host (HOS-162 Phase 3)
     [NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN]:
         'Tu calendario de {providerLabel} dejó de sincronizarse — {accommodationName}',

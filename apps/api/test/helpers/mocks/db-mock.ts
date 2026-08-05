@@ -345,6 +345,71 @@ export function createDbMock() {
             }
         },
 
+        // HOS-390: relational content media, the post/event twins of
+        // AccommodationMediaModel above. PostService and EventService instantiate
+        // them in their constructors, so a mock without them fails at MODULE LOAD
+        // for every test that touches a post or event route — and the suite then
+        // reports "0 tests" rather than a failure, which reads like a pass.
+        PostMediaModel: class MockPostMediaModel {
+            async findByPost(_input: unknown) {
+                return { items: [], total: 0 };
+            }
+            async findFeatured(_input: unknown) {
+                return null;
+            }
+            async findByPosts(_input: unknown) {
+                return new Map();
+            }
+            async findById(_id: string) {
+                return null;
+            }
+            async findAll(_filters: unknown) {
+                return { items: [], total: 0 };
+            }
+            async create(_data: unknown, _tx?: unknown) {
+                return null;
+            }
+            async update(_filters: unknown, _data: unknown, _tx?: unknown) {
+                return null;
+            }
+            async softDelete(_filters: unknown, _tx?: unknown) {
+                return undefined;
+            }
+            async hardDelete(_filters: unknown, _tx?: unknown) {
+                return undefined;
+            }
+        },
+
+        EventMediaModel: class MockEventMediaModel {
+            async findByEvent(_input: unknown) {
+                return { items: [], total: 0 };
+            }
+            async findFeatured(_input: unknown) {
+                return null;
+            }
+            async findByEvents(_input: unknown) {
+                return new Map();
+            }
+            async findById(_id: string) {
+                return null;
+            }
+            async findAll(_filters: unknown) {
+                return { items: [], total: 0 };
+            }
+            async create(_data: unknown, _tx?: unknown) {
+                return null;
+            }
+            async update(_filters: unknown, _data: unknown, _tx?: unknown) {
+                return null;
+            }
+            async softDelete(_filters: unknown, _tx?: unknown) {
+                return undefined;
+            }
+            async hardDelete(_filters: unknown, _tx?: unknown) {
+                return undefined;
+            }
+        },
+
         // Mock DestinationModel — same module-scope instantiation in reviews.ts.
         DestinationModel: class MockDestinationModel {
             async findById(_id: string) {
@@ -929,6 +994,22 @@ export function createDbMock() {
         accommodationMediaModel: {
             findByAccommodation: vi.fn().mockResolvedValue({ items: [], total: 0 }),
             findByAccommodations: vi.fn().mockResolvedValue(new Map()),
+            findFeatured: vi.fn().mockResolvedValue(null),
+            create: vi.fn().mockResolvedValue(null),
+            hardDelete: vi.fn().mockResolvedValue(undefined)
+        },
+
+        // HOS-390: relational content media singletons (post_media / event_media).
+        postMediaModel: {
+            findByPost: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+            findByPosts: vi.fn().mockResolvedValue(new Map()),
+            findFeatured: vi.fn().mockResolvedValue(null),
+            create: vi.fn().mockResolvedValue(null),
+            hardDelete: vi.fn().mockResolvedValue(undefined)
+        },
+        eventMediaModel: {
+            findByEvent: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+            findByEvents: vi.fn().mockResolvedValue(new Map()),
             findFeatured: vi.fn().mockResolvedValue(null),
             create: vi.fn().mockResolvedValue(null),
             hardDelete: vi.fn().mockResolvedValue(undefined)

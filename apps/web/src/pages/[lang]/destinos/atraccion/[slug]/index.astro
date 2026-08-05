@@ -3,7 +3,9 @@
  * @file destinos/atraccion/[slug]/index.astro
  * @description Destinations that offer a given attraction.
  * @route /{lang}/destinos/atraccion/{slug}/
- * @rendering SSR + ISR 24h
+ * @rendering SSR + Cloudflare edge cache — `public, s-maxage=300,
+ *   stale-while-revalidate=600`, purged by cache tag. Eligibility is decided
+ *   per request by the `applyCacheHeaders` call below, not by this comment.
  *
  * An attraction is a taxonomy term ("Termas", "Playa Fluvial"), not a place:
  * the whole catalog is `isBuiltin`, and its `description` defines the category

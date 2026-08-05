@@ -521,6 +521,17 @@
         "adminNote": {
             "max": "Note must not exceed {{max}} characters"
         },
+        "benefitType": {
+            "requiredForServiceProvider": "[EN] Elegí qué beneficio ofrecés a los anfitriones"
+        },
+        "businessName": {
+            "max": "[EN] El nombre del negocio no puede superar los {{max}} caracteres",
+            "min": "[EN] El nombre del negocio debe tener al menos {{min}} caracteres",
+            "requiredForServiceProvider": "[EN] Indicá el nombre de tu negocio"
+        },
+        "category": {
+            "requiredForServiceProvider": "[EN] Elegí la categoría del servicio que ofrecés"
+        },
         "claimExpiresAt": {
             "invalid": "The confirmation expiry date is invalid"
         },
@@ -531,6 +542,9 @@
         "contactName": {
             "max": "Contact name must not exceed {{max}} characters",
             "min": "Contact name must be at least {{min}} characters"
+        },
+        "destinationId": {
+            "requiredForServiceProvider": "[EN] Elegí la localidad donde prestás el servicio"
         },
         "email": {
             "invalid": "Email is invalid",
@@ -1492,6 +1506,12 @@
             "publicId": {
                 "min": "The public id must be at least {{min}} characters"
             },
+            "reorder": {
+                "orderedIds": {
+                    "invalid": "The ordered list must be an array of valid UUIDs",
+                    "min": "The ordered list must contain at least {{min}} item"
+                }
+            },
             "sortOrder": {
                 "int": "Display order must be an integer"
             },
@@ -2264,6 +2284,9 @@
         },
         "gastronomyType": {
             "invalid": "[EN] El tipo de gastronomía no es válido"
+        },
+        "hostTradeBenefitType": {
+            "invalid": "[EN] El tipo de beneficio seleccionado no es válido"
         },
         "hostTradeCategory": {
             "invalid": "[EN] La categoría de oficio seleccionada no es válida"
@@ -3093,11 +3116,34 @@
         "benefit": {
             "min": "[EN] El beneficio debe tener al menos {{min}} caracteres"
         },
+        "benefitReview": {
+            "decision": {
+                "invalid": "[EN] La decisión de revisión no es válida"
+            }
+        },
+        "benefitReviewState": {
+            "invalid": "[EN] El estado de revisión del beneficio no es válido"
+        },
+        "benefitText": {
+            "max": "[EN] La letra chica no puede superar los {{max}} caracteres"
+        },
+        "benefitValue": {
+            "int": "[EN] El valor del beneficio debe ser un número entero",
+            "notAllowedForType": "[EN] El tipo de beneficio elegido no lleva un valor numérico",
+            "percentageMax": "[EN] El descuento no puede superar el 100%",
+            "positive": "[EN] El valor del beneficio debe ser mayor que cero",
+            "required": "[EN] Indicá el valor del beneficio para el tipo elegido",
+            "requiresType": "[EN] Elegí un tipo de beneficio antes de indicar su valor"
+        },
         "contact": {
             "min": "[EN] El contacto debe tener al menos {{min}} caracteres"
         },
         "name": {
             "min": "[EN] El nombre debe tener al menos {{min}} caracteres"
+        },
+        "revokeReason": {
+            "max": "[EN] El motivo no puede superar los {{max}} caracteres",
+            "required": "[EN] Indicá el motivo de la revocación"
         },
         "slug": {
             "min": "[EN] El slug debe tener al menos {{min}} caracteres"

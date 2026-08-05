@@ -521,6 +521,17 @@
         "adminNote": {
             "max": "La nota no puede superar los {{max}} caracteres"
         },
+        "benefitType": {
+            "requiredForServiceProvider": "Elegí qué beneficio ofrecés a los anfitriones"
+        },
+        "businessName": {
+            "max": "El nombre del negocio no puede superar los {{max}} caracteres",
+            "min": "El nombre del negocio debe tener al menos {{min}} caracteres",
+            "requiredForServiceProvider": "Indicá el nombre de tu negocio"
+        },
+        "category": {
+            "requiredForServiceProvider": "Elegí la categoría del servicio que ofrecés"
+        },
         "claimExpiresAt": {
             "invalid": "La fecha de vencimiento de la confirmación no es válida"
         },
@@ -531,6 +542,9 @@
         "contactName": {
             "max": "El nombre de contacto no puede superar los {{max}} caracteres",
             "min": "El nombre de contacto debe tener al menos {{min}} caracteres"
+        },
+        "destinationId": {
+            "requiredForServiceProvider": "Elegí la localidad donde prestás el servicio"
         },
         "email": {
             "invalid": "El email no es válido",
@@ -1492,6 +1506,12 @@
             "publicId": {
                 "min": "El public id debe tener al menos {{min}} caracteres"
             },
+            "reorder": {
+                "orderedIds": {
+                    "invalid": "La lista ordenada debe ser un arreglo de UUIDs válidos",
+                    "min": "La lista ordenada debe contener al menos {{min}} elemento"
+                }
+            },
             "sortOrder": {
                 "int": "El orden de visualización debe ser un número entero"
             },
@@ -2264,6 +2284,9 @@
         },
         "gastronomyType": {
             "invalid": "El tipo de gastronomía no es válido"
+        },
+        "hostTradeBenefitType": {
+            "invalid": "El tipo de beneficio seleccionado no es válido"
         },
         "hostTradeCategory": {
             "invalid": "La categoría de oficio seleccionada no es válida"
@@ -3093,11 +3116,34 @@
         "benefit": {
             "min": "El beneficio debe tener al menos {{min}} caracteres"
         },
+        "benefitReview": {
+            "decision": {
+                "invalid": "La decisión de revisión no es válida"
+            }
+        },
+        "benefitReviewState": {
+            "invalid": "El estado de revisión del beneficio no es válido"
+        },
+        "benefitText": {
+            "max": "La letra chica no puede superar los {{max}} caracteres"
+        },
+        "benefitValue": {
+            "int": "El valor del beneficio debe ser un número entero",
+            "notAllowedForType": "El tipo de beneficio elegido no lleva un valor numérico",
+            "percentageMax": "El descuento no puede superar el 100%",
+            "positive": "El valor del beneficio debe ser mayor que cero",
+            "required": "Indicá el valor del beneficio para el tipo elegido",
+            "requiresType": "Elegí un tipo de beneficio antes de indicar su valor"
+        },
         "contact": {
             "min": "El contacto debe tener al menos {{min}} caracteres"
         },
         "name": {
             "min": "El nombre debe tener al menos {{min}} caracteres"
+        },
+        "revokeReason": {
+            "max": "El motivo no puede superar los {{max}} caracteres",
+            "required": "Indicá el motivo de la revocación"
         },
         "slug": {
             "min": "El slug debe tener al menos {{min}} caracteres"

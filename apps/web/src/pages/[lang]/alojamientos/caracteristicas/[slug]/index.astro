@@ -3,7 +3,14 @@
  * @file alojamientos/caracteristicas/[slug]/index.astro
  * @description Accommodations with a specific feature (uses dedicated endpoint).
  * @route /{lang}/alojamientos/caracteristicas/{slug}/
- * @rendering SSR + ISR 24h
+ * @rendering SSR only — this page never opts into the edge cache.
+ *
+ *   That is a GAP, not a decision: it is public catalog content keyed by slug,
+ *   with the same shape as the sibling facet pages that W2-3/W2-4 did wire up
+ *   (`alojamientos/tipo/`, `publicaciones/etiqueta/`, ...). It was simply never
+ *   given an `applyCacheHeaders` call, a cache tag, or a Cloudflare rule entry.
+ *   Do not "fix" this by adding the header alone — without a purge chain the
+ *   page would serve stale content for the full TTL.
  */
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';

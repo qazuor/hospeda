@@ -18,7 +18,7 @@ import {
     expectUnauthorizedError,
     expectValidationError
 } from '../../helpers/assertions';
-import { createTypedModelMock } from '../../utils/modelMockFactory';
+import { createTypedModelMock, makeEventMediaModelStub } from '../../utils/modelMockFactory';
 
 /**
  * Tests for EventService.getByAuthor
@@ -35,7 +35,11 @@ describe('EventService.getByAuthor', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findAll']);
         loggerMock = { log: vi.fn(), error: vi.fn() } as unknown as ServiceLogger;
-        service = new EventService({ model: modelMock, logger: loggerMock });
+        service = new EventService({
+            model: modelMock,
+            logger: loggerMock,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
     });
 
     it('should apply the public read floor even when the actor has EVENT_SOFT_DELETE_VIEW', async () => {

@@ -28,6 +28,7 @@ import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createActor } from '../../factories/actorFactory';
 import { createUser } from '../../factories/userFactory';
 import { expectSuccess } from '../../helpers/assertions';
+import { makeEventMediaModelStub } from '../../utils/modelMockFactory';
 
 type QueryChunk = { value?: unknown[] };
 
@@ -96,7 +97,11 @@ describe('EventService.getByAuthor — soft-delete default (HOS-274, real EventM
 
     beforeEach(() => {
         loggerMock = { log: vi.fn(), error: vi.fn() } as unknown as ServiceLogger;
-        service = new EventService({ model: new EventModel(), logger: loggerMock });
+        service = new EventService({
+            model: new EventModel(),
+            logger: loggerMock,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
     });
 
     afterEach(() => {
