@@ -715,4 +715,112 @@ describe('sitemap-dynamic.xml — GET handler', () => {
             expect(body).toContain('/es/destinos/atraccion/playa-fluvial/');
         });
     });
+
+    describe('author pages (HOS-375 §6.6)', () => {
+        /**
+         * Answers `/authors` with `items` and every other entity with an empty
+         * page. Matches on the URL rather than call order: the positional
+         * `mockImplementationOnce` style used above breaks the moment a fetch
+         * is added anywhere in the `Promise.allSettled` array.
+         */
+        function stubAuthorFetch(items: Array<{ slug: string; updatedAt?: string }>) {
+            const fetchMock = vi.fn().mockImplementation((url: string) => {
+                const urlStr = String(url);
+                if (urlStr.includes('/authors') && urlStr.includes('page=1')) {
+                    return Promise.resolve(makeApiResponse(items));
+                }
+                return Promise.resolve(makeEmptyApiResponse());
+            });
+            vi.stubGlobal('fetch', fetchMock);
+            return fetchMock;
+        }
+
+        it('emits one /autores/ entry per locale for an eligible author', async () => {
+            stubAuthorFetch([{ slug: 'equipo-hospeda', updatedAt: '2026-08-01T00:00:00.000Z' }]);
+
+            const body = await (await GET({})).text();
+
+            expect(body).toContain('https://hospeda.test/es/autores/equipo-hospeda/');
+            expect(body).toContain('https://hospeda.test/en/autores/equipo-hospeda/');
+            expect(body).toContain('https://hospeda.test/pt/autores/equipo-hospeda/');
+        });
+
+        it('emits the author page exactly once per locale, not once per content item', async () => {
+            stubAuthorFetch([{ slug: 'equipo-hospeda' }]);
+
+            const body = await (await GET({})).text();
+            const occurrences =
+                body.split('<loc>https://hospeda.test/es/autores/equipo-hospeda/<').length - 1;
+
+            expect(occurrences).toBe(1);
+        });
+
+        it('carries the author row updatedAt as lastmod', async () => {
+            stubAuthorFetch([{ slug: 'laura-vega', updatedAt: '2026-07-16T22:44:34.849Z' }]);
+
+            const body = await (await GET({})).text();
+            expect(body).toContain('2026-07-16');
+        });
+
+        it('reads authors from /api/v1/public/authors — the endpoint that applies the predicate', async () => {
+            // This is the real guard for "excluded authors never appear", and it
+            // is deliberately about the URL rather than about filtering output.
+            // The §6.5 predicate (system account, published items, bio, avatar)
+            // lives behind this endpoint, shared with the page through
+            // `evaluateAuthorIndexability`. A test that fed this file an
+            // ineligible author and asserted it was dropped would be asserting
+            // a filter that MUST NOT exist here — adding one would create the
+            // second source of truth §6.6 exists to prevent.
+            const fetchMock = stubAuthorFetch([]);
+
+            await GET({});
+
+            const authorCalls = fetchMock.mock.calls
+                .map((call) => String(call[0]))
+                .filter((url) => url.includes('/authors'));
+
+            expect(authorCalls.length).toBeGreaterThan(0);
+            for (const url of authorCalls) {
+                expect(url).toContain('/api/v1/public/authors');
+                // Mounting under /users would classify the route as
+                // browser-private and lose shared caching (T-012).
+                expect(url).not.toContain('/public/users');
+            }
+        });
+
+        it('emits no author entry when the authors fetch fails', async () => {
+            // Degrades like every other entity: a broken endpoint costs the
+            // author block, never the whole sitemap.
+            const fetchMock = vi.fn().mockImplementation((url: string) => {
+                if (String(url).includes('/authors')) {
+                    return Promise.reject(new Error('Network error'));
+                }
+                return Promise.resolve(makeEmptyApiResponse());
+            });
+            vi.stubGlobal('fetch', fetchMock);
+
+            const response = await GET({});
+            const body = await response.text();
+
+            expect(response.status).toBe(200);
+            expect(body).not.toContain('/autores/');
+            expect(body).toContain('</urlset>');
+        });
+
+        it('emits no author entry when the endpoint returns an empty list', async () => {
+            stubAuthorFetch([]);
+
+            const body = await (await GET({})).text();
+            expect(body).not.toContain('/autores/');
+        });
+
+        it('skips an item with no slug instead of emitting /autores//', async () => {
+            stubAuthorFetch([{ slug: '' }, { slug: 'carmen-silva' }]);
+
+            const body = await (await GET({})).text();
+
+            expect(body).not.toContain('/autores//');
+            expect(body).toContain('/es/autores/carmen-silva/');
+        });
+    });
 });

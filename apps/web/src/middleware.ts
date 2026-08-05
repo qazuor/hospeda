@@ -7,7 +7,8 @@
  *    parse — see the Step 2 block below for why)
  * 3. Enforce trailing slash (301 redirect before Astro resolves the route)
  * 3.1. Legacy URL aliases (e.g. `/mi-cuenta/messages` -> `/mi-cuenta/consultas`,
- *      `/blog` -> `/publicaciones`) redirect before locale/route resolution
+ *      `/blog` -> `/publicaciones`, `/publicaciones/autor` -> `/autores`)
+ *      redirect before locale/route resolution
  * 4. Extract and validate locale from URL path; redirect invalid locales to default
  * 5. Set validated locale in context.locals
  * 6. Parse session only for routes that need it (protected + auth)
@@ -229,6 +230,30 @@ export const onRequest = defineMiddleware(async (context, next) => {
         const tail = legacyBlogMatch[2] ?? '/';
         const search = context.url.search;
         return context.redirect(`/${localeSegment}/publicaciones${tail}${search}`, 301);
+    }
+
+    // Step 3.3 (HOS-375): The author page moved out from under the blog — it now
+    // carries events as well as posts, so living at `/publicaciones/autor/` said
+    // the wrong thing about its content. One regex covers the whole subtree: the
+    // tail capture carries both the bare slug and the `/page/<n>/` pagination
+    // suffix, whose shape was kept byte-identical on the new route precisely so
+    // this stays a splice of the path's head.
+    //
+    // 301, not the 308 the messages alias uses: 308's only added guarantee is
+    // method preservation on POST/PUT, and this is a GET-only public page. What
+    // matters here is consolidating search authority onto the new URL, which
+    // both codes do.
+    //
+    // `/publicaciones/autor/` with no slug redirects to `/autores/`, which does
+    // not exist yet (NG-1) and 404s. That is deliberate and not a regression:
+    // the old bare URL was a 404 too, since the route it lived on was `[slug]`.
+    // The day an authors index ships, this redirect already points at it.
+    const legacyAuthorMatch = path.match(/^\/(es|en|pt)\/publicaciones\/autor(\/.*)?$/);
+    if (legacyAuthorMatch) {
+        const localeSegment = legacyAuthorMatch[1];
+        const tail = legacyAuthorMatch[2] ?? '/';
+        const search = context.url.search;
+        return context.redirect(`/${localeSegment}/autores${tail}${search}`, 301);
     }
 
     // Step 4: Extract and validate locale from the URL path.

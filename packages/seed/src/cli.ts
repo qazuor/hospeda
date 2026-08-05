@@ -224,6 +224,10 @@ export interface DataMigrateOptions {
      * `--reset --required --example` baseline seed, where the baseline
      * already produced the post-migration end state directly. Wired to the
      * CLI's `--baseline-stamp` flag.
+     *
+     * Migrations flagged `meta.contentOnly` are the exception: `baselineStamp`
+     * leaves them pending and this handler then runs them for real (HOS-375
+     * G-10). See {@link handleDataMigrate}.
      */
     readonly baselineStamp: boolean;
 }
@@ -232,6 +236,15 @@ export interface DataMigrateOptions {
  * HOS-25 T-017 — handles `db:seed:migrate` (`--data-migrate`): runs every
  * pending versioned seed data-migration, or (with `--baseline-stamp`)
  * records them as applied without ever calling their `up()`.
+ *
+ * `--baseline-stamp` is NOT an early return (HOS-375 G-10). It stamps every
+ * pending migration except those declaring `meta.contentOnly: true`, then
+ * falls through to `runMigrations()`, which — finding everything else already
+ * ledgered — runs exactly the content-only ones for real. A content-only
+ * migration is the sole source of its own rows, so a fresh build that only
+ * stamped it would end up with the migration marked applied and its content
+ * missing forever. One command, one flag, no hardcoded list of migration
+ * names to keep in sync.
  *
  * Dynamically imports the underlying `runMigrations`/`baselineStamp`
  * functions (both of which transitively pull in `@repo/db`) so importing
@@ -257,11 +270,14 @@ export async function handleDataMigrate(options: DataMigrateOptions): Promise<vo
             const { baselineStamp: runBaselineStamp } = await import(
                 './data-migrations/baselineStamp.js'
             );
-            const result = await runBaselineStamp({ group: options.group });
+            const stampResult = await runBaselineStamp({ group: options.group });
             logger.success({
-                msg: `Baseline-stamped ${result.stamped.length} data-migration(s).`
+                msg: `Baseline-stamped ${stampResult.stamped.length} data-migration(s)${
+                    stampResult.deferred.length > 0
+                        ? `, deferring ${stampResult.deferred.length} content-only migration(s) to a real run.`
+                        : '.'
+                }`
             });
-            return;
         }
 
         const { runMigrations } = await import('./data-migrations/runner.js');

@@ -149,7 +149,7 @@ function buildUserModelClass(store: Map<string, Row>) {
         async findOne(where: { email: string }) {
             return store.get(`user:${where.email}`) ?? null;
         }
-        async create(data: { email: string; displayName?: string }) {
+        async create(data: { email: string; slug?: string; displayName?: string }) {
             const row: Row = { id: `user-${data.email}`, ...data };
             store.set(`user:${data.email}`, row);
             return row;
@@ -208,6 +208,11 @@ describe('0025-seed-real-blog-posts — up()', () => {
         const result = await postsMigration.up(buildCtx(store, created));
 
         expect(store.has('user:editorial@hospeda.com.ar')).toBe(true);
+        // Baseline half of the HOS-375 §6.10.2 dual-write: the curated slug is
+        // set AT CREATION, so a fresh environment never generates the random
+        // `user-<8 hex>` auto-slug that `0041-editorial-author-slug` exists to
+        // repair in already-seeded ones.
+        expect(store.get('user:editorial@hospeda.com.ar')?.slug).toBe('equipo-hospeda');
         expect(created).toHaveLength(EXPECTED_POST_COUNT);
         expect(result.counts?.postsCreated).toBe(EXPECTED_POST_COUNT);
         expect(result.counts?.postsSkipped).toBe(0);

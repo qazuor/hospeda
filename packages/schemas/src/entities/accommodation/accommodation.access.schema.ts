@@ -40,17 +40,36 @@ const AccommodationSeoReadSchema = z
     .object({ title: z.string().optional(), description: z.string().optional() })
     .strip();
 
-/** Contact read shape — phones/emails/website as plain strings (legacy local-format AR phones like `0223-155-1234` are extremely common and lack the `+` the write regex requires). */
+/**
+ * Contact read shape — phones/emails/website as plain strings (legacy
+ * local-format AR phones like `0223-155-1234` are extremely common and lack the
+ * `+` the write regex requires).
+ *
+ * Every key is `.nullish()`, not `.optional()`, and that half is HOS-375 rather
+ * than HOS-190. `accommodations.contact_info` is a MERGEABLE JSONB column
+ * (`AccommodationModel.mergeableJsonbColumns`), so an omitted key now means
+ * "leave the stored value alone" and CLEARING a key is an explicit `null` — the
+ * write side already accepts it (`ContactInfoSchema.partial().nullish()` in
+ * `accommodation.crud.schema.ts`). That JSON null is then what comes BACK on
+ * every subsequent read, and this shape is applied by `stripWithSchema`, which
+ * FAIL-CLOSES to HTTP 500. A read shape still saying `string | undefined` would
+ * turn one cleared field into a permanent 500 on the owner's own
+ * `GET /protected/accommodations/:id` — and, because `createPaginatedResponse`
+ * strips per item, one poisoned row would 500 an ENTIRE admin/protected list
+ * page. The admin could not even repair it, since the edit page is one of the
+ * 500s. This is the local twin of the shared `ContactInfoReadSchema`; read ⊇
+ * write is not optional here.
+ */
 const AccommodationContactInfoReadSchema = z.object({
-    personalEmail: z.string().optional(),
-    workEmail: z.string().optional(),
-    homePhone: z.string().optional(),
-    workPhone: z.string().optional(),
-    mobilePhone: z.string().optional(),
-    whatsapp: z.string().optional(),
-    website: z.string().optional(),
-    preferredEmail: PreferredContactEnumSchema.optional(),
-    preferredPhone: PreferredContactEnumSchema.optional()
+    personalEmail: z.string().nullish(),
+    workEmail: z.string().nullish(),
+    homePhone: z.string().nullish(),
+    workPhone: z.string().nullish(),
+    mobilePhone: z.string().nullish(),
+    whatsapp: z.string().nullish(),
+    website: z.string().nullish(),
+    preferredEmail: PreferredContactEnumSchema.nullish(),
+    preferredPhone: PreferredContactEnumSchema.nullish()
 });
 
 /** Social read shape — plain strings (legacy variant URLs like `m.facebook.com`/mobile share links fail the platform regex). */

@@ -69,13 +69,13 @@ describe('EventService.getByOrganizer', () => {
         // Arrange
         const events = [createMockEvent({ organizerId, visibility: VisibilityEnum.PUBLIC })];
         (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 1 });
-        // Act
+
         const result = await service.getByOrganizer(actorNoPerm, {
             organizerId,
             page: 1,
             pageSize: 10
         });
-        // Assert
+
         expectSuccess(result);
         const { data } = result;
         if (!data) throw new Error('Expected data to be defined after expectSuccess');

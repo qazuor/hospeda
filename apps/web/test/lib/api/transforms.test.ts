@@ -406,6 +406,97 @@ describe('toArticleCardProps', () => {
         expect(result.slug).toBe('no-id-post');
     });
 
+    // -----------------------------------------------------------------------
+    // Author byline — the legal name must NEVER be published.
+    //
+    // `PostPublicSchema.author` used to be `UserPublicSchema`, which carries
+    // `firstName`/`lastName`, and this transform fell back to them whenever
+    // `displayName` was falsy. `display_name` is a nullable column Better Auth
+    // writes directly, bypassing the Zod write schemas, so `''` and `null` are
+    // both real production states — meaning real authors' legal names were
+    // rendered on every article card, including the posts block of the HOS-375
+    // author page, which exists precisely to publish a CHOSEN name. Same shape
+    // as the event byline block further down this file.
+    // -----------------------------------------------------------------------
+    it('publishes the chosen displayName when the author relation is loaded', () => {
+        const result = toArticleCardProps({
+            item: {
+                slug: 'nota-con-autor',
+                author: { id: 'c0ffee00-0000-4000-8000-000000000001', displayName: 'Laura Vega' }
+            }
+        });
+
+        expect(result.authorName).toBe('Laura Vega');
+    });
+
+    it('never publishes the legal name when displayName is empty', () => {
+        const result = toArticleCardProps({
+            item: {
+                slug: 'nota-sin-display-name',
+                author: {
+                    id: 'c0ffee00-0000-4000-8000-000000000001',
+                    displayName: '',
+                    firstName: 'Laura',
+                    lastName: 'Vega',
+                    slug: 'laura-vega'
+                }
+            }
+        });
+
+        expect(result.authorName).toBe('Equipo Hospeda');
+        expect(result.authorName).not.toContain('Laura');
+        expect(result.authorName).not.toContain('Vega');
+    });
+
+    it('ignores firstName/lastName even when a caller smuggles them in', () => {
+        // Non-vacuity for the case above: proves the assertion is about the
+        // name fields being IGNORED, not merely about the fixture lacking them.
+        // A whitespace-only displayName is the nastier variant — it is truthy.
+        const result = toArticleCardProps({
+            item: {
+                slug: 'nota-nombre-filtrado',
+                author: {
+                    id: 'c0ffee00-0000-4000-8000-000000000001',
+                    displayName: '  ',
+                    firstName: 'Laura',
+                    lastName: 'Vega'
+                }
+            }
+        });
+
+        expect(result.authorName).toBe('Equipo Hospeda');
+    });
+
+    it('never publishes the legal name when displayName is null', () => {
+        const result = toArticleCardProps({
+            item: {
+                slug: 'nota-display-name-null',
+                author: {
+                    id: 'c0ffee00-0000-4000-8000-000000000001',
+                    displayName: null,
+                    firstName: 'Laura',
+                    lastName: 'Vega'
+                }
+            }
+        });
+
+        expect(result.authorName).toBe('Equipo Hospeda');
+    });
+
+    it('still honours a precomputed authorName field over the relation', () => {
+        // `item.authorName` is the flat field some payloads carry instead of the
+        // relation; it is a display name already, never a legal one.
+        const result = toArticleCardProps({
+            item: {
+                slug: 'nota-author-name-plano',
+                authorName: 'Redacción Hospeda',
+                author: { id: 'c0ffee00-0000-4000-8000-000000000001', displayName: 'Laura Vega' }
+            }
+        });
+
+        expect(result.authorName).toBe('Redacción Hospeda');
+    });
+
     it('should include id in the returned object alongside all existing fields', () => {
         const item = {
             id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
@@ -1548,6 +1639,112 @@ describe('toEventDetailProps — precision (HOS-280)', () => {
             }
         });
         expect(result.precision).toBe('EXACT');
+    });
+});
+
+/**
+ * HOS-375 §6.9 (G-7) — the event detail page gained an author byline linking to
+ * `/autores/<slug>/`. The payload now carries the author relation (public tier),
+ * and this transform is where it becomes a display-ready `{ id, name, slug }`.
+ *
+ * The name resolution is the load-bearing part: `displayName` is a NULLABLE
+ * column Better Auth signup writes directly, bypassing the create/update Zod
+ * schemas, so production holds rows where it is `null` or `''`.
+ */
+describe('toEventDetailProps — author byline (HOS-375 G-7)', () => {
+    const authorRelation = {
+        id: 'c0ffee00-0000-4000-8000-000000000001',
+        displayName: 'Laura Vega',
+        firstName: 'Laura',
+        lastName: 'Vega',
+        slug: 'laura-vega'
+    };
+
+    it('carries the author through when the relation is loaded', () => {
+        const result = toEventDetailProps({
+            item: { slug: 'evento-con-autor', author: authorRelation }
+        });
+
+        expect(result.author).toEqual({
+            id: authorRelation.id,
+            name: 'Laura Vega',
+            slug: 'laura-vega'
+        });
+    });
+
+    it('omits the author entirely when the payload carries no relation', () => {
+        // Every event created before this shipped, plus any list payload where
+        // the JOIN was not requested. The byline must simply not render.
+        const result = toEventDetailProps({ item: { slug: 'evento-sin-autor' } });
+
+        expect(result.author).toBeUndefined();
+    });
+
+    it('omits the author when the relation is null (FK is nullable)', () => {
+        const result = toEventDetailProps({ item: { slug: 'evento-fk-null', author: null } });
+
+        expect(result.author).toBeUndefined();
+    });
+
+    it('never publishes the legal name when displayName is empty', () => {
+        // The `''` case is real: Better Auth writes `display_name` directly and
+        // production holds empty strings. This USED to fall back to
+        // `firstName + lastName`, which published an author's legal name on a
+        // public page they never opted into. `EventAuthorPublicSchema` now strips
+        // both fields server-side, so even if a caller hands them to the transform
+        // they must not reach the byline — no byline beats the wrong byline.
+        const result = toEventDetailProps({
+            item: {
+                slug: 'evento-sin-display-name',
+                author: { ...authorRelation, displayName: '' }
+            }
+        });
+
+        expect(result.author).toBeUndefined();
+    });
+
+    it('ignores firstName/lastName even when a caller smuggles them in', () => {
+        // Non-vacuity for the case above: proves the assertion is about the name
+        // fields being IGNORED, not merely about `authorRelation` lacking them.
+        const result = toEventDetailProps({
+            item: {
+                slug: 'evento-nombre-filtrado',
+                author: {
+                    id: authorRelation.id,
+                    slug: 'laura-vega',
+                    displayName: '  ',
+                    firstName: 'Laura',
+                    lastName: 'Vega'
+                }
+            }
+        });
+
+        expect(result.author).toBeUndefined();
+    });
+
+    it('drops an author with no resolvable name rather than rendering an empty byline', () => {
+        const result = toEventDetailProps({
+            item: {
+                slug: 'evento-autor-anonimo',
+                author: { id: authorRelation.id, displayName: null, slug: 'anon' }
+            }
+        });
+
+        expect(result.author).toBeUndefined();
+    });
+
+    it('keeps the author but nulls the slug when there is no author page to link to', () => {
+        // A slug-less author still deserves attribution — as plain text, not as
+        // a link to `/autores/undefined/`.
+        const result = toEventDetailProps({
+            item: {
+                slug: 'evento-autor-sin-slug',
+                author: { ...authorRelation, slug: undefined }
+            }
+        });
+
+        expect(result.author?.name).toBe('Laura Vega');
+        expect(result.author?.slug).toBeNull();
     });
 });
 

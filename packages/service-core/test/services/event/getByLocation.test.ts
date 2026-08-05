@@ -70,13 +70,13 @@ describe('EventService.getByLocation', () => {
         // Arrange
         const events = [createMockEvent({ locationId, visibility: VisibilityEnum.PUBLIC })];
         (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 1 });
-        // Act
+
         const result = await service.getByLocation(actorNoPerm, {
             locationId,
             page: 1,
             pageSize: 10
         });
-        // Assert
+
         expectSuccess(result);
         const { data } = result;
         if (!data) throw new Error('Expected data to be defined after expectSuccess');

@@ -59,6 +59,36 @@ export interface SeedMigrationMeta {
      * @default false
      */
     readonly destructive?: boolean;
+
+    /**
+     * Marks a migration whose rows have **no baseline fixture** — the
+     * migration file itself is the only source of that content (e.g. a batch
+     * of real blog posts, or imported events, that no `src/data/**` fixture
+     * reproduces).
+     *
+     * Baseline-stamping must not skip such a migration. `baselineStamp`
+     * (T-010) records a migration as applied without running it because a
+     * fresh baseline seed already produced the post-migration end state
+     * directly — and for a content-only migration that premise is simply
+     * false. Stamping it would mark it applied while its content never
+     * existed, and the ledger would then stop it from ever running later. So
+     * a `--baseline-stamp` invocation leaves `contentOnly` migrations pending
+     * and runs them for real instead (see `handleDataMigrate` in `../cli.ts`).
+     *
+     * Declared here, on the migration it describes, rather than kept as a
+     * list of migration names in a script or a runbook: a list drifts away
+     * from the set it names, which is exactly how this gap stayed invisible
+     * (`docs/deployment/first-time-setup.md`'s manual re-run list named one
+     * of the three affected migrations). A flag cannot drift.
+     *
+     * Orthogonal to {@link SeedMigrationMeta.group} and
+     * {@link SeedMigrationMeta.destructive}: a content-only migration is
+     * still subject to the same group scoping and the same production gate.
+     *
+     * @default false
+     * @see .specs/HOS-375-author-page-unification/spec.md §6.11 (G-10)
+     */
+    readonly contentOnly?: boolean;
 }
 
 /**

@@ -80,6 +80,15 @@ export interface ProfileSnapshot {
     readonly addressLine1: string;
     readonly postalCode: string;
     readonly avatarUrl: string;
+    /**
+     * `settings.publicProfileShowSocialNetworks` (HOS-375 §6.7 / G-5) — the
+     * owner's opt-in to publishing the links above on their public author page.
+     *
+     * The only non-string field in this snapshot, and deliberately so: it is a
+     * setting rather than a profile field, it needs no trimming, and coercing it
+     * to `'true'`/`'false'` would only invite a truthiness bug at the diff.
+     */
+    readonly publicProfileShowSocialNetworks: boolean;
 }
 
 /**
@@ -110,7 +119,11 @@ export function buildInitialProfileSnapshot(user: ProfileEditUser): ProfileSnaps
         city: user.city ?? '',
         addressLine1: user.addressLine1 ?? '',
         postalCode: user.postalCode ?? '',
-        avatarUrl: user.avatarUrl ?? ''
+        avatarUrl: user.avatarUrl ?? '',
+        // Defaults to OFF: nothing is published until the owner says so
+        // (HOS-375 §6.7). `=== true` rather than a truthy check, so a user with
+        // no stored settings at all lands on false rather than undefined.
+        publicProfileShowSocialNetworks: user.publicProfileShowSocialNetworks === true
     };
 }
 
@@ -144,10 +157,12 @@ const tr = (value: string): string => value.trim();
  *
  * The diff is intentionally driven by the MUTABLE `baseline` (resynced after
  * each save) rather than the load-time initial user, so reverting a just-saved
- * field is correctly detected as a change (bug F6). Reproduces the exact JSONB
- * nesting rules the form has always used (whole-block profile / social /
- * location rebuild on any change, `province → location.region`, phone omitted
- * on clear).
+ * field is correctly detected as a change (bug F6). Reproduces the JSONB
+ * nesting rules the form uses: `province → location.region`, whole-block
+ * rebuild for the REPLACE-mode columns (`socialNetworks`, `location`) — and a
+ * changed-keys-only delta with explicit nulls for `profile` and `contactInfo`,
+ * which the API MERGES rather than replaces (HOS-375; see the comments on
+ * those blocks).
  *
  * @param params.current - Snapshot of the current form field values.
  * @param params.baseline - Snapshot of the last-persisted values.
@@ -185,34 +200,64 @@ export function buildProfilePatch({
         payload.birthDate = birthDate;
     }
 
-    // profile JSONB (bio / website / occupation) — rebuilt as a whole block
-    // (with only non-empty fields) whenever any of the three changed, so the
-    // API gets a self-consistent JSONB value whether it merges or replaces.
+    // profile JSONB (bio / website / occupation) — a CHANGED-KEYS-ONLY patch.
+    //
+    // `users.profile` is a MERGEABLE JSONB column (HOS-375, see
+    // `UserModel.mergeableJsonbColumns`), so the API merges this patch into the
+    // stored object instead of replacing it. That is what stops this form from
+    // deleting `profile.avatar` — a key it does not model at all, but which
+    // decides whether the user's author page stays indexed and in the sitemap.
+    //
+    // Merge semantics invert the rule for CLEARING, which is why a key the user
+    // emptied is sent as an explicit `null` instead of being omitted: an omitted
+    // key now means "leave it as it was", so omission would make an emptied bio
+    // silently un-saveable. `null` is what the API and the column both read as
+    // "absent" (see `UserProfileSchema`, which accepts it for exactly this).
+    //
+    // Unchanged keys are omitted entirely — sending them back would be a no-op
+    // under `||`, but it would also mean re-submitting a value the user never
+    // touched through the server's write bounds (read ⊇ write).
     const bio = tr(current.bio);
     const website = tr(current.website);
     const occupation = tr(current.occupation);
-    const profileChanged =
-        bio !== tr(baseline.bio) ||
-        website !== tr(baseline.website) ||
-        occupation !== tr(baseline.occupation);
-    if (profileChanged) {
-        if (bio !== tr(baseline.bio)) flatChanged.bio = bio;
-        if (website !== tr(baseline.website)) flatChanged.website = website;
-        if (occupation !== tr(baseline.occupation)) flatChanged.occupation = occupation;
-        const profilePatch: Record<string, string> = {};
-        if (bio.length > 0) profilePatch.bio = bio;
-        if (website.length > 0) profilePatch.website = website;
-        if (occupation.length > 0) profilePatch.occupation = occupation;
+    const profilePatch: Record<string, string | null> = {};
+    if (bio !== tr(baseline.bio)) {
+        flatChanged.bio = bio;
+        profilePatch.bio = bio.length > 0 ? bio : null;
+    }
+    if (website !== tr(baseline.website)) {
+        flatChanged.website = website;
+        profilePatch.website = website.length > 0 ? website : null;
+    }
+    if (occupation !== tr(baseline.occupation)) {
+        flatChanged.occupation = occupation;
+        profilePatch.occupation = occupation.length > 0 ? occupation : null;
+    }
+    if (Object.keys(profilePatch).length > 0) {
         payload.profile = profilePatch;
     }
 
-    // contactInfo JSONB (mobilePhone) — omitted on clear (required-when-present).
+    // contactInfo JSONB (mobilePhone) — a CHANGED-KEYS-ONLY patch, same shape
+    // and same reasoning as `profile` above.
+    //
+    // `users.contactInfo` is a MERGEABLE JSONB column (HOS-375, see
+    // `UserModel.mergeableJsonbColumns`), so this patch is merged into the
+    // stored object instead of replacing it. That is what stops this form from
+    // deleting the eight contact keys it does not model — `personalEmail`,
+    // `workEmail`, `homePhone`, `workPhone`, `whatsapp`, `website`,
+    // `preferredEmail`, `preferredPhone`. `website` in particular is read back
+    // by this very page as the fallback for the profile website field, so under
+    // replacement semantics saving a phone destroyed a value the next page load
+    // tried to display.
+    //
+    // Clearing is therefore an explicit `null`, not an omission: under merge an
+    // omitted key means "leave it as it was", so the old `if (phone.length > 0)`
+    // guard would have made an emptied phone silently un-saveable. The shared
+    // `ContactInfoSchema` accepts `null` on every key for exactly this.
     const phone = tr(current.phone);
     if (phone !== tr(baseline.phone)) {
         flatChanged.phone = phone;
-        if (phone.length > 0) {
-            payload.contactInfo = { mobilePhone: phone };
-        }
+        payload.contactInfo = { mobilePhone: phone.length > 0 ? phone : null };
     }
 
     // socialNetworks JSONB — whole block rebuilt (non-empty only) on any change.
@@ -264,6 +309,25 @@ export function buildProfilePatch({
     }
     if (socialChanged) {
         payload.socialNetworks = socialPatch;
+    }
+
+    // settings.publicProfileShowSocialNetworks (HOS-375 §6.7) — the owner's
+    // opt-in to publishing the links above on their author page.
+    //
+    // Sent under `settings`, which the protected PATCH validates against the
+    // web-scoped allowlist (`UserSettingsWebPatchSchema`, strict), NOT under
+    // `socialNetworks`: it is a preference about the block, not part of it, and
+    // slipping it into the JSONB would be rejected as an unknown key.
+    //
+    // Deliberately absent from `flatChanged`. That map feeds
+    // `ProfileEditFormSchema`, which validates the FORM's text fields; a boolean
+    // it does not declare has nothing to validate and would only risk tripping
+    // the schema. It still reaches `payload`, which is what the "no changes"
+    // guard in the component counts, so flipping the toggle alone is a real save.
+    if (current.publicProfileShowSocialNetworks !== baseline.publicProfileShowSocialNetworks) {
+        payload.settings = {
+            publicProfileShowSocialNetworks: current.publicProfileShowSocialNetworks
+        };
     }
 
     // location JSONB — whole block rebuilt (non-empty only), `province → region`.

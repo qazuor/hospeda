@@ -1,7 +1,7 @@
 {
     "id": "002-user-carlos-martínez",
     "$schema": "../../schemas/user.schema.json",
-    "slug": "carlos-martínez",
+    "slug": "carlos-martinez",
     "role": "EDITOR",
     "permissions": [],
     "firstName": "Carlos",

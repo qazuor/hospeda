@@ -7,13 +7,23 @@
 
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { toRenderableImageUrl } from '@/lib/media';
 import { buildUrl } from '@/lib/urls';
 
+/**
+ * The author fields this card may render.
+ *
+ * `firstName`/`lastName` are deliberately absent. The public post payload is
+ * stripped through `PostPublicSchema`, whose `author` is the narrow
+ * `PostAuthorPublicSchema` (id, displayName, slug, image), so they never
+ * arrive — and when `displayName` was empty this card used to fall back to
+ * them and publish the author's legal name. `display_name` is written directly
+ * by Better Auth, bypassing the Zod write schemas, so an empty value is a real
+ * production state rather than a hypothetical one.
+ */
 interface AuthorShape {
 	readonly id: string;
 	readonly displayName?: string | null;
-	readonly firstName?: string | null;
-	readonly lastName?: string | null;
 	readonly profilePicture?: string | null;
 	readonly bio?: string | null;
 	readonly slug?: string | null;
@@ -27,11 +37,17 @@ interface Props {
 const { author, locale } = Astro.props;
 const { t } = createTranslations(locale);
 
-const name =
-	author.displayName ||
-	[author.firstName, author.lastName].filter(Boolean).join(' ') ||
-	'';
+const name = (author.displayName || '').trim();
 const authorImageAlt = name ? `Foto de ${name}` : t('blog.detail.aboutAuthor', 'Sobre el autor');
+
+// `PostAuthorPublicSchema.image` asserts type but NOT URL format on purpose
+// (HOS-375) — a strict response schema fail-closes the whole post to a 500 on
+// one stored value Better Auth wrote outside Zod. Keeping a broken picture off
+// the page is therefore the consumer's job. The detail page already filters
+// this, but the guard is repeated here because this is the component that
+// actually emits the `<img>`: an unvetted future caller must fall back to the
+// initial placeholder, not to a broken-image icon.
+const avatarSrc = toRenderableImageUrl(author.profilePicture);
 
 // The author profile page lists exactly this author's posts, so it is also the
 // target of the "more from this author" CTA. The CTA used to point at
@@ -39,9 +55,11 @@ const authorImageAlt = name ? `Foto de ${name}` : t('blog.detail.aboutAuthor', '
 // Without a slug there is no author page, and no other surface filters by
 // author — the CTA is dropped rather than pointed at the unfiltered listing,
 // which would promise more articles from this author and deliver everyone's.
-const profileUrl = author.slug
-	? buildUrl({ locale, path: `publicaciones/autor/${author.slug}` })
-	: null;
+//
+// The page moved to `/autores/` in HOS-375 because it now carries the author's
+// events too. Linking straight there rather than leaning on the middleware
+// redirect: an internal link should never spend a hop it can avoid.
+const profileUrl = author.slug ? buildUrl({ locale, path: `autores/${author.slug}` }) : null;
 ---
 
 <div class="post-author-card">
@@ -49,9 +67,9 @@ const profileUrl = author.slug
 
 	<div class="post-author-card__body">
 		<div class="post-author-card__identity">
-			{author.profilePicture ? (
+			{avatarSrc ? (
 				<img
-					src={author.profilePicture}
+					src={avatarSrc}
 					alt={authorImageAlt}
 					class="post-author-card__avatar"
 					width={56}

@@ -772,6 +772,30 @@ export interface EventDetailOrganizer {
 }
 
 /**
+ * The event's author, as the byline on the detail page needs them (HOS-375 G-7).
+ *
+ * Distinct from {@link EventDetailOrganizer}: the organizer is who RUNS the
+ * event, the author is the Hospeda contributor who wrote it up. Only the author
+ * has a public author page at `/autores/<slug>/`.
+ */
+export interface EventDetailAuthor {
+    readonly id: string;
+    /**
+     * Already resolved for display — the author's chosen `displayName` and
+     * NOTHING else. There is deliberately no first+last-name fallback: an
+     * author who never set a display name gets no byline rather than having
+     * their legal name published on a page they never opted into. See
+     * `EventAuthorPublicSchema`, which does not expose those fields at all.
+     */
+    readonly name: string;
+    /**
+     * `null` when the author row has no slug, which leaves the byline as plain
+     * text: there is no author page to link to.
+     */
+    readonly slug: string | null;
+}
+
+/**
  * Rich pricing data for the event detail page.
  */
 export interface EventDetailPricing {
@@ -869,6 +893,10 @@ export interface EventDetailData {
 
     // --- Organizer ---
     readonly organizer?: EventDetailOrganizer;
+
+    // --- Author (HOS-375 G-7) ---
+    /** Absent when the API payload carries no author relation for the event. */
+    readonly author?: EventDetailAuthor;
 
     // --- Event contact ---
     readonly contactEmail?: string;

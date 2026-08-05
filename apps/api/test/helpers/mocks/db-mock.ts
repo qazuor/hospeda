@@ -292,6 +292,21 @@ export function createDbMock() {
             async findByEmail(_email: string) {
                 return null;
             }
+            /**
+             * HOS-375 T-012 — backs `UserService.listPublicAuthors`, which the
+             * public `/api/v1/public/authors` route calls directly. The real
+             * model returns `{ items: PublicAuthorListItem[], total: number }`
+             * (see `packages/db/src/models/user/user.model.ts`); this mirrors
+             * that shape field-for-field rather than the route's
+             * `{ items, pagination }` envelope, since the ENVELOPE is built by
+             * `UserService.listPublicAuthors` itself, one layer up from here.
+             * A mock returning the wrong shape is exactly how the sibling
+             * `events/author/:id` route stayed broken for months (see
+             * `apps/api/test/routes/event/public/getByAuthor.test.ts`).
+             */
+            async listPublicAuthors(_options: { page: number; pageSize: number }) {
+                return { items: [], total: 0 };
+            }
         },
 
         // Mock AccommodationModel — instantiated at module scope in

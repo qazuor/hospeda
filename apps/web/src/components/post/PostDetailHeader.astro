@@ -89,9 +89,16 @@ const showUpdated = (() => {
 })();
 const formattedUpdated = showUpdated ? formatDate({ date: String(updatedAt), locale }) : null;
 
-const authorHref = author?.slug
-	? buildUrl({ locale, path: `publicaciones/autor/${author.slug}` })
-	: null;
+// `/autores/` since HOS-375 — the page carries the author's events as well as
+// their posts now. Linked directly, not via the middleware redirect: an
+// internal link should never spend a hop it can avoid.
+const authorHref = author?.slug ? buildUrl({ locale, path: `autores/${author.slug}` }) : null;
+
+// `t` interpolates `{{name}}` into the resolved string AND into the fallback, so
+// the params form covers both paths — hand-rolling `.replace()` on the result
+// only ever worked for the resolved one. Resolved once here rather than twice in
+// the markup, so the linked and unlinked bylines cannot drift apart.
+const authorLabel = author ? t('blog.detail.byline', 'Por {{name}}', { name: author.name }) : null;
 
 const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 ---
@@ -132,14 +139,14 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 					{t(`blog.categories.${category.toLowerCase()}`, category)}
 				</span>
 
-				{author && (
+				{authorLabel && (
 					<span class="post-header__byline">
 						{authorHref ? (
 							<a href={authorHref} class="post-header__byline-link">
-								{t('blog.detail.byline', `Por ${author.name}`).replace('{{name}}', author.name)}
+								{authorLabel}
 							</a>
 						) : (
-							<span>{t('blog.detail.byline', `Por ${author.name}`).replace('{{name}}', author.name)}</span>
+							<span>{authorLabel}</span>
 						)}
 					</span>
 				)}

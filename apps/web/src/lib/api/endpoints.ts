@@ -944,6 +944,44 @@ export const eventsApi = {
      */
     getSummary({ id }: { readonly id: string }): Promise<ApiResult<EventSummary>> {
         return apiClient.get({ path: `${BASE}/events/${id}/summary` });
+    },
+
+    /**
+     * Get a single author's events, newest first, for the author page
+     * (HOS-375 §6.2).
+     *
+     * Takes the author's **UUID**, not their slug — the route is
+     * `GET /events/author/{authorId}`. The author page resolves the slug to an
+     * id through the public author profile before calling this.
+     *
+     * ONLY pagination is sent, deliberately. The server's
+     * `EventByAuthorHttpSchema` also declares `category`, `isFeatured`,
+     * `isVirtual`, `q`, `sortBy` and `sortOrder`, but the handler
+     * (`apps/api/src/routes/event/public/getByAuthor.ts`) destructures just
+     * `page` and `pageSize` and silently discards the rest (HOS-375 NG-2).
+     * Accepting them here would advertise filtering this endpoint does not do.
+     *
+     * @param params - Author UUID and optional pagination
+     * @returns A paginated page of that author's events
+     *
+     * @example
+     * ```ts
+     * const result = await eventsApi.getByAuthor({ authorId, page: 2, pageSize: 12 });
+     * ```
+     */
+    getByAuthor({
+        authorId,
+        page,
+        pageSize
+    }: {
+        readonly authorId: string;
+        readonly page?: number;
+        readonly pageSize?: number;
+    }): Promise<ApiResult<PaginatedResponse<EventPublic>>> {
+        return apiClient.getList({
+            path: `${BASE}/events/author/${authorId}`,
+            params: { page, pageSize }
+        });
     }
 };
 
@@ -1230,6 +1268,22 @@ export const publicConversationsApi = {
 
 // --- Users ---
 
+/**
+ * The author's social profiles as the public author payload carries them.
+ *
+ * Every key is optional and the whole object is absent unless the profile owner
+ * opted in (HOS-375 §6.7), so a consumer must render only the keys actually
+ * present — never a placeholder for a network the author left empty.
+ */
+export interface UserAuthorSocialNetworks {
+    readonly facebook?: string;
+    readonly instagram?: string;
+    readonly twitter?: string;
+    readonly linkedIn?: string;
+    readonly tiktok?: string;
+    readonly youtube?: string;
+}
+
 /** Minimal public profile returned by the user-by-slug endpoint. */
 export interface UserAuthorPublic {
     readonly id: string;
@@ -1237,16 +1291,33 @@ export interface UserAuthorPublic {
     readonly slug: string;
     readonly avatar: string | null;
     readonly bio: string | null;
+
+    /**
+     * `users.is_system_account` — `true` for a platform/service identity rather
+     * than a person. Consumed by `evaluateAuthorIndexability` (HOS-375 §6.5
+     * condition 1): a system account is never indexable, however complete its
+     * profile is.
+     */
+    readonly isSystemAccount: boolean;
+
+    /**
+     * Present ONLY when the profile owner enabled
+     * `settings.publicProfileShowSocialNetworks`. Absent — the key omitted, not
+     * `null` — otherwise, so `author.socialNetworks` being falsy already means
+     * "do not render the block".
+     */
+    readonly socialNetworks?: UserAuthorSocialNetworks;
 }
 
 /** Public user API endpoints */
 export const usersApi = {
     /**
      * Get a minimal public profile for a user by their URL slug.
-     * Used by the author page (/publicaciones/autor/{slug}/).
+     * Used by the author page (/{lang}/autores/{slug}/).
      *
      * @param params - User URL slug
-     * @returns Minimal public profile (id, displayName, slug, avatar, bio)
+     * @returns Minimal public profile (id, displayName, slug, avatar, bio,
+     *   isSystemAccount, plus socialNetworks when the owner opted in)
      *
      * @example
      * ```ts

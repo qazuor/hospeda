@@ -37,7 +37,8 @@ import {
     extractFeaturedImage,
     extractFeaturedImageUrl,
     extractGalleryItems,
-    extractGalleryUrls
+    extractGalleryUrls,
+    toRenderableImageUrl
 } from '../media';
 import { type I18nTextLike, resolveI18nText } from '../resolve-i18n-text';
 
@@ -702,21 +703,30 @@ export function toArticleCardProps({
     }
 
     const authorObj = item.author as Record<string, unknown> | undefined;
-    const resolvedAuthorName = String(
-        item.authorName ||
-            authorObj?.displayName ||
-            [authorObj?.firstName, authorObj?.lastName].filter(Boolean).join(' ') ||
-            ''
-    );
-    // Fallback when the public posts endpoint does not JOIN the author table
-    // (tracked under the backend author-join spec). Keeps the UI complete and
-    // signals editorial ownership rather than leaving the byline empty.
+    // `displayName` is the ONLY name this payload carries: every public post
+    // route strips its response through `PostPublicSchema`, whose `author` is
+    // the narrow `PostAuthorPublicSchema` (id, displayName, slug, image).
+    // `firstName`/`lastName` are deliberately NOT exposed — this used to fall
+    // back to `firstName + lastName`, which published an author's legal name on
+    // every article card, including the HOS-375 author page's own posts block,
+    // for anyone whose `display_name` was empty. That is a real production
+    // state: Better Auth writes the column directly, bypassing the Zod write
+    // schemas, so `''` and `null` both exist. Same resolution as the event
+    // byline in `toEventDetailProps` below.
+    const resolvedAuthorName = String(item.authorName || authorObj?.displayName || '').trim();
+    // Fallback when the public posts endpoint does not JOIN the author table,
+    // or when the author never chose a display name. Keeps the UI complete and
+    // signals editorial ownership rather than leaving the byline empty — and,
+    // unlike a legal-name fallback, publishes nothing about the person.
     const authorName = resolvedAuthorName || 'Equipo Hospeda';
-    const authorAvatar = item.authorAvatar
-        ? String(item.authorAvatar)
-        : authorObj?.image
-          ? String(authorObj.image)
-          : undefined;
+    // `PostAuthorPublicSchema.image` asserts type but NOT URL format on purpose
+    // (HOS-375): `users.image` is written outside Zod by Better Auth, and a
+    // strict response schema would fail-close the whole listing to a 500. The
+    // schema therefore hands the raw stored value through, and dropping a value
+    // the browser cannot load is this transform's job — otherwise a junk string
+    // reaches `<img src>` and renders a broken-image icon on every card.
+    const authorAvatar =
+        toRenderableImageUrl(item.authorAvatar) ?? toRenderableImageUrl(authorObj?.image);
 
     const { featuredImage } = processEntityImages({
         item,
@@ -1578,6 +1588,35 @@ export function toEventDetailProps({
         };
     }
 
+    // --- Author (HOS-375 G-7) ---
+    // Distinct from the organizer above: the organizer runs the event, the
+    // author is the contributor who wrote it up and the only one with a public
+    // page at `/autores/<slug>/`.
+    const authorObj = item.author as Record<string, unknown> | undefined;
+    let author: EventDetailData['author'];
+
+    if (authorObj?.id) {
+        // `displayName` is the ONLY name this payload carries: every public event
+        // route strips its response through `EventPublicSchema`, whose `author` is
+        // the narrow `EventAuthorPublicSchema` (id, displayName, slug, image).
+        // `firstName`/`lastName` are deliberately NOT exposed — an author who never
+        // set a display name gets no byline rather than having their legal name
+        // published. Posts now follow the same rule: `PostPublicSchema.author` is
+        // the equally narrow `PostAuthorPublicSchema`, and `toArticleCardProps`
+        // above resolves the byline the same way.
+        const authorName = String(authorObj.displayName || '').trim();
+
+        // An author with no resolvable name would render an empty byline —
+        // worse than none at all, so it is dropped entirely.
+        if (authorName) {
+            author = {
+                id: String(authorObj.id),
+                name: authorName,
+                slug: authorObj.slug ? String(authorObj.slug) : null
+            };
+        }
+    }
+
     // --- SEO ---
     const seoObj = item.seo as Record<string, unknown> | undefined;
     const rawKeywords = seoObj?.keywords;
@@ -1620,6 +1659,7 @@ export function toEventDetailProps({
             coordinates
         },
         organizer,
+        author,
         contactEmail: contactObj?.email
             ? String(contactObj.email)
             : item.contactEmail

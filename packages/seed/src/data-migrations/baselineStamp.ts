@@ -19,6 +19,15 @@
  * it records a ledger row for every currently-pending data-migration WITHOUT
  * ever calling its `up()`.
  *
+ * **The one exception** (HOS-375 G-10) is a migration declaring
+ * `meta.contentOnly: true`: its rows have no fixture baseline, so the "already
+ * satisfied by construction" premise above does not hold for it — a fresh
+ * baseline seed produces nothing of what it inserts. Stamping it would record
+ * it applied while its content never existed, and the ledger would then stop
+ * it from ever running. Those migrations are therefore left PENDING here and
+ * reported back as {@link BaselineStampResult.deferred}, for the caller to run
+ * for real (see `handleDataMigrate` in `../cli.ts`, which does exactly that).
+ *
  * Deliberately kept in its own file rather than folded into `runner.ts` — see
  * that file's module doc for why {@link resolvePendingMigrations} was
  * factored out specifically to make this possible without touching the
@@ -69,6 +78,19 @@ export interface BaselineStampResult {
      * naturally excluded since they no longer appear as pending).
      */
     readonly stamped: readonly string[];
+
+    /**
+     * Names of pending migrations deliberately NOT stamped because they
+     * declare `meta.contentOnly: true`, in numeric-prefix order. They are
+     * still pending after this call, by design — the caller is expected to
+     * run them for real (`runMigrations`) so their content actually exists.
+     *
+     * Empty when no pending migration is content-only, which is the common
+     * case.
+     *
+     * @see .specs/HOS-375-author-page-unification/spec.md §6.11 (G-10)
+     */
+    readonly deferred: readonly string[];
 }
 
 /**
@@ -76,10 +98,16 @@ export interface BaselineStampResult {
  * its `up()` function — for use immediately after a fresh baseline seed has
  * already produced the equivalent end state directly.
  *
+ * Migrations declaring `meta.contentOnly: true` are the documented exception:
+ * they are skipped (left pending) and returned under
+ * {@link BaselineStampResult.deferred} instead of being stamped, because no
+ * fixture reproduces their content. See this module's file-level doc.
+ *
  * Idempotent: migrations stamped by a previous call are already in the
  * ledger, so {@link resolvePendingMigrations} excludes them from `pending` on
  * a second call, and this function does nothing for them (no duplicate rows,
- * no error).
+ * no error). Content-only migrations stay in `deferred` on every call until
+ * something actually runs them.
  *
  * Reuses {@link resolvePendingMigrations} (T-009) for discovery + ledger-diff
  * so this never duplicates (or drifts from) the runner's own notion of
@@ -104,8 +132,14 @@ export async function baselineStamp(args: BaselineStampArgs = {}): Promise<Basel
     const { db, pending } = await resolvePendingMigrations({ db: args.db, group, dir });
 
     const stamped: string[] = [];
+    const deferred: string[] = [];
 
     for (const migration of pending) {
+        if (migration.meta.contentOnly === true) {
+            deferred.push(migration.name);
+            continue;
+        }
+
         const contents = await readFile(migration.filePath, 'utf8');
 
         await recordApplied({
@@ -120,5 +154,5 @@ export async function baselineStamp(args: BaselineStampArgs = {}): Promise<Basel
         stamped.push(migration.name);
     }
 
-    return { stamped };
+    return { stamped, deferred };
 }

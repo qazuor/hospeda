@@ -105,7 +105,11 @@ const CATALOG_PAGES: readonly CatalogPage[] = [
     },
     { path: 'publicaciones/[slug].astro', tag: 'post', kind: 'entity', gate: 'entity-tag' },
     {
-        path: 'publicaciones/autor/[slug]/index.astro',
+        // Was `publicaciones/autor/[slug]/index.astro` until HOS-375 moved the
+        // author page to `/autores/<slug>/` (the old URL 301s here) and deleted
+        // that file. Retargeted rather than dropped: the entry is what stops
+        // the page from silently losing its cacheability across the rename.
+        path: 'autores/[slug]/index.astro',
         tag: 'CACHE_TAG_COLLECTIONS.post',
         kind: 'collection',
         gate: 'pagination-only'

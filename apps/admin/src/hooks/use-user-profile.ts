@@ -157,6 +157,18 @@ export function useUpdateUserProfile({ userId }: { readonly userId: string | und
                 body.phone = profile.phone === '' ? null : profile.phone;
             }
 
+            // `users.profile` is a MERGEABLE JSONB column (HOS-375, see
+            // `UserModel.mergeableJsonbColumns`): the API merges this patch into
+            // the stored object rather than replacing it, which is what stops
+            // this form from deleting `profile.website` / `profile.occupation` —
+            // keys it does not model, but which the web profile form owns.
+            //
+            // Under merge semantics an OMITTED key means "leave it as it was",
+            // so clearing a field must be an explicit `null` (already the shape
+            // below, and `UserProfileSchema` accepts it for exactly this). Do
+            // not "simplify" these to omissions: `bio` and `avatar` decide
+            // whether the user's author page stays indexed, and an un-clearable
+            // bio is as much a bug as a wiped one.
             const profileNested: Record<string, unknown> = {};
             if (profile.bio !== undefined) {
                 profileNested.bio = profile.bio === '' ? null : profile.bio;
