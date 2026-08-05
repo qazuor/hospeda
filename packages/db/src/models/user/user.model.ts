@@ -32,6 +32,124 @@ export class UserModel extends BaseModelImpl<User> {
     protected table = users;
     public entityName = 'users';
 
+    /**
+     * `settings` stores every per-user preference namespace in ONE JSONB column
+     * — `themeWeb`, `languageWeb`, `notifications`, `newsletter`,
+     * `searchHistoryEnabled`, `publicProfileShowSocialNetworks`, and the whole
+     * `onboarding` subtree (welcome tour, what's-new baseline).
+     *
+     * Without this opt-in, `update()` REPLACES the column, so any caller that
+     * sends a partial patch silently deletes every namespace it did not
+     * mention. That is not hypothetical: the web profile form's social opt-in
+     * (HOS-375 §6.7) sends exactly `{ settings: { publicProfileShowSocialNetworks } }`,
+     * which would have wiped the user's theme, language, notification
+     * preferences and onboarding progress on every save.
+     *
+     * **It takes TWO halves to make that true, and this merge is only the
+     * second one.** An earlier revision of this comment credited the merge
+     * alone, and for `themeWeb` / `themeAdmin` / `languageWeb` /
+     * `languageAdmin` / `newsletter` / `searchHistoryEnabled` that was simply
+     * false: those keys were being overwritten UPSTREAM of here, and no merge
+     * at this layer could have saved them.
+     *
+     * 1. **Zod must not expand the patch.** `BaseCrudService` re-parses the
+     *    body through `UserUpdateInputSchema` and forwards the PARSED payload
+     *    to `update()`. Zod materialises `.default()` at parse time, and
+     *    `.partial()` does not suppress the defaults declared INSIDE
+     *    `settings` — so a one-key patch arrived here already expanded to all
+     *    seven defaulted keys, and `||` then faithfully wrote every one of
+     *    them. The write path now uses `UserSettingsPatchSchema`, which is
+     *    `UserSettingsSchema` with the defaults stripped, so what reaches this
+     *    method really is the one key the caller sent.
+     * 2. **This merge must not replace the column.** With a genuinely partial
+     *    patch in hand, `COALESCE(existing,'{}') || patch` preserves every
+     *    namespace the patch does not mention.
+     *
+     * Half 1 without half 2 loses the siblings to replacement; half 2 without
+     * half 1 loses them to injected defaults. The regression tests are split
+     * along the same line: the schema/service side is covered by
+     * `packages/service-core/test/services/user/update.settings-patch.hos375.test.ts`
+     * (which asserts on the object handed to this method), the SQL side by
+     * `packages/db/test/models/user.model.settings-merge.test.ts`.
+     *
+     * Every existing writer of this column already does an application-level
+     * read-modify-write (`UserService.markWhatsNewSeen` / `markAdminTourSeen` /
+     * `completeProfile`, `markUserReady`, the newsletter and search-history
+     * routes), so none of them depends on replacement semantics and none is
+     * changed by this: their patch is a superset of the stored object, which
+     * `||` merges to the same result. They also bypass the service's update
+     * schema entirely — they call `model.update` directly — so half 1 does not
+     * apply to them either way.
+     *
+     * Shallow merge only (see {@link BaseModelImpl.mergeableJsonbColumns}): a
+     * patch carrying `settings.onboarding` still replaces that whole subtree.
+     * Callers touching a NESTED namespace must keep doing their own
+     * read-modify-write.
+     *
+     * ---
+     *
+     * `profile` is here for the SAME structural reason, and it is the column
+     * where getting it wrong is most expensive. It holds `bio`, `avatar`,
+     * `website` and `occupation` in one JSONB value, and since HOS-375 two of
+     * those keys decide whether an author page is INDEXED and listed in the
+     * sitemap (`listPublicAuthors` below requires a non-empty `bio` AND
+     * `avatar`; the web mirror is `evaluateAuthorIndexability`).
+     *
+     * The two writers each know only HALF the keys. The web profile form
+     * (`apps/web/src/components/account/ProfileEditForm.helpers.ts`) rebuilds
+     * `{ bio, website, occupation }` and has no concept of `avatar` (its
+     * avatar upload targets the separate `users.image` COLUMN). The admin
+     * account form (`apps/admin/src/hooks/use-user-profile.ts`) rebuilds
+     * `{ bio, avatar }` and has no concept of `website`/`occupation`. Under
+     * replacement semantics an editor who set bio + avatar in the admin and
+     * then added a website on the web lost `avatar` — their author page
+     * silently fell out of Google's index with no signal anywhere.
+     *
+     * Merge makes that class of bug structurally impossible instead of
+     * something both forms (and every future one) have to remember.
+     *
+     * **The cost, which callers MUST pay:** omitting a key no longer clears
+     * it. Clearing a profile field is now an EXPLICIT `null`
+     * (`{ profile: { bio: null } }`), which `||` stores as a JSON null. Every
+     * read path treats a JSON null as absent — `profile->>'bio'` yields SQL
+     * NULL, which `trim(coalesce(...,'')) <> ''` rejects, and the TS readers
+     * all use `?? null` / `typeof x === 'string'` — and both the WRITE and
+     * READ halves of `UserProfileSchema` accept `null` so the explicit clear
+     * is not rejected on the way in nor 500'd on the way out.
+     *
+     * ---
+     *
+     * `contactInfo` is here for the SAME structural reason as `profile`, and it
+     * is the widest of the three: NINE keys in one JSONB value — `personalEmail`,
+     * `workEmail`, `homePhone`, `workPhone`, `mobilePhone`, `whatsapp`,
+     * `website`, `preferredEmail`, `preferredPhone`.
+     *
+     * Every writer models a strict SUBSET of them. The web profile form
+     * (`apps/web/src/components/account/ProfileEditForm.helpers.ts`) sends
+     * exactly `{ mobilePhone }`, and the mobile app's `use-patch-user` hook
+     * sends the same single key — so under replacement semantics one phone edit
+     * deleted the other eight. That is not hypothetical: the same web page reads
+     * `contactInfo.website` as a live fallback for the profile website field
+     * (`pages/[lang]/mi-cuenta/editar/index.astro`), so saving a phone silently
+     * destroyed a value the very next page load tried to display.
+     *
+     * `UserService.completeProfile` already does its own application-level
+     * read-modify-write of this column, so it does not depend on replacement
+     * semantics and is unchanged by this: its patch is a superset of the stored
+     * object, which `||` merges to the same result.
+     *
+     * The same cost applies as for `profile`: clearing a key is an explicit
+     * `null` (`{ contactInfo: { mobilePhone: null } }`), never an omission. Both
+     * the WRITE and READ halves of the shared `ContactInfoSchema` accept `null`
+     * for exactly that reason. `contactInfo: null` (the whole value) still
+     * clears the entire column — that is plain assignment, not a merge.
+     */
+    protected override readonly mergeableJsonbColumns = [
+        'settings',
+        'profile',
+        'contactInfo'
+    ] as const;
+
     protected getTableName(): string {
         return 'users';
     }
@@ -435,12 +553,20 @@ export class UserModel extends BaseModelImpl<User> {
      *    `users.image` is a DIFFERENT field the author page does not render.
      *
      * "Published" here means `visibility = 'PUBLIC' AND lifecycle_state =
-     * 'ACTIVE' AND deleted_at IS NULL`. That is deliberately CONSERVATIVE: the
-     * public post list currently applies no visibility filter of its own, so the
-     * page can count content this query does not. The divergence is one-way by
-     * design — a page may be indexable without being listed in the sitemap, but
-     * the sitemap can never advertise a URL the page then serves as `noindex`,
-     * which is the failure §6.6 exists to prevent.
+     * 'ACTIVE' AND deleted_at IS NULL` — the SAME definition the author page's
+     * own content reads use. `applyPublicVisibilityScope`
+     * (`packages/service-core/src/utils/public-visibility-scope.ts`) forces
+     * exactly those two filters, UNCONDITIONALLY and for every actor, onto
+     * `PostService.search` (which backs `GET /api/v1/public/posts?authorId=…`,
+     * the page's post block) and `EventService.getByAuthor` (its event block).
+     * So this predicate and the counts the page computes agree by construction
+     * rather than by coincidence.
+     *
+     * Keep them agreeing. The invariant §6.6 exists to protect is one-way: a
+     * page may be indexable without being listed in the sitemap, but the sitemap
+     * must never advertise a URL the page then serves as `noindex`. If either
+     * side's notion of "published" is ever loosened, loosen it HERE LAST — this
+     * query is the one that may only ever be the narrower of the two.
      *
      * Ordering is `updated_at DESC, slug ASC`. The slug tiebreak is not
      * cosmetic: `updated_at` is not unique, and without it a row could appear on
