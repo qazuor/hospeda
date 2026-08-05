@@ -175,6 +175,9 @@
         "zodError.allianceLead.adminList.pageSize.positive",
         "zodError.allianceLead.adminNote.max",
         "zodError.allianceLead.benefitType.requiredForServiceProvider",
+        "zodError.allianceLead.businessName.max",
+        "zodError.allianceLead.businessName.min",
+        "zodError.allianceLead.businessName.requiredForServiceProvider",
         "zodError.allianceLead.category.requiredForServiceProvider",
         "zodError.allianceLead.claimExpiresAt.invalid",
         "zodError.allianceLead.claimToken.max",
@@ -1782,7 +1785,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1781,
+    "total": 1784,
     "byNamespace": {
         "accommodation": 69,
         "accommodationAmenity": 4,
@@ -1794,7 +1797,7 @@
         "accommodationReview": 3,
         "admin": 50,
         "adminView": 3,
-        "allianceLead": 20,
+        "allianceLead": 23,
         "amenity": 46,
         "attraction": 26,
         "billing": 233,

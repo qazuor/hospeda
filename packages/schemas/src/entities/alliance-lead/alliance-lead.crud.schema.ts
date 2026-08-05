@@ -24,6 +24,10 @@ const SERVICE_PROVIDER_KIND: z.infer<typeof AllianceLeadSchema.shape.kind> = 'se
  * string the first time a provider submitted an incomplete form.
  */
 const REQUIRED_SERVICE_PROVIDER_FIELDS = [
+    {
+        field: 'businessName',
+        message: 'zodError.allianceLead.businessName.requiredForServiceProvider'
+    },
     { field: 'category', message: 'zodError.allianceLead.category.requiredForServiceProvider' },
     {
         field: 'destinationId',
@@ -52,6 +56,7 @@ const REQUIRED_SERVICE_PROVIDER_FIELDS = [
 export const refineAllianceLeadKindFields = (
     value: {
         readonly kind?: string;
+        readonly businessName?: string | null;
         readonly category?: string | null;
         readonly destinationId?: string | null;
         readonly benefitType?: HostTradeBenefitTypeEnum | null;
@@ -96,6 +101,10 @@ export const AllianceLeadCreateInputSchema = AllianceLeadSchema.omit({
     adminNote: true,
     applicantUserId: true,
     claimExpiresAt: true,
+    // What approval WROTE, never what a submission may assert: accepting it
+    // from a request body would let a caller point their application at
+    // somebody else's directory listing.
+    provisionedHostTradeId: true,
     createdAt: true,
     updatedAt: true,
     createdById: true,

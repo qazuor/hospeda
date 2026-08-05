@@ -133,6 +133,26 @@ describe('AllianceLeadCreateInputSchema', () => {
         expect(keys).not.toContain('deletedAt');
     });
 
+    it('should not accept provisionedHostTradeId from a submission', () => {
+        // A submitter naming the listing their application links to could point
+        // it at somebody else's ficha. The field is what approval WROTE, so it
+        // must never be settable from a public request body.
+        const keys = Object.keys(AllianceLeadCreateInputSchema.shape ?? {});
+        expect(keys).not.toContain('provisionedHostTradeId');
+    });
+
+    it('should keep the applicant-supplied provider fields IN the create input', () => {
+        // The mirror of the test above: these four are supplied BY the
+        // applicant (§6.1), so omitting them would make a provider application
+        // impossible to complete.
+        const keys = Object.keys(AllianceLeadCreateInputSchema.shape ?? {});
+        expect(keys).toContain('businessName');
+        expect(keys).toContain('category');
+        expect(keys).toContain('destinationId');
+        expect(keys).toContain('benefitType');
+        expect(keys).toContain('benefitValue');
+    });
+
     it('should reject when email is missing', () => {
         const data = { kind: 'editor', contactName: 'Test', message: 'A valid message here.' };
         expect(() => AllianceLeadCreateInputSchema.parse(data)).toThrow(ZodError);
@@ -265,6 +285,7 @@ describe('AllianceLeadSubmissionSchema — per-kind requirement (HOS-278)', () =
         contactName: 'Test Provider',
         email: 'provider@example.com',
         message: 'Quiero sumar mi servicio al directorio de proveedores.',
+        businessName: 'Plomería Acme',
         category: HostTradeCategoryEnum.PLOMERIA,
         destinationId: faker.string.uuid(),
         benefitType: HostTradeBenefitTypeEnum.PERCENTAGE,
@@ -277,6 +298,7 @@ describe('AllianceLeadSubmissionSchema — per-kind requirement (HOS-278)', () =
     });
 
     it.each([
+        'businessName',
         'category',
         'destinationId',
         'benefitType'
@@ -286,6 +308,7 @@ describe('AllianceLeadSubmissionSchema — per-kind requirement (HOS-278)', () =
     });
 
     it.each([
+        'businessName',
         'category',
         'destinationId',
         'benefitType'

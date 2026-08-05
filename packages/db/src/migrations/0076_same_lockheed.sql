@@ -1,0 +1,3 @@
+ALTER TABLE "alliance_leads" ADD COLUMN "business_name" varchar(255);--> statement-breakpoint
+ALTER TABLE "alliance_leads" ADD COLUMN "provisioned_host_trade_id" uuid;--> statement-breakpoint
+ALTER TABLE "alliance_leads" ADD CONSTRAINT "alliance_leads_provisioned_host_trade_id_host_trades_id_fk" FOREIGN KEY ("provisioned_host_trade_id") REFERENCES "public"."host_trades"("id") ON DELETE set null ON UPDATE no action;

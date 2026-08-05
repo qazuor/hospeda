@@ -524,6 +524,11 @@
         "benefitType": {
             "requiredForServiceProvider": "[EN] Elegí qué beneficio ofrecés a los anfitriones"
         },
+        "businessName": {
+            "max": "[EN] El nombre del negocio no puede superar los {{max}} caracteres",
+            "min": "[EN] El nombre del negocio debe tener al menos {{min}} caracteres",
+            "requiredForServiceProvider": "[EN] Indicá el nombre de tu negocio"
+        },
         "category": {
             "requiredForServiceProvider": "[EN] Elegí la categoría del servicio que ofrecés"
         },

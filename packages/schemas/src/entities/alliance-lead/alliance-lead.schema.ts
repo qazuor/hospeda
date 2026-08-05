@@ -4,7 +4,7 @@ import {
     HOST_TRADE_BENEFIT_TEXT_MAX,
     HostTradeBenefitValueSchema
 } from '../../common/host-trade-benefit.schema.js';
-import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
+import { DestinationIdSchema, HostTradeIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import { HostTradeBenefitTypeEnumSchema } from '../../enums/host-trade-benefit-type.schema.js';
 import { HostTradeCategoryEnumSchema } from '../../enums/host-trade-category.schema.js';
 
@@ -161,6 +161,19 @@ export const AllianceLeadSchema = z.object({
         .nullish(),
 
     /**
+     * Trading name of the applicant's business — becomes `host_trades.name`.
+     *
+     * Distinct from {@link AllianceLeadSchema.shape.contactName}, which names
+     * the PERSON to talk to. Publishing the contact's name would put "Juan
+     * Pérez" into a directory of plumbers and locksmiths.
+     */
+    businessName: z
+        .string()
+        .min(2, { message: 'zodError.allianceLead.businessName.min' })
+        .max(255, { message: 'zodError.allianceLead.businessName.max' })
+        .nullish(),
+
+    /**
      * Service category the applicant operates in (HOS-278 §6.4).
      *
      * The next four fields are `service_provider`-only, and they exist because
@@ -191,6 +204,16 @@ export const AllianceLeadSchema = z.object({
         .string()
         .max(HOST_TRADE_BENEFIT_TEXT_MAX, { message: 'zodError.hostTrade.benefitText.max' })
         .nullish(),
+
+    /**
+     * The directory listing this lead's approval produced, or null.
+     *
+     * System-managed and omitted from the create input: it is what approval
+     * WROTE, never something a submission may assert. Accepting it from a
+     * request body would let a caller point their application at somebody
+     * else's listing.
+     */
+    provisionedHostTradeId: HostTradeIdSchema.nullish(),
 
     // Audit fields (createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById)
     ...BaseAuditFields
