@@ -2477,6 +2477,7 @@
         },
         "date": {
             "end": {
+                "beforeStart": "[EN] La fecha de fin no puede ser anterior a la de inicio",
                 "invalid": "[EN] El fin no es válido"
             },
             "start": {
