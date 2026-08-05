@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import {
     EventAdminSchema,
+    EventAuthorPublicSchema,
     EventProtectedSchema,
     EventPublicSchema
 } from '../../../src/entities/event/event.access.schema.js';
@@ -203,5 +205,89 @@ describe('EventPublicSchema — author relation (HOS-375 G-7)', () => {
                 expect(author).not.toHaveProperty(leaked);
             }
         }
+    });
+
+    /**
+     * The author relation was first declared as `UserPublicSchema`, which is a
+     * wider projection than a byline needs and is fail-CLOSED on its avatar.
+     * These two cases pin the narrowing.
+     */
+    describe('EventAuthorPublicSchema — the narrowed projection', () => {
+        it('drops the real name and the account roles', () => {
+            // `firstName`/`lastName` are the person's real name, a different
+            // class of data from the display name they chose to publish;
+            // `roles` describes account privileges and has no business in an
+            // events payload. All three shipped on every event of every LIST
+            // page under `UserPublicSchema`.
+            const result = EventPublicSchema.safeParse({
+                ...publicEventBase(),
+                author: { ...rawAuthorRow, roles: ['ADMIN'], avatarUrl: 'https://x.test/a.jpg' }
+            });
+
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+
+            const author = result.data.author as Record<string, unknown>;
+            for (const dropped of ['firstName', 'lastName', 'roles', 'avatarUrl']) {
+                expect(author).not.toHaveProperty(dropped);
+            }
+            // Non-vacuity: the fields the byline DOES need survived.
+            expect(author.displayName).toBe('Laura Vega');
+            expect(author.slug).toBe('laura-vega');
+            expect(author.image).toBe(rawAuthorRow.image);
+        });
+
+        it('accepts a malformed avatar instead of failing the response closed', () => {
+            // `users.image` is an unbounded nullable `text` column Better Auth
+            // writes directly, bypassing the write schemas. `stripWithSchema`
+            // is fail-closed and `createPaginatedResponse` runs it per item, so
+            // under a strict `.url()` this one row would 500 EVERY page of
+            // `/api/v1/public/events` for every visitor.
+            //
+            // The property under test is 500-PREVENTION, and nothing more: the
+            // schema must not reject. It deliberately does NOT erase the value
+            // (that used to be `.catch(undefined)`, which `@hono/zod-openapi`
+            // cannot render — it broke the whole global OpenAPI document).
+            // Keeping the junk out of an `<img>` is the CONSUMER's job now; see
+            // `apps/web/test/lib/media.renderable-image-url.test.ts` and
+            // `apps/web/test/lib/api/transforms.author-avatar.test.ts`.
+            const result = EventPublicSchema.safeParse({
+                ...publicEventBase(),
+                author: { ...rawAuthorRow, image: 'not-a-url' }
+            });
+
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+
+            const author = result.data.author as Record<string, unknown>;
+            expect(author.image).toBe('not-a-url');
+            // The byline still renders.
+            expect(author.displayName).toBe('Laura Vega');
+            expect(author.slug).toBe('laura-vega');
+        });
+
+        it('does not render `image` through a ZodCatch (global OpenAPI doc guard)', () => {
+            // Regression pin: `.catch()` here made `getOpenAPIDocument()` throw
+            // ("Unknown zod object type"), which 500s `/docs/openapi.json` and
+            // breaks `/docs`, `/reference` and `/ui` in EVERY environment —
+            // because the OpenAPI document is global, not per-route.
+            //
+            // This pins the outermost wrapper only — a `.catch()` buried deeper
+            // would slip past. The authoritative, nesting-proof guard is
+            // `apps/api`'s `test/routes/openapi-doc-generation.test.ts`, which
+            // builds the real document; this assertion just fails FASTER and
+            // names the culprit field.
+            expect(EventAuthorPublicSchema.shape.image instanceof z.ZodCatch).toBe(false);
+        });
+
+        it('does not 500 on an empty displayName either', () => {
+            // Production really holds `display_name = ''` rows (HOS-302).
+            const result = EventPublicSchema.safeParse({
+                ...publicEventBase(),
+                author: { ...rawAuthorRow, displayName: '' }
+            });
+
+            expect(result.success).toBe(true);
+        });
     });
 });
