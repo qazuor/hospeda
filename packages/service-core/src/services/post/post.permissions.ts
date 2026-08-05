@@ -61,6 +61,25 @@ export function checkCanUpdatePost(actor: Actor, post: Post): void {
 }
 
 /**
+ * Checks if the actor can manage a post's gallery photos (HOS-390).
+ *
+ * Delegates to {@link checkCanUpdatePost} rather than introducing a dedicated
+ * `POST_MEDIA_*` permission: a photo IS post content, so editing the gallery
+ * cannot require less — nor more — than editing the post itself. Adding a
+ * separate permission would let the two drift, producing an actor who can
+ * rewrite a post's body but not replace its cover image (or vice versa).
+ *
+ * Exists as its own named function so the media helpers read against a
+ * media-specific seam (mirroring `checkGastronomyCanEditMedia`), and so a future
+ * divergence has one place to land instead of five call sites.
+ *
+ * @throws ServiceError if forbidden
+ */
+export function checkPostCanEditMedia(actor: Actor, post: Post): void {
+    checkCanUpdatePost(actor, post);
+}
+
+/**
  * Checks if the actor can delete a post.
  *
  * `POST_DELETE` deletes any post; `POST_DELETE_OWN` deletes only the actor's
