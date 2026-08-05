@@ -108,6 +108,21 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_MODERATION_CHANGE,
         PermissionEnum.EVENT_LOCATION_UPDATE,
         PermissionEnum.EVENT_ORGANIZER_MANAGE,
+        // EVENT_ORGANIZER granular family (NOSPEC:event-organizer-permissions):
+        // every event-organizer admin route (apps/api/src/routes/event-organizer/
+        // admin/*) and the protected create route gate on these `eventOrganizer.*`
+        // permissions, not on the legacy `EVENT_ORGANIZER_MANAGE`
+        // (`event.organizer.manage`) above. The granular family was orphaned —
+        // granted to no role at all — until this fix, so nobody (not even
+        // SUPER_ADMIN) could create/list/update/delete an event organizer through
+        // the API. EVENT_ORGANIZER_MANAGE is kept as-is for backward
+        // compatibility; do not remove it.
+        PermissionEnum.EVENT_ORGANIZER_CREATE,
+        PermissionEnum.EVENT_ORGANIZER_VIEW,
+        PermissionEnum.EVENT_ORGANIZER_UPDATE,
+        PermissionEnum.EVENT_ORGANIZER_DELETE,
+        PermissionEnum.EVENT_ORGANIZER_RESTORE,
+        PermissionEnum.EVENT_ORGANIZER_HARD_DELETE,
         PermissionEnum.EVENT_SLUG_MANAGE,
         PermissionEnum.EVENT_COMMENT_CREATE,
         PermissionEnum.EVENT_COMMENT_VIEW,
@@ -507,6 +522,16 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_MODERATION_CHANGE,
         PermissionEnum.EVENT_LOCATION_UPDATE,
         PermissionEnum.EVENT_ORGANIZER_MANAGE,
+        // EVENT_ORGANIZER granular family (NOSPEC:event-organizer-permissions):
+        // see the identical comment on the SUPER_ADMIN block above — the routes
+        // gate on `eventOrganizer.*`, this family was orphaned (granted to no
+        // role) until this fix, and EVENT_ORGANIZER_MANAGE stays as legacy.
+        PermissionEnum.EVENT_ORGANIZER_CREATE,
+        PermissionEnum.EVENT_ORGANIZER_VIEW,
+        PermissionEnum.EVENT_ORGANIZER_UPDATE,
+        PermissionEnum.EVENT_ORGANIZER_DELETE,
+        PermissionEnum.EVENT_ORGANIZER_RESTORE,
+        PermissionEnum.EVENT_ORGANIZER_HARD_DELETE,
         PermissionEnum.EVENT_SLUG_MANAGE,
         PermissionEnum.EVENT_COMMENT_CREATE,
         PermissionEnum.EVENT_COMMENT_VIEW,
@@ -826,6 +851,16 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_LOCATION_LIFECYCLE_CHANGE,
         PermissionEnum.EVENT_ORGANIZER_MANAGE,
         PermissionEnum.EVENT_ORGANIZER_LIFECYCLE_CHANGE,
+        // EVENT_ORGANIZER_CREATE only (NOSPEC:event-organizer-permissions): HOS-374
+        // gives editors an inline "create an organizer" affordance inside the
+        // event create form at `/mi-cuenta`, because `EventCreateHttpSchema
+        // .organizerId` is a required UUID and an editor whose organizer isn't in
+        // the catalog would otherwise be stuck. This is deliberately narrower than
+        // the SUPER_ADMIN/ADMIN grant above — an editor must NOT be able to
+        // list-admin, edit, delete, restore or hard-delete organizers, so none of
+        // EVENT_ORGANIZER_VIEW / _UPDATE / _DELETE / _RESTORE / _HARD_DELETE are
+        // granted here.
+        PermissionEnum.EVENT_ORGANIZER_CREATE,
         PermissionEnum.EVENT_SLUG_MANAGE,
         PermissionEnum.EVENT_COMMENT_CREATE,
         // SPEC-165: EDITOR moderates event comments (view all states + approve/reject/delete).
