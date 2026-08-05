@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { TRUSTED_EDITOR_PERMISSIONS } from '@repo/schemas';
 import { execSQL } from './db-helpers.ts';
 
 /**
@@ -22,7 +23,7 @@ import { execSQL } from './db-helpers.ts';
 const DEFAULT_API_BASE_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
 const DEFAULT_WEB_BASE_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321';
 
-export type UserRole = 'USER' | 'HOST' | 'ADMIN' | 'SUPER_ADMIN';
+export type UserRole = 'USER' | 'HOST' | 'EDITOR' | 'ADMIN' | 'SUPER_ADMIN';
 
 export interface CreatedUser {
     readonly id: string;
@@ -313,6 +314,42 @@ export async function setUserRole(userId: string, role: UserRole): Promise<void>
  */
 export async function promoteToHost(userId: string): Promise<void> {
     await setUserRole(userId, 'HOST');
+}
+
+/**
+ * Makes an EDITOR a **trusted editor** (HOS-374 §5.1.2 / OQ-1).
+ *
+ * A trusted editor is not a role and not a column: it is an `EDITOR` holding
+ * the four `TRUSTED_EDITOR_PERMISSIONS` as per-user `grant` overrides in
+ * `user_permission` (SPEC-170). Writes the rows directly, like
+ * {@link setUserRole} does for hats — the admin endpoint that normally
+ * performs this (`PUT /api/v1/admin/users/{id}/trusted-editor`) needs a
+ * SUPER_ADMIN session, and a fixture should not have to mint one just to
+ * arrange state the test isn't validating.
+ *
+ * The permission list is DERIVED from `TRUSTED_EDITOR_PERMISSIONS`, never
+ * restated: that tuple is the single source of truth, so a fifth permission
+ * joining the bundle reaches this fixture without anyone editing it.
+ *
+ * Idempotent, and it normalizes: the `(user_id, permission)` primary key makes
+ * a repeat call a no-op, and a pre-existing `deny` row is upgraded to `grant`
+ * — the same semantics the real service applies.
+ *
+ * The caller must have granted the EDITOR hat first (`createUser({ role:
+ * 'EDITOR' })`); these overrides widen what an editor may do, they do not
+ * substitute for the role.
+ *
+ * @param userId - UUID of the editor to promote
+ */
+export async function setTrustedEditor(userId: string): Promise<void> {
+    await execSQL(
+        `INSERT INTO user_permission (user_id, permission, effect)
+         SELECT $1::uuid, wanted, 'grant'::permission_effect_enum
+         FROM unnest($2::permission_enum[]) AS wanted
+         ON CONFLICT (user_id, permission)
+         DO UPDATE SET effect = 'grant'::permission_effect_enum`,
+        [userId, [...TRUSTED_EDITOR_PERMISSIONS]]
+    );
 }
 
 interface MeResponse {
