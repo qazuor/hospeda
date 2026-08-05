@@ -2,13 +2,34 @@
  * HOS-375 §6.7 / AC-6 — `GET /api/v1/public/users/by-slug/{slug}` must answer
  * identically to everyone.
  *
- * The route is declared with `cacheTTL: 300` and lives in
- * `PUBLIC_CACHE_ENDPOINTS`, so one stored body is served to every subsequent
- * visitor. Anything in the response that varied with the REQUESTER would be
- * captured on the first request and replayed to all the others — the social
- * block being the obvious candidate, since it is a preference and preferences
- * invite "did THIS user opt in?" reasoning. The opt-in belongs to the profile
- * OWNER; nothing here may consult who is asking.
+ * ## Which cache, exactly
+ *
+ * `/api/v1/public/users` is in **`PRIVATE_CACHE_ENDPOINTS`**, not
+ * `PUBLIC_CACHE_ENDPOINTS` (`apps/api/src/middlewares/cache.constants.ts`) — so
+ * it never reaches the shared CDN. It IS stored in the API's own in-memory
+ * cache, since the route declares `cacheTTL: 300`, under the key
+ * `private:${path}${suffix}:${authorization ?? 'anonymous'}`
+ * (`generateCacheKey`, `apps/api/src/middlewares/cache.ts`).
+ *
+ * That key segments on the `Authorization` HEADER — and the web app
+ * authenticates with session COOKIES, which the key never reads. In production
+ * every logged-in visitor therefore lands in the same `:anonymous` bucket as
+ * every logged-out one, so a response that varied with the REQUESTER would still
+ * be captured once and replayed to all of them. The social block is the obvious
+ * candidate, since it is a preference and preferences invite "did THIS user opt
+ * in?" reasoning. The opt-in belongs to the profile OWNER; nothing here may
+ * consult who is asking.
+ *
+ * ## Why `clearCache()` + `X-Cache: MISS`
+ *
+ * These tests DO send a bearer token, which the test harness's mock auth
+ * accepts — and which `generateCacheKey` does read. So without the two
+ * precautions below, the anonymous and authenticated requests would land in
+ * different buckets while consecutive same-header requests would be served from
+ * the first one, and every "identical" assertion could pass by replaying a
+ * stored body rather than by the handler producing it twice. Clearing the cache
+ * before each test and asserting `X-Cache: MISS` makes each comparison a real
+ * pair of handler invocations.
  *
  * `getPublicProfileBySlug` is already proven actor-blind at the service layer
  * (`packages/service-core/test/services/user/getPublicProfileBySlug.test.ts`).
@@ -16,8 +37,9 @@
  * route, its response schema, and the middleware chain that wraps both.
  */
 
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
+import { clearCache } from '../../../../src/middlewares/cache.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
 import {
     AUTHOR_SLUG_OPTED_IN,
@@ -47,6 +69,34 @@ describe('GET /api/v1/public/users/by-slug/{slug} — actor-blind response (AC-6
 
     beforeAll(() => {
         app = initApp();
+    });
+
+    beforeEach(() => {
+        // Every comparison below must be two REAL handler runs, never a replay
+        // of a body the previous test left behind. See the file docstring.
+        clearCache();
+    });
+
+    it('serves each of these requests from the handler, not from the cache', async () => {
+        // The guard that makes every "identical" assertion below mean
+        // something. If a request were answered from a stored entry, the two
+        // sides of a comparison could be the same bytes without the handler
+        // having produced them twice.
+        const first = await get(app, `${BASE}/${AUTHOR_SLUG_OPTED_IN}`, ANONYMOUS_HEADERS);
+        const authenticated = await get(
+            app,
+            `${BASE}/${AUTHOR_SLUG_OPTED_IN}`,
+            AUTHENTICATED_HEADERS
+        );
+
+        expect(first.headers.get('x-cache')).toBe('MISS');
+        expect(authenticated.headers.get('x-cache')).toBe('MISS');
+
+        // Non-vacuity: the route IS cached, so a repeat of the FIRST request
+        // must HIT. Without this, `MISS` above could just mean "caching is off"
+        // and the assertions would prove nothing about the mechanism.
+        const repeat = await get(app, `${BASE}/${AUTHOR_SLUG_OPTED_IN}`, ANONYMOUS_HEADERS);
+        expect(repeat.headers.get('x-cache')).toBe('HIT');
     });
 
     it('treats the bearer token as a real session — without this the rest is vacuous', async () => {
@@ -79,6 +129,9 @@ describe('GET /api/v1/public/users/by-slug/{slug} — actor-blind response (AC-6
         );
 
         expect(authenticated.status).toBe(anonymous.status);
+        // Both bodies came from the handler, not from a stored entry.
+        expect(anonymous.headers.get('x-cache')).toBe('MISS');
+        expect(authenticated.headers.get('x-cache')).toBe('MISS');
 
         const anonymousBody = await anonymous.json();
         const authenticatedBody = await authenticated.json();
@@ -99,6 +152,9 @@ describe('GET /api/v1/public/users/by-slug/{slug} — actor-blind response (AC-6
             `${BASE}/${AUTHOR_SLUG_OPTED_IN}`,
             AUTHENTICATED_HEADERS
         );
+
+        expect(anonymous.headers.get('x-cache')).toBe('MISS');
+        expect(authenticated.headers.get('x-cache')).toBe('MISS');
 
         const anonymousBody = await anonymous.json();
         const authenticatedBody = await authenticated.json();

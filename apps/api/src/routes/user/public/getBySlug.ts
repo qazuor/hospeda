@@ -26,8 +26,16 @@ const userService = new UserService({ logger: apiLogger });
  * `settings.publicProfileShowSocialNetworks`, and omits the key entirely
  * otherwise. `settings` itself stays excluded — only that one boolean's effect
  * is observable. The decision depends on the owner and never on the requesting
- * actor, so this response stays actor-blind and safe for the route's shared
- * edge cache.
+ * actor, so this response stays actor-blind.
+ *
+ * Note what that protects, precisely: `/api/v1/public/users` is in
+ * `PRIVATE_CACHE_ENDPOINTS`, NOT `PUBLIC_CACHE_ENDPOINTS`, so it never reaches
+ * the shared CDN. It IS stored in the API's in-memory cache (`cacheTTL: 300`
+ * below) under `private:${path}${suffix}:${authorization ?? 'anonymous'}`, and
+ * the web app authenticates with session COOKIES rather than an `Authorization`
+ * header — so every logged-in visitor shares the `:anonymous` bucket with every
+ * logged-out one. An actor-dependent field here would still be captured once
+ * and replayed to everybody.
  *
  * It uses the LENIENT {@link SocialNetworkReadSchema}, not the write-side shape,
  * for the same reason `displayName` does: stored values predate the current
@@ -47,6 +55,33 @@ const userService = new UserService({ logger: apiLogger });
  * of truth for that read-side leniency (type-only, bounds stay on the write
  * path), so it is imported rather than re-inlined here.
  *
+ * `avatar` is the third lenient field, and for the same fail-closed reason.
+ * `profile.avatar` is a JSONB path, not a validated column: the seed fixtures
+ * and data-migration `0037` both write it directly, bypassing Zod entirely, so
+ * nothing guarantees the stored value is a parseable URL. Leaving it strict
+ * meant ONE malformed stored value 500'd the whole author page. The ABSENCE of
+ * `.url()` is the load-bearing part — the same treatment
+ * {@link EventAuthorPublicSchema} applies to the event author's avatar
+ * (`packages/schemas/src/entities/event/event.access.schema.ts`) and the same
+ * read⊇write split `ContactInfoReadSchema.website` uses: the format constraint
+ * belongs to the WRITE path ({@link UserProfileSchema}), where a rejection is a
+ * 400 the caller can fix, not to a response that fail-closes on data already in
+ * the database.
+ *
+ * DO NOT "restore" strictness with `.catch(undefined)`. `ZodCatch` has no
+ * renderer in `@hono/zod-openapi` / `@asteasolutions/zod-to-openapi`, and this
+ * schema is registered on a route, so it is rendered into the GLOBAL OpenAPI
+ * document: one unrenderable field makes `getOpenAPIDocument()` throw, which
+ * 500s `/docs/openapi.json` and breaks `/docs`, `/reference` and `/ui` in every
+ * environment. That is not a hypothesis — it is the regression
+ * `test/routes/openapi-doc-generation.test.ts` caught on this very field.
+ *
+ * Consequence, by design: a malformed value now reaches the client as-is
+ * instead of being erased here. Not rendering a broken `<img>` is the
+ * CONSUMER's job — `apps/web`'s `isRenderableImageUrl` (`src/lib/media.ts`) is
+ * where that decision lives, and the author page applies it before both the
+ * `<img>` and the indexability gate.
+ *
  * `isSystemAccount` is the one flag deliberately carried into a public payload
  * (HOS-375 §6.5 condition 1 / AC-13). The author page's indexability gate runs
  * in the web app and this is its only source: a system account must render
@@ -63,7 +98,7 @@ export const UserAuthorPublicResponseSchema = z.object({
     id: UserSchema.shape.id,
     displayName: UserNameReadFields.displayName,
     slug: UserSchema.shape.slug,
-    avatar: z.string().url().optional().nullable(),
+    avatar: z.string().optional().nullable(),
     bio: z.string().optional().nullable(),
     socialNetworks: SocialNetworkReadSchema.optional(),
     isSystemAccount: UserSchema.shape.isSystemAccount

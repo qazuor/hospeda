@@ -17,6 +17,18 @@ export const AUTHOR_SLUG_OPTED_OUT = 'carmen-silva';
 export const AUTHOR_SLUG_OPTED_IN = 'laura-vega';
 
 /**
+ * Slug of an author whose stored `profile.avatar` is NOT a parseable URL.
+ *
+ * Not a hypothetical: `profile.avatar` is a JSONB path written directly by the
+ * seed fixtures and by data-migration `0037`, both of which bypass Zod, so
+ * nothing in the write path guarantees the value is a URL. The value below is
+ * the shape that matters — a non-empty string the `z.string().url()` check
+ * rejects — because `stripWithSchema` fail-closes to HTTP 500 and this is a
+ * PUBLIC page.
+ */
+export const AUTHOR_SLUG_MALFORMED_AVATAR = 'tomas-quiroga';
+
+/**
  * Public author profiles keyed by slug, shaped exactly like the real
  * `UserService.getPublicProfileBySlug` return value.
  *
@@ -46,6 +58,15 @@ const PUBLIC_AUTHOR_PROFILES: Record<string, Record<string, unknown>> = {
             instagram: 'https://instagram.com/lauravega',
             linkedIn: 'https://linkedin.com/in/lauravega'
         }
+    },
+    [AUTHOR_SLUG_MALFORMED_AVATAR]: {
+        id: '33333333-3333-4333-8333-333333333333',
+        displayName: 'Tomas Quiroga',
+        slug: AUTHOR_SLUG_MALFORMED_AVATAR,
+        // Not a URL — the exact class of stored value that used to 500 the page.
+        avatar: 'avatars/tomas-quiroga.jpg',
+        bio: 'Fotografia del litoral.',
+        isSystemAccount: false
     }
 };
 

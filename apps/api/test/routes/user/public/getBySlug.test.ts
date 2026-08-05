@@ -21,10 +21,14 @@
 
 import { UserSchema } from '@repo/schemas';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import { initApp } from '../../../../src/app.js';
 import { UserAuthorPublicResponseSchema } from '../../../../src/routes/user/public/getBySlug.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
-import { AUTHOR_SLUG_OPTED_OUT } from '../../../helpers/mocks/user-services.js';
+import {
+    AUTHOR_SLUG_MALFORMED_AVATAR,
+    AUTHOR_SLUG_OPTED_OUT
+} from '../../../helpers/mocks/user-services.js';
 
 const BASE = '/api/v1/public/users/by-slug';
 
@@ -163,6 +167,46 @@ describe('GET /api/v1/public/users/by-slug/:slug', () => {
             expect(user).not.toHaveProperty('permissions');
             expect(user).not.toHaveProperty('createdAt');
             expect(user).not.toHaveProperty('deletedAt');
+        });
+
+        // HOS-375 round-2 review finding: `avatar` was the last STRICT field on
+        // this response, and `stripWithSchema` fail-closes to HTTP 500. Since
+        // `profile.avatar` is a JSONB path written by seed fixtures and by
+        // data-migration `0037` — both bypassing Zod — one malformed stored
+        // value took down the entire PUBLIC author page. Dropping `.url()`
+        // (the same treatment `EventAuthorPublicSchema` applies to the event
+        // author avatar) makes the response accept it instead.
+        //
+        // This assertion is at the ROUTE level on purpose: the schema-level
+        // test below cannot observe the 500, because the fail-closed behaviour
+        // lives in the response pipeline, not in the schema.
+        //
+        // What this does NOT assert: that the bad value is erased. It used to —
+        // via `.catch(undefined)` — but `ZodCatch` is unrenderable by
+        // `@hono/zod-openapi` and the OpenAPI document is global, so that broke
+        // `/docs/openapi.json` everywhere. Suppressing the broken image is now
+        // the web app's job, asserted in
+        // `apps/web/test/lib/media.renderable-image-url.test.ts`.
+        it('should serve a malformed stored avatar instead of 500ing the page', async () => {
+            const res = await app.request(`${BASE}/${AUTHOR_SLUG_MALFORMED_AVATAR}`, {
+                method: 'GET',
+                headers: { 'user-agent': 'vitest', accept: 'application/json' }
+            });
+
+            expect(res.status).toBe(200);
+
+            const body = await res.json();
+            expect(body.success).toBe(true);
+
+            // The page still renders: everything except the avatar survived.
+            expect(body.data.slug).toBe(AUTHOR_SLUG_MALFORMED_AVATAR);
+            expect(body.data.displayName).toBe('Tomas Quiroga');
+            expect(body.data.bio).toBe('Fotografia del litoral.');
+
+            // The malformed value survives the response contract verbatim —
+            // that is the whole point: the API's job here is "do not 500", and
+            // the web app's `isRenderableImageUrl` drops it before render.
+            expect(body.data.avatar).toBe('avatars/tomas-quiroga.jpg');
         });
     });
 
@@ -369,6 +413,82 @@ describe('UserAuthorPublicResponseSchema — HOS-375 socialNetworks', () => {
         });
 
         expect(result.success).toBe(false);
+    });
+});
+
+/**
+ * HOS-375 round-2 — `avatar` ACCEPTS, it does not reject.
+ *
+ * The value comes from the `profile.avatar` JSONB path, written by seed
+ * fixtures and by data-migration `0037` without ever passing through Zod, so a
+ * non-URL string is a reachable stored state rather than a hypothetical one.
+ * Dropping the `.url()` constraint is what keeps it from taking the whole
+ * PUBLIC author page down through `stripWithSchema`'s fail-closed 500.
+ *
+ * The property under test is 500-PREVENTION, and nothing more. This used to be
+ * `.catch(undefined)`, which additionally ERASED the bad value — but `ZodCatch`
+ * has no renderer in `@hono/zod-openapi`, and the OpenAPI document is global,
+ * so that one field made `getOpenAPIDocument()` throw and 500'd
+ * `/docs/openapi.json` (with `/docs`, `/reference` and `/ui`) in every
+ * environment. Keeping the junk out of an `<img>` moved to the CONSUMER; see
+ * `apps/web/test/lib/media.renderable-image-url.test.ts` and
+ * `apps/web/test/pages/author-page.test.ts`.
+ */
+describe('UserAuthorPublicResponseSchema — HOS-375 avatar leniency', () => {
+    const AUTHOR = { ...baseAuthorPayload, displayName: 'Carmen Silva' };
+
+    it.each([
+        ['a bare relative path', 'avatars/carmen-silva.jpg'],
+        ['a protocol-less host', 'example.com/a.jpg'],
+        ['an empty string', '']
+    ])('accepts a malformed avatar (%s) rather than failing the page closed', (_label, avatar) => {
+        const result = UserAuthorPublicResponseSchema.safeParse({ ...AUTHOR, avatar });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            // Passed through verbatim — the schema no longer erases it.
+            expect(result.data.avatar).toBe(avatar);
+        }
+    });
+
+    // The leniency is TYPE-preserving, not unconditional: read ⊇ write widens
+    // the accepted FORMAT, it does not turn the field into `unknown`. A number
+    // is not a string in any stored shape, and letting it through would push an
+    // untyped value onto every consumer.
+    it('still rejects a value of the wrong type entirely', () => {
+        const result = UserAuthorPublicResponseSchema.safeParse({ ...AUTHOR, avatar: 42 });
+
+        expect(result.success).toBe(false);
+    });
+
+    it('does not wrap `avatar` in a ZodCatch (global OpenAPI doc guard)', () => {
+        // The exact regression: `getOpenAPIDocument()` threw "Unknown zod object
+        // type" and took `/docs/openapi.json` down. Pinned here so the field is
+        // named directly; `test/routes/openapi-doc-generation.test.ts` is the
+        // nesting-proof end-to-end guard.
+        expect(UserAuthorPublicResponseSchema.shape.avatar instanceof z.ZodCatch).toBe(false);
+    });
+
+    // Non-vacuity guard: a real URL must still round-trip byte-identical, and an
+    // explicit `null` (the "this user has no avatar" case the handler already
+    // emits) must survive as `null` rather than being swallowed into `undefined`.
+    it('round-trips a well-formed URL untouched', () => {
+        const avatar = 'https://example.com/avatars/carmen-silva.jpg';
+        const result = UserAuthorPublicResponseSchema.safeParse({ ...AUTHOR, avatar });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.avatar).toBe(avatar);
+        }
+    });
+
+    it('keeps an explicit null as null', () => {
+        const result = UserAuthorPublicResponseSchema.safeParse({ ...AUTHOR, avatar: null });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.avatar).toBeNull();
+        }
     });
 });
 
