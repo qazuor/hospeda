@@ -67,18 +67,29 @@ describe('User CRUD Schemas', () => {
 
         // HOS-375: the public author route (getBySlug.ts) validates its
         // `:slug` path param against `^[a-z0-9]+(?:[_-][a-z0-9]+)*$` and 400s
-        // otherwise. Writing a non-conforming slug used to be silently
-        // accepted, producing a permanently 404ing author page — this schema
-        // is the fix, on the WRITE side only (see the JSDoc note above the
-        // CRUD schemas for why `UserSchema.slug` itself stays unconstrained).
-        it('rejects a slug with non-ASCII characters', () => {
+        // otherwise, so a non-conforming slug produces a permanently 404ing
+        // author page. That pattern is deliberately NOT enforced here: this is
+        // a PUBLISHED schema, and adding a regex to a shipped field is a
+        // narrowing the additive-only compat policy forbids. It lives in
+        // `UserService`'s normalizer instead, where a bad value is REPAIRED via
+        // `toSlug` rather than refused — see
+        // `packages/service-core/src/services/user/user.normalizers.ts`.
+        it('does NOT reject a non-ASCII slug — narrowing a published schema is forbidden', () => {
             const user = createUserFixture();
-            const invalidInput = {
+            const legacyInput = {
                 ...user,
                 slug: 'ana-rodríguez'
             };
 
-            expect(() => UserCreateInputSchema.parse(invalidInput)).toThrow(ZodError);
+            expect(() => UserCreateInputSchema.parse(legacyInput)).not.toThrow();
+        });
+
+        it('still rejects an EMPTY slug — the pre-existing `.min(1)` is untouched', () => {
+            // Non-vacuity for the case above: proves the field is still
+            // validated at all, and that only the added regex was removed.
+            const user = createUserFixture();
+
+            expect(() => UserCreateInputSchema.parse({ ...user, slug: '' })).toThrow(ZodError);
         });
 
         it('accepts a plain ASCII hyphenated slug', () => {
@@ -181,11 +192,17 @@ describe('User CRUD Schemas', () => {
             expect(Object.hasOwn(parsed, 'isSystemAccount')).toBe(false);
         });
 
-        // HOS-375: same write-side pattern constraint as UserCreateInputSchema.
-        it('rejects a slug with non-ASCII characters', () => {
-            const invalidInput = { slug: 'carlos-martínez' };
+        // HOS-375: same reasoning as UserCreateInputSchema above — the public
+        // slug pattern is enforced by REPAIR in the service normalizer, never
+        // by narrowing this published write schema.
+        it('does NOT reject a non-ASCII slug — narrowing a published schema is forbidden', () => {
+            const legacyInput = { slug: 'carlos-martínez' };
 
-            expect(() => UserUpdateInputSchema.parse(invalidInput)).toThrow(ZodError);
+            expect(() => UserUpdateInputSchema.parse(legacyInput)).not.toThrow();
+        });
+
+        it('still rejects an EMPTY slug — the pre-existing `.min(1)` is untouched', () => {
+            expect(() => UserUpdateInputSchema.parse({ slug: '' })).toThrow(ZodError);
         });
 
         it('accepts a plain ASCII hyphenated slug', () => {

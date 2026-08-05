@@ -5,6 +5,7 @@ import { PermissionEnumSchema } from '../../enums/index.js';
 import { ModerationStatusEnumSchema } from '../../enums/moderation-status.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 import { UserReadSchema, UserSchema } from './user.schema.js';
+import { UserSettingsPatchSchema } from './user.settings.schema.js';
 import { AssignableRoleEnumSchema } from './user-role.schema.js';
 
 /**
@@ -22,34 +23,32 @@ import { AssignableRoleEnumSchema } from './user-role.schema.js';
  * `UserReadSchema`, because an output schema describes a row that already exists
  * — including rows Better Auth wrote without ever passing the write bounds.
  *
- * HOS-375 slug format rule: `UserSchema.slug` itself stays `.min(1)` — it is
- * also the READ shape (`UserAuthorPublicResponseSchema` in
- * `apps/api/src/routes/user/public/getBySlug.ts` reuses `UserSchema.shape.slug`
- * verbatim), and that route's `stripWithSchema` FAIL-CLOSES to HTTP 500 on a
- * public page. Tightening the base schema would turn a legacy non-conforming
- * row (see `packages/seed/src/data-migrations/0038-transliterate-user-slugs.ts`
- * for the backfill, and any row created before this constraint existed) from a
- * 404 into a 500 on that same public page — strictly worse. The
- * `^[a-z0-9]+(?:[_-][a-z0-9]+)*$` pattern the public route's `:slug` path param
- * already enforces is therefore added ONLY on the write schemas below, via
- * `.extend({ slug: ... })` over the field the base schema declares — never on
- * `UserSchema` itself.
+ * HOS-375 slug format rule — where it is NOT enforced, and why: these
+ * create/update schemas are PUBLISHED, so adding a `regex` to `slug` here is a
+ * narrowing, which the package's additive-only compatibility policy forbids
+ * (`docs/guides/schema-compat-policy.md`). A caller that has been sending a
+ * legal-but-non-conforming slug — a legacy row being re-saved, an admin form
+ * round-tripping a value it read — would start getting a 400 on a field it did
+ * not touch. The slug is also **derived**, not typed by a user, so rejecting is
+ * the wrong response to a malformed one anyway.
+ *
+ * The pattern therefore lives in the SERVICE NORMALIZER
+ * (`packages/service-core/src/services/user/user.normalizers.ts`), where a
+ * non-conforming value is REPAIRED through `toSlug` instead of refused. Two
+ * further layers already back that up: `apps/api/src/routes/user/public/getBySlug.ts`
+ * validates the `:slug` PATH PARAM with the same regex, and
+ * `packages/seed/src/data-migrations/0038-transliterate-user-slugs.ts` backfills
+ * the rows that predate it.
+ *
+ * `UserSchema.slug` stays `.min(1)` for the separate reason that it is also the
+ * READ shape (`UserAuthorPublicResponseSchema` reuses `UserSchema.shape.slug`
+ * verbatim) and that route's `stripWithSchema` FAIL-CLOSES to HTTP 500 — a
+ * tightened read shape would turn a legacy row's 404 into a 500 on a public page.
  */
 
 // ============================================================================
 // CREATE SCHEMAS
 // ============================================================================
-
-/**
- * Public-route-conforming slug pattern (HOS-375). Mirrors the `:slug` path
- * param regex in `apps/api/src/routes/user/public/getBySlug.ts` — lowercase
- * alphanumerics, segments separated by a single hyphen or underscore. Applied
- * only to the write schemas (see the HOS-375 note above the CRUD schemas
- * JSDoc); `UserSchema.slug` stays unconstrained beyond `.min(1)`.
- */
-const UserSlugPatternSchema = UserSchema.shape.slug.regex(/^[a-z0-9]+(?:[_-][a-z0-9]+)*$/, {
-    message: 'zodError.user.slug.pattern'
-});
 
 /**
  * Schema for creating a new user
@@ -63,8 +62,6 @@ export const UserCreateInputSchema = UserSchema.omit({
     updatedById: true,
     deletedAt: true,
     deletedById: true
-}).extend({
-    slug: UserSlugPatternSchema
 });
 
 /**
@@ -108,6 +105,13 @@ export const UserCreateOutputSchema = UserReadSchema;
  * grant/revoke endpoints, which are additive and audited. A scalar `role` on a
  * generic update is exactly the "replace the hat" write the multi-role model
  * exists to remove.
+ *
+ * `settings` is overridden with {@link UserSettingsPatchSchema} (HOS-375).
+ * `stripShapeDefaults` walks only the TOP level of the shape, and `settings`
+ * itself declares no default — the defaults live on its FIELDS, one level down,
+ * where neither the strip nor `.partial()` reaches them. Read that schema's
+ * JSDoc for the full failure it closes and for why removing a `.default()` from
+ * a write-path patch shape is a widening, not a narrowing.
  */
 export const UserUpdateInputSchema = z
     .object(
@@ -136,14 +140,15 @@ export const UserUpdateInputSchema = z
             }).shape
         )
     )
-    .partial()
     .extend({
-        // HOS-375: same write-only pattern as UserCreateInputSchema (see the
-        // note above the CRUD schemas JSDoc). `.optional()` because an update
-        // omitting `slug` must mean "no change", matching every other field's
-        // `.partial()` semantics.
-        slug: UserSlugPatternSchema.optional()
-    });
+        // `stripShapeDefaults` only walks the TOP level, and `settings` itself
+        // carries no default — its FIELDS do. Left as `UserSettingsSchema`, a
+        // one-key `settings` patch was expanded by Zod into all seven defaulted
+        // keys before it ever reached the model, so the JSONB merge faithfully
+        // overwrote every sibling (HOS-375). See `UserSettingsPatchSchema`.
+        settings: UserSettingsPatchSchema.optional()
+    })
+    .partial();
 
 /**
  * Schema for partial user updates (PATCH)
