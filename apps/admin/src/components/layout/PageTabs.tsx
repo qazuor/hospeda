@@ -158,6 +158,9 @@ export const userTabs: TabConfig[] = [
 
 export const eventTabs: TabConfig[] = [
     { id: 'overview', label: 'General', labelKey: 'admin-tabs.overview', href: '' },
+    // HOS-390: photos live in `event_media`, not the entity's JSONB blob, so
+    // they get their own tab instead of fields on the edit form.
+    { id: 'gallery', label: 'Galería', labelKey: 'admin-tabs.gallery', href: '/gallery' },
     { id: 'tickets', label: 'Entradas', labelKey: 'admin-tabs.tickets', href: '/tickets' },
     { id: 'attendees', label: 'Asistentes', labelKey: 'admin-tabs.attendees', href: '/attendees' },
     { id: 'seo', label: 'SEO', labelKey: 'admin-tabs.seo', href: '/seo' }
@@ -165,6 +168,9 @@ export const eventTabs: TabConfig[] = [
 
 export const postTabs: TabConfig[] = [
     { id: 'content', label: 'Contenido', labelKey: 'admin-tabs.content', href: '' },
+    // HOS-390: photos live in `post_media`, not the entity's JSONB blob, so
+    // they get their own tab instead of fields on the edit form.
+    { id: 'gallery', label: 'Galería', labelKey: 'admin-tabs.gallery', href: '/gallery' },
     { id: 'seo', label: 'SEO', labelKey: 'admin-tabs.seo', href: '/seo' },
     {
         id: 'sponsorship',
