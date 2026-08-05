@@ -1157,7 +1157,39 @@
                 "title": "Mis eventos",
                 "subtitle": "Revisá el estado de tus eventos",
                 "empty": "Todavía no creaste ningún evento",
-                "fetchError": "No se pudo cargar la lista. Intentá recargar la página."
+                "fetchError": "No se pudo cargar la lista. Intentá recargar la página.",
+                "createCta": "+ Nuevo evento",
+                "emptyCta": "Crear mi primer evento"
+            },
+            "create": {
+                "pageTitle": "Nuevo evento",
+                "subtitle": "Completá lo básico ahora — vas a poder sumar fotos y más detalles después en el editor.",
+                "field": {
+                    "name": "Nombre",
+                    "category": "Categoría",
+                    "description": "Descripción",
+                    "startDate": "Comienza",
+                    "endDate": "Termina",
+                    "organizerId": "Organiza"
+                },
+                "hint": {
+                    "description": "Entre 50 y 2000 caracteres. El resumen del listado sale de acá."
+                },
+                "organizer": {
+                    "createNew": "+ Crear organizador nuevo",
+                    "namePlaceholder": "Nombre del organizador",
+                    "submit": "Crear organizador",
+                    "creating": "Creando...",
+                    "cancel": "Cancelar",
+                    "error": "No pudimos crear el organizador. Probá de nuevo.",
+                    "nameInvalid": "El nombre debe tener entre 3 y 100 caracteres.",
+                    "loadError": "No pudimos cargar el listado de organizadores. Recargá la página para reintentar, o creá uno nuevo abajo.",
+                    "empty": "Todavía no hay organizadores cargados. Creá el primero para poder publicar tu evento."
+                },
+                "dateOrderError": "La fecha de fin no puede ser anterior a la fecha de inicio.",
+                "error": "No pudimos crear el evento. Probá de nuevo.",
+                "submitting": "Creando...",
+                "submit": "Crear evento"
             },
             "editor": {
                 "pageTitle": "Editar evento",

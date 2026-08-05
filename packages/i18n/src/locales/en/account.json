@@ -1157,7 +1157,39 @@
                 "title": "My events",
                 "subtitle": "Check the status of your events",
                 "empty": "You haven't created any event yet",
-                "fetchError": "Couldn't load the list. Try reloading the page."
+                "fetchError": "Couldn't load the list. Try reloading the page.",
+                "createCta": "+ New event",
+                "emptyCta": "Create my first event"
+            },
+            "create": {
+                "pageTitle": "New event",
+                "subtitle": "Fill in the basics now — you'll be able to add photos and more details later in the editor.",
+                "field": {
+                    "name": "Name",
+                    "category": "Category",
+                    "description": "Description",
+                    "startDate": "Starts",
+                    "endDate": "Ends",
+                    "organizerId": "Organized by"
+                },
+                "hint": {
+                    "description": "Between 50 and 2000 characters. The listing summary comes from here."
+                },
+                "organizer": {
+                    "createNew": "+ Create new organizer",
+                    "namePlaceholder": "Organizer name",
+                    "submit": "Create organizer",
+                    "creating": "Creating...",
+                    "cancel": "Cancel",
+                    "error": "We couldn't create the organizer. Try again.",
+                    "nameInvalid": "The name must be between 3 and 100 characters.",
+                    "loadError": "We couldn't load the organizer list. Reload the page to retry, or create a new one below.",
+                    "empty": "There are no organizers yet. Create the first one to be able to publish your event."
+                },
+                "dateOrderError": "The end date can't be earlier than the start date.",
+                "error": "We couldn't create the event. Try again.",
+                "submitting": "Creating...",
+                "submit": "Create event"
             },
             "editor": {
                 "pageTitle": "Edit event",
