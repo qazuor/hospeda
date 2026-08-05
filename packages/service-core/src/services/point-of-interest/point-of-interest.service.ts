@@ -563,8 +563,17 @@ export class PointOfInterestService extends BaseCrudRelatedService<
                         'Point of interest relation not found for this destination'
                     );
                 }
-                // Remove the relation (soft delete)
-                const relation = await this.relatedModel.softDelete(
+                // Remove the relation.
+                //
+                // `hardDelete`, not `softDelete`: this is a pure join table with
+                // three columns and no `deleted_at`, and `BaseModel.softDelete`
+                // THROWS on a table without one. Every unlink used to fail with
+                // a DbError from the model layer, unconditionally — the unit
+                // tests missed it because they mock the model and hand back a
+                // relation, so the stub succeeded where the real model cannot.
+                // A join row also has no history worth preserving: the link
+                // either exists or it does not.
+                const deletedCount = await this.relatedModel.hardDelete(
                     {
                         destinationId: destinationId as DestinationIdType,
                         pointOfInterestId: pointOfInterestId as PointOfInterestIdType
@@ -572,39 +581,28 @@ export class PointOfInterestService extends BaseCrudRelatedService<
                     execCtx?.tx
                 );
 
-                // Scheduled here, before the return branching below, so BOTH
-                // shapes the model can hand back purge the destination page —
-                // and scheduled unconditionally because the delete has already
-                // been issued at this point: the write happened whether or not
-                // we can read the full relation back afterwards.
-                await this._scheduleRelationRevalidation(
-                    pointOfInterest as PointOfInterest,
-                    (destination as { slug?: string }).slug
-                );
-
-                if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
-                    const fullRelation = await this.relatedModel.findOne(
-                        {
-                            destinationId: destinationId as DestinationIdType,
-                            pointOfInterestId: pointOfInterestId as PointOfInterestIdType
-                        },
-                        execCtx?.tx
-                    );
-                    if (!fullRelation) {
-                        throw new ServiceError(
-                            ServiceErrorCode.INTERNAL_ERROR,
-                            'Failed to remove relation'
-                        );
-                    }
-                    return { relation: fullRelation };
-                }
-                if (!relation) {
+                if (deletedCount === 0) {
                     throw new ServiceError(
                         ServiceErrorCode.INTERNAL_ERROR,
                         'Failed to remove relation'
                     );
                 }
-                return { relation: relation as DestinationPointOfInterestRelation };
+
+                // Purged only once the delete is confirmed: a no-op delete
+                // changed no page, so there is nothing to evict.
+                await this._scheduleRelationRevalidation(
+                    pointOfInterest as PointOfInterest,
+                    (destination as { slug?: string }).slug
+                );
+
+                // `existing` — the row as it was BEFORE the delete, already read
+                // above for the NOT_FOUND guard. The caller is told what was
+                // removed, which is the only shape that still means anything:
+                // re-reading the row after a hard delete can only ever return
+                // null. The old code did exactly that re-read (correct under a
+                // soft delete, where the row survives) and would now throw
+                // INTERNAL_ERROR on every successful unlink.
+                return { relation: existing as DestinationPointOfInterestRelation };
             }
         });
     }
