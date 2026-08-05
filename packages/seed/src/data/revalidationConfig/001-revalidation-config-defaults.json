@@ -54,5 +54,33 @@
         "cronIntervalMinutes": 1440,
         "debounceSeconds": 60,
         "enabled": true
+    },
+    {
+        "entityType": "pointOfInterest",
+        "autoRevalidateOnChange": true,
+        "cronIntervalMinutes": 120,
+        "debounceSeconds": 10,
+        "enabled": true
+    },
+    {
+        "entityType": "attraction",
+        "autoRevalidateOnChange": true,
+        "cronIntervalMinutes": 120,
+        "debounceSeconds": 10,
+        "enabled": true
+    },
+    {
+        "entityType": "gastronomy",
+        "autoRevalidateOnChange": true,
+        "cronIntervalMinutes": 60,
+        "debounceSeconds": 5,
+        "enabled": true
+    },
+    {
+        "entityType": "experience",
+        "autoRevalidateOnChange": true,
+        "cronIntervalMinutes": 60,
+        "debounceSeconds": 5,
+        "enabled": true
     }
 ]
