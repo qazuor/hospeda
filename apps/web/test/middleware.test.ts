@@ -17,15 +17,13 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { onRequest } from '../src/middleware';
 
-// `vi.hoisted` is required, not stylistic: the `vi.mock` below is hoisted above
-// every import, and `../src/middleware` is now imported at MODULE scope (see the
-// note on that import), so the factory runs before this file's body would
-// otherwise have initialised the mock. Without `vi.hoisted` that is a TDZ
-// ReferenceError at import time.
-const parseSessionUserMock = vi.hoisted(() =>
-    vi.fn().mockResolvedValue({
+// Built via vi.hoisted because vi.mock's factory is hoisted above any
+// top-level declaration it would otherwise close over. A plain `const` here
+// works only while `../src/middleware` is imported lazily (inside a test), and
+// this file imports it statically — see the import below.
+const { parseSessionUserMock } = vi.hoisted(() => ({
+    parseSessionUserMock: vi.fn().mockResolvedValue({
         id: 'u1',
         name: 'Test User',
         email: 'test@example.com',
@@ -33,7 +31,7 @@ const parseSessionUserMock = vi.hoisted(() =>
         image: null,
         mustChangePassword: false
     })
-);
+}));
 
 // Mock only `parseSessionUser` from middleware-helpers — every other export
 // (isServerIslandRoute, isStaticAssetRoute, buildCspHeader, ...) runs for
@@ -47,28 +45,18 @@ vi.mock('../src/lib/middleware-helpers', async (importOriginal) => {
     };
 });
 
-// ---------------------------------------------------------------------------
-// Why `onRequest` is imported at MODULE scope and not with `await import(...)`
-// inside each test.
+// Imported statically, NOT via `await import(...)` inside each test.
 //
-// Every test here used to open with `const { onRequest } = await
-// import('../src/middleware')`. All of those calls resolve the SAME cached
-// module — nothing here calls `vi.resetModules()` — so only the FIRST one did
-// any work, and that work was evaluating the middleware's entire module graph.
-// A dynamic import inside a test body is charged to that test's `testTimeout`
-// (15s here), which turned "how long does this module take to load" into a
-// pass/fail condition of an assertion about session parsing.
-//
-// That bill is not small and not ours to control: `src/middleware.ts` imports
-// `./lib/icon-sprite`, whose module-level initialiser renders ~1,600 Phosphor
-// glyphs through `renderToStaticMarkup` and sha256-hashes the result. Measured
-// locally, it took the first test from 2.4s to 6.2s; on CI, from a passing 9.9s
-// to a 15,023ms timeout — a red build with nothing wrong in the middleware.
-//
-// A top-level import moves the same evaluation into the collection phase, which
-// no per-test timeout applies to. `test/lib/icon-sprite.test.ts` pays the exact
-// same cost this way and reports 49ms of test time.
-// ---------------------------------------------------------------------------
+// `src/middleware` pulls a large module graph (env, i18n, media, cache-tags,
+// the icon sprite, Sentry). Loading it inside a test body charges that graph's
+// one-time transform+import cost to that test's own 15s timeout, and only to
+// the FIRST test — every later one finds the module cached. On CI that first
+// test sat right at the cliff: on the shard that carries this file, apps/web
+// alone spends ~410s of import time across 117 files, and the test timed out
+// there twice in a row while passing locally in milliseconds and passing on
+// other runs of the identical file set. A static import pays the same cost
+// once, during collection, where it is not measured against a test timeout.
+import { onRequest } from '../src/middleware';
 
 /** Minimal Astro APIContext double sufficient for the code paths exercised here. */
 function createContext({
