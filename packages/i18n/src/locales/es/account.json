@@ -1081,6 +1081,57 @@
                 "subtitle": "Revisá el estado de tus artículos",
                 "empty": "Todavía no escribiste ninguna publicación",
                 "fetchError": "No se pudo cargar la lista. Intentá recargar la página."
+            },
+            "editor": {
+                "pageTitle": "Editar publicación",
+                "slugImmutableNotice": "La URL pública se genera al crear la nota y no se puede cambiar.",
+                "backToList": "Volver a mis publicaciones",
+                "lockNotice": "Esta nota ya fue aprobada y publicada, así que no podés editarla. Escribile al equipo si necesitás cambiar algo.",
+                "unsavedChanges": "Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?",
+                "publicationExplainer": "Tu nota se ve en el sitio público solo cuando está aprobada, pública y activa a la vez.",
+                "publishBlockedByUnsaved": "Guardá los cambios antes de cambiar la publicación.",
+                "section": {
+                    "basicInfo": "Información básica",
+                    "content": "Contenido",
+                    "details": "Detalles",
+                    "publication": "Publicación"
+                },
+                "field": {
+                    "title": "Título",
+                    "summary": "Resumen",
+                    "category": "Categoría",
+                    "content": "Contenido",
+                    "readingTime": "Tiempo de lectura (minutos)",
+                    "destination": "Destino relacionado",
+                    "destinationNone": "Sin destino relacionado"
+                },
+                "hint": {
+                    "summary": "Entre 10 y 300 caracteres. Se muestra en el listado del blog.",
+                    "content": "Mínimo 100 caracteres.",
+                    "readingTime": "Dejalo vacío para mantener el valor actual."
+                },
+                "placeholder": {
+                    "content": "Escribí tu nota..."
+                },
+                "action": {
+                    "publish": "Publicar",
+                    "unpublish": "Despublicar",
+                    "delete": "Eliminar",
+                    "deleteConfirm": "¿Eliminar esta publicación?",
+                    "deleteYes": "Sí, eliminar",
+                    "deleteNo": "Cancelar"
+                },
+                "toast": {
+                    "saved": "Cambios guardados",
+                    "noChanges": "No hay cambios para guardar",
+                    "published": "Publicación publicada",
+                    "unpublished": "Publicación despublicada",
+                    "publishError": "No se pudo cambiar la publicación.",
+                    "deleteError": "No se pudo eliminar la publicación."
+                },
+                "error": {
+                    "saveFailed": "No se pudieron guardar los cambios."
+                }
             }
         },
         "events": {
