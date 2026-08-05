@@ -3342,6 +3342,18 @@
             "required": "[PT] La versión es obligatoria"
         }
     },
+    "partner": {
+        "contentReview": {
+            "decision": {
+                "invalid": "[PT] La decisión de revisión no es válida"
+            },
+            "note": {
+                "requiredOnReject": "[PT] Rechazar el contenido requiere indicar un motivo",
+                "tooLong": "[PT] El motivo del rechazo no puede superar los {{max}} caracteres",
+                "tooShort": "[PT] El motivo del rechazo no puede estar vacío"
+            }
+        }
+    },
     "poiCategory": {
         "displayWeight": {
             "int": "[PT] El peso de visualización debe ser un número entero",
