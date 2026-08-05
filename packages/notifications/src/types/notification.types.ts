@@ -121,6 +121,20 @@ export enum NotificationType {
      */
     ALLIANCE_LEAD_DECISION = 'alliance_lead_decision',
     /**
+     * HOS-278 R-4 — sent to a service provider when their directory listing is
+     * revoked.
+     *
+     * R-4 chose "revoke, not undo": the row survives and the reason is
+     * recorded. Telling the provider is the other half of that choice — a
+     * listing that quietly stops appearing, with no message, is
+     * indistinguishable from a bug, and the provider would keep honouring a
+     * benefit for hosts who can no longer find them.
+     *
+     * TRANSACTIONAL: it reports a change to an arrangement the recipient is
+     * party to, not something they can opt out of hearing.
+     */
+    HOST_TRADE_REVOKED = 'host_trade_revoked',
+    /**
      * HOS-176 Increment A — advance notice sent to a subscriber before a plan
      * price INCREASE is applied to their MercadoPago preapproval.
      *
@@ -744,6 +758,35 @@ export interface AllianceLeadDecisionPayload extends BaseNotificationPayload {
 }
 
 /**
+ * Payload for the HOST_TRADE_REVOKED notification (HOS-278 R-4).
+ *
+ * Sent when an admin takes a service provider's directory listing down. Unlike
+ * {@link AllianceLeadDecisionPayload}, this one DOES carry the reason: it is
+ * not an internal note about the recipient, it is the explanation the
+ * recipient is owed, and the revoke endpoint requires it precisely so this
+ * email has something to say.
+ *
+ * @example
+ * ```ts
+ * const payload: HostTradeRevokedPayload = {
+ *   type: NotificationType.HOST_TRADE_REVOKED,
+ *   recipientEmail: 'proveedor@example.com',
+ *   recipientName: 'Juan Pérez',
+ *   userId: 'user-uuid',
+ *   listingName: 'Plomería Acme',
+ *   reason: 'Dejó de responder a los anfitriones.',
+ * };
+ * ```
+ */
+export interface HostTradeRevokedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.HOST_TRADE_REVOKED;
+    /** Display name of the listing that was taken down. */
+    readonly listingName: string;
+    /** Why it was revoked. Shown to the provider verbatim. */
+    readonly reason: string;
+}
+
+/**
  * Payload for the ACCOMMODATION_CALENDAR_FEED_BROKEN notification
  * (HOS-162 Phase 3, spec §14.4).
  *
@@ -841,5 +884,6 @@ export type NotificationPayload =
     | CommerceOwnerCredentialsPayload
     | AllianceClaimInvitePayload
     | AllianceLeadDecisionPayload
+    | HostTradeRevokedPayload
     | AccommodationCalendarFeedBrokenPayload
     | PlanPriceChangeNoticePayload;
