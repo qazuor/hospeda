@@ -55,6 +55,29 @@ const OWNER_SCOPE_KEY: keyof SelectHostTrade = 'ownerUserId';
 const HOST_TRADE_BENEFIT_REVIEW_PENDING = 'pending';
 
 /**
+ * Input for {@link HostTradeService.revoke}.
+ *
+ * `reason` is REQUIRED. A revocation with no reason recorded is exactly the
+ * audit gap R-4 exists to close — the row survives precisely so the question
+ * "why is this provider no longer listed?" has an answer.
+ */
+const revokeHostTradeInputSchema = z.object({
+    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    reason: z
+        .string()
+        .min(1, { message: 'zodError.hostTrade.revokeReason.required' })
+        .max(1000, { message: 'zodError.hostTrade.revokeReason.max' })
+});
+
+/** Input for {@link HostTradeService.reviewPendingBenefit}. */
+const reviewPendingBenefitInputSchema = z.object({
+    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    decision: z.enum(['approve', 'reject'], {
+        message: 'zodError.hostTrade.benefitReview.decision.invalid'
+    })
+});
+
+/**
  * Resolves the actor to the account id a listing may be owned by, or null.
  *
  * An anonymous or guest actor carries a sentinel id that is not a real `users`
@@ -557,6 +580,167 @@ export class HostTradeService extends BaseCrudService<
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'No host trade listing is owned by this account'
+                    );
+                }
+
+                return { trade: updated };
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // Admin: revoke (HOS-278 R-4) and benefit review (AC-8)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Revokes a listing: makes it invisible while KEEPING the row.
+     *
+     * R-4 was decided as "revoke, not undo". The row survives, the reason and
+     * the admin who decided are recorded, and the provider is told. Deleting
+     * instead would destroy the only evidence that the provider was ever
+     * approved, and the audit question that follows a revocation ("who took
+     * this down, and why?") would have no answer.
+     *
+     * Deliberately NOT `softDelete`. A soft-deleted row disappears from admin
+     * queries too; a revoked one must stay in front of the admins who revoked
+     * it. `isActive` is the visibility switch this table already had — the trio
+     * is what turns flipping it into a decision with an author.
+     *
+     * Gated by `HOST_TRADE_DELETE` rather than `HOST_TRADE_UPDATE`: it removes
+     * a provider from the directory, which is nearer to deletion than to an
+     * edit, and the stricter of the two permissions is the safer default.
+     *
+     * @param actor - The admin revoking.
+     * @param input - `{ id, reason }` — the reason is required, not optional.
+     * @param ctx - Optional service execution context.
+     * @returns The revoked listing.
+     */
+    public async revoke(
+        actor: Actor,
+        input: { readonly id: string; readonly reason: string },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ trade: HostTrade }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'revoke',
+            input: { actor, ...input },
+            schema: revokeHostTradeInputSchema,
+            ctx,
+            execute: async (validated, a) => {
+                checkCanDeleteHostTrade(a);
+
+                const existing = await this.model.findById(validated.id, ctx?.tx);
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Host trade not found: ${validated.id}`
+                    );
+                }
+
+                // Re-revoking is a no-op rather than an error: it would
+                // otherwise overwrite the ORIGINAL reason and author with
+                // whoever pressed the button second, quietly rewriting the
+                // audit trail this whole mechanism exists to keep.
+                if (existing.revokedAt) {
+                    return { trade: existing };
+                }
+
+                const updated = await this.model.update(
+                    { id: validated.id },
+                    {
+                        isActive: false,
+                        revokedAt: new Date(),
+                        revokedById: a.id,
+                        revokeReason: validated.reason,
+                        updatedById: a.id
+                    },
+                    ctx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Host trade not found: ${validated.id}`
+                    );
+                }
+
+                return { trade: updated };
+            }
+        });
+    }
+
+    /**
+     * Resolves a pending benefit edit (AC-8).
+     *
+     * Approving COPIES the pending values onto the live ones; rejecting
+     * DISCARDS them. Either way the pending columns and the marker are cleared,
+     * which is why `benefit_review_state` has only one value — what remains
+     * after a review is a listing with nothing pending, not a listing in an
+     * "approved edit" state.
+     *
+     * @param actor - The admin reviewing.
+     * @param input - `{ id, decision }`.
+     * @param ctx - Optional service execution context.
+     * @returns The listing after the review.
+     */
+    public async reviewPendingBenefit(
+        actor: Actor,
+        input: { readonly id: string; readonly decision: 'approve' | 'reject' },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ trade: HostTrade }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'reviewPendingBenefit',
+            input: { actor, ...input },
+            schema: reviewPendingBenefitInputSchema,
+            ctx,
+            execute: async (validated, a) => {
+                checkCanUpdateHostTrade(a);
+
+                const existing = await this.model.findById(validated.id, ctx?.tx);
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Host trade not found: ${validated.id}`
+                    );
+                }
+
+                if (!existing.benefitReviewState) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'This listing has no pending benefit edit to review'
+                    );
+                }
+
+                const cleared = {
+                    pendingBenefitType: null,
+                    pendingBenefitValue: null,
+                    pendingBenefitText: null,
+                    benefitReviewState: null,
+                    updatedById: a.id
+                };
+
+                const updated = await this.model.update(
+                    { id: validated.id },
+                    validated.decision === 'approve'
+                        ? {
+                              ...cleared,
+                              benefitType: existing.pendingBenefitType,
+                              benefitValue: existing.pendingBenefitValue,
+                              // The pending FINE PRINT becomes the live one. An
+                              // edit that cleared it legitimately leaves an
+                              // empty string, not the previous conditions —
+                              // keeping the old prose beside a new benefit is
+                              // how a listing ends up promising terms nobody
+                              // agreed to.
+                              benefit: existing.pendingBenefitText ?? ''
+                          }
+                        : cleared,
+                    ctx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Host trade not found: ${validated.id}`
                     );
                 }
 

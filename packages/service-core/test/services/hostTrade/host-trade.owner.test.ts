@@ -248,3 +248,154 @@ describe('HostTradeService.updateOwn — AC-8 / AC-9', () => {
         expect(model.update).not.toHaveBeenCalled();
     });
 });
+
+describe('HostTradeService.revoke — R-4', () => {
+    const adminActor = createActor({ permissions: [PermissionEnum.HOST_TRADE_DELETE] });
+
+    it('should hide the listing while KEEPING the row and recording who/when/why', async () => {
+        // Arrange
+        const trade = makeOwnedTrade(providerActor.id);
+        const { service, model } = buildService({
+            findById: vi.fn(async () => trade),
+            update: vi.fn(async () => trade)
+        });
+
+        // Act
+        await service.revoke(adminActor, { id: HT_ID, reason: 'Dejó de responder.' });
+
+        // Assert — isActive false, the trio filled, and NOT a soft delete: a
+        // soft-deleted row would vanish from the admin queries that need to
+        // show it.
+        const [, payload] = (model.update as ReturnType<typeof vi.fn>).mock.calls[0] ?? [];
+        expect(payload).toMatchObject({
+            isActive: false,
+            revokedById: adminActor.id,
+            revokeReason: 'Dejó de responder.'
+        });
+        expect(payload.revokedAt).toBeInstanceOf(Date);
+        expect(payload).not.toHaveProperty('deletedAt');
+        expect(model.softDelete).not.toHaveBeenCalled();
+    });
+
+    it('should refuse a revocation with no reason', async () => {
+        // Arrange — a revocation nobody can explain is the audit gap R-4 closes.
+        const { service, model } = buildService({
+            findById: vi.fn(async () => makeOwnedTrade(providerActor.id))
+        });
+
+        // Act
+        const result = await service.revoke(adminActor, { id: HT_ID, reason: '' });
+
+        // Assert
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(model.update).not.toHaveBeenCalled();
+    });
+
+    it('should not overwrite the original reason when revoked twice', async () => {
+        // Arrange — the second press must not rewrite who decided and why.
+        const alreadyRevoked = makeOwnedTrade(providerActor.id, {
+            isActive: false,
+            revokedAt: new Date('2026-01-01'),
+            revokedById: 'the-first-admin',
+            revokeReason: 'La razón original.'
+        });
+        const { service, model } = buildService({
+            findById: vi.fn(async () => alreadyRevoked),
+            update: vi.fn(async () => alreadyRevoked)
+        });
+
+        // Act
+        const result = await service.revoke(adminActor, { id: HT_ID, reason: 'Otra razón.' });
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        expect(model.update).not.toHaveBeenCalled();
+        expect(result.data?.trade.revokeReason).toBe('La razón original.');
+    });
+
+    it('should deny an actor without HOST_TRADE_DELETE', async () => {
+        const { service } = buildService({
+            findById: vi.fn(async () => makeOwnedTrade(providerActor.id))
+        });
+
+        const result = await service.revoke(providerActor, { id: HT_ID, reason: 'x' });
+
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+    });
+});
+
+describe('HostTradeService.reviewPendingBenefit — AC-8', () => {
+    const adminActor = createActor({ permissions: [PermissionEnum.HOST_TRADE_UPDATE] });
+
+    const withPendingEdit = () =>
+        makeOwnedTrade(providerActor.id, {
+            benefitType: HostTradeBenefitTypeEnum.PERCENTAGE,
+            benefitValue: 10,
+            benefit: 'Condiciones viejas.',
+            pendingBenefitType: HostTradeBenefitTypeEnum.TWO_FOR_ONE,
+            pendingBenefitValue: null,
+            pendingBenefitText: 'Sólo martes.',
+            benefitReviewState: 'pending'
+        });
+
+    it('should copy the pending benefit onto the live one when approved', async () => {
+        // Arrange
+        const trade = withPendingEdit();
+        const { service, model } = buildService({
+            findById: vi.fn(async () => trade),
+            update: vi.fn(async () => trade)
+        });
+
+        // Act
+        await service.reviewPendingBenefit(adminActor, { id: HT_ID, decision: 'approve' });
+
+        // Assert
+        const [, payload] = (model.update as ReturnType<typeof vi.fn>).mock.calls[0] ?? [];
+        expect(payload).toMatchObject({
+            benefitType: HostTradeBenefitTypeEnum.TWO_FOR_ONE,
+            benefitValue: null,
+            benefit: 'Sólo martes.',
+            pendingBenefitType: null,
+            pendingBenefitText: null,
+            benefitReviewState: null
+        });
+    });
+
+    it('should leave the live benefit untouched when rejected', async () => {
+        // Arrange — rejecting discards the proposal; the vetted offer that has
+        // been public all along stays exactly as it was.
+        const trade = withPendingEdit();
+        const { service, model } = buildService({
+            findById: vi.fn(async () => trade),
+            update: vi.fn(async () => trade)
+        });
+
+        // Act
+        await service.reviewPendingBenefit(adminActor, { id: HT_ID, decision: 'reject' });
+
+        // Assert
+        const [, payload] = (model.update as ReturnType<typeof vi.fn>).mock.calls[0] ?? [];
+        expect(payload).not.toHaveProperty('benefitType');
+        expect(payload).not.toHaveProperty('benefitValue');
+        expect(payload).not.toHaveProperty('benefit');
+        expect(payload).toMatchObject({
+            pendingBenefitType: null,
+            pendingBenefitText: null,
+            benefitReviewState: null
+        });
+    });
+
+    it('should refuse to review a listing with nothing pending', async () => {
+        const { service, model } = buildService({
+            findById: vi.fn(async () => makeOwnedTrade(providerActor.id))
+        });
+
+        const result = await service.reviewPendingBenefit(adminActor, {
+            id: HT_ID,
+            decision: 'approve'
+        });
+
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(model.update).not.toHaveBeenCalled();
+    });
+});

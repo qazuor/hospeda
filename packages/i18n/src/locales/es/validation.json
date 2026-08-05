@@ -3084,6 +3084,11 @@
         "benefit": {
             "min": "El beneficio debe tener al menos {{min}} caracteres"
         },
+        "benefitReview": {
+            "decision": {
+                "invalid": "La decisión de revisión no es válida"
+            }
+        },
         "benefitReviewState": {
             "invalid": "El estado de revisión del beneficio no es válido"
         },
@@ -3105,7 +3110,8 @@
             "min": "El nombre debe tener al menos {{min}} caracteres"
         },
         "revokeReason": {
-            "max": "El motivo no puede superar los {{max}} caracteres"
+            "max": "El motivo no puede superar los {{max}} caracteres",
+            "required": "Indicá el motivo de la revocación"
         },
         "slug": {
             "min": "El slug debe tener al menos {{min}} caracteres"
