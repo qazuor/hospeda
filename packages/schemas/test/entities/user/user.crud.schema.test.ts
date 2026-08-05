@@ -64,6 +64,56 @@ describe('User CRUD Schemas', () => {
 
             expect(() => UserCreateInputSchema.parse(invalidInput)).toThrow(ZodError);
         });
+
+        // HOS-375: the public author route (getBySlug.ts) validates its
+        // `:slug` path param against `^[a-z0-9]+(?:[_-][a-z0-9]+)*$` and 400s
+        // otherwise, so a non-conforming slug produces a permanently 404ing
+        // author page. That pattern is deliberately NOT enforced here: this is
+        // a PUBLISHED schema, and adding a regex to a shipped field is a
+        // narrowing the additive-only compat policy forbids. It lives in
+        // `UserService`'s normalizer instead, where a bad value is REPAIRED via
+        // `toSlug` rather than refused — see
+        // `packages/service-core/src/services/user/user.normalizers.ts`.
+        it('does NOT reject a non-ASCII slug — narrowing a published schema is forbidden', () => {
+            const user = createUserFixture();
+            const legacyInput = {
+                ...user,
+                slug: 'ana-rodríguez'
+            };
+
+            expect(() => UserCreateInputSchema.parse(legacyInput)).not.toThrow();
+        });
+
+        it('still rejects an EMPTY slug — the pre-existing `.min(1)` is untouched', () => {
+            // Non-vacuity for the case above: proves the field is still
+            // validated at all, and that only the added regex was removed.
+            const user = createUserFixture();
+
+            expect(() => UserCreateInputSchema.parse({ ...user, slug: '' })).toThrow(ZodError);
+        });
+
+        it('accepts a plain ASCII hyphenated slug', () => {
+            const user = createUserFixture();
+            const validInput = {
+                ...user,
+                slug: 'ana-rodriguez'
+            };
+
+            expect(() => UserCreateInputSchema.parse(validInput)).not.toThrow();
+        });
+
+        it('accepts the auto-generated `user-<8 hex>` slug shape', () => {
+            // Must keep passing: `users.slug.$defaultFn` in
+            // packages/db/src/schemas/user/user.dbschema.ts produces exactly
+            // this shape for any signup that omits a slug.
+            const user = createUserFixture();
+            const validInput = {
+                ...user,
+                slug: 'user-a1b2c3d4'
+            };
+
+            expect(() => UserCreateInputSchema.parse(validInput)).not.toThrow();
+        });
     });
 
     describe('UserUpdateInputSchema', () => {
@@ -108,6 +158,7 @@ describe('User CRUD Schemas', () => {
                 'profileCompleted',
                 'setPasswordPrompted',
                 'serviceSuspended',
+                'isSystemAccount',
                 'permissions',
                 'banned',
                 'banReason',
@@ -126,7 +177,8 @@ describe('User CRUD Schemas', () => {
                 emailVerified: true,
                 profileCompleted: true,
                 banned: true,
-                serviceSuspended: true
+                serviceSuspended: true,
+                isSystemAccount: false
             }) as Record<string, unknown>;
 
             expect(parsed.firstName).toBe('Jane');
@@ -134,6 +186,44 @@ describe('User CRUD Schemas', () => {
             expect(Object.hasOwn(parsed, 'profileCompleted')).toBe(false);
             expect(Object.hasOwn(parsed, 'banned')).toBe(false);
             expect(Object.hasOwn(parsed, 'serviceSuspended')).toBe(false);
+            // HOS-375: a generic user edit must not be able to clear the
+            // system-account flag. If it could, an unrelated profile save on a
+            // staff account would turn it back into an indexable author page.
+            expect(Object.hasOwn(parsed, 'isSystemAccount')).toBe(false);
+        });
+
+        // HOS-375: same reasoning as UserCreateInputSchema above — the public
+        // slug pattern is enforced by REPAIR in the service normalizer, never
+        // by narrowing this published write schema.
+        it('does NOT reject a non-ASCII slug — narrowing a published schema is forbidden', () => {
+            const legacyInput = { slug: 'carlos-martínez' };
+
+            expect(() => UserUpdateInputSchema.parse(legacyInput)).not.toThrow();
+        });
+
+        it('still rejects an EMPTY slug — the pre-existing `.min(1)` is untouched', () => {
+            expect(() => UserUpdateInputSchema.parse({ slug: '' })).toThrow(ZodError);
+        });
+
+        it('accepts a plain ASCII hyphenated slug', () => {
+            const validInput = { slug: 'carlos-martinez' };
+
+            expect(() => UserUpdateInputSchema.parse(validInput)).not.toThrow();
+        });
+
+        it('accepts the auto-generated `user-<8 hex>` slug shape', () => {
+            const validInput = { slug: 'user-a1b2c3d4' };
+
+            expect(() => UserUpdateInputSchema.parse(validInput)).not.toThrow();
+        });
+
+        it('omitting slug still means "no change" (partial semantics preserved)', () => {
+            const parsed = UserUpdateInputSchema.parse({ firstName: 'Jane' }) as Record<
+                string,
+                unknown
+            >;
+
+            expect(Object.hasOwn(parsed, 'slug')).toBe(false);
         });
 
         it('no longer carries a scalar `role` (HOS-296)', () => {

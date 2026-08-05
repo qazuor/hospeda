@@ -1,5 +1,5 @@
 {
-  "id": "a9656b6f-cb6d-47ee-ba92-18ca52fe5053",
+  "id": "7860a005-310a-4f1a-a164-2655b5b936ee",
   "prevId": "dfe6b170-9951-4eba-a1f2-87f754cf28fa",
   "version": "7",
   "dialect": "postgresql",
@@ -16492,49 +16492,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "pending_logo_url": {
-          "name": "pending_logo_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "pending_description": {
-          "name": "pending_description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "pending_website_url": {
-          "name": "pending_website_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "content_review_state": {
-          "name": "content_review_state",
-          "type": "partner_content_review_state_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "content_review_note": {
-          "name": "content_review_note",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "content_approved_at": {
-          "name": "content_approved_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "content_approved_by_id": {
-          "name": "content_approved_by_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -16680,21 +16637,6 @@
           "method": "btree",
           "with": {}
         },
-        "partners_contentReviewState_idx": {
-          "name": "partners_contentReviewState_idx",
-          "columns": [
-            {
-              "expression": "content_review_state",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "partners_deletedAt_idx": {
           "name": "partners_deletedAt_idx",
           "columns": [
@@ -16786,19 +16728,6 @@
           "tableTo": "users",
           "columnsFrom": [
             "owner_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "partners_content_approved_by_id_users_id_fk": {
-          "name": "partners_content_approved_by_id_users_id_fk",
-          "tableFrom": "partners",
-          "tableTo": "users",
-          "columnsFrom": [
-            "content_approved_by_id"
           ],
           "columnsTo": [
             "id"
@@ -24442,6 +24371,13 @@
           "notNull": true,
           "default": false
         },
+        "is_system_account": {
+          "name": "is_system_account",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -30817,15 +30753,6 @@
         "percentage",
         "fixed",
         "free_night"
-      ]
-    },
-    "public.partner_content_review_state_enum": {
-      "name": "partner_content_review_state_enum",
-      "schema": "public",
-      "values": [
-        "pending",
-        "approved",
-        "rejected"
       ]
     },
     "public.partner_subscription_status_enum": {

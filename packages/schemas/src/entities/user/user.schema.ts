@@ -170,6 +170,38 @@ export const UserSchema = z.object({
      */
     serviceSuspended: z.boolean().default(false).optional(),
 
+    /**
+     * HOS-375 (G-8). Marks a platform/service account rather than a person —
+     * the seeded staff accounts, and any future bot/integration identity.
+     * Mirrors the `users.is_system_account` column.
+     *
+     * Deliberately NOT derived from the account's role: roles are mutable and
+     * this property is not, so an account promoted or demoted must not change
+     * what it fundamentally IS. It is a content-curation rule (a system account
+     * never gets a public author page, however many posts it has authored), not
+     * an authorization check — do not convert it into a `PermissionEnum` gate.
+     *
+     * `.default(false)` with no `.optional()`, unlike the three flags above:
+     * the column is `NOT NULL DEFAULT false`, so a read always carries a real
+     * boolean, and widening the inferred type to `boolean | undefined` would
+     * force every consumer of the indexability predicate to write `?? false`
+     * for a case the database cannot produce. Objects that omit the key still
+     * parse — that is what `.default()` already guarantees.
+     *
+     * Exposed in exactly ONE public payload, on purpose: the author-page
+     * projection (`UserAuthorPublicResponseSchema`), whose consumer is the
+     * indexability gate of HOS-375 §6.5 — a system account must render
+     * `noindex` even with published items, a bio and an avatar (AC-13), and the
+     * web app has no other source for that bit. It discloses nothing the
+     * sitemap does not already disclose by omission.
+     *
+     * Everywhere else it stays out by construction, not by remembering to
+     * exclude it: every public/read projection of a user is an explicit
+     * allow-list (`UserPublicSchema`, `UserListItemSchema`, `UserSummarySchema`),
+     * so adding it to one is a deliberate act, as above.
+     */
+    isSystemAccount: z.boolean().default(false),
+
     // User-specific nested objects
     profile: UserProfileSchema.nullish(),
     settings: UserSettingsSchema.optional(),

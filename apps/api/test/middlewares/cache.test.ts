@@ -195,6 +195,21 @@ describe('Cache Middleware', () => {
             expect(getCallCount()).toBe(1);
         });
 
+        it('should cache the public authors endpoint (HOS-375 T-013)', async () => {
+            // `/api/v1/public/authors` must resolve to the PUBLIC bucket, not
+            // fall through unclassified (uncached) or under the PRIVATE
+            // `/api/v1/public/users` prefix — the payload is actor-blind and
+            // must be shared-cacheable at the edge.
+            const { app, getCallCount } = createTestApp({ route: '/api/v1/public/authors' });
+
+            const res1 = await app.request('/api/v1/public/authors');
+            expect(res1.headers.get('X-Cache')).toBe('MISS');
+
+            const res2 = await app.request('/api/v1/public/authors');
+            expect(res2.headers.get('X-Cache')).toBe('HIT');
+            expect(getCallCount()).toBe(1);
+        });
+
         it('should NOT cache no-cache endpoints', async () => {
             const middleware = createCacheMiddleware();
             const app = new Hono();

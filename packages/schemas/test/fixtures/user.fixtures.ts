@@ -29,6 +29,9 @@ export const createUserFixture = (overrides: Partial<UserType> = {}): UserType =
         // a user's hats live in `user_role` and are never part of the entity.
         permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
 
+        // HOS-375: the default fixture is a person, not a platform account.
+        isSystemAccount: false,
+
         // Contact info
         contactInfo: {
             personalEmail: 'john@example.com',

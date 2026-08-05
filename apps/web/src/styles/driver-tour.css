@@ -1,0 +1,123 @@
+/* ==========================================================================
+   driver.js tour styles — LAZY, off the global bundle (HOS-369 W3-4)
+   --------------------------------------------------------------------------
+   This file is NOT imported by global.css. It is pulled in by
+   `src/lib/load-driver.ts`, which is itself only reached through the dynamic
+   `import()` in TourController.client.tsx / RestartTour.client.tsx. Vite emits
+   it as a sibling CSS asset of that async chunk and injects the <link> when
+   the chunk loads — so the ~4 KB below ships only for the handful of account
+   sessions that actually run the onboarding tour, instead of on every page.
+
+   Do NOT move these rules back into global.css or import this file from a
+   layout: `test/styles/driver-css-lazy.guard.test.ts` fails if you do.
+
+   Order matters: the vendor base rules come first, the themed overrides
+   below them. `@import` must precede every other statement per the CSS spec.
+   ========================================================================== */
+@import "driver.js/dist/driver.css";
+
+/*
+ * driver.js theme overrides (host onboarding tour, BETA-121).
+ *
+ * The base `driver.js/dist/driver.css` import above ships zero visual theme
+ * (no color, no max-width, no flex footer) — without these overrides the
+ * popover renders as an unstyled block and its title/description/buttons
+ * overlap. The mapping below mirrors apps/admin/src/styles.css's driver.js
+ * theme (SPEC-174), adapted to this app's design tokens so it also flips
+ * correctly in dark mode (all tokens used here have a `[data-theme="dark"]`
+ * override in @repo/design-tokens/tokens.css, which the page already loaded
+ * globally before this file arrives):
+ *
+ *   admin var                        -> web var
+ *   --color-bg-elevated (card)       -> --core-card
+ *   --color-fg-primary               -> --core-foreground
+ *   --color-fg-secondary             -> --core-muted-foreground
+ *   --color-border                   -> --border
+ *   --color-primary (river, next/close btn) -> --brand-accent (web's CTA color)
+ *   --palette-neutral-50 (btn text)  -> --accent-foreground
+ *   --radius (popover)               -> --radius-md (compact surface, not --radius-card)
+ *   --radius - 2px (buttons)         -> --radius-button
+ */
+.driver-popover {
+    background-color: var(--core-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card-hover);
+    max-width: 340px;
+    padding: var(--space-5);
+}
+
+.driver-popover-title {
+    color: var(--core-foreground);
+    font-family: var(--font-heading);
+    font-size: var(--text-lg);
+    font-weight: 600;
+    line-height: 1.4;
+    margin-bottom: var(--space-2);
+}
+
+.driver-popover-description {
+    color: var(--core-muted-foreground);
+    font-size: var(--text-body-sm);
+    line-height: 1.5;
+}
+
+.driver-popover-footer {
+    margin-top: var(--space-4);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+.driver-popover-progress-text {
+    color: var(--core-muted-foreground);
+    font-size: var(--text-caption);
+}
+
+.driver-popover-prev-btn,
+.driver-popover-next-btn,
+.driver-popover-close-btn {
+    background-color: var(--brand-accent);
+    color: var(--accent-foreground);
+    border: none;
+    border-radius: var(--radius-button);
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+    padding: var(--space-2) var(--space-4);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease;
+}
+
+.driver-popover-prev-btn {
+    background-color: var(--muted);
+    color: var(--core-foreground);
+}
+
+.driver-popover-prev-btn:hover {
+    background-color: var(--core-muted-foreground-a20);
+}
+
+.driver-popover-next-btn:hover,
+.driver-popover-close-btn:hover {
+    background-color: var(--accent-hover);
+}
+
+.driver-overlay {
+    background-color: var(--overlay);
+}
+
+/*
+ * Reduced-motion guard, moved verbatim from global.css. The `*` guard there
+ * already matches these elements; this explicit rule is the one that shipped
+ * with BETA-121 and it is kept so the tour's motion behaviour stays defined
+ * in the same file as the rest of its theme.
+ */
+@media (prefers-reduced-motion: reduce) {
+    .driver-popover,
+    .driver-overlay,
+    .driver-highlighted-element {
+        transition: none !important;
+        animation: none !important;
+    }
+}

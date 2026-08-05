@@ -61,6 +61,7 @@ const {
 	location,
 	pricing,
 	organizer,
+	author,
 	tags,
 	seo,
 	isCancelled,
@@ -226,6 +227,7 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 			locationName={location.name}
 			isPast={isPast}
 			isCancelled={isCancelled}
+			author={author ?? null}
 			bookmarkCount={bookmarkCount}
 			locale={locale}
 		/>

@@ -193,6 +193,98 @@ describe('middleware onRequest — BETA-162 legacy /blog alias redirects to /pub
     });
 });
 
+describe('middleware onRequest — HOS-375 /publicaciones/autor/* redirects to /autores/*', () => {
+    beforeEach(() => {
+        parseSessionUserMock.mockClear();
+    });
+
+    /** Run the middleware for one path and return the redirect call's arguments. */
+    async function redirectFor(pathname: string): Promise<readonly [string, number]> {
+        const context = createContext({ pathname });
+        const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+        await onRequest(context as any, next);
+
+        expect(next).not.toHaveBeenCalled();
+        expect(context.redirect).toHaveBeenCalledTimes(1);
+        return context.redirect.mock.calls[0] as unknown as readonly [string, number];
+    }
+
+    it('redirects a bare author slug', async () => {
+        const [target, status] = await redirectFor('/es/publicaciones/autor/carmen-silva/');
+
+        expect(target).toBe('/es/autores/carmen-silva/');
+        expect(status).toBe(301);
+    });
+
+    it('redirects the bare /publicaciones/autor/ with no slug', async () => {
+        // There is no authors index yet (NG-1), so the target 404s — but the old
+        // URL 404'd too, and the day an index ships this already points at it.
+        const [target, status] = await redirectFor('/es/publicaciones/autor/');
+
+        expect(target).toBe('/es/autores/');
+        expect(status).toBe(301);
+    });
+
+    it('preserves the /page/<n>/ tail AND the query string together (AC-2)', async () => {
+        // The two are captured by different mechanisms — the tail by the regex
+        // group, the query by `context.url.search` — so a fix that keeps one can
+        // silently drop the other. Assert them in a single URL.
+        const [target, status] = await redirectFor(
+            '/es/publicaciones/autor/carmen-silva/page/3/?x=1&y=2'
+        );
+
+        expect(target).toBe('/es/autores/carmen-silva/page/3/?x=1&y=2');
+        expect(status).toBe(301);
+    });
+
+    it('carries the events pagination sub-route across as well', async () => {
+        // Nothing links to this shape today, but the redirect is a path splice —
+        // it must not care which tail it is carrying, or a future inbound link
+        // would break.
+        const [target] = await redirectFor('/pt/publicaciones/autor/ana/eventos/page/2/');
+
+        expect(target).toBe('/pt/autores/ana/eventos/page/2/');
+    });
+
+    it('is a 301 in every supported locale, never a 302', async () => {
+        // A 302 would tell Google the move is temporary and withhold the link
+        // equity this redirect exists to transfer.
+        for (const locale of ['es', 'en', 'pt'] as const) {
+            const [target, status] = await redirectFor(
+                `/${locale}/publicaciones/autor/laura-vega/`
+            );
+
+            expect(target).toBe(`/${locale}/autores/laura-vega/`);
+            expect(status).toBe(301);
+        }
+    });
+
+    it('leaves the rest of the blog alone', async () => {
+        // The regex must anchor on the `autor` segment. Matching `/publicaciones/`
+        // more loosely would send every post detail page to a non-existent
+        // `/autores/<post-slug>/`.
+        const context = createContext({ pathname: '/es/publicaciones/una-nota-cualquiera/' });
+        const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+        await onRequest(context as any, next);
+
+        expect(context.redirect).not.toHaveBeenCalled();
+        expect(next).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not hijack a sibling segment that merely starts with "autor"', async () => {
+        // `/publicaciones/autores/` (or `/autoral/`) is a different path. The
+        // tail group starts with `/`, so only the exact `autor` segment matches.
+        const context = createContext({ pathname: '/es/publicaciones/autores/' });
+        const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+        await onRequest(context as any, next);
+
+        expect(context.redirect).not.toHaveBeenCalled();
+    });
+});
+
 // ---------------------------------------------------------------------------
 // Regression: Step 4 (locale redirect) dropped the query string.
 //

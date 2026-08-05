@@ -22,7 +22,7 @@ import { execSQL } from './db-helpers.ts';
 const DEFAULT_API_BASE_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
 const DEFAULT_WEB_BASE_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321';
 
-export type UserRole = 'USER' | 'HOST' | 'ADMIN' | 'SUPER_ADMIN';
+export type UserRole = 'USER' | 'HOST' | 'EDITOR' | 'ADMIN' | 'SUPER_ADMIN';
 
 export interface CreatedUser {
     readonly id: string;

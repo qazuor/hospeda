@@ -54,6 +54,7 @@ import { adminAuditLogRoutes, adminSecurityLogRoutes } from './audit-logs';
 // ─── Non-entity route imports ─────────────────────────────────────────────────
 import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
+import { publicAuthorRoutes } from './author/public/index.js';
 import { createBillingRoutesHandler } from './billing';
 import { adminBillingRoutes } from './billing/admin';
 import { publicBillingRoutes } from './billing/public';
@@ -303,6 +304,13 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Users (public read-only: getById, batch)
         app.route('/api/v1/public/users', publicUserRoutes);
+
+        // Public authors list (HOS-375 T-012) — feeds the dynamic sitemap.
+        // Deliberately mounted at /api/v1/public/authors, NOT under
+        // /api/v1/public/users: `users` is a PRIVATE_CACHE_ENDPOINTS prefix, and
+        // this payload is actor-blind, so it needs its own PUBLIC_CACHE_ENDPOINTS
+        // entry to be shared-cacheable at the edge.
+        app.route('/api/v1/public/authors', publicAuthorRoutes);
 
         // Core entities
         app.route('/api/v1/public/accommodations', publicAccommodationRoutes);

@@ -964,11 +964,31 @@ export class PostService extends BaseCrudService<
     }
 
     /**
-     * Gets news posts, optionally filtered by date and visibility.
-     * @param actor - The user or system performing the action.
+     * Gets PUBLISHED news posts, optionally filtered by date.
+     *
+     * Its only caller is `GET /api/v1/public/posts/news` (`cacheTTL: 60`, under
+     * the `/api/v1/public/posts` prefix of `PUBLIC_CACHE_ENDPOINTS`), so it goes
+     * through {@link applyPublicReadFloor} and returns `APPROVED` + `PUBLIC` +
+     * `ACTIVE` rows to everyone, regardless of who is asking.
+     *
+     * It previously carried the same DEAD `!actor.id` guard {@link getByCategory}
+     * documents in full: `createGuestActor` (`apps/api/src/utils/actor.ts`) gives
+     * every anonymous public request a real UUID and
+     * `runWithLoggingAndValidation` rejects an id-less actor, so the branch never
+     * fired for any caller. `visibility` was therefore effectively unfiltered and
+     * `lifecycleState` never constrained at all — a `PRIVATE` news post, or a
+     * `DRAFT`/`ARCHIVED` one whose `visibility` is `PUBLIC` (the column default),
+     * reached every visitor and sat in the shared 60s cache entry.
+     *
+     * A caller-supplied `visibility` is NOT honoured here: the floor is applied
+     * LAST and pins all three state columns, so no query parameter can widen a
+     * public read. The route does not forward one either.
+     *
+     * @param actor - The user or system performing the action. Recorded for
+     *   logging and permission checks; it does not change which rows come back.
      * @param params - Optional filters for news posts.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns List of news posts
+     * @returns List of published news posts
      */
     public async getNews(
         actor: Actor,
@@ -999,11 +1019,25 @@ export class PostService extends BaseCrudService<
     }
 
     /**
-     * Gets featured posts.
-     * @param actor - The user or system performing the action.
+     * Gets PUBLISHED featured posts.
+     *
+     * Its only caller is `GET /api/v1/public/posts/featured` (`cacheTTL: 60`,
+     * under the `/api/v1/public/posts` prefix of `PUBLIC_CACHE_ENDPOINTS`), so it
+     * goes through {@link applyPublicReadFloor} and returns `APPROVED` + `PUBLIC`
+     * + `ACTIVE` rows to everyone, regardless of who is asking. It previously
+     * carried the same DEAD `!actor.id` guard {@link getByCategory} documents in
+     * full, so `PRIVATE`/`DRAFT`/`ARCHIVED` posts reached every visitor and sat
+     * in the shared 60s cache entry.
+     *
+     * A caller-supplied `visibility` is NOT honoured here: the floor is applied
+     * LAST and pins all three state columns, so no query parameter can widen a
+     * public read. The route does not forward one either.
+     *
+     * @param actor - The user or system performing the action. Recorded for
+     *   logging and permission checks; it does not change which rows come back.
      * @param params - Optional filters for featured posts.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns List of featured posts
+     * @returns List of published featured posts
      */
     public async getFeatured(
         actor: Actor,
@@ -1034,11 +1068,45 @@ export class PostService extends BaseCrudService<
     }
 
     /**
-     * Gets posts by category.
-     * @param actor - The user or system performing the action.
+     * Gets PUBLISHED posts by category.
+     *
+     * Its only caller is `GET /api/v1/public/posts/category/{category}`
+     * (`cacheTTL: 300`, under the `/api/v1/public/posts` prefix of
+     * `PUBLIC_CACHE_ENDPOINTS`), so it goes through
+     * {@link applyPublicReadFloor} and returns `APPROVED` + `PUBLIC` + `ACTIVE`
+     * rows to everyone, regardless of who is asking — see that helper's docstring for
+     * why a public read cannot branch on the actor.
+     *
+     * It previously defaulted `visibility` to `PUBLIC` only when `!actor.id`,
+     * and never constrained `lifecycleState` at all. **That guard was dead
+     * code**: `createGuestActor` (`apps/api/src/utils/actor.ts`) hands every
+     * unauthenticated public request a real UUID
+     * (`00000000-0000-4000-8000-000000000000`), and `runWithLoggingAndValidation`
+     * rejects an actor without an id outright — so `!actor.id` was never true
+     * for any caller that reached this method. The route therefore served
+     * `PRIVATE` and `DRAFT` posts to every visitor unconditionally, with the
+     * shared 300s cache entry merely widening the blast radius rather than
+     * causing it. The two failure modes it is worth keeping straight:
+     *
+     * - **Unconditional leak.** `visibility` was effectively unfiltered, and
+     *   `lifecycleState` genuinely unfiltered, so a `PRIVATE` post, or a
+     *   `DRAFT`/`ARCHIVED` one whose `visibility` is `PUBLIC` (the column
+     *   default), reached anonymous callers directly.
+     * - **Cache poisoning.** Even had the `!actor.id` branch worked, the cached
+     *   body carries no actor component and `cacheMiddleware` runs before
+     *   `authMiddleware`, so one signed-in request would have stored the
+     *   widened result under the shared anonymous entry for the whole TTL.
+     *
+     * A caller-supplied `visibility` is NOT honoured here: the floor is applied
+     * LAST and pins all three state columns, so no query parameter can widen a
+     * public read. The public HTTP schema (`PostsByCategoryHttpSchema`) cannot
+     * express it either, and the route forwards only `category`.
+     *
+     * @param actor - The user or system performing the action. Recorded for
+     *   logging and permission checks; it does not change which rows come back.
      * @param params - The category and optional filters.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns List of posts in the given category
+     * @returns List of published posts in the given category
      */
     public async getByCategory(
         actor: Actor,
@@ -1074,11 +1142,27 @@ export class PostService extends BaseCrudService<
     }
 
     /**
-     * Gets posts related to an accommodation.
-     * @param actor - The user or system performing the action.
+     * Gets PUBLISHED posts related to an accommodation.
+     *
+     * Its only caller is
+     * `GET /api/v1/public/posts/related/accommodation/{accommodationId}`
+     * (`cacheTTL: 300`, under the `/api/v1/public/posts` prefix of
+     * `PUBLIC_CACHE_ENDPOINTS`), so it goes through
+     * {@link applyPublicReadFloor} and returns `APPROVED` + `PUBLIC` + `ACTIVE`
+     * rows to everyone, regardless of who is asking. It previously carried the same DEAD
+     * `!actor.id` guard {@link getByCategory} documents in full, so
+     * `PRIVATE`/`DRAFT`/`ARCHIVED` posts reached every visitor and sat in the
+     * shared 300s cache entry.
+     *
+     * A caller-supplied `visibility` is NOT honoured here: the floor is applied
+     * LAST and pins all three state columns, so no query parameter can widen a
+     * public read. The route forwards only `accommodationId`.
+     *
+     * @param actor - The user or system performing the action. Recorded for
+     *   logging and permission checks; it does not change which rows come back.
      * @param params - The accommodationId and optional filters.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns List of posts related to the accommodation
+     * @returns List of published posts related to the accommodation
      */
     public async getByRelatedAccommodation(
         actor: Actor,
@@ -1111,11 +1195,27 @@ export class PostService extends BaseCrudService<
     }
 
     /**
-     * Gets posts related to a destination.
-     * @param actor - The user or system performing the action.
+     * Gets PUBLISHED posts related to a destination.
+     *
+     * Its only caller is
+     * `GET /api/v1/public/posts/related/destination/{destinationId}`
+     * (`cacheTTL: 300`, under the `/api/v1/public/posts` prefix of
+     * `PUBLIC_CACHE_ENDPOINTS`), so it goes through
+     * {@link applyPublicReadFloor} and returns `APPROVED` + `PUBLIC` + `ACTIVE`
+     * rows to everyone, regardless of who is asking. It previously carried the same DEAD
+     * `!actor.id` guard {@link getByCategory} documents in full, so
+     * `PRIVATE`/`DRAFT`/`ARCHIVED` posts reached every visitor and sat in the
+     * shared 300s cache entry.
+     *
+     * A caller-supplied `visibility` is NOT honoured here: the floor is applied
+     * LAST and pins all three state columns, so no query parameter can widen a
+     * public read. The route forwards only `destinationId`.
+     *
+     * @param actor - The user or system performing the action. Recorded for
+     *   logging and permission checks; it does not change which rows come back.
      * @param params - The destinationId and optional filters.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns List of posts related to the destination
+     * @returns List of published posts related to the destination
      */
     public async getByRelatedDestination(
         actor: Actor,
@@ -1148,11 +1248,26 @@ export class PostService extends BaseCrudService<
     }
 
     /**
-     * Gets posts related to an event.
-     * @param actor - The user or system performing the action.
+     * Gets PUBLISHED posts related to an event.
+     *
+     * Its only caller is `GET /api/v1/public/posts/related/event/{eventId}`
+     * (`cacheTTL: 300`, under the `/api/v1/public/posts` prefix of
+     * `PUBLIC_CACHE_ENDPOINTS`), so it goes through
+     * {@link applyPublicReadFloor} and returns `APPROVED` + `PUBLIC` + `ACTIVE`
+     * rows to everyone, regardless of who is asking. It previously carried the same DEAD
+     * `!actor.id` guard {@link getByCategory} documents in full, so
+     * `PRIVATE`/`DRAFT`/`ARCHIVED` posts reached every visitor and sat in the
+     * shared 300s cache entry.
+     *
+     * A caller-supplied `visibility` is NOT honoured here: the floor is applied
+     * LAST and pins all three state columns, so no query parameter can widen a
+     * public read. The route forwards only `eventId`.
+     *
+     * @param actor - The user or system performing the action. Recorded for
+     *   logging and permission checks; it does not change which rows come back.
      * @param params - The eventId and optional filters.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns List of posts related to the event
+     * @returns List of published posts related to the event
      */
     public async getByRelatedEvent(
         actor: Actor,
