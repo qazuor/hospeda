@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import {
     isTrustedEditorFromGrants,
+    SetTrustedEditorBodySchema,
     TRUSTED_EDITOR_PERMISSIONS,
     TrustedEditorInputSchema,
     TrustedEditorResultSchema
@@ -86,5 +87,32 @@ describe('TrustedEditorResultSchema', () => {
 
     it('rejects a missing changed flag', () => {
         expect(() => TrustedEditorResultSchema.parse({ isTrustedEditor: true })).toThrow(ZodError);
+    });
+});
+
+describe('SetTrustedEditorBodySchema', () => {
+    it('accepts either direction', () => {
+        expect(SetTrustedEditorBodySchema.parse({ trusted: true })).toEqual({ trusted: true });
+        expect(SetTrustedEditorBodySchema.parse({ trusted: false })).toEqual({ trusted: false });
+    });
+
+    it('requires trusted to be present', () => {
+        // Absent must NOT default to either direction: the endpoint is a PUT
+        // carrying the desired state, so an omitted flag is a malformed request,
+        // never an implicit "unmark".
+        expect(() => SetTrustedEditorBodySchema.parse({})).toThrow(ZodError);
+    });
+
+    it('rejects a non-boolean trusted', () => {
+        expect(() => SetTrustedEditorBodySchema.parse({ trusted: 'true' })).toThrow(ZodError);
+    });
+
+    it('is strict — the permission set is never caller-supplied', () => {
+        expect(() =>
+            SetTrustedEditorBodySchema.parse({
+                trusted: true,
+                permissions: [PermissionEnum.POST_PUBLISH_OWN]
+            })
+        ).toThrow(ZodError);
     });
 });

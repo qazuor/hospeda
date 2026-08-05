@@ -48,6 +48,23 @@ export const TrustedEditorInputSchema = z
 export type TrustedEditorInput = z.infer<typeof TrustedEditorInputSchema>;
 
 /**
+ * Body of the admin endpoint that sets trusted-editor status.
+ *
+ * The endpoint is a single `PUT` carrying the desired state rather than a
+ * `POST`/`DELETE` pair on one path: route-factory middlewares are registered per
+ * PATH and are method-agnostic, so a pair sharing a path would silently enforce
+ * whichever gate was registered first, making the second route's declared
+ * `requiredPermissions` a claim the router never honors.
+ */
+export const SetTrustedEditorBodySchema = z
+    .object({
+        trusted: z.boolean()
+    })
+    .strict();
+
+export type SetTrustedEditorBody = z.infer<typeof SetTrustedEditorBodySchema>;
+
+/**
  * Result of the atomic mark/unmark trusted-editor action.
  *
  * - `isTrustedEditor`: the resulting state (`true` after a successful mark,
