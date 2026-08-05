@@ -1739,7 +1739,33 @@ Overlaps HOS-168; this spec supplies the measurements it lacked.
   (`DestinationsMap` reads one, `slug`). Fixed by projecting to those ten before
   passing them. The 170 KB figure came from the LISTING; nobody had bucketed the
   home.
-- **W3-4** — Remove `driver.js` CSS from the global bundle.
+- **W3-4** — ~~Remove `driver.js` CSS from the global bundle.~~ **DONE 2026-08-05
+  (PR #TBD): −4,540 B raw / −788..811 B brotli on every page.** The runtime was
+  already lazy — both tour islands `await import('driver.js')` — so the only
+  thing on the critical path was the CSS: `global.css` did the vendor `@import`
+  plus ~90 lines of themed overrides, for a tour reachable only from
+  `/mi-cuenta`. The rules moved to `styles/driver-tour.css`, imported by
+  `lib/load-driver.ts`, which re-exports `driver` and is what the islands now
+  dynamically import. Vite emits the stylesheet as a sibling asset of that async
+  chunk (`load-driver.*.css`, 4,540 B raw / 1,052 B brotli), referenced by the
+  two island chunks and nothing else, so the `<link>` is injected when the tour
+  starts. The per-page saving is smaller than the asset because brotli was
+  already compressing those rules inside the 80 KB global sheet; both numbers
+  were measured on a production build, not estimated.
+
+  **The invariant that needed a guard is the dynamic import, not the file move.**
+  A plain `import { driver } from '@/lib/load-driver'` in either island folds the
+  CSS straight back into that island's eagerly linked stylesheet — the tour still
+  works, the bytes are just back, and nothing at runtime says so. The guard pins
+  all three parts (rules in their own file, one importer, dynamic import only)
+  and matches import SYNTAX rather than bare mentions, so the pointer comments in
+  `global.css` and `driver-tour.css` that explain the invariant do not trip it.
+  Its positive assertions matter as much as the negative ones: "no `.driver-` rule
+  in `global.css`" also passes if someone deletes the theme outright, which is
+  BETA-121 (unstyled popover), so the themed rules are asserted to exist in their
+  new home. Mutation-tested 4/4: static import in an island, `driver-tour.css`
+  imported from `BaseLayout.astro`, the vendor `@import` back in `global.css`, and
+  the theme deleted — each fails and names the file.
 - **W3-5** — Consolidate the 20 render-blocking stylesheets. Gated on the
   CSP/`inlineStylesheets` constraint (HOS-164/HOS-168) — do not start before
   that resolves.
