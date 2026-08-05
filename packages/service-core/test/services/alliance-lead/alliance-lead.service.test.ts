@@ -36,6 +36,7 @@ const LEAD_ID = '00000000-0000-4000-a000-000000000002';
 const ACTOR_ID = '00000000-0000-4000-a000-000000000010';
 const GUEST_ID = '00000000-0000-4000-a000-000000000011';
 const HOST_TRADE_ID = '00000000-0000-4000-a000-000000000020';
+const PARTNER_ID = '00000000-0000-4000-a000-000000000021';
 
 const adminActor: Actor = {
     id: ACTOR_ID,
@@ -60,7 +61,8 @@ const createInput = {
     contactName: 'Juan Pérez',
     email: 'juan@example.com',
     phone: '+5491112345678',
-    message: 'Nombre del negocio: Acme SA\nSitio web: https://acme.com\n\nMensaje:\nQuiero sumarme.',
+    message:
+        'Nombre del negocio: Acme SA\nSitio web: https://acme.com\n\nMensaje:\nQuiero sumarme.',
     // partnerType is required for kind='partner' since HOS-278 provisioning
     // slice D (refineAllianceLeadKindFields) — without it, createLead's
     // AllianceLeadSubmissionSchema.parse rejects every fixture below.
@@ -107,6 +109,25 @@ function makeHostTradeModel(
     return {
         findById: vi.fn().mockResolvedValue(hostTrade),
         update: vi.fn().mockResolvedValue({ ...hostTrade, ownerUserId: hostTrade.ownerUserId })
+    };
+}
+
+/**
+ * Mock factory for `PartnerModel`, used by the claim-time owner backfill.
+ *
+ * `ownerUserId` is typed to admit `undefined` as well as `null` because the
+ * schema declares it `.nullish()` — and the backfill has to treat both as
+ * "empty", so the mock must be able to express both.
+ */
+function makePartnerModel(
+    partner: { id: string; ownerUserId?: string | null } = {
+        id: PARTNER_ID,
+        ownerUserId: null
+    }
+) {
+    return {
+        findById: vi.fn().mockResolvedValue(partner),
+        update: vi.fn().mockResolvedValue({ ...partner, ownerUserId: partner.ownerUserId })
     };
 }
 
@@ -457,6 +478,158 @@ describe('AllianceLeadService', () => {
             expect(result.error).toBeUndefined();
             expect(hostTradeModel.findById).not.toHaveBeenCalled();
             expect(hostTradeModel.update).not.toHaveBeenCalled();
+        });
+
+        // HOS-278 D1 — the partner side of the same story. Provisioning a
+        // partner copies `lead.applicantUserId` into `partners.ownerUserId`,
+        // which is null for an anonymous submission. This is the only moment
+        // that null can be resolved; nothing else ever writes that column.
+        it('should backfill the provisioned partner owner when an anonymous lead is claimed', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead({ provisionedPartnerId: PARTNER_ID }));
+            (service as any)._model = model;
+            const partnerModel = makePartnerModel({ id: PARTNER_ID, ownerUserId: null });
+            (service as any)._partnerModel = partnerModel;
+
+            const result = await service.claimLead({
+                actor: claimant,
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error).toBeUndefined();
+            const [where, data] = partnerModel.update.mock.calls[0] ?? [];
+            expect(where).toEqual({ id: PARTNER_ID });
+            expect(data).toEqual(expect.objectContaining({ ownerUserId: ACTOR_ID }));
+        });
+
+        // `ownerUserId` is declared `.nullish()`, so an absent owner can arrive
+        // as `undefined` rather than `null`. A strict `=== null` emptiness check
+        // reads that as "already owned" and skips the backfill — the partner
+        // stays ownerless forever while the claim reports success.
+        it('should treat an UNDEFINED partner owner as empty, not as already owned', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead({ provisionedPartnerId: PARTNER_ID }));
+            (service as any)._model = model;
+            const partnerModel = makePartnerModel({ id: PARTNER_ID, ownerUserId: undefined });
+            (service as any)._partnerModel = partnerModel;
+
+            const result = await service.claimLead({
+                actor: claimant,
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error).toBeUndefined();
+            const [where, data] = partnerModel.update.mock.calls[0] ?? [];
+            expect(where).toEqual({ id: PARTNER_ID });
+            expect(data).toEqual(expect.objectContaining({ ownerUserId: ACTOR_ID }));
+        });
+
+        // The transaction decision is computed BEFORE `applyClaim` runs, from
+        // its own boolean. If that boolean only consults the host-trade link, a
+        // partner-only lead runs its backfill with no boundary at all: the
+        // result still looks right, so only the tx handle reaching the model
+        // can tell the two apart.
+        it('should open a transaction for a partner-only lead, not just a listing one', async () => {
+            const service = makeService();
+            const model = makeLeadModel(
+                claimableLead({
+                    provisionedHostTradeId: null,
+                    provisionedPartnerId: PARTNER_ID
+                })
+            );
+            (service as any)._model = model;
+            const partnerModel = makePartnerModel({ id: PARTNER_ID, ownerUserId: null });
+            (service as any)._partnerModel = partnerModel;
+
+            const result = await service.claimLead({
+                actor: claimant,
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error).toBeUndefined();
+            const [, , tx] = partnerModel.update.mock.calls[0] ?? [];
+            expect(tx).toBeDefined();
+        });
+
+        it('should NOT move an already-owned partner to the claiming actor', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead({ provisionedPartnerId: PARTNER_ID }));
+            (service as any)._model = model;
+            const partnerModel = makePartnerModel({
+                id: PARTNER_ID,
+                ownerUserId: 'someone-else-id'
+            });
+            (service as any)._partnerModel = partnerModel;
+
+            const result = await service.claimLead({
+                actor: claimant,
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(partnerModel.update).not.toHaveBeenCalled();
+        });
+
+        it('should not touch the partner model when the lead has no provisioned partner', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead({ provisionedPartnerId: null }));
+            (service as any)._model = model;
+            const partnerModel = makePartnerModel();
+            (service as any)._partnerModel = partnerModel;
+
+            const result = await service.claimLead({
+                actor: claimant,
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(partnerModel.findById).not.toHaveBeenCalled();
+            expect(partnerModel.update).not.toHaveBeenCalled();
+        });
+
+        // The two link columns are INDEPENDENT, so one lead can carry both. An
+        // `else if` between the two backfills would silently drop whichever
+        // came second, and nothing downstream would report it.
+        it('should backfill BOTH links when one lead provisioned a listing and a partner', async () => {
+            const service = makeService();
+            const model = makeLeadModel(
+                claimableLead({
+                    provisionedHostTradeId: HOST_TRADE_ID,
+                    provisionedPartnerId: PARTNER_ID
+                })
+            );
+            (service as any)._model = model;
+            const hostTradeModel = makeHostTradeModel({ id: HOST_TRADE_ID, ownerUserId: null });
+            (service as any)._hostTradeModel = hostTradeModel;
+            const partnerModel = makePartnerModel({ id: PARTNER_ID, ownerUserId: null });
+            (service as any)._partnerModel = partnerModel;
+
+            const result = await service.claimLead({
+                actor: claimant,
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error).toBeUndefined();
+
+            const [htWhere, htData, htTx] = hostTradeModel.update.mock.calls[0] ?? [];
+            const [pWhere, pData, pTx] = partnerModel.update.mock.calls[0] ?? [];
+
+            expect(htWhere).toEqual({ id: HOST_TRADE_ID });
+            expect(htData).toEqual(expect.objectContaining({ ownerUserId: ACTOR_ID }));
+            expect(pWhere).toEqual({ id: PARTNER_ID });
+            expect(pData).toEqual(expect.objectContaining({ ownerUserId: ACTOR_ID }));
+
+            // Both writes enlist in the SAME boundary. That is the actual
+            // guarantee: a failure between them must not leave the lead linked
+            // with only one of its two rows backfilled.
+            expect(htTx).toBeDefined();
+            expect(pTx).toBe(htTx);
         });
 
         it('should burn the token so the same link cannot be replayed', async () => {

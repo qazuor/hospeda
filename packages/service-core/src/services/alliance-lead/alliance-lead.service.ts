@@ -247,6 +247,66 @@ const APPLICANT_SCOPE_KEY: keyof SelectAllianceLead = 'applicantUserId';
  */
 const MY_LEADS_MAX = 100;
 
+/**
+ * The slice of a model the claim needs in order to backfill an owner.
+ *
+ * Structural rather than a union of `HostTradeModel | PartnerModel`, because
+ * both call sites want the SAME operation: the two differ only in which table
+ * the id points at. Writing it twice would mean maintaining the read-then-write
+ * reasoning below in two places, and letting them drift apart is precisely how
+ * one of the two programs ends up silently losing the backfill.
+ */
+interface OwnableProvisionedModel {
+    readonly findById: (
+        id: string,
+        tx?: DrizzleTransaction
+    ) => Promise<{ readonly ownerUserId?: string | null } | null>;
+    readonly update: (
+        where: { readonly id: string },
+        data: { readonly ownerUserId: string; readonly updatedById: string },
+        tx?: DrizzleTransaction
+    ) => Promise<unknown>;
+}
+
+/** The transaction handle the models accept, borrowed from one of them. */
+type DrizzleTransaction = Parameters<HostTradeModel['findById']>[1];
+
+/**
+ * Fills an EMPTY owner on a row this lead provisioned, and only an empty one.
+ *
+ * Read-then-write, not a conditional UPDATE: Drizzle's `where` builder cannot
+ * express "ownerUserId IS NULL" from a plain object (`eq(col, null)` renders
+ * `= NULL`, which never matches). And the emptiness check is the whole point —
+ * a row some other flow already attached to an account must never be moved by
+ * a later claim.
+ *
+ * Emptiness is tested with LOOSE `== null`, deliberately. `ownerUserId` is
+ * declared `.nullish()`, so its type admits `undefined` as well as `null`, and
+ * a strict `=== null` would read an undefined owner as "already owned" and skip
+ * the backfill — leaving the row ownerless forever, with the claim reporting
+ * success. Same footgun that `revokedAt` has already sprung once in this
+ * domain, in the opposite direction.
+ *
+ * @param input - The model to read/write through, the row id, the new owner, and
+ *   the transaction to enlist in.
+ */
+const backfillProvisionedOwner = async ({
+    model,
+    id,
+    ownerUserId,
+    tx
+}: {
+    readonly model: OwnableProvisionedModel;
+    readonly id: string;
+    readonly ownerUserId: string;
+    readonly tx?: DrizzleTransaction;
+}): Promise<void> => {
+    const row = await model.findById(id, tx);
+    if (row && row.ownerUserId == null) {
+        await model.update({ id }, { ownerUserId, updatedById: ownerUserId }, tx);
+    }
+};
+
 // ---------------------------------------------------------------------------
 // Claim token
 // ---------------------------------------------------------------------------
@@ -719,24 +779,31 @@ export class AllianceLeadService extends BaseService {
                     }
 
                     if (existing.provisionedHostTradeId) {
-                        // Read-then-write, not a conditional UPDATE: Drizzle's
-                        // `where` builder cannot express "ownerUserId IS
-                        // NULL" from a plain object (`eq(col, null)` renders
-                        // `= NULL`, which never matches), and this must ONLY
-                        // fill an EMPTY owner — a listing some other flow
-                        // already attached to an account must never be moved
-                        // by a later claim.
-                        const listing = await this._hostTradeModel.findById(
-                            existing.provisionedHostTradeId,
-                            txCtx?.tx
-                        );
-                        if (listing && listing.ownerUserId === null) {
-                            await this._hostTradeModel.update(
-                                { id: existing.provisionedHostTradeId },
-                                { ownerUserId: actorUserId, updatedById: actorUserId },
-                                txCtx?.tx
-                            );
-                        }
+                        await backfillProvisionedOwner({
+                            model: this._hostTradeModel,
+                            id: existing.provisionedHostTradeId,
+                            ownerUserId: actorUserId,
+                            tx: txCtx?.tx
+                        });
+                    }
+
+                    // The partner side of the same story. A `partner` lead is
+                    // provisioned by a separate admin action (§6.5 OQ-1) that
+                    // copies `lead.applicantUserId` into `partners.ownerUserId`
+                    // — null whenever the application arrived anonymously. This
+                    // is the moment that null can finally be resolved, and
+                    // nothing else in the codebase ever writes that column.
+                    //
+                    // Both links are checked because ONE LEAD CAN CARRY BOTH:
+                    // the columns are independent, so an `else if` here would
+                    // silently drop whichever backfill lost the coin toss.
+                    if (existing.provisionedPartnerId) {
+                        await backfillProvisionedOwner({
+                            model: this._partnerModel,
+                            id: existing.provisionedPartnerId,
+                            ownerUserId: actorUserId,
+                            tx: txCtx?.tx
+                        });
                     }
 
                     return updated as SelectAllianceLead;
@@ -747,10 +814,15 @@ export class AllianceLeadService extends BaseService {
                 // decision. Every other claim is a single UPDATE, and wrapping
                 // that in a transaction it does not need would be the same
                 // regression this file's own review already ruled out once.
-                // Truthiness, matching the guard inside `applyClaim`: the two
+                // Truthiness, matching the guards inside `applyClaim`: the two
                 // must agree, or a lead whose link column is absent rather than
-                // null opens a transaction for a backfill that never runs.
-                const willBackfillOwner = Boolean(existing.provisionedHostTradeId);
+                // null opens a transaction for a backfill that never runs —
+                // and, in the other direction, a partner-only lead would run
+                // its backfill OUTSIDE the boundary, leaving the linked lead
+                // and the ownerless partner able to disagree after a failure.
+                const willBackfillOwner = Boolean(
+                    existing.provisionedHostTradeId || existing.provisionedPartnerId
+                );
 
                 const updated = execCtx?.tx
                     ? await applyClaim(execCtx)
