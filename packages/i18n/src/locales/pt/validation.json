@@ -3084,6 +3084,9 @@
         "benefit": {
             "min": "[PT] El beneficio debe tener al menos {{min}} caracteres"
         },
+        "benefitReviewState": {
+            "invalid": "[PT] El estado de revisión del beneficio no es válido"
+        },
         "benefitText": {
             "max": "[PT] La letra chica no puede superar los {{max}} caracteres"
         },
@@ -3100,6 +3103,9 @@
         },
         "name": {
             "min": "[PT] El nombre debe tener al menos {{min}} caracteres"
+        },
+        "revokeReason": {
+            "max": "[PT] El motivo no puede superar los {{max}} caracteres"
         },
         "slug": {
             "min": "[PT] El slug debe tener al menos {{min}} caracteres"

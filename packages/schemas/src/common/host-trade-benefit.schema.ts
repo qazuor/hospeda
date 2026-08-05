@@ -60,6 +60,22 @@ export const HostTradeBenefitFieldsSchema = z.object({
 /** Inferred type for the structured benefit fields. */
 export type HostTradeBenefitFields = z.infer<typeof HostTradeBenefitFieldsSchema>;
 
+/**
+ * Review state of a pending benefit edit (HOS-278 AC-8).
+ *
+ * Single-valued on purpose. The states a review can END in are not recorded
+ * here: approving COPIES the pending values over the live ones and clears the
+ * marker, and rejecting DISCARDS them and clears the marker. Either way what
+ * remains is a listing with nothing pending, so an `'approved'` or `'rejected'`
+ * variant would describe a row that no longer exists.
+ */
+export const HostTradeBenefitReviewStateEnumSchema = z.enum(['pending'], {
+    message: 'zodError.hostTrade.benefitReviewState.invalid'
+});
+
+/** Inferred type for {@link HostTradeBenefitReviewStateEnumSchema}. */
+export type HostTradeBenefitReviewState = z.infer<typeof HostTradeBenefitReviewStateEnumSchema>;
+
 /** The subset of a payload {@link refineHostTradeBenefit} needs to inspect. */
 interface BenefitShapeToRefine {
     readonly benefitType?: HostTradeBenefitTypeEnum | null;

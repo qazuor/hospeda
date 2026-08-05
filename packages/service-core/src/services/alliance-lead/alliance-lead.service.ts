@@ -30,7 +30,7 @@
  */
 
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import { AllianceLeadModel, type SelectAllianceLead } from '@repo/db';
+import { AllianceLeadModel, HostTradeModel, type SelectAllianceLead } from '@repo/db';
 import {
     type AllianceLead,
     AllianceLeadAdminListQuerySchema,
@@ -54,6 +54,11 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
+import { withServiceTransaction } from '../../utils/transaction';
+import {
+    provisionServiceProviderListing,
+    resolveProvisionPlan
+} from './alliance-lead.provisioning';
 
 // ---------------------------------------------------------------------------
 // Input types (RO-RO — every public method takes a single input object)
@@ -341,6 +346,7 @@ const resolveApplicantUserId = (actor: Actor): string | null => {
  */
 export class AllianceLeadService extends BaseService {
     private readonly _model: AllianceLeadModel;
+    private readonly _hostTradeModel: HostTradeModel;
     private readonly _claimInviter: AllianceClaimInvitePort | null;
     private readonly _decisionNotifier: AllianceDecisionNotifyPort | null;
 
@@ -351,6 +357,11 @@ export class AllianceLeadService extends BaseService {
     ) {
         super(config, 'allianceLead');
         this._model = new AllianceLeadModel();
+        // The MODEL, not HostTradeService: provisioning is an effect of
+        // ALLIANCE_LEAD_MANAGE, and going through the service would additionally
+        // demand HOST_TRADE_CREATE from an admin whose permission to approve
+        // this lead is not in question.
+        this._hostTradeModel = new HostTradeModel();
         this._claimInviter = claimInviter ?? null;
         this._decisionNotifier = decisionNotifier ?? null;
     }
@@ -697,9 +708,13 @@ export class AllianceLeadService extends BaseService {
      * - `adminNote` → optional note
      * - `updatedById` → the acting admin's id
      *
-     * Never auto-provisions any role/entity (HOS-277 NG-1) — the admin
-     * provisions the corresponding partner/sponsor/editor/HostTrade entry by
-     * hand after approving.
+     * Approving a `service_provider` ALSO provisions its `host_trades`
+     * directory listing, in the same transaction (HOS-278 §6.4) — this is the
+     * one place HOS-277's NG-1 no longer holds. Partner, sponsor and editor are
+     * still provisioned by hand, as are provider leads submitted before the
+     * typed provider columns existed (see
+     * {@link provisionServiceProviderListing} for why those degrade rather than
+     * fail).
      *
      * @param params - `{ actor, id, input }`.
      * @param ctx - Optional service execution context.
@@ -732,30 +747,78 @@ export class AllianceLeadService extends BaseService {
                     );
                 }
 
-                const updatePayload: Partial<AllianceLead> = {
-                    status: validated.status,
-                    updatedById: a.id,
-                    ...(validated.adminNote === undefined ? {} : { adminNote: validated.adminNote })
+                // Provisioning and the status change must land together. A lead
+                // marked `approved` with no listing is the inconsistent state
+                // this whole slice exists to remove, and an orphan listing whose
+                // lead is still pending would be provisioned AGAIN on the retry,
+                // because the link that makes approval idempotent is written by
+                // the very update that failed.
+                //
+                // The boundary is opened here only when the caller did not
+                // already supply one — nesting would create an INDEPENDENT
+                // transaction (this package's `withServiceTransaction` does not
+                // use savepoints), which is exactly the atomicity we are buying.
+                const applyDecision = async (
+                    txCtx: ServiceContext | undefined
+                ): Promise<SelectAllianceLead> => {
+                    const provisioning =
+                        validated.status === 'approved'
+                            ? await provisionServiceProviderListing({
+                                  lead: existing,
+                                  hostTradeModel: this._hostTradeModel,
+                                  actorId: a.id,
+                                  logger: this.logger,
+                                  tx: txCtx?.tx
+                              })
+                            : null;
+
+                    const updatePayload: Partial<AllianceLead> = {
+                        status: validated.status,
+                        updatedById: a.id,
+                        ...(validated.adminNote === undefined
+                            ? {}
+                            : { adminNote: validated.adminNote }),
+                        ...(provisioning?.provisioned
+                            ? { provisionedHostTradeId: provisioning.hostTradeId }
+                            : {})
+                    };
+
+                    const row = await this._model.update(
+                        { id: validated.id },
+                        updatePayload,
+                        txCtx?.tx
+                    );
+
+                    // Same reasoning as `update` in `claimLead`: null means the
+                    // row went away mid-request. Throwing here also rolls back
+                    // any listing this call just created, which is the point of
+                    // doing both inside one boundary.
+                    if (!row) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            `Alliance lead not found: ${validated.id}`
+                        );
+                    }
+
+                    return row as SelectAllianceLead;
                 };
 
-                const updated = await this._model.update(
-                    { id: validated.id },
-                    updatePayload,
-                    execCtx?.tx
-                );
+                // A boundary is opened ONLY when a listing is actually coming.
+                // Rejections, and approvals of the other three programs, are a
+                // single UPDATE — wrapping those would make a method that needs
+                // no database connection demand one, which is precisely what
+                // broke every mocked unit test of this method when it did.
+                const willProvision =
+                    validated.status === 'approved' &&
+                    resolveProvisionPlan(existing).kind === 'provision';
 
-                // Same reasoning as `update` in `claimLead`: null means the row
-                // went away mid-request. The decision has nowhere to land, so
-                // it is reported rather than announced to an applicant whose
-                // application no longer exists.
-                if (!updated) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        `Alliance lead not found: ${validated.id}`
-                    );
-                }
+                const updated = execCtx?.tx
+                    ? await applyDecision(execCtx)
+                    : willProvision
+                      ? await withServiceTransaction(applyDecision)
+                      : await applyDecision(undefined);
 
-                const lead = toAllianceLead(updated as SelectAllianceLead);
+                const lead = toAllianceLead(updated);
 
                 if (this._decisionNotifier !== null) {
                     // AFTER the write, and deliberately NOT awaited. The status
