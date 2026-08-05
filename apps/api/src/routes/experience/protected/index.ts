@@ -2,13 +2,21 @@
  * Protected experience routes (T-020 / HOS-372)
  * Routes that require authentication.
  *
- * IMPORTANT: Routes with overlapping param patterns are registered in order from
- * most specific to most general to prevent Hono's param catch-all routes from
- * swallowing named sub-paths:
- * - /{id}/faqs/reorder (PUT) MUST be before /{id}/faqs/{faqId} (PUT/DELETE).
- * - /{experienceId}/reviews (POST) MUST be before /{id} (GET/PATCH).
- * - /{id}/media/reorder (PATCH) MUST be before /{id}/media/{mediaId} (DELETE).
- * - /{id}/media/{mediaId}/featured (PUT) MUST be before /{id}/media/{mediaId} (DELETE).
+ * Routes with overlapping param patterns are registered from most specific to
+ * most general, matching the convention the rest of the codebase follows:
+ * - /{id}/faqs/reorder (PUT) before /{id}/faqs/{faqId} (PUT/DELETE).
+ * - /{experienceId}/reviews (POST) before /{id} (GET/PATCH).
+ * - /{id}/media/reorder (PATCH) before /{id}/media/{mediaId} (DELETE).
+ * - /{id}/media/{mediaId}/featured (PUT) before /{id}/media/{mediaId} (DELETE).
+ *
+ * For the two media entries this ordering is DEFENSIVE, not load-bearing: Hono
+ * resolves a static segment ahead of a param at the same position regardless of
+ * insertion order. Verified by mutation on the post/event twin of these routes
+ * (registering the DELETE first leaves
+ * `test/routes/post-protected-media.test.ts` green). There is no equivalent
+ * commerce-side route test to re-run that mutation against here, but it is the
+ * same Hono router. The other two entries are very likely the same, but were
+ * not verified — do not read them as proven.
  */
 import { createRouter } from '../../../utils/create-app';
 import { protectedAddExperienceFaqRoute } from './addFaq';

@@ -16,8 +16,10 @@
  * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff) —
  * enforced inside `setFeaturedGastronomyMedia` via `checkGastronomyCanEditMedia`.
  *
- * NOTE: this route must be registered BEFORE /{id}/media/{mediaId} so that Hono
- * does not treat "featured" ambiguity issues (mirrors the reorder-route note).
+ * NOTE: `index.ts` registers this before /{id}/media/{mediaId} by convention.
+ * That is defensive, not required — the two paths differ in segment count, and
+ * Hono resolves the static `featured` segment regardless of insertion order
+ * (mirrors the reorder-route note).
  */
 import { GastronomyMediaSingleOutputSchema } from '@repo/schemas';
 import { GastronomyService, ServiceError, setFeaturedGastronomyMedia } from '@repo/service-core';
