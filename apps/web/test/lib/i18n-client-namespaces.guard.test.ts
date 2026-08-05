@@ -23,7 +23,10 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve as resolvePath } from 'node:path';
 import { namespaces } from '@repo/i18n/web';
 import { describe, expect, it } from 'vitest';
-import { CLIENT_I18N_NAMESPACES } from '../../src/lib/i18n-client-namespaces';
+import {
+    CLIENT_I18N_KEY_PREFIXES,
+    EXTERNAL_I18N_KEY_PREFIXES
+} from '../../src/lib/i18n-client-namespaces';
 
 const REPO_ROOT = resolvePath(__dirname, '../../../..');
 const WEB_SRC = join(REPO_ROOT, 'apps/web/src');
@@ -146,71 +149,111 @@ const stripComments = (src: string): string =>
     src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
 /**
- * Every namespace a reachable module can name.
+ * Every two-segment key prefix a reachable module can name.
  *
- * Matches any string literal whose head is a known namespace followed by a dot
- * — NOT only literals inside a `t()` call. Keys routinely live in a data
- * structure first (`config/navigation.ts`, tour steps, filter definitions) and
- * reach `t()` through a variable, so a call-site-only scan would miss them.
+ * Matches any string literal whose head is a known namespace — NOT only
+ * literals inside a `t()` call. Keys routinely live in a data structure first
+ * (`config/navigation.ts`, tour steps, filter definitions) and reach `t()`
+ * through a variable, so a call-site-only scan would miss them.
+ *
+ * A template literal contributes only the part before its first `${`, so
+ * `` `host.miniForm.types.${v}` `` yields `host.miniForm` and covers the whole
+ * subtree beneath it. That is the most that can be claimed without guessing.
  */
-function namespacesNameableFrom(modules: ReadonlySet<string>): Map<string, string[]> {
+function prefixesNameableFrom(modules: ReadonlySet<string>): Map<string, string[]> {
     const found = new Map<string, string[]>();
-    const literal = /['"`]([A-Za-z0-9_-]+)\./g;
+    const literal = /['"`]([A-Za-z0-9_-]+)\.([A-Za-z0-9_.$-]*)/g;
     for (const file of modules) {
         if (!/\.tsx?$/.test(file)) continue;
         const src = stripComments(readFileSync(file, 'utf8'));
         for (const match of src.matchAll(literal)) {
             const ns = match[1] as string;
             if (!ALL_NAMESPACES.has(ns)) continue;
-            const list = found.get(ns) ?? [];
+            // Cut at the first interpolation, then keep at most two segments.
+            const rest = (match[2] as string).split('$')[0] as string;
+            const second = rest.split('.')[0] ?? '';
+            const prefix = second ? `${ns}.${second}` : ns;
+            const list = found.get(prefix) ?? [];
             const rel = relative(REPO_ROOT, file);
-            // One entry per FILE, not per match: a module naming the namespace
-            // ten times should not fill the failure message with ten copies of
-            // its own path.
             if (list.length < 3 && !list.includes(rel)) list.push(rel);
-            found.set(ns, list);
+            found.set(prefix, list);
         }
     }
     return found;
 }
 
-describe('HOS-369 W3-2 — client i18n namespace set', () => {
+/** True when some declared prefix equals `key` or is an ancestor of it. */
+function isCovered(key: string, declared: readonly string[]): boolean {
+    return declared.some((p) => key === p || key.startsWith(`${p}.`));
+}
+
+describe('HOS-369 W3-2 — client i18n key prefixes', () => {
     const graph = buildClientGraph();
-    const nameable = namespacesNameableFrom(graph.modules);
-    const declared = new Set<string>(CLIENT_I18N_NAMESPACES);
+    const nameable = prefixesNameableFrom(graph.modules);
+    const declared = [...CLIENT_I18N_KEY_PREFIXES] as string[];
 
     it('resolves every import in the client graph', () => {
         // An unresolved import truncates the graph, and a truncated graph is how
-        // a namespace gets reported unreachable when it is not. Fail loudly.
+        // a prefix gets reported unreachable when it is not. Fail loudly.
         expect(graph.unresolved, `unresolved imports:\n${graph.unresolved.join('\n')}`).toEqual([]);
         expect(graph.modules.size).toBeGreaterThan(400);
     });
 
-    it('ships every namespace browser code can name', () => {
+    it('ships every prefix browser code can name', () => {
         const missing = [...nameable.entries()]
-            .filter(([ns]) => !declared.has(ns))
-            .map(([ns, files]) => `${ns}  (named in ${files.join(', ')})`);
+            .filter(([prefix]) => !isCovered(prefix, declared))
+            .map(([prefix, files]) => `${prefix}  (named in ${files.join(', ')})`);
 
         expect(
             missing,
-            `These namespaces are reachable from the browser but are NOT in ` +
-                `CLIENT_I18N_NAMESPACES, so their keys would render as raw key text ` +
-                `in production:\n${missing.join('\n')}`
+            'These prefixes are reachable from the browser but are NOT covered by ' +
+                `CLIENT_I18N_KEY_PREFIXES, so their keys would render as raw key ` +
+                `text in production:\n${missing.join('\n')}`
         ).toEqual([]);
     });
 
-    it('ships no namespace the browser cannot reach', () => {
-        const dead = [...declared].filter((ns) => !nameable.has(ns));
+    it('ships no prefix the browser cannot reach', () => {
+        const nameableKeys = [...nameable.keys()];
+        const dead = declared.filter(
+            (p) =>
+                !nameableKeys.some((n) => n === p || n.startsWith(`${p}.`) || p.startsWith(`${n}.`))
+        );
 
         expect(
             dead,
-            `These namespaces are in CLIENT_I18N_NAMESPACES but no client-reachable ` +
-                `module names them — they are download weight for every visitor:\n${dead.join('\n')}`
+            'These prefixes are declared but no client-reachable module names ' +
+                `them — they are download weight for every visitor:\n${dead.join('\n')}`
         ).toEqual([]);
     });
 
     it('declares only real namespaces', () => {
-        const unknown = [...declared].filter((ns) => !ALL_NAMESPACES.has(ns));
+        const unknown = declared
+            .map((p) => (p.includes('.') ? p.slice(0, p.indexOf('.')) : p))
+            .filter((ns) => !ALL_NAMESPACES.has(ns));
         expect(unknown, `not present in @repo/i18n/web: ${unknown.join(', ')}`).toEqual([]);
+    });
+
+    describe('external prefixes — key paths no scan of apps/web can see', () => {
+        // Each EXTERNAL entry exists because a package builds the key. If that
+        // code path is ever removed or renamed, the entry becomes dead weight
+        // and nobody would notice — so assert the path itself still exists.
+        it('common.apiError is still built inside @repo/i18n', () => {
+            const src = readFileSync(join(REPO_ROOT, 'packages/i18n/src/api-errors.ts'), 'utf8');
+            expect(EXTERNAL_I18N_KEY_PREFIXES).toContain('common.apiError');
+            expect(src, 'api-errors.ts no longer builds common.apiError.* keys').toContain(
+                'common.apiError.'
+            );
+        });
+
+        it('validation is still fed from @repo/schemas at runtime', () => {
+            const src = readFileSync(
+                join(REPO_ROOT, 'apps/web/src/lib/forms/field-errors.ts'),
+                'utf8'
+            );
+            // resolveValidationMessage rewrites zodError.X -> validation.X, so
+            // the whole namespace stays reachable from PUBLIC forms.
+            expect(src).toContain('resolveValidationMessage');
+            expect(declared).toContain('validation');
+        });
     });
 });

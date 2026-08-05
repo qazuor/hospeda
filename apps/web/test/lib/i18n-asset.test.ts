@@ -24,19 +24,27 @@ import {
 /**
  * Distinct per locale, and carrying a `<` that must survive as an escape.
  *
- * Both keys sit under `nav`, which is a CLIENT namespace: since HOS-369 W3-2
- * `buildBody` narrows the dictionary to `CLIENT_I18N_NAMESPACES`, so a fixture
- * under an unreachable namespace would be pruned before the escaping assertion
- * ever saw it, and this test would fail for a reason that has nothing to do
- * with escaping.
+ * Both keys sit under DECLARED client prefixes (`nav.signIn`, `nav.mobileMenu`):
+ * since HOS-369 W3-2 `buildBody` narrows the dictionary to
+ * `CLIENT_I18N_KEY_PREFIXES`, a fixture under an unreachable prefix would be
+ * pruned before the escaping assertion ever saw it, and this test would fail
+ * for a reason that has nothing to do with escaping.
  *
  * `vi.hoisted` because the mock factory below is hoisted above every
  * declaration in this file; a plain `const` would not exist yet when it runs.
  */
 const FIXTURES = vi.hoisted<Record<string, Record<string, string>>>(() => ({
-    es: { 'nav.home': 'Inicio', 'nav.terms': 'Ver <b>términos</b>', 'faq.q1': 'Pregunta' },
-    en: { 'nav.home': 'Home', 'nav.terms': 'See <b>terms</b>', 'faq.q1': 'Question' },
-    pt: { 'nav.home': 'Início', 'nav.terms': 'Ver <b>termos</b>', 'faq.q1': 'Pergunta' }
+    es: {
+        'nav.signIn': 'Inicio',
+        'nav.mobileMenu.label': 'Ver <b>términos</b>',
+        'faq.q1': 'Pregunta'
+    },
+    en: { 'nav.signIn': 'Home', 'nav.mobileMenu.label': 'See <b>terms</b>', 'faq.q1': 'Question' },
+    pt: {
+        'nav.signIn': 'Início',
+        'nav.mobileMenu.label': 'Ver <b>termos</b>',
+        'faq.q1': 'Pergunta'
+    }
 }));
 
 vi.mock('@/lib/i18n', async (importOriginal) => {
@@ -101,7 +109,7 @@ describe('getI18nAssetBody', () => {
     });
 
     it('carries the actual dictionary content', () => {
-        expect(getI18nAssetBody('en')).toContain('"nav.home":"Home"');
+        expect(getI18nAssetBody('en')).toContain('"nav.signIn":"Home"');
     });
 
     it('escapes every `<` as a unicode escape', () => {
@@ -122,7 +130,7 @@ describe('getI18nAssetBody', () => {
         const body = getI18nAssetBody('es');
 
         expect(body, 'a non-client namespace was serialized into the asset').not.toContain('"faq.');
-        expect(body, 'a client namespace was pruned by mistake').toContain('"nav.home"');
+        expect(body, 'a client prefix was pruned by mistake').toContain('"nav.signIn"');
     });
 });
 

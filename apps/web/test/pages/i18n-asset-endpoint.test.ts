@@ -16,9 +16,9 @@ import { GET, prerender } from '../../src/pages/i18n/[file].js';
 
 /** `vi.hoisted` — the mock factory below runs before any plain declaration. */
 const FIXTURES = vi.hoisted<Record<string, Record<string, string>>>(() => ({
-    es: { 'nav.home': 'Inicio' },
-    en: { 'nav.home': 'Home' },
-    pt: { 'nav.home': 'Início' }
+    es: { 'nav.signIn': 'Inicio' },
+    en: { 'nav.signIn': 'Home' },
+    pt: { 'nav.signIn': 'Início' }
 }));
 
 vi.mock('@/lib/i18n', async (importOriginal) => {
@@ -80,7 +80,7 @@ describe('GET /i18n/[file].js', () => {
     it('serves the locale the filename names, not a default one', async () => {
         const response = await get(param('pt'));
 
-        expect(await response.text()).toContain('"nav.home":"Início"');
+        expect(await response.text()).toContain('"nav.signIn":"Início"');
     });
 
     it('declares an executable JavaScript content type', async () => {
