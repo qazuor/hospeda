@@ -23,6 +23,7 @@ import { events } from '../event/event.dbschema.ts';
 import { rEntityTag } from '../tag/r_entity_tag.dbschema.ts';
 import { rPostPostTag } from '../tag/r_post_post_tag.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
+import { postMedia } from './post_media.dbschema.ts';
 import { postSponsorships } from './post_sponsorship.dbschema.ts';
 
 export const posts = pgTable(
@@ -136,5 +137,15 @@ export const postsRelations = relations(posts, ({ one, many }) => ({
      * Loaded with the nested `postTag` to flatten into a `PostTag[]` array
      * at the service layer.
      */
-    postTags: many(rPostPostTag)
+    postTags: many(rPostPostTag),
+    /**
+     * HOS-390: the relational gallery rows (`post_media`).
+     *
+     * Deliberately NOT named `media`: `posts` already has a `media` JSONB
+     * COLUMN, and a relation of the same name lands on the same key of the
+     * query result — the relation would shadow the blob that every read path
+     * still uses today. `accommodations` carries exactly that collision; it is
+     * not replicated here.
+     */
+    mediaItems: many(postMedia)
 }));
