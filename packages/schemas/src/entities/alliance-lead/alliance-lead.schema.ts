@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { BaseAuditFields } from '../../common/audit.schema.js';
+import { UserIdSchema } from '../../common/id.schema.js';
 
 // ---------------------------------------------------------------------------
 // Alliance Lead Schema
@@ -56,6 +57,8 @@ export type AllianceLeadStatus = z.infer<typeof AllianceLeadStatusEnum>;
  *   message: 'Nombre del negocio: Acme SA\n...',
  *   status: 'pending',
  *   adminNote: null,
+ *   applicantUserId: null,
+ *   claimExpiresAt: null,
  *   createdAt: new Date(),
  *   updatedAt: new Date(),
  *   createdById: null,
@@ -117,6 +120,36 @@ export const AllianceLeadSchema = z.object({
      * Optional admin note attached when the lead is reviewed via mark-handled.
      */
     adminNote: z.string().max(1000, { message: 'zodError.allianceLead.adminNote.max' }).nullish(),
+
+    /**
+     * The account this application belongs to (HOS-278 §6.2).
+     *
+     * Null is the PRIMARY case, not an edge case: the four "aliados" forms are
+     * public and most submissions arrive with no session. It is set when the
+     * submitter is authenticated, when an account is created at approval, or
+     * when the email's owner redeems a claim token.
+     *
+     * This field is the ONLY way a lead is resolved to a user. Never match by
+     * {@link AllianceLeadSchema.shape.email} (HOS-278 R-1): the lead's email is
+     * unverified, so an email match would let anyone attach an application — and
+     * whatever benefits it carries — to someone else's account.
+     */
+    applicantUserId: UserIdSchema.nullish(),
+
+    /**
+     * When the pending claim invitation for this lead stops being redeemable
+     * (7 days after it was issued — HOS-278 OQ-5). Null when no claim is
+     * outstanding.
+     *
+     * The claim TOKEN itself is deliberately absent from this schema: this
+     * schema doubles as the response allowlist for the admin leads inbox
+     * (`responseSchema` strips every field it does not declare), and a
+     * single-use secret proving ownership of an email address has no business
+     * being serialized into a list response. It stays on the DB row only.
+     */
+    claimExpiresAt: z.coerce
+        .date({ message: 'zodError.allianceLead.claimExpiresAt.invalid' })
+        .nullish(),
 
     // Audit fields (createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById)
     ...BaseAuditFields

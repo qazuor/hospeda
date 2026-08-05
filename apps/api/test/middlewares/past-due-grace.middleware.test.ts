@@ -679,6 +679,54 @@ describe('pastDueGraceMiddleware', () => {
             expect(ctx.json).not.toHaveBeenCalled();
         });
 
+        it('should call next() for the alliance protected tier even with expired grace (HOS-278)', async () => {
+            // Arrange — dual-persona user: the ACCOMMODATION subscription is
+            // past-due and grace-expired, but they are asking whether their
+            // PARTNER application was approved. Different product domain
+            // (ADR-035), and a read of non-billing state.
+            const pastDueSub = createMockSubscription({
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -9
+            });
+            setupBillingWith([pastDueSub]);
+            const ctx = createMockContext({
+                reqPath: '/api/v1/protected/alliance/leads/mine'
+            });
+            const middleware = pastDueGraceMiddleware();
+
+            // Act
+            await middleware(ctx as never, next);
+
+            // Assert
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
+
+        it('should NOT let the alliance prefix exempt a lookalike path outside the tier', async () => {
+            // Arrange — the exemption is a prefix match on the tier, not a
+            // substring match: `/protected/alliances-report` is a different
+            // route and must stay gated.
+            const pastDueSub = createMockSubscription({
+                isPastDue: true,
+                isInGracePeriod: false,
+                daysRemainingInGrace: -2
+            });
+            setupBillingWith([pastDueSub]);
+            const ctx = createMockContext({
+                reqPath: '/api/v1/protected/alliances-report'
+            });
+            const middleware = pastDueGraceMiddleware();
+
+            // Act
+            const thrown = await middleware(ctx as never, next).catch((e: unknown) => e);
+
+            // Assert
+            expect(next).not.toHaveBeenCalled();
+            expect(thrown).toBeInstanceOf(HTTPException);
+            expect((thrown as HTTPException).status).toBe(402);
+        });
+
         it('should still block non-exempt path /subscriptions with expired grace', async () => {
             // Arrange
             const pastDueSub = createMockSubscription({

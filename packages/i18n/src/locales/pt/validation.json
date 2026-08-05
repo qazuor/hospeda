@@ -521,6 +521,13 @@
         "adminNote": {
             "max": "A nota não pode exceder {{max}} caracteres"
         },
+        "claimExpiresAt": {
+            "invalid": "A data de expiração da confirmação é inválida"
+        },
+        "claimToken": {
+            "max": "O código de confirmação não pode exceder {{max}} caracteres",
+            "required": "Falta o código de confirmação"
+        },
         "contactName": {
             "max": "O nome de contato não pode exceder {{max}} caracteres",
             "min": "O nome de contato deve ter pelo menos {{min}} caracteres"

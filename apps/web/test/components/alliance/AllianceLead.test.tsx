@@ -26,6 +26,20 @@ vi.mock('../../../src/components/alliance/AllianceLead.module.css', () => ({
     })
 }));
 
+const { mockReadCachedAuthMe, mockFetchAuthMe, mockWriteCachedAuthMe } = vi.hoisted(() => ({
+    mockReadCachedAuthMe: vi.fn(),
+    mockFetchAuthMe: vi.fn(),
+    mockWriteCachedAuthMe: vi.fn()
+}));
+
+// The island resolves the visitor in the browser (HOS-278 AC-1). Mocked at the
+// module boundary so the suite drives auth state without a network.
+vi.mock('@/lib/auth-cache', () => ({
+    readCachedAuthMe: mockReadCachedAuthMe,
+    fetchAuthMe: mockFetchAuthMe,
+    writeCachedAuthMe: mockWriteCachedAuthMe
+}));
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function renderForm(kind: 'partner' | 'sponsor' | 'service_provider' | 'editor' = 'partner') {
@@ -56,6 +70,21 @@ async function fillGenericRequiredFields(
 describe('AllianceLead', () => {
     beforeEach(() => {
         global.fetch = vi.fn();
+        // Reset call history too, not just the return value: several assertions
+        // below check that /auth/me was NOT called, and a stale count from the
+        // previous test would make them pass or fail for the wrong reason.
+        mockReadCachedAuthMe.mockReset();
+        mockFetchAuthMe.mockReset();
+        // Default: anonymous visitor, the primary case for these forms.
+        mockReadCachedAuthMe.mockReturnValue(null);
+        mockFetchAuthMe.mockResolvedValue({
+            isAuthenticated: false,
+            user: null,
+            permissions: [],
+            roles: [],
+            cachedAt: Date.now()
+        });
+        mockWriteCachedAuthMe.mockReset();
     });
 
     // ── Render — generic fields ─────────────────────────────────────────────
@@ -233,6 +262,164 @@ describe('AllianceLead', () => {
     });
 
     // ── Submission ────────────────────────────────────────────────────────────
+
+    // ── Signed-in applicant (HOS-278 AC-1) ──────────────────────────────────
+    //
+    // The visitor is resolved in the BROWSER, after hydration — these pages
+    // must stay session-blind because `colaborar/editores` is edge-cached
+    // (HOS-369 W2-2). So the suite drives `/auth/me`, not a prop.
+
+    describe('Signed-in applicant', () => {
+        function renderSignedIn(user: { name: string | null; email: string | null }) {
+            mockReadCachedAuthMe.mockReturnValue({
+                isAuthenticated: true,
+                user: { id: 'u1', name: user.name ?? '', email: user.email ?? '' },
+                permissions: [],
+                roles: ['USER'],
+                cachedAt: Date.now()
+            });
+            return render(
+                <AllianceLead
+                    locale="es"
+                    kind="partner"
+                />
+            );
+        }
+
+        it('does NOT ask for the email when the account has one (AC-1)', async () => {
+            renderSignedIn({ name: 'Juan Pérez', email: 'juan@example.com' });
+
+            await waitFor(() => {
+                expect(screen.queryByLabelText(/correo electrónico/i)).not.toBeInTheDocument();
+            });
+        });
+
+        it('states the address the application will be filed under', async () => {
+            renderSignedIn({ name: 'Juan Pérez', email: 'juan@example.com' });
+
+            expect(await screen.findByText('juan@example.com')).toBeInTheDocument();
+        });
+
+        it('resolves the visitor without a network call when the shared cache is warm', async () => {
+            renderSignedIn({ name: 'Juan Pérez', email: 'juan@example.com' });
+
+            await screen.findByText('juan@example.com');
+            expect(mockFetchAuthMe).not.toHaveBeenCalled();
+        });
+
+        it('falls back to /auth/me when the shared cache is cold', async () => {
+            mockReadCachedAuthMe.mockReturnValue(null);
+            mockFetchAuthMe.mockResolvedValue({
+                isAuthenticated: true,
+                user: { id: 'u1', name: 'Juan Pérez', email: 'juan@example.com' },
+                permissions: [],
+                roles: ['USER'],
+                cachedAt: Date.now()
+            });
+
+            render(
+                <AllianceLead
+                    locale="es"
+                    kind="partner"
+                />
+            );
+
+            expect(await screen.findByText('juan@example.com')).toBeInTheDocument();
+            expect(mockWriteCachedAuthMe).toHaveBeenCalled();
+        });
+
+        it('stays anonymous when /auth/me says guest', async () => {
+            mockReadCachedAuthMe.mockReturnValue(null);
+            mockFetchAuthMe.mockResolvedValue({
+                isAuthenticated: false,
+                user: null,
+                permissions: [],
+                roles: [],
+                cachedAt: Date.now()
+            });
+
+            render(
+                <AllianceLead
+                    locale="es"
+                    kind="partner"
+                />
+            );
+
+            await waitFor(() => expect(mockFetchAuthMe).toHaveBeenCalled());
+            expect(screen.getByLabelText(/correo electrónico/i)).toBeInTheDocument();
+        });
+
+        it('pre-fills the contact name but leaves it editable', async () => {
+            renderSignedIn({ name: 'Juan Pérez', email: 'juan@example.com' });
+
+            const nameInput = (await screen.findByLabelText(/tu nombre/i)) as HTMLInputElement;
+            await waitFor(() => expect(nameInput.value).toBe('Juan Pérez'));
+            expect(nameInput).not.toBeDisabled();
+        });
+
+        it('submits the account email even though no field collected it', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ id: 'abc' })
+            } as Response);
+
+            renderSignedIn({ name: 'Juan Pérez', email: 'juan@example.com' });
+            fireEvent.change(screen.getByLabelText(/^businessName/i), {
+                target: { value: 'Acme SA' }
+            });
+            fireEvent.change(screen.getByLabelText(/^partnershipType/i), {
+                target: { value: 'Agencia de turismo' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                expect(global.fetch).toHaveBeenCalled();
+            });
+            const [, init] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
+            expect(JSON.parse(String(init.body)).email).toBe('juan@example.com');
+        });
+
+        it('sends the session cookie, or the lead would arrive unlinked (AC-1)', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ id: 'abc' })
+            } as Response);
+
+            renderSignedIn({ name: 'Juan Pérez', email: 'juan@example.com' });
+            fireEvent.change(screen.getByLabelText(/^businessName/i), {
+                target: { value: 'Acme SA' }
+            });
+            fireEvent.change(screen.getByLabelText(/^partnershipType/i), {
+                target: { value: 'Agencia de turismo' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                expect(global.fetch).toHaveBeenCalledWith(
+                    expect.any(String),
+                    expect.objectContaining({ credentials: 'include' })
+                );
+            });
+        });
+
+        it('still asks for the email when the session carries none', () => {
+            renderSignedIn({ name: 'Juan Pérez', email: null });
+
+            expect(screen.getByLabelText(/correo electrónico/i)).toBeInTheDocument();
+        });
+
+        it('still asks for the email when the session email is blank', () => {
+            renderSignedIn({ name: 'Juan Pérez', email: '   ' });
+
+            expect(screen.getByLabelText(/correo electrónico/i)).toBeInTheDocument();
+        });
+
+        it('asks an anonymous visitor for the email as before (AC-2)', () => {
+            renderForm('partner');
+
+            expect(screen.getByLabelText(/correo electrónico/i)).toBeInTheDocument();
+        });
+    });
 
     describe('Successful submission', () => {
         it('POSTs to /api/v1/public/alliance/leads', async () => {

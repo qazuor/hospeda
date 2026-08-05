@@ -54,6 +54,10 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.COMMERCE_OWNER_CREDENTIALS]:
         'Tus credenciales de acceso a Hospeda — activá tu cuenta',
 
+    // Alliance claim invitation (HOS-278 §6.2)
+    [NotificationType.ALLIANCE_CLAIM_INVITE]:
+        '¿Postulaste a {programLabel} en Hospeda? Confirmanos que fuiste vos',
+
     // Broken iCal feed alert to the host (HOS-162 Phase 3)
     [NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN]:
         'Tu calendario de {providerLabel} dejó de sincronizarse — {accommodationName}',

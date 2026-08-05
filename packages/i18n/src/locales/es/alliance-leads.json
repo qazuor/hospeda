@@ -15,6 +15,7 @@
             "topics": "Temas sobre los que te gustaría escribir",
             "experience": "Experiencia previa (opcional)"
         },
+        "accountEmailNotice": "Vamos a usar el correo de tu cuenta:",
         "messageIntro": "Mensaje:",
         "submit": "Enviar solicitud",
         "submitting": "Enviando...",

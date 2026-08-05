@@ -8,14 +8,22 @@ import { AllianceLeadSchema, AllianceLeadStatusEnum } from './alliance-lead.sche
 /**
  * Input schema for submitting a new alliance lead (public "aliados" forms).
  *
- * Excludes system-managed fields: id, status, adminNote, and all audit fields.
- * Callers supply only the applicant-facing fields (`kind`, `contactName`,
- * `email`, `phone`, `message`).
+ * Excludes system-managed fields: id, status, adminNote, the account link, and
+ * all audit fields. Callers supply only the applicant-facing fields (`kind`,
+ * `contactName`, `email`, `phone`, `message`).
+ *
+ * `applicantUserId`/`claimExpiresAt` are omitted deliberately (HOS-278 §6.2):
+ * the account link is derived server-side from the authenticated actor or from
+ * a redeemed claim token. Accepting either from the request body would let a
+ * caller attach an application to an arbitrary account — exactly the R-1 attack
+ * the "never resolve a lead by email" rule exists to prevent.
  */
 export const AllianceLeadCreateInputSchema = AllianceLeadSchema.omit({
     id: true,
     status: true,
     adminNote: true,
+    applicantUserId: true,
+    claimExpiresAt: true,
     createdAt: true,
     updatedAt: true,
     createdById: true,
@@ -72,6 +80,32 @@ export const AllianceLeadAdminUpdateInputSchema = z.object({
 
 /** TypeScript type for {@link AllianceLeadAdminUpdateInputSchema}. */
 export type AllianceLeadAdminUpdateInput = z.infer<typeof AllianceLeadAdminUpdateInputSchema>;
+
+// ---------------------------------------------------------------------------
+// Claim (applicant redeeming an emailed confirmation token)
+// ---------------------------------------------------------------------------
+
+/**
+ * Input schema for redeeming a claim invitation (HOS-278 AC-4).
+ *
+ * The token is the single-use secret from the invitation email. It is the ONLY
+ * body field: the lead comes from the path, and the identity of the claimant
+ * comes from the session — never from the request, which is the whole point of
+ * R-1 (the lead's email is unverified, so nothing the caller sends may decide
+ * whose account an application attaches to).
+ */
+export const AllianceLeadClaimInputSchema = z.object({
+    /** UUID of the lead being claimed. */
+    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    /** Single-use token from the claim invitation email. */
+    token: z
+        .string()
+        .min(1, { message: 'zodError.allianceLead.claimToken.required' })
+        .max(512, { message: 'zodError.allianceLead.claimToken.max' })
+});
+
+/** TypeScript type for {@link AllianceLeadClaimInputSchema}. */
+export type AllianceLeadClaimInput = z.infer<typeof AllianceLeadClaimInputSchema>;
 
 // ---------------------------------------------------------------------------
 // Delete
