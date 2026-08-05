@@ -90,9 +90,11 @@ export type MarkUserReadyResult = { ok: true; userId: string } | { ok: false; re
  *
  * The merge is non-destructive: any pre-existing settings keys (e.g. `theme`, other
  * `adminTours` entries) are preserved via a read-modify-write spread, mirroring the
- * pattern in `UserService.markAdminTourSeen`. `UserModel` does not declare
- * `mergeableJsonbColumns` for `settings`, so the DB-level merge cannot be relied on —
- * the merge MUST be done here before calling `model.update`.
+ * pattern in `UserService.markAdminTourSeen`. `UserModel` DOES declare `settings` in
+ * `mergeableJsonbColumns`, but that merge is SHALLOW (`existing || patch`), and what
+ * this helper writes lives two levels down (`settings.onboarding.adminTours`), so a
+ * DB-level merge would still replace the whole `onboarding` subtree. The read-modify-
+ * write below is therefore load-bearing and must stay.
  *
  * `whatsNew.baselineAt` is written with `?? new Date().toISOString()` so that re-running
  * this helper is idempotent: an existing baseline is kept as-is.

@@ -5,7 +5,7 @@ import { PermissionEnum, RoleEnum, RoleGrantReason } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { grantRole } from '@repo/service-core';
 import { hash } from 'bcryptjs';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNull } from 'drizzle-orm';
 import superAdminInput from '../data/user/required/super-admin-user.json';
 import { STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
@@ -52,6 +52,30 @@ async function grantSuperAdminRole(userId: string): Promise<void> {
  * `users` with an `IS NULL` deleted filter so a soft-deleted account can never
  * be adopted as the seeding actor — same shape as `required/aiPrompts.seed.ts`.
  *
+ * ## Why the `ORDER BY` is load-bearing, not cosmetic
+ *
+ * `LIMIT 1` without an `ORDER BY` picks whatever row Postgres happens to hand
+ * back first. On a database holding a single super admin that is stable by
+ * accident; on one holding several — a real environment where a second staff
+ * account was promoted — it can change between runs for reasons no caller
+ * controls (plan choice, physical row order after a `VACUUM`, a concurrent
+ * update moving a tuple).
+ *
+ * That turns a specific data-migration failure into a reachable one rather
+ * than a theoretical one. `0036-reattribute-imported-events.ts` resolves its
+ * fallback actor through {@link findSuperAdminActor}, and by design it THROWS
+ * when the actor it resolves is not the one `0027`/`0028` ran as. A
+ * non-deterministic pick therefore does not merely choose a different-but-fine
+ * actor: it aborts `0036` and blocks `0037`/`0038` from ever applying.
+ *
+ * `createdAt ASC` is the tiebreak because it is the one column here that is
+ * both immutable and monotonic — "the FIRST super admin this database ever
+ * had", which is by construction the one the earliest migrations ran as. `id`
+ * (a random UUID) is stable but arbitrary, and `email`/`displayName` are both
+ * mutable. `id ASC` is appended as a second key because `created_at` is not
+ * unique — two accounts promoted in the same seed run can share a timestamp,
+ * which would put the ambiguity straight back.
+ *
  * @param db - Drizzle client to read through. Callers holding an explicit
  *   client (the data-migration runner) must pass it: `getDb()`'s singleton
  *   lives on whichever `@repo/db` module copy the importer resolved, which is
@@ -72,6 +96,9 @@ async function findExistingSuperAdmin(db: DrizzleClient): Promise<{
         .from(userRole)
         .innerJoin(users, eq(users.id, userRole.userId))
         .where(and(eq(userRole.role, RoleEnum.SUPER_ADMIN), isNull(users.deletedAt)))
+        // Deterministic pick — see the JSDoc. Never drop this: `LIMIT 1` without
+        // it makes the resolved actor depend on Postgres' physical row order.
+        .orderBy(asc(users.createdAt), asc(users.id))
         .limit(1);
 
     return rows[0] ?? null;

@@ -270,6 +270,52 @@ describe('HOS-375 T-007: 0036-reattribute-imported-events (integration)', () => 
         });
     });
 
+    it('THROWS when it matches zero events and nothing was ever re-attributed', async () => {
+        // The silent-failure case. `SUPER_ADMIN_EMAIL` is hardcoded and the
+        // `ctx.actor.id` fallback only fires when that account is ABSENT — so on
+        // an environment where it EXISTS but is not the account `0027`/`0028`
+        // ran as, the lookup succeeds, matches nothing, and the fallback never
+        // engages. Reporting success there ledgers the migration forever with
+        // the imported events still under a real person's byline (AC-14).
+        await withRollback(async (tx) => {
+            await clearTargets(tx);
+            await insertUser(tx, EDITORIAL_EMAIL);
+            const superAdminId = await insertUser(tx, SUPER_ADMIN_EMAIL);
+            const promotedId = await insertUser(tx, PROMOTED_ADMIN_EMAIL);
+
+            // The import really ran as the promoted human; the fixture account
+            // exists but authored nothing.
+            await insertEvent(tx, 'imported-by-promoted', promotedId, null);
+
+            await expect(reattributeImportedEvents.up(buildCtx(tx, superAdminId))).rejects.toThrow(
+                /matched ZERO events/
+            );
+
+            // Nothing moved — the throw rolls the batch back, and the runner
+            // records no ledger entry, so a corrected re-run is still possible.
+            expect(await readAuthorId(tx, 'imported-by-promoted')).toBe(promotedId);
+        });
+    });
+
+    it('does NOT throw on the idempotent re-run — the two zero-match cases are distinguished', async () => {
+        // Non-vacuity for the case above: "matched zero" must not become a
+        // blanket failure, or the second run of a correctly-applied migration
+        // would abort the whole batch.
+        await withRollback(async (tx) => {
+            await clearTargets(tx);
+            const editorialId = await insertUser(tx, EDITORIAL_EMAIL);
+            const superAdminId = await insertUser(tx, SUPER_ADMIN_EMAIL);
+            await insertEvent(tx, 'imported-1', superAdminId, null);
+
+            await reattributeImportedEvents.up(buildCtx(tx, superAdminId));
+            const second = await reattributeImportedEvents.up(buildCtx(tx, superAdminId));
+
+            expect(second.counts?.eventsReattributed).toBe(0);
+            expect(second.summary).toMatch(/Already applied/);
+            expect(await readAuthorId(tx, 'imported-1')).toBe(editorialId);
+        });
+    });
+
     it('is a silent no-op where the editorial account does not exist', async () => {
         // An environment that has not run `0025-seed-real-blog-posts` has no
         // editorial account. Throwing would abort the whole batch (HOS-25 G-5)

@@ -58,12 +58,32 @@
  * forever without the rows ever moving. See HOS-375 §6.11 and
  * `docs/seed-migration-mechanics.md` (verdict M-C).
  *
- * ## Idempotency
+ * ## Idempotency, and why a zero match is NOT automatically fine
  *
  * Re-running is a no-op: after the first pass no event still matches
  * `author_id = <source> AND created_by_id IS NULL`, because every one of them
  * now points at the editorial account. The migration reports the post-run match
  * count so that claim is observable rather than assumed.
+ *
+ * But "nothing matched" has TWO causes, and they are opposites:
+ *
+ * - **Already applied.** The editorial account holds the imported events. This
+ *   is the idempotent re-run, and it succeeds.
+ * - **Wrong source account.** `SUPER_ADMIN_EMAIL` is a hardcoded fixture email
+ *   and the `ctx.actor.id` fallback only fires when that account is ABSENT. On
+ *   an environment where `superadmin@hospeda.com` EXISTS but is not the account
+ *   `0027`/`0028` actually ran as, the lookup succeeds, matches zero rows, and
+ *   the fallback never engages. The 44 imported events stay attributed to
+ *   whoever really imported them, `/es/autores/<their-slug>/` gets published to
+ *   Google, and the ledger records the migration as applied — so it can never
+ *   run again to fix it. AC-14 is silently unmet.
+ *
+ * The two are distinguished by asking whether the editorial account already
+ * holds events with the import signature. If it does, this ran before. If it
+ * does not, and the source matched nothing either, then nobody was
+ * re-attributed and the migration THROWS — rolling back its transaction and
+ * refusing the ledger entry, so the operator can fix the source and re-run.
+ * Reporting success here is the one outcome that cannot be recovered from.
  *
  * ## Soft-deleted rows are included on purpose
  *
@@ -150,6 +170,33 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
 
     const matchedBefore = await countImportedEvents(ctx, sourceAuthorId);
 
+    if (matchedBefore === 0) {
+        // Distinguish "already applied" from "resolved the wrong source". See
+        // the header: only the first is a legitimate no-op, and only the
+        // editorial account's own import-signature events can tell them apart
+        // (it authored none before this migration).
+        const alreadyReattributed = await countImportedEvents(ctx, editorialId);
+
+        if (alreadyReattributed > 0) {
+            return {
+                summary: `Already applied: the editorial author holds ${alreadyReattributed} imported event(s) and none remain under ${sourceAuthorId}.`,
+                counts: {
+                    eventsMatchedBefore: 0,
+                    eventsReattributed: 0,
+                    eventsMatchedAfter: 0
+                }
+            };
+        }
+
+        throw new Error(
+            `0036-reattribute-imported-events matched ZERO events and the editorial author holds none either, so nothing was re-attributed. ` +
+                `The source account was resolved to ${sourceAuthorId} (from "${SUPER_ADMIN_EMAIL}", falling back to the running actor when absent), ` +
+                `but no event carries "author_id = <that account> AND created_by_id IS NULL". ` +
+                'Refusing to record this migration as applied: ledgering it would leave the bulk-imported events attributed to a real person and publish their author page (HOS-375 AC-14), with no way to re-run. ' +
+                'Identify the account 0027/0028 actually ran as, then re-run.'
+        );
+    }
+
     const moved = await ctx.db
         .update(events)
         .set({ authorId: editorialId, updatedAt: new Date() })
@@ -158,11 +205,19 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
 
     const matchedAfter = await countImportedEvents(ctx, sourceAuthorId);
 
+    // `matchedBefore > 0` is guaranteed by the guard above, so `moved.length`
+    // can only be 0 here if a concurrent writer changed the rows mid-migration.
+    // That is a genuine anomaly, not the "already applied" case, and must not be
+    // ledgered as a success either.
+    if (moved.length === 0) {
+        throw new Error(
+            `0036-reattribute-imported-events found ${matchedBefore} matching event(s) but updated none. ` +
+                'A concurrent writer most likely changed them mid-migration. Refusing to record this as applied; re-run.'
+        );
+    }
+
     return {
-        summary:
-            moved.length > 0
-                ? `Re-attributed ${moved.length} imported event(s) from ${sourceAuthorId} to the editorial author (${matchedBefore} matched before, ${matchedAfter} after).`
-                : 'No imported event matched the super-admin + created_by_id IS NULL signature; nothing to re-attribute.',
+        summary: `Re-attributed ${moved.length} imported event(s) from ${sourceAuthorId} to the editorial author (${matchedBefore} matched before, ${matchedAfter} after).`,
         counts: {
             eventsMatchedBefore: matchedBefore,
             eventsReattributed: moved.length,

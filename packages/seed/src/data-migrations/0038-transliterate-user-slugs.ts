@@ -15,18 +15,45 @@
  * the character set, so writing them was never rejected — but
  * `GET /api/v1/public/users/by-slug/:slug` (HOS-375) validates the `:slug`
  * path param against the strict pattern above and 400s before the row is
- * even looked up, so both authors' pages 404 permanently. HOS-375 also adds
- * the same constraint to the write schemas (`UserCreateInputSchema` /
- * `UserUpdateInputSchema`), so no NEW non-conforming slug can be created —
- * this migration is the one-time backfill for rows written before that
- * constraint existed.
+ * even looked up, so both authors' pages 404 permanently.
+ *
+ * ## This migration is NOT the closing gate — new bad slugs are still possible
+ *
+ * An earlier draft of this docstring claimed HOS-375 added the same regex to
+ * `UserCreateInputSchema` / `UserUpdateInputSchema` so no NEW non-conforming
+ * slug could be created. That is false, twice over:
+ *
+ * 1. **Those regexes were never shipped.** They were removed as a narrowing of
+ *    PUBLISHED write schemas, which the package's additive-only compat policy
+ *    forbids. The pattern lives in the service normalizer instead
+ *    (`PUBLIC_SLUG_PATTERN` in
+ *    `packages/service-core/src/services/user/user.normalizers.ts`), and it
+ *    REPAIRS rather than rejects: a non-conforming value is run through
+ *    `toSlug` and the repaired result is written.
+ * 2. **The signup path never reaches that normalizer.** Better Auth's
+ *    `user.create.before` hook (`apps/api/src/lib/auth.ts`, ~L712-717) derives
+ *    the slug itself and writes the row through the Drizzle adapter, bypassing
+ *    `UserService` entirely. Its derivation is close to conforming but not
+ *    guaranteed: it lowercases, collapses every non-`[a-z0-9]` run to a single
+ *    hyphen, trims edge hyphens, then appends `-<8 hex chars>`. A display name
+ *    made entirely of characters outside `[a-z0-9]` (a CJK or Cyrillic name,
+ *    say) collapses to the empty string, and the slug becomes `-a1b2c3d4` — a
+ *    leading hyphen, which the route regex rejects.
+ *
+ * So this is a one-time BACKFILL of the rows that exist today, not a gate that
+ * closes the class of bug. It is still worth running (it fixes every currently
+ * broken author page, and it is a no-op once clean), but do not read it as
+ * proof that the invariant now holds going forward. Closing the class properly
+ * means fixing the derivation in the signup hook; that is deliberately out of
+ * this migration's scope.
  *
  * The predicate is generic (any row failing the pattern, not just these two
- * emails) because the two known fixtures are the currently-known instances
- * of a class of bug, not the whole class: any other row written before the
- * write-side constraint landed — via an older fixture, a hand-edited row, or
- * a future data-migration that forgets the pattern — gets caught the same
- * way.
+ * emails) precisely BECAUSE no write-side gate exists: the two known fixtures
+ * are the currently-known instances of a class of bug, not the whole class.
+ * Any other non-conforming row — an older fixture, a hand-edited row, a signup
+ * that hit the empty-basename case above, or a future data-migration that
+ * forgets the pattern — gets caught the same way, and re-running this migration
+ * is the documented remedy.
  *
  * ## No redirect owed
  *
@@ -106,7 +133,12 @@ export const meta = {
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];
 
-/** The same public-route constraint enforced by `getBySlug.ts` and the write schemas. */
+/**
+ * The public-route constraint enforced by `getBySlug.ts`'s `:slug` path param,
+ * and mirrored (as a repair, not a rejection) by `PUBLIC_SLUG_PATTERN` in the
+ * user service normalizer. NOT enforced by the write schemas — see the file
+ * docstring for why, and for the signup path that bypasses the normalizer.
+ */
 const CONFORMING_SLUG_PATTERN = '^[a-z0-9]+(?:[_-][a-z0-9]+)*$';
 
 /**
