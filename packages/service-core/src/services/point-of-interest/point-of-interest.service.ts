@@ -224,8 +224,8 @@ export class PointOfInterestService extends BaseCrudRelatedService<
      * @param extraDestinationSlugs - Destinations that must be purged even
      *   though the live relation table no longer links them to this POI. Only
      *   `removePointOfInterestFromDestination` needs this: by the time the
-     *   purge runs, the link is already soft-deleted, so the destination whose
-     *   page still renders the POI is precisely the one
+     *   purge runs the link row is gone, so the destination whose page still
+     *   renders the POI is precisely the one
      *   {@link _resolveDestinationSlugsForRevalidation} can no longer see.
      */
     private async _schedulePointOfInterestRevalidation(
