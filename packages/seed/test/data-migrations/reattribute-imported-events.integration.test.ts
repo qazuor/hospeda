@@ -19,7 +19,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { DrizzleClient } from '@repo/db';
-import { eq, events, getDb, inArray, initializeDb, resetDb, users } from '@repo/db';
+import { eq, events, getDb, inArray, initializeDb, isNull, resetDb, users } from '@repo/db';
 import { EventCategoryEnum, EventDatePrecisionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { config as loadEnv } from 'dotenv';
@@ -137,6 +137,20 @@ async function readAuthorId(tx: DrizzleClient, slug: string): Promise<string | u
         .limit(1);
 
     return rows[0]?.authorId;
+}
+
+/**
+ * Deletes every event carrying the import signature, whoever authored it.
+ *
+ * Establishes a deterministic "this environment received no import" baseline
+ * regardless of what the shared database happens to hold, without ever touching
+ * data outside the rolled-back transaction — the same idiom
+ * `transliterate-user-slugs.integration.test.ts` uses for its own global
+ * predicate. Scoped to `created_by_id IS NULL` so human-authored events (which
+ * the migration must never consider) are left in place.
+ */
+async function clearAllImportedEvents(tx: DrizzleClient): Promise<void> {
+    await tx.delete(events).where(isNull(events.createdById));
 }
 
 /**
@@ -313,6 +327,38 @@ describe('HOS-375 T-007: 0040-reattribute-imported-events (integration)', () => 
             expect(second.counts?.eventsReattributed).toBe(0);
             expect(second.summary).toMatch(/Already applied/);
             expect(await readAuthorId(tx, 'imported-1')).toBe(editorialId);
+        });
+    });
+
+    it('is a no-op — not a failure — where no event carries the import signature', async () => {
+        // The third zero-match cause, and the one that broke CI. `0027`/`0028`
+        // SKIP every event whose destination is absent and still report
+        // success, so any environment without the base destination seed (the
+        // integration database this suite runs against, and every `--data-migrate`
+        // against it) reaches this migration with zero imported events. Throwing
+        // there aborts the batch over a condition those two migrations
+        // deliberately support, and under HOS-25 G-5 also blocks `0041`/`0042`
+        // from ever applying.
+        await withRollback(async (tx) => {
+            await clearTargets(tx);
+            await clearAllImportedEvents(tx);
+            const editorialId = await insertUser(tx, EDITORIAL_EMAIL);
+            const superAdminId = await insertUser(tx, SUPER_ADMIN_EMAIL);
+            const humanId = await insertUser(tx, HUMAN_EMAIL);
+
+            // Human-authored events DO exist — they are simply not imports, so
+            // their presence must not be mistaken for one.
+            await insertEvent(tx, 'human-authored', humanId, humanId);
+
+            const result = await reattributeImportedEvents.up(buildCtx(tx, superAdminId));
+
+            expect(result.counts?.eventsReattributed).toBe(0);
+            expect(result.summary).toMatch(/no event .* carries the import signature/i);
+
+            // Non-vacuity: the account the migration would have moved events TO
+            // exists, so this is not the "editorial absent" branch below.
+            expect(editorialId).toBeTruthy();
+            expect(await readAuthorId(tx, 'human-authored')).toBe(humanId);
         });
     });
 

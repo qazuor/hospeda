@@ -65,10 +65,18 @@
  * now points at the editorial account. The migration reports the post-run match
  * count so that claim is observable rather than assumed.
  *
- * But "nothing matched" has TWO causes, and they are opposites:
+ * But "nothing matched" has THREE causes, and only one of them is a failure:
  *
  * - **Already applied.** The editorial account holds the imported events. This
  *   is the idempotent re-run, and it succeeds.
+ * - **Never imported here.** No event in the environment carries the import
+ *   signature at all, because `0027`/`0028` inserted none. That is not a
+ *   hypothetical: both of them deliberately SKIP every event whose destination
+ *   is absent and still report success, precisely so an environment without the
+ *   base destination seed (the CI integration database is exactly that) gets a
+ *   no-op-but-successful pass instead of a hard failure. Throwing here would
+ *   abort the batch — and under HOS-25 G-5 also block `0041`/`0042` — over a
+ *   condition those two migrations explicitly support.
  * - **Wrong source account.** `SUPER_ADMIN_EMAIL` is a hardcoded fixture email
  *   and the `ctx.actor.id` fallback only fires when that account is ABSENT. On
  *   an environment where `superadmin@hospeda.com` EXISTS but is not the account
@@ -78,12 +86,20 @@
  *   Google, and the ledger records the migration as applied — so it can never
  *   run again to fix it. AC-14 is silently unmet.
  *
- * The two are distinguished by asking whether the editorial account already
- * holds events with the import signature. If it does, this ran before. If it
- * does not, and the source matched nothing either, then nobody was
- * re-attributed and the migration THROWS — rolling back its transaction and
- * refusing the ledger entry, so the operator can fix the source and re-run.
- * Reporting success here is the one outcome that cannot be recovered from.
+ * Two questions separate them, asked in this order. First, does the editorial
+ * account already hold events with the import signature? If so, this ran
+ * before. Second, does ANY event in the database carry that signature? If not,
+ * there is no import here to re-attribute — and, decisively, nothing that could
+ * be mis-attributed either: the risk this guard exists for is imported events
+ * sitting under a real person's byline, which cannot be the case when no such
+ * row exists at all.
+ *
+ * Only when both answers are no — the signature exists, but under neither the
+ * resolved source nor the editorial account — is the third case real. Then
+ * nobody was re-attributed and the migration THROWS, rolling back its
+ * transaction and refusing the ledger entry, so the operator can fix the source
+ * and re-run. Reporting success there is the one outcome that cannot be
+ * recovered from.
  *
  * ## Soft-deleted rows are included on purpose
  *
@@ -144,6 +160,23 @@ async function countImportedEvents(ctx: SeedMigrationCtx, authorId: string): Pro
     return rows.length;
 }
 
+/**
+ * Counts events carrying the import signature under ANY author.
+ *
+ * Deliberately author-blind: it answers "does this environment hold imported
+ * events at all", which is what separates "0027/0028 never inserted anything
+ * here" from "they inserted under an account this migration failed to resolve".
+ * See the header's three-causes section.
+ */
+async function countAllImportedEvents(ctx: SeedMigrationCtx): Promise<number> {
+    const rows = await ctx.db
+        .select({ id: events.id })
+        .from(events)
+        .where(isNull(events.createdById));
+
+    return rows.length;
+}
+
 export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     const editorialId = await findUserIdByEmail(ctx, EDITORIAL_EMAIL);
 
@@ -188,10 +221,29 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
             };
         }
 
+        // Second question: does the environment hold ANY imported event? When
+        // it does not, `0027`/`0028` skipped their batches here (no base
+        // destination seed) and there is nothing to re-attribute — and nothing
+        // that could be mis-attributed either. See the header.
+        const importSignatureTotal = await countAllImportedEvents(ctx);
+
+        if (importSignatureTotal === 0) {
+            return {
+                summary:
+                    'No event in this environment carries the import signature (author + created_by_id IS NULL); ' +
+                    '0027/0028 inserted none here, so there is nothing to re-attribute.',
+                counts: {
+                    eventsMatchedBefore: 0,
+                    eventsReattributed: 0,
+                    eventsMatchedAfter: 0
+                }
+            };
+        }
+
         throw new Error(
             `0040-reattribute-imported-events matched ZERO events and the editorial author holds none either, so nothing was re-attributed. ` +
                 `The source account was resolved to ${sourceAuthorId} (from "${SUPER_ADMIN_EMAIL}", falling back to the running actor when absent), ` +
-                `but no event carries "author_id = <that account> AND created_by_id IS NULL". ` +
+                `but no event carries "author_id = <that account> AND created_by_id IS NULL" — while ${importSignatureTotal} event(s) in this database DO carry the import signature under some other account. ` +
                 'Refusing to record this migration as applied: ledgering it would leave the bulk-imported events attributed to a real person and publish their author page (HOS-375 AC-14), with no way to re-run. ' +
                 'Identify the account 0027/0028 actually ran as, then re-run.'
         );
