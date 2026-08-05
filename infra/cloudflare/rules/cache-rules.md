@@ -481,3 +481,41 @@ purge returns `Unauthorized` — which looks like a credential problem and is no
 
 The trailing slash on `/api/revalidate/` is mandatory; without it Astro's
 trailing-slash middleware answers 301 and the POST body is lost.
+
+## `/i18n/<locale>.<hash>.js` — outside every rule on this page
+
+Wave D moved the client translation dictionary out of the page HTML (~632 KB for
+`es`, byte-identical on every page, 46.4% of a listing page) into a
+content-addressed asset served by `apps/web/src/pages/i18n/[file].js.ts`.
+
+**No rule on this page matches it, and none should.** The W1-2 rule requires
+`http.request.uri.query eq ""` *and* one of its 24 path prefixes; `/i18n/` is not
+one of them. The asset instead falls to Cloudflare's **default** caching for
+static file extensions, which honours the origin's `Cache-Control: public,
+max-age=31536000, immutable`.
+
+That is a claim about Cloudflare's defaults, not something this repo controls —
+**verify it by measurement on staging before trusting it**, exactly as every
+other row on this page was verified:
+
+```bash
+# Read the current hash out of the page, then probe the asset twice.
+URL=$(curl -sS https://staging.hospeda.com.ar/es/ | grep -o '/i18n/es\.[0-9a-f]\{8\}\.js' | head -1)
+for i in 1 2; do
+  curl -sS -o /dev/null -D - "https://staging.hospeda.com.ar$URL" \
+    | grep -iE '^(HTTP|cf-cache-status|cache-control)'
+done
+```
+
+Use `-o /dev/null -D -`, never `-I`: `-I` sends HEAD, and a HEAD never reports a
+representative cache status.
+
+**This asset is never purged, by design.** The filename carries
+`sha256(body).slice(0,8)`, so changing a translation produces a NEW URL and the
+old one simply stops being requested. The endpoint 404s any hash that is not the
+current one — without that, a stale URL would be answered with fresh content
+under `immutable` headers and pinned for a year in every cache that asked, with
+nothing able to invalidate it. That is also why the endpoint deliberately does
+not call `applyCacheHeaders`: it carries no cache tag, because there is no purge
+for a tag to trigger. Both cache-tag static guards in `apps/web` carry an
+explicit exemption entry for it.
