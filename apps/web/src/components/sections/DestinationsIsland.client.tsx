@@ -27,10 +27,39 @@ import { DestinationsMap } from './DestinationsMap';
 // Props
 // ---------------------------------------------------------------------------
 
+/**
+ * The destination fields this island and its children actually render.
+ *
+ * Deliberately NOT `DestinationCardData` (HOS-369 W3-3). Astro serializes an
+ * island's props into the HTML so the client can hydrate, so every field
+ * reaches the browser whether or not anything reads it — and the full card
+ * shape carried `gallery` (77,162 B across the 22 destinations, 63.7% of this
+ * island's props), plus `coordinates`, `ratingDimensions`, `isFeatured` and
+ * `eventsCount`, none of which are read here or in `DestinationsMap`. That was
+ * 84,870 B of the home page's HTML spent on data nothing displayed.
+ *
+ * Keeping this a `Pick` rather than a hand-written interface means a field
+ * renamed upstream fails the typecheck instead of silently becoming `undefined`
+ * at runtime.
+ */
+export type DestinationsIslandData = Pick<
+    DestinationCardData,
+    | 'id'
+    | 'slug'
+    | 'name'
+    | 'summary'
+    | 'featuredImage'
+    | 'accommodationsCount'
+    | 'path'
+    | 'averageRating'
+    | 'reviewsCount'
+    | 'attractions'
+>;
+
 /** Props for the DestinationsIsland component. */
 interface DestinationsIslandProps {
     /** List of destination items ordered to match MAIN_CITIES map pins. */
-    readonly destinations: readonly DestinationCardData[];
+    readonly destinations: readonly DestinationsIslandData[];
     /** Active locale used to build destination URLs and resolve translations. */
     readonly locale: SupportedLocale;
 }

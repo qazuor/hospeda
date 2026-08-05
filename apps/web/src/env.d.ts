@@ -16,6 +16,22 @@
  */
 interface Window {
     __HOSPEDA_I18N__?: Record<string, Record<string, string>>;
+
+    /**
+     * URL of the hashed, immutable icon sprite the current deployment serves
+     * (`/icons/sprite.<8 hex>.svg`), assigned by the inline classic script
+     * `IconSpriteClientData.astro` emits from `<head>` and served by
+     * `src/pages/icons/[file].svg.ts` (HOS-369 W3-6).
+     *
+     * `@repo/icons` reads it ONCE, on its first sprite lookup, so islands emit
+     * the same `<use>` references the server did instead of re-inlining every
+     * glyph on hydration.
+     *
+     * Optional because it is absent until that script executes (and in any test
+     * that does not seed it); with it missing the wrappers render inline, which
+     * is correct — just heavier.
+     */
+    __HOSPEDA_ICON_SPRITE__?: string;
 }
 
 /**

@@ -609,6 +609,13 @@ export class AllianceLeadService extends BaseService {
      * fails — except by the account that already holds the lead, which is
      * answered idempotently (a double-clicked email must not look broken).
      *
+     * When the lead was approved BEFORE it was claimed (the normal ordering,
+     * since an admin and the recipient act independently), its provisioned
+     * `host_trades` listing was created with `ownerUserId: null` — see
+     * {@link provisionServiceProviderListing}. This redemption is the moment
+     * ownership can finally be established, so it also backfills the
+     * listing's owner, in the same transaction as the link itself.
+     *
      * @param params - `{ actor, id, token }`.
      * @param ctx - Optional service execution context.
      * @returns `ServiceOutput<AllianceLead>` wrapping the now-linked lead.
@@ -671,26 +678,85 @@ export class AllianceLeadService extends BaseService {
                     throw rejected;
                 }
 
-                const updated = await this._model.update(
-                    { id: validated.id },
-                    {
-                        applicantUserId: actorUserId,
-                        // Single use: burn both halves so the same link cannot
-                        // be replayed, and so no digest outlives its purpose.
-                        claimToken: null,
-                        claimExpiresAt: null
-                    },
-                    execCtx?.tx
-                );
+                // Linking the lead and backfilling its provisioned listing's
+                // owner must land together. `provisionServiceProviderListing`
+                // writes `ownerUserId: lead.applicantUserId` at APPROVAL time
+                // (`alliance-lead.provisioning.ts`), which is `null` for an
+                // anonymous submission whose email already had an account —
+                // the listing has no owner until THIS moment, when the
+                // recipient proves ownership of the address. Without this
+                // backfill the listing stays ownerless forever: nothing else
+                // in the codebase ever writes `host_trades.ownerUserId`.
+                //
+                // The boundary is opened here only when the caller did not
+                // already supply one — nesting would create an INDEPENDENT
+                // transaction (this package's `withServiceTransaction` does
+                // not use savepoints), which is exactly the atomicity a linked
+                // lead whose listing stayed ownerless would break.
+                const applyClaim = async (
+                    txCtx: ServiceContext | undefined
+                ): Promise<SelectAllianceLead> => {
+                    const updated = await this._model.update(
+                        { id: validated.id },
+                        {
+                            applicantUserId: actorUserId,
+                            // Single use: burn both halves so the same link
+                            // cannot be replayed, and so no digest outlives
+                            // its purpose.
+                            claimToken: null,
+                            claimExpiresAt: null
+                        },
+                        txCtx?.tx
+                    );
 
-                // `update` answers null when the row is gone — it existed a few
-                // lines ago, so this is a row deleted mid-request. Nothing was
-                // linked, so it answers like every other rejected claim rather
-                // than surfacing a distinct "it vanished" the caller could
-                // learn something from.
-                if (!updated) {
-                    throw rejected;
-                }
+                    // `update` answers null when the row is gone — it existed
+                    // a few lines ago, so this is a row deleted mid-request.
+                    // Nothing was linked, so it answers like every other
+                    // rejected claim rather than surfacing a distinct "it
+                    // vanished" the caller could learn something from.
+                    if (!updated) {
+                        throw rejected;
+                    }
+
+                    if (existing.provisionedHostTradeId) {
+                        // Read-then-write, not a conditional UPDATE: Drizzle's
+                        // `where` builder cannot express "ownerUserId IS
+                        // NULL" from a plain object (`eq(col, null)` renders
+                        // `= NULL`, which never matches), and this must ONLY
+                        // fill an EMPTY owner — a listing some other flow
+                        // already attached to an account must never be moved
+                        // by a later claim.
+                        const listing = await this._hostTradeModel.findById(
+                            existing.provisionedHostTradeId,
+                            txCtx?.tx
+                        );
+                        if (listing && listing.ownerUserId === null) {
+                            await this._hostTradeModel.update(
+                                { id: existing.provisionedHostTradeId },
+                                { ownerUserId: actorUserId, updatedById: actorUserId },
+                                txCtx?.tx
+                            );
+                        }
+                    }
+
+                    return updated as SelectAllianceLead;
+                };
+
+                // A boundary is opened ONLY when a backfill is actually
+                // coming — same discipline as `markHandled`'s provisioning
+                // decision. Every other claim is a single UPDATE, and wrapping
+                // that in a transaction it does not need would be the same
+                // regression this file's own review already ruled out once.
+                // Truthiness, matching the guard inside `applyClaim`: the two
+                // must agree, or a lead whose link column is absent rather than
+                // null opens a transaction for a backfill that never runs.
+                const willBackfillOwner = Boolean(existing.provisionedHostTradeId);
+
+                const updated = execCtx?.tx
+                    ? await applyClaim(execCtx)
+                    : willBackfillOwner
+                      ? await withServiceTransaction(applyClaim)
+                      : await applyClaim(undefined);
 
                 return toAllianceLead(updated);
             }

@@ -11,6 +11,23 @@ import { AllianceLeadService } from '../../../src/services/alliance-lead/allianc
 import type { Actor } from '../../../src/types';
 import * as permissionUtils from '../../../src/utils/permission';
 
+/**
+ * `claimLead` opens a real `withServiceTransaction` boundary when a claim is
+ * about to backfill a provisioned listing's owner (HOS-278 regression fix).
+ * Unit tests have no real DB, so — same established pattern as
+ * `test/services/accommodation/create.test.ts` — `withServiceTransaction` is
+ * mocked to run its callback inline with a stub `ctx`, instead of opening a
+ * Drizzle transaction. Every OTHER test in this file never reaches that
+ * branch (no lead here carries a `provisionedHostTradeId` unless a test sets
+ * one), so this mock changes nothing for them.
+ */
+vi.mock('../../../src/utils/transaction', () => ({
+    withServiceTransaction: vi.fn(
+        async (fn: (ctx: { tx: object; hookState: Record<string, unknown> }) => Promise<unknown>) =>
+            fn({ tx: {}, hookState: {} })
+    )
+}));
+
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
@@ -18,6 +35,7 @@ import * as permissionUtils from '../../../src/utils/permission';
 const LEAD_ID = '00000000-0000-4000-a000-000000000002';
 const ACTOR_ID = '00000000-0000-4000-a000-000000000010';
 const GUEST_ID = '00000000-0000-4000-a000-000000000011';
+const HOST_TRADE_ID = '00000000-0000-4000-a000-000000000020';
 
 const adminActor: Actor = {
     id: ACTOR_ID,
@@ -57,6 +75,7 @@ const mockLead = {
     applicantUserId: null as string | null,
     claimToken: null as string | null,
     claimExpiresAt: null as Date | null,
+    provisionedHostTradeId: null as string | null,
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
@@ -75,6 +94,19 @@ function makeLeadModel(lead = mockLead) {
         findAll: vi.fn().mockResolvedValue({ items: [lead], total: 1 }),
         findById: vi.fn().mockResolvedValue(lead),
         update: vi.fn().mockResolvedValue({ ...lead, status: 'approved' })
+    };
+}
+
+/** Mock factory for `HostTradeModel`, used by the claim-time owner backfill. */
+function makeHostTradeModel(
+    hostTrade: { id: string; ownerUserId: string | null } = {
+        id: HOST_TRADE_ID,
+        ownerUserId: null
+    }
+) {
+    return {
+        findById: vi.fn().mockResolvedValue(hostTrade),
+        update: vi.fn().mockResolvedValue({ ...hostTrade, ownerUserId: hostTrade.ownerUserId })
     };
 }
 
@@ -363,6 +395,68 @@ describe('AllianceLeadService', () => {
                 { applicantUserId: ACTOR_ID, claimToken: null, claimExpiresAt: null },
                 undefined
             );
+        });
+
+        // HOS-278 regression — approve-then-claim ordering. Provisioning writes
+        // `ownerUserId: lead.applicantUserId` at APPROVAL time, which is `null`
+        // for an anonymous submission whose email already had an account. The
+        // listing must not stay ownerless forever once the recipient redeems
+        // the claim token.
+        it('should backfill the provisioned listing owner when an anonymous lead is claimed after approval', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead({ provisionedHostTradeId: HOST_TRADE_ID }));
+            (service as any)._model = model;
+            const hostTradeModel = makeHostTradeModel({ id: HOST_TRADE_ID, ownerUserId: null });
+            (service as any)._hostTradeModel = hostTradeModel;
+
+            const result = await service.claimLead({
+                actor: claimant,
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error).toBeUndefined();
+            const [where, data] = hostTradeModel.update.mock.calls[0] ?? [];
+            expect(where).toEqual({ id: HOST_TRADE_ID });
+            expect(data).toEqual(expect.objectContaining({ ownerUserId: ACTOR_ID }));
+        });
+
+        it('should NOT move an already-owned listing to the claiming actor', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead({ provisionedHostTradeId: HOST_TRADE_ID }));
+            (service as any)._model = model;
+            const hostTradeModel = makeHostTradeModel({
+                id: HOST_TRADE_ID,
+                ownerUserId: 'someone-else-id'
+            });
+            (service as any)._hostTradeModel = hostTradeModel;
+
+            const result = await service.claimLead({
+                actor: claimant,
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(hostTradeModel.update).not.toHaveBeenCalled();
+        });
+
+        it('should not touch the host trade model when the lead has no provisioned listing', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead({ provisionedHostTradeId: null }));
+            (service as any)._model = model;
+            const hostTradeModel = makeHostTradeModel();
+            (service as any)._hostTradeModel = hostTradeModel;
+
+            const result = await service.claimLead({
+                actor: claimant,
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(hostTradeModel.findById).not.toHaveBeenCalled();
+            expect(hostTradeModel.update).not.toHaveBeenCalled();
         });
 
         it('should burn the token so the same link cannot be replayed', async () => {
