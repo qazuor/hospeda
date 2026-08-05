@@ -23,6 +23,11 @@
  *    while islands render; anything asynchronous would hand them an empty
  *    dictionary and every key would silently degrade to its fallback.
  *
+ * The body carries only the namespaces browser code can name
+ * (`./i18n-client-namespaces`) — 26.9% of the asset was namespaces no client
+ * module can reach, since SSR reads the full catalog server-side and never
+ * touches this file (HOS-369 W3-2).
+ *
  * Server-only by construction: `getInlineLocaleMessages` reads the full
  * `@repo/i18n` catalog behind an `import.meta.env.SSR` guard, which is what
  * keeps that catalog out of the client bundle.
@@ -33,6 +38,7 @@
 import { createHash } from 'node:crypto';
 import type { SupportedLocale } from './i18n';
 import { getInlineLocaleMessages, isValidLocale, SUPPORTED_LOCALES } from './i18n';
+import { pickClientNamespaces } from './i18n-client-namespaces';
 
 /**
  * URL path prefix the dictionary assets are served under.
@@ -87,7 +93,8 @@ interface I18nAssetEntry {
  * @returns The script body, ready to serve verbatim.
  */
 function buildBody(locale: SupportedLocale): string {
-    const json = JSON.stringify(getInlineLocaleMessages(locale)).replace(/</g, '\\u003c');
+    const messages = pickClientNamespaces(getInlineLocaleMessages(locale));
+    const json = JSON.stringify(messages).replace(/</g, '\\u003c');
     return `(window.__HOSPEDA_I18N__||={})[${JSON.stringify(locale)}]=${json};`;
 }
 
