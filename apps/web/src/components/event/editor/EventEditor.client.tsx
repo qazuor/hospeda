@@ -13,6 +13,7 @@
 import { EventUpdateHttpSchema } from '@repo/schemas';
 import { type JSX, useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
+import { ContentMediaSection } from '@/components/account/editor/ContentMediaSection.client';
 import styles from '@/components/account/editor/content-editor-layout.module.css';
 import type { PublicationSectionLabels } from '@/components/account/editor/PublicationSection.client';
 import { PublicationSection } from '@/components/account/editor/PublicationSection.client';
@@ -274,6 +275,7 @@ export function EventEditor({
             basicInfo: t('account.myContent.events.editor.section.basicInfo', 'Información básica'),
             description: t('account.myContent.events.editor.section.description', 'Descripción'),
             schedule: t('account.myContent.events.editor.section.schedule', 'Fechas'),
+            media: t('account.myContent.editor.media.sectionTitle', 'Fotos'),
             publication: t('account.myContent.events.editor.section.publication', 'Publicación')
         }),
         [t]
@@ -284,6 +286,7 @@ export function EventEditor({
             { id: 'event-editor-basicInfo', label: sectionLabels.basicInfo },
             { id: 'event-editor-description', label: sectionLabels.description },
             { id: 'event-editor-schedule', label: sectionLabels.schedule },
+            { id: 'event-editor-media', label: sectionLabels.media },
             { id: 'event-editor-publication', label: sectionLabels.publication }
         ],
         [sectionLabels]
@@ -357,6 +360,25 @@ export function EventEditor({
                             isMonthPrecision={isMonthPrecision}
                             disabled={isEditLocked}
                             onFieldChange={handleDateChange}
+                        />
+                    </section>
+
+                    {/*
+                     * Photos persist per-operation against `event_media`
+                     * (HOS-390) — they never travel in this form's PATCH diff,
+                     * which is why the section takes no value/onChange and sits
+                     * outside the `formData` flow entirely.
+                     */}
+                    <section
+                        id="event-editor-media"
+                        className={styles.card}
+                        aria-label={sectionLabels.media}
+                    >
+                        <ContentMediaSection
+                            locale={locale}
+                            entity="event"
+                            entityId={initialData.id}
+                            disabled={isEditLocked}
                         />
                     </section>
 

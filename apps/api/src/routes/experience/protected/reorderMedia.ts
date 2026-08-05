@@ -10,9 +10,11 @@
  * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff) —
  * enforced inside `reorderExperienceMedia` via `checkExperienceCanEditMedia`.
  *
- * NOTE: this route must be registered BEFORE /{id}/media/{mediaId} so that Hono
- * does not treat "reorder" as a mediaId param value. The index.ts registers it
- * first.
+ * NOTE: `index.ts` registers this before /{id}/media/{mediaId} by convention.
+ * That is defensive, not required — Hono resolves the static `reorder` segment
+ * ahead of the `{mediaId}` param regardless of insertion order (verified by
+ * mutation on the post/event twin, `test/routes/post-protected-media.test.ts`;
+ * there is no commerce-side route test to re-run it against).
  */
 import {
     ExperienceMediaListOutputSchema,

@@ -7,8 +7,10 @@
  * extras, no missing entries, no duplicates) and then applies the new
  * `sortOrder` positions in a single transaction.
  *
- * MUST be registered BEFORE /{id}/media/{mediaId} to prevent "reorder" from
- * being captured as a mediaId param.
+ * `index.ts` registers this before /{id}/media/{mediaId} by convention. That is
+ * defensive, not required — Hono resolves the static `reorder` segment ahead of
+ * the `{mediaId}` param regardless of insertion order (verified by mutation on
+ * the post/event twin, `test/routes/post-protected-media.test.ts`).
  */
 import {
     GastronomyMediaListOutputSchema,

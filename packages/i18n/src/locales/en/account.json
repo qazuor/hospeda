@@ -1138,6 +1138,24 @@
                 }
             }
         },
+        "editor": {
+            "media": {
+                "sectionTitle": "Photos",
+                "featured": "Cover image",
+                "gallery": "Photo gallery",
+                "add": "Add photo",
+                "remove": "Remove",
+                "uploadHint": "JPG, PNG or WebP — max {{maxSize}}MB. Up to {{cap}} photos in the gallery.",
+                "invalidType": "Only JPG, PNG or WebP files are allowed",
+                "tooLarge": "The file cannot exceed {{maxSize}}MB",
+                "capReached": "Gallery limit reached (max {{cap}} photos)",
+                "uploadFailed": "Could not upload the image",
+                "uploadTimeout": "The upload took too long. Please try again.",
+                "persistFailed": "Could not save the image to the database",
+                "featuredFailed": "Could not set the image as the cover",
+                "removeFailed": "Could not remove the image"
+            }
+        },
         "events": {
             "list": {
                 "title": "My events",
@@ -1221,6 +1239,49 @@
             "working": "Confirming your application…",
             "confirmed": "Done! We linked the application to your account.",
             "failed": "We couldn't confirm that application. The link may have expired or already been used."
+        }
+    },
+    "provider": {
+        "pageTitle": "My provider listing",
+        "pageSubtitle": "Manage your listing in the provider directory",
+        "empty": {
+            "text": "You don't have a provider listing yet. Apply from \"Become a partner\" and, once your application is approved, your listing will show up here.",
+            "cta": "Go to Become a partner"
+        },
+        "revoked": {
+            "text": "Your listing was taken down from the provider directory.",
+            "contact": "If you'd like more details, reach out and we'll explain."
+        },
+        "errors": {
+            "fetchFailed": "We couldn't load your provider listing. Reload the page to try again."
+        },
+        "form": {
+            "title": "Edit my provider listing",
+            "identitySection": "Managed by Hospeda",
+            "identityNote": "These fields are managed by the Hospeda team. Contact us if you need to correct them.",
+            "fields": {
+                "name": "Name",
+                "slug": "Identifier (slug)",
+                "category": "Category",
+                "contact": "Contact",
+                "is24h": "Available 24 hours",
+                "scheduleText": "Business hours",
+                "scheduleTextPlaceholder": "E.g. Monday to Friday 8am–6pm"
+            },
+            "operationalSection": "Contact and availability",
+            "operationalNote": "These changes apply to the directory right away.",
+            "benefitSection": "Benefit for hosts",
+            "benefitNote": "A benefit change goes to the Hospeda team for review before it's published. In the meantime, the current benefit stays visible in the directory.",
+            "liveBenefitLabel": "Currently published benefit",
+            "noBenefit": "No structured benefit set",
+            "pendingLabel": "Awaiting review",
+            "noChanges": "There are no changes to save",
+            "success": "Changes saved",
+            "saving": "Saving…",
+            "save": "Save changes",
+            "errors": {
+                "saveFailed": "We couldn't save your changes"
+            }
         }
     }
 }

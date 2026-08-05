@@ -245,6 +245,69 @@ describe('resolveDoorOptionState (HOS-131 §6.3, OQ-3: acquired signal = permiss
     });
 });
 
+describe('resolveDoorOptionState — acquiredOptionIds override (HOS-278 §8)', () => {
+    // Permission-only visibility, so any assertion of `'acquired'` below can
+    // ONLY come from the override, never from the permission check.
+    const alwaysDenied = () => false;
+
+    it('resolves to "acquired" when the option id is present in acquiredOptionIds, regardless of permissions', () => {
+        const option = { id: 'serviceProvider' };
+        expect(
+            resolveDoorOptionState({
+                option,
+                visibility: alwaysDenied,
+                acquiredOptionIds: ['serviceProvider']
+            })
+        ).toBe('acquired');
+    });
+
+    it('overrides even an option that would otherwise resolve to comingSoon', () => {
+        const option = { id: 'serviceProvider', comingSoon: true };
+        expect(
+            resolveDoorOptionState({
+                option,
+                visibility: alwaysDenied,
+                acquiredOptionIds: ['serviceProvider']
+            })
+        ).toBe('acquired');
+    });
+
+    it('leaves the option unchanged when its id is absent from acquiredOptionIds', () => {
+        const option = { id: 'serviceProvider' };
+        expect(
+            resolveDoorOptionState({
+                option,
+                visibility: alwaysDenied,
+                acquiredOptionIds: ['someOtherOption']
+            })
+        ).toBe('unacquired');
+    });
+
+    it('leaves the option unchanged when acquiredOptionIds is omitted (every pre-existing caller)', () => {
+        const option = { id: 'serviceProvider' };
+        expect(resolveDoorOptionState({ option, visibility: alwaysDenied })).toBe('unacquired');
+    });
+
+    it('never matches an option that declares no id', () => {
+        const option = {};
+        expect(
+            resolveDoorOptionState({
+                option,
+                visibility: alwaysDenied,
+                acquiredOptionIds: ['serviceProvider']
+            })
+        ).toBe('unacquired');
+    });
+
+    it('does not leak into isDoorVisible — a door with only a force-acquired option still resolves via the plain evaluator', () => {
+        // isDoorVisible never forwards acquiredOptionIds to resolveDoorOptionState,
+        // so a permission-only evaluator still decides visibility here: the
+        // option keeps resolving 'unacquired' and the door stays visible.
+        const door = { options: [{ id: 'serviceProvider' }] };
+        expect(isDoorVisible({ door, visibility: alwaysDenied })).toBe(true);
+    });
+});
+
 describe('isDoorVisible (HOS-131 §6.3 door lifecycle)', () => {
     const byRole =
         (role: string | null) => (node: { readonly requiredPermission?: PermissionEnum }) =>

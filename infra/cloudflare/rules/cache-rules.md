@@ -481,3 +481,65 @@ purge returns `Unauthorized` — which looks like a credential problem and is no
 
 The trailing slash on `/api/revalidate/` is mandatory; without it Astro's
 trailing-slash middleware answers 301 and the POST body is lost.
+
+## `/i18n/<locale>.<hash>.js` — outside every rule on this page
+
+Wave D moved the client translation dictionary out of the page HTML (~632 KB for
+`es`, byte-identical on every page, 46.4% of a listing page) into a
+content-addressed asset served by `apps/web/src/pages/i18n/[file].js.ts`.
+
+**No rule on this page matches it, and none should.** The W1-2 rule requires
+`http.request.uri.query eq ""` *and* one of its 24 path prefixes; `/i18n/` is not
+one of them. The asset instead falls to Cloudflare's **default** caching for
+static file extensions, which honours the origin's `Cache-Control: public,
+max-age=31536000, immutable`.
+
+That was a claim about Cloudflare's defaults rather than something this repo
+controls, so it was **verified by measurement** like every other row on this
+page. Re-run this after any change to the endpoint or the rule set:
+
+```bash
+# Read the current hash out of the page, then probe the asset twice.
+URL=$(curl -sS https://staging.hospeda.com.ar/es/ | grep -o '/i18n/es\.[0-9a-f]\{8\}\.js' | head -1)
+for i in 1 2; do
+  curl -sS -o /dev/null -D - "https://staging.hospeda.com.ar$URL" \
+    | grep -iE '^(HTTP|cf-cache-status|cache-control)'
+done
+```
+
+Use `-o /dev/null -D -`, never `-I`: `-I` sends HEAD, and a HEAD never reports a
+representative cache status.
+
+### Measured on 2026-08-05, after W3-1 shipped
+
+`/i18n/es.12bb2cea.js`, probed from Buenos Aires immediately after the staging
+redeploy:
+
+| probe | `cf-cache-status` | `age` |
+|---|---|---|
+| 1 | `MISS` | — |
+| 2 | `HIT` | 5 |
+| 3 | `HIT` | 10 |
+
+`cache-control: public, max-age=31536000, immutable` is returned unchanged, so
+Cloudflare's default static-extension caching does honour it. The served body is
+658,231 B and its `sha256` prefix is `12bb2cea` — identical to the hash in the
+URL, which is the property that makes `immutable` safe to claim.
+
+Both 404 branches were confirmed through the edge, not just in unit tests: a
+stale hash (`es.13640a05.js`, from a different build) and an unknown locale
+(`zz.…`) each return 404.
+
+**The HTML pages still cache.** `/es/alojamientos/` went `EXPIRED` → `HIT`
+(`age: 3`) on consecutive requests with `s-maxage=300` intact — moving the
+dictionary tag into `<head>` did not disturb W2-2/W2-3.
+
+**This asset is never purged, by design.** The filename carries
+`sha256(body).slice(0,8)`, so changing a translation produces a NEW URL and the
+old one simply stops being requested. The endpoint 404s any hash that is not the
+current one — without that, a stale URL would be answered with fresh content
+under `immutable` headers and pinned for a year in every cache that asked, with
+nothing able to invalidate it. That is also why the endpoint deliberately does
+not call `applyCacheHeaders`: it carries no cache tag, because there is no purge
+for a tag to trigger. Both cache-tag static guards in `apps/web` carry an
+explicit exemption entry for it.

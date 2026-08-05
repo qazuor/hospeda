@@ -2,11 +2,18 @@
 /**
  * @file mi-cuenta/aliados/index.astro
  * @description "Sumate como aliado" discovery-door hub page (HOS-131 §6.2,
- * expanded HOS-134 §5.3). Lists the four B2B alliance roles: sponsor, partner
- * (home-ad), and service provider are not-yet-implemented verticals (NG-2)
- * that render "Próximamente" + a "Contactanos" CTA; `editor` has a real entry
- * form (`/colaborar/editores`) and resolves `acquired` once the user holds
- * `POST_CREATE`, linking the admin panel to manage it.
+ * expanded HOS-134 §5.3, HOS-278). Lists the four B2B alliance roles, all
+ * backed by a real qualified lead-capture landing since HOS-277: `sponsor`
+ * and `partner` stay lead-only forever (an admin evaluates and provisions
+ * manually — no self-service "acquired" state exists for them);
+ * `serviceProvider` becomes a real, self-service-editable `host_trades`
+ * directory listing once an admin approves the lead (HOS-278) — this page
+ * fetches `GET /host-trades/mine` and, when a row comes back, force-acquires
+ * that door option (`resolveDoorOptionState`'s `acquiredOptionIds` override,
+ * `src/lib/nav-gating.ts`) so it shows "Gestionar" → `/mi-cuenta/proveedor`
+ * instead of the acquire CTA; `editor` resolves `acquired` once the user
+ * holds `POST_CREATE`/`EVENT_CREATE`, linking the relevant own-content
+ * listing.
  *
  * @route     /[lang]/mi-cuenta/aliados/
  * @rendering SSR (prerender = false — requires authenticated user)
@@ -16,7 +23,7 @@ import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';
 import AllianceApplicationsSection from '@/components/account/AllianceApplicationsSection.astro';
 import { AllianceClaimBanner } from '@/components/account/AllianceClaimBanner.client';
 import DiscoveryDoorHub from '@/components/account/DiscoveryDoorHub.astro';
-import { allianceLeadsApi } from '@/lib/api/endpoints-protected';
+import { allianceLeadsApi, hostTradesApi } from '@/lib/api/endpoints-protected';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -56,10 +63,21 @@ const description = t(door.subtitleI18nKey);
 // for two specs, and a 500 on the API must not take the hub down with it. The
 // section renders nothing at all when the list is empty, so the fallback is
 // simply the page as it was.
-const myLeadsResult = await allianceLeadsApi.mine({
-    cookieHeader: Astro.request.headers.get('cookie') ?? undefined
-});
+// The second fetch resolves the `serviceProvider` door option's "acquired"
+// signal (HOS-278 §8) and degrades to null on ANY failure for the same reason:
+// a 500 there just means the option falls back to its unacquired CTA for this
+// render.
+//
+// Both run in parallel — neither depends on the other, and this is an
+// uncacheable actor-scoped SSR page, so chaining them would add a full API
+// round-trip to its TTFB for nothing.
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const [myLeadsResult, myTradeResult] = await Promise.all([
+    allianceLeadsApi.mine({ cookieHeader }),
+    hostTradesApi.mine({ cookieHeader })
+]);
 const myLeads = myLeadsResult.ok ? myLeadsResult.data.leads : [];
+const myTrade = myTradeResult.ok ? myTradeResult.data.trade : null;
 
 // HOS-278 AC-4 — this is where the claim invitation email lands.
 //
@@ -75,5 +93,11 @@ const hasPendingClaim =
     <AccountPageHeader title={title} />
     {hasPendingClaim && <AllianceClaimBanner client:load locale={locale} />}
     <AllianceApplicationsSection locale={locale} leads={myLeads} />
-    <DiscoveryDoorHub locale={locale} door={door} roles={user.roles} adminUrl={getAdminUrl()} />
+    <DiscoveryDoorHub
+        locale={locale}
+        door={door}
+        roles={user.roles}
+        adminUrl={getAdminUrl()}
+        acquiredOptionIds={myTrade ? ['serviceProvider'] : []}
+    />
 </AccountLayout>

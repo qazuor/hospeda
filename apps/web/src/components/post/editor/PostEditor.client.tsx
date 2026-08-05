@@ -13,6 +13,7 @@
 import { PostUpdateHttpSchema } from '@repo/schemas';
 import { type JSX, useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
+import { ContentMediaSection } from '@/components/account/editor/ContentMediaSection.client';
 import styles from '@/components/account/editor/content-editor-layout.module.css';
 import type { PublicationSectionLabels } from '@/components/account/editor/PublicationSection.client';
 import { PublicationSection } from '@/components/account/editor/PublicationSection.client';
@@ -291,6 +292,7 @@ export function PostEditor({
             basicInfo: t('account.myContent.posts.editor.section.basicInfo', 'Información básica'),
             content: t('account.myContent.posts.editor.section.content', 'Contenido'),
             details: t('account.myContent.posts.editor.section.details', 'Detalles'),
+            media: t('account.myContent.editor.media.sectionTitle', 'Fotos'),
             publication: t('account.myContent.posts.editor.section.publication', 'Publicación')
         }),
         [t]
@@ -301,6 +303,7 @@ export function PostEditor({
             { id: 'post-editor-basicInfo', label: sectionLabels.basicInfo },
             { id: 'post-editor-content', label: sectionLabels.content },
             { id: 'post-editor-details', label: sectionLabels.details },
+            { id: 'post-editor-media', label: sectionLabels.media },
             { id: 'post-editor-publication', label: sectionLabels.publication }
         ],
         [sectionLabels]
@@ -375,6 +378,25 @@ export function PostEditor({
                             disabled={isEditLocked}
                             onReadingTimeChange={handleReadingTimeChange}
                             onDestinationChange={handleDestinationChange}
+                        />
+                    </section>
+
+                    {/*
+                     * Photos persist per-operation against `post_media`
+                     * (HOS-390) — they never travel in this form's PATCH diff,
+                     * which is why the section takes no value/onChange and sits
+                     * outside the `formData` flow entirely.
+                     */}
+                    <section
+                        id="post-editor-media"
+                        className={styles.card}
+                        aria-label={sectionLabels.media}
+                    >
+                        <ContentMediaSection
+                            locale={locale}
+                            entity="post"
+                            entityId={initialData.id}
+                            disabled={isEditLocked}
                         />
                     </section>
 

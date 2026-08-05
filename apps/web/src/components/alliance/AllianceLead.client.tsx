@@ -6,11 +6,18 @@
  * Collects generic applicant info (`contactName`, `email`, `phone`,
  * free-text `message`) plus a small set of kind-specific fields (business
  * name, website, portfolio links, etc. — see
- * `@/lib/forms/alliance-lead-message.ts`). The kind-specific fields are
- * front-only: on submit they are serialized with human-readable labels into
- * the single `message` string the backend persists (HOS-277 §7.3), so the
- * payload sent to `POST /api/v1/public/alliance/leads` only ever carries
+ * `@/lib/forms/alliance-lead-message.ts`). For `partner`/`sponsor`/`editor`
+ * these kind-specific fields are front-only: on submit they are serialized
+ * with human-readable labels into the single `message` string the backend
+ * persists (HOS-277 §7.3), so the payload only ever carries
  * `{ kind, contactName, email, phone?, message, _hp? }`.
+ *
+ * `service_provider` is the deliberate exception (HOS-278 §6.4): approving
+ * that kind materializes a `host_trades` directory row, so its structured
+ * fields (`businessName`, `category`, `destinationId`, `benefitType`,
+ * `benefitValue`, `benefitText`) are typed payload columns instead — sent as
+ * their own top-level keys, NOT serialized into `message`. Only `website`
+ * still goes through the free-text `message` path for that kind too.
  *
  * Includes a honeypot `_hp` field for spam rejection, mirroring
  * `CommerceLead.client.tsx`. Rate-limit (429) and generic API errors surface
@@ -22,8 +29,14 @@
 
 import { CheckCircleIcon } from '@repo/icons';
 import type { AllianceLeadCreateInput, AllianceLeadKind } from '@repo/schemas';
-import { AllianceLeadCreateInputSchema } from '@repo/schemas';
+import {
+    AllianceLeadCreateInputSchema,
+    HostTradeBenefitTypeEnum,
+    HostTradeCategoryEnum,
+    hostTradeBenefitTypeRequiresValue
+} from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
+import type { TranslationFn } from '@/lib/api-errors';
 import {
     type AuthMeSnapshot,
     fetchAuthMe,
@@ -33,6 +46,7 @@ import {
 import {
     ALLIANCE_LEAD_SPECIFIC_FIELDS,
     type AllianceLeadSpecificValues,
+    buildAllianceLeadTypedFields,
     serializeAllianceLeadMessage,
     validateAllianceLeadSpecificFields
 } from '@/lib/forms/alliance-lead-message';
@@ -55,6 +69,14 @@ export interface AllianceLeadCurrentUser {
     readonly email: string | null;
 }
 
+/** A single destination option for the `service_provider` coverage select. */
+export interface AllianceLeadDestinationOption {
+    /** Destination UUID — becomes `host_trades.destination_id` on approval. */
+    readonly id: string;
+    /** Display name shown in the select. */
+    readonly name: string;
+}
+
 /** Props for the AllianceLead island. */
 export interface AllianceLeadProps {
     /** Active locale for i18n. */
@@ -72,6 +94,44 @@ export interface AllianceLeadProps {
      * everyone for the whole 300s TTL.
      */
     readonly currentUser?: AllianceLeadCurrentUser | null;
+    /**
+     * Destination options for the `service_provider` "coverage area" select
+     * (HOS-278 §6.4). Fetched SSR by `sumate/proveedor/index.astro` (a plain
+     * SSR page, not edge-cached — unlike `currentUser` above there is no
+     * cache-poisoning concern) and passed down, so the island never fetches
+     * this itself. Optional/defaulted to `[]` so the other three landing
+     * pages, which never pass it, keep working unchanged.
+     */
+    readonly destinations?: ReadonlyArray<AllianceLeadDestinationOption>;
+}
+
+/** A single `<option>` for a kind-specific select field. */
+interface SpecificSelectOption {
+    readonly value: string;
+    readonly label: string;
+}
+
+/** `category` select options — the closed {@link HostTradeCategoryEnum} set. */
+function getCategoryOptions(t: TranslationFn): readonly SpecificSelectOption[] {
+    return Object.values(HostTradeCategoryEnum).map((value) => ({
+        value,
+        label: t(`host-trades.categories.${value}`, value)
+    }));
+}
+
+/** `benefitType` select options — the closed {@link HostTradeBenefitTypeEnum} set. */
+function getBenefitTypeOptions(t: TranslationFn): readonly SpecificSelectOption[] {
+    return Object.values(HostTradeBenefitTypeEnum).map((value) => ({
+        value,
+        label: t(`alliance-leads.form.benefitTypeOptions.${value}`, value)
+    }));
+}
+
+/** `destinationId` select options — from the `destinations` prop (runtime data, not an enum). */
+function getDestinationOptions(
+    destinations: ReadonlyArray<AllianceLeadDestinationOption>
+): readonly SpecificSelectOption[] {
+    return destinations.map((d) => ({ value: d.id, label: d.name }));
 }
 
 interface GenericFields {
@@ -111,12 +171,23 @@ const KIND_NAMESPACE: Record<AllianceLeadKind, string> = {
  *
  * @param props - Component props (see {@link AllianceLeadProps})
  */
-export function AllianceLead({ locale, kind, currentUser = null }: AllianceLeadProps) {
+export function AllianceLead({
+    locale,
+    kind,
+    currentUser = null,
+    destinations = []
+}: AllianceLeadProps) {
     const { t } = createTranslations(locale);
 
     const namespaceKey = KIND_NAMESPACE[kind];
     const formTitleKey = `alliance-leads.${namespaceKey}.form.heading`;
     const specificFields = ALLIANCE_LEAD_SPECIFIC_FIELDS[kind];
+    // Message is optional for the other three kinds (they still have a free
+    // text box to fill in), but for `service_provider` all six structured
+    // fields moved OUT of `message` (HOS-278 §6.4) — leaving nothing to
+    // satisfy the schema's `.min(10)` unless the free text itself becomes
+    // required.
+    const isMessageRequired = kind === 'service_provider';
 
     const [visitor, setVisitor] = useState<AllianceLeadCurrentUser | null>(currentUser);
 
@@ -189,6 +260,22 @@ export function AllianceLead({ locale, kind, currentUser = null }: AllianceLeadP
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
+    // `benefitValue` only means something for the two numeric benefit types
+    // (HOS-278 §6.4) — hidden otherwise, so an applicant offering `TWO_FOR_ONE`
+    // is never asked for a number that would trip the backend's "non-numeric
+    // type rejects a value" rule.
+    const benefitValueApplicable =
+        kind === 'service_provider' &&
+        hostTradeBenefitTypeRequiresValue(
+            (specificValues.benefitType ?? '') as HostTradeBenefitTypeEnum
+        );
+    const visibleSpecificFields = specificFields.filter(
+        (field) => field.name !== 'benefitValue' || benefitValueApplicable
+    );
+    const categoryOptions = getCategoryOptions(t);
+    const benefitTypeOptions = getBenefitTypeOptions(t);
+    const destinationOptions = getDestinationOptions(destinations);
+
     function handleChange(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void {
         const { name, value } = e.currentTarget;
         setFields((prev) => ({ ...prev, [name]: value }));
@@ -198,7 +285,7 @@ export function AllianceLead({ locale, kind, currentUser = null }: AllianceLeadP
         setFormError(null);
     }
 
-    function handleSpecificChange(e: ChangeEvent<HTMLInputElement>): void {
+    function handleSpecificChange(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>): void {
         const { name, value } = e.currentTarget;
         setSpecificValues((prev) => ({ ...prev, [name]: value }));
         if (errors[name]) {
@@ -224,6 +311,8 @@ export function AllianceLead({ locale, kind, currentUser = null }: AllianceLeadP
             t
         });
 
+        const typedFields = buildAllianceLeadTypedFields({ kind, specificValues });
+
         const payload: AllianceLeadCreateInput = {
             kind,
             contactName: fields.contactName,
@@ -233,13 +322,29 @@ export function AllianceLead({ locale, kind, currentUser = null }: AllianceLeadP
             // that links the lead in agreement.
             email: usesAccountEmail ? accountEmail : fields.email,
             phone: fields.phone || undefined,
-            message
+            message,
+            ...typedFields
         };
 
         const parsed = AllianceLeadCreateInputSchema.safeParse(payload);
 
         const schemaErrors = parsed.success ? {} : zodIssuesToFieldErrors(parsed.error.issues, t);
-        const combinedErrors = { ...specificErrors, ...schemaErrors };
+
+        // Message is required for `service_provider` (see `isMessageRequired`
+        // above). Spread last so this clear "required" message always wins
+        // over the schema's generic `.min(10)` wording when the field is
+        // totally empty.
+        const freeTextErrors: FieldErrors =
+            isMessageRequired && fields.freeText.trim().length === 0
+                ? {
+                      message: t(
+                          'alliance-leads.form.validation.messageRequired',
+                          'Contanos brevemente sobre tu servicio.'
+                      )
+                  }
+                : {};
+
+        const combinedErrors = { ...specificErrors, ...schemaErrors, ...freeTextErrors };
 
         if (Object.keys(combinedErrors).length > 0) {
             setErrors(combinedErrors);
@@ -466,55 +571,117 @@ export function AllianceLead({ locale, kind, currentUser = null }: AllianceLeadP
 
             {/* Kind-specific fields */}
             <h3 className={styles.sectionTitle}>{t(formTitleKey, 'Contanos más')}</h3>
-            {specificFields.map((field) => (
-                <div
-                    key={field.name}
-                    className={styles.field}
-                >
-                    <label
-                        className={styles.label}
-                        htmlFor={`al-${field.name}`}
-                    >
-                        {t(`alliance-leads.form.fields.${field.name}`, field.name)}
-                        {field.required && (
-                            <span
-                                className={styles.required}
-                                aria-hidden="true"
-                            >
-                                *
-                            </span>
-                        )}
-                    </label>
-                    <input
-                        id={`al-${field.name}`}
-                        type={field.type === 'url' ? 'url' : 'text'}
-                        name={field.name}
-                        value={specificValues[field.name] ?? ''}
-                        onChange={handleSpecificChange}
-                        className={`${styles.input}${errors[field.name] ? ` ${styles.inputError}` : ''}`}
-                        aria-describedby={errors[field.name] ? `al-${field.name}-error` : undefined}
-                        aria-invalid={!!errors[field.name]}
-                        required={field.required}
-                    />
-                    {errors[field.name] && (
-                        <p
-                            id={`al-${field.name}-error`}
-                            className={styles.errorMsg}
-                            role="alert"
-                        >
-                            {errors[field.name]}
-                        </p>
-                    )}
-                </div>
-            ))}
+            {visibleSpecificFields.map((field) => {
+                const fieldId = `al-${field.name}`;
+                const errorId = `${fieldId}-error`;
+                const hasError = !!errors[field.name];
+                const options =
+                    field.name === 'category'
+                        ? categoryOptions
+                        : field.name === 'benefitType'
+                          ? benefitTypeOptions
+                          : field.name === 'destinationId'
+                            ? destinationOptions
+                            : null;
 
-            {/* Free-text message (optional) */}
+                return (
+                    <div
+                        key={field.name}
+                        className={styles.field}
+                    >
+                        <label
+                            className={styles.label}
+                            htmlFor={fieldId}
+                        >
+                            {t(`alliance-leads.form.fields.${field.name}`, field.name)}
+                            {field.required && (
+                                <span
+                                    className={styles.required}
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>
+                            )}
+                        </label>
+                        {field.type === 'select' && options ? (
+                            <select
+                                id={fieldId}
+                                name={field.name}
+                                value={specificValues[field.name] ?? ''}
+                                onChange={handleSpecificChange}
+                                className={`${styles.select}${hasError ? ` ${styles.inputError}` : ''}`}
+                                aria-describedby={hasError ? errorId : undefined}
+                                aria-invalid={hasError}
+                                required={field.required}
+                            >
+                                <option value="">
+                                    {t(
+                                        `alliance-leads.form.placeholders.${field.name}`,
+                                        'Seleccioná una opción'
+                                    )}
+                                </option>
+                                {options.map((option) => (
+                                    <option
+                                        key={option.value}
+                                        value={option.value}
+                                    >
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <input
+                                id={fieldId}
+                                type={
+                                    field.type === 'url'
+                                        ? 'url'
+                                        : field.type === 'number'
+                                          ? 'number'
+                                          : 'text'
+                                }
+                                name={field.name}
+                                value={specificValues[field.name] ?? ''}
+                                onChange={handleSpecificChange}
+                                className={`${styles.input}${hasError ? ` ${styles.inputError}` : ''}`}
+                                aria-describedby={hasError ? errorId : undefined}
+                                aria-invalid={hasError}
+                                required={field.required}
+                                {...(field.type === 'number' ? { min: 1, step: 1 } : {})}
+                            />
+                        )}
+                        {hasError && (
+                            <p
+                                id={errorId}
+                                className={styles.errorMsg}
+                                role="alert"
+                            >
+                                {errors[field.name]}
+                            </p>
+                        )}
+                    </div>
+                );
+            })}
+
+            {/* Free-text message (required for service_provider, optional otherwise) */}
             <div className={styles.field}>
                 <label
                     className={styles.label}
                     htmlFor="al-message"
                 >
-                    {t('alliance-leads.form.fields.message', 'Contanos más (opcional)')}
+                    {isMessageRequired
+                        ? t(
+                              'alliance-leads.form.fields.messageRequired',
+                              'Contanos sobre tu servicio'
+                          )
+                        : t('alliance-leads.form.fields.message', 'Contanos más (opcional)')}
+                    {isMessageRequired && (
+                        <span
+                            className={styles.required}
+                            aria-hidden="true"
+                        >
+                            *
+                        </span>
+                    )}
                 </label>
                 <textarea
                     id="al-message"
@@ -525,6 +692,7 @@ export function AllianceLead({ locale, kind, currentUser = null }: AllianceLeadP
                     rows={4}
                     aria-describedby={errors.message ? 'al-message-error' : undefined}
                     aria-invalid={!!errors.message}
+                    required={isMessageRequired}
                 />
                 {errors.message && (
                     <p

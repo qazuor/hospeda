@@ -1,0 +1,112 @@
+---
+/**
+ * @file mi-cuenta/proveedor/index.astro
+ * @description Provider self-service page for the owner's own `host_trades`
+ * directory listing (HOS-278 §8). Reached from the "Sumate como aliado" hub
+ * (`mi-cuenta/aliados`) once `serviceProvider` resolves to `'acquired'` — see
+ * `resolveDoorOptionState`'s `acquiredOptionIds` override in
+ * `src/lib/nav-gating.ts` for how that state is derived from this same
+ * `GET /host-trades/mine` fetch.
+ *
+ * Auth-only (no permission gate, HOS-278 AC-7): an approved provider is an
+ * ordinary tourist account, so ownership of the row — not a role or
+ * permission — is what lets someone reach this page's content.
+ *
+ * Four renders:
+ * - fetch failed  -> friendly error state (never a crash).
+ * - `trade: null` -> empty state ("you haven't applied / been approved yet"),
+ *   linking back to the aliados hub. NOT an error, NOT a 404.
+ * - `trade.revokedAt` set -> prominent "listing taken down" state + the
+ *   admin's `revokeReason` when present. No edit form is offered (the API
+ *   would still accept a PATCH — this is a UX choice, not a hard block).
+ * - otherwise -> header + the `HostTradeEditForm` edit island.
+ *
+ * @route     /[lang]/mi-cuenta/proveedor/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped data)
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import { HostTradeEditForm } from '@/components/account/HostTradeEditForm.client';
+import { hostTradesApi } from '@/lib/api/endpoints-protected';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+// Auth guard: middleware protects /mi-cuenta/* automatically, safety net.
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+const title = t('account.provider.pageTitle', 'Mi ficha de proveedor');
+const subtitle = t('account.provider.pageSubtitle', 'Gestioná tu ficha en el directorio de proveedores');
+
+const tradeResult = await hostTradesApi.mine({
+    cookieHeader: Astro.request.headers.get('cookie') ?? undefined
+});
+
+const fetchFailed = !tradeResult.ok;
+const trade = tradeResult.ok ? tradeResult.data.trade : null;
+// `!= null` (not `!== null`) on purpose: `revokedAt` is `z.coerce.date().nullish()`
+// on `HostTradeSchema`, so an absent value can arrive as `undefined` — a key
+// dropped by JSON serialization — not just `null`. A `!== null` test would read
+// that `undefined` as "revoked" and hide the edit form from every healthy
+// provider. Same reason `revokeReason` is rendered by truthiness below.
+const isRevoked = trade !== null && trade.revokedAt != null;
+---
+
+<AccountLayout locale={locale} title={title} description={subtitle} activeSection="proveedor">
+    <AccountPageHeader title={title} description={subtitle} />
+
+    {
+        fetchFailed ? (
+            <AccountSectionCard>
+                <p role="alert">
+                    {t(
+                        'account.provider.errors.fetchFailed',
+                        'No pudimos cargar tu ficha de proveedor. Recargá la página para reintentar.'
+                    )}
+                </p>
+            </AccountSectionCard>
+        ) : trade === null ? (
+            <AccountSectionCard>
+                <p>
+                    {t(
+                        'account.provider.empty.text',
+                        'Todavía no tenés una ficha de proveedor. Postulate desde "Sumate como aliado" y, una vez aprobada tu solicitud, tu ficha va a aparecer acá.'
+                    )}
+                </p>
+                <a href={buildUrl({ locale, path: 'mi-cuenta/aliados' })}>
+                    {t('account.provider.empty.cta', 'Ir a Sumate como aliado')}
+                </a>
+            </AccountSectionCard>
+        ) : isRevoked ? (
+            <AccountSectionCard>
+                <p role="alert">
+                    {t(
+                        'account.provider.revoked.text',
+                        'Tu ficha fue dada de baja del directorio de proveedores.'
+                    )}
+                </p>
+                {trade.revokeReason && <p>{trade.revokeReason}</p>}
+                <p>
+                    {t(
+                        'account.provider.revoked.contact',
+                        'Si querés más información, escribinos y te contamos los detalles.'
+                    )}
+                </p>
+            </AccountSectionCard>
+        ) : (
+            <AccountSectionCard>
+                <HostTradeEditForm locale={locale} trade={trade} client:load />
+            </AccountSectionCard>
+        )
+    }
+</AccountLayout>

@@ -101,6 +101,16 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		-->
 		<slot name="head-early" />
 
+		<!--
+		  HOS-369 Wave D: the client translation dictionary, as a hashed
+		  immutable asset. It MUST live in <head>: a parser-inserted
+		  `<script defer>` only runs before the deferred module scripts that
+		  hydrate islands if it comes first in document order. From <body> it
+		  would sit after the islands rendered above it, and those would
+		  hydrate against an empty dictionary.
+		-->
+		<I18nClientData locale={locale} />
+
 		<!-- SPEC-157 REQ-18: browser UI chrome matches the brand blue. The light
 		     value matches site.webmanifest theme_color; the dark variant keeps the
 		     chrome on-brand under prefers-color-scheme: dark (the manifest stays
@@ -208,7 +218,6 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		}
 	</head>
 	<body>
-		<I18nClientData locale={locale} />
 		<NavigationProgress locale={locale} />
 		<SkipToContent locale={locale} />
 		<Header locale={locale} />

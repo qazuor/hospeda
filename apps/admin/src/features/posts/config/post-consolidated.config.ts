@@ -7,7 +7,6 @@ import { AiPostGeneratePanel } from '@/features/posts/components/AiPostGenerateP
 import { createBasicInfoConsolidatedSection } from './sections/basic-info.consolidated';
 import { createContentConsolidatedSection } from './sections/content.consolidated';
 import { createContentStatesViewSection } from './sections/content-states.view.consolidated';
-import { createMediaConsolidatedSection } from './sections/media.consolidated';
 import { createRelationsConsolidatedSection } from './sections/relations.consolidated';
 import { createStatesModerationConsolidatedSection } from './sections/states-moderation.consolidated';
 import { createStatisticsConsolidatedSection } from './sections/statistics.consolidated';
@@ -91,7 +90,6 @@ export const createPostConsolidatedConfig = (
         createAiGenerateSection(t),
         createBasicInfoConsolidatedSection(),
         createContentConsolidatedSection(),
-        createMediaConsolidatedSection(),
         createRelationsConsolidatedSection(),
         createContentStatesViewSection(),
         createStatesModerationConsolidatedSection(),

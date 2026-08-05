@@ -25,7 +25,9 @@ describe('DiscoveryDoorHub.astro — wiring', () => {
         expect(source).toContain(
             "import { isVisibleByRoles, resolveDoorOptionState } from '@/lib/nav-gating';"
         );
-        expect(source).toContain('resolveDoorOptionState({ option, visibility })');
+        expect(source).toContain(
+            'resolveDoorOptionState({ option, visibility, acquiredOptionIds })'
+        );
     });
 
     it('renders all three per-option states: acquired, comingSoon, unacquired', () => {
@@ -175,6 +177,46 @@ describe('DiscoveryDoorHub — per-option state resolution (engine integration)'
                 })
             ).toBe('acquired');
         }
+    });
+});
+
+describe('DiscoveryDoorHub.astro — acquiredOptionIds prop (HOS-278 §8)', () => {
+    it('declares the acquiredOptionIds prop and forwards it to resolveDoorOptionState', () => {
+        expect(source).toContain('readonly acquiredOptionIds?: readonly string[];');
+        expect(source).toContain(
+            'resolveDoorOptionState({ option, visibility, acquiredOptionIds })'
+        );
+    });
+});
+
+describe('DiscoveryDoorHub — acquiredOptionIds override (engine integration)', () => {
+    const partner = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'partner');
+
+    it('force-acquires "serviceProvider" when its id is passed, even with no held role', () => {
+        const serviceProvider = partner?.options.find((option) => option.id === 'serviceProvider');
+        expect(serviceProvider).toBeDefined();
+        if (!serviceProvider) return;
+
+        expect(
+            resolveDoorOptionState({
+                option: serviceProvider,
+                visibility: (node) => isVisibleByRoles(node, null),
+                acquiredOptionIds: ['serviceProvider']
+            })
+        ).toBe('acquired');
+    });
+
+    it('leaves "serviceProvider" unacquired when acquiredOptionIds is omitted (pre-HOS-278 behaviour)', () => {
+        const serviceProvider = partner?.options.find((option) => option.id === 'serviceProvider');
+        expect(serviceProvider).toBeDefined();
+        if (!serviceProvider) return;
+
+        expect(
+            resolveDoorOptionState({
+                option: serviceProvider,
+                visibility: (node) => isVisibleByRoles(node, [RoleEnum.ADMIN])
+            })
+        ).toBe('unacquired');
     });
 });
 

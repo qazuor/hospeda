@@ -42,11 +42,18 @@ vi.mock('@/lib/auth-cache', () => ({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+// Non-empty by default so `service_provider` tests can select a
+// `destinationId` option without depending on the SSR-fetched real list.
+const TEST_DESTINATIONS = [
+    { id: '11111111-1111-4111-8111-111111111111', name: 'Concepción del Uruguay' }
+];
+
 function renderForm(kind: 'partner' | 'sponsor' | 'service_provider' | 'editor' = 'partner') {
     return render(
         <AllianceLead
             locale="es"
             kind={kind}
+            destinations={TEST_DESTINATIONS}
         />
     );
 }
@@ -132,11 +139,47 @@ describe('AllianceLead', () => {
             expect(screen.getByLabelText(/^sponsorshipInterest/i)).toBeInTheDocument();
         });
 
-        it('renders businessName, serviceType, coverageArea, website for service_provider', () => {
+        it('renders businessName, category, destinationId, benefitType, website for service_provider (HOS-278 §6.4)', () => {
             renderForm('service_provider');
             expect(screen.getByLabelText(/^businessName/i)).toBeInTheDocument();
-            expect(screen.getByLabelText(/^serviceType/i)).toBeInTheDocument();
-            expect(screen.getByLabelText(/^coverageArea/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/^category/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/^destinationId/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/^benefitType/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/^website/i)).toBeInTheDocument();
+        });
+
+        it('renders category, destinationId, benefitType as <select> elements', () => {
+            renderForm('service_provider');
+            expect(screen.getByLabelText(/^category/i).tagName).toBe('SELECT');
+            expect(screen.getByLabelText(/^destinationId/i).tagName).toBe('SELECT');
+            expect(screen.getByLabelText(/^benefitType/i).tagName).toBe('SELECT');
+        });
+
+        it('does not render benefitValue until a numeric benefitType is selected', () => {
+            renderForm('service_provider');
+            expect(screen.queryByLabelText(/^benefitValue/i)).not.toBeInTheDocument();
+
+            fireEvent.change(screen.getByLabelText(/^benefitType/i), {
+                target: { value: 'PERCENTAGE' }
+            });
+
+            expect(screen.getByLabelText(/^benefitValue/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/^benefitValue/i)).toHaveAttribute('type', 'number');
+        });
+
+        it('does not render benefitValue for a non-numeric benefitType (e.g. TWO_FOR_ONE)', () => {
+            renderForm('service_provider');
+            fireEvent.change(screen.getByLabelText(/^benefitType/i), {
+                target: { value: 'TWO_FOR_ONE' }
+            });
+
+            expect(screen.queryByLabelText(/^benefitValue/i)).not.toBeInTheDocument();
+        });
+
+        it('labels the free-text message as required for service_provider', () => {
+            renderForm('service_provider');
+            expect(screen.getByLabelText(/contanos sobre tu servicio/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/contanos sobre tu servicio/i)).toBeRequired();
         });
 
         it('renders portfolioLinks, topics, experience for editor — no businessName (B2C)', () => {
@@ -258,6 +301,109 @@ describe('AllianceLead', () => {
                 expect(screen.getByLabelText(/^website/i)).toHaveAttribute('aria-invalid', 'true');
             });
             expect(global.fetch).not.toHaveBeenCalled();
+        });
+    });
+
+    // ── service_provider typed payload (HOS-278 §6.4) ───────────────────────
+
+    describe('service_provider typed fields', () => {
+        async function fillServiceProviderRequiredFields() {
+            await fillGenericRequiredFields();
+            fireEvent.change(screen.getByLabelText(/^businessName/i), {
+                target: { value: 'Plomería Acme' }
+            });
+            fireEvent.change(screen.getByLabelText(/^category/i), {
+                target: { value: 'PLOMERIA' }
+            });
+            fireEvent.change(screen.getByLabelText(/^destinationId/i), {
+                target: { value: '11111111-1111-4111-8111-111111111111' }
+            });
+            fireEvent.change(screen.getByLabelText(/^benefitType/i), {
+                target: { value: 'PERCENTAGE' }
+            });
+            fireEvent.change(screen.getByLabelText(/^benefitValue/i), {
+                target: { value: '15' }
+            });
+            fireEvent.change(screen.getByLabelText(/contanos sobre tu servicio/i), {
+                target: { value: 'Ofrecemos servicio 24hs para hosts.' }
+            });
+        }
+
+        it('requires the free-text message (schema min(10) would otherwise reject an empty one)', async () => {
+            renderForm('service_provider');
+            await fillGenericRequiredFields();
+            fireEvent.change(screen.getByLabelText(/^businessName/i), {
+                target: { value: 'Plomería Acme' }
+            });
+            fireEvent.change(screen.getByLabelText(/^category/i), {
+                target: { value: 'PLOMERIA' }
+            });
+            fireEvent.change(screen.getByLabelText(/^destinationId/i), {
+                target: { value: '11111111-1111-4111-8111-111111111111' }
+            });
+            fireEvent.change(screen.getByLabelText(/^benefitType/i), {
+                target: { value: 'TWO_FOR_ONE' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                expect(screen.getByLabelText(/contanos sobre tu servicio/i)).toHaveAttribute(
+                    'aria-invalid',
+                    'true'
+                );
+            });
+            expect(global.fetch).not.toHaveBeenCalled();
+        });
+
+        it('requires category, destinationId, benefitType', async () => {
+            renderForm('service_provider');
+            await fillGenericRequiredFields();
+            fireEvent.change(screen.getByLabelText(/^businessName/i), {
+                target: { value: 'Plomería Acme' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                expect(screen.getByLabelText(/^category/i)).toHaveAttribute('aria-invalid', 'true');
+                expect(screen.getByLabelText(/^destinationId/i)).toHaveAttribute(
+                    'aria-invalid',
+                    'true'
+                );
+                expect(screen.getByLabelText(/^benefitType/i)).toHaveAttribute(
+                    'aria-invalid',
+                    'true'
+                );
+            });
+            expect(global.fetch).not.toHaveBeenCalled();
+        });
+
+        it('POSTs the typed fields as top-level payload keys, with benefitValue as a number', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ id: 'abc' })
+            } as Response);
+
+            renderForm('service_provider');
+            await fillServiceProviderRequiredFields();
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                expect(global.fetch).toHaveBeenCalled();
+            });
+            const callArgs = vi.mocked(global.fetch).mock.calls[0];
+            const body = JSON.parse((callArgs?.[1] as RequestInit).body as string) as Record<
+                string,
+                unknown
+            >;
+
+            expect(body.businessName).toBe('Plomería Acme');
+            expect(body.category).toBe('PLOMERIA');
+            expect(body.destinationId).toBe('11111111-1111-4111-8111-111111111111');
+            expect(body.benefitType).toBe('PERCENTAGE');
+            expect(body.benefitValue).toBe(15);
+            expect(typeof body.benefitValue).toBe('number');
+            expect(body.message).not.toContain('businessName');
+            expect(body.message).toContain('Ofrecemos servicio 24hs para hosts.');
         });
     });
 

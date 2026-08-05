@@ -56,9 +56,11 @@ describe('mi-cuenta/aliados/index.astro (HOS-131 "Sumate como aliado" hub)', () 
             "import DiscoveryDoorHub from '@/components/account/DiscoveryDoorHub.astro';"
         );
         expect(source).toContain("import { getAdminUrl } from '@/lib/env';");
-        expect(source).toContain(
-            '<DiscoveryDoorHub locale={locale} door={door} roles={user.roles} adminUrl={getAdminUrl()} />'
-        );
+        expect(source).toContain('<DiscoveryDoorHub');
+        expect(source).toContain('locale={locale}');
+        expect(source).toContain('door={door}');
+        expect(source).toContain('roles={user.roles}');
+        expect(source).toContain('adminUrl={getAdminUrl()}');
     });
 
     it('wraps content in AccountLayout with the aliados active section', () => {
@@ -70,7 +72,7 @@ describe('mi-cuenta/aliados/index.astro (HOS-131 "Sumate como aliado" hub)', () 
     describe('own applications (HOS-278 AC-14)', () => {
         it('fetches the caller own applications, forwarding the session cookie', () => {
             expect(source).toContain(
-                "import { allianceLeadsApi } from '@/lib/api/endpoints-protected';"
+                "import { allianceLeadsApi, hostTradesApi } from '@/lib/api/endpoints-protected';"
             );
             expect(source).toContain('allianceLeadsApi.mine({');
             expect(source).toContain("Astro.request.headers.get('cookie')");
@@ -92,6 +94,25 @@ describe('mi-cuenta/aliados/index.astro (HOS-131 "Sumate como aliado" hub)', () 
             expect(source.indexOf('<AllianceApplicationsSection')).toBeLessThan(
                 source.indexOf('<DiscoveryDoorHub')
             );
+        });
+    });
+
+    // HOS-278 §8 — the serviceProvider door option force-acquires once the
+    // caller owns a host-trades listing.
+    describe('serviceProvider acquired signal (HOS-278 §8)', () => {
+        it('fetches the caller own host-trade listing, forwarding the session cookie', () => {
+            expect(source).toContain(
+                "import { allianceLeadsApi, hostTradesApi } from '@/lib/api/endpoints-protected';"
+            );
+            expect(source).toContain('hostTradesApi.mine({');
+        });
+
+        it('degrades to null on fetch failure, rather than erroring the hub', () => {
+            expect(source).toContain('myTradeResult.ok ? myTradeResult.data.trade : null');
+        });
+
+        it('passes acquiredOptionIds=["serviceProvider"] to DiscoveryDoorHub only when a trade exists', () => {
+            expect(source).toContain("acquiredOptionIds={myTrade ? ['serviceProvider'] : []}");
         });
     });
 });

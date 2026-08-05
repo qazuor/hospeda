@@ -17,6 +17,9 @@ import type {
     AddonResponse,
     DestinationReviewListItem,
     DowngradePreview,
+    HostTradeBenefitTypeEnum,
+    HostTradeCategoryEnum,
+    HostTradeOwnerUpdate,
     KeepSelections,
     LinkPreapprovalResponse,
     OccupancySourceEnum,
@@ -1996,6 +1999,90 @@ export const allianceLeadsApi = {
             path: `${PROTECTED}/alliance/leads/mine`,
             cookieHeader
         });
+    }
+};
+
+// --- Host-trade self-service (Protected — HOS-278 AC-7 .. AC-10) ---
+
+/**
+ * The caller's own `host_trades` directory listing, as the account page shows
+ * it. A read allowlist mirroring `HostTradeOwnerViewSchema` field-for-field
+ * (same precedent as {@link MyAllianceLeadItem} — the web declares its own
+ * read interface rather than importing the Zod-inferred type directly).
+ *
+ * `benefit`/`benefitType`/`benefitValue` are the LIVE, publicly visible offer.
+ * `pendingBenefit*` + `benefitReviewState` describe an edit awaiting admin
+ * review (HOS-278 AC-8) — they never overwrite the live trio until approved.
+ */
+export interface MyHostTrade {
+    readonly id: string;
+    readonly slug: string;
+    readonly name: string;
+    readonly category: HostTradeCategoryEnum;
+    readonly contact: string;
+    /** Fine print of the LIVE benefit (conditions, exclusions, validity). */
+    readonly benefit: string;
+    readonly benefitType: HostTradeBenefitTypeEnum | null;
+    readonly benefitValue: number | null;
+    readonly pendingBenefitType: HostTradeBenefitTypeEnum | null;
+    readonly pendingBenefitValue: number | null;
+    /** Fine print of the PENDING benefit edit, when one is awaiting review. */
+    readonly pendingBenefitText: string | null;
+    readonly benefitReviewState: 'pending' | null;
+    readonly destinationId: string;
+    readonly is24h: boolean;
+    readonly scheduleText: string | null;
+    readonly isActive: boolean;
+    /** Set once the listing has been taken down (HOS-278 R-4) — the row survives. */
+    readonly revokedAt: string | null;
+    readonly revokeReason: string | null;
+}
+
+/** Response envelope for `GET /protected/host-trades/mine`. */
+export interface MyHostTradeResponse {
+    /** `null` when the caller owns no listing — never a 403/404. */
+    readonly trade: MyHostTrade | null;
+}
+
+/**
+ * Provider self-service view/edit of their OWN `host_trades` listing.
+ *
+ * Auth-only (no permission — HOS-278 AC-7): an approved service provider is
+ * an ordinary tourist account with no role/permission change, so ownership of
+ * the row is the only gate. `mine()` answers `{ trade: null }` rather than an
+ * error when the caller owns none, mirroring {@link allianceLeadsApi.mine}.
+ */
+export const hostTradesApi = {
+    /**
+     * Fetches the caller's own listing, or `null`.
+     *
+     * @param params - `{ cookieHeader }` when calling from SSR; omit in the browser.
+     * @returns The caller's listing, or an error the page degrades from.
+     */
+    mine({
+        cookieHeader
+    }: {
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<MyHostTradeResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host-trades/mine`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Applies an edit to the caller's own listing.
+     *
+     * Operational fields (`contact`, `scheduleText`, `is24h`) apply
+     * immediately; any of `benefitType`/`benefitValue`/`benefitText` present
+     * goes to the PENDING columns and waits for admin review (HOS-278 AC-8) —
+     * see `HostTradeOwnerUpdateSchema`'s JSDoc for the full contract.
+     *
+     * @param body - The changed fields only (validated by `HostTradeOwnerUpdateSchema`).
+     * @returns The updated listing (owner view shape).
+     */
+    updateMine(body: HostTradeOwnerUpdate): Promise<ApiResult<{ readonly trade: MyHostTrade }>> {
+        return apiClient.patch({ path: `${PROTECTED}/host-trades/mine`, body });
     }
 };
 
@@ -4229,6 +4316,190 @@ export const commerceMediaApi = {
     }): Promise<ApiResult<{ readonly media: readonly CommerceMediaRow[] }>> {
         return apiClient.patch({
             path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/reorder`,
+            body: { orderedIds }
+        });
+    }
+};
+
+// ---------------------------------------------------------------------------
+// Content media (posts / events) — HOS-390
+// ---------------------------------------------------------------------------
+
+/** Editorial content vertical that owns a relational media table. */
+export type ContentMediaEntity = 'post' | 'event';
+
+/**
+ * Maps a content entity to its URL path segment.
+ */
+function contentMediaPathSegment(entity: ContentMediaEntity): 'posts' | 'events' {
+    return entity === 'post' ? 'posts' : 'events';
+}
+
+/**
+ * Row shape returned by the `post_media` / `event_media` relational endpoints.
+ * Field-for-field identical between both (they share `BaseContentMediaSchema`),
+ * so one client parameterized by `entity` reads cleanly instead of two
+ * near-identical objects.
+ *
+ * The `id` is the DB UUID needed for removeMedia / setFeaturedMedia /
+ * reorderMedia.
+ */
+export interface ContentMediaRow {
+    readonly id: string;
+    readonly url: string;
+    readonly publicId?: string | null;
+    readonly caption?: string | null;
+    readonly description?: string | null;
+    readonly alt?: string | null;
+    readonly isFeatured: boolean;
+    readonly sortOrder: number;
+    readonly state: 'visible' | 'archived';
+    readonly moderationState: string;
+}
+
+/**
+ * Granular per-operation protected endpoints for post / event photo management
+ * (HOS-390).
+ *
+ * Mirrors `commerceMediaApi` (HOS-372), with ONE behavioral difference worth
+ * knowing: `removeMedia` here DOES delete the Cloudinary asset server-side (the
+ * route passes the media provider down, so the binary is removed before the
+ * row and a storage failure aborts the whole operation). Callers must NOT also
+ * call `protectedMediaApi.deleteMedia` — that would be a second delete of an
+ * already-deleted asset.
+ *
+ * Each operation persists immediately: the post/event editor PATCH does not
+ * carry photo data. Videos are the exception and still travel in the entity's
+ * `media` blob (SPEC-204 D1).
+ *
+ * @example
+ * ```ts
+ * const list = await contentMediaApi.listMedia({ entity: 'post', id: 'post-uuid' });
+ * const added = await contentMediaApi.addMedia({ entity: 'post', id: 'post-uuid', body: { url, publicId } });
+ * await contentMediaApi.setFeaturedMedia({ entity: 'post', id: 'post-uuid', mediaId: added.data.media.id });
+ * await contentMediaApi.removeMedia({ entity: 'post', id: 'post-uuid', mediaId: added.data.media.id });
+ * ```
+ */
+export const contentMediaApi = {
+    /**
+     * List media rows for a post or event.
+     *
+     * @param params - Entity, entity ID, optional state filter, optional SSR cookie
+     * @returns `{ media: ContentMediaRow[] }`
+     */
+    listMedia({
+        entity,
+        id,
+        state = 'visible',
+        cookieHeader
+    }: {
+        readonly entity: ContentMediaEntity;
+        readonly id: string;
+        readonly state?: 'visible' | 'archived';
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<{ readonly media: readonly ContentMediaRow[] }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/${contentMediaPathSegment(entity)}/${id}/media`,
+            params: { state },
+            cookieHeader
+        });
+    },
+
+    /**
+     * Add a new media row for a post or event.
+     * `sortOrder` and `isFeatured` are server-controlled.
+     *
+     * Uses `postProtected`, not `post` — the plain helper does not send
+     * credentials, so a protected write through it is always a 401.
+     *
+     * @param params - Entity, entity ID, and media body
+     * @returns `{ media: ContentMediaRow }` — the newly created row (with DB id)
+     */
+    addMedia({
+        entity,
+        id,
+        body
+    }: {
+        readonly entity: ContentMediaEntity;
+        readonly id: string;
+        readonly body: {
+            readonly url: string;
+            readonly publicId?: string;
+            readonly caption?: string;
+            readonly description?: string;
+            readonly alt?: string;
+            readonly moderationState?: string;
+        };
+    }): Promise<ApiResult<{ readonly media: ContentMediaRow }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/${contentMediaPathSegment(entity)}/${id}/media`,
+            body
+        });
+    },
+
+    /**
+     * Delete a media row by its DB UUID (soft-delete + resequence).
+     *
+     * The server also deletes the Cloudinary asset — do NOT pair this with
+     * `protectedMediaApi.deleteMedia`.
+     *
+     * @param params - Entity, entity ID, and media row ID (DB UUID)
+     * @returns Delete result
+     */
+    removeMedia({
+        entity,
+        id,
+        mediaId
+    }: {
+        readonly entity: ContentMediaEntity;
+        readonly id: string;
+        readonly mediaId: string;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.delete({
+            path: `${PROTECTED}/${contentMediaPathSegment(entity)}/${id}/media/${mediaId}`
+        });
+    },
+
+    /**
+     * Mark a media row as the featured (cover) image.
+     * Enforces the single-featured invariant: the previous featured row is
+     * automatically unmarked by the server and becomes a normal visible row.
+     *
+     * @param params - Entity, entity ID, and media row ID (DB UUID) to feature
+     * @returns `{ media: ContentMediaRow }` — the updated row
+     */
+    setFeaturedMedia({
+        entity,
+        id,
+        mediaId
+    }: {
+        readonly entity: ContentMediaEntity;
+        readonly id: string;
+        readonly mediaId: string;
+    }): Promise<ApiResult<{ readonly media: ContentMediaRow }>> {
+        return apiClient.put({
+            path: `${PROTECTED}/${contentMediaPathSegment(entity)}/${id}/media/${mediaId}/featured`
+        });
+    },
+
+    /**
+     * Reorder the visible gallery photos of a post or event.
+     *
+     * @param params - Entity, entity ID, and the full ordered list of visible
+     *   media UUIDs (must match the current visible set exactly).
+     * @returns `{ media: ContentMediaRow[] }` — the rows in their new order
+     */
+    reorderMedia({
+        entity,
+        id,
+        orderedIds
+    }: {
+        readonly entity: ContentMediaEntity;
+        readonly id: string;
+        readonly orderedIds: readonly string[];
+    }): Promise<ApiResult<{ readonly media: readonly ContentMediaRow[] }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/${contentMediaPathSegment(entity)}/${id}/media/reorder`,
             body: { orderedIds }
         });
     }

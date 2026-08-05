@@ -8,13 +8,29 @@
  * (e.g. ACCOMMODATION_REVIEW_CREATE), the 'catalogo' section is NOT in EDITOR's
  * mainMenu template — navigation decisions are separate from data permissions.
  *
- * ROLE_PERMISSIONS source: packages/seed/src/required/rolePermissions.seed.ts
+ * ## HOS-374 Phase 3 — this config is now unreachable, and that is deliberate
+ *
+ * EDITOR no longer holds ACCESS_PANEL_ADMIN, so `authed-guard.ts` turns it away
+ * at the door and none of this navigation ever renders for a real editor — the
+ * role authors from `/mi-cuenta` instead. The IA config and these tests are kept
+ * as-is rather than deleted: retiring EDITOR from the admin IA would revert part
+ * of SPEC-154 §AC-13, a separate decision from HOS-374's authorization work.
+ * What this suite still proves is that the config remains internally coherent.
+ *
+ * ## EDITOR_PERMISSIONS is a HAND-MAINTAINED mirror, not an import
+ *
+ * `apps/admin` does not depend on `@repo/seed`, so the bundle below is copied
+ * from `packages/seed/src/required/rolePermissions.seed.ts` (RoleEnum.EDITOR)
+ * and nothing enforces that it stays in sync — it had silently drifted from the
+ * seed by 9 permissions before HOS-374 resynced it. Re-copy it by hand whenever
+ * EDITOR's grants change, and treat a passing run here as evidence about the IA
+ * config, never as evidence about what EDITOR actually holds.
  */
 
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { validatedConfig } from '@/config/ia/validate';
-import { hasSidebarAccessibleItem } from '@/lib/nav/permission-visibility';
+import { hasSidebarAccessibleItem, isPermissionGateGranted } from '@/lib/nav/permission-visibility';
 
 // ---------------------------------------------------------------------------
 // EDITOR real permission bundle
@@ -22,29 +38,31 @@ import { hasSidebarAccessibleItem } from '@/lib/nav/permission-visibility';
 // ---------------------------------------------------------------------------
 
 const EDITOR_PERMISSIONS: readonly PermissionEnum[] = [
-    // EVENT
+    // EVENT — author-scoped since HOS-374 §7.6.2
     PermissionEnum.EVENT_CREATE,
-    PermissionEnum.EVENT_UPDATE,
-    PermissionEnum.EVENT_PUBLISH_TOGGLE,
+    PermissionEnum.EVENT_VIEW_OWN,
+    PermissionEnum.EVENT_UPDATE_OWN,
     PermissionEnum.EVENT_FEATURED_TOGGLE,
     PermissionEnum.EVENT_LOCATION_UPDATE,
+    PermissionEnum.EVENT_LOCATION_LIFECYCLE_CHANGE,
     PermissionEnum.EVENT_ORGANIZER_MANAGE,
+    PermissionEnum.EVENT_ORGANIZER_LIFECYCLE_CHANGE,
     PermissionEnum.EVENT_SLUG_MANAGE,
     PermissionEnum.EVENT_COMMENT_CREATE,
-    PermissionEnum.EVENT_VIEW_PRIVATE,
-    PermissionEnum.EVENT_VIEW_DRAFT,
-    // POST
+    PermissionEnum.EVENT_COMMENT_VIEW,
+    PermissionEnum.EVENT_COMMENT_MODERATE,
+    // POST — author-scoped since HOS-374 §7.6.2
     PermissionEnum.POST_CREATE,
-    PermissionEnum.POST_UPDATE,
-    PermissionEnum.POST_PUBLISH_TOGGLE,
+    PermissionEnum.POST_VIEW_OWN,
+    PermissionEnum.POST_UPDATE_OWN,
     PermissionEnum.POST_SPONSOR_MANAGE,
+    PermissionEnum.POST_SPONSOR_LIFECYCLE_CHANGE,
     PermissionEnum.POST_TAGS_MANAGE,
     PermissionEnum.POST_FEATURED_TOGGLE,
     PermissionEnum.POST_SLUG_MANAGE,
     PermissionEnum.POST_COMMENT_CREATE,
-    PermissionEnum.POST_VIEW_PRIVATE,
-    PermissionEnum.POST_VIEW_DRAFT,
-    PermissionEnum.POST_VIEW_ALL,
+    PermissionEnum.POST_COMMENT_VIEW,
+    PermissionEnum.POST_COMMENT_MODERATE,
     // USER: Basic profile permissions
     PermissionEnum.USER_VIEW_PROFILE,
     PermissionEnum.USER_UPDATE_PROFILE,
@@ -69,10 +87,10 @@ const EDITOR_PERMISSIONS: readonly PermissionEnum[] = [
     PermissionEnum.DESTINATION_REVIEW_UPDATE,
     PermissionEnum.HOST_CONTACT_VIEW,
     PermissionEnum.HOST_MESSAGE_SEND,
-    // ACCESS
+    // RECOMMENDATION
+    PermissionEnum.RECOMMENDATION_VIEW,
+    // ACCESS — no ACCESS_PANEL_ADMIN / ACCESS_API_ADMIN since HOS-374 D-1
     PermissionEnum.DASHBOARD_BASE_VIEW,
-    PermissionEnum.ACCESS_PANEL_ADMIN,
-    PermissionEnum.ACCESS_API_ADMIN,
     PermissionEnum.ACCESS_API_PUBLIC,
     // TAG: Editor scope
     PermissionEnum.TAG_SYSTEM_VIEW,
@@ -91,7 +109,13 @@ const EDITOR_PERMISSIONS: readonly PermissionEnum[] = [
     PermissionEnum.POST_TAG_ASSIGN,
     // MEDIA
     PermissionEnum.MEDIA_UPLOAD,
-    PermissionEnum.MEDIA_DELETE
+    PermissionEnum.MEDIA_DELETE,
+    // NEWSLETTER
+    PermissionEnum.NEWSLETTER_CAMPAIGN_VIEW,
+    PermissionEnum.NEWSLETTER_CAMPAIGN_WRITE,
+    PermissionEnum.NEWSLETTER_SUBSCRIBER_VIEW,
+    // PLATFORM SETTINGS V1
+    PermissionEnum.USER_UPDATE_SELF
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -205,21 +229,40 @@ describe(`AC-13 — ${RoleEnum.EDITOR} role navigation`, () => {
 
     // ── Sidebar visibility for EDITOR's real permissions ─────────────────────
 
-    it('inicio sidebar is accessible for EDITOR (has ACCESS_PANEL_ADMIN)', () => {
+    it('inicio sidebar items are all DENIED to EDITOR since HOS-374 — only the disable semantics keep the sidebar "accessible"', () => {
+        /**
+         * Both inicioSidebar items gate on ACCESS_PANEL_ADMIN, which EDITOR lost
+         * in HOS-374 Phase 3. `hasSidebarAccessibleItem` still returns true, but
+         * for the OPPOSITE reason it used to: not because EDITOR passes the gate,
+         * but because a denied item with the default `onMissing` renders disabled
+         * and still occupies the sidebar (same rule the analisis test relies on).
+         *
+         * The gate assertion below is the load-bearing one — without it, this
+         * test would read as "EDITOR can use the inicio sidebar", which is false.
+         */
         // Arrange
         const sidebar = validatedConfig.sidebars.inicioSidebar;
 
         // Act
+        const gateOutcomes = sidebar.items.map((item) =>
+            item.type === 'link'
+                ? isPermissionGateGranted({
+                      gate: item.permissions,
+                      userPermissions: EDITOR_PERMISSIONS
+                  })
+                : null
+        );
         const accessible = hasSidebarAccessibleItem({
             items: sidebar.items,
             userPermissions: EDITOR_PERMISSIONS
         });
 
-        // Assert
+        // Assert — every link is denied, yet the sidebar still counts as occupied.
+        expect(gateOutcomes).toEqual([false, false]);
         expect(accessible).toBe(true);
     });
 
-    it('editorial sidebar is accessible for EDITOR (has POST_VIEW_ALL, POST_CREATE, etc.)', () => {
+    it('editorial sidebar is accessible for EDITOR (still has POST_CREATE — the gate is an OR)', () => {
         // Arrange
         const sidebar = validatedConfig.sidebars.editorialSidebar;
 

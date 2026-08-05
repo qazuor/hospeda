@@ -2,6 +2,23 @@
 /// <reference types="astro/client" />
 
 /**
+ * Flattened translation dictionaries delivered to the browser, keyed by locale
+ * (`{ es: { "nav.home": "Inicio", … } }`).
+ *
+ * Assigned by the hashed, immutable classic script that `I18nClientData.astro`
+ * links from `<head>` and `src/pages/i18n/[file].js.ts` serves (HOS-369 Wave D).
+ * `getClientLocaleDict` in `src/lib/i18n.ts` reads it SYNCHRONOUSLY while
+ * islands render — do not replace it with anything asynchronous.
+ *
+ * Optional because it is absent until that script executes (and in any test
+ * that does not seed it); every reader must handle the missing case by falling
+ * back to the key's own fallback string.
+ */
+interface Window {
+    __HOSPEDA_I18N__?: Record<string, Record<string, string>>;
+}
+
+/**
  * Augment Astro's App namespace with custom types for request-scoped locals.
  * Provides full type safety for data populated by middleware and consumed in pages.
  */

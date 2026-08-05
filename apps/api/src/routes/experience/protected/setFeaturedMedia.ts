@@ -16,8 +16,10 @@
  * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff) —
  * enforced inside `setFeaturedExperienceMedia` via `checkExperienceCanEditMedia`.
  *
- * NOTE: this route must be registered BEFORE /{id}/media/{mediaId} (DELETE)
- * so Hono resolves the fixed "/featured" suffix unambiguously.
+ * NOTE: `index.ts` registers this before /{id}/media/{mediaId} by convention.
+ * That is defensive, not required — the two paths differ in segment count, and
+ * Hono resolves the static `featured` segment regardless of insertion order
+ * (mirrors the reorder-route note).
  */
 import { ExperienceMediaSingleOutputSchema } from '@repo/schemas';
 import { ExperienceService, ServiceError, setFeaturedExperienceMedia } from '@repo/service-core';
