@@ -12,8 +12,8 @@
 
 import { BridgeIcon } from '@repo/icons';
 import { type MouseEvent as ReactMouseEvent, useCallback, useRef, useState } from 'react';
-import type { DestinationCardData } from '@/data/types';
 import { cn } from '@/lib/cn';
+import type { DestinationsIslandData } from './DestinationsIsland.client';
 import styles from './DestinationsMap.module.css';
 
 // ---------------------------------------------------------------------------
@@ -200,7 +200,7 @@ interface DestinationsMapProps {
     /** Callback invoked when a city pin is clicked and a matching destination exists. */
     readonly onSelectDestination: (index: number) => void;
     /** The list of destination cards. Slugs must match `City.slug` values above. */
-    readonly destinations: readonly DestinationCardData[];
+    readonly destinations: readonly DestinationsIslandData[];
     /** Accessible label for the map container. */
     readonly mapLabel?: string;
     /** Formatter for individual pin aria-labels. Receives city name. */
