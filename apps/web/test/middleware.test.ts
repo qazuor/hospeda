@@ -18,14 +18,20 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const parseSessionUserMock = vi.fn().mockResolvedValue({
-    id: 'u1',
-    name: 'Test User',
-    email: 'test@example.com',
-    roles: ['USER'],
-    image: null,
-    mustChangePassword: false
-});
+// Built via vi.hoisted because vi.mock's factory is hoisted above any
+// top-level declaration it would otherwise close over. A plain `const` here
+// works only while `../src/middleware` is imported lazily (inside a test), and
+// this file imports it statically — see the import below.
+const { parseSessionUserMock } = vi.hoisted(() => ({
+    parseSessionUserMock: vi.fn().mockResolvedValue({
+        id: 'u1',
+        name: 'Test User',
+        email: 'test@example.com',
+        roles: ['USER'],
+        image: null,
+        mustChangePassword: false
+    })
+}));
 
 // Mock only `parseSessionUser` from middleware-helpers — every other export
 // (isServerIslandRoute, isStaticAssetRoute, buildCspHeader, ...) runs for
@@ -38,6 +44,19 @@ vi.mock('../src/lib/middleware-helpers', async (importOriginal) => {
         parseSessionUser: parseSessionUserMock
     };
 });
+
+// Imported statically, NOT via `await import(...)` inside each test.
+//
+// `src/middleware` pulls a large module graph (env, i18n, media, cache-tags,
+// the icon sprite, Sentry). Loading it inside a test body charges that graph's
+// one-time transform+import cost to that test's own 15s timeout, and only to
+// the FIRST test — every later one finds the module cached. On CI that first
+// test sat right at the cliff: on the shard that carries this file, apps/web
+// alone spends ~410s of import time across 117 files, and the test timed out
+// there twice in a row while passing locally in milliseconds and passing on
+// other runs of the identical file set. A static import pays the same cost
+// once, during collection, where it is not measured against a test timeout.
+import { onRequest } from '../src/middleware';
 
 /** Minimal Astro APIContext double sufficient for the code paths exercised here. */
 function createContext({
@@ -71,7 +90,6 @@ describe('middleware onRequest — Server Island requests never trigger parseSes
     });
 
     it('never calls parseSessionUser for a /_server-islands/* request (the get-session flood fix)', async () => {
-        const { onRequest } = await import('../src/middleware');
         const context = createContext({
             pathname: '/_server-islands/MobileMenuIsland',
             cookieHeader: 'better-auth.session_token=fake-session'
@@ -85,7 +103,6 @@ describe('middleware onRequest — Server Island requests never trigger parseSes
     });
 
     it('sets locals.user to null (not undefined) for a Server Island request, satisfying the App.Locals contract', async () => {
-        const { onRequest } = await import('../src/middleware');
         const context = createContext({ pathname: '/_server-islands/NextEventsSection' });
         const next = vi.fn().mockResolvedValue(new Response('ok'));
 
@@ -95,7 +112,6 @@ describe('middleware onRequest — Server Island requests never trigger parseSes
     });
 
     it('this test would catch a regression: still calls parseSessionUser for a real protected route (Step 6, unaffected by the fix)', async () => {
-        const { onRequest } = await import('../src/middleware');
         const context = createContext({
             pathname: '/es/mi-cuenta/',
             cookieHeader: 'better-auth.session_token=fake-session'
@@ -114,7 +130,6 @@ describe('middleware onRequest — 410 Gone rewrite keeps the 410 status (soft-d
     });
 
     it('re-wraps a downstream 410 as a 410 rendering the /404 chrome (not a coerced 404)', async () => {
-        const { onRequest } = await import('../src/middleware');
         // A real 410 producer (e.g. `alojamientos/[slug].astro` for a soft-deleted
         // entity) returns an empty-body 410. Use a valid, trailing-slashed,
         // session-optional public detail path so Steps 1-7 pass through without an
@@ -148,7 +163,6 @@ describe('middleware onRequest — BETA-162 legacy /blog alias redirects to /pub
     });
 
     it('301-redirects /es/blog/ to /es/publicaciones/', async () => {
-        const { onRequest } = await import('../src/middleware');
         const context = createContext({ pathname: '/es/blog/' });
         const next = vi.fn().mockResolvedValue(new Response('ok'));
 
@@ -159,7 +173,6 @@ describe('middleware onRequest — BETA-162 legacy /blog alias redirects to /pub
     });
 
     it('301-redirects a /blog subpath (e.g. /en/blog/some-post/) to the equivalent /publicaciones/ subpath', async () => {
-        const { onRequest } = await import('../src/middleware');
         const context = createContext({ pathname: '/en/blog/some-post/' });
         const next = vi.fn().mockResolvedValue(new Response('ok'));
 
@@ -169,8 +182,6 @@ describe('middleware onRequest — BETA-162 legacy /blog alias redirects to /pub
     });
 
     it('redirects for all three supported locales (es/en/pt)', async () => {
-        const { onRequest } = await import('../src/middleware');
-
         for (const locale of ['es', 'en', 'pt'] as const) {
             const context = createContext({ pathname: `/${locale}/blog/` });
             const next = vi.fn().mockResolvedValue(new Response('ok'));
@@ -198,7 +209,6 @@ describe('middleware onRequest — BETA-162 legacy /blog alias redirects to /pub
 // ---------------------------------------------------------------------------
 describe('middleware onRequest — Step 4 locale redirect preserves the query string', () => {
     it('carries the query string through the root redirect (campaign attribution)', async () => {
-        const { onRequest } = await import('../src/middleware');
         const context = createContext({
             pathname: '/?utm_source=newsletter&utm_campaign=verano'
         });
@@ -216,7 +226,6 @@ describe('middleware onRequest — Step 4 locale redirect preserves the query st
         // segment, which `extractLocaleFromPath` correctly strips, leaving the
         // rest of the path intact. Deliberately NOT `/alojamientos/?page=2` —
         // see the note below on why that URL behaves differently.
-        const { onRequest } = await import('../src/middleware');
         const context = createContext({ pathname: '/fr/alojamientos/?page=2' });
 
         await onRequest(context as any, vi.fn());
@@ -225,7 +234,6 @@ describe('middleware onRequest — Step 4 locale redirect preserves the query st
     });
 
     it('emits no stray "?" when the URL carries no query string', async () => {
-        const { onRequest } = await import('../src/middleware');
         const context = createContext({ pathname: '/' });
 
         await onRequest(context as any, vi.fn());
@@ -248,7 +256,6 @@ describe('middleware onRequest — Step 4 locale redirect preserves the query st
 // ---------------------------------------------------------------------------
 describe('middleware onRequest — Step 4 keeps the path when there is no locale segment', () => {
     it('redirects /destinos/colon/ to /es/destinos/colon/, not /es/colon/', async () => {
-        const { onRequest } = await import('../src/middleware');
         const context = createContext({ pathname: '/destinos/colon/' });
 
         await onRequest(context as any, vi.fn());
@@ -257,7 +264,6 @@ describe('middleware onRequest — Step 4 keeps the path when there is no locale
     });
 
     it('keeps the path AND the query string together', async () => {
-        const { onRequest } = await import('../src/middleware');
         const context = createContext({ pathname: '/alojamientos/?page=2' });
 
         await onRequest(context as any, vi.fn());
@@ -268,7 +274,6 @@ describe('middleware onRequest — Step 4 keeps the path when there is no locale
     it('still replaces a real unsupported locale rather than keeping it', async () => {
         // The counter-case that stops the fix from being over-broad: `/fr/...`
         // must NOT become `/es/fr/...`.
-        const { onRequest } = await import('../src/middleware');
         const context = createContext({ pathname: '/fr/alojamientos/' });
 
         await onRequest(context as any, vi.fn());
@@ -296,7 +301,6 @@ describe('middleware onRequest — Step 11 emits the Cache-Tag purge header (HOS
         readonly cacheControl?: string;
         readonly tags?: readonly string[];
     }): Promise<Response> {
-        const { onRequest } = await import('../src/middleware');
         const context = createContext({ pathname });
         const next = vi.fn().mockImplementation(() => {
             for (const tag of tags ?? []) {
@@ -311,7 +315,6 @@ describe('middleware onRequest — Step 11 emits the Cache-Tag purge header (HOS
     }
 
     it('opens the collector before next(), so page frontmatter can contribute', async () => {
-        const { onRequest } = await import('../src/middleware');
         const context = createContext({ pathname: '/es/alojamientos/' });
         let seen: unknown;
         const next = vi.fn().mockImplementation(() => {
