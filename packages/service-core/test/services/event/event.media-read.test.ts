@@ -173,6 +173,17 @@ describe('attachComposedEventMediaList', () => {
         expect(mediaModel.findByEvents).not.toHaveBeenCalled();
     });
 
+    it('returns an empty array for a nullish item list instead of throwing', async () => {
+        // Reachable from a model stub or an error path that yields a result
+        // object with no `items` key. Spreading it would raise a TypeError.
+        const mediaModel = makeMediaModel(new Map());
+
+        await expect(
+            attachComposedEventMediaList({ items: undefined as never, mediaModel })
+        ).resolves.toEqual([]);
+        expect(mediaModel.findByEvents).not.toHaveBeenCalled();
+    });
+
     it('batches every event into a single query (no N+1)', async () => {
         const mediaModel = makeMediaModel(
             new Map([[EVENT_ID, [makeRow({ url: 'https://cdn.example.com/a.jpg' })]]])

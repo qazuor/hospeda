@@ -11,7 +11,7 @@ import {
     expectSuccess
 } from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
-import { createTypedModelMock } from '../../utils/modelMockFactory';
+import { createTypedModelMock, makePostMediaModelStub } from '../../utils/modelMockFactory';
 
 describe('PostService.restore', () => {
     let service: PostService;
@@ -23,7 +23,14 @@ describe('PostService.restore', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         modelMock = createTypedModelMock(PostModel, ['findById', 'restore']);
-        service = createServiceTestInstance(PostService, modelMock);
+        service = createServiceTestInstance(
+            PostService,
+            modelMock,
+            undefined,
+            null,
+            undefined,
+            makePostMediaModelStub()
+        );
         post = createMockPost({ deletedAt: new Date() });
         postId = post.id;
         actorWithPerm = createActor({ permissions: [PermissionEnum.POST_RESTORE] });

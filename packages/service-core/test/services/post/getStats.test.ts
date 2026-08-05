@@ -15,7 +15,7 @@ import { createMockPost } from '../../factories/postFactory';
 import * as assertions from '../../helpers/assertions';
 import { expectInternalError, expectValidationError } from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
-import { createTypedModelMock } from '../../utils/modelMockFactory';
+import { createTypedModelMock, makePostMediaModelStub } from '../../utils/modelMockFactory';
 
 const asMock = <T>(fn: T) => fn as unknown as Mock;
 
@@ -29,7 +29,14 @@ describe('PostService.getStats', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         modelMock = createTypedModelMock(PostModel, ['findOne']);
-        service = createServiceTestInstance(PostService, modelMock);
+        service = createServiceTestInstance(
+            PostService,
+            modelMock,
+            undefined,
+            null,
+            undefined,
+            makePostMediaModelStub()
+        );
         actor = createActor();
         post = createMockPost();
         input = { id: post.id as PostIdType };

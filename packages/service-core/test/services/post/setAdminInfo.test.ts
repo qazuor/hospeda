@@ -10,7 +10,11 @@ import {
     expectNotFoundError,
     expectValidationError
 } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makePostMediaModelStub
+} from '../../utils/modelMockFactory';
 
 type Actor = ReturnType<typeof createActor>;
 let modelMock: PostModel;
@@ -28,7 +32,13 @@ describe('PostService - setAdminInfo', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(PostModel, ['findById', 'update']);
         loggerMock = createLoggerMock();
-        service = new PostService({ logger: loggerMock }, modelMock);
+        service = new PostService(
+            { logger: loggerMock },
+            modelMock,
+            null,
+            undefined,
+            makePostMediaModelStub() as never
+        );
         superAdmin = createActor({
             roles: [RoleEnum.SUPER_ADMIN],
             permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.POST_UPDATE]

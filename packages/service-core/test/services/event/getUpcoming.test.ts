@@ -15,7 +15,7 @@ import {
     expectSuccess,
     expectUnauthorizedError
 } from '../../helpers/assertions';
-import { createTypedModelMock } from '../../utils/modelMockFactory';
+import { createTypedModelMock, makeEventMediaModelStub } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
 
 /**
@@ -53,7 +53,11 @@ describe('EventService.getUpcoming', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findAllWithRelations']);
         loggerMock = { log: vi.fn(), error: vi.fn() } as unknown as ServiceLogger;
-        service = new EventService({ model: modelMock, logger: loggerMock });
+        service = new EventService({
+            model: modelMock,
+            logger: loggerMock,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
     });
 
     it('should return public and private events if actor has EVENT_SOFT_DELETE_VIEW', async () => {

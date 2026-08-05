@@ -11,7 +11,11 @@ import {
     expectSuccess,
     expectValidationError
 } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makePostMediaModelStub
+} from '../../utils/modelMockFactory';
 
 describe('PostService.unlike', () => {
     let service: PostService;
@@ -23,7 +27,13 @@ describe('PostService.unlike', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(PostModel, ['findOne', 'decrementLikes']);
         loggerMock = createLoggerMock();
-        service = new PostService({ logger: loggerMock }, modelMock);
+        service = new PostService(
+            { logger: loggerMock },
+            modelMock,
+            null,
+            undefined,
+            makePostMediaModelStub() as never
+        );
     });
 
     it('should decrement likes (success)', async () => {
