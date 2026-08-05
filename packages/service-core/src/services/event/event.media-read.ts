@@ -102,7 +102,10 @@ export async function attachComposedEventMediaList<T extends Event>(input: {
     tx?: DrizzleClient;
 }): Promise<T[]> {
     const { items, mediaModel, tx } = input;
-    if (!items || items.length === 0) return [...items];
+    // `!items` covers undefined/null, which a caller can reach when a model
+    // stub or an error path yields a result object with no `items` key —
+    // spreading it (as the gastronomy molde does) throws a TypeError instead.
+    if (!items || items.length === 0) return items ? [...items] : [];
     const grouped = await mediaModel.findByEvents({ eventIds: items.map((i) => i.id), tx });
     return items.map((item) => withComposedEventMedia(item, grouped.get(item.id) ?? []));
 }
