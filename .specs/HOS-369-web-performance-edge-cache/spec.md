@@ -261,6 +261,10 @@ with no validatable form.
   immutable, edge-cacheable asset.
 - **G-7** — Bots (Googlebot, PageSpeed, AI crawlers) get the same cached-edge
   benefit as human visitors, and are not throttled by the public rate limit.
+  **MET on staging 2026-08-05 (W2-6).** Googlebot and Chrome were measured
+  served from the *same* cache entry (identical `age`, no `Vary`), and the
+  rate-limit half needs no work: a 24 h census found zero crawler requests
+  against the API host. See §6.5 W2-6 and D-13.
 
 Added in Rev 2:
 
@@ -1515,9 +1519,76 @@ do not dangle.
 for the first request after every TTL expiry and for every `stale-while-
 revalidate` refresh.
 
-**W2-6 — Bot handling.** Confirm crawlers benefit from the edge cache (they
-will, since the cache is UA-agnostic) and add a rate-limit allowlist or a
-separate tier for verified crawler traffic hitting the API directly.
+**W2-6 — Bot handling. DONE (2026-08-05), and the second half was closed as
+unnecessary rather than built.** This task had two halves. The first is
+confirmed by measurement; the second turned out to protect an empty set.
+
+**Half 1 — crawlers do benefit from the edge cache. Confirmed on staging.**
+Not "they will, since the cache is UA-agnostic" — measured. The same URL
+(`https://staging.hospeda.com.ar/es/`) was requested twice in immediate
+succession with different User-Agents:
+
+| User-Agent | Status | `cf-cache-status` | `age` |
+|---|---|---|---|
+| `Googlebot/2.1` | 200 | `HIT` | 6 |
+| `Chrome/151` | 200 | `HIT` | 6 |
+
+The **identical `age`** is the actual evidence, not the two `HIT`s: it proves
+both requests were served from *the same cache object*, rather than each UA
+warming its own entry. No `Vary` header is present on the response, which is
+what makes that true. **AC-G-7 is satisfied for staging.**
+
+**Half 2 — the rate-limit allowlist is not built, because verified crawlers
+never reach the API.** §5.6 described the residual exposure as "a crawler
+hitting `api.hospeda.com.ar` directly from a shared datacenter range". That
+exposure was already closed by a different spec: **HOS-109 T-011 serves
+`User-agent: * / Disallow: /` on the API host** (`apps/api/src/routes/robots.ts`),
+because crawlers were probing it for feeds. The consequence for this task is
+structural:
+
+- A crawler that *respects* robots.txt — which is what "verified" means — never
+  requests anything from the API host, so an allowlist grants it nothing.
+- A crawler that reaches the API *anyway* is by definition ignoring robots.txt,
+  so it is not verified and must not be allowlisted.
+
+The set the allowlist would serve is empty by construction, not by accident.
+
+**Measured, not just reasoned (Cloudflare AI Crawl Control, 24 h to
+2026-08-05, the maximum window the Free plan exposes).** Filtering the zone's
+crawler traffic to `hostname contains "api."` — which covers both
+`api.hospeda.com.ar` and `staging-api.hospeda.com.ar` — returns **one single
+request**, and that request is **our own probe**: `GET /api/v1/public/destinations`
+on `staging-api.hospeda.com.ar`, issued by the curl that verified the API's
+robots.txt an hour earlier. Real crawler traffic against the API is **zero**.
+The same window shows **~2,000 crawler requests zone-wide** (Applebot 947,
+Googlebot 182, ChatGPT-User 28, Amazonbot 22, Claude-SearchBot 10, +5 others
+35) — all of it against the web app, none against the API.
+
+**A User-Agent allowlist would have been a rate-limit bypass, and we
+demonstrated it by accident.** Cloudflare's AI Crawl Control attributed the
+probe above to **"Googlebot"** — because that is the User-Agent string the
+curl sent. A `curl -A` is all it takes. Any allowlist keyed on the UA string
+would hand a rate-limit exemption to anyone who asks for one. Building it
+honestly would require Cloudflare's `cf.verified_bot` signal plus a shared
+secret so the header cannot be forged by bypassing the proxy — real work, a
+permanent bypass path to maintain, in exchange for protecting a set measured
+at zero. Rejected on that trade, not on difficulty.
+
+**The inverse risk was checked and is not real.** The API's `Disallow: /` also
+tells Googlebot's *renderer* not to fetch API subresources while rendering a
+page, which would matter if any indexable content arrived only via a
+client-side fetch. It does not: the SSR-first island rule
+(`apps/web/CLAUDE.md`) requires the critical data to be in the SSR HTML, and
+the browser-side calls to `PUBLIC_API_URL` on public pages are `/protected/*`
+endpoints (which return nothing without a session), "load more" pagination
+past page 1, forms, and analytics. Nothing indexable depends on them.
+
+**Scope limit, stated so this is not read as broader than it is.** AI Crawl
+Control tracks *known* crawlers, and the Free plan caps the window at 24 hours.
+A rogue scraper with a forged UA would not necessarily appear in it — but that
+is precisely the actor an allowlist for *verified* crawlers could never have
+covered. The public tier's 1000 req/h per IP and the per-route limiters remain
+the defence there, unchanged by this task.
 
 **W2-7 — Fix the 19 misleading `@rendering SSR + ISR 24h` comments** — either
 implement the caching they claim (covered by W2-3) or correct the comment. A
@@ -2070,6 +2141,20 @@ Added in Rev 2:
   Unblocking it requires native `security.csp` → dropping `<ClientRouter/>` →
   HOS-124, canceled. The same doc records that prerender does not change
   indexability, only TTFB, and that CWV is already "Good".
+
+### 11.1.2 Decisions taken (owner, 2026-08-05)
+
+- **D-13 — W2-6's crawler rate-limit allowlist is closed as unnecessary, not
+  deferred.** The owner asked for a Cloudflare census before deciding rather
+  than accepting the argument on its logic, and the census settled it: zero real
+  crawler requests against the API host in 24 h, against ~2,000 zone-wide. The
+  allowlist would protect a set that is empty by construction — HOS-109 already
+  serves `Disallow: /` on the API host, so a compliant crawler never arrives and
+  a non-compliant one is not "verified". Recorded as a decision rather than as a
+  dropped task, because the reasoning is reusable: **an allowlist keyed on a
+  self-declared identity is a bypass, not a control.** The census demonstrated
+  this in the act of being taken — Cloudflare attributed our own `curl -A
+  "…Googlebot…"` probe to Googlebot. Full record and evidence in §6.5 W2-6.
 
 ### 11.2 Still open
 
