@@ -3,7 +3,9 @@
  * @file destinos/[slug]/alojamientos/index.astro
  * @description Accommodations within a specific destination.
  * @route /{lang}/destinos/{slug}/alojamientos/
- * @rendering SSR + ISR 24h
+ * @rendering SSR + Cloudflare edge cache — `public, s-maxage=300,
+ *   stale-while-revalidate=600`, purged by cache tag. Eligibility is decided
+ *   per request by the `applyCacheHeaders` call below, not by this comment.
  */
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
