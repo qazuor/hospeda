@@ -385,7 +385,6 @@ contradicting a comment in `listing-cache.ts:9` that claims otherwise.
 > `revalidation_log.path` is now `target`. Kept as written because it is the
 > record of WHY, and because §5.11's reasoning still governs W1-2.
 
-
 `apps/web/src/pages/api/revalidate.ts:60` sends
 `{ purge_everything: true }` to the Cloudflare zone. Verified by reading the
 file on 2026-07-31 — HOS-297 (Done) solved the *burst* problem (a 50 ms
@@ -710,7 +709,7 @@ none of the collateral.
 > and the method that actually proves it are in §5.11.6; the original open
 > question is preserved below because the reasoning is what made it worth
 > testing rather than assuming.
-
+>
 > Method: re-read the live Cloudflare docs on 2026-08-03 while implementing
 > W1-1 — the purge-cache overview, the purge-by-tags page, and the Workers
 > cache configuration page.
@@ -1216,8 +1215,38 @@ coalesces per-entity debounce buckets into a **single** flush per window
 (`revalidation.service.ts`, `enqueuePurgeGroup`), so the 5 requests/min tag-purge
 ceiling is not a constraint at our write volume.
 
-**W1-2 — Cloudflare Cache Rule.**
-Scope: `/{lang}/alojamientos*` and `/{lang}/suscriptores/{planes,turistas}*`
+**W1-2 — Cloudflare Cache Rule. DONE (2026-08-04, staging only).**
+Live as `HOS-369 W1-2 - staging catalog + subscriber`; the expression, every
+setting, and the reasoning per clause are versioned at
+[`infra/cloudflare/rules/cache-rules.md`](../../infra/cloudflare/rules/cache-rules.md)
+(W1-5). Three things differ from the plan below, all found by measuring rather
+than by reading:
+
+- **Edge TTL is `bypass_by_default`, not `respect_origin`.** "Honor the origin"
+  has three sub-modes in Cloudflare and only this one fails closed:
+  `respect_origin` would cache any matched response whose origin sent no
+  `Cache-Control` at Cloudflare's own default TTL — untagged, therefore
+  unpurgeable. This mirrors `applyCacheHeaders`'s coupling at the edge.
+- **A Browser TTL of `respect_origin` had to be added, and it is load-bearing.**
+  The zone's Browser Cache TTL is 4 h and Cloudflare injects `max-age=14400`
+  into everything a Cache Rule makes cacheable — absent before the rule, absent
+  on prod. A purge never reaches browser caches, so without this a returning
+  visitor holds stale HTML for four hours with nothing able to evict it. The fix
+  is per-rule; the zone setting is left alone because it would also hit prod.
+- **The rule's real footprint is smaller than its expression.** Only the listing
+  index (and `/page/N/`), `mapa/`, `tipo/<type>/` and the four subscriber pages
+  declare cacheability. Accommodation **detail** pages, `fotos/`, `comparar/`,
+  `comodidades/<slug>/`, `caracteristicas/<slug>/` and
+  `suscriptores/propietarios/` send no `Cache-Control` and return `BYPASS`.
+  Adding one is an application change (one `applyCacheHeaders` call), not a
+  Cloudflare change.
+
+Requirement 5 (Sort query string) is satisfied but currently **inert**:
+`http.request.uri.query eq ""` means the rule never sees a query string to
+normalize. Kept per §7.2 so it is already right if the expression widens.
+
+The original plan, for the record. Scope: `/{lang}/alojamientos*` and
+`/{lang}/suscriptores/{planes,turistas}*`
 first — the routes that already emit a correct header — then **one path family
 at a time** as WB0-5 proves each one auth-blind. Requirements, in order:
 
@@ -1292,22 +1321,168 @@ aliased the whole locals object (`const locals = Astro.locals as { user?: … }`
 rather than reading `Astro.locals.user`. A membership check cannot be defeated
 by a spelling, and it covers every future consumer, not just the three layouts.
 
-**W1-3 — Verify by measurement, not by assumption.**
-Re-run the §5.1 probes. Acceptance is in §9; a rule that is created but not
-verified is exactly the failure mode that left the pricing header dead for
-months.
+**W1-3 — Verify by measurement, not by assumption. DONE for the surfaces that
+exist (2026-08-04).** All probes from Buenos Aires, PoP `EZE`, pinned via
+`cf-ray`.
 
-**W1-4 — Redirect Rules at the edge.**
-Move the trailing-slash and `/` → `/es/` redirects to Cloudflare Redirect
-Rules. Collapse the `/es/blog` → `/es/blog/` → `/es/publicaciones/` chain into a
-single hop.
+- **AC-1 PASSED** — `HIT` on the second request, `age` climbing (3, 6).
+- **AC-2 PASSED with a real session — and the criterion as written is wrong.**
+  Re-run on 2026-08-04 with an actual logged-in visitor, every probe issued from
+  inside the browser (`fetch` with `credentials: 'include'` vs `'omit'`) so the
+  session token was never read or handled.
 
-**W1-5 — Version the Cloudflare configuration.**
-The only Cloudflare config-as-code in the repo today is two Workers
-(`infra/cloudflare/posthog-proxy`, `infra/cloudflare/sentry-tunnel`). Cache
-Rules and Redirect Rules must not be dashboard-only — that is precisely how a
-dead header survived unnoticed. At minimum, commit the rule expressions as
-documentation under `infra/cloudflare/`; ideally as Terraform.
+  *Bypass half:* across `/es/alojamientos/`, `/en/alojamientos/` and
+  `/es/suscriptores/planes/`, **12 authenticated requests returned `DYNAMIC`,
+  never `HIT`**, while the anonymous ones warmed to `HIT` alongside them. No
+  `Set-Cookie` on any anonymous response.
+
+  *Body half:* AC-2 asks that the bypassed response "contains that user's
+  state". **It cannot, and should not — W1-2a is what changed this.** The
+  authenticated response carries `data-user-authenticated="false"` exactly like
+  the anonymous one. What holds instead is the stronger **AC-B0-1**: after
+  normalising only the two Sentry telemetry metas (`sentry-trace`, `baggage` —
+  per-request span ids carrying no visitor state), the two documents are
+  **byte-identical**: 1,378,961 characters, same length, zero differing regions.
+  That identity is precisely what makes the cookie bypass redundant rather than
+  load-bearing. Record AC-2 as passing on this basis; its original wording
+  predates the de-personalization and now describes a failure, not a success.
+
+  Two traps worth keeping. `/api/v1/public/auth/me` does **not** exist on the
+  web origin — it lives on the API host, and fetching it returns the web app's
+  404 *page* with `data-user-authenticated="false"` baked in, which reads
+  exactly like "not logged in". Confirm a session with `fetch('/es/mi-cuenta/')`
+  instead. And `document.cookie` cannot see `better-auth.session_token` because
+  it is HttpOnly, so its absence proves nothing.
+- **AC-3 PASSED** — `?types=HOTEL` → `DYNAMIC`.
+- **AC-6 PASSED, both directions.** First pass: purging `preview:list-accom`
+  evicted `/es/alojamientos/` **and** `/es/alojamientos/page/2/` (the case
+  purge-by-URL provably could not reach, §5.11.2), while the `/_astro/*` chunk
+  stayed `HIT` with its `age` climbing *through* the purge (4409 → 4542, i.e.
+  +133 s of wall time, not a reset). Tag purge does not touch static assets.
+
+  The remaining half became testable once the accommodation **detail** page
+  opted into the cache (see W1-6 below), and was measured on 2026-08-04 in
+  **both directions**, which is what makes it non-vacuous rather than a lucky
+  single observation:
+
+  | Purged tag | Detail (es/en/pt) | Listing | `/_astro/*` |
+  |---|---|---|---|
+  | `preview:accom-<slug>` | **MISS ×3** | `HIT` (survived) | `HIT`, age climbing |
+  | `preview:list-accom` | `HIT` ×3 (survived, ages 37→69, 45→68, 54→68) | **MISS** | — |
+
+  An entity purge takes the entity's page in every locale and nothing else; a
+  collection purge takes the listing and leaves every detail page standing. The
+  spec's original wording names an *event*, but `/eventos/` is outside the Cache
+  Rule and emits no cache header — accommodations exercise the identical
+  property on a family the rule actually covers.
+- **AC-9 PASSED, with a caveat worth keeping.** TTFB on the cached route is
+  **15–18 ms** on a warm connection. A first reading of 246 ms looked like a
+  failure until it was decomposed: 213 ms of it was the TCP+TLS handshake and
+  only ~33 ms was the response. Measure with connection reuse, or the number
+  describes the handshake rather than the cache.
+- **AC-10 PASSED** — Googlebot and Chrome user-agents received the same cached
+  object: both `HIT`, identical `age` (109).
+
+Purge propagation measured at **≤ ~4 s** (tighter than gate A's 5–8 s on
+`llms.txt`): confirmed `HIT` → purge returns 3 s later → `MISS` 1 s after that,
+with the object 4 s into a 300 s TTL. Both arms of the §5.11.6 discriminator
+were observed on the same URL and PoP — natural expiry → `EXPIRED`, explicit
+purge → `MISS`.
+
+**Headline**: cached listing **15 ms** vs uncached accommodation detail
+**689 ms**, same host. That is the concrete argument for extending
+`applyCacheHeaders` to the detail pages.
+
+Operational note: the purge must be issued from the VPS (the secret never
+leaves it) while the probes run locally — the cache is per-PoP and the VPS
+resolves to a different one. `POST /api/revalidate/` **requires** the trailing
+slash; without it Astro's trailing-slash middleware returns a 301 and the POST
+body is lost. Not a defect — `CloudflareRevalidationAdapter` already documents
+it — but it will catch anyone hand-rolling a curl.
+
+**W1-4 — Redirect Rules at the edge. DONE, narrowed to one rule (2026-08-04,
+staging only).** Versioned at
+[`infra/cloudflare/rules/redirect-rules.md`](../../infra/cloudflare/rules/redirect-rules.md).
+
+Only `/` → `/es/` moved. It is served at the edge with no origin round-trip,
+which satisfies **AC-7** for staging. Two of the three things this task asked
+for were deliberately not done:
+
+- **The generic trailing-slash redirect stays at the origin.** Moving it means
+  transcribing `routes.ts`'s skip-list (`/_astro/`, `/_server-islands/`,
+  `/api/`, `/favicon`, images, fonts, `.txt`, `.xml`, `/_image`) into a
+  Cloudflare expression with no tests and no link back to its source. That is
+  the `entity-path-mapper` failure shape this spec deleted 466 lines to remove,
+  re-created inside Cloudflare, for ~90 ms per redirect.
+- **The `/es/blog` chain collapse was built, verified, and then removed the same
+  day.** It worked — 1051 ms → 369 ms, two hops to one. But `/blog` is not a
+  legacy URL: the blog has always lived at `/publicaciones/`, and the alias
+  exists only because BETA-162 (priority Low) found that `/es/blog` 404'd, an
+  *obvious* URL a visitor might guess. Nothing has ever linked to it, so the
+  traffic is near zero by construction. Two permanently-maintained rules with
+  dynamic `concat`/`substring` targets to save 680 ms on a URL nobody requests
+  is a bad trade — the latency was measured, the volume was not, and the volume
+  is what decided it.
+
+**AC-7's stated signal is wrong and should be read as measured, not as
+written.** It expects `cf-cache-status` to be *present* on the edge-served 301.
+Cloudflare Redirect Rules answer *before* the cache layer, so an edge-served
+redirect has **no** `cf-cache-status` header at all and an **absolute**
+`Location`; the origin-served one is what carries `cf-cache-status: DYNAMIC` and
+a relative `Location`. Measured both ways on the same URL.
+
+**Found while building it (out of scope, tracked separately):** `middleware.ts`
+Step 4 drops the query string. `buildLocaleRedirect({ restOfPath })` takes only
+the path, unlike Steps 3/3.1/3.2 which all append `context.url.search` — so
+`https://hospeda.com.ar/?utm_source=newsletter` arrives at a bare `/es/` and the
+campaign parameters are gone before analytics sees them. The edge rule preserves
+them, so staging's root is now fixed and production is not; every other
+locale-less path is still affected on both.
+
+**W1-5 — Version the Cloudflare configuration. DONE at the documentation tier
+(2026-08-04).**
+[`infra/cloudflare/README.md`](../../infra/cloudflare/README.md) now indexes
+everything the zone carries and states the shared-zone constraint every rule
+must respect; [`infra/cloudflare/rules/cache-rules.md`](../../infra/cloudflare/rules/cache-rules.md)
+mirrors the live Cache Rule — expression, every setting with its API
+equivalent, the reasoning per clause, the measured list of what it does and does
+not actually cache, and the verification commands.
+
+**Terraform is deliberately deferred, not forgotten.** It needs a state backend,
+a provider credential with ruleset-write scope, and a decision about who may
+apply — three choices worth making on purpose rather than as a side effect of
+writing one cache rule. Until then the documents are the source of truth for
+*intent* and the dashboard for *what is live*, and the two are kept in step by
+convention: a rule changed in the dashboard is changed in its document in the
+same PR. Redirect Rules join the same directory when W1-4 lands.
+
+**W1-6 — The accommodation detail page opts into the cache. DONE (2026-08-04,
+PR #2610).** Not in the original plan; added once W1-3 measured **15 ms cached
+vs 689 ms uncached on the same host** and the §6.4 footprint audit showed detail
+pages — the bulk of the indexable surface — were returning `BYPASS` purely
+because the origin never opted in.
+
+No Cloudflare change was needed: the W1-2 rule already matched
+`/{lang}/alojamientos*`, and `bypass_by_default` was doing exactly its job.
+Adding a family is an application change, and this is the proof of it.
+
+The page is the **first caller of `buildEntityCacheTags`** — the helper shipped
+with W1-1 and had no call site until now. It emits `accom-<slug>` **and**
+`accom-<id>`, and deliberately **not** `list-accom`: a detail page is not a
+listing, and tagging it with the collection would make every accommodation write
+evict every other accommodation's page. The trade, stated plainly: content
+pulled in from other entities (similar stays, the owner's other properties,
+related posts and events, reviews, promotions, nearby POIs) is not
+purge-addressable from this page and goes stale for at most the 300 s TTL.
+
+`cacheable` is gated on two fail-closed conditions — an empty query string
+(every `ctx*` on the page comes from a search param and feeds the WhatsApp
+prefill with the visitor's dates and party size, so the ORIGIN must refuse to
+mark such a render shareable regardless of what the edge does) and the existence
+of a usable entity tag. The call sits **after** the 404/410 guards, so an error
+response is never marked `public, s-maxage=300` — pinning a 404 at the edge for
+five minutes. A test asserts that ordering, because the ordering is the whole
+protection.
 
 ### 6.5 Wave C — extend the pattern across the catalog
 
@@ -1368,6 +1543,50 @@ Overlaps HOS-168; this spec supplies the measurements it lacked.
 - **W3-5** — Consolidate the 20 render-blocking stylesheets. Gated on the
   CSP/`inlineStylesheets` constraint (HOS-164/HOS-168) — do not start before
   that resolves.
+- **W3-6 (new, 2026-08-04)** — Deduplicate the inline SVG icons. See the
+  re-measurement below: 520 inline `<svg>` elements on one listing page, only
+  **169 distinct** — each icon repeated ~20×, once per card. 355 KB, the second
+  largest bucket in the document and not covered by W3-1..W3-5.
+
+#### Re-measured 2026-08-04, after Waves A, B0 and B shipped
+
+The owner asked why PageSpeed against staging had not moved. It had not, and the
+measurement says exactly why — **this wave is now the only thing standing
+between the work already done and a visible score.** Recorded here so HOS-369 is
+not closed without it.
+
+`/es/alojamientos/`, measured live on staging: **1,385,789 B of HTML**, 197,500 B
+transferred (brotli). Compression hides it on the wire; the browser still parses
+1.39 MB.
+
+| Bucket | Bytes | Share |
+|---|---|---|
+| `<script id="hospeda-i18n">` | **639,458** | **46.4 %** |
+| Inline SVG (520 elements, 169 distinct) | **354,976** | **25.7 %** |
+| `astro-island` props (57 islands) | 55,758 | 4.0 % |
+| `<style>` | 51,144 | 3.7 % |
+| JSON-LD | 3,286 | 0.2 % |
+
+**72 % of the document is payload the page does not need in that form.** The
+i18n blob carries `.m.cookies.sections.*`, `.m.faq.categories.*`,
+`.m.privacy.sections.*`, `.m.about.story.*` and `.m.features.hero.*` — the
+cookie policy, the FAQ, the privacy policy and two marketing pages, shipped
+inside the accommodation listing.
+
+**New fact that raises W3-1's value beyond the 631 KB already claimed**: the
+blob is **byte-identical across every page** (`/es/`, `/es/alojamientos/`, a
+detail page, `/es/suscriptores/planes/`, `/es/legal/cookies/` — all 645,173 B of
+`id="hospeda-i18n"`). Moving it to a hashed immutable asset therefore saves the
+bytes **once per session**, not once per page: the browser downloads it on the
+first navigation and reuses it for every subsequent one. It also shrinks every
+edge-cached HTML object to roughly a third of its size.
+
+**Why the edge cache could not have moved the score, stated plainly so nobody
+re-litigates it.** Wave B fixed the cost of *serving* (TTFB 689 ms → 15 ms).
+Lighthouse weights TBT 30 %, LCP 25 %, CLS 25 %, FCP 10 %, SI 10 % — TTFB is not
+scored directly and only partly feeds FCP. Mobile PSI additionally throttles CPU
+4×, which punishes precisely the parse-and-execute work this payload creates.
+Two different problems; both real; PageSpeed measures the second one.
 
 ### 6.7 Documentation cleanup
 
@@ -1429,7 +1648,7 @@ response — Cloudflare limits):
 > purging by the other purges nothing (§6.4). Two page tags were also added
 > that the plan did not anticipate. The vocabulary lives in
 > `packages/cache-tags/src/vocabulary.ts`, which is the source of truth.
-
+>
 > **EVERY tag below is prefixed by its deployment environment** —
 > `prod:list-accom`, `preview:home` — see §7.3.1. The table gives the bare
 > vocabulary; the namespace is applied on top of it, symmetrically, in every
@@ -1607,7 +1826,12 @@ Wave B onward:
   purge-by-URL provably could not reach (§5.11.2).
 - **AC-7** — `https://hospeda.com.ar/` resolves to `/es/` at the edge
   (`cf-cache-status` present on the 301, no origin hit).
-- **AC-8** — Home HTML drops below 500 KB uncompressed after W3-1.
+- **AC-8** — Home HTML drops below 500 KB uncompressed after W3-1. **Baseline
+  re-measured 2026-08-04** (see §6.6): the home is 1,256,468 B and the
+  accommodation listing 1,385,789 B, so this is a ~3× reduction, not a trim.
+  **HOS-369 does not close until Wave D ships** — the owner's acceptance of this
+  spec is a faster site, and the waves already delivered do not move a
+  Lighthouse score on their own.
 - **AC-9** — TTFB for an anonymous, cached catalog route measured from Buenos
   Aires is under 200 ms.
 - **AC-10** — Googlebot user-agent receives the same `HIT` as a browser

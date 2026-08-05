@@ -67,8 +67,18 @@ export const EventUpdateInputSchema = z
                 updatedById: true,
                 deletedAt: true,
                 deletedById: true,
-                // moderationState is editable on update so admins can change it inline from
-                // the events list (gated by EVENT_MODERATION_CHANGE on the frontend).
+                // HOS-374 §7.6.4 — the three state fields leave the generic update
+                // payload. They now travel through dedicated single-purpose endpoints
+                // (/moderate, /publish-state, /lifecycle-state), each gated by its own
+                // permission. While they rode this payload, any actor holding
+                // EVENT_UPDATE could approve and publish their own content, which made
+                // every publication gate in the model bypassable by editing the field
+                // directly. The previous comment here documented the opposite decision
+                // (moderationState kept editable for the admin list) — that inline
+                // widget now calls the dedicated endpoint instead.
+                moderationState: true,
+                visibility: true,
+                lifecycleState: true,
                 tags: true
             }).shape
         )

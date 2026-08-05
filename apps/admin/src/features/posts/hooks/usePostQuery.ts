@@ -1,6 +1,7 @@
 import type { Post } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { createContentStateMutationHooks } from '@/features/content/hooks/useContentStateMutations';
 import { fetchApi } from '@/lib/api/client';
 import { adminLogger } from '@/utils/logger';
 
@@ -14,6 +15,19 @@ export const postQueryKeys = {
     details: () => [...postQueryKeys.all, 'detail'] as const,
     detail: (id: string) => [...postQueryKeys.details(), id] as const
 };
+
+/**
+ * The three dedicated state-transition mutations for posts (HOS-374 §7.6.4).
+ *
+ * Built once at module scope: `InlineStateSelectCell` invokes the hook factory
+ * on every render, so it must be a stable reference. These replace the generic
+ * update mutation for `moderationState` / `visibility` / `lifecycleState`, which
+ * the update payload no longer accepts.
+ */
+export const POST_STATE_MUTATIONS = createContentStateMutationHooks({
+    entity: 'posts',
+    queryKeys: postQueryKeys
+});
 
 /**
  * Fetch a single post by ID

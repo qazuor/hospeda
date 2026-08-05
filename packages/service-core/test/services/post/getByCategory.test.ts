@@ -3,6 +3,7 @@ import type { PostIdType } from '@repo/schemas';
 import { LifecycleStatusEnum, PostCategoryEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock } from 'vitest';
 import type { Actor } from '../../../src';
+import { PUBLIC_READ_FLOOR } from '../../../src/services/moderation/public-read-floor';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createMockPost } from '../../factories/postFactory';
@@ -14,12 +15,6 @@ import {
 } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
-
-/** The scope every caller of this public route must receive, whoever they are. */
-const PUBLISHED_SCOPE = {
-    visibility: VisibilityEnum.PUBLIC,
-    lifecycleState: LifecycleStatusEnum.ACTIVE
-} as const;
 
 describe('PostService.getByCategory', () => {
     let service: PostService;
@@ -56,14 +51,14 @@ describe('PostService.getByCategory', () => {
 
         expectSuccess(result);
         expect(result.data).toHaveLength(2);
-        expect(modelMock.findAll).toHaveBeenCalledWith({ category, ...PUBLISHED_SCOPE });
+        expect(modelMock.findAll).toHaveBeenCalledWith({ category, ...PUBLIC_READ_FLOOR });
     });
 
-    it('honours an explicit visibility filter but still constrains lifecycleState', async () => {
-        // A caller-supplied filter wins over the default — it can only narrow.
-        // `lifecycleState` was never constrained at all, so a DRAFT row whose
-        // visibility defaults to PUBLIC reached anonymous visitors too.
-        const posts = [createMockPost({ category, visibility: VisibilityEnum.PRIVATE })];
+    it('should override a caller-supplied visibility with the public read floor', async () => {
+        // HOS-374 §7.6.5: the public read floor is applied last on public read
+        // paths, so a caller-supplied `visibility` (even PRIVATE) is overridden
+        // rather than honored.
+        const posts = [createMockPost({ category, visibility: VisibilityEnum.PUBLIC })];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 1 });
         const params = { category, visibility: VisibilityEnum.PRIVATE };
 
@@ -73,8 +68,7 @@ describe('PostService.getByCategory', () => {
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             category,
-            visibility: VisibilityEnum.PRIVATE,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            ...PUBLIC_READ_FLOOR
         });
     });
 
@@ -92,7 +86,7 @@ describe('PostService.getByCategory', () => {
         expect(modelMock.findAll).toHaveBeenCalledWith({
             category,
             createdAt: { gte: params.fromDate, lte: params.toDate },
-            ...PUBLISHED_SCOPE
+            ...PUBLIC_READ_FLOOR
         });
     });
 

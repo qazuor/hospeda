@@ -50,6 +50,8 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { pickLocalizedSeo } from '@/lib/seo';
 import { buildUrl } from '@/lib/urls';
+import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 
 export const prerender = false;
 
@@ -143,6 +145,48 @@ if (!result.data) return new Response(null, { status: 404 });
 
 const rawAccommodation = result.data as Record<string, unknown>;
 const accommodation = toAccommodationDetailPageProps({ item: rawAccommodation, locale });
+
+// --- Edge cacheability (HOS-369) ---
+// Placed AFTER the 404/410 guards above so an error response is never marked
+// shareable, and after `accommodation` is derived so the id is available.
+//
+// This page is addressed by its OWN two tags and deliberately NOT by
+// `list-accom`: a detail page is not a listing, and tagging it with the
+// collection would make every accommodation write evict every other
+// accommodation's page. Editing THIS accommodation evicts THIS page.
+//
+// Content pulled in from other entities (similar stays, the owner's other
+// properties, related posts and events, reviews, promotions, nearby POIs) is
+// therefore not purge-addressable from here. It goes stale for at most the
+// 300s TTL, which is the trade this scoping buys.
+const entityCacheTags = buildEntityCacheTags({
+	entity: 'accommodation',
+	slug,
+	id: accommodation.id
+});
+const [primaryCacheTag, ...extraCacheTags] = entityCacheTags;
+
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	// Two independent reasons to stay private, both fail-closed:
+	//  - a query string means this render is visitor-specific: every `ctx*`
+	//    above comes from a search param and feeds the WhatsApp prefill with
+	//    the visitor's dates and party size. The Cloudflare Cache Rule already
+	//    bypasses on a non-empty query, but the ORIGIN must not mark such a
+	//    response shareable either — the rule is not the only thing that could
+	//    ever cache it;
+	//  - no usable entity tag means nothing could purge this page, and an
+	//    unpurgeable cached page is worse than an uncached one.
+	cacheable: Astro.url.search === '' && primaryCacheTag !== undefined,
+	// Only read when `cacheable` is true, which requires `primaryCacheTag`.
+	// The other branch exists to satisfy the non-empty tuple type and is never
+	// applied, because `applyCacheHeaders` returns before touching tags.
+	tags:
+		primaryCacheTag !== undefined
+			? [primaryCacheTag, ...extraCacheTags]
+			: [CACHE_TAG_COLLECTIONS.accommodation]
+});
 
 // Extract lifecycle fields directly from raw API response (not in AccommodationDetailData)
 const accommodationLifecycleState = String(rawAccommodation.lifecycleState ?? 'ACTIVE');

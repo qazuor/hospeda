@@ -175,6 +175,17 @@ export class GastronomyService extends BaseCommerceListingService<
         return 'gastronomyId';
     }
 
+    /**
+     * Entity kind reported to the cache-revalidation pipeline (HOS-369 W2-4).
+     *
+     * Must match the `EntityChangeData` discriminant and the
+     * `@repo/cache-tags` vocabulary exactly — a mismatch purges nothing while
+     * still reporting success.
+     */
+    protected override get _revalidationEntityType(): 'gastronomy' {
+        return 'gastronomy';
+    }
+
     /** Gastronomy-amenity junction model (satisfies {@link CommerceJunctionModel}). */
     protected override get _amenityJunctionModel(): CommerceJunctionModel<Record<string, unknown>> {
         return this._amenityJunctionModelInstance;

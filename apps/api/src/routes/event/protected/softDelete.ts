@@ -31,7 +31,7 @@ export const protectedSoftDeleteEventRoute = createProtectedRoute({
     }),
     ownership: {
         entityType: 'event',
-        ownershipFields: ['createdById'],
+        ownershipFields: ['authorId'],
         bypassPermission: PermissionEnum.EVENT_DELETE
     },
     handler: async (ctx: Context, params: Record<string, unknown>) => {

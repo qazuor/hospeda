@@ -11,13 +11,14 @@
  */
 
 import type { JSX } from 'react';
-import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
+import { TextField } from '@/components/ui/TextField';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { CommercePhoneField } from './CommercePhoneField';
 import contactStyles from './ContactSection.module.css';
 import type { ContactValues } from './commerce-edit-data';
 import styles from './editor-fields.module.css';
+import { COMMERCE_FIELD_PREFIX } from './field-ids';
 
 export interface ContactSectionProps {
     readonly locale: SupportedLocale;
@@ -61,29 +62,17 @@ export function ContactSection({
                 label also satisfies WCAG 3.3.2 (Labels or Instructions), which
                 an aria-label alone does not. */}
             <div className={contactStyles.emailField}>
-                <label
-                    className={contactStyles.fieldLabel}
-                    htmlFor="ce-workEmail"
-                >
-                    {t('commerce.owner.editor.contactField.workEmail', 'Email')}
-                </label>
-                <input
-                    id="ce-workEmail"
+                <TextField
+                    prefix={COMMERCE_FIELD_PREFIX}
+                    name="contactInfo.workEmail"
+                    label={t('commerce.owner.editor.contactField.workEmail', 'Email')}
+                    labelClassName={contactStyles.fieldLabel}
                     className={styles.input}
+                    error={errors['contactInfo.workEmail']}
                     type="email"
                     value={contact.workEmail}
                     placeholder="contacto@ejemplo.com"
-                    aria-invalid={errors['contactInfo.workEmail'] ? 'true' : 'false'}
-                    aria-describedby={
-                        errors['contactInfo.workEmail']
-                            ? fieldErrorId('contactInfo.workEmail')
-                            : undefined
-                    }
                     onChange={(event) => onContactChange({ workEmail: event.target.value })}
-                />
-                <FieldError
-                    id={fieldErrorId('contactInfo.workEmail')}
-                    message={errors['contactInfo.workEmail']}
                 />
             </div>
         </fieldset>

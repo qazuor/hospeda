@@ -40,7 +40,11 @@ export const CACHE_TAG_ENTITY_PREFIXES = {
     accommodation: 'accom',
     destination: 'dest',
     event: 'event',
-    post: 'post'
+    post: 'post',
+    gastronomy: 'gastro',
+    experience: 'exp',
+    attraction: 'attr',
+    pointOfInterest: 'poi'
 } as const;
 
 /** An entity kind that can be addressed by a per-entity cache tag. */
@@ -52,16 +56,38 @@ export type CacheTagEntity = keyof typeof CACHE_TAG_ENTITY_PREFIXES;
  * member invalidates every page that could have shown it without having to know
  * which pages those are.
  *
- * Keyed by the same {@link CacheTagEntity} union as the per-entity prefixes so
- * the two tables cannot drift apart: adding an entity kind without its
- * collection tag is a type error.
+ * Keyed by {@link CacheTagEntity}, so a collection tag can never be invented for
+ * something that is not a tagged entity.
+ *
+ * This used to be a TOTAL `Record<CacheTagEntity, string>`, making "an entity
+ * without a collection tag" a type error. HOS-369 W2-4 relaxed it to a PARTIAL
+ * one, deliberately and with a reason: `attraction` and `pointOfInterest` have
+ * per-entity pages (`/destinos/atraccion/<slug>/`, `/destinos/lugar/<slug>/`)
+ * but no page anywhere that lists all of them. Inventing `list-attr` to satisfy
+ * the type would have added vocabulary nothing emits and nothing purges —
+ * exactly the dead-tag failure this package exists to prevent, introduced in
+ * the name of a type check.
+ *
+ * The half of the invariant that was load-bearing is kept: `satisfies` still
+ * rejects a key that is not a real entity, so the two tables cannot drift into
+ * naming different things. What is no longer enforced is totality — adding an
+ * entity now requires deciding whether it has a listing, instead of being told
+ * by the compiler that it must.
  */
-export const CACHE_TAG_COLLECTIONS: Readonly<Record<CacheTagEntity, string>> = {
+export const CACHE_TAG_COLLECTIONS = {
     accommodation: 'list-accom',
     destination: 'list-dest',
     event: 'list-event',
-    post: 'list-post'
-} as const;
+    post: 'list-post',
+    gastronomy: 'list-gastro',
+    experience: 'list-exp'
+} as const satisfies Partial<Record<CacheTagEntity, string>>;
+
+/**
+ * An entity kind that additionally has a listing page, and therefore a
+ * collection tag. Narrower than {@link CacheTagEntity}.
+ */
+export type CacheTagCollectionEntity = keyof typeof CACHE_TAG_COLLECTIONS;
 
 /** The home page — carries featured content from every collection. */
 export const CACHE_TAG_HOME = 'home';

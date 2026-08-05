@@ -86,6 +86,18 @@ export const PERMISSION_ROLE_MAP: Partial<Record<PermissionEnum, ReadonlySet<Rol
         RoleEnum.EDITOR,
         RoleEnum.ADMIN,
         RoleEnum.SUPER_ADMIN
+    ]),
+    // Same role set as POST_CREATE (EDITOR, ADMIN, SUPER_ADMIN — verified
+    // against `packages/seed/src/required/rolePermissions.seed.ts`), kept as
+    // its own map entry rather than reused from POST_CREATE: events and posts
+    // are separate content domains with separate permissions server-side, and
+    // a future divergence between the two role sets must not silently change
+    // `hasPostsNavAccess` too. Backs the `/mi-cuenta/eventos` own-content
+    // listing gate (HOS-374 Phase 2 2C-1).
+    [PermissionEnum.EVENT_CREATE]: new Set<RoleEnum>([
+        RoleEnum.EDITOR,
+        RoleEnum.ADMIN,
+        RoleEnum.SUPER_ADMIN
     ])
 };
 
@@ -192,6 +204,47 @@ export function hasCommerceNavAccess({
     readonly roles: readonly string[] | null;
 }): boolean {
     return isVisibleByRoles({ requiredPermission: PermissionEnum.COMMERCE_EDIT_OWN }, roles);
+}
+
+/**
+ * Does the user hold a role that grants the own-posts editorial listing
+ * (`/mi-cuenta/publicaciones`, HOS-374 Phase 2 2C-1)?
+ *
+ * Keyed on `POST_CREATE` — the same permission the HOS-134 editor
+ * discovery-door signal already uses, so the two never disagree about who
+ * counts as an editor.
+ *
+ * @param params - `{ roles }` (RO-RO): every role the user holds, or `null`
+ *   for unauthenticated visitors.
+ * @returns `true` when at least one held role carries editor-tier access.
+ */
+export function hasPostsNavAccess({
+    roles
+}: {
+    readonly roles: readonly string[] | null;
+}): boolean {
+    return isVisibleByRoles({ requiredPermission: PermissionEnum.POST_CREATE }, roles);
+}
+
+/**
+ * Does the user hold a role that grants the own-events editorial listing
+ * (`/mi-cuenta/eventos`, HOS-374 Phase 2 2C-1)?
+ *
+ * Keyed on `EVENT_CREATE`, a distinct map entry from `POST_CREATE` — see the
+ * comment on that entry in `PERMISSION_ROLE_MAP` for why the two are not
+ * collapsed into one shared permission even though they resolve to the same
+ * role set today.
+ *
+ * @param params - `{ roles }` (RO-RO): every role the user holds, or `null`
+ *   for unauthenticated visitors.
+ * @returns `true` when at least one held role carries editor-tier access.
+ */
+export function hasEventsNavAccess({
+    roles
+}: {
+    readonly roles: readonly string[] | null;
+}): boolean {
+    return isVisibleByRoles({ requiredPermission: PermissionEnum.EVENT_CREATE }, roles);
 }
 
 // -----------------------------------------------------------------------------

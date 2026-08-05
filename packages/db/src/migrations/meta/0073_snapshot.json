@@ -1,5 +1,5 @@
 {
-  "id": "c33d9530-ca8a-442b-a1e1-e55e11e5f604",
+  "id": "302d3e10-e6b2-43e6-a29a-7418d7e2f2b5",
   "prevId": "7b581f82-931c-4b54-8ca7-c888ee8cc2dd",
   "version": "7",
   "dialect": "postgresql",
@@ -23657,13 +23657,6 @@
           "notNull": true,
           "default": false
         },
-        "is_system_account": {
-          "name": "is_system_account",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -30280,6 +30273,10 @@
         "event.view.draft",
         "event.viewAll",
         "event.location.manage",
+        "event.view.own",
+        "event.update.own",
+        "event.delete.own",
+        "event.publish.own",
         "post.create",
         "post.update",
         "post.delete",
@@ -30301,6 +30298,10 @@
         "post.view.draft",
         "post.viewAll",
         "post.sponsorship.manage",
+        "post.view.own",
+        "post.update.own",
+        "post.delete.own",
+        "post.publish.own",
         "user.read.all",
         "user.impersonate",
         "user.create",

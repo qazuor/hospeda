@@ -32,7 +32,31 @@ export interface LocaleExtractionResult {
 }
 
 /**
+ * A path segment shaped like a language tag — `fr`, `it`, `en-US`, `pt-BR`.
+ *
+ * This is what separates "the visitor asked for an unsupported language" from
+ * "there is no locale segment here at all", and the two must be handled
+ * differently: the first segment is replaced in one case and kept in the other.
+ * Nothing else can tell them apart, because an unsupported locale and a route
+ * segment are both just "not one of es/en/pt".
+ *
+ * Safe against the real routing table: every top-level segment the app serves
+ * is a word (`alojamientos`, `destinos`, `eventos`, `mi-cuenta`, …), and none
+ * is two letters. A future two-letter route segment would be swallowed by this
+ * check — which is a reason to not create one, since it would collide with a
+ * language tag for visitors regardless of what this function does.
+ */
+const LOCALE_SHAPED_SEGMENT = /^[a-z]{2}(-[a-z]{2})?$/i;
+
+/**
  * Extracts and validates locale from a URL path in the format "/{locale}/...".
+ *
+ * When the first segment is not a supported locale, whether it is dropped
+ * depends on whether it *looks* like a locale. Dropping it unconditionally —
+ * as this did until HOS-369 — silently ate the first segment of every
+ * locale-less URL: `/destinos/colon/` redirected to `/es/colon/`, a 404, for
+ * any visitor who typed the URL or followed a link written without the locale
+ * prefix.
  *
  * @param params - Object containing the URL path string
  * @returns Extracted locale (or null if missing/invalid) and the remaining path
@@ -42,8 +66,11 @@ export interface LocaleExtractionResult {
  * extractLocaleFromPath({ path: '/es/alojamientos/' })
  * // => { locale: 'es', restOfPath: '/alojamientos/' }
  *
- * extractLocaleFromPath({ path: '/xx/foo/' })
- * // => { locale: null, restOfPath: '/foo/' }
+ * extractLocaleFromPath({ path: '/xx/foo/' })      // unsupported LOCALE
+ * // => { locale: null, restOfPath: '/foo/' }      //   → segment replaced
+ *
+ * extractLocaleFromPath({ path: '/destinos/colon/' })   // no locale segment
+ * // => { locale: null, restOfPath: '/destinos/colon/' } //   → path kept whole
  * ```
  */
 export function extractLocaleFromPath({ path }: { path: string }): LocaleExtractionResult {
@@ -60,6 +87,13 @@ export function extractLocaleFromPath({ path }: { path: string }): LocaleExtract
     }
 
     if (!isValidLocale(potentialLocale)) {
+        // Not a locale at all — the path simply has no locale prefix. Keep it
+        // whole, or the redirect loses its first segment and lands on a 404.
+        if (!LOCALE_SHAPED_SEGMENT.test(potentialLocale)) {
+            return { locale: null, restOfPath: path };
+        }
+        // Shaped like a locale but unsupported: the visitor asked for a
+        // language we do not serve, so the segment is replaced, not kept.
         return { locale: null, restOfPath: `/${segments.slice(1).join('/')}` };
     }
 
@@ -277,18 +311,38 @@ export { buildLoginRedirect } from './auth-redirect';
 /**
  * Builds a redirect URL for an invalid or missing locale, defaulting to the default locale.
  *
- * @param params - Object with the remaining path after the (invalid) locale segment
- * @returns Absolute path prefixed with DEFAULT_LOCALE
+ * The query string is carried over, which is what the other three redirect
+ * builders in the middleware already do (Steps 3, 3.1 and 3.2 all append
+ * `context.url.search`). This one did not, and the omission was silent: a
+ * campaign link to `hospeda.com.ar/?utm_source=newsletter` landed on a bare
+ * `/es/` with the parameters stripped, so the attribution was lost before the
+ * first pageview was captured. Nothing errored and the page rendered fine,
+ * which is how it survived in production.
+ *
+ * @param params.restOfPath - The remaining path after the (invalid) locale segment
+ * @param params.search - The URL's query string including its leading `?`, as
+ *   given by `URL.search` — pass it straight through. Empty string for a
+ *   query-less URL, which is why it defaults to `''` rather than being required.
+ * @returns Absolute path prefixed with DEFAULT_LOCALE, query string preserved
  *
  * @example
  * ```ts
  * buildLocaleRedirect({ restOfPath: '/alojamientos/' })
  * // => '/es/alojamientos/'
+ *
+ * buildLocaleRedirect({ restOfPath: '/', search: '?utm_source=newsletter' })
+ * // => '/es/?utm_source=newsletter'
  * ```
  */
-export function buildLocaleRedirect({ restOfPath }: { restOfPath: string }): string {
+export function buildLocaleRedirect({
+    restOfPath,
+    search = ''
+}: {
+    restOfPath: string;
+    search?: string;
+}): string {
     const normalizedPath = restOfPath.startsWith('/') ? restOfPath : `/${restOfPath}`;
-    return `/${DEFAULT_LOCALE}${normalizedPath}`;
+    return `/${DEFAULT_LOCALE}${normalizedPath}${search}`;
 }
 
 /**
@@ -313,6 +367,21 @@ export interface SessionUser {
      * treat that as the lowest-privilege case (no host/commerce access).
      */
     readonly roles: readonly string[];
+    /**
+     * Every granular permission the actor holds, from the same `/auth/me`
+     * payload as `roles`.
+     *
+     * Roles are NOT a substitute for this (HOS-374 OQ-1): the "trusted editor"
+     * is two per-user grants in `user_permission` (`*_PUBLISH_OWN`,
+     * `*_DELETE_OWN`) on the plain `EDITOR` role, deliberately not a role of
+     * its own. Any gate that must tell a plain editor from a trusted one — the
+     * publish and delete controls in `/mi-cuenta`, which are ABSENT rather
+     * than disabled for a plain editor (OQ-3) — can only ask this set.
+     *
+     * Empty when the payload was malformed; consumers must treat that as the
+     * lowest-privilege case, exactly like `roles`.
+     */
+    readonly permissions: readonly string[];
     /**
      * Avatar URL from the actor (`users.image`, mirrored onto `Actor.image`
      * by `actorMiddleware`). `null` when the user has no avatar. Without this,
@@ -465,6 +534,12 @@ export async function parseSessionUser({
                             // former `role` scalar, which no longer exists in
                             // any payload.
                             roles?: readonly string[];
+                            // HOS-374: the granular permission set. Already on
+                            // this payload — `/auth/me` returns the full set
+                            // deliberately ("needed for client-side feature
+                            // gating", see `apps/api/src/routes/auth/me.ts`) —
+                            // the middleware simply discarded it until now.
+                            permissions?: readonly string[];
                             // SPEC-239 commerce-owner password gate. Lives on
                             // the actor since HOS-296 — see `SessionUser`.
                             mustChangePassword?: boolean;
@@ -487,6 +562,15 @@ export async function parseSessionUser({
                     email: actor.email || '',
                     roles: Array.isArray(actor.roles)
                         ? actor.roles.filter((role): role is string => typeof role === 'string')
+                        : [],
+                    // Same defensive shape as `roles`: a malformed payload
+                    // yields an EMPTY set, never a partial one, so every gate
+                    // built on it fails closed rather than granting something
+                    // the actor may not hold.
+                    permissions: Array.isArray(actor.permissions)
+                        ? actor.permissions.filter(
+                              (permission): permission is string => typeof permission === 'string'
+                          )
                         : [],
                     image: typeof actor.image === 'string' ? actor.image : null,
                     // Fail-open on anything but an explicit `true`, matching

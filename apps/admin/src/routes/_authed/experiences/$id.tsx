@@ -16,6 +16,7 @@ import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { FaqManager } from '@/components/faqs/FaqManager';
+import { experienceTabs, PageTabs } from '@/components/layout/PageTabs';
 import { OwnerSelect } from '@/components/selects/OwnerSelect';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -213,6 +214,11 @@ function ExperienceViewPage() {
 
     return (
         <div className="space-y-4">
+            <PageTabs
+                tabs={experienceTabs}
+                basePath={`/experiences/${id}`}
+            />
+
             <div className="flex justify-end">
                 <DeleteRowButton
                     entityId={id}

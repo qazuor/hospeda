@@ -41,9 +41,14 @@ export type OwnableEntityType =
     | 'user';
 
 /**
- * Fields that can represent ownership of an entity
+ * Fields that can represent ownership of an entity.
+ *
+ * `authorId` is the ownership field for editorial content (posts, events):
+ * authorship, not creation, is what the permission model scopes on (HOS-374
+ * OQ-4). An admin creating content on someone's behalf sets `createdById` to
+ * themselves, which is precisely why the two cannot be conflated.
  */
-export type OwnershipField = 'ownerId' | 'createdById' | 'userId';
+export type OwnershipField = 'ownerId' | 'createdById' | 'userId' | 'authorId';
 
 /**
  * Configuration for ownership verification middleware

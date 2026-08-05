@@ -10,7 +10,8 @@
 
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { TextField } from '@/components/ui/TextField';
+import { FieldError } from '@/components/ui/FieldError';
+import { buildFieldErrorId, TextField } from '@/components/ui/TextField';
 import { buildFieldId } from '@/lib/forms/build-field-id';
 
 describe('TextField', () => {
@@ -162,6 +163,81 @@ describe('TextField', () => {
         expect(control.tagName).toBe('SELECT');
         expect(control).toHaveAttribute('id', 'acc-type');
         expect(control.getAttribute('aria-describedby')).toBe(screen.getByRole('alert').id);
+    });
+
+    describe('renderError={false} — one Zod field, several controls', () => {
+        it('should not render the error itself', () => {
+            render(
+                <TextField
+                    prefix="acc"
+                    name="phone"
+                    suffix="number"
+                    label="Número"
+                    error="Teléfono inválido"
+                    renderError={false}
+                />
+            );
+
+            expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+        });
+
+        it('should STILL mark the control invalid and describe it', () => {
+            // The caller only chooses where the message goes. If opting out of
+            // the render also dropped the a11y wiring, this prop would be a
+            // silent accessibility regression rather than a layout choice.
+            render(
+                <TextField
+                    prefix="acc"
+                    name="phone"
+                    suffix="number"
+                    label="Número"
+                    error="Teléfono inválido"
+                    renderError={false}
+                />
+            );
+
+            const control = screen.getByLabelText('Número');
+            expect(control).toHaveAttribute('aria-invalid', 'true');
+            expect(control).toHaveAttribute(
+                'aria-describedby',
+                buildFieldErrorId({ prefix: 'acc', name: 'phone', suffix: 'number' })
+            );
+        });
+
+        it('should pair with an externally placed FieldError built from the same params', () => {
+            // The whole point of exporting buildFieldErrorId: the message the
+            // caller positions elsewhere must still be the element the control
+            // points at. Assert they resolve to each other, not just that both
+            // exist.
+            const params = { prefix: 'acc', name: 'phone', suffix: 'number' } as const;
+
+            render(
+                <fieldset>
+                    <TextField
+                        {...params}
+                        label="Número"
+                        error="Teléfono inválido"
+                        renderError={false}
+                    />
+                    <FieldError
+                        id={buildFieldErrorId(params)}
+                        message="Teléfono inválido"
+                    />
+                </fieldset>
+            );
+
+            const control = screen.getByLabelText('Número');
+            const alert = screen.getByRole('alert');
+
+            expect(control.getAttribute('aria-describedby')).toBe(alert.id);
+            expect(document.getElementById(alert.id)).toBe(alert);
+        });
+
+        it('should derive the error id from the control id, suffix included', () => {
+            expect(buildFieldErrorId({ prefix: 'acc', name: 'phone', suffix: 'number' })).toBe(
+                'acc-phone-number-error'
+            );
+        });
     });
 
     it('should forward native props to the control', () => {

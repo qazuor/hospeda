@@ -1,8 +1,9 @@
 import { EventModel } from '@repo/db';
 import type { EventLocationIdType } from '@repo/schemas';
-import { LifecycleStatusEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
+import { PermissionEnum, VisibilityEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
+import { PUBLIC_READ_FLOOR } from '../../../src/services/moderation/public-read-floor';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createActor } from '../../factories/actorFactory';
 import { createMockEvent } from '../../factories/eventFactory';
@@ -14,12 +15,6 @@ import {
 } from '../../helpers/assertions';
 import { createTypedModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
-
-/** The scope every caller of this public route must receive, whoever they are. */
-const PUBLISHED_SCOPE = {
-    visibility: VisibilityEnum.PUBLIC,
-    lifecycleState: LifecycleStatusEnum.ACTIVE
-} as const;
 
 /**
  * Tests for EventService.getByLocation
@@ -39,28 +34,36 @@ describe('EventService.getByLocation', () => {
         service = new EventService({ model: modelMock, logger: loggerMock });
     });
 
-    it('scopes a PRIVILEGED actor to PUBLIC + ACTIVE — the route is actor-blind', async () => {
-        // This used to return PRIVATE/DRAFT rows to anyone holding
-        // EVENT_SOFT_DELETE_VIEW. `GET /api/v1/public/events/location/{id}`
-        // declares `cacheTTL: 60` under the `/api/v1/public/events` prefix of
-        // PUBLIC_CACHE_ENDPOINTS, and that cache key carries no actor — so one
-        // editor's request stored unpublished events for every visitor.
-        (modelMock.findAll as Mock).mockResolvedValue({ items: [], total: 0 });
-
-        await service.getByLocation(actorWithPerm, { locationId, page: 1, pageSize: 10 });
-
+    it('should apply the public read floor even when the actor has EVENT_SOFT_DELETE_VIEW', async () => {
+        // Arrange
+        // HOS-374 §7.6.5: EVENT_SOFT_DELETE_VIEW no longer widens this public read
+        // path — the floor is unconditional, so only public events are mocked back.
+        const events = [
+            createMockEvent({ locationId, visibility: VisibilityEnum.PUBLIC }),
+            createMockEvent({ locationId, visibility: VisibilityEnum.PUBLIC })
+        ];
+        (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 2 });
+        // Act
+        const result = await service.getByLocation(actorWithPerm, {
+            locationId,
+            page: 1,
+            pageSize: 10
+        });
+        // Assert
+        expectSuccess(result);
+        const { data } = result;
+        if (!data) throw new Error('Expected data to be defined after expectSuccess');
+        expect(data.items).toHaveLength(2);
         expect(modelMock.findAll).toHaveBeenCalledWith(
-            { locationId, ...PUBLISHED_SCOPE },
+            { locationId, ...PUBLIC_READ_FLOOR },
             { page: 1, pageSize: 10 },
             undefined,
             undefined
         );
     });
 
-    it('scopes an unprivileged actor to PUBLIC + ACTIVE', async () => {
-        // `lifecycleState` is the half that used to be missing for EVERY caller:
-        // a DRAFT row whose visibility defaults to PUBLIC reached anonymous
-        // visitors regardless of caching.
+    it('should apply the public read floor for an actor without elevated permissions', async () => {
+        // Arrange
         const events = [createMockEvent({ locationId, visibility: VisibilityEnum.PUBLIC })];
         (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 1 });
 
@@ -75,7 +78,7 @@ describe('EventService.getByLocation', () => {
         if (!data) throw new Error('Expected data to be defined after expectSuccess');
         expect(data.items).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith(
-            { locationId, ...PUBLISHED_SCOPE },
+            { locationId, ...PUBLIC_READ_FLOOR },
             { page: 1, pageSize: 10 },
             undefined,
             undefined

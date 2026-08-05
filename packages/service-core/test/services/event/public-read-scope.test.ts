@@ -5,9 +5,10 @@
  * unpublished event, for ANY actor.
  *
  * The per-method suites next to this file assert the FILTER handed to the
- * model. This one runs a fake model that HONOURS that filter, so a constraint
- * the service forgets to send shows up as a row that should not be there —
- * an outcome, not a call argument.
+ * model — that `applyPublicReadFloor` (HOS-374) was called with the right
+ * argument. This one runs a fake model that HONOURS that filter, so a
+ * constraint the service forgets to send shows up as a row that should not be
+ * there — an outcome, not a call argument.
  *
  * ## Why these three, and why it was live
  *
@@ -20,14 +21,20 @@
  *    with NO actor component and `cacheMiddleware` runs BEFORE `authMiddleware`,
  *    so the `EVENT_SOFT_DELETE_VIEW` branch let one editor's request store
  *    PRIVATE/DRAFT events under the shared anonymous entry for the whole TTL.
- * 2. **Unconditional leak.** None of them constrained `lifecycleState`, so a
- *    `DRAFT` or `ARCHIVED` row whose `visibility` is `PUBLIC` (the column
- *    default) reached anonymous callers regardless of caching.
+ * 2. **Unconditional leak.** None of them constrained `lifecycleState` or
+ *    `moderationState`, so a `DRAFT`/`ARCHIVED`/unapproved row whose
+ *    `visibility` is `PUBLIC` (the column default) reached anonymous callers
+ *    regardless of caching.
  */
 
 import { EventModel } from '@repo/db';
 import type { EventLocationIdType, EventOrganizerIdType } from '@repo/schemas';
-import { LifecycleStatusEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    PermissionEnum,
+    VisibilityEnum
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import type { Actor } from '../../../src/types';
@@ -41,40 +48,53 @@ import { createTypedModelMock } from '../../utils/modelMockFactory';
 const locationId = getMockId('event') as EventLocationIdType;
 const organizerId = getMockId('event') as EventOrganizerIdType;
 
-/** The author's real mix: one publishable event and three that are not. */
+/** The author's real mix: one publishable event and four that are not. */
 const PUBLISHED = createMockEvent({
     locationId,
     organizerId,
     slug: 'fiesta-de-la-playa',
     visibility: VisibilityEnum.PUBLIC,
-    lifecycleState: LifecycleStatusEnum.ACTIVE
+    lifecycleState: LifecycleStatusEnum.ACTIVE,
+    moderationState: ModerationStatusEnum.APPROVED
 });
 const DRAFT = createMockEvent({
     locationId,
     organizerId,
     slug: 'borrador-sin-publicar',
     visibility: VisibilityEnum.PUBLIC,
-    lifecycleState: LifecycleStatusEnum.DRAFT
+    lifecycleState: LifecycleStatusEnum.DRAFT,
+    moderationState: ModerationStatusEnum.APPROVED
 });
 const ARCHIVED = createMockEvent({
     locationId,
     organizerId,
     slug: 'evento-archivado',
     visibility: VisibilityEnum.PUBLIC,
-    lifecycleState: LifecycleStatusEnum.ARCHIVED
+    lifecycleState: LifecycleStatusEnum.ARCHIVED,
+    moderationState: ModerationStatusEnum.APPROVED
 });
 const PRIVATE = createMockEvent({
     locationId,
     organizerId,
     slug: 'evento-privado',
     visibility: VisibilityEnum.PRIVATE,
-    lifecycleState: LifecycleStatusEnum.ACTIVE
+    lifecycleState: LifecycleStatusEnum.ACTIVE,
+    moderationState: ModerationStatusEnum.APPROVED
+});
+/** The third floor column (HOS-374 §7.6.1): the platform's verdict. */
+const UNMODERATED = createMockEvent({
+    locationId,
+    organizerId,
+    slug: 'evento-sin-moderar',
+    visibility: VisibilityEnum.PUBLIC,
+    lifecycleState: LifecycleStatusEnum.ACTIVE,
+    moderationState: ModerationStatusEnum.PENDING
 });
 
-const ALL = [PUBLISHED, DRAFT, ARCHIVED, PRIVATE];
+const ALL = [PUBLISHED, DRAFT, ARCHIVED, PRIVATE, UNMODERATED];
 
 /**
- * Applies the two scope keys the way the real model would.
+ * Applies the three floor keys the way the real model would.
  *
  * Deliberately ignores every OTHER filter key: `getUpcoming` also passes
  * `date.start: { $gte, $lte }`, an operator object no plain equality check can
@@ -84,7 +104,8 @@ const honourScope = (where: Record<string, unknown>) =>
     ALL.filter(
         (event) =>
             (where.visibility === undefined || event.visibility === where.visibility) &&
-            (where.lifecycleState === undefined || event.lifecycleState === where.lifecycleState)
+            (where.lifecycleState === undefined || event.lifecycleState === where.lifecycleState) &&
+            (where.moderationState === undefined || event.moderationState === where.moderationState)
     );
 
 /** Both ends of the actor spectrum: the response is cached for both. */
@@ -161,8 +182,9 @@ describe('EventService — public reads never publish unpublished events', () =>
         expect(slugs).not.toContain(DRAFT.slug);
         expect(slugs).not.toContain(ARCHIVED.slug);
         expect(slugs).not.toContain(PRIVATE.slug);
+        expect(slugs).not.toContain(UNMODERATED.slug);
         expect(slugs).toContain(PUBLISHED.slug);
-        // The fake really does hold all four when nothing narrows it.
-        expect(honourScope({})).toHaveLength(4);
+        // The fake really does hold all five when nothing narrows it.
+        expect(honourScope({})).toHaveLength(5);
     });
 });

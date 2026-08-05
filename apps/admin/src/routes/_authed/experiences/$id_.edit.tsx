@@ -5,18 +5,25 @@
  * Gate-protected by COMMERCE_EDIT_ALL.
  *
  * Mirrors the gastronomy edit page pattern (SPEC-240 T-028).
+ *
+ * HOS-382: the `media.featuredImage` / `media.gallery` field handlers were
+ * removed. Those fields used to buffer uploads into a `media` object on
+ * PATCH, but the `media` JSONB column was dropped (HOS-372) and the update
+ * schema silently strips that key — every photo uploaded through this form
+ * was orphaned in Cloudinary with no DB row. Photos are now managed via the
+ * dedicated Gallery tab (`/experiences/:id/gallery`, `CommerceGalleryManager`),
+ * reachable from the `PageTabs` bar below, mirroring accommodations.
  */
 
 import { ExperienceUpdateInputSchema, PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
-import { useMemo } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { FaqManager } from '@/components/faqs/FaqManager';
+import { experienceTabs, PageTabs } from '@/components/layout/PageTabs';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
 import { useExperiencePage } from '@/features/experience';
-import { createUploadHandler, useMediaUpload } from '@/hooks/use-media-upload';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
@@ -37,36 +44,15 @@ function ExperienceEditPage() {
     const { id } = Route.useParams();
     const { t } = useTranslations();
     const entityData = useExperiencePage(id);
-    const { uploadEntityImage, deleteImage } = useMediaUpload();
-
-    const mediaFieldHandlers = useMemo(
-        () => ({
-            'media.featuredImage': {
-                onUpload: createUploadHandler({
-                    entityType: 'experience',
-                    entityId: id,
-                    role: 'featured',
-                    onUpload: (input) => uploadEntityImage.mutateAsync(input)
-                })
-            },
-            'media.gallery': {
-                onUpload: createUploadHandler({
-                    entityType: 'experience',
-                    entityId: id,
-                    role: 'gallery',
-                    onUpload: (input) => uploadEntityImage.mutateAsync(input)
-                }),
-                onDelete: async (publicId: string) => {
-                    await deleteImage.mutateAsync({ publicId });
-                }
-            }
-        }),
-        [id, uploadEntityImage, deleteImage]
-    );
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.COMMERCE_EDIT_ALL]}>
             <div className="space-y-4">
+                <PageTabs
+                    tabs={experienceTabs}
+                    basePath={`/experiences/${id}`}
+                />
+
                 <EntityPageBase
                     entityType="experience"
                     entityId={id}
@@ -90,7 +76,6 @@ function ExperienceEditPage() {
                         >
                             <EntityEditContent
                                 entityType="experience"
-                                fieldHandlers={mediaFieldHandlers}
                                 flat
                             />
                         </TabsContent>

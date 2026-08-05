@@ -10,11 +10,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { focusFirstInvalidField } from '@/lib/forms/focus-first-invalid-field';
 
-const MAP = {
-    name: 'f-name',
-    summary: 'f-summary',
-    youtube: 'f-youtube'
-} as const;
+/**
+ * The editor namespace under test. HOS-385 replaced the per-editor
+ * `FieldInputIdMap` with derivation, so there is no table to fixture — ids are
+ * `<prefix>-<zod key>`, built by the same `buildFieldId` the render site calls.
+ */
+const PREFIX = 'f';
+
+/** One Zod key rendered as several controls — the only derivation exception. */
+const SUFFIXES = { phone: 'number' } as const;
 
 /** Renders inputs in the given DOM order. */
 function renderInputs(ids: ReadonlyArray<string>): void {
@@ -62,7 +66,7 @@ describe('focusFirstInvalidField', () => {
     it('should focus the mapped input for a single invalid field', () => {
         renderInputs(['f-name']);
 
-        const focused = focusFirstInvalidField({ fieldNames: ['name'], map: MAP });
+        const focused = focusFirstInvalidField({ fieldNames: ['name'], prefix: PREFIX });
 
         expect(focused).toBe(true);
         expect(document.activeElement?.id).toBe('f-name');
@@ -76,42 +80,80 @@ describe('focusFirstInvalidField', () => {
 
         const focused = focusFirstInvalidField({
             fieldNames: ['youtube', 'summary', 'name'],
-            map: MAP
+            prefix: PREFIX
         });
 
         expect(focused).toBe(true);
         expect(document.activeElement?.id).toBe('f-name');
     });
 
-    it('should skip fields that are not in the map', () => {
+    it('should skip fields the editor does not render', () => {
+        // Since HOS-385 every Zod key DERIVES an id, so "unmapped" is no longer
+        // a state — a key the editor draws no control for simply resolves to
+        // nothing, which is the same silent skip the table used to produce.
         renderInputs(['f-summary']);
 
         const focused = focusFirstInvalidField({
-            fieldNames: ['unmappedField', 'summary'],
-            map: MAP
+            fieldNames: ['fieldWithNoControl', 'summary'],
+            prefix: PREFIX
         });
 
         expect(focused).toBe(true);
         expect(document.activeElement?.id).toBe('f-summary');
     });
 
-    it('should skip mapped fields whose element is not rendered', () => {
-        // A section can be conditionally rendered — the id is mapped but absent.
+    it('should skip fields whose element is not rendered', () => {
+        // A section can be conditionally rendered — the id derives but is absent.
         renderInputs(['f-summary']);
 
         const focused = focusFirstInvalidField({
             fieldNames: ['name', 'summary'],
-            map: MAP
+            prefix: PREFIX
         });
 
         expect(focused).toBe(true);
         expect(document.activeElement?.id).toBe('f-summary');
+    });
+
+    it('should target the suffixed sub-control for a grouped field', () => {
+        // `phone` is ONE Zod key rendered as a country combobox plus a number
+        // input. The suffix map is what sends focus to the number — and it is
+        // the one place derivation does not fully determine the answer, so the
+        // render site and this site must read the SAME constant.
+        renderInputs(['f-phone-country', 'f-phone-number']);
+
+        const focused = focusFirstInvalidField({
+            fieldNames: ['phone'],
+            prefix: PREFIX,
+            suffixes: SUFFIXES
+        });
+
+        expect(focused).toBe(true);
+        expect(document.activeElement?.id).toBe('f-phone-number');
+    });
+
+    it('should normalise a dotted Zod path to the rendered id', () => {
+        // The commerce editor validates nested blocks, so its keys are dotted.
+        // `buildFieldId` turns the dot into a hyphen; a raw `#a.b` selector
+        // would read the dot as a class.
+        renderInputs(['f-contactInfo-workEmail']);
+
+        const focused = focusFirstInvalidField({
+            fieldNames: ['contactInfo.workEmail'],
+            prefix: PREFIX
+        });
+
+        expect(focused).toBe(true);
+        expect(document.activeElement?.id).toBe('f-contactInfo-workEmail');
     });
 
     it('should report false when nothing resolves', () => {
         renderInputs(['f-name']);
 
-        const focused = focusFirstInvalidField({ fieldNames: ['unmapped'], map: MAP });
+        const focused = focusFirstInvalidField({
+            fieldNames: ['fieldWithNoControl'],
+            prefix: PREFIX
+        });
 
         expect(focused).toBe(false);
     });
@@ -119,13 +161,13 @@ describe('focusFirstInvalidField', () => {
     it('should report false for an empty field list', () => {
         renderInputs(['f-name']);
 
-        expect(focusFirstInvalidField({ fieldNames: [], map: MAP })).toBe(false);
+        expect(focusFirstInvalidField({ fieldNames: [], prefix: PREFIX })).toBe(false);
     });
 
     it('should scroll the focused field into view', () => {
         renderInputs(['f-name']);
 
-        focusFirstInvalidField({ fieldNames: ['name'], map: MAP });
+        focusFirstInvalidField({ fieldNames: ['name'], prefix: PREFIX });
 
         expect(scrollSpy).toHaveBeenCalledTimes(1);
     });
@@ -137,7 +179,7 @@ describe('focusFirstInvalidField', () => {
             vi.fn().mockReturnValue({ matches: true, media: '(prefers-reduced-motion: reduce)' })
         );
 
-        focusFirstInvalidField({ fieldNames: ['name'], map: MAP });
+        focusFirstInvalidField({ fieldNames: ['name'], prefix: PREFIX });
 
         expect(scrollSpy).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'auto' }));
     });
@@ -150,7 +192,9 @@ describe('focusFirstInvalidField', () => {
         delete (Element.prototype as unknown as Record<string, unknown>).scrollIntoView;
         renderInputs(['f-name']);
 
-        expect(() => focusFirstInvalidField({ fieldNames: ['name'], map: MAP })).not.toThrow();
+        expect(() =>
+            focusFirstInvalidField({ fieldNames: ['name'], prefix: PREFIX })
+        ).not.toThrow();
         expect(document.activeElement?.id).toBe('f-name');
     });
 });

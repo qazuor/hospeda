@@ -236,11 +236,19 @@ export const onRequest = defineMiddleware(async (context, next) => {
     const { locale, restOfPath } = extractLocaleFromPath({ path });
 
     // If the locale segment is missing or not a supported locale, redirect to the
-    // default locale while preserving the rest of the path.
+    // default locale while preserving the rest of the path AND the query string.
     // REQ-19: 301 (permanent) — this is a stable URL strategy decision; Google
     // passes full link equity through 301s but not through the default 302.
+    //
+    // `context.url.search` is passed for the same reason Steps 3, 3.1 and 3.2
+    // pass it: dropping it silently strips campaign parameters from every
+    // locale-less link (`/?utm_source=newsletter` → a bare `/es/`), and the
+    // attribution is gone before analytics sees the first pageview.
     if (locale === null) {
-        const redirectUrl = buildLocaleRedirect({ restOfPath: restOfPath || path });
+        const redirectUrl = buildLocaleRedirect({
+            restOfPath: restOfPath || path,
+            search: context.url.search
+        });
         return context.redirect(redirectUrl, 301);
     }
 

@@ -13,6 +13,8 @@ import {
     AdminPaymentFailure,
     AdminSystemEvent,
     AiCostThresholdAlert,
+    AllianceClaimInvite,
+    AllianceLeadDecision,
     CommerceOwnerCredentials,
     ContactSubmissionEmail,
     FeedbackReportEmail,
@@ -41,6 +43,8 @@ import type {
     AddonEventPayload,
     AdminNotificationPayload,
     AiCostThresholdAlertPayload,
+    AllianceClaimInvitePayload,
+    AllianceLeadDecisionPayload,
     CommerceOwnerCredentialsPayload,
     ContactSubmissionPayload,
     FeedbackReportPayload,
@@ -583,6 +587,25 @@ export class NotificationService {
                     recipientName,
                     temporaryPassword: p.temporaryPassword,
                     changePasswordUrl: p.changePasswordUrl
+                });
+            }
+
+            case 'alliance_claim_invite': {
+                const p = payload as AllianceClaimInvitePayload;
+                return AllianceClaimInvite({
+                    recipientName,
+                    programLabel: p.programLabel,
+                    claimUrl: p.claimUrl,
+                    expiresAtLabel: formatDate({ dateString: p.expiresAt })
+                });
+            }
+
+            case 'alliance_lead_decision': {
+                const p = payload as AllianceLeadDecisionPayload;
+                return AllianceLeadDecision({
+                    recipientName,
+                    programLabel: p.programLabel,
+                    outcome: p.outcome
                 });
             }
 

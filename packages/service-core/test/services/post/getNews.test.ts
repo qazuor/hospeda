@@ -1,7 +1,8 @@
 import { PostModel } from '@repo/db';
 import type { PostIdType } from '@repo/schemas';
-import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
+import { RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock } from 'vitest';
+import { PUBLIC_READ_FLOOR } from '../../../src/services/moderation/public-read-floor';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createMockPost } from '../../factories/postFactory';
@@ -12,12 +13,6 @@ import {
     expectValidationError
 } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
-
-/** The scope every caller of this public route must receive, whoever they are. */
-const PUBLISHED_SCOPE = {
-    visibility: VisibilityEnum.PUBLIC,
-    lifecycleState: LifecycleStatusEnum.ACTIVE
-} as const;
 
 describe('PostService.getNews', () => {
     let service: PostService;
@@ -45,15 +40,14 @@ describe('PostService.getNews', () => {
         const result = await service.getNews(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(2);
-        expect(modelMock.findAll).toHaveBeenCalledWith({ isNews: true, ...PUBLISHED_SCOPE });
+        expect(modelMock.findAll).toHaveBeenCalledWith({ isNews: true, ...PUBLIC_READ_FLOOR });
     });
 
-    it('honours an explicit visibility filter but still constrains lifecycleState', async () => {
-        // A caller-supplied filter wins over the default — it can only
-        // narrow. `lifecycleState` was never constrained at all, so a
-        // DRAFT row whose visibility defaults to PUBLIC reached every
-        // visitor regardless of what `visibility` said.
-        const posts = [createMockPost({ visibility: VisibilityEnum.PRIVATE })];
+    it('should override a caller-supplied visibility with the public read floor', async () => {
+        // HOS-374 §7.6.5: the public read floor is applied last on public read
+        // paths, so a caller-supplied `visibility` (even PRIVATE) is overridden
+        // rather than honored.
+        const posts = [createMockPost({ visibility: VisibilityEnum.PUBLIC })];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 1 });
         const params = { visibility: VisibilityEnum.PRIVATE };
         const result = await service.getNews(actor, params);
@@ -61,8 +55,7 @@ describe('PostService.getNews', () => {
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             isNews: true,
-            visibility: VisibilityEnum.PRIVATE,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            ...PUBLIC_READ_FLOOR
         });
     });
 
@@ -76,7 +69,7 @@ describe('PostService.getNews', () => {
         expect(modelMock.findAll).toHaveBeenCalledWith({
             isNews: true,
             expiresAt: { gte: params.fromDate, lte: params.toDate },
-            ...PUBLISHED_SCOPE
+            ...PUBLIC_READ_FLOOR
         });
     });
 

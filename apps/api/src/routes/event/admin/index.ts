@@ -8,9 +8,12 @@ import { adminCreateEventRoute } from './create';
 import { adminDeleteEventRoute } from './delete';
 import { adminGetEventByIdRoute } from './getById';
 import { adminHardDeleteEventRoute } from './hardDelete';
+import { adminSetEventLifecycleStateRoute } from './lifecycleState';
 import { adminListEventsRoute } from './list';
+import { adminModerateEventRoute } from './moderate';
 import { adminEventOptionsRoute } from './options';
 import { adminPatchEventRoute } from './patch';
+import { adminSetEventPublishStateRoute } from './publishState';
 import { adminRestoreEventRoute } from './restore';
 import { adminUpdateEventRoute } from './update';
 
@@ -46,5 +49,14 @@ app.route('/', adminHardDeleteEventRoute);
 
 // POST /:id/restore - Restore event
 app.route('/', adminRestoreEventRoute);
+
+// POST /:id/moderate - Apply the moderation verdict (HOS-374)
+app.route('/', adminModerateEventRoute);
+
+// POST /:id/publish-state - Raise or lower publication (HOS-374)
+app.route('/', adminSetEventPublishStateRoute);
+
+// POST /:id/lifecycle-state - Move through the lifecycle (HOS-374)
+app.route('/', adminSetEventLifecycleStateRoute);
 
 export { app as adminEventRoutes };

@@ -552,15 +552,22 @@ export class UserModel extends BaseModelImpl<User> {
      *    off `profile`. There are no `bio`/`avatar` columns on `users` (§12), and
      *    `users.image` is a DIFFERENT field the author page does not render.
      *
-     * "Published" here means `visibility = 'PUBLIC' AND lifecycle_state =
-     * 'ACTIVE' AND deleted_at IS NULL` — the SAME definition the author page's
-     * own content reads use. `applyPublicVisibilityScope`
-     * (`packages/service-core/src/utils/public-visibility-scope.ts`) forces
-     * exactly those two filters, UNCONDITIONALLY and for every actor, onto
-     * `PostService.search` (which backs `GET /api/v1/public/posts?authorId=…`,
-     * the page's post block) and `EventService.getByAuthor` (its event block).
-     * So this predicate and the counts the page computes agree by construction
-     * rather than by coincidence.
+     * "Published" here means `moderation_state = 'APPROVED' AND visibility =
+     * 'PUBLIC' AND lifecycle_state = 'ACTIVE' AND deleted_at IS NULL` — the SAME
+     * definition the author page's own content reads use. `PUBLIC_READ_FLOOR` /
+     * `applyPublicReadFloor`
+     * (`packages/service-core/src/services/moderation/public-read-floor.ts`,
+     * HOS-374 §7.6.5) forces exactly those three state filters,
+     * UNCONDITIONALLY and for every actor, onto `PostService.search` (which
+     * backs `GET /api/v1/public/posts?authorId=…`, the page's post block) and
+     * `EventService.getByAuthor` (its event block). So this predicate and the
+     * counts the page computes agree by construction rather than by
+     * coincidence.
+     *
+     * `moderation_state` is the newest of the three and the easiest to forget:
+     * it defaults to `'PENDING'` on both tables, so omitting it here does not
+     * fail loudly — it silently makes this query WIDER than the content reads,
+     * which is the one direction the invariant below forbids.
      *
      * Keep them agreeing. The invariant §6.6 exists to protect is one-way: a
      * page may be indexable without being listed in the sitemap, but the sitemap
@@ -592,6 +599,7 @@ export class UserModel extends BaseModelImpl<User> {
             FROM "posts" AS p
             WHERE p."author_id" = ${outerUserId}
               AND p."deleted_at" IS NULL
+              AND p."moderation_state" = 'APPROVED'
               AND p."visibility" = 'PUBLIC'
               AND p."lifecycle_state" = 'ACTIVE'
         )`;
@@ -601,6 +609,7 @@ export class UserModel extends BaseModelImpl<User> {
             FROM "events" AS e
             WHERE e."author_id" = ${outerUserId}
               AND e."deleted_at" IS NULL
+              AND e."moderation_state" = 'APPROVED'
               AND e."visibility" = 'PUBLIC'
               AND e."lifecycle_state" = 'ACTIVE'
         )`;

@@ -63,7 +63,10 @@ import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { toRenderableImageUrl } from '@/lib/media';
 import { evaluateAuthorIndexability } from '@/lib/seo/author-indexable';
+import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { buildUrl } from '@/lib/urls';
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import {
 	FacebookIcon,
 	InstagramIcon,
@@ -108,6 +111,31 @@ if (!authorResult.ok) {
 	return new Response(null, { status: 404 });
 }
 const author = authorResult.data;
+
+// --- Edge cacheability (HOS-369 W2-3) ---
+// Inherited from the pre-HOS-375 author route this page replaced: that route
+// carried these headers, and it now 301s here, so dropping them would have
+// silently un-cached the author listing rather than moved it.
+//
+// After the 404 guard, so a missing author is never marked shareable.
+//
+// Tagged `list-post` only. The AUTHOR is a user, and `user` has no entry in the
+// tag vocabulary or in `entity-tag-mapper.ts` — so an author renaming their
+// display name does not purge this page; the heading goes stale for at most the
+// 300s TTL. Post writes, which change the list itself, do purge it.
+//
+// `hasOnlyPaginationParams` accepts `page` and nothing else, so
+// `/autores/<slug>/` and `/autores/<slug>/page/N/` (which rewrites here with
+// `?page=N`) are cacheable, while `/autores/<slug>/eventos/page/N/` — which
+// rewrites with `?eventsPage=N` — is not. That is deliberate: widening the
+// shared helper to admit a second key would change the gate for every other
+// page that calls it, to cache a `noindex` sub-route nothing links to.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
+	tags: [CACHE_TAG_COLLECTIONS.post],
+});
 
 // One real Promise.all — the posts and events reads are independent.
 const [postsResult, eventsResult] = await Promise.all([

@@ -7,6 +7,7 @@
 import type { IconProps } from '@repo/icons';
 import {
     BuildingIcon,
+    CalendarIcon,
     CompassIcon,
     EditIcon,
     ForkKnifeIcon,
@@ -167,11 +168,13 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
         id: 'partner',
         i18nKey: 'account.doors.partner.title',
         subtitleI18nKey: 'account.doors.partner.subtitle',
-        // RESOLVED (HOS-134 D-4): `editor` below is the acquired-capable
-        // option that drives the stateful label — once a user holds
-        // `POST_CREATE` (the editor role), `resolveDoorLabelKey`
-        // (`src/lib/nav-gating.ts`) switches this door's rendered title from
-        // `i18nKey` to `statefulI18nKey` ("Sumá otra alianza").
+        // RESOLVED (HOS-134 D-4): the two `editor*` options below are the
+        // acquired-capable ones that drive the stateful label — once a user
+        // holds `POST_CREATE` or `EVENT_CREATE` (the editor role),
+        // `resolveDoorLabelKey` (`src/lib/nav-gating.ts`) switches this door's
+        // rendered title from `i18nKey` to `statefulI18nKey` ("Sumá otra
+        // alianza"). Split into two by HOS-374 OQ-5; before that it was a
+        // single `editor` option.
         statefulI18nKey: 'account.doors.partner.titleStateful',
         kind: 'partner',
         href: 'mi-cuenta/aliados',
@@ -220,19 +223,46 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 // (HOS-277 NG-1) — the admin evaluates and provisions
                 // manually, so this option never resolves to 'acquired'.
             },
+            // HOS-374 OQ-5 splits the former single `editor` option in two, one
+            // per content type, so an acquired editor lands on the listing for
+            // the thing they clicked instead of a shared dashboard they then
+            // have to navigate out of. Matches the convention `accommodation`
+            // and the two commerce verticals already follow above.
+            //
+            // Both keep `href: 'colaborar/editores'` — there is ONE application
+            // form and one manual promotion to RoleEnum.EDITOR (HOS-134 §2);
+            // splitting the door does not split the way in.
+            //
+            // `managesInAdminPanel` is deliberately gone. It used to send an
+            // acquired editor to the admin panel, which HOS-374 Phase 3 closes
+            // to them (§7.6.6) — leaving it would point the "Gestionar" button
+            // at a door they can no longer open. Flipping it here rather than in
+            // Phase 3 removes that window entirely: `/mi-cuenta/publicaciones`
+            // and `/mi-cuenta/eventos` already work while panel access is still
+            // in place.
             {
-                id: 'editor',
-                i18nKey: 'account.doors.partner.options.editor.title',
-                descriptionI18nKey: 'account.doors.partner.options.editor.description',
+                id: 'editorPosts',
+                i18nKey: 'account.doors.partner.options.editorPosts.title',
+                descriptionI18nKey: 'account.doors.partner.options.editorPosts.description',
                 icon: EditIcon,
                 href: 'colaborar/editores',
-                ctaI18nKey: 'account.doors.partner.options.editor.cta',
-                // The only aliado with a real entry form today (HOS-134 §2) —
-                // an admin manually promotes the applicant to RoleEnum.EDITOR,
-                // who then holds POST_CREATE and manages content in the admin
-                // panel, not under /mi-cuenta (`managesInAdminPanel`).
+                ctaI18nKey: 'account.doors.partner.options.editorPosts.cta',
                 acquiredPermission: PermissionEnum.POST_CREATE,
-                managesInAdminPanel: true
+                manageHref: 'mi-cuenta/publicaciones'
+            },
+            {
+                id: 'editorEvents',
+                i18nKey: 'account.doors.partner.options.editorEvents.title',
+                descriptionI18nKey: 'account.doors.partner.options.editorEvents.description',
+                icon: CalendarIcon,
+                href: 'colaborar/editores',
+                ctaI18nKey: 'account.doors.partner.options.editorEvents.cta',
+                // EVENT_CREATE, not POST_CREATE: the two permissions sit on the
+                // same roles today, but keying each option to the capability it
+                // actually manages means a future split between them cannot
+                // silently show an editor a listing they cannot write to.
+                acquiredPermission: PermissionEnum.EVENT_CREATE,
+                manageHref: 'mi-cuenta/eventos'
             }
         ]
     }

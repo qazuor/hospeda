@@ -2,12 +2,12 @@ import { EventModel } from '@repo/db';
 import {
     DestinationTypeEnum,
     EventDatePrecisionEnum,
-    LifecycleStatusEnum,
     PermissionEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
+import { PUBLIC_READ_FLOOR } from '../../../src/services/moderation/public-read-floor';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createActor } from '../../factories/actorFactory';
 import { createMockEvent } from '../../factories/eventFactory';
@@ -29,11 +29,12 @@ const EXPECTED_LIST_RELATIONS = {
     location: { destination: true }
 };
 
-/** The scope every caller of this public route must receive, whoever they are. */
-const PUBLISHED_SCOPE = {
-    visibility: VisibilityEnum.PUBLIC,
-    lifecycleState: LifecycleStatusEnum.ACTIVE
-} as const;
+/**
+ * The floor every caller of this public route must receive, whoever they are.
+ * Imported rather than restated so a change to the floor's shape breaks here
+ * instead of leaving a stale two-column copy quietly passing (HOS-374 §7.6.5).
+ */
+const PUBLISHED_SCOPE = PUBLIC_READ_FLOOR;
 
 /** A valid `destination` relation that satisfies CityDestinationRefSchema. */
 const cityRelation = {

@@ -198,6 +198,8 @@ jobs:
           # fetch-depth: 0 for its semgrep --baseline-commit diff).
           fetch-depth: 0
       - uses: ./.github/actions/setup
+      - name: Check package layering (HOS-380)
+        run: bash scripts/check-circular-deps.sh
       - name: Check CSP-incompatible patterns
         run: bash scripts/check-csp-patterns.sh
       - name: Check for unsafe ilike() usage

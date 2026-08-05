@@ -9,6 +9,9 @@ import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
 import type {
+    ContentLifecycleStateInput,
+    ContentModerationChangeInput,
+    ContentPublishStateInput,
     EntityOptionsItem,
     Event,
     EventByAuthorInput,
@@ -37,9 +40,8 @@ import {
     EventSummaryInputSchema,
     EventUpcomingInputSchema,
     EventUpdateInputSchema,
-    PermissionEnum,
     ServiceErrorCode,
-    VisibilityEnum
+    type VisibilityEnum
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
@@ -57,8 +59,8 @@ import type {
 } from '../../types';
 import { type Actor, ServiceError } from '../../types';
 import { checkCanFindOptions } from '../../utils';
-import { applyPublicVisibilityScope } from '../../utils/public-visibility-scope';
 import { projectEventLocationCityDestination } from '../eventLocation/eventLocation.projections';
+import { applyPublicReadFloor } from '../moderation/public-read-floor';
 import {
     buildEventDateConditions,
     buildEventPriceConditions,
@@ -71,7 +73,10 @@ import {
     checkCanDeleteEvent,
     checkCanHardDeleteEvent,
     checkCanListEvents,
+    checkCanModerateEvent,
     checkCanRestoreEvent,
+    checkCanSetEventLifecycleState,
+    checkCanSetEventPublishState,
     checkCanUpdateEvent,
     checkCanViewEvent
 } from './event.permissions';
@@ -268,15 +273,15 @@ export class EventService extends BaseCrudService<
     /**
      * Permission hook: checks if the actor can update an event.
      */
-    protected _canUpdate(actor: Actor, _entity: Event): void {
-        checkCanUpdateEvent(actor);
+    protected _canUpdate(actor: Actor, entity: Event): void {
+        checkCanUpdateEvent(actor, entity);
     }
 
     /**
      * Permission hook: checks if the actor can soft-delete an event.
      */
-    protected _canSoftDelete(actor: Actor, _entity: Event): void {
-        checkCanDeleteEvent(actor);
+    protected _canSoftDelete(actor: Actor, entity: Event): void {
+        checkCanDeleteEvent(actor, entity);
     }
 
     /**
@@ -329,10 +334,10 @@ export class EventService extends BaseCrudService<
      */
     protected _canUpdateVisibility(
         actor: Actor,
-        _entity: Event,
+        entity: Event,
         _newVisibility: VisibilityEnum
     ): void {
-        checkCanUpdateEvent(actor);
+        checkCanUpdateEvent(actor, entity);
     }
     /**
      * @inheritdoc
@@ -702,7 +707,7 @@ export class EventService extends BaseCrudService<
      * @param _actor - The actor performing the search
      * @returns Paginated list of events matching the criteria
      */
-    protected async _executeSearch(params: EventSearchInput, actor: Actor, ctx: ServiceContext) {
+    protected async _executeSearch(params: EventSearchInput, _actor: Actor, ctx: ServiceContext) {
         const {
             page: _page,
             pageSize: _pageSize,
@@ -790,17 +795,13 @@ export class EventService extends BaseCrudService<
         // ordering falls back to the default (id DESC) instead of bookmark count.
         // Accept this regression to keep card relations consistent; a future
         // change can implement mostSaved at the findAllWithRelations layer.
-        // `search` is a PUBLIC read path — its only callers are public-tier
-        // routes — and it used to hand the caller's filters through untouched,
-        // so PRIVATE and DRAFT events were served to anonymous visitors.
-        const scopedFilters = applyPublicVisibilityScope({
-            filters: filterParams,
-            actor
-        });
-
+        // The public read floor (HOS-374 §7.6.5) is applied LAST, on top of the
+        // caller's filters, so no query parameter can widen the result set to
+        // pending, private or archived events. `adminList` is a separate code
+        // path (`_executeAdminSearch`) and deliberately does not get it.
         const searchResult = await this.model.findAllWithRelations(
             this.getCardListRelations(),
-            scopedFilters,
+            applyPublicReadFloor(filterParams),
             {
                 page: ctx.pagination?.page ?? 1,
                 pageSize: ctx.pagination?.pageSize ?? 10,
@@ -825,7 +826,7 @@ export class EventService extends BaseCrudService<
      * @param _actor - The actor performing the count
      * @returns Count of events matching the criteria
      */
-    protected async _executeCount(params: EventSearchInput, actor: Actor, _ctx: ServiceContext) {
+    protected async _executeCount(params: EventSearchInput, _actor: Actor, _ctx: ServiceContext) {
         const {
             page: _page,
             pageSize: _pageSize,
@@ -895,15 +896,10 @@ export class EventService extends BaseCrudService<
             if (searchCondition) additionalConditions.push(searchCondition);
         }
 
-        // Same scope as `_executeSearch`, or `total` would count rows `items`
-        // never shows.
-        const scopedFilters = applyPublicVisibilityScope({
-            filters: filterParams,
-            actor
-        });
-
+        // Mirror the `_executeSearch` public read floor so `total` stays
+        // consistent with the items actually returned (HOS-374 §7.6.5).
         const count = await this.model.count(
-            scopedFilters,
+            applyPublicReadFloor(filterParams),
             additionalConditions.length > 0 ? { additionalConditions } : undefined
         );
         return { count };
@@ -914,8 +910,8 @@ export class EventService extends BaseCrudService<
      *
      * Its only caller is `GET /api/v1/public/events/author/{authorId}`, which
      * backs the public author page (HOS-375). It therefore goes through
-     * {@link applyPublicVisibilityScope} and returns `PUBLIC` + `ACTIVE` rows to
-     * everyone, regardless of the actor's permissions.
+     * {@link applyPublicReadFloor} and returns `APPROVED` + `PUBLIC` + `ACTIVE`
+     * rows to everyone, regardless of the actor's permissions.
      *
      * It previously constrained `visibility` alone, and only for actors lacking
      * `EVENT_SOFT_DELETE_VIEW`. Both halves were wrong:
@@ -926,7 +922,7 @@ export class EventService extends BaseCrudService<
      *   exists.
      * - **The permission branch poisoned the shared cache.** This route sits
      *   under a public cache key that carries no actor (see the
-     *   `applyPublicVisibilityScope` docstring), so one privileged request would
+     *   `applyPublicReadFloor` docstring), so one privileged request would
      *   store unpublished events for every subsequent anonymous visitor.
      *
      * @param actor - Authenticated actor. Recorded for logging; it does not
@@ -950,15 +946,16 @@ export class EventService extends BaseCrudService<
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
                 }
-                const filters = applyPublicVisibilityScope({
-                    filters: { authorId: validatedInput.authorId },
-                    actor: validatedActor
-                });
+                const filters: Record<string, unknown> = { authorId: validatedInput.authorId };
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
+                    // Public read floor (HOS-374 §7.6.5), applied last so
+                    // neither a caller-supplied filter nor an elevated
+                    // permission widens a public read path to pending, private
+                    // or archived events.
                     return await this.model.findAll(
-                        filters,
+                        applyPublicReadFloor(filters),
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx
@@ -976,8 +973,8 @@ export class EventService extends BaseCrudService<
      * Its only caller is `GET /api/v1/public/events/location/{locationId}`
      * (`cacheTTL: 60`, under the `/api/v1/public/events` prefix of
      * `PUBLIC_CACHE_ENDPOINTS`), so it goes through
-     * {@link applyPublicVisibilityScope} and returns `PUBLIC` + `ACTIVE` rows to
-     * everyone, regardless of the actor's permissions — see that helper's
+     * {@link applyPublicReadFloor} and returns `APPROVED` + `PUBLIC` + `ACTIVE`
+     * rows to everyone, regardless of the actor's permissions — see that helper's
      * docstring for why a public read cannot branch on the actor.
      *
      * It previously constrained `visibility` alone, and only for actors lacking
@@ -1008,15 +1005,16 @@ export class EventService extends BaseCrudService<
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
                 }
-                const filters = applyPublicVisibilityScope({
-                    filters: { locationId: validatedInput.locationId },
-                    actor: validatedActor
-                });
+                const filters: Record<string, unknown> = { locationId: validatedInput.locationId };
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
+                    // Public read floor (HOS-374 §7.6.5), applied last so
+                    // neither a caller-supplied filter nor an elevated
+                    // permission widens a public read path to pending, private
+                    // or archived events.
                     return await this.model.findAll(
-                        filters,
+                        applyPublicReadFloor(filters),
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx
@@ -1035,8 +1033,8 @@ export class EventService extends BaseCrudService<
      * Its only caller is `GET /api/v1/public/events/organizer/{organizerId}`
      * (`cacheTTL: 60`, under the `/api/v1/public/events` prefix of
      * `PUBLIC_CACHE_ENDPOINTS`), so it goes through
-     * {@link applyPublicVisibilityScope} and returns `PUBLIC` + `ACTIVE` rows to
-     * everyone. Same two defects as {@link getByLocation}: no `lifecycleState`
+     * {@link applyPublicReadFloor} and returns `APPROVED` + `PUBLIC` + `ACTIVE`
+     * rows to everyone. Same two defects as {@link getByLocation}: no `lifecycleState`
      * constraint at all, and an actor-dependent `visibility` branch on a
      * response stored under an actorless cache key.
      *
@@ -1061,15 +1059,18 @@ export class EventService extends BaseCrudService<
                 if (!validatedActor) {
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
                 }
-                const filters = applyPublicVisibilityScope({
-                    filters: { organizerId: validatedInput.organizerId },
-                    actor: validatedActor
-                });
+                const filters: Record<string, unknown> = {
+                    organizerId: validatedInput.organizerId
+                };
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
+                    // Public read floor (HOS-374 §7.6.5), applied last so
+                    // neither a caller-supplied filter nor an elevated
+                    // permission widens a public read path to pending, private
+                    // or archived events.
                     return await this.model.findAll(
-                        filters,
+                        applyPublicReadFloor(filters),
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx
@@ -1087,7 +1088,7 @@ export class EventService extends BaseCrudService<
      * Its only caller is `GET /api/v1/public/events/upcoming` (`cacheTTL: 60`,
      * under the `/api/v1/public/events` prefix of `PUBLIC_CACHE_ENDPOINTS`),
      * which also backs the home page's "next events" section, so it goes
-     * through {@link applyPublicVisibilityScope} and returns `PUBLIC` +
+     * through {@link applyPublicReadFloor} and returns `APPROVED` + `PUBLIC` +
      * `ACTIVE` rows to everyone. Same two defects as {@link getByLocation}: no
      * `lifecycleState` constraint at all, and an actor-dependent `visibility`
      * branch on a response stored under an actorless cache key.
@@ -1138,10 +1139,6 @@ export class EventService extends BaseCrudService<
                 if (validatedInput.maxPrice) {
                     filters['pricing.basePrice'] = { $lte: validatedInput.maxPrice };
                 }
-                const scopedFilters = applyPublicVisibilityScope({
-                    filters,
-                    actor: validatedActor
-                });
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
@@ -1150,7 +1147,8 @@ export class EventService extends BaseCrudService<
                     // project location.destination → location.cityDestination.
                     const upcomingResult = await this.model.findAllWithRelations(
                         this.getCardListRelations(),
-                        scopedFilters,
+                        // Public read floor (HOS-374 §7.6.5), applied last.
+                        applyPublicReadFloor(filters),
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx
@@ -1247,14 +1245,15 @@ export class EventService extends BaseCrudService<
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
                 }
                 const filters: Record<string, unknown> = { category: validatedInput.category };
-                if (!validatedActor.permissions?.includes(PermissionEnum.EVENT_SOFT_DELETE_VIEW)) {
-                    filters.visibility = VisibilityEnum.PUBLIC;
-                }
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
+                    // Public read floor (HOS-374 §7.6.5), applied last so
+                    // neither a caller-supplied filter nor an elevated
+                    // permission widens a public read path to pending, private
+                    // or archived events.
                     return await this.model.findAll(
-                        filters,
+                        applyPublicReadFloor(filters),
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx
@@ -1292,14 +1291,15 @@ export class EventService extends BaseCrudService<
                     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
                 }
                 const filters: Record<string, unknown> = { pricing: undefined };
-                if (!validatedActor.permissions?.includes(PermissionEnum.EVENT_SOFT_DELETE_VIEW)) {
-                    filters.visibility = VisibilityEnum.PUBLIC;
-                }
                 const page = validatedInput.page ?? 1;
                 const pageSize = validatedInput.pageSize ?? 20;
                 try {
+                    // Public read floor (HOS-374 §7.6.5), applied last so
+                    // neither a caller-supplied filter nor an elevated
+                    // permission widens a public read path to pending, private
+                    // or archived events.
                     return await this.model.findAll(
-                        filters,
+                        applyPublicReadFloor(filters),
                         { page, pageSize },
                         undefined,
                         resolvedCtx.tx
@@ -1309,5 +1309,161 @@ export class EventService extends BaseCrudService<
                 }
             }
         });
+    }
+
+    /**
+     * Applies a single state transition to one event.
+     *
+     * Shared tail of `moderate` / `setPublishState` / `setLifecycleState`
+     * (HOS-374 §7.6.4): load the event, authorize against the loaded row, write
+     * ONLY the field the caller owns, then revalidate the public page. Each
+     * transition supplies its own `authorize` because the three are gated by
+     * three different permissions, two of which have no author path at all.
+     *
+     * Writing one field per call is the point: it is what makes the permission
+     * on each transition impossible to sidestep by bundling a second state
+     * change into the same payload.
+     *
+     * @param input - actor, event id, the patch to apply, and the authorization check
+     * @param methodName - name reported to the service logger
+     * @param ctx - optional service context for transaction propagation
+     */
+    private async _applyStateChange(
+        input: {
+            readonly actor: Actor;
+            readonly id: string;
+            readonly patch: Partial<Event>;
+            readonly authorize: (actor: Actor, event: Event) => void;
+        },
+        methodName: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Event>> {
+        const { actor, id, patch, authorize } = input;
+        return this.runWithLoggingAndValidation({
+            methodName,
+            input: { actor, id },
+            schema: z.object({ id: z.string().uuid() }),
+            ctx,
+            execute: async (validated, validatedActor, resolvedCtx) => {
+                const existing = await this.model.findById(validated.id, resolvedCtx.tx);
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Event not found: ${validated.id}`
+                    );
+                }
+
+                authorize(validatedActor, existing as Event);
+
+                const updated = await this.model.update(
+                    { id: validated.id },
+                    patch as Partial<Event>,
+                    resolvedCtx.tx
+                );
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Event not found after update: ${validated.id}`
+                    );
+                }
+
+                // Every one of these transitions can flip the event in or out of
+                // the public predicate (APPROVED + PUBLIC + ACTIVE), so the
+                // cached page is stale either way. Best-effort: a revalidation
+                // failure must not undo a committed state change.
+                try {
+                    getRevalidationService()?.scheduleRevalidation({
+                        entityType: 'event',
+                        slug: updated.slug
+                    });
+                } catch (error) {
+                    EventService.revalidationLogger.warn(
+                        { error, entityType: 'event' },
+                        'Revalidation scheduling failed (non-blocking)'
+                    );
+                }
+
+                return updated as Event;
+            }
+        });
+    }
+
+    /**
+     * Applies the platform's moderation verdict to an event.
+     *
+     * Gated by `EVENT_MODERATION_CHANGE`. Touches `moderationState` and nothing
+     * else — approving does not publish and rejecting does not unpublish
+     * (HOS-374 §7.6.1).
+     *
+     * @param input - actor, event id, and the new moderation state
+     * @param ctx - optional service context for transaction propagation
+     * @returns The updated event or a service error
+     */
+    public async moderate(
+        input: { readonly actor: Actor; readonly id: string } & ContentModerationChangeInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Event>> {
+        return this._applyStateChange(
+            {
+                actor: input.actor,
+                id: input.id,
+                patch: { moderationState: input.moderationState },
+                authorize: (actor) => checkCanModerateEvent(actor)
+            },
+            'moderate',
+            ctx
+        );
+    }
+
+    /**
+     * Raises or lowers an event's publication.
+     *
+     * Gated by `EVENT_PUBLISH_TOGGLE` (any event) or `EVENT_PUBLISH_OWN` plus
+     * authorship. Touches `visibility` only, so unpublishing keeps the approval
+     * (§7.6.1).
+     *
+     * @param input - actor, event id, and the new visibility
+     * @param ctx - optional service context for transaction propagation
+     * @returns The updated event or a service error
+     */
+    public async setPublishState(
+        input: { readonly actor: Actor; readonly id: string } & ContentPublishStateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Event>> {
+        return this._applyStateChange(
+            {
+                actor: input.actor,
+                id: input.id,
+                patch: { visibility: input.visibility },
+                authorize: (actor, event) => checkCanSetEventPublishState(actor, event)
+            },
+            'setPublishState',
+            ctx
+        );
+    }
+
+    /**
+     * Moves an event through its lifecycle (draft / active / archived).
+     *
+     * Gated by `EVENT_LIFECYCLE_CHANGE`.
+     *
+     * @param input - actor, event id, and the new lifecycle state
+     * @param ctx - optional service context for transaction propagation
+     * @returns The updated event or a service error
+     */
+    public async setLifecycleState(
+        input: { readonly actor: Actor; readonly id: string } & ContentLifecycleStateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Event>> {
+        return this._applyStateChange(
+            {
+                actor: input.actor,
+                id: input.id,
+                patch: { lifecycleState: input.lifecycleState },
+                authorize: (actor) => checkCanSetEventLifecycleState(actor)
+            },
+            'setLifecycleState',
+            ctx
+        );
     }
 }

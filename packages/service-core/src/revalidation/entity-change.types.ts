@@ -82,4 +82,61 @@ export type EntityChangeData =
     | {
           /** Amenity entity changed — amenities are shown on accommodation listings */
           readonly entityType: 'amenity';
+      }
+    | {
+          /** Gastronomy listing changed (HOS-369 W2-4) */
+          readonly entityType: 'gastronomy';
+          /** Slug of the changed listing — addresses its detail page */
+          readonly slug?: string;
+          /** Stable UUID of the changed listing */
+          readonly id?: string;
+          /** Slug of the parent destination, when the listing is tied to one */
+          readonly destinationSlug?: string;
+      }
+    | {
+          /** Experience listing changed (HOS-369 W2-4) */
+          readonly entityType: 'experience';
+          /** Slug of the changed listing */
+          readonly slug?: string;
+          /** Stable UUID of the changed listing */
+          readonly id?: string;
+          /** Slug of the parent destination, when the listing is tied to one */
+          readonly destinationSlug?: string;
+      }
+    | {
+          /** Attraction changed (HOS-369 W2-4) */
+          readonly entityType: 'attraction';
+          /** Slug of the changed attraction — addresses `/destinos/atraccion/<slug>/` */
+          readonly slug?: string;
+          /** Stable UUID of the changed attraction */
+          readonly id?: string;
+          /**
+           * Slugs of EVERY destination that lists this attraction.
+           *
+           * Plural, unlike the singular `destinationSlug` the other variants
+           * carry, because the relation is many-to-many: one attraction appears
+           * on several destination pages, and a rename has to evict all of
+           * them. A singular field here would silently purge one destination
+           * and leave the rest stale — invisible, since the purge still reports
+           * success.
+           */
+          readonly destinationSlugs?: readonly string[];
+      }
+    | {
+          /** Point of interest changed (HOS-369 W2-4) */
+          readonly entityType: 'pointOfInterest';
+          /** Slug of the changed POI — addresses `/destinos/lugar/<slug>/` */
+          readonly slug?: string;
+          /** Stable UUID of the changed POI */
+          readonly id?: string;
+          /**
+           * Slugs of EVERY destination this POI belongs to.
+           *
+           * Plural for the same reason as `attraction`, and here it is not a
+           * hypothetical: `r_destination_point_of_interest` is a genuine
+           * many-to-many join, and the destination detail page renders its POIs
+           * (`DestinationPOISection`), so editing one POI must evict every
+           * destination page showing it.
+           */
+          readonly destinationSlugs?: readonly string[];
       };

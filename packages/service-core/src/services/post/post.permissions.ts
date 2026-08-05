@@ -2,6 +2,8 @@ import type { Post } from '@repo/schemas';
 import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import { type Actor, ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
+import { isAuthorEditLockedByModeration } from '../moderation/author-edit-lock';
+import { isContentStateApproved } from '../moderation/public-read-floor';
 
 /**
  * Checks if the actor has a specific permission.
@@ -25,12 +27,34 @@ export function checkCanCreatePost(actor: Actor): void {
 
 /**
  * Checks if the actor can update a post.
+ *
+ * Two independent paths (HOS-374 §7.6.2):
+ * - `POST_UPDATE` is the broad side: any post, any state.
+ * - `POST_UPDATE_OWN` is the author side: only posts the actor authored, and
+ *   only while the platform has not approved them — unless the actor also
+ *   holds `POST_PUBLISH_OWN` (§7.6.3).
+ *
+ * Authorship alone no longer grants the update. Before HOS-374 any actor whose
+ * id matched `authorId` could edit, with no permission at all.
+ *
  * @throws ServiceError if forbidden
  */
 export function checkCanUpdatePost(actor: Actor, post: Post): void {
-    // Users with POST_UPDATE permission can update any post.
-    // Authors can update their own posts.
-    if (actor.permissions.includes(PermissionEnum.POST_UPDATE) || actor.id === post.authorId) {
+    if (hasPermission(actor, PermissionEnum.POST_UPDATE)) {
+        return;
+    }
+    if (actor.id === post.authorId && hasPermission(actor, PermissionEnum.POST_UPDATE_OWN)) {
+        if (
+            isAuthorEditLockedByModeration({
+                moderationState: post.moderationState,
+                canPublishOwn: hasPermission(actor, PermissionEnum.POST_PUBLISH_OWN)
+            })
+        ) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Forbidden: cannot update a published post'
+            );
+        }
         return;
     }
     throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: cannot update post');
@@ -38,15 +62,74 @@ export function checkCanUpdatePost(actor: Actor, post: Post): void {
 
 /**
  * Checks if the actor can delete a post.
+ *
+ * `POST_DELETE` deletes any post; `POST_DELETE_OWN` deletes only the actor's
+ * own. Authorship alone is not enough — deleting own content is a trusted-editor
+ * capability, not a plain editor one (HOS-374 §7.6.2).
+ *
  * @throws ServiceError if forbidden
  */
 export function checkCanDeletePost(actor: Actor, post: Post): void {
-    // Users with POST_DELETE permission can delete any post.
-    // Authors can delete their own posts.
-    if (actor.permissions.includes(PermissionEnum.POST_DELETE) || actor.id === post.authorId) {
+    if (hasPermission(actor, PermissionEnum.POST_DELETE)) {
+        return;
+    }
+    if (actor.id === post.authorId && hasPermission(actor, PermissionEnum.POST_DELETE_OWN)) {
         return;
     }
     throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: cannot delete post');
+}
+
+/**
+ * Checks if the actor can change a post's moderation state.
+ *
+ * `POST_MODERATION_CHANGE` has existed and been seeded since long before
+ * HOS-374, but gated nothing server-side: it only decided whether the admin
+ * panel rendered a widget, while the write itself went through the generic
+ * update behind plain `POST_UPDATE`. This is where it becomes load-bearing
+ * (§7.6.4).
+ *
+ * The verdict belongs to the platform, so there is no author path here — not
+ * even for a trusted editor, who moves `visibility` instead.
+ *
+ * @throws ServiceError if forbidden
+ */
+export function checkCanModeratePost(actor: Actor): void {
+    requirePermission(actor, PermissionEnum.POST_MODERATION_CHANGE);
+}
+
+/**
+ * Checks if the actor can raise or lower a post's publication.
+ *
+ * `POST_PUBLISH_TOGGLE` is the broad side (any post), `POST_PUBLISH_OWN` the
+ * author side. Publish and unpublish are deliberately one permission: "may
+ * publish but may not unpublish" pushes content live with no way to pull it
+ * back (§7.6.2).
+ *
+ * @throws ServiceError if forbidden
+ */
+export function checkCanSetPostPublishState(actor: Actor, post: Post): void {
+    if (hasPermission(actor, PermissionEnum.POST_PUBLISH_TOGGLE)) {
+        return;
+    }
+    if (actor.id === post.authorId && hasPermission(actor, PermissionEnum.POST_PUBLISH_OWN)) {
+        return;
+    }
+    throw new ServiceError(
+        ServiceErrorCode.FORBIDDEN,
+        'Forbidden: cannot change post publication state'
+    );
+}
+
+/**
+ * Checks if the actor can change a post's lifecycle state.
+ *
+ * Archiving is a platform-side action with no author counterpart, same shape as
+ * moderation. `POST_LIFECYCLE_CHANGE` also stops being decorative here.
+ *
+ * @throws ServiceError if forbidden
+ */
+export function checkCanSetPostLifecycleState(actor: Actor): void {
+    requirePermission(actor, PermissionEnum.POST_LIFECYCLE_CHANGE);
 }
 
 /**
@@ -87,6 +170,22 @@ export function checkCanViewPost(actor: Actor, post: Post): void {
         if (post.visibility === VisibilityEnum.PUBLIC) {
             throw new ServiceError(ServiceErrorCode.GONE, 'Post is gone');
         }
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Post not found');
+    }
+
+    // Public read floor, platform half (HOS-374 §5.1.1 / §7.6.5): content the
+    // platform has not approved, or that has been archived, is not readable —
+    // regardless of how public its `visibility` says it is. The author still
+    // reads their own drafts, and so do the elevated view permissions;
+    // otherwise an editor could not review what they just wrote. NOT_FOUND, not
+    // FORBIDDEN, so an unapproved post is indistinguishable from a missing one.
+    if (
+        !isContentStateApproved(post) &&
+        actor.id !== post.authorId &&
+        !hasPermission(actor, PermissionEnum.POST_VIEW_ALL) &&
+        !hasPermission(actor, PermissionEnum.POST_VIEW_PRIVATE) &&
+        !hasPermission(actor, PermissionEnum.POST_VIEW_DRAFT)
+    ) {
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Post not found');
     }
 

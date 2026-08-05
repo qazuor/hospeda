@@ -38,7 +38,11 @@ import {
     aiSocialDraftsRoute,
     aiSocialPublicDataRoute
 } from './ai/social/index.js';
-import { adminAllianceRoutes, publicAllianceRoutes } from './alliance/index.js';
+import {
+    adminAllianceRoutes,
+    protectedAllianceRoutes,
+    publicAllianceRoutes
+} from './alliance/index.js';
 import { adminAmenityRoutes, protectedAmenityRoutes, publicAmenityRoutes } from './amenity';
 import { adminAppLogRoutes } from './app-logs';
 import {
@@ -462,6 +466,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/experiences', protectedExperienceRoutes);
         // Commerce owner self-checkout: create + start-subscription (HOS-166 §6.3, §7.2)
         app.route('/api/v1/protected/commerce', protectedCommerceRoutes);
+        // Alliance applicant self-service: my own applications (HOS-278 AC-5)
+        app.route('/api/v1/protected/alliance', protectedAllianceRoutes);
         app.route('/api/v1/protected/host', protectedHostRoutes);
         app.route('/api/v1/protected/host-trades', protectedHostTradeRoutes);
         app.route('/api/v1/protected/host-onboarding', protectedHostOnboardingRoutes);

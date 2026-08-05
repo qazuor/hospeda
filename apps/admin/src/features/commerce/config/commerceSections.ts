@@ -16,10 +16,21 @@
  *   - `createCommerceOperationalSection()` — owner-editable operational fields:
  *       contactInfo (phone, email, website, whatsapp),
  *       socialNetworks (facebook, instagram, twitter),
- *       media (featuredImage, gallery, videos),
+ *       videos,
  *       openingHours (scheduleText),
  *       richDescription (already in identity; NOT duplicated here),
  *       amenities, features.
+ *
+ * HOS-382: `media.featuredImage` and `media.gallery` were REMOVED from this
+ * section. They used to buffer into a `media` object on PATCH, but the
+ * `media` JSONB column was dropped from `gastronomies`/`experiences`
+ * (HOS-372) — the update schemas silently strip a `media` key, so every
+ * photo uploaded through those fields was orphaned in Cloudinary with no DB
+ * row ever created. Photos are now managed exclusively via the relational
+ * `gastronomy_media` / `experience_media` tables through the dedicated
+ * Gallery tab (`CommerceGalleryManager`, mirroring accommodations'
+ * `GalleryManager`). `videos` is unaffected — it is its own top-level
+ * column, not nested under `media`.
  *
  * Permissions use the generic COMMERCE_* enum values from @repo/schemas so
  * that both admin (COMMERCE_EDIT_ALL) and owner-scoped edits
@@ -37,7 +48,6 @@ import {
     RichTextFeatureEnum
 } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/consolidated-config.types';
-import { DEFAULT_MEDIA_MAX_SIZE_BYTES } from '@/lib/constants';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -340,7 +350,9 @@ export function createCommerceIdentitySection(): ConsolidatedSectionConfig {
  * Contains owner-editable fields:
  *   - Contact info: phone, email, website, whatsapp.
  *   - Social networks: facebook, instagram, twitter.
- *   - Media: featuredImage (IMAGE), gallery (GALLERY), videos (VIDEO_GALLERY).
+ *   - Videos: videos (VIDEO_GALLERY). Photos are NOT here — see the
+ *     `HOS-382` note above the file-level "Media" bullet list; they live on
+ *     the dedicated Gallery tab, not this form.
  *   - Opening hours: scheduleText (TEXTAREA — no structured type exists yet).
  *   - Amenities: AMENITY_SELECT (multi-select).
  *   - Features: FEATURE_SELECT (multi-select).
@@ -470,52 +482,14 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
             },
 
             // ------------------------------------------------------------------
-            // Media
+            // Videos
+            //
+            // HOS-382: `media.featuredImage` (IMAGE) and `media.gallery` (GALLERY)
+            // used to live here but were REMOVED — see the file-level HOS-382 note
+            // in this file's header JSDoc (top of file). Photos are now
+            // managed exclusively via the relational gallery tab
+            // (`CommerceGalleryManager`), never through this form.
             // ------------------------------------------------------------------
-            {
-                id: 'media.featuredImage',
-                type: FieldTypeEnum.IMAGE,
-                required: false,
-                modes: ['view', 'edit'],
-                label: 'Imagen Principal',
-                description: 'Imagen principal del comercio (recomendado 16:9)',
-                placeholder: 'Seleccioná la imagen principal…',
-                permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
-                },
-                typeConfig: {
-                    type: 'IMAGE',
-                    maxSize: DEFAULT_MEDIA_MAX_SIZE_BYTES,
-                    allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
-                    maxWidth: 1920,
-                    maxHeight: 1080,
-                    aspectRatio: '16:9',
-                    quality: 0.85
-                }
-            },
-            {
-                id: 'media.gallery',
-                type: FieldTypeEnum.GALLERY,
-                required: false,
-                modes: ['view', 'edit'],
-                label: 'Galería de Imágenes',
-                description: 'Colección de imágenes del comercio',
-                placeholder: 'Arrastrá imágenes aquí o hacé clic para seleccionar…',
-                permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
-                },
-                typeConfig: {
-                    type: 'GALLERY',
-                    maxImages: 20,
-                    maxSize: DEFAULT_MEDIA_MAX_SIZE_BYTES,
-                    allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
-                    maxWidth: 1920,
-                    maxHeight: 1080,
-                    sortable: true
-                }
-            },
             {
                 // HOS-372: the field id is `videos`, NOT `media.videos`. The `media`
                 // JSONB column was dropped from `gastronomies`/`experiences` and

@@ -186,7 +186,14 @@ export const EventCreateHttpSchema = z.object({
     endDate: z.coerce.date(),
     locationId: z.string().uuid().optional(),
     organizerId: z.string().uuid(),
-    authorId: z.string().uuid(),
+    // `authorId` is deliberately absent (HOS-374 D-2). Authorship on this HTTP
+    // surface is the authenticated actor's, resolved server-side by
+    // `httpToDomainEventCreate`. Accepting it from the body let any caller
+    // holding EVENT_CREATE attribute content to an arbitrary user.
+    //
+    // This affects the PROTECTED tier only. The admin routes validate with
+    // `EventCreateInputSchema` instead, where an admin legitimately assigns
+    // authorship to someone else.
     isFeatured: z.coerce.boolean().default(false),
     isVirtual: z.coerce.boolean().default(false),
     isPrivate: z.coerce.boolean().default(false),
@@ -275,7 +282,10 @@ export const httpToDomainEventSearch = (httpParams: EventSearchHttp): EventSearc
  * Convert HTTP create data to domain create input
  * Maps HTTP form/JSON data to domain object with required fields
  */
-export const httpToDomainEventCreate = (httpData: EventCreateHttp): EventCreateInput => ({
+export const httpToDomainEventCreate = (
+    httpData: EventCreateHttp,
+    authorId: string
+): EventCreateInput => ({
     // Direct field mapping - no conversion needed now that HTTP uses 'name'
     name: httpData.name,
     slug:
@@ -308,7 +318,7 @@ export const httpToDomainEventCreate = (httpData: EventCreateHttp): EventCreateI
 
     locationId: httpData.locationId,
     organizerId: httpData.organizerId,
-    authorId: httpData.authorId,
+    authorId,
     isFeatured: httpData.isFeatured,
 
     // Required fields with defaults for domain schema
@@ -342,7 +352,9 @@ export const httpToDomainEventUpdate = (httpData: EventUpdateHttp): EventUpdateI
 
     locationId: httpData.locationId,
     organizerId: httpData.organizerId,
-    authorId: httpData.authorId,
+    // `authorId` is intentionally NOT mapped (HOS-374 D-2): authorship is
+    // assigned once, at creation, from the authenticated actor. Passing it
+    // through here let a caller reassign an existing event to another user.
     isFeatured: httpData.isFeatured
 
     // Note: Pricing updates are complex due to nested structure

@@ -1,0 +1,165 @@
+---
+/**
+ * @file AllianceApplicationsSection.astro
+ * @description The caller's own "aliados" applications and their real state
+ * (HOS-278 AC-14).
+ *
+ * `/mi-cuenta/aliados` was a static discovery hub: it offered the four
+ * programs and, once you had applied, said exactly the same thing as before
+ * you did. This section is the half that answers "and then what happened?".
+ *
+ * Renders NOTHING when the visitor has no applications — the hub below it is
+ * the whole page for someone who has never applied, and an empty "your
+ * applications" panel would be noise on the most common case.
+ *
+ * Server-rendered on purpose: `/mi-cuenta/*` is a protected route, never
+ * edge-cached, so reading the session here is correct. (Contrast with the four
+ * public landing pages, where the same personalization has to happen in the
+ * browser — see `AllianceLead.client.tsx`.)
+ */
+
+import type { MyAllianceLeadItem } from '@/lib/api/endpoints-protected';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+
+interface Props {
+    /** Active locale for i18n. */
+    readonly locale: SupportedLocale;
+    /** The visitor's own applications, newest first. */
+    readonly leads: ReadonlyArray<MyAllianceLeadItem>;
+}
+
+const { locale, leads } = Astro.props;
+const { t } = createTranslations(locale);
+
+/**
+ * Maps a lead status to the modifier class carrying its colour.
+ * `pending` and `reviewing` share one: to the applicant they are the same
+ * answer — we have it, we have not decided.
+ */
+const STATUS_MODIFIER: Record<MyAllianceLeadItem['status'], string> = {
+    pending: 'is-open',
+    reviewing: 'is-open',
+    approved: 'is-approved',
+    rejected: 'is-rejected'
+};
+
+const dateFormatter = new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+});
+---
+
+{
+    leads.length > 0 && (
+        <section class="applications">
+            <h2 class="applications__title">
+                {t('account.alliances.applications.title', 'Tus postulaciones')}
+            </h2>
+
+            <ul class="applications__list">
+                {leads.map((lead) => (
+                    <li class="applications__item">
+                        <div class="applications__main">
+                            <span class="applications__program">
+                                {t(`account.alliances.programs.${lead.kind}`, lead.kind)}
+                            </span>
+                            <span class="applications__date">
+                                {t('account.alliances.applications.submittedOn', 'Enviada el')}{' '}
+                                {dateFormatter.format(new Date(lead.createdAt))}
+                            </span>
+                        </div>
+                        <span
+                            class={`applications__status ${STATUS_MODIFIER[lead.status]}`}
+                            data-status={lead.status}
+                        >
+                            {t(`account.alliances.status.${lead.status}`, lead.status)}
+                        </span>
+                    </li>
+                ))}
+            </ul>
+
+            <p class="applications__note">
+                {t(
+                    'account.alliances.applications.note',
+                    'Cuando resolvamos una postulación te vamos a escribir por correo.'
+                )}
+            </p>
+        </section>
+    )
+}
+
+<style>
+    .applications {
+        margin-bottom: var(--space-8, 2rem);
+    }
+    .applications__title {
+        font-family: var(--font-heading);
+        font-size: var(--text-h3);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-4, 1rem);
+    }
+    .applications__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2, 0.5rem);
+    }
+    .applications__item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-4, 1rem);
+        padding: var(--space-4, 1rem);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-card, 12px);
+        background-color: var(--core-card);
+        flex-wrap: wrap;
+    }
+    .applications__main {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1, 0.25rem);
+        min-width: 0;
+    }
+    .applications__program {
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: var(--text-body);
+        color: var(--core-foreground);
+    }
+    .applications__date {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--core-muted-foreground);
+    }
+    .applications__status {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        font-weight: 600;
+        padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+        border-radius: 999px;
+        white-space: nowrap;
+    }
+    .applications__status.is-open {
+        background-color: var(--core-foreground-a08);
+        color: var(--core-muted-foreground);
+    }
+    .applications__status.is-approved {
+        background-color: var(--brand-primary-a10);
+        color: var(--brand-primary);
+    }
+    .applications__status.is-rejected {
+        background-color: var(--core-foreground-a08);
+        color: var(--core-muted-foreground);
+    }
+    .applications__note {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--core-muted-foreground);
+        margin: var(--space-3, 0.75rem) 0 0;
+    }
+</style>

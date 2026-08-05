@@ -19,18 +19,39 @@
  * ## Fields with no single input
  *
  * Some fields carry one aggregate error over a group (commerce `openingHours`
- * is 7 day checkboxes × N shift inputs). They are handled by pointing their map
- * entry at the group's first control — no special case here (HOS-373 OQ-3).
+ * is 7 day checkboxes × N shift inputs). They are handled by rendering the
+ * derived id on the group's first control — no special case here (HOS-373
+ * OQ-3).
+ *
+ * ## Derivation, not a table (HOS-385)
+ *
+ * This used to take a `FieldInputIdMap`: a per-editor table mapping every Zod
+ * key to a free-form id string, which existed only because the Zod key and the
+ * DOM id had drifted apart with no rule bridging them. Any row could be wrong,
+ * and a wrong row failed SILENTLY — `getElementById` returns `null` and this
+ * function simply does nothing.
+ *
+ * Now it calls the same {@link buildFieldId} the render site calls, so the two
+ * cannot disagree: there is no table left to be wrong. The one place derivation
+ * does not fully determine the answer is a Zod key rendered as several controls
+ * (`phone` → country combobox + number input), which is what `suffixes` carries
+ * — declared ONCE per editor and read from both sites.
  */
 
-import type { FieldInputIdMap } from '@/components/ui/FieldError';
+import { buildFieldId } from '@/lib/forms/build-field-id';
 
 /** Options accepted by {@link focusFirstInvalidField}. */
 export interface FocusFirstInvalidFieldOptions {
     /** Dotted Zod paths that failed validation, in any order. */
     readonly fieldNames: ReadonlyArray<string>;
-    /** The editor's field-to-input-id table. */
-    readonly map: FieldInputIdMap;
+    /** The editor's id namespace, e.g. `'acc'` or `'ce'`. */
+    readonly prefix: string;
+    /**
+     * The editor's shared sub-control suffix map, for the Zod keys rendered as
+     * more than one control. MUST be the same constant the render site reads —
+     * passing a suffix ad-hoc at either end is what would let them disagree.
+     */
+    readonly suffixes?: Readonly<Record<string, string>>;
 }
 
 /** Whether the user asked for reduced motion, so scrolling does not animate. */
@@ -57,16 +78,18 @@ function earlierInDocument(a: HTMLElement, b: HTMLElement): HTMLElement {
  * Focuses the first invalid field present on the page.
  *
  * Silently does nothing when no invalid field resolves to an element in the
- * DOM — a field can be unmapped, or live in a collapsed/unrendered section.
- * That silence is exactly why the field-id contract needs a static guard: a
- * missing id makes this a no-op with no error anywhere.
+ * DOM — a field can be one the editor does not render at all, or live in a
+ * collapsed/unrendered section. That silence is why each editor carries a
+ * mounted test asserting every Zod key resolves to a focusable control
+ * (HOS-385 AC-5): a missing element makes this a no-op with no error anywhere.
  *
  * @returns `true` when a field was focused, so callers (and tests) can tell the
  * difference between "focused" and "found nothing".
  */
 export function focusFirstInvalidField({
     fieldNames,
-    map
+    prefix,
+    suffixes
 }: FocusFirstInvalidFieldOptions): boolean {
     if (typeof document === 'undefined' || fieldNames.length === 0) {
         return false;
@@ -75,8 +98,7 @@ export function focusFirstInvalidField({
     let best: HTMLElement | null = null;
 
     for (const fieldName of fieldNames) {
-        const id = map[fieldName];
-        if (!id) continue;
+        const id = buildFieldId({ prefix, name: fieldName, suffix: suffixes?.[fieldName] });
 
         const element = document.getElementById(id);
         if (!(element instanceof HTMLElement)) continue;

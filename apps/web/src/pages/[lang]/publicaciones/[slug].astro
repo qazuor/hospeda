@@ -35,6 +35,8 @@ import { toRenderableImageUrl } from '@/lib/media';
 import { renderContent } from '@/lib/render-content';
 import { extractToc } from '@/lib/extract-toc';
 
+import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { slug } = Astro.params;
@@ -48,6 +50,32 @@ if (!result.ok) return new Response(null, { status: result.error.status === 410 
 
 const post = result.data as Record<string, unknown>;
 const postId = String(post.id || '');
+
+// --- Edge cacheability (HOS-369 W2-3) ---
+// After the 404/410 guards, so an error response is never marked shareable,
+// and after `postId` is derived so both tags are available.
+//
+// Addressed by its OWN two tags and deliberately NOT by `list-post`: a detail
+// page is not a listing, and the collection tag would make every post write
+// evict every other post's page.
+const postCacheTags = buildEntityCacheTags({
+	entity: 'post',
+	slug,
+	id: postId
+});
+const [primaryPostTag, ...extraPostTags] = postCacheTags;
+
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	// No usable entity tag means nothing could purge this page, and an
+	// unpurgeable cached page is worse than an uncached one.
+	cacheable: primaryPostTag !== undefined,
+	tags:
+		primaryPostTag !== undefined
+			? [primaryPostTag, ...extraPostTags]
+			: [CACHE_TAG_COLLECTIONS.post]
+});
 const title = String(post.title || '');
 const summary = String(post.summary || post.excerpt || '');
 const category = String(post.category || '');

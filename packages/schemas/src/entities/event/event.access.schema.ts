@@ -202,6 +202,12 @@ export const EventProtectedSchema = EventSchema.pick({
     // Lifecycle (for authors)
     lifecycleState: true,
 
+    // The platform's moderation verdict on the author's own content (HOS-374
+    // §7.6.1). An editor working from /mi-cuenta has to see whether their event
+    // is still PENDING or was REJECTED; `visibility` is the author's own switch
+    // and says nothing about whether the platform approved the content.
+    moderationState: true,
+
     // Basic audit (created/updated dates)
     createdAt: true,
     updatedAt: true

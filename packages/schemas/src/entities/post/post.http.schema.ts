@@ -206,7 +206,14 @@ export const PostCreateHttpSchema = z.object({
     category: PostCategoryEnumSchema,
     isFeatured: z.coerce.boolean().default(false),
     isPublished: z.coerce.boolean().default(false),
-    authorId: z.string().uuid(),
+    // `authorId` is deliberately absent (HOS-374 D-2). Authorship on this HTTP
+    // surface is the authenticated actor's, resolved server-side by
+    // `httpToDomainPostCreate`. Accepting it from the body let any caller
+    // holding POST_CREATE attribute content to an arbitrary user.
+    //
+    // This affects the PROTECTED tier only. The admin routes validate with
+    // `PostCreateInputSchema` instead, where the admin's author picker
+    // legitimately assigns authorship to someone else.
     destinationId: z.string().uuid().optional(),
     accommodationId: z.string().uuid().optional(),
     eventId: z.string().uuid().optional(),
@@ -317,8 +324,15 @@ export const httpToDomainPostSearch = (httpParams: PostSearchHttp): PostSearchIn
 /**
  * Convert HTTP create data to domain create input
  * Maps HTTP form/JSON data to domain object with required fields
+ *
+ * @param httpData - The validated request body.
+ * @param authorId - The authenticated actor's id. Authorship is assigned here,
+ *   server-side, and is never read from the request body (HOS-374 D-2).
  */
-export const httpToDomainPostCreate = (httpData: PostCreateHttp): PostCreateInput => ({
+export const httpToDomainPostCreate = (
+    httpData: PostCreateHttp,
+    authorId: string
+): PostCreateInput => ({
     // Basic post fields
     title: httpData.title,
     slug:
@@ -331,7 +345,7 @@ export const httpToDomainPostCreate = (httpData: PostCreateHttp): PostCreateInpu
     content: httpData.content,
     category: httpData.category,
     isFeatured: httpData.isFeatured,
-    authorId: httpData.authorId,
+    authorId,
 
     // Map isPublished boolean to publishedAt date
     publishedAt: httpData.isPublished ? new Date() : undefined,
@@ -369,7 +383,9 @@ export const httpToDomainPostUpdate = (httpData: PostUpdateHttp): PostUpdateInpu
     content: httpData.content,
     category: httpData.category,
     isFeatured: httpData.isFeatured,
-    authorId: httpData.authorId,
+    // `authorId` is intentionally NOT mapped (HOS-374 D-2): authorship is
+    // assigned once, at creation, from the authenticated actor. Passing it
+    // through here let a caller reassign an existing post to another user.
 
     // Map isPublished to publishedAt (only set if explicitly being published)
     ...(httpData.isPublished !== undefined && {

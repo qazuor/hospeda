@@ -5,10 +5,11 @@
  * Uses native HTML form elements.
  */
 
-import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
+import { TextField } from '@/components/ui/TextField';
 import type { AccommodationEditData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { ACCOMMODATION_FIELD_PREFIX } from './field-ids';
 import styles from './PricingSection.module.css';
 
 /** Props for PricingSection. */
@@ -39,16 +40,14 @@ export function PricingSection({ locale, data, errors, onFieldChange }: PricingS
 
             <div className={styles.row}>
                 <div className={styles.field}>
-                    <label
-                        htmlFor="acc-basePrice"
-                        className={styles.fieldLabel}
-                    >
-                        {t('host.properties.editor.field.price', 'Precio por noche')}
-                    </label>
-                    <input
-                        id="acc-basePrice"
-                        type="number"
+                    <TextField
+                        prefix={ACCOMMODATION_FIELD_PREFIX}
+                        name="basePrice"
+                        label={t('host.properties.editor.field.price', 'Precio por noche')}
+                        labelClassName={styles.fieldLabel}
                         className={styles.fieldInput}
+                        error={errors.basePrice}
+                        type="number"
                         value={data.basePrice ?? ''}
                         min={0}
                         // Prices are whole ARS integers — any positive integer must
@@ -62,15 +61,6 @@ export function PricingSection({ locale, data, errors, onFieldChange }: PricingS
                                 e.target.value === '' ? null : Number(e.target.value)
                             )
                         }
-                        aria-invalid={Boolean(errors.basePrice)}
-                        aria-describedby={
-                            errors.basePrice ? fieldErrorId('acc-basePrice') : undefined
-                        }
-                    />
-                    <FieldError
-                        id={fieldErrorId('acc-basePrice')}
-                        message={errors.basePrice}
-                        className={styles.fieldErrorSpacing}
                     />
                 </div>
 

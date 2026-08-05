@@ -1,29 +1,13 @@
-/**
- * @file getByAuthor.test.ts
- * @description Tests for `EventService.getByAuthor`.
- *
- * HOS-375 made this method load-bearing: it is the ONLY source of events for
- * the public author page (`/autores/<slug>/`), which is now indexable and
- * sitemapped. Two things it used to get wrong:
- *
- * 1. It filtered `visibility` but NEVER `lifecycleState`, so a `DRAFT` or
- *    `ARCHIVED` event was published on that page AND counted toward the page's
- *    indexability gate (§6.5).
- * 2. It skipped even the `visibility` filter for actors holding
- *    `EVENT_SOFT_DELETE_VIEW`. Its only caller is a PUBLIC route whose cache
- *    key carries no actor, so one privileged request would store unpublished
- *    events under the shared anonymous entry.
- *
- * Both are now closed by routing the filters through
- * `applyPublicVisibilityScope`. The first block asserts the FILTER the model
- * receives; the second runs a fake model that honours that filter, so the
- * exclusion is proven as an outcome rather than as a call argument.
- */
-
 import { EventModel } from '@repo/db';
-import { LifecycleStatusEnum, PermissionEnum, VisibilityEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    PermissionEnum,
+    VisibilityEnum
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
+import { PUBLIC_READ_FLOOR } from '../../../src/services/moderation/public-read-floor';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createActor } from '../../factories/actorFactory';
 import { createMockEvent } from '../../factories/eventFactory';
@@ -36,24 +20,16 @@ import {
 } from '../../helpers/assertions';
 import { createTypedModelMock } from '../../utils/modelMockFactory';
 
-/** The scope every caller must receive, whoever they are. */
-const PUBLISHED_SCOPE = {
-    visibility: VisibilityEnum.PUBLIC,
-    lifecycleState: LifecycleStatusEnum.ACTIVE
-} as const;
-
+/**
+ * Tests for EventService.getByAuthor
+ * Covers: éxito (con y sin permiso especial), forbidden, validación, edge, error interno.
+ */
 describe('EventService.getByAuthor', () => {
     let service: EventService;
     let modelMock: EventModel;
     let loggerMock: ServiceLogger;
     const authorId = createUser().id;
-    const actorWithPerm = createActor({
-        permissions: [
-            PermissionEnum.EVENT_SOFT_DELETE_VIEW,
-            PermissionEnum.EVENT_VIEW_PRIVATE,
-            PermissionEnum.EVENT_VIEW_DRAFT
-        ]
-    });
+    const actorWithPerm = createActor({ permissions: [PermissionEnum.EVENT_SOFT_DELETE_VIEW] });
     const actorNoPerm = createActor();
 
     beforeEach(() => {
@@ -62,31 +38,47 @@ describe('EventService.getByAuthor', () => {
         service = new EventService({ model: modelMock, logger: loggerMock });
     });
 
-    it('scopes an unprivileged actor to PUBLIC + ACTIVE', async () => {
+    it('should apply the public read floor even when the actor has EVENT_SOFT_DELETE_VIEW', async () => {
         // Arrange
-        (modelMock.findAll as Mock).mockResolvedValue({ items: [], total: 0 });
-
+        // HOS-374 §7.6.5: EVENT_SOFT_DELETE_VIEW no longer widens this public read
+        // path — the floor is unconditional, so only public events are mocked back.
+        const events = [
+            createMockEvent({ authorId, visibility: VisibilityEnum.PUBLIC }),
+            createMockEvent({ authorId, visibility: VisibilityEnum.PUBLIC })
+        ];
+        (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 2 });
         // Act
-        await service.getByAuthor(actorNoPerm, { authorId, page: 1, pageSize: 10 });
-
-        // Assert — `lifecycleState` is the half that used to be missing.
+        const result = await service.getByAuthor(actorWithPerm, {
+            authorId,
+            page: 1,
+            pageSize: 10
+        });
+        // Assert
+        expectSuccess(result);
+        const { data } = result;
+        if (!data) throw new Error('Expected data to be defined after expectSuccess');
+        expect(data.items).toHaveLength(2);
         expect(modelMock.findAll).toHaveBeenCalledWith(
-            { authorId, ...PUBLISHED_SCOPE },
+            { authorId, ...PUBLIC_READ_FLOOR },
             { page: 1, pageSize: 10 },
             undefined,
             undefined
         );
     });
 
-    it('scopes a PRIVILEGED actor identically — the route is actor-blind', async () => {
-        // The cache-poisoning guard. This route's cached body has no actor
-        // component, so an editor's request must not widen what gets stored.
-        (modelMock.findAll as Mock).mockResolvedValue({ items: [], total: 0 });
-
-        await service.getByAuthor(actorWithPerm, { authorId, page: 1, pageSize: 10 });
-
+    it('should apply the public read floor for an actor without elevated permissions', async () => {
+        // Arrange
+        const events = [createMockEvent({ authorId, visibility: VisibilityEnum.PUBLIC })];
+        (modelMock.findAll as Mock).mockResolvedValue({ items: events, total: 1 });
+        // Act
+        const result = await service.getByAuthor(actorNoPerm, { authorId, page: 1, pageSize: 10 });
+        // Assert
+        expectSuccess(result);
+        const { data } = result;
+        if (!data) throw new Error('Expected data to be defined after expectSuccess');
+        expect(data.items).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith(
-            { authorId, ...PUBLISHED_SCOPE },
+            { authorId, ...PUBLIC_READ_FLOOR },
             { page: 1, pageSize: 10 },
             undefined,
             undefined
@@ -135,38 +127,63 @@ describe('EventService.getByAuthor', () => {
     });
 });
 
+/**
+ * HOS-375 outcome test: `getByAuthor` is the ONLY source of events for the
+ * public author page (`/autores/<slug>/`), which is indexable and sitemapped.
+ *
+ * The block above asserts the FILTER the model is HANDED. This one runs a fake
+ * model that HONOURS that filter, so an exclusion the service forgets to
+ * request shows up as a row that should not be there — the difference between
+ * "we passed the right argument" and "the wrong rows cannot come back".
+ *
+ * It also pins `total`, which drives the page's indexability gate (§6.5): a
+ * `total` that counts rows `items` never shows would tell Google a URL exists
+ * that the page then renders as `noindex`.
+ */
 describe('EventService.getByAuthor — unpublished events never reach the author page', () => {
     let service: EventService;
     let modelMock: EventModel;
     const authorId = createUser().id;
 
-    /** The author's real mix: one publishable event and three that are not. */
+    /** The author's real mix: one publishable event and four that are not. */
     const PUBLISHED = createMockEvent({
         authorId,
         slug: 'fiesta-de-la-playa',
         visibility: VisibilityEnum.PUBLIC,
-        lifecycleState: LifecycleStatusEnum.ACTIVE
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        moderationState: ModerationStatusEnum.APPROVED
     });
     const DRAFT = createMockEvent({
         authorId,
         slug: 'borrador-sin-publicar',
         visibility: VisibilityEnum.PUBLIC,
-        lifecycleState: LifecycleStatusEnum.DRAFT
+        lifecycleState: LifecycleStatusEnum.DRAFT,
+        moderationState: ModerationStatusEnum.APPROVED
     });
     const ARCHIVED = createMockEvent({
         authorId,
         slug: 'evento-archivado',
         visibility: VisibilityEnum.PUBLIC,
-        lifecycleState: LifecycleStatusEnum.ARCHIVED
+        lifecycleState: LifecycleStatusEnum.ARCHIVED,
+        moderationState: ModerationStatusEnum.APPROVED
     });
     const PRIVATE = createMockEvent({
         authorId,
         slug: 'evento-privado',
         visibility: VisibilityEnum.PRIVATE,
-        lifecycleState: LifecycleStatusEnum.ACTIVE
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        moderationState: ModerationStatusEnum.APPROVED
+    });
+    /** The third floor column (HOS-374): approved by the platform, or invisible. */
+    const UNMODERATED = createMockEvent({
+        authorId,
+        slug: 'evento-sin-moderar',
+        visibility: VisibilityEnum.PUBLIC,
+        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        moderationState: ModerationStatusEnum.PENDING
     });
 
-    const ALL = [PUBLISHED, DRAFT, ARCHIVED, PRIVATE];
+    const ALL = [PUBLISHED, DRAFT, ARCHIVED, PRIVATE, UNMODERATED];
 
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findAll']);
@@ -225,6 +242,7 @@ describe('EventService.getByAuthor — unpublished events never reach the author
         expect(slugs).not.toContain(DRAFT.slug);
         expect(slugs).not.toContain(ARCHIVED.slug);
         expect(slugs).not.toContain(PRIVATE.slug);
+        expect(slugs).not.toContain(UNMODERATED.slug);
         expect(slugs).toContain(PUBLISHED.slug);
     });
 });

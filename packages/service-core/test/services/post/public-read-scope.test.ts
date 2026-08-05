@@ -6,9 +6,10 @@
  * unpublished post, for ANY actor.
  *
  * The per-method suites next to this file assert the FILTER handed to the
- * model. This one runs a fake model that HONOURS that filter, so a constraint
- * the service forgets to send shows up as a row that should not be there — an
- * outcome, not a call argument. It is the post-side twin of
+ * model — that `applyPublicReadFloor` (HOS-374) was called with the right
+ * argument. This one runs a fake model that HONOURS that filter, so a
+ * constraint the service forgets to send shows up as a row that should not be
+ * there — an outcome, not a call argument. It is the post-side twin of
  * `test/services/event/public-read-scope.test.ts`.
  *
  * ## Why these five, and why it was live
@@ -29,10 +30,10 @@
  * rejects an actor without an id outright — so `!actor.id` was never true for
  * any caller that reached these methods. Two defects rode on it:
  *
- * 1. **Unconditional leak.** `visibility` was effectively unfiltered and
- *    `lifecycleState` genuinely unfiltered, so a `PRIVATE` post — or a
- *    `DRAFT`/`ARCHIVED` one whose `visibility` is `PUBLIC` (the column
- *    default) — reached anonymous callers directly.
+ * 1. **Unconditional leak.** `visibility` was effectively unfiltered, and
+ *    `lifecycleState` / `moderationState` genuinely unfiltered, so a `PRIVATE`
+ *    post — or a `DRAFT`/`ARCHIVED`/unapproved one whose `visibility` is
+ *    `PUBLIC` (the column default) — reached anonymous callers directly.
  * 2. **Cache poisoning.** `generateCacheKey` builds `public:${path}${suffix}`
  *    with NO actor component and `cacheMiddleware` runs BEFORE
  *    `authMiddleware`, so the leaked rows were then served from the shared
@@ -49,7 +50,13 @@ import type {
     EventIdType,
     PostIdType
 } from '@repo/schemas';
-import { LifecycleStatusEnum, PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    PermissionEnum,
+    RoleEnum,
+    VisibilityEnum
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import type { Actor } from '../../../src/types';
@@ -75,7 +82,7 @@ const commonShape = {
     relatedEventId: eventId
 } as const;
 
-/** One publishable post and three that are not. */
+/** One publishable post and four that are not. */
 const PUBLISHED = createMockPost({
     ...commonShape,
     slug: 'nota-publicada',
@@ -103,11 +110,24 @@ const PRIVATE = createMockPost({
     visibility: VisibilityEnum.PRIVATE,
     lifecycleState: LifecycleStatusEnum.ACTIVE
 });
+/**
+ * The third floor column (HOS-374 §7.6.1): the platform's verdict. A post the
+ * author published and never archived is still not servable until moderation
+ * approves it.
+ */
+const UNMODERATED = createMockPost({
+    ...commonShape,
+    id: getMockId('post', '5') as PostIdType,
+    slug: 'nota-sin-moderar',
+    visibility: VisibilityEnum.PUBLIC,
+    lifecycleState: LifecycleStatusEnum.ACTIVE,
+    moderationState: ModerationStatusEnum.PENDING
+});
 
-const ALL = [PUBLISHED, DRAFT, ARCHIVED, PRIVATE];
+const ALL = [PUBLISHED, DRAFT, ARCHIVED, PRIVATE, UNMODERATED];
 
 /**
- * Applies the two scope keys the way the real model would.
+ * Applies the three floor keys the way the real model would.
  *
  * Deliberately ignores every OTHER filter key: `getNews` also passes
  * `expiresAt: { gte, lte }`, an operator object no plain equality check can
@@ -117,7 +137,8 @@ const honourScope = (where: Record<string, unknown>) =>
     ALL.filter(
         (post) =>
             (where.visibility === undefined || post.visibility === where.visibility) &&
-            (where.lifecycleState === undefined || post.lifecycleState === where.lifecycleState)
+            (where.lifecycleState === undefined || post.lifecycleState === where.lifecycleState) &&
+            (where.moderationState === undefined || post.moderationState === where.moderationState)
     );
 
 /**
@@ -211,8 +232,9 @@ describe('PostService — public reads never publish unpublished posts', () => {
         expect(slugs).not.toContain(DRAFT.slug);
         expect(slugs).not.toContain(ARCHIVED.slug);
         expect(slugs).not.toContain(PRIVATE.slug);
+        expect(slugs).not.toContain(UNMODERATED.slug);
         expect(slugs).toContain(PUBLISHED.slug);
-        // The fake really does hold all four when nothing narrows it.
-        expect(honourScope({})).toHaveLength(4);
+        // The fake really does hold all five when nothing narrows it.
+        expect(honourScope({})).toHaveLength(5);
     });
 });

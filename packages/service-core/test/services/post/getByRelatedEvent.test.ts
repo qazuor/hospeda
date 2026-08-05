@@ -1,7 +1,8 @@
 import { PostModel } from '@repo/db';
 import type { EventIdType, PostIdType } from '@repo/schemas';
-import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
+import { RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock } from 'vitest';
+import { PUBLIC_READ_FLOOR } from '../../../src/services/moderation/public-read-floor';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createMockPost } from '../../factories/postFactory';
@@ -13,12 +14,6 @@ import {
 } from '../../helpers/assertions';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
-
-/** The scope every caller of this public route must receive, whoever they are. */
-const PUBLISHED_SCOPE = {
-    visibility: VisibilityEnum.PUBLIC,
-    lifecycleState: LifecycleStatusEnum.ACTIVE
-} as const;
 
 describe('PostService.getByRelatedEvent', () => {
     let service: PostService;
@@ -49,17 +44,16 @@ describe('PostService.getByRelatedEvent', () => {
         expect(result.data).toHaveLength(2);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             relatedEventId: eventId,
-            ...PUBLISHED_SCOPE
+            ...PUBLIC_READ_FLOOR
         });
     });
 
-    it('honours an explicit visibility filter but still constrains lifecycleState', async () => {
-        // A caller-supplied filter wins over the default — it can only
-        // narrow. `lifecycleState` was never constrained at all, so a
-        // DRAFT row whose visibility defaults to PUBLIC reached every
-        // visitor regardless of what `visibility` said.
+    it('should override a caller-supplied visibility with the public read floor', async () => {
+        // HOS-374 §7.6.5: the public read floor is applied last on public read
+        // paths, so a caller-supplied `visibility` (even PRIVATE) is overridden
+        // rather than honored.
         const posts = [
-            createMockPost({ relatedEventId: eventId, visibility: VisibilityEnum.PRIVATE })
+            createMockPost({ relatedEventId: eventId, visibility: VisibilityEnum.PUBLIC })
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 1 });
         const params = { eventId, visibility: VisibilityEnum.PRIVATE };
@@ -68,8 +62,7 @@ describe('PostService.getByRelatedEvent', () => {
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             relatedEventId: eventId,
-            visibility: VisibilityEnum.PRIVATE,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            ...PUBLIC_READ_FLOOR
         });
     });
 
@@ -89,7 +82,7 @@ describe('PostService.getByRelatedEvent', () => {
         expect(modelMock.findAll).toHaveBeenCalledWith({
             relatedEventId: eventId,
             createdAt: { gte: params.fromDate, lte: params.toDate },
-            ...PUBLISHED_SCOPE
+            ...PUBLIC_READ_FLOOR
         });
     });
 

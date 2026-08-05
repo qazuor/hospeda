@@ -35,7 +35,7 @@ export const protectedUpdateEventRoute = createProtectedRoute({
     responseSchema: EventProtectedSchema,
     ownership: {
         entityType: 'event',
-        ownershipFields: ['createdById'],
+        ownershipFields: ['authorId'],
         bypassPermission: PermissionEnum.EVENT_UPDATE
     },
     handler: async (

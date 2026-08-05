@@ -94,6 +94,33 @@ export enum NotificationType {
      */
     ACCOMMODATION_CALENDAR_FEED_BROKEN = 'accommodation_calendar_feed_broken',
     /**
+     * HOS-278 §6.2 — sent to the OWNER of an email address when an anonymous
+     * "aliados" application arrives carrying that address.
+     *
+     * The application is not linked to their account by sending this: the link
+     * is established only when they click through and redeem the token
+     * (AC-4). The lead's email is unverified, so linking on the email alone
+     * would let anyone hang an application — and whatever benefits it carries
+     * — off someone else's account.
+     *
+     * This is a TRANSACTIONAL notification: it is a security-relevant
+     * confirmation about the recipient's own account, and it is the ONLY way
+     * the claim token is ever delivered.
+     */
+    ALLIANCE_CLAIM_INVITE = 'alliance_claim_invite',
+    /**
+     * HOS-278 AC-6 — sent to an applicant when an admin resolves their
+     * "aliados" application, whichever way it went.
+     *
+     * The copy the landing pages already make ("nos contactamos a la
+     * brevedad") is a promise this notification is what keeps. Before it, a
+     * rejected applicant heard nothing at all and an approved one heard
+     * whatever the admin remembered to write by hand.
+     *
+     * TRANSACTIONAL: it is the answer to something the recipient asked for.
+     */
+    ALLIANCE_LEAD_DECISION = 'alliance_lead_decision',
+    /**
      * HOS-176 Increment A — advance notice sent to a subscriber before a plan
      * price INCREASE is applied to their MercadoPago preapproval.
      *
@@ -633,6 +660,90 @@ export interface CommerceOwnerCredentialsPayload extends BaseNotificationPayload
 }
 
 /**
+ * Payload for the ALLIANCE_CLAIM_INVITE notification (HOS-278 §6.2).
+ *
+ * Sent to the owner of an email address that an ANONYMOUS "aliados"
+ * application arrived with. Asks them to confirm the application is theirs;
+ * only that click links it to their account (AC-4).
+ *
+ * **Security note**: `claimUrl` embeds the single-use claim token. It is the
+ * only place the raw token ever exists outside the request that generated it
+ * — the database stores a SHA-256 digest, never the token itself. It MUST NOT
+ * be logged, echoed in an API response, or stored in notification metadata.
+ *
+ * The message never states whether an account already existed: it is only
+ * ever DELIVERED when one does, so the fact is disclosed to the account owner
+ * alone and never to the submitter (AC-3).
+ *
+ * @example
+ * ```ts
+ * const payload: AllianceClaimInvitePayload = {
+ *   type: NotificationType.ALLIANCE_CLAIM_INVITE,
+ *   recipientEmail: 'juan@example.com',
+ *   recipientName: 'Juan Pérez',
+ *   userId: 'user-uuid',
+ *   leadId: 'lead-uuid',
+ *   programLabel: 'Partner',
+ *   claimUrl: 'https://hospeda.com.ar/mi-cuenta/aliados?lead=lead-uuid&claim=TOKEN',
+ *   expiresAt: '2026-08-11T12:00:00.000Z',
+ * };
+ * ```
+ */
+export interface AllianceClaimInvitePayload extends BaseNotificationPayload {
+    readonly type: NotificationType.ALLIANCE_CLAIM_INVITE;
+    /** UUID of the alliance lead awaiting confirmation. For traceability. */
+    readonly leadId: string;
+    /**
+     * Human-readable name of the program applied to (e.g. "Partner",
+     * "Proveedor"). Resolved by the caller — the recipient should not have to
+     * decode a slug to know what they are confirming.
+     */
+    readonly programLabel: string;
+    /**
+     * Full confirmation URL, including the single-use claim token.
+     * NEVER log or persist this value.
+     */
+    readonly claimUrl: string;
+    /** ISO-8601 timestamp at which the claim link stops working. */
+    readonly expiresAt: string;
+}
+
+/**
+ * Payload for the ALLIANCE_LEAD_DECISION notification (HOS-278 AC-6).
+ *
+ * Sent when an admin approves or rejects an "aliados" application. One type
+ * rather than two: the recipient, the program and the next step all come from
+ * the same place, and splitting it would duplicate every field to vary one
+ * sentence.
+ *
+ * `adminNote` is NOT carried. It is the admin's internal note on the
+ * disposition — written for colleagues, not for the applicant, and the
+ * applicant-facing endpoints strip it for the same reason.
+ *
+ * @example
+ * ```ts
+ * const payload: AllianceLeadDecisionPayload = {
+ *   type: NotificationType.ALLIANCE_LEAD_DECISION,
+ *   recipientEmail: 'juan@example.com',
+ *   recipientName: 'Juan Pérez',
+ *   userId: null,
+ *   leadId: 'lead-uuid',
+ *   programLabel: 'Partner',
+ *   outcome: 'approved',
+ * };
+ * ```
+ */
+export interface AllianceLeadDecisionPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.ALLIANCE_LEAD_DECISION;
+    /** UUID of the resolved application. For traceability. */
+    readonly leadId: string;
+    /** Human-readable program name (e.g. "Partner", "Proveedor"). */
+    readonly programLabel: string;
+    /** Which way the admin resolved it. */
+    readonly outcome: 'approved' | 'rejected';
+}
+
+/**
  * Payload for the ACCOMMODATION_CALENDAR_FEED_BROKEN notification
  * (HOS-162 Phase 3, spec §14.4).
  *
@@ -728,5 +839,7 @@ export type NotificationPayload =
     | SubscriptionAccessEndingSoonPayload
     | PlanBeingRetiredPayload
     | CommerceOwnerCredentialsPayload
+    | AllianceClaimInvitePayload
+    | AllianceLeadDecisionPayload
     | AccommodationCalendarFeedBrokenPayload
     | PlanPriceChangeNoticePayload;

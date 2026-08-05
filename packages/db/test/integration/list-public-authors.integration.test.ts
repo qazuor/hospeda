@@ -77,6 +77,7 @@ async function insertPost(
         summary: 'Resumen de la nota',
         content: 'Contenido de la nota',
         authorId,
+        moderationState: 'APPROVED',
         visibility: 'PUBLIC',
         lifecycleState: 'ACTIVE',
         ...overrides
@@ -97,6 +98,7 @@ async function insertEvent(
         category: 'MUSIC',
         date: { start: new Date('2026-09-01T20:00:00.000Z') },
         authorId,
+        moderationState: 'APPROVED',
         visibility: 'PUBLIC',
         lifecycleState: 'ACTIVE',
         ...overrides
@@ -317,6 +319,34 @@ describe.skipIf(!DB_AVAILABLE)('UserModel.listPublicAuthors — what counts as p
             // edit cannot tighten one table and forget the other.
             const author = await insertAuthor(tx);
             await insertEvent(tx, author.id, { lifecycleState: 'DRAFT' });
+            // Act
+            const slugs = await listedSlugs(tx);
+            // Assert
+            expect(slugs).not.toContain(author.slug);
+        });
+    });
+
+    it('does not count a post the platform has not approved', async () => {
+        await withTestTransaction(async (tx) => {
+            // Arrange — `moderation_state` is the third column of the public
+            // read floor (HOS-374 §7.6.5). The author page's own content reads
+            // require APPROVED, so this predicate must too: an author listed
+            // here on the strength of a PENDING post would be advertised in the
+            // sitemap while the page itself renders empty and `noindex`.
+            const author = await insertAuthor(tx);
+            await insertPost(tx, author.id, { moderationState: 'PENDING' });
+            // Act
+            const slugs = await listedSlugs(tx);
+            // Assert
+            expect(slugs).not.toContain(author.slug);
+        });
+    });
+
+    it('does not count an event the platform has not approved', async () => {
+        await withTestTransaction(async (tx) => {
+            // Arrange — the same rule on the other side of the OR.
+            const author = await insertAuthor(tx);
+            await insertEvent(tx, author.id, { moderationState: 'REJECTED' });
             // Act
             const slugs = await listedSlugs(tx);
             // Assert

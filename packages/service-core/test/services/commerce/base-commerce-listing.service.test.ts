@@ -190,6 +190,9 @@ class TestCommerceService extends BaseCommerceListingService<
     protected get _entityFkColumn() {
         return 'testCommerceId';
     }
+    protected get _revalidationEntityType(): 'gastronomy' {
+        return 'gastronomy';
+    }
     protected get _amenityModel(): CommerceCatalogModel {
         return this._amenityModel_instance;
     }

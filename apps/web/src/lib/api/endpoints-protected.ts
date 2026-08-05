@@ -1957,6 +1957,48 @@ export const hostDashboardApi = {
     }
 };
 
+// --- Alliance applications (Protected — HOS-278 AC-5 / AC-14) ---
+
+/** One of the caller's own "aliados" applications, as the account page shows it. */
+export interface MyAllianceLeadItem {
+    readonly id: string;
+    readonly kind: 'partner' | 'sponsor' | 'editor' | 'service_provider';
+    readonly status: 'pending' | 'reviewing' | 'approved' | 'rejected';
+    /** ISO-8601 submission timestamp. */
+    readonly createdAt: string;
+}
+
+/** Response envelope for `GET /protected/alliance/leads/mine`. */
+export interface MyAllianceLeadsResponse {
+    readonly leads: ReadonlyArray<MyAllianceLeadItem>;
+}
+
+/**
+ * Applicant self-service view of their own alliance applications.
+ *
+ * Auth-only — the endpoint scopes to the caller's own `applicantUserId`, and
+ * answers `{ leads: [] }` rather than an error when there are none, which is
+ * the common case (HOS-278 AC-5).
+ */
+export const allianceLeadsApi = {
+    /**
+     * Lists the caller's own applications, newest first.
+     *
+     * @param params - `{ cookieHeader }` when calling from SSR; omit in the browser.
+     * @returns The caller's applications, or an error the page degrades from.
+     */
+    mine({
+        cookieHeader
+    }: {
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<MyAllianceLeadsResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/alliance/leads/mine`,
+            cookieHeader
+        });
+    }
+};
+
 // --- Host Analytics (Protected — SPEC-207) ---
 
 /** Analytics window type for time-range queries */
@@ -2656,6 +2698,227 @@ export const accommodationEditApi = {
             path: `${BASE}/destinations`,
             params: { pageSize: 200 }
         });
+    }
+};
+
+// --- Post edit (Protected — HOS-374 Phase 2 2C-1) ---
+
+/**
+ * Protected post edit API endpoints. Backs the editor's own-content dashboard
+ * (`/mi-cuenta/publicaciones`) and the editor form
+ * (`/mi-cuenta/publicaciones/[id]/editar`) — HOS-374 §5.2.2.
+ *
+ * Every endpoint here is author-scoped SERVER-side: authorship comes from the
+ * session, never from a parameter this client could widen.
+ */
+export const postEditApi = {
+    /**
+     * Load one of the caller's own posts, in whatever moderation and lifecycle
+     * state it is in.
+     *
+     * This goes to the PROTECTED route rather than `GET /public/posts/:id`,
+     * which would technically answer (an author may read their own pending
+     * post). That route carries `cacheTTL: 300`, so a response shaped by WHO
+     * asked would be cached and then served to whoever asked next — an
+     * author's unpublished draft handed to an anonymous visitor.
+     *
+     * @param params - Post ID plus the SSR cookie header.
+     * @returns The post, or a 403/404 error when the caller is not its author.
+     */
+    getById({
+        id,
+        cookieHeader
+    }: {
+        readonly id: string;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.getProtected({ path: `${PROTECTED}/posts/${id}`, cookieHeader });
+    },
+
+    /**
+     * Publish or unpublish one of the caller's own posts.
+     *
+     * Moves `visibility` ONLY — the moderation verdict is left intact, so
+     * unpublish → edit → republish never re-enters the review queue
+     * (HOS-374 §7.6.1). Requires `POST_PUBLISH_OWN` plus authorship (or the
+     * broad `POST_PUBLISH_TOGGLE`); a plain editor gets a 403.
+     *
+     * Do NOT reach for `update({ data: { isPublished } })` instead: that field
+     * name lies. `httpToDomainPostUpdate` maps it to the `publishedAt`
+     * TIMESTAMP, which no read path consults — it publishes nothing.
+     *
+     * @param params - Post ID and the target visibility.
+     * @returns The updated post.
+     */
+    setPublishState({
+        id,
+        visibility
+    }: {
+        readonly id: string;
+        readonly visibility: 'PUBLIC' | 'PRIVATE';
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/posts/${id}/publish-state`,
+            body: { visibility }
+        });
+    },
+    /**
+     * List the authenticated user's own posts, in every moderation and
+     * lifecycle state — including drafts, pending-review, and rejected
+     * content the public site never shows.
+     *
+     * Authorship is forced server-side from the session; `authorId` is NOT an
+     * accepted query parameter (the endpoint rejects it with a 400).
+     *
+     * @param params - Pagination, optional moderation/lifecycle filters, sort,
+     *   and optional SSR cookie header (see {@link protectedConversationsApi.list}).
+     * @returns Paginated list of the caller's own posts.
+     *
+     * @example
+     * ```ts
+     * const result = await postEditApi.listOwn({ cookieHeader, moderationState: 'PENDING' });
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    listOwn({
+        cookieHeader,
+        page,
+        pageSize,
+        moderationState,
+        lifecycleState,
+        sortBy,
+        sortOrder
+    }: {
+        readonly cookieHeader?: string;
+        readonly page?: number;
+        readonly pageSize?: number;
+        readonly moderationState?: 'PENDING' | 'APPROVED' | 'REJECTED';
+        readonly lifecycleState?: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+        readonly sortBy?: string;
+        readonly sortOrder?: 'asc' | 'desc';
+    } = {}): Promise<ApiResult<PaginatedResponse<Record<string, unknown>>>> {
+        return apiClient.getListProtected({
+            path: `${PROTECTED}/posts`,
+            params: { page, pageSize, moderationState, lifecycleState, sortBy, sortOrder },
+            cookieHeader
+        });
+    },
+
+    /**
+     * Update one of the caller's own posts via PATCH (partial update). Only
+     * sends the fields provided in `data`.
+     *
+     * Not called by the read-only listing (HOS-374 Phase 2 2C-1) — wired
+     * ahead of time for the editor form the next slice builds.
+     *
+     * @param params - Post ID and partial update data
+     * @returns The updated post record
+     */
+    update({
+        id,
+        data
+    }: {
+        readonly id: string;
+        readonly data: Record<string, unknown>;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.patch({ path: `${PROTECTED}/posts/${id}`, body: data });
+    },
+
+    /**
+     * Soft-delete one of the caller's own posts.
+     *
+     * Not called by the read-only listing (HOS-374 Phase 2 2C-1) — wired
+     * ahead of time for the editor form the next slice builds.
+     *
+     * @param params - Post ID to delete
+     * @returns The delete result
+     */
+    softDelete({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.delete({ path: `${PROTECTED}/posts/${id}` });
+    }
+};
+
+// --- Event edit (Protected — HOS-374 Phase 2 2C-1) ---
+
+/**
+ * Protected event edit API endpoints. Mirrors {@link postEditApi} field for
+ * field — see its JSDoc for the shared rationale (author-forced listing, no
+ * `getById` yet).
+ */
+export const eventEditApi = {
+    /**
+     * List the authenticated user's own events, in every moderation and
+     * lifecycle state — including drafts, pending-review, and rejected
+     * content the public site never shows.
+     *
+     * Authorship is forced server-side from the session; `authorId` is NOT an
+     * accepted query parameter (the endpoint rejects it with a 400).
+     *
+     * @param params - Pagination, optional moderation/lifecycle filters, sort,
+     *   and optional SSR cookie header (see {@link protectedConversationsApi.list}).
+     * @returns Paginated list of the caller's own events.
+     *
+     * @example
+     * ```ts
+     * const result = await eventEditApi.listOwn({ cookieHeader, lifecycleState: 'DRAFT' });
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    listOwn({
+        cookieHeader,
+        page,
+        pageSize,
+        moderationState,
+        lifecycleState,
+        sortBy,
+        sortOrder
+    }: {
+        readonly cookieHeader?: string;
+        readonly page?: number;
+        readonly pageSize?: number;
+        readonly moderationState?: 'PENDING' | 'APPROVED' | 'REJECTED';
+        readonly lifecycleState?: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+        readonly sortBy?: string;
+        readonly sortOrder?: 'asc' | 'desc';
+    } = {}): Promise<ApiResult<PaginatedResponse<Record<string, unknown>>>> {
+        return apiClient.getListProtected({
+            path: `${PROTECTED}/events`,
+            params: { page, pageSize, moderationState, lifecycleState, sortBy, sortOrder },
+            cookieHeader
+        });
+    },
+
+    /**
+     * Update one of the caller's own events via PATCH (partial update). Only
+     * sends the fields provided in `data`.
+     *
+     * Not called by the read-only listing (HOS-374 Phase 2 2C-1) — wired
+     * ahead of time for the editor form the next slice builds.
+     *
+     * @param params - Event ID and partial update data
+     * @returns The updated event record
+     */
+    update({
+        id,
+        data
+    }: {
+        readonly id: string;
+        readonly data: Record<string, unknown>;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.patch({ path: `${PROTECTED}/events/${id}`, body: data });
+    },
+
+    /**
+     * Soft-delete one of the caller's own events.
+     *
+     * Not called by the read-only listing (HOS-374 Phase 2 2C-1) — wired
+     * ahead of time for the editor form the next slice builds.
+     *
+     * @param params - Event ID to delete
+     * @returns The delete result
+     */
+    softDelete({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.delete({ path: `${PROTECTED}/events/${id}` });
     }
 };
 
