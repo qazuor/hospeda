@@ -182,8 +182,8 @@ describe('PostEditor — capability-gated controls', () => {
 
         // OQ-3: absent, not disabled — a disabled button only invites the
         // question of how to enable it, and the answer is an admin grant.
-        expect(screen.queryByTestId('post-publish-toggle')).not.toBeInTheDocument();
-        expect(screen.queryByTestId('post-delete')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('content-publish-toggle')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('content-delete')).not.toBeInTheDocument();
     });
 
     it('renders the delete control alone when only deletion is granted', () => {
@@ -193,22 +193,22 @@ describe('PostEditor — capability-gated controls', () => {
         // with both flags false the row is absent either way.
         renderEditor({ canPublish: false, canDelete: true });
 
-        expect(screen.getByTestId('post-delete')).toBeInTheDocument();
-        expect(screen.queryByTestId('post-publish-toggle')).not.toBeInTheDocument();
+        expect(screen.getByTestId('content-delete')).toBeInTheDocument();
+        expect(screen.queryByTestId('content-publish-toggle')).not.toBeInTheDocument();
     });
 
     it('renders the publish control alone when only publishing is granted', () => {
         renderEditor({ canPublish: true, canDelete: false });
 
-        expect(screen.getByTestId('post-publish-toggle')).toBeInTheDocument();
-        expect(screen.queryByTestId('post-delete')).not.toBeInTheDocument();
+        expect(screen.getByTestId('content-publish-toggle')).toBeInTheDocument();
+        expect(screen.queryByTestId('content-delete')).not.toBeInTheDocument();
     });
 
     it('publishes through the publish-state endpoint, never through the PATCH', async () => {
         mockSetPublishState.mockResolvedValueOnce({ ok: true, data: {} });
         renderEditor({ canPublish: true });
 
-        fireEvent.click(screen.getByTestId('post-publish-toggle'));
+        fireEvent.click(screen.getByTestId('content-publish-toggle'));
 
         await waitFor(() => expect(mockSetPublishState).toHaveBeenCalledTimes(1));
         expect(mockSetPublishState).toHaveBeenCalledWith({
@@ -218,7 +218,7 @@ describe('PostEditor — capability-gated controls', () => {
         expect(mockUpdate).not.toHaveBeenCalled();
         // The control reflects the new state without a page reload.
         await waitFor(() =>
-            expect(screen.getByTestId('post-publish-toggle')).toHaveTextContent('Despublicar')
+            expect(screen.getByTestId('content-publish-toggle')).toHaveTextContent('Despublicar')
         );
     });
 
@@ -226,7 +226,7 @@ describe('PostEditor — capability-gated controls', () => {
         mockSetPublishState.mockResolvedValueOnce({ ok: true, data: {} });
         renderEditor({ post: { visibility: 'PUBLIC' }, canPublish: true });
 
-        fireEvent.click(screen.getByTestId('post-publish-toggle'));
+        fireEvent.click(screen.getByTestId('content-publish-toggle'));
 
         await waitFor(() =>
             expect(mockSetPublishState).toHaveBeenCalledWith({
@@ -245,7 +245,7 @@ describe('PostEditor — capability-gated controls', () => {
 
         // Publishing now would push the PERSISTED version live, not what is on
         // screen. Disabled WITH a visible reason, unlike the permission case.
-        expect(screen.getByTestId('post-publish-toggle')).toBeDisabled();
+        expect(screen.getByTestId('content-publish-toggle')).toBeDisabled();
         expect(
             screen.getByText('Guardá los cambios antes de cambiar la publicación.')
         ).toBeInTheDocument();
@@ -256,10 +256,10 @@ describe('PostEditor — capability-gated controls', () => {
         Object.defineProperty(window, 'location', { value: { href: '' }, writable: true });
         renderEditor({ canDelete: true });
 
-        fireEvent.click(screen.getByTestId('post-delete'));
+        fireEvent.click(screen.getByTestId('content-delete'));
         expect(mockSoftDelete).not.toHaveBeenCalled();
 
-        fireEvent.click(screen.getByTestId('post-delete-confirm'));
+        fireEvent.click(screen.getByTestId('content-delete-confirm'));
         await waitFor(() => expect(mockSoftDelete).toHaveBeenCalledWith({ id: 'post-1' }));
     });
 });

@@ -1,44 +1,85 @@
 /**
  * @file PublicationSection.client.tsx
- * @description Publication state of a post, plus the two state actions that do
- * NOT travel in the editor's PATCH: publish/unpublish and delete
- * (HOS-374 2C-2, §7.6.1 / §7.6.4).
+ * @description Publication state of one piece of own content, plus the two
+ * state actions that do NOT travel in the editor's PATCH: publish/unpublish and
+ * delete (HOS-374 §7.6.1 / §7.6.4).
+ *
+ * Shared by the post editor (2C-2) and the event editor (2C-3): both expose the
+ * exact same three orthogonal state columns and the same two actions, so the
+ * entity-specific parts — which endpoint to call, where to go after a delete,
+ * and the already-translated copy — are INJECTED rather than branched on. That
+ * follows `DeleteButton.client.tsx`, which takes its labels as pre-resolved
+ * strings for the same reason.
  *
  * ## Why these are not form fields
  *
  * `visibility`, `moderationState` and `lifecycleState` are not accepted by the
  * generic PATCH payload, by design — leaving them in it would make every gate
  * in §7.6 bypassable by editing the field directly. Publication moves through
- * its own single-purpose endpoint (`POST /protected/posts/:id/publish-state`),
+ * its own single-purpose endpoint (`POST /protected/{posts,events}/:id/publish-state`),
  * which touches `visibility` and leaves the moderation verdict intact, so
  * unpublish → edit → republish never re-enters the review queue.
  *
  * ## Why the controls are absent rather than disabled
  *
- * A plain editor holds neither `post.publish.own` nor `post.delete.own`
+ * A plain editor holds neither `*.publish.own` nor `*.delete.own`
  * (HOS-374 OQ-3). For them the buttons do not render at all: "a disabled button
  * only invites the question of how to enable it", and the answer — a per-user
  * grant an admin makes — is not something the author can act on.
  */
 
 import { type JSX, useCallback, useState } from 'react';
-import { postEditApi } from '@/lib/api/endpoints-protected';
 import type {
+    ApiResult,
     EditorContentLifecycleState,
     EditorContentModerationState,
     EditorContentVisibility
 } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
+import fieldStyles from './content-editor-fields.module.css';
 import styles from './PublicationSection.module.css';
-import fieldStyles from './post-editor-fields.module.css';
+
+/**
+ * The already-translated, entity-specific copy this section renders.
+ *
+ * Passed in rather than resolved here because the strings genuinely differ per
+ * entity ("Publicación publicada" vs "Evento publicado"), and an interpolated
+ * i18n key would be invisible to any static scan of the locale files.
+ */
+export interface PublicationSectionLabels {
+    readonly sectionTitle: string;
+    readonly explainer: string;
+    readonly publish: string;
+    readonly unpublish: string;
+    readonly publishedToast: string;
+    readonly unpublishedToast: string;
+    readonly publishErrorToast: string;
+    readonly blockedByUnsaved: string;
+    readonly delete: string;
+    readonly deleteConfirm: string;
+    readonly deleteYes: string;
+    readonly deleteNo: string;
+    readonly deleteErrorToast: string;
+}
 
 /** Props for {@link PublicationSection}. */
 export interface PublicationSectionProps {
     readonly locale: SupportedLocale;
-    readonly postId: string;
+    /** Already-translated copy — see {@link PublicationSectionLabels}. */
+    readonly labels: PublicationSectionLabels;
+    /**
+     * Raises or lowers publication on the entity. Injected so this component
+     * never imports an entity-specific endpoint.
+     */
+    readonly onSetPublishState: (params: {
+        readonly visibility: 'PUBLIC' | 'PRIVATE';
+    }) => Promise<ApiResult<unknown>>;
+    /** Soft-deletes the entity. */
+    readonly onDelete: () => Promise<ApiResult<unknown>>;
+    /** Where to land after a successful delete (already locale-prefixed). */
+    readonly listHref: string;
     readonly visibility: EditorContentVisibility;
     readonly moderationState: EditorContentModerationState;
     readonly lifecycleState: EditorContentLifecycleState;
@@ -98,7 +139,10 @@ const LIFECYCLE_LABELS = (t: TranslateFn): Readonly<Record<string, string>> => (
  */
 export function PublicationSection({
     locale,
-    postId,
+    labels,
+    onSetPublishState,
+    onDelete,
+    listHref,
     visibility,
     moderationState,
     lifecycleState,
@@ -116,56 +160,37 @@ export function PublicationSection({
     const handleTogglePublish = useCallback(async () => {
         setIsPublishing(true);
         const next: EditorContentVisibility = isPublic ? 'PRIVATE' : 'PUBLIC';
-        const result = await postEditApi.setPublishState({ id: postId, visibility: next });
+        const result = await onSetPublishState({ visibility: next });
         setIsPublishing(false);
 
         if (result.ok) {
             onVisibilityChange(next);
             addToast({
                 type: 'success',
-                message: isPublic
-                    ? t(
-                          'account.myContent.posts.editor.toast.unpublished',
-                          'Publicación despublicada'
-                      )
-                    : t('account.myContent.posts.editor.toast.published', 'Publicación publicada')
+                message: isPublic ? labels.unpublishedToast : labels.publishedToast
             });
             return;
         }
 
-        addToast({
-            type: 'error',
-            message: t(
-                'account.myContent.posts.editor.toast.publishError',
-                'No se pudo cambiar la publicación.'
-            )
-        });
-    }, [isPublic, postId, onVisibilityChange, t]);
+        addToast({ type: 'error', message: labels.publishErrorToast });
+    }, [isPublic, onSetPublishState, onVisibilityChange, labels]);
 
     const handleDelete = useCallback(async () => {
         setDeleteState('pending');
-        const result = await postEditApi.softDelete({ id: postId });
+        const result = await onDelete();
 
         if (result.ok) {
-            window.location.href = buildUrl({ locale, path: 'mi-cuenta/publicaciones' });
+            window.location.href = listHref;
             return;
         }
 
         setDeleteState('idle');
-        addToast({
-            type: 'error',
-            message: t(
-                'account.myContent.posts.editor.toast.deleteError',
-                'No se pudo eliminar la publicación.'
-            )
-        });
-    }, [postId, locale, t]);
+        addToast({ type: 'error', message: labels.deleteErrorToast });
+    }, [onDelete, listHref, labels]);
 
     return (
         <fieldset className={fieldStyles.section}>
-            <legend className={fieldStyles.sectionTitle}>
-                {t('account.myContent.posts.editor.section.publication', 'Publicación')}
-            </legend>
+            <legend className={fieldStyles.sectionTitle}>{labels.sectionTitle}</legend>
 
             <dl className={styles.states}>
                 <div className={styles.state}>
@@ -194,12 +219,7 @@ export function PublicationSection({
                 </div>
             </dl>
 
-            <p className={fieldStyles.fieldHint}>
-                {t(
-                    'account.myContent.posts.editor.publicationExplainer',
-                    'Tu nota se ve en el sitio público solo cuando está aprobada, pública y activa a la vez.'
-                )}
-            </p>
+            <p className={fieldStyles.fieldHint}>{labels.explainer}</p>
 
             {(canPublish || canDelete) && (
                 <div className={styles.actions}>
@@ -209,14 +229,9 @@ export function PublicationSection({
                             className={styles.publishButton}
                             onClick={handleTogglePublish}
                             disabled={isPublishing || hasUnsavedChanges}
-                            data-testid="post-publish-toggle"
+                            data-testid="content-publish-toggle"
                         >
-                            {isPublic
-                                ? t(
-                                      'account.myContent.posts.editor.action.unpublish',
-                                      'Despublicar'
-                                  )
-                                : t('account.myContent.posts.editor.action.publish', 'Publicar')}
+                            {isPublic ? labels.unpublish : labels.publish}
                         </button>
                     )}
 
@@ -225,31 +240,23 @@ export function PublicationSection({
                             type="button"
                             className={styles.deleteButton}
                             onClick={() => setDeleteState('confirming')}
-                            data-testid="post-delete"
+                            data-testid="content-delete"
                         >
-                            {t('account.myContent.posts.editor.action.delete', 'Eliminar')}
+                            {labels.delete}
                         </button>
                     )}
 
                     {canDelete && deleteState !== 'idle' && (
                         <span className={styles.confirm}>
-                            <span className={styles.confirmText}>
-                                {t(
-                                    'account.myContent.posts.editor.action.deleteConfirm',
-                                    '¿Eliminar esta publicación?'
-                                )}
-                            </span>
+                            <span className={styles.confirmText}>{labels.deleteConfirm}</span>
                             <button
                                 type="button"
                                 className={styles.deleteButton}
                                 onClick={handleDelete}
                                 disabled={deleteState === 'pending'}
-                                data-testid="post-delete-confirm"
+                                data-testid="content-delete-confirm"
                             >
-                                {t(
-                                    'account.myContent.posts.editor.action.deleteYes',
-                                    'Sí, eliminar'
-                                )}
+                                {labels.deleteYes}
                             </button>
                             <button
                                 type="button"
@@ -257,7 +264,7 @@ export function PublicationSection({
                                 onClick={() => setDeleteState('idle')}
                                 disabled={deleteState === 'pending'}
                             >
-                                {t('account.myContent.posts.editor.action.deleteNo', 'Cancelar')}
+                                {labels.deleteNo}
                             </button>
                         </span>
                     )}
@@ -265,12 +272,7 @@ export function PublicationSection({
             )}
 
             {canPublish && hasUnsavedChanges && (
-                <p className={fieldStyles.fieldHint}>
-                    {t(
-                        'account.myContent.posts.editor.publishBlockedByUnsaved',
-                        'Guardá los cambios antes de cambiar la publicación.'
-                    )}
-                </p>
+                <p className={fieldStyles.fieldHint}>{labels.blockedByUnsaved}</p>
             )}
         </fieldset>
     );

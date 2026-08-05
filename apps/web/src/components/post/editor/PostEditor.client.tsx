@@ -13,6 +13,8 @@
 import { PostUpdateHttpSchema } from '@repo/schemas';
 import { type JSX, useCallback, useMemo, useState } from 'react';
 import { z } from 'zod';
+import type { PublicationSectionLabels } from '@/components/account/editor/PublicationSection.client';
+import { PublicationSection } from '@/components/account/editor/PublicationSection.client';
 import { ActionBar } from '@/components/host/editor/ActionBar.client';
 import type { EditorSectionNavItem } from '@/components/host/editor/EditorSectionNav.client';
 import { EditorSectionNav } from '@/components/host/editor/EditorSectionNav.client';
@@ -30,7 +32,6 @@ import type { PostDestinationOption } from './DetailsSection.client';
 import { DetailsSection } from './DetailsSection.client';
 import { POST_FIELD_ID_SUFFIXES, POST_FIELD_PREFIX } from './field-ids';
 import styles from './PostEditor.module.css';
-import { PublicationSection } from './PublicationSection.client';
 import type { PostEditFormData } from './post-edit-data';
 import { buildPostEditFormData, buildPostPatchPayload } from './post-edit-data';
 
@@ -240,6 +241,51 @@ export function PostEditor({
         window.location.href = buildUrl({ locale, path: 'mi-cuenta/publicaciones' });
     }, [locale]);
 
+    /**
+     * Entity-specific copy for the shared `PublicationSection`. Resolved here,
+     * key by key, because that component is shared with the event editor and
+     * takes pre-translated strings (see its `PublicationSectionLabels` doc).
+     */
+    const publicationLabels = useMemo<PublicationSectionLabels>(
+        () => ({
+            sectionTitle: t('account.myContent.posts.editor.section.publication', 'Publicación'),
+            explainer: t(
+                'account.myContent.posts.editor.publicationExplainer',
+                'Tu nota se ve en el sitio público solo cuando está aprobada, pública y activa a la vez.'
+            ),
+            publish: t('account.myContent.posts.editor.action.publish', 'Publicar'),
+            unpublish: t('account.myContent.posts.editor.action.unpublish', 'Despublicar'),
+            publishedToast: t(
+                'account.myContent.posts.editor.toast.published',
+                'Publicación publicada'
+            ),
+            unpublishedToast: t(
+                'account.myContent.posts.editor.toast.unpublished',
+                'Publicación despublicada'
+            ),
+            publishErrorToast: t(
+                'account.myContent.posts.editor.toast.publishError',
+                'No se pudo cambiar la publicación.'
+            ),
+            blockedByUnsaved: t(
+                'account.myContent.posts.editor.publishBlockedByUnsaved',
+                'Guardá los cambios antes de cambiar la publicación.'
+            ),
+            delete: t('account.myContent.posts.editor.action.delete', 'Eliminar'),
+            deleteConfirm: t(
+                'account.myContent.posts.editor.action.deleteConfirm',
+                '¿Eliminar esta publicación?'
+            ),
+            deleteYes: t('account.myContent.posts.editor.action.deleteYes', 'Sí, eliminar'),
+            deleteNo: t('account.myContent.posts.editor.action.deleteNo', 'Cancelar'),
+            deleteErrorToast: t(
+                'account.myContent.posts.editor.toast.deleteError',
+                'No se pudo eliminar la publicación.'
+            )
+        }),
+        [t]
+    );
+
     const sectionLabels = useMemo(
         () => ({
             basicInfo: t('account.myContent.posts.editor.section.basicInfo', 'Información básica'),
@@ -339,7 +385,15 @@ export function PostEditor({
                     >
                         <PublicationSection
                             locale={locale}
-                            postId={initialData.id}
+                            labels={publicationLabels}
+                            listHref={buildUrl({ locale, path: 'mi-cuenta/publicaciones' })}
+                            onSetPublishState={({ visibility: next }) =>
+                                postEditApi.setPublishState({
+                                    id: initialData.id,
+                                    visibility: next
+                                })
+                            }
+                            onDelete={() => postEditApi.softDelete({ id: initialData.id })}
                             visibility={visibility}
                             moderationState={initialData.moderationState}
                             lifecycleState={initialData.lifecycleState}

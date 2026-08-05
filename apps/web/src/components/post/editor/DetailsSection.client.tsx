@@ -10,12 +10,12 @@
  * cities, so they fit a plain select today.
  */
 
+import styles from '@/components/account/editor/content-editor-fields.module.css';
 import { TextField } from '@/components/ui/TextField';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { POST_FIELD_PREFIX } from './field-ids';
 import type { PostEditFormData } from './post-edit-data';
-import styles from './post-editor-fields.module.css';
 
 /**
  * One option of the related-destination select.

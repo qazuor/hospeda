@@ -1,6 +1,6 @@
 /* PostEditor.module.css — HOS-374 2C-2
    Layout chrome only; the field primitives live in
-   `post-editor-fields.module.css`. Mirrors `AccommodationEditor.module.css`:
+   `account/editor/content-editor-fields.module.css`. Mirrors `AccommodationEditor.module.css`:
    stacked cards on small screens, sticky section nav from 1100px up. */
 
 .editor {

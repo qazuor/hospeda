@@ -9,6 +9,7 @@
  * subscriber. Formatted body text is the whole point of the field here.
  */
 
+import styles from '@/components/account/editor/content-editor-fields.module.css';
 import { RichTextEditor } from '@/components/host/editor/RichTextEditor.client';
 import { FieldError } from '@/components/ui/FieldError';
 import { buildFieldErrorId } from '@/components/ui/TextField';
@@ -16,7 +17,6 @@ import { buildFieldId } from '@/lib/forms/build-field-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { POST_FIELD_PREFIX } from './field-ids';
-import styles from './post-editor-fields.module.css';
 
 /**
  * Identity of the `content` field.
