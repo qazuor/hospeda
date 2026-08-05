@@ -276,3 +276,54 @@ describe('buildCSS — snapshot', () => {
         expect(CSS).toMatchSnapshot();
     });
 });
+
+describe('buildCSS — web-only artifact (HOS-369 W3-5)', () => {
+    const full = buildCSS();
+    const web = buildCSS({ includeAdminThemes: false });
+
+    it('defaults to the FULL artifact so existing callers are unaffected', () => {
+        // The validator, the snapshot test and the coverage test all call
+        // `buildCSS()` with no arguments and expect the admin blocks present.
+        expect(full).toContain('[data-app="admin"] {');
+        expect(full).toContain('[data-app="admin"][data-theme="dark"] {');
+    });
+
+    it('drops both admin theme blocks when asked', () => {
+        expect(web).not.toContain('[data-app="admin"] {');
+        expect(web).not.toContain('[data-app="admin"][data-theme="dark"] {');
+    });
+
+    it('drops the admin declarations themselves, not just the selectors', () => {
+        // A selector-only assertion would pass if the block were renamed while
+        // its 92 + 14 declarations stayed. Sample real admin token names.
+        const adminOnlyKeys = Object.keys(adminLight).filter((key) => !(key in webLight));
+        expect(adminOnlyKeys.length).toBeGreaterThan(0);
+        for (const key of adminOnlyKeys.slice(0, 5)) {
+            expect(web).not.toContain(`--${key}:`);
+        }
+        const adminDarkKeys = Object.keys(adminDark);
+        expect(adminDarkKeys.length).toBeGreaterThan(0);
+    });
+
+    it('keeps everything else byte-identical', () => {
+        // The web artifact must be the full one MINUS the admin blocks — not a
+        // separately assembled file that could drift. Rebuilding the full
+        // output by re-inserting nothing else proves no other section moved.
+        const adminBlocks = full.match(/\/\* Admin (light|dark) theme[\s\S]*?\n\}\n/g) ?? [];
+        expect(adminBlocks).toHaveLength(2);
+
+        let stripped = full;
+        for (const block of adminBlocks) stripped = stripped.replace(block, '');
+        // Both sides collapse consecutive blank lines left by the removal.
+        const normalise = (css: string) => css.replace(/\n{2,}/g, '\n');
+        expect(normalise(web)).toBe(normalise(stripped));
+    });
+
+    it('is meaningfully smaller, and says by how much', () => {
+        const saved = full.length - web.length;
+        expect(saved).toBeGreaterThan(6000);
+        // Pinned so a theme growing the admin blocks shows up here rather than
+        // silently changing what the web app was told it saves.
+        expect(saved).toBe(6544);
+    });
+});
