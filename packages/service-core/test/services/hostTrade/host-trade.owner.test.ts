@@ -399,3 +399,153 @@ describe('HostTradeService.reviewPendingBenefit — AC-8', () => {
         expect(model.update).not.toHaveBeenCalled();
     });
 });
+
+describe('HostTradeService.revoke — the provider is told (R-4)', () => {
+    const adminActor = createActor({ permissions: [PermissionEnum.HOST_TRADE_DELETE] });
+
+    /** Builds a service with a spied notify port injected. */
+    function buildWithNotifier(trade: ReturnType<typeof makeOwnedTrade>) {
+        const notifyRevoked = vi.fn(async () => undefined);
+        const model = {
+            ...createModelMock(['findForHost']),
+            findById: vi.fn(async () => trade),
+            update: vi.fn(async () => trade)
+        };
+        const service = new HostTradeService(
+            { logger: mockLogger },
+            model as unknown as HostTradeModel,
+            createModelMock() as unknown as AccommodationModel,
+            { notifyRevoked }
+        );
+        return { service, model, notifyRevoked };
+    }
+
+    it('should notify the owner with the listing name and the reason', async () => {
+        // Arrange
+        const trade = makeOwnedTrade(providerActor.id);
+        const { service, notifyRevoked } = buildWithNotifier(trade);
+
+        // Act
+        await service.revoke(adminActor, { id: HT_ID, reason: 'Dejó de responder.' });
+
+        // Assert — the reason IS forwarded here, unlike the alliance decision
+        // email which withholds the admin note. The revoke endpoint requires a
+        // reason precisely so this message has something to say.
+        expect(notifyRevoked).toHaveBeenCalledTimes(1);
+        expect(notifyRevoked).toHaveBeenCalledWith({
+            hostTradeId: HT_ID,
+            ownerUserId: providerActor.id,
+            listingName: 'Plomería Acme',
+            reason: 'Dejó de responder.'
+        });
+    });
+
+    it('should not notify when the listing has no owner', async () => {
+        // Arrange — listings that predate HOS-278 were admin-curated and belong
+        // to no account; there is nobody to write to.
+        const orphan = makeOwnedTrade(providerActor.id, { ownerUserId: null });
+        const { service, notifyRevoked } = buildWithNotifier(orphan);
+
+        // Act
+        const result = await service.revoke(adminActor, { id: HT_ID, reason: 'Cerró.' });
+
+        // Assert — the revocation still succeeds.
+        expect(result.error).toBeUndefined();
+        expect(notifyRevoked).not.toHaveBeenCalled();
+    });
+
+    it('should still persist the revocation when the notice fails to send', async () => {
+        // Arrange — a mail server having a bad afternoon must not roll back an
+        // admin's decision.
+        const trade = makeOwnedTrade(providerActor.id);
+        const notifyRevoked = vi.fn(async () => {
+            throw new Error('smtp down');
+        });
+        const model = {
+            ...createModelMock(['findForHost']),
+            findById: vi.fn(async () => trade),
+            update: vi.fn(async () => trade)
+        };
+        const service = new HostTradeService(
+            { logger: mockLogger },
+            model as unknown as HostTradeModel,
+            createModelMock() as unknown as AccommodationModel,
+            { notifyRevoked }
+        );
+
+        // Act
+        const result = await service.revoke(adminActor, { id: HT_ID, reason: 'Motivo.' });
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        expect(model.update).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not notify on a re-revoke, since nothing changed', async () => {
+        // Arrange — the second press is a no-op; re-sending the notice would
+        // tell the provider again about something that already happened.
+        const alreadyRevoked = makeOwnedTrade(providerActor.id, {
+            isActive: false,
+            revokedAt: new Date('2026-01-01'),
+            revokeReason: 'La razón original.'
+        });
+        const { service, notifyRevoked } = buildWithNotifier(alreadyRevoked);
+
+        // Act
+        await service.revoke(adminActor, { id: HT_ID, reason: 'Otra razón.' });
+
+        // Assert
+        expect(notifyRevoked).not.toHaveBeenCalled();
+    });
+
+    it('should work with no notifier injected at all', async () => {
+        // Arrange — tests and preview environments run without one.
+        const trade = makeOwnedTrade(providerActor.id);
+        const { service } = buildService({
+            findById: vi.fn(async () => trade),
+            update: vi.fn(async () => trade)
+        });
+
+        // Act
+        const result = await service.revoke(adminActor, { id: HT_ID, reason: 'Motivo.' });
+
+        // Assert
+        expect(result.error).toBeUndefined();
+    });
+});
+
+describe('HostTradeService.revoke — the notice must not block the admin', () => {
+    const adminActor = createActor({ permissions: [PermissionEnum.HOST_TRADE_DELETE] });
+
+    it('should resolve even while the notifier is still hanging', async () => {
+        // Arrange — a transport that never settles. This is the shape of a slow
+        // mail server, and the reason the call is fire-and-forget: awaiting it
+        // would hold the admin's request open for as long as the transport
+        // takes. A plain rejecting mock cannot catch that regression, because
+        // awaiting an already-`.catch()`ed promise still resolves.
+        const trade = makeOwnedTrade(providerActor.id);
+        const notifyRevoked = vi.fn(() => new Promise<void>(() => undefined));
+        const model = {
+            ...createModelMock(['findForHost']),
+            findById: vi.fn(async () => trade),
+            update: vi.fn(async () => trade)
+        };
+        const service = new HostTradeService(
+            { logger: mockLogger },
+            model as unknown as HostTradeModel,
+            createModelMock() as unknown as AccommodationModel,
+            { notifyRevoked }
+        );
+
+        // Act — race the revocation against a short timer. If the service
+        // awaits the notifier, the timer wins.
+        const outcome = await Promise.race([
+            service.revoke(adminActor, { id: HT_ID, reason: 'Motivo.' }).then(() => 'revoked'),
+            new Promise((resolve) => setTimeout(() => resolve('blocked'), 150))
+        ]);
+
+        // Assert
+        expect(outcome).toBe('revoked');
+        expect(notifyRevoked).toHaveBeenCalledTimes(1);
+    });
+});

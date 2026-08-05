@@ -78,6 +78,32 @@ const reviewPendingBenefitInputSchema = z.object({
 });
 
 /**
+ * Port for telling a provider their listing was taken down (HOS-278 R-4).
+ *
+ * Injected rather than imported, for the same reason the alliance ports are:
+ * `@repo/service-core` has no business knowing about an email transport.
+ * Omitting it silences the notification (tests, preview environments) without
+ * changing the revocation itself, which is the durable outcome.
+ */
+export interface HostTradeRevokeNotifyPort {
+    /**
+     * Announces the revocation to the listing's owner.
+     *
+     * Called fire-and-forget AFTER the row is already written: a mail server
+     * having a bad afternoon must not roll back an admin's decision, and an
+     * admin watching a spinner must not be waiting on Resend.
+     *
+     * @param input - Who owns it, what it was called, and why it came down.
+     */
+    notifyRevoked: (input: {
+        readonly hostTradeId: string;
+        readonly ownerUserId: string;
+        readonly listingName: string;
+        readonly reason: string;
+    }) => Promise<void>;
+}
+
+/**
  * Resolves the actor to the account id a listing may be owned by, or null.
  *
  * An anonymous or guest actor carries a sentinel id that is not a real `users`
@@ -150,14 +176,23 @@ export class HostTradeService extends BaseCrudService<
         return undefined;
     }
 
+    /**
+     * Port used to tell a provider their listing was revoked (R-4). Null in
+     * tests and preview environments, which silences the email without
+     * changing the revocation.
+     */
+    private readonly revokeNotifier: HostTradeRevokeNotifyPort | null;
+
     constructor(
         ctx: ServiceConfig,
         model?: HostTradeModel,
-        accommodationModel?: AccommodationModel
+        accommodationModel?: AccommodationModel,
+        revokeNotifier?: HostTradeRevokeNotifyPort | null
     ) {
         super(ctx, HostTradeService.ENTITY_NAME);
         this.model = model ?? new HostTradeModel();
         this.accommodationModel = accommodationModel ?? new AccommodationModel();
+        this.revokeNotifier = revokeNotifier ?? null;
     }
 
     // --- Permission hooks ---
@@ -661,6 +696,44 @@ export class HostTradeService extends BaseCrudService<
                         ServiceErrorCode.NOT_FOUND,
                         `Host trade not found: ${validated.id}`
                     );
+                }
+
+                if (updated.ownerUserId === null || updated.ownerUserId === undefined) {
+                    // Nobody to write to. Listings that predate HOS-278 were
+                    // admin-curated and belong to no account, and an approved
+                    // application whose applicant never confirmed their email
+                    // provisions one the same way. Logged rather than silent:
+                    // "the provider was not told" is a real outcome an admin
+                    // may need to act on by hand.
+                    this.logger.info(
+                        { hostTradeId: updated.id },
+                        '[host-trade] revoked a listing with no owner — nobody was notified'
+                    );
+                } else if (this.revokeNotifier !== null) {
+                    // AFTER the write, and deliberately NOT awaited. The
+                    // revocation is the durable outcome; the email reports it.
+                    // Awaiting would let a slow transport hold an admin's UI
+                    // open, and throwing would surface a delivery problem as a
+                    // failed revocation the admin would then retry — which the
+                    // re-revoke guard turns into a no-op anyway, so the retry
+                    // would not even re-send.
+                    const ownerUserId = updated.ownerUserId;
+                    void this.revokeNotifier
+                        .notifyRevoked({
+                            hostTradeId: updated.id,
+                            ownerUserId,
+                            listingName: updated.name,
+                            reason: validated.reason
+                        })
+                        .catch((error: unknown) => {
+                            this.logger.error(
+                                {
+                                    hostTradeId: updated.id,
+                                    error: error instanceof Error ? error.message : String(error)
+                                },
+                                '[host-trade] revocation notice failed to send'
+                            );
+                        });
                 }
 
                 return { trade: updated };

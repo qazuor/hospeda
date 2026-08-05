@@ -21,11 +21,20 @@ import { HostTradeAdminSchema, HostTradeIdSchema, PermissionEnum } from '@repo/s
 import { HostTradeService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { createHostTradeRevokeNotifyPort } from '../../../lib/host-trade-ports';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const hostTradeService = new HostTradeService({ logger: apiLogger });
+// The notify port is injected here rather than imported by the service, so
+// `@repo/service-core` stays free of the notification transport. Passing the
+// default models explicitly is the cost of the port being the fourth argument.
+const hostTradeService = new HostTradeService(
+    { logger: apiLogger },
+    undefined,
+    undefined,
+    createHostTradeRevokeNotifyPort()
+);
 
 /**
  * Body for a revocation.
