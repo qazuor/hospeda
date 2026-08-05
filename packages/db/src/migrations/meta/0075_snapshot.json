@@ -1,5 +1,5 @@
 {
-  "id": "2fff89ad-0f7a-46ce-ab30-780f2a12c3d5",
+  "id": "c84a00d1-31cc-40f8-a44e-c8c998fce2c0",
   "prevId": "241a16f4-debf-46a2-85f4-e7499f38742c",
   "version": "7",
   "dialect": "postgresql",
@@ -4198,36 +4198,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "category": {
-          "name": "category",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "destination_id": {
-          "name": "destination_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "benefit_type": {
-          "name": "benefit_type",
-          "type": "varchar(30)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "benefit_value": {
-          "name": "benefit_value",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "benefit_text": {
-          "name": "benefit_text",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "applicant_user_id": {
           "name": "applicant_user_id",
           "type": "uuid",
@@ -4363,19 +4333,6 @@
         }
       },
       "foreignKeys": {
-        "alliance_leads_destination_id_destinations_id_fk": {
-          "name": "alliance_leads_destination_id_destinations_id_fk",
-          "tableFrom": "alliance_leads",
-          "tableTo": "destinations",
-          "columnsFrom": [
-            "destination_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
         "alliance_leads_applicant_user_id_users_id_fk": {
           "name": "alliance_leads_applicant_user_id_users_id_fk",
           "tableFrom": "alliance_leads",
@@ -11065,6 +11022,225 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.event_media": {
+      "name": "event_media",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "caption": {
+          "name": "caption",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alt": {
+          "name": "alt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attribution": {
+          "name": "attribution",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "moderation_state": {
+          "name": "moderation_state",
+          "type": "moderation_status_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
+        "state": {
+          "name": "state",
+          "type": "event_media_state_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'visible'"
+        },
+        "is_featured": {
+          "name": "is_featured",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "eventMedia_eventId_idx": {
+          "name": "eventMedia_eventId_idx",
+          "columns": [
+            {
+              "expression": "event_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "eventMedia_state_idx": {
+          "name": "eventMedia_state_idx",
+          "columns": [
+            {
+              "expression": "state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "eventMedia_isFeatured_idx": {
+          "name": "eventMedia_isFeatured_idx",
+          "columns": [
+            {
+              "expression": "is_featured",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "eventMedia_eventId_state_sortOrder_idx": {
+          "name": "eventMedia_eventId_state_sortOrder_idx",
+          "columns": [
+            {
+              "expression": "event_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sort_order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "eventMedia_deletedAt_idx": {
+          "name": "eventMedia_deletedAt_idx",
+          "columns": [
+            {
+              "expression": "deleted_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "event_media_event_id_events_id_fk": {
+          "name": "event_media_event_id_events_id_fk",
+          "tableFrom": "event_media",
+          "tableTo": "events",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.event_locations": {
       "name": "event_locations",
       "schema": "",
@@ -14775,19 +14951,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "benefit_type": {
-          "name": "benefit_type",
-          "type": "host_trade_benefit_type_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "benefit_value": {
-          "name": "benefit_value",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "destination_id": {
           "name": "destination_id",
           "type": "uuid",
@@ -14813,55 +14976,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
-        },
-        "owner_user_id": {
-          "name": "owner_user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "pending_benefit_type": {
-          "name": "pending_benefit_type",
-          "type": "host_trade_benefit_type_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "pending_benefit_value": {
-          "name": "pending_benefit_value",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "pending_benefit_text": {
-          "name": "pending_benefit_text",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "benefit_review_state": {
-          "name": "benefit_review_state",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "revoked_at": {
-          "name": "revoked_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "revoked_by_id": {
-          "name": "revoked_by_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "revoke_reason": {
-          "name": "revoke_reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -14968,21 +15082,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "hostTrades_ownerUserId_idx": {
-          "name": "hostTrades_ownerUserId_idx",
-          "columns": [
-            {
-              "expression": "owner_user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -14997,32 +15096,6 @@
             "id"
           ],
           "onDelete": "restrict",
-          "onUpdate": "no action"
-        },
-        "host_trades_owner_user_id_users_id_fk": {
-          "name": "host_trades_owner_user_id_users_id_fk",
-          "tableFrom": "host_trades",
-          "tableTo": "users",
-          "columnsFrom": [
-            "owner_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "host_trades_revoked_by_id_users_id_fk": {
-          "name": "host_trades_revoked_by_id_users_id_fk",
-          "tableFrom": "host_trades",
-          "tableTo": "users",
-          "columnsFrom": [
-            "revoked_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "host_trades_created_by_id_users_id_fk": {
@@ -17132,6 +17205,225 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.post_media": {
+      "name": "post_media",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "post_id": {
+          "name": "post_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "caption": {
+          "name": "caption",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alt": {
+          "name": "alt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attribution": {
+          "name": "attribution",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "moderation_state": {
+          "name": "moderation_state",
+          "type": "moderation_status_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
+        "state": {
+          "name": "state",
+          "type": "post_media_state_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'visible'"
+        },
+        "is_featured": {
+          "name": "is_featured",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "postMedia_postId_idx": {
+          "name": "postMedia_postId_idx",
+          "columns": [
+            {
+              "expression": "post_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "postMedia_state_idx": {
+          "name": "postMedia_state_idx",
+          "columns": [
+            {
+              "expression": "state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "postMedia_isFeatured_idx": {
+          "name": "postMedia_isFeatured_idx",
+          "columns": [
+            {
+              "expression": "is_featured",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "postMedia_postId_state_sortOrder_idx": {
+          "name": "postMedia_postId_state_sortOrder_idx",
+          "columns": [
+            {
+              "expression": "post_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sort_order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "postMedia_deletedAt_idx": {
+          "name": "postMedia_deletedAt_idx",
+          "columns": [
+            {
+              "expression": "deleted_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "post_media_post_id_posts_id_fk": {
+          "name": "post_media_post_id_posts_id_fk",
+          "tableFrom": "post_media",
+          "tableTo": "posts",
+          "columnsFrom": [
+            "post_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -30051,16 +30343,6 @@
         "FOOD_TRUCK"
       ]
     },
-    "public.host_trade_benefit_type_enum": {
-      "name": "host_trade_benefit_type_enum",
-      "schema": "public",
-      "values": [
-        "PERCENTAGE",
-        "FIXED_AMOUNT",
-        "TWO_FOR_ONE",
-        "SPECIAL_CONDITION"
-      ]
-    },
     "public.host_trade_category_enum": {
       "name": "host_trade_category_enum",
       "schema": "public",
@@ -31384,6 +31666,14 @@
         "archived"
       ]
     },
+    "public.event_media_state_enum": {
+      "name": "event_media_state_enum",
+      "schema": "public",
+      "values": [
+        "visible",
+        "archived"
+      ]
+    },
     "public.experience_media_state_enum": {
       "name": "experience_media_state_enum",
       "schema": "public",
@@ -31394,6 +31684,14 @@
     },
     "public.gastronomy_media_state_enum": {
       "name": "gastronomy_media_state_enum",
+      "schema": "public",
+      "values": [
+        "visible",
+        "archived"
+      ]
+    },
+    "public.post_media_state_enum": {
+      "name": "post_media_state_enum",
       "schema": "public",
       "values": [
         "visible",

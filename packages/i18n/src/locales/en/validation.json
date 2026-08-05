@@ -1490,6 +1490,32 @@
                 "international": "[EN] El work phone no es válido"
             }
         },
+        "contentMedia": {
+            "alt": {
+                "max": "Alt text cannot exceed {{max}} characters",
+                "min": "Alt text must be at least {{min}} characters"
+            },
+            "caption": {
+                "max": "The caption cannot exceed {{max}} characters",
+                "min": "The caption must be at least {{min}} characters"
+            },
+            "description": {
+                "max": "The description cannot exceed {{max}} characters",
+                "min": "The description must be at least {{min}} characters"
+            },
+            "publicId": {
+                "min": "The public id must be at least {{min}} characters"
+            },
+            "sortOrder": {
+                "int": "Display order must be an integer"
+            },
+            "state": {
+                "invalid": "Media state must be 'visible' or 'archived'"
+            },
+            "url": {
+                "invalid": "The URL is not valid"
+            }
+        },
         "createdAfter": {
             "invalidDate": "[EN] El created after debe ser una fecha válida"
         },

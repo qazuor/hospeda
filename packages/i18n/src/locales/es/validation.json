@@ -1490,6 +1490,32 @@
                 "international": "El teléfono laboral no es válido"
             }
         },
+        "contentMedia": {
+            "alt": {
+                "max": "El texto alternativo no puede superar los {{max}} caracteres",
+                "min": "El texto alternativo debe tener al menos {{min}} caracteres"
+            },
+            "caption": {
+                "max": "La leyenda no puede superar los {{max}} caracteres",
+                "min": "La leyenda debe tener al menos {{min}} caracteres"
+            },
+            "description": {
+                "max": "La descripción no puede superar los {{max}} caracteres",
+                "min": "La descripción debe tener al menos {{min}} caracteres"
+            },
+            "publicId": {
+                "min": "El public id debe tener al menos {{min}} caracteres"
+            },
+            "sortOrder": {
+                "int": "El orden de visualización debe ser un número entero"
+            },
+            "state": {
+                "invalid": "El estado del medio debe ser 'visible' o 'archived'"
+            },
+            "url": {
+                "invalid": "La URL no es válida"
+            }
+        },
         "createdAfter": {
             "invalidDate": "El created after debe ser una fecha válida"
         },
