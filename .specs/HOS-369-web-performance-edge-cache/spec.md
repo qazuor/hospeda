@@ -1538,7 +1538,15 @@ Overlaps HOS-168; this spec supplies the measurements it lacked.
   631 KB per cold page load. **This is the single largest byte win available.**
 - **W3-2** — Split the i18n catalog by namespace. `validation` (157 KB) has no
   business being on a page without forms.
-- **W3-3** — Audit the 170 KB of `astro-island` props across 26 islands.
+- **W3-3** — ~~Audit the 170 KB of `astro-island` props across 26 islands.~~
+  **DONE 2026-08-05, and the framing above was wrong.** It is not 26 islands: on
+  the home, `DestinationsIsland` alone carried 147,372 B — 28.9% of the whole
+  document and 79% of all island props. Measured per field, `gallery` was 77,162 B
+  of that and is read nowhere, along with `coordinates`, `ratingDimensions`,
+  `isFeatured` and `eventsCount`. The island tree reads exactly ten fields
+  (`DestinationsMap` reads one, `slug`). Fixed by projecting to those ten before
+  passing them. The 170 KB figure came from the LISTING; nobody had bucketed the
+  home.
 - **W3-4** — Remove `driver.js` CSS from the global bundle.
 - **W3-5** — Consolidate the 20 render-blocking stylesheets. Gated on the
   CSP/`inlineStylesheets` constraint (HOS-164/HOS-168) — do not start before
@@ -1617,6 +1625,36 @@ One framing correction while the numbers are fresh: the dictionary is ~100 KB
 brotli / 127 KB gzip on the wire, not 639 KB. The 632 KB that *is* paid in full on
 every navigation is HTML parsing and the DOM text node — which is exactly the
 CPU-bound work mobile PSI throttles 4×, and therefore still the right target.
+
+#### Measured on 2026-08-05 — AC-8 met, after W3-6 and W3-3
+
+| Page | Baseline 2026-08-04 | After W3-1 | After W3-6 | After W3-3 | Total |
+|---|---|---|---|---|---|
+| `/es/` (home) | 1,256,468 B | 611,861 B | 511,077 B | **412,346 B** | **−67.2 %** |
+| `/es/alojamientos/` | 1,385,789 B | 741,191 B | 490,047 B | 490,046 B | **−64.6 %** |
+
+**AC-8 is met**: the home is 412,346 B against the 500,000 B threshold, a 17.5 %
+margin rather than the knife-edge the earlier projections kept landing on.
+
+It took THREE levers, not the one the criterion named — and each time the
+arithmetic fell short, it was because a bucket nobody had measured on the home
+turned out to dominate it:
+
+1. **W3-1** removed the 641,597 B i18n blob → 611,861 B. Still 22 % over.
+2. **W3-6** replaced 520 inline SVGs with `<use>` into a hashed sprite →
+   511,077 B. Still 2.2 % over.
+3. **W3-3** stopped serializing 84,870 B of island props nothing renders →
+   412,346 B. Clear.
+
+The recurring lesson is worth stating once: **the spec's bucket table was
+measured on the LISTING, and every projection made from it onto the home was
+wrong.** The two pages do not share a profile — the listing is dominated by
+repeated card SVGs, the home by one island's props. Re-bucket the specific page
+before predicting anything about it.
+
+Verified on staging with real data after each deploy: the sprite reaches `HIT` at
+the edge, 383 `<use>` resolve with none broken, the destinations map and carousel
+render from the narrowed prop set, and the i18n dictionary carries its 8,840 keys.
 
 ### 6.7 Documentation cleanup
 
@@ -1862,12 +1900,16 @@ Wave B onward:
   until Wave D ships** — the owner's acceptance of this spec is a faster site,
   and the waves already delivered do not move a Lighthouse score on their own.
 
-  **Corrected 2026-08-05.** This criterion previously read "after W3-1", which is
-  wrong: W3-1 shipped and the home measured 611,860 B — still 22 % over. It takes
-  **W3-1 and W3-6 together** to clear 500 KB, because the 2026-08-04
-  re-measurement found a second bucket (354,976 B of duplicated inline SVG) that
-  postdates the original wording. Do not read the old sentence as licence to close
-  on W3-1 alone.
+  **MET 2026-08-05: the home measures 412,346 B on staging** (17.5 % under the
+  threshold). See §6.6 for the full progression.
+
+  Corrected twice on the way there, and both corrections are worth keeping. The
+  criterion originally read "after W3-1": W3-1 shipped and the home was 611,860 B,
+  22 % over. It was then amended to "W3-1 and W3-6 together": those shipped and
+  the home was 511,077 B, still 2.2 % over. It took **W3-1, W3-6 and W3-3**.
+  Each shortfall had the same cause — the bucket table in §6.6 was measured on the
+  LISTING, and the home has a different profile. Do not project one page's
+  composition onto another.
 - **AC-9** — TTFB for an anonymous, cached catalog route measured from Buenos
   Aires is under 200 ms.
 - **AC-10** — Googlebot user-agent receives the same `HIT` as a browser
