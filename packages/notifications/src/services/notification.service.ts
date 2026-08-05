@@ -18,6 +18,7 @@ import {
     CommerceOwnerCredentials,
     ContactSubmissionEmail,
     FeedbackReportEmail,
+    HostTradeRevoked,
     PaymentFailure,
     PaymentRetryWarning,
     PaymentSuccess,
@@ -48,6 +49,7 @@ import type {
     CommerceOwnerCredentialsPayload,
     ContactSubmissionPayload,
     FeedbackReportPayload,
+    HostTradeRevokedPayload,
     NotificationPayload,
     PaymentNotificationPayload,
     PaymentRetryWarningPayload,
@@ -606,6 +608,15 @@ export class NotificationService {
                     recipientName,
                     programLabel: p.programLabel,
                     outcome: p.outcome
+                });
+            }
+
+            case 'host_trade_revoked': {
+                const p = payload as HostTradeRevokedPayload;
+                return HostTradeRevoked({
+                    recipientName,
+                    listingName: p.listingName,
+                    reason: p.reason
                 });
             }
 

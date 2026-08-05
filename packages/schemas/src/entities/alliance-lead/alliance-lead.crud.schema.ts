@@ -1,5 +1,82 @@
 import { z } from 'zod';
+import { refineHostTradeBenefit } from '../../common/host-trade-benefit.schema.js';
+import type { HostTradeBenefitTypeEnum } from '../../enums/host-trade-benefit-type.enum.js';
 import { AllianceLeadSchema, AllianceLeadStatusEnum } from './alliance-lead.schema.js';
+
+/**
+ * The kind whose application carries structured provider data (HOS-278 §6.4).
+ *
+ * Bound to the enum's literal so a typo cannot silently disable the whole
+ * per-kind rule below — a bare `'provider'` string would compile, match no
+ * lead, and let every provider application through with no category, no
+ * destination and no benefit.
+ */
+const SERVICE_PROVIDER_KIND: z.infer<typeof AllianceLeadSchema.shape.kind> = 'service_provider';
+
+/**
+ * The fields a `service_provider` application must supply, each paired with its
+ * error key.
+ *
+ * The keys are written as whole literals rather than built with a template,
+ * because `scripts/extract-zod-keys.ts` finds translation keys by STATIC
+ * analysis: an interpolated key is invisible to it, so it would never be
+ * verified against the locales and would surface to a user as the raw key
+ * string the first time a provider submitted an incomplete form.
+ */
+const REQUIRED_SERVICE_PROVIDER_FIELDS = [
+    {
+        field: 'businessName',
+        message: 'zodError.allianceLead.businessName.requiredForServiceProvider'
+    },
+    { field: 'category', message: 'zodError.allianceLead.category.requiredForServiceProvider' },
+    {
+        field: 'destinationId',
+        message: 'zodError.allianceLead.destinationId.requiredForServiceProvider'
+    },
+    {
+        field: 'benefitType',
+        message: 'zodError.allianceLead.benefitType.requiredForServiceProvider'
+    }
+] as const;
+
+/**
+ * Per-kind requirement rule for an alliance lead submission.
+ *
+ * The provider fields are nullable columns shared by four programs, so the
+ * database cannot express "required, but only for one kind". This is where that
+ * lives — and it is load-bearing rather than cosmetic: approving a
+ * `service_provider` materializes a `host_trades` row whose `category`,
+ * `destination_id` and benefit are NOT NULL, so a lead accepted without them
+ * cannot be approved later without going back to the applicant.
+ *
+ * The benefit's own internal consistency (value required by numeric types,
+ * rejected by the others) is delegated to {@link refineHostTradeBenefit} so the
+ * rule is not restated here and cannot drift from the listing's copy of it.
+ */
+export const refineAllianceLeadKindFields = (
+    value: {
+        readonly kind?: string;
+        readonly businessName?: string | null;
+        readonly category?: string | null;
+        readonly destinationId?: string | null;
+        readonly benefitType?: HostTradeBenefitTypeEnum | null;
+        readonly benefitValue?: number | null;
+    },
+    ctx: z.RefinementCtx
+): void => {
+    if (value.kind !== SERVICE_PROVIDER_KIND) {
+        return;
+    }
+
+    for (const { field, message } of REQUIRED_SERVICE_PROVIDER_FIELDS) {
+        const supplied = value[field];
+        if (supplied === null || supplied === undefined) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message });
+        }
+    }
+
+    refineHostTradeBenefit(value, ctx);
+};
 
 // ---------------------------------------------------------------------------
 // Create
@@ -24,6 +101,10 @@ export const AllianceLeadCreateInputSchema = AllianceLeadSchema.omit({
     adminNote: true,
     applicantUserId: true,
     claimExpiresAt: true,
+    // What approval WROTE, never what a submission may assert: accepting it
+    // from a request body would let a caller point their application at
+    // somebody else's directory listing.
+    provisionedHostTradeId: true,
     createdAt: true,
     updatedAt: true,
     createdById: true,
@@ -34,6 +115,27 @@ export const AllianceLeadCreateInputSchema = AllianceLeadSchema.omit({
 
 /** TypeScript type for {@link AllianceLeadCreateInputSchema}. */
 export type AllianceLeadCreateInput = z.infer<typeof AllianceLeadCreateInputSchema>;
+
+/**
+ * {@link AllianceLeadCreateInputSchema} with the per-kind requirement applied.
+ *
+ * Two schemas exist because they are consumed by machinery with different
+ * needs. The plain object above stays a `ZodObject` so the HTTP layer can
+ * `.extend()` it (the route adds a honeypot field) and so OpenAPI can generate
+ * from it — neither works on the `ZodEffects` a `.superRefine()` produces. This
+ * one is the schema that actually ENFORCES the rules.
+ *
+ * `AllianceLeadService.create` validates with this one, which makes the service
+ * the choke point every submission passes through: a client that validates with
+ * the plain object still gets rejected server-side. Client-side use is for the
+ * error message, never for the guarantee.
+ */
+export const AllianceLeadSubmissionSchema = AllianceLeadCreateInputSchema.superRefine(
+    refineAllianceLeadKindFields
+);
+
+/** TypeScript type for {@link AllianceLeadSubmissionSchema}. */
+export type AllianceLeadSubmission = z.infer<typeof AllianceLeadSubmissionSchema>;
 
 // ---------------------------------------------------------------------------
 // Mark handled (admin only — approve/reject + note)

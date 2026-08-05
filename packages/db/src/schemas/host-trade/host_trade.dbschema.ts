@@ -1,7 +1,16 @@
 import { relations } from 'drizzle-orm';
-import { boolean, index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+    boolean,
+    index,
+    integer,
+    pgTable,
+    text,
+    timestamp,
+    uuid,
+    varchar
+} from 'drizzle-orm/pg-core';
 import { destinations } from '../destination/destination.dbschema.ts';
-import { HostTradeCategoryPgEnum } from '../enums.dbschema.ts';
+import { HostTradeBenefitTypePgEnum, HostTradeCategoryPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 
 /**
@@ -21,8 +30,27 @@ export const hostTrades = pgTable(
         category: HostTradeCategoryPgEnum('category').notNull(),
         /** Contact information (phone, WhatsApp, email, etc.) — free text. */
         contact: text('contact').notNull(),
-        /** Benefit or discount for hosts listed in the directory. */
+        /**
+         * Fine print of the benefit: conditions, exclusions, validity.
+         *
+         * Was the WHOLE benefit until HOS-278 §6.4 gave it a structured shape;
+         * it is now the prose that accompanies {@link benefitType} /
+         * {@link benefitValue}. Kept `notNull` and un-renamed on purpose — the
+         * schema compatibility policy is additive-only, and every row that
+         * predates the structured columns still carries its offer here.
+         */
         benefit: text('benefit').notNull(),
+        /**
+         * Structured benefit shape (HOS-278 §6.4). Nullable because listings
+         * created before the structured columns existed only have the prose.
+         */
+        benefitType: HostTradeBenefitTypePgEnum('benefit_type'),
+        /**
+         * Benefit magnitude, interpreted by {@link benefitType}: whole percent
+         * for `PERCENTAGE`, centavos for `FIXED_AMOUNT`, null for the rest.
+         * The pairing is enforced by `refineHostTradeBenefit` in `@repo/schemas`.
+         */
+        benefitValue: integer('benefit_value'),
         /** Geographic destination this trade entry belongs to. */
         destinationId: uuid('destination_id')
             .notNull()
@@ -33,6 +61,60 @@ export const hostTrades = pgTable(
         scheduleText: text('schedule_text'),
         /** Whether this entry is publicly visible in the host directory. */
         isActive: boolean('is_active').notNull().default(true),
+        /**
+         * The account that owns this listing and may edit its operational
+         * fields from `/mi-cuenta` (HOS-278 AC-7).
+         *
+         * Nullable for two distinct reasons, both real: every listing that
+         * predates HOS-278 was admin-curated and belongs to nobody, and an
+         * approved application whose applicant never confirmed their email
+         * (`alliance_leads.applicant_user_id IS NULL`) provisions a listing
+         * with no owner yet — the claim flow backfills it later.
+         *
+         * A null owner is what makes the ownership filter fail CLOSED: a query
+         * scoped to the actor can never match it.
+         */
+        ownerUserId: uuid('owner_user_id').references(() => users.id, { onDelete: 'set null' }),
+        /**
+         * A benefit edit awaiting admin review (HOS-278 AC-8).
+         *
+         * The pending copy is deliberately SEPARATE from the live columns
+         * rather than a `moderationState` on the row: the benefit is the
+         * provider's consideration for being listed, so an edit must never take
+         * the vetted offer — or the whole listing — off the directory while it
+         * waits. The public directory always reads the live columns; these are
+         * invisible to it.
+         *
+         * `null` here does NOT mean "no benefit", it means "nothing pending".
+         */
+        pendingBenefitType: HostTradeBenefitTypePgEnum('pending_benefit_type'),
+        /** Pending counterpart of {@link benefitValue}. */
+        pendingBenefitValue: integer('pending_benefit_value'),
+        /** Pending counterpart of {@link benefit} (the fine print). */
+        pendingBenefitText: text('pending_benefit_text'),
+        /**
+         * Review state of the pending benefit edit: `'pending'` or null.
+         *
+         * An explicit marker rather than inferring from the pending columns:
+         * an edit that only rewrites the fine print leaves
+         * {@link pendingBenefitType} null, and inferring would silently treat
+         * that as "nothing to review".
+         */
+        benefitReviewState: varchar('benefit_review_state', { length: 20 }),
+        /**
+         * When this listing was revoked (HOS-278 R-4), or null if it was not.
+         *
+         * Revoking sets {@link isActive} false and fills this trio. It never
+         * deletes the row: the listing must stay auditable, and the provider's
+         * history of having been approved is itself a fact worth keeping. This
+         * is deliberately NOT `deletedAt` — a revoked listing is still visible
+         * to admins in normal queries, a soft-deleted one is not.
+         */
+        revokedAt: timestamp('revoked_at', { withTimezone: true }),
+        /** Admin who revoked the listing. */
+        revokedById: uuid('revoked_by_id').references(() => users.id, { onDelete: 'set null' }),
+        /** Why it was revoked. Surfaced to the provider in the notification. */
+        revokeReason: text('revoke_reason'),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
         createdById: uuid('created_by_id').references(() => users.id, { onDelete: 'set null' }),
@@ -47,7 +129,9 @@ export const hostTrades = pgTable(
         hostTrades_destinationId_category_idx: index('hostTrades_destinationId_category_idx').on(
             table.destinationId,
             table.category
-        )
+        ),
+        /** Backs the owner-scoped `/protected/host-trades/mine` lookup (AC-7). */
+        hostTrades_ownerUserId_idx: index('hostTrades_ownerUserId_idx').on(table.ownerUserId)
     })
 );
 
@@ -55,6 +139,16 @@ export const hostTradesRelations = relations(hostTrades, ({ one }) => ({
     destination: one(destinations, {
         fields: [hostTrades.destinationId],
         references: [destinations.id]
+    }),
+    owner: one(users, {
+        fields: [hostTrades.ownerUserId],
+        references: [users.id],
+        relationName: 'hostTradeOwner'
+    }),
+    revokedBy: one(users, {
+        fields: [hostTrades.revokedById],
+        references: [users.id],
+        relationName: 'hostTradeRevokedBy'
     }),
     createdBy: one(users, {
         fields: [hostTrades.createdById],

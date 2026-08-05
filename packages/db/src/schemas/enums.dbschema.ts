@@ -17,6 +17,7 @@ import {
     ExperienceTypeEnum,
     ExternalPlatformEnum,
     GastronomyTypeEnum,
+    HostTradeBenefitTypeEnum,
     HostTradeCategoryEnum,
     InvoiceStatusEnum,
     LifecycleStatusEnum,
@@ -107,6 +108,11 @@ export const EventCategoryPgEnum = pgEnum('event_category_enum', enumToTuple(Eve
 export const HostTradeCategoryPgEnum = pgEnum(
     'host_trade_category_enum',
     enumToTuple(HostTradeCategoryEnum)
+);
+
+export const HostTradeBenefitTypePgEnum = pgEnum(
+    'host_trade_benefit_type_enum',
+    enumToTuple(HostTradeBenefitTypeEnum)
 );
 
 export const ExchangeRateSourcePgEnum = pgEnum(

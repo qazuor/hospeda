@@ -1,6 +1,12 @@
 import { z } from 'zod';
 import { BaseAuditFields } from '../../common/audit.schema.js';
-import { UserIdSchema } from '../../common/id.schema.js';
+import {
+    HOST_TRADE_BENEFIT_TEXT_MAX,
+    HostTradeBenefitValueSchema
+} from '../../common/host-trade-benefit.schema.js';
+import { DestinationIdSchema, HostTradeIdSchema, UserIdSchema } from '../../common/id.schema.js';
+import { HostTradeBenefitTypeEnumSchema } from '../../enums/host-trade-benefit-type.schema.js';
+import { HostTradeCategoryEnumSchema } from '../../enums/host-trade-category.schema.js';
 
 // ---------------------------------------------------------------------------
 // Alliance Lead Schema
@@ -37,14 +43,17 @@ export type AllianceLeadStatus = z.infer<typeof AllianceLeadStatusEnum>;
  * Alliance Lead Schema.
  *
  * A qualified lead submitted through one of the four "aliados" landing pages
- * (`partner`, `sponsor`, `editor`, `service_provider`). Unlike `CommerceLeadSchema`,
- * this entity has no `businessName`/`destinationId` fields — kind-specific details
- * are serialized with labels into `message` by the submitting form (HOS-277 §7.3),
- * so the persisted contract stays generic across all four kinds.
+ * (`partner`, `sponsor`, `editor`, `service_provider`). Kind-specific details are
+ * serialized with labels into `message` by the submitting form (HOS-277 §7.3), so
+ * the persisted contract stays generic — with ONE deliberate exception: the
+ * `service_provider` fields (`category`, `destinationId`, `benefit*`) are typed
+ * columns, because approving that kind provisions a `host_trades` row from them
+ * and prose cannot be read as data (HOS-278 §6.4).
  *
- * The admin evaluates the lead by hand and never auto-provisions any
- * role/entity on approval (HOS-277 NG-1) — `status` and `adminNote` are the
- * only fields an admin can change via the mark-handled action.
+ * That exception is also why HOS-277's NG-1 ("approval never auto-provisions")
+ * no longer holds universally: approving a `service_provider` DOES create its
+ * directory listing. For the other three kinds the admin still provisions by
+ * hand, and `status` / `adminNote` remain the only fields mark-handled changes.
  *
  * @example
  * ```ts
@@ -150,6 +159,61 @@ export const AllianceLeadSchema = z.object({
     claimExpiresAt: z.coerce
         .date({ message: 'zodError.allianceLead.claimExpiresAt.invalid' })
         .nullish(),
+
+    /**
+     * Trading name of the applicant's business — becomes `host_trades.name`.
+     *
+     * Distinct from {@link AllianceLeadSchema.shape.contactName}, which names
+     * the PERSON to talk to. Publishing the contact's name would put "Juan
+     * Pérez" into a directory of plumbers and locksmiths.
+     */
+    businessName: z
+        .string()
+        .min(2, { message: 'zodError.allianceLead.businessName.min' })
+        .max(255, { message: 'zodError.allianceLead.businessName.max' })
+        .nullish(),
+
+    /**
+     * Service category the applicant operates in (HOS-278 §6.4).
+     *
+     * The next four fields are `service_provider`-only, and they exist because
+     * approving that kind must materialize a `host_trades` row — a table whose
+     * `category`, `destination_id` and benefit are NOT NULL. Under HOS-277's
+     * NG-3 those answers were serialized into {@link message} as labelled
+     * prose, which is unusable as data.
+     *
+     * Nullish at the field level because the other three kinds never carry
+     * them. The per-kind requirement is imposed by
+     * `refineAllianceLeadKindFields` on the create input, not here: this schema
+     * also parses rows submitted before the columns existed, which legitimately
+     * have none.
+     */
+    category: HostTradeCategoryEnumSchema.nullish(),
+
+    /** Destination the applicant covers. Becomes `host_trades.destination_id`. */
+    destinationId: DestinationIdSchema.nullish(),
+
+    /** What the applicant offers hosts. See {@link category} for why it is nullish. */
+    benefitType: HostTradeBenefitTypeEnumSchema.nullish(),
+
+    /** Magnitude of the benefit, interpreted by {@link benefitType}. */
+    benefitValue: HostTradeBenefitValueSchema.nullish(),
+
+    /** Fine print accompanying the benefit. */
+    benefitText: z
+        .string()
+        .max(HOST_TRADE_BENEFIT_TEXT_MAX, { message: 'zodError.hostTrade.benefitText.max' })
+        .nullish(),
+
+    /**
+     * The directory listing this lead's approval produced, or null.
+     *
+     * System-managed and omitted from the create input: it is what approval
+     * WROTE, never something a submission may assert. Accepting it from a
+     * request body would let a caller point their application at somebody
+     * else's listing.
+     */
+    provisionedHostTradeId: HostTradeIdSchema.nullish(),
 
     // Audit fields (createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById)
     ...BaseAuditFields

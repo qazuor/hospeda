@@ -77,6 +77,10 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // promises it.
     [NotificationType.ALLIANCE_LEAD_DECISION]: NotificationCategory.TRANSACTIONAL,
 
+    // Listing revoked (HOS-278 R-4) — TRANSACTIONAL: it reports a change to an
+    // arrangement the recipient is party to, not something to opt out of.
+    [NotificationType.HOST_TRADE_REVOKED]: NotificationCategory.TRANSACTIONAL,
+
     // Broken iCal feed alert to the host (HOS-162 Phase 3) — TRANSACTIONAL:
     // overbooking risk, always sent, never opted out of
     [NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN]: NotificationCategory.TRANSACTIONAL,
