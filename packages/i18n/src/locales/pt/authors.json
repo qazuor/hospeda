@@ -5,12 +5,10 @@
     },
     "tagline": "Autor",
     "posts": {
-        "heading": "Publicações",
-        "empty": "Este autor ainda não publicou artigos."
+        "heading": "Publicações"
     },
     "events": {
-        "heading": "Eventos",
-        "empty": "Este autor ainda não publicou eventos."
+        "heading": "Eventos"
     },
     "empty": {
         "title": "Sem conteúdo publicado",
@@ -18,11 +16,5 @@
     },
     "socialNetworks": {
         "regionLabel": "Redes sociais de {{name}}"
-    },
-    "pagination": {
-        "label": "Paginação de publicações",
-        "previous": "Anterior",
-        "next": "Próxima",
-        "page": "Página {{page}} de {{total}}"
     }
 }
