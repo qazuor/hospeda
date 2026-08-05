@@ -1670,6 +1670,66 @@ Overlaps HOS-168; this spec supplies the measurements it lacked.
   how a namespace gets misreported as unreachable. Mutation-tested both ways:
   removing `blog` names `blog (named in apps/web/src/lib/colors.ts)`, adding
   `faq` names `faq`.
+
+  **W3-2b — the same cut again, one level finer. DONE 2026-08-05
+  (PR #2675): 76,766 → 56,644 B brotli, −20,122 B (−26.2%), 6,914 → 5,118
+  keys.** Dropping whole namespaces left most of the remaining weight in place:
+  inside the 31 namespaces that survived, the majority of keys are named only by
+  `.astro` files. Narrowing from namespaces to the **two-segment key prefixes**
+  browser code names removes them.
+
+  **Two segments is a chosen stopping point, and the table is why.** Measured
+  across granularities, single asset, no route logic: two segments → 169
+  entries / 55,222 B; three → 803 / 48,433 B; full prefix → 1,777 / 45,157 B.
+  Two segments takes **68% of the available win for 9% of the declaration**.
+  Past it the list stops being reviewable in a diff and every PR adding a key
+  must regenerate it; at two segments a new key under an existing prefix is
+  covered for free. Note the constraint that forces a declaration at all: the
+  asset is built at server start and the production container has no source
+  tree, so the set cannot be computed at runtime.
+
+  **A coverage audit had to come before trusting any key-level cut, and it
+  found two real holes.** All 96 non-literal translation calls in the client
+  graph were enumerated and classified: 53 template literals (safe — the static
+  head bounds the subtree), 9 `${NAMESPACE}.x` (safe — one file, module-level
+  literal), 34 variable-keyed. Of those 34, **32 are safe** because the literals
+  feeding them live in `apps/web/src` and the scan already sees them; **2 are
+  not**, and they share a shape — the key literal lives inside a workspace
+  package the graph treats as external:
+
+  - `lib/forms/field-errors.ts` → `validation.*`, via `issue.message` from
+    `@repo/schemas`.
+  - `lib/api-errors.ts` → `common.apiError.*`, built inside `@repo/i18n` by
+    `translateApiErrorWithT`.
+
+  Neither literal exists anywhere in `apps/web`, so a scan of the web app alone
+  deletes both and silently breaks API-error messages and form validation in the
+  browser. `common.apiError` was verified absent from the generated list before
+  being added by hand. They live in `EXTERNAL_I18N_KEY_PREFIXES`, and the guard
+  asserts **their code paths still exist**, so removing an entry without
+  removing its call path fails CI rather than shipping.
+
+  **The guard caught its first defect on its first run**, and the direction
+  matters: it flagged four `auth-ui.*` prefixes the generator had missed,
+  because the generator walked pages → islands while the guard also roots at the
+  `auth-ui` package. The checker being strictly more conservative than the
+  producer is the property that makes this safe. Mutation-tested: removing
+  `nav.signIn` names it and its call site; emptying the external list fails on
+  `expected [] to include 'common.apiError'`.
+
+  **The public / `mi-cuenta` split was measured and NOT built.** At namespace
+  granularity it is worthless — exactly **one** namespace (`events`, 1,105 B) is
+  private-only, because the shared header mounts `UserMenu` with `client:load`
+  on every page and its nav config names `account.nav.*`, `commerce.owner.nav`
+  and `conversations.inbox.*`, while public landings mount `HostLandingCta`
+  (`host`) and `PlanPurchaseButton` (`billing`). At key-prefix granularity it is
+  worth ~17.7 KB, but it needs two assets, route-conditional linking, and a
+  guard that reasons about which islands each `.astro` page mounts. Since the
+  SSR-only cut above takes more weight with one asset and no routing, the split
+  was deferred rather than built. Reorganizing the namespaces to make the
+  boundary cleaner was considered and rejected: the ceiling is set by which keys
+  public islands can reach, which is a property of the code, not of the naming —
+  renaming ~1,300 keys across three locales would buy a shorter list, not bytes.
 - **W3-3** — ~~Audit the 170 KB of `astro-island` props across 26 islands.~~
   **DONE 2026-08-05, and the framing above was wrong.** It is not 26 islands: on
   the home, `DestinationsIsland` alone carried 147,372 B — 28.9% of the whole
