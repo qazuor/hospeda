@@ -62,6 +62,11 @@ const { locale } = Astro.props;
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+		<!-- HOS-369 Wave D: client translation dictionary (hashed immutable
+		     asset). Must be in <head> so its deferred execution precedes the
+		     island hydration modules — see I18nClientData.astro. -->
+		<I18nClientData locale={locale} />
+
 		<!-- Browser UI chrome matches the brand blue, same as BaseLayout — the
 		     dark variant keeps the chrome on-brand under prefers-color-scheme:
 		     dark (see BaseLayout.astro for the full SPEC-157 REQ-18 rationale). -->
@@ -102,7 +107,6 @@ const { locale } = Astro.props;
 		</noscript>
 	</head>
 	<body>
-		<I18nClientData locale={locale} />
 		<main id="main-content">
 			<slot />
 		</main>

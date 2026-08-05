@@ -64,6 +64,10 @@ const EXEMPT: ReadonlyArray<{ readonly file: string; readonly why: string }> = [
     {
         file: 'pages/api/og.ts',
         why: 'Content-addressed by construction: every input that changes the image (title, description, type, subtitle, rating, image URL, seed) is a query param, and the query string is part of the Cloudflare cache key. An edit that changes the card also changes its URL, so the old entry is never served for the new content — there is nothing for a purge to invalidate.'
+    },
+    {
+        file: 'pages/i18n/[file].js.ts',
+        why: 'Content-addressed by construction (HOS-369 Wave D): the filename carries sha256 of the exact body served, so a dictionary change produces a NEW URL and the old one is simply never requested again. The endpoint 404s any hash it does not currently serve, so a stale URL can never be answered with fresh content either. Nothing a purge could target.'
     }
 ];
 
