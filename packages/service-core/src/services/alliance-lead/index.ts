@@ -9,6 +9,8 @@ export {
     type AllianceClaimInvitePort,
     type AllianceDecisionNotifyPort,
     AllianceLeadService,
+    type ApproveAndProvisionPartnerInput,
+    type ApproveAndProvisionPartnerOutput,
     type ClaimAllianceLeadInput,
     type CreateAllianceLeadInput,
     type ListAllianceLeadsForAdminInput,

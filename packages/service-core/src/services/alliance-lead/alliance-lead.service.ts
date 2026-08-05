@@ -30,7 +30,7 @@
  */
 
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import { AllianceLeadModel, HostTradeModel, type SelectAllianceLead } from '@repo/db';
+import { AllianceLeadModel, HostTradeModel, PartnerModel, type SelectAllianceLead } from '@repo/db';
 import {
     type AllianceLead,
     AllianceLeadAdminListQuerySchema,
@@ -39,6 +39,8 @@ import {
     type AllianceLeadKind,
     AllianceLeadMarkHandledSchema,
     AllianceLeadSubmissionSchema,
+    type PartnerTierEnum,
+    PartnerTierEnumSchema,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode
@@ -55,6 +57,11 @@ import type {
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction';
+import {
+    type ProvisionPartnerResult,
+    provisionPartnerFromLead,
+    resolvePartnerProvisionPlan
+} from './alliance-lead.partner-provisioning';
 import {
     provisionServiceProviderListing,
     resolveProvisionPlan
@@ -175,6 +182,34 @@ export interface MarkAllianceLeadHandledInput {
     };
 }
 
+/** Input for {@link AllianceLeadService.approveAndProvisionPartner}. */
+export interface ApproveAndProvisionPartnerInput {
+    /** The admin actor performing the action. */
+    readonly actor: Actor;
+    /** UUID of the `partner` lead to approve and provision. */
+    readonly id: string;
+    /** The tier to grant, plus an optional admin note. */
+    readonly input: {
+        readonly tier: PartnerTierEnum;
+        readonly adminNote?: string;
+    };
+}
+
+/** Result of {@link AllianceLeadService.approveAndProvisionPartner}. */
+export interface ApproveAndProvisionPartnerOutput {
+    /** The updated lead — `approved`, and linked to the partner when one exists. */
+    readonly lead: AllianceLead;
+    /**
+     * The partner this lead points at, or null.
+     *
+     * Null only for a lead with no usable typed organization data, which is
+     * approved without a partner and left for the admin to build by hand.
+     */
+    readonly partnerId: string | null;
+    /** `true` when THIS call created the partner; `false` when it already existed. */
+    readonly provisioned: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // Internal validation schemas
 // ---------------------------------------------------------------------------
@@ -182,6 +217,13 @@ export interface MarkAllianceLeadHandledInput {
 /** Validates the `{ id, status, adminNote? }` shape for `markHandled`. */
 const markHandledInputSchema = AllianceLeadMarkHandledSchema.extend({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+});
+
+/** Validates the `{ id, tier, adminNote? }` shape for partner provisioning. */
+const approveAndProvisionPartnerInputSchema = z.object({
+    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    tier: PartnerTierEnumSchema,
+    adminNote: z.string().max(1000, { message: 'zodError.allianceLead.adminNote.max' }).optional()
 });
 
 /** `listMine` takes no caller-supplied input — its only scope is the actor. */
@@ -347,6 +389,7 @@ const resolveApplicantUserId = (actor: Actor): string | null => {
 export class AllianceLeadService extends BaseService {
     private readonly _model: AllianceLeadModel;
     private readonly _hostTradeModel: HostTradeModel;
+    private readonly _partnerModel: PartnerModel;
     private readonly _claimInviter: AllianceClaimInvitePort | null;
     private readonly _decisionNotifier: AllianceDecisionNotifyPort | null;
 
@@ -362,6 +405,11 @@ export class AllianceLeadService extends BaseService {
         // demand HOST_TRADE_CREATE from an admin whose permission to approve
         // this lead is not in question.
         this._hostTradeModel = new HostTradeModel();
+        // Same reasoning as `_hostTradeModel` above: provisioning is an effect
+        // of ALLIANCE_LEAD_MANAGE, and going through PartnerService would
+        // additionally demand PARTNER_MANAGE from an admin whose permission to
+        // handle this lead is not in question.
+        this._partnerModel = new PartnerModel();
         this._claimInviter = claimInviter ?? null;
         this._decisionNotifier = decisionNotifier ?? null;
     }
@@ -914,6 +962,174 @@ export class AllianceLeadService extends BaseService {
                 }
 
                 return lead;
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // approveAndProvisionPartner — admin (requires ALLIANCE_LEAD_MANAGE)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Approves a `partner` lead AND provisions its `partners` row in one action.
+     *
+     * A SEPARATE entry point from {@link markHandled}, not a branch inside it
+     * (HOS-278 §6.5 OQ-1). Approving a partner lead through `markHandled`
+     * still provisions nothing — that path remains available for an admin who
+     * wants to accept the application without standing up an organization yet,
+     * and it is what every pre-existing partner approval already did. Folding
+     * provisioning into `markHandled` would have changed the meaning of a
+     * button admins already use.
+     *
+     * The tier is taken from the ADMIN, not the lead: it is a commercial
+     * decision about what Hospeda is granting, so no public form asks for it
+     * and no applicant can assert it.
+     *
+     * Degrades rather than fails on a lead with no usable typed organization
+     * data: the lead is still approved, `partnerId` comes back null, and the
+     * admin builds the partner by hand. Refusing would strand every partner
+     * lead submitted before the typed columns existed.
+     *
+     * @param params - `{ actor, id, input: { tier, adminNote? } }`.
+     * @param ctx - Optional service execution context.
+     * @returns `ServiceOutput<ApproveAndProvisionPartnerOutput>`.
+     * @throws `FORBIDDEN` without `ALLIANCE_LEAD_MANAGE`.
+     * @throws `NOT_FOUND` when the lead does not exist.
+     * @throws `VALIDATION_ERROR` when the lead is not a `partner` lead.
+     */
+    public async approveAndProvisionPartner(
+        params: ApproveAndProvisionPartnerInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<ApproveAndProvisionPartnerOutput>> {
+        const { actor, id, input } = params;
+        return this.runWithLoggingAndValidation({
+            methodName: 'approveAndProvisionPartner',
+            input: { actor, id, ...input },
+            schema: approveAndProvisionPartnerInputSchema,
+            ctx,
+            execute: async (validated, a, execCtx) => {
+                if (!hasPermission(a, PermissionEnum.ALLIANCE_LEAD_MANAGE)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: ALLIANCE_LEAD_MANAGE required to handle alliance leads'
+                    );
+                }
+
+                const existing = await this._model.findById(validated.id, execCtx?.tx);
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Alliance lead not found: ${validated.id}`
+                    );
+                }
+
+                const plan = resolvePartnerProvisionPlan(existing);
+
+                // The ONE skip that is a real error. The other two are outcomes
+                // an admin can legitimately reach by pressing this button; this
+                // one means the button was pressed on the wrong lead, and
+                // silently approving a sponsor or editor application as a side
+                // effect of a partner-specific action would be a surprise worth
+                // failing over.
+                if (plan.kind === 'skip' && plan.reason === 'not-a-partner') {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        `Alliance lead ${validated.id} is not a partner application`
+                    );
+                }
+
+                // Provisioning and the status change land together, for the
+                // reason spelled out in `markHandled`: an approved lead with no
+                // partner is the inconsistent state this slice removes, and an
+                // orphan partner whose lead never got linked would be
+                // provisioned AGAIN on the retry, because the link that makes
+                // this idempotent is written by the very update that failed.
+                const applyDecision = async (
+                    txCtx: ServiceContext | undefined
+                ): Promise<{ row: SelectAllianceLead; result: ProvisionPartnerResult }> => {
+                    const result = await provisionPartnerFromLead({
+                        lead: existing,
+                        partnerModel: this._partnerModel,
+                        tier: validated.tier,
+                        actorId: a.id,
+                        logger: this.logger,
+                        tx: txCtx?.tx
+                    });
+
+                    const updatePayload: Partial<AllianceLead> = {
+                        status: 'approved',
+                        updatedById: a.id,
+                        ...(validated.adminNote === undefined
+                            ? {}
+                            : { adminNote: validated.adminNote }),
+                        ...(result.provisioned ? { provisionedPartnerId: result.partnerId } : {})
+                    };
+
+                    const row = await this._model.update(
+                        { id: validated.id },
+                        updatePayload,
+                        txCtx?.tx
+                    );
+
+                    // Null means the row went away mid-request. Throwing here
+                    // also rolls back the partner this call just created, which
+                    // is the point of doing both inside one boundary.
+                    if (!row) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            `Alliance lead not found: ${validated.id}`
+                        );
+                    }
+
+                    return { row: row as SelectAllianceLead, result };
+                };
+
+                // A boundary is opened ONLY when a partner is actually coming.
+                // Re-pressing the button on an already-provisioned lead, and
+                // approving a lead too incomplete to provision, are a single
+                // UPDATE — wrapping those would make a method that needs no
+                // database connection demand one.
+                const willProvision = plan.kind === 'provision';
+
+                const { row, result } = execCtx?.tx
+                    ? await applyDecision(execCtx)
+                    : willProvision
+                      ? await withServiceTransaction(applyDecision)
+                      : await applyDecision(undefined);
+
+                const lead = toAllianceLead(row);
+
+                if (this._decisionNotifier !== null) {
+                    // AFTER the write and deliberately NOT awaited — same
+                    // reasoning as `markHandled`: the approval is the durable
+                    // outcome and the email is a courtesy on top of it.
+                    void this._decisionNotifier
+                        .notifyDecision({
+                            leadId: lead.id,
+                            email: lead.email,
+                            contactName: lead.contactName,
+                            kind: lead.kind,
+                            outcome: 'approved'
+                        })
+                        .catch((error: unknown) => {
+                            this.logger.error(
+                                {
+                                    leadId: lead.id,
+                                    outcome: 'approved',
+                                    error: error instanceof Error ? error.message : String(error)
+                                },
+                                '[alliance-lead] decision notification failed to send'
+                            );
+                        });
+                }
+
+                return {
+                    lead,
+                    partnerId: result.provisioned
+                        ? result.partnerId
+                        : (result.partnerId ?? lead.provisionedPartnerId ?? null),
+                    provisioned: result.provisioned
+                };
             }
         });
     }
