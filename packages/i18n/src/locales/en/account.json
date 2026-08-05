@@ -1134,6 +1134,24 @@
                 }
             }
         },
+        "editor": {
+            "media": {
+                "sectionTitle": "Photos",
+                "featured": "Cover image",
+                "gallery": "Photo gallery",
+                "add": "Add photo",
+                "remove": "Remove",
+                "uploadHint": "JPG, PNG or WebP — max {{maxSize}}MB. Up to {{cap}} photos in the gallery.",
+                "invalidType": "Only JPG, PNG or WebP files are allowed",
+                "tooLarge": "The file cannot exceed {{maxSize}}MB",
+                "capReached": "Gallery limit reached (max {{cap}} photos)",
+                "uploadFailed": "Could not upload the image",
+                "uploadTimeout": "The upload took too long. Please try again.",
+                "persistFailed": "Could not save the image to the database",
+                "featuredFailed": "Could not set the image as the cover",
+                "removeFailed": "Could not remove the image"
+            }
+        },
         "events": {
             "list": {
                 "title": "My events",

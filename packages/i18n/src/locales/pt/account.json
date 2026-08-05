@@ -1134,6 +1134,24 @@
                 }
             }
         },
+        "editor": {
+            "media": {
+                "sectionTitle": "Fotos",
+                "featured": "Imagem principal",
+                "gallery": "Galeria de fotos",
+                "add": "Adicionar foto",
+                "remove": "Remover",
+                "uploadHint": "JPG, PNG ou WebP — máx. {{maxSize}}MB. Até {{cap}} fotos na galeria.",
+                "invalidType": "Somente arquivos JPG, PNG ou WebP são permitidos",
+                "tooLarge": "O arquivo não pode ultrapassar {{maxSize}}MB",
+                "capReached": "Limite da galeria atingido (máx. {{cap}} fotos)",
+                "uploadFailed": "Não foi possível enviar a imagem",
+                "uploadTimeout": "O envio demorou demais. Tente novamente.",
+                "persistFailed": "Não foi possível salvar a imagem no banco de dados",
+                "featuredFailed": "Não foi possível definir a imagem como principal",
+                "removeFailed": "Não foi possível remover a imagem"
+            }
+        },
         "events": {
             "list": {
                 "title": "Meus eventos",
