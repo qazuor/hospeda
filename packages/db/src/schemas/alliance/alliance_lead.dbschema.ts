@@ -107,10 +107,9 @@ export const allianceLeads = pgTable(
          *
          * Null for every lead that is not an approved `service_provider`.
          */
-        provisionedHostTradeId: uuid('provisioned_host_trade_id').references(
-            () => hostTrades.id,
-            { onDelete: 'set null' }
-        ),
+        provisionedHostTradeId: uuid('provisioned_host_trade_id').references(() => hostTrades.id, {
+            onDelete: 'set null'
+        }),
         /**
          * The account this application belongs to (HOS-278 §6.2).
          *
