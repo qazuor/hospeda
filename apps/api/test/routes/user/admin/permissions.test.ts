@@ -119,6 +119,82 @@ describe('Admin user permission override routes (SPEC-170 gate + routing)', () =
         });
     });
 
+    describe('POST /:id/trusted-editor (HOS-374 OQ-1)', () => {
+        const path = `/api/v1/admin/users/${USER_ID}/trusted-editor`;
+
+        it('rejects an unauthenticated guest', async () => {
+            expect([400, 401, 403]).toContain(await statusOf('POST', path));
+        });
+
+        it('blocks an admin without the permission trio (403)', async () => {
+            expect(await statusOf('POST', path, { headers: headers([]) })).toBe(403);
+        });
+
+        it('lets a trio-holding admin through the gate (not 403) — and routes to trusted-editor, not /:id', async () => {
+            // The trio does NOT include USER_READ_ALL, which the sibling bare
+            // `/:id` routes require; not being blocked proves the request
+            // resolved to the trusted-editor route.
+            const status = await statusOf('POST', path, { headers: headers(MANAGE_TRIO) });
+            expect(status).not.toBe(401);
+            expect(status).not.toBe(403);
+        });
+
+        // The mark and unmark actions share a PATH but must NOT share a gate:
+        // marking is PERMISSION_ASSIGN, unmarking is PERMISSION_REVOKE. Pin the
+        // per-method split so a future refactor that collapses the two routes
+        // (or drops one gate) is caught.
+        it('is gated by PERMISSION_ASSIGN alone (not 403 without REVOKE)', async () => {
+            const status = await statusOf('POST', path, {
+                headers: headers(['permission.assign'])
+            });
+            expect(status).not.toBe(403);
+        });
+
+        it('is NOT satisfied by PERMISSION_REVOKE alone (403)', async () => {
+            expect(await statusOf('POST', path, { headers: headers(['permission.revoke']) })).toBe(
+                403
+            );
+        });
+    });
+
+    describe('DELETE /:id/trusted-editor (HOS-374 OQ-1)', () => {
+        const path = `/api/v1/admin/users/${USER_ID}/trusted-editor`;
+
+        it('rejects an unauthenticated guest', async () => {
+            expect([400, 401, 403]).toContain(await statusOf('DELETE', path));
+        });
+
+        it('blocks an admin without the permission trio (403)', async () => {
+            expect(await statusOf('DELETE', path, { headers: headers([]) })).toBe(403);
+        });
+
+        it('lets a trio-holding admin through the gate (not 403)', async () => {
+            const status = await statusOf('DELETE', path, { headers: headers(MANAGE_TRIO) });
+            expect(status).not.toBe(401);
+            expect(status).not.toBe(403);
+        });
+
+        // KNOWN route-factory behavior, pinned deliberately rather than assumed:
+        // middlewares are registered per PATH and are method-agnostic, and the
+        // POST route is registered first, so its PERMISSION_ASSIGN gate also
+        // guards this DELETE. Effectively the unmark action demands BOTH
+        // permissions. Moot today — only SUPER_ADMIN holds the trio (SPEC-170
+        // T-011) — and identical to the pre-existing `/{id}/permissions`
+        // GET+POST pair. If a role is ever given REVOKE without ASSIGN, split
+        // the unmark onto its own path the way `roles.ts` did for `/role-grants`.
+        it('inherits the sibling POST gate: REVOKE alone is not enough (403)', async () => {
+            expect(
+                await statusOf('DELETE', path, { headers: headers(['permission.revoke']) })
+            ).toBe(403);
+        });
+
+        it('is not satisfied by PERMISSION_ASSIGN alone either (403)', async () => {
+            expect(
+                await statusOf('DELETE', path, { headers: headers(['permission.assign']) })
+            ).toBe(403);
+        });
+    });
+
     describe('DELETE /:id/permissions/:permission', () => {
         it('rejects an unauthenticated guest', async () => {
             expect([400, 401, 403]).toContain(await statusOf('DELETE', deletePath));
