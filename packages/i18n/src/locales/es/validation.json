@@ -2239,6 +2239,9 @@
         "gastronomyType": {
             "invalid": "El tipo de gastronomía no es válido"
         },
+        "hostTradeBenefitType": {
+            "invalid": "El tipo de beneficio seleccionado no es válido"
+        },
         "hostTradeCategory": {
             "invalid": "La categoría de oficio seleccionada no es válida"
         },
@@ -3066,6 +3069,17 @@
     "hostTrade": {
         "benefit": {
             "min": "El beneficio debe tener al menos {{min}} caracteres"
+        },
+        "benefitText": {
+            "max": "La letra chica no puede superar los {{max}} caracteres"
+        },
+        "benefitValue": {
+            "int": "El valor del beneficio debe ser un número entero",
+            "notAllowedForType": "El tipo de beneficio elegido no lleva un valor numérico",
+            "percentageMax": "El descuento no puede superar el 100%",
+            "positive": "El valor del beneficio debe ser mayor que cero",
+            "required": "Indicá el valor del beneficio para el tipo elegido",
+            "requiresType": "Elegí un tipo de beneficio antes de indicar su valor"
         },
         "contact": {
             "min": "El contacto debe tener al menos {{min}} caracteres"
