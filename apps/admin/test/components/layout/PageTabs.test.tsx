@@ -301,14 +301,20 @@ describe('PageTabs', () => {
 
         it('should export eventTabs', () => {
             expect(eventTabs).toBeDefined();
-            expect(eventTabs).toHaveLength(4);
-            expect(eventTabs.map((t) => t.id)).toEqual(['overview', 'tickets', 'attendees', 'seo']);
+            expect(eventTabs).toHaveLength(5);
+            expect(eventTabs.map((t) => t.id)).toEqual([
+                'overview',
+                'gallery',
+                'tickets',
+                'attendees',
+                'seo'
+            ]);
         });
 
         it('should export postTabs', () => {
             expect(postTabs).toBeDefined();
-            expect(postTabs).toHaveLength(3);
-            expect(postTabs.map((t) => t.id)).toEqual(['content', 'seo', 'sponsorship']);
+            expect(postTabs).toHaveLength(4);
+            expect(postTabs.map((t) => t.id)).toEqual(['content', 'gallery', 'seo', 'sponsorship']);
         });
 
         it('should export gastronomyTabs', () => {
