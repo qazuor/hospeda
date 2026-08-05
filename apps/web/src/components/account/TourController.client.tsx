@@ -54,7 +54,9 @@ export function TourController({ locale, userRoles }: TourControllerProps) {
         async function startTour(): Promise<void> {
             if (cancelled) return;
 
-            const { driver } = await import('driver.js');
+            // `@/lib/load-driver` re-exports driver.js and pulls in its
+            // stylesheet, so both land in the same async chunk (HOS-369 W3-4).
+            const { driver } = await import('@/lib/load-driver');
 
             if (cancelled) return;
 
