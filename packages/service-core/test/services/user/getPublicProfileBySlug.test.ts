@@ -10,8 +10,16 @@
  *
  * These tests pin the three properties that make bypassing that gate safe:
  * a guest is served, the payload carries ONLY public fields, and the payload
- * does not vary with the actor (the route is edge-cached with a session-blind
- * key).
+ * does not vary with the actor.
+ *
+ * On that last one, note what the cache actually is: `/api/v1/public/users` is
+ * in `PRIVATE_CACHE_ENDPOINTS`, NOT `PUBLIC_CACHE_ENDPOINTS`, so it never
+ * reaches the shared CDN. It IS held in the API's in-memory cache
+ * (`cacheTTL: 300`) under `private:${path}${suffix}:${authorization ??
+ * 'anonymous'}` — and the web app authenticates with session COOKIES, never an
+ * `Authorization` header, so every logged-in visitor shares the `:anonymous`
+ * bucket with every logged-out one. Actor-blindness is what keeps one visitor's
+ * payload from being replayed to all of them.
  */
 import { UserModel } from '@repo/db';
 import { RoleEnum } from '@repo/schemas';
@@ -88,8 +96,10 @@ describe('UserService.getPublicProfileBySlug', () => {
     });
 
     it('returns the identical payload to a guest, the user themselves and a third party', async () => {
-        // Arrange — the route is edge-cached on a session-blind key, so any
-        // actor-dependent field here would poison the cache for everyone.
+        // Arrange — the route is cached on a key that segments only on the
+        // `Authorization` header, which cookie-authenticated visitors never
+        // send, so any actor-dependent field here would be replayed to all of
+        // them. See the file docstring.
         asMock(userModelMock.findOne).mockResolvedValue(authorRow());
         // Act
         const asGuest = await service.getPublicProfileBySlug(guest, { slug });
@@ -203,10 +213,10 @@ describe('UserService.getPublicProfileBySlug', () => {
         ]);
     });
 
-    it('stays actor-blind with the opt-in ON, which the shared edge cache requires', async () => {
+    it('stays actor-blind with the opt-in ON, which the shared cache entry requires', async () => {
         // Arrange — this is the branch that could have been written against the
         // REQUESTING actor. If it ever is, one visitor's payload gets served to
-        // everyone from the 300s cache.
+        // everyone from the 300s cache entry they all share.
         asMock(userModelMock.findOne).mockResolvedValue(authorWithSocial(true));
         // Act
         const asGuest = await service.getPublicProfileBySlug(guest, { slug });
