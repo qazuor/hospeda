@@ -1,0 +1,166 @@
+---
+/**
+ * @file mi-cuenta/publicaciones/[id]/editar.astro
+ * @description Editor page for one of the author's own posts (HOS-374
+ * Phase 2 2C-2). Loads the post through the author-scoped protected `getById`
+ * and mounts the `PostEditor` island.
+ *
+ * Three gates, in order:
+ *  1. Session — middleware AND this page, matching the `/mi-cuenta` convention.
+ *  2. Role — `hasPostsNavAccess`, same as the listing this page links from.
+ *  3. Authorship — enforced SERVER-SIDE by `GET /protected/posts/:id`, which
+ *     403s anyone who is neither the author nor a `POST_VIEW_ALL` holder. A
+ *     failed fetch bounces back to the listing; this page never decides
+ *     ownership itself.
+ *
+ * Capability flags (`canPublish` / `canDelete` / `isEditLocked`) are resolved
+ * here from `Astro.locals.user.permissions` (HOS-374 #2629) and NEVER from
+ * roles: the "trusted editor" is two per-user grants layered on the plain
+ * `EDITOR` role (OQ-1), so the role set cannot answer the question.
+ *
+ * @route     /[lang]/mi-cuenta/publicaciones/[id]/editar/
+ * @rendering SSR (prerender = false — authenticated, author-scoped data)
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import { PostEditor } from '@/components/post/editor/PostEditor.client';
+import { destinationsApi } from '@/lib/api/endpoints';
+import { postEditApi } from '@/lib/api/endpoints-protected';
+import { transformPostEditDetail } from '@/lib/api/transforms';
+import type { PostDestinationOption } from '@/components/post/editor/DetailsSection.client';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { webLogger as logger } from '@/lib/logger';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { hasPostsNavAccess } from '@/lib/nav-gating';
+import { buildUrl } from '@/lib/urls';
+import btn from '@/components/account/AccountButton.module.css';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const listUrl = buildUrl({ locale, path: 'mi-cuenta/publicaciones' });
+
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
+}
+
+if (!hasPostsNavAccess({ roles: user.roles })) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+}
+
+const postId = Astro.params.id;
+if (!postId) {
+    return Astro.redirect(listUrl);
+}
+
+// ---------------------------------------------------------------------------
+// Server-side fetch: the post itself (author-scoped) + the destination catalog.
+// ---------------------------------------------------------------------------
+
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+
+const result = await postEditApi.getById({ id: postId, cookieHeader });
+
+if (!result.ok) {
+    // 403 (not the author) and 404 (no such post) land in the same place on
+    // purpose: telling the two apart would confirm the existence of another
+    // author's post to someone who may not read it.
+    logger.error('[mi-cuenta/publicaciones/editar] Failed to fetch post', result.error.message);
+    return Astro.redirect(listUrl);
+}
+
+const post = transformPostEditDetail({ item: result.data });
+
+// Optional catalog for the related-destination select. A failed fetch hides the
+// field rather than failing the page — the field is optional, so its absence
+// costs the author nothing (see `DetailsSection`).
+let destinations: readonly PostDestinationOption[] = [];
+const destinationsResult = await destinationsApi.list({
+    destinationType: 'CITY',
+    pageSize: 100
+});
+if (destinationsResult.ok) {
+    destinations = destinationsResult.data.items.map((item) => ({
+        id: item.id,
+        name: item.name
+    }));
+}
+
+// ---------------------------------------------------------------------------
+// Capabilities — permission set, never roles (HOS-374 OQ-1).
+// ---------------------------------------------------------------------------
+
+const permissions = user.permissions;
+const canUpdateAny = permissions.includes('post.update');
+const canPublish = permissions.includes('post.publish.own') || permissions.includes('post.publish.toggle');
+const canDelete = permissions.includes('post.delete.own') || permissions.includes('post.delete');
+
+/*
+ * The §7.6.3 write-side state lock, mirroring `checkCanUpdatePost` +
+ * `isAuthorEditLockedByModeration`: an author holding only `post.update.own`
+ * loses edit rights once the platform APPROVES the content. Holding
+ * `post.publish.own` lifts it (that actor can unpublish → edit → republish
+ * anyway), and a broad `post.update` holder is authorized before the predicate
+ * is ever consulted.
+ *
+ * This is a UI mirror of a server rule, not the rule itself — the API refuses
+ * the PATCH regardless. Its job is to say so BEFORE the author writes a full
+ * revision they cannot save.
+ */
+const isEditLocked = post.moderationState === 'APPROVED' && !canPublish && !canUpdateAny;
+
+const title = t('account.myContent.posts.editor.pageTitle', 'Editar publicación');
+---
+
+<AccountLayout locale={locale} title={`${title}: ${post.title}`} activeSection="publicaciones">
+    <AccountPageHeader title={title} description={post.title} />
+
+    <p class="post-edit-page__slug">
+        <code>/{post.slug}</code>
+        <span class="post-edit-page__slug-note">
+            {t(
+                'account.myContent.posts.editor.slugImmutableNotice',
+                'La URL pública se genera al crear la nota y no se puede cambiar.'
+            )}
+        </span>
+    </p>
+
+    <a class:list={['post-edit-page__back', btn.secondary]} href={listUrl}>
+        {t('account.myContent.posts.editor.backToList', 'Volver a mis publicaciones')}
+    </a>
+
+    <PostEditor
+        client:load
+        locale={locale}
+        initialData={post}
+        destinations={destinations}
+        canPublish={canPublish}
+        canDelete={canDelete}
+        isEditLocked={isEditLocked}
+    />
+</AccountLayout>
+
+<style>
+    .post-edit-page__slug {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: var(--space-2, 0.5rem);
+        margin: 0 0 var(--space-3, 0.75rem);
+        font-size: var(--text-caption, 0.75rem);
+        color: var(--core-muted-foreground);
+    }
+
+    .post-edit-page__slug-note {
+        font-family: var(--font-sans);
+    }
+
+    .post-edit-page__back {
+        text-decoration: none;
+    }
+</style>

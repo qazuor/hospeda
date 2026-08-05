@@ -1,0 +1,106 @@
+/**
+ * Field primitives shared by every post editor section (HOS-374 2C-2).
+ *
+ * Same layering decision as the commerce editor's `editor-fields.module.css`:
+ * the primitives live once here and each section module keeps only what is
+ * genuinely its own. The accommodation editor duplicates these rules per
+ * section — that is the pattern deliberately NOT copied.
+ */
+
+/* Section body. The card chrome (surface, radius, brand accent bar) is owned by
+   the orchestrator's `.card`, which wraps each `<section>` — exactly as
+   `AccommodationEditor.module.css` does. This is the bare fieldset inside it. */
+.section {
+    border: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1rem);
+}
+
+/* A UA renders a <legend> ON the fieldset's top border, outside its padding
+   box, which would let the title escape the wrapping card and slice its accent
+   bar. `float` opts the legend out of that placement and back into normal
+   flow (same fix as the commerce editor). */
+.sectionTitle {
+    float: left;
+    width: 100%;
+    margin: 0;
+    padding-bottom: var(--space-2, 0.5rem);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-heading, var(--font-sans));
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.sectionTitle + * {
+    clear: both;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+}
+
+.fieldLabel {
+    display: block;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    margin-bottom: var(--space-1, 0.25rem);
+}
+
+.fieldInput {
+    display: block;
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    transition: border-color 150ms ease-out;
+    box-sizing: border-box;
+}
+
+.fieldInput:focus {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 1px;
+    border-color: var(--brand-primary);
+}
+
+.fieldInput[aria-invalid="true"] {
+    border-color: oklch(0.55 0.22 25);
+}
+
+.fieldInput:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+select.fieldInput {
+    appearance: auto;
+}
+
+.fieldHint {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    margin-top: var(--space-1, 0.25rem);
+}
+
+/*
+ * The shared `FieldError` ships `margin: 0` and expects its container to own
+ * the spacing. The selector is doubled to raise specificity above `.error`
+ * deterministically — with equal specificity the winner would depend on
+ * stylesheet order (same reasoning as the accommodation editor's sections).
+ */
+.fieldErrorSpacing.fieldErrorSpacing {
+    margin-top: var(--space-1, 0.25rem);
+}

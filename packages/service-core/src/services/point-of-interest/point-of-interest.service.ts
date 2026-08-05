@@ -221,10 +221,20 @@ export class PointOfInterestService extends BaseCrudRelatedService<
      * Cloudflare outage must not fail the write that triggered it.
      *
      * @param entity - The POI as it now stands after the write.
+     * @param extraDestinationSlugs - Destinations that must be purged even
+     *   though the live relation table no longer links them to this POI. Only
+     *   `removePointOfInterestFromDestination` needs this: by the time the
+     *   purge runs, the link is already soft-deleted, so the destination whose
+     *   page still renders the POI is precisely the one
+     *   {@link _resolveDestinationSlugsForRevalidation} can no longer see.
      */
-    private async _schedulePointOfInterestRevalidation(entity: PointOfInterest): Promise<void> {
+    private async _schedulePointOfInterestRevalidation(
+        entity: PointOfInterest,
+        extraDestinationSlugs: readonly string[] = []
+    ): Promise<void> {
         try {
-            const destinationSlugs = await this._resolveDestinationSlugsForRevalidation(entity.id);
+            const linkedSlugs = await this._resolveDestinationSlugsForRevalidation(entity.id);
+            const destinationSlugs = [...new Set([...linkedSlugs, ...extraDestinationSlugs])];
 
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'pointOfInterest',
@@ -238,6 +248,31 @@ export class PointOfInterestService extends BaseCrudRelatedService<
                 'Revalidation scheduling failed (non-blocking)'
             );
         }
+    }
+
+    /**
+     * Schedule a cache purge after a POI ↔ destination LINK changes.
+     *
+     * Editing the link mutates the destination detail page just as surely as
+     * editing the POI itself does — the page renders its POI list server-side,
+     * and that list is `PRIMARY`-only, so even a `PRIMARY`/`NEARBY` flip adds
+     * or removes an entry. Linking, unlinking, and re-kinding therefore all
+     * have to purge, and until HOS-369 none of them did: only `_afterCreate`
+     * and `_afterUpdate` on the POI row were wired up, leaving relation edits
+     * to sit stale behind the edge cache until the TTL expired.
+     *
+     * @param pointOfInterest - The POI on either side of the changed link.
+     * @param destinationSlug - The destination on the other side, passed
+     *   explicitly so an unlink still purges the page it just changed.
+     */
+    private async _scheduleRelationRevalidation(
+        pointOfInterest: PointOfInterest,
+        destinationSlug: string | undefined
+    ): Promise<void> {
+        await this._schedulePointOfInterestRevalidation(
+            pointOfInterest,
+            destinationSlug ? [destinationSlug] : []
+        );
     }
 
     protected async _afterCreate(entity: PointOfInterest): Promise<PointOfInterest> {
@@ -464,6 +499,12 @@ export class PointOfInterestService extends BaseCrudRelatedService<
                     }
                     fullRelation = found;
                 }
+
+                await this._scheduleRelationRevalidation(
+                    pointOfInterest as PointOfInterest,
+                    (destination as { slug?: string }).slug
+                );
+
                 return { relation: fullRelation as DestinationPointOfInterestRelation };
             }
         });
@@ -530,6 +571,17 @@ export class PointOfInterestService extends BaseCrudRelatedService<
                     },
                     execCtx?.tx
                 );
+
+                // Scheduled here, before the return branching below, so BOTH
+                // shapes the model can hand back purge the destination page —
+                // and scheduled unconditionally because the row is already
+                // soft-deleted at this point: the write happened whether or
+                // not we can read the full relation back afterwards.
+                await this._scheduleRelationRevalidation(
+                    pointOfInterest as PointOfInterest,
+                    (destination as { slug?: string }).slug
+                );
+
                 if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
                     const fullRelation = await this.relatedModel.findOne(
                         {
@@ -638,6 +690,12 @@ export class PointOfInterestService extends BaseCrudRelatedService<
                     }
                     fullRelation = found;
                 }
+
+                await this._scheduleRelationRevalidation(
+                    pointOfInterest as PointOfInterest,
+                    (destination as { slug?: string }).slug
+                );
+
                 return { relation: fullRelation as DestinationPointOfInterestRelation };
             }
         });

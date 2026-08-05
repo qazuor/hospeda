@@ -406,6 +406,32 @@ That is coverage of the tag computation, NOT of the chain from service through
 Cloudflare. Treat the fan-out as untested end-to-end until somebody edits a
 multi-destination POI in staging and watches those destination pages fall.
 
+#### Setting up that end-to-end check (and what it turned up)
+
+Staging cannot run the check as-is. `r_destination_point_of_interest` holds
+**zero rows** there, so `_resolveDestinationSlugsForRevalidation` returns `[]`
+and a fan-out probe would pass without fanning out to anything. Exactly one POI
+(`palacio_san_jose`) has `hasOwnPage = true`. Before probing, link that POI to
+two or more destinations from the admin's POI → Destinations tab, warm every
+affected destination page to `HIT`, then edit and save the POI itself.
+
+Preparing that setup surfaced a real gap, now fixed: the three relation
+mutators — `addPointOfInterestToDestination`,
+`removePointOfInterestFromDestination`, and
+`updatePointOfInterestDestinationRelation` — scheduled no revalidation at all.
+Only `_afterCreate` / `_afterUpdate` on the POI row were wired to the purge
+chain. Linking a POI to a destination changes that destination's page (it
+renders its `PRIMARY` POIs server-side) and evicted nothing; the page stayed
+stale for the full TTL. Unlinking carried the subtler half: the link row is
+already soft-deleted by the time the purge runs, so the one destination whose
+page actually changed is precisely the one the relation table can no longer
+report — it has to be passed to the purge explicitly.
+
+Note the ordering this implies for the probe. The relation edits themselves now
+purge, so linking the POI to its destinations evicts those pages as a side
+effect. Warm the pages to `HIT` **after** the links exist, not before, or the
+first probe measures the link purge instead of the POI-edit fan-out.
+
 ### Purging from a shell
 
 The probes must run from your own machine (the cache is per-PoP and the VPS

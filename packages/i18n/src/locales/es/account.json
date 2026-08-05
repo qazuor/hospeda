@@ -1081,6 +1081,57 @@
                 "subtitle": "Revisá el estado de tus artículos",
                 "empty": "Todavía no escribiste ninguna publicación",
                 "fetchError": "No se pudo cargar la lista. Intentá recargar la página."
+            },
+            "editor": {
+                "pageTitle": "Editar publicación",
+                "slugImmutableNotice": "La URL pública se genera al crear la nota y no se puede cambiar.",
+                "backToList": "Volver a mis publicaciones",
+                "lockNotice": "Esta nota ya fue aprobada y publicada, así que no podés editarla. Escribile al equipo si necesitás cambiar algo.",
+                "unsavedChanges": "Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?",
+                "publicationExplainer": "Tu nota se ve en el sitio público solo cuando está aprobada, pública y activa a la vez.",
+                "publishBlockedByUnsaved": "Guardá los cambios antes de cambiar la publicación.",
+                "section": {
+                    "basicInfo": "Información básica",
+                    "content": "Contenido",
+                    "details": "Detalles",
+                    "publication": "Publicación"
+                },
+                "field": {
+                    "title": "Título",
+                    "summary": "Resumen",
+                    "category": "Categoría",
+                    "content": "Contenido",
+                    "readingTime": "Tiempo de lectura (minutos)",
+                    "destination": "Destino relacionado",
+                    "destinationNone": "Sin destino relacionado"
+                },
+                "hint": {
+                    "summary": "Entre 10 y 300 caracteres. Se muestra en el listado del blog.",
+                    "content": "Mínimo 100 caracteres.",
+                    "readingTime": "Dejalo vacío para mantener el valor actual."
+                },
+                "placeholder": {
+                    "content": "Escribí tu nota..."
+                },
+                "action": {
+                    "publish": "Publicar",
+                    "unpublish": "Despublicar",
+                    "delete": "Eliminar",
+                    "deleteConfirm": "¿Eliminar esta publicación?",
+                    "deleteYes": "Sí, eliminar",
+                    "deleteNo": "Cancelar"
+                },
+                "toast": {
+                    "saved": "Cambios guardados",
+                    "noChanges": "No hay cambios para guardar",
+                    "published": "Publicación publicada",
+                    "unpublished": "Publicación despublicada",
+                    "publishError": "No se pudo cambiar la publicación.",
+                    "deleteError": "No se pudo eliminar la publicación."
+                },
+                "error": {
+                    "saveFailed": "No se pudieron guardar los cambios."
+                }
             }
         },
         "events": {
@@ -1089,6 +1140,58 @@
                 "subtitle": "Revisá el estado de tus eventos",
                 "empty": "Todavía no creaste ningún evento",
                 "fetchError": "No se pudo cargar la lista. Intentá recargar la página."
+            },
+            "editor": {
+                "pageTitle": "Editar evento",
+                "backToList": "Volver a mis eventos",
+                "readOnlyNotice": "La URL, el organizador y el lugar se definen al crear el evento y no se editan desde acá.",
+                "lockNotice": "Este evento ya fue aprobado y publicado, así que no podés editarlo. Escribile al equipo si necesitás cambiar algo.",
+                "unsavedChanges": "Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?",
+                "publicationExplainer": "Tu evento se ve en el sitio público solo cuando está aprobado, público y activo a la vez.",
+                "publishBlockedByUnsaved": "Guardá los cambios antes de cambiar la publicación.",
+                "monthPrecisionNotice": "Este evento tiene fecha aproximada al mes, así que no se edita desde acá. Escribinos si necesitás fijar el día.",
+                "section": {
+                    "basicInfo": "Información básica",
+                    "description": "Descripción",
+                    "schedule": "Fechas",
+                    "publication": "Publicación"
+                },
+                "field": {
+                    "name": "Nombre",
+                    "category": "Categoría",
+                    "description": "Descripción",
+                    "startDate": "Comienza",
+                    "endDate": "Termina",
+                    "organizer": "Organiza",
+                    "location": "Lugar"
+                },
+                "hint": {
+                    "description": "Entre 50 y 2000 caracteres. El resumen del listado sale de acá.",
+                    "endDate": "Opcional. Dejalo vacío si el evento dura un solo momento."
+                },
+                "placeholder": {
+                    "description": "Contá de qué se trata el evento..."
+                },
+                "action": {
+                    "publish": "Publicar",
+                    "unpublish": "Despublicar",
+                    "delete": "Eliminar",
+                    "deleteConfirm": "¿Eliminar este evento?",
+                    "deleteYes": "Sí, eliminar",
+                    "deleteNo": "Cancelar"
+                },
+                "toast": {
+                    "saved": "Cambios guardados",
+                    "noChanges": "No hay cambios para guardar",
+                    "published": "Evento publicado",
+                    "unpublished": "Evento despublicado",
+                    "publishError": "No se pudo cambiar la publicación.",
+                    "deleteError": "No se pudo eliminar el evento."
+                },
+                "error": {
+                    "saveFailed": "No se pudieron guardar los cambios.",
+                    "startDateRequired": "El evento necesita una fecha de comienzo."
+                }
             }
         }
     },

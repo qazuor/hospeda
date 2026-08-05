@@ -1081,6 +1081,57 @@
                 "subtitle": "Veja o status dos seus artigos",
                 "empty": "Você ainda não escreveu nenhuma publicação",
                 "fetchError": "Não foi possível carregar a lista. Tente recarregar a página."
+            },
+            "editor": {
+                "pageTitle": "Editar publicação",
+                "slugImmutableNotice": "A URL pública é gerada ao criar a publicação e não pode ser alterada.",
+                "backToList": "Voltar às minhas publicações",
+                "lockNotice": "Esta publicação já foi aprovada e publicada, então você não pode editá-la. Fale com a equipe se precisar mudar algo.",
+                "unsavedChanges": "Você tem alterações não salvas. Se sair agora, elas serão perdidas. Deseja sair mesmo assim?",
+                "publicationExplainer": "Sua publicação aparece no site público somente quando está aprovada, pública e ativa ao mesmo tempo.",
+                "publishBlockedByUnsaved": "Salve as alterações antes de mudar a publicação.",
+                "section": {
+                    "basicInfo": "Informações básicas",
+                    "content": "Conteúdo",
+                    "details": "Detalhes",
+                    "publication": "Publicação"
+                },
+                "field": {
+                    "title": "Título",
+                    "summary": "Resumo",
+                    "category": "Categoria",
+                    "content": "Conteúdo",
+                    "readingTime": "Tempo de leitura (minutos)",
+                    "destination": "Destino relacionado",
+                    "destinationNone": "Sem destino relacionado"
+                },
+                "hint": {
+                    "summary": "Entre 10 e 300 caracteres. Aparece na listagem do blog.",
+                    "content": "Mínimo de 100 caracteres.",
+                    "readingTime": "Deixe vazio para manter o valor atual."
+                },
+                "placeholder": {
+                    "content": "Escreva sua publicação..."
+                },
+                "action": {
+                    "publish": "Publicar",
+                    "unpublish": "Despublicar",
+                    "delete": "Excluir",
+                    "deleteConfirm": "Excluir esta publicação?",
+                    "deleteYes": "Sim, excluir",
+                    "deleteNo": "Cancelar"
+                },
+                "toast": {
+                    "saved": "Alterações salvas",
+                    "noChanges": "Não há alterações para salvar",
+                    "published": "Publicação publicada",
+                    "unpublished": "Publicação despublicada",
+                    "publishError": "Não foi possível alterar a publicação.",
+                    "deleteError": "Não foi possível excluir a publicação."
+                },
+                "error": {
+                    "saveFailed": "Não foi possível salvar as alterações."
+                }
             }
         },
         "events": {
@@ -1089,6 +1140,58 @@
                 "subtitle": "Veja o status dos seus eventos",
                 "empty": "Você ainda não criou nenhum evento",
                 "fetchError": "Não foi possível carregar a lista. Tente recarregar a página."
+            },
+            "editor": {
+                "pageTitle": "Editar evento",
+                "backToList": "Voltar aos meus eventos",
+                "readOnlyNotice": "A URL, o organizador e o local são definidos ao criar o evento e não são editáveis aqui.",
+                "lockNotice": "Este evento já foi aprovado e publicado, então você não pode editá-lo. Fale com a equipe se precisar mudar algo.",
+                "unsavedChanges": "Você tem alterações não salvas. Se sair agora, elas serão perdidas. Deseja sair mesmo assim?",
+                "publicationExplainer": "Seu evento aparece no site público somente quando está aprovado, público e ativo ao mesmo tempo.",
+                "publishBlockedByUnsaved": "Salve as alterações antes de mudar a publicação.",
+                "monthPrecisionNotice": "Este evento tem data aproximada ao mês, então não é editável aqui. Fale conosco se precisar definir o dia.",
+                "section": {
+                    "basicInfo": "Informações básicas",
+                    "description": "Descrição",
+                    "schedule": "Datas",
+                    "publication": "Publicação"
+                },
+                "field": {
+                    "name": "Nome",
+                    "category": "Categoria",
+                    "description": "Descrição",
+                    "startDate": "Começa",
+                    "endDate": "Termina",
+                    "organizer": "Organiza",
+                    "location": "Local"
+                },
+                "hint": {
+                    "description": "Entre 50 e 2000 caracteres. O resumo da listagem sai daqui.",
+                    "endDate": "Opcional. Deixe vazio se o evento durar um só momento."
+                },
+                "placeholder": {
+                    "description": "Conte do que se trata o evento..."
+                },
+                "action": {
+                    "publish": "Publicar",
+                    "unpublish": "Despublicar",
+                    "delete": "Excluir",
+                    "deleteConfirm": "Excluir este evento?",
+                    "deleteYes": "Sim, excluir",
+                    "deleteNo": "Cancelar"
+                },
+                "toast": {
+                    "saved": "Alterações salvas",
+                    "noChanges": "Não há alterações para salvar",
+                    "published": "Evento publicado",
+                    "unpublished": "Evento despublicado",
+                    "publishError": "Não foi possível alterar a publicação.",
+                    "deleteError": "Não foi possível excluir o evento."
+                },
+                "error": {
+                    "saveFailed": "Não foi possível salvar as alterações.",
+                    "startDateRequired": "O evento precisa de uma data de início."
+                }
             }
         }
     },
