@@ -1140,6 +1140,58 @@
                 "subtitle": "Check the status of your events",
                 "empty": "You haven't created any event yet",
                 "fetchError": "Couldn't load the list. Try reloading the page."
+            },
+            "editor": {
+                "pageTitle": "Edit event",
+                "backToList": "Back to my events",
+                "readOnlyNotice": "The URL, the organizer and the venue are set when the event is created and cannot be edited here.",
+                "lockNotice": "This event has already been approved and published, so you can't edit it. Contact the team if you need a change.",
+                "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
+                "publicationExplainer": "Your event is visible on the public site only when it is approved, public and active at the same time.",
+                "publishBlockedByUnsaved": "Save your changes before changing publication.",
+                "monthPrecisionNotice": "This event only has a month-level date, so it cannot be edited here. Contact us if you need to set the exact day.",
+                "section": {
+                    "basicInfo": "Basic information",
+                    "description": "Description",
+                    "schedule": "Dates",
+                    "publication": "Publication"
+                },
+                "field": {
+                    "name": "Name",
+                    "category": "Category",
+                    "description": "Description",
+                    "startDate": "Starts",
+                    "endDate": "Ends",
+                    "organizer": "Organized by",
+                    "location": "Venue"
+                },
+                "hint": {
+                    "description": "Between 50 and 2000 characters. The listing summary comes from here.",
+                    "endDate": "Optional. Leave it empty for a single-moment event."
+                },
+                "placeholder": {
+                    "description": "Tell us what the event is about..."
+                },
+                "action": {
+                    "publish": "Publish",
+                    "unpublish": "Unpublish",
+                    "delete": "Delete",
+                    "deleteConfirm": "Delete this event?",
+                    "deleteYes": "Yes, delete",
+                    "deleteNo": "Cancel"
+                },
+                "toast": {
+                    "saved": "Changes saved",
+                    "noChanges": "No changes to save",
+                    "published": "Event published",
+                    "unpublished": "Event unpublished",
+                    "publishError": "Couldn't change publication.",
+                    "deleteError": "Couldn't delete the event."
+                },
+                "error": {
+                    "saveFailed": "Couldn't save the changes.",
+                    "startDateRequired": "The event needs a start date."
+                }
             }
         }
     },
