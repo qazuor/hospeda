@@ -1740,7 +1740,7 @@ Overlaps HOS-168; this spec supplies the measurements it lacked.
   passing them. The 170 KB figure came from the LISTING; nobody had bucketed the
   home.
 - **W3-4** — ~~Remove `driver.js` CSS from the global bundle.~~ **DONE 2026-08-05
-  (PR #TBD): −4,540 B raw / −788..811 B brotli on every page.** The runtime was
+  (PR #2678): −4,540 B raw / −788..811 B brotli on every page.** The runtime was
   already lazy — both tour islands `await import('driver.js')` — so the only
   thing on the critical path was the CSS: `global.css` did the vendor `@import`
   plus ~90 lines of themed overrides, for a tour reachable only from
