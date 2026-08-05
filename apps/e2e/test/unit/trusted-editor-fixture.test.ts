@@ -1,7 +1,7 @@
 /**
  * Static guard — the trusted-editor e2e fixture derives its permission bundle.
  *
- * `setTrustedEditor` (apps/e2e/fixtures/api-helpers.ts) arranges the state that
+ * `setTrustedEditor` (apps/e2e/fixtures/editorial-helpers.ts) arranges the state that
  * every HOS-374 trusted-editor spec depends on: an `EDITOR` holding the four
  * `TRUSTED_EDITOR_PERMISSIONS` as `grant` overrides in `user_permission`.
  *
@@ -15,7 +15,7 @@
  * No DB, no servers: `execSQL` is mocked and the emitted parameters inspected.
  *
  * @see packages/schemas/src/entities/permission/permission.trusted-editor.schema.ts
- * @see apps/e2e/fixtures/api-helpers.ts
+ * @see apps/e2e/fixtures/editorial-helpers.ts
  */
 
 import { TRUSTED_EDITOR_PERMISSIONS } from '@repo/schemas';
@@ -27,7 +27,7 @@ vi.mock('../../fixtures/db-helpers.ts', () => ({
     execSQL: execSQLMock
 }));
 
-import { setTrustedEditor } from '../../fixtures/api-helpers.ts';
+import { setTrustedEditor } from '../../fixtures/editorial-helpers.ts';
 
 const USER_ID = '11111111-2222-3333-4444-555555555555';
 
